@@ -7,7 +7,7 @@
 		<title>reveal.js</title>
 
 		<link rel="stylesheet" href="css/reveal.css">
-		<link rel="stylesheet" href="css/theme/moon.css">
+		<link rel="stylesheet" href="css/theme/black.css">
 
 		<!-- Theme used for syntax highlighting of code -->
 		<link rel="stylesheet" href="lib/css/zenburn.css">
@@ -24,37 +24,43 @@
 	<body>
 		<div class="reveal">
 			<div class="slides">
-				<section data-markdown>
-					### Why use Baker?
-
-					Write content using inline.
-
-					* Start a lineg
-					* Start a second line.
-
-					- dash *works* as **well**
-					- Like this
-					- and this
+				<section>
+					<section data-markdown>
+				        ## Why Baker?
+				        Explains the reasoning behind Baker and our target audience.
+					</section>
+					<section data-markdown>
+						### Modern age API dilemmas:
+						* Where do you implement the *orchestration logic* that involves calling APIs from multiple systems?
+						* What if the logic must run in the *absense of your customer*?
+						* What if the same logic must be exposed to multiple customer channels? 
+						* What if your process involves *manual steps in the backoffice*?
+					</section>
 				</section>
 				<section>
-					<section>
-						One
+					<section data-markdown>
+				        ## Capabilities you get with Baker?
+				        Explains what developers get.
 					</section>
-					<section>
-						Two
+					<section data-markdown>
+				        * DSL - domain specific language, achieve more logic with less code
+				        * Process - a customer journey, a business process
+				        * 
 					</section>
-				</section>
-				<section data-markdown>
-					### Why use Baker? 2
+					<section data-markdown>
+						* A programming library with a DSL for both Scala and Java
+						* A way to catalogue separate system interactions
+						* A way to describe business process steps to be performed based on the catalogue
+						* A way to keep state and handle functional failures
+						* A way to visually represent the complete process
+					</section>
+					<section data-markdown>
+				        As a result:
 
-					Write content using inline.
-
-					* Start a lineg
-					* Start a second line.
-
-					- dash *works* as **well**
-					- Like this
-					- and this
+				        * Multiple teams can work together on separate parts of the same orchestration logic
+				        * Build once, declare and re-use in many processes
+				        * 
+					</section>
 				</section>
 			</div>
 		</div>
@@ -75,8 +81,8 @@
 					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
 				],
 				transition: 'none',
-				slideNumber: true,
-				progress: false
+				progress: false,
+				slideNumber: 'c/t'
 			});
 		</script>
 	</body>
