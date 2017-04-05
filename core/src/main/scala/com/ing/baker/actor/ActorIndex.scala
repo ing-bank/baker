@@ -1,6 +1,6 @@
 package com.ing.baker.actor
 
-import akka.actor.{ActorLogging, ActorRef, Props, Terminated}
+import  akka.actor.{ActorLogging, ActorRef, Props, Terminated}
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import io.kagera.akka.actor.PetriNetInstanceProtocol.{AlreadyInitialized, Initialize, Uninitialized}

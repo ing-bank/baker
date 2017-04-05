@@ -27,7 +27,7 @@ Execute the following commands in your terminal to get started with the developm
 
 
 ```
-$ git clone ssh://git@gitlab.ing.net:2222/Rocket/Baker.git
+$ git clone https://github.com/ing-bank/baker.git
 $ cd Baker
 $ sbt
 $ compile

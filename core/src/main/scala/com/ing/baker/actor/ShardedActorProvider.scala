@@ -17,7 +17,8 @@ object ShardedActorProvider {
     * So we have at most 10 manager actors created, all the petrinet actors will fall under these 10 actors
     * Note, the nrOfShards used here has to be aligned with the nrOfShards used in the shardIdExtractor
     */
-  def indexActorName(recipeName: String, processId: UUID, nrOfShards: Int): String = s"$recipeName-index-${Math.abs(processId.getLeastSignificantBits % nrOfShards)}"
+  def indexActorName(recipeName: String, processId: UUID, nrOfShards: Int): String =
+    s"$recipeName-index-${Math.abs(processId.getLeastSignificantBits % nrOfShards)}"
 
   // extracts the actor id -> message from the incoming message
   // Entity id is the first character of the UUID
@@ -46,4 +47,3 @@ class ShardedActorProvider(config: Config) extends BakerActorProvider {
     )
   }
 }
-
