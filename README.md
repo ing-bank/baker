@@ -19,13 +19,15 @@ Petri nets have two interesting mathematical properties that we’d like to expl
 - **reachability** – can we deliver on a promise (recipe) at all – this will allow developers to check during compile time if the recipe they’ve created makes sense and achieves the desired end state (fulfills the customer order);
 - **liveliness** – do we have steps in a recipe that make no sense (unreachable, “dead” code) – this will allow developers to create lean and mean recipes (the less code you write, the less bugs you produce, the less you support);
 
+[**Release notes**](https://gitlab.ing.net/Rocket/Baker/blob/master/CHANGELOG.md)
+
 ## How to contribute?
 
 Execute the following commands in your terminal to get started with the development of BAKER.
 
 
 ```
-$ git clone https://github.com/ing-bank/baker.git
+$ git clone ssh://git@gitlab.ing.net:2222/Rocket/Baker.git
 $ cd Baker
 $ sbt
 $ compile

@@ -1,0 +1,122 @@
+package com.ing.baker
+package java_api
+
+import com.ing.baker.compiler._
+import com.ing.baker.core.ActionType.SieveAction
+import com.ing.baker.core.InteractionFailureStrategy.RetryWithIncrementalBackoff
+import com.ing.baker.core._
+
+import scala.annotation.varargs
+import scala.collection.JavaConverters._
+import scala.concurrent.duration
+import scala.concurrent.duration.Duration
+
+case class JRecipe(
+    override val name: String,
+    override val interactionDescriptors: Seq[InteractionDescriptor[_]],
+    override val sieveDescriptors: Seq[InteractionDescriptor[_]],
+    override val events: Set[Class[_]],
+    override val defaultFailureStrategy: InteractionFailureStrategy) extends Recipe {
+
+  def this(name: String) = this(name, Seq.empty, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction)
+
+  def getInteractions: java.util.List[InteractionDescriptor[_]] = interactionDescriptors.asJava
+
+  def getSieves: java.util.List[InteractionDescriptor[_]] = sieveDescriptors.asJava
+
+  def getEvents: java.util.List[Class[_]] = events.toList.asJava
+
+  def compileRecipe: JCompiledRecipe = JCompiledRecipe(RecipeCompiler.compileRecipe(this))
+
+  /**
+    * Adds the interaction to the recipe.
+    * To get a JInteractionDescriptor from a JInteraction call the of method on JInteractionDescriptor
+    *
+    * @param interactionDesc the interaction to add
+    * @tparam T
+    * @return
+    */
+  def withInteraction[T <: JInteraction](interactionDesc: JInteractionDescriptor[T]): JRecipe =
+      withInteractions(Seq(interactionDesc): _*)
+
+  /**
+    * Adds the interactions to the recipe.
+    * To get a JInteractionDescriptor from a JInteraction call the of method on JInteractionDescriptor
+    *
+    * @param newInteractionDescriptors The interactions to add
+    * @return
+    */
+  @varargs
+  def withInteractions(newInteractionDescriptors: JInteractionDescriptor[_]*): JRecipe =
+    copy(interactionDescriptors = newInteractionDescriptors ++ interactionDescriptors)
+
+  /**
+    * Adds a sieve function to the recipe.
+    *
+    * @param sieveDescriptor
+    * @tparam T
+    * @return
+    */
+  def withSieve[T <: JInteraction](sieveDescriptor: JInteractionDescriptor[T]): JRecipe =
+    withSieves(Seq(sieveDescriptor): _*)
+
+  /**
+    * Adds a sieves function to the recipe.
+    *
+    * @param newSieveDescriptors
+    * @return
+    */
+  @varargs
+  def withSieves(newSieveDescriptors: JInteractionDescriptor[_]*): JRecipe = {
+    copy(sieveDescriptors = newSieveDescriptors.map(_.withActionType(SieveAction)) ++ sieveDescriptors)
+  }
+
+  /**
+    * Adds the sensory event to the recipe
+    *
+    * @param newEvent
+    * @return
+    */
+  def withSensoryEvent(newEvent: Class[_]): JRecipe =
+    copy(events = events + newEvent)
+
+  /**
+    * Adds the sensory events to the recipe
+    *
+    * @param eventsToAdd
+    * @return
+    */
+  @varargs
+  def withSensoryEvents(eventsToAdd: Class[_]*): JRecipe =
+    copy(events = events ++ eventsToAdd)
+
+  /**
+    * This actives the incremental backup retry strategy for all the interactions if failure occurs
+    * @param initialDelay the initial delay before the first retry starts
+    * @param deadline the deadline for how long the retry should run
+    * @return
+    */
+  def withDefaultRetryFailureStrategy(initialDelay: java.time.Duration,
+                                      deadline: java.time.Duration): JRecipe =
+    copy(
+      defaultFailureStrategy =
+        RetryWithIncrementalBackoff(Duration(initialDelay.toMillis, duration.MILLISECONDS),
+          Duration(deadline.toMillis, duration.MILLISECONDS)))
+
+  /**
+    * This actives the incremental backup retry strategy for all the interactions if failure occurs
+    * @param initialDelay the initial delay before the first retry starts
+    * @param backoffFactor the backoff factor for the retry
+    * @param maximumRetries the maximum ammount of retries.
+    * @return
+    */
+  def withDefaultRetryFailureStrategy(initialDelay: java.time.Duration,
+                                      backoffFactor: Double,
+                                      maximumRetries: Int): JRecipe =
+  copy(
+      defaultFailureStrategy =
+        RetryWithIncrementalBackoff(Duration(initialDelay.toMillis, duration.MILLISECONDS),
+          backoffFactor,
+          maximumRetries))
+
+}
