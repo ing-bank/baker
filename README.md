@@ -1,4 +1,4 @@
-![Current Version](https://img.shields.io/badge/version-0.2.10-brightgreen.svg?style=flat "0.2.20")
+![Current Version](https://img.shields.io/badge/version-0.2.20-brightgreen.svg?style=flat "0.2.20")
 
 
 # BAKER
