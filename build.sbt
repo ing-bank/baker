@@ -28,11 +28,7 @@ lazy val noPublishSettings = Seq(
   publishArtifact := false
 )
 
-val artifactoryRealm = "Artifactory Realm"
-
-val publishSettings = Seq.empty
-
-lazy val defaultModuleSettings = commonSettings ++ Revolver.settings ++ publishSettings
+lazy val defaultModuleSettings = commonSettings ++ Revolver.settings ++ SonatypePublish.settings
 
 lazy val baker = project.in(file("core"))
   .settings(defaultModuleSettings: _*)
