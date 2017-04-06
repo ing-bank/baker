@@ -25,7 +25,7 @@ class BakerTestUtilSpec extends TestRecipeHelper {
 
     val processId = java.util.UUID.randomUUID()
 
-    BakerTestUtil.provisionProcessWithEvents(processId, baker.recipe, history)
+    BakerTestUtil.provisionProcessWithEvents(processId, baker.compiledRecipe, history)
 
     baker.getIngredients(processId) shouldBe Map(
       "initialIngredient"        -> "foo",

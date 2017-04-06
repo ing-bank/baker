@@ -23,6 +23,7 @@ case class InitialEvent(initialIngredient: String) extends Event
 case class SecondEvent() extends Event
 case class NotUsedSensoryEvent() extends Event
 case class EventFromInteractionTwo(interactionTwoIngredient: String) extends Event
+case class EventWithANonSerializableIngredient(nonSerializableObject: NonSerializableObject) extends Event
 class NonSerializableObject()
 
 //All the interaction operations that are used in the recipes for the tests
@@ -170,8 +171,8 @@ trait TestRecipeHelper
 
   override def afterAll(): Unit = { TestKit.shutdownActorSystem(defaultActorSystem) }
 
-  protected def getComplexRecipe(recipeName: String): RecipeImpl = {
-    Recipe(
+  protected def getComplexRecipe(recipeName: String): SRecipe = {
+    SRecipe(
       name = recipeName,
       interactions = Seq(
         InteractionDescriptorFactory[InteractionOne]()

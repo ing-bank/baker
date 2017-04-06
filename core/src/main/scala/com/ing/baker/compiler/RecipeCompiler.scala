@@ -290,6 +290,7 @@ object RecipeCompiler {
       petriNet = petriNet,
       initialMarking = initialMarking,
       sensoryEvents = recipe.events,
+      ingredientExtractor,
       validationErrors = interactionValidationErrors.flatten ++ preconditionORErrors ++ preconditionANDErrors ++ sieveErrors
     )
 

@@ -51,7 +51,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       when(testInteractionTwoMock.apply(anyString()))
         .thenReturn(EventFromInteractionTwo(interactionTwoIngredient))
 
-      val recipe = Recipe(
+      val recipe = SRecipe(
         name = "directStartRecipe",
         interactions = Seq(
           InteractionDescriptorFactory[InteractionOne]()
@@ -145,7 +145,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
     "execute an interaction when one of the two events occur (OR situation)" in {
       val baker = {
-        val recipe = Recipe(
+        val recipe = SRecipe(
           name = "ORPreconditionedRecipeForEvents",
           interactions = Seq(
             InteractionDescriptorFactory[InteractionFour]
@@ -290,7 +290,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
     "only fire an interaction once if it has an maximum interaction count of 1" in {
 
-      val recipe = Recipe(
+      val recipe = SRecipe(
         name = "FiringLimitTestRecipe",
         interactions = Seq(
           InteractionDescriptorFactory[InteractionOne]

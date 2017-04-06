@@ -2,7 +2,7 @@ package com.ing.baker
 
 import java.util.UUID
 
-import com.ing.baker.scala_api.RecipeImpl
+import com.ing.baker.scala_api.SRecipe
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -53,7 +53,7 @@ class RecipeVisualizationSpec extends TestRecipeHelper {
     }
 
     "be able to visualize the created interactions" in {
-      val recipe: RecipeImpl = getComplexRecipe("VisiualizationRecipe")
+      val recipe: SRecipe = getComplexRecipe("VisiualizationRecipe")
       val compileRecipe = recipe.compileRecipe
 //      System.out.println(compileRecipe.getPetriNetVisualization)
       System.out.println(compileRecipe.getRecipeVisualization)
@@ -70,7 +70,7 @@ class RecipeVisualizationSpec extends TestRecipeHelper {
 
     "be able to visualize the created interactions with a filter" in {
       val baker = setupBakerWithRecipe("VisualizationRecipe")
-      baker.recipe.getFilteredRecipeVisualization(e => !e.contains("interactionFour")) shouldNot contain(
+      baker.compiledRecipe.getFilteredRecipeVisualization(e => !e.contains("interactionFour")) shouldNot contain(
         "interactionFour")
     }
 

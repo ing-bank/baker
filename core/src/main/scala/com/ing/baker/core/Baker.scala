@@ -39,18 +39,17 @@ import scala.util.{Failure, Success, Try}
   * - A list of events
   * The Baker can bake a recipe, create a process and respond to events.
   */
-class Baker(compiledRecipe: CompiledRecipe, implicit val actorSystem: ActorSystem) {
+class Baker(val recipe: Recipe,
+            val implementations: Map[Class[_], () => AnyRef],
+            val validationSettings: ValidationSettings = ValidationSettings.defaultValidationSettings,
+            implicit val actorSystem: ActorSystem) {
+
+  val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe, implementations, validationSettings,  new CompositeIngredientExtractor(actorSystem.settings.config))
 
   if (compiledRecipe.validationErrors.nonEmpty)
     throw new RecipeValidationException(compiledRecipe.validationErrors.mkString(", "))
 
   assertEventsAndIngredientsAreSerializable(compiledRecipe)
-
-  def this(recipe: Recipe,
-           implementations: Map[Class[_], () => AnyRef],
-           validationSettings: ValidationSettings = ValidationSettings.defaultValidationSettings,
-           actorSystem: ActorSystem) =
-    this(RecipeCompiler.compileRecipe(recipe, implementations, validationSettings, new CompositeIngredientExtractor(actorSystem.settings.config)), actorSystem)
 
   import actorSystem.dispatcher
 
@@ -102,7 +101,7 @@ class Baker(compiledRecipe: CompiledRecipe, implicit val actorSystem: ActorSyste
   private def createEventMsg(processId: java.util.UUID, event: AnyRef) = {
     require(event != null, "Event can not be null")
 
-    val t = recipe.transitionForEventClass(event.getClass)
+    val t = compiledRecipe.transitionForEventClass(event.getClass)
     BakerActorMessage(processId, FireTransition(t.id, event))
   }
 
@@ -156,11 +155,6 @@ class Baker(compiledRecipe: CompiledRecipe, implicit val actorSystem: ActorSyste
 
     eventualState
   }
-
-  /**
-    * The compiled recipe.
-    */
-  val recipe: CompiledRecipe = compiledRecipe
 
   /**
     * Synchronously returns all events that occurred for a process.
@@ -267,17 +261,16 @@ class Baker(compiledRecipe: CompiledRecipe, implicit val actorSystem: ActorSyste
     }
 
     // check all event classes (sensory events + interaction events)
-    val eventSerializationErrors = compiledRecipe.allEvents.toSeq
+    val eventSerializationErrors: Seq[String] = compiledRecipe.allEvents.toSeq
       .filter(serializerNotFound)
       .map(c => s"Event class: $c is not serializable by akka")
 
-    val ingredientSerializationErrors = compiledRecipe.interactionTransitions.toSeq
-      .filter(_.providesIngredient)
-      .map(_.method.getReturnType)
+    val ingredientSerializationErrors: Seq[String] =
+      compiledRecipe.ingredients.values
       .filter(serializerNotFound)
-      .map(c => s"Ingredient class: $c is not serializable by akka")
+      .map(c => s"Ingredient class: $c is not serializable by akka").toSeq
 
-    val allErrors = eventSerializationErrors ++ ingredientSerializationErrors
+    val allErrors: Seq[String] = eventSerializationErrors ++ ingredientSerializationErrors
 
     if (allErrors.nonEmpty) throw new NonSerializableException(allErrors.mkString(", "))
   }

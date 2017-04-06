@@ -24,7 +24,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
     }
 
     "give a List of missing implementations in the validation errors if a recipe does not provide an implementation for an interaction" in {
-      val recipe = Recipe(name = "MissingImplementation",
+      val recipe = SRecipe(name = "MissingImplementation",
                           interactions = Seq(InteractionDescriptorFactory[InteractionOne]),
                           events = Set.empty)
 
@@ -33,7 +33,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
     }
 
     "give a List of missing ingredients if an interaction has an ingredient that is not provided by any other event or interaction" in {
-      val recipe = Recipe(name = "NonProvidedIngredient",
+      val recipe = SRecipe(name = "NonProvidedIngredient",
                           interactions = Seq(InteractionDescriptorFactory[InteractionOne]),
                           events = Set.empty)
 
@@ -43,7 +43,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
 
     "give a list of non serializable events an RecipeValidationException if an event is not Serializable" in {
 
-      val recipe = Recipe(
+      val recipe = SRecipe(
         name = "NonSerializableEventTest",
         interactions = Seq(
           InteractionDescriptorFactory[NonSerializableEventInteraction]
@@ -56,7 +56,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
 
     "give a list of sensory events that does not extend from baker Event" in {
 
-      val recipe = Recipe(
+      val recipe = SRecipe(
         name = "NonSerializableSensoryEventTest",
         interactions = Seq(
           InteractionDescriptorFactory[InteractionOne]
@@ -69,7 +69,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
     }
 
     "give a list of wrong interactions if an event of an interaction does not match it's return type" in {
-      val recipe = Recipe(
+      val recipe = SRecipe(
         name = "NonMatchingReturnTypeTest",
         interactions = Seq(
           InteractionDescriptorFactory[NonMatchingReturnTypeInteraction]
@@ -81,7 +81,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
     }
 
     "give a list of wrong ingredients if an predefined ingredient is of the wrong type" in {
-      val recipe = Recipe(
+      val recipe = SRecipe(
         name = "WrongGivenIngredient",
         interactions = Seq(
           InteractionDescriptorFactory[InteractionOne]
@@ -95,7 +95,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
     }
 
     "give a list of wrong ingredients if an predefined ingredient is not needed by the interaction" in {
-      val recipe = Recipe(
+      val recipe = SRecipe(
         name = "WrongGivenIngredient",
         interactions = Seq(
           InteractionDescriptorFactory[InteractionOne]

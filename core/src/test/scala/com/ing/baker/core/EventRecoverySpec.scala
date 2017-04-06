@@ -3,7 +3,7 @@ package com.ing.baker.core
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.core.EventRecovery._
 import com.ing.baker.java_api.{FiresEvent, ProcessId, ProvidesIngredient, RequiresIngredient}
-import com.ing.baker.scala_api.{InteractionDescriptorFactory, Recipe}
+import com.ing.baker.scala_api.{InteractionDescriptorFactory, SRecipe}
 import org.scalatest.{Matchers, WordSpecLike}
 
 case class TestEvent(testIngredient: String)
@@ -22,7 +22,7 @@ trait TestInteractionTwo extends Interaction {
 
 class EventRecoverySpec extends WordSpecLike with Matchers {
 
-  val testRecipe = Recipe(
+  val testRecipe = SRecipe(
     name = "test",
     interactions = Seq(InteractionDescriptorFactory[TestInteractionOne](),
                        InteractionDescriptorFactory[TestInteractionTwo]()),

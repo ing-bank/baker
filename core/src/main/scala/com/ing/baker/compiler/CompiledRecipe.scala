@@ -13,6 +13,7 @@ case class CompiledRecipe(name: String,
                           petriNet: ExecutablePetriNet[ProcessState],
                           initialMarking: Marking,
                           sensoryEvents: Set[Class[_]],
+                          ingredientExtractor: IngredientExtractor,
                           validationErrors: Seq[String] = Seq.empty) {
 
   def getRecipeVisualization: String = petriNet.innerGraph.toDot(x => true)
@@ -40,8 +41,8 @@ case class CompiledRecipe(name: String,
 
   val allEvents: Set[Class[_]] = sensoryEvents ++ interactionEvents
 
-  val ingredients: Map[String, Class[_]] = ((interactionEvents ++ sensoryEvents).flatMap {
-    eventClass =>
-      eventClass.getDeclaredFields.toSeq.map(f => f.getName -> f.getType)
+  val ingredients: Map[String, Class[_]] =
+    (allEvents.flatMap {
+    eventClass => ingredientExtractor.extractIngredientTypes(eventClass)
   } ++ interactionTransitions.flatMap(_.outputIngredient)).toMap
 }

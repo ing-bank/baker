@@ -19,7 +19,7 @@ class BakerSetupSpec extends TestRecipeHelper {
   "The Baker execution engine during setup" should {
 
     "throw an RecipeValidationException if a recipe does not provide an implementation for an interaction" in {
-      val recipe = Recipe(name = "MissingImplementation",
+      val recipe = SRecipe(name = "MissingImplementation",
                           interactions = Seq(InteractionDescriptorFactory[InteractionOne]),
                           events = Set.empty)
 
@@ -29,7 +29,7 @@ class BakerSetupSpec extends TestRecipeHelper {
     }
 
     "throw an RecipeValidationException if an invalid recipe is given" in {
-      val recipe = Recipe(name = "NonProvidedIngredient",
+      val recipe = SRecipe(name = "NonProvidedIngredient",
                           interactions = Seq(InteractionDescriptorFactory[InteractionOne]),
                           events = Set.empty)
 
@@ -40,14 +40,30 @@ class BakerSetupSpec extends TestRecipeHelper {
       }
     }
 
-    "throw BakerException with the list of ingredient serialization validation errors" in {
+    "throw BakerException with the list of ingredient serialization validation errors for Ingredients provided by Interactions" in {
 
-      val recipe = Recipe(
+      val recipe = SRecipe(
         name = "NonSerializableIngredientTest",
         interactions = Seq(
           InteractionDescriptorFactory[NonSerializableIngredientInteraction]
         ),
         events = Set(classOf[InitialEvent])
+      )
+
+      intercept[NonSerializableException] {
+        new Baker(recipe = recipe,
+          implementations = mockImplementations,
+          actorSystem = defaultActorSystem)
+      } should have('message("Ingredient class: class com.ing.baker.NonSerializableObject is not serializable by akka"))
+
+    }
+
+    "throw BakerException with the list of ingredient serialization validation errors for Ingredients provided by Events" in {
+
+      val recipe = SRecipe(
+        name = "NonSerializableIngredientFromEventTest",
+        interactions = Seq(),
+        events = Set(classOf[EventWithANonSerializableIngredient])
       )
 
       intercept[NonSerializableException] {
