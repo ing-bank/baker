@@ -1,4 +1,4 @@
-![Current Version](https://img.shields.io/badge/version-0.2.20-brightgreen.svg?style=flat "0.2.20")
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.ing/baker_2.11/badge.svg?style=plastic)](https://maven-badges.herokuapp.com/maven-central/com.ing/baker_2.11)
 
 
 # BAKER
@@ -19,6 +19,14 @@ Petri nets have two interesting mathematical properties that we’d like to expl
 - **reachability** – can we deliver on a promise (recipe) at all – this will allow developers to check during compile time if the recipe they’ve created makes sense and achieves the desired end state (fulfills the customer order);
 - **liveliness** – do we have steps in a recipe that make no sense (unreachable, “dead” code) – this will allow developers to create lean and mean recipes (the less code you write, the less bugs you produce, the less you support);
 
+## Getting Started
+
+
+To get started with SBT, simply add the following to your build.sbt file:
+
+```
+libraryDependencies += "com.ing" %% "baker" % "0.2.21"
+```
 
 ## How to contribute?
 
