@@ -4,6 +4,9 @@ import akka.actor.ActorSystem
 import akka.serialization.SerializationExtension
 import com.ing.baker.compiler.ReflectionHelpers._
 import com.ing.baker.compiler.transitions.InteractionTransition
+import com.ing.baker.core.NonSerializableException
+
+import scala.util.Try
 
 object RecipeValidations {
 
@@ -119,5 +122,26 @@ object RecipeValidations {
 
     compiledRecipe.copy(
       validationErrors = compiledRecipe.validationErrors ++ postCompileValidationErrors)
+  }
+
+  @throws[NonSerializableException]
+  def assertEventsAndIngredientsAreSerializable(compiledRecipe: CompiledRecipe)(implicit actorSystem: ActorSystem): Unit = {
+    val serialization = SerializationExtension(actorSystem)
+
+    val hasAkkaSerializer = (clazz: Class[_]) => Try { serialization.serializerFor(clazz) }.isSuccess
+
+    // check all event classes (sensory events + interaction events)
+    val eventSerializationErrors: Seq[String] = compiledRecipe.allEvents.toSeq
+      .filterNot(hasAkkaSerializer)
+      .map(c => s"Event class: $c is not serializable by akka")
+
+    val ingredientSerializationErrors: Seq[String] =
+      compiledRecipe.ingredients.values
+        .filterNot(hasAkkaSerializer)
+        .map(c => s"Ingredient class: $c is not serializable by akka").toSeq
+
+    val allErrors: Seq[String] = eventSerializationErrors ++ ingredientSerializationErrors
+
+    if (allErrors.nonEmpty) throw new NonSerializableException(allErrors.mkString(", "))
   }
 }

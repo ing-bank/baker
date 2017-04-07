@@ -1,6 +1,5 @@
 package com.ing.baker.core
 
-import java.io.NotSerializableException
 import java.util.UUID
 
 import akka.NotUsed
@@ -49,7 +48,7 @@ class Baker(val recipe: Recipe,
   if (compiledRecipe.validationErrors.nonEmpty)
     throw new RecipeValidationException(compiledRecipe.validationErrors.mkString(", "))
 
-  assertEventsAndIngredientsAreSerializable(compiledRecipe)
+  RecipeValidations.assertEventsAndIngredientsAreSerializable(compiledRecipe)
 
   import actorSystem.dispatcher
 
@@ -148,9 +147,9 @@ class Baker(val recipe: Recipe,
     val initializeFuture = (processIdManagerActor ? BakerActorMessage(processId, msg)).mapTo[Response]
 
     val eventualState = initializeFuture.map {
-      case msg: Initialized => msg.state.asInstanceOf[ProcessState]
+      case msg: Initialized   => msg.state.asInstanceOf[ProcessState]
       case AlreadyInitialized => throw new IllegalArgumentException(s"Processs with $processId already exists.")
-      case msg@_ => throw new BakerException(s"Unexpected message: $msg")
+      case msg @ _            => throw new BakerException(s"Unexpected message: $msg")
     }
 
     eventualState
@@ -244,34 +243,5 @@ class Baker(val recipe: Recipe,
         case Uninitialized(id) => throw new NoSuchProcessException(s"No such process with: $id")
         case msg => throw new BakerException(s"Unexpected actor response message: $msg")
       }
-  }
-
-  @throws[NonSerializableException]
-  private def assertEventsAndIngredientsAreSerializable(compiledRecipe: CompiledRecipe)(implicit actorSystem: ActorSystem): Unit = {
-    val serialization = SerializationExtension(actorSystem)
-
-    def serializerNotFound = { clazz: Class[_] =>
-        try {
-          serialization.serializerFor(clazz)
-          false
-        } catch {
-          case _: NotSerializableException => true
-          case e: Exception => throw new BakerException(cause = e)
-        }
-    }
-
-    // check all event classes (sensory events + interaction events)
-    val eventSerializationErrors: Seq[String] = compiledRecipe.allEvents.toSeq
-      .filter(serializerNotFound)
-      .map(c => s"Event class: $c is not serializable by akka")
-
-    val ingredientSerializationErrors: Seq[String] =
-      compiledRecipe.ingredients.values
-      .filter(serializerNotFound)
-      .map(c => s"Ingredient class: $c is not serializable by akka").toSeq
-
-    val allErrors: Seq[String] = eventSerializationErrors ++ ingredientSerializationErrors
-
-    if (allErrors.nonEmpty) throw new NonSerializableException(allErrors.mkString(", "))
   }
 }
