@@ -1,5 +1,5 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.ing/baker_2.11/badge.svg?style=plastic)](https://maven-badges.herokuapp.com/maven-central/com.ing/baker_2.11)
-
+[![Build Status](https://api.travis-ci.org/ing-bank/baker.png?branch=master)](https://travis-ci.org/ing-bank/baker)
 
 # BAKER
 
