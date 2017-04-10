@@ -4,7 +4,7 @@ object Dependencies {
 
   val slf4jVersion = "1.7.18"
   val akkaVersion = "2.4.17"
-  val kageraVersion = "0.2.17"
+  val kageraVersion = "0.2.18"
 
   val typeSafeConfig =            "com.typesafe"               %  "config"                             % "1.3.1"
 

@@ -69,7 +69,7 @@ object EventRecovery {
 
     val executor = new AsyncTransitionExecutor[ProcessState](petriNet)(Strategy.sequential)
 
-    val step: State[Instance[ProcessState], List[TransitionEvent]] = allEnabledJobs[ProcessState]
+    val step: State[Instance[ProcessState], List[TransitionEvent]] = newEnabledJobs[ProcessState]
       .map(_.filterNot(_.transition.isInteraction))
       .flatMap(applyJobs(executor))
 
