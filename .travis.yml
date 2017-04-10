@@ -1,0 +1,16 @@
+language: scala
+
+scala:
+  - 2.11.8
+
+
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt
+
+jdk:
+   - oraclejdk8
+
+notifications:
+  email: true
