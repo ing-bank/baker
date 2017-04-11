@@ -11,5 +11,7 @@ class PojoIngredientExtractor extends IngredientExtractor {
   }
 
   override def extractIngredientTypes(clazz: Class[_]): Map[String, Class[_]] =
-    clazz.getDeclaredFields.map(field => field.getName -> field.getType).toMap
+    clazz.getDeclaredFields
+      .filterNot(field => field.isSynthetic)
+      .map(field => field.getName -> field.getType).toMap
 }
