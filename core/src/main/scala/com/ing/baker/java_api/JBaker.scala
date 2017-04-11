@@ -91,10 +91,8 @@ class JBaker private (jRecipe: JRecipe,
     *
     * @param processId the identifier of the process
     * @param event The event to fire
-    * @throws BakerException
     * @return
     */
-  @throws(classOf[BakerException])
   def processEvent(processId: java.util.UUID, event: Object): Unit =
     processEventAsync(processId, event).confirmCompleted
 

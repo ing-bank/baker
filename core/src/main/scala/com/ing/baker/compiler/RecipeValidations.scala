@@ -136,9 +136,9 @@ object RecipeValidations {
       .map(c => s"Event class: $c is not serializable by akka")
 
     val ingredientSerializationErrors: Seq[String] =
-      compiledRecipe.ingredients.values
-        .filterNot(hasAkkaSerializer)
-        .map(c => s"Ingredient class: $c is not serializable by akka").toSeq
+      compiledRecipe.ingredients
+        .filterNot{case (c, v) => hasAkkaSerializer(v) }
+        .map{case (c, v) => s"Ingredient $c of $v is not serializable by akka"}.toSeq
 
     val allErrors: Seq[String] = eventSerializationErrors ++ ingredientSerializationErrors
 

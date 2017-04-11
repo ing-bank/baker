@@ -8,7 +8,6 @@ import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
-import akka.serialization.SerializationExtension
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
@@ -130,7 +129,6 @@ class Baker(val recipe: Recipe,
     * Creates an instance of the  process using the recipe.
     *
     * @param processId A unique process id.
-    * @throws IllegalArgumentException If the identifier is already used by an existing process instance.
     */
   def bake(processId: java.util.UUID): ProcessState = Await.result(bakeAsync(processId), bakeTimeout)
 
