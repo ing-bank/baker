@@ -54,7 +54,7 @@ class BakerSetupSpec extends TestRecipeHelper {
         new Baker(recipe = recipe,
           implementations = mockImplementations,
           actorSystem = defaultActorSystem)
-      } should have('message("Ingredient class: class com.ing.baker.NonSerializableObject is not serializable by akka"))
+      } should have('message("Ingredient nonSerializableIngredient of class com.ing.baker.NonSerializableObject is not serializable by akka"))
 
     }
 
@@ -70,7 +70,7 @@ class BakerSetupSpec extends TestRecipeHelper {
         new Baker(recipe = recipe,
           implementations = mockImplementations,
           actorSystem = defaultActorSystem)
-      } should have('message("Ingredient class: class com.ing.baker.NonSerializableObject is not serializable by akka"))
+      } should have('message("Ingredient nonSerializableObject of class com.ing.baker.NonSerializableObject is not serializable by akka"))
 
     }
 
