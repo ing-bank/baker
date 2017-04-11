@@ -17,6 +17,8 @@ script:
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 
-
 notifications:
-  email: true
+  slack: apolloworks:HNnFUCAYcp7fbGsTXWzqCgo2
+  email:
+    on_success: change
+    on_failure: always
