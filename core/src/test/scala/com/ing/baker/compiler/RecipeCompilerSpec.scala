@@ -1,10 +1,7 @@
 package com.ing.baker.compiler
 
 import com.ing.baker._
-import com.ing.baker.core.Baker
 import com.ing.baker.scala_api._
-import org.mockito.Matchers._
-import org.mockito.Mockito._
 
 import scala.concurrent.duration._
 import scala.language.postfixOps

@@ -8,7 +8,7 @@ import com.ing.baker.api.Event
 import com.ing.baker.compiler.ValidationSettings
 import com.ing.baker.core.{Baker, Interaction}
 import com.ing.baker.java_api.{FiresEvent, ProcessId, ProvidesIngredient, RequiresIngredient}
-import com.ing.baker.scala_api.{InteractionDescriptorFactory, _}
+import com.ing.baker.scala_api._
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
@@ -20,7 +20,7 @@ import scala.language.postfixOps
 
 //All events that are used in the recipes for the test
 case class InitialEvent(initialIngredient: String) extends Event
-case class InitialEventExtendedName(initialIngredientExtendedName: String) extends Event
+case class InitialEventOverlappingName(initialIngredientOverlappingName: String) extends Event
 case class SecondEvent() extends Event
 case class NotUsedSensoryEvent() extends Event
 case class EventFromInteractionTwo(interactionTwoIngredient: String) extends Event
@@ -50,14 +50,14 @@ trait InteractionFour extends Interaction {
 }
 
 trait InteractionFive extends Interaction {
-  @ProvidesIngredient("interactionOneCopyIngredient")
+  @ProvidesIngredient("interactionFiveIngredient")
   def apply(@ProcessId id: String,
-            @RequiresIngredient("initialIngredientExtendedName") message: String): String
+            @RequiresIngredient("initialIngredientOverlappingName") message: String): String
 }
 
 trait InteractionSix extends Interaction {
-  @ProvidesIngredient("interactionTwoCopyIngredient")
-  def apply(@RequiresIngredient("initialIngredientExtendedName") message: String): String
+  @ProvidesIngredient("interactionSixIngredient")
+  def apply(@RequiresIngredient("initialIngredientOverlappingName") message: String): String
 }
 
 
@@ -207,7 +207,7 @@ trait TestRecipeHelper
         InteractionDescriptorFactory[InteractionFive],
         InteractionDescriptorFactory[InteractionSix]
       ),
-      events = Set(classOf[InitialEvent], classOf[InitialEventExtendedName], classOf[SecondEvent], classOf[NotUsedSensoryEvent])
+      events = Set(classOf[InitialEvent], classOf[InitialEventOverlappingName], classOf[SecondEvent], classOf[NotUsedSensoryEvent])
     )
   }
 
