@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.testkit.{TestKit, TestProbe}
 import com.ing.baker._
-import com.ing.baker.compiler.{CompiledRecipe, ValidationSettings}
+import com.ing.baker.compiler.ValidationSettings
 import com.ing.baker.scala_api._
 import org.mockito.Matchers._
 import org.mockito.Mockito._
