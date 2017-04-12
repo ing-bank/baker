@@ -309,7 +309,7 @@ object RecipeCompiler {
   private def getMultiTransition(internalRepresentationName: String,
                                  transitions: Seq[Transition[_, _, _]]): Transition[_, _, _] = {
     transitions
-      .find(t => t.label.contains(internalRepresentationName))
+      .find(t => t.label.equals(internalRepresentationName))
       .getOrElse(throw new NoSuchElementException(s"No multi transition found with name $internalRepresentationName"))
   }
 
