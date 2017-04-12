@@ -491,8 +491,11 @@ class BakerExecutionSpec extends TestRecipeHelper {
     "bind multi transitions correctly even if ingredient name overlaps" in {
       //This test is part of the ExecutionSpec and not the Compiler spec because the only correct way to validate
       //for this test is to check if Baker calls the mocks.
-      //If there is a easey way to validate the created petrinet by the compiler it should be moved to the compiler spec.
+      //If there is a easy way to validate the created petrinet by the compiler it should be moved to the compiler spec.
       val baker = setupBakerWithRecipe("OverlappingMultiIngredients")
+
+      // It is helpful to check the recipe visualization if this test fails
+      println(baker.compiledRecipe.getRecipeVisualization)
 
       val processId = UUID.randomUUID()
       baker.bake(processId)
@@ -500,8 +503,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       verify(testInteractionOneMock, times(1)).apply(processId.toString, initialIngredient)
       verify(testInteractionTwoMock, times(1)).apply(initialIngredient)
-      verify(testInteractionFiveMock, never).apply(processId.toString, initialIngredient)
-      verify(testInteractionSixMock, never).apply(initialIngredient)
+      verifyNoMoreInteractions(testInteractionFiveMock, testInteractionSixMock)
     }
   }
 }

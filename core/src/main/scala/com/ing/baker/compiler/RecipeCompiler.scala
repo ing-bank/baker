@@ -66,8 +66,8 @@ object RecipeCompiler {
 
     val eventTransition = preconditionTransition(eventClass)
 
-    val notProvidedError = (!eventTransition.isDefined).toOption {
-      s"Event '$eventClass' for '${interactionTransition}' is not provided in the recipe"
+    val notProvidedError = eventTransition.isEmpty.toOption {
+      s"Event '$eventClass' for '$interactionTransition' is not provided in the recipe"
     }.toSeq
 
     val arcs = Seq(
@@ -122,7 +122,7 @@ object RecipeCompiler {
       fieldNamesWithoutPrefix.map(fieldName => arc(placeWithLabel(fieldName), t, 1))
 
     val limitInteractionCountArc =
-      t.maximumInteractionCount.map(n => arc(placeWithLabel(s"$limitPrefix:${t.label}"), t, 1))
+      t.maximumInteractionCount.map(_ => arc(placeWithLabel(s"$limitPrefix:${t.label}"), t, 1))
 
     dataInputArcs ++ internalDataInputArcs ++ limitInteractionCountArc
   }

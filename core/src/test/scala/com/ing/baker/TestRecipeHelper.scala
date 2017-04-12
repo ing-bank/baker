@@ -20,7 +20,7 @@ import scala.language.postfixOps
 
 //All events that are used in the recipes for the test
 case class InitialEvent(initialIngredient: String) extends Event
-case class InitialEventOverlappingName(initialIngredientExtendedName: String) extends Event
+case class InitialEventExtendedName(initialIngredientExtendedName: String) extends Event
 case class SecondEvent() extends Event
 case class NotUsedSensoryEvent() extends Event
 case class EventFromInteractionTwo(interactionTwoIngredient: String) extends Event
@@ -52,14 +52,14 @@ trait InteractionFour extends Interaction {
 trait InteractionFive extends Interaction {
   @ProvidesIngredient("interactionFiveIngredient")
   def apply(@ProcessId id: String,
-            @RequiresIngredient("initialIngredientExtendedName") message: String): String
+            @RequiresIngredient("initialIngredient") message: String,
+            @RequiresIngredient("initialIngredientExtendedName") message2: String): String
 }
 
 trait InteractionSix extends Interaction {
   @ProvidesIngredient("interactionSixIngredient")
   def apply(@RequiresIngredient("initialIngredientExtendedName") message: String): String
 }
-
 
 trait NonSerializableEventInteraction extends Interaction {
   @FiresEvent(oneOf = Array(classOf[NonSerializableObject]))
@@ -207,7 +207,7 @@ trait TestRecipeHelper
         InteractionDescriptorFactory[InteractionFive],
         InteractionDescriptorFactory[InteractionSix]
       ),
-      events = Set(classOf[InitialEvent], classOf[InitialEventOverlappingName], classOf[SecondEvent], classOf[NotUsedSensoryEvent])
+      events = Set(classOf[InitialEvent], classOf[InitialEventExtendedName], classOf[SecondEvent], classOf[NotUsedSensoryEvent])
     )
   }
 
@@ -263,7 +263,7 @@ trait TestRecipeHelper
     when(testInteractionTwoMock.apply(anyString())).thenReturn(interactionTwoEvent)
     when(testInteractionThreeMock.apply(anyString(), anyString())).thenReturn(interactionThreeIngredient)
     when(testInteractionFourMock.apply()).thenReturn(interactionFourIngredient)
-    when(testInteractionFiveMock.apply(anyString(), anyString())).thenReturn(interactionFiveIngredient)
+    when(testInteractionFiveMock.apply(anyString(), anyString(), anyString())).thenReturn(interactionFiveIngredient)
     when(testInteractionSixMock.apply(anyString())).thenReturn(interactionSixIngredient)
 
     new Baker(recipe = recipe,
