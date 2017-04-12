@@ -20,7 +20,7 @@ import scala.language.postfixOps
 
 //All events that are used in the recipes for the test
 case class InitialEvent(initialIngredient: String) extends Event
-case class InitialEventOverlappingName(initialIngredientOverlappingName: String) extends Event
+case class InitialEventOverlappingName(initialIngredientExtendedName: String) extends Event
 case class SecondEvent() extends Event
 case class NotUsedSensoryEvent() extends Event
 case class EventFromInteractionTwo(interactionTwoIngredient: String) extends Event
@@ -52,12 +52,12 @@ trait InteractionFour extends Interaction {
 trait InteractionFive extends Interaction {
   @ProvidesIngredient("interactionFiveIngredient")
   def apply(@ProcessId id: String,
-            @RequiresIngredient("initialIngredientOverlappingName") message: String): String
+            @RequiresIngredient("initialIngredientExtendedName") message: String): String
 }
 
 trait InteractionSix extends Interaction {
   @ProvidesIngredient("interactionSixIngredient")
-  def apply(@RequiresIngredient("initialIngredientOverlappingName") message: String): String
+  def apply(@RequiresIngredient("initialIngredientExtendedName") message: String): String
 }
 
 
