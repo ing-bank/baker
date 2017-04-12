@@ -20,6 +20,7 @@ import scala.language.postfixOps
 
 //All events that are used in the recipes for the test
 case class InitialEvent(initialIngredient: String) extends Event
+case class InitialEventExtendedName(initialIngredientExtendedName: String) extends Event
 case class SecondEvent() extends Event
 case class NotUsedSensoryEvent() extends Event
 case class EventFromInteractionTwo(interactionTwoIngredient: String) extends Event
@@ -47,6 +48,19 @@ trait InteractionFour extends Interaction {
   @ProvidesIngredient("interactionFourIngredient")
   def apply(): String
 }
+
+trait InteractionFive extends Interaction {
+  @ProvidesIngredient("interactionFiveIngredient")
+  def apply(@ProcessId id: String,
+            @RequiresIngredient("initialIngredient") message: String,
+            @RequiresIngredient("initialIngredientExtendedName") message2: String): String
+}
+
+trait InteractionSix extends Interaction {
+  @ProvidesIngredient("interactionSixIngredient")
+  def apply(@RequiresIngredient("initialIngredientExtendedName") message: String): String
+}
+
 trait NonSerializableEventInteraction extends Interaction {
   @FiresEvent(oneOf = Array(classOf[NonSerializableObject]))
   def apply(@RequiresIngredient("initialIngredient") message: String): NonSerializableObject
@@ -77,6 +91,8 @@ trait TestRecipeHelper
   protected val interactionTwoEvent              = EventFromInteractionTwo(interactionTwoIngredient)
   protected val interactionThreeIngredient       = "interactionThreeIngredient"
   protected val interactionFourIngredient        = "interactionFourIngredient"
+  protected val interactionFiveIngredient        = "interactionFiveIngredient"
+  protected val interactionSixIngredient        = "interactionSixIngredient"
   protected val errorMessage                     = "This is the error message"
 
   //Can be used to check the state after firing the initialEvent
@@ -100,6 +116,8 @@ trait TestRecipeHelper
   protected val testInteractionTwoMock: InteractionTwo     = mock[InteractionTwo]
   protected val testInteractionThreeMock: InteractionThree = mock[InteractionThree]
   protected val testInteractionFourMock: InteractionFour   = mock[InteractionFour]
+  protected val testInteractionFiveMock: InteractionFive     = mock[InteractionFive]
+  protected val testInteractionSixMock: InteractionSix     = mock[InteractionSix]
   protected val testNonSerializableEventInteractionMock: NonSerializableEventInteraction =
     mock[NonSerializableEventInteraction]
   protected val testNonSerializableIngredientInteractionMock: NonSerializableIngredientInteraction =
@@ -113,6 +131,8 @@ trait TestRecipeHelper
       classOf[InteractionTwo]   -> (() => testInteractionTwoMock),
       classOf[InteractionThree] -> (() => testInteractionThreeMock),
       classOf[InteractionFour]  -> (() => testInteractionFourMock),
+      classOf[InteractionFive]   -> (() => testInteractionFiveMock),
+      classOf[InteractionSix]   -> (() => testInteractionSixMock),
       classOf[NonSerializableIngredientInteraction] -> (() =>
                                                           testNonSerializableIngredientInteractionMock),
       classOf[NonSerializableEventInteraction] -> (() => testNonSerializableEventInteractionMock),
@@ -183,9 +203,11 @@ trait TestRecipeHelper
         InteractionDescriptorFactory[InteractionThree]
           .withMaximumInteractionCount(1),
         InteractionDescriptorFactory[InteractionFour]
-          .withRequiredEvent[SecondEvent].withRequiredEvent[EventFromInteractionTwo]
+          .withRequiredEvent[SecondEvent].withRequiredEvent[EventFromInteractionTwo],
+        InteractionDescriptorFactory[InteractionFive],
+        InteractionDescriptorFactory[InteractionSix]
       ),
-      events = Set(classOf[InitialEvent], classOf[SecondEvent], classOf[NotUsedSensoryEvent])
+      events = Set(classOf[InitialEvent], classOf[InitialEventExtendedName], classOf[SecondEvent], classOf[NotUsedSensoryEvent])
     )
   }
 
@@ -237,12 +259,12 @@ trait TestRecipeHelper
                                      appendUUIDToTheRecipeName: Boolean = true): Baker = {
     val newRecipeName = if (appendUUIDToTheRecipeName) s"$recipeName-${UUID.randomUUID().toString}" else recipeName
     val recipe = getComplexRecipe(newRecipeName)
-    when(testInteractionOneMock.apply(anyString(), anyString()))
-      .thenReturn(interactionOneIngredient)
+    when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredient)
     when(testInteractionTwoMock.apply(anyString())).thenReturn(interactionTwoEvent)
-    when(testInteractionThreeMock.apply(anyString(), anyString()))
-      .thenReturn(interactionThreeIngredient)
+    when(testInteractionThreeMock.apply(anyString(), anyString())).thenReturn(interactionThreeIngredient)
     when(testInteractionFourMock.apply()).thenReturn(interactionFourIngredient)
+    when(testInteractionFiveMock.apply(anyString(), anyString(), anyString())).thenReturn(interactionFiveIngredient)
+    when(testInteractionSixMock.apply(anyString())).thenReturn(interactionSixIngredient)
 
     new Baker(recipe = recipe,
               validationSettings = ValidationSettings.defaultValidationSettings,

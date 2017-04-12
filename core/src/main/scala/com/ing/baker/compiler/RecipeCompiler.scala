@@ -66,8 +66,8 @@ object RecipeCompiler {
 
     val eventTransition = preconditionTransition(eventClass)
 
-    val notProvidedError = (!eventTransition.isDefined).toOption {
-      s"Event '$eventClass' for '${interactionTransition}' is not provided in the recipe"
+    val notProvidedError = eventTransition.isEmpty.toOption {
+      s"Event '$eventClass' for '$interactionTransition' is not provided in the recipe"
     }.toSeq
 
     val arcs = Seq(
@@ -122,7 +122,7 @@ object RecipeCompiler {
       fieldNamesWithoutPrefix.map(fieldName => arc(placeWithLabel(fieldName), t, 1))
 
     val limitInteractionCountArc =
-      t.maximumInteractionCount.map(n => arc(placeWithLabel(s"$limitPrefix:${t.label}"), t, 1))
+      t.maximumInteractionCount.map(_ => arc(placeWithLabel(s"$limitPrefix:${t.label}"), t, 1))
 
     dataInputArcs ++ internalDataInputArcs ++ limitInteractionCountArc
   }
@@ -309,7 +309,7 @@ object RecipeCompiler {
   private def getMultiTransition(internalRepresentationName: String,
                                  transitions: Seq[Transition[_, _, _]]): Transition[_, _, _] = {
     transitions
-      .find(t => t.label.contains(internalRepresentationName))
+      .find(t => t.label.equals(internalRepresentationName))
       .getOrElse(throw new NoSuchElementException(s"No multi transition found with name $internalRepresentationName"))
   }
 
