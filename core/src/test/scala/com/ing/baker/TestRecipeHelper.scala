@@ -150,7 +150,6 @@ trait TestRecipeHelper
       |    auto-start-journals = [ "inmemory-journal" ]
       |  }
       |  log-config-on-start = off
-      |  serialize-messages = on
       |}
       |
       |baker {
@@ -160,10 +159,22 @@ trait TestRecipeHelper
       |logging.root.level = DEBUG
     """.stripMargin)
 
-  protected val levelDbConfig: Config = ConfigFactory.parseString(
-    """
+  protected def levelDbConfig(actorSystemName: String, port: Int): Config = ConfigFactory.parseString(
+    s"""
       |akka {
-      |   persistence {
+      |  log-config-on-start = off
+      |  actor.provider = "akka.cluster.ClusterActorRefProvider"
+      |
+      |  remote {
+      |    netty.tcp {
+      |      hostname = localhost
+      |      port = $port
+      |    }
+      |  }
+      |
+      |  cluster.seed-nodes = ["akka.tcp://$actorSystemName@localhost:$port"]
+      |
+      |  persistence {
       |     journal.plugin = "akka.persistence.journal.leveldb"
       |     journal.leveldb.dir = "target/journal"
       |
@@ -175,12 +186,10 @@ trait TestRecipeHelper
       |
       |     journal.leveldb.native = off
       |  }
-      |  log-config-on-start = off
-      |  serialize-messages = on
       |}
       |
       |baker {
-      |  actor.provider = "local"
+      |  actor.provider = "cluster-sharded"
       |  actor.read-journal-plugin = "akka.persistence.query.journal.leveldb"
       |}
       |

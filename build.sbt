@@ -57,6 +57,7 @@ lazy val baker = project.in(file("core"))
       ) ++
       testDeps(
         akkaSlf4j,
+        akkaTestKit,
         logback,
         mockito,
         scalaTest,

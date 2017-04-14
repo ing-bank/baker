@@ -3,12 +3,12 @@ import sbt._
 object Dependencies {
 
   val slf4jVersion = "1.7.18"
-  val akkaVersion = "2.4.17"
-  val kageraVersion = "0.2.18"
+  val akkaVersion = "2.5.0"
+  val kageraVersion = "0.2.19"
 
   val typeSafeConfig =            "com.typesafe"               %  "config"                             % "1.3.1"
 
-  val akkaInmemoryJournal =       "com.github.dnvriend"        %% "akka-persistence-inmemory"          % "2.4.17.3"
+  val akkaInmemoryJournal =       "com.github.dnvriend"        %% "akka-persistence-inmemory"          % "2.5.0.0"
 
   val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "2.2.6"
   val mockito =                   "org.mockito"                % "mockito-all"                         % "1.10.19"
@@ -19,6 +19,7 @@ object Dependencies {
   val akkaCluster =               "com.typesafe.akka"          %% "akka-cluster"                       % akkaVersion
   val akkaClusterSharding =       "com.typesafe.akka"          %% "akka-cluster-sharding"              % akkaVersion
   val akkaSlf4j =                 "com.typesafe.akka"          %% "akka-slf4j"                         % akkaVersion
+  val akkaTestKit =               "com.typesafe.akka"          %% "akka-testkit"                       % akkaVersion
   val levelDB   =                 "org.iq80.leveldb"           % "leveldb"                             % "0.7"
   val levelDBJni =                "org.fusesource.leveldbjni"  % "leveldbjni-all"                      % "1.8"
 

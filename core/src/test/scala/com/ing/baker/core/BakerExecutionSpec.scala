@@ -420,28 +420,33 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
     //Only works if persistence actors are used (think cassandra)
     "recover the state of a process from a persistence store" in {
-      val system1 = ActorSystem("persistenceTest1", levelDbConfig)
-
+      val system1 = ActorSystem("persistenceTest1", levelDbConfig("persistenceTest1", 2552))
       val recoveryRecipeName = "RecoveryRecipe"
-      val baker1 = setupBakerWithRecipe(recoveryRecipeName, system1, appendUUIDToTheRecipeName = false)
-
       val processId = UUID.randomUUID()
-      baker1.bake(processId)
-      baker1.handleEvent(processId, InitialEvent(initialIngredient))
-      baker1.handleEvent(processId, SecondEvent())
 
-      baker1.getProcessState(processId).ingredients shouldBe finalState
+      try {
+        val baker1 = setupBakerWithRecipe(recoveryRecipeName, system1, appendUUIDToTheRecipeName = false)
 
-      TestKit.shutdownActorSystem(system1)
+        baker1.bake(processId)
+        baker1.handleEvent(processId, InitialEvent(initialIngredient))
+        baker1.handleEvent(processId, SecondEvent())
 
-      val system2 = ActorSystem("persistenceTest2", levelDbConfig)
-      val baker2 = new Baker(getComplexRecipe(recoveryRecipeName),
-                             mockImplementations,
-                             ValidationSettings.defaultValidationSettings,
-                             system2)
-      baker2.getProcessState(processId).ingredients shouldBe finalState
+        baker1.getProcessState(processId).ingredients shouldBe finalState
+      } finally {
+        TestKit.shutdownActorSystem(system1)
+      }
 
-      TestKit.shutdownActorSystem(system2)
+      val system2 = ActorSystem("persistenceTest2", levelDbConfig("persistenceTest2", 2553))
+      try {
+        val baker2 = new Baker(getComplexRecipe(recoveryRecipeName),
+          mockImplementations,
+          ValidationSettings.defaultValidationSettings,
+          system2)
+        baker2.getProcessState(processId).ingredients shouldBe finalState
+      } finally {
+        TestKit.shutdownActorSystem(system2)
+      }
+
     }
 
     "when acknowledging the first event, not wait on the rest" in {
