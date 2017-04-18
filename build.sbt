@@ -17,7 +17,8 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
       "-Ywarn-dead-code",
       "-language:higherKinds",
       "-language:existentials",
-      "-language:postfixOps"
+      "-language:postfixOps",
+      "-Xfatal-warnings"
     )
   )
 
