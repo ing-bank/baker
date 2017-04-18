@@ -2,7 +2,6 @@ import sbt._
 
 object Dependencies {
 
-  val slf4jVersion = "1.7.18"
   val akkaVersion = "2.5.0"
   val kageraVersion = "0.2.19"
 
@@ -41,6 +40,8 @@ object Dependencies {
   val kryoSerializers =           "de.javakaffee"              % "kryo-serializers"                    % "0.41"
   val jodaTime =                  "joda-time"                  % "joda-time"                           % "2.9.9"
   val jodaConvert =               "org.joda"                   % "joda-convert"                        % "1.8.1"
+  val scalaXml =                  "org.scala-lang.modules"     %% "scala-xml"                           % "1.0.4"
+  val slf4jApi =                  "org.slf4j"                  %    "slf4j-api"                           % "1.7.25"
 
   def scopeDeps(scope: String, modules: Seq[ModuleID]) =  modules.map(m => m % scope)
   def compileDeps(modules: ModuleID*) = modules.toSeq
