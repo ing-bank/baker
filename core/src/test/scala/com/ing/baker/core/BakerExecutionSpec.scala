@@ -420,7 +420,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
     //Only works if persistence actors are used (think cassandra)
     "recover the state of a process from a persistence store" in {
-      val system1 = ActorSystem("persistenceTest1", levelDbConfig("persistenceTest1", 2999))
+      val system1 = ActorSystem("persistenceTest1", levelDbConfig("persistenceTest1", 2552))
       val recoveryRecipeName = "RecoveryRecipe"
       val processId = UUID.randomUUID()
 
@@ -436,7 +436,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
         TestKit.shutdownActorSystem(system1)
       }
 
-      val system2 = ActorSystem("persistenceTest2", levelDbConfig("persistenceTest2", 2998))
+      val system2 = ActorSystem("persistenceTest2", levelDbConfig("persistenceTest2", 2553))
       try {
         val baker2 = new Baker(getComplexRecipe(recoveryRecipeName),
           mockImplementations,
