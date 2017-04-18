@@ -94,7 +94,7 @@ class Baker(val recipe: Recipe,
   private val petriNetApi = new PetriNetInstanceApi[ProcessState](compiledRecipe.petriNet, processIdManagerActor)
 
   private val readJournal = PersistenceQuery(actorSystem)
-    .readJournalFor[CurrentEventsByPersistenceIdQuery with PersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
+    .readJournalFor[CurrentEventsByPersistenceIdQuery with AllPersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
 
   private def createEventMsg(processId: java.util.UUID, event: AnyRef) = {
     require(event != null, "Event can not be null")
