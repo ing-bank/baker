@@ -15,11 +15,7 @@ object SonatypePublish {
     licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT")),
     homepage := Some(url("https://github.com/ing-bank/baker")),
     pomExtra := (
-      <scm>
-        <url>git@github.com:ing-bank/baker.git</url>
-        <connection>scm:git:git@github.com:ing-bank/baker</connection>
-      </scm>
-        <developers>
+         <developers>
           <developer>
             <id>Apollo</id>
             <name>Squad Apollo</name>
