@@ -19,6 +19,7 @@ object Dependencies {
   val akkaCluster =               "com.typesafe.akka"          %% "akka-cluster"                       % akkaVersion
   val akkaClusterSharding =       "com.typesafe.akka"          %% "akka-cluster-sharding"              % akkaVersion
   val akkaSlf4j =                 "com.typesafe.akka"          %% "akka-slf4j"                         % akkaVersion
+  val akkaTestKit =               "com.typesafe.akka"          %% "akka-testkit"                       % akkaVersion
   val levelDB   =                 "org.iq80.leveldb"           % "leveldb"                             % "0.7"
   val levelDBJni =                "org.fusesource.leveldbjni"  % "leveldbjni-all"                      % "1.8"
 
@@ -40,6 +41,8 @@ object Dependencies {
   val kryoSerializers =           "de.javakaffee"              % "kryo-serializers"                    % "0.41"
   val jodaTime =                  "joda-time"                  % "joda-time"                           % "2.9.9"
   val jodaConvert =               "org.joda"                   % "joda-convert"                        % "1.8.1"
+  val scalaXml =                  "org.scala-lang.modules"     %% "scala-xml"                           % "1.0.4"
+  val slf4jApi =                  "org.slf4j"                  %    "slf4j-api"                           % "1.7.25"
 
   def scopeDeps(scope: String, modules: Seq[ModuleID]) =  modules.map(m => m % scope)
   def compileDeps(modules: ModuleID*) = modules.toSeq
