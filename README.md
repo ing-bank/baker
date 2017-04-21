@@ -26,17 +26,18 @@ Petri nets have two interesting mathematical properties that we’d like to expl
 # A Catalogue of Reusable Interactions
 Let's look at three different products that a bank would sell to customers:
 
-Checking Account | Savings Account | Joint Account
+Checking Account | Savings Account | Customer Onboarding
 --- | --- | ---
 Verify Person's Identity | Verify Person's Identity | Verify Person's Identity
 Register Person | Register Person | Register Person
-Open Checking Account | Open Savings Account | `n/a`
-Send Message | Send Message | `n/a`
-Register Product Possession | Register Product Possession | Register Product Possession
+Open *Checking* Account | Open *Savings* Account | `n/a`
+Issue Debit Card | `n/a` | `n/a`
+Send Message | Send Message | Send Message
+Register Product Possession | Register Product Possession | `n/a`
 
 As you can see, there are similarities in the products.
 
-It becomes interesting when you're able to combine the same interactions in different recipes. This is how new functionality can be delivered quickly by re-using what's already available.
+It becomes interesting when you're able to combine the same interactions in different recipes. New functionality can then be built quickly by re-using what's already available.
 
 # How to apply Baker?
 Applying Baker will only be successful if you make sure that:
