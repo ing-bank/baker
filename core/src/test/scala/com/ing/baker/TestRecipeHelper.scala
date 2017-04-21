@@ -29,6 +29,18 @@ case class NotUsedSensoryEvent() extends Event
 
 case class EventFromInteractionTwo(interactionTwoIngredient: String) extends Event
 
+//an event can provide an ingredient in a primitive type
+case class OrderPlaced(order: String) extends Event
+case class Customer(name: String, address: String, email: String)
+//an event can also provide a more complex ingredient as a case class
+case class CustomerInfoReceived(customerInfo: Customer) extends Event
+case class PaymentMade() extends Event
+trait OrderValidationOutcome extends Event
+case class Valid() extends OrderValidationOutcome
+case class Sorry() extends OrderValidationOutcome
+case class GoodsManufactured(goods: String) extends Event
+case class GoodsShipped(trackingId: String) extends Event
+
 case class EventWithANonSerializableIngredient(nonSerializableObject: NonSerializableObject) extends Event
 
 class NonSerializableObject()
@@ -81,6 +93,30 @@ trait NonSerializableIngredientInteraction extends Interaction {
 trait NonMatchingReturnTypeInteraction extends Interaction {
   @FiresEvent(oneOf = Array(classOf[EventFromInteractionTwo]))
   def apply(@RequiresIngredient("initialIngredient") message: String): String
+}
+
+trait ValidateOrder extends Interaction {
+  //an interaction can fire two events
+  @FiresEvent(oneOf = Array(classOf[Valid], classOf[Sorry]))
+  def apply(@RequiresIngredient("order") order: String): OrderValidationOutcome
+}
+
+trait ManufactureGoods extends Interaction {
+  //an interaction can fire a single event only
+  @FiresEvent(oneOf = Array(classOf[GoodsManufactured]))
+  def apply(@RequiresIngredient("order") order: String): GoodsManufactured
+}
+
+trait ShipGoods extends Interaction {
+  @FiresEvent(oneOf = Array(classOf[GoodsShipped]))
+  def apply(@RequiresIngredient("goods") goods: String, @RequiresIngredient("customerInfo") customerInfo: Customer): GoodsShipped
+}
+
+trait SendInvoice extends Interaction {
+  //instead of an event, an interaction can directly provide a new ingredient
+  //any primitive type or a case class is supported
+  @ProvidesIngredient("invoiceWasSent")
+  def apply(@RequiresIngredient("customerInfo") customerInfo: Customer): Boolean
 }
 
 trait TestRecipeHelper
@@ -231,6 +267,23 @@ trait TestRecipeHelper
     )
   }
 
+  private def getFinTechRecipe() = ???
+  protected def getWebshopRecipe(): SRecipe = {
+    SRecipe(
+      "EventDrivenWebshop",
+      interactions = Seq(
+        InteractionDescriptorFactory[ValidateOrder],
+        InteractionDescriptorFactory[ManufactureGoods]
+          .withRequiredEvent[Valid]
+          .withRequiredEvent[PaymentMade],
+        InteractionDescriptorFactory[ShipGoods],
+        InteractionDescriptorFactory[SendInvoice]
+          .withRequiredEvent[GoodsShipped]
+      ),
+      events = Set(classOf[CustomerInfoReceived], classOf[OrderPlaced], classOf[PaymentMade])
+    )
+  }
+
   /**
     * Returns a Baker instance that contains a simple recipe that can be used in tests
     * It als sets mocks that return happy flow responses for the interactions
@@ -310,5 +363,4 @@ trait TestRecipeHelper
       testNonMatchingReturnTypeInteractionMock,
       testNonSerializableEventInteractionMock,
       testNonSerializableIngredientInteractionMock)
-
 }

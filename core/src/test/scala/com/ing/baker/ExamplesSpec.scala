@@ -1,8 +1,9 @@
 package com.ing.baker
 
-/**
-  * Created by nikola on 21-04-17.
-  */
-class ExamplesSpec {
-
+class ExamplesSpec extends TestRecipeHelper {
+  "An example web-shop recipe" should {
+    "be represented in a DOT format that is suitable for visualization" should {
+      println(getWebshopRecipe.compileRecipe.getRecipeVisualization)
+    }
+  }
 }

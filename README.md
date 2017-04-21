@@ -12,7 +12,7 @@ A recipe is made out of **interactions** (system calls), **ingredients** (data) 
 A visual representation (shown below) of the recipe allows product owners, architects and developers to talk the same language.
 
 
-![](TestRecipe.png)
+![](webshop.png)
 
 
 Baker consists of a DSL that allows developers to choose interactions from a catalogue and re-use them in their own recipes.
