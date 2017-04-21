@@ -11,6 +11,7 @@ Developers declare the orchestration logic in a recipe.
 A recipe is made out of **interactions** (system calls), **ingredients** (data) and **events**.
 A visual representation (shown below) of the recipe allows product owners, architects and developers to talk the same language.
 
+Events are colored in gray, ingredients in orange and interactions in lilac. An example web-shop recipe is:
 
 ![](webshop.png)
 
@@ -22,9 +23,11 @@ Petri nets have two interesting mathematical properties that we’d like to expl
 - **reachability** – can we deliver on a promise (recipe) at all – this will allow developers to check during compile time if the recipe they’ve created makes sense and achieves the desired end state (fulfills the customer order);
 - **liveliness** – do we have steps in a recipe that make no sense (unreachable, “dead” code) – this will allow developers to create lean and mean recipes (the less code you write, the less bugs you produce, the less you support);
 
-## Example Comparison of Reusable Interactions
+## A Catalogue of Reusable Interactions
 Let's look at three different products that a bank would sell to customers:
+
 | Checking Account | Savings Account | Joint Account |
+| --- | --- | --- |
 | Verify Person's Identity | Verify Person's Identity | Verify Person's Identity |
 
 
@@ -51,13 +54,13 @@ Execute the following commands in your terminal to get started with the developm
 
 ```
 $ git clone https://github.com/ing-bank/baker.git
-$ cd Baker
+$ cd baker
 $ sbt
 $ compile
 ```
 
 ## How to visualize your recipe?
-Baker can turn a recipe into a DOT representation which can then be visualized using the following web-site for example (http://www.webgraphviz.com).
+Baker can turn a recipe into a DOT representation. It can then be visualized using the following web-site (http://www.webgraphviz.com).
 
 Another way to visualize the recipe is to install [Graphviz](http://www.graphviz.org) on your development machine. On your Mac, install using [brew](https://brew.sh):
 

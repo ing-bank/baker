@@ -268,9 +268,10 @@ trait TestRecipeHelper
   }
 
   private def getFinTechRecipe() = ???
+
   protected def getWebshopRecipe(): SRecipe = {
     SRecipe(
-      "EventDrivenWebshop",
+      "Webshop",
       interactions = Seq(
         InteractionDescriptorFactory[ValidateOrder],
         InteractionDescriptorFactory[ManufactureGoods]
@@ -280,7 +281,8 @@ trait TestRecipeHelper
         InteractionDescriptorFactory[SendInvoice]
           .withRequiredEvent[GoodsShipped]
       ),
-      events = Set(classOf[CustomerInfoReceived], classOf[OrderPlaced], classOf[PaymentMade])
+      events = Set(classOf[CustomerInfoReceived], classOf[OrderPlaced], classOf[PaymentMade]
+      )
     )
   }
 
