@@ -1,5 +1,4 @@
 import Dependencies._
-import sbt.Def
 import sbt.Keys._
 
 val scalaV = "2.11.8"
@@ -18,7 +17,8 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
       "-Ywarn-dead-code",
       "-language:higherKinds",
       "-language:existentials",
-      "-language:postfixOps"
+      "-language:postfixOps",
+      "-Xfatal-warnings"
     )
   )
 
@@ -53,7 +53,9 @@ lazy val baker = project.in(file("core"))
         chill,
         kryoSerializers,
         jodaTime,
-        jodaConvert
+        jodaConvert,
+        scalaXml,
+        slf4jApi
       ) ++
       testDeps(
         akkaSlf4j,
@@ -74,41 +76,3 @@ lazy val root = project
   .dependsOn(baker)
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
-
-//lazy val micrositeSettings = Seq(
-//  micrositeName := "Baker",
-//  micrositeDescription := "Bake your process",
-//  micrositeBaseUrl := "baker",
-//  micrositeDocumentationUrl := "/baker/docs.html",
-//  micrositeGithubOwner := "ing-bank",
-//  micrositeGithubRepo := "baker",
-//  micrositeHighlightTheme := "tomorrow",
-//  micrositePalette := Map("brand-primary"   -> "#FF518C",
-//                          "brand-secondary" -> "#2F2859",
-//                          "brand-tertiary"  -> "#28224C",
-//                          "gray-dark"       -> "#48474C",
-//                          "gray"            -> "#8D8C92",
-//                          "gray-light"      -> "#E3E2E3",
-//                          "gray-lighter"    -> "#F4F3F9",
-//                          "white-color"     -> "#FFFFFF"),
-//  includeFilter in makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js" | "*.swf" | "*.md"
-//)
-//
-//lazy val docsSettings = basicSettings ++ micrositeSettings ++ Seq(
-//    tutScalacOptions ~= (_.filterNot(Set("-Ywarn-unused-import", "-Ywarn-dead-code"))),
-//    tutScalacOptions ++= (scalaBinaryVersion.value match {
-//    case "2.10" => Seq("-Xdivergence211")
-//    case _      => Nil
-//  }),
-//    aggregate in doc := true
-//  )
-//
-//lazy val docs = project
-//  .in(file("docs"))
-//  .dependsOn(baker)
-//  .settings(moduleName := "baker-docs")
-//  .settings(docsSettings: _*)
-//  .settings(noPublishSettings)
-//  .enablePlugins(MicrositesPlugin)
-//
-
