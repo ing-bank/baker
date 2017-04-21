@@ -8,7 +8,7 @@
 
 Baker is a library that reduces the effort to orchestrate (micros)service-based process flows.
 Developers declare the orchestration logic in a recipe.
-A recipe is made out of interactions (system calls), ingredients (data) and events.
+A recipe is made out of **interactions** (system calls), **ingredients** (data) and **events**.
 A visual representation (shown below) of the recipe allows product owners, architects and developers to talk the same language.
 
 
@@ -21,6 +21,20 @@ Developers can use Java or Scala as a programming language. Each recipe is turne
 Petri nets have two interesting mathematical properties that we’d like to explore in the near future:
 - **reachability** – can we deliver on a promise (recipe) at all – this will allow developers to check during compile time if the recipe they’ve created makes sense and achieves the desired end state (fulfills the customer order);
 - **liveliness** – do we have steps in a recipe that make no sense (unreachable, “dead” code) – this will allow developers to create lean and mean recipes (the less code you write, the less bugs you produce, the less you support);
+
+## Example Comparison of Reusable Interactions
+Let's look at three different products that a bank would sell to customers:
+| Checking Account | Savings Account | Joint Account |
+| Verify Person's Identity | Verify Person's Identity | Verify Person's Identity |
+
+
+As you can see, there are similarities in the products. 
+
+## How to apply Baker?
+Applying Baker will only be successful if you make sure that:
+1. You've compared the products your company is selling and there are similarities;
+2. You've defined a catalogue of those capabilities necessary to deliver the products from;
+3. Each capability (**interaction** in Baker terms) is accessible via an API of any sort (could be a micro-service, web-service, so on); 
 
 ## Getting Started
 
@@ -50,21 +64,43 @@ Another way to visualize the recipe is to install [Graphviz](http://www.graphviz
 ```
 brew install graphviz
 ```
+
 To test that all works fine, save the following text in a graph.dot file:
+
 ```
-digraph d {  A [label="Hello"]  B [label="World"]  C [label="Everyone"]  A -> { B C } }
+digraph d {
+A [label="Hello"]
+B [label="World"]
+C [label="Everyone"]
+A -> { B C }
+}
 ```
+
 To create a PNG, run:
+
 ```
 dot -v -Tpng -O graph.dot
 ```
+
 Preview the results:
+
 ```
 open graph.dot.png
 ```
+
 You are all set to visualize your recipes now!
 
-You can also use custom fonts, for more info see (http://www.graphviz.org/doc/fontfaq.txt).
+You can also use custom fonts, for more info see <http://www.graphviz.org/doc/fontfaq.txt>.
+
+## Naming conventions
+Each interaction can be:
+
+1. Synchronous - wait on a response;
+2. Or asynchronous - get an acknowledgement only, but the outcome is received later;
+
+For synchronous interactions model the result with two events: **Successful** and **Failed**. For example the ValidateOrder interaction could fire OrderValidationSuccessful or OrderValidationFailed events.
+
+For asynchronous interaction model the acknowledgment with an **Accepted** event. The actual result (received at a later stage) of the interaction is modelled as above.
 
 ## References
 1. DOT Graph Description Language (https://en.wikipedia.org/wiki/DOT_(graph_description_language)) - explain more about the format Baker uses to product a graphical representation of the recipe;
