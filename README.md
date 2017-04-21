@@ -8,7 +8,7 @@
 
 Baker is a library that reduces the effort to orchestrate (micros)service-based process flows.
 Developers declare the orchestration logic in a recipe.
-A recipe is made out of system interactions, ingredients (data) and events.
+A recipe is made out of interactions (system calls), ingredients (data) and events.
 A visual representation (shown below) of the recipe allows product owners, architects and developers to talk the same language.
 
 
@@ -23,7 +23,6 @@ Petri nets have two interesting mathematical properties that we’d like to expl
 - **liveliness** – do we have steps in a recipe that make no sense (unreachable, “dead” code) – this will allow developers to create lean and mean recipes (the less code you write, the less bugs you produce, the less you support);
 
 ## Getting Started
-
 
 To get started with SBT, simply add the following to your build.sbt file:
 
@@ -43,12 +42,30 @@ $ sbt
 $ compile
 ```
 
+## How to visualize your recipe?
+Baker can turn a recipe into a DOT representation which can then be visualized using the following web-site for example (http://www.webgraphviz.com).
 
-## Usage
+Another way to visualize the recipe is to install [Graphviz](http://www.graphviz.org) on your development machine. On your Mac, install using [brew](https://brew.sh):
 
-TBD
+```
+brew install graphviz
+```
+To test that all works fine, save the following text in a graph.dot file:
+```
+digraph d {  A [label="Hello"]  B [label="World"]  C [label="Everyone"]  A -> { B C } }
+```
+To create a PNG, run:
+```
+dot -v -Tpng -O graph.dot
+```
+Preview the results:
+```
+open graph.dot.png
+```
+You are all set to visualize your recipes now!
 
-## Dependencies
+You can also use custom fonts, for more info see (http://www.graphviz.org/doc/fontfaq.txt).
 
-
-TBD
+## References
+1. DOT Graph Description Language (https://en.wikipedia.org/wiki/DOT_(graph_description_language)) - explain more about the format Baker uses to product a graphical representation of the recipe;
+2. Order fulfillment (https://en.wikipedia.org/wiki/Order_fulfillment) - gives an idea about the theory behind order fulfillment strategies. As you are in the business of producing and selling products to people, you are in the business of fulfillment;
