@@ -24,7 +24,7 @@ class EventList(private val events: Seq[Any]) extends java.util.AbstractList[Any
     *
     * @return
     */
-  def eventOccurred(clazz: Class[_]): Boolean = events.exists(e => clazz.isInstance(e))
+  def hasEventOccurred(clazz: Class[_]): Boolean = events.exists(e => clazz.isInstance(e))
 
   /**
     * Returns the number of times an event occurred.
@@ -33,12 +33,19 @@ class EventList(private val events: Seq[Any]) extends java.util.AbstractList[Any
     *
     * @return The number of times an event occurred.
     */
-  def eventCount(clazz: Class[_]): Int = events.filter(e => clazz.isInstance(e)).size
+  def getEventCount(clazz: Class[_]): Int = events.filter(e => clazz.isInstance(e)).size
 
   /**
     * Returns a list of the event classes.
     *
     * @return A list of event classes.
     */
-  def eventClassList: java.util.List[Class[_]] = events.toList.map(_.getClass).asJava
+  def getEventClassList: java.util.List[Class[_]] = events.toList.map(_.getClass).asJava
+
+  /**
+    * Returns a list of the event classes.
+    *
+    * @return A list of event classes.
+    */
+  def getEventNameList: java.util.List[String] = events.map(_.getClass.getName).asJava
 }
