@@ -1,3 +1,3 @@
 package com.ing.baker.core
 
-trait InternalBakerData
+trait InternalBakerData extends Serializable

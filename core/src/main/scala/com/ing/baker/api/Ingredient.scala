@@ -1,3 +1,3 @@
 package com.ing.baker.api
 
-trait Ingredient
+trait Ingredient extends Serializable
