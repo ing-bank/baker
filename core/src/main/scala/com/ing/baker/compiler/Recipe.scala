@@ -1,5 +1,6 @@
 package com.ing.baker.compiler
 
+import com.ing.baker.api.Event
 import com.ing.baker.core.{InteractionDescriptor, InteractionFailureStrategy}
 
 /**
@@ -25,7 +26,7 @@ trait Recipe {
   /**
     * The set of events.
     */
-  def events: Set[Class[_]]
+  def events: Set[Class[_ <: Event]]
 
   /**
     * The default interaction failure strategy.

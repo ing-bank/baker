@@ -16,7 +16,7 @@ case class JRecipe(
     override val name: String,
     override val interactionDescriptors: Seq[InteractionDescriptor[_]],
     override val sieveDescriptors: Seq[InteractionDescriptor[_]],
-    override val events: Set[Class[_]],
+    override val events: Set[Class[_ <: Event]],
     override val defaultFailureStrategy: InteractionFailureStrategy) extends Recipe {
 
   def this(name: String) = this(name, Seq.empty, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction)
@@ -25,7 +25,7 @@ case class JRecipe(
 
   def getSieves: java.util.List[InteractionDescriptor[_]] = sieveDescriptors.asJava
 
-  def getEvents: java.util.List[Class[_]] = events.toList.asJava
+  def getEvents: java.util.List[Class[_ <: Event]] = events.toList.asJava
 
   def compileRecipe: JCompiledRecipe = JCompiledRecipe(RecipeCompiler.compileRecipe(this))
 

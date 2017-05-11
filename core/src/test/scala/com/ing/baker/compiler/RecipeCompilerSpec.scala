@@ -54,20 +54,6 @@ class RecipeCompilerSpec extends TestRecipeHelper {
       compiledRecipe.validationErrors should contain ("Event class: class com.ing.baker.NonSerializableObject does not extend from com.ing.baker.api.Event")
     }
 
-    "give a list of sensory events that does not extend from baker Event" in {
-
-      val recipe = SRecipe(
-        name = "NonSerializableSensoryEventTest",
-        interactions = Seq(
-          InteractionDescriptorFactory[InteractionOne]
-        ),
-        events = Set(classOf[InitialEvent], classOf[NonSerializableObject])
-      )
-
-      val compiledRecipe: CompiledRecipe = recipe.compileRecipe
-      compiledRecipe.validationErrors should contain ("Event class: class com.ing.baker.NonSerializableObject does not extend from com.ing.baker.api.Event")
-    }
-
     "give a list of wrong interactions if an event of an interaction does not match it's return type" in {
       val recipe = SRecipe(
         name = "NonMatchingReturnTypeTest",
