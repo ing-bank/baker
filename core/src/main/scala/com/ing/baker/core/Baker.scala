@@ -25,6 +25,7 @@ import io.kagera.persistence.Encryption.NoEncryption
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
+import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
@@ -241,5 +242,11 @@ class Baker(val recipe: Recipe,
         case Uninitialized(id) => throw new NoSuchProcessException(s"No such process with: $id")
         case msg => throw new BakerException(s"Unexpected actor response message: $msg")
       }
+  }
+
+  def getAllProcessIds(): List[String] = {
+    val allProcessIdsFuture: Future[Seq[String]] =
+      PetriNetQuery.currentProcessIds(readJournal).runWith(Sink.seq[String])
+    Await.result(allProcessIdsFuture, 5 seconds).toList
   }
 }

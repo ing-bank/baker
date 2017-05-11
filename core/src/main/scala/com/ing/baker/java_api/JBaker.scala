@@ -154,11 +154,13 @@ class JBaker private (jRecipe: JRecipe,
     */
   def getCompiledRecipe(): JCompiledRecipe = jRecipe.compileRecipe
 
-  def getVisualState(processId: java.util.UUID, waitTimeoutMillis: Long): String = {
+  def getVisualState(processId: java.util.UUID, waitTimeoutMillis: Long): String =
     baker.getVisualState(processId)(waitTimeoutMillis milliseconds)
-  }
 
-  def getVisualState(processId: java.util.UUID): String = {
+
+  def getVisualState(processId: java.util.UUID): String =
     getVisualState(processId, defaultTimeout)
-  }
+
+  def getAllProcessIds(): java.util.List[String] =
+    baker.getAllProcessIds().asJava
 }

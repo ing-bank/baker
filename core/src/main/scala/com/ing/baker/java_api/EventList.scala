@@ -47,5 +47,5 @@ class EventList(private val events: Seq[Any]) extends java.util.AbstractList[Any
     *
     * @return A list of event classes.
     */
-  def getEventNameList: java.util.List[String] = events.map(_.getClass.getName).asJava
+  def getEventNameList: java.util.List[String] = events.map(_.getClass.getSimpleName).asJava
 }
