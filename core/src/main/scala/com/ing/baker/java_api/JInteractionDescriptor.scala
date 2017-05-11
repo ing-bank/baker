@@ -3,6 +3,7 @@ package java_api
 
 import java.util.Optional
 
+import com.ing.baker.api.Event
 import com.ing.baker.core.InteractionFailureStrategy._
 import com.ing.baker.core.{ActionType, EventOutputTransformer, InteractionDescriptor, InteractionFailureStrategy}
 
@@ -14,8 +15,8 @@ import scala.reflect.ClassTag
 
 case class JInteractionDescriptor[T <: JInteraction] private (
     interactionClass: Class[T],
-    requiredEvents: Set[Class[_]],
-    requiredOneOfEvents: Set[Class[_]],
+    requiredEvents: Set[Class[_ <: Event]],
+    requiredOneOfEvents: Set[Class[_ <: Event]],
     predefinedIngredients: Map[String, AnyRef],
     overriddenIngredientNames: Map[String, String],
     override val overriddenOutputIngredientName: String = null,
@@ -31,7 +32,7 @@ case class JInteractionDescriptor[T <: JInteraction] private (
     else interactionClass.getSimpleName
   }
 
-  def getRequiredEvents: java.util.Set[Class[_]] = requiredEvents.asJava
+  def getRequiredEvents: java.util.Set[Class[_ <: Event]] = requiredEvents.asJava
 
   def getName: String = name
 
@@ -51,10 +52,9 @@ case class JInteractionDescriptor[T <: JInteraction] private (
     * This sets a requirement for this interaction that a specific event needs to have been fired before it can execute.
     *
     * @param newRequiredEvent the class of the events that needs to have been fired
-    * @tparam C
     * @return
     */
-  def withRequiredEvent[C](newRequiredEvent: Class[C]): JInteractionDescriptor[T] =
+  def withRequiredEvent(newRequiredEvent: Class[_ <: Event]): JInteractionDescriptor[T] =
     this.copy(requiredEvents = requiredEvents + newRequiredEvent)
 
   /**
@@ -63,8 +63,9 @@ case class JInteractionDescriptor[T <: JInteraction] private (
     * @param newRequiredEvents the classes of the events.
     * @return
     */
+  @SafeVarargs
   @varargs
-  def withRequiredEvents(newRequiredEvents: Class[_]*): JInteractionDescriptor[T] =
+  def withRequiredEvents(newRequiredEvents: Class[_ <: Event]*): JInteractionDescriptor[T] =
     this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.toSet)
 
   /**
@@ -73,7 +74,7 @@ case class JInteractionDescriptor[T <: JInteraction] private (
     * @param newRequiredEvents the classes of the event.
     * @return
     */
-  def withRequiredEvents(newRequiredEvents: java.util.Set[Class[_]]): JInteractionDescriptor[T] =
+  def withRequiredEvents(newRequiredEvents: java.util.Set[Class[_ <: Event]]): JInteractionDescriptor[T] =
     this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.asScala)
 
   /**
@@ -82,8 +83,9 @@ case class JInteractionDescriptor[T <: JInteraction] private (
     * @param requiredOneOfEvents the classes of the events.
     * @return
     */
+  @SafeVarargs
   @varargs
-  def withRequiredOneOfEvents(requiredOneOfEvents: Class[_]*): JInteractionDescriptor[T] =
+  def withRequiredOneOfEvents(requiredOneOfEvents: Class[_ <: Event]*): JInteractionDescriptor[T] =
     this.copy(requiredOneOfEvents = requiredOneOfEvents.toSet)
 
   /**
