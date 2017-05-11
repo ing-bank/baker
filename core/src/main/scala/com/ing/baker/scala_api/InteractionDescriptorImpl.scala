@@ -1,5 +1,6 @@
 package com.ing.baker.scala_api
 
+import com.ing.baker.api.Event
 import com.ing.baker.core.InteractionFailureStrategy.RetryWithIncrementalBackoff
 import com.ing.baker.core.{ActionType, Interaction, InteractionDescriptor, InteractionFailureStrategy}
 
@@ -8,8 +9,8 @@ import scala.reflect.ClassTag
 
 case class InteractionDescriptorImpl[T <: Interaction: ClassTag](
     interactionClass: Class[T],
-    override val requiredEvents: Set[Class[_]] = Set.empty,
-    override val requiredOneOfEvents: Set[Class[_]] = Set.empty,
+    override val requiredEvents: Set[Class[_ <: Event]] = Set.empty,
+    override val requiredOneOfEvents: Set[Class[_ <: Event]] = Set.empty,
     override val predefinedIngredients: Map[String, AnyRef] = Map.empty,
     override val overriddenIngredientNames: Map[String, String] = Map.empty,
     override val overriddenOutputIngredientName: String = null,
@@ -18,10 +19,10 @@ case class InteractionDescriptorImpl[T <: Interaction: ClassTag](
     override val actionType: ActionType = ActionType.InteractionAction)
     extends InteractionDescriptor[T] {
 
-  def withRequiredEvent[C: ClassTag]: InteractionDescriptorImpl[T] =
-    copy(requiredEvents = requiredEvents + implicitly[ClassTag[C]].runtimeClass)
+  def withRequiredEvent[C <: Event : ClassTag]: InteractionDescriptorImpl[T] =
+    copy(requiredEvents = requiredEvents + implicitly[ClassTag[C]].runtimeClass.asInstanceOf[Class[C]])
 
-  def withRequiredOneOfEvents(requiredOneOfEvents: Class[_]*): InteractionDescriptorImpl[T] =
+  def withRequiredOneOfEvents(requiredOneOfEvents: Class[_ <: Event]*): InteractionDescriptorImpl[T] =
     copy(requiredOneOfEvents = requiredOneOfEvents.toSet)
 
   def withPredefinedIngredients(values: (String, AnyRef)*): InteractionDescriptorImpl[T] =

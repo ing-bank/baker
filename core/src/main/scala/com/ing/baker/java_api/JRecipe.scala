@@ -1,6 +1,7 @@
 package com.ing.baker
 package java_api
 
+import com.ing.baker.api.Event
 import com.ing.baker.compiler._
 import com.ing.baker.core.ActionType.SieveAction
 import com.ing.baker.core.InteractionFailureStrategy.RetryWithIncrementalBackoff
@@ -33,10 +34,9 @@ case class JRecipe(
     * To get a JInteractionDescriptor from a JInteraction call the of method on JInteractionDescriptor
     *
     * @param interactionDesc the interaction to add
-    * @tparam T
     * @return
     */
-  def withInteraction[T <: JInteraction](interactionDesc: JInteractionDescriptor[T]): JRecipe =
+  def withInteraction(interactionDesc: JInteractionDescriptor[_ <: JInteraction]): JRecipe =
       withInteractions(Seq(interactionDesc): _*)
 
   /**
@@ -46,18 +46,18 @@ case class JRecipe(
     * @param newInteractionDescriptors The interactions to add
     * @return
     */
+  @SafeVarargs
   @varargs
-  def withInteractions(newInteractionDescriptors: JInteractionDescriptor[_]*): JRecipe =
+  def withInteractions(newInteractionDescriptors: JInteractionDescriptor[_ <: JInteraction]*): JRecipe =
     copy(interactionDescriptors = newInteractionDescriptors ++ interactionDescriptors)
 
   /**
     * Adds a sieve function to the recipe.
     *
     * @param sieveDescriptor
-    * @tparam T
     * @return
     */
-  def withSieve[T <: JInteraction](sieveDescriptor: JInteractionDescriptor[T]): JRecipe =
+  def withSieve(sieveDescriptor: JInteractionDescriptor[_ <: JInteraction]): JRecipe =
     withSieves(Seq(sieveDescriptor): _*)
 
   /**
@@ -66,8 +66,9 @@ case class JRecipe(
     * @param newSieveDescriptors
     * @return
     */
+  @SafeVarargs
   @varargs
-  def withSieves(newSieveDescriptors: JInteractionDescriptor[_]*): JRecipe = {
+  def withSieves(newSieveDescriptors: JInteractionDescriptor[_ <: JInteraction]*): JRecipe = {
     copy(sieveDescriptors = newSieveDescriptors.map(_.withActionType(SieveAction)) ++ sieveDescriptors)
   }
 
@@ -77,7 +78,7 @@ case class JRecipe(
     * @param newEvent
     * @return
     */
-  def withSensoryEvent(newEvent: Class[_]): JRecipe =
+  def withSensoryEvent(newEvent: Class[_ <: Event]): JRecipe =
     copy(events = events + newEvent)
 
   /**
@@ -86,8 +87,9 @@ case class JRecipe(
     * @param eventsToAdd
     * @return
     */
+  @SafeVarargs
   @varargs
-  def withSensoryEvents(eventsToAdd: Class[_]*): JRecipe =
+  def withSensoryEvents(eventsToAdd: Class[_ <: Event]*): JRecipe =
     copy(events = events ++ eventsToAdd)
 
   /**

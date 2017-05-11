@@ -62,7 +62,6 @@ public class JCompiledRecipeTest {
         JCompiledRecipe compileRecipe = recipe.compileRecipe();
         assertEquals(compileRecipe.getValidationErrors().size(), 0);
         String visualRecipe = compileRecipe.getRecipeVisualization();
-//        System.out.println(visualRecipe);
         assertTrue("Should contain actionOne", visualRecipe.contains("actionOne"));
         assertTrue("Should contain actionTwo", visualRecipe.contains("actionTwo"));
         assertTrue("Should contain EventOne", visualRecipe.contains("EventOne"));
@@ -76,7 +75,6 @@ public class JCompiledRecipeTest {
         JCompiledRecipe compileRecipe = recipe.compileRecipe();
         assertEquals(compileRecipe.getValidationErrors().size(), 0);
         String petrinetVisual = compileRecipe.getPetriNetVisualization();
-//        System.out.println(petrinetVisual);
         assertTrue("Should contain actionOne", petrinetVisual.contains("actionOne"));
         assertTrue("Should contain actionTwo", petrinetVisual.contains("actionTwo"));
         assertTrue("Should contain EventOne", petrinetVisual.contains("EventOne"));
@@ -90,7 +88,6 @@ public class JCompiledRecipeTest {
         JCompiledRecipe compileRecipe = recipe.compileRecipe();
         assertEquals(compileRecipe.getValidationErrors().size(), 0);
         String visualRecipe = compileRecipe.getFilteredRecipeVisualization("InteractionOne");
-//        System.out.println(visualRecipe);
         assertTrue("Should not contain actionOne", !visualRecipe.contains("InteractionOne"));
         assertTrue("Should contain actionTwo", visualRecipe.contains("actionTwo"));
         assertTrue("Should not contain EventOne", !visualRecipe.contains("EventOne"));

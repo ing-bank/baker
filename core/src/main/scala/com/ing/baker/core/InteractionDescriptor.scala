@@ -1,5 +1,7 @@
 package com.ing.baker.core
 
+import com.ing.baker.api.Event
+
 /**
   * An interaction is some code that requires input (ingredients) and produces output (ingredients)
   */
@@ -27,12 +29,12 @@ abstract class InteractionDescriptor[T <: Interaction] {
   /**
     * A set of AND preconditions (events)
     */
-  def requiredEvents: Set[Class[_]]
+  def requiredEvents: Set[Class[_ <: Event]]
 
   /**
     * A set of OR preconditions (events)
     */
-  def requiredOneOfEvents: Set[Class[_]]
+  def requiredOneOfEvents: Set[Class[_ <: Event]]
 
   /**
     * A map of predefined parameter values, not provided from the recipe.
