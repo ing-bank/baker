@@ -1,34 +1,37 @@
 package com.ing.baker.actor
 
-import  akka.actor.{ActorLogging, ActorRef, Props, Terminated}
+import akka.actor.{ActorLogging, Props, Terminated}
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.persistence.{PersistentActor, RecoveryCompleted}
+import com.ing.baker.actor.ActorIndex._
 import io.kagera.akka.actor.PetriNetInstanceProtocol.{AlreadyInitialized, Initialize, Uninitialized}
 
 import scala.collection.mutable
-import ActorIndex._
 
 object ActorIndex {
 
   def props(petriNetActorProps: Props) = Props(new ActorIndex(petriNetActorProps))
 
-  case class ActorCreated(processId: String) extends InternalBakerEvent
+  case class ActorMetadata(id: String, createdDateTime: Long)
 
-  case class ActorTerminated(processId: String) extends InternalBakerEvent
+  // when an actor is created
+  case class ActorCreated(processId: String, createdDateTime: Long) extends InternalBakerEvent
 
-  case object GetActorIndex extends InternalBakerMessage
+  // when an actor is requested again after passivation
+  case class ActorActivated(processId: String) extends InternalBakerEvent
+
+  // when an actor is passivated
+  case class ActorPassivated(processId: String) extends InternalBakerEvent
 
 }
 
 class ActorIndex(petriNetActorProps: Props) extends PersistentActor with ActorLogging {
 
-  private val runningActors: mutable.Map[String, ActorRef] = mutable.Map[String, ActorRef]()
-  private val passivated: mutable.Set[String] = mutable.Set.empty
+  private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
 
   private def createActor(id: String) = {
     val actorRef = context.actorOf(petriNetActorProps, name = id)
     context.watch(actorRef)
-    runningActors.put(id, actorRef)
     actorRef
   }
 
@@ -38,19 +41,18 @@ class ActorIndex(petriNetActorProps: Props) extends PersistentActor with ActorLo
 
     case Terminated(actorRef) =>
       val id = actorRef.path.name
-      persist(ActorTerminated(id)) { _ =>
-        passivated += id
-        runningActors -= id
-      }
+      persist(ActorPassivated(id)) { _ => }
 
     case BakerActorMessage(processId, cmd@Initialize(_, _)) =>
 
       val id = processId.toString
 
-      runningActors.get(id) match {
-        case None if !passivated.contains(id) =>
-          persist(ActorCreated(id)) { _ =>
+      context.child(id) match {
+        case None if !index.contains(id) =>
+          val created = System.currentTimeMillis()
+          persist(ActorCreated(id, created)) { _ =>
             createActor(id).forward(cmd)
+            index += id -> ActorMetadata(id, created)
           }
         case _ => sender() ! AlreadyInitialized
       }
@@ -59,33 +61,32 @@ class ActorIndex(petriNetActorProps: Props) extends PersistentActor with ActorLo
 
       val id = processId.toString
 
-      runningActors.get(id) match {
+      context.child(id) match {
         case Some(actorRef) => actorRef.forward(cmd)
-        case _ if passivated.contains(id) =>
-          persist(ActorCreated(id)) { _ =>
+        case _ if index.contains(id) =>
+          persist(ActorActivated(id)) { _ =>
             createActor(id).forward(cmd)
-            passivated -= id
           }
         case _ => sender() ! Uninitialized(processId.toString)
       }
-
-    case GetActorIndex => (runningActors.keys ++ passivated).toSet
 
     case cmd =>
       log.error(s"Unrecognized command $cmd")
   }
 
-  private val recoveringIds: mutable.Set[String] = mutable.Set.empty
+  // This Set holds all the actor ids to be created again after the recovery completed
+  private val actorsToBeCreated: mutable.Set[String] = mutable.Set.empty
 
   override def receiveRecover: Receive = {
-    case ActorCreated(processId) =>
-      recoveringIds += processId
-      passivated -= processId
-    case ActorTerminated(processId) =>
-      recoveringIds -= processId
-      passivated += processId
+    case ActorCreated(processId, created) =>
+      index += processId -> ActorMetadata(processId, created)
+      actorsToBeCreated += processId
+    case ActorPassivated(processId) =>
+      actorsToBeCreated -= processId
+    case ActorActivated(processId) =>
+      actorsToBeCreated += processId
     case RecoveryCompleted =>
-      (recoveringIds -- passivated).foreach(id => runningActors += id -> createActor(id))
+      actorsToBeCreated.foreach(id => createActor(id))
   }
 
   override def persistenceId: String = self.path.name

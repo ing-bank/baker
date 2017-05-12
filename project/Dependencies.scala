@@ -20,6 +20,7 @@ object Dependencies {
   val akkaClusterSharding =       "com.typesafe.akka"          %% "akka-cluster-sharding"              % akkaVersion
   val akkaSlf4j =                 "com.typesafe.akka"          %% "akka-slf4j"                         % akkaVersion
   val akkaTestKit =               "com.typesafe.akka"          %% "akka-testkit"                       % akkaVersion
+  val akkaDistributedData =       "com.typesafe.akka"          %% "akka-distributed-data-experimental" % akkaVersion
   val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.7"
   val levelDBJni =                "org.fusesource.leveldbjni"  %  "leveldbjni-all"                     % "1.8"
 
