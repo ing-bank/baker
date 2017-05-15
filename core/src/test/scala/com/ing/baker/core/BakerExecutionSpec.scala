@@ -520,15 +520,19 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.allProcessMetadata.map(_.id) shouldBe processIds.map(_.toString)
     }
 
-    "get all ProcessMetadata info for cluster baker setup" ignore {
+    "get all ProcessMetadata info for cluster baker setup" in {
       val recipeName = "GetAllProcessMetadata-Cluster"
       val system = ActorSystem(recipeName, levelDbConfig(recipeName, 3003))
 
-      val baker = setupBakerWithRecipe(recipeName, system)
-      val processIds = Set(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID())
-      processIds foreach baker.bake
+      try {
+        val baker = setupBakerWithRecipe(recipeName, system)
+        val processIds = Set(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID())
+        processIds foreach baker.bake
 
-      baker.allProcessMetadata.map(_.id) shouldBe processIds.map(_.toString)
+        baker.allProcessMetadata.map(_.id) shouldBe processIds.map(_.toString)
+      } finally {
+        TestKit.shutdownActorSystem(system)
+      }
     }
   }
 }

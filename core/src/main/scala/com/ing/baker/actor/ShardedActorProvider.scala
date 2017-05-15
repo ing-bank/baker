@@ -2,16 +2,21 @@ package com.ing.baker.actor
 
 import java.util.UUID
 
-import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 import akka.cluster.Cluster
 import akka.cluster.ddata.Replicator._
 import akka.cluster.ddata.{DistributedData, GSet, GSetKey}
 import akka.cluster.sharding.ShardRegion._
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
+import akka.pattern.ask
+import akka.util.Timeout
 import com.ing.baker.actor.ShardedActorProvider._
 import com.ing.baker.api.ProcessMetadata
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
+
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationDouble
 
 object ShardedActorProvider {
 
@@ -64,15 +69,26 @@ class ClusterRecipeMetadata(override val recipeName: String)(implicit actorSyste
 
   private val replicator = DistributedData(actorSystem).replicator
   implicit val node = Cluster(actorSystem)
-  replicator ! Subscribe(DataKey, actorSystem.actorOf(Props.empty, "dummyactor")) // TODO make an actor here
+
+  private val senderActor = actorSystem.actorOf(Props.apply(new Actor with ActorLogging {
+    //noinspection TypeAnnotation
+    override def receive = {
+      case msg => log.debug("Ignoring message: {}", msg)
+    }
+  }))
+
+  replicator ! Subscribe(DataKey, senderActor)
 
   override def getAllProcessMetadata: Set[ProcessMetadata] = {
-    replicator ! Get(DataKey, ReadLocal)
-    Set()
+    implicit val askTimeout = Timeout(5 seconds)
+    import actorSystem.dispatcher
+
+    val resultFuture = replicator.ask(Get(DataKey, ReadLocal)).mapTo[GetSuccess[GSet[ProcessMetadata]]].map(_.get(DataKey).elements)
+    Await.result(resultFuture, 5 seconds)
   }
 
   override def addNewProcessMetadata(name: String, created: Long): Unit = {
-    replicator ! Update(DataKey, GSet.empty[ProcessMetadata], WriteLocal)(_ + ProcessMetadata(name, created))
+    replicator.tell(Update(DataKey, GSet.empty[ProcessMetadata], WriteLocal)(_ + ProcessMetadata(name, created)), senderActor)
   }
 
 }
