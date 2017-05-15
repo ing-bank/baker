@@ -36,16 +36,16 @@ class EventList(private val events: Seq[Any]) extends java.util.AbstractList[Any
   def getEventCount(clazz: Class[_]): Int = events.filter(e => clazz.isInstance(e)).size
 
   /**
-    * Returns a list of the event classes.
+    * Returns a list of the event classes that have fired
     *
     * @return A list of event classes.
     */
   def getEventClassList: java.util.List[Class[_]] = events.toList.map(_.getClass).asJava
 
   /**
-    * Returns a list of the event classes.
+    * Returns a list of simple names of all events that have fired.
     *
     * @return A list of event classes.
     */
-  def getEventNameList: java.util.List[String] = events.map(_.getClass.getName).asJava
+  def getEventNameList: java.util.List[String] = events.map(_.getClass.getSimpleName).asJava
 }

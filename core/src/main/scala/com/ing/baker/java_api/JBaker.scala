@@ -1,19 +1,16 @@
 package com.ing.baker.java_api
 
-import java.util
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
+import com.ing.baker.core._
+import com.ing.baker.java_api.JBaker._
 import com.typesafe.config.ConfigFactory
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.concurrent.Future
 import scala.concurrent.duration._
-import JBaker._
-import com.ing.baker.RecipeVisualizer
-import com.ing.baker.core._
 
 object JBaker {
   val defaultConfig =
@@ -154,11 +151,21 @@ class JBaker private (jRecipe: JRecipe,
     */
   def getCompiledRecipe(): JCompiledRecipe = jRecipe.compileRecipe
 
-  def getVisualState(processId: java.util.UUID, waitTimeoutMillis: Long): String = {
+  /**
+    * returns the visual state of the recipe in dot format
+    * @param processId
+    * @param waitTimeoutMillis
+    * @return
+    */
+  def getVisualState(processId: java.util.UUID, waitTimeoutMillis: Long): String =
     baker.getVisualState(processId)(waitTimeoutMillis milliseconds)
-  }
 
-  def getVisualState(processId: java.util.UUID): String = {
+  /**
+    * returns the visual state of the recipe in dot format with a default timeout of 20 seconds
+    * @param processId
+    * @return
+    */
+  def getVisualState(processId: java.util.UUID): String =
     getVisualState(processId, defaultTimeout)
-  }
+
 }
