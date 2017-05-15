@@ -12,6 +12,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
 import com.ing.baker.RecipeVisualizer
+import com.ing.baker.actor.Util.createPersistenceWarmupActor
 import com.ing.baker.actor._
 import com.ing.baker.compiler.{CompiledRecipe, RecipeCompiler, ValidationSettings, _}
 import com.ing.baker.scala_api.BakerResponse
@@ -64,7 +65,7 @@ class Baker(val recipe: Recipe,
   /**
     * We do this to force initialization of the journal (database) connection.
     */
-  com.ing.baker.actor.Util.createPersistenceWarmupActor()(actorSystem, journalInitializeTimeout)
+  createPersistenceWarmupActor()(actorSystem, journalInitializeTimeout)
 
   private val bakerActorProvider =
     actorSystem.settings.config.as[Option[String]]("baker.actor.provider") match {
@@ -115,9 +116,9 @@ class Baker(val recipe: Recipe,
         cluster.registerOnMemberRemoved {
           actorSystem.terminate()
         }
-        implicit val akkaTimeout = Timeout(timeout);
+        implicit val akkaTimeout = Timeout(timeout)
         Util.handOverShardsAndLeaveCluster(Seq(recipe.name))
-      case Success(cluster) =>
+      case Success(_) =>
         log.debug("ActorSystem not a member of cluster")
         actorSystem.terminate()
       case Failure(exception) =>
@@ -215,7 +216,7 @@ class Baker(val recipe: Recipe,
   def getVisualState(processId: java.util.UUID)(implicit timeout: FiniteDuration): String = {
     val events: Seq[Any] = this.events(processId)
     val classes: Seq[String] = events.map(x => x.getClass.getSimpleName)
-    RecipeVisualizer.generateDot(compiledRecipe.petriNet.innerGraph, x => true, classes)
+    RecipeVisualizer.generateDot(compiledRecipe.petriNet.innerGraph, _ => true, classes)
   }
 
 
@@ -244,9 +245,8 @@ class Baker(val recipe: Recipe,
       }
   }
 
-  def getAllProcessIds(): List[String] = {
-    val allProcessIdsFuture: Future[Seq[String]] =
-      PetriNetQuery.currentProcessIds(readJournal).runWith(Sink.seq[String])
-    Await.result(allProcessIdsFuture, 5 seconds).toList
+  def allProcessIds(): List[String] = {
+//    replicatorActor.ask("AllProcessIds")
+    List()
   }
 }

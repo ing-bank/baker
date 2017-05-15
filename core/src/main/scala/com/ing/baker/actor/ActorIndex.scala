@@ -1,6 +1,9 @@
 package com.ing.baker.actor
 
 import akka.actor.{ActorLogging, Props, Terminated}
+import akka.cluster.Cluster
+import akka.cluster.ddata.Replicator._
+import akka.cluster.ddata._
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.ing.baker.actor.ActorIndex._
@@ -23,13 +26,18 @@ object ActorIndex {
   // when an actor is passivated
   case class ActorPassivated(processId: String) extends InternalBakerEvent
 
+  private val DataKey = GSetKey.create[ActorMetadata]("allProcessIds")
 }
 
 class ActorIndex(petriNetActorProps: Props) extends PersistentActor with ActorLogging {
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
 
-  private def createActor(id: String) = {
+  private val replicator = DistributedData(context.system).replicator
+  implicit val node = Cluster(context.system)
+  replicator ! Subscribe(DataKey, self)
+
+  private def createChildPetriNetActor(id: String) = {
     val actorRef = context.actorOf(petriNetActorProps, name = id)
     context.watch(actorRef)
     actorRef
@@ -51,8 +59,10 @@ class ActorIndex(petriNetActorProps: Props) extends PersistentActor with ActorLo
         case None if !index.contains(id) =>
           val created = System.currentTimeMillis()
           persist(ActorCreated(id, created)) { _ =>
-            createActor(id).forward(cmd)
-            index += id -> ActorMetadata(id, created)
+            createChildPetriNetActor(id).forward(cmd)
+            val actorMetadata = ActorMetadata(id, created)
+            index += id -> actorMetadata
+            replicator ! Update(DataKey, GSet.empty[ActorMetadata], WriteLocal)(_ + actorMetadata)
           }
         case _ => sender() ! AlreadyInitialized
       }
@@ -65,7 +75,7 @@ class ActorIndex(petriNetActorProps: Props) extends PersistentActor with ActorLo
         case Some(actorRef) => actorRef.forward(cmd)
         case _ if index.contains(id) =>
           persist(ActorActivated(id)) { _ =>
-            createActor(id).forward(cmd)
+            createChildPetriNetActor(id).forward(cmd)
           }
         case _ => sender() ! Uninitialized(processId.toString)
       }
@@ -86,7 +96,7 @@ class ActorIndex(petriNetActorProps: Props) extends PersistentActor with ActorLo
     case ActorActivated(processId) =>
       actorsToBeCreated += processId
     case RecoveryCompleted =>
-      actorsToBeCreated.foreach(id => createActor(id))
+      actorsToBeCreated.foreach(id => createChildPetriNetActor(id))
   }
 
   override def persistenceId: String = self.path.name
