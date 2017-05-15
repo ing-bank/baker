@@ -3,7 +3,7 @@ package com.ing.baker.core
 import java.util.UUID
 
 import akka.NotUsed
-import akka.actor.ActorSystem
+import akka.actor.{ActorRef, ActorSystem}
 import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
@@ -44,7 +44,7 @@ class Baker(val recipe: Recipe,
             val validationSettings: ValidationSettings = ValidationSettings.defaultValidationSettings,
             implicit val actorSystem: ActorSystem) {
 
-  val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe, implementations, validationSettings,  new CompositeIngredientExtractor(actorSystem.settings.config))
+  val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe, implementations, validationSettings, new CompositeIngredientExtractor(actorSystem.settings.config))
 
   if (compiledRecipe.validationErrors.nonEmpty)
     throw new RecipeValidationException(compiledRecipe.validationErrors.mkString(", "))
@@ -67,12 +67,14 @@ class Baker(val recipe: Recipe,
     */
   createPersistenceWarmupActor()(actorSystem, journalInitializeTimeout)
 
-  private val bakerActorProvider =
+  private val (bakerActorProvider, globalMetadataActor) =
     actorSystem.settings.config.as[Option[String]]("baker.actor.provider") match {
-      case None | Some("local") => new LocalBakerActorProvider
-      case Some("cluster-sharded") => new ShardedActorProvider(config)
+      case None | Some("local") => (new LocalBakerActorProvider(), createGlobalMetadataActor())
+      case Some("cluster-sharded") => (new ShardedActorProvider(config), createGlobalMetadataActor())
       case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
     }
+
+  private def createGlobalMetadataActor(): ActorRef = ???
 
   private val configuredEncryption: Encryption = {
     val encryptionEnabled = config.getAs[Boolean]("baker.encryption.enabled").getOrElse(false)
@@ -84,14 +86,15 @@ class Baker(val recipe: Recipe,
   }
 
   private val actorIdleTimeout = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout")
-
-  private val processIdManagerActor = bakerActorProvider.createActorIndex(
-    compiledRecipe.name,
+  private val petriNetInstanceActorProps =
     PetriNetInstance.props[ProcessState](compiledRecipe.petriNet,
       PetriNetInstance.Settings(
         evaluationStrategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadpool"),
         serializer = new AkkaObjectSerializer(actorSystem, configuredEncryption),
-        idleTTL = actorIdleTimeout )))
+        idleTTL = actorIdleTimeout))
+
+  private val processIdManagerActor = bakerActorProvider.createActorIndex(
+    compiledRecipe.name, petriNetInstanceActorProps, globalMetadataActor)
 
   private val petriNetApi = new PetriNetInstanceApi[ProcessState](compiledRecipe.petriNet, processIdManagerActor)
 
@@ -147,9 +150,9 @@ class Baker(val recipe: Recipe,
     val initializeFuture = (processIdManagerActor ? BakerActorMessage(processId, msg)).mapTo[Response]
 
     val eventualState = initializeFuture.map {
-      case msg: Initialized   => msg.state.asInstanceOf[ProcessState]
+      case msg: Initialized => msg.state.asInstanceOf[ProcessState]
       case AlreadyInitialized => throw new IllegalArgumentException(s"Processs with $processId already exists.")
-      case msg @ _            => throw new BakerException(s"Unexpected message: $msg")
+      case msg@_ => throw new BakerException(s"Unexpected message: $msg")
     }
 
     eventualState
@@ -246,7 +249,7 @@ class Baker(val recipe: Recipe,
   }
 
   def allProcessIds(): List[String] = {
-//    replicatorActor.ask("AllProcessIds")
+    //    replicatorActor.ask("AllProcessIds")
     List()
   }
 }

@@ -4,6 +4,6 @@ import akka.actor.{ActorRef, ActorSystem, Props}
 
 trait BakerActorProvider extends {
 
-  def createActorIndex(recipeName: String, petriNetActorProps: Props)(implicit actorSystem: ActorSystem): ActorRef
+  def createActorIndex(recipeName: String, petriNetActorProps: Props, globalMetadataActor: ActorRef)(implicit actorSystem: ActorSystem): ActorRef
 
 }

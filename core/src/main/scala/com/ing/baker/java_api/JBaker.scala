@@ -4,8 +4,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
-import com.ing.baker.core._
-import com.ing.baker.java_api.JBaker._
+import com.ing.baker.core.{Baker, Interaction, InteractionDescriptor}
 import com.typesafe.config.{Config, ConfigFactory}
 
 import scala.collection.JavaConverters._
@@ -57,7 +56,7 @@ class JBaker private (jRecipe: JRecipe,
            implementations: java.util.List[Interaction],
            actorSystem: ActorSystem) =
     this(jRecipe,
-         mapInteractionToImplementation(jRecipe.getInteractions, implementations),
+         JBaker.mapInteractionToImplementation(jRecipe.getInteractions, implementations),
          actorSystem)
 
   def this(jRecipe: JRecipe, implementations: java.util.List[Interaction]) =
@@ -151,10 +150,20 @@ class JBaker private (jRecipe: JRecipe,
     */
   def getCompiledRecipe: JCompiledRecipe = jRecipe.compileRecipe
 
+  /**
+    * returns the visual state of the recipe in dot format
+    * @param processId
+    * @param waitTimeoutMillis
+    * @return
+    */
   def getVisualState(processId: java.util.UUID, waitTimeoutMillis: Long): String =
     baker.getVisualState(processId)(waitTimeoutMillis milliseconds)
 
-
+  /**
+    * returns the visual state of the recipe in dot format with a default timeout of 20 seconds
+    * @param processId
+    * @return
+    */
   def getVisualState(processId: java.util.UUID): String =
     getVisualState(processId, defaultTimeout)
 

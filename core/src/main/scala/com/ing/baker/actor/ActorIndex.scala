@@ -1,6 +1,6 @@
 package com.ing.baker.actor
 
-import akka.actor.{ActorLogging, Props, Terminated}
+import akka.actor.{ActorLogging, ActorRef, Props, Terminated}
 import akka.cluster.Cluster
 import akka.cluster.ddata.Replicator._
 import akka.cluster.ddata._
@@ -13,7 +13,7 @@ import scala.collection.mutable
 
 object ActorIndex {
 
-  def props(petriNetActorProps: Props) = Props(new ActorIndex(petriNetActorProps))
+  def props(petriNetActorProps: Props, globalMetadataActor: ActorRef) = Props(new ActorIndex(petriNetActorProps))
 
   case class ActorMetadata(id: String, createdDateTime: Long)
 

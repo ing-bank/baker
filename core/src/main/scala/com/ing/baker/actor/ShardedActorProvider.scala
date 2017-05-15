@@ -36,11 +36,11 @@ class ShardedActorProvider(config: Config) extends BakerActorProvider {
 
   private val nrOfShards = config.as[Int]("baker.actor.cluster.nr-of-shards")
 
-  override def createActorIndex(recipeName: String, petriNetActorProps: Props)(
+  override def createActorIndex(recipeName: String, petriNetActorProps: Props, globalMetadataActor: ActorRef)(
     implicit actorSystem: ActorSystem): ActorRef = {
     ClusterSharding(actorSystem).start(
       typeName = recipeName,
-      entityProps = ActorIndex.props(petriNetActorProps),
+      entityProps = ActorIndex.props(petriNetActorProps, globalMetadataActor),
       settings = ClusterShardingSettings.create(actorSystem),
       extractEntityId = entityIdExtractor(recipeName, nrOfShards),
       extractShardId = shardIdExtractor(nrOfShards)
