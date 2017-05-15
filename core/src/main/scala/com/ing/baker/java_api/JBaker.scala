@@ -4,6 +4,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
+import com.ing.baker.api.ProcessMetadata
 import com.ing.baker.core.{Baker, Interaction, InteractionDescriptor}
 import com.typesafe.config.{Config, ConfigFactory}
 
@@ -167,6 +168,6 @@ class JBaker private (jRecipe: JRecipe,
   def getVisualState(processId: java.util.UUID): String =
     getVisualState(processId, defaultTimeout)
 
-  def getAllProcessIds: java.util.List[String] =
-    baker.allProcessIds().asJava
+  def getAllProcessMetadata: java.util.Set[ProcessMetadata] =
+    baker.allProcessMetadata.asJava
 }

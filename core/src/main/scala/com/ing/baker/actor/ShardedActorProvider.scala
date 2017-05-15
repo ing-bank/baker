@@ -3,9 +3,13 @@ package com.ing.baker.actor
 import java.util.UUID
 
 import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.cluster.Cluster
+import akka.cluster.ddata.Replicator._
+import akka.cluster.ddata.{DistributedData, GSet, GSetKey}
 import akka.cluster.sharding.ShardRegion._
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
 import com.ing.baker.actor.ShardedActorProvider._
+import com.ing.baker.api.ProcessMetadata
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 
@@ -36,14 +40,39 @@ class ShardedActorProvider(config: Config) extends BakerActorProvider {
 
   private val nrOfShards = config.as[Int]("baker.actor.cluster.nr-of-shards")
 
-  override def createActorIndex(recipeName: String, petriNetActorProps: Props, globalMetadataActor: ActorRef)(
-    implicit actorSystem: ActorSystem): ActorRef = {
-    ClusterSharding(actorSystem).start(
+  override def createRecipeActors(recipeName: String, petriNetActorProps: Props)(
+    implicit actorSystem: ActorSystem): (ActorRef, RecipeMetadata) = {
+    val recipeMetadata = new ClusterRecipeMetadata(recipeName)
+    val recipeManagerActor = ClusterSharding(actorSystem).start(
       typeName = recipeName,
-      entityProps = ActorIndex.props(petriNetActorProps, globalMetadataActor),
+      entityProps = ActorIndex.props(petriNetActorProps, recipeMetadata),
       settings = ClusterShardingSettings.create(actorSystem),
       extractEntityId = entityIdExtractor(recipeName, nrOfShards),
       extractShardId = shardIdExtractor(nrOfShards)
     )
+    (recipeManagerActor, recipeMetadata)
   }
+}
+
+object ClusterRecipeMetadata {
+  private val DataKey = GSetKey.create[ProcessMetadata]("allProcessIds")
+}
+
+class ClusterRecipeMetadata(override val recipeName: String)(implicit actorSystem: ActorSystem) extends RecipeMetadata {
+
+  import ClusterRecipeMetadata._
+
+  private val replicator = DistributedData(actorSystem).replicator
+  implicit val node = Cluster(actorSystem)
+  replicator ! Subscribe(DataKey, actorSystem.actorOf(Props.empty, "dummyactor")) // TODO make an actor here
+
+  override def getAllProcessMetadata: Set[ProcessMetadata] = {
+    replicator ! Get(DataKey, ReadLocal)
+    Set()
+  }
+
+  override def addNewProcessMetadata(name: String, created: Long): Unit = {
+    replicator ! Update(DataKey, GSet.empty[ProcessMetadata], WriteLocal)(_ + ProcessMetadata(name, created))
+  }
+
 }

@@ -1,9 +1,6 @@
 package com.ing.baker.actor
 
-import akka.actor.{ActorLogging, ActorRef, Props, Terminated}
-import akka.cluster.Cluster
-import akka.cluster.ddata.Replicator._
-import akka.cluster.ddata._
+import akka.actor.{ActorLogging, Props, Terminated}
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.ing.baker.actor.ActorIndex._
@@ -13,7 +10,7 @@ import scala.collection.mutable
 
 object ActorIndex {
 
-  def props(petriNetActorProps: Props, globalMetadataActor: ActorRef) = Props(new ActorIndex(petriNetActorProps))
+  def props(petriNetActorProps: Props, recipeMetadata: RecipeMetadata) = Props(new ActorIndex(petriNetActorProps, recipeMetadata))
 
   case class ActorMetadata(id: String, createdDateTime: Long)
 
@@ -26,16 +23,11 @@ object ActorIndex {
   // when an actor is passivated
   case class ActorPassivated(processId: String) extends InternalBakerEvent
 
-  private val DataKey = GSetKey.create[ActorMetadata]("allProcessIds")
 }
 
-class ActorIndex(petriNetActorProps: Props) extends PersistentActor with ActorLogging {
+class ActorIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata) extends PersistentActor with ActorLogging {
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
-
-  private val replicator = DistributedData(context.system).replicator
-  implicit val node = Cluster(context.system)
-  replicator ! Subscribe(DataKey, self)
 
   private def createChildPetriNetActor(id: String) = {
     val actorRef = context.actorOf(petriNetActorProps, name = id)
@@ -62,7 +54,7 @@ class ActorIndex(petriNetActorProps: Props) extends PersistentActor with ActorLo
             createChildPetriNetActor(id).forward(cmd)
             val actorMetadata = ActorMetadata(id, created)
             index += id -> actorMetadata
-            replicator ! Update(DataKey, GSet.empty[ActorMetadata], WriteLocal)(_ + actorMetadata)
+            recipeMetadata.addNewProcessMetadata(id, created)
           }
         case _ => sender() ! AlreadyInitialized
       }
