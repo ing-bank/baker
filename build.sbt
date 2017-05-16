@@ -22,6 +22,42 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     )
   )
 
+val allLibraries =
+  compileDeps(
+    kagera,
+    kageraAkka,
+    kageraVisualization,
+    akkaPersistence,
+    akkaActor,
+    akkaCluster,
+    akkaClusterSharding,
+    scalaReflect,
+    javaxInject,
+    paranamer,
+    typeSafeConfig,
+    ficusConfig,
+    akkaInmemoryJournal,
+    guava,
+    chill,
+    kryoSerializers,
+    jodaTime,
+    jodaConvert,
+    scalaXml,
+    slf4jApi
+  ) ++
+    testDeps(
+      akkaSlf4j,
+      logback,
+      mockito,
+      scalaTest,
+      junit,
+      levelDB,
+      levelDBJni
+    ) ++
+    providedDeps(
+      findbugs
+    )
+
 lazy val noPublishSettings = Seq(
   publish := (),
   publishLocal := (),
@@ -30,49 +66,30 @@ lazy val noPublishSettings = Seq(
 
 lazy val defaultModuleSettings = commonSettings ++ Revolver.settings ++ SonatypePublish.settings
 
-lazy val baker = project.in(file("core"))
+lazy val runtime = project.in(file("runtime"))
   .settings(defaultModuleSettings: _*)
   .settings(
-    moduleName := "baker",
-    libraryDependencies ++=
-      compileDeps(
-        kagera,
-        kageraAkka,
-        kageraVisualization,
-        akkaPersistence,
-        akkaActor,
-        akkaCluster,
-        akkaClusterSharding,
-        scalaReflect,
-        javaxInject,
-        paranamer,
-        typeSafeConfig,
-        ficusConfig,
-        akkaInmemoryJournal,
-        guava,
-        chill,
-        kryoSerializers,
-        jodaTime,
-        jodaConvert,
-        scalaXml,
-        slf4jApi
-      ) ++
-      testDeps(
-        akkaSlf4j,
-        logback,
-        mockito,
-        scalaTest,
-        junit,
-        levelDB,
-        levelDBJni
-      ) ++
-      providedDeps(
-        findbugs
-      ))
+    moduleName := "runtime",
+    libraryDependencies ++= allLibraries
+  )
+
+lazy val compiler = project.in(file("compiler"))
+  .settings(defaultModuleSettings: _*)
+  .settings(
+    moduleName := "compiler",
+    libraryDependencies ++= allLibraries
+  )
+  .dependsOn(recipedsl, runtime)
+
+lazy val recipedsl = project.in(file("recipedsl"))
+  .settings(defaultModuleSettings: _*)
+  .settings(
+    moduleName := "recipedsl",
+    libraryDependencies ++= allLibraries
+  )
 
 lazy val root = project
   .in(file("."))
-  .aggregate(baker)
-  .dependsOn(baker)
+  .aggregate(runtime, compiler, recipedsl)
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
