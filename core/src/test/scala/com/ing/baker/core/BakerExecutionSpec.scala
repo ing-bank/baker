@@ -526,6 +526,9 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       try {
         val baker = setupBakerWithRecipe(recipeName, system)
+
+        baker.allProcessMetadata shouldBe Set.empty[ProcessState]
+
         val processIds = Set(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID())
         processIds foreach baker.bake
 

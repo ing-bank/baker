@@ -67,6 +67,8 @@ class ClusterRecipeMetadata(override val recipeName: String)(implicit actorSyste
 
   import ClusterRecipeMetadata._
 
+  implicit val timeout = Timeout(5 seconds)
+
   private val replicator = DistributedData(actorSystem).replicator
   implicit val node = Cluster(actorSystem)
 
@@ -80,15 +82,19 @@ class ClusterRecipeMetadata(override val recipeName: String)(implicit actorSyste
   replicator ! Subscribe(DataKey, senderActor)
 
   override def getAllProcessMetadata: Set[ProcessMetadata] = {
-    implicit val askTimeout = Timeout(5 seconds)
     import actorSystem.dispatcher
 
-    val resultFuture = replicator.ask(Get(DataKey, ReadLocal)).mapTo[GetSuccess[GSet[ProcessMetadata]]].map(_.get(DataKey).elements)
+    val resultFuture = replicator.ask(Get(DataKey, ReadMajority(timeout.duration))).mapTo[GetResponse[GSet[ProcessMetadata]]].map {
+      case success: GetSuccess[_] => success.get(DataKey).elements
+      case _: NotFound[_]         => Set.empty[ProcessMetadata]
+      case msg                    => throw new IllegalStateException(s"Unexpected response: $msg")
+    }
+
     Await.result(resultFuture, 5 seconds)
   }
 
   override def addNewProcessMetadata(name: String, created: Long): Unit = {
-    replicator.tell(Update(DataKey, GSet.empty[ProcessMetadata], WriteLocal)(_ + ProcessMetadata(name, created)), senderActor)
+    replicator.tell(Update(DataKey, GSet.empty[ProcessMetadata], WriteMajority(timeout.duration))(_ + ProcessMetadata(name, created)), senderActor)
   }
 
 }
