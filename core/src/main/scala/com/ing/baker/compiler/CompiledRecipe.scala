@@ -2,6 +2,7 @@ package com.ing.baker.compiler
 
 import com.ing.baker.compiler.transitions.InteractionTransition
 import com.ing.baker.RecipeVisualizer._
+import com.ing.baker.api.Event
 import com.ing.baker.core.ProcessState
 import io.kagera.api.colored._
 import io.kagera.dot.{GraphDot, PetriNetDot}
@@ -12,7 +13,7 @@ import io.kagera.dot.{GraphDot, PetriNetDot}
 case class CompiledRecipe(name: String,
                           petriNet: ExecutablePetriNet[ProcessState],
                           initialMarking: Marking,
-                          sensoryEvents: Set[Class[_]],
+                          sensoryEvents: Set[Class[_<: Event]],
                           ingredientExtractor: IngredientExtractor,
                           validationErrors: Seq[String] = Seq.empty) {
 

@@ -1,12 +1,13 @@
 package com.ing.baker.core
 
+import com.ing.baker.api.Event
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.core.EventRecovery._
 import com.ing.baker.java_api.{FiresEvent, ProcessId, ProvidesIngredient, RequiresIngredient}
 import com.ing.baker.scala_api.{InteractionDescriptorFactory, SRecipe}
 import org.scalatest.{Matchers, WordSpecLike}
 
-case class TestEvent(testIngredient: String)
+case class TestEvent(testIngredient: String) extends Event
 
 trait TestInteractionOne extends Interaction {
   @ProvidesIngredient("testInteractionOneIngredient")
