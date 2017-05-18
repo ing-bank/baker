@@ -1,19 +1,15 @@
 package com.ing.baker.recipe.common
 
-import io.kagera.api.colored.ExceptionStrategy._
-import io.kagera.api.colored._
-
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 object InteractionFailureStrategy {
 
-  def retryWithIncrementalBackoff(initialTimeout: Duration,
-                                  backoffFactor: Double = 2.0,
-                                  maximumRetries: Int = 50): TransitionExceptionHandler = {
-    case (e: Error, _) => BlockTransition
-    case (e, n) if n < maximumRetries =>
-      RetryWithDelay((initialTimeout * (Math.pow(backoffFactor, (n - 1)))).toMillis)
-    case (e, n) => BlockTransition
+  case class RetryWithIncrementalBackoff(initialTimeout: Duration,
+                                         backoffFactor: Double = 2.0,
+                                         maximumRetries: Int = 50)
+      extends InteractionFailureStrategy {
+    require(backoffFactor >= 1.0, "backoff factor must be greater or equal to 1.0")
+    require(maximumRetries >= 1, "maximum retries must be greater or equal to 1")
   }
 
   object RetryWithIncrementalBackoff {
@@ -29,24 +25,8 @@ object InteractionFailureStrategy {
     }
   }
 
-  case class RetryWithIncrementalBackoff(initialTimeout: Duration,
-                                         backoffFactor: Double = 2.0,
-                                         maximumRetries: Int = 50)
-      extends InteractionFailureStrategy {
-    require(backoffFactor >= 1.0, "backoff factor must be greater or equal to 1.0")
-    require(maximumRetries >= 1, "maximum retries must be greater or equal to 1")
-  }
 
   case object BlockInteraction extends InteractionFailureStrategy
-
-  def asTransitionExceptionHandler(s: InteractionFailureStrategy): TransitionExceptionHandler =
-    s match {
-      case RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries) =>
-        retryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries)
-      case BlockInteraction =>
-        (e, n) =>
-          BlockTransition
-    }
 }
 
 sealed trait InteractionFailureStrategy

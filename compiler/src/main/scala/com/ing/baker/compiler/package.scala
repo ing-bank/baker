@@ -11,6 +11,9 @@ import com.ing.baker.runtime.recipe.ingredientExtractors.IngredientExtractor
 import com.ing.baker.runtime.recipe.transitions.InteractionTransition
 import io.kagera.api.colored.Transition
 
+import scala.concurrent.duration.Duration
+import scala.reflect.ClassTag
+
 package object compiler {
 
   implicit class BooleanOps(bool: Boolean) {
@@ -93,6 +96,22 @@ package object compiler {
         eventClasses.map(transformEventType) //performing additional rewriting on the output events if applicable.
       }
 
+      implicit def transformFailureStrategy(recipeStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): com.ing.baker.runtime.recipe.duplicates.InteractionFailureStrategy = {
+        recipeStrategy match {
+          case com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout: Duration, backoffFactor: Double, maximumRetries: Int) => com.ing.baker.runtime.recipe.duplicates.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries)
+          case com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction => com.ing.baker.runtime.recipe.duplicates.InteractionFailureStrategy.BlockInteraction
+          case _ => com.ing.baker.runtime.recipe.duplicates.InteractionFailureStrategy.BlockInteraction
+        }
+      }
+
+      def transformEventOutputTransformers[A: ClassTag, B: ClassTag](recipeEventOutputTransformer: com.ing.baker.recipe.common.EventOutputTransformer[A, B]) : com.ing.baker.runtime.recipe.duplicates.EventOutputTransformer[A, B] = {
+         com.ing.baker.runtime.recipe.duplicates.EventOutputTransformer[A, B](recipeEventOutputTransformer.fn)
+      }
+
+      implicit def transformEventOutputTransformersMap(eventOutputTransformersMap : Map[Class[_], com.ing.baker.recipe.common.EventOutputTransformer[_, _]]) : Map[Class[_], com.ing.baker.runtime.recipe.duplicates.EventOutputTransformer[_, _]] = {
+        eventOutputTransformersMap.map(e => (e._1, transformEventOutputTransformers(e._2))).toMap
+      }
+
       InteractionTransition[Any](
         method = method,
         providesIngredient = providesIngredient,
@@ -107,12 +126,8 @@ package object compiler {
 
         predefinedParameters = interaction.predefinedIngredients,
         maximumInteractionCount = interaction.maximumInteractionCount,
-        //TODO create a tranformation from the recipeDsl to the CompiledRecipe
-        //        failureStrategy = interaction.failureStrategy.getOrElse(defaultFailureStrategy),
-        failureStrategy = com.ing.baker.runtime.recipe.duplicates.InteractionFailureStrategy.BlockInteraction,
-        //TODO translate from the recipeDsl eventOutputTransformer to the runtime eventOutputTransformer
-        //        eventOutputTransformers = interaction.eventOutputTransformers,
-        eventOutputTransformers = Map.empty,
+        failureStrategy = interaction.failureStrategy.getOrElse[com.ing.baker.recipe.common.InteractionFailureStrategy](defaultFailureStrategy),
+        eventOutputTransformers = interaction.eventOutputTransformers,
         actionType = if (interaction.actionType == InteractionAction) ActionType.InteractionAction else ActionType.SieveAction,
         ingredientExtractor = ingredientExtractor)
     }
