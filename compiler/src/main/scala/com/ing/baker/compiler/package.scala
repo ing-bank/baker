@@ -4,11 +4,12 @@ import java.lang.reflect.Method
 
 import com.ing.baker.compiler.ReflectionHelpers._
 import com.ing.baker.recipe.common.InteractionDescriptor
-import com.ing.baker.recipe.javadsl.{FiresEvent, ProvidesIngredient}
+import com.ing.baker.recipe.javadsl
 import com.ing.baker.runtime.recipe.duplicates.ActionType.{InteractionAction, SieveAction}
 import com.ing.baker.runtime.recipe.duplicates.{ActionType, EventOutputTransformer}
 import com.ing.baker.runtime.recipe.ingredientExtractors.IngredientExtractor
-import com.ing.baker.runtime.recipe.transitions.InteractionTransition
+import com.ing.baker.runtime.recipe.transitions.ProvidesType.{ProvidesEvent, ProvidesIngredient, ProvidesNothing}
+import com.ing.baker.runtime.recipe.transitions._
 import io.kagera.api.colored.Transition
 
 import scala.concurrent.duration.Duration
@@ -45,14 +46,14 @@ package object compiler {
     }
 
     def interactionTransitionOf(
-                                 interaction: InteractionDescriptor[_],
+                                 interactionDescriptor: InteractionDescriptor[_],
                                  implementationProvider: () => AnyRef,
                                  defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy,
                                  ingredientExtractor: IngredientExtractor): InteractionTransition[Any] = {
 
-      val interactionClass = interaction.interactionClass.asInstanceOf[Class[Any]]
+      val interactionClass = interactionDescriptor.interactionClass.asInstanceOf[Class[Any]]
 
-      val interactionMethodName = interaction.methodName
+      val interactionMethodName = interactionDescriptor.methodName
 
       val method: Method = interactionClass.getDeclaredMethods
         .find(_.getName == interactionMethodName)
@@ -61,39 +62,39 @@ package object compiler {
 
       val inputFields: Seq[(String, Class[_])] = method.getParameterNames.toSeq
         //Replace ingredient tags with overridden tags
-        .map(ingredientName => interaction.overriddenIngredientNames.getOrElse(ingredientName, ingredientName))
+        .map(ingredientName => interactionDescriptor.overriddenIngredientNames.getOrElse(ingredientName, ingredientName))
         //Add the correct typing
         .zip(method.getParameterTypes.toSeq)
 
-      // checks whether this interaction provides an ingredient
-      val providesIngredient: Boolean = method.isAnnotationPresent(classOf[ProvidesIngredient])
-
-      // checks whether this interaction provides an event
-      val providesEvent: Boolean = method.isAnnotationPresent(classOf[FiresEvent])
 
 
-      val interactionOutputName: String =
-        if (providesIngredient) {
-          if (interaction.overriddenOutputIngredientName != null && interaction.overriddenOutputIngredientName != "") {
-            interaction.overriddenOutputIngredientName
-          } else {
-            method.getOutputName
-          }
+      val returnType = if (method.isAsynchronous) method.getFirstTypeParameter else method.getReturnType
+
+      val providesType: ProvidesType =
+        if(method.isAnnotationPresent(classOf[javadsl.ProvidesIngredient]))
+        {
+          val interactionOutputName: String =
+            if (interactionDescriptor.overriddenOutputIngredientName != null && interactionDescriptor.overriddenOutputIngredientName != "") {
+              interactionDescriptor.overriddenOutputIngredientName
+            } else {
+              method.getOutputName
+            }
+          ProvidesIngredient(interactionOutputName -> returnType, returnType)
         }
-        else ""
+        else if(method.isAnnotationPresent(classOf[javadsl.FiresEvent])) {
+          val outputType = transformEventType(returnType)
+          val outputEventClasses: Seq[Class[_]] = {
+            val eventClasses = method.getAnnotation(classOf[javadsl.FiresEvent]).oneOf().toSeq
+            eventClasses.map(transformEventType) //performing additional rewriting on the output events if applicable.
+          }
+          ProvidesEvent(outputFieldNames = outputType.getDeclaredFields.map(_.getName).toSeq, outputType = outputType, outputEventClasses = outputEventClasses)
+        }
+        else ProvidesNothing
 
       def transformEventType(clazz: Class[_]): Class[_] =
-        interaction.eventOutputTransformers
+        interactionDescriptor.eventOutputTransformers
           .get(clazz)
           .fold(clazz.asInstanceOf[Class[Any]])(_.targetType.asInstanceOf[Class[Any]])
-
-
-      val outputEventClasses: Seq[Class[_]] = {
-        val eventClasses =
-          if (providesEvent) method.getAnnotation(classOf[FiresEvent]).oneOf().toSeq else Nil
-
-        eventClasses.map(transformEventType) //performing additional rewriting on the output events if applicable.
-      }
 
       implicit def transformFailureStrategy(recipeStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): com.ing.baker.runtime.recipe.duplicates.InteractionFailureStrategy = {
         recipeStrategy match {
@@ -118,21 +119,19 @@ package object compiler {
 
       InteractionTransition[Any](
         method = method,
-        providesIngredient = providesIngredient,
-        providesEvent = providesEvent,
+        providesType = providesType,
 
         inputFields = inputFields,
         interactionClass = interactionClass,
         interactionProvider = implementationProvider,
-        interactionName = interaction.name,
-        outputEventClasses = outputEventClasses,
-        interactionOutputName = interactionOutputName,
+        interactionName = interactionDescriptor.name,
+//        interactionOutputName = interactionOutputName,
 
-        predefinedParameters = interaction.predefinedIngredients,
-        maximumInteractionCount = interaction.maximumInteractionCount,
-        failureStrategy = interaction.failureStrategy.getOrElse[com.ing.baker.recipe.common.InteractionFailureStrategy](defaultFailureStrategy),
-        eventOutputTransformers = interaction.eventOutputTransformers,
-        actionType = interaction.actionType,
+        predefinedParameters = interactionDescriptor.predefinedIngredients,
+        maximumInteractionCount = interactionDescriptor.maximumInteractionCount,
+        failureStrategy = interactionDescriptor.failureStrategy.getOrElse[com.ing.baker.recipe.common.InteractionFailureStrategy](defaultFailureStrategy),
+        eventOutputTransformers = interactionDescriptor.eventOutputTransformers,
+        actionType = interactionDescriptor.actionType,
         ingredientExtractor = ingredientExtractor)
     }
   }

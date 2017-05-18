@@ -8,6 +8,7 @@ import com.ing.baker.runtime.recipe._
 import com.ing.baker.runtime.recipe.duplicates.ReflectionHelpers._
 import com.ing.baker.runtime.recipe.duplicates.{ActionType, EventOutputTransformer, InteractionFailureStrategy}
 import com.ing.baker.runtime.recipe.ingredientExtractors.IngredientExtractor
+import com.ing.baker.runtime.recipe.transitions.ProvidesType._
 import fs2.Task
 import io.kagera.api.colored._
 import io.kagera.api.multiset._
@@ -15,17 +16,27 @@ import org.slf4j._
 
 import scala.util._
 
-/**
-  * Kagera Petri Net transition which executes an interaction.
-  *
-  * @param interactionClass     The interaction class to which the created transition belongs.
-  * @param interactionProvider  The provider of the implementation.
-  * @param predefinedParameters An extra map from parameter name to parameter value to provide to the action.
-  */
+
+sealed trait ProvidesType
+
+object ProvidesType {
+
+  case class ProvidesIngredient(outputIngredient: (String, Class[_]),
+                                outputType: Class[_]
+                               ) extends ProvidesType
+
+  case class ProvidesEvent(outputFieldNames: Seq[String],
+                           outputType: Class[_],
+                           outputEventClasses: Seq[Class[_]]
+                          ) extends ProvidesType
+
+  case object ProvidesNothing extends ProvidesType
+
+}
+
 case class InteractionTransition[A](
                                      method: Method,
-                                     providesIngredient: Boolean,
-                                     providesEvent: Boolean,
+                                     providesType: ProvidesType,
                                      //Original values of the Interaction
                                      inputFields: Seq[(String, Class[_])],
                                      interactionClass: Class[A],
@@ -33,8 +44,7 @@ case class InteractionTransition[A](
                                      var interactionProvider: () => A,
                                      interactionName: String,
 
-                                     interactionOutputName: String,
-                                     outputEventClasses: Seq[Class[_]],
+//                                     interactionOutputName: String,
                                      actionType: ActionType = ActionType.InteractionAction,
 
                                      //Changes to the original interaction
@@ -59,7 +69,6 @@ case class InteractionTransition[A](
 
   override def toString: String = label
 
-
   // all the input fields of the method
   val inputFieldNames: Seq[String] = inputFields.map(_._1)
 
@@ -69,43 +78,22 @@ case class InteractionTransition[A](
   val requiredIngredients: Map[String, Class[_]] =
     inputFields.toMap.filterKeys(requiredIngredientNames.contains)
 
-  /**
-    * The ingredient or event output type of the interaction
-    */
-  val outputType: Class[_] = {
-    val returnType =
-      if (method.isAsynchronous) method.getFirstTypeParameter else method.getReturnType
-
-    if (providesEvent)
-      transformEventType(returnType) //performing additional rewriting on the output type if this Interaction provides Events
-    else
-      returnType
-  }
-
   def transformEventType(clazz: Class[_]): Class[_] =
-    eventOutputTransformers
-      .get(clazz)
-      .fold(clazz.asInstanceOf[Class[Any]])(_.targetType.asInstanceOf[Class[Any]])
-
-  val outputIngredient: Option[(String, Class[_])] =
-    if (providesIngredient) Some(interactionOutputName -> outputType) else None
-
-  val outputFieldNames: Seq[String] = {
-    if (method.isVoid)
-      Nil
-    else if (providesIngredient)
-      Seq(interactionOutputName)
-    else
-      outputType.getDeclaredFields.map(_.getName).toSeq
-  }
+  eventOutputTransformers
+    .get(clazz)
+    .fold(clazz.asInstanceOf[Class[Any]])(_.targetType.asInstanceOf[Class[Any]])
 
   def matchingEventName(output: AnyRef): String =
-    outputEventClasses.find(_.isInstance(output)).map(_.getSimpleName).getOrElse {
-      throw new IllegalStateException(
-        s"Method output: $output is not an instance of any of the specified event classes: ${
-          outputEventClasses
-            .mkString(",")
-        }")
+    providesType match {
+      case ProvidesEvent(_, _, outputEventClasses: Seq[Class[_]]) =>
+        outputEventClasses.find(_.isInstance(output)).map(_.getSimpleName).getOrElse {
+          throw new IllegalStateException(
+            s"Method output: $output is not an instance of any of the specified event classes: ${
+              outputEventClasses
+                .mkString(",")
+            }")
+        }
+      case _ => ""
     }
 
   override val exceptionStrategy: TransitionExceptionHandler =
@@ -117,10 +105,10 @@ case class InteractionTransition[A](
   def createProducedMarking(outAdjacent: MultiSet[Place[_]]): AnyRef => Marking = { output =>
     outAdjacent.keys.map { place =>
       val value: Any = {
-        if (providesEvent)
-          matchingEventName(output)
-        else
-          ()
+        providesType match {
+          case ProvidesEvent(_, _, _) => matchingEventName(output)
+          case _ => ()
+        }
       }
       place -> MultiSet(value)
     }.toMarking
@@ -200,11 +188,13 @@ case class InteractionTransition[A](
 
         // function that (optionally) transforms the output event using the event output transformers
         val transformEvent: AnyRef => AnyRef = output => {
-          if (providesEvent)
-            eventOutputTransformers
-              .get(output.getClass)
-              .fold(output)(_.transform(output).asInstanceOf[AnyRef])
-          else output
+          providesType match {
+            case ProvidesEvent(_, _, _) =>
+              eventOutputTransformers
+                .get(output.getClass)
+                .fold(output)(_.transform(output).asInstanceOf[AnyRef])
+            case _ => output
+          }
         }
 
         // returns a delayed task that will get executed by the kagera runtime
@@ -221,11 +211,14 @@ case class InteractionTransition[A](
   override def updateState: (ProcessState) => (AnyRef) => ProcessState =
     state =>
       event => {
-        if (event == null || method.isVoid) state
-        else if (providesIngredient)
-          state.copy(ingredients = state.ingredients + (outputIngredient.get._1 -> event))
-        else if (providesEvent)
-          state.copy(ingredients = state.ingredients ++ ingredientExtractor.extractIngredientData(event))
-        else state
+        providesType match {
+          case _ if event == null => state
+          case ProvidesIngredient(outputIngredient: (String, Class[_]), _) =>
+            state.copy(ingredients = state.ingredients + (outputIngredient._1 -> event))
+          case ProvidesEvent(_, _, _) =>
+            state.copy(ingredients = state.ingredients ++ ingredientExtractor.extractIngredientData(event))
+          case ProvidesNothing => state
+          case _ => state
+        }
       }
 }

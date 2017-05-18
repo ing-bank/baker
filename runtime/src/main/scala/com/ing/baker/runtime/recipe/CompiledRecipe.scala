@@ -3,6 +3,7 @@ package com.ing.baker.runtime.recipe
 import com.ing.baker.runtime.core.ProcessState
 import com.ing.baker.runtime.recipe.ingredientExtractors.IngredientExtractor
 import com.ing.baker.runtime.recipe.transitions.InteractionTransition
+import com.ing.baker.runtime.recipe.transitions.ProvidesType.{ProvidesEvent, ProvidesIngredient}
 import com.ing.baker.runtime.visualization.RecipeVisualizer.PetriNetVisualization
 import io.kagera.api.colored._
 import io.kagera.dot.{GraphDot, PetriNetDot}
@@ -40,13 +41,29 @@ case class CompiledRecipe(name: String,
       throw new IllegalArgumentException(s"No such event known in recipe: $eventClass")
     }
 
-  val interactionEvents: Set[Class[_]] = interactionTransitions.flatMap(_.outputEventClasses)
+  val interactionEvents: Set[Class[_]] =
+    interactionTransitions.flatMap(
+      _.providesType match {
+        case ProvidesEvent(_, _, outputEventClasses) => outputEventClasses
+        case _ => Nil
+      }
+    )
 
   val allEvents: Set[Class[_]] = sensoryEvents ++ interactionEvents
 
+  val allIngredientsProvidedByInteractions: Set[(String, Class[_])] =
+    interactionTransitions.map {
+      _.providesType match {
+        case ProvidesIngredient(outputIngredient: (String, Class[_]), _) => outputIngredient
+        case _ => None.asInstanceOf[(String, Class[_])]
+      }
+    }
+
+  val allIngredientsProvidedByEvents = allEvents.flatMap {
+    eventClass => ingredientExtractor.extractIngredientTypes(eventClass)
+  }
+
   val ingredients: Map[String, Class[_]] =
   //TODO move te setting of this to the compiler and not as part of the compiled recipe itself
-    (allEvents.flatMap {
-    eventClass => ingredientExtractor.extractIngredientTypes(eventClass)
-  } ++ interactionTransitions.flatMap(_.outputIngredient)).toMap
+    (allIngredientsProvidedByInteractions ++ allIngredientsProvidedByInteractions).toMap
 }

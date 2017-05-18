@@ -3,9 +3,9 @@ package com.ing.baker.runtime.recipe
 import akka.actor.ActorSystem
 import akka.serialization.SerializationExtension
 import com.ing.baker.runtime.core.NonSerializableException
-import com.ing.baker.runtime.recipe.transitions.InteractionTransition
-
 import com.ing.baker.runtime.recipe.duplicates.ReflectionHelpers._
+import com.ing.baker.runtime.recipe.transitions.InteractionTransition
+import com.ing.baker.runtime.recipe.transitions.ProvidesType.ProvidesEvent
 
 import scala.util.Try
 
@@ -18,10 +18,13 @@ object RecipeValidations {
     if (compiledRecipe.petriNet.inMarking(interaction).isEmpty)
       validationErrors += s"Interaction $interaction does not have any requirements (ingredients or preconditions)! This will result in an infinite execution loop."
 
-    // validate that the return type the interaction matches the expectations from the annotation
-    interaction.outputEventClasses.foreach(eventClass =>
-      if (!interaction.outputType.isAssignableFrom(eventClass))
-        validationErrors += s"Event class: $eventClass is not assignable to return type: ${interaction.outputType} for interaction: $interaction")
+    interaction.providesType match {
+      case ProvidesEvent(outputFieldNames: Seq[String], outputType: Class[_], outputEventClasses: Seq[Class[_]]) =>
+        outputEventClasses.foreach(eventClass =>
+          if (outputType.isAssignableFrom(eventClass))
+            validationErrors += s"Event class: $eventClass is not assignable to return type: ${outputType} for interaction: $interaction")
+      case _ => ()
+    }
 
     // check if the process id argument type is correct, TODO remove overlap with code below
     interaction.method.processIdClass.foreach {
