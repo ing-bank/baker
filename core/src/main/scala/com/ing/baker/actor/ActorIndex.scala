@@ -82,6 +82,7 @@ class ActorIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata) exte
   override def receiveRecover: Receive = {
     case ActorCreated(processId, created) =>
       index += processId -> ActorMetadata(processId, created)
+      recipeMetadata.addNewProcessMetadata(processId, created)
       actorsToBeCreated += processId
     case ActorPassivated(processId) =>
       actorsToBeCreated -= processId
