@@ -3,10 +3,10 @@ package com.ing.baker
 import java.lang.reflect.Method
 
 import com.ing.baker.compiler.ReflectionHelpers._
-import com.ing.baker.recipe.common.ActionType.InteractionAction
-import com.ing.baker.recipe.common.{InteractionDescriptor, InteractionFailureStrategy}
+import com.ing.baker.recipe.common.InteractionDescriptor
 import com.ing.baker.recipe.javadsl.{FiresEvent, ProvidesIngredient}
-import com.ing.baker.runtime.recipe.duplicates.ActionType
+import com.ing.baker.runtime.recipe.duplicates.ActionType.{InteractionAction, SieveAction}
+import com.ing.baker.runtime.recipe.duplicates.{ActionType, EventOutputTransformer}
 import com.ing.baker.runtime.recipe.ingredientExtractors.IngredientExtractor
 import com.ing.baker.runtime.recipe.transitions.InteractionTransition
 import io.kagera.api.colored.Transition
@@ -29,7 +29,7 @@ package object compiler {
   implicit class InteractionOps(interaction: InteractionDescriptor[_]) {
 
     def toInteractionTransition(implementations: Map[Class[_], () => AnyRef],
-                                defaultFailureStrategy: InteractionFailureStrategy,
+                                defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy,
                                 ingredientExtractor: IngredientExtractor): (InteractionTransition[_], Seq[String]) = {
 
       val validationErrors = scala.collection.mutable.MutableList.empty[String]
@@ -73,15 +73,14 @@ package object compiler {
 
 
       val interactionOutputName: String =
-      if(providesIngredient)
-      {
-        if (interaction.overriddenOutputIngredientName != null && interaction.overriddenOutputIngredientName != "") {
-          interaction.overriddenOutputIngredientName
-        } else {
-          method.getOutputName
+        if (providesIngredient) {
+          if (interaction.overriddenOutputIngredientName != null && interaction.overriddenOutputIngredientName != "") {
+            interaction.overriddenOutputIngredientName
+          } else {
+            method.getOutputName
+          }
         }
-      }
-      else ""
+        else ""
 
       def transformEventType(clazz: Class[_]): Class[_] =
         interaction.eventOutputTransformers
@@ -104,12 +103,17 @@ package object compiler {
         }
       }
 
-      def transformEventOutputTransformers[A: ClassTag, B: ClassTag](recipeEventOutputTransformer: com.ing.baker.recipe.common.EventOutputTransformer[A, B]) : com.ing.baker.runtime.recipe.duplicates.EventOutputTransformer[A, B] = {
-         com.ing.baker.runtime.recipe.duplicates.EventOutputTransformer[A, B](recipeEventOutputTransformer.fn)
-      }
+      def transformEventOutputTransformers[A: ClassTag, B: ClassTag](recipeEventOutputTransformer: com.ing.baker.recipe.common.EventOutputTransformer[A, B]): EventOutputTransformer[A, B] =
+        EventOutputTransformer[A, B](recipeEventOutputTransformer.fn)
 
-      implicit def transformEventOutputTransformersMap(eventOutputTransformersMap : Map[Class[_], com.ing.baker.recipe.common.EventOutputTransformer[_, _]]) : Map[Class[_], com.ing.baker.runtime.recipe.duplicates.EventOutputTransformer[_, _]] = {
+      implicit def transformEventOutputTransformersMap(eventOutputTransformersMap: Map[Class[_], com.ing.baker.recipe.common.EventOutputTransformer[_, _]]): Map[Class[_], EventOutputTransformer[_, _]] =
         eventOutputTransformersMap.map(e => (e._1, transformEventOutputTransformers(e._2))).toMap
+
+      implicit def transformActionType(recipeActionType: com.ing.baker.recipe.common.ActionType): ActionType = {
+        recipeActionType match {
+          case com.ing.baker.recipe.common.ActionType.InteractionAction => InteractionAction
+          case com.ing.baker.recipe.common.ActionType.SieveAction => SieveAction
+        }
       }
 
       InteractionTransition[Any](
@@ -128,7 +132,7 @@ package object compiler {
         maximumInteractionCount = interaction.maximumInteractionCount,
         failureStrategy = interaction.failureStrategy.getOrElse[com.ing.baker.recipe.common.InteractionFailureStrategy](defaultFailureStrategy),
         eventOutputTransformers = interaction.eventOutputTransformers,
-        actionType = if (interaction.actionType == InteractionAction) ActionType.InteractionAction else ActionType.SieveAction,
+        actionType = interaction.actionType,
         ingredientExtractor = ingredientExtractor)
     }
   }
