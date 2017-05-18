@@ -2,6 +2,7 @@ package com.ing.baker.runtime.actor
 
 import akka.actor._
 import akka.cluster.sharding.{ClusterSharding, ShardRegion}
+import com.ing.baker.runtime.actor.GracefulShutdownActor.{Done, Leave, ShardHandoverTimedOut}
 import com.typesafe.config.Config
 
 import scala.collection._

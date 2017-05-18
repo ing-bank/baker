@@ -2,10 +2,19 @@ package com.ing.baker
 
 import java.util.UUID
 
-import com.ing.baker.compiler.ValidationSettings
+import akka.actor.ActorSystem
+import akka.testkit.TestKit
+import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common.{Event, Interaction}
-import com.ing.baker.recipe.javadsl.ProcessId
+import com.ing.baker.recipe.javadsl.{FiresEvent, ProcessId, ProvidesIngredient, RequiresIngredient}
 import com.ing.baker.recipe.scaladsl.{InteractionDescriptorFactory, SRecipe}
+import com.ing.baker.runtime.core.Baker
+import com.ing.baker.runtime.recipe.ValidationSettings
+import com.typesafe.config.{Config, ConfigFactory}
+import org.mockito.Matchers._
+import org.mockito.Mockito._
+import org.scalatest._
+import org.scalatest.mock.MockitoSugar
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -333,8 +342,8 @@ trait TestRecipeHelper
     when(testInteractionFiveMock.apply(anyString(), anyString(), anyString())).thenReturn(interactionFiveIngredient)
     when(testInteractionSixMock.apply(anyString())).thenReturn(interactionSixIngredient)
 
-    new Baker(recipe = recipe,
-      validationSettings = ValidationSettings.defaultValidationSettings,
+    new Baker(
+      compiledRecipe = RecipeCompiler.compileRecipe(recipe),
       actorSystem = actorSystem,
       implementations = mockImplementations)
   }

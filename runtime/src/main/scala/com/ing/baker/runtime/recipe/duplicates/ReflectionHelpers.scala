@@ -1,11 +1,11 @@
-package com.ing.baker.compiler
+package com.ing.baker.runtime.recipe.duplicates
 
 import java.lang.annotation.Annotation
 import java.lang.reflect.{Field, Method, ParameterizedType}
 
-import com.ing.baker.recipe.javadsl.{FiresEvent, ProcessId, ProvidesIngredient, RequiresIngredient}
-import com.ing.baker.runtime.recipe._
 import com.thoughtworks.paranamer.AnnotationParanamer
+
+import com.ing.baker.runtime.recipe._
 
 import scala.concurrent.Future
 
@@ -33,8 +33,6 @@ object ReflectionHelpers {
         .asInstanceOf[Class[_]]
 
     def isVoid                = method.getReturnType.equals(classOf[Void])
-    def getOutputName         = method.getAnnotation(classOf[ProvidesIngredient]).value()
-    def getOutputEventClasses = method.getAnnotation(classOf[FiresEvent]).oneOf().toSeq
 
     def parameterTypeForName(name: String): Option[Class[_]] =
       getParameterNames.indexWhere(_ == name) match {

@@ -62,7 +62,7 @@ object BakerResponse {
 
 class BakerResponse(processId: UUID, source: Source[TransitionResponse, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext) {
 
-  val (receivedFuture, completedFuture) = createFlow(processId, source)
+  val (receivedFuture, completedFuture) = BakerResponse.createFlow(processId, source)
 
   def confirmReceived(implicit timeout: FiniteDuration): Unit = Await.result(receivedFuture, timeout)
 

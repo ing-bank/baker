@@ -1,7 +1,5 @@
 package com.ing.baker.recipe.common
 
-import com.ing.baker.recipe.scaladsl.EventOutputTransformer
-
 /**
   * An interaction is some code that requires input (ingredients) and produces output (ingredients)
   */

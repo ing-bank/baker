@@ -1,6 +1,6 @@
 package com.ing.baker.recipe.scaladsl
 
-import com.ing.baker.core.InteractionFailureStrategy.RetryWithIncrementalBackoff
+import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
 import com.ing.baker.recipe.common._
 
 import scala.concurrent.duration.Duration

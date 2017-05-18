@@ -1,9 +1,11 @@
 package com.ing.baker
 package compiler
 
-import com.ing.baker.compiler.transitions._
-import com.ing.baker.core.ProcessState
 import com.ing.baker.recipe.common.{InteractionDescriptor, Recipe}
+import com.ing.baker.runtime.core.ProcessState
+import com.ing.baker.runtime.recipe.ingredientExtractors.{CompositeIngredientExtractor, IngredientExtractor}
+import com.ing.baker.runtime.recipe.transitions.{EventTransition, InteractionTransition}
+import com.ing.baker.runtime.recipe.{CompiledRecipe, RecipeValidations, ValidationSettings, _}
 import io.kagera.api._
 import io.kagera.api.colored._
 import io.kagera.api.colored.dsl._
@@ -290,7 +292,7 @@ object RecipeCompiler {
       name = recipe.name,
       petriNet = petriNet,
       initialMarking = initialMarking,
-      sensoryEvents = recipe.events,
+      sensoryEvents = recipe.events.asInstanceOf[Set[Class[_]]],
       ingredientExtractor,
       validationErrors = interactionValidationErrors.flatten ++ preconditionORErrors ++ preconditionANDErrors ++ sieveErrors
     )

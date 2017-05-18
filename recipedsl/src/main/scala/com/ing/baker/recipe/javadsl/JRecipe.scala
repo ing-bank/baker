@@ -1,9 +1,8 @@
 package com.ing.baker.recipe.javadsl
 
-import com.ing.baker.compiler._
 import com.ing.baker.recipe.common.ActionType.SieveAction
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
-import com.ing.baker.recipe.common.{Event, InteractionDescriptor, InteractionFailureStrategy, Recipe}
+import com.ing.baker.recipe.common._
 
 import scala.annotation.varargs
 import scala.collection.JavaConverters._
@@ -25,7 +24,8 @@ case class JRecipe(
 
   def getEvents: java.util.List[Class[_ <: Event]] = events.toList.asJava
 
-  def compileRecipe: JCompiledRecipe = JCompiledRecipe(RecipeCompiler.compileRecipe(this))
+  //TODO move this to the recipeCompiler since the recipeDSL is not able to compile itself
+//  def compileRecipe: JCompiledRecipe = JCompiledRecipe(RecipeCompiler.compileRecipe(this))
 
   /**
     * Adds the interaction to the recipe.
@@ -34,7 +34,7 @@ case class JRecipe(
     * @param interactionDesc the interaction to add
     * @return
     */
-  def withInteraction(interactionDesc: JInteractionDescriptor[_ <: JInteraction]): JRecipe =
+  def withInteraction(interactionDesc: JInteractionDescriptor[_ <: Interaction]): JRecipe =
       withInteractions(Seq(interactionDesc): _*)
 
   /**
@@ -46,7 +46,7 @@ case class JRecipe(
     */
   @SafeVarargs
   @varargs
-  def withInteractions(newInteractionDescriptors: JInteractionDescriptor[_ <: JInteraction]*): JRecipe =
+  def withInteractions(newInteractionDescriptors: JInteractionDescriptor[_ <: Interaction]*): JRecipe =
     copy(interactionDescriptors = newInteractionDescriptors ++ interactionDescriptors)
 
   /**
@@ -55,7 +55,7 @@ case class JRecipe(
     * @param sieveDescriptor
     * @return
     */
-  def withSieve(sieveDescriptor: JInteractionDescriptor[_ <: JInteraction]): JRecipe =
+  def withSieve(sieveDescriptor: JInteractionDescriptor[_ <: Interaction]): JRecipe =
     withSieves(Seq(sieveDescriptor): _*)
 
   /**
@@ -66,7 +66,7 @@ case class JRecipe(
     */
   @SafeVarargs
   @varargs
-  def withSieves(newSieveDescriptors: JInteractionDescriptor[_ <: JInteraction]*): JRecipe = {
+  def withSieves(newSieveDescriptors: JInteractionDescriptor[_ <: Interaction]*): JRecipe = {
     copy(sieveDescriptors = newSieveDescriptors.map(_.withActionType(SieveAction)) ++ sieveDescriptors)
   }
 

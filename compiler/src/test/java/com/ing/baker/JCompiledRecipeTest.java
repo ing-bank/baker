@@ -1,10 +1,16 @@
 package com.ing.baker;
 
+import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.recipe.common.Event;
-import com.ing.baker.core.*;
+import com.ing.baker.recipe.common.Interaction;
 import com.ing.baker.recipe.common.InteractionDescriptor;
 import com.ing.baker.recipe.javadsl.JRecipe;
 import com.ing.baker.recipe.javadsl.ProcessId;
+import com.ing.baker.recipe.javadsl.ProvidesIngredient;
+import com.ing.baker.recipe.javadsl.RequiresIngredient;
+import com.ing.baker.runtime.core.BakerException;
+import com.ing.baker.runtime.java_api.JCompiledRecipe;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -13,7 +19,6 @@ import java.util.ArrayList;
 
 import static com.ing.baker.recipe.javadsl.JInteractionDescriptor.of;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class JCompiledRecipeTest {
     @Rule
@@ -22,7 +27,7 @@ public class JCompiledRecipeTest {
     @Test
     public void shouldCompileSimpleRecipe() throws BakerException {
         JRecipe recipe = setupSimpleRecipe();
-        JCompiledRecipe compileRecipe = recipe.compileRecipe();
+        JCompiledRecipe compileRecipe = new JCompiledRecipe(RecipeCompiler.compileRecipe(recipe));
         assertEquals(compileRecipe.getValidationErrors(), new ArrayList<String>());
         assertEquals(JCompiledRecipeTest.EventOne.class, recipe.getEvents().get(0));
         assertEquals(InteractionOne.class, recipe.getInteractions().get(0).interactionClass());
@@ -31,7 +36,7 @@ public class JCompiledRecipeTest {
     @Test
     public void shouldCompileComplexRecipe() throws BakerException {
         JRecipe recipe = setupComplexRecipe();
-        JCompiledRecipe compileRecipe = recipe.compileRecipe();
+        JCompiledRecipe compileRecipe = new JCompiledRecipe(RecipeCompiler.compileRecipe(recipe));
         assertEquals(compileRecipe.getValidationErrors(), new ArrayList<String>());
         assertEquals(JCompiledRecipeTest.EventOne.class, recipe.getEvents().get(0));
         assertEquals(JCompiledRecipeTest.EventTwo.class, recipe.getEvents().get(1));
@@ -45,7 +50,7 @@ public class JCompiledRecipeTest {
     @Test
     public void shouldCompileRecipeWithSieve() throws BakerException {
         JRecipe recipe = setupComplexRecipe();
-        JCompiledRecipe compileRecipe = recipe.compileRecipe();
+        JCompiledRecipe compileRecipe = new JCompiledRecipe(RecipeCompiler.compileRecipe(recipe));
         assertEquals(compileRecipe.getValidationErrors(), new ArrayList<String>());
         Assert.assertTrue(recipe.getSieves().stream().anyMatch((InteractionDescriptor a) -> a.interactionClass() == SieveImpl.class));
     }
@@ -53,14 +58,14 @@ public class JCompiledRecipeTest {
     @Test
     public void shouldCompileRecipeWithSieveWithoutDefaultConstructorWithErrors() throws BakerException {
         JRecipe recipe = setupComplexRecipe().withSieve(of(JCompiledRecipeTest.SieveImplWithoutDefaultConstruct.class));
-        JCompiledRecipe compileRecipe = recipe.compileRecipe();
+        JCompiledRecipe compileRecipe = new JCompiledRecipe(RecipeCompiler.compileRecipe(recipe));
         assertEquals(compileRecipe.getValidationErrors().size(), 1);
     }
 
     @Test
     public void shouldShowVisualRecipe() throws BakerException {
         JRecipe recipe = setupComplexRecipe();
-        JCompiledRecipe compileRecipe = recipe.compileRecipe();
+        JCompiledRecipe compileRecipe = new JCompiledRecipe(RecipeCompiler.compileRecipe(recipe));
         assertEquals(compileRecipe.getValidationErrors().size(), 0);
         String visualRecipe = compileRecipe.getRecipeVisualization();
         Assert.assertTrue("Should contain actionOne", visualRecipe.contains("actionOne"));
@@ -73,7 +78,7 @@ public class JCompiledRecipeTest {
     @Test
     public void shouldShowPetriNetVisual() throws BakerException {
         JRecipe recipe = setupComplexRecipe();
-        JCompiledRecipe compileRecipe = recipe.compileRecipe();
+        JCompiledRecipe compileRecipe = new JCompiledRecipe(RecipeCompiler.compileRecipe(recipe));
         assertEquals(compileRecipe.getValidationErrors().size(), 0);
         String petrinetVisual = compileRecipe.getPetriNetVisualization();
         Assert.assertTrue("Should contain actionOne", petrinetVisual.contains("actionOne"));
@@ -86,7 +91,7 @@ public class JCompiledRecipeTest {
     @Test
     public void shouldShowFilteredVisualRecipe() throws BakerException {
         JRecipe recipe = setupComplexRecipe();
-        JCompiledRecipe compileRecipe = recipe.compileRecipe();
+        JCompiledRecipe compileRecipe = new JCompiledRecipe(RecipeCompiler.compileRecipe(recipe));
         assertEquals(compileRecipe.getValidationErrors().size(), 0);
         String visualRecipe = compileRecipe.getFilteredRecipeVisualization("InteractionOne");
         Assert.assertTrue("Should not contain actionOne", !visualRecipe.contains("InteractionOne"));
@@ -100,7 +105,7 @@ public class JCompiledRecipeTest {
     @Test
     public void shouldShowFilteredMultipleVisualRecipe() throws BakerException {
         JRecipe recipe = setupComplexRecipe();
-        JCompiledRecipe compileRecipe = recipe.compileRecipe();
+        JCompiledRecipe compileRecipe = new JCompiledRecipe(RecipeCompiler.compileRecipe(recipe));
         assertEquals(compileRecipe.getValidationErrors().size(), 0);
         String visualRecipe = compileRecipe.getFilteredRecipeVisualization(new String[]{"actionOne", "EventTwo"});
         Assert.assertTrue("Should not contain actionOne", !visualRecipe.contains("actionOne"));
@@ -111,16 +116,16 @@ public class JCompiledRecipeTest {
         Assert.assertTrue("Should contain RequestIDStringTwo", visualRecipe.contains("RequestIDStringTwo"));
     }
 
-    static class EventOne implements Event {
+    public static class EventOne implements Event {
     }
 
-    static class EventTwo implements Event {
+    public static class EventTwo implements Event {
     }
 
-    static class EventWithoutIngredientsNorPreconditions implements Event {
+    public static class EventWithoutIngredientsNorPreconditions implements Event {
     }
 
-    public static class SieveImpl implements JInteraction {
+    public static class SieveImpl implements Interaction {
         @ProvidesIngredient("AppendedRequestIds")
         public String apply(@RequiresIngredient("RequestIDStringOne") String requestIDStringOne,
                                @RequiresIngredient("RequestIDStringTwo") String requestIDStringTwo) {
@@ -128,7 +133,7 @@ public class JCompiledRecipeTest {
         }
     }
 
-    public static class SieveImplWithoutDefaultConstruct implements JInteraction {
+    public static class SieveImplWithoutDefaultConstruct implements Interaction {
         public SieveImplWithoutDefaultConstruct(String param){}
 
         @ProvidesIngredient("AppendedRequestIds")
@@ -138,9 +143,9 @@ public class JCompiledRecipeTest {
         }
     }
 
-    public interface InteractionOne extends JInteraction {
+    public interface InteractionOne extends Interaction {
         @ProvidesIngredient("RequestIDStringOne")
-        public String apply(@ProcessId String requestId);
+        String apply(@ProcessId String requestId);
     }
 
     public static class InteractionOneImpl implements InteractionOne {
@@ -149,21 +154,21 @@ public class JCompiledRecipeTest {
         }
     }
 
-    public static class InteractionTwo implements JInteraction {
+    public static class InteractionTwo implements Interaction {
         @ProvidesIngredient("RequestIDStringTwo")
         public String apply(@ProcessId String requestId) {
               return requestId;
           }
     }
 
-    public static class InteractionThree implements JInteraction {
+    public static class InteractionThree implements Interaction {
         public void apply(@RequiresIngredient("RequestIDStringOne") String requestIDStringOne,
                           @RequiresIngredient("RequestIDStringTwo") String requestIDStringTwo) {
 
         }
     }
 
-    public static class RegisterIndividual implements JInteraction {
+    public static class RegisterIndividual implements Interaction {
 
         @ProvidesIngredient("RequestIDStringThree")
         public String apply(@ProcessId String requestId, @RequiresIngredient("RequestIDStringOne") String requestIDStringOne) {
@@ -171,13 +176,13 @@ public class JCompiledRecipeTest {
         }
     }
 
-    static JRecipe setupSimpleRecipe() {
+    public static JRecipe setupSimpleRecipe() {
         return new JRecipe("TestRecipe")
                 .withInteraction(of(InteractionOne.class).withRequiredEvent(EventOne.class))
                 .withSensoryEvent(EventOne.class);
     }
 
-    static JRecipe setupComplexRecipe() {
+    public static JRecipe setupComplexRecipe() {
         return new JRecipe("TestRecipe")
                 .withInteractions(
                         of(InteractionOne.class)

@@ -1,6 +1,5 @@
 package com.ing.baker.recipe.scaladsl
 
-import com.ing.baker.compiler.{CompiledRecipe, RecipeCompiler}
 import com.ing.baker.recipe.common.{Event, InteractionDescriptor, InteractionFailureStrategy, Recipe}
 
 case class SRecipe(override val name: String,
@@ -19,7 +18,7 @@ case class SRecipe(override val name: String,
   def withDefaultFailureStrategy(newDefaultFailureStrategy: InteractionFailureStrategy) =
     copy(defaultFailureStrategy = newDefaultFailureStrategy)
 
-  def compileRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(this)
+//  def compileRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(this)
 }
 
 object SRecipe {

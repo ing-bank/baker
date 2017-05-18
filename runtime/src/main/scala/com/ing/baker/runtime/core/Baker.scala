@@ -11,10 +11,9 @@ import akka.persistence.query.scaladsl._
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
-import com.ing.baker.actor._
-import com.ing.baker.compiler.{CompiledRecipe, RecipeCompiler, RecipeVisualizer, ValidationSettings, _}
-import com.ing.baker.recipe.common.Recipe
-import com.ing.baker.runtime.actor.{LocalBakerActorProvider, ShardedActorProvider}
+import com.ing.baker.runtime.actor.{BakerActorMessage, LocalBakerActorProvider, ShardedActorProvider, Util}
+import com.ing.baker.runtime.recipe.{CompiledRecipe, RecipeValidations}
+import com.ing.baker.runtime.visualization.RecipeVisualizer
 import fs2.Strategy
 import io.kagera.akka.actor.PetriNetInstanceProtocol._
 import io.kagera.akka.actor._
@@ -37,12 +36,12 @@ import scala.util.{Failure, Success, Try}
   * - A list of events
   * The Baker can bake a recipe, create a process and respond to events.
   */
-class Baker(val recipe: Recipe,
-            val implementations: Map[Class[_], () => AnyRef],
-            val validationSettings: ValidationSettings = ValidationSettings.defaultValidationSettings,
+class Baker(val compiledRecipe: CompiledRecipe,
+            val implementations: Map[Class[_], () => Any],
             implicit val actorSystem: ActorSystem) {
 
-  val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe, implementations, validationSettings,  new CompositeIngredientExtractor(actorSystem.settings.config))
+
+  //Write code to give bind the implementations when creating the baker to the compiledRecipe
 
   if (compiledRecipe.validationErrors.nonEmpty)
     throw new RecipeValidationException(compiledRecipe.validationErrors.mkString(", "))
@@ -63,7 +62,7 @@ class Baker(val recipe: Recipe,
   /**
     * We do this to force initialization of the journal (database) connection.
     */
-  com.ing.baker.actor.Util.createPersistenceWarmupActor()(actorSystem, journalInitializeTimeout)
+  Util.createPersistenceWarmupActor()(actorSystem, journalInitializeTimeout)
 
   private val bakerActorProvider =
     actorSystem.settings.config.as[Option[String]]("baker.actor.provider") match {
@@ -115,7 +114,7 @@ class Baker(val recipe: Recipe,
           actorSystem.terminate()
         }
         implicit val akkaTimeout = Timeout(timeout);
-        Util.handOverShardsAndLeaveCluster(Seq(recipe.name))
+        Util.handOverShardsAndLeaveCluster(Seq(compiledRecipe.name))
       case Success(cluster) =>
         log.debug("ActorSystem not a member of cluster")
         actorSystem.terminate()
@@ -211,6 +210,7 @@ class Baker(val recipe: Recipe,
     Await.result(getProcessStateAsync(processId), timeout)
   }
 
+  //TODO, decide if Baker can visualise itself or is visualising part of the runtime that the compiler exposes also?
   def getVisualState(processId: java.util.UUID)(implicit timeout: FiniteDuration): String = {
     val events: Seq[Any] = this.events(processId)
     val classes: Seq[String] = events.map(x => x.getClass.getSimpleName)

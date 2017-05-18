@@ -41,8 +41,8 @@ class ShardedActorProvider(config: Config) extends BakerActorProvider {
       typeName = recipeName,
       entityProps = ActorIndex.props(petriNetActorProps),
       settings = ClusterShardingSettings.create(actorSystem),
-      extractEntityId = entityIdExtractor(recipeName, nrOfShards),
-      extractShardId = shardIdExtractor(nrOfShards)
+      extractEntityId = ShardedActorProvider.entityIdExtractor(recipeName, nrOfShards),
+      extractShardId = ShardedActorProvider.shardIdExtractor(nrOfShards)
     )
   }
 }

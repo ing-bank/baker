@@ -2,6 +2,7 @@ package com.ing.baker
 
 import java.util.UUID
 
+import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.SRecipe
 
 import scala.concurrent.duration._
@@ -54,7 +55,7 @@ class RecipeVisualizationSpec extends TestRecipeHelper {
 
     "be able to visualize the created interactions" in {
       val recipe: SRecipe = getComplexRecipe("VisiualizationRecipe")
-      val compileRecipe = recipe.compileRecipe
+      val compileRecipe = RecipeCompiler.compileRecipe(recipe)
 //      System.out.println(compileRecipe.getPetriNetVisualization)
       System.out.println(compileRecipe.getRecipeVisualization)
       compileRecipe.getRecipeVisualization should include(

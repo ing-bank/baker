@@ -3,8 +3,7 @@ package com.ing.baker.recipe.javadsl
 import java.util.Optional
 
 import com.ing.baker.recipe.common.InteractionFailureStrategy._
-import com.ing.baker.recipe.common.{ActionType, Event, InteractionDescriptor, InteractionFailureStrategy}
-import com.ing.baker.recipe.scaladsl.EventOutputTransformer
+import com.ing.baker.recipe.common._
 
 import scala.annotation.varargs
 import scala.collection.JavaConverters._
@@ -12,7 +11,7 @@ import scala.concurrent.duration
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag
 
-case class JInteractionDescriptor[T <: JInteraction] private (
+case class JInteractionDescriptor[T <: Interaction] private (
     interactionClass: Class[T],
     requiredEvents: Set[Class[_ <: Event]],
     requiredOneOfEvents: Set[Class[_ <: Event]],
@@ -246,11 +245,11 @@ case class JInteractionDescriptor[T <: JInteraction] private (
 }
 
 object JInteractionDescriptor {
-  def of[T <: JInteraction](clazz: Class[T]): JInteractionDescriptor[T] = {
+  def of[T <: Interaction](clazz: Class[T]): JInteractionDescriptor[T] = {
     JInteractionDescriptor(clazz, Set.empty, Set.empty, Map.empty, Map.empty, null, None)
   }
 
-  def of[T <: JInteraction](clazz: Class[T], name: String): JInteractionDescriptor[T] = {
+  def of[T <: Interaction](clazz: Class[T], name: String): JInteractionDescriptor[T] = {
     JInteractionDescriptor(clazz,
                            Set.empty,
                            Set.empty,

@@ -4,11 +4,11 @@ import akka.actor.ActorSystem
 import akka.util.Timeout
 import cats.Monoid
 import cats.data.State
-import com.ing.baker.actor.Util
-import com.ing.baker.compiler._
-import com.ing.baker.compiler.transitions.InteractionTransition
+import com.ing.baker.runtime.recipe.CompiledRecipe
+import com.ing.baker.runtime.recipe.transitions.InteractionTransition
+import com.ing.baker.runtime.recipe._
 import fs2.Strategy
-import io.kagera.akka.actor.{AkkaObjectSerializer, PetriNetInstance}
+import io.kagera.akka.actor.AkkaObjectSerializer
 import io.kagera.api._
 import io.kagera.api.colored._
 import io.kagera.execution.EventSourcing._

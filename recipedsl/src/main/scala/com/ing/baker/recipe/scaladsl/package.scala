@@ -1,5 +1,7 @@
 package com.ing.baker.recipe
 
+import com.ing.baker.recipe.common.EventOutputTransformer
+
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 

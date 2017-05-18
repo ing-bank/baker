@@ -1,20 +1,17 @@
 package com.ing.baker
 
-import com.ing.baker.compiler.transitions.InteractionTransition
-import com.ing.baker.recipe.common.ActionType.{InteractionAction, SieveAction}
+import java.lang.reflect.Method
+
+import com.ing.baker.compiler.ReflectionHelpers._
+import com.ing.baker.recipe.common.ActionType.InteractionAction
 import com.ing.baker.recipe.common.{InteractionDescriptor, InteractionFailureStrategy}
-import io.kagera.api.colored.{Place, Transition}
+import com.ing.baker.recipe.javadsl.{FiresEvent, ProvidesIngredient}
+import com.ing.baker.runtime.recipe.duplicates.ActionType
+import com.ing.baker.runtime.recipe.ingredientExtractors.IngredientExtractor
+import com.ing.baker.runtime.recipe.transitions.InteractionTransition
+import io.kagera.api.colored.Transition
 
 package object compiler {
-
-  val limitPrefix           = "limit:"
-  val preconditionPrefix    = "precondition:"
-  val orPreconditionPrefix  = "orPrecondition:"
-  val interactionEvent      = "result:"
-  val multiTransitionPrefix = "multi:"
-  val processIdName         = "$ProcessID$"
-  val missingEvent          = "missing:"
-  val emptyEventIngredient     = "EEI:"
 
   implicit class BooleanOps(bool: Boolean) {
 
@@ -24,33 +21,6 @@ package object compiler {
       else
         None
     }
-  }
-
-  implicit class PlaceAdditions(place: Place[_]) {
-    def isIngredient: Boolean =
-      !isInteractionEventOutput && !isEventPrecondition && !isFiringLimiter && !isIntermediate
-    def isInteractionEventOutput: Boolean = place.label.startsWith(interactionEvent)
-    def isFiringLimiter: Boolean          = place.label.startsWith(limitPrefix)
-    def isEventPrecondition: Boolean      = place.label.startsWith(preconditionPrefix)
-    def isOrEventPrecondition: Boolean    = place.label.startsWith(orPreconditionPrefix)
-    def isIntermediate: Boolean           = place.label.startsWith(multiTransitionPrefix)
-    def isEmptyEventIngredient: Boolean   = place.label.startsWith(emptyEventIngredient)
-  }
-
-  implicit class TransitionAdditions(transition: Transition[_, _, _]) {
-    def isParallelizationTransition: Boolean = transition.label.startsWith(multiTransitionPrefix)
-    def isInteraction: Boolean = PartialFunction.cond(transition) {
-      case t: InteractionTransition[_] => t.actionType == InteractionAction
-    }
-    def isSieve: Boolean = PartialFunction.cond(transition) {
-      case t: InteractionTransition[_] => t.actionType == SieveAction
-    }
-    def isEventMissing: Boolean =
-      !transition
-        .isInstanceOf[InteractionTransition[_]] && transition.label.startsWith(missingEvent)
-
-    def isEvent: Boolean =
-      !(transition.isInstanceOf[InteractionTransition[_]] || transition.label.contains(":"))
   }
 
   implicit class InteractionOps(interaction: InteractionDescriptor[_]) {
@@ -72,24 +42,80 @@ package object compiler {
     }
 
     def interactionTransitionOf(
-        interaction: InteractionDescriptor[_],
-        implementationProvider: () => AnyRef,
-        defaultFailureStrategy: InteractionFailureStrategy,
-        ingredientExtractor: IngredientExtractor): InteractionTransition[Any] =
+                                 interaction: InteractionDescriptor[_],
+                                 implementationProvider: () => AnyRef,
+                                 defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy,
+                                 ingredientExtractor: IngredientExtractor): InteractionTransition[Any] = {
+
+      val interactionClass = interaction.interactionClass.asInstanceOf[Class[Any]]
+
+      val interactionMethodName = interaction.methodName
+
+      val method: Method = interactionClass.getDeclaredMethods
+        .find(_.getName == interactionMethodName)
+        .getOrElse(throw new IllegalStateException(
+          s"No method named '$interactionMethodName' defined on '${interactionClass.getName}'"))
+
+      val inputFields: Seq[(String, Class[_])] = method.getParameterNames.toSeq
+        //Replace ingredient tags with overridden tags
+        .map(ingredientName => interaction.overriddenIngredientNames.getOrElse(ingredientName, ingredientName))
+        //Add the correct typing
+        .zip(method.getParameterTypes.toSeq)
+
+      // checks whether this interaction provides an ingredient
+      val providesIngredient: Boolean = method.isAnnotationPresent(classOf[ProvidesIngredient])
+
+      // checks whether this interaction provides an event
+      val providesEvent: Boolean = method.isAnnotationPresent(classOf[FiresEvent])
+
+
+      val interactionOutputName: String =
+      if(providesIngredient)
+      {
+        if (interaction.overriddenOutputIngredientName != null && interaction.overriddenOutputIngredientName != "") {
+          interaction.overriddenOutputIngredientName
+        } else {
+          method.getOutputName
+        }
+      }
+      else ""
+
+      def transformEventType(clazz: Class[_]): Class[_] =
+        interaction.eventOutputTransformers
+          .get(clazz)
+          .fold(clazz.asInstanceOf[Class[Any]])(_.targetType.asInstanceOf[Class[Any]])
+
+
+      val outputEventClasses: Seq[Class[_]] = {
+        val eventClasses =
+          if (providesEvent) method.getAnnotation(classOf[FiresEvent]).oneOf().toSeq else Nil
+
+        eventClasses.map(transformEventType) //performing additional rewriting on the output events if applicable.
+      }
 
       InteractionTransition[Any](
-        interactionClass = interaction.interactionClass.asInstanceOf[Class[Any]],
+        method = method,
+        providesIngredient = providesIngredient,
+        providesEvent = providesEvent,
+
+        inputFields = inputFields,
+        interactionClass = interactionClass,
         interactionProvider = implementationProvider,
-        interactionMethod = interaction.methodName,
         interactionName = interaction.name,
+        outputEventClasses = outputEventClasses,
+        interactionOutputName = interactionOutputName,
+
         predefinedParameters = interaction.predefinedIngredients,
-        overriddenIngredientNames = interaction.overriddenIngredientNames,
         maximumInteractionCount = interaction.maximumInteractionCount,
-        overriddenOutputIngredientName = interaction.overriddenOutputIngredientName,
-        failureStrategy = interaction.failureStrategy.getOrElse(defaultFailureStrategy),
-        eventOutputTransformers = interaction.eventOutputTransformers,
-        actionType = interaction.actionType,
+        //TODO create a tranformation from the recipeDsl to the CompiledRecipe
+        //        failureStrategy = interaction.failureStrategy.getOrElse(defaultFailureStrategy),
+        failureStrategy = com.ing.baker.runtime.recipe.duplicates.InteractionFailureStrategy.BlockInteraction,
+        //TODO translate from the recipeDsl eventOutputTransformer to the runtime eventOutputTransformer
+        //        eventOutputTransformers = interaction.eventOutputTransformers,
+        eventOutputTransformers = Map.empty,
+        actionType = if (interaction.actionType == InteractionAction) ActionType.InteractionAction else ActionType.SieveAction,
         ingredientExtractor = ingredientExtractor)
+    }
   }
 
   implicit class TransitionOps(transitions: Seq[Transition[_, _, _]]) {

@@ -1,8 +1,9 @@
 package com.ing.baker.compiler
 
 import com.ing.baker._
+import com.ing.baker.recipe.common.Recipe
 import com.ing.baker.recipe.scaladsl.{InteractionDescriptorFactory, SRecipe}
-import com.ing.baker.scala_api._
+import com.ing.baker.runtime.recipe.CompiledRecipe
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -19,9 +20,12 @@ class RecipeCompilerSpec extends TestRecipeHelper {
   "The RecipeCompiler after compilation" should {
 
     "should not contain errors if compiling a valid recipe" in {
-      val compiledRecipe: CompiledRecipe = getComplexRecipe("ValidRecipe").compileRecipe
+      val recipe: Recipe = getComplexRecipe("ValidRecipe")
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      System.out.println(compiledRecipe.getRecipeVisualization)
       //For now all missing implementation errors are provided so they are filtered out
       compiledRecipe.validationErrors.filterNot(s => s.startsWith("No implementation provided for interaction")) shouldBe List.empty
+
     }
 
     "give a List of missing implementations in the validation errors if a recipe does not provide an implementation for an interaction" in {
@@ -29,7 +33,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
                           interactions = Seq(InteractionDescriptorFactory[InteractionOne]),
                           events = Set.empty)
 
-      val compiledRecipe: CompiledRecipe = recipe.compileRecipe
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
       compiledRecipe.validationErrors should contain("No implementation provided for interaction: interface com.ing.baker.InteractionOne")
     }
 
@@ -38,7 +42,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
                           interactions = Seq(InteractionDescriptorFactory[InteractionOne]),
                           events = Set.empty)
 
-      val compiledRecipe: CompiledRecipe = recipe.compileRecipe
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
       compiledRecipe.validationErrors should contain ("Ingredient 'initialIngredient' for interaction 'interface com.ing.baker.InteractionOne:apply' is not provided by any event or interaction")
     }
 
@@ -51,7 +55,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         ),
         events = Set(classOf[InitialEvent])
       )
-      val compiledRecipe: CompiledRecipe = recipe.compileRecipe
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
       compiledRecipe.validationErrors should contain ("Event class: class com.ing.baker.NonSerializableObject does not extend from com.ing.baker.api.Event")
     }
 
@@ -63,7 +67,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         ),
         events = Set(classOf[InitialEvent])
       )
-      val compiledRecipe: CompiledRecipe = recipe.compileRecipe
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
       compiledRecipe.validationErrors should contain ("Event class: class com.ing.baker.EventFromInteractionTwo is not assignable to return type: class java.lang.String for interaction: NonMatchingReturnTypeInteraction")
     }
 
@@ -77,7 +81,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         ),
         events = Set(classOf[InitialEvent])
       )
-      val compiledRecipe: CompiledRecipe = recipe.compileRecipe
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
       compiledRecipe.validationErrors should contain ("Predefined argument 'initialIngredient' is not of type: class java.lang.String on interaction: 'InteractionOne'")
     }
 
@@ -90,7 +94,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         ),
         events = Set(classOf[InitialEvent])
       )
-      val compiledRecipe: CompiledRecipe = recipe.compileRecipe
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
       compiledRecipe.validationErrors should contain ("Predefined argument 'WrongIngredient' is not defined on interaction: 'InteractionOne'")
     }
   }

@@ -1,15 +1,5 @@
 package com.ing.baker;
 
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-
-import com.ing.baker.java_api.JBakerResponse;
-import org.junit.Test;
-
-import static java.util.Collections.emptyMap;
-import static org.junit.Assert.assertTrue;
-
 public class JBakerResponseTest {
 
 //    @Test
