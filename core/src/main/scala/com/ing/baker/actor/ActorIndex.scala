@@ -29,7 +29,7 @@ class ActorIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata) exte
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
 
-  private def createChildPetriNetActor(id: String) = {
+  private[actor] def createChildPetriNetActor(id: String) = {
     val actorRef = context.actorOf(petriNetActorProps, name = id)
     context.watch(actorRef)
     actorRef
@@ -65,11 +65,11 @@ class ActorIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata) exte
 
       context.child(id) match {
         case Some(actorRef) => actorRef.forward(cmd)
-        case _ if index.contains(id) =>
+        case None if index.contains(id) =>
           persist(ActorActivated(id)) { _ =>
             createChildPetriNetActor(id).forward(cmd)
           }
-        case _ => sender() ! Uninitialized(processId.toString)
+        case None => sender() ! Uninitialized(processId.toString)
       }
 
     case cmd =>
