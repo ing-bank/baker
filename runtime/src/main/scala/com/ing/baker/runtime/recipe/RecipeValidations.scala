@@ -7,46 +7,52 @@ import com.ing.baker.runtime.recipe.duplicates.ReflectionHelpers._
 import com.ing.baker.runtime.recipe.transitions.InteractionTransition
 import com.ing.baker.runtime.recipe.transitions.ProvidesType.ProvidesEvent
 
+import scala.collection.mutable
 import scala.util.Try
 
 object RecipeValidations {
 
-  def validateInteraction(compiledRecipe: CompiledRecipe)(interaction: InteractionTransition[_]): Seq[String] = {
+  def validateInteraction(compiledRecipe: CompiledRecipe)(interactionTransition: InteractionTransition[_]): Seq[String] = {
 
-    val validationErrors = scala.collection.mutable.MutableList.empty[String]
+    val validationErrors: mutable.MutableList[String] = mutable.MutableList.empty[String]
 
-    if (compiledRecipe.petriNet.inMarking(interaction).isEmpty)
-      validationErrors += s"Interaction $interaction does not have any requirements (ingredients or preconditions)! This will result in an infinite execution loop."
+    if (compiledRecipe.petriNet.inMarking(interactionTransition).isEmpty)
+      validationErrors += s"Interaction $interactionTransition does not have any requirements (ingredients or preconditions)! This will result in an infinite execution loop."
 
-    interaction.providesType match {
-      case ProvidesEvent(outputFieldNames: Seq[String], outputType: Class[_], outputEventClasses: Seq[Class[_]]) =>
-        outputEventClasses.foreach(eventClass =>
-          if (outputType.isAssignableFrom(eventClass))
-            validationErrors += s"Event class: $eventClass is not assignable to return type: ${outputType} for interaction: $interaction")
-      case _ => ()
+    val eventClassNotAssignableFromErrors: Seq[String] = interactionTransition match  {
+      case InteractionTransition(_, providesType: ProvidesEvent, _, _, _, interactionName: String, _, _, _, _, _, _) =>
+        providesType.outputEventClasses.flatMap(
+          eventClass =>
+            if (!providesType.outputType.isAssignableFrom(eventClass))
+              Some(s"Event class: $eventClass is not assignable to return type: ${providesType.outputType} for interaction: $interactionName")
+            else None
+        )
+      case _ => Seq.empty
     }
 
+    validationErrors ++= eventClassNotAssignableFromErrors
+
     // check if the process id argument type is correct, TODO remove overlap with code below
-    interaction.method.processIdClass.foreach {
+    interactionTransition.method.processIdClass.foreach {
       case c if c == classOf[String]         =>
       case c if c == classOf[java.util.UUID] =>
-      case c => validationErrors += s"Non supported process id class: ${c.getName} on interaction: '$interaction'"
+      case c => validationErrors += s"Non supported process id class: ${c.getName} on interaction: '$interactionTransition'"
     }
 
     // throw an exception is attempting to predefine a non existing input field
-    (interaction.predefinedParameters.keySet -- interaction.inputFieldNames.toSet) foreach { name =>
-      validationErrors += s"Predefined argument '$name' is not defined on interaction: '$interaction'"
+    (interactionTransition.predefinedParameters.keySet -- interactionTransition.inputFieldNames.toSet) foreach { name =>
+      validationErrors += s"Predefined argument '$name' is not defined on interaction: '$interactionTransition'"
     }
 
     // check if the predefined ingredient is of the expected type
-    interaction.predefinedParameters.foreach {
+    interactionTransition.predefinedParameters.foreach {
       case (name, value) =>
-        val methodName = interaction.method.parameterTypeForName(name)
+        val methodName = interactionTransition.method.parameterTypeForName(name)
         // We do not have to add a validation error if the method name is not defined since this is validated for all given ingredients at the same time
         if(methodName.isDefined){
-          val parameterType = interaction.method.parameterTypeForName(name).get
+          val parameterType = interactionTransition.method.parameterTypeForName(name).get
           if (!parameterType.isInstance(value))
-            validationErrors += s"Predefined argument '$name' is not of type: $parameterType on interaction: '$interaction'"
+            validationErrors += s"Predefined argument '$name' is not of type: $parameterType on interaction: '$interactionTransition'"
         }
     }
 
@@ -114,7 +120,7 @@ object RecipeValidations {
                              validationSettings: ValidationSettings): CompiledRecipe = {
 
     // TODO don't use a mutable list but instead a more functional solutions such as folding or a writer monad
-    val postCompileValidationErrors = scala.collection.mutable.MutableList.empty[String]
+    val postCompileValidationErrors = mutable.MutableList.empty[String]
 
     postCompileValidationErrors ++= validateInteractionIngredients(compiledRecipe)
     postCompileValidationErrors ++= validateInteractions(compiledRecipe)

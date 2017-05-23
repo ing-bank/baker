@@ -66,11 +66,15 @@ package object compiler {
         //Add the correct typing
         .zip(method.getParameterTypes.toSeq)
 
-
+      def transformEventType(clazz: Class[_]): Class[_] =
+        interactionDescriptor.eventOutputTransformers
+          .get(clazz)
+          .fold(clazz.asInstanceOf[Class[Any]])(_.targetType.asInstanceOf[Class[Any]])
 
       val returnType = if (method.isAsynchronous) method.getFirstTypeParameter else method.getReturnType
 
       val providesType: ProvidesType =
+        //ProvidesIngredient
         if(method.isAnnotationPresent(classOf[javadsl.ProvidesIngredient]))
         {
           val interactionOutputName: String =
@@ -81,6 +85,7 @@ package object compiler {
             }
           ProvidesIngredient(interactionOutputName -> returnType, returnType)
         }
+        //ProvidesEvent
         else if(method.isAnnotationPresent(classOf[javadsl.FiresEvent])) {
           val outputType = transformEventType(returnType)
           val outputEventClasses: Seq[Class[_]] = {
@@ -89,12 +94,8 @@ package object compiler {
           }
           ProvidesEvent(outputFieldNames = outputType.getDeclaredFields.map(_.getName).toSeq, outputType = outputType, outputEventClasses = outputEventClasses)
         }
+        //ProvidesNothing
         else ProvidesNothing
-
-      def transformEventType(clazz: Class[_]): Class[_] =
-        interactionDescriptor.eventOutputTransformers
-          .get(clazz)
-          .fold(clazz.asInstanceOf[Class[Any]])(_.targetType.asInstanceOf[Class[Any]])
 
       implicit def transformFailureStrategy(recipeStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): com.ing.baker.runtime.recipe.duplicates.InteractionFailureStrategy = {
         recipeStrategy match {

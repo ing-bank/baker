@@ -2,11 +2,11 @@ package com.ing.baker
 package compiler
 
 import com.ing.baker.recipe.common.{InteractionDescriptor, Recipe}
-import com.ing.baker.runtime.core.ProcessState
+import com.ing.baker.runtime.core.{BakerException, ProcessState}
 import com.ing.baker.runtime.recipe.ingredientExtractors.{CompositeIngredientExtractor, IngredientExtractor}
+import com.ing.baker.runtime.recipe.transitions.ProvidesType.{ProvidesEvent, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.runtime.recipe.transitions.{EventTransition, InteractionTransition}
 import com.ing.baker.runtime.recipe.{CompiledRecipe, RecipeValidations, ValidationSettings, _}
-import io.kagera.api._
 import io.kagera.api.colored._
 import io.kagera.api.colored.dsl._
 
@@ -82,22 +82,29 @@ object RecipeCompiler {
   }
 
   // the (possible) event output arcs / places
-  private def interactionEventOutputArc(
-      t: InteractionTransition[_],
-      findInternalEventByClass: Class[_] => Option[Transition[_, _, _]]): Seq[Arc] = {
-    val resultPlace = placeWithLabel(s"$interactionEvent${t.label}")
-    val eventArcs = t.outputEventClasses.map { eventClass =>
-      val internalEventTransition = findInternalEventByClass(eventClass).get
-      val filter                  = (value: Any) => value == eventClass.getSimpleName
-
-      arc(resultPlace, internalEventTransition, 1, filter)
+  private def interactionEventOutputArc(t: InteractionTransition[_],
+                                        findInternalEventByClass: Class[_] => Option[Transition[_, _, _]]): Seq[Arc] = {
+    t.providesType match {
+      case e: ProvidesEvent => {
+        val resultPlace = placeWithLabel(s"$interactionEvent${t.label}")
+        val eventArcs = e.outputEventClasses.map { eventClass =>
+          val internalEventTransition = findInternalEventByClass(eventClass).get
+          val filter                  = (value: Any) => value == eventClass.getSimpleName
+          arc(resultPlace, internalEventTransition, 1, filter)
+        }
+        arc(t, resultPlace, 1) +: eventArcs
+      }
+      case _ => throw new BakerException("InteractionEventOutputArc called for non event transition")
     }
-    arc(t, resultPlace, 1) +: eventArcs
   }
 
   // the (possible) data output arcs / places
   private def interactionIngredientOutputArc(t: InteractionTransition[_]): Seq[Arc] =
-    t.outputFieldNames.map(placeWithLabel).map(p => arc(t, p, 1))
+    t.providesType match {
+      case e: ProvidesEvent => e.outputFieldNames.map(placeWithLabel).map(p => arc(t, p, 1))
+      case i: ProvidesIngredient => Seq(i.outputIngredient._1).map(placeWithLabel).map(p => arc(t, p, 1))
+      case _ => Seq.empty
+    }
 
   private def buildInteractionInputArcs(
       t: InteractionTransition[_],
@@ -130,13 +137,13 @@ object RecipeCompiler {
     dataInputArcs ++ internalDataInputArcs ++ limitInteractionCountArc
   }
 
-  private def buildInteractionOutputArcs(
-      t: InteractionTransition[_],
-      findInternalEventByClass: Class[_] => Option[Transition[_, _, _]]): Seq[Arc] = {
-    if (t.providesEvent)
-      interactionEventOutputArc(t, findInternalEventByClass)
-    else
-      interactionIngredientOutputArc(t)
+  private def buildInteractionOutputArcs(t: InteractionTransition[_],
+                                         findInternalEventByClass: Class[_] => Option[Transition[_, _, _]]): Seq[Arc] = {
+    t.providesType match {
+      case e: ProvidesEvent => interactionEventOutputArc(t, findInternalEventByClass)
+      case i: ProvidesIngredient => interactionIngredientOutputArc(t)
+      case n: ProvidesNothing.type => interactionIngredientOutputArc(t)
+    }
   }
 
   private def buildInteractionArcs(
@@ -202,22 +209,34 @@ object RecipeCompiler {
     val sensoryEventTransitions: Seq[EventTransition[_]] = recipe.events.map { new EventTransition(_, ingredientExtractor) }.toSeq
 
     // events provided by other transitions / actions
-    val interactionEventTransitions = interactionTransitions.flatMap { t =>
-      t.outputEventClasses.map(
-        clazz =>
-          nullTransition(id = clazz.getName.hashCode,
-                         label = Some(clazz.getSimpleName),
-                         automated = true))
+    val interactionEventTransitions: Seq[Transition[Unit, Unit, Nothing]] = interactionTransitions.flatMap { t =>
+      t.providesType match {
+        case e: ProvidesEvent => {
+          e.outputEventClasses.map(
+          clazz =>
+            nullTransition(id = clazz.getName.hashCode,
+              label = Some(clazz.getSimpleName),
+              automated = true))
+        }
+        case i: ProvidesIngredient => Nil
+        case n: ProvidesNothing.type => Nil
+      }
     }
 
     val allEventTransitions: Seq[Transition[_, _, _]] = sensoryEventTransitions ++ interactionEventTransitions
 
     // Given the event classes, it is creating the ingredient places and
     // connecting a transition to a ingredient place.
-    val internalEventArcs = interactionTransitions.flatMap { t =>
-      t.outputEventClasses.flatMap(clazz =>
-          clazz.getDeclaredFields.toSeq.map(field =>
+    val internalEventArcs: Seq[Arc] = interactionTransitions.flatMap { t =>
+      t.providesType match {
+        case e: ProvidesEvent => {
+          e.outputEventClasses.flatMap(clazz =>
+            clazz.getDeclaredFields.toSeq.map(field =>
               arc(interactionEventTransitions.getByLabel(clazz.getSimpleName), placeWithLabel(field.getName), 1)))
+        }
+        case i: ProvidesIngredient => Nil
+        case n: ProvidesNothing.type => Nil
+      }
     }
 
     // This generates precondition arcs for Required Events (AND).

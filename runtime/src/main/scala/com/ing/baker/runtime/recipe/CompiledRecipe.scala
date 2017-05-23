@@ -1,8 +1,9 @@
 package com.ing.baker.runtime.recipe
 
 import com.ing.baker.runtime.core.ProcessState
+import com.ing.baker.runtime.recipe.duplicates.RequiresIngredient
 import com.ing.baker.runtime.recipe.ingredientExtractors.IngredientExtractor
-import com.ing.baker.runtime.recipe.transitions.InteractionTransition
+import com.ing.baker.runtime.recipe.transitions.{InteractionTransition, ProvidesType}
 import com.ing.baker.runtime.recipe.transitions.ProvidesType.{ProvidesEvent, ProvidesIngredient}
 import com.ing.baker.runtime.visualization.RecipeVisualizer.PetriNetVisualization
 import io.kagera.api.colored._
@@ -42,28 +43,25 @@ case class CompiledRecipe(name: String,
     }
 
   val interactionEvents: Set[Class[_]] =
-    interactionTransitions.flatMap(
-      _.providesType match {
-        case ProvidesEvent(_, _, outputEventClasses) => outputEventClasses
-        case _ => Nil
-      }
-    )
+    interactionTransitions flatMap  {
+      case InteractionTransition(_, providesType: ProvidesEvent, _, _, _, _, _, _, _, _, _, _) => providesType.outputEventClasses
+      case _ => Seq.empty
+    }
 
   val allEvents: Set[Class[_]] = sensoryEvents ++ interactionEvents
 
   val allIngredientsProvidedByInteractions: Set[(String, Class[_])] =
-    interactionTransitions.map {
-      _.providesType match {
-        case ProvidesIngredient(outputIngredient: (String, Class[_]), _) => outputIngredient
-        case _ => None.asInstanceOf[(String, Class[_])]
-      }
-    }
+    interactionTransitions map {
+      case InteractionTransition(_, providesType: ProvidesIngredient, _, _, _, _, _, _, _, _, _, _) => providesType.outputIngredient
+      case _ => null
+    } filterNot(_ == null)
 
-  val allIngredientsProvidedByEvents = allEvents.flatMap {
+
+  val allIngredientsProvidedByEvents: Set[(String, Class[_])] = allEvents.flatMap {
     eventClass => ingredientExtractor.extractIngredientTypes(eventClass)
   }
 
   val ingredients: Map[String, Class[_]] =
   //TODO move te setting of this to the compiler and not as part of the compiled recipe itself
-    (allIngredientsProvidedByInteractions ++ allIngredientsProvidedByInteractions).toMap
+    (allIngredientsProvidedByInteractions ++ allIngredientsProvidedByEvents).toMap
 }
