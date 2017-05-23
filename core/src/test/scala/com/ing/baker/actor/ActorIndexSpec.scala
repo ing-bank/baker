@@ -2,46 +2,42 @@ package com.ing.baker.actor
 
 import java.util.UUID
 
-import akka.actor.{ActorSystem, Props}
-import akka.testkit.{ImplicitSender, TestKit, TestProbe}
+import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.testkit.{TestKit, TestProbe}
 import com.typesafe.config.ConfigFactory
 import io.kagera.akka.actor.PetriNetInstanceProtocol
 import io.kagera.akka.actor.PetriNetInstanceProtocol.{AlreadyInitialized, Initialize, Uninitialized}
 import io.kagera.api.colored.Marking
 import org.mockito
+import org.mockito.Mockito
 import org.mockito.Mockito.verify
-import org.mockito.{ArgumentCaptor, Mockito}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mock.MockitoSugar
-import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Matchers, WordSpecLike}
 
 //noinspection TypeAnnotation
-class ActorIndexSpec extends TestKit(ActorSystem("ActorIndexSpec", ConfigFactory.parseString(
-  """
-    |akka.persistence.journal.plugin = "inmemory-journal"
-    |akka.persistence.snapshot-store.plugin = "inmemory-snapshot-store"
-  """.stripMargin)))
-  with ImplicitSender
-  with WordSpecLike
-  with Matchers
-  with BeforeAndAfterAll
-  with BeforeAndAfter
-  with MockitoSugar
-  with Eventually {
+class ActorIndexSpec
+  extends WordSpecLike
+    with Matchers
+    with BeforeAndAfterAll
+    with BeforeAndAfter
+    with MockitoSugar
+    with Eventually {
 
-  override implicit val patienceConfig = PatienceConfig(Span(3, Seconds), Span(500, Millis))
+  implicit val system = ActorSystem("ActorIndexSpec", ConfigFactory.parseString(
+    """
+      |akka.persistence.journal.plugin = "inmemory-journal"
+      |akka.persistence.snapshot-store.plugin = "inmemory-snapshot-store"
+    """.stripMargin))
 
-  var petriNetActorProbe = TestProbe()
   val recipeMetadataMock = mock[RecipeMetadata]
+
+  before {
+    Mockito.reset(recipeMetadataMock)
+  }
 
   override def afterAll {
     TestKit.shutdownActorSystem(system)
-  }
-
-  before {
-    petriNetActorProbe = TestProbe()
-    Mockito.reset(recipeMetadataMock)
   }
 
   "ActorIndex" should {
@@ -50,9 +46,12 @@ class ActorIndexSpec extends TestKit(ActorSystem("ActorIndexSpec", ConfigFactory
       val initializeMsg = Initialize(Marking.empty)
       val processId = UUID.randomUUID()
 
-      val actorIndex = createActorIndex
+      val petriNetActorProbe = TestProbe()
+      val actorIndex = createActorIndex(petriNetActorProbe.ref)
 
+      implicit val sender = TestProbe().ref
       actorIndex ! BakerActorMessage(processId, initializeMsg)
+
       petriNetActorProbe.expectMsg(initializeMsg)
     }
 
@@ -60,14 +59,18 @@ class ActorIndexSpec extends TestKit(ActorSystem("ActorIndexSpec", ConfigFactory
       val initializeMsg = Initialize(Marking.empty)
       val processId = UUID.randomUUID()
 
-      val actorIndex = createActorIndex
+      val senderProbe = TestProbe()
 
+      val petriNetActorProbe = TestProbe()
+      val actorIndex = createActorIndex(petriNetActorProbe.ref)
+
+      implicit val sender = senderProbe.ref
       actorIndex ! BakerActorMessage(processId, initializeMsg)
       actorIndex ! BakerActorMessage(processId, initializeMsg)
 
       petriNetActorProbe.expectMsg(initializeMsg)
       petriNetActorProbe.expectNoMsg()
-      expectMsg(AlreadyInitialized)
+      senderProbe.expectMsg(AlreadyInitialized)
     }
 
     "forward messages to the PetriNetInstance actor" in {
@@ -75,8 +78,10 @@ class ActorIndexSpec extends TestKit(ActorSystem("ActorIndexSpec", ConfigFactory
       val otherMsg = mock[PetriNetInstanceProtocol.Command]
       val processId = UUID.randomUUID()
 
-      val actorIndex = createActorIndex
+      val petriNetActorProbe = TestProbe()
+      val actorIndex = createActorIndex(petriNetActorProbe.ref)
 
+      implicit val sender = TestProbe().ref
       actorIndex ! BakerActorMessage(processId, initializeMsg)
       actorIndex ! BakerActorMessage(processId, otherMsg)
 
@@ -84,24 +89,21 @@ class ActorIndexSpec extends TestKit(ActorSystem("ActorIndexSpec", ConfigFactory
       petriNetActorProbe.expectMsg(otherMsg)
     }
 
-    "notifies ProcessMetadata when a PetriNetInstance actor is created" in {
+    "notify ProcessMetadata when a PetriNetInstance actor is created" in {
       val initializeMsg = Initialize(Marking.empty)
       val processId = UUID.randomUUID()
 
-      val actorIndex = createActorIndex
+      val actorIndex = createActorIndex(TestProbe().ref)
 
-      val currentTime = System.currentTimeMillis()
+      implicit val sender = TestProbe().ref
       actorIndex ! BakerActorMessage(processId, initializeMsg)
 
+      implicit val patienceConfig = PatienceConfig()
       eventually {
-        val captor = ArgumentCaptor.forClass(classOf[Long])
-        verify(recipeMetadataMock).addNewProcessMetadata(
-          mockito.Matchers.eq(processId.toString),
-          captor.capture())
-
-        // check the created time is a sensible long value, not anyLong,
-        // i.e. newer than the time BakerActorMessage is sent
-        captor.getValue should be > currentTime
+        verify(recipeMetadataMock)
+          .addNewProcessMetadata(
+            mockito.Matchers.eq(processId.toString),
+            mockito.Matchers.anyLong())
       }
 
     }
@@ -110,19 +112,24 @@ class ActorIndexSpec extends TestKit(ActorSystem("ActorIndexSpec", ConfigFactory
       val processId = UUID.randomUUID()
       val otherMsg = mock[PetriNetInstanceProtocol.Command]
 
-      val actorIndex = createActorIndex
+      val senderProbe = TestProbe()
 
+      val petriNetActorProbe = TestProbe()
+      val actorIndex = createActorIndex(petriNetActorProbe.ref)
+
+      implicit val sender = senderProbe.ref
       actorIndex ! BakerActorMessage(processId, otherMsg)
+
       petriNetActorProbe.expectNoMsg()
-      expectMsg(Uninitialized(processId.toString))
+      senderProbe.expectMsg(Uninitialized(processId.toString))
     }
   }
 
-  private def createActorIndex = {
+  private def createActorIndex(petriNetActorRef: ActorRef) = {
     system.actorOf(Props(new ActorIndex(Props.empty, recipeMetadataMock) {
       override private[actor] def createChildPetriNetActor(id: String) = {
-        petriNetActorProbe.ref
+        petriNetActorRef
       }
-    }))
+    }), s"actorIndex-${UUID.randomUUID().toString}")
   }
 }
