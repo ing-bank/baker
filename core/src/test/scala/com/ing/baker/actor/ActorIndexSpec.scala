@@ -28,6 +28,7 @@ class ActorIndexSpec
     """
       |akka.persistence.journal.plugin = "inmemory-journal"
       |akka.persistence.snapshot-store.plugin = "inmemory-snapshot-store"
+      |akka.test.timefactor = 2.0
     """.stripMargin))
 
   val recipeMetadataMock = mock[RecipeMetadata]
@@ -59,18 +60,17 @@ class ActorIndexSpec
       val initializeMsg = Initialize(Marking.empty)
       val processId = UUID.randomUUID()
 
-      val senderProbe = TestProbe()
-
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref)
 
-      implicit val sender = senderProbe.ref
+      val selfProbe = TestProbe()
+      implicit val self = selfProbe.ref
       actorIndex ! BakerActorMessage(processId, initializeMsg)
       actorIndex ! BakerActorMessage(processId, initializeMsg)
 
       petriNetActorProbe.expectMsg(initializeMsg)
       petriNetActorProbe.expectNoMsg()
-      senderProbe.expectMsg(AlreadyInitialized)
+      selfProbe.expectMsg(AlreadyInitialized)
     }
 
     "forward messages to the PetriNetInstance actor" in {
@@ -81,7 +81,7 @@ class ActorIndexSpec
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref)
 
-      implicit val sender = TestProbe().ref
+      implicit val self = TestProbe().ref
       actorIndex ! BakerActorMessage(processId, initializeMsg)
       actorIndex ! BakerActorMessage(processId, otherMsg)
 
@@ -95,7 +95,7 @@ class ActorIndexSpec
 
       val actorIndex = createActorIndex(TestProbe().ref)
 
-      implicit val sender = TestProbe().ref
+      implicit val self = TestProbe().ref
       actorIndex ! BakerActorMessage(processId, initializeMsg)
 
       implicit val patienceConfig = PatienceConfig()
@@ -112,16 +112,15 @@ class ActorIndexSpec
       val processId = UUID.randomUUID()
       val otherMsg = mock[PetriNetInstanceProtocol.Command]
 
-      val senderProbe = TestProbe()
-
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref)
 
-      implicit val sender = senderProbe.ref
+      val selfProbe = TestProbe()
+      implicit val self = selfProbe.ref
       actorIndex ! BakerActorMessage(processId, otherMsg)
 
       petriNetActorProbe.expectNoMsg()
-      senderProbe.expectMsg(Uninitialized(processId.toString))
+      selfProbe.expectMsg(Uninitialized(processId.toString))
     }
   }
 
