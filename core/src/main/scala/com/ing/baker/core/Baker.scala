@@ -12,7 +12,9 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
 import com.ing.baker.RecipeVisualizer
+import com.ing.baker.actor.Util.createPersistenceWarmupActor
 import com.ing.baker.actor._
+import com.ing.baker.api.ProcessMetadata
 import com.ing.baker.compiler.{CompiledRecipe, RecipeCompiler, ValidationSettings, _}
 import com.ing.baker.scala_api.BakerResponse
 import fs2.Strategy
@@ -25,6 +27,7 @@ import io.kagera.persistence.Encryption.NoEncryption
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
+import scala.collection.immutable.Seq
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
@@ -42,7 +45,7 @@ class Baker(val recipe: Recipe,
             val validationSettings: ValidationSettings = ValidationSettings.defaultValidationSettings,
             implicit val actorSystem: ActorSystem) {
 
-  val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe, implementations, validationSettings,  new CompositeIngredientExtractor(actorSystem.settings.config))
+  val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe, implementations, validationSettings, new CompositeIngredientExtractor(actorSystem.settings.config))
 
   if (compiledRecipe.validationErrors.nonEmpty)
     throw new RecipeValidationException(compiledRecipe.validationErrors.mkString(", "))
@@ -63,11 +66,11 @@ class Baker(val recipe: Recipe,
   /**
     * We do this to force initialization of the journal (database) connection.
     */
-  com.ing.baker.actor.Util.createPersistenceWarmupActor()(actorSystem, journalInitializeTimeout)
+  createPersistenceWarmupActor()(actorSystem, journalInitializeTimeout)
 
   private val bakerActorProvider =
     actorSystem.settings.config.as[Option[String]]("baker.actor.provider") match {
-      case None | Some("local") => new LocalBakerActorProvider
+      case None | Some("local") => new LocalBakerActorProvider()
       case Some("cluster-sharded") => new ShardedActorProvider(config)
       case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
     }
@@ -82,16 +85,17 @@ class Baker(val recipe: Recipe,
   }
 
   private val actorIdleTimeout = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout")
-
-  private val processIdManagerActor = bakerActorProvider.createActorIndex(
-    compiledRecipe.name,
+  private val petriNetInstanceActorProps =
     PetriNetInstance.props[ProcessState](compiledRecipe.petriNet,
       PetriNetInstance.Settings(
-        evaluationStrategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadpool"),
+        evaluationStrategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadPool"),
         serializer = new AkkaObjectSerializer(actorSystem, configuredEncryption),
-        idleTTL = actorIdleTimeout )))
+        idleTTL = actorIdleTimeout))
 
-  private val petriNetApi = new PetriNetInstanceApi[ProcessState](compiledRecipe.petriNet, processIdManagerActor)
+  private val (recipeManagerActor, recipeMetadata) = bakerActorProvider.createRecipeActors(
+    compiledRecipe.name, petriNetInstanceActorProps)
+
+  private val petriNetApi = new PetriNetInstanceApi[ProcessState](compiledRecipe.petriNet, recipeManagerActor)
 
   private val readJournal = PersistenceQuery(actorSystem)
     .readJournalFor[CurrentEventsByPersistenceIdQuery with AllPersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
@@ -114,9 +118,9 @@ class Baker(val recipe: Recipe,
         cluster.registerOnMemberRemoved {
           actorSystem.terminate()
         }
-        implicit val akkaTimeout = Timeout(timeout);
+        implicit val akkaTimeout = Timeout(timeout)
         Util.handOverShardsAndLeaveCluster(Seq(recipe.name))
-      case Success(cluster) =>
+      case Success(_) =>
         log.debug("ActorSystem not a member of cluster")
         actorSystem.terminate()
       case Failure(exception) =>
@@ -142,12 +146,12 @@ class Baker(val recipe: Recipe,
     implicit val askTimeout = Timeout(bakeTimeout)
 
     val msg = Initialize(compiledRecipe.initialMarking, ProcessState(processId, Map.empty))
-    val initializeFuture = (processIdManagerActor ? BakerActorMessage(processId, msg)).mapTo[Response]
+    val initializeFuture = (recipeManagerActor ? BakerActorMessage(processId, msg)).mapTo[Response]
 
     val eventualState = initializeFuture.map {
-      case msg: Initialized   => msg.state.asInstanceOf[ProcessState]
+      case msg: Initialized => msg.state.asInstanceOf[ProcessState]
       case AlreadyInitialized => throw new IllegalArgumentException(s"Processs with $processId already exists.")
-      case msg @ _            => throw new BakerException(s"Unexpected message: $msg")
+      case msg@_ => throw new BakerException(s"Unexpected message: $msg")
     }
 
     eventualState
@@ -214,7 +218,7 @@ class Baker(val recipe: Recipe,
   def getVisualState(processId: java.util.UUID)(implicit timeout: FiniteDuration): String = {
     val events: Seq[Any] = this.events(processId)
     val classes: Seq[String] = events.map(x => x.getClass.getSimpleName)
-    RecipeVisualizer.generateDot(compiledRecipe.petriNet.innerGraph, x => true, classes)
+    RecipeVisualizer.generateDot(compiledRecipe.petriNet.innerGraph, _ => true, classes)
   }
 
 
@@ -234,7 +238,7 @@ class Baker(val recipe: Recipe,
     * @return Accumulated state.
     */
   def getProcessStateAsync(processId: java.util.UUID)(implicit timeout: FiniteDuration): Future[ProcessState] = {
-    processIdManagerActor
+    recipeManagerActor
       .ask(BakerActorMessage(processId, GetState))(Timeout.durationToTimeout(timeout))
       .map {
         case instanceState: InstanceState => instanceState.state.asInstanceOf[ProcessState]
@@ -242,4 +246,6 @@ class Baker(val recipe: Recipe,
         case msg => throw new BakerException(s"Unexpected actor response message: $msg")
       }
   }
+
+  def allProcessMetadata: Set[ProcessMetadata] = recipeMetadata.getAllProcessMetadata
 }

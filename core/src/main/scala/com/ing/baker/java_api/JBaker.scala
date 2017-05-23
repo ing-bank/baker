@@ -4,16 +4,16 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
-import com.ing.baker.core._
-import com.ing.baker.java_api.JBaker._
-import com.typesafe.config.ConfigFactory
+import com.ing.baker.api.ProcessMetadata
+import com.ing.baker.core.{Baker, Interaction, InteractionDescriptor}
+import com.typesafe.config.{Config, ConfigFactory}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.concurrent.duration._
 
 object JBaker {
-  val defaultConfig =
+  val defaultConfig: Config =
     ConfigFactory.parseString("""
       |akka {
       |   persistence {
@@ -35,7 +35,7 @@ object JBaker {
       c =>
         c -> implementationsSeq.find(e => c.isAssignableFrom(e.getClass)).orNull
     }
-    interactionMappings.toMap.filterNot { case (k, v) => v == null }.asJava
+    interactionMappings.toMap.filterNot { case (_, v) => v == null }.asJava
   }
 }
 
@@ -51,13 +51,13 @@ class JBaker private (jRecipe: JRecipe,
   val baker: Baker =
     new Baker(recipe = jRecipe, interactionImplementations, actorSystem = actorSystem)
 
-  val defaultTimeout = 20 * 1000
+  val defaultTimeout: Int = 20 * 1000
 
   def this(jRecipe: JRecipe,
            implementations: java.util.List[Interaction],
            actorSystem: ActorSystem) =
     this(jRecipe,
-         mapInteractionToImplementation(jRecipe.getInteractions, implementations),
+         JBaker.mapInteractionToImplementation(jRecipe.getInteractions, implementations),
          actorSystem)
 
   def this(jRecipe: JRecipe, implementations: java.util.List[Interaction]) =
@@ -68,7 +68,7 @@ class JBaker private (jRecipe: JRecipe,
     *
     * @param timeout The time to wait for the shard handover.
     */
-  def shutdown(timeout: java.time.Duration) = baker.shutdown(Duration(timeout.toMillis, TimeUnit.MILLISECONDS))
+  def shutdown(timeout: java.time.Duration): Unit = baker.shutdown(Duration(timeout.toMillis, TimeUnit.MILLISECONDS))
 
   /**
     * Attempts to gracefully shutdown the baker system.
@@ -77,7 +77,7 @@ class JBaker private (jRecipe: JRecipe,
 
   /**
     * This Bakes a new instance of the recipe
-    * @param processId
+    * @param processId process id
     */
   def bake(processId: java.util.UUID): Unit =
     baker.bake(processId)
@@ -149,7 +149,7 @@ class JBaker private (jRecipe: JRecipe,
     * Returns the compiled recipe
     * @return
     */
-  def getCompiledRecipe(): JCompiledRecipe = jRecipe.compileRecipe
+  def getCompiledRecipe: JCompiledRecipe = jRecipe.compileRecipe
 
   /**
     * returns the visual state of the recipe in dot format
@@ -168,4 +168,6 @@ class JBaker private (jRecipe: JRecipe,
   def getVisualState(processId: java.util.UUID): String =
     getVisualState(processId, defaultTimeout)
 
+  def getAllProcessMetadata: java.util.Set[ProcessMetadata] =
+    baker.allProcessMetadata.asJava
 }

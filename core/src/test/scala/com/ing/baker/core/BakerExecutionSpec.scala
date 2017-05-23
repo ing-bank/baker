@@ -510,5 +510,32 @@ class BakerExecutionSpec extends TestRecipeHelper {
       verify(testInteractionTwoMock, times(1)).apply(initialIngredient)
       verifyNoMoreInteractions(testInteractionFiveMock, testInteractionSixMock)
     }
+
+    "get all ProcessMetadata info for non-cluster baker setup" in {
+      val recipeName = "GetAllProcessMetadata-Local"
+      val baker = setupBakerWithRecipe(recipeName)
+      val processIds = Set(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID())
+      processIds foreach baker.bake
+
+      baker.allProcessMetadata.map(_.id) shouldBe processIds.map(_.toString)
+    }
+
+    "get all ProcessMetadata info for cluster baker setup" in {
+      val recipeName = "GetAllProcessMetadata-Cluster"
+      val system = ActorSystem(recipeName, levelDbConfig(recipeName, 3003))
+
+      try {
+        val baker = setupBakerWithRecipe(recipeName, system)
+
+        baker.allProcessMetadata shouldBe Set.empty[ProcessState]
+
+        val processIds = Set(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID())
+        processIds foreach baker.bake
+
+        baker.allProcessMetadata.map(_.id) shouldBe processIds.map(_.toString)
+      } finally {
+        TestKit.shutdownActorSystem(system)
+      }
+    }
   }
 }

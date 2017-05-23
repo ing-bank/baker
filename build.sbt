@@ -43,6 +43,7 @@ lazy val baker = project.in(file("core"))
         akkaActor,
         akkaCluster,
         akkaClusterSharding,
+        akkaDistributedData,
         scalaReflect,
         javaxInject,
         paranamer,
