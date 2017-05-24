@@ -3,7 +3,7 @@ package com.ing.baker.runtime.core
 import java.util.UUID
 
 import akka.NotUsed
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Props}
 import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
@@ -16,10 +16,15 @@ import com.ing.baker.core.{BakerException, ProcessState, RecipeValidationExcepti
 import com.ing.baker.runtime.actor.{BakerActorMessage, LocalBakerActorProvider, ShardedActorProvider, Util}
 import com.ing.baker.visualisation.RecipeVisualizer
 import fs2.Strategy
+import io.kagera.akka.actor.PetriNetInstance.Settings
 import io.kagera.akka.actor.PetriNetInstanceProtocol._
 import io.kagera.akka.actor._
 import io.kagera.akka.query.PetriNetQuery
+import io.kagera.api.Marking
+import io.kagera.dsl.colored
+import io.kagera.dsl.colored.{Transition, _}
 import io.kagera.execution.EventSourcing.TransitionFiredEvent
+import io.kagera.execution.JobExecutor
 import io.kagera.persistence.Encryption
 import io.kagera.persistence.Encryption.NoEncryption
 import net.ceedubs.ficus.Ficus._
@@ -85,7 +90,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   private val processIdManagerActor = bakerActorProvider.createActorIndex(
     compiledRecipe.name,
-    PetriNetInstance.props[ProcessState](compiledRecipe.petriNet,
+    Util.coloredPetrinetProps[ProcessState](compiledRecipe.petriNet,
       PetriNetInstance.Settings(
         evaluationStrategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadpool"),
         serializer = new AkkaObjectSerializer(actorSystem, configuredEncryption),
@@ -141,7 +146,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
   def bakeAsync(processId: java.util.UUID): Future[ProcessState] = {
     implicit val askTimeout = Timeout(bakeTimeout)
 
-    val msg = Initialize(compiledRecipe.initialMarking, ProcessState(processId, Map.empty))
+    val msg = Initialize(Marking.marshal(compiledRecipe.initialMarking), ProcessState(processId, Map.empty))
     val initializeFuture = (processIdManagerActor ? BakerActorMessage(processId, msg)).mapTo[Response]
 
     val eventualState = initializeFuture.map {
@@ -173,7 +178,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     PetriNetQuery
       .eventsForInstance[ProcessState](processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal)
       .collect {
-        case (_, TransitionFiredEvent(_, _, _, _, _, _, Some(output)))
+        case (_, TransitionFiredEvent(_, _, _, _, _, _, output))
           if compiledRecipe.allEvents.exists(_.isInstance(output)) => output
       }
   }

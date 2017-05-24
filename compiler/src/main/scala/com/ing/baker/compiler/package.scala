@@ -10,7 +10,8 @@ import com.ing.baker.compiledRecipe.transitions.ProvidesType.{ProvidesEvent, Pro
 import com.ing.baker.compiledRecipe.transitions.{InteractionTransition, ProvidesType}
 import com.ing.baker.compiledRecipe.{ActionType, EventOutputTransformer, InteractionFailureStrategy, annotations}
 import com.ing.baker.recipe.common.InteractionDescriptor
-import io.kagera.api.colored.Transition
+import io.kagera.api._
+import io.kagera.dsl.colored._
 
 import scala.concurrent.duration.Duration
 import scala.reflect.ClassTag

@@ -5,14 +5,15 @@ import com.ing.baker.compiledRecipe.transitions.InteractionTransition
 import com.ing.baker.compiledRecipe.transitions.ProvidesType.{ProvidesEvent, ProvidesIngredient}
 import com.ing.baker.core.ProcessState
 import com.ing.baker.visualisation.RecipeVisualizer
-import io.kagera.api.colored._
+import io.kagera.api._
+import io.kagera.dsl.colored.{ColoredPetriNet, Place}
 
 /**
   * A Compiled recipe.
   */
 case class CompiledRecipe(name: String,
-                          petriNet: ExecutablePetriNet[ProcessState],
-                          initialMarking: Marking,
+                          petriNet: ColoredPetriNet,
+                          initialMarking: Marking[Place],
                           sensoryEvents: Set[Class[_]],
                           ingredientExtractor: IngredientExtractor,
                           validationErrors: Seq[String] = Seq.empty) {

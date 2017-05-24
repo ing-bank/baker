@@ -1,9 +1,9 @@
 package com.ing.baker.visualisation
 
 import com.ing.baker.compiledRecipe._
-import com.ing.baker.core.ProcessState
 import io.kagera.api._
-import io.kagera.api.colored._
+import io.kagera.dsl.colored
+import io.kagera.dsl.colored._
 import io.kagera.dot.{GraphDot, PetriNetDot}
 
 import scala.language.higherKinds
@@ -184,6 +184,6 @@ object RecipeVisualizer {
   def visualiseCompiledRecipe(compiledRecipe: CompiledRecipe, filter: String => Boolean = s => true, events: Seq[String] = Seq.empty) =
     generateDot(compiledRecipe.petriNet.innerGraph, filter, events)
 
-  def visualisePetrinetOfCompiledRecipe(petriNet: ExecutablePetriNet[ProcessState]) =
+  def visualisePetrinetOfCompiledRecipe(petriNet: ColoredPetriNet) =
     GraphDot.generateDot(petriNet.innerGraph, PetriNetDot.petriNetTheme[Place[_], Transition[_, _, _]])
 }

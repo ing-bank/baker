@@ -1,7 +1,7 @@
 package com.ing.baker.compiledRecipe
 
-import io.kagera.api.colored.ExceptionStrategy._
-import io.kagera.api.colored._
+import io.kagera.execution.ExceptionStrategy.{BlockTransition, RetryWithDelay}
+import io.kagera.execution.TransitionExceptionHandler
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 

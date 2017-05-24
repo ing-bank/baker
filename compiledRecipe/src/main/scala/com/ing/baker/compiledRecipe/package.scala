@@ -2,7 +2,7 @@ package com.ing.baker
 
 import com.ing.baker.compiledRecipe.ActionType.{InteractionAction, SieveAction}
 import com.ing.baker.compiledRecipe.transitions.InteractionTransition
-import io.kagera.api.colored.{Place, Transition}
+import io.kagera.dsl.colored.{Place, Transition}
 
 package object compiledRecipe {
   val limitPrefix           = "limit:"

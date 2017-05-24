@@ -1,14 +1,14 @@
 package com.ing.baker
 package compiler
 
-import com.ing.baker.recipe.common.{InteractionDescriptor, Recipe}
 import com.ing.baker.compiledRecipe.ingredientExtractors.{CompositeIngredientExtractor, IngredientExtractor}
 import com.ing.baker.compiledRecipe.transitions.ProvidesType.{ProvidesEvent, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.compiledRecipe.transitions.{EventTransition, InteractionTransition}
 import com.ing.baker.compiledRecipe.{CompiledRecipe, RecipeValidations, ValidationSettings, _}
 import com.ing.baker.core.{BakerException, ProcessState}
-import io.kagera.api.colored._
-import io.kagera.api.colored.dsl._
+import com.ing.baker.recipe.common.{InteractionDescriptor, Recipe}
+import io.kagera.api._
+import io.kagera.dsl.colored._
 
 import scala.language.postfixOps
 
@@ -293,7 +293,7 @@ object RecipeCompiler {
                              ingredientsWithMultipleConsumers,
                              interactionEventTransitions.findTransitionsByClass))
 
-    val petriNet: ExecutablePetriNet[ProcessState] = createPetriNet[ProcessState](
+    val petriNet: ColoredPetriNet = createPetriNet[ProcessState](
       interactionArcs
         ++ eventPreconditionArcs
         ++ eventOrPreconditionArcs
@@ -302,7 +302,7 @@ object RecipeCompiler {
         ++ internalEventArcs
         ++ multipleOutputFacilitatorArcs: _*)
 
-    val initialMarking: Marking = interactionTransitions.flatMap { t =>
+    val initialMarking: Marking[Place] = interactionTransitions.flatMap { t =>
       t.maximumInteractionCount.map(n =>
         placeWithLabel(s"$limitPrefix:${t.label}") -> Map(() -> n))
     }.toMarking
@@ -358,5 +358,5 @@ object RecipeCompiler {
     ingredientsWithMultipleConsumers
   }
 
-  private def placeWithLabel(label: String) = Place[Any](id = label.hashCode, label = Some(label))
+  private def placeWithLabel(label: String): Place[Any] = Place(id = label.hashCode, label = label)
 }

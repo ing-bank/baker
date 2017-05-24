@@ -9,8 +9,9 @@ import com.ing.baker.compiledRecipe.transitions.ProvidesType._
 import com.ing.baker.compiledRecipe.{ActionType, EventOutputTransformer, InteractionFailureStrategy, _}
 import com.ing.baker.core.ProcessState
 import fs2.Task
-import io.kagera.api.colored._
-import io.kagera.api.multiset._
+import io.kagera.dsl.colored._
+import io.kagera.api._
+import io.kagera.execution.TransitionExceptionHandler
 import org.slf4j._
 
 import scala.util._
@@ -126,7 +127,7 @@ case class InteractionTransition[A](
   /**
     * Creates the produced marking (tokens) given the output (event) of the interaction.
     */
-  def createProducedMarking(outAdjacent: MultiSet[Place[_]]): AnyRef => Marking = { output =>
+  def createProducedMarking(outAdjacent: MultiSet[Place[_]]): AnyRef => Marking[Place] = { output =>
     outAdjacent.keys.map { place =>
       val value: Any = {
         providesType match {
@@ -184,7 +185,7 @@ case class InteractionTransition[A](
 
   override def apply(
                       inAdjacent: MultiSet[Place[_]],
-                      outAdjacent: MultiSet[Place[_]]): (Marking, ProcessState, Unit) => Task[(Marking, AnyRef)] =
+                      outAdjacent: MultiSet[Place[_]]): (Marking[Place], ProcessState, Unit) => Task[(Marking[Place], AnyRef)] =
     (consume, processState, input) => {
 
       def failureHandler[T]: PartialFunction[Throwable, Task[T]] = {
