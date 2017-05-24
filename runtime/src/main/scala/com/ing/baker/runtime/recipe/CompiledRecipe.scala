@@ -1,13 +1,11 @@
 package com.ing.baker.runtime.recipe
 
 import com.ing.baker.runtime.core.ProcessState
-import com.ing.baker.runtime.recipe.duplicates.RequiresIngredient
 import com.ing.baker.runtime.recipe.ingredientExtractors.IngredientExtractor
-import com.ing.baker.runtime.recipe.transitions.{InteractionTransition, ProvidesType}
+import com.ing.baker.runtime.recipe.transitions.InteractionTransition
 import com.ing.baker.runtime.recipe.transitions.ProvidesType.{ProvidesEvent, ProvidesIngredient}
-import com.ing.baker.runtime.visualization.RecipeVisualizer.PetriNetVisualization
+import com.ing.baker.runtime.visualization.RecipeVisualizer
 import io.kagera.api.colored._
-import io.kagera.dot.{GraphDot, PetriNetDot}
 
 /**
   * A Compiled recipe.
@@ -19,18 +17,27 @@ case class CompiledRecipe(name: String,
                           ingredientExtractor: IngredientExtractor,
                           validationErrors: Seq[String] = Seq.empty) {
 
-
-  def getRecipeVisualization: String = petriNet.innerGraph.toDot(x => true)
+  /**
+    * Visualise the compiled recipe in DOT format
+    * @return
+    */
+  def getRecipeVisualization: String =
+    RecipeVisualizer.visualiseCompiledRecipe(this)
 
   /**
-    * Returns a DOT ((http://www.graphviz.org/)) representation of the recipe filtering out those nodes / edges that match the filter.
+    * Visualise the compiled recipe in DOT format
+    * @param filterFunc
+    * @return
     */
   def getFilteredRecipeVisualization(filterFunc: String => Boolean): String =
-    petriNet.innerGraph.toDot(filterFunc)
+    RecipeVisualizer.visualiseCompiledRecipe(this, filterFunc)
 
+  /**
+    * Visualises the underlying petri net in DOT format
+    * @return
+    */
   def getPetriNetVisualization: String =
-    GraphDot
-      .generateDot(petriNet.innerGraph, PetriNetDot.petriNetTheme[Place[_], Transition[_, _, _]])
+    RecipeVisualizer.visualisePetrinetOfCompiledRecipe(petriNet)
 
   val interactionTransitions: Set[InteractionTransition[_]] = petriNet.transitions.collect {
     case t: InteractionTransition[_] => t

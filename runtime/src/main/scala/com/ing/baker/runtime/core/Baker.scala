@@ -214,7 +214,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
   def getVisualState(processId: java.util.UUID)(implicit timeout: FiniteDuration): String = {
     val events: Seq[Any] = this.events(processId)
     val classes: Seq[String] = events.map(x => x.getClass.getSimpleName)
-    RecipeVisualizer.generateDot(compiledRecipe.petriNet.innerGraph, x => true, classes)
+    RecipeVisualizer.visualiseCompiledRecipe(compiledRecipe, events = classes)
   }
 
 

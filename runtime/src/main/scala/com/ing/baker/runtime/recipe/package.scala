@@ -1,6 +1,6 @@
 package com.ing.baker.runtime
 
-import com.ing.baker.runtime.recipe.duplicates.ActionType.{InteractionAction, SieveAction}
+import com.ing.baker.runtime.recipe.ActionType.{InteractionAction, SieveAction}
 import com.ing.baker.runtime.recipe.transitions.InteractionTransition
 import io.kagera.api.colored.{Place, Transition}
 

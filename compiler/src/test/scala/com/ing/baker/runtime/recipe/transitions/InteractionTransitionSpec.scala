@@ -3,7 +3,7 @@ package com.ing.baker.runtime.recipe.transitions
 import java.util.UUID
 
 import com.ing.baker.recipe.javadsl.{FiresEvent, ProvidesIngredient}
-import com.ing.baker.runtime.recipe.duplicates.{InteractionFailureStrategy, RequiresIngredient}
+import com.ing.baker.runtime.recipe.duplicates.RequiresIngredient
 import com.ing.baker.runtime.recipe.ingredientExtractors.CompositeIngredientExtractor
 import fs2._
 import io.kagera.api.colored._

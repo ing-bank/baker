@@ -6,7 +6,6 @@ import java.util.UUID
 import com.ing.baker.runtime.core.ProcessState
 import com.ing.baker.runtime.recipe._
 import com.ing.baker.runtime.recipe.duplicates.ReflectionHelpers._
-import com.ing.baker.runtime.recipe.duplicates.{ActionType, EventOutputTransformer, InteractionFailureStrategy}
 import com.ing.baker.runtime.recipe.ingredientExtractors.IngredientExtractor
 import com.ing.baker.runtime.recipe.transitions.ProvidesType._
 import fs2.Task
@@ -16,15 +15,28 @@ import org.slf4j._
 
 import scala.util._
 
-
+/**
+  * This trait describes what kind of output the interaction provides
+  */
 sealed trait ProvidesType
 
 object ProvidesType {
 
+  /**
+    * the interaction provides an ingredient
+    * @param outputIngredient the ingredient the interaction provides
+    * @param outputType the class of the ingredient that the interaction provides
+    */
   case class ProvidesIngredient(outputIngredient: (String, Class[_]),
                                 outputType: Class[_]
                                ) extends ProvidesType
 
+  /**
+    * The interaction provides an event
+    * @param outputFieldNames
+    * @param outputType the class that the event that is returned
+    * @param outputEventClasses the different events that the Interaction can provide
+    */
   case class ProvidesEvent(outputFieldNames: Seq[String],
                            outputType: Class[_],
                            outputEventClasses: Seq[Class[_]]
@@ -34,20 +46,32 @@ object ProvidesType {
 
 }
 
+/**
+  * A transition that represents an Interaction
+  * @param method
+  * @param providesType
+  * @param inputFields
+  * @param interactionClass
+  * @param interactionProvider
+  * @param interactionName
+  * @param actionType
+  * @param predefinedParameters
+  * @param maximumInteractionCount
+  * @param failureStrategy
+  * @param eventOutputTransformers
+  * @param ingredientExtractor
+  * @tparam A
+  */
 case class InteractionTransition[A](
+                                     //Original values of the Interaction
                                      method: Method,
                                      providesType: ProvidesType,
-                                     //Original values of the Interaction
                                      inputFields: Seq[(String, Class[_])],
                                      interactionClass: Class[A],
-
                                      var interactionProvider: () => A,
                                      interactionName: String,
-
-//                                     interactionOutputName: String,
                                      actionType: ActionType = ActionType.InteractionAction,
 
-                                     //Changes to the original interaction
                                      predefinedParameters: Map[String, Any],
                                      maximumInteractionCount: Option[Int],
                                      failureStrategy: InteractionFailureStrategy,

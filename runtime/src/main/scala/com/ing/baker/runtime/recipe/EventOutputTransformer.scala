@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.recipe.duplicates
+package com.ing.baker.runtime.recipe
 
 import scala.reflect.ClassTag
 

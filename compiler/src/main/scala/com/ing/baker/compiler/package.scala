@@ -5,11 +5,11 @@ import java.lang.reflect.Method
 import com.ing.baker.compiler.ReflectionHelpers._
 import com.ing.baker.recipe.common.InteractionDescriptor
 import com.ing.baker.recipe.javadsl
-import com.ing.baker.runtime.recipe.duplicates.ActionType.{InteractionAction, SieveAction}
-import com.ing.baker.runtime.recipe.duplicates.{ActionType, EventOutputTransformer}
+import com.ing.baker.runtime.recipe.ActionType.{InteractionAction, SieveAction}
 import com.ing.baker.runtime.recipe.ingredientExtractors.IngredientExtractor
 import com.ing.baker.runtime.recipe.transitions.ProvidesType.{ProvidesEvent, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.runtime.recipe.transitions._
+import com.ing.baker.runtime.recipe.{ActionType, EventOutputTransformer, InteractionFailureStrategy}
 import io.kagera.api.colored.Transition
 
 import scala.concurrent.duration.Duration
@@ -97,11 +97,11 @@ package object compiler {
         //ProvidesNothing
         else ProvidesNothing
 
-      implicit def transformFailureStrategy(recipeStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): com.ing.baker.runtime.recipe.duplicates.InteractionFailureStrategy = {
+      implicit def transformFailureStrategy(recipeStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): InteractionFailureStrategy = {
         recipeStrategy match {
-          case com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout: Duration, backoffFactor: Double, maximumRetries: Int) => com.ing.baker.runtime.recipe.duplicates.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries)
-          case com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction => com.ing.baker.runtime.recipe.duplicates.InteractionFailureStrategy.BlockInteraction
-          case _ => com.ing.baker.runtime.recipe.duplicates.InteractionFailureStrategy.BlockInteraction
+          case com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout: Duration, backoffFactor: Double, maximumRetries: Int) => InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries)
+          case com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction => InteractionFailureStrategy.BlockInteraction
+          case _ => InteractionFailureStrategy.BlockInteraction
         }
       }
 
