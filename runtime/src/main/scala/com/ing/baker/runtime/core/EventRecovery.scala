@@ -4,9 +4,10 @@ import akka.actor.ActorSystem
 import akka.util.Timeout
 import cats.Monoid
 import cats.data.State
-import com.ing.baker.runtime.recipe.CompiledRecipe
-import com.ing.baker.runtime.recipe.transitions.InteractionTransition
-import com.ing.baker.runtime.recipe._
+import com.ing.baker.compiledRecipe.CompiledRecipe
+import com.ing.baker.compiledRecipe.transitions.InteractionTransition
+import com.ing.baker.compiledRecipe._
+import com.ing.baker.core.ProcessState
 import fs2.Strategy
 import io.kagera.akka.actor.AkkaObjectSerializer
 import io.kagera.api._

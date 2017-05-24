@@ -2,11 +2,11 @@ package com.ing.baker
 package compiler
 
 import com.ing.baker.recipe.common.{InteractionDescriptor, Recipe}
-import com.ing.baker.runtime.core.{BakerException, ProcessState}
-import com.ing.baker.runtime.recipe.ingredientExtractors.{CompositeIngredientExtractor, IngredientExtractor}
-import com.ing.baker.runtime.recipe.transitions.ProvidesType.{ProvidesEvent, ProvidesIngredient, ProvidesNothing}
-import com.ing.baker.runtime.recipe.transitions.{EventTransition, InteractionTransition}
-import com.ing.baker.runtime.recipe.{CompiledRecipe, RecipeValidations, ValidationSettings, _}
+import com.ing.baker.compiledRecipe.ingredientExtractors.{CompositeIngredientExtractor, IngredientExtractor}
+import com.ing.baker.compiledRecipe.transitions.ProvidesType.{ProvidesEvent, ProvidesIngredient, ProvidesNothing}
+import com.ing.baker.compiledRecipe.transitions.{EventTransition, InteractionTransition}
+import com.ing.baker.compiledRecipe.{CompiledRecipe, RecipeValidations, ValidationSettings, _}
+import com.ing.baker.core.{BakerException, ProcessState}
 import io.kagera.api.colored._
 import io.kagera.api.colored.dsl._
 

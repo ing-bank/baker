@@ -1,14 +1,14 @@
 package com.ing.baker;
 
+import com.ing.baker.compiledRecipe.annotations.ProcessId;
+import com.ing.baker.compiledRecipe.annotations.ProvidesIngredient;
+import com.ing.baker.compiledRecipe.annotations.RequiresIngredient;
 import com.ing.baker.compiler.RecipeCompiler;
+import com.ing.baker.core.BakerException;
 import com.ing.baker.recipe.common.Event;
 import com.ing.baker.recipe.common.Interaction;
 import com.ing.baker.recipe.common.InteractionDescriptor;
 import com.ing.baker.recipe.javadsl.JRecipe;
-import com.ing.baker.recipe.javadsl.ProcessId;
-import com.ing.baker.recipe.javadsl.ProvidesIngredient;
-import com.ing.baker.recipe.javadsl.RequiresIngredient;
-import com.ing.baker.runtime.core.BakerException;
 import com.ing.baker.runtime.java_api.JCompiledRecipe;
 import org.junit.Assert;
 import org.junit.Rule;

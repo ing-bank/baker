@@ -2,6 +2,7 @@ package com.ing.baker.runtime.core
 
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.core.{NonSerializableException, RecipeValidationException}
 import com.ing.baker.recipe.scaladsl.{InteractionDescriptorFactory, SRecipe}
 
 import scala.concurrent.duration._

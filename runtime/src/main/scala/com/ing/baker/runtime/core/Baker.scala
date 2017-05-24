@@ -11,9 +11,10 @@ import akka.persistence.query.scaladsl._
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
+import com.ing.baker.compiledRecipe.{CompiledRecipe, RecipeValidations}
+import com.ing.baker.core.{BakerException, ProcessState, RecipeValidationException}
 import com.ing.baker.runtime.actor.{BakerActorMessage, LocalBakerActorProvider, ShardedActorProvider, Util}
-import com.ing.baker.runtime.recipe.{CompiledRecipe, RecipeValidations}
-import com.ing.baker.runtime.visualization.RecipeVisualizer
+import com.ing.baker.visualisation.RecipeVisualizer
 import fs2.Strategy
 import io.kagera.akka.actor.PetriNetInstanceProtocol._
 import io.kagera.akka.actor._
@@ -113,7 +114,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
         cluster.registerOnMemberRemoved {
           actorSystem.terminate()
         }
-        implicit val akkaTimeout = Timeout(timeout);
+        implicit val akkaTimeout = Timeout(timeout)
         Util.handOverShardsAndLeaveCluster(Seq(compiledRecipe.name))
       case Success(cluster) =>
         log.debug("ActorSystem not a member of cluster")

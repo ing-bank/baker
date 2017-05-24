@@ -4,9 +4,9 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
+import com.ing.baker.compiledRecipe.annotations.{FiresEvent, ProcessId, ProvidesIngredient, RequiresIngredient}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common.{Event, Interaction}
-import com.ing.baker.recipe.javadsl.{FiresEvent, ProcessId, ProvidesIngredient, RequiresIngredient}
 import com.ing.baker.recipe.scaladsl.{InteractionDescriptorFactory, SRecipe}
 import com.ing.baker.runtime.core.Baker
 import com.typesafe.config.{Config, ConfigFactory}

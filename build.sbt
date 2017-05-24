@@ -67,12 +67,20 @@ lazy val noPublishSettings = Seq(
 
 lazy val defaultModuleSettings = commonSettings ++ Revolver.settings ++ SonatypePublish.settings
 
+lazy val compiledRecipe = project.in(file("compiledRecipe"))
+  .settings(defaultModuleSettings: _*)
+  .settings(
+    moduleName := "compiledRecipe",
+    libraryDependencies ++= allLibraries
+  )
+
 lazy val runtime = project.in(file("runtime"))
   .settings(defaultModuleSettings: _*)
   .settings(
     moduleName := "runtime",
     libraryDependencies ++= allLibraries
   )
+  .dependsOn(compiledRecipe)
 
 lazy val compiler = project.in(file("compiler"))
   .settings(defaultModuleSettings: _*)
@@ -80,7 +88,7 @@ lazy val compiler = project.in(file("compiler"))
     moduleName := "compiler",
     libraryDependencies ++= allLibraries
   )
-  .dependsOn(recipedsl, runtime)
+  .dependsOn(recipedsl, compiledRecipe)
 
 lazy val recipedsl = project.in(file("recipedsl"))
   .settings(defaultModuleSettings: _*)
@@ -95,10 +103,10 @@ lazy val testModule = project.in(file("testModule"))
     moduleName := "testModule",
     libraryDependencies ++= allLibraries
   )
-  .dependsOn(recipedsl, runtime, compiler)
+  .dependsOn(recipedsl, runtime, compiler, compiledRecipe)
 
 lazy val root = project
   .in(file("."))
-  .aggregate(runtime, compiler, recipedsl)
+  .aggregate(runtime, compiler, recipedsl, compiledRecipe, testModule)
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)

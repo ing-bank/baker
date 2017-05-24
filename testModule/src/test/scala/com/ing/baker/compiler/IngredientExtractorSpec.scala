@@ -1,6 +1,6 @@
 package com.ing.baker.compiler
 
-import com.ing.baker.runtime.recipe.ingredientExtractors.{CompositeIngredientExtractor, IngredientExtractor}
+import com.ing.baker.compiledRecipe.ingredientExtractors.{CompositeIngredientExtractor, IngredientExtractor}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{Matchers, WordSpecLike}
 
@@ -24,7 +24,7 @@ class IngredientExtractorSpec extends WordSpecLike with Matchers {
           | baker {
           |
           |   ingredient-extractors {
-          |     "default" = com.ing.baker.runtime.recipe.ingredientExtractors.PojoIngredientExtractor
+          |     "default" = com.ing.baker.compiledRecipe.ingredientExtractors.PojoIngredientExtractor
           |     "test" = "com.ing.baker.compiler.TestIngredientExtractor"
           |   }
           |

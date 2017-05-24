@@ -1,7 +1,8 @@
 package com.ing.baker.runtime.java_api
 
-import com.ing.baker.runtime.recipe.CompiledRecipe
-import com.ing.baker.runtime.visualization.RecipeVisualizer._
+import com.ing.baker.compiledRecipe.CompiledRecipe
+import com.ing.baker.visualisation.RecipeVisualizer._
+
 import collection.JavaConverters._
 
 /**

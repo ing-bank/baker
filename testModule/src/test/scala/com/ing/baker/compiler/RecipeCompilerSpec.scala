@@ -1,9 +1,9 @@
 package com.ing.baker.compiler
 
 import com.ing.baker._
+import com.ing.baker.compiledRecipe.CompiledRecipe
 import com.ing.baker.recipe.common.Recipe
 import com.ing.baker.recipe.scaladsl.{InteractionDescriptorFactory, SRecipe}
-import com.ing.baker.runtime.recipe.CompiledRecipe
 
 import scala.concurrent.duration._
 import scala.language.postfixOps

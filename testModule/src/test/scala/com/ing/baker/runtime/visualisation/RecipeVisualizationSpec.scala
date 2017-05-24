@@ -1,10 +1,10 @@
 package com.ing.baker.runtime.visualisation
 
 import com.ing.baker.TestRecipeHelper
+import com.ing.baker.compiledRecipe.CompiledRecipe
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.SRecipe
-import com.ing.baker.runtime.recipe.CompiledRecipe
-import com.ing.baker.runtime.visualization.RecipeVisualizer
+import com.ing.baker.visualisation.RecipeVisualizer
 
 import scala.concurrent.duration._
 import scala.language.postfixOps

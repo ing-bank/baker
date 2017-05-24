@@ -2,14 +2,14 @@ package com.ing.baker
 
 import java.lang.reflect.Method
 
-import com.ing.baker.compiler.ReflectionHelpers._
+import com.ing.baker.compiledRecipe.ActionType.{InteractionAction, SieveAction}
+import com.ing.baker.compiledRecipe.annotations.FiresEvent
+import com.ing.baker.compiledRecipe.duplicates.ReflectionHelpers._
+import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
+import com.ing.baker.compiledRecipe.transitions.ProvidesType.{ProvidesEvent, ProvidesIngredient, ProvidesNothing}
+import com.ing.baker.compiledRecipe.transitions.{InteractionTransition, ProvidesType}
+import com.ing.baker.compiledRecipe.{ActionType, EventOutputTransformer, InteractionFailureStrategy, annotations}
 import com.ing.baker.recipe.common.InteractionDescriptor
-import com.ing.baker.recipe.javadsl
-import com.ing.baker.runtime.recipe.ActionType.{InteractionAction, SieveAction}
-import com.ing.baker.runtime.recipe.ingredientExtractors.IngredientExtractor
-import com.ing.baker.runtime.recipe.transitions.ProvidesType.{ProvidesEvent, ProvidesIngredient, ProvidesNothing}
-import com.ing.baker.runtime.recipe.transitions._
-import com.ing.baker.runtime.recipe.{ActionType, EventOutputTransformer, InteractionFailureStrategy}
 import io.kagera.api.colored.Transition
 
 import scala.concurrent.duration.Duration
@@ -75,21 +75,21 @@ package object compiler {
 
       val providesType: ProvidesType =
         //ProvidesIngredient
-        if(method.isAnnotationPresent(classOf[javadsl.ProvidesIngredient]))
+        if(method.isAnnotationPresent(classOf[annotations.ProvidesIngredient]))
         {
           val interactionOutputName: String =
             if (interactionDescriptor.overriddenOutputIngredientName != null && interactionDescriptor.overriddenOutputIngredientName != "") {
               interactionDescriptor.overriddenOutputIngredientName
             } else {
-              method.getOutputName
+              method.getAnnotation(classOf[annotations.ProvidesIngredient]).value()
             }
           ProvidesIngredient(interactionOutputName -> returnType, returnType)
         }
         //ProvidesEvent
-        else if(method.isAnnotationPresent(classOf[javadsl.FiresEvent])) {
+        else if(method.isAnnotationPresent(classOf[annotations.FiresEvent])) {
           val outputType = transformEventType(returnType)
           val outputEventClasses: Seq[Class[_]] = {
-            val eventClasses = method.getAnnotation(classOf[javadsl.FiresEvent]).oneOf().toSeq
+            val eventClasses = method.getAnnotation(classOf[annotations.FiresEvent]).oneOf().toSeq
             eventClasses.map(transformEventType) //performing additional rewriting on the output events if applicable.
           }
           ProvidesEvent(outputFieldNames = outputType.getDeclaredFields.map(_.getName).toSeq, outputType = outputType, outputEventClasses = outputEventClasses)

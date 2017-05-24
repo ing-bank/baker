@@ -2,9 +2,9 @@ package com.ing.baker.runtime.core
 
 import akka.actor.ActorSystem
 import akka.util.Timeout
+import com.ing.baker.compiledRecipe.CompiledRecipe
 import com.ing.baker.runtime.actor.Util
 import com.ing.baker.runtime.core.EventRecovery._
-import com.ing.baker.runtime.recipe.CompiledRecipe
 import io.kagera.akka.actor.PetriNetInstance
 
 object BakerTestUtil extends BakerTestUtil
