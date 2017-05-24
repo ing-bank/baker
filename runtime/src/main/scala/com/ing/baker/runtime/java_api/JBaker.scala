@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
 import com.ing.baker.compiledRecipe.CompiledRecipe
-import com.ing.baker.compiledRecipe.transitions.InteractionTransition
+import com.ing.baker.compiledRecipe.petrinet.InteractionTransition
 import com.ing.baker.runtime.core.Baker
 import com.typesafe.config.ConfigFactory
 

@@ -2,8 +2,9 @@ package com.ing.baker
 package compiler
 
 import com.ing.baker.compiledRecipe.ingredientExtractors.{CompositeIngredientExtractor, IngredientExtractor}
-import com.ing.baker.compiledRecipe.transitions.ProvidesType.{ProvidesEvent, ProvidesIngredient, ProvidesNothing}
-import com.ing.baker.compiledRecipe.transitions.{EventTransition, InteractionTransition}
+import com.ing.baker.compiledRecipe.petrinet.InteractionTransition
+import com.ing.baker.compiledRecipe.petrinet.ProvidesType.{ProvidesEvent, ProvidesIngredient, ProvidesNothing}
+import com.ing.baker.compiledRecipe.petrinet.EventTransition
 import com.ing.baker.compiledRecipe.{CompiledRecipe, RecipeValidations, ValidationSettings, _}
 import com.ing.baker.core.{BakerException, ProcessState}
 import com.ing.baker.recipe.common.{InteractionDescriptor, Recipe}

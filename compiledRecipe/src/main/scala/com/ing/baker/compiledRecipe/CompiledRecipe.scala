@@ -1,9 +1,8 @@
 package com.ing.baker.compiledRecipe
 
 import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
-import com.ing.baker.compiledRecipe.transitions.InteractionTransition
-import com.ing.baker.compiledRecipe.transitions.ProvidesType.{ProvidesEvent, ProvidesIngredient}
-import com.ing.baker.core.ProcessState
+import com.ing.baker.compiledRecipe.petrinet.InteractionTransition
+import com.ing.baker.compiledRecipe.petrinet.ProvidesType.{ProvidesEvent, ProvidesIngredient}
 import com.ing.baker.visualisation.RecipeVisualizer
 import io.kagera.api._
 import io.kagera.dsl.colored.{ColoredPetriNet, Place}

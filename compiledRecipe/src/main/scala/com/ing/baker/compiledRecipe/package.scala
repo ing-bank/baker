@@ -1,7 +1,7 @@
 package com.ing.baker
 
 import com.ing.baker.compiledRecipe.ActionType.{InteractionAction, SieveAction}
-import com.ing.baker.compiledRecipe.transitions.InteractionTransition
+import com.ing.baker.compiledRecipe.petrinet.InteractionTransition
 import io.kagera.dsl.colored.{Place, Transition}
 
 package object compiledRecipe {

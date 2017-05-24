@@ -1,10 +1,10 @@
-package com.ing.baker.compiledRecipe.transitions
+package com.ing.baker.compiledRecipe.petrinet
 
 import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
 import com.ing.baker.core.ProcessState
 import fs2.Task
 import io.kagera.api.Marking
-import io.kagera.dsl.colored._
+import io.kagera.dsl.colored.Place
 import io.kagera.dsl.colored.transitions.UncoloredTransition
 
 /**

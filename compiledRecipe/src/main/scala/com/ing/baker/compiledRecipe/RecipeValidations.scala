@@ -2,10 +2,10 @@ package com.ing.baker.compiledRecipe
 
 import akka.actor.ActorSystem
 import akka.serialization.SerializationExtension
-import com.ing.baker.compiledRecipe.transitions.InteractionTransition
-import com.ing.baker.compiledRecipe.transitions.ProvidesType.ProvidesEvent
+import com.ing.baker.compiledRecipe.petrinet.ProvidesType.ProvidesEvent
 import com.ing.baker.core.NonSerializableException
 import com.ing.baker.compiledRecipe.duplicates.ReflectionHelpers._
+import com.ing.baker.compiledRecipe.petrinet.InteractionTransition
 
 import scala.collection.mutable
 import scala.util.Try

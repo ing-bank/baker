@@ -6,8 +6,9 @@ import com.ing.baker.compiledRecipe.ActionType.{InteractionAction, SieveAction}
 import com.ing.baker.compiledRecipe.annotations.FiresEvent
 import com.ing.baker.compiledRecipe.duplicates.ReflectionHelpers._
 import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
-import com.ing.baker.compiledRecipe.transitions.ProvidesType.{ProvidesEvent, ProvidesIngredient, ProvidesNothing}
-import com.ing.baker.compiledRecipe.transitions.{InteractionTransition, ProvidesType}
+import com.ing.baker.compiledRecipe.petrinet.{InteractionTransition, ProvidesType}
+import com.ing.baker.compiledRecipe.petrinet.ProvidesType.{ProvidesEvent, ProvidesIngredient, ProvidesNothing}
+import com.ing.baker.compiledRecipe.petrinet.ProvidesType
 import com.ing.baker.compiledRecipe.{ActionType, EventOutputTransformer, InteractionFailureStrategy, annotations}
 import com.ing.baker.recipe.common.InteractionDescriptor
 import io.kagera.api._

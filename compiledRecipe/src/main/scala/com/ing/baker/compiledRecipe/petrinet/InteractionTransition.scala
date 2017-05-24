@@ -1,18 +1,18 @@
-package com.ing.baker.compiledRecipe.transitions
+package com.ing.baker.compiledRecipe.petrinet
 
 import java.lang.reflect._
 import java.util.UUID
 
 import com.ing.baker.compiledRecipe.duplicates.ReflectionHelpers._
 import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
-import com.ing.baker.compiledRecipe.transitions.ProvidesType._
 import com.ing.baker.compiledRecipe.{ActionType, EventOutputTransformer, InteractionFailureStrategy, _}
 import com.ing.baker.core.ProcessState
 import fs2.Task
-import io.kagera.dsl.colored._
 import io.kagera.api._
+import io.kagera.dsl.colored._
 import io.kagera.execution.TransitionExceptionHandler
 import org.slf4j._
+import ProvidesType._
 
 import scala.util._
 
@@ -44,7 +44,6 @@ object ProvidesType {
                           ) extends ProvidesType
 
   case object ProvidesNothing extends ProvidesType
-
 }
 
 /**
