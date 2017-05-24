@@ -26,7 +26,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
       a[RecipeValidationException] should be thrownBy {
         new Baker(
-          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+          compiledRecipe = RecipeCompiler.compileRecipe(recipe, mockImplementations),
           implementations = Map.empty,
           actorSystem = defaultActorSystem)
       }
@@ -39,7 +39,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
       a[RecipeValidationException] should be thrownBy {
         new Baker(
-          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+          compiledRecipe = RecipeCompiler.compileRecipe(recipe, mockImplementations),
           implementations = mockImplementations,
           actorSystem = defaultActorSystem)
       }
@@ -57,7 +57,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
       intercept[NonSerializableException] {
         new Baker(
-          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+          compiledRecipe = RecipeCompiler.compileRecipe(recipe, mockImplementations),
           implementations = mockImplementations,
           actorSystem = defaultActorSystem)
       } should have('message("Ingredient nonSerializableIngredient of class com.ing.baker.NonSerializableObject is not serializable by akka"))
@@ -74,7 +74,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
       intercept[NonSerializableException] {
         new Baker(
-          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+          compiledRecipe = RecipeCompiler.compileRecipe(recipe, mockImplementations),
           implementations = mockImplementations,
           actorSystem = defaultActorSystem)
       } should have('message("Ingredient nonSerializableObject of class com.ing.baker.NonSerializableObject is not serializable by akka"))

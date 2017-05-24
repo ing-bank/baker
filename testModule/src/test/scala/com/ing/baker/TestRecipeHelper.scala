@@ -342,7 +342,7 @@ trait TestRecipeHelper
     when(testInteractionSixMock.apply(anyString())).thenReturn(interactionSixIngredient)
 
     new Baker(
-      compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+      compiledRecipe = RecipeCompiler.compileRecipe(recipe, mockImplementations),
       actorSystem = actorSystem,
       implementations = mockImplementations)
   }

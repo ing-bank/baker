@@ -322,8 +322,8 @@ object RecipeCompiler {
   def compileRecipe(recipe: Recipe): CompiledRecipe =
     compileRecipe(recipe, Map.empty, ValidationSettings.defaultValidationSettings, defaultIngredientExtractor)
 
-  def compileRecipe(recipe: Recipe, validationSettings: ValidationSettings): CompiledRecipe =
-    compileRecipe(recipe, Map.empty, validationSettings, defaultIngredientExtractor)
+  def compileRecipe(recipe: Recipe, interactionImplementations: Map[Class[_], () => AnyRef]): CompiledRecipe =
+    compileRecipe(recipe, interactionImplementations, ValidationSettings.defaultValidationSettings, defaultIngredientExtractor)
 
   // transform multi:dossierId ---> dossierId
   private def trimPrefix(label: String, prefix: String) = label.replace(prefix, "")
