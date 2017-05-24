@@ -1,6 +1,5 @@
 package com.ing.baker.runtime.recipe.transitions
 
-import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.runtime.recipe.duplicates.RequiresIngredient
 import com.ing.baker.runtime.recipe.ingredientExtractors.CompositeIngredientExtractor
 import org.scalatest.{FunSpec, ShouldMatchers}
@@ -17,8 +16,6 @@ object ActionExecutingTransitionSpec {
 }
 
 class ActionExecutingTransitionSpec extends FunSpec with ShouldMatchers {
-
-  import ActionExecutingTransitionSpec._
 
   val ingredientExtractor = new CompositeIngredientExtractor()
 

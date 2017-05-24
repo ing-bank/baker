@@ -4,8 +4,8 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common.{Event, Interaction}
 import com.ing.baker.recipe.javadsl.{FiresEvent, ProcessId, ProvidesIngredient, RequiresIngredient}
 import com.ing.baker.recipe.scaladsl.{InteractionDescriptorFactory, SRecipe}
-import org.scalatest.{Matchers, WordSpecLike}
 import com.ing.baker.runtime.core.EventRecovery._
+import org.scalatest.{Matchers, WordSpecLike}
 
 case class TestEvent(testIngredient: String) extends Event
 

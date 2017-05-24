@@ -1,12 +1,7 @@
 package com.ing.baker.runtime.recipe.transitions
 
-import java.util.UUID
-
 import com.ing.baker.recipe.javadsl.{FiresEvent, ProvidesIngredient}
 import com.ing.baker.runtime.recipe.duplicates.RequiresIngredient
-import com.ing.baker.runtime.recipe.ingredientExtractors.CompositeIngredientExtractor
-import fs2._
-import io.kagera.api.colored._
 import org.scalatest._
 
 object InteractionTransitionSpec {
@@ -39,8 +34,6 @@ object InteractionTransitionSpec {
 }
 
 class InteractionTransitionSpec extends WordSpec with ShouldMatchers with GivenWhenThen {
-
-  import InteractionTransitionSpec._
 
 //  "InteractionTransition" should {
 //    "succeed when calling apply method with right ingredient " in {

@@ -9,7 +9,6 @@ import com.ing.baker.recipe.common.{Event, Interaction}
 import com.ing.baker.recipe.javadsl.{FiresEvent, ProcessId, ProvidesIngredient, RequiresIngredient}
 import com.ing.baker.recipe.scaladsl.{InteractionDescriptorFactory, SRecipe}
 import com.ing.baker.runtime.core.Baker
-import com.ing.baker.runtime.recipe.ValidationSettings
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers._
 import org.mockito.Mockito._

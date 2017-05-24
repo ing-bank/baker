@@ -89,6 +89,14 @@ lazy val recipedsl = project.in(file("recipedsl"))
     libraryDependencies ++= allLibraries
   )
 
+lazy val testModule = project.in(file("testModule"))
+  .settings(defaultModuleSettings: _*)
+  .settings(
+    moduleName := "testModule",
+    libraryDependencies ++= allLibraries
+  )
+  .dependsOn(recipedsl, runtime, compiler)
+
 lazy val root = project
   .in(file("."))
   .aggregate(runtime, compiler, recipedsl)
