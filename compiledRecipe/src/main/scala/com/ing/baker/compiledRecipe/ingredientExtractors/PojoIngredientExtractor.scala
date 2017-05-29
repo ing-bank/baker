@@ -3,10 +3,10 @@ package com.ing.baker.compiledRecipe.ingredientExtractors
 import com.ing.baker.compiledRecipe.duplicates.ReflectionHelpers._
 
 class PojoIngredientExtractor extends IngredientExtractor {
-  override def extractIngredientData(obj: AnyRef): Map[String, Any] = {
+  override def extractIngredientData(obj: Any): Map[String, Any] = {
     val clazz = obj.getClass
     clazz.getDeclaredFields.toSeq.map { field =>
-      field.getName -> field.accessAndGet(obj)
+      field.getName -> field.accessAndGet(obj.asInstanceOf[AnyRef])
     }.toMap
   }
 

@@ -28,11 +28,11 @@ object JBaker {
     //TODO rewrite this to make the link between a description of the interaction instead of between class and implementation
   def mapInteractionToImplementation(
       interactionTransitions: Set[InteractionTransition[_]],
-      implementations: java.util.List[Any]): java.util.Map[Class[_], Any] = {
+      implementations: java.util.List[AnyRef]): java.util.Map[Class[_], AnyRef] = {
     val interactionClasses: Set[Class[_]] =
       interactionTransitions.map(i => i.interactionClass)
-    val implementationsSeq: scala.collection.mutable.Buffer[Any] = implementations.asScala
-    val interactionMappings: Set[(Class[_], Any)] = interactionClasses.map {
+    val implementationsSeq: scala.collection.mutable.Buffer[AnyRef] = implementations.asScala
+    val interactionMappings: Set[(Class[_], AnyRef)] = interactionClasses.map {
       c =>
         c -> implementationsSeq.find(e => c.isAssignableFrom(e.getClass)).orNull
     }
@@ -44,10 +44,10 @@ object JBaker {
 //It use to be of the Interaction type but now this is not possible since this is not known here
 //Maybe we can create a InteractionImplementation trait and only accept classes of that type
 class JBaker private (compiledRecipe: CompiledRecipe,
-                      implementations: java.util.Map[Class[_], Any],
+                      implementations: java.util.Map[Class[_], AnyRef],
                       actorSystem: ActorSystem) {
 
-  val interactionImplementations: Map[Class[_], () => Any] =
+  val interactionImplementations: Map[Class[_], () => AnyRef] =
     implementations.asScala.toMap.mapValues { implementation => () =>
       implementation
     }
@@ -59,18 +59,18 @@ class JBaker private (compiledRecipe: CompiledRecipe,
 
 
   def this (jCompiledRecipe: JCompiledRecipe,
-            implementations: java.util.Map[Class[_], Any],
+            implementations: java.util.Map[Class[_], AnyRef],
             actorSystem: ActorSystem) =
     this(jCompiledRecipe.compiledRecipe, implementations, actorSystem)
 
 //  TODO Enable this again once we can make the link again between implementation and class
   def this(compiledRecipe: CompiledRecipe,
-           implementations: java.util.List[Any],
+           implementations: java.util.List[AnyRef],
            actorSystem: ActorSystem) =
     this(compiledRecipe: CompiledRecipe, JBaker.mapInteractionToImplementation(compiledRecipe.interactionTransitions, implementations),
          actorSystem)
 
-  def this(compiledRecipe: CompiledRecipe, implementations: java.util.List[Any]) =
+  def this(compiledRecipe: CompiledRecipe, implementations: java.util.List[AnyRef]) =
     this(compiledRecipe, implementations, ActorSystem.apply("BakerActorSystem", JBaker.defaultConfig))
 
   /**

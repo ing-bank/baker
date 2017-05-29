@@ -1,9 +1,8 @@
 package com.ing.baker.visualisation
 
 import com.ing.baker.compiledRecipe._
+import com.ing.baker.compiledRecipe.petrinet.{Node, Place, RecipePetriNet, Transition}
 import io.kagera.api._
-import io.kagera.dsl.colored
-import io.kagera.dsl.colored._
 import io.kagera.dot.{GraphDot, PetriNetDot}
 
 import scala.language.higherKinds
@@ -13,7 +12,7 @@ import scalax.collection.io.dot.implicits._
 
 object RecipeVisualizer {
 
-  type ColoredPetriNetGraph = BiPartiteGraph[Place[_], Transition[_, _, _], WLDiEdge]
+  type RecipePetriNetGraph = BiPartiteGraph[Place[_], Transition[_, _, _], WLDiEdge]
 
   private val ingredientAttributes: List[DotAttr] = List(
     DotAttr("shape", "circle"),
@@ -91,18 +90,20 @@ object RecipeVisualizer {
   )
 
   private def nodeLabelFn: Either[Place[_], Transition[_, _, _]] ⇒ String = {
-    case Left(a)  ⇒ a.label
-    case Right(b) ⇒ b.label
+    case Left(place) if(place.isEmptyEventIngredient)  ⇒ s"empty:${place.label}"
+    case Left(place)  ⇒ place.label
+    case Right(transition) if transition.isMultiFacilitatorTransition ⇒ s"multi:${transition.label}"
+    case Right(transition) => transition.label
   }
 
-  private def nodeDotAttrFn: (ColoredPetriNetGraph#NodeT, Seq[String])=> List[DotAttr] =
-    (node: ColoredPetriNetGraph#NodeT, events: Seq[String]) ⇒
+  private def nodeDotAttrFn: (RecipePetriNetGraph#NodeT, Seq[String])=> List[DotAttr] =
+    (node: RecipePetriNetGraph#NodeT, events: Seq[String]) ⇒
       node.value match {
         case Left(place) if place.isInteractionEventOutput => choiceAttributes
         case Left(place) if place.isOrEventPrecondition    => preconditionORAttributes
         case Left(place) if place.isEmptyEventIngredient   ⇒ emptyEventAttributes
         case Left(place)                                   ⇒ ingredientAttributes
-        case Right(transition) if transition.isParallelizationTransition =>
+        case Right(transition) if transition.isMultiFacilitatorTransition =>
           choiceAttributes // TODO, better way to hide the multiTransition
         case Right(transition) if transition.isInteraction  ⇒ interactionAttributes
         case Right(transition) if transition.isSieve        ⇒ sieveAttributes
@@ -111,17 +112,17 @@ object RecipeVisualizer {
         case Right(transition)                              ⇒ eventTransitionAttributes
     }
 
-  private def generateDot(graph: ColoredPetriNetGraph, filter: String => Boolean, events: Seq[String]): String = {
+  private def generateDot(graph: RecipePetriNetGraph, filter: String => Boolean, events: Seq[String]): String = {
     val myRoot = DotRootGraph(directed = graph.isDirected,
                               id = None,
                               attrStmts = attrStmts,
                               attrList = rootAttrs)
 
-    def myNodeTransformer(innerNode: ColoredPetriNetGraph#NodeT): Option[(DotGraph, DotNodeStmt)] = {
+    def myNodeTransformer(innerNode: RecipePetriNetGraph#NodeT): Option[(DotGraph, DotNodeStmt)] = {
       Some((myRoot, DotNodeStmt(nodeLabelFn(innerNode.value), nodeDotAttrFn(innerNode, events))))
     }
 
-    def myEdgeTransformer(innerEdge: ColoredPetriNetGraph#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
+    def myEdgeTransformer(innerEdge: RecipePetriNetGraph#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
 
       val source = innerEdge.edge.source
       val target = innerEdge.edge.target
@@ -132,8 +133,8 @@ object RecipeVisualizer {
     /**
       * Removes a node from the graph & connecting all the adjacent nodes directly to each other.
       */
-    def compactNode(graph: ColoredPetriNetGraph,
-                    node: ColoredPetriNetGraph#NodeT): ColoredPetriNetGraph = {
+    def compactNode(graph: RecipePetriNetGraph,
+                    node: RecipePetriNetGraph#NodeT): RecipePetriNetGraph = {
       //There is no input node so remove node
       if (node.incomingTransitions.isEmpty) graph - node
       //There is a input node so link incoming and outgoing together
@@ -150,7 +151,7 @@ object RecipeVisualizer {
 
         // Create new edges from incoming to outgoing transition
         val newEdges = outgoingTransitions.map(t =>
-          WLDiEdge[colored.Node, String](Right(incomingNode), Right(t))(0, ""))
+          WLDiEdge[Node, String](Right(incomingNode), Right(t))(0, ""))
 
         // Remove the incoming edge and node, combine outgoing edge and newly created edge, remove the outgoing edge and add the new one.
         (outgoingEdges zip newEdges).foldLeft(graph - node - incomingEdge) {
@@ -162,7 +163,7 @@ object RecipeVisualizer {
     val formattedGraph = graph.nodes.foldLeft(graph) {
       case (graphAccumulator, node) =>
         node.value match {
-          case Left(place) if !place.isIngredient => compactNode(graphAccumulator, node)
+          case Left(place) if !(place.isIngredient | place.isEmptyEventIngredient) => compactNode(graphAccumulator, node)
           case _                                  => graphAccumulator
         }
     }
@@ -184,6 +185,6 @@ object RecipeVisualizer {
   def visualiseCompiledRecipe(compiledRecipe: CompiledRecipe, filter: String => Boolean = s => true, events: Seq[String] = Seq.empty) =
     generateDot(compiledRecipe.petriNet.innerGraph, filter, events)
 
-  def visualisePetrinetOfCompiledRecipe(petriNet: ColoredPetriNet) =
+  def visualisePetrinetOfCompiledRecipe(petriNet: RecipePetriNet) =
     GraphDot.generateDot(petriNet.innerGraph, PetriNetDot.petriNetTheme[Place[_], Transition[_, _, _]])
 }

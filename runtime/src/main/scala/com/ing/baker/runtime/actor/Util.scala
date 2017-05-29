@@ -6,26 +6,27 @@ import akka.pattern.ask
 import akka.persistence.PersistentActor
 import akka.util.Timeout
 import GracefulShutdownActor.Leave
+import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
+import com.ing.baker.compiledRecipe.petrinet
+import com.ing.baker.compiledRecipe.petrinet._
+import com.ing.baker.core.ProcessState
 import io.kagera.akka.actor.PetriNetInstance
 import io.kagera.akka.actor.PetriNetInstance.Settings
-import io.kagera.dsl.colored
-import io.kagera.dsl.colored.{Place, Transition, _}
-import io.kagera.execution.JobExecutor
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
 object Util {
 
-  def coloredPetrinetProps[S](topology: ColoredPetriNet, settings: Settings): Props =
-    Props(new PetriNetInstance[Place, Transition, S](
+  def coloredPetrinetProps[S](topology: RecipePetriNet, interactions: Map[Class[_], () => AnyRef], ingredientExtractor: IngredientExtractor, settings: Settings): Props =
+    Props(new PetriNetInstance[Place, Transition, ProcessState](
       topology,
       settings,
-      colored.jobPicker,
-      new JobExecutor[S, Place, Transition](topology, colored.taskProvider[S], t ⇒ t.exceptionStrategy)(settings.evaluationStrategy),
-      t ⇒ t.updateState.asInstanceOf[(S ⇒ Any ⇒ S)],
-      colored.placeIdentifier,
-      colored.transitionIdentifier)
+      jobPicker,
+      jobExecutor(topology, interactions, ingredientExtractor, settings.evaluationStrategy),
+      transitionEventSource(ingredientExtractor),
+      petrinet.placeIdentifier,
+      petrinet.transitionIdentifier)
     )
 
   def createPersistenceWarmupActor()(implicit actorSystem: ActorSystem, timeout: FiniteDuration) = {

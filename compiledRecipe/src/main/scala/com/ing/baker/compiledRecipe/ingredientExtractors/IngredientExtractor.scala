@@ -21,6 +21,6 @@ trait IngredientExtractor {
     *
     * @return The ingredient data.
     */
-  def extractIngredientData(obj: AnyRef): Map[String, Any]
+  def extractIngredientData(obj: Any): Map[String, Any]
 }
 

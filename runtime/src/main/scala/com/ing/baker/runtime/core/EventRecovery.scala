@@ -10,7 +10,6 @@
 //import fs2.Strategy
 //import io.kagera.akka.actor.AkkaObjectSerializer
 //import io.kagera.api._
-//import io.kagera.dsl.colored._
 //import io.kagera.execution.EventSourcing._
 //import io.kagera.execution._
 //import io.kagera.persistence.Serialization

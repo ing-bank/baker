@@ -11,6 +11,8 @@ import akka.persistence.query.scaladsl._
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
+import com.ing.baker.compiledRecipe.ingredientExtractors.{CompositeIngredientExtractor, IngredientExtractor}
+import com.ing.baker.compiledRecipe.petrinet._
 import com.ing.baker.compiledRecipe.{CompiledRecipe, RecipeValidations}
 import com.ing.baker.core.{BakerException, ProcessState, RecipeValidationException}
 import com.ing.baker.runtime.actor.{BakerActorMessage, LocalBakerActorProvider, ShardedActorProvider, Util}
@@ -21,8 +23,6 @@ import io.kagera.akka.actor.PetriNetInstanceProtocol._
 import io.kagera.akka.actor._
 import io.kagera.akka.query.PetriNetQuery
 import io.kagera.api.Marking
-import io.kagera.dsl.colored
-import io.kagera.dsl.colored.{Transition, _}
 import io.kagera.execution.EventSourcing.TransitionFiredEvent
 import io.kagera.execution.JobExecutor
 import io.kagera.persistence.Encryption
@@ -43,7 +43,8 @@ import scala.util.{Failure, Success, Try}
   * The Baker can bake a recipe, create a process and respond to events.
   */
 class Baker(val compiledRecipe: CompiledRecipe,
-            val implementations: Map[Class[_], () => Any],
+            val implementations: Map[Class[_], () => AnyRef],
+            val ingredientExtractor: IngredientExtractor = new CompositeIngredientExtractor(),
             implicit val actorSystem: ActorSystem) {
 
 
@@ -90,13 +91,16 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   private val processIdManagerActor = bakerActorProvider.createActorIndex(
     compiledRecipe.name,
-    Util.coloredPetrinetProps[ProcessState](compiledRecipe.petriNet,
+    Util.coloredPetrinetProps[ProcessState](
+      compiledRecipe.petriNet,
+      implementations,
+      ingredientExtractor,
       PetriNetInstance.Settings(
         evaluationStrategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadpool"),
         serializer = new AkkaObjectSerializer(actorSystem, configuredEncryption),
         idleTTL = actorIdleTimeout )))
 
-  private val petriNetApi = new PetriNetInstanceApi[ProcessState](compiledRecipe.petriNet, processIdManagerActor)
+  private val petriNetApi = new PetriNetInstanceApi[Place, Transition, ProcessState](compiledRecipe.petriNet, processIdManagerActor)
 
   private val readJournal = PersistenceQuery(actorSystem)
     .readJournalFor[CurrentEventsByPersistenceIdQuery with AllPersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
@@ -176,7 +180,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     */
   def eventsAsync(processId: java.util.UUID): Source[Any, NotUsed] = {
     PetriNetQuery
-      .eventsForInstance[ProcessState](processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal)
+      .eventsForInstance[Place, Transition, ProcessState](processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal, transitionEventSource(ingredientExtractor))
       .collect {
         case (_, TransitionFiredEvent(_, _, _, _, _, _, output))
           if compiledRecipe.allEvents.exists(_.isInstance(output)) => output

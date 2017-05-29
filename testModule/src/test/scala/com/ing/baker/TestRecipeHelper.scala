@@ -259,7 +259,8 @@ trait TestRecipeHelper
         InteractionDescriptorFactory[InteractionThree]
           .withMaximumInteractionCount(1),
         InteractionDescriptorFactory[InteractionFour]
-          .withRequiredEvent[SecondEvent].withRequiredEvent[EventFromInteractionTwo],
+          .withRequiredEvent[SecondEvent]
+          .withRequiredEvent[EventFromInteractionTwo],
         InteractionDescriptorFactory[InteractionFive],
         InteractionDescriptorFactory[InteractionSix]
       ),

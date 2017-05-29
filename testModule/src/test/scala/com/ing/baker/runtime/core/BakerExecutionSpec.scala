@@ -65,7 +65,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val baker = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(recipe, mockImplementations),
                             mockImplementations,
-                            defaultActorSystem)
+        actorSystem = defaultActorSystem)
 
       val processId = UUID.randomUUID()
       baker.bake(processId)
@@ -302,7 +302,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val baker = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(recipe, mockImplementations),
                             mockImplementations,
-                            defaultActorSystem)
+        actorSystem = defaultActorSystem)
       val processId = UUID.randomUUID()
       baker.bake(processId)
 
@@ -468,7 +468,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       try {
         val baker2 = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(getComplexRecipe(recoveryRecipeName), mockImplementations),
           mockImplementations,
-          system2)
+          actorSystem = system2)
         baker2.getProcessState(processId).ingredients shouldBe finalState
       } finally {
         TestKit.shutdownActorSystem(system2)
@@ -477,7 +477,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
     }
 
     "when acknowledging the first event, not wait on the rest" in {
-      val baker = setupBakerWithRecipe("NotWaitForTheRest", defaultActorSystem)
+      val baker = setupBakerWithRecipe("NotWaitForTheRest", actorSystem = defaultActorSystem)
 
       val interaction2Delay = 2000
 

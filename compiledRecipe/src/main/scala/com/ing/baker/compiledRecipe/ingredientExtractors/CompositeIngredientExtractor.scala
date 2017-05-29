@@ -54,6 +54,6 @@ class CompositeIngredientExtractor(extractorBindings: Map[Class[_], IngredientEx
   override def extractIngredientTypes(clazz: Class[_]): Map[String, Class[_]] =
     extractorForClass(clazz).extractIngredientTypes(clazz)
 
-  override def extractIngredientData(obj: AnyRef): Map[String, Any] =
+  override def extractIngredientData(obj: Any): Map[String, Any] =
     extractorForClass(obj.getClass).extractIngredientData(obj)
 }

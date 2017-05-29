@@ -20,7 +20,7 @@ object RecipeValidations {
       validationErrors += s"Interaction $interactionTransition does not have any requirements (ingredients or preconditions)! This will result in an infinite execution loop."
 
     val eventClassNotAssignableFromErrors: Seq[String] = interactionTransition match  {
-      case InteractionTransition(_, providesType: ProvidesEvent, _, _, _, interactionName: String, _, _, _, _, _, _) =>
+      case InteractionTransition(_, providesType: ProvidesEvent, _, _, interactionName: String, _, _, _, _, _) =>
         providesType.outputEventClasses.flatMap(
           eventClass =>
             if (!providesType.outputType.isAssignableFrom(eventClass))

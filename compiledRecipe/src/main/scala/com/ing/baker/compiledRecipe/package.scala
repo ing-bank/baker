@@ -1,44 +1,41 @@
 package com.ing.baker
 
 import com.ing.baker.compiledRecipe.ActionType.{InteractionAction, SieveAction}
-import com.ing.baker.compiledRecipe.petrinet.InteractionTransition
-import io.kagera.dsl.colored.{Place, Transition}
+import com.ing.baker.compiledRecipe.petrinet.Place._
+import com.ing.baker.compiledRecipe.petrinet.{EventTransition, InteractionTransition, IntermediateTransition, MultiFacilitatorTransition, Place, Transition}
+
 
 package object compiledRecipe {
-  val limitPrefix           = "limit:"
-  val preconditionPrefix    = "precondition:"
-  val orPreconditionPrefix  = "orPrecondition:"
-  val interactionEvent      = "result:"
-  val multiTransitionPrefix = "multi:"
+  //TODO remove the use of this stringly typed
   val processIdName         = "$ProcessID$"
-  val missingEvent          = "missing:"
-  val emptyEventIngredient     = "EEI:"
 
   implicit class PlaceAdditions(place: Place[_]) {
-    def isIngredient: Boolean =
-      !isInteractionEventOutput && !isEventPrecondition && !isFiringLimiter && !isIntermediate
-    def isInteractionEventOutput: Boolean = place.label.startsWith(interactionEvent)
-    def isFiringLimiter: Boolean          = place.label.startsWith(limitPrefix)
-    def isEventPrecondition: Boolean      = place.label.startsWith(preconditionPrefix)
-    def isOrEventPrecondition: Boolean    = place.label.startsWith(orPreconditionPrefix)
-    def isIntermediate: Boolean           = place.label.startsWith(multiTransitionPrefix)
-    def isEmptyEventIngredient: Boolean   = place.label.startsWith(emptyEventIngredient)
+    def isIngredient: Boolean = place.placeType == IngredientPlace
+    def isInteractionEventOutput: Boolean = place.placeType == InteractionEventOutputPlace
+    def isFiringLimiter: Boolean          = place.placeType == FiringLimiterPlace
+    def isEventPrecondition: Boolean      = place.placeType == EventPreconditionPlace
+    def isOrEventPrecondition: Boolean    = place.placeType == EventOrPreconditionPlace
+    def isIntermediate: Boolean           = place.placeType == IntermediatePlace
+    def isEmptyEventIngredient: Boolean   = place.placeType == EmptyEventIngredientPlace
   }
 
   implicit class TransitionAdditions(transition: Transition[_, _, _]) {
-    def isParallelizationTransition: Boolean = transition.label.startsWith(multiTransitionPrefix)
 
     def isInteraction: Boolean = PartialFunction.cond(transition) {
       case t: InteractionTransition[_] => t.actionType == InteractionAction
     }
+
+    def isMultiFacilitatorTransition: Boolean = transition.isInstanceOf[MultiFacilitatorTransition]
 
     def isSieve: Boolean = PartialFunction.cond(transition) {
       case t: InteractionTransition[_] => t.actionType == SieveAction
     }
 
     def isEventMissing: Boolean =
-      !transition
-        .isInstanceOf[InteractionTransition[_]] && transition.label.startsWith(missingEvent)
+      transition match {
+        case EventTransition(_, _, isMissing) => isMissing
+        case _ => false
+      }
 
     def isEvent: Boolean =
       !(transition.isInstanceOf[InteractionTransition[_]] || transition.label.contains(":"))
