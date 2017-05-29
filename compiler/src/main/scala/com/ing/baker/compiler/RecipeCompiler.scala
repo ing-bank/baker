@@ -131,7 +131,7 @@ object RecipeCompiler {
     val dataInputArcs = fieldNamesWithoutPrefix.map(fieldName => arc(createPlace(fieldName, IngredientPlace), t, 1))
 
     val limitInteractionCountArc =
-      t.maximumInteractionCount.map(_ => arc(createPlace(t.label, FiringLimiterPlace), t, 1))
+      t.maximumInteractionCount.map(_ => arc(createPlace(s"limit:${t.label}", FiringLimiterPlace), t, 1))
 
     dataInputArcs ++ internalDataInputArcs ++ limitInteractionCountArc
   }
@@ -300,7 +300,7 @@ object RecipeCompiler {
 
     val initialMarking: Marking[Place] = interactionTransitions.flatMap { t =>
       t.maximumInteractionCount.map(n =>
-        createPlace(s"limitPrefix:${t.label}", FiringLimiterPlace) -> Map(() -> n))
+        createPlace(s"limit:${t.label}", FiringLimiterPlace) -> Map(() -> n))
     }.toMarking
 
     val compiledRecipe = CompiledRecipe(

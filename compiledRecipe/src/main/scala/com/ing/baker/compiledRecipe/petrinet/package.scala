@@ -21,7 +21,7 @@ package object petrinet {
     }
   }
 
-  val exceptionStrategyHandler: Transition[_,_,_] => TransitionExceptionHandler = {
+  val transitionExceptionHandler: Transition[_,_,_] => TransitionExceptionHandler = {
     case interaction: InteractionTransition[_] => interaction.exceptionStrategy
     case _ => (e, n) => BlockTransition
   }
@@ -29,10 +29,11 @@ package object petrinet {
   def transitionEventSource(ingredientExtractor: IngredientExtractor): Transition[_,_,_] => (ProcessState => Any => ProcessState) = {
     case t: InteractionTransition[_] => EventSource.updateIngredientState(t, ingredientExtractor)
     case t: EventTransition[_]       => EventSource.updateEventState(t, ingredientExtractor)
+    case t                           => s => e => s
   }
 
   def jobExecutor(topology: RecipePetriNet, interactions: Map[Class[_], () => AnyRef], ingredientExtractor: IngredientExtractor, evaluationStrategy: Strategy) =
-    new JobExecutor[ProcessState, Place, Transition](topology, new TaskProvider(interactions, ingredientExtractor), exceptionStrategyHandler)(evaluationStrategy)
+    new JobExecutor[ProcessState, Place, Transition](topology, new TaskProvider(interactions, ingredientExtractor), transitionExceptionHandler)(evaluationStrategy)
 
   def arc(t: Transition[_, _, _], p: Place[_], weight: Long): Arc = WLDiEdge[Node, String](Right(t), Left(p))(weight, "")
 

@@ -3,7 +3,7 @@ package com.ing.baker.runtime.core
 import java.util.UUID
 
 import akka.NotUsed
-import akka.actor.{ActorSystem, Props}
+import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
@@ -18,13 +18,11 @@ import com.ing.baker.core.{BakerException, ProcessState, RecipeValidationExcepti
 import com.ing.baker.runtime.actor.{BakerActorMessage, LocalBakerActorProvider, ShardedActorProvider, Util}
 import com.ing.baker.visualisation.RecipeVisualizer
 import fs2.Strategy
-import io.kagera.akka.actor.PetriNetInstance.Settings
 import io.kagera.akka.actor.PetriNetInstanceProtocol._
 import io.kagera.akka.actor._
 import io.kagera.akka.query.PetriNetQuery
 import io.kagera.api.Marking
 import io.kagera.execution.EventSourcing.TransitionFiredEvent
-import io.kagera.execution.JobExecutor
 import io.kagera.persistence.Encryption
 import io.kagera.persistence.Encryption.NoEncryption
 import net.ceedubs.ficus.Ficus._

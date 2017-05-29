@@ -4,13 +4,13 @@ import java.lang.reflect.InvocationTargetException
 import java.util.UUID
 
 import com.ing.baker.compiledRecipe._
-import com.ing.baker.compiledRecipe.petrinet.ProvidesType.{ProvidesEvent, ProvidesIngredient, ProvidesNothing}
+import com.ing.baker.compiledRecipe.duplicates.ReflectionHelpers._
+import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
+import com.ing.baker.compiledRecipe.petrinet.ProvidesType.ProvidesEvent
 import com.ing.baker.core.ProcessState
 import fs2.Task
 import io.kagera.api._
 import io.kagera.execution.{TransitionTask, TransitionTaskProvider}
-import com.ing.baker.compiledRecipe.duplicates.ReflectionHelpers._
-import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
 import org.slf4j.{LoggerFactory, MDC}
 
 import scala.util.Try
@@ -19,21 +19,22 @@ class TaskProvider(interactionProviders: Map[Class[_], () => AnyRef], ingredient
 
   val log = LoggerFactory.getLogger(classOf[TaskProvider])
 
+  def toMarking[P[_]](mset: MultiSet[P[_]]): Marking[P] = mset.map { case (p, n) ⇒ p -> Map(() -> n) }.toMarking
+
   override def apply[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _, _]], t: Transition[Input, Output, ProcessState]): TransitionTask[Place, Input, Output, ProcessState] = {
     t match {
       case interaction: InteractionTransition[_] =>
         interactionTransitionTask[AnyRef, Input, Output](interaction.asInstanceOf[InteractionTransition[AnyRef]], interactionProviders(interaction.interactionClass), petriNet.outMarking(interaction))
-      case t: EventTransition[_] => eventTransitionTask(t)
-      case t: MultiFacilitatorTransition => passThroughtTransitionTask(petriNet, t)
-      case t: MissingEventTransition[_] => passThroughtTransitionTask(petriNet, t)
-
+      case t: EventTransition[_]         => eventTransitionTask(petriNet, t)
+      case t                             => passThroughtTransitionTask(petriNet, t)
     }
   }
 
   def passThroughtTransitionTask[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _, _]], t: Transition[Input, Output, _]): TransitionTask[Place, Input, Output, ProcessState] =
-    (consume, processState, input) => Task.now((petriNet.outMarking(t).map { case (p, n) ⇒ p -> Map(() -> n) }.toMarking, null.asInstanceOf[Output]))
+    (consume, processState, input) => Task.now((toMarking[Place](petriNet.outMarking(t)), null.asInstanceOf[Output]))
 
-  def eventTransitionTask[E, Input, Output](eventTransition: EventTransition[E]): TransitionTask[Place, Input, Output, ProcessState] = ???
+  def eventTransitionTask[E, Input, Output](petriNet: PetriNet[Place[_], Transition[_, _, _]], eventTransition: EventTransition[E]): TransitionTask[Place, Input, Output, ProcessState] =
+    (consume, processState, input) => Task.now((toMarking[Place](petriNet.outMarking(eventTransition)), input.asInstanceOf[Output]))
 
   def interactionTransitionTask[I, Input, Output](interaction: InteractionTransition[I], interactionProvider: () => I, outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, Input, Output, ProcessState] =
 
@@ -129,7 +130,6 @@ class TaskProvider(interactionProviders: Map[Class[_], () => AnyRef], ingredient
     parameterValues
   }
 
-
   /**
     * Creates the produced marking (tokens) given the output (event) of the interaction.
     */
@@ -144,6 +144,4 @@ class TaskProvider(interactionProviders: Map[Class[_], () => AnyRef], ingredient
       place -> MultiSet(value)
     }.toMarking
   }
-
-
 }
