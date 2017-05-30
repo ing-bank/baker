@@ -3,11 +3,10 @@ package com.ing.baker
 import java.lang.reflect.Method
 
 import com.ing.baker.compiledRecipe.ActionType.{InteractionAction, SieveAction}
-import com.ing.baker.compiledRecipe.annotations.FiresEvent
 import com.ing.baker.compiledRecipe.duplicates.ReflectionHelpers._
 import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
-import com.ing.baker.compiledRecipe.petrinet.{InteractionTransition, ProvidesType, Transition}
 import com.ing.baker.compiledRecipe.petrinet.ProvidesType.{ProvidesEvent, ProvidesIngredient, ProvidesNothing}
+import com.ing.baker.compiledRecipe.petrinet.{InteractionTransition, ProvidesType, Transition}
 import com.ing.baker.compiledRecipe.{ActionType, EventOutputTransformer, InteractionFailureStrategy, annotations}
 import com.ing.baker.recipe.common.InteractionDescriptor
 import io.kagera.api._
@@ -29,25 +28,18 @@ package object compiler {
 
   implicit class InteractionOps(interaction: InteractionDescriptor[_]) {
 
-    def toInteractionTransition(implementations: Map[Class[_], () => AnyRef],
-                                defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy,
+    def toInteractionTransition(defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy,
                                 ingredientExtractor: IngredientExtractor): (InteractionTransition[_], Seq[String]) = {
 
       val validationErrors = scala.collection.mutable.MutableList.empty[String]
 
-      // validate that an implementation is provided for the interaction
-      if (!implementations.isDefinedAt(interaction.interactionClass))
-        validationErrors += s"No implementation provided for interaction: ${interaction.interactionClass}"
-
-      val implementationProvider = implementations.lift(interaction.interactionClass).getOrElse(() => null)
-      val interactionTransition = interactionTransitionOf(interaction, implementationProvider, defaultFailureStrategy, ingredientExtractor)
+      val interactionTransition = interactionTransitionOf(interaction, defaultFailureStrategy, ingredientExtractor)
 
       (interactionTransition, validationErrors)
     }
 
     def interactionTransitionOf(
                                  interactionDescriptor: InteractionDescriptor[_],
-                                 implementationProvider: () => AnyRef,
                                  defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy,
                                  ingredientExtractor: IngredientExtractor): InteractionTransition[Any] = {
 

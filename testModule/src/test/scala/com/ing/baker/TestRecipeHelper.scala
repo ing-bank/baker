@@ -80,6 +80,18 @@ trait InteractionSix extends Interaction {
   def apply(@RequiresIngredient("initialIngredientExtendedName") message: String): String
 }
 
+class SieveInteraction(s: String) extends Interaction {
+  def apply(@ProcessId id: String,
+            @RequiresIngredient("initialIngredient") message: String): String = "InitialIngredient"
+}
+
+
+class SieveInteractionWithoutDefaultConstructor(s: String) extends Interaction {
+  def apply(@ProcessId id: String,
+            @RequiresIngredient("initialIngredient") message: String): String = s
+}
+
+
 trait NonSerializableEventInteraction extends Interaction {
   @FiresEvent(oneOf = Array(classOf[NonSerializableObject]))
   def apply(@RequiresIngredient("initialIngredient") message: String): NonSerializableObject
@@ -343,7 +355,7 @@ trait TestRecipeHelper
     when(testInteractionSixMock.apply(anyString())).thenReturn(interactionSixIngredient)
 
     new Baker(
-      compiledRecipe = RecipeCompiler.compileRecipe(recipe, mockImplementations),
+      compiledRecipe = RecipeCompiler.compileRecipe(recipe),
       actorSystem = actorSystem,
       implementations = mockImplementations)
   }

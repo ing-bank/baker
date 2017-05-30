@@ -63,7 +63,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
         events = Set(classOf[InitialEvent])
       )
 
-      val baker = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(recipe, mockImplementations),
+      val baker = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(recipe),
                             mockImplementations,
         actorSystem = defaultActorSystem)
 
@@ -154,7 +154,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
         )
 
         new Baker(
-          compiledRecipe = RecipeCompiler.compileRecipe(recipe, mockImplementations),
+          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
           implementations = mockImplementations,
           actorSystem = defaultActorSystem
         )
@@ -300,7 +300,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       when(testInteractionOneMock.apply(anyString(), anyString()))
         .thenReturn(interactionOneIngredient)
 
-      val baker = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(recipe, mockImplementations),
+      val baker = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(recipe),
                             mockImplementations,
         actorSystem = defaultActorSystem)
       val processId = UUID.randomUUID()
@@ -466,7 +466,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val system2 = ActorSystem("persistenceTest2", levelDbConfig("persistenceTest2", 3002))
       try {
-        val baker2 = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(getComplexRecipe(recoveryRecipeName), mockImplementations),
+        val baker2 = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(getComplexRecipe(recoveryRecipeName)),
           mockImplementations,
           actorSystem = system2)
         baker2.getProcessState(processId).ingredients shouldBe finalState

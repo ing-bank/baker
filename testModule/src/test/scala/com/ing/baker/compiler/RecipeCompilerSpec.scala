@@ -28,15 +28,6 @@ class RecipeCompilerSpec extends TestRecipeHelper {
 
     }
 
-    "give a List of missing implementations in the validation errors if a recipe does not provide an implementation for an interaction" in {
-      val recipe = SRecipe(name = "MissingImplementation",
-                          interactions = Seq(InteractionDescriptorFactory[InteractionOne]),
-                          events = Set.empty)
-
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("No implementation provided for interaction: interface com.ing.baker.InteractionOne")
-    }
-
     "give a List of missing ingredients if an interaction has an ingredient that is not provided by any other event or interaction" in {
       val recipe = SRecipe(name = "NonProvidedIngredient",
                           interactions = Seq(InteractionDescriptorFactory[InteractionOne]),

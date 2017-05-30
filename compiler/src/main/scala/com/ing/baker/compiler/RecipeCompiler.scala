@@ -3,9 +3,9 @@ package compiler
 
 import com.ing.baker.compiledRecipe.ingredientExtractors.{CompositeIngredientExtractor, IngredientExtractor}
 import com.ing.baker.compiledRecipe.petrinet.Place._
-import com.ing.baker.compiledRecipe.petrinet._
 import com.ing.baker.compiledRecipe.petrinet.ProvidesType.{ProvidesEvent, ProvidesIngredient, ProvidesNothing}
-import com.ing.baker.compiledRecipe.{CompiledRecipe, RecipeValidations, ValidationSettings, _}
+import com.ing.baker.compiledRecipe.petrinet._
+import com.ing.baker.compiledRecipe.{CompiledRecipe, RecipeValidations, ValidationSettings}
 import com.ing.baker.core.{BakerException, ProcessState}
 import com.ing.baker.recipe.common.{InteractionDescriptor, Recipe}
 import io.kagera.api._
@@ -157,51 +157,25 @@ object RecipeCompiler {
       placeNameWithDuplicateTransitions) ++ buildInteractionOutputArcs(t, findInternalEventByClass)
   }
 
-  private def buildSieveImplementationProviders(
-      actions: Seq[InteractionDescriptor[_]]): (Map[Class[_], () => AnyRef], Seq[String]) = {
-
-    val actionsMap: Map[Class[_], () => AnyRef] = actions
-        .map(_.interactionClass)
-        .map(clazz => clazz -> (() => clazz.newInstance().asInstanceOf[AnyRef]))
-        .toMap
-
-    val noDefaultConstructorErrors = actions
-      .map(action => {
-        if (action.interactionClass.getConstructors.exists(e => e.getParameterCount == 0)) ""
-        else s"No default constructor found for Sieve: '${action.interactionClass}'"
-      })
-      .filter(_.nonEmpty)
-
-    (actionsMap, noDefaultConstructorErrors)
-  }
-
   val defaultIngredientExtractor: IngredientExtractor = new CompositeIngredientExtractor()
 
   /**
     * Compile the given recipe to a technical recipe that is useful for Baker.
     *
     * @param recipe; The Recipe to compile and execute
-    * @param interactionImplementations: The implementations of the needed interactions
     * @param validationSettings The validation settings to follow for the validation
     * @return
     */
   def compileRecipe(recipe: Recipe,
-                    interactionImplementations: Map[Class[_], () => AnyRef],
                     validationSettings: ValidationSettings,
                     ingredientExtractor: IngredientExtractor): CompiledRecipe = {
 
-    val (sieveClassToImplementations, sieveErrors): (Map[Class[_], () => AnyRef], Seq[String]) =
-      buildSieveImplementationProviders(recipe.sieveDescriptors)
-
     val actionDescriptors: Seq[InteractionDescriptor[_]] = recipe.interactionDescriptors ++ recipe.sieveDescriptors
-
-    val allImplementations: Map[Class[_], () => AnyRef] =
-      interactionImplementations ++ sieveClassToImplementations
 
     // For inputs for which no matching output cannot be found, we do not want to generate a place.
     // It should be provided at runtime from outside the active petri net (marking)
     val (interactionTransitions, interactionValidationErrors) = actionDescriptors.map {
-      _.toInteractionTransition(allImplementations, recipe.defaultFailureStrategy, ingredientExtractor)
+      _.toInteractionTransition(recipe.defaultFailureStrategy, ingredientExtractor)
     }.unzip
 
     // events provided from outside
@@ -266,7 +240,6 @@ object RecipeCompiler {
     val sensoryEventArcsNoIngredientsArcs: Seq[Arc] = sensoryEventNoIngredients
       //Filter out events that are preconditions to interactions
       .filterNot(sensoryEvent => eventThatArePreconditions.contains(sensoryEvent.label))
-      //TODO remove EEI when possible
       .map(sensoryEvent => arc(sensoryEvent, createPlace(sensoryEvent.label, EmptyEventIngredientPlace), 1))
 
     // First find the cases where multiple transitions depend on the same ingredient place
@@ -309,17 +282,14 @@ object RecipeCompiler {
       initialMarking = initialMarking,
       sensoryEvents = recipe.events.asInstanceOf[Set[Class[_]]],
       ingredientExtractor,
-      validationErrors = interactionValidationErrors.flatten ++ preconditionORErrors ++ preconditionANDErrors ++ sieveErrors
+      validationErrors = interactionValidationErrors.flatten ++ preconditionORErrors ++ preconditionANDErrors
     )
 
     RecipeValidations.postCompileValidations(compiledRecipe, validationSettings)
   }
 
   def compileRecipe(recipe: Recipe): CompiledRecipe =
-    compileRecipe(recipe, Map.empty, ValidationSettings.defaultValidationSettings, defaultIngredientExtractor)
-
-  def compileRecipe(recipe: Recipe, interactionImplementations: Map[Class[_], () => AnyRef]): CompiledRecipe =
-    compileRecipe(recipe, interactionImplementations, ValidationSettings.defaultValidationSettings, defaultIngredientExtractor)
+    compileRecipe(recipe, ValidationSettings.defaultValidationSettings, defaultIngredientExtractor)
 
   private def getMultiTransition(internalRepresentationName: String,
                                  transitions: Seq[Transition[_, _, _]]): Transition[_, _, _] = {

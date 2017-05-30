@@ -137,7 +137,14 @@ class TaskProvider(interactionProviders: Map[Class[_], () => AnyRef], ingredient
     outAdjacent.keys.map { place =>
       val value: Any = {
         interaction.providesType match {
-          case ProvidesEvent(_, _, _) => interaction.matchingEventName(output)
+          case ProvidesEvent(_, _, outputEventClasses: Seq[Class[_]]) =>
+            outputEventClasses.find(_.isInstance(output)).map(_.getSimpleName).getOrElse {
+              throw new IllegalStateException(
+                s"Method output: $output is not an instance of any of the specified event classes: ${
+                  outputEventClasses
+                    .mkString(",")
+                }")
+            }
           case _ => ()
         }
       }

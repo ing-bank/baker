@@ -11,17 +11,19 @@ import akka.persistence.query.scaladsl._
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
+import com.ing.baker.compiledRecipe.ActionType.SieveAction
 import com.ing.baker.compiledRecipe.ingredientExtractors.{CompositeIngredientExtractor, IngredientExtractor}
 import com.ing.baker.compiledRecipe.petrinet._
 import com.ing.baker.compiledRecipe.{CompiledRecipe, RecipeValidations}
 import com.ing.baker.core.{BakerException, ProcessState, RecipeValidationException}
 import com.ing.baker.runtime.actor.{BakerActorMessage, LocalBakerActorProvider, ShardedActorProvider, Util}
+import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.visualisation.RecipeVisualizer
 import fs2.Strategy
 import io.kagera.akka.actor.PetriNetInstanceProtocol._
 import io.kagera.akka.actor._
 import io.kagera.akka.query.PetriNetQuery
-import io.kagera.api.Marking
+import io.kagera.api._
 import io.kagera.execution.EventSourcing.TransitionFiredEvent
 import io.kagera.persistence.Encryption
 import io.kagera.persistence.Encryption.NoEncryption
@@ -33,10 +35,39 @@ import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
+object Baker {
+  private def buildSieveImplementationProviders(actions: Set[InteractionTransition[_]]): (Map[Class[_], () => AnyRef], Set[String]) = {
+    val actionsMap: Map[Class[_], () => AnyRef] = actions
+      .map(_.interactionClass)
+      .map(clazz => clazz -> (() => clazz.newInstance().asInstanceOf[AnyRef]))
+      .toMap
+
+    val noDefaultConstructorErrors = actions
+      .map(action => {
+        if (action.interactionClass.getConstructors.exists(e => e.getParameterCount == 0)) ""
+        else s"No default constructor found for Sieve: '${action.interactionClass}'"
+      })
+      .filter(_.nonEmpty)
+
+    (actionsMap, noDefaultConstructorErrors)
+  }
+
+  private def checkIfImplementationsProvided(implementations: Map[Class[_], () => AnyRef], actions: Set[InteractionTransition[_]]): Set[String] = {
+    actions
+      .filterNot(a => implementations.contains(a.interactionClass))
+      .map(a => s"No implementation provided for interaction: ${a.interactionClass}")
+  }
+
+  def transitionForEventClass(eventClass: Class[_], compiledRecipe: CompiledRecipe) =
+    compiledRecipe.petriNet.transitions.findByLabel(eventClass.getSimpleName).getOrElse {
+      throw new IllegalArgumentException(s"No such event known in recipe: $eventClass")
+    }
+}
+
 /**
   * The Baker knows:
   * - A recipe
-  * - The ingredientImpls (what concrete implementation for what interface): Map[Interface, Implementation]
+  * - The interaction implementations for the interactions of the compiledRecipe (what concrete implementation for what interface): Map[Interface, Implementation]
   * - A list of events
   * The Baker can bake a recipe, create a process and respond to events.
   */
@@ -44,14 +75,6 @@ class Baker(val compiledRecipe: CompiledRecipe,
             val implementations: Map[Class[_], () => AnyRef],
             val ingredientExtractor: IngredientExtractor = new CompositeIngredientExtractor(),
             implicit val actorSystem: ActorSystem) {
-
-
-  //Write code to give bind the implementations when creating the baker to the compiledRecipe
-
-  if (compiledRecipe.validationErrors.nonEmpty)
-    throw new RecipeValidationException(compiledRecipe.validationErrors.mkString(", "))
-
-  RecipeValidations.assertEventsAndIngredientsAreSerializable(compiledRecipe)
 
   import actorSystem.dispatcher
 
@@ -63,6 +86,26 @@ class Baker(val compiledRecipe: CompiledRecipe,
   private val bakeTimeout = config.as[FiniteDuration]("baker.bake-timeout")
   private val journalInitializeTimeout = config.as[FiniteDuration]("baker.journal-initialize-timeout")
   private val readJournalIdentifier = config.as[String]("baker.actor.read-journal-plugin")
+
+
+  if (compiledRecipe.validationErrors.nonEmpty)
+    throw new RecipeValidationException(compiledRecipe.validationErrors.mkString(", "))
+
+  //Create implementations for sieve interactions
+  val sieveInteractions = compiledRecipe.interactionTransitions.filter(_.actionType == SieveAction)
+  val (sieveImplementations, sieveErrors) = buildSieveImplementationProviders(sieveInteractions)
+  if(sieveErrors.nonEmpty)
+    throw new BakerException(sieveErrors.mkString(", "))
+
+  //Check if all implementations are provided
+  val allImplementations = implementations ++ sieveImplementations
+  val implementationErrors = checkIfImplementationsProvided(allImplementations, compiledRecipe.interactionTransitions)
+  if(implementationErrors.nonEmpty)
+    throw new BakerException(implementationErrors.mkString(", "))
+
+  //Validate if all events and ingredients are serializable
+  RecipeValidations.assertEventsAndIngredientsAreSerializable(compiledRecipe)
+
 
   /**
     * We do this to force initialization of the journal (database) connection.
@@ -91,7 +134,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     compiledRecipe.name,
     Util.coloredPetrinetProps[ProcessState](
       compiledRecipe.petriNet,
-      implementations,
+      allImplementations,
       ingredientExtractor,
       PetriNetInstance.Settings(
         evaluationStrategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadpool"),
@@ -106,7 +149,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
   private def createEventMsg(processId: java.util.UUID, event: AnyRef) = {
     require(event != null, "Event can not be null")
 
-    val t = compiledRecipe.transitionForEventClass(event.getClass)
+    val t = transitionForEventClass(event.getClass, compiledRecipe)
     BakerActorMessage(processId, FireTransition(t.id, event))
   }
 

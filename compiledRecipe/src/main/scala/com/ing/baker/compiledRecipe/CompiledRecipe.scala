@@ -41,12 +41,6 @@ case class CompiledRecipe(name: String,
     case t: InteractionTransition[_] => t
   }
 
-  def transitionForEventClass(eventClass: Class[_]) =
-  //TODO move te setting of this to the compiler and not as part of the compiled recipe itself
-    petriNet.transitions.findByLabel(eventClass.getSimpleName).getOrElse {
-      throw new IllegalArgumentException(s"No such event known in recipe: $eventClass")
-    }
-
   val interactionEvents: Set[Class[_]] =
     interactionTransitions flatMap  {
       case InteractionTransition(_, providesType: ProvidesEvent, _, _, _, _, _, _, _, _) => providesType.outputEventClasses
@@ -66,7 +60,5 @@ case class CompiledRecipe(name: String,
     eventClass => ingredientExtractor.extractIngredientTypes(eventClass)
   }
 
-  val ingredients: Map[String, Class[_]] =
-  //TODO move te setting of this to the compiler and not as part of the compiled recipe itself
-    (allIngredientsProvidedByInteractions ++ allIngredientsProvidedByEvents).toMap
+  val ingredients: Map[String, Class[_]] = (allIngredientsProvidedByInteractions ++ allIngredientsProvidedByEvents).toMap
 }

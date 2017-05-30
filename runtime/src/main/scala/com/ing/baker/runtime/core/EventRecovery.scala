@@ -5,7 +5,7 @@
 //import cats.Monoid
 //import cats.data.State
 //import com.ing.baker.compiledRecipe.CompiledRecipe
-//import com.ing.baker.compiledRecipe.transitions.InteractionTransition
+//import com.ing.baker.compiledRecipe.petrinet._
 //import com.ing.baker.core.ProcessState
 //import fs2.Strategy
 //import io.kagera.akka.actor.AkkaObjectSerializer

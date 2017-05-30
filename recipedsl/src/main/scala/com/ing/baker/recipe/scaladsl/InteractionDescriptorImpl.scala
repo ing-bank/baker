@@ -1,5 +1,6 @@
 package com.ing.baker.recipe.scaladsl
 
+import com.ing.baker.recipe.common.ActionType.SieveAction
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
 import com.ing.baker.recipe.common._
 
@@ -53,5 +54,11 @@ case class InteractionDescriptorImpl[T <: Interaction: ClassTag](
 object InteractionDescriptorFactory {
   def apply[T <: Interaction: ClassTag](): InteractionDescriptorImpl[T] = {
     InteractionDescriptorImpl[T](implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
+  }
+}
+
+object SieveDescriptorFactory {
+  def apply[T <: Interaction: ClassTag](): InteractionDescriptorImpl[T] = {
+    InteractionDescriptorImpl[T](implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]], actionType = SieveAction)
   }
 }

@@ -55,12 +55,7 @@ public class JCompiledRecipeTest {
         Assert.assertTrue(recipe.getSieves().stream().anyMatch((InteractionDescriptor a) -> a.interactionClass() == SieveImpl.class));
     }
 
-    @Test
-    public void shouldCompileRecipeWithSieveWithoutDefaultConstructorWithErrors() throws BakerException {
-        JRecipe recipe = setupComplexRecipe().withSieve(of(JCompiledRecipeTest.SieveImplWithoutDefaultConstruct.class));
-        JCompiledRecipe compileRecipe = new JCompiledRecipe(RecipeCompiler.compileRecipe(recipe));
-        assertEquals(compileRecipe.getValidationErrors().size(), 1);
-    }
+
 
     @Test
     public void shouldShowVisualRecipe() throws BakerException {
@@ -128,7 +123,7 @@ public class JCompiledRecipeTest {
     public static class SieveImpl implements Interaction {
         @ProvidesIngredient("AppendedRequestIds")
         public String apply(@RequiresIngredient("RequestIDStringOne") String requestIDStringOne,
-                               @RequiresIngredient("RequestIDStringTwo") String requestIDStringTwo) {
+                               @RequiresIngredient("RequestIDStringTwoC") String requestIDStringTwo) {
             return requestIDStringOne + requestIDStringTwo;
         }
     }

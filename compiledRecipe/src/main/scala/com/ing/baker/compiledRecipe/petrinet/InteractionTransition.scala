@@ -2,7 +2,6 @@ package com.ing.baker.compiledRecipe.petrinet
 
 import java.lang.reflect._
 
-import com.ing.baker.compiledRecipe.petrinet.ProvidesType._
 import com.ing.baker.compiledRecipe.{ActionType, EventOutputTransformer, InteractionFailureStrategy, _}
 import com.ing.baker.core.ProcessState
 import io.kagera.execution.TransitionExceptionHandler
@@ -90,19 +89,6 @@ case class InteractionTransition[I](
     eventOutputTransformers
       .get(clazz)
       .fold(clazz.asInstanceOf[Class[Any]])(_.targetType.asInstanceOf[Class[Any]])
-
-  def matchingEventName(output: AnyRef): String =
-    providesType match {
-      case ProvidesEvent(_, _, outputEventClasses: Seq[Class[_]]) =>
-        outputEventClasses.find(_.isInstance(output)).map(_.getSimpleName).getOrElse {
-          throw new IllegalStateException(
-            s"Method output: $output is not an instance of any of the specified event classes: ${
-              outputEventClasses
-                .mkString(",")
-            }")
-        }
-      case _ => ""
-    }
 
   val exceptionStrategy: TransitionExceptionHandler = InteractionFailureStrategy.asTransitionExceptionHandler(failureStrategy)
 }
