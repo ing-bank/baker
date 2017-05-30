@@ -1,4 +1,4 @@
-package com.ing.baker.compiledRecipe.annotations;
+package com.ing.baker.recipe.annotations;
 
 import javax.inject.Qualifier;
 import java.lang.annotation.*;
@@ -6,7 +6,7 @@ import java.lang.annotation.*;
 @Qualifier
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface ProvidesIngredient {
+@Target(ElementType.PARAMETER)
+public @interface RequiresIngredient {
     String value() default "";
 }

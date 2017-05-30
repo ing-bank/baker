@@ -7,7 +7,8 @@ import com.ing.baker.compiler.ReflectionHelpers._
 import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
 import com.ing.baker.compiledRecipe.petrinet.ProvidesType.{ProvidesEvent, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.compiledRecipe.petrinet.{InteractionTransition, ProvidesType, Transition}
-import com.ing.baker.compiledRecipe.{ActionType, EventOutputTransformer, InteractionFailureStrategy, annotations}
+import com.ing.baker.compiledRecipe.{ActionType, EventOutputTransformer, InteractionFailureStrategy}
+import com.ing.baker.recipe.annotations
 import com.ing.baker.recipe.common.InteractionDescriptor
 import io.kagera.api._
 

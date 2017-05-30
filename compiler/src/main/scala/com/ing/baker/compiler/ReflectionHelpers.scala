@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation
 import java.lang.reflect.{Field, Method, ParameterizedType}
 
 import com.ing.baker.compiledRecipe._
+import com.ing.baker.recipe.annotations
 import com.thoughtworks.paranamer.AnnotationParanamer
 
 import scala.concurrent.Future

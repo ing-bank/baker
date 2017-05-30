@@ -1,4 +1,4 @@
-package com.ing.baker.compiledRecipe.annotations;
+package com.ing.baker.recipe.annotations;
 
 import javax.inject.Qualifier;
 import java.lang.annotation.*;

@@ -5,7 +5,7 @@ val scalaV = "2.11.8"
 val jvmV   = "1.8"
 
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
-    organization := "com.ing",
+    organization := "com.ing.baker",
     scalaVersion := scalaV,
     scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", s"-target:jvm-$jvmV"),
     javacOptions := Seq("-source", jvmV, "-target", jvmV),
