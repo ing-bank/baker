@@ -4,7 +4,6 @@ import akka.actor.ActorSystem
 import akka.serialization.SerializationExtension
 import com.ing.baker.compiledRecipe.petrinet.ProvidesType.ProvidesEvent
 import com.ing.baker.core.NonSerializableException
-import com.ing.baker.compiledRecipe.duplicates.ReflectionHelpers._
 import com.ing.baker.compiledRecipe.petrinet.InteractionTransition
 
 import scala.collection.mutable
@@ -33,29 +32,21 @@ object RecipeValidations {
     validationErrors ++= eventClassNotAssignableFromErrors
 
     // check if the process id argument type is correct, TODO remove overlap with code below
-    interactionTransition.method.processIdClass.foreach {
+    interactionTransition.inputFields.toMap.get(processIdName).map {
       case c if c == classOf[String]         =>
       case c if c == classOf[java.util.UUID] =>
       case c => validationErrors += s"Non supported process id class: ${c.getName} on interaction: '$interactionTransition'"
     }
 
-    // throw an exception is attempting to predefine a non existing input field
-    (interactionTransition.predefinedParameters.keySet -- interactionTransition.inputFieldNames.toSet) foreach { name =>
-      validationErrors += s"Predefined argument '$name' is not defined on interaction: '$interactionTransition'"
-    }
-
     // check if the predefined ingredient is of the expected type
     interactionTransition.predefinedParameters.foreach {
       case (name, value) =>
-        val methodName = interactionTransition.method.parameterTypeForName(name)
-        // We do not have to add a validation error if the method name is not defined since this is validated for all given ingredients at the same time
-        if(methodName.isDefined){
-          val parameterType = interactionTransition.method.parameterTypeForName(name).get
-          if (!parameterType.isInstance(value))
-            validationErrors += s"Predefined argument '$name' is not of type: $parameterType on interaction: '$interactionTransition'"
-        }
+        val parameterTypeOption: Option[Class[_]] = interactionTransition.inputFields.toMap.get(name)
+        if(parameterTypeOption.isEmpty)
+          validationErrors += s"Predefined argument '$name' is not defined on interaction: '$interactionTransition'"
+        else if(!parameterTypeOption.get.isInstance(value))
+          validationErrors += s"Predefined argument '$name' is not of type: ${parameterTypeOption.get} on interaction: '$interactionTransition'"
     }
-
     validationErrors
   }
 

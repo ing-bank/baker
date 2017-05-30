@@ -123,7 +123,7 @@ public class JCompiledRecipeTest {
     public static class SieveImpl implements Interaction {
         @ProvidesIngredient("AppendedRequestIds")
         public String apply(@RequiresIngredient("RequestIDStringOne") String requestIDStringOne,
-                               @RequiresIngredient("RequestIDStringTwoC") String requestIDStringTwo) {
+                               @RequiresIngredient("RequestIDStringTwo") String requestIDStringTwo) {
             return requestIDStringOne + requestIDStringTwo;
         }
     }

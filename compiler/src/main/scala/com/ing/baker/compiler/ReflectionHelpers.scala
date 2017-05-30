@@ -1,4 +1,4 @@
-package com.ing.baker.compiledRecipe.duplicates
+package com.ing.baker.compiler
 
 import java.lang.annotation.Annotation
 import java.lang.reflect.{Field, Method, ParameterizedType}
@@ -9,12 +9,6 @@ import com.thoughtworks.paranamer.AnnotationParanamer
 import scala.concurrent.Future
 
 object ReflectionHelpers {
-
-  implicit class EnrichedMap(indexArgumentValueMap: collection.Map[Int, Any]) {
-    def filterMissingParameters: Seq[(Int, Any)] = {
-      indexArgumentValueMap.toSeq.filter { case (index, tokenValue) => index >= 0 }
-    }
-  }
 
   implicit class MethodReflectionAdditions(method: Method) {
     lazy val paramamer         = new RequiresAnnotationParanamer()

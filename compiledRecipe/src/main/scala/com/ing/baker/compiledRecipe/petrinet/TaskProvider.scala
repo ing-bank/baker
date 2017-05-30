@@ -4,7 +4,6 @@ import java.lang.reflect.InvocationTargetException
 import java.util.UUID
 
 import com.ing.baker.compiledRecipe._
-import com.ing.baker.compiledRecipe.duplicates.ReflectionHelpers._
 import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
 import com.ing.baker.compiledRecipe.petrinet.ProvidesType.ProvidesEvent
 import com.ing.baker.core.ProcessState
@@ -94,7 +93,7 @@ class TaskProvider(interactionProviders: Map[Class[_], () => AnyRef], ingredient
   def createMethodInput[A](interaction: InteractionTransition[A], state: ProcessState): Seq[AnyRef] = {
 
     // We support both UUID and String types
-    val processId: Option[(String, AnyRef)] = interaction.method.processIdClass.map {
+    val processId: Option[(String, AnyRef)] = interaction.inputFields.toMap.get(processIdName).map {
       case c if c == classOf[String] => state.id.toString
       case c if c == classOf[java.util.UUID] => state.id
       case _ => throw new IllegalStateException("Type not supported")
@@ -117,7 +116,7 @@ class TaskProvider(interactionProviders: Map[Class[_], () => AnyRef], ingredient
 
     val parameterIndicesWithValues = argumentNamesToValues.map {
       case (argumentName, argumentValue) => (interaction.inputFieldNames.indexWhere(_ == argumentName), argumentValue)
-    }.filterMissingParameters
+    }.toSeq.filter { case (index, tokenValue) => index >= 0 }
 
     val sortedIndicesAndValues = parameterIndicesWithValues.sortBy {
       case (index, tokenValue) => index

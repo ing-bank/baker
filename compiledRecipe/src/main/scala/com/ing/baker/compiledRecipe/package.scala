@@ -6,7 +6,6 @@ import com.ing.baker.compiledRecipe.petrinet.{EventTransition, InteractionTransi
 
 
 package object compiledRecipe {
-  //TODO remove the use of this stringly typed
   val processIdName         = "$ProcessID$"
 
   implicit class PlaceAdditions(place: Place[_]) {

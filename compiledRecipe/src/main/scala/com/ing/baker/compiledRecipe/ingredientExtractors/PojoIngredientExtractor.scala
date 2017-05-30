@@ -1,8 +1,15 @@
 package com.ing.baker.compiledRecipe.ingredientExtractors
 
-import com.ing.baker.compiledRecipe.duplicates.ReflectionHelpers._
+import java.lang.reflect.Field
 
 class PojoIngredientExtractor extends IngredientExtractor {
+  implicit class FieldWithAdditions(field: Field) {
+    def accessAndGet(obj: AnyRef) = {
+      field.setAccessible(true)
+      field.get(obj)
+    }
+  }
+
   override def extractIngredientData(obj: Any): Map[String, Any] = {
     val clazz = obj.getClass
     clazz.getDeclaredFields.toSeq.map { field =>

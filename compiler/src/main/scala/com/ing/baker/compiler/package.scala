@@ -3,7 +3,7 @@ package com.ing.baker
 import java.lang.reflect.Method
 
 import com.ing.baker.compiledRecipe.ActionType.{InteractionAction, SieveAction}
-import com.ing.baker.compiledRecipe.duplicates.ReflectionHelpers._
+import com.ing.baker.compiler.ReflectionHelpers._
 import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
 import com.ing.baker.compiledRecipe.petrinet.ProvidesType.{ProvidesEvent, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.compiledRecipe.petrinet.{InteractionTransition, ProvidesType, Transition}

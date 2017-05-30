@@ -14,7 +14,7 @@ import akka.util.Timeout
 import com.ing.baker.compiledRecipe.ActionType.SieveAction
 import com.ing.baker.compiledRecipe.ingredientExtractors.{CompositeIngredientExtractor, IngredientExtractor}
 import com.ing.baker.compiledRecipe.petrinet._
-import com.ing.baker.compiledRecipe.{CompiledRecipe, RecipeValidations}
+import com.ing.baker.compiledRecipe._
 import com.ing.baker.core.{BakerException, ProcessState, RecipeValidationException}
 import com.ing.baker.runtime.actor.{BakerActorMessage, LocalBakerActorProvider, ShardedActorProvider, Util}
 import com.ing.baker.runtime.core.Baker._
