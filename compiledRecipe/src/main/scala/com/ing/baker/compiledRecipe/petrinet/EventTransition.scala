@@ -12,7 +12,7 @@ case class EventTransition[E](clazz: Class[E],
                               val isSensoryEvent: Boolean = true,
                               val isMissing: Boolean = false) extends Transition[Unit, E, ProcessState] {
 
-  override val id       = clazz.getName.hashCode.toLong
+  override val id       = (clazz.getName + "EventTransition").hashCode.toLong
   override val label    = clazz.getSimpleName
   override val toString = label
 

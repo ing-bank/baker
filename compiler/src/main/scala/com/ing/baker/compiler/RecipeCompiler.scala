@@ -186,7 +186,7 @@ object RecipeCompiler {
       t.providesType match {
         case e: ProvidesEvent => {
           e.outputEventClasses.map(
-          clazz => IntermediateTransition(id = clazz.getName.hashCode, label = clazz.getSimpleName))
+          clazz => IntermediateTransition(id = (clazz.getName + "IntermediateTransition").hashCode, label = clazz.getSimpleName))
         }
         case i: ProvidesIngredient => Nil
         case n: ProvidesNothing.type => Nil
@@ -321,5 +321,5 @@ object RecipeCompiler {
     ingredientsWithMultipleConsumers
   }
 
-  private def createPlace(label: String, placeType: PlaceType): Place[Any] = Place(id = label.hashCode, label = label, placeType)
+  private def createPlace(label: String, placeType: PlaceType): Place[Any] = Place(id = (label + placeType).hashCode, label = label, placeType)
 }

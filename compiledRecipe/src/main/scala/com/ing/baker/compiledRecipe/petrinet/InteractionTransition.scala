@@ -70,7 +70,7 @@ case class InteractionTransition[I](
 
   val log: Logger = LoggerFactory.getLogger(classOf[InteractionTransition[_]])
 
-  override val id: Long = interactionName.hashCode.toLong
+  override val id: Long = (interactionName + "InteractionTransition").hashCode.toLong
 
   override val label: String = interactionName
 
