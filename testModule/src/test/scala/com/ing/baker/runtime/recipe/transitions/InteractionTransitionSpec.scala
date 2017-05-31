@@ -3,7 +3,7 @@ package com.ing.baker.runtime.recipe.transitions
 import com.ing.baker.recipe.annotations.{FiresEvent, ProvidesIngredient, RequiresIngredient}
 import org.scalatest._
 
-object InteractionTransitionSpec {
+object rInteractionTransitionSpec {
 
   trait SimpleInteraction {
     @ProvidesIngredient("originalIngredient")
