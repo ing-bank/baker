@@ -270,6 +270,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.getProcessState(processId).ingredients shouldBe Map(
         "initialIngredient"          -> firstData,
         "interactionOneIngredient"   -> firstResponse,
+        "sievedIngredient" -> sievedIngredient,
         "interactionTwoIngredient"   -> interactionTwoIngredient,
         "interactionThreeIngredient" -> interactionThreeIngredient
       )
@@ -281,6 +282,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.getProcessState(processId).ingredients shouldBe Map(
         "initialIngredient"          -> secondData,
         "interactionOneIngredient"   -> secondResponse,
+        "sievedIngredient" -> sievedIngredient,
         "interactionTwoIngredient"   -> interactionTwoIngredient,
         "interactionThreeIngredient" -> interactionThreeIngredient
       )
@@ -367,8 +369,10 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.handleEvent(processId, InitialEvent(initialIngredient))
 
       val result = baker.getProcessState(processId).ingredients
-      result shouldBe Map("initialIngredient"        -> initialIngredient,
-                          "interactionTwoIngredient" -> interactionTwoIngredient)
+      result shouldBe Map(
+        "initialIngredient"        -> initialIngredient,
+        "sievedIngredient" -> sievedIngredient,
+        "interactionTwoIngredient" -> interactionTwoIngredient)
     }
 
     "retry an interaction with incremental backoff if configured to do so" in {
@@ -411,8 +415,10 @@ class BakerExecutionSpec extends TestRecipeHelper {
       verify(testInteractionTwoMock, never()).apply(anyString())
 
       val result = baker.getProcessState(processId).ingredients
-      result shouldBe Map("initialIngredient"        -> initialIngredient,
-                          "interactionOneIngredient" -> interactionOneIngredient)
+      result shouldBe Map(
+        "initialIngredient"        -> initialIngredient,
+        "sievedIngredient" -> sievedIngredient,
+        "interactionOneIngredient" -> interactionOneIngredient)
     }
 
     "be able to return all occurred events" in {

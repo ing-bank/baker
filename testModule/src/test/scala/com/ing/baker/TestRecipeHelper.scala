@@ -7,7 +7,7 @@ import akka.testkit.TestKit
 import com.ing.baker.recipe.annotations.{FiresEvent, ProcessId, ProvidesIngredient, RequiresIngredient}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common.{Event, Interaction}
-import com.ing.baker.recipe.scaladsl.{InteractionDescriptorFactory, SRecipe}
+import com.ing.baker.recipe.scaladsl.{InteractionDescriptorFactory, SRecipe, SieveDescriptorFactory}
 import com.ing.baker.runtime.core.Baker
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers._
@@ -80,13 +80,15 @@ trait InteractionSix extends Interaction {
   def apply(@RequiresIngredient("initialIngredientExtendedName") message: String): String
 }
 
-class SieveInteraction(s: String) extends Interaction {
+class SieveInteraction() extends Interaction {
+  @ProvidesIngredient("sievedIngredient")
   def apply(@ProcessId id: String,
-            @RequiresIngredient("initialIngredient") message: String): String = "InitialIngredient"
+            @RequiresIngredient("initialIngredient") message: String): String = "sievedIngredient"
 }
 
 
 class SieveInteractionWithoutDefaultConstructor(s: String) extends Interaction {
+  @ProvidesIngredient("sievedIngredient")
   def apply(@ProcessId id: String,
             @RequiresIngredient("initialIngredient") message: String): String = s
 }
@@ -141,6 +143,7 @@ trait TestRecipeHelper
 
   //Default values to be used for the ingredients in the tests
   protected val initialIngredient = "initialIngredient"
+  protected val sievedIngredient = "sievedIngredient"
   protected val interactionOneOriginalIngredient = "interactionOneOriginalIngredient"
   protected val interactionOneIngredient = "interactionOneIngredient"
   protected val interactionTwoIngredient = "interactionTwoIngredient"
@@ -154,6 +157,7 @@ trait TestRecipeHelper
   //Can be used to check the state after firing the initialEvent
   protected val afterInitialState = Map(
     "initialIngredient" -> initialIngredient,
+    "sievedIngredient" -> sievedIngredient,
     "interactionOneIngredient" -> interactionOneIngredient,
     "interactionTwoIngredient" -> interactionTwoIngredient,
     "interactionThreeIngredient" -> interactionThreeIngredient
@@ -162,6 +166,7 @@ trait TestRecipeHelper
   //Can be used to check the state after firing the initialEvent and SecondEvent
   protected val finalState = Map(
     "initialIngredient" -> initialIngredient,
+    "sievedIngredient" -> sievedIngredient,
     "interactionOneIngredient" -> interactionOneIngredient,
     "interactionTwoIngredient" -> interactionTwoIngredient,
     "interactionThreeIngredient" -> interactionThreeIngredient,
@@ -274,7 +279,8 @@ trait TestRecipeHelper
           .withRequiredEvent[SecondEvent]
           .withRequiredEvent[EventFromInteractionTwo],
         InteractionDescriptorFactory[InteractionFive],
-        InteractionDescriptorFactory[InteractionSix]
+        InteractionDescriptorFactory[InteractionSix],
+        SieveDescriptorFactory[SieveInteraction]
       ),
       events = Set(classOf[InitialEvent], classOf[InitialEventExtendedName], classOf[SecondEvent], classOf[NotUsedSensoryEvent])
     )

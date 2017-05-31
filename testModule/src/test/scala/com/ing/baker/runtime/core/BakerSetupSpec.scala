@@ -58,7 +58,7 @@ class BakerSetupSpec extends TestRecipeHelper {
       } should have('message("No implementation provided for interaction: interface com.ing.baker.InteractionOne"))
     }
 
-    "throw BakerException with the list of ingredient serialization validation errors for Ingredients provided by Interactions" in {
+    "throw NonSerializableException with the list of ingredient serialization validation errors for Ingredients provided by Interactions" in {
 
       val recipe = SRecipe(
         name = "NonSerializableIngredientTest",
@@ -75,7 +75,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
     }
 
-    "throw BakerException with the list of ingredient serialization validation errors for Ingredients provided by Events" in {
+    "throw NonSerializableException with the list of ingredient serialization validation errors for Ingredients provided by Events" in {
 
       val recipe = SRecipe(
         name = "NonSerializableIngredientFromEventTest",
@@ -90,6 +90,26 @@ class BakerSetupSpec extends TestRecipeHelper {
           actorSystem = defaultActorSystem)
       } should have('message("Ingredient nonSerializableObject of class com.ing.baker.NonSerializableObject is not serializable by akka"))
 
+    }
+
+
+    //TODO ad this validation when starting up the baker runtime
+    "throw NonSerializableException with a list of non serializable events if an event is not Serializable" ignore {
+
+      val recipe = SRecipe(
+        name = "NonSerializableEventTest",
+        interactions = Seq(
+          InteractionDescriptorFactory[NonSerializableEventInteraction]
+        ),
+        events = Set(classOf[InitialEvent])
+      )
+
+      intercept[NonSerializableException] {
+        new Baker(
+          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+          implementations = mockImplementations,
+          actorSystem = defaultActorSystem)
+      } should have('message("Event class: class com.ing.baker.NonSerializableObject does not extend from com.ing.baker.api.Event"))
     }
 
   }

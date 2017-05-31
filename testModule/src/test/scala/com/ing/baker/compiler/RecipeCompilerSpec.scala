@@ -38,18 +38,6 @@ class RecipeCompilerSpec extends TestRecipeHelper {
     }
 
     //"This should be tested in the runtime when the Baker is initilaized, not in the recipe compilation")
-    "give a list of non serializable events an RecipeValidationException if an event is not Serializable" ignore {
-
-      val recipe = SRecipe(
-        name = "NonSerializableEventTest",
-        interactions = Seq(
-          InteractionDescriptorFactory[NonSerializableEventInteraction]
-        ),
-        events = Set(classOf[InitialEvent])
-      )
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain ("Event class: class com.ing.baker.NonSerializableObject does not extend from com.ing.baker.api.Event")
-    }
 
     "give a list of wrong interactions if an event of an interaction does not match it's return type" in {
       val recipe = SRecipe(
@@ -63,8 +51,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
       compiledRecipe.validationErrors should contain ("Event class: class com.ing.baker.EventFromInteractionTwo is not assignable to return type: class java.lang.String for interaction: NonMatchingReturnTypeInteraction")
     }
 
-    //With out current approach its not possible to get the ingredient type and name of each of the Interactions
-    "give a list of wrong ingredients if an predefined ingredient is of the wrong type" ignore {
+    "give a list of wrong ingredients if an predefined ingredient is of the wrong type" in {
       val recipe = SRecipe(
         name = "WrongGivenIngredient",
         interactions = Seq(

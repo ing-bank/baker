@@ -30,7 +30,7 @@ object RecipeCompiler {
 
     interaction.requiredEvents.toSeq.map { eventClass =>
       // a new `Place` generated for each AND events
-      val eventPreconditionPlace = createPlace(label = eventClass.getSimpleName, placeType = EventPreconditionPlace)
+      val eventPreconditionPlace = createPlace(label = s"${eventClass.getSimpleName}-${interaction.name}", placeType = EventPreconditionPlace)
 
       buildEventPreconditionArcs(eventClass,
                                  eventPreconditionPlace,
@@ -321,5 +321,5 @@ object RecipeCompiler {
     ingredientsWithMultipleConsumers
   }
 
-  private def createPlace(label: String, placeType: PlaceType): Place[Any] = Place(id = (label + placeType).hashCode, label = label, placeType)
+  private def createPlace(label: String, placeType: PlaceType): Place[Any] = Place(id = s"$placeType:$label".hashCode, label = label, placeType)
 }
