@@ -22,12 +22,12 @@ trait InteractionDescriptor {
   /**
     * A map of predefined parameter values, not provided from the recipe.
     */
-  val predefinedIngredients: Map[Ingredient, AnyRef]
+  val predefinedIngredients: Map[String, AnyRef]
 
   /**
     * A map of overridden Ingredient Names for the input
     */
-  val overriddenIngredientNames: Map[Ingredient, String]
+  val overriddenIngredientNames: Map[String, String]
 
   /**
     * This is used to overwrite the name used for the output ingredient

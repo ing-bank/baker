@@ -1,8 +1,8 @@
 package com.ing.baker.newrecipe.scaladsl
 
+import com.ing.baker.newrecipe.scaladsl.ScaladslSpec._
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{Matchers, WordSpecLike}
-import com.ing.baker.newrecipe.scaladsl.ScaladslSpec._
 
 object ScaladslSpec {
   //Ingredients
@@ -54,7 +54,7 @@ class ScaladslSpec extends WordSpecLike with Matchers with MockitoSugar {
 
 
       "visualise the complexer recipe" in {
-        onboardingRecipe.toString
+        println(onboardingRecipe.toString)
       }
     }
   }

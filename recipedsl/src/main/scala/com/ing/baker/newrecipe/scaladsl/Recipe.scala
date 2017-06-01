@@ -21,7 +21,7 @@ case class Recipe private (override val name: String,
   def withSensoryEvents(newEvents: Event*) = copy(events = events ++ newEvents)
 
   override def toString: String = {
-    s"""
+    s"""{
        |  Recipe: $name
        |  Interactions:{
        |${interactions.foldLeft("")((i, j) => s"$i\n${j.toString("    ")}").replaceFirst("\n", "")}
@@ -32,6 +32,7 @@ case class Recipe private (override val name: String,
        |  Events:{
        |${events.foldLeft("")((i, j) => s"$i\n    $j").replaceFirst("\n", "")}
        |  }
+       |}
        |""".stripMargin
   }
 
