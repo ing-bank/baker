@@ -5,18 +5,21 @@ import com.ing.baker.newrecipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.EventOutputTransformer
 
 case class InteractionDescriptor private(override val interaction: Interaction,
-                                         override val requiredEvents: Set[Event]  = Set.empty,
-                                         override val requiredOneOfEvents: Set[Event]  = Set.empty,
-                                         override val predefinedIngredients: Map[Ingredient[_], AnyRef]  = Map.empty,
-                                         override val overriddenIngredientNames: Map[Ingredient[_], String] = Map.empty,
+                                         override val requiredEvents: Set[common.Event]  = Set.empty,
+                                         override val requiredOneOfEvents: Set[common.Event]  = Set.empty,
+                                         override val predefinedIngredients: Map[common.Ingredient, AnyRef]  = Map.empty,
+                                         override val overriddenIngredientNames: Map[common.Ingredient, String] = Map.empty,
                                          override val overriddenOutputIngredientName: Option[String] = None,
                                          override val maximumInteractionCount: Option[Int] = None,
                                          override val failureStrategy: Option[InteractionFailureStrategy] = None,
                                          override val eventOutputTransformers: Map[Class[_], EventOutputTransformer[_, _]] = Map.empty)
   extends common.InteractionDescriptor {
 
-  //  def withRequiredEvent(event: Event): InteractionDescriptor =
-  //    copy(requiredEvents = requiredEvents + event)
+    def withRequiredEvent(event: Event): InteractionDescriptor =
+      copy(requiredEvents = requiredEvents + event)
+
+    def withRequiredEvents(events: Event*): InteractionDescriptor =
+      copy(requiredEvents = requiredEvents ++ events)
 
   //  def withRequiredOneOfEvents(requiredOneOfEvents: Class[_ <: Event]*): InteractionDescriptorImpl[T] =
   //    copy(requiredOneOfEvents = requiredOneOfEvents.toSet)
@@ -44,8 +47,17 @@ case class InteractionDescriptor private(override val interaction: Interaction,
   //    copy(
   //      failureStrategy =
   //        Some(RetryWithIncrementalBackoff(initialDelay, backoffFactor, maximumRetries)))
+
+  override def toString(): String = toString("")
+
+    def toString(appender: String): String = {
+      s"""$appender${interaction.name}{
+         |${appender + ""} requiredIngredients:(${interaction.inputIngredients.foldLeft("")((i, j) => s"$i$j")})
+         |${interaction.interactionOutput.toString(appender + "  ")}
+         |$appender}""".stripMargin
+  }
 }
 
-object InteractionDescriptor {
+object InteractionDescriptorFactory {
   def apply(interaction: Interaction): InteractionDescriptor = InteractionDescriptor(interaction)
 }

@@ -18,7 +18,7 @@ trait Recipe {
   /**
     * The set of sieves.
     */
-  val sieves: Seq[Interaction]
+  val sieves: Seq[InteractionDescriptor]
 
   /**
     * The set of events.

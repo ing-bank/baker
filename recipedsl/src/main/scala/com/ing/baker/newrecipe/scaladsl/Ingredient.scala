@@ -7,6 +7,8 @@ import scala.reflect.ClassTag
 case class Ingredient[I: ClassTag](override val name: String)
   extends common.Ingredient{
   override val clazz: Class[_] = implicitly[ClassTag[I]].runtimeClass
+
+  override def toString: String = s"$name: ${clazz.getSimpleName}"
 }
 
 
