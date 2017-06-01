@@ -12,51 +12,56 @@ object ScaladslSpec {
   val accountName = Ingredient[Int]("accountName")
 
   //Events
-  val AgreementsAcceptedEvent = Event("AgreementsAccepted")
-  val NameProvidedEvent = Event("NameProvided", customerName)
-  val AccountOpenedEvent = Event("AccountOpened", accountId, accountName)
-  val AccountOpenedFailedEvent = Event("AccountOpenedFailed")
+  val agreementsAcceptedEvent = Event("agreementsAccepted")
+  val manualApprovedEvent = Event("manualApproved")
+  val automaticApprovedEvent = Event("automaticApproved")
+  val NameProvidedEvent = Event("nameProvided", customerName)
+  val accountOpenedEvent = Event("accountOpened", accountId, accountName)
+  val accountOpenedFailedEvent = Event("accountOpenedFailed")
 
   //Recipe
   //Interactions
-  val CreateCustomer = Interaction(
+  val createCustomer = Interaction(
     name = "CreateCustomer",
     inputIngredients = customerName,
     interactionOutput = ProvidesIngredient(customerId)
   )
 
-  val OpenAccount = Interaction(
+  val openAccount = Interaction(
     name = "OpenAccount",
     inputIngredients = customerId,
-    interactionOutput = FiresOneOfEvents(Seq(AccountOpenedEvent, AccountOpenedFailedEvent))
+    interactionOutput = FiresOneOfEvents(Seq(accountOpenedEvent, accountOpenedFailedEvent))
   )
 
   val onboardingRecipe =
-    Recipe("newCustomer")
+    Recipe("newCustomerRecipe")
       .withInteractions(
-        CreateCustomer
-          .withRequiredEvent(AgreementsAcceptedEvent),
-        OpenAccount)
-      .withSensoryEvent(
-        AgreementsAcceptedEvent
-      )
+        createCustomer
+          .withRequiredEvent(agreementsAcceptedEvent)
+          .withRequiredOneOfEvents(automaticApprovedEvent, manualApprovedEvent),
+        openAccount)
+      .withSensoryEvent(agreementsAcceptedEvent)
 
+  val onboardingRecipe2 =
+    "newCustomerRecipe"
+      .withInteractions(
+        createCustomer
+          .withRequiredEvent(agreementsAcceptedEvent)
+          .withRequiredOneOfEvents(automaticApprovedEvent, manualApprovedEvent),
+        openAccount)
+      .withSensoryEvent(agreementsAcceptedEvent)
 }
 
 class ScaladslSpec extends WordSpecLike with Matchers with MockitoSugar {
   "an Recipe" when {
+    "visualise the newCustomer recipe" in {
+      println(onboardingRecipe.toString)
+    }
 
-    "calling the toString method" should {
-      "visualise the simplest recipe" in {
-        val simpleRecipe = Recipe("SimpleRecipe")
-        simpleRecipe.toString shouldNot equal("")
-      }
-
-
-      "visualise the complexer recipe" in {
-        println(onboardingRecipe.toString)
-      }
+    "should be the same if directly calling the constructor or using the implicit from String" in {
+      onboardingRecipe shouldBe onboardingRecipe2
     }
   }
 }
+
 
