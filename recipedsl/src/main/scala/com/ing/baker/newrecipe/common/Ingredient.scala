@@ -5,9 +5,7 @@ trait Ingredient {
   val clazz: Class[_]
 
   override def equals(obj: scala.Any): Boolean = obj match {
-    case ingredient: Ingredient => this.name == ingredient.name && this.clazz == ingredient.clazz
+    case other: Ingredient => this.name == other.name && this.clazz == other.clazz
     case _ => false
   }
-
-  override def toString: String = s"Ingredient: $name -> ${clazz.getSimpleName}"
 }
