@@ -13,7 +13,7 @@ trait Recipe {
   /**
     * The set of interactions.
     */
-  val interactions: Seq[Interaction]
+  val interactions: Seq[InteractionDescriptor]
 
   /**
     * The set of sieves.

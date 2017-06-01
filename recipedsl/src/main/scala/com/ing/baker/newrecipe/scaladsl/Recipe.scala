@@ -6,13 +6,13 @@ import com.ing.baker.newrecipe.common
   * A Recipe combines a set of interactions & events.
   */
 case class Recipe private (override val name: String,
-                           override val interactions: Seq[Interaction],
+                           override val interactions: Seq[InteractionDescriptor],
                            override val sieves: Seq[Interaction],
                            override val events: Set[common.Event])
   extends common.Recipe {
 
-  def withInteraction(newInteraction: Interaction) = copy(interactions = interactions :+ newInteraction)
-  def withInteractions(newInteractions: Interaction*) = copy(interactions = interactions ++ newInteractions)
+  def withInteraction(newInteraction: InteractionDescriptor) = copy(interactions = interactions :+ newInteraction)
+  def withInteractions(newInteractions: InteractionDescriptor*) = copy(interactions = interactions ++ newInteractions)
 
   def withSieve(newSieve: Interaction) = copy(sieves = sieves :+ newSieve)
   def withSieves(newSieves: Interaction*) = copy(sieves = sieves ++ newSieves)
