@@ -1,4 +1,4 @@
-package com.ing.baker.recipe.common
+package com.ing.baker.newrecipe.common
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 

@@ -16,17 +16,10 @@ object newRecipe {
       */
     override def name: String = recipeOps.name
 
-
-    implicit def seqOfToSeqInteractionDescriptor[T](ofs: Seq[of[_]]) : Seq[InteractionDescriptor[_]] =
-      ofs.map(ofToInteractionDescriptor(_))
-
-    def ofToInteractionDescriptor[T](of: of[T]): InteractionDescriptor[T] =
-      InteractionDescriptorImpl(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]], requiredEvents = of.requiredEvents)
-
     /**
       * The set of interactions.
       */
-    override def interactionDescriptors: Seq[InteractionDescriptor[_]] = recipeOps.interactionTypes
+    override def interactionDescriptors: Seq[InteractionDescriptor[_]] = Seq.empty
 
     /**
       * The set of sieves.
@@ -51,6 +44,13 @@ object RecipeImplicits {
     def withRequiredEvent[C <: Event : ClassTag]: of[T] =
       copy(requiredEvents = requiredEvents + implicitly[ClassTag[C]].runtimeClass.asInstanceOf[Class[C]])
   }
+
+//  implicit def seqOfToSeqInteractionDescriptor[T](ofs: Seq[of[_]]) : Seq[InteractionDescriptor[_]] =
+//    ofs.map(ofToInteractionDescriptor(_))
+//
+//  def ofToInteractionDescriptor[T](of: of[T]): InteractionDescriptor[T] =
+//    InteractionDescriptorImpl(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]], requiredEvents = of.requiredEvents)
+
 
   implicit def stringToRecipeOps(name: String): RecipeOps = new RecipeOps(name, Seq.empty, Set.empty)
   implicit class EventClassWrapper[E <: Event](val event: E)

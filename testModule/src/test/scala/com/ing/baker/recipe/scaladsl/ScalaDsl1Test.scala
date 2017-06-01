@@ -6,7 +6,7 @@ import com.ing.baker.recipe.annotations.{FiresEvent, RequiresIngredient}
 import com.ing.baker.recipe.common.{Event, Interaction}
 import com.ing.baker.recipe.newscaladsl.RecipeImplicits._
 import com.ing.baker.recipe.newscaladsl.newRecipe._
-import com.ing.baker.recipe.scaladsl.testRecipe._
+import com.ing.baker.recipe.scaladsl.ScalaDsl1Test._
 
 case class AgreementAccepted() extends Event
 
@@ -30,7 +30,7 @@ trait OpenAccount extends Interaction {
   def apply(@RequiresIngredient("customerId") customerId: String): Event
 }
 
-object testRecipe {
+object ScalaDsl1Test {
   val oldslRecipe = SRecipe(
     name = "onboard_customer",
     interactions = Seq(
@@ -55,7 +55,7 @@ object testRecipe {
         AgreementAccepted())
 }
 
-class testRecipe extends TestRecipeHelper {
+class ScalaDsl1Test extends TestRecipeHelper {
   "the recipe dsl should" should {
 
     "compile for the old recipe dsl" in {
