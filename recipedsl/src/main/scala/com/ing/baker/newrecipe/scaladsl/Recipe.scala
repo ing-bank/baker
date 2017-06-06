@@ -19,23 +19,6 @@ case class Recipe private (override val name: String,
 
   def withSensoryEvent(newEvent: Event) = copy(events = events + newEvent)
   def withSensoryEvents(newEvents: Event*) = copy(events = events ++ newEvents)
-
-  override def toString: String = {
-    s"""{
-       |  Recipe: $name
-       |  Interactions:{
-       |${interactions.foldLeft("")((i, j) => s"$i\n${j.toString("    ")}").replaceFirst("\n", "")}
-       |  }
-       |  Sieves:{
-       |${sieves.foldLeft("")((i, j) => s"$i\n${j.toString("    ")}").replaceFirst("\n", "")}
-       |  }
-       |  Events:{
-       |${events.foldLeft("")((i, j) => s"$i\n    $j").replaceFirst("\n", "")}
-       |  }
-       |}
-       |""".stripMargin
-  }
-
 }
 
 object Recipe{

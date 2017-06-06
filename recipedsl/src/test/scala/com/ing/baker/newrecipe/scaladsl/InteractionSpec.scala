@@ -1,5 +1,6 @@
 package com.ing.baker.newrecipe.scaladsl
 
+import com.ing.baker.newrecipe.common.ProvidesIngredient
 import org.scalatest.{Matchers, WordSpecLike}
 import org.scalatest.mock.MockitoSugar
 
@@ -13,7 +14,7 @@ class InteractionSpec extends WordSpecLike with Matchers with MockitoSugar {
         val CreateCustomer = Interaction(
           name = "CreateCustomer",
           inputIngredients = Seq(customerName),
-          interactionOutput = ProvidesIngredient(customerId)
+          output = ProvidesIngredient(customerId)
         )
         CreateCustomer.equals(CreateCustomer) shouldBe true
       }
@@ -24,12 +25,12 @@ class InteractionSpec extends WordSpecLike with Matchers with MockitoSugar {
         val CreateCustomer = Interaction(
           name = "CreateCustomer",
           inputIngredients = Seq(customerName),
-          interactionOutput = ProvidesIngredient(customerId)
+          output = ProvidesIngredient(customerId)
         )
         val CreateCustomer2 = Interaction(
           name = "CreateCustomer",
           inputIngredients = Seq(customerName),
-          interactionOutput = ProvidesIngredient(customerId)
+          output = ProvidesIngredient(customerId)
         )
         CreateCustomer.equals(CreateCustomer2) shouldBe true
       }
@@ -40,12 +41,12 @@ class InteractionSpec extends WordSpecLike with Matchers with MockitoSugar {
         val CreateCustomer = Interaction(
           name = "CreateCustomer",
           inputIngredients = Seq(customerName),
-          interactionOutput = ProvidesIngredient(customerId)
+          output = ProvidesIngredient(customerId)
         )
         val CreateCustomer2 = Interaction(
           name = "CreateCustomer2",
           inputIngredients = Seq(customerName),
-          interactionOutput = ProvidesIngredient(customerId)
+          output = ProvidesIngredient(customerId)
         )
         CreateCustomer.equals(CreateCustomer2) shouldBe false
       }
@@ -56,7 +57,7 @@ class InteractionSpec extends WordSpecLike with Matchers with MockitoSugar {
         val CreateCustomer = Interaction(
           name = "CreateCustomer",
           inputIngredients = Seq(customerName),
-          interactionOutput = ProvidesIngredient(customerId)
+          output = ProvidesIngredient(customerId)
         )
         val otherObject = ""
         CreateCustomer.equals(otherObject) shouldBe false

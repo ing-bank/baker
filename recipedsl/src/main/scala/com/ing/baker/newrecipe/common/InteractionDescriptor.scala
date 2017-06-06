@@ -46,4 +46,21 @@ trait InteractionDescriptor {
 
 
   val eventOutputTransformers: Map[Class[_], EventOutputTransformer[_, _]]
+
+  override def toString(): String = toString("")
+
+  def toString(appender: String): String = {
+    s"""$appender${interaction.name}{
+       |${appender + ""}requiredIngredients:(${interaction.inputIngredients.foldLeft("")((i, j) => s"$i$j")})
+       |${interaction.output.toString(appender)}
+       |${appender}requiredEvents(${requiredEvents.foldLeft("")((i, j) => s"$i\n${j.toString(appender + "  ")}")})
+       |${appender}requiredOneOfEvents(${requiredOneOfEvents.foldLeft("")((i, j) => s"$i\n${j.toString(appender + "  ")}")})
+       |${appender}predefinedIngredients(${predefinedIngredients})
+       |${appender}overriddenIngredientNames(${overriddenIngredientNames})
+       |${appender}overriddenOutputIngredientName(${overriddenOutputIngredientName})
+       |${appender}maximumInteractionCount(${maximumInteractionCount})
+       |${appender}failureStrategy(${failureStrategy})
+       |${appender}eventOutputTransformers(${eventOutputTransformers})
+       |$appender}""".stripMargin
+  }
 }

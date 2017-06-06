@@ -1,5 +1,6 @@
 package com.ing.baker.newrecipe.scaladsl
 
+import com.ing.baker.newrecipe.common.{FiresOneOfEvents, ProvidesIngredient}
 import com.ing.baker.newrecipe.scaladsl.ScaladslSpec._
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{Matchers, WordSpecLike}
@@ -24,13 +25,13 @@ object ScaladslSpec {
   val createCustomer = Interaction(
     name = "CreateCustomer",
     inputIngredients = customerName,
-    interactionOutput = ProvidesIngredient(customerId)
+    output = ProvidesIngredient(customerId)
   )
 
   val openAccount = Interaction(
     name = "OpenAccount",
     inputIngredients = customerId,
-    interactionOutput = FiresOneOfEvents(Seq(accountOpenedEvent, accountOpenedFailedEvent))
+    output = FiresOneOfEvents(Seq(accountOpenedEvent, accountOpenedFailedEvent))
   )
 
   val onboardingRecipe =

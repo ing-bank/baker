@@ -47,23 +47,6 @@ case class InteractionDescriptor private(override val interaction: Interaction,
                                       backoffFactor: Double = 2.0,
                                       maximumRetries: Int = 50): InteractionDescriptor =
     copy(failureStrategy = Some(RetryWithIncrementalBackoff(initialDelay, backoffFactor, maximumRetries)))
-
-  override def toString(): String = toString("")
-
-  def toString(appender: String): String = {
-    s"""$appender${interaction.name}{
-       |${appender + ""}requiredIngredients:(${interaction.inputIngredients.foldLeft("")((i, j) => s"$i$j")})
-       |${interaction.interactionOutput.toString(appender)}
-       |${appender}requiredEvents(${requiredEvents})
-       |${appender}requiredOneOfEvents(${requiredOneOfEvents})
-       |${appender}predefinedIngredients(${predefinedIngredients})
-       |${appender}overriddenIngredientNames(${overriddenIngredientNames})
-       |${appender}overriddenOutputIngredientName(${overriddenOutputIngredientName})
-       |${appender}maximumInteractionCount(${maximumInteractionCount})
-       |${appender}failureStrategy(${failureStrategy})
-       |${appender}eventOutputTransformers(${eventOutputTransformers})
-       |$appender}""".stripMargin
-  }
 }
 
 object InteractionDescriptorFactory {
