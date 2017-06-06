@@ -75,8 +75,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
             val implementations: Map[Class[_], () => AnyRef],
             val ingredientExtractor: IngredientExtractor = new CompositeIngredientExtractor(),
             implicit val actorSystem: ActorSystem) {
-
-  import actorSystem.dispatcher
+    import actorSystem.dispatcher
 
   implicit val materializer = ActorMaterializer()
 

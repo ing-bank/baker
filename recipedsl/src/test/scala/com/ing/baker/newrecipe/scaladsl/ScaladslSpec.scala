@@ -1,5 +1,7 @@
 package com.ing.baker.newrecipe.scaladsl
 
+import java.util.UUID
+
 import com.ing.baker.newrecipe.common.{FiresOneOfEvents, ProvidesIngredient}
 import com.ing.baker.newrecipe.scaladsl.ScaladslSpec._
 import org.scalatest.mock.MockitoSugar
@@ -7,6 +9,7 @@ import org.scalatest.{Matchers, WordSpecLike}
 
 object ScaladslSpec {
   //Ingredients
+  val processId = Ingredient[UUID]("ProcessId")
   val customerName = Ingredient[String]("customerName")
   val customerId = Ingredient[String]("customerId")
   val accountId = Ingredient[Int]("accountId")
@@ -30,9 +33,17 @@ object ScaladslSpec {
 
   val openAccount = Interaction(
     name = "OpenAccount",
-    inputIngredients = customerId,
-    output = FiresOneOfEvents(Seq(accountOpenedEvent, accountOpenedFailedEvent))
-  )
+    inputIngredients =Seq(customerId, accountId),
+    output = FiresOneOfEvents(Seq(accountOpenedEvent, accountOpenedFailedEvent)))
+
+    val ingredient1 = Ingredient[String]("Ingredient1")
+    val ingredient2 = Ingredient[String]("Ingredient2")
+    val ingredient3 = Ingredient[String]("Ingredient3")
+    val InteractionExample = Interaction(
+      name = "InteractionExample",
+      inputIngredients =Seq(ingredient1, ingredient2),
+      output = ProvidesIngredient(ingredient3))
+
 
   val onboardingRecipe =
     Recipe("newCustomerRecipe")
@@ -51,6 +62,9 @@ object ScaladslSpec {
           .withRequiredOneOfEvents(automaticApprovedEvent, manualApprovedEvent),
         openAccount)
       .withSensoryEvent(agreementsAcceptedEvent)
+
+  //  val fn = (String, String): String
+  //  Map("InteractionExample" -> fn)
 }
 
 class ScaladslSpec extends WordSpecLike with Matchers with MockitoSugar {

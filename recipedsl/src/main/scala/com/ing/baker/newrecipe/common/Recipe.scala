@@ -25,6 +25,8 @@ trait Recipe {
     */
   val events: Set[Event]
 
+  val defaultFailureStrategy: InteractionFailureStrategy
+
 
   override def toString: String = {
     val appender = "  "
