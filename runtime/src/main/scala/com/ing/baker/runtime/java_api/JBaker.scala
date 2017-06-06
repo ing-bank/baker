@@ -28,15 +28,16 @@ object JBaker {
     //TODO rewrite this to make the link between a description of the interaction instead of between class and implementation
   def mapInteractionToImplementation(
       interactionTransitions: Set[InteractionTransition[_]],
-      implementations: java.util.List[AnyRef]): java.util.Map[Class[_], AnyRef] = {
-    val interactionClasses: Set[Class[_]] =
-      interactionTransitions.map(i => i.interactionClass)
-    val implementationsSeq: scala.collection.mutable.Buffer[AnyRef] = implementations.asScala
-    val interactionMappings: Set[(Class[_], AnyRef)] = interactionClasses.map {
-      c =>
-        c -> implementationsSeq.find(e => c.isAssignableFrom(e.getClass)).orNull
-    }
-    interactionMappings.toMap.filterNot { case (k, v) => v == null }.asJava
+      implementations: java.util.List[AnyRef]): java.util.Map[String, AnyRef] = {
+//    val interactionClasses: Set[Class[_]] =
+//      interactionTransitions.map(i => i.interactionClass)
+//    val implementationsSeq: scala.collection.mutable.Buffer[AnyRef] = implementations.asScala
+//    val interactionMappings: Set[(Class[_], AnyRef)] = interactionClasses.map {
+//      c =>
+//        c -> implementationsSeq.find(e => c.isAssignableFrom(e.getClass)).orNull
+//    }
+//    interactionMappings.toMap.filterNot { case (k, v) => v == null }.asJava
+    Map.empty[String, AnyRef].asJava
   }
 }
 
@@ -53,7 +54,7 @@ class JBaker private (compiledRecipe: CompiledRecipe,
     }
 
   val baker: Baker =
-    new Baker(compiledRecipe = compiledRecipe, interactionImplementations, actorSystem = actorSystem)
+    new Baker(compiledRecipe = compiledRecipe, Map.empty[String, () => AnyRef], actorSystem = actorSystem)
 
   val defaultTimeout = 20 * 1000
 

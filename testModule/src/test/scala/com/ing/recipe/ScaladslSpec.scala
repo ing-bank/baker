@@ -1,10 +1,10 @@
-package com.ing.baker.newrecipe.scaladsl
+package com.ing.recipe
 
 import java.util.UUID
 
-import com.ing.baker.newrecipe.scaladsl.ScaladslSpec._
-import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
+import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common
+import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe, _}
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{Matchers, WordSpecLike}
@@ -35,16 +35,8 @@ object ScaladslSpec {
 
   val openAccount = Interaction(
     name = "OpenAccount",
-    inputIngredients =Seq(customerId, accountId),
+    inputIngredients =Seq(customerId),
     output = FiresOneOfEvents(Seq(accountOpenedEvent, accountOpenedFailedEvent)))
-
-    val ingredient1 = Ingredient[String]("Ingredient1")
-    val ingredient2 = Ingredient[String]("Ingredient2")
-    val ingredient3 = Ingredient[String]("Ingredient3")
-    val InteractionExample = Interaction(
-      name = "InteractionExample",
-      inputIngredients =Seq(ingredient1, ingredient2),
-      output = ProvidesIngredient(ingredient3))
 
 
   val onboardingRecipe =
@@ -55,7 +47,7 @@ object ScaladslSpec {
           .withRequiredOneOfEvents(automaticApprovedEvent, manualApprovedEvent),
         openAccount
           .withEventOutputTransformer(accountOpenedEvent, renameEvent))
-      .withSensoryEvent(agreementsAcceptedEvent)
+      .withSensoryEvents(agreementsAcceptedEvent, NameProvidedEvent, manualApprovedEvent, automaticApprovedEvent)
 
   val onboardingRecipe2: Recipe =
     "newCustomerRecipe"
@@ -65,7 +57,7 @@ object ScaladslSpec {
           .withRequiredOneOfEvents(automaticApprovedEvent, manualApprovedEvent),
         openAccount
             .withEventOutputTransformer(accountOpenedEvent, renameEvent))
-      .withSensoryEvent(agreementsAcceptedEvent)
+      .withSensoryEvents(agreementsAcceptedEvent, NameProvidedEvent, manualApprovedEvent, automaticApprovedEvent)
 
   def renameEvent(e: common.Event): common.Event = Event(e.name + "new", e.providedIngredients)
 
@@ -74,9 +66,12 @@ object ScaladslSpec {
 }
 
 class ScaladslSpec extends WordSpecLike with Matchers with MockitoSugar {
+  import com.ing.recipe.ScaladslSpec._
   "an Recipe" when {
     "visualise the newCustomer recipe" in {
-      println(onboardingRecipe.toString)
+      val compiledRecipe = RecipeCompiler.compileRecipe(onboardingRecipe)
+      compiledRecipe.validationErrors shouldBe empty
+      println(compiledRecipe.getRecipeVisualization)
     }
 
     "should be the same if directly calling the constructor or using the implicit from String" in {

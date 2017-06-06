@@ -5,7 +5,6 @@ import java.util.UUID
 
 import com.ing.baker.compiledRecipe._
 import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
-import com.ing.baker.compiledRecipe.petrinet.ProvidesType.ProvidesEvent
 import com.ing.baker.core.ProcessState
 import fs2.Task
 import io.kagera.api._
@@ -14,7 +13,7 @@ import org.slf4j.{LoggerFactory, MDC}
 
 import scala.util.Try
 
-class TaskProvider(interactionProviders: Map[Class[_], () => AnyRef], ingredientExtractor: IngredientExtractor) extends TransitionTaskProvider[ProcessState, Place, Transition] {
+class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientExtractor: IngredientExtractor) extends TransitionTaskProvider[ProcessState, Place, Transition] {
 
   val log = LoggerFactory.getLogger(classOf[TaskProvider])
 
@@ -23,7 +22,7 @@ class TaskProvider(interactionProviders: Map[Class[_], () => AnyRef], ingredient
   override def apply[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _, _]], t: Transition[Input, Output, ProcessState]): TransitionTask[Place, Input, Output, ProcessState] = {
     t match {
       case interaction: InteractionTransition[_] =>
-        interactionTransitionTask[AnyRef, Input, Output](interaction.asInstanceOf[InteractionTransition[AnyRef]], interactionProviders(interaction.interactionClass), petriNet.outMarking(interaction))
+        interactionTransitionTask[AnyRef, Input, Output](interaction.asInstanceOf[InteractionTransition[AnyRef]], interactionProviders(interaction.interactionName), petriNet.outMarking(interaction))
       case t: EventTransition[_]         => eventTransitionTask(petriNet, t)
       case t                             => passThroughtTransitionTask(petriNet, t)
     }
@@ -32,7 +31,7 @@ class TaskProvider(interactionProviders: Map[Class[_], () => AnyRef], ingredient
   def passThroughtTransitionTask[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _, _]], t: Transition[Input, Output, _]): TransitionTask[Place, Input, Output, ProcessState] =
     (consume, processState, input) => Task.now((toMarking[Place](petriNet.outMarking(t)), null.asInstanceOf[Output]))
 
-  def eventTransitionTask[E, Input, Output](petriNet: PetriNet[Place[_], Transition[_, _, _]], eventTransition: EventTransition[E]): TransitionTask[Place, Input, Output, ProcessState] =
+  def eventTransitionTask[E <: RuntimeEvent, Input, Output](petriNet: PetriNet[Place[_], Transition[_, _, _]], eventTransition: EventTransition[E]): TransitionTask[Place, Input, Output, ProcessState] =
     (consume, processState, input) => Task.now((toMarking[Place](petriNet.outMarking(eventTransition)), input.asInstanceOf[Output]))
 
   def interactionTransitionTask[I, Input, Output](interaction: InteractionTransition[I], interactionProvider: () => I, outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, Input, Output, ProcessState] =
@@ -50,12 +49,11 @@ class TaskProvider(interactionProviders: Map[Class[_], () => AnyRef], ingredient
       val interactionObject: I = interactionProvider.apply()
 
       log.trace(
-        s"[$invocationId] invoking '${interaction.interactionClass.getSimpleName}.${interaction.method.getName}' with parameters ${input.toString}")
+        s"[$invocationId] invoking '${interaction.interactionName}' with parameters ${input.toString}")
 
       def invokeMethod(): AnyRef = {
         MDC.put("processId", processState.id.toString)
-
-        val result = interaction.method.invoke(interactionObject, inputArgs: _*)
+        val result = interactionObject.getClass.getMethod("apply").invoke(interactionObject, inputArgs: _*)
         log.trace(s"[$invocationId] result: $result")
 
         MDC.remove("processId")
@@ -65,10 +63,11 @@ class TaskProvider(interactionProviders: Map[Class[_], () => AnyRef], ingredient
       // function that (optionally) transforms the output event using the event output transformers
       def transformEvent: AnyRef => Output = methodOutput => {
         interaction.providesType match {
-          case ProvidesEvent(_, _, _) =>
+          case FiresOneOfEvents(_) =>
+            val runtimeEventMethodOutput: RuntimeEvent = RuntimeEvent(methodOutput)
             interaction.eventOutputTransformers
-              .get(methodOutput.getClass)
-              .map(_.transform(methodOutput))
+              .get(runtimeEventMethodOutput)
+              .map(_.fn(runtimeEventMethodOutput))
               .getOrElse(methodOutput).asInstanceOf[Output]
           case _ => methodOutput.asInstanceOf[Output]
         }
@@ -136,11 +135,11 @@ class TaskProvider(interactionProviders: Map[Class[_], () => AnyRef], ingredient
     outAdjacent.keys.map { place =>
       val value: Any = {
         interaction.providesType match {
-          case ProvidesEvent(_, _, outputEventClasses: Seq[Class[_]]) =>
-            outputEventClasses.find(_.isInstance(output)).map(_.getSimpleName).getOrElse {
+          case FiresOneOfEvents(events) =>
+            events.find(_.name == output.getClass.getSimpleName).map(_.name).getOrElse {
               throw new IllegalStateException(
-                s"Method output: $output is not an instance of any of the specified event classes: ${
-                  outputEventClasses
+                s"Method output: $output is not an instance of any of the specified events: ${
+                  events
                     .mkString(",")
                 }")
             }

@@ -7,3 +7,9 @@ case class RuntimeEvent(name: String,
     case _ => false
   }
 }
+
+object RuntimeEvent{
+  def apply(obj: Any): RuntimeEvent = {
+    RuntimeEvent(obj.getClass.getSimpleName, obj.getClass.getDeclaredFields.map(RuntimeIngredient(_)))
+  }
+}

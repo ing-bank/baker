@@ -1,10 +1,9 @@
-package com.ing.baker.newrecipe.scaladsl
+package com.ing.baker.recipe.scaladsl
 
 import org.scalatest.{Matchers, WordSpecLike}
 import org.scalatest.mock.MockitoSugar
-import com.ing.baker.newrecipe.scaladsl.InteractionDescriptorSpec._
+import com.ing.baker.recipe.scaladsl.InteractionDescriptorSpec._
 import com.ing.baker.recipe.common.ProvidesIngredient
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, InteractionDescriptor, InteractionDescriptorFactory}
 
 object InteractionDescriptorSpec {
   val customerName = Ingredient[String]("customerName")

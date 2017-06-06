@@ -18,7 +18,7 @@ import scala.concurrent.duration._
 
 object Util {
 
-  def coloredPetrinetProps[S](topology: RecipePetriNet, interactions: Map[Class[_], () => AnyRef], ingredientExtractor: IngredientExtractor, settings: Settings): Props =
+  def coloredPetrinetProps[S](topology: RecipePetriNet, interactions: Map[String, () => AnyRef], ingredientExtractor: IngredientExtractor, settings: Settings): Props =
     Props(new PetriNetInstance[Place, Transition, ProcessState](
       topology,
       settings,

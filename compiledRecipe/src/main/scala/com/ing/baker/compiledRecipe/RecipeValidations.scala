@@ -63,9 +63,9 @@ object RecipeValidations {
             case None =>
               Some(
                 s"Ingredient '$name' for interaction '${t.interactionName}' is not provided by any event or interaction")
-            case Some(providedType) if !expectedType.isAssignableFrom(providedType) =>
+            case Some(ingredient) if !expectedType.isAssignableFrom(ingredient.clazz) =>
               Some(
-                s"Interaction '$t' expects ingredient '$name:$expectedType', however incompatible type: '$providedType' was provided")
+                s"Interaction '$t' expects ingredient '$name:$expectedType', however incompatible type: '$ingredient' was provided")
             case _ =>
               None
           }
@@ -133,16 +133,16 @@ object RecipeValidations {
     val hasAkkaSerializer = (clazz: Class[_]) => Try { serialization.serializerFor(clazz) }.isSuccess
 
     // check all event classes (sensory events + interaction events)
-    val eventSerializationErrors: Seq[String] = compiledRecipe.allEvents.toSeq
-      .filterNot(hasAkkaSerializer)
-      .map(c => s"Event class: $c is not serializable by akka")
+//    val eventSerializationErrors: Seq[String] = compiledRecipe.allEvents.toSeq
+//      .filterNot(hasAkkaSerializer)
+//      .map(c => s"Event class: $c is not serializable by akka")
 
     val ingredientSerializationErrors: Seq[String] =
-      compiledRecipe.ingredients
+      compiledRecipe.ingredients.mapValues(_.clazz)
         .filterNot{case (c, v) => hasAkkaSerializer(v) }
         .map{case (c, v) => s"Ingredient $c of $v is not serializable by akka"}.toSeq
 
-    val allErrors: Seq[String] = eventSerializationErrors ++ ingredientSerializationErrors
+    val allErrors: Seq[String] = ingredientSerializationErrors
 
     if (allErrors.nonEmpty) throw new NonSerializableException(allErrors.mkString(", "))
   }

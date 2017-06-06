@@ -1,6 +1,5 @@
-package com.ing.baker.newrecipe.scaladsl
+package com.ing.baker.recipe.scaladsl
 
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient}
 import org.scalatest.{Matchers, WordSpecLike}
 import org.scalatest.mock.MockitoSugar
 

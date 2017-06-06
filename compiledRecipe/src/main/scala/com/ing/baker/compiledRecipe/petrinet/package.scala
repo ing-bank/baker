@@ -32,7 +32,7 @@ package object petrinet {
     case t                           => s => e => s
   }
 
-  def jobExecutor(topology: RecipePetriNet, interactions: Map[Class[_], () => AnyRef], ingredientExtractor: IngredientExtractor, evaluationStrategy: Strategy) =
+  def jobExecutor(topology: RecipePetriNet, interactions: Map[String, () => AnyRef], ingredientExtractor: IngredientExtractor, evaluationStrategy: Strategy) =
     new JobExecutor[ProcessState, Place, Transition](topology, new TaskProvider(interactions, ingredientExtractor), transitionExceptionHandler)(evaluationStrategy)
 
   def arc(t: Transition[_, _, _], p: Place[_], weight: Long): Arc = WLDiEdge[Node, String](Right(t), Left(p))(weight, "")

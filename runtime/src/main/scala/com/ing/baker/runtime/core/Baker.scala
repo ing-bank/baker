@@ -36,26 +36,27 @@ import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
 object Baker {
-  private def buildSieveImplementationProviders(actions: Set[InteractionTransition[_]]): (Map[Class[_], () => AnyRef], Set[String]) = {
-    val actionsMap: Map[Class[_], () => AnyRef] = actions
-      .map(_.interactionClass)
-      .map(clazz => clazz -> (() => clazz.newInstance().asInstanceOf[AnyRef]))
-      .toMap
+//  private def buildSieveImplementationProviders(actions: Set[InteractionTransition[_]]): (Map[String, () => AnyRef], Set[String]) = {
+//    val actionsMap: Map[String, () => AnyRef] = actions
+//      .map(_.interactionName)
+//      .map(clazz => clazz -> (() => clazz.newInstance().asInstanceOf[AnyRef]))
+//      .toMap
+//
+//    val noDefaultConstructorErrors = actions
+//      .map(action => {
+//        if (action.interactionClass.getConstructors.exists(e => e.getParameterCount == 0)) ""
+//        else s"No default constructor found for Sieve: '${action.interactionClass}'"
+//      })
+//      .filter(_.nonEmpty)
+//
+//    (actionsMap, noDefaultConstructorErrors)
+//  }
 
-    val noDefaultConstructorErrors = actions
-      .map(action => {
-        if (action.interactionClass.getConstructors.exists(e => e.getParameterCount == 0)) ""
-        else s"No default constructor found for Sieve: '${action.interactionClass}'"
-      })
-      .filter(_.nonEmpty)
-
-    (actionsMap, noDefaultConstructorErrors)
-  }
-
-  private def checkIfImplementationsProvided(implementations: Map[Class[_], () => AnyRef], actions: Set[InteractionTransition[_]]): Set[String] = {
+  private def checkIfImplementationsProvided(implementations: Map[String, () => AnyRef], actions: Set[InteractionTransition[_]]): Set[String] = {
+    //TODO add validation that not only the name but also the apply method with correct parameters is provided
     actions
-      .filterNot(a => implementations.contains(a.interactionClass))
-      .map(a => s"No implementation provided for interaction: ${a.interactionClass}")
+      .filterNot(i => implementations.contains(i.interactionName))
+      .map(i => s"No implementation provided for interaction: ${i.interactionName}")
   }
 
   def transitionForEventClass(eventClass: Class[_], compiledRecipe: CompiledRecipe) =
@@ -72,7 +73,7 @@ object Baker {
   * The Baker can bake a recipe, create a process and respond to events.
   */
 class Baker(val compiledRecipe: CompiledRecipe,
-            val implementations: Map[Class[_], () => AnyRef],
+            val implementations: Map[String, () => AnyRef],
             val ingredientExtractor: IngredientExtractor = new CompositeIngredientExtractor(),
             implicit val actorSystem: ActorSystem) {
     import actorSystem.dispatcher
@@ -92,12 +93,12 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   //Create implementations for sieve interactions
   val sieveInteractions = compiledRecipe.interactionTransitions.filter(_.actionType == SieveAction)
-  val (sieveImplementations, sieveErrors) = buildSieveImplementationProviders(sieveInteractions)
-  if(sieveErrors.nonEmpty)
-    throw new BakerException(sieveErrors.mkString(", "))
+//  val (sieveImplementations, sieveErrors) = buildSieveImplementationProviders(sieveInteractions)
+//  if(sieveErrors.nonEmpty)
+//    throw new BakerException(sieveErrors.mkString(", "))
 
   //Check if all implementations are provided
-  val allImplementations = implementations ++ sieveImplementations
+  val allImplementations = implementations
   val implementationErrors = checkIfImplementationsProvided(allImplementations, compiledRecipe.interactionTransitions)
   if(implementationErrors.nonEmpty)
     throw new BakerException(implementationErrors.mkString(", "))
@@ -223,7 +224,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
       .eventsForInstance[Place, Transition, ProcessState](processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal, transitionEventSource(ingredientExtractor))
       .collect {
         case (_, TransitionFiredEvent(_, _, _, _, _, _, output))
-          if compiledRecipe.allEvents.exists(_.isInstance(output)) => output
+          if compiledRecipe.allEvents.contains(RuntimeEvent(output)) => output
       }
   }
 

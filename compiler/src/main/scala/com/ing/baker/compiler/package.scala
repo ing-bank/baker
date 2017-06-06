@@ -38,20 +38,18 @@ package object compiler {
 
   implicit class InteractionOps(interaction: InteractionDescriptor) {
 
-    def toInteractionTransition(defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy,
-                                ingredientExtractor: IngredientExtractor): (InteractionTransition[_], Seq[String]) = {
+    def toInteractionTransition(defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): (InteractionTransition[_], Seq[String]) = {
 
       val validationErrors = scala.collection.mutable.MutableList.empty[String]
 
-      val interactionTransition = interactionTransitionOf(interaction, defaultFailureStrategy, ingredientExtractor)
+      val interactionTransition = interactionTransitionOf(interaction, defaultFailureStrategy)
 
       (interactionTransition, validationErrors)
     }
 
     def interactionTransitionOf(
                                  interactionDescriptor: InteractionDescriptor,
-                                 defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy,
-                                 ingredientExtractor: IngredientExtractor): InteractionTransition[Any] = {
+                                 defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): InteractionTransition[Any] = {
 
       val inputFields: Seq[(String, Class[_])] = interactionDescriptor.interaction.inputIngredients
         //Replace ingredient tags with overridden tags

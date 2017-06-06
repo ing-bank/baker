@@ -156,8 +156,6 @@ object RecipeCompiler {
       placeNameWithDuplicateTransitions) ++ buildInteractionOutputArcs(t, findInternalEventByEvent)
   }
 
-  val defaultIngredientExtractor: IngredientExtractor = new CompositeIngredientExtractor()
-
   /**
     * Compile the given recipe to a technical recipe that is useful for Baker.
     *
@@ -166,15 +164,14 @@ object RecipeCompiler {
     * @return
     */
   def compileRecipe(recipe: Recipe,
-                    validationSettings: ValidationSettings,
-                    ingredientExtractor: IngredientExtractor): CompiledRecipe = {
+                    validationSettings: ValidationSettings): CompiledRecipe = {
 
     val actionDescriptors: Seq[InteractionDescriptor] = recipe.interactions ++ recipe.sieves
 
     // For inputs for which no matching output cannot be found, we do not want to generate a place.
     // It should be provided at runtime from outside the active petri net (marking)
     val (interactionTransitions, interactionValidationErrors) = actionDescriptors.map {
-      _.toInteractionTransition(recipe.defaultFailureStrategy, ingredientExtractor)
+      _.toInteractionTransition(recipe.defaultFailureStrategy)
     }.unzip
 
     // events provided from outside
@@ -278,8 +275,7 @@ object RecipeCompiler {
       name = recipe.name,
       petriNet = petriNet,
       initialMarking = initialMarking,
-      sensoryEvents = recipe.events.asInstanceOf[Set[Class[_]]],
-      ingredientExtractor,
+      sensoryEvents = recipe.events.map(eventToRuntimeEvent),
       validationErrors = interactionValidationErrors.flatten ++ preconditionORErrors ++ preconditionANDErrors
     )
 
@@ -287,7 +283,7 @@ object RecipeCompiler {
   }
 
   def compileRecipe(recipe: Recipe): CompiledRecipe =
-    compileRecipe(recipe, ValidationSettings.defaultValidationSettings, defaultIngredientExtractor)
+    compileRecipe(recipe, ValidationSettings.defaultValidationSettings)
 
   private def getMultiTransition(internalRepresentationName: String,
                                  transitions: Seq[Transition[_, _, _]]): Transition[_, _, _] = {

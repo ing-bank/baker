@@ -1,8 +1,6 @@
 package com.ing.baker.compiledRecipe
 
-import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
-import com.ing.baker.compiledRecipe.petrinet.ProvidesType.{ProvidesEvent, ProvidesIngredient}
-import com.ing.baker.compiledRecipe.petrinet.{InteractionTransition, Place, RecipePetriNet}
+import com.ing.baker.compiledRecipe.petrinet.{FiresOneOfEvents, InteractionTransition, Place, ProvidesIngredient, RecipePetriNet}
 import com.ing.baker.visualisation.RecipeVisualizer
 import io.kagera.api._
 /**
@@ -11,8 +9,7 @@ import io.kagera.api._
 case class CompiledRecipe(name: String,
                           petriNet: RecipePetriNet,
                           initialMarking: Marking[Place],
-                          sensoryEvents: Set[Class[_]],
-                          ingredientExtractor: IngredientExtractor,
+                          sensoryEvents: Set[RuntimeEvent],
                           validationErrors: Seq[String] = Seq.empty) {
 
   /**
@@ -41,24 +38,24 @@ case class CompiledRecipe(name: String,
     case t: InteractionTransition[_] => t
   }
 
-  val interactionEvents: Set[Class[_]] =
+  val interactionEvents: Set[RuntimeEvent] =
     interactionTransitions flatMap  {
-      case InteractionTransition(_, providesType: ProvidesEvent, _, _, _, _, _, _, _, _) => providesType.outputEventClasses
+      case InteractionTransition(providesType: FiresOneOfEvents, _, _, _, _, _, _, _) => providesType.events
       case _ => Seq.empty
     }
 
-  val allEvents: Set[Class[_]] = sensoryEvents ++ interactionEvents
+  val allEvents: Set[RuntimeEvent] = sensoryEvents ++ interactionEvents
 
-  val allIngredientsProvidedByInteractions: Set[(String, Class[_])] =
+  val allIngredientsProvidedByInteractions: Set[RuntimeIngredient] =
     interactionTransitions map {
-      case InteractionTransition(_, providesType: ProvidesIngredient, _, _, _, _, _, _, _, _) => providesType.outputIngredient
+      case InteractionTransition(providesType: ProvidesIngredient, _, _, _, _, _, _, _) => providesType.ingredient
       case _ => null
     } filterNot(_ == null)
 
 
-  val allIngredientsProvidedByEvents: Set[(String, Class[_])] = allEvents.flatMap {
-    eventClass => ingredientExtractor.extractIngredientTypes(eventClass)
+  val allIngredientsProvidedByEvents: Set[RuntimeIngredient] = allEvents.flatMap {
+    events => events.providedIngredients
   }
 
-  val ingredients: Map[String, Class[_]] = (allIngredientsProvidedByInteractions ++ allIngredientsProvidedByEvents).toMap
+  val ingredients: Map[String, RuntimeIngredient] = (allIngredientsProvidedByInteractions ++ allIngredientsProvidedByEvents).map(i => i.name -> i).toMap
 }
