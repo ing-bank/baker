@@ -1,15 +1,19 @@
 package com.ing.baker.recipe.common
 
-import scala.reflect.ClassTag
+trait OutputTransformer {
+  def originalEvent: Event
+  def newEvent: Event
+  def fn: Event => Event
 
-abstract class OutputTransformer[A: ClassTag, B: ClassTag] {
-  def sourceType: Class[_] = implicitly[ClassTag[A]].runtimeClass
+  override def equals(obj: scala.Any): Boolean = obj match{
+    case other: OutputTransformer =>
+      this.originalEvent == other.originalEvent
+      this.newEvent == other.newEvent
+      this.fn(this.originalEvent) == other.fn(this.originalEvent)
+    case _ => false
+  }
 
-  def targetType: Class[_] = implicitly[ClassTag[B]].runtimeClass
-
-  def fn: A ⇒ B
-
-  override def toString: String = s"${sourceType.getSimpleName} ⇒ ${targetType.getSimpleName}"
+  override def toString: String = s"${originalEvent.toString} ⇒ ${newEvent.toString}"
 }
 
-case class EventOutputTransformer[A: ClassTag, B: ClassTag](fn: A ⇒ B) extends OutputTransformer[A, B]
+case class EventOutputTransformer(originalEvent: Event, newEvent: Event, fn: Event => Event) extends OutputTransformer

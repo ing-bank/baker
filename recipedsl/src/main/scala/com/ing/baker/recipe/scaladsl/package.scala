@@ -1,15 +1,9 @@
 package com.ing.baker.recipe
 
-import com.ing.baker.recipe.common.EventOutputTransformer
-
-import scala.language.implicitConversions
-import scala.reflect.ClassTag
-
 package object scaladsl {
+  implicit def InteractionToInteractionDescriptor(interaction: Interaction): InteractionDescriptor = InteractionDescriptorFactory(interaction)
 
-  object EventOutputTransformerOps {
+  implicit def IngredientToIngredientSeq(ingredient: Ingredient[_]): Seq[Ingredient[_]] = Seq(ingredient)
 
-    implicit def fnToEventOutputTransformer[A: ClassTag, B: ClassTag](aFunction: A ⇒ B): EventOutputTransformer[A, B] =
-      EventOutputTransformer[A, B](aFunction)
-  }
+  implicit def StringToRecipe(name: String): Recipe = Recipe(name)
 }

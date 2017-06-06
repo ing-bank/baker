@@ -1,10 +1,9 @@
-package com.ing.baker.newrecipe.scaladsl
+package com.ing.baker.recipe.scaladsl
 
-import com.ing.baker.newrecipe.common
+import com.ing.baker.recipe.common
 
 case class Event (override val name: String,
-                 override val providedIngredients: Seq[Ingredient[_]])
-  extends common.Event
+                  override val providedIngredients: Seq[common.Ingredient]) extends common.Event
 
 object Event {
   def apply(name: String) : Event = Event(name, Seq.empty)

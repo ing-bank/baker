@@ -2,8 +2,10 @@ package com.ing.baker.newrecipe.scaladsl
 
 import java.util.UUID
 
-import com.ing.baker.newrecipe.common.{FiresOneOfEvents, ProvidesIngredient}
 import com.ing.baker.newrecipe.scaladsl.ScaladslSpec._
+import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
+import com.ing.baker.recipe.common
+import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe, _}
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{Matchers, WordSpecLike}
 
@@ -51,17 +53,21 @@ object ScaladslSpec {
         createCustomer
           .withRequiredEvent(agreementsAcceptedEvent)
           .withRequiredOneOfEvents(automaticApprovedEvent, manualApprovedEvent),
-        openAccount)
+        openAccount
+          .withEventOutputTransformer(accountOpenedEvent, renameEvent))
       .withSensoryEvent(agreementsAcceptedEvent)
 
-  val onboardingRecipe2 =
+  val onboardingRecipe2: Recipe =
     "newCustomerRecipe"
       .withInteractions(
         createCustomer
           .withRequiredEvent(agreementsAcceptedEvent)
           .withRequiredOneOfEvents(automaticApprovedEvent, manualApprovedEvent),
-        openAccount)
+        openAccount
+            .withEventOutputTransformer(accountOpenedEvent, renameEvent))
       .withSensoryEvent(agreementsAcceptedEvent)
+
+  def renameEvent(e: common.Event): common.Event = Event(e.name + "new", e.providedIngredients)
 
   //  val fn = (String, String): String
   //  Map("InteractionExample" -> fn)

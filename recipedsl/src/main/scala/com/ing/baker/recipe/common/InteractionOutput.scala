@@ -1,4 +1,4 @@
-package com.ing.baker.newrecipe.common
+package com.ing.baker.recipe.common
 
 sealed trait InteractionOutput {
   def toString(appender: String): String

@@ -2,9 +2,8 @@ package com.ing.baker.compiledRecipe
 
 import akka.actor.ActorSystem
 import akka.serialization.SerializationExtension
-import com.ing.baker.compiledRecipe.petrinet.ProvidesType.ProvidesEvent
+import com.ing.baker.compiledRecipe.petrinet.{FiresOneOfEvents, InteractionTransition}
 import com.ing.baker.core.NonSerializableException
-import com.ing.baker.compiledRecipe.petrinet.InteractionTransition
 
 import scala.collection.mutable
 import scala.util.Try
@@ -18,18 +17,18 @@ object RecipeValidations {
     if (compiledRecipe.petriNet.inMarking(interactionTransition).isEmpty)
       validationErrors += s"Interaction $interactionTransition does not have any requirements (ingredients or preconditions)! This will result in an infinite execution loop."
 
-    val eventClassNotAssignableFromErrors: Seq[String] = interactionTransition match  {
-      case InteractionTransition(_, providesType: ProvidesEvent, _, _, interactionName: String, _, _, _, _, _) =>
-        providesType.outputEventClasses.flatMap(
-          eventClass =>
-            if (!providesType.outputType.isAssignableFrom(eventClass))
-              Some(s"Event class: $eventClass is not assignable to return type: ${providesType.outputType} for interaction: $interactionName")
-            else None
-        )
-      case _ => Seq.empty
-    }
+//    val eventClassNotAssignableFromErrors: Seq[String] = interactionTransition match  {
+//      case InteractionTransition(providesType: FiresOneOfEvents, _, interactionName: String, _, _, _, _, _) =>
+//        providesType.events.flatMap(
+//          event =>
+//            if (!providesType.outputType.isAssignableFrom(eventClass))
+//              Some(s"Event class: $eventClass is not assignable to return type: ${providesType.outputType} for interaction: $interactionName")
+//            else None
+//        )
+//      case _ => Seq.empty
+//    }
 
-    validationErrors ++= eventClassNotAssignableFromErrors
+//    validationErrors ++= eventClassNotAssignableFromErrors
 
     // check if the process id argument type is correct, TODO remove overlap with code below
     interactionTransition.inputFields.toMap.get(processIdName).map {
@@ -63,7 +62,7 @@ object RecipeValidations {
           compiledRecipe.ingredients.get(name) match {
             case None =>
               Some(
-                s"Ingredient '$name' for interaction '${t.interactionClass}:${t.method.getName}' is not provided by any event or interaction")
+                s"Ingredient '$name' for interaction '${t.interactionName}' is not provided by any event or interaction")
             case Some(providedType) if !expectedType.isAssignableFrom(providedType) =>
               Some(
                 s"Interaction '$t' expects ingredient '$name:$expectedType', however incompatible type: '$providedType' was provided")

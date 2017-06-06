@@ -1,7 +1,7 @@
-package com.ing.baker.newrecipe.scaladsl
+package com.ing.baker.recipe.scaladsl
 
-import com.ing.baker.newrecipe.common
-import com.ing.baker.newrecipe.common.InteractionFailureStrategy
+import com.ing.baker.recipe.common
+import com.ing.baker.recipe.common.InteractionFailureStrategy
 
 /**
   * A Recipe combines a set of interactions & events.

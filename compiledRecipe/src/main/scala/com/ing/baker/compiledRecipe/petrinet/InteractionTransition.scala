@@ -1,8 +1,6 @@
 package com.ing.baker.compiledRecipe.petrinet
 
-import java.lang.reflect._
-
-import com.ing.baker.compiledRecipe.{ActionType, EventOutputTransformer, InteractionFailureStrategy, _}
+import com.ing.baker.compiledRecipe.{ActionType, RuntimeEventOutputTransformer, InteractionFailureStrategy, _}
 import com.ing.baker.core.ProcessState
 import io.kagera.execution.TransitionExceptionHandler
 import org.slf4j._
@@ -11,39 +9,17 @@ import org.slf4j._
   * This trait describes what kind of output the interaction provides
   */
 sealed trait ProvidesType
+case class ProvidesIngredient(ingredient: RuntimeIngredient) extends ProvidesType
+case class FiresOneOfEvents(events: Seq[RuntimeEvent]) extends ProvidesType
+case object ProvidesNothing extends ProvidesType
 
-object ProvidesType {
 
-  /**
-    * the interaction provides an ingredient
-    * @param outputIngredient the ingredient the interaction provides
-    * @param outputType the class of the ingredient that the interaction provides
-    */
-  case class ProvidesIngredient(outputIngredient: (String, Class[_]),
-                                outputType: Class[_]
-                               ) extends ProvidesType
-
-  /**
-    * The interaction provides an event
-    * @param outputFieldNames
-    * @param outputType the class that the event that is returned
-    * @param outputEventClasses the different events that the Interaction can provide
-    */
-  case class ProvidesEvent(outputFieldNames: Seq[String],
-                           outputType: Class[_],
-                           outputEventClasses: Seq[Class[_]]
-                          ) extends ProvidesType
-
-  case object ProvidesNothing extends ProvidesType
-}
 
 /**
   * A transition that represents an Interaction
   *
-  * @param method
   * @param providesType
   * @param inputFields
-  * @param interactionClass
   * @param interactionName
   * @param actionType
   * @param predefinedParameters
@@ -55,16 +31,16 @@ object ProvidesType {
   */
 case class InteractionTransition[I](
                                      //Original values of the Interaction
-                                     method: Method,
+//                                     method: Method,
                                      providesType: ProvidesType,
                                      inputFields: Seq[(String, Class[_])],
-                                     interactionClass: Class[I],
+//                                     interactionClass: Class[I],
                                      interactionName: String,
                                      actionType: ActionType = ActionType.InteractionAction,
                                      predefinedParameters: Map[String, Any],
                                      maximumInteractionCount: Option[Int],
                                      failureStrategy: InteractionFailureStrategy,
-                                     eventOutputTransformers: Map[Class[_], EventOutputTransformer[_, _]] = Map.empty)
+                                     eventOutputTransformers: Map[RuntimeEvent, RuntimeEventOutputTransformer] = Map.empty)
 
   extends Transition[Unit, AnyRef, ProcessState] {
 
@@ -85,10 +61,10 @@ case class InteractionTransition[I](
   val requiredIngredients: Map[String, Class[_]] =
     inputFields.toMap.filterKeys(requiredIngredientNames.contains)
 
-  def transformEventType(clazz: Class[_]): Class[_] =
+  def transformEventType(event: RuntimeEvent): RuntimeEvent =
     eventOutputTransformers
-      .get(clazz)
-      .fold(clazz.asInstanceOf[Class[Any]])(_.targetType.asInstanceOf[Class[Any]])
+      .get(event)
+      .fold(event)(_.newEvent)
 
   val exceptionStrategy: TransitionExceptionHandler = InteractionFailureStrategy.asTransitionExceptionHandler(failureStrategy)
 }

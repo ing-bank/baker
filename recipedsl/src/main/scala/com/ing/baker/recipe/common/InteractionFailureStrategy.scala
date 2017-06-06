@@ -2,8 +2,6 @@ package com.ing.baker.recipe.common
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-sealed trait InteractionFailureStrategy
-
 object InteractionFailureStrategy {
 
   case class RetryWithIncrementalBackoff(initialTimeout: Duration,
@@ -28,3 +26,5 @@ object InteractionFailureStrategy {
   }
   case object BlockInteraction extends InteractionFailureStrategy
 }
+
+sealed trait InteractionFailureStrategy

@@ -2,7 +2,7 @@ package com.ing.baker
 
 import com.ing.baker.compiledRecipe.ActionType.{InteractionAction, SieveAction}
 import com.ing.baker.compiledRecipe.petrinet.Place._
-import com.ing.baker.compiledRecipe.petrinet.{EventTransition, InteractionTransition, IntermediateTransition, MultiFacilitatorTransition, Place, Transition}
+import com.ing.baker.compiledRecipe.petrinet.{EventTransition, InteractionTransition, MultiFacilitatorTransition, Place, Transition}
 
 
 package object compiledRecipe {

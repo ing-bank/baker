@@ -1,19 +1,20 @@
 package com.ing.baker.compiledRecipe.petrinet
 
+import com.ing.baker.compiledRecipe.RuntimeEvent
 import com.ing.baker.core.ProcessState
 
 /**
   * Transition providing data from an event.
   *
-  * @param clazz The event class
   * @tparam E The type of the event
   */
-case class EventTransition[E](clazz: Class[E],
+//TODO remove E since its always RuntimeEvent
+case class EventTransition[E <: RuntimeEvent](event: RuntimeEvent,
                               val isSensoryEvent: Boolean = true,
                               val isMissing: Boolean = false) extends Transition[Unit, E, ProcessState] {
 
-  override val id       = (clazz.getName + "EventTransition").hashCode.toLong
-  override val label    = clazz.getSimpleName
+  override val id       = (event.name + "EventTransition").hashCode.toLong
+  override val label    = event.name
   override val toString = label
 
   // TODO move once refactor complete

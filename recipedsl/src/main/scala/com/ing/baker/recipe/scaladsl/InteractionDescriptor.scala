@@ -1,11 +1,9 @@
-package com.ing.baker.newrecipe.scaladsl
-
-import com.ing.baker.newrecipe.common
-import com.ing.baker.newrecipe.common.InteractionFailureStrategy
-import com.ing.baker.newrecipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
-import com.ing.baker.recipe.common.EventOutputTransformer
+package com.ing.baker.recipe.scaladsl
 
 import scala.concurrent.duration.Duration
+import com.ing.baker.recipe.common
+import com.ing.baker.recipe.common._
+import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
 
 case class InteractionDescriptor private(override val interaction: Interaction,
                                          override val requiredEvents: Set[common.Event] = Set.empty,
@@ -15,8 +13,15 @@ case class InteractionDescriptor private(override val interaction: Interaction,
                                          override val overriddenOutputIngredientName: Option[String] = None,
                                          override val maximumInteractionCount: Option[Int] = None,
                                          override val failureStrategy: Option[InteractionFailureStrategy] = None,
-                                         override val eventOutputTransformers: Map[Class[_], EventOutputTransformer[_, _]] = Map.empty)
+                                         override val eventOutputTransformers: Seq[EventOutputTransformer] = Seq.empty,
+                                         override val actionType: ActionType = common.InteractionAction,
+                                         newName: String = null)
   extends common.InteractionDescriptor {
+
+  override val name: String = {
+    if (newName != null) newName
+    else interaction.name
+  }
 
   def withRequiredEvent(event: common.Event): InteractionDescriptor =
     copy(requiredEvents = requiredEvents + event)
@@ -47,8 +52,17 @@ case class InteractionDescriptor private(override val interaction: Interaction,
                                       backoffFactor: Double = 2.0,
                                       maximumRetries: Int = 50): InteractionDescriptor =
     copy(failureStrategy = Some(RetryWithIncrementalBackoff(initialDelay, backoffFactor, maximumRetries)))
+
+  def withEventOutputTransformer(originalEvent: common.Event, f: common.Event => common.Event): InteractionDescriptor =
+    copy(eventOutputTransformers = eventOutputTransformers :+ EventOutputTransformer(originalEvent, f(originalEvent),f))
 }
 
 object InteractionDescriptorFactory {
   def apply(interaction: Interaction): InteractionDescriptor = InteractionDescriptor(interaction)
+  def apply(interaction: Interaction, name: String): InteractionDescriptor = InteractionDescriptor(interaction, newName = name)
+}
+
+object SieveDescriptorFactory {
+  def apply(interaction: Interaction): InteractionDescriptor = InteractionDescriptor(interaction, actionType = SieveAction)
+  def apply(interaction: Interaction, name: String): InteractionDescriptor = InteractionDescriptor(interaction, actionType = SieveAction, newName = name)
 }

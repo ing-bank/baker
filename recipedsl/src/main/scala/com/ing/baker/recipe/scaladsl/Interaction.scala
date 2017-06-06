@@ -1,7 +1,7 @@
-package com.ing.baker.newrecipe.scaladsl
+package com.ing.baker.recipe.scaladsl
 
-import com.ing.baker.newrecipe.common
-import com.ing.baker.newrecipe.common._
+import com.ing.baker.recipe.common.InteractionOutput
+import com.ing.baker.recipe.common
 
 case class Interaction(override val name: String,
                        override val inputIngredients: Seq[Ingredient[_]],

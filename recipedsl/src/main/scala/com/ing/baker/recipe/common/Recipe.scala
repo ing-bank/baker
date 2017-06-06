@@ -8,25 +8,41 @@ trait Recipe {
   /**
     * The name of the recipe.
     */
-  def name: String
+  val name: String
 
   /**
     * The set of interactions.
     */
-  def interactionDescriptors: Seq[InteractionDescriptor[_]]
+  val interactions: Seq[InteractionDescriptor]
 
   /**
     * The set of sieves.
     */
-  def sieveDescriptors: Seq[InteractionDescriptor[_]]
+  val sieves: Seq[InteractionDescriptor]
 
   /**
     * The set of events.
     */
-  def events: Set[Class[_ <: Event]]
+  val events: Set[Event]
 
-  /**
-    * The default interaction failure strategy.
-    */
-  def defaultFailureStrategy: InteractionFailureStrategy
+  val defaultFailureStrategy: InteractionFailureStrategy
+
+
+  override def toString: String = {
+    val appender = "  "
+    val appender2 = appender + appender
+    s"""{
+        |  Recipe: $name
+        |  Interactions:{
+        |${interactions.foldLeft("")((i, j) => s"$i\n${j.toString(appender2)}").replaceFirst("\n", "")}
+        |  }
+        |  Sieves:{
+        |${sieves.foldLeft("")((i, j) => s"$i\n${j.toString(appender2)}").replaceFirst("\n", "")}
+        |  }
+        |  Events:{
+        |${events.foldLeft("")((i, j) => s"$i\n${j.toString(appender2)}").replaceFirst("\n", "")}
+        |  }
+        |}
+        |""".stripMargin
+  }
 }
