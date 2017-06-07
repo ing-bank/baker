@@ -33,17 +33,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .withInteractions(InteractionOne)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("Ingredient 'initialIngredient' for interaction 'interface com.ing.baker.InteractionOne:apply' is not provided by any event or interaction")
-    }
-
-    //"This should be tested in the runtime when the Baker is initilaized, not in the recipe compilation")
-    "give a list of wrong interactions if an event of an interaction does not match it's return type" in {
-      val recipe = Recipe("NonMatchingReturnTypeTest")
-        .withInteractions(NonMatchingReturnTypeInteraction)
-        .withSensoryEvents(InitialEvent)
-
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("Event class: class com.ing.baker.EventFromInteractionTwo is not assignable to return type: class java.lang.String for interaction: NonMatchingReturnTypeInteraction")
+      compiledRecipe.validationErrors should contain("Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction")
     }
 
     "give a list of wrong ingredients if an predefined ingredient is of the wrong type" in {
