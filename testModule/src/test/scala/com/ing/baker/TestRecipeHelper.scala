@@ -178,35 +178,35 @@ trait TestRecipeHelper
   //Values to use for setting and checking the ingredients
 
   //Default values to be used for the ingredients in the tests
-  protected val initialIngredient = "initialIngredient"
-  protected val sievedIngredient = "sievedIngredient"
-  protected val interactionOneOriginalIngredient = "interactionOneOriginalIngredient"
-  protected val interactionOneIngredient = "interactionOneIngredient"
-  protected val interactionTwoIngredient = "interactionTwoIngredient"
-  protected val interactionTwoEvent = EventFromInteractionTwoImpl(interactionTwoIngredient)
-  protected val interactionThreeIngredient = "interactionThreeIngredient"
-  protected val interactionFourIngredient = "interactionFourIngredient"
-  protected val interactionFiveIngredient = "interactionFiveIngredient"
-  protected val interactionSixIngredient = "interactionSixIngredient"
+  protected val initialIngredientValue = "initialIngredient"
+  protected val sievedIngredientValue = "sievedIngredient"
+  protected val interactionOneOriginalIngredientValue = "interactionOneOriginalIngredient"
+  protected val interactionOneIngredientValue = "interactionOneIngredient"
+  protected val interactionTwoIngredientValue = "interactionTwoIngredient"
+  protected val interactionTwoEventValue = EventFromInteractionTwoImpl(interactionTwoIngredientValue)
+  protected val interactionThreeIngredientValue = "interactionThreeIngredient"
+  protected val interactionFourIngredientValue = "interactionFourIngredient"
+  protected val interactionFiveIngredientValue = "interactionFiveIngredient"
+  protected val interactionSixIngredientValue = "interactionSixIngredient"
   protected val errorMessage = "This is the error message"
 
   //Can be used to check the state after firing the initialEvent
   protected val afterInitialState = Map(
-    "initialIngredient" -> initialIngredient,
-    "sievedIngredient" -> sievedIngredient,
-    "interactionOneIngredient" -> interactionOneIngredient,
-    "interactionTwoIngredient" -> interactionTwoIngredient,
-    "interactionThreeIngredient" -> interactionThreeIngredient
+    "initialIngredient" -> initialIngredientValue,
+    "sievedIngredient" -> sievedIngredientValue,
+    "interactionOneIngredient" -> interactionOneIngredientValue,
+    "interactionTwoIngredient" -> interactionTwoIngredientValue,
+    "interactionThreeIngredient" -> interactionThreeIngredientValue
   )
 
   //Can be used to check the state after firing the initialEvent and SecondEvent
   protected val finalState = Map(
-    "initialIngredient" -> initialIngredient,
-    "sievedIngredient" -> sievedIngredient,
-    "interactionOneIngredient" -> interactionOneIngredient,
-    "interactionTwoIngredient" -> interactionTwoIngredient,
-    "interactionThreeIngredient" -> interactionThreeIngredient,
-    "interactionFourIngredient" -> interactionFourIngredient
+    "initialIngredient" -> initialIngredientValue,
+    "sievedIngredient" -> sievedIngredientValue,
+    "interactionOneIngredient" -> interactionOneIngredientValue,
+    "interactionTwoIngredient" -> interactionTwoIngredientValue,
+    "interactionThreeIngredient" -> interactionThreeIngredientValue,
+    "interactionFourIngredient" -> interactionFourIngredientValue
   )
 
   protected val testInteractionOneMock: InteractionOneImpl = mock[InteractionOneImpl]
@@ -398,12 +398,12 @@ trait TestRecipeHelper
                                      appendUUIDToTheRecipeName: Boolean = true): Baker = {
     val newRecipeName = if (appendUUIDToTheRecipeName) s"$recipeName-${UUID.randomUUID().toString}" else recipeName
     val recipe = getComplexRecipe(newRecipeName)
-    when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredient)
-    when(testInteractionTwoMock.apply(anyString())).thenReturn(interactionTwoEvent)
-    when(testInteractionThreeMock.apply(anyString(), anyString())).thenReturn(interactionThreeIngredient)
-    when(testInteractionFourMock.apply()).thenReturn(interactionFourIngredient)
-    when(testInteractionFiveMock.apply(anyString(), anyString(), anyString())).thenReturn(interactionFiveIngredient)
-    when(testInteractionSixMock.apply(anyString())).thenReturn(interactionSixIngredient)
+    when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
+    when(testInteractionTwoMock.apply(anyString())).thenReturn(interactionTwoEventValue)
+    when(testInteractionThreeMock.apply(anyString(), anyString())).thenReturn(interactionThreeIngredientValue)
+    when(testInteractionFourMock.apply()).thenReturn(interactionFourIngredientValue)
+    when(testInteractionFiveMock.apply(anyString(), anyString(), anyString())).thenReturn(interactionFiveIngredientValue)
+    when(testInteractionSixMock.apply(anyString())).thenReturn(interactionSixIngredientValue)
 
     new Baker(
       compiledRecipe = RecipeCompiler.compileRecipe(recipe),
