@@ -20,7 +20,7 @@ object EventSource {
         }
       }
 
-  def updateEventState[T <: RuntimeEvent](eventTransition: EventTransition[T], ingredientExtractor: IngredientExtractor): (ProcessState) => (Any) => ProcessState =
+  def updateEventState(eventTransition: EventTransition, ingredientExtractor: IngredientExtractor): (ProcessState) => (Any) => ProcessState =
     state =>
       event => {
           val eventIngredients = ingredientExtractor.extractIngredientData(event)

@@ -23,7 +23,7 @@ trait Recipe {
   /**
     * The set of events.
     */
-  val events: Set[Event]
+  val sensoryEvents: Set[Event]
 
   val defaultFailureStrategy: InteractionFailureStrategy
 
@@ -40,7 +40,7 @@ trait Recipe {
         |${sieves.foldLeft("")((i, j) => s"$i\n${j.toString(appender2)}").replaceFirst("\n", "")}
         |  }
         |  Events:{
-        |${events.foldLeft("")((i, j) => s"$i\n${j.toString(appender2)}").replaceFirst("\n", "")}
+        |${sensoryEvents.foldLeft("")((i, j) => s"$i\n${j.toString(appender2)}").replaceFirst("\n", "")}
         |  }
         |}
         |""".stripMargin

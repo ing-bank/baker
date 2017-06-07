@@ -28,7 +28,7 @@ package object petrinet {
 
   def transitionEventSource(ingredientExtractor: IngredientExtractor): Transition[_,_,_] => (ProcessState => Any => ProcessState) = {
     case t: InteractionTransition[_] => EventSource.updateIngredientState(t, ingredientExtractor)
-    case t: EventTransition[_]       => EventSource.updateEventState(t, ingredientExtractor)
+    case t: EventTransition          => EventSource.updateEventState(t, ingredientExtractor)
     case t                           => s => e => s
   }
 

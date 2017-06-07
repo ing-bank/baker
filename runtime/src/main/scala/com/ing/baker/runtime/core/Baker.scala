@@ -87,7 +87,6 @@ class Baker(val compiledRecipe: CompiledRecipe,
   private val journalInitializeTimeout = config.as[FiniteDuration]("baker.journal-initialize-timeout")
   private val readJournalIdentifier = config.as[String]("baker.actor.read-journal-plugin")
 
-
   if (compiledRecipe.validationErrors.nonEmpty)
     throw new RecipeValidationException(compiledRecipe.validationErrors.mkString(", "))
 

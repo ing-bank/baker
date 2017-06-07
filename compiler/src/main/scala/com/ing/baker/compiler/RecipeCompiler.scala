@@ -1,7 +1,6 @@
 package com.ing.baker
 package compiler
 
-import com.ing.baker.compiledRecipe.ingredientExtractors.{CompositeIngredientExtractor, IngredientExtractor}
 import com.ing.baker.compiledRecipe.petrinet.Place._
 import com.ing.baker.compiledRecipe.petrinet._
 import com.ing.baker.compiledRecipe.{CompiledRecipe, RecipeValidations, RuntimeEvent, ValidationSettings}
@@ -175,10 +174,10 @@ object RecipeCompiler {
     }.unzip
 
     // events provided from outside
-    val sensoryEventTransitions: Seq[EventTransition[_]] = recipe.events.map {event =>  EventTransition(eventToRuntimeEvent(event))}.toSeq
+    val sensoryEventTransitions: Seq[EventTransition] = recipe.sensoryEvents.map { event =>  EventTransition(eventToRuntimeEvent(event))}.toSeq
 
     // events provided by other transitions / actions
-    val interactionEventTransitions: Seq[EventTransition[_]] = interactionTransitions.flatMap { t =>
+    val interactionEventTransitions: Seq[EventTransition] = interactionTransitions.flatMap { t =>
       t.providesType match {
         case FiresOneOfEvents(events) =>
 //          events.map(event => IntermediateTransition(id = (event.name + "IntermediateTransition").hashCode, label = event.name))
@@ -188,7 +187,7 @@ object RecipeCompiler {
       }
     }
 
-    val allEventTransitions: Seq[EventTransition[_]] = sensoryEventTransitions ++ interactionEventTransitions
+    val allEventTransitions: Seq[EventTransition] = sensoryEventTransitions ++ interactionEventTransitions
 
     // Given the event classes, it is creating the ingredient places and
     // connecting a transition to a ingredient place.
@@ -217,8 +216,6 @@ object RecipeCompiler {
                                    allEventTransitions.findEventTransitionsByEvent,
                                    interactionTransitions.findTransitionByName)
     }.unzipFlatten
-
-//    def providedIngredients[E](e: EventTransition[E]) = ingredientExtractor.extractIngredientTypes(e.clazz).keys.toSeq
 
     val (sensoryEventNoIngredients, sensoryEventWithIngredients) = sensoryEventTransitions.partition(_.event.providedIngredients.isEmpty)
 
@@ -275,7 +272,7 @@ object RecipeCompiler {
       name = recipe.name,
       petriNet = petriNet,
       initialMarking = initialMarking,
-      sensoryEvents = recipe.events.map(eventToRuntimeEvent),
+      sensoryEvents = recipe.sensoryEvents.map(eventToRuntimeEvent),
       validationErrors = interactionValidationErrors.flatten ++ preconditionORErrors ++ preconditionANDErrors
     )
 

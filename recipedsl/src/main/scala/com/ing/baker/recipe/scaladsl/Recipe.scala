@@ -9,7 +9,7 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy
 case class Recipe private (override val name: String,
                            override val interactions: Seq[InteractionDescriptor],
                            override val sieves: Seq[InteractionDescriptor],
-                           override val events: Set[common.Event],
+                           override val sensoryEvents: Set[common.Event],
                            override val defaultFailureStrategy: InteractionFailureStrategy)
   extends common.Recipe {
 
@@ -19,8 +19,8 @@ case class Recipe private (override val name: String,
   def withSieve(newSieve: InteractionDescriptor) = copy(sieves = sieves :+ newSieve)
   def withSieves(newSieves: InteractionDescriptor*) = copy(sieves = sieves ++ newSieves)
 
-  def withSensoryEvent(newEvent: Event) = copy(events = events + newEvent)
-  def withSensoryEvents(newEvents: Event*) = copy(events = events ++ newEvents)
+  def withSensoryEvent(newEvent: Event) = copy(sensoryEvents = sensoryEvents + newEvent)
+  def withSensoryEvents(newEvents: Event*) = copy(sensoryEvents = sensoryEvents ++ newEvents)
 }
 
 object Recipe{

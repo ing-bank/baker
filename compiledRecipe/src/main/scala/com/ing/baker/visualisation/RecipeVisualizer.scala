@@ -90,7 +90,7 @@ object RecipeVisualizer {
   )
 
   private def nodeLabelFn: Either[Place[_], Transition[_, _, _]] ⇒ String = {
-    case Left(place) if(place.isEmptyEventIngredient)  ⇒ s"empty:${place.label}"
+    case Left(place) if place.isEmptyEventIngredient  ⇒ s"empty:${place.label}"
     case Left(place)  ⇒ place.label
     case Right(transition) if transition.isMultiFacilitatorTransition ⇒ s"multi:${transition.label}"
     case Right(transition) => transition.label

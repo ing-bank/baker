@@ -45,10 +45,10 @@ object JBaker {
 //It use to be of the Interaction type but now this is not possible since this is not known here
 //Maybe we can create a InteractionImplementation trait and only accept classes of that type
 class JBaker private (compiledRecipe: CompiledRecipe,
-                      implementations: java.util.Map[Class[_], AnyRef],
+                      implementations: java.util.Map[String, AnyRef],
                       actorSystem: ActorSystem) {
 
-  val interactionImplementations: Map[Class[_], () => AnyRef] =
+  val interactionImplementations: Map[String, () => AnyRef] =
     implementations.asScala.toMap.mapValues { implementation => () =>
       implementation
     }
@@ -60,7 +60,7 @@ class JBaker private (compiledRecipe: CompiledRecipe,
 
 
   def this (jCompiledRecipe: JCompiledRecipe,
-            implementations: java.util.Map[Class[_], AnyRef],
+            implementations: java.util.Map[String, AnyRef],
             actorSystem: ActorSystem) =
     this(jCompiledRecipe.compiledRecipe, implementations, actorSystem)
 

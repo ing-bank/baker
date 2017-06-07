@@ -1,7 +1,6 @@
 package com.ing.baker
 
 import com.ing.baker.compiledRecipe.ActionType.{InteractionAction, SieveAction}
-import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
 import com.ing.baker.compiledRecipe.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing, ProvidesType, Transition}
 import com.ing.baker.compiledRecipe.{ActionType, InteractionFailureStrategy, RuntimeEvent, RuntimeEventOutputTransformer, RuntimeIngredient}
 import com.ing.baker.recipe.common
@@ -52,8 +51,11 @@ package object compiler {
                                  defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): InteractionTransition[Any] = {
 
       val inputFields: Seq[(String, Class[_])] = interactionDescriptor.interaction.inputIngredients
+        //Replace ProcessId to ProcessIdName tag as know in compiledRecipe
         //Replace ingredient tags with overridden tags
-        .map(ingredient => interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.clazz)
+        .map(ingredient =>
+          if(ingredient.name == common.ProcessIdName) compiledRecipe.processIdName -> ingredient.clazz
+          else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.clazz)
 
       def transformEventType(event: common.Event): common.Event =
         interactionDescriptor.eventOutputTransformers
@@ -72,7 +74,7 @@ package object compiler {
             ProvidesIngredient(RuntimeIngredient(ingredientName, outputIngredient.clazz))
           }
           case common.FiresOneOfEvents(events) => {
-            val runtimeEvents = events.map(transformEventType)
+            val runtimeEvents = Seq(events).map(transformEventType)
               .map(e => RuntimeEvent(e.name, e.providedIngredients
                 .map(i => RuntimeIngredient(i.name, i.clazz))))
             FiresOneOfEvents(runtimeEvents)
@@ -124,8 +126,8 @@ package object compiler {
       interactionName ⇒ transitions.findByLabel(interactionName)
   }
 
-  implicit class EventTransitionOps(eventTransitions: Seq[EventTransition[_]]) {
-    def findEventTransitionsByEvent: RuntimeEvent ⇒ Option[EventTransition[_]] =
+  implicit class EventTransitionOps(eventTransitions: Seq[EventTransition]) {
+    def findEventTransitionsByEvent: RuntimeEvent ⇒ Option[EventTransition] =
       event => eventTransitions.find(_.event == event)
   }
 }
