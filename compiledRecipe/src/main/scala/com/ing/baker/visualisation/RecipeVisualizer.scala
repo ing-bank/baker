@@ -103,8 +103,7 @@ object RecipeVisualizer {
         case Left(place) if place.isOrEventPrecondition    => preconditionORAttributes
         case Left(place) if place.isEmptyEventIngredient   ⇒ emptyEventAttributes
         case Left(place)                                   ⇒ ingredientAttributes
-        case Right(transition) if transition.isMultiFacilitatorTransition =>
-          choiceAttributes // TODO, better way to hide the multiTransition
+        case Right(transition) if transition.isMultiFacilitatorTransition => choiceAttributes
         case Right(transition) if transition.isInteraction  ⇒ interactionAttributes
         case Right(transition) if transition.isSieve        ⇒ sieveAttributes
         case Right(transition) if transition.isEventMissing ⇒ eventTransitionMissingAttributes
@@ -163,7 +162,7 @@ object RecipeVisualizer {
     val formattedGraph = graph.nodes.foldLeft(graph) {
       case (graphAccumulator, node) =>
         node.value match {
-          case Left(place) if !(place.isIngredient | place.isEmptyEventIngredient) => compactNode(graphAccumulator, node)
+          case Left(place) if !(place.isIngredient | place.isEmptyEventIngredient | place.isOrEventPrecondition) => compactNode(graphAccumulator, node)
           case _                                  => graphAccumulator
         }
     }

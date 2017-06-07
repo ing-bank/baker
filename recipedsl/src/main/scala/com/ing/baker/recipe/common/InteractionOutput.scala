@@ -10,12 +10,21 @@ case class ProvidesIngredient(ingredient: Ingredient) extends InteractionOutput 
     s"""${appender}ProvidesIngredient($ingredient)""".stripMargin
   }
 }
-case class FiresOneOfEvents(events: Event*) extends InteractionOutput {
+
+case class FiresOneOfEvents(events: Seq[Event]) extends InteractionOutput {
   override def toString(): String = toString("")
   def toString(appender: String): String = {
     s"""${appender}FiresOneOfEvents:{
        |${events.foldLeft("")((i, j) => s"$i\n${j.toString(appender + "  ")}").replaceFirst("\n", "")}}""".stripMargin
   }
+}
+
+object FiresOneOfEvents {
+  def apply(event: Event): FiresOneOfEvents = FiresOneOfEvents(Seq(event))
+  def apply(eventOne: Event, eventTwo: Event): FiresOneOfEvents = FiresOneOfEvents(Seq(eventOne, eventTwo))
+  def apply(eventOne: Event, eventTwo: Event, eventThree: Event): FiresOneOfEvents = FiresOneOfEvents(Seq(eventOne, eventTwo, eventThree))
+  def apply(eventOne: Event, eventTwo: Event, eventThree: Event, eventFour: Event): FiresOneOfEvents = FiresOneOfEvents(Seq(eventOne, eventTwo, eventThree, eventFour))
+  def apply(eventOne: Event, eventTwo: Event, eventThree: Event, eventFour: Event, eventFive: Event): FiresOneOfEvents = FiresOneOfEvents(Seq(eventOne, eventTwo, eventThree, eventFour, eventFive))
 }
 
 case object ProvidesNothing extends InteractionOutput {

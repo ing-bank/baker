@@ -74,7 +74,7 @@ package object compiler {
             ProvidesIngredient(RuntimeIngredient(ingredientName, outputIngredient.clazz))
           }
           case common.FiresOneOfEvents(events) => {
-            val runtimeEvents = Seq(events).map(transformEventType)
+            val runtimeEvents = events.map(transformEventType)
               .map(e => RuntimeEvent(e.name, e.providedIngredients
                 .map(i => RuntimeIngredient(i.name, i.clazz))))
             FiresOneOfEvents(runtimeEvents)

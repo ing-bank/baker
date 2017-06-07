@@ -18,8 +18,8 @@ object Event {
     Event(name, Seq(ingredientOne, ingredientTwo, ingredientThree))
 
   def apply(name: String, ingredientOne: Ingredient[_], ingredientTwo: Ingredient[_], ingredientThree: Ingredient[_], ingredientFour: Ingredient[_]) : Event =
-    Event(name, Seq(ingredientOne, ingredientTwo, ingredientFour))
+    Event(name, Seq(ingredientOne, ingredientTwo, ingredientThree, ingredientFour))
 
   def apply(name: String, ingredientOne: Ingredient[_], ingredientTwo: Ingredient[_], ingredientThree: Ingredient[_], ingredientFour: Ingredient[_], ingredientFive: Ingredient[_]) : Event =
-    Event(name, Seq(ingredientOne, ingredientTwo, ingredientFour, ingredientFive))
+    Event(name, Seq(ingredientOne, ingredientTwo, ingredientThree, ingredientFour, ingredientFive))
 }
