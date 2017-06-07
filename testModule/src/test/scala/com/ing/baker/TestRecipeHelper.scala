@@ -404,6 +404,7 @@ trait TestRecipeHelper
     when(testInteractionFourMock.apply()).thenReturn(interactionFourIngredientValue)
     when(testInteractionFiveMock.apply(anyString(), anyString(), anyString())).thenReturn(interactionFiveIngredientValue)
     when(testInteractionSixMock.apply(anyString())).thenReturn(interactionSixIngredientValue)
+    when(testSieveInteractionMock.apply(anyString(), anyString())).thenReturn(sievedIngredientValue)
 
     new Baker(
       compiledRecipe = RecipeCompiler.compileRecipe(recipe),

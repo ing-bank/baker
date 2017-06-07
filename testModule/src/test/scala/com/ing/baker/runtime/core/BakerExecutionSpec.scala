@@ -35,7 +35,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
   "The Baker execution engine" should {
 
-    "throw no Error if a baking a process for the first time" in {
+    "bake a process successful if baking for the first time" in {
       val baker = setupBakerWithRecipe("FirstTimeBaking")
 
       val id = UUID.randomUUID()
@@ -113,6 +113,29 @@ class BakerExecutionSpec extends TestRecipeHelper {
       intercept[NoSuchProcessException] {
         Await.result(response.completedFuture, timeout)
       }
+    }
+
+    "execute an interaction when its ingredient is provided" in {
+      val recipe =
+        Recipe("IngredientProvidedRecipe")
+        .withInteraction(InteractionOne)
+        .withSensoryEvent(InitialEvent)
+
+      val baker = new Baker(
+        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+        actorSystem = defaultActorSystem,
+        implementations = mockImplementations)
+
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
+
+      val processId = UUID.randomUUID()
+      baker.bake(processId)
+
+      baker.handleEvent(processId, InitialEventImpl(initialIngredientValue))
+      println(baker.getVisualState(processId))
+
+      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+      baker.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue, "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
     }
 
     "execute an interaction when both ingredients are provided (join situation)" in {

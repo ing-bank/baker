@@ -53,7 +53,7 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
 
       def invokeMethod(): AnyRef = {
         MDC.put("processId", processState.id.toString)
-        val result = interactionObject.getClass.getMethod("apply").invoke(interactionObject, inputArgs: _*)
+        val result = interactionObject.getClass.getMethod("apply", interaction.inputFields.map(_._2): _*) .invoke(interactionObject, inputArgs: _*)
         log.trace(s"[$invocationId] result: $result")
 
         MDC.remove("processId")

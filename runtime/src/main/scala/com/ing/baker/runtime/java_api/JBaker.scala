@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import com.ing.baker.compiledRecipe.CompiledRecipe
 import com.ing.baker.compiledRecipe.petrinet.InteractionTransition
-import com.ing.baker.runtime.core.Baker
+import com.ing.baker.runtime.core.{Baker, EventImpl}
 import com.typesafe.config.ConfigFactory
 
 import scala.collection.JavaConverters._
@@ -101,7 +101,7 @@ class JBaker private (compiledRecipe: CompiledRecipe,
     * @param event The event to fire
     * @return
     */
-  def processEvent(processId: java.util.UUID, event: Object): Unit =
+  def processEvent(processId: java.util.UUID, event: EventImpl): Unit =
     processEventAsync(processId, event).confirmCompleted
 
   /**
@@ -111,7 +111,7 @@ class JBaker private (compiledRecipe: CompiledRecipe,
     * @param event The event to fire
     * @return
     */
-  def processEventAsync(processId: java.util.UUID, event: Object): JBakerResponse = {
+  def processEventAsync(processId: java.util.UUID, event: EventImpl): JBakerResponse = {
     implicit val executionContext = actorSystem.dispatcher
 
     val response = baker.handleEventAsync(processId, event)

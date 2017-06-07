@@ -59,9 +59,9 @@ object Baker {
       .map(i => s"No implementation provided for interaction: ${i.interactionName}")
   }
 
-  def transitionForEventClass(eventClass: Class[_], compiledRecipe: CompiledRecipe) =
-    compiledRecipe.petriNet.transitions.findByLabel(eventClass.getSimpleName).getOrElse {
-      throw new IllegalArgumentException(s"No such event known in recipe: $eventClass")
+  def transitionForEventClass(event: EventImpl, compiledRecipe: CompiledRecipe) =
+    compiledRecipe.petriNet.transitions.findByLabel(event.name).getOrElse {
+      throw new IllegalArgumentException(s"No such event known in recipe: $event")
     }
 }
 
@@ -145,10 +145,10 @@ class Baker(val compiledRecipe: CompiledRecipe,
   private val readJournal = PersistenceQuery(actorSystem)
     .readJournalFor[CurrentEventsByPersistenceIdQuery with AllPersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
 
-  private def createEventMsg(processId: java.util.UUID, event: AnyRef) = {
+  private def createEventMsg(processId: java.util.UUID, event: EventImpl) = {
     require(event != null, "Event can not be null")
 
-    val t = transitionForEventClass(event.getClass, compiledRecipe)
+    val t = transitionForEventClass(event, compiledRecipe)
     BakerActorMessage(processId, FireTransition(t.id, event))
   }
 
@@ -233,7 +233,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * @param processId The process id
     * @param event     The event instance
     */
-  def handleEvent(processId: java.util.UUID, event: AnyRef)(implicit timeout: FiniteDuration): Unit = {
+  def handleEvent(processId: java.util.UUID, event: EventImpl)(implicit timeout: FiniteDuration): Unit = {
     handleEventAsync(processId, event).confirmCompleted
   }
 
@@ -241,7 +241,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * Fires an event to baker for a process. This is fire and forget in the sense that if nothing is done
     * with the response you have NO guarantee that the event is received by baker.
     */
-  def handleEventAsync(processId: UUID, event: AnyRef): BakerResponse = {
+  def handleEventAsync(processId: UUID, event: EventImpl): BakerResponse = {
 
     val msg = createEventMsg(processId, event)
     val source = petriNetApi.askAndCollectAll(msg, waitForRetries = true)
