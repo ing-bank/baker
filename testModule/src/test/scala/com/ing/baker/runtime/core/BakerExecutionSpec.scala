@@ -145,7 +145,9 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       baker.handleEvent(processId, InitialEventImpl(initialIngredientValue))
       println(baker.events(processId))
+      println(baker.getIngredients(processId))
       println(baker.getVisualState(processId))
+      println(baker.compiledRecipe.getPetriNetVisualization)
 
       verify(testInteractionOneMock).apply(processId.toString, initialIngredientValue)
       verify(testInteractionTwoMock).apply(initialIngredientValue)
@@ -556,7 +558,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       val baker = setupBakerWithRecipe("OverlappingMultiIngredients")
 
       // It is helpful to check the recipe visualization if this test fails
-      println(baker.compiledRecipe.getRecipeVisualization)
+//      println(baker.compiledRecipe.getRecipeVisualization)
 
       val processId = UUID.randomUUID()
       baker.bake(processId)

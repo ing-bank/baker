@@ -61,16 +61,17 @@ object RecipeCompiler {
 
     val eventTransition = preconditionTransition(event)
 
-    val notProvidedError = eventTransition.isEmpty.toOption {
-      s"Event '$event' for '$interactionTransition' is not provided in the recipe"
-    }.toSeq
+    val notProvidedError = eventTransition.isEmpty match {
+      case true => Some(s"Event '$event' for '$interactionTransition' is not provided in the recipe")
+      case false => None
+    }
 
     val arcs = Seq(
       arc(eventTransition.getOrElse(missingEventTransition(event)), preconditionPlace, 1),
       arc(preconditionPlace, interactionTransition, 1)
     )
 
-    (arcs, notProvidedError)
+    (arcs, Seq(notProvidedError).flatten)
   }
 
   // the (possible) event output arcs / places
@@ -312,5 +313,5 @@ object RecipeCompiler {
     ingredientsWithMultipleConsumers
   }
 
-  private def createPlace(label: String, placeType: PlaceType): Place[Any] = Place(id = s"$placeType:$label".hashCode, label = placeType.labelPrepend+label, placeType)
+  private def createPlace(label: String, placeType: PlaceType): Place[Any] = Place(id = s"$placeType:$label".hashCode, label = label, placeType)
 }

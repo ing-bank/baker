@@ -25,16 +25,6 @@ package object compiler {
     override val providedIngredients: Seq[Ingredient] = runtimeEvent.providedIngredients.map(runtimeIngredientToIngredient)
   }
 
-  implicit class BooleanOps(bool: Boolean) {
-
-    def toOption[T](fn: => T): Option[T] = {
-      if (bool)
-        Some(fn)
-      else
-        None
-    }
-  }
-
   implicit class InteractionOps(interaction: InteractionDescriptor) {
 
     def toInteractionTransition(defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): (InteractionTransition[_], Seq[String]) = {
