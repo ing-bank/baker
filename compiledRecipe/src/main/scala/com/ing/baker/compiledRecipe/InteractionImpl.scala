@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.core
+package com.ing.baker.compiledRecipe
 
 trait InteractionImpl {
   def name: String

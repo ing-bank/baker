@@ -31,8 +31,8 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
   def passThroughtTransitionTask[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _, _]], t: Transition[Input, Output, _]): TransitionTask[Place, Input, Output, ProcessState] =
     (consume, processState, input) => Task.now((toMarking[Place](petriNet.outMarking(t)), null.asInstanceOf[Output]))
 
-  def eventTransitionTask[RuntimeEvent, Input, Output](petriNet: PetriNet[Place[_], Transition[_, _, _]], eventTransition: EventTransition): TransitionTask[Place, Input, Output, ProcessState] =
-    (consume, processState, input) => Task.now((toMarking[Place](petriNet.outMarking(eventTransition)), input.asInstanceOf[Output]))
+  def eventTransitionTask[RuntimeEvent, Input, EventImpl](petriNet: PetriNet[Place[_], Transition[_, _, _]], eventTransition: EventTransition): TransitionTask[Place, Input, EventImpl, ProcessState] =
+    (consume, processState, input) => Task.now((toMarking[Place](petriNet.outMarking(eventTransition)), input.asInstanceOf[EventImpl]))
 
   def interactionTransitionTask[I, Input, Output](interaction: InteractionTransition[I], interactionProvider: () => I, outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, Input, Output, ProcessState] =
 
@@ -136,7 +136,7 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
       val value: Any = {
         interaction.providesType match {
           case FiresOneOfEvents(events) =>
-            events.find(_.name == output.getClass.getSimpleName).map(_.name).getOrElse {
+            events.find(_.name == output.asInstanceOf[EventImpl].name).map(_.name).getOrElse {
               throw new IllegalStateException(
                 s"Method output: $output is not an instance of any of the specified events: ${
                   events
