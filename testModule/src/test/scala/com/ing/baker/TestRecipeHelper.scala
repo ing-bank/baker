@@ -36,7 +36,7 @@ object TestRecipeHelper {
   val interactionFiveIngredient = Ingredient[String]("interactionFiveIngredient")
   val interactionSixIngredient = Ingredient[String]("interactionSixIngredient")
   val sievedIngredient = Ingredient[String]("sievedIngredient")
-  val nonSerializableObject = Ingredient[NonSerializableObject]("nonSerializableObject")
+  val nonSerializableIngredient = Ingredient[NonSerializableObject]("nonSerializableIngredient")
 
   //Events as used in the recipe & objects used in runtime
   val InitialEvent = Event("InitialEvent", initialIngredient)
@@ -49,7 +49,7 @@ object TestRecipeHelper {
   case class NotUsedSensoryEventImpl() extends EventImpl {override def name = "NotUsedSensoryEvent"}
   val EventFromInteractionTwo = Event("EventFromInteractionTwo", interactionTwoIngredient)
   case class EventFromInteractionTwoImpl(interactionTwoIngredient: String) extends EventImpl {override def name = "EventFromInteractionTwo"}
-  val EventWithANonSerializableIngredient = Event("EventWithANonSerializableIngredient", nonSerializableObject)
+  val EventWithANonSerializableIngredient = Event("EventWithANonSerializableIngredient", nonSerializableIngredient)
   case class EventWithANonSerializableIngredientImpl(nonSerializableObject: NonSerializableObject) extends EventImpl {override def name = "EventWithANonSerializableIngredient"}
 
   //Interactions used in the recipe & implementations (we use traits instead of case classes since we use mocks for the real implementations
@@ -107,7 +107,7 @@ object TestRecipeHelper {
     def apply(initialIngredient: String): EventWithANonSerializableIngredientImpl
   }
 
-  val NonSerializableIngredientInteraction = Interaction("NonSerializableIngredientInteraction", Seq(initialIngredient), ProvidesIngredient(nonSerializableObject))
+  val NonSerializableIngredientInteraction = Interaction("NonSerializableIngredientInteraction", Seq(initialIngredient), ProvidesIngredient(nonSerializableIngredient))
   trait NonSerializableIngredientInteractionImpl extends InteractionImpl {
     def name: String = "NonSerializableIngredientInteraction"
     def apply(initialIngredient: String): NonSerializableObject
@@ -221,6 +221,18 @@ trait TestRecipeHelper
     mock[NonSerializableIngredientInteractionImpl]
   protected val testNonMatchingReturnTypeInteractionMock: NonMatchingReturnTypeInteractionImpl =
     mock[NonMatchingReturnTypeInteractionImpl]
+  protected val testSieveInteractionMock: SieveInteractionImpl = mock[SieveInteractionImpl]
+
+  when(testInteractionOneMock.name).thenReturn("InteractionOne")
+  when(testInteractionTwoMock.name).thenReturn("InteractionTwo")
+  when(testInteractionThreeMock.name).thenReturn("InteractionThree")
+  when(testInteractionFourMock.name).thenReturn("InteractionFour")
+  when(testInteractionFiveMock.name).thenReturn("InteractionFive")
+  when(testInteractionSixMock.name).thenReturn("InteractionSix")
+  when(testNonSerializableIngredientInteractionMock.name).thenReturn("NonSerializableIngredientInteraction")
+  when(testNonSerializableEventInteractionMock.name).thenReturn("NonSerializableEventInteraction")
+  when(testNonSerializableEventInteractionMock.name).thenReturn("NonSerializableEventInteraction")
+  when(testSieveInteractionMock.name).thenReturn("SieveInteraction")
 
   protected val mockImplementations: Map[String, () => AnyRef] =
     Map(
@@ -232,7 +244,8 @@ trait TestRecipeHelper
       testInteractionSixMock.name -> (() => testInteractionSixMock),
       testNonSerializableIngredientInteractionMock.name -> (() => testNonSerializableIngredientInteractionMock),
       testNonSerializableEventInteractionMock.name -> (() => testNonSerializableEventInteractionMock),
-      testNonSerializableEventInteractionMock.name -> (() => testNonMatchingReturnTypeInteractionMock))
+      testNonSerializableEventInteractionMock.name -> (() => testNonMatchingReturnTypeInteractionMock),
+      testSieveInteractionMock.name -> (() => testSieveInteractionMock))
 
   protected val localConfig: Config =
     ConfigFactory.parseString(
@@ -386,17 +399,11 @@ trait TestRecipeHelper
     val newRecipeName = if (appendUUIDToTheRecipeName) s"$recipeName-${UUID.randomUUID().toString}" else recipeName
     val recipe = getComplexRecipe(newRecipeName)
     when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredient)
-    when(testInteractionOneMock.name).thenReturn("testInteractionOne")
     when(testInteractionTwoMock.apply(anyString())).thenReturn(interactionTwoEvent)
-    when(testInteractionTwoMock.name).thenReturn("testInteractionTwo")
     when(testInteractionThreeMock.apply(anyString(), anyString())).thenReturn(interactionThreeIngredient)
-    when(testInteractionThreeMock.name).thenReturn("testInteractionThree")
     when(testInteractionFourMock.apply()).thenReturn(interactionFourIngredient)
-    when(testInteractionFourMock.name).thenReturn("testInteractionFour")
     when(testInteractionFiveMock.apply(anyString(), anyString(), anyString())).thenReturn(interactionFiveIngredient)
-    when(testInteractionFiveMock.name).thenReturn("testInteractionFive")
     when(testInteractionSixMock.apply(anyString())).thenReturn(interactionSixIngredient)
-    when(testInteractionSixMock.name).thenReturn("testInteractionSix")
 
     new Baker(
       compiledRecipe = RecipeCompiler.compileRecipe(recipe),
