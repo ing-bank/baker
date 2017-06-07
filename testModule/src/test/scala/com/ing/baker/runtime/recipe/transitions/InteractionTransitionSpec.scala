@@ -1,36 +1,37 @@
 package com.ing.baker.runtime.recipe.transitions
 
 import com.ing.baker.recipe.annotations.{FiresEvent, ProvidesIngredient, RequiresIngredient}
+import com.ing.baker.recipe.javadsl.Event
 import org.scalatest._
 
-object InteractionTransitionSpec {
-
-  trait SimpleInteraction {
-    @ProvidesIngredient("originalIngredient")
-    def action1(@RequiresIngredient("overriddenName") arg1: String): Int
-  }
-
-  case object SimpleInteractionImpl extends SimpleInteraction {
-    override def action1(arg1: String): Int = 10
-  }
-
-  case class TestEvent(msg: String)
-
-  case class TransformedEvent(msg: String, s: Int)
-
-  val eventTransformer            = (e: TestEvent) ⇒ TransformedEvent(e.msg, Integer.MAX_VALUE)
-  val transformedEventTransformer = (e: TransformedEvent) ⇒ TestEvent(e.msg)
-
-  trait SimpleInteractionThatTriggersEvent {
-    @FiresEvent(oneOf = Array(classOf[TestEvent]))
-    def aInteraction(@RequiresIngredient("overriddenName") message: String): TestEvent
-  }
-
-  case object InteractionThatTriggersAnEvent extends SimpleInteractionThatTriggersEvent {
-    override def aInteraction(message: String): TestEvent =
-      TestEvent(message)
-  }
-}
+//object InteractionTransitionSpec {
+//
+//  trait SimpleInteraction {
+//    @ProvidesIngredient("originalIngredient")
+//    def action1(@RequiresIngredient("overriddenName") arg1: String): Int
+//  }
+//
+//  case object SimpleInteractionImpl extends SimpleInteraction {
+//    override def action1(arg1: String): Int = 10
+//  }
+//
+//  case class TestEvent(msg: String) extends Event
+//
+//  case class TransformedEvent(msg: String, s: Int)
+//
+//  val eventTransformer            = (e: TestEvent) ⇒ TransformedEvent(e.msg, Integer.MAX_VALUE)
+//  val transformedEventTransformer = (e: TransformedEvent) ⇒ TestEvent(e.msg)
+//
+//  trait SimpleInteractionThatTriggersEvent {
+//    @FiresEvent(oneOf = Array(classOf[TestEvent]))
+//    def aInteraction(@RequiresIngredient("overriddenName") message: String): TestEvent
+//  }
+//
+//  case object InteractionThatTriggersAnEvent extends SimpleInteractionThatTriggersEvent {
+//    override def aInteraction(message: String): TestEvent =
+//      TestEvent(message)
+//  }
+//}
 
 class InteractionTransitionSpec extends WordSpec with ShouldMatchers with GivenWhenThen {
 

@@ -1,5 +1,5 @@
 package com.ing.baker.compiledRecipe
 
-trait InteractionImpl {
-  def name: String
+class InteractionImpl {
+  def name: String = this.getClass.getSimpleName
 }

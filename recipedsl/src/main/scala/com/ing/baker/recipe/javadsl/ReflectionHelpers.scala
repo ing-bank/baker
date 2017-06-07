@@ -1,10 +1,9 @@
-package com.ing.baker.compiler
+package com.ing.baker.recipe.javadsl
 
 import java.lang.annotation.Annotation
 import java.lang.reflect.{Field, Method, ParameterizedType}
 
-import com.ing.baker.compiledRecipe._
-import com.ing.baker.recipe.annotations
+import com.ing.baker.recipe.{annotations, common}
 import com.thoughtworks.paranamer.AnnotationParanamer
 
 import scala.concurrent.Future
@@ -34,7 +33,7 @@ object ReflectionHelpers {
         case n  => Some(method.getParameterTypes.apply(n))
       }
 
-    def processIdClass: Option[Class[_]] = parameterTypeForName(processIdName)
+    def processIdClass: Option[Class[_]] = parameterTypeForName(common.ProcessIdName)
   }
 
   implicit class FieldWithAdditions(field: Field) {
@@ -52,7 +51,7 @@ object ReflectionHelpers {
       if (annotationType.equals(classOf[annotations.RequiresIngredient]))
         annotation.asInstanceOf[annotations.RequiresIngredient].value()
       else if (annotationType.equals(classOf[annotations.ProcessId]))
-        processIdName
+        common.ProcessIdName
       else annotationType.getSimpleName
     }
 
