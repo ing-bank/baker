@@ -12,4 +12,8 @@ object RuntimeEvent{
   def apply(obj: Any): RuntimeEvent = {
     RuntimeEvent(obj.getClass.getSimpleName, obj.getClass.getDeclaredFields.map(RuntimeIngredient(_)))
   }
+
+  def apply(eventImpl: EventImpl): RuntimeEvent = {
+    RuntimeEvent(eventImpl.name, eventImpl.getClass.getDeclaredFields.map(RuntimeIngredient(_)))
+  }
 }

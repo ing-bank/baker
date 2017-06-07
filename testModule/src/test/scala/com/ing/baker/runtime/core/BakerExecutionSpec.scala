@@ -132,7 +132,6 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.bake(processId)
 
       baker.handleEvent(processId, InitialEventImpl(initialIngredientValue))
-      println(baker.getVisualState(processId))
 
       verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
       baker.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue, "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
@@ -144,13 +143,13 @@ class BakerExecutionSpec extends TestRecipeHelper {
       val processId = UUID.randomUUID()
       baker.bake(processId)
 
-      baker.handleEvent(processId, InitialEventImpl("initialIngredient"))
+      baker.handleEvent(processId, InitialEventImpl(initialIngredientValue))
+      println(baker.events(processId))
       println(baker.getVisualState(processId))
 
-      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
-      verify(testInteractionTwoMock).apply("initialIngredient")
-      verify(testInteractionThreeMock).apply("interactionOneIngredient",
-                                             "interactionTwoIngredient")
+      verify(testInteractionOneMock).apply(processId.toString, initialIngredientValue)
+      verify(testInteractionTwoMock).apply(initialIngredientValue)
+      verify(testInteractionThreeMock).apply(interactionOneIngredientValue, interactionTwoIngredientValue)
       baker.getIngredients(processId) shouldBe afterInitialState
     }
 

@@ -11,6 +11,7 @@ import akka.persistence.query.scaladsl._
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
+import com.ing.baker
 import com.ing.baker.compiledRecipe.ActionType.SieveAction
 import com.ing.baker.compiledRecipe.ingredientExtractors.{CompositeIngredientExtractor, IngredientExtractor}
 import com.ing.baker.compiledRecipe.petrinet._
@@ -205,7 +206,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
   /**
     * Synchronously returns all events that occurred for a process.
     */
-  def events(processId: java.util.UUID)(implicit timeout: FiniteDuration): Seq[Any] = {
+  def events(processId: java.util.UUID)(implicit timeout: FiniteDuration): Seq[RuntimeEvent] = {
 
     val futureEventSeq = eventsAsync(processId).runWith(Sink.seq)
 
@@ -218,12 +219,13 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * @param processId The process identifier.
     * @return The source of events.
     */
-  def eventsAsync(processId: java.util.UUID): Source[Any, NotUsed] = {
+  def eventsAsync(processId: java.util.UUID): Source[RuntimeEvent, NotUsed] = {
     PetriNetQuery
       .eventsForInstance[Place, Transition, ProcessState](processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal, transitionEventSource(ingredientExtractor))
       .collect {
-        case (_, TransitionFiredEvent(_, _, _, _, _, _, output))
-          if compiledRecipe.allEvents.contains(RuntimeEvent(output)) => output
+        case (_, TransitionFiredEvent(_, _, _, _, _, _, output: EventImpl))
+          if compiledRecipe.allEvents.exists(e => e.name == output.name) => RuntimeEvent(output)
+
       }
   }
 
@@ -262,8 +264,8 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   //TODO, decide if Baker can visualise itself or is visualising part of the runtime that the compiler exposes also?
   def getVisualState(processId: java.util.UUID)(implicit timeout: FiniteDuration): String = {
-    val events: Seq[Any] = this.events(processId)
-    val classes: Seq[String] = events.map(x => x.getClass.getSimpleName)
+    val events: Seq[RuntimeEvent] = this.events(processId)
+    val classes: Seq[String] = events.map(x => x.name)
     RecipeVisualizer.visualiseCompiledRecipe(compiledRecipe, events = classes)
   }
 
