@@ -206,7 +206,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
   /**
     * Synchronously returns all events that occurred for a process.
     */
-  def events(processId: java.util.UUID)(implicit timeout: FiniteDuration): Seq[RuntimeEvent] = {
+  def events(processId: java.util.UUID)(implicit timeout: FiniteDuration): Seq[Any] = {
 
     val futureEventSeq = eventsAsync(processId).runWith(Sink.seq)
 
@@ -219,12 +219,14 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * @param processId The process identifier.
     * @return The source of events.
     */
-  def eventsAsync(processId: java.util.UUID): Source[RuntimeEvent, NotUsed] = {
+  def eventsAsync(processId: java.util.UUID): Source[Any, NotUsed] = {
     PetriNetQuery
       .eventsForInstance[Place, Transition, ProcessState](processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal, transitionEventSource(ingredientExtractor))
       .collect {
         case (_, TransitionFiredEvent(_, _, _, _, _, _, output: EventImpl))
-          if compiledRecipe.allEvents.exists(e => e.name == output.name) => RuntimeEvent(output)
+          if compiledRecipe.allEvents.exists(e => e.name == output.name) => output
+        case (_, TransitionFiredEvent(_, _, _, _, _, _, output))
+          if compiledRecipe.allEvents.contains(RuntimeEvent(output)) => output
 
       }
   }
@@ -264,8 +266,12 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   //TODO, decide if Baker can visualise itself or is visualising part of the runtime that the compiler exposes also?
   def getVisualState(processId: java.util.UUID)(implicit timeout: FiniteDuration): String = {
-    val events: Seq[RuntimeEvent] = this.events(processId)
-    val classes: Seq[String] = events.map(x => x.name)
+    val events: Seq[Any] = this.events(processId)
+    val classes: Seq[String] = events.map {
+      case event: EventImpl => event.name
+      case event => event.getClass.getSimpleName
+    }
+
     RecipeVisualizer.visualiseCompiledRecipe(compiledRecipe, events = classes)
   }
 
