@@ -3,7 +3,7 @@ package compiler
 
 import com.ing.baker.compiledRecipe.petrinet.Place._
 import com.ing.baker.compiledRecipe.petrinet._
-import com.ing.baker.compiledRecipe.{CompiledRecipe, RecipeValidations, RuntimeEvent, ValidationSettings}
+import com.ing.baker.compiledRecipe.{CompiledRecipe, RecipeValidations, CompiledEvent, ValidationSettings}
 import com.ing.baker.core.{BakerException, ProcessState}
 import com.ing.baker.recipe.common.{InteractionDescriptor, Recipe}
 import io.kagera.api._
@@ -19,12 +19,12 @@ object RecipeCompiler {
   /**
     * Creates a transition for a missing event in the recipe.
     */
-  private def missingEventTransition[E](event: RuntimeEvent): MissingEventTransition[E] = MissingEventTransition[E](event.name.hashCode, event.name)
+  private def missingEventTransition[E](event: CompiledEvent): MissingEventTransition[E] = MissingEventTransition[E](event.name.hashCode, event.name)
 
   private def buildEventAndPreconditionArcs(
-      interaction: InteractionDescriptor,
-      preconditionTransition: RuntimeEvent => Option[Transition[_, _, _]],
-      interactionTransition: String => Option[Transition[_, _, _]]): (Seq[Arc], Seq[String]) = {
+                                             interaction: InteractionDescriptor,
+                                             preconditionTransition: CompiledEvent => Option[Transition[_, _, _]],
+                                             interactionTransition: String => Option[Transition[_, _, _]]): (Seq[Arc], Seq[String]) = {
 
     interaction.requiredEvents.toSeq.map { event =>
       // a new `Place` generated for each AND events
@@ -38,9 +38,9 @@ object RecipeCompiler {
   }
 
   private def buildEventORPreconditionArcs(
-      interaction: InteractionDescriptor,
-      preconditionTransition: RuntimeEvent => Option[Transition[_, _, _]],
-      interactionTransition: String => Option[Transition[_, _, _]]): (Seq[Arc], Seq[String]) = {
+                                            interaction: InteractionDescriptor,
+                                            preconditionTransition: CompiledEvent => Option[Transition[_, _, _]],
+                                            interactionTransition: String => Option[Transition[_, _, _]]): (Seq[Arc], Seq[String]) = {
 
     // only one `Place` for all the OR events
     val eventPreconditionPlace = createPlace(label = interaction.name, placeType = EventOrPreconditionPlace)
@@ -54,10 +54,10 @@ object RecipeCompiler {
   }
 
   private def buildEventPreconditionArcs(
-      event: RuntimeEvent,
-      preconditionPlace: Place[_],
-      preconditionTransition: RuntimeEvent => Option[Transition[_, _, _]],
-      interactionTransition: Transition[_, _, _]): (Seq[Arc], Seq[String]) = {
+                                          event: CompiledEvent,
+                                          preconditionPlace: Place[_],
+                                          preconditionTransition: CompiledEvent => Option[Transition[_, _, _]],
+                                          interactionTransition: Transition[_, _, _]): (Seq[Arc], Seq[String]) = {
 
     val eventTransition = preconditionTransition(event)
 
@@ -76,7 +76,7 @@ object RecipeCompiler {
 
   // the (possible) event output arcs / places
   private def interactionEventOutputArc(interaction: InteractionTransition[_],
-                                        findInternalEventByEvent: RuntimeEvent => Option[Transition[_, _, _]]): Seq[Arc] = {
+                                        findInternalEventByEvent: CompiledEvent => Option[Transition[_, _, _]]): Seq[Arc] = {
     interaction.providesType match {
       case FiresOneOfEvents(events) => {
         val resultPlace = createPlace(label = interaction.label, placeType = InteractionEventOutputPlace)
@@ -136,7 +136,7 @@ object RecipeCompiler {
   }
 
   private def buildInteractionOutputArcs(t: InteractionTransition[_],
-                                         findInternalEventByEvent: RuntimeEvent => Option[Transition[_, _, _]]): Seq[Arc] = {
+                                         findInternalEventByEvent: CompiledEvent => Option[Transition[_, _, _]]): Seq[Arc] = {
     t.providesType match {
       case e: FiresOneOfEvents => interactionEventOutputArc(t, findInternalEventByEvent)
       case i: ProvidesIngredient => interactionIngredientOutputArc(t)
@@ -147,7 +147,7 @@ object RecipeCompiler {
   private def buildInteractionArcs(
       multipleOutputFacilitatorTransitions: Seq[Transition[_, _, _]],
       placeNameWithDuplicateTransitions: Map[String, Seq[InteractionTransition[_]]],
-      findInternalEventByEvent: RuntimeEvent => Option[Transition[_, _, _]])(
+      findInternalEventByEvent: CompiledEvent => Option[Transition[_, _, _]])(
       t: InteractionTransition[_]): Seq[Arc] = {
 
     buildInteractionInputArcs(
@@ -182,7 +182,7 @@ object RecipeCompiler {
       t.providesType match {
         case FiresOneOfEvents(events) =>
 //          events.map(event => IntermediateTransition(id = (event.name + "IntermediateTransition").hashCode, label = event.name))
-          events.map(event => EventTransition(event))
+          events.map(event => EventTransition(event, false))
         case i: ProvidesIngredient => Nil
         case n: ProvidesNothing.type => Nil
       }

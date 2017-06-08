@@ -9,7 +9,7 @@ import io.kagera.api._
 case class CompiledRecipe(name: String,
                           petriNet: RecipePetriNet,
                           initialMarking: Marking[Place],
-                          sensoryEvents: Set[RuntimeEvent],
+                          sensoryEvents: Set[CompiledEvent],
                           validationErrors: Seq[String] = Seq.empty) {
 
   /**
@@ -38,24 +38,24 @@ case class CompiledRecipe(name: String,
     case t: InteractionTransition[_] => t
   }
 
-  val interactionEvents: Set[RuntimeEvent] =
+  val interactionEvents: Set[CompiledEvent] =
     interactionTransitions flatMap  {
       case InteractionTransition(providesType: FiresOneOfEvents, _, _, _, _, _, _, _, _) => providesType.events
       case _ => Seq.empty
     }
 
-  val allEvents: Set[RuntimeEvent] = sensoryEvents ++ interactionEvents
+  val allEvents: Set[CompiledEvent] = sensoryEvents ++ interactionEvents
 
-  val allIngredientsProvidedByInteractions: Set[RuntimeIngredient] =
+  val allIngredientsProvidedByInteractions: Set[CompiledIngredient] =
     interactionTransitions map {
       case InteractionTransition(providesType: ProvidesIngredient, _, _, _, _, _, _, _, _) => providesType.ingredient
       case _ => null
     } filterNot(_ == null)
 
 
-  val allIngredientsProvidedByEvents: Set[RuntimeIngredient] = allEvents.flatMap {
+  val allIngredientsProvidedByEvents: Set[CompiledIngredient] = allEvents.flatMap {
     events => events.providedIngredients
   }
 
-  val ingredients: Map[String, RuntimeIngredient] = (allIngredientsProvidedByInteractions ++ allIngredientsProvidedByEvents).map(i => i.name -> i).toMap
+  val ingredients: Map[String, CompiledIngredient] = (allIngredientsProvidedByInteractions ++ allIngredientsProvidedByEvents).map(i => i.name -> i).toMap
 }

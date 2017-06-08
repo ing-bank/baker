@@ -218,7 +218,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
       .eventsForInstance[Place, Transition, ProcessState](processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal, transitionEventSource(ingredientExtractor))
       .collect {
         case (_, TransitionFiredEvent(_, _, _, _, _, _, output))
-          if compiledRecipe.allEvents.contains(RuntimeEvent(getNameOrClassName(output), output)) => output
+          if output != null && compiledRecipe.allEvents.exists(e => e.name equals getNameOrClassName(output)) => output
       }
   }
 

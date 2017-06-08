@@ -29,7 +29,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
     "throw an RecipeValidationException if an invalid recipe is given" in {
       val recipe = Recipe("NonProvidedIngredient")
-        .withInteraction(InteractionOne)
+        .withInteraction(interactionOne)
 
       a[RecipeValidationException] should be thrownBy {
         new Baker(
@@ -42,8 +42,8 @@ class BakerSetupSpec extends TestRecipeHelper {
     //Sieves are not auto constructed anymore, find out if we want this back or not
     "throw a BakerException if a sieve does not have a default constructor" ignore {
       val recipe = Recipe("SieveWithoutDefaultConstructor")
-          .withInteractions(SieveInteractionWithoutDefaultConstructor)
-          .withSensoryEvent(InitialEvent)
+          .withInteractions(sieveInteractionWithoutDefaultConstructor)
+          .withSensoryEvent(initialEvent)
 
       intercept[BakerException] {
         new Baker(
@@ -55,8 +55,8 @@ class BakerSetupSpec extends TestRecipeHelper {
 
     "throw an BakerException if a recipe does not provide an implementation for an interaction" in {
       val recipe = Recipe("MissingImplementation")
-        .withInteraction(InteractionOne)
-        .withSensoryEvent(InitialEvent)
+        .withInteraction(interactionOne)
+        .withSensoryEvent(initialEvent)
 
       intercept[BakerException] {
         new Baker(
@@ -70,7 +70,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
       val recipe = Recipe("NonSerializableIngredientTest")
         .withInteraction(NonSerializableIngredientInteraction)
-        .withSensoryEvent(InitialEvent)
+        .withSensoryEvent(initialEvent)
 
       intercept[NonSerializableException] {
         new Baker(
@@ -84,7 +84,7 @@ class BakerSetupSpec extends TestRecipeHelper {
     "throw NonSerializableException with the list of ingredient serialization validation errors for Ingredients provided by Events" in {
 
       val recipe = Recipe("NonSerializableIngredientFromEventTest")
-          .withSensoryEvent(EventWithANonSerializableIngredient)
+          .withSensoryEvent(eventWithANonSerializableIngredient)
 
       intercept[NonSerializableException] {
         new Baker(
@@ -101,7 +101,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
       val recipe = Recipe("NonSerializableEventTest")
         .withInteraction(NonSerializableEventInteraction)
-        .withSensoryEvent(InitialEvent)
+        .withSensoryEvent(initialEvent)
 
       intercept[NonSerializableException] {
         new Baker(

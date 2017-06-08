@@ -24,8 +24,8 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
     t match {
       case interaction: InteractionTransition[_] =>
         interactionTransitionTask[AnyRef, Input, Output](interaction.asInstanceOf[InteractionTransition[AnyRef]], interactionProviders(interaction.originalInteractionName), petriNet.outMarking(interaction))
-      case t: EventTransition         => eventTransitionTask(petriNet, t)
-      case t                          => passThroughtTransitionTask(petriNet, t)
+      case t: EventTransition  => eventTransitionTask(petriNet, t)
+      case t                   => passThroughtTransitionTask(petriNet, t)
     }
   }
 
@@ -50,7 +50,7 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
       val interactionObject: I = interactionProvider.apply()
 
       log.trace(
-        s"[$invocationId] invoking '${interaction.originalInteractionName}' with parameters ${input.toString}")
+        s"[$invocationId] invoking '${interaction.originalInteractionName}' with parameters ${inputArgs.toString}")
 
       def invokeMethod(): AnyRef = {
         MDC.put("processId", processState.id.toString)
@@ -64,12 +64,13 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
       // function that (optionally) transforms the output event using the event output transformers
       def transformEvent: AnyRef => Output = methodOutput => {
         interaction.providesType match {
-          case FiresOneOfEvents(_) =>
-            val runtimeEventMethodOutput: RuntimeEvent = RuntimeEvent(methodOutput)
-            interaction.eventOutputTransformers
-              .get(runtimeEventMethodOutput)
-              .map(_.fn(runtimeEventMethodOutput))
-              .getOrElse(methodOutput).asInstanceOf[Output]
+            //TODO rewrite this once the recipe dsl is finished for replacing events
+//          case FiresOneOfEvents(_) =>
+//            val runtimeEventMethodOutput: CompiledEvent = CompiledEvent(methodOutput)
+//            interaction.eventOutputTransformers
+//              .get(runtimeEventMethodOutput)
+//              .map(_.fn(runtimeEventMethodOutput))
+//              .getOrElse(methodOutput).asInstanceOf[Output]
           case _ => methodOutput.asInstanceOf[Output]
         }
       }

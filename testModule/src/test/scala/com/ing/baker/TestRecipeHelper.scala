@@ -10,7 +10,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
 import com.ing.baker.recipe.scaladsl
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
-import com.ing.baker.runtime.core.{Baker}
+import com.ing.baker.runtime.core.{Baker, RuntimeEvent}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
@@ -39,72 +39,73 @@ object TestRecipeHelper {
   val nonSerializableIngredient = Ingredient[NonSerializableObject]("nonSerializableIngredient")
 
   //Events as used in the recipe & objects used in runtime
-  val InitialEvent = Event("InitialEvent", initialIngredient)
-  case class InitialEventImpl(initialIngredient: String) {val name = "InitialEvent"}
-  val InitialEventExtendedName = Event("InitialEventExtendedName", initialIngredientExtendedName)
-  case class InitialEventExtendedNameImpl(initialIngredientExtendedName: String) {val name = "InitialEventExtendedName"}
-  val SecondEvent = Event("SecondEvent")
-  case class SecondEventImpl() {val name = "SecondEvent"}
-  val NotUsedSensoryEvent = Event("NotUsedSensoryEvent")
-  case class NotUsedSensoryEventImpl() {val name = "NotUsedSensoryEvent"}
-  val EventFromInteractionTwo = Event("EventFromInteractionTwo", interactionTwoIngredient)
-  case class EventFromInteractionTwoImpl(interactionTwoIngredient: String) {val name = "EventFromInteractionTwo"}
-  val EventWithANonSerializableIngredient = Event("EventWithANonSerializableIngredient", nonSerializableIngredient)
-  case class EventWithANonSerializableIngredientImpl(nonSerializableObject: NonSerializableObject) {val name = "EventWithANonSerializableIngredient"}
+  val initialEvent = Event("InitialEvent", initialIngredient)
+  case class InitialEvent(initialIngredient: String) extends RuntimeEvent {}
+
+  val initialEventExtendedName = Event("InitialEventExtendedName", initialIngredientExtendedName)
+  case class InitialEventExtendedName(initialIngredientExtendedName: String) extends RuntimeEvent
+  val secondEvent = Event("SecondEvent")
+  case class SecondEvent() extends RuntimeEvent
+  val notUsedSensoryEvent = Event("NotUsedSensoryEvent")
+  case class NotUsedSensoryEvent() extends RuntimeEvent
+  val eventFromInteractionTwo = Event("EventFromInteractionTwo", interactionTwoIngredient)
+  case class EventFromInteractionTwo(interactionTwoIngredient: String) extends RuntimeEvent
+  val eventWithANonSerializableIngredient = Event("EventWithANonSerializableIngredient", nonSerializableIngredient)
+  case class EventWithANonSerializableIngredient(nonSerializableObject: NonSerializableObject) extends RuntimeEvent
 
   //Interactions used in the recipe & implementations (we use traits instead of case classes since we use mocks for the real implementations
-  val InteractionOne = Interaction("InteractionOne", Seq(scaladsl.processId, initialIngredient), ProvidesIngredient(interactionOneOriginalIngredient))
+  val interactionOne = Interaction("InteractionOne", Seq(scaladsl.processId, initialIngredient), ProvidesIngredient(interactionOneOriginalIngredient))
   trait InteractionOneImpl {
     val name: String = "InteractionOne"
     def apply(processId: String, initialIngredient: String): String = ""
   }
 
-  val InteractionTwo = Interaction("InteractionTwo", Seq(initialIngredientOld), FiresOneOfEvents(EventFromInteractionTwo))
+  val interactionTwo = Interaction("InteractionTwo", Seq(initialIngredientOld), FiresOneOfEvents(eventFromInteractionTwo))
   trait InteractionTwoImpl {
     val name: String = "InteractionTwo"
-    def apply(initialIngredientOld: String): EventFromInteractionTwoImpl
+    def apply(initialIngredientOld: String): EventFromInteractionTwo
   }
 
-  val InteractionThree = Interaction("InteractionThree", Seq(interactionOneIngredient, interactionTwoIngredient), ProvidesIngredient(interactionThreeIngredient))
+  val interactionThree = Interaction("InteractionThree", Seq(interactionOneIngredient, interactionTwoIngredient), ProvidesIngredient(interactionThreeIngredient))
   trait InteractionThreeImpl {
     val name: String = "InteractionThree"
     def apply(interactionOneIngredient: String, interactionTwoIngredient: String): String
   }
 
-  val InteractionFour = Interaction("InteractionFour", Seq(), ProvidesIngredient(interactionFourIngredient))
+  val interactionFour = Interaction("InteractionFour", Seq(), ProvidesIngredient(interactionFourIngredient))
   trait InteractionFourImpl {
     val name: String = "InteractionFour"
     def apply(): String
   }
 
-  val InteractionFive = Interaction("InteractionFive", Seq(scaladsl.processId, initialIngredient, initialIngredientExtendedName), ProvidesIngredient(interactionFiveIngredient))
+  val interactionFive = Interaction("InteractionFive", Seq(scaladsl.processId, initialIngredient, initialIngredientExtendedName), ProvidesIngredient(interactionFiveIngredient))
   trait InteractionFiveImpl {
     val name: String = "InteractionFive"
     def apply(processId: String, initialIngredient: String, initialIngredientExtendedName: String): String
   }
 
-  val InteractionSix = Interaction("InteractionSix", Seq(initialIngredientExtendedName), ProvidesIngredient(interactionSixIngredient))
+  val interactionSix = Interaction("InteractionSix", Seq(initialIngredientExtendedName), ProvidesIngredient(interactionSixIngredient))
   trait InteractionSixImpl {
     val name: String = "InteractionSix"
     def apply(initialIngredientExtendedName: String): String
   }
 
-  val SieveInteraction = Interaction("SieveInteraction", Seq(scaladsl.processId, initialIngredient), ProvidesIngredient(sievedIngredient))
+  val sieveInteraction = Interaction("SieveInteraction", Seq(scaladsl.processId, initialIngredient), ProvidesIngredient(sievedIngredient))
   trait SieveInteractionImpl {
     val name: String = "SieveInteraction"
     def apply(processId: String, initialIngredient: String): String
   }
 
-  val SieveInteractionWithoutDefaultConstructor = Interaction("SieveInteractionWithoutDefaultConstructor", Seq(scaladsl.processId, initialIngredient), ProvidesIngredient(sievedIngredient))
+  val sieveInteractionWithoutDefaultConstructor = Interaction("SieveInteractionWithoutDefaultConstructor", Seq(scaladsl.processId, initialIngredient), ProvidesIngredient(sievedIngredient))
   trait SieveInteractionWithoutDefaultConstructorImpl {
     val name: String = "SieveInteractionWithoutDefaultConstructor"
     def apply(processId: String, initialIngredient: String): String
   }
 
-  val NonSerializableEventInteraction = Interaction("NonSerializableEventInteraction", Seq(initialIngredient), FiresOneOfEvents(EventWithANonSerializableIngredient))
+  val NonSerializableEventInteraction = Interaction("NonSerializableEventInteraction", Seq(initialIngredient), FiresOneOfEvents(eventWithANonSerializableIngredient))
   trait NonSerializableEventInteractionImpl {
     val name: String = "NonSerializableEventInteraction"
-    def apply(initialIngredient: String): EventWithANonSerializableIngredientImpl
+    def apply(initialIngredient: String): EventWithANonSerializableIngredient
   }
 
   val NonSerializableIngredientInteraction = Interaction("NonSerializableIngredientInteraction", Seq(initialIngredient), ProvidesIngredient(nonSerializableIngredient))
@@ -113,10 +114,10 @@ object TestRecipeHelper {
     def apply(initialIngredient: String): NonSerializableObject
   }
 
-  val NonMatchingReturnTypeInteraction = Interaction("NonMatchingReturnTypeInteraction", Seq(initialIngredient), FiresOneOfEvents(EventFromInteractionTwo))
+  val NonMatchingReturnTypeInteraction = Interaction("NonMatchingReturnTypeInteraction", Seq(initialIngredient), FiresOneOfEvents(eventFromInteractionTwo))
   trait NonMatchingReturnTypeInteractionImpl {
     val name: String = "NonMatchingReturnTypeInteraction"
-    def apply(initialIngredient: String): EventFromInteractionTwoImpl
+    def apply(initialIngredient: String): EventFromInteractionTwo
   }
 }
 
@@ -183,7 +184,7 @@ trait TestRecipeHelper
   protected val interactionOneOriginalIngredientValue = "interactionOneOriginalIngredient"
   protected val interactionOneIngredientValue = "interactionOneIngredient"
   protected val interactionTwoIngredientValue = "interactionTwoIngredient"
-  protected val interactionTwoEventValue = EventFromInteractionTwoImpl(interactionTwoIngredientValue)
+  protected val interactionTwoEventValue = EventFromInteractionTwo(interactionTwoIngredientValue)
   protected val interactionThreeIngredientValue = "interactionThreeIngredient"
   protected val interactionFourIngredientValue = "interactionFourIngredient"
   protected val interactionFiveIngredientValue = "interactionFiveIngredient"
@@ -251,6 +252,11 @@ trait TestRecipeHelper
     ConfigFactory.parseString(
       """
         |akka {
+        |   loggers = ["akka.event.slf4j.Slf4jLogger"]
+        |   loglevel = "DEBUG"
+        |   logging-filter = "akka.event.slf4j.Slf4jLoggingFilter"
+        |   jvm-exit-on-fatal-error = false
+        |
         |   persistence {
         |    journal.plugin = "inmemory-journal"
         |    snapshot-store.plugin = "inmemory-snapshot-store"
@@ -314,24 +320,24 @@ trait TestRecipeHelper
   protected def getComplexRecipe(recipeName: String): Recipe =
     Recipe(recipeName)
       .withInteractions(
-        InteractionOne
+        interactionOne
           .withOverriddenOutputIngredientName("interactionOneIngredient")
           .withIncrementalBackoffOnFailure(initialDelay = 10 millisecond, maximumRetries = 3),
-        InteractionTwo
+        interactionTwo
           .withOverriddenIngredientName("initialIngredientOld", "initialIngredient"),
-        InteractionThree
+        interactionThree
           .withMaximumInteractionCount(1),
-        InteractionFour
-          .withRequiredEvents(SecondEvent,EventFromInteractionTwo),
-        InteractionFive,
-        InteractionSix,
-        SieveInteraction
+        interactionFour
+          .withRequiredEvents(secondEvent, eventFromInteractionTwo),
+        interactionFive,
+        interactionSix,
+        sieveInteraction
       )
       .withSensoryEvents(
-        InitialEvent,
-        InitialEventExtendedName,
-        SecondEvent,
-        NotUsedSensoryEvent)
+        initialEvent,
+        initialEventExtendedName,
+        secondEvent,
+        notUsedSensoryEvent)
 
   private def getFinTechRecipe() = ???
 
@@ -427,6 +433,8 @@ trait TestRecipeHelper
       testInteractionTwoMock,
       testInteractionThreeMock,
       testInteractionFourMock,
+      testInteractionFiveMock,
+      testInteractionSixMock,
       testNonMatchingReturnTypeInteractionMock,
       testNonSerializableEventInteractionMock,
       testNonSerializableIngredientInteractionMock)

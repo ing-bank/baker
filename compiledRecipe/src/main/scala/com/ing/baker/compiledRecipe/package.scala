@@ -44,9 +44,11 @@ package object compiledRecipe {
 
   def getNameOrClassName(obj: Any) : String = {
     Try{
-      obj.getClass.getField("name")
+      obj.getClass.getDeclaredField("name")
     }.toOption match {
-      case Some(field) if field.getType == classOf[String]  => field.get(obj).asInstanceOf[String]
+      case Some(field) if field.getType.equals(classOf[String]) => {
+        field.setAccessible(true)
+        field.get(obj).asInstanceOf[String]}
       case _ => obj.getClass.getSimpleName
     }
   }

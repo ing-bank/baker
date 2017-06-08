@@ -2,7 +2,7 @@ package com.ing.baker
 
 import com.ing.baker.compiledRecipe.ActionType.{InteractionAction, SieveAction}
 import com.ing.baker.compiledRecipe.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing, ProvidesType, Transition}
-import com.ing.baker.compiledRecipe.{ActionType, InteractionFailureStrategy, RuntimeEvent, RuntimeEventOutputTransformer, RuntimeIngredient}
+import com.ing.baker.compiledRecipe.{ActionType, InteractionFailureStrategy, CompiledEvent, RuntimeEventOutputTransformer, CompiledIngredient}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{Event, Ingredient, InteractionDescriptor}
 import io.kagera.api._
@@ -11,16 +11,16 @@ import scala.concurrent.duration.Duration
 
 package object compiler {
 
-  def ingredientsToRuntimeIngredient(ingredient: common.Ingredient): RuntimeIngredient = RuntimeIngredient(ingredient.name, ingredient.clazz)
+  def ingredientsToRuntimeIngredient(ingredient: common.Ingredient): CompiledIngredient = CompiledIngredient(ingredient.name, ingredient.clazz)
 
-  def eventToRuntimeEvent(event: common.Event): RuntimeEvent = RuntimeEvent(event.name, event.providedIngredients.map(ingredientsToRuntimeIngredient))
+  def eventToRuntimeEvent(event: common.Event): CompiledEvent = CompiledEvent(event.name, event.providedIngredients.map(ingredientsToRuntimeIngredient))
 
-  def runtimeIngredientToIngredient(ingredient: RuntimeIngredient): common.Ingredient = new Ingredient {
+  def runtimeIngredientToIngredient(ingredient: CompiledIngredient): common.Ingredient = new Ingredient {
     override val name: String = ingredient.name
     override val clazz: Class[_] = ingredient.clazz
   }
 
-  def runtimeEventToEvent(runtimeEvent: RuntimeEvent): common.Event = new Event {
+  def runtimeEventToEvent(runtimeEvent: CompiledEvent): common.Event = new Event {
     override val name: String = runtimeEvent.name
     override val providedIngredients: Seq[Ingredient] = runtimeEvent.providedIngredients.map(runtimeIngredientToIngredient)
   }
@@ -61,12 +61,12 @@ package object compiler {
             val ingredientName: String =
               if(interactionDescriptor.overriddenOutputIngredientName.nonEmpty) interactionDescriptor.overriddenOutputIngredientName.get
               else outputIngredient.name
-            ProvidesIngredient(RuntimeIngredient(ingredientName, outputIngredient.clazz))
+            ProvidesIngredient(CompiledIngredient(ingredientName, outputIngredient.clazz))
           }
           case common.FiresOneOfEvents(events) => {
             val runtimeEvents = events.map(transformEventType)
-              .map(e => RuntimeEvent(e.name, e.providedIngredients
-                .map(i => RuntimeIngredient(i.name, i.clazz))))
+              .map(e => CompiledEvent(e.name, e.providedIngredients
+                .map(i => CompiledIngredient(i.name, i.clazz))))
             FiresOneOfEvents(runtimeEvents)
           }
           case common.ProvidesNothing => ProvidesNothing
@@ -118,7 +118,7 @@ package object compiler {
   }
 
   implicit class EventTransitionOps(eventTransitions: Seq[EventTransition]) {
-    def findEventTransitionsByEvent: RuntimeEvent ⇒ Option[EventTransition] =
+    def findEventTransitionsByEvent: CompiledEvent ⇒ Option[EventTransition] =
       event => eventTransitions.find(_.event == event)
   }
 }

@@ -1,6 +1,5 @@
 package com.ing.baker.compiledRecipe.petrinet
 
-import com.ing.baker.compiledRecipe.RuntimeEvent
 import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
 import com.ing.baker.core.ProcessState
 

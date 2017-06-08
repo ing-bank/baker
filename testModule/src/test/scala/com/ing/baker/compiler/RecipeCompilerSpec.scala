@@ -30,7 +30,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
 
     "give a List of missing ingredients if an interaction has an ingredient that is not provided by any other event or interaction" in {
       val recipe = Recipe("NonProvidedIngredient")
-        .withInteractions(InteractionOne)
+        .withInteractions(interactionOne)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
       compiledRecipe.validationErrors should contain("Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction")
@@ -39,10 +39,10 @@ class RecipeCompilerSpec extends TestRecipeHelper {
     "give a list of wrong ingredients if an predefined ingredient is of the wrong type" in {
       val recipe = Recipe("WrongGivenIngredient")
         .withInteractions(
-          InteractionOne
-            .withRequiredEvent(InitialEvent)
+          interactionOne
+            .withRequiredEvent(initialEvent)
             .withPredefinedIngredients(("initialIngredient", Integer.valueOf(12))))
-        .withSensoryEvent(InitialEvent)
+        .withSensoryEvent(initialEvent)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
       compiledRecipe.validationErrors should contain("Predefined argument 'initialIngredient' is not of type: class java.lang.String on interaction: 'InteractionOne'")
@@ -51,9 +51,9 @@ class RecipeCompilerSpec extends TestRecipeHelper {
     "give a list of wrong ingredients if an predefined ingredient is not needed by the interaction" in {
       val recipe = Recipe("WrongGivenIngredient")
         .withInteractions(
-          InteractionOne
+          interactionOne
             .withPredefinedIngredients(("WrongIngredient", null)))
-        .withSensoryEvent(InitialEvent)
+        .withSensoryEvent(initialEvent)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
       compiledRecipe.validationErrors should contain("Predefined argument 'WrongIngredient' is not defined on interaction: 'InteractionOne'")

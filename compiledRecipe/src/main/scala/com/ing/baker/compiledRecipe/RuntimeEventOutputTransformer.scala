@@ -1,9 +1,9 @@
 package com.ing.baker.compiledRecipe
 
 trait OutputTransformer {
-  def originalEvent: RuntimeEvent
-  def newEvent: RuntimeEvent
-  def fn: RuntimeEvent => RuntimeEvent
+  def originalEvent: CompiledEvent
+  def newEvent: CompiledEvent
+  def fn: CompiledEvent => CompiledEvent
 
   override def equals(obj: scala.Any): Boolean = obj match{
     case other: OutputTransformer =>
@@ -15,4 +15,4 @@ trait OutputTransformer {
   override def toString: String = s"${originalEvent.toString} ⇒ ${originalEvent.toString}"
 }
 
-case class RuntimeEventOutputTransformer(originalEvent: RuntimeEvent, newEvent: RuntimeEvent, fn: RuntimeEvent => RuntimeEvent) extends OutputTransformer
+case class RuntimeEventOutputTransformer(originalEvent: CompiledEvent, newEvent: CompiledEvent, fn: CompiledEvent => CompiledEvent) extends OutputTransformer

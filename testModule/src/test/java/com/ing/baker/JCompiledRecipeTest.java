@@ -193,12 +193,14 @@ public class JCompiledRecipeTest {
                                 .withRequiredEvent(EventOne.class),
                         of(InteractionOne.class, "InteractionOneRenamed")
                                 .withRequiredEvent(EventOne.class),
-                        of(InteractionTwo.class).withRequiredEvent(EventTwo.class),
+                        of(InteractionTwo.class)
+                                .withRequiredEvent(EventTwo.class),
                         of(InteractionThree.class))
                 .withSensoryEvents(
                         EventOne.class,
                         EventTwo.class,
                         EventWithoutIngredientsNorPreconditions.class)
-                .withSieve(of(SieveImpl.class));
+                .withSieve(
+                        of(SieveImpl.class));
     }
 }

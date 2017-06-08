@@ -9,8 +9,8 @@ import org.slf4j._
   * This trait describes what kind of output the interaction provides
   */
 sealed trait ProvidesType
-case class ProvidesIngredient(ingredient: RuntimeIngredient) extends ProvidesType
-case class FiresOneOfEvents(events: Seq[RuntimeEvent]) extends ProvidesType
+case class ProvidesIngredient(ingredient: CompiledIngredient) extends ProvidesType
+case class FiresOneOfEvents(events: Seq[CompiledEvent]) extends ProvidesType
 case object ProvidesNothing extends ProvidesType
 
 
@@ -37,7 +37,7 @@ case class InteractionTransition[I](providesType: ProvidesType,
                                     predefinedParameters: Map[String, Any],
                                     maximumInteractionCount: Option[Int],
                                     failureStrategy: InteractionFailureStrategy,
-                                    eventOutputTransformers: Map[RuntimeEvent, RuntimeEventOutputTransformer] = Map.empty)
+                                    eventOutputTransformers: Map[CompiledEvent, RuntimeEventOutputTransformer] = Map.empty)
 
   extends Transition[Unit, AnyRef, ProcessState] {
 
@@ -58,7 +58,7 @@ case class InteractionTransition[I](providesType: ProvidesType,
   val requiredIngredients: Map[String, Class[_]] =
     inputFields.toMap.filterKeys(requiredIngredientNames.contains)
 
-  def transformEventType(event: RuntimeEvent): RuntimeEvent =
+  def transformEventType(event: CompiledEvent): CompiledEvent =
     eventOutputTransformers
       .get(event)
       .fold(event)(_.newEvent)
