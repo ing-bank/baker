@@ -11,15 +11,14 @@ import akka.persistence.query.scaladsl._
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
-import com.ing.baker
-import com.ing.baker.compiledRecipe.ActionType.SieveAction
+import com.ing.baker.compiledRecipe._
 import com.ing.baker.compiledRecipe.ingredientExtractors.{CompositeIngredientExtractor, IngredientExtractor}
 import com.ing.baker.compiledRecipe.petrinet._
-import com.ing.baker.compiledRecipe._
 import com.ing.baker.core.{BakerException, ProcessState, RecipeValidationException}
 import com.ing.baker.runtime.actor.{BakerActorMessage, LocalBakerActorProvider, ShardedActorProvider, Util}
 import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.visualisation.RecipeVisualizer
+import com.ing.baker.runtime._
 import fs2.Strategy
 import io.kagera.akka.actor.PetriNetInstanceProtocol._
 import io.kagera.akka.actor._
@@ -37,31 +36,31 @@ import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
 object Baker {
-//  private def buildSieveImplementationProviders(actions: Set[InteractionTransition[_]]): (Map[String, () => AnyRef], Set[String]) = {
-//    val actionsMap: Map[String, () => AnyRef] = actions
-//      .map(_.interactionName)
-//      .map(clazz => clazz -> (() => clazz.newInstance().asInstanceOf[AnyRef]))
-//      .toMap
-//
-//    val noDefaultConstructorErrors = actions
-//      .map(action => {
-//        if (action.interactionClass.getConstructors.exists(e => e.getParameterCount == 0)) ""
-//        else s"No default constructor found for Sieve: '${action.interactionClass}'"
-//      })
-//      .filter(_.nonEmpty)
-//
-//    (actionsMap, noDefaultConstructorErrors)
-//  }
+
+  def apply(compiledRecipe: CompiledRecipe,
+            implementations: Seq[AnyRef],
+            ingredientExtractor: IngredientExtractor = new CompositeIngredientExtractor(),
+            actorSystem: ActorSystem): Baker = {
+    new Baker(compiledRecipe, implementationsToProviderMap(implementations), ingredientExtractor, actorSystem)
+  }
+
+  def implementationsToProviderMap(implementations: Seq[AnyRef]) : Map[String, () => AnyRef] = {
+    implementations.map(im =>
+      (getNameOrClassName(im), () => im)
+    ).toMap
+  }
+
+
 
   private def checkIfImplementationsProvided(implementations: Map[String, () => AnyRef], actions: Set[InteractionTransition[_]]): Set[String] = {
     //TODO add validation that not only the name but also the apply method with correct parameters is provided
     actions
-      .filterNot(i => implementations.contains(i.interactionName))
-      .map(i => s"No implementation provided for interaction: ${i.interactionName}")
+      .filterNot(i => implementations.contains(i.originalInteractionName))
+      .map(i => s"No implementation provided for interaction: ${i.originalInteractionName}")
   }
 
-  def transitionForEventClass(event: EventImpl, compiledRecipe: CompiledRecipe) =
-    compiledRecipe.petriNet.transitions.findByLabel(event.name).getOrElse {
+  def transitionForEventClass(event: Any, compiledRecipe: CompiledRecipe) =
+    compiledRecipe.petriNet.transitions.findByLabel(getNameOrClassName(event)).getOrElse {
       throw new IllegalArgumentException(s"No such event known in recipe: $event")
     }
 }
@@ -81,6 +80,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   implicit val materializer = ActorMaterializer()
 
+
   private val log = LoggerFactory.getLogger(classOf[Baker])
 
   private val config = actorSystem.settings.config
@@ -90,12 +90,6 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   if (compiledRecipe.validationErrors.nonEmpty)
     throw new RecipeValidationException(compiledRecipe.validationErrors.mkString(", "))
-
-  //Create implementations for sieve interactions
-  val sieveInteractions = compiledRecipe.interactionTransitions.filter(_.actionType == SieveAction)
-//  val (sieveImplementations, sieveErrors) = buildSieveImplementationProviders(sieveInteractions)
-//  if(sieveErrors.nonEmpty)
-//    throw new BakerException(sieveErrors.mkString(", "))
 
   //Check if all implementations are provided
   val allImplementations = implementations
@@ -146,7 +140,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
   private val readJournal = PersistenceQuery(actorSystem)
     .readJournalFor[CurrentEventsByPersistenceIdQuery with AllPersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
 
-  private def createEventMsg(processId: java.util.UUID, event: EventImpl) = {
+  private def createEventMsg(processId: java.util.UUID, event: Any) = {
     require(event != null, "Event can not be null")
 
     val t = transitionForEventClass(event, compiledRecipe)
@@ -223,11 +217,8 @@ class Baker(val compiledRecipe: CompiledRecipe,
     PetriNetQuery
       .eventsForInstance[Place, Transition, ProcessState](processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal, transitionEventSource(ingredientExtractor))
       .collect {
-        case (_, TransitionFiredEvent(_, _, _, _, _, _, output: EventImpl))
-          if compiledRecipe.allEvents.exists(e => e.name == output.name) => output
         case (_, TransitionFiredEvent(_, _, _, _, _, _, output))
-          if compiledRecipe.allEvents.contains(RuntimeEvent(output)) => output
-
+          if compiledRecipe.allEvents.contains(RuntimeEvent(getNameOrClassName(output), output)) => output
       }
   }
 
@@ -237,7 +228,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * @param processId The process id
     * @param event     The event instance
     */
-  def handleEvent(processId: java.util.UUID, event: EventImpl)(implicit timeout: FiniteDuration): Unit = {
+  def handleEvent(processId: java.util.UUID, event: Any)(implicit timeout: FiniteDuration): Unit = {
     handleEventAsync(processId, event).confirmCompleted
   }
 
@@ -245,7 +236,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * Fires an event to baker for a process. This is fire and forget in the sense that if nothing is done
     * with the response you have NO guarantee that the event is received by baker.
     */
-  def handleEventAsync(processId: UUID, event: EventImpl): BakerResponse = {
+  def handleEventAsync(processId: UUID, event: Any): BakerResponse = {
 
     val msg = createEventMsg(processId, event)
     val source = petriNetApi.askAndCollectAll(msg, waitForRetries = true)
@@ -267,10 +258,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
   //TODO, decide if Baker can visualise itself or is visualising part of the runtime that the compiler exposes also?
   def getVisualState(processId: java.util.UUID)(implicit timeout: FiniteDuration): String = {
     val events: Seq[Any] = this.events(processId)
-    val classes: Seq[String] = events.map {
-      case event: EventImpl => event.name
-      case event => event.getClass.getSimpleName
-    }
+    val classes: Seq[String] = events.map(getNameOrClassName)
 
     RecipeVisualizer.visualiseCompiledRecipe(compiledRecipe, events = classes)
   }

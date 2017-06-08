@@ -4,6 +4,8 @@ import com.ing.baker.compiledRecipe.ActionType.{InteractionAction, SieveAction}
 import com.ing.baker.compiledRecipe.petrinet.Place._
 import com.ing.baker.compiledRecipe.petrinet.{EventTransition, InteractionTransition, MultiFacilitatorTransition, Place, Transition}
 
+import scala.util.Try
+
 
 package object compiledRecipe {
   val processIdName         = "$ProcessID$"
@@ -38,5 +40,14 @@ package object compiledRecipe {
 
     def isEvent: Boolean =
       !(transition.isInstanceOf[InteractionTransition[_]] || transition.label.contains(":"))
+  }
+
+  def getNameOrClassName(obj: Any) : String = {
+    Try{
+      obj.getClass.getField("name")
+    }.toOption match {
+      case Some(field) if field.getType == classOf[String]  => field.get(obj).asInstanceOf[String]
+      case _ => obj.getClass.getSimpleName
+    }
   }
 }

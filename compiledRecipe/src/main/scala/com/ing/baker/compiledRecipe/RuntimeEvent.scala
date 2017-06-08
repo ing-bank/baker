@@ -13,7 +13,7 @@ object RuntimeEvent{
     RuntimeEvent(obj.getClass.getSimpleName, obj.getClass.getDeclaredFields.map(RuntimeIngredient(_)))
   }
 
-  def apply(eventImpl: EventImpl): RuntimeEvent = {
-    RuntimeEvent(eventImpl.name, eventImpl.getClass.getDeclaredFields.map(RuntimeIngredient(_)))
+  def apply(name: String, obj: Any): RuntimeEvent = {
+    RuntimeEvent(name, obj.getClass.getDeclaredFields.map(RuntimeIngredient(_)))
   }
 }

@@ -6,7 +6,6 @@ import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker.Webshop._
-import com.ing.baker.compiledRecipe.{EventImpl, InteractionImpl}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
 import com.ing.baker.recipe.scaladsl
@@ -41,82 +40,82 @@ object TestRecipeHelper {
 
   //Events as used in the recipe & objects used in runtime
   val InitialEvent = Event("InitialEvent", initialIngredient)
-  case class InitialEventImpl(initialIngredient: String) extends EventImpl {override def name = "InitialEvent"}
+  case class InitialEventImpl(initialIngredient: String) {val name = "InitialEvent"}
   val InitialEventExtendedName = Event("InitialEventExtendedName", initialIngredientExtendedName)
-  case class InitialEventExtendedNameImpl(initialIngredientExtendedName: String) extends EventImpl {override def name = "InitialEventExtendedName"}
+  case class InitialEventExtendedNameImpl(initialIngredientExtendedName: String) {val name = "InitialEventExtendedName"}
   val SecondEvent = Event("SecondEvent")
-  case class SecondEventImpl() extends EventImpl {override def name = "SecondEvent"}
+  case class SecondEventImpl() {val name = "SecondEvent"}
   val NotUsedSensoryEvent = Event("NotUsedSensoryEvent")
-  case class NotUsedSensoryEventImpl() extends EventImpl {override def name = "NotUsedSensoryEvent"}
+  case class NotUsedSensoryEventImpl() {val name = "NotUsedSensoryEvent"}
   val EventFromInteractionTwo = Event("EventFromInteractionTwo", interactionTwoIngredient)
-  case class EventFromInteractionTwoImpl(interactionTwoIngredient: String) extends EventImpl {override def name = "EventFromInteractionTwo"}
+  case class EventFromInteractionTwoImpl(interactionTwoIngredient: String) {val name = "EventFromInteractionTwo"}
   val EventWithANonSerializableIngredient = Event("EventWithANonSerializableIngredient", nonSerializableIngredient)
-  case class EventWithANonSerializableIngredientImpl(nonSerializableObject: NonSerializableObject) extends EventImpl {override def name = "EventWithANonSerializableIngredient"}
+  case class EventWithANonSerializableIngredientImpl(nonSerializableObject: NonSerializableObject) {val name = "EventWithANonSerializableIngredient"}
 
   //Interactions used in the recipe & implementations (we use traits instead of case classes since we use mocks for the real implementations
   val InteractionOne = Interaction("InteractionOne", Seq(scaladsl.processId, initialIngredient), ProvidesIngredient(interactionOneOriginalIngredient))
-  trait InteractionOneImpl extends InteractionImpl {
-    override def name: String = "InteractionOne"
+  trait InteractionOneImpl {
+    val name: String = "InteractionOne"
     def apply(processId: String, initialIngredient: String): String = ""
   }
 
   val InteractionTwo = Interaction("InteractionTwo", Seq(initialIngredientOld), FiresOneOfEvents(EventFromInteractionTwo))
-  trait InteractionTwoImpl extends InteractionImpl {
-    override def name: String = "InteractionTwo"
+  trait InteractionTwoImpl {
+    val name: String = "InteractionTwo"
     def apply(initialIngredientOld: String): EventFromInteractionTwoImpl
   }
 
   val InteractionThree = Interaction("InteractionThree", Seq(interactionOneIngredient, interactionTwoIngredient), ProvidesIngredient(interactionThreeIngredient))
-  trait InteractionThreeImpl extends InteractionImpl {
-    override def name: String = "InteractionThree"
+  trait InteractionThreeImpl {
+    val name: String = "InteractionThree"
     def apply(interactionOneIngredient: String, interactionTwoIngredient: String): String
   }
 
   val InteractionFour = Interaction("InteractionFour", Seq(), ProvidesIngredient(interactionFourIngredient))
-  trait InteractionFourImpl extends InteractionImpl {
-    override def name: String = "InteractionFour"
+  trait InteractionFourImpl {
+    val name: String = "InteractionFour"
     def apply(): String
   }
 
   val InteractionFive = Interaction("InteractionFive", Seq(scaladsl.processId, initialIngredient, initialIngredientExtendedName), ProvidesIngredient(interactionFiveIngredient))
-  trait InteractionFiveImpl extends InteractionImpl {
-    override def name: String = "InteractionFive"
+  trait InteractionFiveImpl {
+    val name: String = "InteractionFive"
     def apply(processId: String, initialIngredient: String, initialIngredientExtendedName: String): String
   }
 
   val InteractionSix = Interaction("InteractionSix", Seq(initialIngredientExtendedName), ProvidesIngredient(interactionSixIngredient))
-  trait InteractionSixImpl extends InteractionImpl {
-    override def name: String = "InteractionSix"
+  trait InteractionSixImpl {
+    val name: String = "InteractionSix"
     def apply(initialIngredientExtendedName: String): String
   }
 
   val SieveInteraction = Interaction("SieveInteraction", Seq(scaladsl.processId, initialIngredient), ProvidesIngredient(sievedIngredient))
-  trait SieveInteractionImpl extends InteractionImpl {
-    override def name: String = "SieveInteraction"
+  trait SieveInteractionImpl {
+    val name: String = "SieveInteraction"
     def apply(processId: String, initialIngredient: String): String
   }
 
   val SieveInteractionWithoutDefaultConstructor = Interaction("SieveInteractionWithoutDefaultConstructor", Seq(scaladsl.processId, initialIngredient), ProvidesIngredient(sievedIngredient))
-  trait SieveInteractionWithoutDefaultConstructorImpl extends InteractionImpl {
-    override def name: String = "SieveInteractionWithoutDefaultConstructor"
+  trait SieveInteractionWithoutDefaultConstructorImpl {
+    val name: String = "SieveInteractionWithoutDefaultConstructor"
     def apply(processId: String, initialIngredient: String): String
   }
 
   val NonSerializableEventInteraction = Interaction("NonSerializableEventInteraction", Seq(initialIngredient), FiresOneOfEvents(EventWithANonSerializableIngredient))
-  trait NonSerializableEventInteractionImpl extends InteractionImpl {
-    override def name: String = "NonSerializableEventInteraction"
+  trait NonSerializableEventInteractionImpl {
+    val name: String = "NonSerializableEventInteraction"
     def apply(initialIngredient: String): EventWithANonSerializableIngredientImpl
   }
 
   val NonSerializableIngredientInteraction = Interaction("NonSerializableIngredientInteraction", Seq(initialIngredient), ProvidesIngredient(nonSerializableIngredient))
-  trait NonSerializableIngredientInteractionImpl extends InteractionImpl {
-    override def name: String = "NonSerializableIngredientInteraction"
+  trait NonSerializableIngredientInteractionImpl {
+    val name: String = "NonSerializableIngredientInteraction"
     def apply(initialIngredient: String): NonSerializableObject
   }
 
   val NonMatchingReturnTypeInteraction = Interaction("NonMatchingReturnTypeInteraction", Seq(initialIngredient), FiresOneOfEvents(EventFromInteractionTwo))
-  trait NonMatchingReturnTypeInteractionImpl extends InteractionImpl {
-    override def name: String = "NonMatchingReturnTypeInteraction"
+  trait NonMatchingReturnTypeInteractionImpl {
+    val name: String = "NonMatchingReturnTypeInteraction"
     def apply(initialIngredient: String): EventFromInteractionTwoImpl
   }
 }

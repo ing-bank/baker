@@ -99,6 +99,7 @@ package object compiler {
         providesType = providesType,
         inputFields = inputFields,
         interactionName = interactionDescriptor.name,
+        originalInteractionName = interactionDescriptor.interaction.name,
         predefinedParameters = interactionDescriptor.predefinedIngredients,
         maximumInteractionCount = interactionDescriptor.maximumInteractionCount,
         failureStrategy = interactionDescriptor.failureStrategy.getOrElse[com.ing.baker.recipe.common.InteractionFailureStrategy](defaultFailureStrategy),

@@ -6,6 +6,7 @@ import java.util.UUID
 import com.ing.baker.compiledRecipe._
 import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
 import com.ing.baker.core.ProcessState
+import com.ing.baker.compiledRecipe._
 import fs2.Task
 import io.kagera.api._
 import io.kagera.execution.{TransitionTask, TransitionTaskProvider}
@@ -22,17 +23,17 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
   override def apply[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _, _]], t: Transition[Input, Output, ProcessState]): TransitionTask[Place, Input, Output, ProcessState] = {
     t match {
       case interaction: InteractionTransition[_] =>
-        interactionTransitionTask[AnyRef, Input, Output](interaction.asInstanceOf[InteractionTransition[AnyRef]], interactionProviders(interaction.interactionName), petriNet.outMarking(interaction))
+        interactionTransitionTask[AnyRef, Input, Output](interaction.asInstanceOf[InteractionTransition[AnyRef]], interactionProviders(interaction.originalInteractionName), petriNet.outMarking(interaction))
       case t: EventTransition         => eventTransitionTask(petriNet, t)
-      case t                             => passThroughtTransitionTask(petriNet, t)
+      case t                          => passThroughtTransitionTask(petriNet, t)
     }
   }
 
   def passThroughtTransitionTask[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _, _]], t: Transition[Input, Output, _]): TransitionTask[Place, Input, Output, ProcessState] =
     (consume, processState, input) => Task.now((toMarking[Place](petriNet.outMarking(t)), null.asInstanceOf[Output]))
 
-  def eventTransitionTask[RuntimeEvent, Input, EventImpl](petriNet: PetriNet[Place[_], Transition[_, _, _]], eventTransition: EventTransition): TransitionTask[Place, Input, EventImpl, ProcessState] =
-    (consume, processState, input) => Task.now((toMarking[Place](petriNet.outMarking(eventTransition)), input.asInstanceOf[EventImpl]))
+  def eventTransitionTask[RuntimeEvent, Input, Output](petriNet: PetriNet[Place[_], Transition[_, _, _]], eventTransition: EventTransition): TransitionTask[Place, Input, Output, ProcessState] =
+    (consume, processState, input) => Task.now((toMarking[Place](petriNet.outMarking(eventTransition)), input.asInstanceOf[Output]))
 
   def interactionTransitionTask[I, Input, Output](interaction: InteractionTransition[I], interactionProvider: () => I, outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, Input, Output, ProcessState] =
 
@@ -49,7 +50,7 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
       val interactionObject: I = interactionProvider.apply()
 
       log.trace(
-        s"[$invocationId] invoking '${interaction.interactionName}' with parameters ${input.toString}")
+        s"[$invocationId] invoking '${interaction.originalInteractionName}' with parameters ${input.toString}")
 
       def invokeMethod(): AnyRef = {
         MDC.put("processId", processState.id.toString)
@@ -136,10 +137,7 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
       val value: Any = {
         interaction.providesType match {
           case FiresOneOfEvents(events) =>
-            val outputName = output match {
-              case event: EventImpl => event.name
-              case event => event.getClass.getSimpleName
-            }
+            val outputName =  getNameOrClassName(output)
             events.find(_.name == outputName).map(_.name).getOrElse {
               throw new IllegalStateException(
                 s"Method output: $output is not an instance of any of the specified events: ${

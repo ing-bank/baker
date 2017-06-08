@@ -40,7 +40,7 @@ case class CompiledRecipe(name: String,
 
   val interactionEvents: Set[RuntimeEvent] =
     interactionTransitions flatMap  {
-      case InteractionTransition(providesType: FiresOneOfEvents, _, _, _, _, _, _, _) => providesType.events
+      case InteractionTransition(providesType: FiresOneOfEvents, _, _, _, _, _, _, _, _) => providesType.events
       case _ => Seq.empty
     }
 
@@ -48,7 +48,7 @@ case class CompiledRecipe(name: String,
 
   val allIngredientsProvidedByInteractions: Set[RuntimeIngredient] =
     interactionTransitions map {
-      case InteractionTransition(providesType: ProvidesIngredient, _, _, _, _, _, _, _) => providesType.ingredient
+      case InteractionTransition(providesType: ProvidesIngredient, _, _, _, _, _, _, _, _) => providesType.ingredient
       case _ => null
     } filterNot(_ == null)
 

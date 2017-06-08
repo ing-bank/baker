@@ -25,7 +25,8 @@ public class JBakerTest {
     java.util.List<Object> implementationsList = ImmutableList.of(
             new JCompiledRecipeTest.InteractionOneImpl(),
             new JCompiledRecipeTest.InteractionTwo(),
-            new JCompiledRecipeTest.InteractionThree());
+            new JCompiledRecipeTest.InteractionThreeImpl(),
+            new JCompiledRecipeTest.SieveImpl());
 
     @Rule
     public final ExpectedException exception = ExpectedException.none();
@@ -53,7 +54,7 @@ public class JBakerTest {
 
     @Test
     public void shouldFailWhenMissingImplementations() throws BakerException {
-        exception.expect(RecipeValidationException.class);
+        exception.expect(BakerException.class);
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(setupComplexRecipe());
         JBaker jBaker = new JBaker(compiledRecipe, ImmutableList.<Object>of());
     }
@@ -70,7 +71,7 @@ public class JBakerTest {
     @Test
     public void shouldFailWhenSieveNotDefaultConstructor() throws BakerException {
         Recipe recipe = setupComplexRecipe().withSieve(InteractionDescriptor.of(JCompiledRecipeTest.SieveImplWithoutDefaultConstruct.class));
-        exception.expect(RecipeValidationException.class);
+        exception.expect(BakerException.class);
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
         JBaker jBaker = new JBaker(compiledRecipe, implementationsList);
     }

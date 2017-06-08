@@ -1,7 +1,5 @@
 package com.ing.baker;
 
-import com.ing.baker.compiledRecipe.EventImpl;
-import com.ing.baker.compiledRecipe.InteractionImpl;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.core.BakerException;
 import com.ing.baker.recipe.annotations.ProcessId;
@@ -113,11 +111,11 @@ public class JCompiledRecipeTest {
         Assert.assertTrue("Should contain RequestIDStringTwo", visualRecipe.contains("RequestIDStringTwo"));
     }
 
-    public static class EventOne extends EventImpl implements Event {}
+    public static class EventOne implements Event {}
 
-    public static class EventTwo extends EventImpl implements Event {}
+    public static class EventTwo implements Event {}
 
-    public static class EventWithoutIngredientsNorPreconditions extends EventImpl implements Event {}
+    public static class EventWithoutIngredientsNorPreconditions implements Event {}
 
     public static class SieveImpl implements Interaction {
         @ProvidesIngredient("AppendedRequestIds")
@@ -142,29 +140,35 @@ public class JCompiledRecipeTest {
         String apply(@ProcessId String requestId);
     }
 
-    public static class InteractionOneImpl extends InteractionImpl implements InteractionOne {
+    public static class InteractionOneImpl implements InteractionOne {
         public String apply(String requestId) {
             return requestId;
         }
 
-        @Override
-        public String name() {
-            return "InteractionOne";
-        }
+        public String name = "InteractionOne";
     }
 
-    public static class InteractionTwo extends InteractionImpl implements Interaction {
+    public static class InteractionTwo implements Interaction {
         @ProvidesIngredient("RequestIDStringTwo")
         public String apply(@ProcessId String requestId) {
               return requestId;
           }
+
+        public String name = "InteractionTwo";
     }
 
-    public static class InteractionThree extends InteractionImpl implements Interaction {
+    public interface InteractionThree extends Interaction {
         public void apply(@RequiresIngredient("RequestIDStringOne") String requestIDStringOne,
-                          @RequiresIngredient("RequestIDStringTwo") String requestIDStringTwo) {
+                          @RequiresIngredient("RequestIDStringTwo") String requestIDStringTwo);
+    }
+
+    public static class InteractionThreeImpl implements InteractionThree {
+        public void apply(String requestIDStringOne,
+                          String requestIDStringTwo) {
 
         }
+
+        public String name = InteractionThree.class.getSimpleName();
     }
 
     public static class RegisterIndividual implements Interaction {
@@ -177,7 +181,8 @@ public class JCompiledRecipeTest {
 
     public static Recipe setupSimpleRecipe() {
         return new Recipe("TestRecipe")
-                .withInteraction(of(InteractionOne.class).withRequiredEvent(EventOne.class))
+                .withInteraction(of(InteractionOne.class)
+                        .withRequiredEvent(EventOne.class))
                 .withSensoryEvent(EventOne.class);
     }
 

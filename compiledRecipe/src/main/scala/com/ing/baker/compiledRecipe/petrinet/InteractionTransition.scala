@@ -29,18 +29,15 @@ case object ProvidesNothing extends ProvidesType
   *
   * @tparam I The class/interface of the interaction
   */
-case class InteractionTransition[I](
-                                     //Original values of the Interaction
-//                                     method: Method,
-                                     providesType: ProvidesType,
-                                     inputFields: Seq[(String, Class[_])],
-//                                     interactionClass: Class[I],
-                                     interactionName: String,
-                                     actionType: ActionType = ActionType.InteractionAction,
-                                     predefinedParameters: Map[String, Any],
-                                     maximumInteractionCount: Option[Int],
-                                     failureStrategy: InteractionFailureStrategy,
-                                     eventOutputTransformers: Map[RuntimeEvent, RuntimeEventOutputTransformer] = Map.empty)
+case class InteractionTransition[I](providesType: ProvidesType,
+                                    inputFields: Seq[(String, Class[_])],
+                                    interactionName: String,
+                                    originalInteractionName: String,
+                                    actionType: ActionType = ActionType.InteractionAction,
+                                    predefinedParameters: Map[String, Any],
+                                    maximumInteractionCount: Option[Int],
+                                    failureStrategy: InteractionFailureStrategy,
+                                    eventOutputTransformers: Map[RuntimeEvent, RuntimeEventOutputTransformer] = Map.empty)
 
   extends Transition[Unit, AnyRef, ProcessState] {
 

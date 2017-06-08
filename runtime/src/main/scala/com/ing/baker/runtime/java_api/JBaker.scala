@@ -4,8 +4,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
-import com.ing.baker.compiledRecipe.{CompiledRecipe, EventImpl}
-import com.ing.baker.compiledRecipe.petrinet.InteractionTransition
+import com.ing.baker.compiledRecipe.CompiledRecipe
 import com.ing.baker.runtime.core.Baker
 import com.typesafe.config.ConfigFactory
 
@@ -24,55 +23,21 @@ object JBaker {
       |
       |baker.actor.provider = "local"
     """.stripMargin)
-
-    //TODO rewrite this to make the link between a description of the interaction instead of between class and implementation
-  def mapInteractionToImplementation(
-      interactionTransitions: Set[InteractionTransition[_]],
-      implementations: java.util.List[AnyRef]): java.util.Map[String, AnyRef] = {
-//    val interactionClasses: Set[Class[_]] =
-//      interactionTransitions.map(i => i.interactionClass)
-//    val implementationsSeq: scala.collection.mutable.Buffer[AnyRef] = implementations.asScala
-//    val interactionMappings: Set[(Class[_], AnyRef)] = interactionClasses.map {
-//      c =>
-//        c -> implementationsSeq.find(e => c.isAssignableFrom(e.getClass)).orNull
-//    }
-//    interactionMappings.toMap.filterNot { case (k, v) => v == null }.asJava
-    Map.empty[String, AnyRef].asJava
-  }
 }
 
 //TODO do we want to accept the implementations as Any?
 //It use to be of the Interaction type but now this is not possible since this is not known here
 //Maybe we can create a InteractionImplementation trait and only accept classes of that type
-class JBaker private (compiledRecipe: CompiledRecipe,
-                      implementations: java.util.Map[String, AnyRef],
-                      actorSystem: ActorSystem) {
-
-  val interactionImplementations: Map[String, () => AnyRef] =
-    implementations.asScala.toMap.mapValues { implementation => () =>
-      implementation
-    }
-
-  val baker: Baker =
-    new Baker(compiledRecipe = compiledRecipe, Map.empty[String, () => AnyRef], actorSystem = actorSystem)
-
-  val defaultTimeout = 20 * 1000
-
-
-  def this (jCompiledRecipe: JCompiledRecipe,
-            implementations: java.util.Map[String, AnyRef],
-            actorSystem: ActorSystem) =
-    this(jCompiledRecipe.compiledRecipe, implementations, actorSystem)
-
-//  TODO Enable this again once we can make the link again between implementation and class
-  def this(compiledRecipe: CompiledRecipe,
-           implementations: java.util.List[AnyRef],
-           actorSystem: ActorSystem) =
-    this(compiledRecipe: CompiledRecipe, JBaker.mapInteractionToImplementation(compiledRecipe.interactionTransitions, implementations),
-         actorSystem)
+class JBaker (compiledRecipe: CompiledRecipe,
+              implementations: java.util.List[AnyRef],
+              actorSystem: ActorSystem) {
 
   def this(compiledRecipe: CompiledRecipe, implementations: java.util.List[AnyRef]) =
     this(compiledRecipe, implementations, ActorSystem.apply("BakerActorSystem", JBaker.defaultConfig))
+
+  val interactionImplementations: Map[String, () => AnyRef] = Baker.implementationsToProviderMap(implementations.asScala)
+  val baker: Baker = Baker(compiledRecipe = compiledRecipe, implementations.asScala, actorSystem = actorSystem)
+  val defaultTimeout = 20 * 1000
 
   /**
     * Attempts to gracefully shutdown the baker system.
@@ -101,7 +66,7 @@ class JBaker private (compiledRecipe: CompiledRecipe,
     * @param event The event to fire
     * @return
     */
-  def processEvent(processId: java.util.UUID, event: EventImpl): Unit =
+  def processEvent(processId: java.util.UUID, event: Any): Unit =
     processEventAsync(processId, event).confirmCompleted
 
   /**
@@ -111,7 +76,7 @@ class JBaker private (compiledRecipe: CompiledRecipe,
     * @param event The event to fire
     * @return
     */
-  def processEventAsync(processId: java.util.UUID, event: EventImpl): JBakerResponse = {
+  def processEventAsync(processId: java.util.UUID, event: Any): JBakerResponse = {
     implicit val executionContext = actorSystem.dispatcher
 
     val response = baker.handleEventAsync(processId, event)
