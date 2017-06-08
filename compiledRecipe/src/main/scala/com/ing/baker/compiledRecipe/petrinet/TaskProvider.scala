@@ -138,7 +138,7 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
       val value: Any = {
         interaction.providesType match {
           case FiresOneOfEvents(events) =>
-            val outputName =  getNameOrClassName(output)
+            val outputName =  output.getClass.getSimpleName
             events.find(_.name == outputName).map(_.name).getOrElse {
               throw new IllegalStateException(
                 s"Method output: $output is not an instance of any of the specified events: ${

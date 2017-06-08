@@ -10,10 +10,6 @@ case class CompiledEvent(name: String,
 
 object CompiledEvent{
   def apply(obj: Any): CompiledEvent = {
-    CompiledEvent(getNameOrClassName(obj), obj.getClass.getDeclaredFields.map(CompiledIngredient(_)))
-  }
-
-  def apply(name: String, obj: Any): CompiledEvent = {
-    CompiledEvent(name, obj.getClass.getDeclaredFields.map(CompiledIngredient(_)))
+    CompiledEvent(obj.getClass.getSimpleName, obj.getClass.getDeclaredFields.map(CompiledIngredient(_)))
   }
 }

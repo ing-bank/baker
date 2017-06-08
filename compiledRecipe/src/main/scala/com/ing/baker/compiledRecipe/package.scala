@@ -41,15 +41,4 @@ package object compiledRecipe {
     def isEvent: Boolean =
       !(transition.isInstanceOf[InteractionTransition[_]] || transition.label.contains(":"))
   }
-
-  def getNameOrClassName(obj: Any) : String = {
-    Try{
-      obj.getClass.getDeclaredField("name")
-    }.toOption match {
-      case Some(field) if field.getType.equals(classOf[String]) => {
-        field.setAccessible(true)
-        field.get(obj).asInstanceOf[String]}
-      case _ => obj.getClass.getSimpleName
-    }
-  }
 }

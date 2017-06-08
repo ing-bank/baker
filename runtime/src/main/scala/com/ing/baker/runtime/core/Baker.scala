@@ -60,7 +60,7 @@ object Baker {
   }
 
   def transitionForEventClass(event: Any, compiledRecipe: CompiledRecipe) =
-    compiledRecipe.petriNet.transitions.findByLabel(getNameOrClassName(event)).getOrElse {
+    compiledRecipe.petriNet.transitions.findByLabel(event.getClass.getSimpleName).getOrElse {
       throw new IllegalArgumentException(s"No such event known in recipe: $event")
     }
 }
@@ -218,7 +218,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
       .eventsForInstance[Place, Transition, ProcessState](processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal, transitionEventSource(ingredientExtractor))
       .collect {
         case (_, TransitionFiredEvent(_, _, _, _, _, _, output))
-          if output != null && compiledRecipe.allEvents.exists(e => e.name equals getNameOrClassName(output)) => output
+          if output != null && compiledRecipe.allEvents.exists(e => e.name equals output.getClass.getSimpleName) => output
       }
   }
 
@@ -258,7 +258,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
   //TODO, decide if Baker can visualise itself or is visualising part of the runtime that the compiler exposes also?
   def getVisualState(processId: java.util.UUID)(implicit timeout: FiniteDuration): String = {
     val events: Seq[Any] = this.events(processId)
-    val classes: Seq[String] = events.map(getNameOrClassName)
+    val classes: Seq[String] = events.map(_.getClass.getSimpleName)
 
     RecipeVisualizer.visualiseCompiledRecipe(compiledRecipe, events = classes)
   }
