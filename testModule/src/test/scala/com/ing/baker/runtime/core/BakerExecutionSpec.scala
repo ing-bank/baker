@@ -146,11 +146,6 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.bake(processId)
 
       baker.handleEvent(processId, InitialEvent(initialIngredientValue))
-//      println(baker.events(processId))
-//      println(baker.getIngredients(processId))
-//      println(baker.getVisualState(processId))
-//      println(baker.compiledRecipe.getPetriNetVisualization)
-//      println(baker.compiledRecipe.getPetriNetVisualization)
 
       verify(testInteractionOneMock).apply(processId.toString, initialIngredientValue)
       verify(testInteractionTwoMock).apply(initialIngredientValue)

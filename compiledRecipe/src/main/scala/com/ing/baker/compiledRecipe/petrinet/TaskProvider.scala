@@ -109,8 +109,8 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
         s"""
            |IllegalArgumentException at Interaction: $toString
            |Missing parameter: $name
-           |Provided input   : ${interaction.inputFieldNames.toSeq.sorted.mkString(",")}
-           |Required input   : ${argumentNamesToValues.keySet.toSeq.sorted.mkString(",")}
+           |Required input   : ${interaction.inputFieldNames.toSeq.sorted.mkString(",")}
+           |Provided input   : ${argumentNamesToValues.keySet.toSeq.sorted.mkString(",")}
          """.stripMargin)
       throw new IllegalArgumentException(s"Missing parameter: $name")
     }
