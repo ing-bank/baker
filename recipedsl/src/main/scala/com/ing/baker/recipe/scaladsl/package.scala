@@ -11,4 +11,10 @@ package object scaladsl {
 
   val processId: Ingredient[_] = new Ingredient[String](common.ProcessIdName)
   val processIdUUID: Ingredient[_] = new Ingredient[UUID](common.ProcessIdName)
+
+  object Ingredients {
+    def apply(ingredients: Ingredient[_]*): Seq[Ingredient[_]] = ingredients.toSeq
+  }
 }
+
+

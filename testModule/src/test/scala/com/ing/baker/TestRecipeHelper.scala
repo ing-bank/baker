@@ -9,7 +9,7 @@ import com.ing.baker.Webshop._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
 import com.ing.baker.recipe.scaladsl
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
+import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, Recipe, processId}
 import com.ing.baker.runtime.core.{Baker, RuntimeEvent}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers._
@@ -54,67 +54,67 @@ object TestRecipeHelper {
   case class EventWithANonSerializableIngredient(nonSerializableObject: NonSerializableObject) extends RuntimeEvent
 
   //Interactions used in the recipe & implementations (we use traits instead of case classes since we use mocks for the real implementations
-  val interactionOne = Interaction("InteractionOne", Seq(scaladsl.processId, initialIngredient), ProvidesIngredient(interactionOneOriginalIngredient))
+  val interactionOne = Interaction("InteractionOne", Ingredients(processId, initialIngredient), ProvidesIngredient(interactionOneOriginalIngredient))
   trait InteractionOneImpl {
     val name: String = "InteractionOne"
     def apply(processId: String, initialIngredient: String): String = ""
   }
 
-  val interactionTwo = Interaction("InteractionTwo", Seq(initialIngredientOld), FiresOneOfEvents(eventFromInteractionTwo))
+  val interactionTwo = Interaction("InteractionTwo", Ingredients(initialIngredientOld), FiresOneOfEvents(eventFromInteractionTwo))
   trait InteractionTwoImpl {
     val name: String = "InteractionTwo"
     def apply(initialIngredientOld: String): EventFromInteractionTwo
   }
 
-  val interactionThree = Interaction("InteractionThree", Seq(interactionOneIngredient, interactionTwoIngredient), ProvidesIngredient(interactionThreeIngredient))
+  val interactionThree = Interaction("InteractionThree", Ingredients(interactionOneIngredient, interactionTwoIngredient), ProvidesIngredient(interactionThreeIngredient))
   trait InteractionThreeImpl {
     val name: String = "InteractionThree"
     def apply(interactionOneIngredient: String, interactionTwoIngredient: String): String
   }
 
-  val interactionFour = Interaction("InteractionFour", Seq(), ProvidesIngredient(interactionFourIngredient))
+  val interactionFour = Interaction("InteractionFour", Ingredients(), ProvidesIngredient(interactionFourIngredient))
   trait InteractionFourImpl {
     val name: String = "InteractionFour"
     def apply(): String
   }
 
-  val interactionFive = Interaction("InteractionFive", Seq(scaladsl.processId, initialIngredient, initialIngredientExtendedName), ProvidesIngredient(interactionFiveIngredient))
+  val interactionFive = Interaction("InteractionFive", Ingredients(processId, initialIngredient, initialIngredientExtendedName), ProvidesIngredient(interactionFiveIngredient))
   trait InteractionFiveImpl {
     val name: String = "InteractionFive"
     def apply(processId: String, initialIngredient: String, initialIngredientExtendedName: String): String
   }
 
-  val interactionSix = Interaction("InteractionSix", Seq(initialIngredientExtendedName), ProvidesIngredient(interactionSixIngredient))
+  val interactionSix = Interaction("InteractionSix", Ingredients(initialIngredientExtendedName), ProvidesIngredient(interactionSixIngredient))
   trait InteractionSixImpl {
     val name: String = "InteractionSix"
     def apply(initialIngredientExtendedName: String): String
   }
 
-  val sieveInteraction = Interaction("SieveInteraction", Seq(scaladsl.processId, initialIngredient), ProvidesIngredient(sievedIngredient))
+  val sieveInteraction = Interaction("SieveInteraction", Ingredients(processId, initialIngredient), ProvidesIngredient(sievedIngredient))
   trait SieveInteractionImpl {
     val name: String = "SieveInteraction"
     def apply(processId: String, initialIngredient: String): String
   }
 
-  val sieveInteractionWithoutDefaultConstructor = Interaction("SieveInteractionWithoutDefaultConstructor", Seq(scaladsl.processId, initialIngredient), ProvidesIngredient(sievedIngredient))
+  val sieveInteractionWithoutDefaultConstructor = Interaction("SieveInteractionWithoutDefaultConstructor", Ingredients(processId, initialIngredient), ProvidesIngredient(sievedIngredient))
   trait SieveInteractionWithoutDefaultConstructorImpl {
     val name: String = "SieveInteractionWithoutDefaultConstructor"
     def apply(processId: String, initialIngredient: String): String
   }
 
-  val NonSerializableEventInteraction = Interaction("NonSerializableEventInteraction", Seq(initialIngredient), FiresOneOfEvents(eventWithANonSerializableIngredient))
+  val NonSerializableEventInteraction = Interaction("NonSerializableEventInteraction", Ingredients(initialIngredient), FiresOneOfEvents(eventWithANonSerializableIngredient))
   trait NonSerializableEventInteractionImpl {
     val name: String = "NonSerializableEventInteraction"
     def apply(initialIngredient: String): EventWithANonSerializableIngredient
   }
 
-  val NonSerializableIngredientInteraction = Interaction("NonSerializableIngredientInteraction", Seq(initialIngredient), ProvidesIngredient(nonSerializableIngredient))
+  val NonSerializableIngredientInteraction = Interaction("NonSerializableIngredientInteraction", Ingredients(initialIngredient), ProvidesIngredient(nonSerializableIngredient))
   trait NonSerializableIngredientInteractionImpl {
     val name: String = "NonSerializableIngredientInteraction"
     def apply(initialIngredient: String): NonSerializableObject
   }
 
-  val NonMatchingReturnTypeInteraction = Interaction("NonMatchingReturnTypeInteraction", Seq(initialIngredient), FiresOneOfEvents(eventFromInteractionTwo))
+  val NonMatchingReturnTypeInteraction = Interaction("NonMatchingReturnTypeInteraction", Ingredients(initialIngredient), FiresOneOfEvents(eventFromInteractionTwo))
   trait NonMatchingReturnTypeInteractionImpl {
     val name: String = "NonMatchingReturnTypeInteraction"
     def apply(initialIngredient: String): EventFromInteractionTwo
@@ -157,14 +157,14 @@ object Webshop {
 
   val ShipGoods = Interaction(
     "ShipGoods",
-    Seq(goods, customerInfo),
+    Ingredients(goods, customerInfo),
     FiresOneOfEvents(GoodsShipped))
 
   //instead of an event, an interaction can directly provide a new ingredient
   //any primitive type or a case class is supported
   val SendInvoice = Interaction(
     "SendInvoice",
-    Seq(customerInfo),
+    customerInfo,
     ProvidesIngredient(invoiceWasSent))
 }
 

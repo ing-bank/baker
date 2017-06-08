@@ -11,7 +11,6 @@ import org.scalatest.{Matchers, WordSpecLike}
 
 object ScaladslSpec {
   //Ingredients
-  val processId = Ingredient[UUID]("ProcessId")
   val customerName = Ingredient[String]("customerName")
   val customerId = Ingredient[String]("customerId")
   val accountId = Ingredient[Int]("accountId")

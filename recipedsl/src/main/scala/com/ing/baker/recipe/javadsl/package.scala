@@ -7,6 +7,7 @@ import com.ing.baker.recipe.javadsl.ReflectionHelpers._
 
 
 package object javadsl {
+
   def eventClassToCommonEvent(eventClass: Class[_ <:Event]): common.Event =
     new common.Event {
     override val name: String = eventClass.getSimpleName
