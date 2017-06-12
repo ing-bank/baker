@@ -2,6 +2,7 @@ package com.ing.baker.compiledRecipe
 
 import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
 import com.ing.baker.core.ProcessState
+import com.ing.baker.runtime.core.TaskProvider
 import fs2.Strategy
 import io.kagera.api._
 import io.kagera.execution.ExceptionStrategy.BlockTransition
@@ -13,27 +14,6 @@ import scalax.collection.immutable.Graph
 package object petrinet {
 
   type RecipePetriNet = PetriNet[Place[_], Transition[_, _, _]]
-
-  val jobPicker = new JobPicker[Place, Transition](new RecipeTokenGame()) {
-    override def isFireable[S](instance: Instance[Place, Transition, S], t: Transition[_, _, _]): Boolean = t match {
-      case EventTransition(_, isSensoryEvent, _) => !isSensoryEvent
-      case _ => true
-    }
-  }
-
-  val transitionExceptionHandler: Transition[_,_,_] => TransitionExceptionHandler = {
-    case interaction: InteractionTransition[_] => interaction.exceptionStrategy
-    case _ => (e, n) => BlockTransition
-  }
-
-  def transitionEventSource(ingredientExtractor: IngredientExtractor): Transition[_,_,_] => (ProcessState => Any => ProcessState) = {
-    case t: InteractionTransition[_] => EventSource.updateIngredientState(t, ingredientExtractor)
-    case t: EventTransition          => EventSource.updateEventState(t, ingredientExtractor)
-    case t                           => s => e => s
-  }
-
-  def jobExecutor(topology: RecipePetriNet, interactions: Map[String, () => AnyRef], ingredientExtractor: IngredientExtractor, evaluationStrategy: Strategy) =
-    new JobExecutor[ProcessState, Place, Transition](topology, new TaskProvider(interactions, ingredientExtractor), transitionExceptionHandler)(evaluationStrategy)
 
   def arc(t: Transition[_, _, _], p: Place[_], weight: Long): Arc = WLDiEdge[Node, String](Right(t), Left(p))(weight, "")
 

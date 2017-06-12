@@ -9,6 +9,7 @@ import GracefulShutdownActor.Leave
 import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
 import com.ing.baker.compiledRecipe.petrinet
 import com.ing.baker.compiledRecipe.petrinet._
+import com.ing.baker.runtime.core._
 import com.ing.baker.core.ProcessState
 import io.kagera.akka.actor.PetriNetInstance
 import io.kagera.akka.actor.PetriNetInstance.Settings

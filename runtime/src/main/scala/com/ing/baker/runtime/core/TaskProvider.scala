@@ -1,12 +1,12 @@
-package com.ing.baker.compiledRecipe.petrinet
+package com.ing.baker.runtime.core
 
 import java.lang.reflect.InvocationTargetException
 import java.util.UUID
 
 import com.ing.baker.compiledRecipe._
 import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
+import com.ing.baker.compiledRecipe.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, Place, Transition}
 import com.ing.baker.core.ProcessState
-import com.ing.baker.compiledRecipe._
 import fs2.Task
 import io.kagera.api._
 import io.kagera.execution.{TransitionTask, TransitionTaskProvider}
@@ -60,6 +60,10 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
         MDC.remove("processId")
         result
       }
+
+//      def transformToRuntimeEvent(output: Any): RuntimeEvent = {
+//
+//      }
 
       // function that (optionally) transforms the output event using the event output transformers
       def transformEvent: AnyRef => Output = methodOutput => {

@@ -4,8 +4,6 @@ import com.ing.baker.compiledRecipe.ActionType.{InteractionAction, SieveAction}
 import com.ing.baker.compiledRecipe.petrinet.Place._
 import com.ing.baker.compiledRecipe.petrinet.{EventTransition, InteractionTransition, MultiFacilitatorTransition, Place, Transition}
 
-import scala.util.Try
-
 
 package object compiledRecipe {
   val processIdName         = "$ProcessID$"

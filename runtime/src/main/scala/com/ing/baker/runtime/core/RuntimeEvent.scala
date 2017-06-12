@@ -1,4 +1,5 @@
 package com.ing.baker.runtime.core
 
 
-trait RuntimeEvent {}
+case class RuntimeEvent(name: String,
+                        providedIngredients: Map[String, Any])

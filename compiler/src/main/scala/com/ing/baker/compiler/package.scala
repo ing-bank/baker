@@ -2,7 +2,7 @@ package com.ing.baker
 
 import com.ing.baker.compiledRecipe.ActionType.{InteractionAction, SieveAction}
 import com.ing.baker.compiledRecipe.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing, ProvidesType, Transition}
-import com.ing.baker.compiledRecipe.{ActionType, InteractionFailureStrategy, CompiledEvent, CompiledEventOutputTransformer, CompiledIngredient}
+import com.ing.baker.compiledRecipe.{ActionType, CompiledEvent, CompiledEventOutputTransformer, CompiledIngredient, InteractionFailureStrategy}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{Event, Ingredient, InteractionDescriptor}
 import io.kagera.api._
@@ -86,19 +86,17 @@ package object compiler {
 
 
       val providesType: ProvidesType =
-        interactionDescriptor.interaction.output match{
-          case common.ProvidesIngredient(outputIngredient) => {
+        interactionDescriptor.interaction.output match {
+          case common.ProvidesIngredient(outputIngredient) =>
             val ingredientName: String =
               if(interactionDescriptor.overriddenOutputIngredientName.nonEmpty) interactionDescriptor.overriddenOutputIngredientName.get
               else outputIngredient.name
             ProvidesIngredient(CompiledIngredient(ingredientName, outputIngredient.clazz))
-          }
-          case common.FiresOneOfEvents(events) => {
+          case common.FiresOneOfEvents(events) =>
             val runtimeEvents = events.map(transformEventType)
               .map(e => CompiledEvent(e.name, e.providedIngredients
                 .map(i => CompiledIngredient(i.name, i.clazz))))
             FiresOneOfEvents(runtimeEvents)
-          }
           case common.ProvidesNothing => ProvidesNothing
         }
 
