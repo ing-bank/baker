@@ -20,7 +20,7 @@ case class InteractionDescriptor private(
                                           override val overriddenOutputIngredientName: Option[String] = Option.empty[String],
                                           override val maximumInteractionCount: Option[Int],
                                           override val failureStrategy: Option[common.InteractionFailureStrategy] = None,
-                                          override val eventOutputTransformers: Seq[common.EventOutputTransformer] = Seq.empty,
+                                          override val eventOutputTransformers: Map[common.Event, common.EventOutputTransformer] = Map.empty,
                                           override val actionType: common.ActionType = common.InteractionAction,
                                           newName: String = null)
   extends common.InteractionDescriptor {
@@ -187,25 +187,13 @@ case class InteractionDescriptor private(
     * @tparam A
     * @return
     */
-  def withEventTransformation[A <: Event](
-                                           eventClazz: Class[A],
-                                           newEventName: String,
-                                           ingredientRenames: Map[String, String]): InteractionDescriptor = {
+  def withEventTransformation[A <: Event](eventClazz: Class[A],
+                                          newEventName: String,
+                                          ingredientRenames: Map[String, String]): InteractionDescriptor = {
 
     val originalEvent: common.Event = eventClassToCommonEvent(eventClazz)
-    val fn: common.Event => common.Event = event =>
-      new common.Event {
-        override val name: String = newEventName
-        override val providedIngredients: Seq[common.Ingredient] = event.providedIngredients.map(i =>
-          new common.Ingredient {
-            override val name: String = ingredientRenames.getOrElse(i.name, i.name)
-            override val clazz: Class[_] = i.clazz
-          })
-      }
-    val newEvent = fn(originalEvent)
-
-    val eventOutputTransformer = EventOutputTransformer(originalEvent, newEvent, fn)
-    this.copy(eventOutputTransformers = eventOutputTransformers :+ eventOutputTransformer)
+    val eventOutputTransformer = EventOutputTransformer(newEventName, ingredientRenames)
+    this.copy(eventOutputTransformers = eventOutputTransformers + (originalEvent -> eventOutputTransformer))
   }
 
   /**

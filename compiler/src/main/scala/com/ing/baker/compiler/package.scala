@@ -2,7 +2,7 @@ package com.ing.baker
 
 import com.ing.baker.compiledRecipe.ActionType.{InteractionAction, SieveAction}
 import com.ing.baker.compiledRecipe.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing, ProvidesType, Transition}
-import com.ing.baker.compiledRecipe.{ActionType, InteractionFailureStrategy, CompiledEvent, RuntimeEventOutputTransformer, CompiledIngredient}
+import com.ing.baker.compiledRecipe.{ActionType, InteractionFailureStrategy, CompiledEvent, CompiledEventOutputTransformer, CompiledIngredient}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{Event, Ingredient, InteractionDescriptor}
 import io.kagera.api._
@@ -13,7 +13,7 @@ package object compiler {
 
   def ingredientsToRuntimeIngredient(ingredient: common.Ingredient): CompiledIngredient = CompiledIngredient(ingredient.name, ingredient.clazz)
 
-  def eventToRuntimeEvent(event: common.Event): CompiledEvent = CompiledEvent(event.name, event.providedIngredients.map(ingredientsToRuntimeIngredient))
+  def eventToCompiledEvent(event: common.Event): CompiledEvent = CompiledEvent(event.name, event.providedIngredients.map(ingredientsToRuntimeIngredient))
 
   def runtimeIngredientToIngredient(ingredient: CompiledIngredient): common.Ingredient = new Ingredient {
     override val name: String = ingredient.name
@@ -40,20 +40,50 @@ package object compiler {
                                  interactionDescriptor: InteractionDescriptor,
                                  defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): InteractionTransition[Any] = {
 
+      //This transforms the event using the eventOutputTransformer to the new event
+      //If there is no eventOutputTransformer for the event the original event is returned
+      def transformEventType(event: common.Event): common.Event =
+        interactionDescriptor.eventOutputTransformers.get(event)
+        match {
+          case Some(eventOutputTransformer) =>
+            new common.Event {
+              override val name: String = eventOutputTransformer.newEventName
+              override val providedIngredients: Seq[common.Ingredient] = event.providedIngredients.map(i =>
+                new common.Ingredient {
+                  override val name: String = eventOutputTransformer.ingredientRenames.getOrElse(i.name, i.name)
+                  override val clazz: Class[_] = i.clazz
+                })
+            }
+          case _ => event
+        }
+
+      def transformFailureStrategy(recipeStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): InteractionFailureStrategy = {
+        recipeStrategy match {
+          case com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout: Duration, backoffFactor: Double, maximumRetries: Int) => InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries)
+          case com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction => InteractionFailureStrategy.BlockInteraction
+          case _ => InteractionFailureStrategy.BlockInteraction
+        }
+      }
+
+      def transformEventOutputTransformer(recipeEventOutputTransformer: common.EventOutputTransformer): CompiledEventOutputTransformer = {
+        CompiledEventOutputTransformer(recipeEventOutputTransformer.newEventName, recipeEventOutputTransformer.ingredientRenames
+        )
+      }
+
+      def transformActionType(interactionDescriptor: common.InteractionDescriptor): ActionType = {
+        interactionDescriptor.actionType match {
+          case common.InteractionAction => InteractionAction
+          case common.SieveAction => SieveAction
+        }
+      }
+
       val inputFields: Seq[(String, Class[_])] = interactionDescriptor.interaction.inputIngredients
         //Replace ProcessId to ProcessIdName tag as know in compiledRecipe
         //Replace ingredient tags with overridden tags
         .map(ingredient =>
-          if(ingredient.name == common.ProcessIdName) compiledRecipe.processIdName -> ingredient.clazz
-          else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.clazz)
+        if(ingredient.name == common.ProcessIdName) compiledRecipe.processIdName -> ingredient.clazz
+        else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.clazz)
 
-      def transformEventType(event: common.Event): common.Event =
-        interactionDescriptor.eventOutputTransformers
-            .find(e => e.originalEvent.equals(event))
-        match {
-          case Some(eventOutputTransformer) => eventOutputTransformer.newEvent
-          case _ => event
-        }
 
       val providesType: ProvidesType =
         interactionDescriptor.interaction.output match{
@@ -72,29 +102,6 @@ package object compiler {
           case common.ProvidesNothing => ProvidesNothing
         }
 
-      implicit def transformFailureStrategy(recipeStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): InteractionFailureStrategy = {
-        recipeStrategy match {
-          case com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout: Duration, backoffFactor: Double, maximumRetries: Int) => InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries)
-          case com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction => InteractionFailureStrategy.BlockInteraction
-          case _ => InteractionFailureStrategy.BlockInteraction
-        }
-      }
-
-      def transformEventOutputTransformer(recipeEventOutputTransformer: common.OutputTransformer): RuntimeEventOutputTransformer = {
-        RuntimeEventOutputTransformer(eventToRuntimeEvent(
-          recipeEventOutputTransformer.originalEvent),
-          eventToRuntimeEvent(recipeEventOutputTransformer.newEvent),
-          (runtimeEventToEvent _).andThen(recipeEventOutputTransformer.fn).andThen(eventToRuntimeEvent)
-        )
-      }
-
-      def transformActionType(interactionDescriptor: common.InteractionDescriptor): ActionType = {
-        interactionDescriptor.actionType match {
-          case common.InteractionAction => InteractionAction
-          case common.SieveAction => SieveAction
-        }
-      }
-
       InteractionTransition[Any](
         providesType = providesType,
         inputFields = inputFields,
@@ -102,8 +109,8 @@ package object compiler {
         originalInteractionName = interactionDescriptor.interaction.name,
         predefinedParameters = interactionDescriptor.predefinedIngredients,
         maximumInteractionCount = interactionDescriptor.maximumInteractionCount,
-        failureStrategy = interactionDescriptor.failureStrategy.getOrElse[com.ing.baker.recipe.common.InteractionFailureStrategy](defaultFailureStrategy),
-        eventOutputTransformers =  interactionDescriptor.eventOutputTransformers.map(et => eventToRuntimeEvent(et.originalEvent) -> transformEventOutputTransformer(et)).toMap,
+        failureStrategy = transformFailureStrategy(interactionDescriptor.failureStrategy.getOrElse[common.InteractionFailureStrategy](defaultFailureStrategy)),
+        eventOutputTransformers =  interactionDescriptor.eventOutputTransformers.map(et => eventToCompiledEvent(et._1) -> transformEventOutputTransformer(et._2)),
         actionType = transformActionType(interactionDescriptor))
     }
   }

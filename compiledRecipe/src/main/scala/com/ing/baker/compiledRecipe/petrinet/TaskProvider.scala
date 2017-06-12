@@ -64,12 +64,12 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
       // function that (optionally) transforms the output event using the event output transformers
       def transformEvent: AnyRef => Output = methodOutput => {
         interaction.providesType match {
-            //TODO rewrite this once the recipe dsl is finished for replacing events
+            //TODO enable this once the runtimeEvent is created
 //          case FiresOneOfEvents(_) =>
-//            val runtimeEventMethodOutput: CompiledEvent = CompiledEvent(methodOutput)
+//            val compiledEvent: CompiledEvent = CompiledEvent(methodOutput)
 //            interaction.eventOutputTransformers
-//              .get(runtimeEventMethodOutput)
-//              .map(_.fn(runtimeEventMethodOutput))
+//              .get(compiledEvent)
+//              .map(_.fn(compiledEvent))
 //              .getOrElse(methodOutput).asInstanceOf[Output]
           case _ => methodOutput.asInstanceOf[Output]
         }

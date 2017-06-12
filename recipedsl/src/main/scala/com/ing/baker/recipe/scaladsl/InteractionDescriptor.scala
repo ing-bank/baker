@@ -13,7 +13,7 @@ case class InteractionDescriptor private(override val interaction: Interaction,
                                          override val overriddenOutputIngredientName: Option[String] = None,
                                          override val maximumInteractionCount: Option[Int] = None,
                                          override val failureStrategy: Option[InteractionFailureStrategy] = None,
-                                         override val eventOutputTransformers: Seq[EventOutputTransformer] = Seq.empty,
+                                         override val eventOutputTransformers: Map[common.Event, common.EventOutputTransformer] = Map.empty,
                                          override val actionType: ActionType = common.InteractionAction,
                                          newName: String = null)
   extends common.InteractionDescriptor {
@@ -53,8 +53,8 @@ case class InteractionDescriptor private(override val interaction: Interaction,
                                       maximumRetries: Int = 50): InteractionDescriptor =
     copy(failureStrategy = Some(RetryWithIncrementalBackoff(initialDelay, backoffFactor, maximumRetries)))
 
-  def withEventOutputTransformer(originalEvent: common.Event, f: common.Event => common.Event): InteractionDescriptor =
-    copy(eventOutputTransformers = eventOutputTransformers :+ EventOutputTransformer(originalEvent, f(originalEvent),f))
+  def withEventOutputTransformer(event: Event, newEventName: String, ingredientRenames: Map[String, String]): InteractionDescriptor =
+    copy(eventOutputTransformers = eventOutputTransformers + (event -> EventOutputTransformer(newEventName, ingredientRenames)))
 }
 
 object InteractionDescriptorFactory {

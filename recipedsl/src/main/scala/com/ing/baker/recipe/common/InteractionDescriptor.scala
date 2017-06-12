@@ -38,6 +38,12 @@ trait InteractionDescriptor {
     */
   val overriddenOutputIngredientName: Option[String]
 
+
+  /**
+    * This is used to overwrite the name used for the output event and for the ingredients created by the event
+    */
+  val eventOutputTransformers: Map[Event, EventOutputTransformer]
+
   /**
     * Indicates the maximum number of times the interaction may be called.
     */
@@ -47,9 +53,6 @@ trait InteractionDescriptor {
     * An optional strategy how to deal with failures. Falls back to the default strategy specified in the recipe.
     */
   val failureStrategy: Option[InteractionFailureStrategy]
-
-
-  val eventOutputTransformers: Seq[EventOutputTransformer]
 
   val actionType: ActionType
 

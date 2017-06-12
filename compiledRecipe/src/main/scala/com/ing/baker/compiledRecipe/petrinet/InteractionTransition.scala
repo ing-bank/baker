@@ -1,6 +1,6 @@
 package com.ing.baker.compiledRecipe.petrinet
 
-import com.ing.baker.compiledRecipe.{ActionType, RuntimeEventOutputTransformer, InteractionFailureStrategy, _}
+import com.ing.baker.compiledRecipe.{ActionType, CompiledEventOutputTransformer, InteractionFailureStrategy, _}
 import com.ing.baker.core.ProcessState
 import io.kagera.execution.TransitionExceptionHandler
 import org.slf4j._
@@ -37,7 +37,7 @@ case class InteractionTransition[I](providesType: ProvidesType,
                                     predefinedParameters: Map[String, Any],
                                     maximumInteractionCount: Option[Int],
                                     failureStrategy: InteractionFailureStrategy,
-                                    eventOutputTransformers: Map[CompiledEvent, RuntimeEventOutputTransformer] = Map.empty)
+                                    eventOutputTransformers: Map[CompiledEvent, CompiledEventOutputTransformer] = Map.empty)
 
   extends Transition[Unit, AnyRef, ProcessState] {
 
