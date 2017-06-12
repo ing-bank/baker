@@ -459,9 +459,10 @@ class BakerExecutionSpec extends TestRecipeHelper {
       events.foreach(println)
 
       //Check if both the send in event and the events occured in baker are in the
+
       baker.events(processId) should contain only (
-        InitialEvent("initialIngredient"),
-        interactionTwoEventValue
+        RuntimeEvent.apply("InitialEvent", Map[String, Any]("initialIngredient" -> "initialIngredient")),
+        RuntimeEvent.apply("EventFromInteractionTwo", Map[String, Any]("interactionTwoIngredient" -> "interactionTwoIngredient"))
         )
 
       //Execute another event
@@ -469,9 +470,9 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       //Check if both the send in event and the events occured in baker are in the
       baker.events(processId) should contain only (
-        InitialEvent("initialIngredient"),
-        interactionTwoEventValue,
-        SecondEvent()
+        RuntimeEvent.apply("InitialEvent", Map[String, Any]("initialIngredient" -> "initialIngredient")),
+        RuntimeEvent.apply("EventFromInteractionTwo", Map[String, Any]("interactionTwoIngredient" -> "interactionTwoIngredient")),
+        RuntimeEvent.apply("SecondEvent", Map.empty[String, Any])
         )
     }
 

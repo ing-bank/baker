@@ -1,5 +1,7 @@
 package com.ing.baker.runtime.java_api
 
+import com.ing.baker.runtime.core.RuntimeEvent
+
 import scala.collection.JavaConverters._
 
 /**
@@ -7,11 +9,11 @@ import scala.collection.JavaConverters._
   *
   * @param events The event sequence.
   */
-class EventList(private val events: Seq[Any]) extends java.util.AbstractList[AnyRef] {
+class EventList(private val events: Seq[RuntimeEvent]) extends java.util.AbstractList[AnyRef] {
 
   def this() = this(Seq.empty)
 
-  def this(events: java.util.List[AnyRef]) = this(events.asScala)
+  def this(events: java.util.List[RuntimeEvent]) = this(events.asScala)
 
   override def get(index: Int): AnyRef = events.apply(index).asInstanceOf[AnyRef]
 
@@ -24,7 +26,7 @@ class EventList(private val events: Seq[Any]) extends java.util.AbstractList[Any
     *
     * @return
     */
-  def hasEventOccurred(clazz: Class[_]): Boolean = events.exists(e => clazz.isInstance(e))
+  def hasEventOccurred(clazz: Class[_]): Boolean = events.exists(e => e.name equals clazz.getSimpleName)
 
   /**
     * Returns the number of times an event occurred.
@@ -33,19 +35,12 @@ class EventList(private val events: Seq[Any]) extends java.util.AbstractList[Any
     *
     * @return The number of times an event occurred.
     */
-  def getEventCount(clazz: Class[_]): Int = events.filter(e => clazz.isInstance(e)).size
-
-  /**
-    * Returns a list of the event classes that have fired
-    *
-    * @return A list of event classes.
-    */
-  def getEventClassList: java.util.List[Class[_]] = events.toList.map(_.getClass).asJava
+  def getEventCount(clazz: Class[_]): Int = events.count(e => e.name equals clazz.getSimpleName)
 
   /**
     * Returns a list of simple names of all events that have fired.
     *
     * @return A list of event classes.
     */
-  def getEventNameList: java.util.List[String] = events.map(_.getClass.getSimpleName).asJava
+  def getEventNameList: java.util.List[String] = events.map(_.name).asJava
 }

@@ -199,7 +199,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
   /**
     * Synchronously returns all events that occurred for a process.
     */
-  def events(processId: java.util.UUID)(implicit timeout: FiniteDuration): Seq[Any] = {
+  def events(processId: java.util.UUID)(implicit timeout: FiniteDuration): Seq[RuntimeEvent] = {
 
     val futureEventSeq = eventsAsync(processId).runWith(Sink.seq)
 
@@ -212,14 +212,14 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * @param processId The process identifier.
     * @return The source of events.
     */
-  def eventsAsync(processId: java.util.UUID): Source[Any, NotUsed] = {
+  def eventsAsync(processId: java.util.UUID): Source[RuntimeEvent, NotUsed] = {
     PetriNetQuery
       .eventsForInstance[Place, Transition, ProcessState](processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal,
         //TODO remove this casting once kagera supports setting the type for the event
         transitionEventSource(ingredientExtractor).asInstanceOf[Transition[_,_,_] => ProcessState => Any => ProcessState])
       .collect {
-        case (_, TransitionFiredEvent(_, _, _, _, _, _, output))
-          if output != null && compiledRecipe.allEvents.exists(e => e.name equals output.getClass.getSimpleName) => output
+        case (_, TransitionFiredEvent(_, _, _, _, _, _, runtimeEvent: RuntimeEvent))
+          if runtimeEvent != null && compiledRecipe.allEvents.exists(e => e.name equals runtimeEvent.name) => runtimeEvent
       }
   }
 
@@ -263,10 +263,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   //TODO, decide if Baker can visualise itself or is visualising part of the runtime that the compiler exposes also?
   def getVisualState(processId: java.util.UUID)(implicit timeout: FiniteDuration): String = {
-    val events: Seq[Any] = this.events(processId)
-    val classes: Seq[String] = events.map(_.getClass.getSimpleName)
-
-    RecipeVisualizer.visualiseCompiledRecipe(compiledRecipe, events = classes)
+    RecipeVisualizer.visualiseCompiledRecipe(compiledRecipe, events = this.events(processId).map(_.name))
   }
 
 
