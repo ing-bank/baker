@@ -40,18 +40,18 @@ object TestRecipeHelper {
 
   //Events as used in the recipe & objects used in runtime
   val initialEvent = Event("InitialEvent", initialIngredient)
-  case class InitialEvent(initialIngredient: String) extends RuntimeEvent {}
+  case class InitialEvent(initialIngredient: String) {}
 
   val initialEventExtendedName = Event("InitialEventExtendedName", initialIngredientExtendedName)
-  case class InitialEventExtendedName(initialIngredientExtendedName: String) extends RuntimeEvent
+  case class InitialEventExtendedName(initialIngredientExtendedName: String)
   val secondEvent = Event("SecondEvent")
-  case class SecondEvent() extends RuntimeEvent
+  case class SecondEvent()
   val notUsedSensoryEvent = Event("NotUsedSensoryEvent")
-  case class NotUsedSensoryEvent() extends RuntimeEvent
+  case class NotUsedSensoryEvent()
   val eventFromInteractionTwo = Event("EventFromInteractionTwo", interactionTwoIngredient)
-  case class EventFromInteractionTwo(interactionTwoIngredient: String) extends RuntimeEvent
+  case class EventFromInteractionTwo(interactionTwoIngredient: String)
   val eventWithANonSerializableIngredient = Event("EventWithANonSerializableIngredient", nonSerializableIngredient)
-  case class EventWithANonSerializableIngredient(nonSerializableObject: NonSerializableObject) extends RuntimeEvent
+  case class EventWithANonSerializableIngredient(nonSerializableObject: NonSerializableObject)
 
   //Interactions used in the recipe & implementations (we use traits instead of case classes since we use mocks for the real implementations
   val interactionOne = Interaction("InteractionOne", Ingredients(processId, initialIngredient), ProvidesIngredient(interactionOneOriginalIngredient))

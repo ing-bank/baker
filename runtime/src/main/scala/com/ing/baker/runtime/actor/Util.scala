@@ -25,7 +25,7 @@ object Util {
       settings,
       jobPicker,
       jobExecutor(topology, interactions, ingredientExtractor, settings.evaluationStrategy),
-      transitionEventSource(ingredientExtractor),
+      transitionEventSource(ingredientExtractor).asInstanceOf[Transition[_,_,_] => ProcessState => Any => ProcessState],
       petrinet.placeIdentifier,
       petrinet.transitionIdentifier)
     )

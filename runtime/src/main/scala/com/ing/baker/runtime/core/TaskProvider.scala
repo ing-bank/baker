@@ -5,7 +5,7 @@ import java.util.UUID
 
 import com.ing.baker.compiledRecipe._
 import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
-import com.ing.baker.compiledRecipe.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, Place, Transition}
+import com.ing.baker.compiledRecipe.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, Place, ProvidesIngredient, ProvidesNothing, Transition}
 import com.ing.baker.core.ProcessState
 import fs2.Task
 import io.kagera.api._
@@ -61,31 +61,46 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
         result
       }
 
-//      def transformToRuntimeEvent(output: Any): RuntimeEvent = {
-//
-//      }
+      def createRuntimeEvent(output: Any): RuntimeEvent = {
+        interaction.providesType match {
+          case FiresOneOfEvents(events) =>
+          {
+            val optionalFoundEvent: Option[CompiledEvent] = events.find(e => e.name equals output.getClass.getSimpleName)
+            if (optionalFoundEvent.isDefined)
+              RuntimeEvent.forEvent(output, optionalFoundEvent.get, ingredientExtractor)
+            else {
+              val msg: String = s"Output: $output fired by an interaction but could not link it to any known event for the interaction"
+              log.error(msg)
+              throw new FatalBakerException(msg)
+            }
+          }
+          case ProvidesIngredient(ingredient) => RuntimeEvent.forIngredient(interaction.interactionName, output, ingredient)
+          case ProvidesNothing => RuntimeEvent.forNothing(interaction.interactionName)
+        }
+      }
 
       // function that (optionally) transforms the output event using the event output transformers
-      def transformEvent: AnyRef => Output = methodOutput => {
-        interaction.providesType match {
-            //TODO enable this once the runtimeEvent is created
-//          case FiresOneOfEvents(_) =>
-//            val compiledEvent: CompiledEvent = CompiledEvent(methodOutput)
-//            interaction.eventOutputTransformers
-//              .get(compiledEvent)
-//              .map(_.fn(compiledEvent))
-//              .getOrElse(methodOutput).asInstanceOf[Output]
-          case _ => methodOutput.asInstanceOf[Output]
-        }
+      def transformEvent(runtimeEvent: RuntimeEvent): RuntimeEvent = {
+       interaction.providesType match {
+         case FiresOneOfEvents(events) => {
+           interaction.eventOutputTransformers.get(runtimeEvent.toCompiledEvent) match {
+             case Some(eventOutputTransformer) =>
+               RuntimeEvent(
+                 eventOutputTransformer.newEventName,
+                 runtimeEvent.providedIngredients.map(pi => eventOutputTransformer.ingredientRenames.getOrElse(pi._1, pi._1) -> pi._2))
+             case None => runtimeEvent
+           }
+         }
+         case _ => runtimeEvent
+       }
       }
 
       // returns a delayed task that will get executed by the kagera runtime
       Task
         .delay(invokeMethod())
-        .map {
-          transformEvent
-        }
-        .map { output => (createProducedMarking(interaction, outAdjacent)(output.asInstanceOf[AnyRef]), output) }
+        .map(createRuntimeEvent)
+        .map(transformEvent)
+        .map { output => (createProducedMarking(interaction, outAdjacent)(output.asInstanceOf[AnyRef]), output.asInstanceOf[Output]) }
         .handleWith(failureHandler)
     }.recover(failureHandler).get
   }

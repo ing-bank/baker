@@ -1,7 +1,5 @@
 package com.ing.baker.recipe.scaladsl
 
-import java.util.UUID
-
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
@@ -47,9 +45,10 @@ object ScaladslSpec {
             automaticApprovedEvent,
             manualApprovedEvent),
         openAccount
-            .withEventOutputTransformer(
-              accountOpenedEvent,
-              renameEvent)
+              .withEventOutputTransformer(
+                accountOpenedEvent,
+                "newAccountOpenedEvent",
+                Map.empty)
       )
       .withSensoryEvents(
         agreementsAcceptedEvent,
@@ -57,8 +56,6 @@ object ScaladslSpec {
         manualApprovedEvent,
         automaticApprovedEvent
       )
-
-  def renameEvent(e: common.Event): common.Event = Event(e.name + "new", e.providedIngredients)
 }
 
 class ScaladslSpec extends WordSpecLike with Matchers with MockitoSugar {

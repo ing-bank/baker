@@ -58,10 +58,5 @@ case class InteractionTransition[I](providesType: ProvidesType,
   val requiredIngredients: Map[String, Class[_]] =
     inputFields.toMap.filterKeys(requiredIngredientNames.contains)
 
-  def transformEventType(event: CompiledEvent): CompiledEvent =
-    eventOutputTransformers
-      .get(event)
-      .fold(event)(_.newEvent)
-
   val exceptionStrategy: TransitionExceptionHandler = InteractionFailureStrategy.asTransitionExceptionHandler(failureStrategy)
 }

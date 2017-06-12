@@ -1,7 +1,7 @@
 package com.ing.baker.runtime
 
 import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
-import com.ing.baker.compiledRecipe.petrinet.{EventSource, EventTransition, InteractionTransition, Place, RecipePetriNet, RecipeTokenGame, Transition}
+import com.ing.baker.compiledRecipe.petrinet.{EventTransition, InteractionTransition, Place, RecipePetriNet, RecipeTokenGame, Transition}
 import com.ing.baker.core.ProcessState
 import fs2.Strategy
 import io.kagera.execution.ExceptionStrategy.BlockTransition
@@ -15,9 +15,9 @@ package object core {
     }
   }
 
-  def transitionEventSource(ingredientExtractor: IngredientExtractor): Transition[_,_,_] => (ProcessState => Any => ProcessState) = {
-    case t: InteractionTransition[_] => EventSource.updateIngredientState(t, ingredientExtractor)
-    case t: EventTransition          => EventSource.updateEventState(t, ingredientExtractor)
+  def transitionEventSource(ingredientExtractor: IngredientExtractor): Transition[_,_,_] => (ProcessState => RuntimeEvent => ProcessState) = {
+    case t: InteractionTransition[_] => EventSource.updateStateFromInteractionOutput()
+    case t: EventTransition          => EventSource.updateStateFromEventOutput(t)
     case t                           => s => e => s
   }
 

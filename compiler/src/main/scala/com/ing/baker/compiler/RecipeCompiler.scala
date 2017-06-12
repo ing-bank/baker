@@ -30,7 +30,7 @@ object RecipeCompiler {
       // a new `Place` generated for each AND events
       val eventPreconditionPlace = createPlace(label = s"${event.name}-${interaction.name}", placeType = EventPreconditionPlace)
 
-      buildEventPreconditionArcs(eventToRuntimeEvent(event),
+      buildEventPreconditionArcs(eventToCompiledEvent(event),
                                  eventPreconditionPlace,
                                  preconditionTransition,
                                  interactionTransition(interaction.name).get)
@@ -46,7 +46,7 @@ object RecipeCompiler {
     val eventPreconditionPlace = createPlace(label = interaction.name, placeType = EventOrPreconditionPlace)
 
     interaction.requiredOneOfEvents.toSeq.map { event =>
-      buildEventPreconditionArcs(eventToRuntimeEvent(event),
+      buildEventPreconditionArcs(eventToCompiledEvent(event),
                                  eventPreconditionPlace,
                                  preconditionTransition,
                                  interactionTransition(interaction.name).get)
@@ -175,7 +175,7 @@ object RecipeCompiler {
     }.unzip
 
     // events provided from outside
-    val sensoryEventTransitions: Seq[EventTransition] = recipe.sensoryEvents.map { event =>  EventTransition(eventToRuntimeEvent(event))}.toSeq
+    val sensoryEventTransitions: Seq[EventTransition] = recipe.sensoryEvents.map { event =>  EventTransition(eventToCompiledEvent(event))}.toSeq
 
     // events provided by other transitions / actions
     val interactionEventTransitions: Seq[EventTransition] = interactionTransitions.flatMap { t =>
@@ -273,7 +273,7 @@ object RecipeCompiler {
       name = recipe.name,
       petriNet = petriNet,
       initialMarking = initialMarking,
-      sensoryEvents = recipe.sensoryEvents.map(eventToRuntimeEvent),
+      sensoryEvents = recipe.sensoryEvents.map(eventToCompiledEvent),
       validationErrors = interactionValidationErrors.flatten ++ preconditionORErrors ++ preconditionANDErrors
     )
 

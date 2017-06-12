@@ -59,9 +59,9 @@ object Baker {
       .map(i => s"No implementation provided for interaction: ${i.originalInteractionName}")
   }
 
-  def transitionForEventClass(event: Any, compiledRecipe: CompiledRecipe) =
-    compiledRecipe.petriNet.transitions.findByLabel(event.getClass.getSimpleName).getOrElse {
-      throw new IllegalArgumentException(s"No such event known in recipe: $event")
+  def transitionForRuntimeEvent(runtimeEvent: RuntimeEvent, compiledRecipe: CompiledRecipe) =
+    compiledRecipe.petriNet.transitions.findByLabel(runtimeEvent.name).getOrElse {
+      throw new IllegalArgumentException(s"No such event known in recipe: $runtimeEvent")
     }
 }
 
@@ -140,11 +140,10 @@ class Baker(val compiledRecipe: CompiledRecipe,
   private val readJournal = PersistenceQuery(actorSystem)
     .readJournalFor[CurrentEventsByPersistenceIdQuery with AllPersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
 
-  private def createEventMsg(processId: java.util.UUID, event: Any) = {
-    require(event != null, "Event can not be null")
-
-    val t = transitionForEventClass(event, compiledRecipe)
-    BakerActorMessage(processId, FireTransition(t.id, event))
+  private def createEventMsg(processId: java.util.UUID, runtimeEvent: RuntimeEvent) = {
+    require(runtimeEvent != null, "Event can not be null")
+    val t: Transition[_, _, _] = transitionForRuntimeEvent(runtimeEvent, compiledRecipe)
+    BakerActorMessage(processId, FireTransition(t.id, runtimeEvent))
   }
 
   /**
@@ -215,7 +214,9 @@ class Baker(val compiledRecipe: CompiledRecipe,
     */
   def eventsAsync(processId: java.util.UUID): Source[Any, NotUsed] = {
     PetriNetQuery
-      .eventsForInstance[Place, Transition, ProcessState](processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal, transitionEventSource(ingredientExtractor))
+      .eventsForInstance[Place, Transition, ProcessState](processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal,
+        //TODO remove this casting once kagera supports setting the type for the event
+        transitionEventSource(ingredientExtractor).asInstanceOf[Transition[_,_,_] => ProcessState => Any => ProcessState])
       .collect {
         case (_, TransitionFiredEvent(_, _, _, _, _, _, output))
           if output != null && compiledRecipe.allEvents.exists(e => e.name equals output.getClass.getSimpleName) => output
@@ -237,8 +238,13 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * with the response you have NO guarantee that the event is received by baker.
     */
   def handleEventAsync(processId: UUID, event: Any): BakerResponse = {
+    //Check if the event is of a know sensory event and create a RuntimeEvent from it.
+    val runtimeEvent = compiledRecipe.sensoryEvents.find(se => se.name == event.getClass.getSimpleName) match {
+      case Some(compiledEvent) => RuntimeEvent.forEvent(event, compiledEvent, ingredientExtractor)
+      case None => throw new BakerException(s"Fired event $event is not recognised as any valid sensory event")
+    }
 
-    val msg = createEventMsg(processId, event)
+    val msg = createEventMsg(processId, runtimeEvent)
     val source = petriNetApi.askAndCollectAll(msg, waitForRetries = true)
     new BakerResponse(processId, source)
   }

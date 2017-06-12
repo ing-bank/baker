@@ -3,7 +3,6 @@ package com.ing.baker.recipe.javadsl
 import java.util.Optional
 
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.EventOutputTransformer
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
 
 import scala.annotation.varargs

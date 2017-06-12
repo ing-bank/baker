@@ -112,11 +112,11 @@ public class JCompiledRecipeTest {
         Assert.assertTrue("Should contain RequestIDStringTwo", visualRecipe.contains("RequestIDStringTwo"));
     }
 
-    public static class EventOne implements Event, RuntimeEvent {}
+    public static class EventOne implements Event {}
 
-    public static class EventTwo implements Event, RuntimeEvent {}
+    public static class EventTwo implements Event {}
 
-    public static class EventWithoutIngredientsNorPreconditions implements Event, RuntimeEvent {}
+    public static class EventWithoutIngredientsNorPreconditions implements Event {}
 
     public static class SieveImpl implements Interaction {
         @ProvidesIngredient("AppendedRequestIds")

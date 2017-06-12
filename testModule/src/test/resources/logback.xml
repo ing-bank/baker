@@ -9,18 +9,18 @@
     </appender>
 
     <logger name="akka" level="trace" additivity="false">
-        <!--<appender-ref ref="CONSOLE"/>-->
+        <appender-ref ref="CONSOLE"/>
     </logger>
 
     <logger name="com.ing.baker" level="trace" additivity="false">
-        <!--<appender-ref ref="CONSOLE"/>-->
+        <appender-ref ref="CONSOLE"/>
     </logger>
 
     <logger name="io.kagera" level="trace" additivity="false">
-        <!--<appender-ref ref="CONSOLE"/>-->
+        <appender-ref ref="CONSOLE"/>
     </logger>
 
     <root level="debug">
-        <!--<appender-ref ref="CONSOLE"/>-->
+        <appender-ref ref="CONSOLE"/>
     </root>
 </configuration>
