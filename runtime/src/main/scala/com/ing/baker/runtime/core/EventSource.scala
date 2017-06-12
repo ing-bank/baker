@@ -14,8 +14,14 @@ object EventSource {
 
   //Only extract ingredients if they are fired by a sensory events
   //If it is a interaction provided event then the ingredients are provided by the Interaction.
-  def updateStateFromEventOutput(eventTransition: EventTransition): (ProcessState) => (RuntimeEvent) => ProcessState =
-    state => event =>
-      if (eventTransition.isSensoryEvent) state.copy(ingredients = state.ingredients ++ event.providedIngredients)
-      else state
+  def updateStateFromEventOutput(eventTransition: EventTransition): (ProcessState) => (Any) => ProcessState =
+    state => {
+      case runtimeEvent: RuntimeEvent =>
+        if (eventTransition.isSensoryEvent) state.copy(ingredients = state.ingredients ++ runtimeEvent.providedIngredients)
+        else state
+      case _ => state
+    }
+
+  //This only exists
+  def updateNothing(): (ProcessState) => (Any) => ProcessState = state => {_ => state}
 }

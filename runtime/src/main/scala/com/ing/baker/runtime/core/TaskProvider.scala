@@ -100,7 +100,7 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
         .delay(invokeMethod())
         .map(createRuntimeEvent)
         .map(transformEvent)
-        .map { output => (createProducedMarking(interaction, outAdjacent)(output.asInstanceOf[AnyRef]), output.asInstanceOf[Output]) }
+        .map { output => (createProducedMarking(interaction, outAdjacent)(output), output.asInstanceOf[Output]) }
         .handleWith(failureHandler)
     }.recover(failureHandler).get
   }
@@ -152,13 +152,12 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
   /**
     * Creates the produced marking (tokens) given the output (event) of the interaction.
     */
-  def createProducedMarking[A](interaction: InteractionTransition[A], outAdjacent: MultiSet[Place[_]]): AnyRef => Marking[Place] = { output =>
+  def createProducedMarking[A](interaction: InteractionTransition[A], outAdjacent: MultiSet[Place[_]]): RuntimeEvent => Marking[Place] = { output =>
     outAdjacent.keys.map { place =>
       val value: Any = {
         interaction.providesType match {
           case FiresOneOfEvents(events) =>
-            val outputName =  output.getClass.getSimpleName
-            events.find(_.name == outputName).map(_.name).getOrElse {
+            events.find(_.name == output.name).map(_.name).getOrElse {
               throw new IllegalStateException(
                 s"Method output: $output is not an instance of any of the specified events: ${
                   events

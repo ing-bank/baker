@@ -18,7 +18,7 @@ package object core {
   def transitionEventSource(ingredientExtractor: IngredientExtractor): Transition[_,_,_] => (ProcessState => RuntimeEvent => ProcessState) = {
     case t: InteractionTransition[_] => EventSource.updateStateFromInteractionOutput()
     case t: EventTransition          => EventSource.updateStateFromEventOutput(t)
-    case t                           => s => e => s
+    case t                           => EventSource.updateNothing()
   }
 
 
