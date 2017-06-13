@@ -13,7 +13,7 @@ class RecipeRuntime(interactions: Map[String, () => AnyRef], ingredientExtractor
   override val eventSourceFn: Transition[_,_] => (ProcessState => RuntimeEvent => ProcessState) = {
     case t: InteractionTransition[_] => EventSource.updateStateFromInteractionOutput()
     case t: EventTransition          => EventSource.updateStateFromEventOutput(t)
-    case t                           => EventSource.updateNothing()
+    case t                           => state => e => state
   }
 
   override val exceptionHandlerFn: Transition[_,_] => TransitionExceptionHandler = {
