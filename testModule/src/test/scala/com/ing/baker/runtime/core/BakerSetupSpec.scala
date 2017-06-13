@@ -5,6 +5,7 @@ import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.core.{BakerException, NonSerializableException, RecipeValidationException}
 import com.ing.baker.recipe.scaladsl.Recipe
+import com.ing.baker.runtime.core.implementations.{InteractionOneFieldName, InteractionOneInterfaceImplementation}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -19,97 +20,99 @@ class BakerSetupSpec extends TestRecipeHelper {
 
   "The Baker execution engine during setup" should {
 
-    "should startup correctly without throwing an error if provided a correct recipe and correct implementations" in {
-      val recipe = getComplexRecipe("ValidRecipe")
-      new Baker(
-        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-        implementations = mockImplementations,
-        actorSystem = defaultActorSystem)
-    }
+    "startup correctly without throwing an error if provided a correct recipe and correct implementations" when {
 
-    "throw an RecipeValidationException if an invalid recipe is given" in {
-      val recipe = Recipe("NonProvidedIngredient")
-        .withInteraction(interactionOne)
-
-      a[RecipeValidationException] should be thrownBy {
+      "providing the implementation directly in a map" in {
+        val recipe = Recipe("directImplementationmap")
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent)
         new Baker(
           compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-          implementations = mockImplementations,
-          actorSystem = defaultActorSystem)
+          implementations = mockImplementations)
+      }
+
+      "providing the implementation in a sequence with the class simplename same as the interaction" in {
+        val recipe = Recipe("simpleNameImplementation")
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent)
+
+        new Baker(
+          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+          implementations = Seq(new implementations.InteractionOne()))
+      }
+
+      "providing the implementation in a sequence with the field name same as the interaction" in {
+        val recipe = Recipe("fieldNameImplementation")
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent)
+
+        new Baker(
+          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+          implementations = Seq(new InteractionOneFieldName()))
+      }
+
+      "providing the implementation in a sequence with the interface its implementing with the correct name" in {
+        val recipe = Recipe("interfaceImplementation")
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent)
+
+        new Baker(
+          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+          implementations = Seq(new InteractionOneInterfaceImplementation()))
       }
     }
 
-    //Sieves are not auto constructed anymore, find out if we want this back or not
-    "throw a BakerException if a sieve does not have a default constructor" ignore {
-      val recipe = Recipe("SieveWithoutDefaultConstructor")
-          .withInteractions(sieveInteractionWithoutDefaultConstructor)
+    "throw a exception" when {
+      "an invalid recipe is given" in {
+        val recipe = Recipe("NonProvidedIngredient")
+          .withInteraction(interactionOne)
+
+        a[RecipeValidationException] should be thrownBy {
+          new Baker(
+            compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+            implementations = mockImplementations)
+        }
+      }
+
+      "a recipe does not provide an implementation for an interaction" in {
+        val recipe = Recipe("MissingImplementation")
+          .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-      intercept[BakerException] {
-        new Baker(
-          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-          implementations = Map.empty,
-          actorSystem = defaultActorSystem)
-      } should have('message("No default constructor found for Sieve: 'class com.ing.baker.SieveInteractionWithoutDefaultConstructor'"))
-    }
+        intercept[BakerException] {
+          new Baker(
+            compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+            implementations = Map.empty[String, () => AnyRef])
 
-    "throw an BakerException if a recipe does not provide an implementation for an interaction" in {
-      val recipe = Recipe("MissingImplementation")
-        .withInteraction(interactionOne)
-        .withSensoryEvent(initialEvent)
+        } should have('message("No implementation provided for interaction: InteractionOne"))
+      }
 
-      intercept[BakerException] {
-        new Baker(
-          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-          implementations = Map.empty,
-          actorSystem = defaultActorSystem)
-      } should have('message("No implementation provided for interaction: InteractionOne"))
-    }
+      "with the list of ingredient serialization validation errors for Ingredients provided by Interactions" in {
 
-    "throw NonSerializableException with the list of ingredient serialization validation errors for Ingredients provided by Interactions" in {
+        val recipe = Recipe("NonSerializableIngredientTest")
+          .withInteraction(NonSerializableIngredientInteraction)
+          .withSensoryEvent(initialEvent)
 
-      val recipe = Recipe("NonSerializableIngredientTest")
-        .withInteraction(NonSerializableIngredientInteraction)
-        .withSensoryEvent(initialEvent)
+        intercept[NonSerializableException] {
+          new Baker(
+            compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+            implementations = mockImplementations)
 
-      intercept[NonSerializableException] {
-        new Baker(
-          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-          implementations = mockImplementations,
-          actorSystem = defaultActorSystem)
-      } should have('message("Ingredient nonSerializableIngredient of class com.ing.baker.NonSerializableObject is not serializable by akka"))
+        } should have('message("Ingredient nonSerializableIngredient of class com.ing.baker.NonSerializableObject is not serializable by akka"))
+      }
 
-    }
+      "with the list of ingredient serialization validation errors for Ingredients provided by Events" in {
 
-    "throw NonSerializableException with the list of ingredient serialization validation errors for Ingredients provided by Events" in {
-
-      val recipe = Recipe("NonSerializableIngredientFromEventTest")
+        val recipe = Recipe("NonSerializableIngredientFromEventTest")
           .withSensoryEvent(eventWithANonSerializableIngredient)
 
-      intercept[NonSerializableException] {
-        new Baker(
-          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-          implementations = mockImplementations,
-          actorSystem = defaultActorSystem)
-      } should have('message("Ingredient nonSerializableIngredient of class com.ing.baker.NonSerializableObject is not serializable by akka"))
+        intercept[NonSerializableException] {
+          new Baker(
+            compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+            implementations = mockImplementations)
 
+        } should have('message("Ingredient nonSerializableIngredient of class com.ing.baker.NonSerializableObject is not serializable by akka"))
+      }
     }
-
-
-    //Events are not know when Baker is startup, each event is transformed into a RuntimeEvent that is always Serializable.
-    "throw NonSerializableException with a list of non serializable events if an event is not Serializable" ignore {
-
-      val recipe = Recipe("NonSerializableEventTest")
-        .withInteraction(NonSerializableEventInteraction)
-        .withSensoryEvent(initialEvent)
-
-      intercept[NonSerializableException] {
-        new Baker(
-          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-          implementations = mockImplementations,
-          actorSystem = defaultActorSystem)
-      } should have('message("Event class: class com.ing.baker.NonSerializableObject does not extend from com.ing.baker.api.Event"))
-    }
-
   }
 }

@@ -36,7 +36,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     this(compiledRecipe, implementations, ActorSystem.apply("BakerActorSystem", JBaker.defaultConfig))
 
   val interactionImplementations: Map[String, () => AnyRef] = Baker.implementationsToProviderMap(implementations.asScala)
-  val baker: Baker = Baker(compiledRecipe = compiledRecipe, implementations.asScala, actorSystem = actorSystem)
+  val baker: Baker = new Baker(compiledRecipe = compiledRecipe, implementations.asScala)(actorSystem = actorSystem)
   val defaultTimeout = 20 * 1000
 
   /**

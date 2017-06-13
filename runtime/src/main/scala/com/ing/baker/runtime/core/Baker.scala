@@ -36,15 +36,6 @@ import scala.util.{Failure, Success, Try}
 
 object Baker {
 
-  def apply(compiledRecipe: CompiledRecipe,
-            implementations: Seq[AnyRef],
-            ingredientExtractor: IngredientExtractor = new CompositeIngredientExtractor(),
-            actorSystem: ActorSystem): Baker = {
-    val implementationsMap = implementationsToProviderMap(implementations)
-
-    new Baker(compiledRecipe, implementationsToProviderMap(implementations), ingredientExtractor, actorSystem)
-  }
-
   def implementationsToProviderMap(implementations: Seq[AnyRef]) : Map[String, () => AnyRef] = {
     implementations.flatMap(im => getPossibleInteractionNamesForImplementation(im).map(_ -> (() => im))).toMap
   }
@@ -59,15 +50,23 @@ object Baker {
     */
   def getPossibleInteractionNamesForImplementation(obj: Any) : Set[String] = {
     val nameField: String = Try{
-      obj.getClass.getField("name")
+      obj.getClass.getDeclaredField("name")
     }.toOption match {
-      case Some(field) if field.getType == classOf[String]  => field.get(obj).asInstanceOf[String]
+      case Some(field) if field.getType == classOf[String]  => {
+        field.setAccessible(true)
+        field.get(obj).asInstanceOf[String]
+      }
       case None => ""
     }
+
+    println(s"impl: $obj, nameField: $nameField")
+
     val interfaces: Array[Class[_]] = obj.getClass.getInterfaces
     val interfaceNames: Seq[String] = interfaces.map(_.getSimpleName).toSeq
 
-    Set[String](obj.getClass.getSimpleName).filterNot(s => s equals "") ++ interfaceNames
+    val foundInteraction = Set[String](obj.getClass.getSimpleName, nameField).filterNot(s => s equals "") ++ interfaceNames
+    println(s"impl: $obj, found interactions: $foundInteraction")
+    foundInteraction
   }
 
   private def checkIfImplementationIsValidForInteraction(implementation: AnyRef, interaction: InteractionTransition[_]): Boolean ={
@@ -106,14 +105,19 @@ throw new IllegalArgumentException(s"No such event known in recipe: $runtimeEven
   * The Baker can bake a recipe, create a process and respond to events.
   */
 class Baker(val compiledRecipe: CompiledRecipe,
-            val implementations: Map[String, () => AnyRef],
-            val ingredientExtractor: IngredientExtractor = new CompositeIngredientExtractor(),
-            implicit val actorSystem: ActorSystem) {
+            val implementations: Map[String, () => AnyRef])
+            (implicit val actorSystem: ActorSystem) {
     import actorSystem.dispatcher
 
+
+  def this(compiledRecipe: CompiledRecipe,
+           implementations: Seq[AnyRef])
+          (implicit actorSystem: ActorSystem) =
+    this(compiledRecipe, implementationsToProviderMap(implementations))(actorSystem)
+
+  val ingredientExtractor: IngredientExtractor = new CompositeIngredientExtractor()
+
   implicit val materializer = ActorMaterializer()
-
-
   private val log = LoggerFactory.getLogger(classOf[Baker])
 
   private val config = actorSystem.settings.config

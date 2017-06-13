@@ -55,9 +55,8 @@ object TestRecipeHelper {
 
   //Interactions used in the recipe & implementations (we use traits instead of case classes since we use mocks for the real implementations
   val interactionOne = Interaction("InteractionOne", Ingredients(processId, initialIngredient), ProvidesIngredient(interactionOneOriginalIngredient))
-  trait InteractionOneImpl {
-    val name: String = "InteractionOne"
-    def apply(processId: String, initialIngredient: String): String = ""
+  trait InteractionOne {
+    def apply(processId: String, initialIngredient: String): String
   }
 
   val interactionTwo = Interaction("InteractionTwo", Ingredients(initialIngredientOld), FiresOneOfEvents(eventFromInteractionTwo))
@@ -210,7 +209,7 @@ trait TestRecipeHelper
     "interactionFourIngredient" -> interactionFourIngredientValue
   )
 
-  protected val testInteractionOneMock: InteractionOneImpl = mock[InteractionOneImpl]
+  protected val testInteractionOneMock: InteractionOne = mock[InteractionOne]
   protected val testInteractionTwoMock: InteractionTwoImpl = mock[InteractionTwoImpl]
   protected val testInteractionThreeMock: InteractionThreeImpl = mock[InteractionThreeImpl]
   protected val testInteractionFourMock: InteractionFourImpl = mock[InteractionFourImpl]
@@ -224,29 +223,18 @@ trait TestRecipeHelper
     mock[NonMatchingReturnTypeInteractionImpl]
   protected val testSieveInteractionMock: SieveInteractionImpl = mock[SieveInteractionImpl]
 
-  when(testInteractionOneMock.name).thenReturn("InteractionOne")
-  when(testInteractionTwoMock.name).thenReturn("InteractionTwo")
-  when(testInteractionThreeMock.name).thenReturn("InteractionThree")
-  when(testInteractionFourMock.name).thenReturn("InteractionFour")
-  when(testInteractionFiveMock.name).thenReturn("InteractionFive")
-  when(testInteractionSixMock.name).thenReturn("InteractionSix")
-  when(testNonSerializableIngredientInteractionMock.name).thenReturn("NonSerializableIngredientInteraction")
-  when(testNonSerializableEventInteractionMock.name).thenReturn("NonSerializableEventInteraction")
-  when(testNonSerializableEventInteractionMock.name).thenReturn("NonSerializableEventInteraction")
-  when(testSieveInteractionMock.name).thenReturn("SieveInteraction")
-
-  protected val mockImplementations: Map[String, () => AnyRef] =
+    protected val mockImplementations: Map[String, () => AnyRef] =
     Map(
-      testInteractionOneMock.name -> (() => testInteractionOneMock),
-      testInteractionTwoMock.name -> (() => testInteractionTwoMock),
-      testInteractionThreeMock.name -> (() => testInteractionThreeMock),
-      testInteractionFourMock.name -> (() => testInteractionFourMock),
-      testInteractionFiveMock.name -> (() => testInteractionFiveMock),
-      testInteractionSixMock.name -> (() => testInteractionSixMock),
-      testNonSerializableIngredientInteractionMock.name -> (() => testNonSerializableIngredientInteractionMock),
-      testNonSerializableEventInteractionMock.name -> (() => testNonSerializableEventInteractionMock),
-      testNonSerializableEventInteractionMock.name -> (() => testNonMatchingReturnTypeInteractionMock),
-      testSieveInteractionMock.name -> (() => testSieveInteractionMock))
+      "InteractionOne" -> (() => testInteractionOneMock),
+      "InteractionTwo" -> (() => testInteractionTwoMock),
+      "InteractionThree" -> (() => testInteractionThreeMock),
+      "InteractionFour" -> (() => testInteractionFourMock),
+      "InteractionFive" -> (() => testInteractionFiveMock),
+      "InteractionSix" -> (() => testInteractionSixMock),
+      "NonSerializableIngredientInteraction" -> (() => testNonSerializableIngredientInteractionMock),
+      "NonSerializableEventInteraction" -> (() => testNonSerializableEventInteractionMock),
+      "NonMatchingReturnTypeInteraction" -> (() => testNonMatchingReturnTypeInteractionMock),
+      "SieveInteraction" -> (() => testSieveInteractionMock))
 
   protected val localConfig: Config =
     ConfigFactory.parseString(
@@ -311,7 +299,7 @@ trait TestRecipeHelper
        |logging.root.level = DEBUG
     """.stripMargin)
 
-  protected val defaultActorSystem = ActorSystem("BakerSpec", localConfig)
+  implicit protected val defaultActorSystem = ActorSystem("BakerSpec", localConfig)
 
   override def afterAll(): Unit = {
     TestKit.shutdownActorSystem(defaultActorSystem)
@@ -414,8 +402,7 @@ trait TestRecipeHelper
 
     new Baker(
       compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-      actorSystem = actorSystem,
-      implementations = mockImplementations)
+      implementations = mockImplementations)(actorSystem)
   }
 
   protected def timeBlockInMilliseconds[T](block: => T): Long = {

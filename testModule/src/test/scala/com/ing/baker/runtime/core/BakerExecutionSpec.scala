@@ -69,8 +69,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
         .withSensoryEvent(initialEvent)
 
       val baker = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-                            mockImplementations,
-        actorSystem = defaultActorSystem)
+                            mockImplementations)(actorSystem = defaultActorSystem)
 
       val processId = UUID.randomUUID()
       baker.bake(processId)
@@ -123,8 +122,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val baker = new Baker(
         compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-        actorSystem = defaultActorSystem,
-        implementations = mockImplementations)
+        implementations = mockImplementations)(actorSystem = defaultActorSystem)
 
 
 
@@ -179,9 +177,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
         new Baker(
           compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-          implementations = mockImplementations,
-          actorSystem = defaultActorSystem
-        )
+          implementations = mockImplementations)(actorSystem = defaultActorSystem)
       }
 
       val firstProcessId = UUID.randomUUID()
@@ -326,8 +322,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
         .thenReturn(interactionOneIngredientValue)
 
       val baker = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-                            mockImplementations,
-        actorSystem = defaultActorSystem)
+                            mockImplementations)(actorSystem = defaultActorSystem)
       val processId = UUID.randomUUID()
       baker.bake(processId)
 
@@ -497,8 +492,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       val system2 = ActorSystem("persistenceTest2", levelDbConfig("persistenceTest2", 3002))
       try {
         val baker2 = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(getComplexRecipe(recoveryRecipeName)),
-          mockImplementations,
-          actorSystem = system2)
+          mockImplementations)(system2)
         baker2.getProcessState(processId).ingredients shouldBe finalState
       } finally {
         TestKit.shutdownActorSystem(system2)
