@@ -113,12 +113,12 @@ package object compiler {
     }
   }
 
-  implicit class TransitionOps(transitions: Seq[Transition[_, _, _]]) {
+  implicit class TransitionOps(transitions: Seq[Transition[_, _]]) {
 
-    def findTransitionsByClass: Class[_] ⇒ Option[Transition[_, _, _]] =
+    def findTransitionsByClass: Class[_] ⇒ Option[Transition[_, _]] =
       clazz => transitions.findByLabel(clazz.getSimpleName)
 
-    def findTransitionByName: String ⇒ Option[Transition[_, _, _]] =
+    def findTransitionByName: String ⇒ Option[Transition[_, _]] =
       interactionName ⇒ transitions.findByLabel(interactionName)
   }
 

@@ -3,7 +3,7 @@ package com.ing.baker.compiledRecipe.petrinet
 import io.kagera.api._
 
 class RecipeTokenGame extends ReferenceTokenGame[Place, Transition] {
-  override def consumableTokens(petriNet: PetriNet[Place[_], Transition[_, _, _]])(marking: Marking[Place], p: Place[_], t: Transition[_, _, _]): MultiSet[_] = {
+  override def consumableTokens(petriNet: PetriNet[Place[_], Transition[_, _]])(marking: Marking[Place], p: Place[_], t: Transition[_, _]): MultiSet[_] = {
     val edge = petriNet.innerGraph.findPTEdge(p, t).map(_.label.asInstanceOf[PTEdge[Any]]).get
 
     marking.get(p) match {

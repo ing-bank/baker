@@ -24,6 +24,7 @@ import io.kagera.akka.actor._
 import io.kagera.akka.query.PetriNetQuery
 import io.kagera.api._
 import io.kagera.execution.EventSourcing.TransitionFiredEvent
+import io.kagera.execution.PetriNetRuntime
 import io.kagera.persistence.Encryption
 import io.kagera.persistence.Encryption.NoEncryption
 import net.ceedubs.ficus.Ficus._
@@ -154,12 +155,13 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   private val actorIdleTimeout = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout")
 
+  val petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] = new RecipeRuntime(allImplementations, ingredientExtractor)
+
   private val processIdManagerActor = bakerActorProvider.createActorIndex(
     compiledRecipe.name,
-    Util.coloredPetrinetProps[ProcessState](
+    Util.recipePetriNetProps(
       compiledRecipe.petriNet,
-      allImplementations,
-      ingredientExtractor,
+      petriNetRuntime,
       PetriNetInstance.Settings(
         evaluationStrategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadpool"),
         serializer = new AkkaObjectSerializer(actorSystem, configuredEncryption),
@@ -172,7 +174,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   private def createEventMsg(processId: java.util.UUID, runtimeEvent: RuntimeEvent) = {
     require(runtimeEvent != null, "Event can not be null")
-    val t: Transition[_, _, _] = transitionForRuntimeEvent(runtimeEvent, compiledRecipe)
+    val t: Transition[_, _] = transitionForRuntimeEvent(runtimeEvent, compiledRecipe)
     BakerActorMessage(processId, FireTransition(t.id, runtimeEvent))
   }
 
@@ -214,7 +216,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
   def bakeAsync(processId: java.util.UUID): Future[ProcessState] = {
     implicit val askTimeout = Timeout(bakeTimeout)
 
-    val msg = Initialize(Marking.marshal(compiledRecipe.initialMarking), ProcessState(processId, Map.empty))
+    val msg = Initialize(marshal(compiledRecipe.initialMarking), ProcessState(processId, Map.empty))
     val initializeFuture = (processIdManagerActor ? BakerActorMessage(processId, msg)).mapTo[Response]
 
     val eventualState = initializeFuture.map {
@@ -244,9 +246,9 @@ class Baker(val compiledRecipe: CompiledRecipe,
     */
   def eventsAsync(processId: java.util.UUID): Source[RuntimeEvent, NotUsed] = {
     PetriNetQuery
-      .eventsForInstance[Place, Transition, ProcessState](processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal,
+      .eventsForInstance[Place, Transition, ProcessState, RuntimeEvent](processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal,
         //TODO remove this casting once kagera supports setting the type for the event
-        transitionEventSource(ingredientExtractor).asInstanceOf[Transition[_,_,_] => ProcessState => Any => ProcessState])
+        petriNetRuntime.eventSourceFn.asInstanceOf[Transition[_,_] => ProcessState => Any => ProcessState])
       .collect {
         case (_, TransitionFiredEvent(_, _, _, _, _, _, runtimeEvent: RuntimeEvent))
           if runtimeEvent != null && compiledRecipe.allEvents.exists(e => e.name equals runtimeEvent.name) => runtimeEvent

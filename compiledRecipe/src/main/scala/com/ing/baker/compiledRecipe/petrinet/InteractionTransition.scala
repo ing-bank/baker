@@ -39,7 +39,7 @@ case class InteractionTransition[I](providesType: ProvidesType,
                                     failureStrategy: InteractionFailureStrategy,
                                     eventOutputTransformers: Map[CompiledEvent, CompiledEventOutputTransformer] = Map.empty)
 
-  extends Transition[Unit, AnyRef, ProcessState] {
+  extends Transition[Unit, AnyRef] {
 
   val log: Logger = LoggerFactory.getLogger(classOf[InteractionTransition[_]])
 

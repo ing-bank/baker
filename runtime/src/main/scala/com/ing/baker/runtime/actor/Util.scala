@@ -6,26 +6,24 @@ import akka.pattern.ask
 import akka.persistence.PersistentActor
 import akka.util.Timeout
 import GracefulShutdownActor.Leave
-import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
 import com.ing.baker.compiledRecipe.petrinet
 import com.ing.baker.compiledRecipe.petrinet._
 import com.ing.baker.runtime.core._
 import com.ing.baker.core.ProcessState
 import io.kagera.akka.actor.PetriNetInstance
 import io.kagera.akka.actor.PetriNetInstance.Settings
+import io.kagera.execution.PetriNetRuntime
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
 object Util {
 
-  def coloredPetrinetProps[S](topology: RecipePetriNet, interactions: Map[String, () => AnyRef], ingredientExtractor: IngredientExtractor, settings: Settings): Props =
-    Props(new PetriNetInstance[Place, Transition, ProcessState](
-      topology,
+  def recipePetriNetProps(petriNet: RecipePetriNet, petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent], settings: Settings): Props =
+    Props(new PetriNetInstance[Place, Transition, ProcessState, RuntimeEvent](
+      petriNet,
       settings,
-      jobPicker,
-      jobExecutor(topology, interactions, ingredientExtractor, settings.evaluationStrategy),
-      transitionEventSource(ingredientExtractor).asInstanceOf[Transition[_,_,_] => ProcessState => Any => ProcessState],
+      petriNetRuntime,
       petrinet.placeIdentifier,
       petrinet.transitionIdentifier)
     )

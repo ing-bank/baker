@@ -9,7 +9,7 @@ import com.ing.baker.core.ProcessState
 //TODO remove E since its always RuntimeEvent
 case class EventTransition(event: CompiledEvent,
                            val isSensoryEvent: Boolean = true,
-                           val isMissing: Boolean = false) extends Transition[Unit, CompiledEvent, ProcessState] {
+                           val isMissing: Boolean = false) extends Transition[Unit, CompiledEvent] {
 
   override val id       = (event.name + "EventTransition").hashCode.toLong
   override val label    = event.name

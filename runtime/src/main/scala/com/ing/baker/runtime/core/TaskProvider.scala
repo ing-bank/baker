@@ -20,7 +20,7 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
 
   def toMarking[P[_]](mset: MultiSet[P[_]]): Marking[P] = mset.map { case (p, n) ⇒ p -> Map(() -> n) }.toMarking
 
-  override def apply[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _, _]], t: Transition[Input, Output, ProcessState]): TransitionTask[Place, Input, Output, ProcessState] = {
+  override def apply[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _]], t: Transition[Input, Output]): TransitionTask[Place, Input, Output, ProcessState] = {
     t match {
       case interaction: InteractionTransition[_] =>
         interactionTransitionTask[AnyRef, Input, Output](interaction.asInstanceOf[InteractionTransition[AnyRef]], interactionProviders(interaction.originalInteractionName), petriNet.outMarking(interaction))
@@ -29,10 +29,10 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
     }
   }
 
-  def passThroughtTransitionTask[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _, _]], t: Transition[Input, Output, _]): TransitionTask[Place, Input, Output, ProcessState] =
+  def passThroughtTransitionTask[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _]], t: Transition[Input, Output]): TransitionTask[Place, Input, Output, ProcessState] =
     (consume, processState, input) => Task.now((toMarking[Place](petriNet.outMarking(t)), null.asInstanceOf[Output]))
 
-  def eventTransitionTask[RuntimeEvent, Input, Output](petriNet: PetriNet[Place[_], Transition[_, _, _]], eventTransition: EventTransition): TransitionTask[Place, Input, Output, ProcessState] =
+  def eventTransitionTask[RuntimeEvent, Input, Output](petriNet: PetriNet[Place[_], Transition[_, _]], eventTransition: EventTransition): TransitionTask[Place, Input, Output, ProcessState] =
     (consume, processState, input) => Task.now((toMarking[Place](petriNet.outMarking(eventTransition)), input.asInstanceOf[Output]))
 
   def interactionTransitionTask[I, Input, Output](interaction: InteractionTransition[I], interactionProvider: () => I, outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, Input, Output, ProcessState] =

@@ -18,7 +18,7 @@ package object compiledRecipe {
     def isEmptyEventIngredient: Boolean   = place.placeType == EmptyEventIngredientPlace
   }
 
-  implicit class TransitionAdditions(transition: Transition[_, _, _]) {
+  implicit class TransitionAdditions(transition: Transition[_, _]) {
 
     def isInteraction: Boolean = PartialFunction.cond(transition) {
       case t: InteractionTransition[_] => t.actionType == InteractionAction
