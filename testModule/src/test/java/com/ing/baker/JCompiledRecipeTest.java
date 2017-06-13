@@ -8,7 +8,6 @@ import com.ing.baker.recipe.annotations.RequiresIngredient;
 import com.ing.baker.recipe.javadsl.Event;
 import com.ing.baker.recipe.javadsl.Interaction;
 import com.ing.baker.recipe.javadsl.Recipe;
-import com.ing.baker.runtime.core.RuntimeEvent;
 import com.ing.baker.runtime.java_api.JCompiledRecipe;
 import org.junit.Assert;
 import org.junit.Rule;

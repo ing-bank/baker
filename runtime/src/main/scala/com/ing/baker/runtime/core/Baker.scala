@@ -18,7 +18,6 @@ import com.ing.baker.core.{BakerException, ProcessState, RecipeValidationExcepti
 import com.ing.baker.runtime.actor.{BakerActorMessage, LocalBakerActorProvider, ShardedActorProvider, Util}
 import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.visualisation.RecipeVisualizer
-import com.ing.baker.runtime._
 import fs2.Strategy
 import io.kagera.akka.actor.PetriNetInstanceProtocol._
 import io.kagera.akka.actor._
@@ -41,27 +40,61 @@ object Baker {
             implementations: Seq[AnyRef],
             ingredientExtractor: IngredientExtractor = new CompositeIngredientExtractor(),
             actorSystem: ActorSystem): Baker = {
+    val implementationsMap = implementationsToProviderMap(implementations)
+
     new Baker(compiledRecipe, implementationsToProviderMap(implementations), ingredientExtractor, actorSystem)
   }
 
   def implementationsToProviderMap(implementations: Seq[AnyRef]) : Map[String, () => AnyRef] = {
-    implementations.map(im =>
-      (getNameOrClassName(im), () => im)
-    ).toMap
+    implementations.flatMap(im => getPossibleInteractionNamesForImplementation(im).map(_ -> (() => im))).toMap
   }
 
+  /**
+    * This method looks for any valid name that this interaction implements
+    * This is its own class name
+    * The class name of any interface it implements
+    * The value of the field "name"
+    * @param obj
+    * @return List of possible interaction names this obj can be implementing
+    */
+  def getPossibleInteractionNamesForImplementation(obj: Any) : Set[String] = {
+    val nameField: String = Try{
+      obj.getClass.getField("name")
+    }.toOption match {
+      case Some(field) if field.getType == classOf[String]  => field.get(obj).asInstanceOf[String]
+      case None => ""
+    }
+    val interfaces: Array[Class[_]] = obj.getClass.getInterfaces
+    val interfaceNames: Seq[String] = interfaces.map(_.getSimpleName).toSeq
 
+    Set[String](obj.getClass.getSimpleName).filterNot(s => s equals "") ++ interfaceNames
+  }
 
-  private def checkIfImplementationsProvided(implementations: Map[String, () => AnyRef], actions: Set[InteractionTransition[_]]): Set[String] = {
-    //TODO add validation that not only the name but also the apply method with correct parameters is provided
-    actions
-      .filterNot(i => implementations.contains(i.originalInteractionName))
+  private def checkIfImplementationIsValidForInteraction(implementation: AnyRef, interaction: InteractionTransition[_]): Boolean ={
+    Try {
+      implementation.getClass.getMethod("apply", interaction.inputFields.map(_._2): _*)
+    }.toOption.isDefined
+  }
+
+  private def checkIfValidImplementationsProvided(implementations: Map[String, () => AnyRef], actions: Set[InteractionTransition[_]]): Set[String] = {
+    //Check if all implementations are provided
+    val missingImplementations: Set[String] = actions.filterNot(i => implementations.contains(i.originalInteractionName))
       .map(i => s"No implementation provided for interaction: ${i.originalInteractionName}")
+
+    //Check if the provided implementations are valid
+    val neededImplementations: Map[String, () => AnyRef] = implementations.filterKeys(s => actions.exists(i => s equals i.interactionName))
+    val invalidImplementations: Seq[String] = neededImplementations.flatMap(impl => {
+      if (checkIfImplementationIsValidForInteraction(impl._2.apply(), actions.getByLabel(impl._1))) None
+      else Some(s"Invalid implementation provided for interaction ${impl._1}")
+    }).toSeq
+
+    missingImplementations ++ invalidImplementations
   }
 
   def transitionForRuntimeEvent(runtimeEvent: RuntimeEvent, compiledRecipe: CompiledRecipe) =
     compiledRecipe.petriNet.transitions.findByLabel(runtimeEvent.name).getOrElse {
-      throw new IllegalArgumentException(s"No such event known in recipe: $runtimeEvent")
+
+throw new IllegalArgumentException(s"No such event known in recipe: $runtimeEvent")
     }
 }
 
@@ -93,7 +126,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   //Check if all implementations are provided
   val allImplementations = implementations
-  val implementationErrors = checkIfImplementationsProvided(allImplementations, compiledRecipe.interactionTransitions)
+  val implementationErrors = checkIfValidImplementationsProvided(allImplementations, compiledRecipe.interactionTransitions)
   if(implementationErrors.nonEmpty)
     throw new BakerException(implementationErrors.mkString(", "))
 

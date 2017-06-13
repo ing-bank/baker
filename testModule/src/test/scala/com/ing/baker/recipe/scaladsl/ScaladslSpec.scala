@@ -1,7 +1,6 @@
 package com.ing.baker.recipe.scaladsl
 
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
 import com.ing.baker.recipe.scaladsl.ScaladslSpec._
 import org.scalatest.mock.MockitoSugar
