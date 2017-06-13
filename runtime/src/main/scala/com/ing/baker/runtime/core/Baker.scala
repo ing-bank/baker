@@ -84,7 +84,7 @@ object Baker {
     val neededImplementations: Map[String, () => AnyRef] = implementations.filterKeys(s => actions.exists(i => s equals i.interactionName))
     val invalidImplementations: Seq[String] = neededImplementations.flatMap(impl => {
       if (checkIfImplementationIsValidForInteraction(impl._2.apply(), actions.getByLabel(impl._1))) None
-      else Some(s"Invalid implementation provided for interaction ${impl._1}")
+      else Some(s"Invalid implementation provided for interaction: ${impl._1}")
     }).toSeq
 
     missingImplementations ++ invalidImplementations

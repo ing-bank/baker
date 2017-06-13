@@ -5,7 +5,7 @@ import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.core.{BakerException, NonSerializableException, RecipeValidationException}
 import com.ing.baker.recipe.scaladsl.Recipe
-import com.ing.baker.runtime.core.implementations.{InteractionOneFieldName, InteractionOneInterfaceImplementation}
+import com.ing.baker.runtime.core.implementations.{InteractionOneFieldName, InteractionOneInterfaceImplementation, InteractionOneWrongApply}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -85,6 +85,19 @@ class BakerSetupSpec extends TestRecipeHelper {
             implementations = Map.empty[String, () => AnyRef])
 
         } should have('message("No implementation provided for interaction: InteractionOne"))
+      }
+
+      "a recipe provides an implementation for an interaction and does not comply to the Interaction" in {
+        val recipe = Recipe("WrongImplementation")
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent)
+
+        intercept[BakerException] {
+          new Baker(
+            compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+            implementations = Map("InteractionOne" -> (() => new InteractionOneWrongApply())))
+
+        } should have('message("Invalid implementation provided for interaction: InteractionOne"))
       }
 
       "with the list of ingredient serialization validation errors for Ingredients provided by Interactions" in {
