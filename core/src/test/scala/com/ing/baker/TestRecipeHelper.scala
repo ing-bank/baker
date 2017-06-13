@@ -187,14 +187,16 @@ trait TestRecipeHelper
     ConfigFactory.parseString(
       """
         |akka {
-        |   persistence {
+        |  actor.allow-java-serialization = off
+        |  log-config-on-start = off
+        |  loglevel = "DEBUG"
+        |  persistence {
         |    journal.plugin = "inmemory-journal"
         |    snapshot-store.plugin = "inmemory-snapshot-store"
         |
         |    auto-start-snapshot-stores = [ "inmemory-snapshot-store"]
         |    auto-start-journals = [ "inmemory-journal" ]
         |  }
-        |  log-config-on-start = off
         |}
         |
         |baker {
@@ -207,8 +209,12 @@ trait TestRecipeHelper
   protected def levelDbConfig(actorSystemName: String, port: Int): Config = ConfigFactory.parseString(
     s"""
        |akka {
+       |  loglevel = "DEBUG"
        |  log-config-on-start = off
-       |  actor.provider = "akka.cluster.ClusterActorRefProvider"
+       |  actor {
+       |    provider = "akka.cluster.ClusterActorRefProvider"
+       |    allow-java-serialization = off
+       |  }
        |
        |  remote {
        |    netty.tcp {
@@ -237,8 +243,6 @@ trait TestRecipeHelper
        |  actor.provider = "cluster-sharded"
        |  actor.read-journal-plugin = "akka.persistence.query.journal.leveldb"
        |}
-       |
-       |logging.root.level = DEBUG
     """.stripMargin)
 
   protected val defaultActorSystem = ActorSystem("BakerSpec", localConfig)
