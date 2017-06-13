@@ -15,7 +15,7 @@ import com.ing.baker.compiledRecipe._
 import com.ing.baker.compiledRecipe.ingredientExtractors.{CompositeIngredientExtractor, IngredientExtractor}
 import com.ing.baker.compiledRecipe.petrinet._
 import com.ing.baker.core.{BakerException, ProcessState, RecipeValidationException}
-import com.ing.baker.runtime.actor.{BakerActorMessage, LocalBakerActorProvider, ShardedActorProvider, Util}
+import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.visualisation.RecipeVisualizer
 import fs2.Strategy
@@ -100,8 +100,12 @@ throw new IllegalArgumentException(s"No such event known in recipe: $runtimeEven
   */
 class Baker(val compiledRecipe: CompiledRecipe,
             val implementations: Map[String, () => AnyRef])
-            (implicit val actorSystem: ActorSystem) {
-    import actorSystem.dispatcher
+            (
+            implicit val actorSystem: ActorSystem) {
+
+
+
+  import actorSystem.dispatcher
 
 
   def this(compiledRecipe: CompiledRecipe,
@@ -139,7 +143,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   private val bakerActorProvider =
     actorSystem.settings.config.as[Option[String]]("baker.actor.provider") match {
-      case None | Some("local") => new LocalBakerActorProvider
+      case None | Some("local") => new LocalBakerActorProvider()
       case Some("cluster-sharded") => new ShardedActorProvider(config)
       case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
     }
@@ -157,17 +161,17 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   val petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] = new RecipeRuntime(allImplementations, ingredientExtractor)
 
-  private val processIdManagerActor = bakerActorProvider.createActorIndex(
-    compiledRecipe.name,
-    Util.recipePetriNetProps(
-      compiledRecipe.petriNet,
-      petriNetRuntime,
+  private val petriNetInstanceActorProps =
+    Util.recipePetriNetProps(compiledRecipe.petriNet,petriNetRuntime,
       PetriNetInstance.Settings(
-        evaluationStrategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadpool"),
+        evaluationStrategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadPool"),
         serializer = new AkkaObjectSerializer(actorSystem, configuredEncryption),
-        idleTTL = actorIdleTimeout )))
+        idleTTL = actorIdleTimeout))
 
-  private val petriNetApi = new PetriNetInstanceApi[Place, Transition, ProcessState](compiledRecipe.petriNet, processIdManagerActor)
+  private val (recipeManagerActor, recipeMetadata) = bakerActorProvider.createRecipeActors(
+    compiledRecipe.name, petriNetInstanceActorProps)
+
+  private val petriNetApi = new PetriNetInstanceApi[Place, Transition, ProcessState](compiledRecipe.petriNet, recipeManagerActor)
 
   private val readJournal = PersistenceQuery(actorSystem)
     .readJournalFor[CurrentEventsByPersistenceIdQuery with AllPersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
@@ -191,7 +195,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
         }
         implicit val akkaTimeout = Timeout(timeout)
         Util.handOverShardsAndLeaveCluster(Seq(compiledRecipe.name))
-      case Success(cluster) =>
+      case Success(_) =>
         log.debug("ActorSystem not a member of cluster")
         actorSystem.terminate()
       case Failure(exception) =>
@@ -217,12 +221,12 @@ class Baker(val compiledRecipe: CompiledRecipe,
     implicit val askTimeout = Timeout(bakeTimeout)
 
     val msg = Initialize(marshal(compiledRecipe.initialMarking), ProcessState(processId, Map.empty))
-    val initializeFuture = (processIdManagerActor ? BakerActorMessage(processId, msg)).mapTo[Response]
+    val initializeFuture = (recipeManagerActor ? BakerActorMessage(processId, msg)).mapTo[Response]
 
     val eventualState = initializeFuture.map {
-      case msg: Initialized   => msg.state.asInstanceOf[ProcessState]
+      case msg: Initialized => msg.state.asInstanceOf[ProcessState]
       case AlreadyInitialized => throw new IllegalArgumentException(s"Processs with $processId already exists.")
-      case msg @ _            => throw new BakerException(s"Unexpected message: $msg")
+      case msg@_ => throw new BakerException(s"Unexpected message: $msg")
     }
 
     eventualState
@@ -315,7 +319,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * @return Accumulated state.
     */
   def getProcessStateAsync(processId: java.util.UUID)(implicit timeout: FiniteDuration): Future[ProcessState] = {
-    processIdManagerActor
+    recipeManagerActor
       .ask(BakerActorMessage(processId, GetState))(Timeout.durationToTimeout(timeout))
       .map {
         case instanceState: InstanceState => instanceState.state.asInstanceOf[ProcessState]
@@ -323,4 +327,6 @@ class Baker(val compiledRecipe: CompiledRecipe,
         case msg => throw new BakerException(s"Unexpected actor response message: $msg")
       }
   }
+
+  def allProcessMetadata: Set[ProcessMetadata] = recipeMetadata.getAllProcessMetadata
 }

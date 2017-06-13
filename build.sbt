@@ -32,6 +32,7 @@ val allLibraries =
     akkaActor,
     akkaCluster,
     akkaClusterSharding,
+    akkaDistributedData,
     scalaReflect,
     javaxInject,
     paranamer,

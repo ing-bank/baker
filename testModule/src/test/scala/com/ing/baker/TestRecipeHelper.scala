@@ -240,10 +240,9 @@ trait TestRecipeHelper
     ConfigFactory.parseString(
       """
         |akka {
-        |   loggers = ["akka.event.slf4j.Slf4jLogger"]
-        |   loglevel = "DEBUG"
-        |   logging-filter = "akka.event.slf4j.Slf4jLoggingFilter"
         |   jvm-exit-on-fatal-error = false
+        |   loglevel = "DEBUG"
+        |   actor.allow-java-serialization = off
         |
         |   persistence {
         |    journal.plugin = "inmemory-journal"
@@ -265,8 +264,12 @@ trait TestRecipeHelper
   protected def levelDbConfig(actorSystemName: String, port: Int): Config = ConfigFactory.parseString(
     s"""
        |akka {
-       |  log-config-on-start = off
        |  actor.provider = "akka.cluster.ClusterActorRefProvider"
+       |
+       |  actor {
+       |    provider = "akka.cluster.ClusterActorRefProvider"
+       |    allow-java-serialization = off
+       |  }
        |
        |  remote {
        |    netty.tcp {

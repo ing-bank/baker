@@ -5,14 +5,15 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
 import com.ing.baker.compiledRecipe.CompiledRecipe
+import com.ing.baker.runtime.actor.ProcessMetadata
 import com.ing.baker.runtime.core.Baker
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
 object JBaker {
-  val defaultConfig =
+  val defaultConfig: Config =
     ConfigFactory.parseString("""
       |akka {
       |   persistence {
@@ -37,14 +38,14 @@ class JBaker (compiledRecipe: CompiledRecipe,
 
   val interactionImplementations: Map[String, () => AnyRef] = Baker.implementationsToProviderMap(implementations.asScala)
   val baker: Baker = new Baker(compiledRecipe = compiledRecipe, implementations.asScala)(actorSystem = actorSystem)
-  val defaultTimeout = 20 * 1000
+  val defaultTimeout: Int = 20 * 1000
 
   /**
     * Attempts to gracefully shutdown the baker system.
     *
     * @param timeout The time to wait for the shard handover.
     */
-  def shutdown(timeout: java.time.Duration) = baker.shutdown(Duration(timeout.toMillis, TimeUnit.MILLISECONDS))
+  def shutdown(timeout: java.time.Duration): Unit = baker.shutdown(Duration(timeout.toMillis, TimeUnit.MILLISECONDS))
 
   /**
     * Attempts to gracefully shutdown the baker system.
@@ -53,7 +54,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
 
   /**
     * This Bakes a new instance of the recipe
-    * @param processId
+    * @param processId process id
     */
   def bake(processId: java.util.UUID): Unit =
     baker.bake(processId)
@@ -125,7 +126,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     * Returns the compiled recipe
     * @return
     */
-  def getCompiledRecipe(): JCompiledRecipe = JCompiledRecipe(compiledRecipe)
+  def getCompiledRecipe: JCompiledRecipe = JCompiledRecipe(compiledRecipe)
 
   /**
     * returns the visual state of the recipe in dot format
@@ -144,4 +145,6 @@ class JBaker (compiledRecipe: CompiledRecipe,
   def getVisualState(processId: java.util.UUID): String =
     getVisualState(processId, defaultTimeout)
 
+  def getAllProcessMetadata: java.util.Set[ProcessMetadata] =
+    baker.allProcessMetadata.asJava
 }
