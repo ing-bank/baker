@@ -313,5 +313,5 @@ object RecipeCompiler {
     ingredientsWithMultipleConsumers
   }
 
-  private def createPlace(label: String, placeType: PlaceType): Place[Any] = Place(id = s"$placeType:$label".hashCode, label = s"${placeType.labelPrepend}:$label" , placeType)
+  private def createPlace(label: String, placeType: PlaceType): Place[Any] = Place(id = s"$placeType:$label".hashCode, label = s"${placeType.labelPrepend}$label" , placeType)
 }

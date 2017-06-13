@@ -23,7 +23,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
     "should not contain errors if compiling a valid recipe" in {
       val recipe: Recipe = getComplexRecipe("ValidRecipe")
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      System.out.println(compiledRecipe.getRecipeVisualization)
+//      System.out.println(compiledRecipe.getRecipeVisualization)
       //For now all missing implementation errors are provided so they are filtered out
       compiledRecipe.validationErrors.filterNot(s => s.startsWith("No implementation provided for interaction")) shouldBe List.empty
     }

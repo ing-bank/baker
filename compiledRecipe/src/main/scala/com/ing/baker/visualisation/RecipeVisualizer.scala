@@ -162,10 +162,7 @@ object RecipeVisualizer {
     val formattedGraph = graph.nodes.foldLeft(graph) {
       case (graphAccumulator, node) =>
         node.value match {
-          case Left(place) if !(place.isIngredient | place.isEmptyEventIngredient | place.isOrEventPrecondition) => {
-            println(s"compacting place: $place")
-            compactNode(graphAccumulator, node)
-          }
+          case Left(place) if !(place.isIngredient | place.isEmptyEventIngredient | place.isOrEventPrecondition) => compactNode(graphAccumulator, node)
           case _                                  => graphAccumulator
         }
     }

@@ -58,15 +58,8 @@ object Baker {
       }
       case None => ""
     }
-
-    println(s"impl: $obj, nameField: $nameField")
-
-    val interfaces: Array[Class[_]] = obj.getClass.getInterfaces
-    val interfaceNames: Seq[String] = interfaces.map(_.getSimpleName).toSeq
-
-    val foundInteraction = Set[String](obj.getClass.getSimpleName, nameField).filterNot(s => s equals "") ++ interfaceNames
-    println(s"impl: $obj, found interactions: $foundInteraction")
-    foundInteraction
+    val interfaceNames: Seq[String] = obj.getClass.getInterfaces.map(_.getSimpleName).toSeq
+    Set[String](obj.getClass.getSimpleName, nameField).filterNot(s => s equals "") ++ interfaceNames
   }
 
   private def checkIfImplementationIsValidForInteraction(implementation: AnyRef, interaction: InteractionTransition[_]): Boolean ={

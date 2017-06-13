@@ -451,8 +451,6 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val events = baker.events(processId)
 
-      events.foreach(println)
-
       //Check if both the send in event and the events occured in baker are in the
 
       baker.events(processId) should contain only (
