@@ -97,7 +97,7 @@ package object compiler {
               .map(e => CompiledEvent(e.name, e.providedIngredients
                 .map(i => CompiledIngredient(i.name, i.clazz))))
             FiresOneOfEvents(runtimeEvents)
-          case common.ProvidesNothing => ProvidesNothing
+          case common.ProvidesNothing() => ProvidesNothing
         }
 
       InteractionTransition[Any](

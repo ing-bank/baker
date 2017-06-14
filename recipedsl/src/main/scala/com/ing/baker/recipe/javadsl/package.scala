@@ -2,19 +2,26 @@ package com.ing.baker.recipe
 
 import java.lang.reflect.Method
 
-import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient, ProvidesNothing}
+import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient, ProvidesNothing, RecipeValidationException}
 import com.ing.baker.recipe.javadsl.ReflectionHelpers._
 
 
 package object javadsl {
 
-  def eventClassToCommonEvent(eventClass: Class[_ <:Event]): common.Event =
-    new common.Event {
-    override val name: String = eventClass.getSimpleName
-    override val providedIngredients: Seq[common.Ingredient] = eventClass.getDeclaredFields.map(f => Ingredient(f.getName, f.getType))
-  }
+  private def createIngredient(ingredientName: String, ingredientClazz: Class[_]): common.Ingredient =
+    new common.Ingredient {
+      override val name: String = ingredientName
+      override val clazz: Class[_] = ingredientClazz
+    }
 
-  def interactionClassToCommonInteraction(interactionClass: Class[_ <: Interaction]) : common.Interaction =
+
+  def eventClassToCommonEvent(eventClass: Class[_]): common.Event =
+    new common.Event {
+      override val name: String = eventClass.getSimpleName
+      override val providedIngredients: Seq[common.Ingredient] = eventClass.getDeclaredFields.map(f => createIngredient(f.getName, f.getType))
+    }
+
+  def interactionClassToCommonInteraction(interactionClass: Class[_ <: Interaction]): common.Interaction =
     new common.Interaction {
       override val name: String = interactionClass.getSimpleName
 
@@ -24,23 +31,22 @@ package object javadsl {
         .getOrElse(throw new IllegalStateException(
           s"No method named '$interactionMethodName' defined on '${interactionClass.getName}'"))
 
-      override val inputIngredients: Seq[common.Ingredient] = method.getParameterNames.map(s => Ingredient(s, method.parameterTypeForName(s).get))
+      override val inputIngredients: Seq[common.Ingredient] = method.getParameterNames.map(s => createIngredient(s, method.parameterTypeForName(s).get))
 
       override val output: common.InteractionOutput = {
         //ProvidesIngredient
-        if(method.isAnnotationPresent(classOf[annotations.ProvidesIngredient]))
-        {
+        if (method.isAnnotationPresent(classOf[annotations.ProvidesIngredient])) {
           val interactionOutputName: String = method.getAnnotation(classOf[annotations.ProvidesIngredient]).value()
-          ProvidesIngredient(Ingredient(interactionOutputName, method.getReturnType))
+          ProvidesIngredient(createIngredient(interactionOutputName, method.getReturnType))
         }
         //ProvidesEvent
-        else if(method.isAnnotationPresent(classOf[annotations.FiresEvent])) {
-          val outputEventClasses: Seq[Class[_ <: Event]] = method.getAnnotation(classOf[annotations.FiresEvent]).oneOf().toSeq
+        else if (method.isAnnotationPresent(classOf[annotations.FiresEvent])) {
+          val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[annotations.FiresEvent]).oneOf()
           val events: Seq[common.Event] = outputEventClasses.map(eventClassToCommonEvent)
           FiresOneOfEvents(events)
         }
         //ProvidesNothing
-        else ProvidesNothing
+        else ProvidesNothing()
       }
     }
 }

@@ -5,7 +5,6 @@ import com.ing.baker.core.BakerException;
 import com.ing.baker.recipe.annotations.ProcessId;
 import com.ing.baker.recipe.annotations.ProvidesIngredient;
 import com.ing.baker.recipe.annotations.RequiresIngredient;
-import com.ing.baker.recipe.javadsl.Event;
 import com.ing.baker.recipe.javadsl.Interaction;
 import com.ing.baker.recipe.javadsl.Recipe;
 import com.ing.baker.runtime.java_api.JCompiledRecipe;
@@ -111,11 +110,11 @@ public class JCompiledRecipeTest {
         Assert.assertTrue("Should contain RequestIDStringTwo", visualRecipe.contains("RequestIDStringTwo"));
     }
 
-    public static class EventOne implements Event {}
+    public static class EventOne {}
 
-    public static class EventTwo implements Event {}
+    public static class EventTwo {}
 
-    public static class EventWithoutIngredientsNorPreconditions implements Event {}
+    public static class EventWithoutIngredientsNorPreconditions{}
 
     public static class SieveImpl implements Interaction {
         @ProvidesIngredient("AppendedRequestIds")

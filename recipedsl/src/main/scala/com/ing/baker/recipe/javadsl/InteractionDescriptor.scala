@@ -2,7 +2,9 @@ package com.ing.baker.recipe.javadsl
 
 import java.util.Optional
 
+import com.ing.baker.recipe.annotations.FiresEvent
 import com.ing.baker.recipe.common
+import com.ing.baker.recipe.common.{FiresOneOfEvents, RecipeValidationException}
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
 
 import scala.annotation.varargs
@@ -49,7 +51,7 @@ case class InteractionDescriptor private(
     * @param newRequiredEvent the class of the events that needs to have been fired
     * @return
     */
-  def withRequiredEvent(newRequiredEvent: Class[_ <: Event]): InteractionDescriptor =
+  def withRequiredEvent(newRequiredEvent: Class[_]): InteractionDescriptor =
   this.copy(requiredEvents = requiredEvents + eventClassToCommonEvent(newRequiredEvent))
 
   /**
@@ -60,7 +62,7 @@ case class InteractionDescriptor private(
     */
   @SafeVarargs
   @varargs
-  def withRequiredEvents(newRequiredEvents: Class[_ <: Event]*): InteractionDescriptor =
+  def withRequiredEvents(newRequiredEvents: Class[_]*): InteractionDescriptor =
   this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.map(eventClassToCommonEvent))
 
   /**
@@ -69,7 +71,7 @@ case class InteractionDescriptor private(
     * @param newRequiredEvents the classes of the event.
     * @return
     */
-  def withRequiredEvents(newRequiredEvents: java.util.Set[Class[_ <: Event]]): InteractionDescriptor =
+  def withRequiredEvents(newRequiredEvents: java.util.Set[Class[_]]): InteractionDescriptor =
   this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.asScala.map(eventClassToCommonEvent))
 
   /**
@@ -80,7 +82,7 @@ case class InteractionDescriptor private(
     */
   @SafeVarargs
   @varargs
-  def withRequiredOneOfEvents(requiredOneOfEvents: Class[_ <: Event]*): InteractionDescriptor =
+  def withRequiredOneOfEvents(requiredOneOfEvents: Class[_]*): InteractionDescriptor =
   this.copy(requiredOneOfEvents = requiredOneOfEvents.map(eventClassToCommonEvent).toSet)
 
   /**
@@ -186,11 +188,19 @@ case class InteractionDescriptor private(
     * @tparam A
     * @return
     */
-  def withEventTransformation[A <: Event](eventClazz: Class[A],
-                                          newEventName: String,
-                                          ingredientRenames: Map[String, String]): InteractionDescriptor = {
+  def withEventTransformation[A](eventClazz: Class[A],
+                                 newEventName: String,
+                                 ingredientRenames: Map[String, String]): InteractionDescriptor = {
 
     val originalEvent: common.Event = eventClassToCommonEvent(eventClazz)
+    //TODO enable this check and create tests to see if it works
+//    interaction.output match{
+//      case FiresOneOfEvents(events) =>
+//        if (!events.contains(originalEvent))
+//          throw new RecipeValidationException(s"Event transformation given for Interaction $name but does not fire event $originalEvent ")
+//      case _ => throw new RecipeValidationException(s"Event transformation given for Interaction $name but does not fire any event ")
+//    }
+
     val eventOutputTransformer = EventOutputTransformer(newEventName, ingredientRenames)
     this.copy(eventOutputTransformers = eventOutputTransformers + (originalEvent -> eventOutputTransformer))
   }

@@ -27,7 +27,7 @@ object FiresOneOfEvents {
   def apply(eventOne: Event, eventTwo: Event, eventThree: Event, eventFour: Event, eventFive: Event): FiresOneOfEvents = FiresOneOfEvents(Seq(eventOne, eventTwo, eventThree, eventFour, eventFive))
 }
 
-case object ProvidesNothing extends InteractionOutput {
+case class ProvidesNothing() extends InteractionOutput {
   override def toString(): String = toString("")
   def toString(appender: String): String = {
     s"""${appender}ProvidesNothing:""".stripMargin

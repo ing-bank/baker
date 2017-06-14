@@ -74,7 +74,7 @@ case class Recipe(
     * @param newEvent
     * @return
     */
-  def withSensoryEvent(newEvent: Class[_ <: Event]): Recipe =
+  def withSensoryEvent(newEvent: Class[_]): Recipe =
     copy(sensoryEvents = sensoryEvents + eventClassToCommonEvent(newEvent))
 
   /**
@@ -85,7 +85,7 @@ case class Recipe(
     */
   @SafeVarargs
   @varargs
-  def withSensoryEvents(eventsToAdd: Class[_ <: Event]*): Recipe =
+  def withSensoryEvents(eventsToAdd: Class[_]*): Recipe =
     copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent))
 
   /**
