@@ -16,77 +16,103 @@ public class InteractionDescriptorTest {
 
     @Test
     public void shouldCreateInteractionDescriptorOfProvidesIngredientInteraction() {
-        com.ing.baker.recipe.common.InteractionDescriptor interactionDescriptor = of(ProvidesIngredientInteraction.class);
-        assertEquals(providesIngredientInteractionCheck(), interactionDescriptor.interaction());
+        com.ing.baker.recipe.common.InteractionDescriptor id = of(ProvidesIngredientInteraction.class);
+        assertEquals(providesIngredientInteractionCheck(), id.interaction());
     }
 
     @Test
     public void shouldCreateInteractionDescriptorOfRequiredProcessIdStringInteraction() {
-        com.ing.baker.recipe.common.InteractionDescriptor interactionDescriptor = of(RequiresProcessIdStringInteraction.class);
-        assertEquals(requiresProcessIdStringInteractionCheck(), interactionDescriptor.interaction());
+        com.ing.baker.recipe.common.InteractionDescriptor id = of(RequiresProcessIdStringInteraction.class);
+        assertEquals(requiresProcessIdStringInteractionCheck(), id.interaction());
     }
 
     @Test
     public void shouldCreateInteractionDescriptorOfRequiredProcessIdUUIDInteraction() {
-        InteractionDescriptor interactionDescriptor = of(RequiresProcessIdUUIDInteraction.class);
-        assertEquals(requiresProcessIdUUIDInteractionCheck(), interactionDescriptor.interaction());
+        InteractionDescriptor id = of(RequiresProcessIdUUIDInteraction.class);
+        assertEquals(requiresProcessIdUUIDInteractionCheck(), id.interaction());
     }
 
     @Test
     public void shouldCreateInteractionDescriptorWithDefaultName() {
-        InteractionDescriptor interactionDescriptor = of(ProvidesIngredientInteraction.class);
-        assertEquals("ProvidesIngredientInteraction", interactionDescriptor.name());
+        InteractionDescriptor id = of(ProvidesIngredientInteraction.class);
+        assertEquals("ProvidesIngredientInteraction", id.name());
     }
 
     @Test
     public void shouldCreateInteractionDescriptorWithChangedName() {
-        InteractionDescriptor interactionDescriptor = of(ProvidesIngredientInteraction.class, "ChangedName");
-        assertEquals("ChangedName", interactionDescriptor.name());
+        InteractionDescriptor id = of(ProvidesIngredientInteraction.class, "ChangedName");
+        assertEquals("ChangedName", id.name());
     }
 
     @Test
     public void shouldCreateInteractionDefaultWithInteractionActionType() {
-        InteractionDescriptor interactionDescriptor = of(ProvidesIngredientInteraction.class);
-        assertEquals(com.ing.baker.recipe.common.InteractionAction$.class, interactionDescriptor.actionType().getClass());
+        InteractionDescriptor id = of(ProvidesIngredientInteraction.class);
+        assertEquals(com.ing.baker.recipe.common.InteractionAction$.class, id.actionType().getClass());
     }
 
     @Test
     public void shouldUpdateTheRequiredEventList() {
-        InteractionDescriptor interactionDescriptor = of(ProvidesIngredientInteraction.class);
-        assertTrue(interactionDescriptor.requiredEvents().isEmpty());
+        InteractionDescriptor id = of(ProvidesIngredientInteraction.class);
+        assertTrue(id.requiredEvents().isEmpty());
 
-        InteractionDescriptor interactionDescriptorWithRequiredEvent =
-                interactionDescriptor.withRequiredEvent(SensoryEventWithIngredient.class);
+        InteractionDescriptor idWithRequiredEvent =
+                id.withRequiredEvent(SensoryEventWithIngredient.class);
 
-        assertEquals(interactionDescriptorWithRequiredEvent.requiredEvents().size(), 1);
-        assertTrue(interactionDescriptorWithRequiredEvent.requiredEvents().contains(sensoryEventWithIngredientCheck()));
+        assertEquals(idWithRequiredEvent.requiredEvents().size(), 1);
+        assertTrue(idWithRequiredEvent.requiredEvents().contains(sensoryEventWithIngredientCheck()));
 
-        InteractionDescriptor interactionDescriptorWithRequiredEvents =
-                interactionDescriptor.withRequiredEvents(SensoryEventWithIngredient.class, SensoryEventWithoutIngredient.class);
+        InteractionDescriptor idWithRequiredEvents =
+                id.withRequiredEvents(SensoryEventWithIngredient.class, SensoryEventWithoutIngredient.class);
 
-        assertEquals(interactionDescriptorWithRequiredEvents.requiredEvents().size(), 2);
-        assertTrue(interactionDescriptorWithRequiredEvents.requiredEvents().contains(sensoryEventWithIngredientCheck()));
-        assertTrue(interactionDescriptorWithRequiredEvents.requiredEvents().contains(sensoryEventWithoutIngredientCheck()));
+        assertEquals(idWithRequiredEvents.requiredEvents().size(), 2);
+        assertTrue(idWithRequiredEvents.requiredEvents().contains(sensoryEventWithIngredientCheck()));
+        assertTrue(idWithRequiredEvents.requiredEvents().contains(sensoryEventWithoutIngredientCheck()));
     }
 
     @Test
     public void shouldUpdateTheRequiredOneOfEventList() {
-        InteractionDescriptor interactionDescriptor = of(ProvidesIngredientInteraction.class);
-        assertTrue(interactionDescriptor.requiredOneOfEvents().isEmpty());
+        InteractionDescriptor id = of(ProvidesIngredientInteraction.class);
+        assertTrue(id.requiredOneOfEvents().isEmpty());
 
-        InteractionDescriptor interactionDescriptorWithRequiredOneOfEvents =
-                interactionDescriptor.withRequiredOneOfEvents(SensoryEventWithIngredient.class, SensoryEventWithoutIngredient.class);
+        InteractionDescriptor idWithRequiredOneOfEvents =
+                id.withRequiredOneOfEvents(SensoryEventWithIngredient.class, SensoryEventWithoutIngredient.class);
 
-        assertEquals(interactionDescriptorWithRequiredOneOfEvents.requiredOneOfEvents().size(), 2);
-        assertTrue(interactionDescriptorWithRequiredOneOfEvents.requiredOneOfEvents().contains(sensoryEventWithIngredientCheck()));
-        assertTrue(interactionDescriptorWithRequiredOneOfEvents.requiredOneOfEvents().contains(sensoryEventWithoutIngredientCheck()));
+        assertEquals(idWithRequiredOneOfEvents.requiredOneOfEvents().size(), 2);
+        assertTrue(idWithRequiredOneOfEvents.requiredOneOfEvents().contains(sensoryEventWithIngredientCheck()));
+        assertTrue(idWithRequiredOneOfEvents.requiredOneOfEvents().contains(sensoryEventWithoutIngredientCheck()));
+    }
+
+    @Test
+    public void shouldUpdateTheMaximumInteractionCount() {
+        InteractionDescriptor id = of(ProvidesIngredientInteraction.class);
+        assertTrue(id.maximumInteractionCount().isEmpty());
+
+        InteractionDescriptor idWithMaximumInteractionCount =
+                id.withMaximumInteractionCount(1);
+        assertTrue(idWithMaximumInteractionCount.maximumInteractionCount().isDefined());
+        assertEquals(idWithMaximumInteractionCount.maximumInteractionCount().get(), 1);
+
+        idWithMaximumInteractionCount =
+                idWithMaximumInteractionCount.withMaximumInteractionCount(2);
+        assertTrue(idWithMaximumInteractionCount.maximumInteractionCount().isDefined());
+        assertEquals(idWithMaximumInteractionCount.maximumInteractionCount().get(), 2);
+    }
+
+    @Test
+    public void shouldUpdateTheOverriddenOutputIngredientName() {
+        InteractionDescriptor id = of(ProvidesIngredientInteraction.class);
+        assertTrue(id.overriddenOutputIngredientName().isEmpty());
+
+        InteractionDescriptor idWithOverriddenOutputIngredientName =
+                id.renameProvidedIngredient("Renamed");
+
+        assertTrue(idWithOverriddenOutputIngredientName.overriddenOutputIngredientName().isDefined());
+        assertEquals(idWithOverriddenOutputIngredientName.overriddenOutputIngredientName().get(), "Renamed");
     }
 
     //TODO add tests for all InteractionDescriptor methods
     //predefinedIngredients
     //overriddenIngredientNames
-    //overriddenOutputIngredientName
-    //maximumInteractionCount
     //failureStrategy
     //eventOutputTransformers
 }
