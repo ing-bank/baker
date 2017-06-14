@@ -4,6 +4,14 @@ import com.ing.baker.runtime.core.RuntimeEvent
 
 import scala.collection.JavaConverters._
 
+object EventList {
+  def CreateFromStringList(events: java.util.List[String]): EventList =
+    new EventList(events.asScala.map(RuntimeEvent(_, Map.empty)))
+
+  def CreateFromObjectList(events: java.util.List[Object]): EventList =
+    new EventList(events.asScala.map(obj => RuntimeEvent(obj.getClass.getSimpleName, Map.empty)))
+}
+
 /**
   * Java API class wrapping a sequence of events for a process instance.
   *

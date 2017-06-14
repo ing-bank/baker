@@ -63,9 +63,9 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
 
       def createRuntimeEvent(output: Any): RuntimeEvent = {
         interaction.providesType match {
-          case FiresOneOfEvents(events) =>
+          case FiresOneOfEvents(_, originalEvents) =>
           {
-            val optionalFoundEvent: Option[CompiledEvent] = events.find(e => e.name equals output.getClass.getSimpleName)
+            val optionalFoundEvent: Option[CompiledEvent] = originalEvents.find(e => e.name equals output.getClass.getSimpleName)
             if (optionalFoundEvent.isDefined)
               RuntimeEvent.forEvent(output, optionalFoundEvent.get, ingredientExtractor)
             else {
@@ -82,7 +82,7 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
       // function that (optionally) transforms the output event using the event output transformers
       def transformEvent(runtimeEvent: RuntimeEvent): RuntimeEvent = {
        interaction.providesType match {
-         case FiresOneOfEvents(events) => {
+         case FiresOneOfEvents(_, _) => {
            interaction.eventOutputTransformers.get(runtimeEvent.toCompiledEvent) match {
              case Some(eventOutputTransformer) =>
                RuntimeEvent(
@@ -156,7 +156,7 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
     outAdjacent.keys.map { place =>
       val value: Any = {
         interaction.providesType match {
-          case FiresOneOfEvents(events) =>
+          case FiresOneOfEvents(events, _) =>
             events.find(_.name == output.name).map(_.name).getOrElse {
               throw new IllegalStateException(
                 s"Method output: $output is not an instance of any of the specified events: ${

@@ -10,7 +10,7 @@ import org.slf4j._
   */
 sealed trait ProvidesType
 case class ProvidesIngredient(ingredient: CompiledIngredient) extends ProvidesType
-case class FiresOneOfEvents(events: Seq[CompiledEvent]) extends ProvidesType
+case class FiresOneOfEvents(events: Seq[CompiledEvent], originalEvents: Seq[CompiledEvent]) extends ProvidesType
 case object ProvidesNothing extends ProvidesType
 
 

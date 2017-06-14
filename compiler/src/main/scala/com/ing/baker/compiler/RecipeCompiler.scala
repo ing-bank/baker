@@ -78,7 +78,7 @@ object RecipeCompiler {
   private def interactionEventOutputArc(interaction: InteractionTransition[_],
                                         findInternalEventByEvent: CompiledEvent => Option[Transition[_, _]]): Seq[Arc] = {
     interaction.providesType match {
-      case FiresOneOfEvents(events) => {
+      case FiresOneOfEvents(events, _) => {
         val resultPlace = createPlace(label = interaction.label, placeType = InteractionEventOutputPlace)
         val eventArcs = events.map { event =>
           val internalEventTransition = findInternalEventByEvent(event).get
@@ -180,7 +180,7 @@ object RecipeCompiler {
     // events provided by other transitions / actions
     val interactionEventTransitions: Seq[EventTransition] = interactionTransitions.flatMap { t =>
       t.providesType match {
-        case FiresOneOfEvents(events) =>
+        case FiresOneOfEvents(events, _) =>
 //          events.map(event => IntermediateTransition(id = (event.name + "IntermediateTransition").hashCode, label = event.name))
           events.map(event => EventTransition(event, false))
         case i: ProvidesIngredient => Nil
@@ -194,7 +194,7 @@ object RecipeCompiler {
     // connecting a transition to a ingredient place.
     val internalEventArcs: Seq[Arc] = interactionTransitions.flatMap { t =>
       t.providesType match {
-        case FiresOneOfEvents(events) => {
+        case FiresOneOfEvents(events, _) => {
           events.flatMap(event =>
             event.providedIngredients.map(ingredient =>
               arc(interactionEventTransitions.getByLabel(event.name), createPlace(ingredient.name, IngredientPlace), 1)))

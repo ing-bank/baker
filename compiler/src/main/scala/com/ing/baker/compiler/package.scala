@@ -77,6 +77,13 @@ package object compiler {
         }
       }
 
+      def transformEventToCompiledEvent(event: common.Event): CompiledEvent = {
+          CompiledEvent(
+            event.name,
+            event.providedIngredients
+              .map(i => CompiledIngredient(i.name, i.clazz)))
+      }
+
       val inputFields: Seq[(String, Class[_])] = interactionDescriptor.interaction.inputIngredients
         //Replace ProcessId to ProcessIdName tag as know in compiledRecipe
         //Replace ingredient tags with overridden tags
@@ -93,10 +100,9 @@ package object compiler {
               else outputIngredient.name
             ProvidesIngredient(CompiledIngredient(ingredientName, outputIngredient.clazz))
           case common.FiresOneOfEvents(events) =>
-            val runtimeEvents = events.map(transformEventType)
-              .map(e => CompiledEvent(e.name, e.providedIngredients
-                .map(i => CompiledIngredient(i.name, i.clazz))))
-            FiresOneOfEvents(runtimeEvents)
+            val originalCompiledEvents = events.map(transformEventToCompiledEvent)
+            val compiledEvents = events.map(transformEventType).map(transformEventToCompiledEvent)
+            FiresOneOfEvents(compiledEvents, originalCompiledEvents)
           case common.ProvidesNothing() => ProvidesNothing
         }
 

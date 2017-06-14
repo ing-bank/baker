@@ -65,7 +65,7 @@ case class Recipe(
   @SafeVarargs
   @varargs
   def withSieves(newSieves: InteractionDescriptor*): Recipe = {
-    copy(sieves = sieves ++ newSieves)
+    copy(sieves = sieves ++ newSieves.map(_.copy(actionType = SieveAction)))
   }
 
   /**
