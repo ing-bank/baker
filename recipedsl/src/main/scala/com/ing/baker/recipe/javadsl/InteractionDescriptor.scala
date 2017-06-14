@@ -189,16 +189,26 @@ case class InteractionDescriptor private(
     */
   def withEventTransformation(eventClazz: Class[_],
                               newEventName: String,
-                              ingredientRenames: Map[String, String]): InteractionDescriptor = {
+                              ingredientRenames: java.util.Map[String, String]): InteractionDescriptor = {
+    withEventTransformation(eventClazz, newEventName, ingredientRenames.asScala.toMap)
+  }
 
+  def withEventTransformation(eventClazz: Class[_],
+                              newEventName: String): InteractionDescriptor = {
+    withEventTransformation(eventClazz, newEventName, Map.empty[String, String])
+  }
+
+  private def withEventTransformation(eventClazz: Class[_],
+                                     newEventName: String,
+                                     ingredientRenames: Map[String, String]): InteractionDescriptor = {
     val originalEvent: common.Event = eventClassToCommonEvent(eventClazz)
     //TODO enable this check and create tests to see if it works
-//    interaction.output match{
-//      case FiresOneOfEvents(events) =>
-//        if (!events.contains(originalEvent))
-//          throw new RecipeValidationException(s"Event transformation given for Interaction $name but does not fire event $originalEvent ")
-//      case _ => throw new RecipeValidationException(s"Event transformation given for Interaction $name but does not fire any event ")
-//    }
+    //    interaction.output match{
+    //      case FiresOneOfEvents(events) =>
+    //        if (!events.contains(originalEvent))
+    //          throw new RecipeValidationException(s"Event transformation given for Interaction $name but does not fire event $originalEvent ")
+    //      case _ => throw new RecipeValidationException(s"Event transformation given for Interaction $name but does not fire any event ")
+    //    }
 
     val eventOutputTransformer = EventOutputTransformer(newEventName, ingredientRenames)
     this.copy(eventOutputTransformers = eventOutputTransformers + (originalEvent -> eventOutputTransformer))
