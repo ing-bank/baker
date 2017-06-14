@@ -1,6 +1,6 @@
 package com.ing.baker.recipe.javadsl;
 
-import com.ing.baker.recipe.javadsl.events.InitialSensoryEvent;
+import com.ing.baker.recipe.javadsl.events.*;
 import com.ing.baker.recipe.javadsl.interactions.*;
 import org.junit.Rule;
 import org.junit.Test;
@@ -14,57 +14,46 @@ public class RecipeTest extends JavadslTestHelper {
     public final ExpectedException exception = ExpectedException.none();
 
     @Test
-    public void shouldSetupRecipeWithProvidesIngredientInteraction() {
-        Recipe recipe = new Recipe("ProvidesIngredientInteractionRecipe")
+    public void shouldSetupRecipeWithOneInteractionDescriptor() {
+        Recipe recipe = new Recipe("OneInteractionRecipe")
                 .withInteraction(of(ProvidesIngredientInteraction.class));
         assertEquals(recipe.getEvents().size(), 0);
         assertEquals(recipe.getInteractions().size(), 1);
-        assertEquals(recipe.getInteractions().get(0).interaction(), providesIngredientInteraction);
+        assertEquals(recipe.getInteractions().get(0).interaction(), providesIngredientInteractionCheck);
     }
 
     @Test
-    public void shouldSetupRecipeWithRequiredProcessIdStringInteraction() {
-        Recipe recipe = new Recipe("RequiredProcessIdStringInteractionRecipe")
-                .withInteraction(of(RequiresProcessIdStringInteraction.class));
+    public void shouldSetupRecipeWithMultipleInteractionDescriptors() {
+        Recipe recipe = new Recipe("MultipleInteractionsRecipe")
+                .withInteractions(
+                        of(RequiresProcessIdUUIDInteraction.class),
+                        of(FiresTwoEventInteraction.class),
+                        of(ProvidesIngredientInteraction.class));
         assertEquals(recipe.getEvents().size(), 0);
-        assertEquals(recipe.getInteractions().size(), 1);
-        System.out.println(recipe.getInteractions().get(0).interaction().inputIngredients());
-        assertEquals(recipe.getInteractions().get(0).interaction(), requiresProcessIdStringInteraction);
+        assertEquals(recipe.getInteractions().size(), 3);
+        assertEquals(recipe.getInteractions().get(0).interaction(), requiresProcessIdUUIDInteractionCheck);
+        assertEquals(recipe.getInteractions().get(1).interaction(), firesTwoEventInteractionCheck);
+        assertEquals(recipe.getInteractions().get(2).interaction(), providesIngredientInteractionCheck);
     }
 
     @Test
-    public void shouldSetupRecipeWithRequiredProcessIdUUIDInteraction() {
-        Recipe recipe = new Recipe("RequiredProcessIdUUIDInteractionRecipe")
-                .withInteraction(of(RequiresProcessIdUUIDInteraction.class));
-        assertEquals(recipe.getEvents().size(), 0);
-        assertEquals(recipe.getInteractions().size(), 1);
-        assertEquals(recipe.getInteractions().get(0).interaction(), requiresProcessIdUUIDInteraction);
-    }
-
-    @Test
-    public void shouldSetupRecipeWithFiresEventInteraction() {
-        Recipe recipe = new Recipe("FiresEventInteractionRecipe")
-                .withInteraction(of(FiresEventInteraction.class));
-        assertEquals(recipe.getEvents().size(), 0);
-        assertEquals(recipe.getInteractions().size(), 1);
-        assertEquals(recipe.getInteractions().get(0).interaction(), firesEventInteractionCheck);
-    }
-
-    @Test
-    public void shouldSetupRecipeWithFiresTwoEventsInteraction() {
-        Recipe recipe = new Recipe("FiresTwoEventInteractionRecipe")
-                .withInteraction(of(FiresTwoEventInteraction.class));
-        assertEquals(recipe.getEvents().size(), 0);
-        assertEquals(recipe.getInteractions().size(), 1);
-        assertEquals(recipe.getInteractions().get(0).interaction(), firesTwoEventInteractionCheck);
-    }
-
-    @Test
-    public void shouldSetupRecipeWithASensoryEvent() {
-        Recipe recipe = new Recipe("SensoryEventRecipe")
-                .withSensoryEvent(InitialSensoryEvent.class);
+    public void shouldSetupRecipeWithOneSensoryEvent() {
+        Recipe recipe = new Recipe("OneSensoryEventRecipe")
+                .withSensoryEvent(SensoryEventWithIngredient.class);
         assertEquals(recipe.getEvents().size(), 1);
         assertEquals(recipe.getInteractions().size(), 0);
-        assertEquals(recipe.getEvents().get(0), initialSensoryEventCheck);
+        assertEquals(recipe.getEvents().get(0), sensoryEventWithIngredientCheck);
+    }
+
+    @Test
+    public void shouldSetupRecipeWithMultipleSensoryEvent() {
+        Recipe recipe = new Recipe("MultipleSensoryEventRecipe")
+                .withSensoryEvents(
+                        SensoryEventWithIngredient.class,
+                        SensoryEventWithoutIngredient.class);
+        assertEquals(recipe.getEvents().size(), 2);
+        assertEquals(recipe.getInteractions().size(), 0);
+        assertEquals(recipe.getEvents().get(0), sensoryEventWithIngredientCheck);
+        assertEquals(recipe.getEvents().get(1), sensoryEventWithoutIngredientCheck);
     }
 }

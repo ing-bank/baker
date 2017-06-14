@@ -27,9 +27,13 @@ public class JavadslTestHelper {
             new com.ing.baker.recipe.scaladsl.Event("InteractionProvidedEvent2",
                     JavaConversions.asScalaBuffer(new ArrayList<com.ing.baker.recipe.common.Ingredient>()).toSeq());
 
-    public static com.ing.baker.recipe.common.Event initialSensoryEventCheck =
-            new com.ing.baker.recipe.scaladsl.Event("InitialSensoryEvent",
+    public static com.ing.baker.recipe.common.Event sensoryEventWithIngredientCheck =
+            new com.ing.baker.recipe.scaladsl.Event("SensoryEventWithIngredient",
                     new Set.Set1<com.ing.baker.recipe.common.Ingredient>(initialIngredientCheck).toSeq());
+
+    public static com.ing.baker.recipe.common.Event sensoryEventWithoutIngredientCheck =
+            new com.ing.baker.recipe.scaladsl.Event("SensoryEventWithoutIngredient",
+                    JavaConversions.asScalaBuffer(new ArrayList<com.ing.baker.recipe.common.Ingredient>()).toSeq());
 
 
     //Interactions
@@ -39,21 +43,21 @@ public class JavadslTestHelper {
     public static com.ing.baker.recipe.common.Ingredient ProcessIdUUIDCheck =
             new com.ing.baker.recipe.scaladsl.Ingredient<String>("$ProcessId$", UUIDClassTag);
 
-    public static com.ing.baker.recipe.common.Interaction providesIngredientInteraction =
+    public static com.ing.baker.recipe.common.Interaction providesIngredientInteractionCheck =
             new com.ing.baker.recipe.scaladsl.Interaction(
                     "ProvidesIngredientInteraction",
                     new Set.Set1<com.ing.baker.recipe.common.Ingredient>(initialIngredientCheck).toSeq(),
                     new com.ing.baker.recipe.common.ProvidesIngredient(firstProvidedIngredientCheck)
             );
 
-    public static com.ing.baker.recipe.common.Interaction requiresProcessIdStringInteraction =
+    public static com.ing.baker.recipe.common.Interaction requiresProcessIdStringInteractionCheck =
             new com.ing.baker.recipe.scaladsl.Interaction(
                     "RequiresProcessIdStringInteraction",
                     new Set.Set2<com.ing.baker.recipe.common.Ingredient>(ProcessIdStringCheck, initialIngredientCheck).toSeq(),
                     new com.ing.baker.recipe.common.ProvidesNothing()
             );
 
-    public static com.ing.baker.recipe.common.Interaction requiresProcessIdUUIDInteraction =
+    public static com.ing.baker.recipe.common.Interaction requiresProcessIdUUIDInteractionCheck =
             new com.ing.baker.recipe.scaladsl.Interaction(
                     "RequiresProcessIdUUIDInteraction",
                     new Set.Set2<com.ing.baker.recipe.common.Ingredient>(ProcessIdUUIDCheck, initialIngredientCheck).toSeq(),

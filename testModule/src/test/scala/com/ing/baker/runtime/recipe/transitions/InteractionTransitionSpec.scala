@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.recipe.transitions
 
 import com.ing.baker.recipe.annotations.{FiresEvent, ProvidesIngredient, RequiresIngredient}
-import com.ing.baker.recipe.javadsl.Event
 import org.scalatest._
 
 //object InteractionTransitionSpec {
