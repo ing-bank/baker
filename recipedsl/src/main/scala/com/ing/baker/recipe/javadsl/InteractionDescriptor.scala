@@ -1,10 +1,6 @@
 package com.ing.baker.recipe.javadsl
 
-import java.util.Optional
-
-import com.ing.baker.recipe.annotations.FiresEvent
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.{FiresOneOfEvents, RecipeValidationException}
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
 
 import scala.annotation.varargs
@@ -29,17 +25,6 @@ case class InteractionDescriptor private(
   override val name: String = {
     if (newName != null) newName
     else interaction.name
-  }
-
-  def getRequiredEvents: java.util.Set[common.Event] = requiredEvents.asJava
-
-  def getName: String = name
-
-  def getPredefinedIngredients: java.util.Map[String, Object] = predefinedIngredients.asJava
-
-  def getMaximumInteractionCount: Optional[Int] = maximumInteractionCount match {
-    case None => Optional.empty()
-    case Some(n) => Optional.of(n)
   }
 
   def withActionType(newActionType: common.ActionType): InteractionDescriptor =
