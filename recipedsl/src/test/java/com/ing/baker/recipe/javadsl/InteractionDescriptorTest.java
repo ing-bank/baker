@@ -14,19 +14,19 @@ public class InteractionDescriptorTest {
     @Test
     public void shouldCreateInteractionDescriptorOfProvidesIngredientInteraction() {
         com.ing.baker.recipe.common.InteractionDescriptor interactionDescriptor = of(ProvidesIngredientInteraction.class);
-        assertEquals(interactionDescriptor.interaction(), providesIngredientInteractionCheck);
+        assertEquals(providesIngredientInteractionCheck(), interactionDescriptor.interaction());
     }
 
     @Test
     public void shouldCreateInteractionDescriptorOfRequiredProcessIdStringInteraction() {
         com.ing.baker.recipe.common.InteractionDescriptor interactionDescriptor = of(RequiresProcessIdStringInteraction.class);
-        assertEquals(interactionDescriptor.interaction(), requiresProcessIdStringInteractionCheck);
+        assertEquals(requiresProcessIdStringInteractionCheck(), interactionDescriptor.interaction());
     }
 
     @Test
     public void shouldCreateInteractionDescriptorOfRequiredProcessIdUUIDInteraction() {
         com.ing.baker.recipe.common.InteractionDescriptor interactionDescriptor = of(RequiresProcessIdUUIDInteraction.class);
-        assertEquals(interactionDescriptor.interaction(), requiresProcessIdUUIDInteractionCheck);
+        assertEquals(requiresProcessIdUUIDInteractionCheck(), interactionDescriptor.interaction());
     }
 
     //TODO add tests for all InteractionDescriptor methods

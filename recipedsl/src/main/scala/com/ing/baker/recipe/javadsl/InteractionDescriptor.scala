@@ -185,12 +185,11 @@ case class InteractionDescriptor private(
     * @param eventClazz
     * @param newEventName
     * @param ingredientRenames
-    * @tparam A
     * @return
     */
-  def withEventTransformation[A](eventClazz: Class[A],
-                                 newEventName: String,
-                                 ingredientRenames: Map[String, String]): InteractionDescriptor = {
+  def withEventTransformation(eventClazz: Class[_],
+                              newEventName: String,
+                              ingredientRenames: Map[String, String]): InteractionDescriptor = {
 
     val originalEvent: common.Event = eventClassToCommonEvent(eventClazz)
     //TODO enable this check and create tests to see if it works
