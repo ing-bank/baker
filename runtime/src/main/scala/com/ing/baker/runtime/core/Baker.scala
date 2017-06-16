@@ -66,7 +66,7 @@ object Baker {
   private def checkIfImplementationIsValidForInteraction(implementation: AnyRef, interaction: InteractionTransition[_]): Boolean ={
     Try {
       implementation.getClass.getMethod("apply", interaction.inputFields.map(_._2): _*)
-    }.toOption.isDefined
+    }.isSuccess
   }
 
   private def checkIfValidImplementationsProvided(implementations: Map[String, () => AnyRef], actions: Set[InteractionTransition[_]]): Set[String] = {

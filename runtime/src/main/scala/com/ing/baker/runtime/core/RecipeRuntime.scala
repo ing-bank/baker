@@ -21,11 +21,4 @@ class RecipeRuntime(interactions: Map[String, () => AnyRef], ingredientExtractor
   }
 
   override val taskProvider = new TaskProvider(interactions, ingredientExtractor)
-
-  override lazy val jobPicker = new JobPicker[Place, Transition](tokenGame) {
-    override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition[_, _]): Boolean = t match {
-      case EventTransition(_, isSensoryEvent, _) => !isSensoryEvent
-      case _ => true
-    }
-  }
 }
