@@ -10,11 +10,10 @@ class RecipeRuntime(interactions: Map[String, () => AnyRef], ingredientExtractor
 
   override val tokenGame = new RecipeTokenGame()
 
-  override val eventSourceFn: Transition[_,_] => (ProcessState => RuntimeEvent => ProcessState) = {
-    case t: InteractionTransition[_] => EventSource.updateStateFromInteractionOutput()
-    case t: EventTransition          => EventSource.updateStateFromEventOutput(t)
-    case t                           => state => e => state
-  }
+  override val eventSourceFn: Transition[_,_] => (ProcessState => RuntimeEvent => ProcessState) = t => state => {
+      case null                                    => state
+      case RuntimeEvent(name, providedIngredients) => state.copy(ingredients = state.ingredients ++ providedIngredients)
+    }
 
   override val exceptionHandlerFn: Transition[_,_] => TransitionExceptionHandler = {
     case interaction: InteractionTransition[_] => interaction.exceptionStrategy
@@ -22,8 +21,6 @@ class RecipeRuntime(interactions: Map[String, () => AnyRef], ingredientExtractor
   }
 
   override val taskProvider = new TaskProvider(interactions, ingredientExtractor)
-
-  override lazy val jobExecutor = new JobExecutor[ProcessState, Place, Transition](taskProvider, exceptionHandlerFn)
 
   override lazy val jobPicker = new JobPicker[Place, Transition](tokenGame) {
     override def isFireable[S](instance: Instance[Place, Transition, S], t: Transition[_, _]): Boolean = t match {

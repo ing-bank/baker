@@ -86,8 +86,7 @@ object Baker {
 
   def transitionForRuntimeEvent(runtimeEvent: RuntimeEvent, compiledRecipe: CompiledRecipe) =
     compiledRecipe.petriNet.transitions.findByLabel(runtimeEvent.name).getOrElse {
-
-throw new IllegalArgumentException(s"No such event known in recipe: $runtimeEvent")
+      throw new IllegalArgumentException(s"No such event known in recipe: $runtimeEvent")
     }
 }
 
