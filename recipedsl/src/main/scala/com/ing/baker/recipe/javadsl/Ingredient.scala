@@ -1,3 +1,3 @@
 package com.ing.baker.recipe.javadsl
 
-trait Ingredient
+trait Ingredient extends Serializable
