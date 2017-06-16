@@ -3,15 +3,7 @@ package com.ing.baker.compiledRecipe
 import java.lang.reflect.Field
 
 case class CompiledIngredient(name: String,
-                              clazz: Class[_]) {
-  override def equals(obj: scala.Any): Boolean = obj match {
-    case other: CompiledIngredient =>
-      this.name == other.name &&
-      this.clazz == other.clazz
-    case _ => false
-  }
-}
-
+                              clazz: Class[_])
 object CompiledIngredient{
   def apply(obj: Any): CompiledIngredient =
     CompiledIngredient(obj.getClass.getSimpleName, obj.getClass)

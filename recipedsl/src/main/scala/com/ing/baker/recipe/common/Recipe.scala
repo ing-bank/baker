@@ -27,20 +27,17 @@ trait Recipe {
 
   val defaultFailureStrategy: InteractionFailureStrategy
 
-
   override def toString: String = {
-    val appender = "  "
-    val appender2 = appender + appender
     s"""{
         |  Recipe: $name
         |  Interactions:{
-        |${interactions.foldLeft("")((i, j) => s"$i\n${j.toString(appender2)}").replaceFirst("\n", "")}
+        |${interactions.mkString("\n")}
         |  }
         |  Sieves:{
-        |${sieves.foldLeft("")((i, j) => s"$i\n${j.toString(appender2)}").replaceFirst("\n", "")}
+        |${sieves.mkString("\n")}
         |  }
         |  Events:{
-        |${sensoryEvents.foldLeft("")((i, j) => s"$i\n${j.toString(appender2)}").replaceFirst("\n", "")}
+        |${sensoryEvents.mkString("\n")}
         |  }
         |}
         |""".stripMargin

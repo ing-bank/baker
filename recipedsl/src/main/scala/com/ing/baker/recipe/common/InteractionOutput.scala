@@ -1,8 +1,6 @@
 package com.ing.baker.recipe.common
 
-sealed trait InteractionOutput {
-  def toString(appender: String): String
-}
+sealed trait InteractionOutput
 
 case class ProvidesIngredient(ingredient: Ingredient) extends InteractionOutput {
   override def toString(): String = toString("")
@@ -12,10 +10,9 @@ case class ProvidesIngredient(ingredient: Ingredient) extends InteractionOutput 
 }
 
 case class FiresOneOfEvents(events: Seq[Event]) extends InteractionOutput {
-  override def toString(): String = toString("")
-  def toString(appender: String): String = {
-    s"""${appender}FiresOneOfEvents:{
-       |${events.foldLeft("")((i, j) => s"$i\n${j.toString(appender + "  ")}").replaceFirst("\n", "")}}""".stripMargin
+  override def toString(): String = {
+    s"""FiresOneOfEvents:{
+       |${events.mkString("\n")}}""".stripMargin
   }
 }
 
@@ -28,8 +25,5 @@ object FiresOneOfEvents {
 }
 
 case class ProvidesNothing() extends InteractionOutput {
-  override def toString(): String = toString("")
-  def toString(appender: String): String = {
-    s"""${appender}ProvidesNothing:""".stripMargin
-  }
+  override def toString(): String = "ProvidesNothing:"
 }

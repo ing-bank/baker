@@ -56,20 +56,17 @@ trait InteractionDescriptor {
 
   val actionType: ActionType
 
-  override def toString(): String = toString("")
-
-  def toString(appender: String): String = {
-    s"""$appender${interaction.name}{
-       |${appender + ""}requiredIngredients:(${interaction.inputIngredients.foldLeft("")((i, j) => s"$i$j")})
-       |${interaction.output.toString(appender)}
-       |${appender}requiredEvents(${requiredEvents.foldLeft("")((i, j) => s"$i\n${j.toString(appender + "  ")}")})
-       |${appender}requiredOneOfEvents(${requiredOneOfEvents.foldLeft("")((i, j) => s"$i\n${j.toString(appender + "  ")}")})
-       |${appender}predefinedIngredients(${predefinedIngredients})
-       |${appender}overriddenIngredientNames(${overriddenIngredientNames})
-       |${appender}overriddenOutputIngredientName(${overriddenOutputIngredientName})
-       |${appender}maximumInteractionCount(${maximumInteractionCount})
-       |${appender}failureStrategy(${failureStrategy})
-       |${appender}eventOutputTransformers(${eventOutputTransformers})
-       |$appender}""".stripMargin
+  override def toString(): String = {
+    s"""${interaction.name}{
+       |requiredIngredients:(${interaction.inputIngredients.foldLeft("")((i, j) => s"$i$j")})
+       |${interaction.output.toString}
+       |requiredEvents(${requiredEvents.mkString("\n")})
+       |requiredOneOfEvents(${requiredOneOfEvents.mkString("\n")})
+       |predefinedIngredients(${predefinedIngredients})
+       |overriddenIngredientNames(${overriddenIngredientNames})
+       |overriddenOutputIngredientName(${overriddenOutputIngredientName})
+       |maximumInteractionCount(${maximumInteractionCount})
+       |failureStrategy(${failureStrategy})
+       |eventOutputTransformers(${eventOutputTransformers})""".stripMargin
   }
 }

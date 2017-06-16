@@ -1,12 +1,7 @@
 package com.ing.baker.compiledRecipe
 
 case class CompiledEvent(name: String,
-                         providedIngredients: Seq[CompiledIngredient]){
-  override def equals(obj: scala.Any): Boolean = obj match {
-    case other: CompiledEvent => this.name == other.name && this.providedIngredients == other.providedIngredients
-    case _ => false
-  }
-}
+                         providedIngredients: Seq[CompiledIngredient])
 
 object CompiledEvent{
   def apply(obj: Any): CompiledEvent = {
