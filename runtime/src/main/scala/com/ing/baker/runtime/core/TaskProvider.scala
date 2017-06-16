@@ -9,7 +9,7 @@ import com.ing.baker.compiledRecipe.petrinet.{EventTransition, FiresOneOfEvents,
 import com.ing.baker.core.ProcessState
 import fs2.Task
 import io.kagera.api._
-import io.kagera.execution.{TransitionTask, TransitionTaskProvider}
+import io.kagera.runtime.{TransitionTask, TransitionTaskProvider}
 import org.slf4j.{LoggerFactory, MDC}
 
 import scala.util.Try

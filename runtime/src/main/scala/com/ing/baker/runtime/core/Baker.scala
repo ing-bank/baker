@@ -23,10 +23,10 @@ import io.kagera.akka.actor.PetriNetInstanceProtocol._
 import io.kagera.akka.actor._
 import io.kagera.akka.query.PetriNetQuery
 import io.kagera.api._
-import io.kagera.execution.EventSourcing.TransitionFiredEvent
-import io.kagera.execution.PetriNetRuntime
-import io.kagera.persistence.Encryption
-import io.kagera.persistence.Encryption.NoEncryption
+import io.kagera.runtime.EventSourcing.TransitionFiredEvent
+import io.kagera.runtime.PetriNetRuntime
+import io.kagera.runtime.persistence.Encryption
+import io.kagera.runtime.persistence.Encryption.NoEncryption
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 

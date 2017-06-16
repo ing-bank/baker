@@ -1,8 +1,7 @@
 package com.ing.baker.compiledRecipe.petrinet
 
 import com.ing.baker.compiledRecipe.{ActionType, CompiledEventOutputTransformer, InteractionFailureStrategy, _}
-import com.ing.baker.core.ProcessState
-import io.kagera.execution.TransitionExceptionHandler
+import io.kagera.runtime.TransitionExceptionHandler
 import org.slf4j._
 
 /**

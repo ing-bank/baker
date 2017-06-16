@@ -1,7 +1,7 @@
 package com.ing.baker.compiledRecipe
 
-import io.kagera.execution.ExceptionStrategy.{BlockTransition, RetryWithDelay}
-import io.kagera.execution.TransitionExceptionHandler
+import io.kagera.runtime.ExceptionStrategy.{BlockTransition, RetryWithDelay}
+import io.kagera.runtime.TransitionExceptionHandler
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 

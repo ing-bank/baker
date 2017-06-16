@@ -12,7 +12,7 @@ import com.ing.baker.runtime.core._
 import com.ing.baker.core.ProcessState
 import io.kagera.akka.actor.PetriNetInstance
 import io.kagera.akka.actor.PetriNetInstance.Settings
-import io.kagera.execution.PetriNetRuntime
+import io.kagera.runtime.PetriNetRuntime
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
