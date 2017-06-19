@@ -236,31 +236,6 @@ trait TestRecipeHelper
       "NonMatchingReturnTypeInteraction" -> (() => testNonMatchingReturnTypeInteractionMock),
       "SieveInteraction" -> (() => testSieveInteractionMock))
 
-  protected val localConfig: Config =
-    ConfigFactory.parseString(
-      """
-        |akka {
-        |   jvm-exit-on-fatal-error = false
-        |   loglevel = "DEBUG"
-        |   actor.allow-java-serialization = off
-        |
-        |   persistence {
-        |    journal.plugin = "inmemory-journal"
-        |    snapshot-store.plugin = "inmemory-snapshot-store"
-        |
-        |    auto-start-snapshot-stores = [ "inmemory-snapshot-store"]
-        |    auto-start-journals = [ "inmemory-journal" ]
-        |  }
-        |  log-config-on-start = off
-        |}
-        |
-        |baker {
-        |  actor.provider = "local"
-        |}
-        |
-        |logging.root.level = DEBUG
-      """.stripMargin)
-
   protected def levelDbConfig(actorSystemName: String, port: Int): Config = ConfigFactory.parseString(
     s"""
        |akka {
@@ -302,7 +277,7 @@ trait TestRecipeHelper
        |logging.root.level = DEBUG
     """.stripMargin)
 
-  implicit protected val defaultActorSystem = ActorSystem("BakerSpec", localConfig)
+  implicit protected val defaultActorSystem = ActorSystem("BakerSpec")
 
   override def afterAll(): Unit = {
     TestKit.shutdownActorSystem(defaultActorSystem)
@@ -330,9 +305,7 @@ trait TestRecipeHelper
         secondEvent,
         notUsedSensoryEvent)
 
-  private def getFinTechRecipe() = ???
-
-  protected def getWebshopRecipe(): Recipe =
+  protected val getWebshopRecipe: Recipe =
     Recipe("Webshop")
         .withInteractions(
         ValidateOrder,
@@ -390,9 +363,8 @@ trait TestRecipeHelper
     * @param recipeName A unique name that is needed for the recipe to insure that the tests do not interfere with each other
     * @return
     */
-  protected def setupBakerWithRecipe(recipeName: String,
-                                     actorSystem: ActorSystem = defaultActorSystem,
-                                     appendUUIDToTheRecipeName: Boolean = true): Baker = {
+  protected def setupBakerWithRecipe(recipeName: String, appendUUIDToTheRecipeName: Boolean = true)
+                                    (implicit actorSystem: ActorSystem): Baker = {
     val newRecipeName = if (appendUUIDToTheRecipeName) s"$recipeName-${UUID.randomUUID().toString}" else recipeName
     val recipe = getComplexRecipe(newRecipeName)
     when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)

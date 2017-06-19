@@ -5,10 +5,10 @@ import java.util.UUID
 import akka.actor.ActorSystem
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.testkit.{TestKit, TestProbe}
+import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.recipe.scaladsl.{InteractionDescriptorFactory, Recipe}
-import com.ing.baker.TestRecipeHelper._
+import com.ing.baker.recipe.scaladsl.Recipe
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
@@ -28,7 +28,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
     resetMocks
 
     // Clean inmemory-journal before each test
-    val tp = TestProbe()(defaultActorSystem)
+    val tp = TestProbe()
     tp.send(StorageExtension(defaultActorSystem).journalStorage, InMemoryJournalStorage.ClearJournal)
     tp.expectMsg(akka.actor.Status.Success(""))
   }
@@ -68,8 +68,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
             .withPredefinedIngredients("initialIngredient" -> initialIngredientValue))
         .withSensoryEvent(initialEvent)
 
-      val baker = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-                            mockImplementations)(actorSystem = defaultActorSystem)
+      val baker = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(recipe), mockImplementations)
 
       val processId = UUID.randomUUID()
       baker.bake(processId)
@@ -122,9 +121,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val baker = new Baker(
         compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-        implementations = mockImplementations)(actorSystem = defaultActorSystem)
-
-
+        implementations = mockImplementations)
 
       when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
 
@@ -177,7 +174,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
         new Baker(
           compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-          implementations = mockImplementations)(actorSystem = defaultActorSystem)
+          implementations = mockImplementations)
       }
 
       val firstProcessId = UUID.randomUUID()
@@ -321,8 +318,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       when(testInteractionOneMock.apply(anyString(), anyString()))
         .thenReturn(interactionOneIngredientValue)
 
-      val baker = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-                            mockImplementations)(actorSystem = defaultActorSystem)
+      val baker = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(recipe), mockImplementations)
       val processId = UUID.randomUUID()
       baker.bake(processId)
 
@@ -476,7 +472,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       val processId = UUID.randomUUID()
 
       try {
-        val baker1 = setupBakerWithRecipe(recoveryRecipeName, system1, appendUUIDToTheRecipeName = false)
+        val baker1 = setupBakerWithRecipe(recoveryRecipeName, appendUUIDToTheRecipeName = false)(system1)
 
         baker1.bake(processId)
         baker1.handleEvent(processId, InitialEvent(initialIngredientValue))
@@ -489,8 +485,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val system2 = ActorSystem("persistenceTest2", levelDbConfig("persistenceTest2", 3002))
       try {
-        val baker2 = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(getComplexRecipe(recoveryRecipeName)),
-          mockImplementations)(system2)
+        val baker2 = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(getComplexRecipe(recoveryRecipeName)), mockImplementations)(system2)
         baker2.getProcessState(processId).ingredients shouldBe finalState
       } finally {
         TestKit.shutdownActorSystem(system2)
@@ -499,7 +494,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
     }
 
     "when acknowledging the first event, not wait on the rest" in {
-      val baker = setupBakerWithRecipe("NotWaitForTheRest", actorSystem = defaultActorSystem)
+      val baker = setupBakerWithRecipe("NotWaitForTheRest")
 
       val interaction2Delay = 2000
 
@@ -529,7 +524,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
     }
 
     "acknowledge the first and final event while rest processing failed" in {
-      val baker = setupBakerWithRecipe("AcknowledgeThefirst", defaultActorSystem)
+      val baker = setupBakerWithRecipe("AcknowledgeThefirst")
 
       when(testInteractionTwoMock.apply(anyString()))
         .thenThrow(new RuntimeException("Unknown Exception."))

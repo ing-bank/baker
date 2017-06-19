@@ -7,24 +7,9 @@ import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.actor.ProcessMetadata
 import com.ing.baker.runtime.core.Baker
-import com.typesafe.config.{Config, ConfigFactory}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
-
-object JBaker {
-  val defaultConfig: Config =
-    ConfigFactory.parseString("""
-      |akka {
-      |   persistence {
-      |    journal.plugin = "inmemory-journal"
-      |    snapshot-store.plugin = "inmemory-snapshot-store"
-      |  }
-      |}
-      |
-      |baker.actor.provider = "local"
-    """.stripMargin)
-}
 
 //TODO do we want to accept the implementations as Any?
 //It use to be of the Interaction type but now this is not possible since this is not known here
@@ -34,7 +19,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
               actorSystem: ActorSystem) {
 
   def this(compiledRecipe: CompiledRecipe, implementations: java.util.List[AnyRef]) =
-    this(compiledRecipe, implementations, ActorSystem.apply("BakerActorSystem", JBaker.defaultConfig))
+    this(compiledRecipe, implementations, ActorSystem("BakerActorSystem"))
 
   val interactionImplementations: Map[String, () => AnyRef] = Baker.implementationsToProviderMap(implementations.asScala)
   val baker: Baker = new Baker(compiledRecipe = compiledRecipe, implementations.asScala)(actorSystem = actorSystem)
