@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.core
 
 import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
-import com.ing.baker.compiledRecipe.petrinet.{EventTransition, InteractionTransition, Place, RecipeTokenGame, Transition}
+import com.ing.baker.compiledRecipe.petrinet.{EventTransition, InteractionTransition, Place, Transition}
 import com.ing.baker.core.ProcessState
 import io.kagera.runtime.ExceptionStrategy.BlockTransition
 import io.kagera.runtime._
