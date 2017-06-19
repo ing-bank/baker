@@ -16,19 +16,6 @@ object RecipeValidations {
     if (compiledRecipe.petriNet.inMarking(interactionTransition).isEmpty)
       validationErrors += s"Interaction $interactionTransition does not have any requirements (ingredients or preconditions)! This will result in an infinite execution loop."
 
-//    val eventClassNotAssignableFromErrors: Seq[String] = interactionTransition match  {
-//      case InteractionTransition(providesType: FiresOneOfEvents, _, interactionName: String, _, _, _, _, _) =>
-//        providesType.events.flatMap(
-//          event =>
-//            if (!providesType.outputType.isAssignableFrom(eventClass))
-//              Some(s"Event class: $eventClass is not assignable to return type: ${providesType.outputType} for interaction: $interactionName")
-//            else None
-//        )
-//      case _ => Seq.empty
-//    }
-
-//    validationErrors ++= eventClassNotAssignableFromErrors
-
     // check if the process id argument type is correct, TODO remove overlap with code below
     interactionTransition.inputFields.toMap.get(processIdName).map {
       case c if c == classOf[String]         =>
@@ -72,24 +59,6 @@ object RecipeValidations {
     }
   }
 
-  //TODO decide if we really want to check this? Is only of type Event valid for the runtime?
-  def validateEventsExtendFromBakerEvent(compiledRecipe: CompiledRecipe): Seq[String] = {
-    // check all event classes (sensory events + interaction events)
-//    val eventValidationsErrors = compiledRecipe.allEvents.toSeq
-//      .filter(c => !classOf[Event].isAssignableFrom(c))
-//      .map(c => s"Event class: $c does not extend from com.ing.baker.api.Event")
-//
-//    // check all interactions that provide an ingredient (instead of an event)
-////    val interactionIngredientsValidationsErrors = compiledRecipe.interactionTransitions.toSeq
-////      .filter(_.providesIngredient)
-////      .map(_.method.getReturnType)
-////      .filter(c => !classOf[java.io.Serializable].isAssignableFrom(c))
-////      .map(c => s"Ingredient class: $c does not extend from java.io.Serializable")
-////    eventValidationsErrors ++ interactionIngredientsValidationsErrors
-//    eventValidationsErrors
-    Seq.empty
-  }
-
   def validateNoCycles(compiledRecipe: CompiledRecipe): Seq[String] =
     compiledRecipe.petriNet.innerGraph.findCycle
       .map(c => s"The petri net topology contains a cycle: $c")
@@ -113,7 +82,6 @@ object RecipeValidations {
 
     postCompileValidationErrors ++= validateInteractionIngredients(compiledRecipe)
     postCompileValidationErrors ++= validateInteractions(compiledRecipe)
-    postCompileValidationErrors ++= validateEventsExtendFromBakerEvent(compiledRecipe)
 
     if (!validationSettings.allowCycles)
     postCompileValidationErrors ++= validateNoCycles(compiledRecipe)

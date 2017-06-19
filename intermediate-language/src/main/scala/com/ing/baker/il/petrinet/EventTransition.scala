@@ -5,7 +5,6 @@ import com.ing.baker.il.CompiledEvent
 /**
   * Transition providing data from an event.
   */
-//TODO remove E since its always RuntimeEvent
 case class EventTransition(event: CompiledEvent,
                            val isSensoryEvent: Boolean = true,
                            val isMissing: Boolean = false) extends Transition[Unit, CompiledEvent] {
