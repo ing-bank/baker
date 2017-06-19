@@ -242,9 +242,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     */
   def eventsAsync(processId: java.util.UUID): Source[RuntimeEvent, NotUsed] = {
     PetriNetQuery
-      .eventsForInstance[Place, Transition, ProcessState, RuntimeEvent](processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal,
-        //TODO remove this casting once kagera supports setting the type for the event
-        petriNetRuntime.eventSourceFn.asInstanceOf[Transition[_,_] => ProcessState => Any => ProcessState])
+      .eventsForInstance[Place, Transition, ProcessState, RuntimeEvent](processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal, petriNetRuntime.eventSourceFn)
       .collect {
         case (_, TransitionFiredEvent(_, _, _, _, _, _, runtimeEvent: RuntimeEvent))
           if runtimeEvent != null && compiledRecipe.allEvents.exists(e => e.name equals runtimeEvent.name) => runtimeEvent
