@@ -1,7 +1,7 @@
 package com.ing.baker;
 
 import com.ing.baker.compiler.RecipeCompiler;
-import com.ing.baker.core.BakerException;
+import com.ing.baker.runtime.core.BakerException;
 import com.ing.baker.recipe.annotations.ProcessId;
 import com.ing.baker.recipe.annotations.ProvidesIngredient;
 import com.ing.baker.recipe.annotations.RequiresIngredient;

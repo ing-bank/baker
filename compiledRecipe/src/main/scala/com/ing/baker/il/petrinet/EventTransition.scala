@@ -1,7 +1,6 @@
 package com.ing.baker.il.petrinet
 
 import com.ing.baker.il.CompiledEvent
-import com.ing.baker.core.ProcessState
 
 /**
   * Transition providing data from an event.

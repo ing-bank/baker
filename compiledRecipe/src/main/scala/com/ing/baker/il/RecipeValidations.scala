@@ -3,7 +3,6 @@ package com.ing.baker.il
 import akka.actor.ActorSystem
 import akka.serialization.SerializationExtension
 import com.ing.baker.il.petrinet.{FiresOneOfEvents, InteractionTransition}
-import com.ing.baker.core.NonSerializableException
 
 import scala.collection.mutable
 import scala.util.Try
@@ -131,11 +130,6 @@ object RecipeValidations {
     val serialization = SerializationExtension(actorSystem)
 
     val hasAkkaSerializer = (clazz: Class[_]) => Try { serialization.serializerFor(clazz) }.isSuccess
-
-    // check all event classes (sensory events + interaction events)
-//    val eventSerializationErrors: Seq[String] = compiledRecipe.allEvents.toSeq
-//      .filterNot(hasAkkaSerializer)
-//      .map(c => s"Event class: $c is not serializable by akka")
 
     val ingredientSerializationErrors: Seq[String] =
       compiledRecipe.ingredients.mapValues(_.clazz)

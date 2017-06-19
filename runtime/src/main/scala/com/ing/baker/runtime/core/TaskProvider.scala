@@ -6,7 +6,6 @@ import java.util.UUID
 import com.ing.baker.il._
 import com.ing.baker.il.ingredient_extractors.IngredientExtractor
 import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, Place, ProvidesIngredient, ProvidesNothing, Transition}
-import com.ing.baker.core.ProcessState
 import fs2.Task
 import io.kagera.api._
 import io.kagera.runtime.{TransitionTask, TransitionTaskProvider}

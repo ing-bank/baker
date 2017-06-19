@@ -4,7 +4,6 @@ package compiler
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
 import com.ing.baker.il.{CompiledRecipe, RecipeValidations, CompiledEvent, ValidationSettings}
-import com.ing.baker.core.BakerException
 import com.ing.baker.recipe.common.{InteractionDescriptor, Recipe}
 import io.kagera.api._
 
@@ -87,7 +86,7 @@ object RecipeCompiler {
         }
         arc(interaction, resultPlace, 1) +: eventArcs
       }
-      case _ => throw new BakerException("InteractionEventOutputArc called for non event transition")
+      case other @ _ => throw new RecipeValidationException(s"InteractionEventOutputArc cannot be applied to non event transition: $other")
     }
   }
 

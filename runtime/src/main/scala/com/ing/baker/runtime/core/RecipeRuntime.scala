@@ -2,7 +2,6 @@ package com.ing.baker.runtime.core
 
 import com.ing.baker.il.ingredient_extractors.IngredientExtractor
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
-import com.ing.baker.core.ProcessState
 import io.kagera.runtime.ExceptionStrategy.BlockTransition
 import io.kagera.runtime._
 

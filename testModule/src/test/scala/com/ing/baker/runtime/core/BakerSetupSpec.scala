@@ -3,7 +3,7 @@ package com.ing.baker.runtime.core
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.core.{BakerException, NonSerializableException, RecipeValidationException}
+import com.ing.baker.il.NonSerializableException
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.core.implementations.{InteractionOneFieldName, InteractionOneInterfaceImplementation, InteractionOneWrongApply}
 
