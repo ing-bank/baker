@@ -3,9 +3,9 @@ package com.ing.baker.runtime.core
 import java.lang.reflect.InvocationTargetException
 import java.util.UUID
 
-import com.ing.baker.compiledRecipe._
-import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
-import com.ing.baker.compiledRecipe.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, Place, ProvidesIngredient, ProvidesNothing, Transition}
+import com.ing.baker.il._
+import com.ing.baker.il.ingredient_extractors.IngredientExtractor
+import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, Place, ProvidesIngredient, ProvidesNothing, Transition}
 import com.ing.baker.core.ProcessState
 import fs2.Task
 import io.kagera.api._

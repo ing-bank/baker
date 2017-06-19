@@ -1,6 +1,6 @@
-package com.ing.baker.compiledRecipe.petrinet
+package com.ing.baker.il.petrinet
 
-import com.ing.baker.compiledRecipe.petrinet.Place.PlaceType
+import com.ing.baker.il.petrinet.Place.PlaceType
 
 
 object Place {

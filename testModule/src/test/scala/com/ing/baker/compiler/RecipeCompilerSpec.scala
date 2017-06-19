@@ -1,7 +1,7 @@
 package com.ing.baker.compiler
 
 import com.ing.baker._
-import com.ing.baker.compiledRecipe.CompiledRecipe
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.scaladsl.{InteractionDescriptorFactory, Recipe}
 
 import scala.concurrent.duration._

@@ -6,8 +6,8 @@ import akka.pattern.ask
 import akka.persistence.PersistentActor
 import akka.util.Timeout
 import GracefulShutdownActor.Leave
-import com.ing.baker.compiledRecipe.petrinet
-import com.ing.baker.compiledRecipe.petrinet._
+import com.ing.baker.il.petrinet
+import com.ing.baker.il.petrinet._
 import com.ing.baker.runtime.core._
 import com.ing.baker.core.ProcessState
 import io.kagera.akka.actor.PetriNetInstance

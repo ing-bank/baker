@@ -1,4 +1,4 @@
-package com.ing.baker.compiledRecipe
+package com.ing.baker.il
 
 import io.kagera.runtime.ExceptionStrategy.{BlockTransition, RetryWithDelay}
 import io.kagera.runtime.TransitionExceptionHandler

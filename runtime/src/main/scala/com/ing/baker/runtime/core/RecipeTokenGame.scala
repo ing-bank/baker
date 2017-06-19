@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.core
 
-import com.ing.baker.compiledRecipe.petrinet.{PTEdge, Place, Transition}
+import com.ing.baker.il.petrinet.{PTEdge, Place, Transition}
 import io.kagera.api._
 import io.kagera.runtime.TokenGame
 

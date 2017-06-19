@@ -1,4 +1,4 @@
-package com.ing.baker.compiledRecipe.petrinet
+package com.ing.baker.il.petrinet
 
 trait Transition[I, O] {
   def id: Long

@@ -1,11 +1,11 @@
 package com.ing.baker
 
-import com.ing.baker.compiledRecipe.ActionType.{InteractionAction, SieveAction}
-import com.ing.baker.compiledRecipe.petrinet.Place._
-import com.ing.baker.compiledRecipe.petrinet.{EventTransition, InteractionTransition, MultiFacilitatorTransition, Place, Transition}
+import com.ing.baker.il.ActionType.{InteractionAction, SieveAction}
+import com.ing.baker.il.petrinet.Place._
+import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, MultiFacilitatorTransition, Place, Transition}
 
 
-package object compiledRecipe {
+package object il {
   val processIdName         = "$ProcessID$"
 
   implicit class PlaceAdditions(place: Place[_]) {

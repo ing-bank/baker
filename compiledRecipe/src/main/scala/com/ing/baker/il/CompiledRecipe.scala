@@ -1,7 +1,6 @@
-package com.ing.baker.compiledRecipe
+package com.ing.baker.il
 
-import com.ing.baker.compiledRecipe.petrinet.{FiresOneOfEvents, InteractionTransition, Place, ProvidesIngredient, RecipePetriNet}
-import com.ing.baker.visualisation.RecipeVisualizer
+import com.ing.baker.il.petrinet.{FiresOneOfEvents, InteractionTransition, Place, ProvidesIngredient, RecipePetriNet}
 import io.kagera.api._
 /**
   * A Compiled recipe.

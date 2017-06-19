@@ -1,4 +1,4 @@
-package com.ing.baker.compiledRecipe
+package com.ing.baker.il
 
 import io.kagera.api._
 
@@ -34,7 +34,7 @@ package object petrinet {
 
   implicit def transitionIdentifier(t: Transition[_, _]): Id = Id(t.id)
 
-  def createPetriNet[S](params: Arc*): RecipePetriNet = {
+  def createPetriNet(params: Arc*): RecipePetriNet = {
     val petriNet = new ScalaGraphPetriNet(Graph(params: _*))
 
     requireUniqueElements(petriNet.places.toSeq.map(_.id), "Place identifier")

@@ -1,8 +1,8 @@
 package com.ing.baker
 
-import com.ing.baker.compiledRecipe.ActionType.{InteractionAction, SieveAction}
-import com.ing.baker.compiledRecipe.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing, ProvidesType, Transition}
-import com.ing.baker.compiledRecipe.{ActionType, CompiledEvent, CompiledEventOutputTransformer, CompiledIngredient, InteractionFailureStrategy}
+import com.ing.baker.il.ActionType.{InteractionAction, SieveAction}
+import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing, ProvidesType, Transition}
+import com.ing.baker.il.{ActionType, CompiledEvent, CompiledEventOutputTransformer, CompiledIngredient, InteractionFailureStrategy}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{Event, Ingredient, InteractionDescriptor}
 import io.kagera.api._
@@ -88,7 +88,7 @@ package object compiler {
         //Replace ProcessId to ProcessIdName tag as know in compiledRecipe
         //Replace ingredient tags with overridden tags
         .map(ingredient =>
-        if(ingredient.name == common.ProcessIdName) compiledRecipe.processIdName -> ingredient.clazz
+        if(ingredient.name == common.ProcessIdName) il.processIdName -> ingredient.clazz
         else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.clazz)
 
 

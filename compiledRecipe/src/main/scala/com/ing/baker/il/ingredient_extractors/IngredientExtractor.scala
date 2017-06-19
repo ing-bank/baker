@@ -1,4 +1,4 @@
-package com.ing.baker.compiledRecipe.ingredientExtractors
+package com.ing.baker.il.ingredient_extractors
 
 /**
   * Extracts ingredients from an object.

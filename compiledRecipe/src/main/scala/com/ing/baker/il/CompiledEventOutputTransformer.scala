@@ -1,4 +1,4 @@
-package com.ing.baker.compiledRecipe
+package com.ing.baker.il
 
 
 case class CompiledEventOutputTransformer(newEventName: String,

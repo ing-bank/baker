@@ -1,6 +1,6 @@
-package com.ing.baker.compiledRecipe.petrinet
+package com.ing.baker.il.petrinet
 
-import com.ing.baker.compiledRecipe.CompiledEvent
+import com.ing.baker.il.CompiledEvent
 import com.ing.baker.core.ProcessState
 
 /**

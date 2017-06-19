@@ -1,6 +1,6 @@
-package com.ing.baker.compiledRecipe.petrinet
+package com.ing.baker.il.petrinet
 
-import com.ing.baker.compiledRecipe.{ActionType, CompiledEventOutputTransformer, InteractionFailureStrategy, _}
+import com.ing.baker.il.{ActionType, CompiledEventOutputTransformer, InteractionFailureStrategy, _}
 import io.kagera.runtime.TransitionExceptionHandler
 import org.slf4j._
 

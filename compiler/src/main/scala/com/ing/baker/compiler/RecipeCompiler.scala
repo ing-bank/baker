@@ -1,10 +1,10 @@
 package com.ing.baker
 package compiler
 
-import com.ing.baker.compiledRecipe.petrinet.Place._
-import com.ing.baker.compiledRecipe.petrinet._
-import com.ing.baker.compiledRecipe.{CompiledRecipe, RecipeValidations, CompiledEvent, ValidationSettings}
-import com.ing.baker.core.{BakerException, ProcessState}
+import com.ing.baker.il.petrinet.Place._
+import com.ing.baker.il.petrinet._
+import com.ing.baker.il.{CompiledRecipe, RecipeValidations, CompiledEvent, ValidationSettings}
+import com.ing.baker.core.BakerException
 import com.ing.baker.recipe.common.{InteractionDescriptor, Recipe}
 import io.kagera.api._
 
@@ -255,7 +255,7 @@ object RecipeCompiler {
                              ingredientsWithMultipleConsumers,
                              interactionEventTransitions.findEventTransitionsByEvent))
 
-    val petriNet: RecipePetriNet = createPetriNet[ProcessState](
+    val petriNet: RecipePetriNet = createPetriNet(
       interactionArcs
         ++ eventPreconditionArcs
         ++ eventOrPreconditionArcs

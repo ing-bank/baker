@@ -11,13 +11,12 @@ import akka.persistence.query.scaladsl._
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
-import com.ing.baker.compiledRecipe._
-import com.ing.baker.compiledRecipe.ingredientExtractors.{CompositeIngredientExtractor, IngredientExtractor}
-import com.ing.baker.compiledRecipe.petrinet._
+import com.ing.baker.il._
+import com.ing.baker.il.ingredient_extractors.{CompositeIngredientExtractor, IngredientExtractor}
+import com.ing.baker.il.petrinet._
 import com.ing.baker.core.{BakerException, ProcessState, RecipeValidationException}
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.core.Baker._
-import com.ing.baker.visualisation.RecipeVisualizer
 import fs2.Strategy
 import io.kagera.akka.actor.PetriNetInstanceProtocol._
 import io.kagera.akka.actor._

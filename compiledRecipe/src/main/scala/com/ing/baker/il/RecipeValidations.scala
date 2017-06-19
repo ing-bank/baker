@@ -1,8 +1,8 @@
-package com.ing.baker.compiledRecipe
+package com.ing.baker.il
 
 import akka.actor.ActorSystem
 import akka.serialization.SerializationExtension
-import com.ing.baker.compiledRecipe.petrinet.{FiresOneOfEvents, InteractionTransition}
+import com.ing.baker.il.petrinet.{FiresOneOfEvents, InteractionTransition}
 import com.ing.baker.core.NonSerializableException
 
 import scala.collection.mutable

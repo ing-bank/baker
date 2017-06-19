@@ -4,7 +4,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
-import com.ing.baker.compiledRecipe.CompiledRecipe
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.actor.ProcessMetadata
 import com.ing.baker.runtime.core.Baker
 import com.typesafe.config.{Config, ConfigFactory}

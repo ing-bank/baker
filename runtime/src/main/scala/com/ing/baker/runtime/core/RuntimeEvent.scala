@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.core
 
-import com.ing.baker.compiledRecipe.{CompiledEvent, CompiledIngredient}
-import com.ing.baker.compiledRecipe.ingredientExtractors.IngredientExtractor
+import com.ing.baker.il.{CompiledEvent, CompiledIngredient}
+import com.ing.baker.il.ingredient_extractors.IngredientExtractor
 import org.slf4j.LoggerFactory
 
 
