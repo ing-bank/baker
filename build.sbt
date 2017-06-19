@@ -68,10 +68,10 @@ lazy val noPublishSettings = Seq(
 
 lazy val defaultModuleSettings = commonSettings ++ Revolver.settings ++ SonatypePublish.settings
 
-lazy val compiledRecipe = project.in(file("compiledRecipe"))
+lazy val intermediateLanguage = project.in(file("intermediate-language"))
   .settings(defaultModuleSettings: _*)
   .settings(
-    moduleName := "compiledRecipe",
+    moduleName := "intermediate-language",
     libraryDependencies ++= allLibraries
   )
 
@@ -81,7 +81,7 @@ lazy val runtime = project.in(file("runtime"))
     moduleName := "runtime",
     libraryDependencies ++= allLibraries
   )
-  .dependsOn(compiledRecipe)
+  .dependsOn(intermediateLanguage)
 
 lazy val compiler = project.in(file("compiler"))
   .settings(defaultModuleSettings: _*)
@@ -89,25 +89,25 @@ lazy val compiler = project.in(file("compiler"))
     moduleName := "compiler",
     libraryDependencies ++= allLibraries
   )
-  .dependsOn(recipedsl, compiledRecipe)
+  .dependsOn(recipedsl, intermediateLanguage)
 
-lazy val recipedsl = project.in(file("recipedsl"))
+lazy val recipedsl = project.in(file("recipe-dsl"))
   .settings(defaultModuleSettings: _*)
   .settings(
-    moduleName := "recipedsl",
+    moduleName := "recipe-dsl",
     libraryDependencies ++= allLibraries
   )
 
-lazy val testModule = project.in(file("testModule"))
+lazy val testModule = project.in(file("test-module"))
   .settings(defaultModuleSettings: _*)
   .settings(
-    moduleName := "testModule",
+    moduleName := "test-module",
     libraryDependencies ++= allLibraries
   )
-  .dependsOn(recipedsl, compiler, compiledRecipe, runtime)
+  .dependsOn(recipedsl, compiler, intermediateLanguage, runtime)
 
 lazy val root = project
   .in(file("."))
-  .aggregate(runtime, compiler, recipedsl, compiledRecipe, testModule)
+  .aggregate(runtime, compiler, recipedsl, intermediateLanguage, testModule)
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
