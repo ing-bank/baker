@@ -52,7 +52,6 @@ class BakerExecutionSpec extends TestRecipeHelper {
       }
     }
 
-    //TODO include support for an implicit start event
     "execute an interaction that has no requirements directly when baking starts" ignore {
       when(testInteractionOneMock.apply(anyString(), anyString()))
         .thenReturn(interactionOneIngredientValue)
