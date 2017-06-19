@@ -76,10 +76,10 @@ object Baker {
 
     //Check if the provided implementations are valid
     val neededImplementations: Map[String, () => AnyRef] = implementations.filterKeys(s => actions.exists(i => s equals i.interactionName))
-    val invalidImplementations: Seq[String] = neededImplementations.flatMap(impl => {
-      if (checkIfImplementationIsValidForInteraction(impl._2.apply(), actions.getByLabel(impl._1))) None
-      else Some(s"Invalid implementation provided for interaction: ${impl._1}")
-    }).toSeq
+    val invalidImplementations: Seq[String] = neededImplementations.flatMap { case (interactionName, impl) => {
+      if (checkIfImplementationIsValidForInteraction(impl.apply(), actions.getByLabel(interactionName))) None
+      else Some(s"Invalid implementation provided for interaction: $interactionName")
+    }}.toSeq
 
     missingImplementations ++ invalidImplementations
   }
@@ -99,13 +99,9 @@ object Baker {
   */
 class Baker(val compiledRecipe: CompiledRecipe,
             val implementations: Map[String, () => AnyRef])
-            (
-            implicit val actorSystem: ActorSystem) {
-
-
+           (implicit val actorSystem: ActorSystem) {
 
   import actorSystem.dispatcher
-
 
   def this(compiledRecipe: CompiledRecipe,
            implementations: Seq[AnyRef])
@@ -133,7 +129,6 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   //Validate if all events and ingredients are serializable
   RecipeValidations.assertEventsAndIngredientsAreSerializable(compiledRecipe)
-
 
   /**
     * We do this to force initialization of the journal (database) connection.

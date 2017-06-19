@@ -114,7 +114,7 @@ package object compiler {
         predefinedParameters = interactionDescriptor.predefinedIngredients,
         maximumInteractionCount = interactionDescriptor.maximumInteractionCount,
         failureStrategy = transformFailureStrategy(interactionDescriptor.failureStrategy.getOrElse[common.InteractionFailureStrategy](defaultFailureStrategy)),
-        eventOutputTransformers =  interactionDescriptor.eventOutputTransformers.map(et => eventToCompiledEvent(et._1) -> transformEventOutputTransformer(et._2)),
+        eventOutputTransformers =  interactionDescriptor.eventOutputTransformers.map { case (event, transformer) => eventToCompiledEvent(event) -> transformEventOutputTransformer(transformer) },
         actionType = transformActionType(interactionDescriptor))
     }
   }

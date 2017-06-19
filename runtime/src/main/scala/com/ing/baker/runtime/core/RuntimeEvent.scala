@@ -30,8 +30,8 @@ object RuntimeEvent {
     //Filter out all ingredients where the name does not comply to any ingredient name
     //Filter out all ingredients where the type does not comply to the found ingredient
     val correctIngredients = foundIngredients.filter {
-      fi => eventToComplyTo.providedIngredients.find(_.name equals fi._1) match {
-        case Some(compiledIngredient) => compiledIngredient.clazz.isAssignableFrom(fi._2.getClass)
+      case (name, value) => eventToComplyTo.providedIngredients.find(_.name equals name) match {
+        case Some(compiledIngredient) => compiledIngredient.clazz.isAssignableFrom(value.getClass)
         case None => false
       }
     }

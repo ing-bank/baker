@@ -87,7 +87,7 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
              case Some(eventOutputTransformer) =>
                RuntimeEvent(
                  eventOutputTransformer.newEventName,
-                 runtimeEvent.providedIngredients.map(pi => eventOutputTransformer.ingredientRenames.getOrElse(pi._1, pi._1) -> pi._2))
+                 runtimeEvent.providedIngredients.map{ case (name, value) => eventOutputTransformer.ingredientRenames.getOrElse(name, name) -> value })
              case None => runtimeEvent
            }
          }
