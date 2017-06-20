@@ -1,7 +1,7 @@
 # BAKER
 
 [![Build Status](https://api.travis-ci.org/ing-bank/baker.png?branch=master)](https://travis-ci.org/ing-bank/baker)
-[![Maven Central](https://img.shields.io/maven-central/v/com.ing/baker_2.11.svg)](https://maven-badges.herokuapp.com/maven-central/com.ing/baker_2.11)
+[![Maven Central](https://img.shields.io/maven-central/v/com.ing.baker/runtime_2.11.svg)](https://maven-badges.herokuapp.com/maven-central/com.ing.baker/runtime_2.11)
 [![codecov.io](http://codecov.io/github/ing-bank/baker/coverage.svg?branch=master)](https://codecov.io/gh/ing-bank/baker?branch=master)
 
 # Overview
