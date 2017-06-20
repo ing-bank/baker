@@ -1,11 +1,10 @@
 package com.ing.baker.runtime.core
 
-import com.ing.baker.il.ingredient_extractors.IngredientExtractor
-import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
+import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
 import io.kagera.runtime.ExceptionStrategy.BlockTransition
 import io.kagera.runtime._
 
-class RecipeRuntime(interactions: Map[String, () => AnyRef], ingredientExtractor: IngredientExtractor) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
+class RecipeRuntime(interactions: Map[String, () => AnyRef]) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
 
   override val tokenGame = new RecipeTokenGame()
 
@@ -19,5 +18,5 @@ class RecipeRuntime(interactions: Map[String, () => AnyRef], ingredientExtractor
     case _                                     => (e, n) => BlockTransition
   }
 
-  override val taskProvider = new TaskProvider(interactions, ingredientExtractor)
+  override val taskProvider = new TaskProvider(interactions)
 }

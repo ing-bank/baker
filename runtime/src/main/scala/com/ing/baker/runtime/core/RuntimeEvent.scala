@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.core
 
 import com.ing.baker.il.{CompiledEvent, CompiledIngredient}
-import com.ing.baker.il.ingredient_extractors.IngredientExtractor
+import com.ing.baker.runtime.ingredient_extractors.{CompositeIngredientExtractor, IngredientExtractor}
 import org.slf4j.LoggerFactory
 
 
@@ -16,16 +16,17 @@ object RuntimeEvent {
 
   private val log = LoggerFactory.getLogger("com.ing.baker.compiledRecipe.petrinet.EventSource")
 
+  private val ingredientExtractor: IngredientExtractor = new CompositeIngredientExtractor()
+
   /**
     * Creates a event and extracts ingredients from the given object.
     * It filters out all possible ingredients that do not match with any expected ingredient for the event
     * It also filters out all ingredients of the wrong type.
     * It checks if all ingredients are provided that the event should provide, if not create the ingredients with value null
     * @param firedEvent the event to extract ingredients from
-    * @param ingredientExtractor the ingredient extractor to help getting the fields from the firedEvent
     * @return
     */
-  def forEvent(firedEvent: Any, eventToComplyTo: CompiledEvent, ingredientExtractor: IngredientExtractor): RuntimeEvent = {
+  def forEvent(firedEvent: Any, eventToComplyTo: CompiledEvent): RuntimeEvent = {
     val foundIngredients: Map[String, Any] = ingredientExtractor.extractIngredientData(firedEvent)
     //Filter out all ingredients where the name does not comply to any ingredient name
     //Filter out all ingredients where the type does not comply to the found ingredient

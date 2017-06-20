@@ -8,11 +8,11 @@ import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
+import akka.serialization.SerializationExtension
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
 import com.ing.baker.il._
-import com.ing.baker.il.ingredient_extractors.{CompositeIngredientExtractor, IngredientExtractor}
 import com.ing.baker.il.petrinet._
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.core.Baker._
@@ -86,6 +86,22 @@ object Baker {
     compiledRecipe.petriNet.transitions.findByLabel(runtimeEvent.name).getOrElse {
       throw new IllegalArgumentException(s"No such event known in recipe: $runtimeEvent")
     }
+
+  @throws[NonSerializableException]
+  def assertEventsAndIngredientsAreSerializable(compiledRecipe: CompiledRecipe)(implicit actorSystem: ActorSystem): Unit = {
+    val serialization = SerializationExtension(actorSystem)
+
+    val hasAkkaSerializer = (clazz: Class[_]) => Try { serialization.serializerFor(clazz) }.isSuccess
+
+    val ingredientSerializationErrors: Seq[String] =
+      compiledRecipe.ingredients.mapValues(_.clazz)
+        .filterNot{case (c, v) => hasAkkaSerializer(v) }
+        .map{case (c, v) => s"Ingredient $c of $v is not serializable by akka"}.toSeq
+
+    val allErrors: Seq[String] = ingredientSerializationErrors
+
+    if (allErrors.nonEmpty) throw new NonSerializableException(allErrors.mkString(", "))
+  }
 }
 
 /**
@@ -106,8 +122,6 @@ class Baker(val compiledRecipe: CompiledRecipe,
           (implicit actorSystem: ActorSystem) =
     this(compiledRecipe, implementationsToProviderMap(implementations))(actorSystem)
 
-  val ingredientExtractor: IngredientExtractor = new CompositeIngredientExtractor()
-
   implicit val materializer = ActorMaterializer()
   private val log = LoggerFactory.getLogger(classOf[Baker])
 
@@ -126,7 +140,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     throw new BakerException(implementationErrors.mkString(", "))
 
   //Validate if all events and ingredients are serializable
-  RecipeValidations.assertEventsAndIngredientsAreSerializable(compiledRecipe)
+  assertEventsAndIngredientsAreSerializable(compiledRecipe)
 
   /**
     * We do this to force initialization of the journal (database) connection.
@@ -151,7 +165,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   private val actorIdleTimeout = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout")
 
-  val petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] = new RecipeRuntime(allImplementations, ingredientExtractor)
+  val petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] = new RecipeRuntime(allImplementations)
 
   private val petriNetInstanceActorProps =
     Util.recipePetriNetProps(compiledRecipe.petriNet,petriNetRuntime,
@@ -266,7 +280,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
   def handleEventAsync(processId: UUID, event: Any): BakerResponse = {
     //Check if the event is of a know sensory event and create a RuntimeEvent from it.
     val runtimeEvent = compiledRecipe.sensoryEvents.find(se => se.name == event.getClass.getSimpleName) match {
-      case Some(compiledEvent) => RuntimeEvent.forEvent(event, compiledEvent, ingredientExtractor)
+      case Some(compiledEvent) => RuntimeEvent.forEvent(event, compiledEvent)
       case None => throw new BakerException(s"Fired event $event is not recognised as any valid sensory event")
     }
 

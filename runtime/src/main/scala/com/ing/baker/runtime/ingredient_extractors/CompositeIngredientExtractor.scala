@@ -1,7 +1,7 @@
-package com.ing.baker.il.ingredient_extractors
+package com.ing.baker.runtime.ingredient_extractors
 
 import com.typesafe.config.{Config, ConfigFactory}
-import com.ing.baker.il.ingredient_extractors.CompositeIngredientExtractor._
+import com.ing.baker.runtime.ingredient_extractors.CompositeIngredientExtractor._
 
 import scala.collection.JavaConverters._
 

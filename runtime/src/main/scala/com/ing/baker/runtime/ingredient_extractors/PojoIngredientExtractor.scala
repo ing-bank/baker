@@ -1,4 +1,4 @@
-package com.ing.baker.il.ingredient_extractors
+package com.ing.baker.runtime.ingredient_extractors
 
 import java.lang.reflect.Field
 

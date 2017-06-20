@@ -12,7 +12,7 @@ object Dependencies {
 
   val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "2.2.6"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
-  val junit =                     "com.novocode"               %  "junit-interface"                    % "0.11"
+  val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
 
   val akkaActor =                 "com.typesafe.akka"          %% "akka-actor"                         % akkaVersion
   val akkaPersistence =           "com.typesafe.akka"          %% "akka-persistence"                   % akkaVersion

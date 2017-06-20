@@ -1,11 +1,8 @@
 package com.ing.baker.il
 
-import akka.actor.ActorSystem
-import akka.serialization.SerializationExtension
-import com.ing.baker.il.petrinet.{FiresOneOfEvents, InteractionTransition}
+import com.ing.baker.il.petrinet.InteractionTransition
 
 import scala.collection.mutable
-import scala.util.Try
 
 object RecipeValidations {
 
@@ -93,19 +90,4 @@ object RecipeValidations {
       validationErrors = compiledRecipe.validationErrors ++ postCompileValidationErrors)
   }
 
-  @throws[NonSerializableException]
-  def assertEventsAndIngredientsAreSerializable(compiledRecipe: CompiledRecipe)(implicit actorSystem: ActorSystem): Unit = {
-    val serialization = SerializationExtension(actorSystem)
-
-    val hasAkkaSerializer = (clazz: Class[_]) => Try { serialization.serializerFor(clazz) }.isSuccess
-
-    val ingredientSerializationErrors: Seq[String] =
-      compiledRecipe.ingredients.mapValues(_.clazz)
-        .filterNot{case (c, v) => hasAkkaSerializer(v) }
-        .map{case (c, v) => s"Ingredient $c of $v is not serializable by akka"}.toSeq
-
-    val allErrors: Seq[String] = ingredientSerializationErrors
-
-    if (allErrors.nonEmpty) throw new NonSerializableException(allErrors.mkString(", "))
-  }
 }

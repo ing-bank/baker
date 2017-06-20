@@ -1,9 +1,8 @@
 package com.ing.baker.recipe.scaladsl
 
-import org.scalatest.mock.MockitoSugar
 import org.scalatest.{Matchers, WordSpecLike}
 
-class IngredientSpec extends WordSpecLike with Matchers with MockitoSugar {
+class IngredientSpec extends WordSpecLike with Matchers {
   "an Ingredient" when {
 
     "calling the Equals method" should {

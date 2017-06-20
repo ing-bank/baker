@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.recipe.transitions
 
 import com.ing.baker.recipe.annotations.RequiresIngredient
-import com.ing.baker.il.ingredient_extractors.CompositeIngredientExtractor
+import com.ing.baker.runtime.ingredient_extractors.CompositeIngredientExtractor
 import org.scalatest.{FunSpec, ShouldMatchers}
 
 object ActionExecutingTransitionSpec {

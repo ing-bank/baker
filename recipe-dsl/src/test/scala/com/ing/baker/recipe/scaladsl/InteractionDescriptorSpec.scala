@@ -1,9 +1,8 @@
 package com.ing.baker.recipe.scaladsl
 
-import org.scalatest.{Matchers, WordSpecLike}
-import org.scalatest.mock.MockitoSugar
-import com.ing.baker.recipe.scaladsl.InteractionDescriptorSpec._
 import com.ing.baker.recipe.common.ProvidesIngredient
+import com.ing.baker.recipe.scaladsl.InteractionDescriptorSpec._
+import org.scalatest.{Matchers, WordSpecLike}
 
 object InteractionDescriptorSpec {
   val customerName = Ingredient[String]("customerName")
@@ -16,7 +15,7 @@ object InteractionDescriptorSpec {
   val agreementsAcceptedEvent = Event("agreementsAccepted")
 }
 
-class InteractionDescriptorSpec extends WordSpecLike with Matchers with MockitoSugar {
+class InteractionDescriptorSpec extends WordSpecLike with Matchers {
   "an InteractionDescriptor" when {
     "constructed" should {
       "be valid when using the factory" in {

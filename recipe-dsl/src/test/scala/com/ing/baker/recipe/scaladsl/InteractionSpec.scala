@@ -2,10 +2,9 @@ package com.ing.baker.recipe.scaladsl
 
 import com.ing.baker.recipe.common.ProvidesIngredient
 import org.scalatest.{Matchers, WordSpecLike}
-import org.scalatest.mock.MockitoSugar
 
 
-class InteractionSpec extends WordSpecLike with Matchers with MockitoSugar {
+class InteractionSpec extends WordSpecLike with Matchers {
   "an Interaction" when {
     "calling the Equals method" should {
       "return true if same interaction instance" in {

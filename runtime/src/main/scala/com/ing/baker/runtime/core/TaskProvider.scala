@@ -4,7 +4,6 @@ import java.lang.reflect.InvocationTargetException
 import java.util.UUID
 
 import com.ing.baker.il._
-import com.ing.baker.il.ingredient_extractors.IngredientExtractor
 import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, Place, ProvidesIngredient, ProvidesNothing, Transition}
 import fs2.Task
 import io.kagera.api._
@@ -13,7 +12,7 @@ import org.slf4j.{LoggerFactory, MDC}
 
 import scala.util.Try
 
-class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientExtractor: IngredientExtractor) extends TransitionTaskProvider[ProcessState, Place, Transition] {
+class TaskProvider(interactionProviders: Map[String, () => AnyRef]) extends TransitionTaskProvider[ProcessState, Place, Transition] {
 
   val log = LoggerFactory.getLogger(classOf[TaskProvider])
 
@@ -66,7 +65,7 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef], ingredientEx
           {
             val optionalFoundEvent: Option[CompiledEvent] = originalEvents.find(e => e.name equals output.getClass.getSimpleName)
             if (optionalFoundEvent.isDefined)
-              RuntimeEvent.forEvent(output, optionalFoundEvent.get, ingredientExtractor)
+              RuntimeEvent.forEvent(output, optionalFoundEvent.get)
             else {
               val msg: String = s"Output: $output fired by an interaction but could not link it to any known event for the interaction"
               log.error(msg)
