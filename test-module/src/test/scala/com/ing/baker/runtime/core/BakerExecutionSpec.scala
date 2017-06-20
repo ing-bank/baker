@@ -52,37 +52,6 @@ class BakerExecutionSpec extends TestRecipeHelper {
       }
     }
 
-    "execute an interaction that has no requirements directly when baking starts" ignore {
-      when(testInteractionOneMock.apply(anyString(), anyString()))
-        .thenReturn(interactionOneIngredientValue)
-      when(testInteractionTwoMock.apply(anyString()))
-        .thenReturn(EventFromInteractionTwo(interactionTwoIngredientValue))
-
-      val recipe = Recipe("directStartRecipe")
-        .withInteractions(
-          interactionOne
-            .withOverriddenOutputIngredientName("interactionOneIngredient")
-            .withPredefinedIngredients("initialIngredient" -> initialIngredientValue),
-          interactionTwo
-            .withPredefinedIngredients("initialIngredient" -> initialIngredientValue))
-        .withSensoryEvent(initialEvent)
-
-      val baker = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(recipe), mockImplementations)
-
-      val processId = UUID.randomUUID()
-      baker.bake(processId)
-
-      verify(testInteractionOneMock).apply(processId.toString, initialIngredientValue)
-      verify(testInteractionTwoMock).apply(initialIngredientValue)
-
-      val result = baker.getProcessState(processId).ingredients
-      result shouldBe Map(
-        "initialIngredient"        -> initialIngredientValue,
-        "interactionOneIngredient" -> interactionOneIngredientValue,
-        "interactionTwoIngredient" -> interactionTwoIngredientValue
-      )
-    }
-
     "throw a NoSuchProcessException when requesting the state of a non existing process" in {
 
       val baker = setupBakerWithRecipe("NonExistingProcessTest")

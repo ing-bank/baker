@@ -10,6 +10,7 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", s"-target:jvm-$jvmV"),
   javacOptions := Seq("-source", jvmV, "-target", jvmV),
   fork in test := true,
+  testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
   scalacOptions ++= Seq(
     "-unchecked",
     "-deprecation",
@@ -32,7 +33,7 @@ lazy val noPublishSettings = Seq(
 lazy val defaultModuleSettings = commonSettings ++ Revolver.settings ++ SonatypePublish.settings
 
 lazy val intermediateLanguage = project.in(file("intermediate-language"))
-  .settings(defaultModuleSettings: _*)
+  .settings(defaultModuleSettings)
   .settings(
     moduleName := "intermediate-language",
     libraryDependencies ++= compileDeps(
@@ -43,7 +44,7 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
   )
 
 lazy val runtime = project.in(file("runtime"))
-  .settings(defaultModuleSettings: _*)
+  .settings(defaultModuleSettings)
   .settings(
     moduleName := "runtime",
     libraryDependencies ++=
@@ -64,7 +65,7 @@ lazy val runtime = project.in(file("runtime"))
   .dependsOn(intermediateLanguage)
 
 lazy val compiler = project.in(file("compiler"))
-  .settings(defaultModuleSettings: _*)
+  .settings(defaultModuleSettings)
   .settings(
     moduleName := "compiler",
     libraryDependencies ++=
@@ -73,7 +74,7 @@ lazy val compiler = project.in(file("compiler"))
   .dependsOn(recipedsl, intermediateLanguage)
 
 lazy val recipedsl = project.in(file("recipe-dsl"))
-  .settings(defaultModuleSettings: _*)
+  .settings(defaultModuleSettings)
   .settings(
     moduleName := "recipe-dsl",
     libraryDependencies ++=
@@ -88,7 +89,8 @@ lazy val recipedsl = project.in(file("recipe-dsl"))
   )
 
 lazy val testModule = project.in(file("test-module"))
-  .settings(defaultModuleSettings: _*)
+  .settings(defaultModuleSettings)
+  .settings(noPublishSettings)
   .settings(
     moduleName := "test-module",
     libraryDependencies ++=
@@ -106,6 +108,6 @@ lazy val testModule = project.in(file("test-module"))
 
 lazy val root = project
   .in(file("."))
-  .aggregate(runtime, compiler, recipedsl, intermediateLanguage, testModule)
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
+  .aggregate(runtime, compiler, recipedsl, intermediateLanguage, testModule)
