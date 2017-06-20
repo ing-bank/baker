@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0
+- baker modules are reorganized to support mode modularity and loose coupling
+- created separate modules: compiler, intermediate-language, recipe-dsl, runtime
+- design time and runtime parts of baker are now separate and ideally could be updated independently
+
 ## 0.2.19
 - enabled kryo serialization for all baker events that extend from com.ing.baker.api.Event interface
 - disabled default Java serialization

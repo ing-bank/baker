@@ -4,7 +4,7 @@ import sbt._
 object Dependencies {
 
   val akkaVersion = "2.4.17"
-  val kageraVersion = "0.2.20"
+  val kageraVersion = "0.2.22"
 
   val typeSafeConfig =            "com.typesafe"               %  "config"                             % "1.3.1"
 
@@ -12,7 +12,7 @@ object Dependencies {
 
   val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "2.2.6"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
-  val junit =                     "com.novocode"               %  "junit-interface"                    % "0.11"
+  val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
 
   val akkaActor =                 "com.typesafe.akka"          %% "akka-actor"                         % akkaVersion
   val akkaPersistence =           "com.typesafe.akka"          %% "akka-persistence"                   % akkaVersion

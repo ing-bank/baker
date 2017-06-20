@@ -2,25 +2,27 @@ import Dependencies._
 import sbt.Keys._
 
 val scalaV = "2.11.8"
-val jvmV   = "1.8"
+val jvmV = "1.8"
 
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
-    organization := "com.ing",
-    scalaVersion := scalaV,
-    scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", s"-target:jvm-$jvmV"),
-    javacOptions := Seq("-source", jvmV, "-target", jvmV),
-    fork in test := true,
-    scalacOptions ++= Seq(
-      "-unchecked",
-      "-deprecation",
-      "-feature",
-      "-Ywarn-dead-code",
-      "-language:higherKinds",
-      "-language:existentials",
-      "-language:postfixOps",
-      "-Xfatal-warnings"
-    )
+  organization := "com.ing.baker",
+  scalaVersion := scalaV,
+  scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", s"-target:jvm-$jvmV"),
+  javacOptions := Seq("-source", jvmV, "-target", jvmV),
+  fork in test := true,
+  testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
+  scalacOptions ++= Seq(
+    "-unchecked",
+    "-deprecation",
+    "-feature",
+    "-Ywarn-dead-code",
+    "-language:higherKinds",
+    "-language:existentials",
+    "-language:implicitConversions",
+    "-language:postfixOps",
+    "-Xfatal-warnings"
   )
+)
 
 lazy val noPublishSettings = Seq(
   publish := (),
@@ -30,50 +32,82 @@ lazy val noPublishSettings = Seq(
 
 lazy val defaultModuleSettings = commonSettings ++ Revolver.settings ++ SonatypePublish.settings
 
-lazy val baker = project.in(file("core"))
-  .settings(defaultModuleSettings: _*)
+lazy val intermediateLanguage = project.in(file("intermediate-language"))
+  .settings(defaultModuleSettings)
   .settings(
-    moduleName := "baker",
+    moduleName := "intermediate-language",
+    libraryDependencies ++= compileDeps(
+      kagera,
+      kageraVisualization,
+      slf4jApi
+    ) ++ testDeps(scalaTest)
+  )
+
+lazy val runtime = project.in(file("runtime"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "runtime",
     libraryDependencies ++=
       compileDeps(
-        kagera,
         kageraAkka,
-        kageraVisualization,
-        akkaPersistence,
-        akkaActor,
-        akkaCluster,
-        akkaClusterSharding,
         akkaDistributedData,
-        scalaReflect,
-        javaxInject,
-        paranamer,
-        typeSafeConfig,
-        ficusConfig,
         akkaInmemoryJournal,
+        ficusConfig,
         guava,
         chill,
         kryoSerializers,
         jodaTime,
         jodaConvert,
-        scalaXml,
         slf4jApi
+      ) ++ testDeps(scalaTest)
+        ++ providedDeps(findbugs)
+  )
+  .dependsOn(intermediateLanguage)
+
+lazy val compiler = project.in(file("compiler"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "compiler",
+    libraryDependencies ++=
+      compileDeps(slf4jApi) ++ testDeps(scalaTest)
+  )
+  .dependsOn(recipedsl, intermediateLanguage)
+
+lazy val recipedsl = project.in(file("recipe-dsl"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "recipe-dsl",
+    libraryDependencies ++=
+      compileDeps(
+        javaxInject,
+        paranamer
       ) ++
+        testDeps(
+          scalaTest,
+          junitInterface
+        )
+  )
+
+lazy val testModule = project.in(file("test-module"))
+  .settings(defaultModuleSettings)
+  .settings(noPublishSettings)
+  .settings(
+    moduleName := "test-module",
+    libraryDependencies ++=
       testDeps(
         akkaSlf4j,
         logback,
         mockito,
         scalaTest,
-        junit,
+        junitInterface,
         levelDB,
         levelDBJni
-      ) ++
-      providedDeps(
-        findbugs
-      ))
+      )
+  )
+  .dependsOn(recipedsl, compiler, intermediateLanguage, runtime)
 
 lazy val root = project
   .in(file("."))
-  .aggregate(baker)
-  .dependsOn(baker)
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
+  .aggregate(runtime, compiler, recipedsl, intermediateLanguage, testModule)

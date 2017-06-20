@@ -1,0 +1,26 @@
+<configuration scan="true" scanPeriod="60 seconds">
+
+    <!--<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">-->
+        <!--<layout class="ch.qos.logback.classic.PatternLayout">-->
+            <!--<Pattern>-->
+                <!--<pattern>%d{ISO8601} [%thread] [%X{processId}] %-5level %logger{36} - %msg%n</pattern>-->
+            <!--</Pattern>-->
+        <!--</layout>-->
+    <!--</appender>-->
+
+    <!--<logger name="akka" level="trace" additivity="false">-->
+        <!--<appender-ref ref="CONSOLE"/>-->
+    <!--</logger>-->
+
+    <!--<logger name="com.ing.baker" level="trace" additivity="false">-->
+        <!--<appender-ref ref="CONSOLE"/>-->
+    <!--</logger>-->
+
+    <!--<logger name="io.kagera" level="trace" additivity="false">-->
+        <!--<appender-ref ref="CONSOLE"/>-->
+    <!--</logger>-->
+
+    <!--<root level="debug">-->
+        <!--<appender-ref ref="CONSOLE"/>-->
+    <!--</root>-->
+</configuration>
