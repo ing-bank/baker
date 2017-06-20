@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0
+## 1.0.0
 - baker modules are reorganized to support mode modularity and loose coupling
 - created separate modules: compiler, intermediate-language, recipe-dsl, runtime
 - design time and runtime parts of baker are now separate and ideally could be updated independently
