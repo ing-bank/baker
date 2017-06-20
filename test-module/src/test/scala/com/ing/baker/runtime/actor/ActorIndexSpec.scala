@@ -29,7 +29,7 @@ class ActorIndexSpec
     """
       |akka.persistence.journal.plugin = "inmemory-journal"
       |akka.persistence.snapshot-store.plugin = "inmemory-snapshot-store"
-      |akka.test.timefactor = 2.0
+      |akka.test.timefactor = 3.0
     """.stripMargin))
 
   val recipeMetadataMock = mock[RecipeMetadata]
