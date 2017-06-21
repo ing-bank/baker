@@ -367,6 +367,14 @@ trait TestRecipeHelper
                                     (implicit actorSystem: ActorSystem): Baker = {
     val newRecipeName = if (appendUUIDToTheRecipeName) s"$recipeName-${UUID.randomUUID().toString}" else recipeName
     val recipe = getComplexRecipe(newRecipeName)
+    setupMockResponse()
+
+    new Baker(
+      compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+      implementations = mockImplementations)(actorSystem)
+  }
+
+  protected def setupMockResponse(): Unit = {
     when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
     when(testInteractionTwoMock.apply(anyString())).thenReturn(interactionTwoEventValue)
     when(testInteractionThreeMock.apply(anyString(), anyString())).thenReturn(interactionThreeIngredientValue)
@@ -374,10 +382,6 @@ trait TestRecipeHelper
     when(testInteractionFiveMock.apply(anyString(), anyString(), anyString())).thenReturn(interactionFiveIngredientValue)
     when(testInteractionSixMock.apply(anyString())).thenReturn(interactionSixIngredientValue)
     when(testSieveInteractionMock.apply(anyString(), anyString())).thenReturn(sievedIngredientValue)
-
-    new Baker(
-      compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-      implementations = mockImplementations)(actorSystem)
   }
 
   protected def timeBlockInMilliseconds[T](block: => T): Long = {

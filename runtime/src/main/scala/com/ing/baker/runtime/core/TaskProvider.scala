@@ -118,10 +118,10 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef]) extends Tran
     }.map(value => processIdName -> value)
 
     // parameterNamesToValues overwrites mapped token values which overwrites context map (in order of importance)
-    val argumentNamesToValues = interaction.predefinedParameters ++ processId ++ state.ingredients
+    val argumentNamesToValues: Map[String, Any] = interaction.predefinedParameters ++ processId ++ state.ingredients
 
-    // throw an exception when a field is missing
-    (interaction.inputFieldNames.toSet -- argumentNamesToValues.keySet).foreach { name =>
+
+    def notFound = (name: String) => {
       log.warn(
         s"""
            |IllegalArgumentException at Interaction: $toString
@@ -132,19 +132,12 @@ class TaskProvider(interactionProviders: Map[String, () => AnyRef]) extends Tran
       throw new IllegalArgumentException(s"Missing parameter: $name")
     }
 
-    val parameterIndicesWithValues = argumentNamesToValues.map {
-      case (argumentName, argumentValue) => (interaction.inputFieldNames.indexWhere(_ == argumentName), argumentValue)
-    }.toSeq.filter { case (index, tokenValue) => index >= 0 }
+    // map the values to the input places, throw an error if a value is not found
+    val methodInput: Seq[Any] =
+      interaction.inputFieldNames.map(i =>
+        argumentNamesToValues.getOrElse(i, notFound))
 
-    val sortedIndicesAndValues = parameterIndicesWithValues.sortBy {
-      case (index, tokenValue) => index
-    }
-
-    val parameterValues = sortedIndicesAndValues.map {
-      case (index, tokenValue) => tokenValue.asInstanceOf[AnyRef]
-    }
-
-    parameterValues
+    methodInput.map(_.asInstanceOf[AnyRef])
   }
 
   /**

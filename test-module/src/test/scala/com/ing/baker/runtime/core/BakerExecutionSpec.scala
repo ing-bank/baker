@@ -8,7 +8,8 @@ import akka.testkit.{TestKit, TestProbe}
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.recipe.scaladsl.Recipe
+import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.recipe.scaladsl.{Recipe, _}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
@@ -522,6 +523,33 @@ class BakerExecutionSpec extends TestRecipeHelper {
       verify(testInteractionTwoMock, times(1)).apply(initialIngredientValue)
       verifyNoMoreInteractions(testInteractionFiveMock, testInteractionSixMock)
     }
+
+    "be able to use the same ingredient multiple times as input parameter for an interaction" in {
+      val recipe: Recipe =
+        "sameIngredientMultipleTime"
+          .withInteractions(
+            interactionOne,
+            interactionThree
+              .withOverriddenIngredientName("interactionOneIngredient", "interactionOneOriginalIngredient")
+              .withOverriddenIngredientName("interactionTwoIngredient", "interactionOneOriginalIngredient"))
+          .withSensoryEvents(initialEvent)
+
+      setupMockResponse()
+
+      val baker = new Baker(
+        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+        implementations = mockImplementations)(defaultActorSystem)
+
+
+      val processId = UUID.randomUUID()
+      baker.bake(processId)
+      baker.handleEvent(processId, InitialEvent(initialIngredientValue))
+
+      verify(testInteractionOneMock, times(1)).apply(processId.toString, initialIngredientValue)
+      verify(testInteractionThreeMock, times(1)).apply(interactionOneIngredientValue, interactionOneIngredientValue)
+    }
+
+
 
     "be able to visualize the created interactions with a filter" in {
       val baker = setupBakerWithRecipe("VisualizationRecipe")
