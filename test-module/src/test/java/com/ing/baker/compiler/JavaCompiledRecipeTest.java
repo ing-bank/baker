@@ -1,4 +1,4 @@
-package com.ing.baker;
+package com.ing.baker.compiler;
 
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.runtime.core.BakerException;
@@ -7,7 +7,7 @@ import com.ing.baker.recipe.annotations.ProvidesIngredient;
 import com.ing.baker.recipe.annotations.RequiresIngredient;
 import com.ing.baker.recipe.javadsl.Interaction;
 import com.ing.baker.recipe.javadsl.Recipe;
-import com.ing.baker.runtime.java_api.JCompiledRecipe;
+import com.ing.baker.il.CompiledRecipe;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
 import static org.junit.Assert.assertEquals;
 
-public class JCompiledRecipeTest {
+public class JavaCompiledRecipeTest {
     @Rule
     public final ExpectedException exception = ExpectedException.none();
 
@@ -26,7 +26,7 @@ public class JCompiledRecipeTest {
     public void shouldCompileSimpleRecipe() throws BakerException {
         Recipe recipe = setupSimpleRecipe();
 
-        JCompiledRecipe compileRecipe = new JCompiledRecipe(RecipeCompiler.compileRecipe(recipe));
+        CompiledRecipe compileRecipe = RecipeCompiler.compileRecipe(recipe);
         assertEquals(compileRecipe.getValidationErrors(), new ArrayList<String>());
         assertEquals("EventOne", recipe.getEvents().get(0).name());
         assertEquals("InteractionOne", recipe.getInteractions().get(0).name());
@@ -35,7 +35,7 @@ public class JCompiledRecipeTest {
     @Test
     public void shouldCompileComplexRecipe() throws BakerException {
         Recipe recipe = setupComplexRecipe();
-        JCompiledRecipe compileRecipe = new JCompiledRecipe(RecipeCompiler.compileRecipe(recipe));
+        CompiledRecipe compileRecipe = RecipeCompiler.compileRecipe(recipe);
         assertEquals(compileRecipe.getValidationErrors(), new ArrayList<String>());
         assertEquals("EventOne", recipe.getEvents().get(0).name());
         assertEquals("EventTwo", recipe.getEvents().get(1).name());
@@ -49,7 +49,7 @@ public class JCompiledRecipeTest {
     @Test
     public void shouldCompileRecipeWithSieve() throws BakerException {
         Recipe recipe = setupComplexRecipe();
-        JCompiledRecipe compileRecipe = new JCompiledRecipe(RecipeCompiler.compileRecipe(recipe));
+        CompiledRecipe compileRecipe = RecipeCompiler.compileRecipe(recipe);
         assertEquals(compileRecipe.getValidationErrors(), new ArrayList<String>());
         Assert.assertTrue(recipe.getSieves().stream().anyMatch(a -> a.name().equals("SieveImpl")));
     }
@@ -57,7 +57,7 @@ public class JCompiledRecipeTest {
     @Test
     public void shouldShowVisualRecipe() throws BakerException {
         Recipe recipe = setupComplexRecipe();
-        JCompiledRecipe compileRecipe = new JCompiledRecipe(RecipeCompiler.compileRecipe(recipe));
+        CompiledRecipe compileRecipe = RecipeCompiler.compileRecipe(recipe);
         assertEquals(compileRecipe.getValidationErrors().size(), 0);
         String visualRecipe = compileRecipe.getRecipeVisualization();
         Assert.assertTrue("Should contain actionOne", visualRecipe.contains("actionOne"));
@@ -72,7 +72,7 @@ public class JCompiledRecipeTest {
     @Test
     public void shouldShowPetriNetVisual() throws BakerException {
         Recipe recipe = setupComplexRecipe();
-        JCompiledRecipe compileRecipe = new JCompiledRecipe(RecipeCompiler.compileRecipe(recipe));
+        CompiledRecipe compileRecipe = RecipeCompiler.compileRecipe(recipe);
         assertEquals(compileRecipe.getValidationErrors().size(), 0);
         String petrinetVisual = compileRecipe.getPetriNetVisualization();
         Assert.assertTrue("Should contain actionOne", petrinetVisual.contains("actionOne"));
@@ -85,7 +85,7 @@ public class JCompiledRecipeTest {
     @Test
     public void shouldShowFilteredVisualRecipe() throws BakerException {
         Recipe recipe = setupComplexRecipe();
-        JCompiledRecipe compileRecipe = new JCompiledRecipe(RecipeCompiler.compileRecipe(recipe));
+        CompiledRecipe compileRecipe = RecipeCompiler.compileRecipe(recipe);
         assertEquals(compileRecipe.getValidationErrors().size(), 0);
         String visualRecipe = compileRecipe.getFilteredRecipeVisualization("InteractionOne");
         Assert.assertTrue("Should not contain actionOne", !visualRecipe.contains("InteractionOne"));
@@ -99,7 +99,7 @@ public class JCompiledRecipeTest {
     @Test
     public void shouldShowFilteredMultipleVisualRecipe() throws BakerException {
         Recipe recipe = setupComplexRecipe();
-        JCompiledRecipe compileRecipe = new JCompiledRecipe(RecipeCompiler.compileRecipe(recipe));
+        CompiledRecipe compileRecipe = RecipeCompiler.compileRecipe(recipe);
         assertEquals(compileRecipe.getValidationErrors().size(), 0);
         String visualRecipe = compileRecipe.getFilteredRecipeVisualization(new String[]{"actionOne", "EventTwo"});
         Assert.assertTrue("Should not contain actionOne", !visualRecipe.contains("actionOne"));

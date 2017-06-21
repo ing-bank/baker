@@ -111,7 +111,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     * Returns the compiled recipe
     * @return
     */
-  def getCompiledRecipe: JCompiledRecipe = JCompiledRecipe(compiledRecipe)
+  def getCompiledRecipe: CompiledRecipe = compiledRecipe
 
   /**
     * returns the visual state of the recipe in dot format

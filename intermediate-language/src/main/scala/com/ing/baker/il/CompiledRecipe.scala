@@ -2,6 +2,9 @@ package com.ing.baker.il
 
 import com.ing.baker.il.petrinet.{FiresOneOfEvents, InteractionTransition, Place, ProvidesIngredient, RecipePetriNet}
 import io.kagera.api._
+
+import scala.collection.JavaConverters._
+
 /**
   * A Compiled recipe.
   */
@@ -10,6 +13,8 @@ case class CompiledRecipe(name: String,
                           initialMarking: Marking[Place],
                           sensoryEvents: Set[CompiledEvent],
                           validationErrors: Seq[String] = Seq.empty) {
+
+  def getValidationErrors: java.util.List[String] = validationErrors.toList.asJava
 
   /**
     * Visualise the compiled recipe in DOT format
@@ -25,6 +30,20 @@ case class CompiledRecipe(name: String,
     */
   def getFilteredRecipeVisualization(filterFunc: String => Boolean): String =
     RecipeVisualizer.visualiseCompiledRecipe(this, filterFunc)
+
+
+  def getFilteredRecipeVisualization(filter: String): String =
+    getFilteredRecipeVisualization(x => !x.contains(filter))
+
+  /**
+    * Returns a DOT (http://www.graphviz.org/) representation of the recipe.
+    * All events/interaction/ingredients that contain one of the given filter strings are filtered out
+    *
+    * @param filters
+    * @return
+    */
+  def getFilteredRecipeVisualization(filters: Array[String]): String =
+    getFilteredRecipeVisualization((current) => filters.forall(filter => !current.contains(filter)))
 
   /**
     * Visualises the underlying petri net in DOT format

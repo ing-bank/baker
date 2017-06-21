@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+- Fixed a bug in the runtime that it could not bind an ingredient multiple times as parameter for an interaction
+- Removed the JCompiledRecipe and moved the functionality to the CompiledRecipe
+
 ## 1.0.0
 - baker modules are reorganized to support mode modularity and loose coupling
 - created separate modules: compiler, intermediate-language, recipe-dsl, runtime
