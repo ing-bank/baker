@@ -34,8 +34,10 @@ package object javadsl {
       override val inputIngredients: Seq[common.Ingredient] = method.getParameterNames.map(s => createIngredient(s, method.parameterTypeForName(s).get))
 
       override val output: common.InteractionOutput = {
+        if(method.isAnnotationPresent(classOf[annotations.ProvidesIngredient]) && method.isAnnotationPresent(classOf[annotations.FiresEvent]))
+          throw new RecipeValidationException(s"Interaction $name has both ProvidesIngredient and FiresEvent annotation, only one if possible")
         //ProvidesIngredient
-        if (method.isAnnotationPresent(classOf[annotations.ProvidesIngredient])) {
+        else if (method.isAnnotationPresent(classOf[annotations.ProvidesIngredient])) {
           val interactionOutputName: String = method.getAnnotation(classOf[annotations.ProvidesIngredient]).value()
           ProvidesIngredient(createIngredient(interactionOutputName, method.getReturnType))
         }

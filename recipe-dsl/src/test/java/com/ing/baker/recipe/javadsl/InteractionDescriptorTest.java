@@ -1,11 +1,15 @@
 package com.ing.baker.recipe.javadsl;
 
+import com.ing.baker.recipe.common.RecipeValidationException;
 import com.ing.baker.recipe.javadsl.events.SensoryEventWithIngredient;
 import com.ing.baker.recipe.javadsl.events.SensoryEventWithoutIngredient;
+import com.ing.baker.recipe.javadsl.interactions.ProvidesIngredientAndFireseventInteraction;
 import com.ing.baker.recipe.javadsl.interactions.ProvidesIngredientInteraction;
 import com.ing.baker.recipe.javadsl.interactions.RequiresProcessIdStringInteraction;
 import com.ing.baker.recipe.javadsl.interactions.RequiresProcessIdUUIDInteraction;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
 import static com.ing.baker.recipe.javadsl.JavadslTestHelper.*;
@@ -13,6 +17,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class InteractionDescriptorTest {
+    @Rule
+    public final ExpectedException exception = ExpectedException.none();
 
     @Test
     public void shouldCreateInteractionDescriptorOfProvidesIngredientInteraction() {
@@ -30,6 +36,12 @@ public class InteractionDescriptorTest {
     public void shouldCreateInteractionDescriptorOfRequiredProcessIdUUIDInteraction() {
         InteractionDescriptor id = of(RequiresProcessIdUUIDInteraction.class);
         assertEquals(requiresProcessIdUUIDInteractionCheck(), id.interaction());
+    }
+
+    @Test
+    public void shouldNotAllowToCreateInteractionDescriptorWithProvidesIngredientAndFiresEvent() {
+        exception.expect(RecipeValidationException.class);
+        of(ProvidesIngredientAndFireseventInteraction.class);
     }
 
     @Test
