@@ -10,7 +10,7 @@ class LocalBakerActorProvider extends BakerActorProvider {
   override def createRecipeActors(recipeName: String, petriNetActorProps: Props)(
       implicit actorSystem: ActorSystem): (ActorRef, RecipeMetadata) = {
     val recipeMetadata = new LocalRecipeMetadata(recipeName)
-    val recipeManagerActor = actorSystem.actorOf(ActorIndex.props(petriNetActorProps, recipeMetadata), recipeName)
+    val recipeManagerActor = actorSystem.actorOf(ActorIndex.props(petriNetActorProps, recipeMetadata, recipeName), recipeName)
 
     (recipeManagerActor, recipeMetadata)
   }

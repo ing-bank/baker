@@ -10,7 +10,7 @@ import ActorIndex._
 
 object ActorIndex {
 
-  def props(petriNetActorProps: Props, recipeMetadata: RecipeMetadata) = Props(new ActorIndex(petriNetActorProps, recipeMetadata))
+  def props(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, recipeName: String) = Props(new ActorIndex(petriNetActorProps, recipeMetadata, recipeName))
 
   case class ActorMetadata(id: String, createdDateTime: Long)
 
@@ -25,12 +25,15 @@ object ActorIndex {
 
 }
 
-class ActorIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata) extends PersistentActor with ActorLogging {
+class ActorIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, recipeName: String) extends PersistentActor with ActorLogging {
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
 
+  def actorName(id: String) = s"$recipeName-$id"
+  def processId(actorName: String) = actorName.replace(recipeName, "")
+
   private[actor] def createChildPetriNetActor(id: String) = {
-    val actorRef = context.actorOf(petriNetActorProps, name = id)
+    val actorRef = context.actorOf(petriNetActorProps, name = actorName(id))
     context.watch(actorRef)
     actorRef
   }
@@ -47,7 +50,7 @@ class ActorIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata) exte
 
       val id = processId.toString
 
-      context.child(id) match {
+      context.child(actorName(id)) match {
         case None if !index.contains(id) =>
           val created = System.currentTimeMillis()
           persist(ActorCreated(id, created)) { _ =>
@@ -63,7 +66,7 @@ class ActorIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata) exte
 
       val id = processId.toString
 
-      context.child(id) match {
+      context.child(actorName(id)) match {
         case Some(actorRef) => actorRef.forward(cmd)
         case None if index.contains(id) =>
           persist(ActorActivated(id)) { _ =>
