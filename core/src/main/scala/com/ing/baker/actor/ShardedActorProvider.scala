@@ -50,7 +50,7 @@ class ShardedActorProvider(config: Config) extends BakerActorProvider {
     val recipeMetadata = new ClusterRecipeMetadata(recipeName)
     val recipeManagerActor = ClusterSharding(actorSystem).start(
       typeName = recipeName,
-      entityProps = ActorIndex.props(petriNetActorProps, recipeMetadata),
+      entityProps = ActorIndex.props(petriNetActorProps, recipeMetadata, recipeName),
       settings = ClusterShardingSettings.create(actorSystem),
       extractEntityId = entityIdExtractor(recipeName, nrOfShards),
       extractShardId = shardIdExtractor(nrOfShards)

@@ -175,7 +175,7 @@ class Baker(val recipe: Recipe,
     */
   def eventsAsync(processId: java.util.UUID): Source[Any, NotUsed] = {
     PetriNetQuery
-      .eventsForInstance[ProcessState](processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal)
+      .eventsForInstance[ProcessState](s"${recipe.name}-$processId", compiledRecipe.petriNet, configuredEncryption, readJournal)
       .collect {
         case (_, TransitionFiredEvent(_, _, _, _, _, _, Some(output)))
           if compiledRecipe.allEvents.exists(_.isInstance(output)) => output
