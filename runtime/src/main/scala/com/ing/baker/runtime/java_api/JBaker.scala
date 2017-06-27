@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.actor.ProcessMetadata
-import com.ing.baker.runtime.core.Baker
+import com.ing.baker.runtime.core.{Baker, ReflectedInteractionTask}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
@@ -21,7 +21,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
   def this(compiledRecipe: CompiledRecipe, implementations: java.util.List[AnyRef]) =
     this(compiledRecipe, implementations, ActorSystem("BakerActorSystem"))
 
-  val interactionImplementations: Map[String, () => AnyRef] = Baker.implementationsToProviderMap(implementations.asScala)
+  val interactionImplementations: Map[String, AnyRef] = ReflectedInteractionTask.implementationsToProviderMap(implementations.asScala)
   val baker: Baker = new Baker(compiledRecipe = compiledRecipe, implementations.asScala)(actorSystem = actorSystem)
   val defaultTimeout: Int = 20 * 1000
 

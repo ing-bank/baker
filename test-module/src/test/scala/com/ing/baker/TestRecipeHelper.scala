@@ -223,18 +223,18 @@ trait TestRecipeHelper
     mock[NonMatchingReturnTypeInteractionImpl]
   protected val testSieveInteractionMock: SieveInteractionImpl = mock[SieveInteractionImpl]
 
-    protected val mockImplementations: Map[String, () => AnyRef] =
+    protected val mockImplementations: Map[String, AnyRef] =
     Map(
-      "InteractionOne" -> (() => testInteractionOneMock),
-      "InteractionTwo" -> (() => testInteractionTwoMock),
-      "InteractionThree" -> (() => testInteractionThreeMock),
-      "InteractionFour" -> (() => testInteractionFourMock),
-      "InteractionFive" -> (() => testInteractionFiveMock),
-      "InteractionSix" -> (() => testInteractionSixMock),
-      "NonSerializableIngredientInteraction" -> (() => testNonSerializableIngredientInteractionMock),
-      "NonSerializableEventInteraction" -> (() => testNonSerializableEventInteractionMock),
-      "NonMatchingReturnTypeInteraction" -> (() => testNonMatchingReturnTypeInteractionMock),
-      "SieveInteraction" -> (() => testSieveInteractionMock))
+      "InteractionOne" -> testInteractionOneMock,
+      "InteractionTwo" -> testInteractionTwoMock,
+      "InteractionThree" -> testInteractionThreeMock,
+      "InteractionFour" -> testInteractionFourMock,
+      "InteractionFive" -> testInteractionFiveMock,
+      "InteractionSix" -> testInteractionSixMock,
+      "NonSerializableIngredientInteraction" -> testNonSerializableIngredientInteractionMock,
+      "NonSerializableEventInteraction" -> testNonSerializableEventInteractionMock,
+      "NonMatchingReturnTypeInteraction" -> testNonMatchingReturnTypeInteractionMock,
+      "SieveInteraction" -> testSieveInteractionMock)
 
   protected def levelDbConfig(actorSystemName: String, port: Int): Config = ConfigFactory.parseString(
     s"""

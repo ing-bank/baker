@@ -4,7 +4,7 @@ import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
 import io.kagera.runtime.ExceptionStrategy.BlockTransition
 import io.kagera.runtime._
 
-class RecipeRuntime(interactions: Map[String, () => AnyRef]) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
+class RecipeRuntime(interactionFunctions: InteractionTransition[_] => (ProcessState => RuntimeEvent)) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
 
   override val tokenGame = new RecipeTokenGame()
 
@@ -18,5 +18,5 @@ class RecipeRuntime(interactions: Map[String, () => AnyRef]) extends PetriNetRun
     case _                                     => (e, n) => BlockTransition
   }
 
-  override val taskProvider = new TaskProvider(interactions)
+  override val taskProvider = new TaskProvider(interactionFunctions)
 }

@@ -179,11 +179,8 @@ object RecipeCompiler {
     // events provided by other transitions / actions
     val interactionEventTransitions: Seq[EventTransition] = interactionTransitions.flatMap { t =>
       t.providesType match {
-        case FiresOneOfEvents(events, _) =>
-//          events.map(event => IntermediateTransition(id = (event.name + "IntermediateTransition").hashCode, label = event.name))
-          events.map(event => EventTransition(event, false))
-        case i: ProvidesIngredient => Nil
-        case n: ProvidesNothing.type => Nil
+        case FiresOneOfEvents(events, _) => events.map(event => EventTransition(event, false))
+        case _                           => Nil
       }
     }
 
@@ -198,8 +195,7 @@ object RecipeCompiler {
             event.providedIngredients.map(ingredient =>
               arc(interactionEventTransitions.getByLabel(event.name), createPlace(ingredient.name, IngredientPlace), 1)))
         }
-        case i: ProvidesIngredient => Nil
-        case n: ProvidesNothing.type => Nil
+        case _ => Nil
       }
     }
 
@@ -217,7 +213,7 @@ object RecipeCompiler {
                                    interactionTransitions.findTransitionByName)
     }.unzipFlatten
 
-    val (sensoryEventNoIngredients, sensoryEventWithIngredients) = sensoryEventTransitions.partition(_.event.providedIngredients.isEmpty)
+    val (sensoryEventWithoutIngredients, sensoryEventWithIngredients) = sensoryEventTransitions.partition(_.event.providedIngredients.isEmpty)
 
     // It connects a sensory event to an ingredient places
     val sensoryEventArcs: Seq[Arc] = sensoryEventWithIngredients
@@ -229,7 +225,7 @@ object RecipeCompiler {
       }
 
     // It connects a sensory event to a dummy ingredient so it can be modelled into the Petri net
-    val sensoryEventArcsNoIngredientsArcs: Seq[Arc] = sensoryEventNoIngredients
+    val sensoryEventArcsNoIngredientsArcs: Seq[Arc] = sensoryEventWithoutIngredients
       //Filter out events that are preconditions to interactions
       .filterNot(sensoryEvent => eventThatArePreconditions.contains(sensoryEvent.label))
       .map(sensoryEvent => arc(sensoryEvent, createPlace(sensoryEvent.label, EmptyEventIngredientPlace), 1))
