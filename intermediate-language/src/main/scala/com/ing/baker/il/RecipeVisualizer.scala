@@ -6,7 +6,7 @@ import io.kagera.dot.{GraphDot, PetriNetDot}
 
 import scala.language.higherKinds
 import scalax.collection.edge.WLDiEdge
-import scalax.collection.io.dot._
+import scalax.collection.io.dot.{DotAttr, _}
 import scalax.collection.io.dot.implicits._
 
 object RecipeVisualizer {
@@ -17,6 +17,14 @@ object RecipeVisualizer {
     DotAttr("shape", "circle"),
     DotAttr("color", "\"#FF6200\""),
     DotAttr("style", "filled")
+  )
+
+  private val missingIngredientAttributes: List[DotAttr] = List(
+    DotAttr("shape", "circle"),
+    DotAttr("style", "filled"),
+//    DotAttr("fillcolor", "\"#FF6200\""),
+    DotAttr("color", "\"#EE0000\""),
+    DotAttr("penwidth", "5.0")
   )
 
   private val eventTransitionAttributes: List[DotAttr] = List(
@@ -37,7 +45,9 @@ object RecipeVisualizer {
     DotAttr("shape", "diamond"),
     DotAttr("margin", 0.3D),
     DotAttr("style", "rounded, filled"),
-    DotAttr("color", "\"#EE0000\"")
+//    DotAttr("fillcolor", "\"#767676\""),
+    DotAttr("color", "\"#EE0000\""),
+    DotAttr("penwidth", "5.0")
   )
 
   private val interactionAttributes: List[DotAttr] = List(
@@ -98,16 +108,17 @@ object RecipeVisualizer {
   private def nodeDotAttrFn: (RecipePetriNetGraph#NodeT, Seq[String])=> List[DotAttr] =
     (node: RecipePetriNetGraph#NodeT, events: Seq[String]) ⇒
       node.value match {
-        case Left(place) if place.isInteractionEventOutput => choiceAttributes
-        case Left(place) if place.isOrEventPrecondition    => preconditionORAttributes
-        case Left(place) if place.isEmptyEventIngredient   ⇒ emptyEventAttributes
-        case Left(place)                                   ⇒ ingredientAttributes
+        case Left(place) if place.isInteractionEventOutput    => choiceAttributes
+        case Left(place) if place.isOrEventPrecondition       => preconditionORAttributes
+        case Left(place) if place.isEmptyEventIngredient      ⇒ emptyEventAttributes
+        case Left(place) if node.incomingTransitions.isEmpty  => missingIngredientAttributes
+        case Left(place)                                      ⇒ ingredientAttributes
         case Right(transition) if transition.isMultiFacilitatorTransition => choiceAttributes
-        case Right(transition) if transition.isInteraction  ⇒ interactionAttributes
-        case Right(transition) if transition.isSieve        ⇒ sieveAttributes
-        case Right(transition) if transition.isEventMissing ⇒ eventTransitionMissingAttributes
+        case Right(transition) if transition.isInteraction      ⇒ interactionAttributes
+        case Right(transition) if transition.isSieve            ⇒ sieveAttributes
+        case Right(transition) if transition.isEventMissing     ⇒ eventTransitionMissingAttributes
         case Right(transition) if events.contains(transition.label) ⇒ eventTransitionFiredAttributes
-        case Right(transition)                              ⇒ eventTransitionAttributes
+        case Right(transition)                                  ⇒ eventTransitionAttributes
     }
 
   private def generateDot(graph: RecipePetriNetGraph, filter: String => Boolean, events: Seq[String]): String = {

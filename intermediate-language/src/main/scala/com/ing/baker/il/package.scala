@@ -2,7 +2,7 @@ package com.ing.baker
 
 import com.ing.baker.il.ActionType.{InteractionAction, SieveAction}
 import com.ing.baker.il.petrinet.Place._
-import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, MultiFacilitatorTransition, Place, Transition}
+import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, MissingEventTransition, MultiFacilitatorTransition, Place, Transition}
 
 
 package object il {
@@ -32,7 +32,7 @@ package object il {
 
     def isEventMissing: Boolean =
       transition match {
-        case EventTransition(_, _, isMissing) => isMissing
+        case MissingEventTransition(_, _) => true
         case _ => false
       }
 
