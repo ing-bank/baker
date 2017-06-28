@@ -14,7 +14,6 @@ case class InteractionDescriptor private(override val interaction: Interaction,
                                          override val maximumInteractionCount: Option[Int] = None,
                                          override val failureStrategy: Option[InteractionFailureStrategy] = None,
                                          override val eventOutputTransformers: Map[common.Event, common.EventOutputTransformer] = Map.empty,
-                                         override val actionType: ActionType = common.InteractionAction,
                                          newName: String = null)
   extends common.InteractionDescriptor {
 
@@ -60,9 +59,4 @@ case class InteractionDescriptor private(override val interaction: Interaction,
 object InteractionDescriptorFactory {
   def apply(interaction: Interaction): InteractionDescriptor = InteractionDescriptor(interaction)
   def apply(interaction: Interaction, name: String): InteractionDescriptor = InteractionDescriptor(interaction, newName = name)
-}
-
-object SieveDescriptorFactory {
-  def apply(interaction: Interaction): InteractionDescriptor = InteractionDescriptor(interaction, actionType = SieveAction)
-  def apply(interaction: Interaction, name: String): InteractionDescriptor = InteractionDescriptor(interaction, actionType = SieveAction, newName = name)
 }

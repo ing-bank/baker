@@ -1,9 +1,5 @@
 package com.ing.baker.recipe.common
 
-sealed trait ActionType
-case object InteractionAction extends ActionType
-case object SieveAction extends ActionType
-
 /**
   * An interaction is some code that requires input (ingredients) and produces output (ingredients)
   */
@@ -53,8 +49,6 @@ trait InteractionDescriptor {
     * An optional strategy how to deal with failures. Falls back to the default strategy specified in the recipe.
     */
   val failureStrategy: Option[InteractionFailureStrategy]
-
-  val actionType: ActionType
 
   override def toString(): String = {
     s"""${interaction.name}{

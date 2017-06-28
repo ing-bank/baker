@@ -103,6 +103,27 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue, "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
     }
 
+    "execute an interaction when its ingredient is provided and the interaction is renamed" in {
+      val recipe =
+        Recipe("IngredientProvidedRecipeWithRename")
+          .withInteraction(interactionOne, "interactionOneRenamed")
+          .withSensoryEvent(initialEvent)
+
+      val baker = new Baker(
+        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+        implementations = mockImplementations)
+
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
+
+      val processId = UUID.randomUUID()
+      baker.bake(processId)
+
+      baker.handleEvent(processId, InitialEvent(initialIngredientValue))
+
+      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+      baker.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue, "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
+    }
+
     "execute an interaction when both ingredients are provided (join situation)" in {
       val baker = setupBakerWithRecipe("JoinRecipeForIngredients")
 

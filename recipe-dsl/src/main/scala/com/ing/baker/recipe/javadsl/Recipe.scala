@@ -24,6 +24,15 @@ case class Recipe(
 
   def getEvents: java.util.List[common.Event] = sensoryEvents.toList.asJava
 
+  /**
+    * This adds all interactions and sieves of the recipe to this recipe
+    * Sensory Events are not added and are expected to be given by the recipe itself
+    * @param recipe
+    * @return
+    */
+  def withRecipe(recipe: common.Recipe) = {
+    copy(interactions = interactions ++ recipe.interactions, sieves = sieves ++ recipe.sieves)
+  }
 
   /**
     * Adds the interaction to the recipe.
@@ -32,7 +41,7 @@ case class Recipe(
     * @param newInteraction the interaction to add
     * @return
     */
-  def withInteraction(newInteraction: InteractionDescriptor): Recipe =
+  def withInteraction(newInteraction: common.InteractionDescriptor): Recipe =
       withInteractions(Seq(newInteraction): _*)
 
   /**
@@ -44,8 +53,8 @@ case class Recipe(
     */
   @SafeVarargs
   @varargs
-  def withInteractions(newInteractions: InteractionDescriptor*): Recipe =
-    copy(interactions = newInteractions ++ interactions)
+  def withInteractions(newInteractions: common.InteractionDescriptor*): Recipe =
+    copy(interactions = interactions ++ newInteractions)
 
   /**
     * Adds a sieve function to the recipe.
@@ -53,8 +62,8 @@ case class Recipe(
     * @param sieveDescriptor
     * @return
     */
-  def withSieve(sieveDescriptor: InteractionDescriptor): Recipe =
-    withSieves(Seq(sieveDescriptor): _*)
+  def withSieve(sieveDescriptor: common.InteractionDescriptor): Recipe =
+    withSieves(Seq(sieveDescriptor.asInstanceOf[InteractionDescriptor]): _*)
 
   /**
     * Adds a sieves function to the recipe.
@@ -64,8 +73,8 @@ case class Recipe(
     */
   @SafeVarargs
   @varargs
-  def withSieves(newSieves: InteractionDescriptor*): Recipe = {
-    copy(sieves = sieves ++ newSieves.map(_.copy(actionType = SieveAction)))
+  def withSieves(newSieves: common.InteractionDescriptor*): Recipe = {
+    copy(sieves = sieves ++ newSieves)
   }
 
   /**

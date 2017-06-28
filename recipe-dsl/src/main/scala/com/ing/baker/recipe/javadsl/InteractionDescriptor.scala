@@ -18,7 +18,6 @@ case class InteractionDescriptor private(
                                           override val maximumInteractionCount: Option[Int],
                                           override val failureStrategy: Option[common.InteractionFailureStrategy] = None,
                                           override val eventOutputTransformers: Map[common.Event, common.EventOutputTransformer] = Map.empty,
-                                          override val actionType: common.ActionType = common.InteractionAction,
                                           newName: String = null)
   extends common.InteractionDescriptor {
 
@@ -26,9 +25,6 @@ case class InteractionDescriptor private(
     if (newName != null) newName
     else interaction.name
   }
-
-  def withActionType(newActionType: common.ActionType): InteractionDescriptor =
-    this.copy(actionType = newActionType)
 
   /**
     * This sets a requirement for this interaction that a specific event needs to have been fired before it can execute.

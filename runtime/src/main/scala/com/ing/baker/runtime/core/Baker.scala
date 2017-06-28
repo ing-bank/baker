@@ -73,7 +73,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
   def this(compiledRecipe: CompiledRecipe,
            implementations: Map[String, AnyRef])
           (implicit actorSystem: ActorSystem) =
-    this(compiledRecipe, ReflectedInteractionTask.createInteractionFuntions(compiledRecipe.interactionTransitions, implementations))(actorSystem)
+    this(compiledRecipe, ReflectedInteractionTask.createInteractionFunctions(compiledRecipe.interactionTransitions, implementations))(actorSystem)
 
   def this(compiledRecipe: CompiledRecipe,
            implementations: Seq[AnyRef])

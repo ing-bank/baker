@@ -94,6 +94,19 @@ public class RecipeTest {
     }
 
     @Test
+    public void shouldBeAbleToAddARecipeToARecipe() {
+        Recipe subRecipe = new Recipe("OneSensoryEventRecipe")
+                .withSensoryEvent(SensoryEventWithIngredient.class)
+                .withInteraction(of(ProvidesIngredientInteraction.class));
+        Recipe recipe = new Recipe("OneInteractionRecipe")
+                .withInteraction(of(FiresTwoEventInteraction.class))
+                .withSensoryEvent(SensoryEventWithoutIngredient.class)
+                .withRecipe(subRecipe);
+        assertEquals(recipe.getEvents().size(), 1);
+        assertEquals(recipe.getInteractions().size(), 2);
+    }
+
+    @Test
     public void shouldSetupRecipeWithDefaultBlockedFailureStrategy() {
         Recipe recipe = new Recipe("defaultBlockedFailureStrategyRecipe");
         assertEquals(InteractionFailureStrategy.BlockInteraction$.class, recipe.defaultFailureStrategy().getClass());

@@ -31,14 +31,24 @@ package object compiler {
 
       val validationErrors = scala.collection.mutable.MutableList.empty[String]
 
-      val interactionTransition = interactionTransitionOf(interaction, defaultFailureStrategy)
+      val interactionTransition = interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.InteractionAction)
+
+      (interactionTransition, validationErrors)
+    }
+
+    def toSieveTransition(defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): (InteractionTransition[_], Seq[String]) = {
+
+      val validationErrors = scala.collection.mutable.MutableList.empty[String]
+
+      val interactionTransition = interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.SieveAction)
 
       (interactionTransition, validationErrors)
     }
 
     def interactionTransitionOf(
                                  interactionDescriptor: InteractionDescriptor,
-                                 defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): InteractionTransition[Any] = {
+                                 defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy,
+                                 actionType: ActionType): InteractionTransition[Any] = {
 
       //This transforms the event using the eventOutputTransformer to the new event
       //If there is no eventOutputTransformer for the event the original event is returned
@@ -68,13 +78,6 @@ package object compiler {
       def transformEventOutputTransformer(recipeEventOutputTransformer: common.EventOutputTransformer): CompiledEventOutputTransformer = {
         CompiledEventOutputTransformer(recipeEventOutputTransformer.newEventName, recipeEventOutputTransformer.ingredientRenames
         )
-      }
-
-      def transformActionType(interactionDescriptor: common.InteractionDescriptor): ActionType = {
-        interactionDescriptor.actionType match {
-          case common.InteractionAction => InteractionAction
-          case common.SieveAction => SieveAction
-        }
       }
 
       def transformEventToCompiledEvent(event: common.Event): CompiledEvent = {
@@ -115,7 +118,7 @@ package object compiler {
         maximumInteractionCount = interactionDescriptor.maximumInteractionCount,
         failureStrategy = transformFailureStrategy(interactionDescriptor.failureStrategy.getOrElse[common.InteractionFailureStrategy](defaultFailureStrategy)),
         eventOutputTransformers =  interactionDescriptor.eventOutputTransformers.map { case (event, transformer) => eventToCompiledEvent(event) -> transformEventOutputTransformer(transformer) },
-        actionType = transformActionType(interactionDescriptor))
+        actionType = actionType)
     }
   }
 

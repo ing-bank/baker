@@ -38,7 +38,7 @@ object ReflectedInteractionTask {
     Set[String](obj.getClass.getSimpleName, nameField).filterNot(s => s equals "") ++ interfaceNames
   }
 
-  def createInteractionFuntions(interactions: Set[InteractionTransition[_]], implementations: Map[String, AnyRef]): InteractionTransition[_] => (ProcessState => RuntimeEvent) = {
+  def createInteractionFunctions(interactions: Set[InteractionTransition[_]], implementations: Map[String, AnyRef]): InteractionTransition[_] => (ProcessState => RuntimeEvent) = {
 
     val implementationErrors = checkIfValidImplementationsProvided(implementations, interactions)
     if(implementationErrors.nonEmpty)

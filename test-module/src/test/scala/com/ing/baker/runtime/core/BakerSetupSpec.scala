@@ -41,6 +41,16 @@ class BakerSetupSpec extends TestRecipeHelper {
           implementations = Seq(new implementations.InteractionOne()))
       }
 
+      "providing the implementation in a sequence and interaction renamed" in {
+        val recipe = Recipe("simpleNameImplementationWithRename")
+          .withInteraction((interactionOne, "interactionOneRenamed"))
+          .withSensoryEvent(initialEvent)
+
+        new Baker(
+          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+          implementations = Seq(new implementations.InteractionOne()))
+      }
+
       "providing the implementation in a sequence with the field name same as the interaction" in {
         val recipe = Recipe("fieldNameImplementation")
           .withInteraction(interactionOne)

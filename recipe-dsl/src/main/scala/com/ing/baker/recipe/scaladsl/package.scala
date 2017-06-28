@@ -5,6 +5,9 @@ import java.util.UUID
 package object scaladsl {
   implicit def InteractionToInteractionDescriptor(interaction: Interaction): InteractionDescriptor = InteractionDescriptorFactory(interaction)
 
+  implicit def InteractionToInteractionDescriptorWithRename(interactionNameTuple:(Interaction, String)): InteractionDescriptor = InteractionDescriptorFactory(interactionNameTuple._1, interactionNameTuple._2)
+
+
   implicit def IngredientToIngredientSeq(ingredient: Ingredient[_]): Seq[Ingredient[_]] = Seq(ingredient)
 
   implicit def StringToRecipe(name: String): Recipe = Recipe(name)

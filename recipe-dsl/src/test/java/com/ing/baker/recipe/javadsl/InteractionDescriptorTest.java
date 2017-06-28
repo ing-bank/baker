@@ -57,12 +57,6 @@ public class InteractionDescriptorTest {
     }
 
     @Test
-    public void shouldCreateInteractionDefaultWithInteractionActionType() {
-        InteractionDescriptor id = of(ProvidesIngredientInteraction.class);
-        assertEquals(com.ing.baker.recipe.common.InteractionAction$.class, id.actionType().getClass());
-    }
-
-    @Test
     public void shouldUpdateTheRequiredEventList() {
         InteractionDescriptor id = of(ProvidesIngredientInteraction.class);
         assertTrue(id.requiredEvents().isEmpty());

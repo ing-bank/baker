@@ -23,11 +23,11 @@ class TaskProvider(interactionFunctions: InteractionTransition[_] => (ProcessSta
       case interaction: InteractionTransition[_] =>
         interactionTransitionTask[AnyRef, Input, Output](interaction.asInstanceOf[InteractionTransition[AnyRef]], interactionFunctions(interaction), petriNet.outMarking(interaction))
       case t: EventTransition  => eventTransitionTask(petriNet, t)
-      case t                   => passThroughtTransitionTask(petriNet, t)
+      case t                   => passThroughTransitionTask(petriNet, t)
     }
   }
 
-  def passThroughtTransitionTask[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _]], t: Transition[Input, Output]): TransitionTask[Place, Input, Output, ProcessState] =
+  def passThroughTransitionTask[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _]], t: Transition[Input, Output]): TransitionTask[Place, Input, Output, ProcessState] =
     (consume, processState, input) => Task.now((toMarking[Place](petriNet.outMarking(t)), null.asInstanceOf[Output]))
 
   def eventTransitionTask[RuntimeEvent, Input, Output](petriNet: PetriNet[Place[_], Transition[_, _]], eventTransition: EventTransition): TransitionTask[Place, Input, Output, ProcessState] =
