@@ -62,13 +62,15 @@ class ScaladslSpec extends WordSpecLike with Matchers with MockitoSugar {
     "visualise the new customer recipe" in {
       val compiledRecipe = RecipeCompiler.compileRecipe(onboardingRecipe)
       compiledRecipe.validationErrors shouldBe empty
-      println(compiledRecipe.getRecipeVisualization)
+      compiledRecipe.getRecipeVisualization should not be empty
+//      println(compiledRecipe.getRecipeVisualization)
     }
 
     "visualise the new customer recipe petri net" in {
       val compiledRecipe = RecipeCompiler.compileRecipe(onboardingRecipe)
       compiledRecipe.validationErrors shouldBe empty
-      println(compiledRecipe.getPetriNetVisualization)
+      compiledRecipe.getPetriNetVisualization should not be empty
+//      println(compiledRecipe.getPetriNetVisualization)
     }
   }
 }

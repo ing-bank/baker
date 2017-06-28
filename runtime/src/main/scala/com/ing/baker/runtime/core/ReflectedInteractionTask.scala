@@ -44,7 +44,7 @@ object ReflectedInteractionTask {
     if(implementationErrors.nonEmpty)
       throw new BakerException(implementationErrors.mkString(", "))
 
-    (i: InteractionTransition[_]) => ReflectedInteractionTask.interactionTask(i.asInstanceOf[InteractionTransition[AnyRef]], () => implementations.apply(i.label))
+    (i: InteractionTransition[_]) => ReflectedInteractionTask.interactionTask(i.asInstanceOf[InteractionTransition[AnyRef]], () => implementations.apply(i.originalInteractionName))
   }
 
   private def checkIfImplementationIsValidForInteraction(implementation: AnyRef, interaction: InteractionTransition[_]): Boolean ={
@@ -59,10 +59,10 @@ object ReflectedInteractionTask {
       .map(i => s"No implementation provided for interaction: ${i.originalInteractionName}")
 
     //Check if the provided implementations are valid
-    val neededImplementations: Map[String, AnyRef] = implementations.filterKeys(s => actions.exists(i => s equals i.interactionName))
-    val invalidImplementations: Seq[String] = neededImplementations.flatMap { case (interactionName, impl) => {
-      if (checkIfImplementationIsValidForInteraction(impl, actions.find(_.label == interactionName).get)) None
-      else Some(s"Invalid implementation provided for interaction: $interactionName")
+    val neededImplementations: Map[String, AnyRef] = implementations.filterKeys(s => actions.exists(i => s equals i.originalInteractionName))
+    val invalidImplementations: Seq[String] = neededImplementations.flatMap { case (neededInteractionName, impl) => {
+      if (checkIfImplementationIsValidForInteraction(impl, actions.find(_.originalInteractionName == neededInteractionName).get)) None
+      else Some(s"Invalid implementation provided for interaction: $neededInteractionName")
     }}.toSeq
 
     missingImplementations ++ invalidImplementations

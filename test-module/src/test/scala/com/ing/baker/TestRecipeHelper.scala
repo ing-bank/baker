@@ -267,6 +267,10 @@ trait TestRecipeHelper
        |
        |     journal.leveldb.native = off
        |  }
+       |
+       |  loggers = ["akka.event.slf4j.Slf4jLogger"]
+       |  loglevel = "DEBUG"
+       |  logging-filter = "akka.event.slf4j.Slf4jLoggingFilter"
        |}
        |
        |baker {

@@ -68,7 +68,7 @@ class newCustomerRecipeScala extends WordSpecLike with Matchers with MockitoSuga
   "The new Customer Recipe" when {
     "created" should {
       "be printable" in {
-        println(onboardingClientRecipe)
+//        println(onboardingClientRecipe)
       }
     }
 
@@ -78,10 +78,10 @@ class newCustomerRecipeScala extends WordSpecLike with Matchers with MockitoSuga
         compiledRecipe.validationErrors shouldBe empty
       }
       "be able to visualise the compiled recipe to a dot format" in {
-        println(compiledRecipe.getRecipeVisualization)
+//        println(compiledRecipe.getRecipeVisualization)
       }
       "be able to visualise the underlying perti net to a dot format" in {
-        println(compiledRecipe.getPetriNetVisualization)
+//        println(compiledRecipe.getPetriNetVisualization)
       }
     }
   }

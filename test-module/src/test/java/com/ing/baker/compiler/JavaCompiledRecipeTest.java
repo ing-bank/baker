@@ -66,7 +66,7 @@ public class JavaCompiledRecipeTest {
         Assert.assertTrue("Should contain EventTwo", visualRecipe.contains("EventTwo"));
         Assert.assertTrue("Should contain RequestIDStringOne", visualRecipe.contains("RequestIDStringOne"));
 
-        System.out.println(compileRecipe.getRecipeVisualization());
+//        System.out.println(visualRecipe);
     }
 
     @Test
