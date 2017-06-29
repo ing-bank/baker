@@ -1,6 +1,6 @@
 package com.ing.baker.il.petrinet
 
-import com.ing.baker.il.{ActionType, CompiledEventOutputTransformer, InteractionFailureStrategy, _}
+import com.ing.baker.il.{ActionType, EventOutputTransformer, InteractionFailureStrategy, _}
 import io.kagera.runtime.TransitionExceptionHandler
 import org.slf4j._
 
@@ -8,8 +8,8 @@ import org.slf4j._
   * This trait describes what kind of output the interaction provides
   */
 sealed trait ProvidesType
-case class ProvidesIngredient(ingredient: CompiledIngredient) extends ProvidesType
-case class FiresOneOfEvents(events: Seq[CompiledEvent], originalEvents: Seq[CompiledEvent]) extends ProvidesType
+case class ProvidesIngredient(ingredient: IngredientType) extends ProvidesType
+case class FiresOneOfEvents(events: Seq[EventType], originalEvents: Seq[EventType]) extends ProvidesType
 case object ProvidesNothing extends ProvidesType
 
 
@@ -36,7 +36,7 @@ case class InteractionTransition[I](providesType: ProvidesType,
                                     predefinedParameters: Map[String, Any],
                                     maximumInteractionCount: Option[Int],
                                     failureStrategy: InteractionFailureStrategy,
-                                    eventOutputTransformers: Map[CompiledEvent, CompiledEventOutputTransformer] = Map.empty)
+                                    eventOutputTransformers: Map[EventType, EventOutputTransformer] = Map.empty)
 
   extends Transition[Unit, AnyRef] {
 

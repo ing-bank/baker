@@ -3,7 +3,8 @@ package com.ing.baker.runtime.core
 import java.util.UUID
 
 import com.ing.baker.il.petrinet.{FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing}
-import com.ing.baker.il.{CompiledEvent, processIdName}
+import com.ing.baker.il.{EventType, IngredientType, processIdName}
+import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor, PojoEventExtractor}
 import org.slf4j.{LoggerFactory, MDC}
 
 import scala.util.Try
@@ -11,6 +12,8 @@ import scala.util.Try
 object ReflectedInteractionTask {
 
   val log = LoggerFactory.getLogger(ReflectedInteractionTask.getClass)
+
+  val eventExtractor: EventExtractor = new PojoEventExtractor()
 
   def implementationsToProviderMap(implementations: Seq[AnyRef]) : Map[String, AnyRef] = {
     implementations.flatMap(im => getPossibleInteractionNamesForImplementation(im).map(_ -> im)).toMap
@@ -89,21 +92,36 @@ object ReflectedInteractionTask {
       interaction.providesType match {
         case FiresOneOfEvents(_, originalEvents) =>
         {
-          val optionalFoundEvent: Option[CompiledEvent] = originalEvents.find(e => e.name equals output.getClass.getSimpleName)
+          val optionalFoundEvent: Option[EventType] = originalEvents.find(e => e.name equals output.getClass.getSimpleName)
           if (optionalFoundEvent.isDefined)
-            RuntimeEvent.forEvent(output, optionalFoundEvent.get)
+            eventExtractor.extractEvent(output).validate(optionalFoundEvent.get)
           else {
             val msg: String = s"Output: $output fired by an interaction but could not link it to any known event for the interaction"
             log.error(msg)
             throw new FatalBakerException(msg)
           }
         }
-        case ProvidesIngredient(ingredient) => RuntimeEvent.forIngredient(interaction.interactionName, output, ingredient)
-        case ProvidesNothing => RuntimeEvent.forNothing(interaction.interactionName)
+        case ProvidesIngredient(ingredient) => runtimeEventForIngredient(interaction.interactionName, output, ingredient)
+        case ProvidesNothing => RuntimeEvent(s"${interaction.interactionName}:ProvidedNothing", Map.empty)
       }
     }
 
     createRuntimeEvent(invokeMethod())
+  }
+
+  def runtimeEventForIngredient(firedInteractionName: String, providedIngredient: Any, ingredientToComplyTo: IngredientType): RuntimeEvent = {
+    if(ingredientToComplyTo.clazz.isAssignableFrom(providedIngredient.getClass))
+      RuntimeEvent(s"$firedInteractionName:${ingredientToComplyTo.name}", Map(ingredientToComplyTo.name -> providedIngredient))
+    //TODO Decide what to do when the ingredient is not of the correct typing, for now a Ingredient is create with a null value
+    else {
+      log.error(
+        s"""
+           |Ingredient: ${ingredientToComplyTo.name} provided by an interaction but does not comply to the expected type
+           |Expected  : $ingredientToComplyTo
+           |Provided  : $providedIngredient
+         """.stripMargin)
+      RuntimeEvent(s"$firedInteractionName:${ingredientToComplyTo.name}", Map(ingredientToComplyTo.name -> null))
+    }
   }
 
   /**

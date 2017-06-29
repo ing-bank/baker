@@ -2,7 +2,7 @@ package com.ing.baker
 
 import com.ing.baker.il.ActionType.{InteractionAction, SieveAction}
 import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing, ProvidesType, Transition}
-import com.ing.baker.il.{ActionType, CompiledEvent, CompiledEventOutputTransformer, CompiledIngredient, InteractionFailureStrategy}
+import com.ing.baker.il.{ActionType, EventType, EventOutputTransformer, IngredientType, InteractionFailureStrategy}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{Event, Ingredient, InteractionDescriptor}
 import io.kagera.api._
@@ -11,16 +11,16 @@ import scala.concurrent.duration.Duration
 
 package object compiler {
 
-  def ingredientsToRuntimeIngredient(ingredient: common.Ingredient): CompiledIngredient = CompiledIngredient(ingredient.name, ingredient.clazz)
+  def ingredientsToRuntimeIngredient(ingredient: common.Ingredient): IngredientType = IngredientType(ingredient.name, ingredient.clazz)
 
-  def eventToCompiledEvent(event: common.Event): CompiledEvent = CompiledEvent(event.name, event.providedIngredients.map(ingredientsToRuntimeIngredient))
+  def eventToCompiledEvent(event: common.Event): EventType = EventType(event.name, event.providedIngredients.map(ingredientsToRuntimeIngredient))
 
-  def runtimeIngredientToIngredient(ingredient: CompiledIngredient): common.Ingredient = new Ingredient {
+  def runtimeIngredientToIngredient(ingredient: IngredientType): common.Ingredient = new Ingredient {
     override val name: String = ingredient.name
     override val clazz: Class[_] = ingredient.clazz
   }
 
-  def runtimeEventToEvent(runtimeEvent: CompiledEvent): common.Event = new Event {
+  def runtimeEventToEvent(runtimeEvent: EventType): common.Event = new Event {
     override val name: String = runtimeEvent.name
     override val providedIngredients: Seq[Ingredient] = runtimeEvent.providedIngredients.map(runtimeIngredientToIngredient)
   }
@@ -75,16 +75,16 @@ package object compiler {
         }
       }
 
-      def transformEventOutputTransformer(recipeEventOutputTransformer: common.EventOutputTransformer): CompiledEventOutputTransformer = {
-        CompiledEventOutputTransformer(recipeEventOutputTransformer.newEventName, recipeEventOutputTransformer.ingredientRenames
+      def transformEventOutputTransformer(recipeEventOutputTransformer: common.EventOutputTransformer): EventOutputTransformer = {
+        EventOutputTransformer(recipeEventOutputTransformer.newEventName, recipeEventOutputTransformer.ingredientRenames
         )
       }
 
-      def transformEventToCompiledEvent(event: common.Event): CompiledEvent = {
-          CompiledEvent(
-            event.name,
-            event.providedIngredients
-              .map(i => CompiledIngredient(i.name, i.clazz)))
+      def transformEventToCompiledEvent(event: common.Event): EventType = {
+        EventType(
+          event.name,
+          event.providedIngredients
+            .map(i => IngredientType(i.name, i.clazz)))
       }
 
       val inputFields: Seq[(String, Class[_])] = interactionDescriptor.interaction.inputIngredients
@@ -101,7 +101,7 @@ package object compiler {
             val ingredientName: String =
               if(interactionDescriptor.overriddenOutputIngredientName.nonEmpty) interactionDescriptor.overriddenOutputIngredientName.get
               else outputIngredient.name
-            ProvidesIngredient(CompiledIngredient(ingredientName, outputIngredient.clazz))
+            ProvidesIngredient(IngredientType(ingredientName, outputIngredient.clazz))
           case common.FiresOneOfEvents(events) =>
             val originalCompiledEvents = events.map(transformEventToCompiledEvent)
             val compiledEvents = events.map(transformEventType).map(transformEventToCompiledEvent)
@@ -132,7 +132,7 @@ package object compiler {
   }
 
   implicit class EventTransitionOps(eventTransitions: Seq[EventTransition]) {
-    def findEventTransitionsByEvent: CompiledEvent ⇒ Option[EventTransition] =
+    def findEventTransitionsByEvent: EventType ⇒ Option[EventTransition] =
       event => eventTransitions.find(_.event == event)
   }
 }

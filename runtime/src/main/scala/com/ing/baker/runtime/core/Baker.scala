@@ -16,6 +16,7 @@ import com.ing.baker.il._
 import com.ing.baker.il.petrinet._
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.core.Baker._
+import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import fs2.Strategy
 import io.kagera.akka.actor.PetriNetInstanceProtocol._
 import io.kagera.akka.actor._
@@ -34,6 +35,8 @@ import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
 object Baker {
+
+  val eventExtractor: EventExtractor = new CompositeEventExtractor()
 
   def transitionForRuntimeEvent(runtimeEvent: RuntimeEvent, compiledRecipe: CompiledRecipe) =
     compiledRecipe.petriNet.transitions.findByLabel(runtimeEvent.name).getOrElse {
@@ -230,13 +233,15 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * with the response you have NO guarantee that the event is received by baker.
     */
   def handleEventAsync(processId: UUID, event: Any): BakerResponse = {
-    //Check if the event is of a know sensory event and create a RuntimeEvent from it.
-    val runtimeEvent = compiledRecipe.sensoryEvents.find(se => se.name == event.getClass.getSimpleName) match {
-      case Some(compiledEvent) => RuntimeEvent.forEvent(event, compiledEvent)
-      case None => throw new BakerException(s"Fired event $event is not recognised as any valid sensory event")
-    }
 
-    val msg = createEventMsg(processId, runtimeEvent)
+    val runtimeEvent = Baker.eventExtractor.extractEvent(event)
+
+    val eventType = compiledRecipe.sensoryEvents.find(se => se.name == runtimeEvent.name)
+      .getOrElse(throw new BakerException(s"Fired event $event is not recognised as any valid sensory event"))
+
+    val validatedEvent = runtimeEvent.validate(eventType)
+
+    val msg = createEventMsg(processId, validatedEvent)
     val source = petriNetApi.askAndCollectAll(msg, waitForRetries = true)
     new BakerResponse(processId, source)
   }

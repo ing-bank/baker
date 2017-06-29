@@ -11,7 +11,7 @@ import scala.collection.JavaConverters._
 case class CompiledRecipe(name: String,
                           petriNet: RecipePetriNet,
                           initialMarking: Marking[Place],
-                          sensoryEvents: Set[CompiledEvent],
+                          sensoryEvents: Set[EventType],
                           validationErrors: Seq[String] = Seq.empty) {
 
   def getValidationErrors: java.util.List[String] = validationErrors.toList.asJava
@@ -56,24 +56,24 @@ case class CompiledRecipe(name: String,
     case t: InteractionTransition[_] => t
   }
 
-  val interactionEvents: Set[CompiledEvent] =
+  val interactionEvents: Set[EventType] =
     interactionTransitions flatMap  {
       case InteractionTransition(providesType: FiresOneOfEvents, _, _, _, _, _, _, _, _) => providesType.events
       case _ => Seq.empty
     }
 
-  val allEvents: Set[CompiledEvent] = sensoryEvents ++ interactionEvents
+  val allEvents: Set[EventType] = sensoryEvents ++ interactionEvents
 
-  val allIngredientsProvidedByInteractions: Set[CompiledIngredient] =
+  val allIngredientsProvidedByInteractions: Set[IngredientType] =
     interactionTransitions map {
       case InteractionTransition(providesType: ProvidesIngredient, _, _, _, _, _, _, _, _) => providesType.ingredient
       case _ => null
     } filterNot(_ == null)
 
 
-  val allIngredientsProvidedByEvents: Set[CompiledIngredient] = allEvents.flatMap {
+  val allIngredientsProvidedByEvents: Set[IngredientType] = allEvents.flatMap {
     events => events.providedIngredients
   }
 
-  val ingredients: Map[String, CompiledIngredient] = (allIngredientsProvidedByInteractions ++ allIngredientsProvidedByEvents).map(i => i.name -> i).toMap
+  val ingredients: Map[String, IngredientType] = (allIngredientsProvidedByInteractions ++ allIngredientsProvidedByEvents).map(i => i.name -> i).toMap
 }

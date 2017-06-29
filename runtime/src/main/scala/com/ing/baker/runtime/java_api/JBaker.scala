@@ -21,8 +21,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
   def this(compiledRecipe: CompiledRecipe, implementations: java.util.List[AnyRef]) =
     this(compiledRecipe, implementations, ActorSystem("BakerActorSystem"))
 
-  val interactionImplementations: Map[String, AnyRef] = ReflectedInteractionTask.implementationsToProviderMap(implementations.asScala)
-  val baker: Baker = new Baker(compiledRecipe = compiledRecipe, implementations.asScala)(actorSystem = actorSystem)
+  val baker: Baker = new Baker(compiledRecipe = compiledRecipe, ReflectedInteractionTask.implementationsToProviderMap(implementations.asScala))(actorSystem = actorSystem)
   val defaultTimeout: Int = 20 * 1000
 
   /**

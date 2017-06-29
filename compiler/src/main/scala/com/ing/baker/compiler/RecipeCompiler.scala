@@ -3,7 +3,7 @@ package compiler
 
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
-import com.ing.baker.il.{CompiledRecipe, RecipeValidations, CompiledEvent, ValidationSettings}
+import com.ing.baker.il.{CompiledRecipe, RecipeValidations, EventType, ValidationSettings}
 import com.ing.baker.recipe.common.{InteractionDescriptor, Recipe}
 import io.kagera.api._
 
@@ -18,11 +18,11 @@ object RecipeCompiler {
   /**
     * Creates a transition for a missing event in the recipe.
     */
-  private def missingEventTransition[E](event: CompiledEvent): MissingEventTransition[E] = MissingEventTransition[E](event.name.hashCode, event.name)
+  private def missingEventTransition[E](event: EventType): MissingEventTransition[E] = MissingEventTransition[E](event.name.hashCode, event.name)
 
   private def buildEventAndPreconditionArcs(
                                              interaction: InteractionDescriptor,
-                                             preconditionTransition: CompiledEvent => Option[Transition[_, _]],
+                                             preconditionTransition: EventType => Option[Transition[_, _]],
                                              interactionTransition: String => Option[Transition[_, _]]): (Seq[Arc], Seq[String]) = {
 
     interaction.requiredEvents.toSeq.map { event =>
@@ -38,7 +38,7 @@ object RecipeCompiler {
 
   private def buildEventORPreconditionArcs(
                                             interaction: InteractionDescriptor,
-                                            preconditionTransition: CompiledEvent => Option[Transition[_, _]],
+                                            preconditionTransition: EventType => Option[Transition[_, _]],
                                             interactionTransition: String => Option[Transition[_, _]]): (Seq[Arc], Seq[String]) = {
 
     // only one `Place` for all the OR events
@@ -53,9 +53,9 @@ object RecipeCompiler {
   }
 
   private def buildEventPreconditionArcs(
-                                          event: CompiledEvent,
+                                          event: EventType,
                                           preconditionPlace: Place[_],
-                                          preconditionTransition: CompiledEvent => Option[Transition[_, _]],
+                                          preconditionTransition: EventType => Option[Transition[_, _]],
                                           interactionTransition: Transition[_, _]): (Seq[Arc], Seq[String]) = {
 
     val eventTransition = preconditionTransition(event)
@@ -75,7 +75,7 @@ object RecipeCompiler {
 
   // the (possible) event output arcs / places
   private def interactionEventOutputArc(interaction: InteractionTransition[_],
-                                        findInternalEventByEvent: CompiledEvent => Option[Transition[_, _]]): Seq[Arc] = {
+                                        findInternalEventByEvent: EventType => Option[Transition[_, _]]): Seq[Arc] = {
     interaction.providesType match {
       case FiresOneOfEvents(events, _) => {
         val resultPlace = createPlace(label = interaction.label, placeType = InteractionEventOutputPlace)
@@ -135,7 +135,7 @@ object RecipeCompiler {
   }
 
   private def buildInteractionOutputArcs(t: InteractionTransition[_],
-                                         findInternalEventByEvent: CompiledEvent => Option[Transition[_, _]]): Seq[Arc] = {
+                                         findInternalEventByEvent: EventType => Option[Transition[_, _]]): Seq[Arc] = {
     t.providesType match {
       case e: FiresOneOfEvents => interactionEventOutputArc(t, findInternalEventByEvent)
       case i: ProvidesIngredient => interactionIngredientOutputArc(t)
@@ -146,7 +146,7 @@ object RecipeCompiler {
   private def buildInteractionArcs(
       multipleOutputFacilitatorTransitions: Seq[Transition[_, _]],
       placeNameWithDuplicateTransitions: Map[String, Seq[InteractionTransition[_]]],
-      findInternalEventByEvent: CompiledEvent => Option[Transition[_, _]])(
+      findInternalEventByEvent: EventType => Option[Transition[_, _]])(
       t: InteractionTransition[_]): Seq[Arc] = {
 
     buildInteractionInputArcs(
