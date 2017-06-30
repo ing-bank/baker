@@ -1,14 +1,13 @@
-package com.ing.baker.runtime.core
+package com.ing.baker.runtime.petrinet
 
 import java.lang.reflect.InvocationTargetException
-import java.util.UUID
 
-import com.ing.baker.il._
-import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, Place, ProvidesIngredient, ProvidesNothing, Transition}
+import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, Place, Transition}
+import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import fs2.Task
 import io.kagera.api._
 import io.kagera.runtime.{TransitionTask, TransitionTaskProvider}
-import org.slf4j.{LoggerFactory, MDC}
+import org.slf4j.LoggerFactory
 
 import scala.util.Try
 

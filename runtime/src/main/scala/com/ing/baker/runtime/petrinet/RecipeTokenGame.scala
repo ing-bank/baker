@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.core
+package com.ing.baker.runtime.petrinet
 
 import com.ing.baker.il.petrinet.{PTEdge, Place, Transition}
 import io.kagera.api._

@@ -1,10 +1,11 @@
-package com.ing.baker.runtime.core
+package com.ing.baker.runtime.petrinet
 
 import java.util.UUID
 
 import com.ing.baker.il.petrinet.{FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.il.{EventType, IngredientType, processIdName}
-import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor, PojoEventExtractor}
+import com.ing.baker.runtime.core.{BakerException, ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.event_extractors.{EventExtractor, PojoEventExtractor}
 import org.slf4j.{LoggerFactory, MDC}
 
 import scala.util.Try
@@ -98,7 +99,7 @@ object ReflectedInteractionTask {
           else {
             val msg: String = s"Output: $output fired by an interaction but could not link it to any known event for the interaction"
             log.error(msg)
-            throw new FatalBakerException(msg)
+            throw new FatalInteractionException(msg)
           }
         }
         case ProvidesIngredient(ingredient) => runtimeEventForIngredient(interaction.interactionName, output, ingredient)

@@ -1,6 +1,7 @@
-package com.ing.baker.runtime.core
+package com.ing.baker.runtime.petrinet
 
 import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
+import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import io.kagera.runtime.ExceptionStrategy.BlockTransition
 import io.kagera.runtime._
 

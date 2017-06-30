@@ -6,7 +6,8 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.actor.ProcessMetadata
-import com.ing.baker.runtime.core.{Baker, ReflectedInteractionTask}
+import com.ing.baker.runtime.core.Baker
+import com.ing.baker.runtime.petrinet.ReflectedInteractionTask
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
