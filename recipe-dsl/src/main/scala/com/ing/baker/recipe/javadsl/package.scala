@@ -18,7 +18,10 @@ package object javadsl {
   def eventClassToCommonEvent(eventClass: Class[_]): common.Event =
     new common.Event {
       override val name: String = eventClass.getSimpleName
-      override val providedIngredients: Seq[common.Ingredient] = eventClass.getDeclaredFields.map(f => createIngredient(f.getName, f.getType))
+      override val providedIngredients: Seq[common.Ingredient] =
+        eventClass.getDeclaredFields
+          .filter(field => !field.isSynthetic)
+          .map(f => createIngredient(f.getName, f.getType))
     }
 
   def interactionClassToCommonInteraction(interactionClass: Class[_ <: Interaction]): common.Interaction =

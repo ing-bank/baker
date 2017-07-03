@@ -21,7 +21,7 @@ import com.ing.baker.runtime.petrinet.{RecipeRuntime, ReflectedInteractionTask}
 import fs2.Strategy
 import io.kagera.akka.actor.PetriNetInstanceProtocol._
 import io.kagera.akka.actor._
-import io.kagera.akka.query.PetriNetQuery
+import io.kagera.akka.actor.PetriNetQuery
 import io.kagera.api._
 import io.kagera.runtime.EventSourcing.TransitionFiredEvent
 import io.kagera.runtime.PetriNetRuntime
@@ -233,7 +233,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * Fires an event to baker for a process. This is fire and forget in the sense that if nothing is done
     * with the response you have NO guarantee that the event is received by baker.
     */
-  def handleEventAsync(processId: UUID, event: Any): BakerResponse = {
+  def handleEventAsync(processId: UUID, event: Any)(implicit timeout: FiniteDuration): BakerResponse = {
 
     val runtimeEvent = Baker.eventExtractor.extractEvent(event)
 
@@ -243,7 +243,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     val validatedEvent = runtimeEvent.validate(eventType)
 
     val msg = createEventMsg(processId, validatedEvent)
-    val source = petriNetApi.askAndCollectAll(msg, waitForRetries = true)
+    val source = petriNetApi.askAndCollectAll(msg, waitForRetries = true)(timeout)
     new BakerResponse(processId, source)
   }
 
