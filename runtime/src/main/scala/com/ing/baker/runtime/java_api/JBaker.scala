@@ -23,6 +23,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
 
   val baker: Baker = new Baker(compiledRecipe = compiledRecipe, ReflectedInteractionTask.implementationsToProviderMap(implementations.asScala))(actorSystem = actorSystem)
   val defaultTimeout: Int = 20 * 1000
+  val defaultHandleEventAsyncTimeout: FiniteDuration = FiniteDuration.apply(10, TimeUnit.SECONDS)
 
   /**
     * Attempts to gracefully shutdown the baker system.
@@ -64,7 +65,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
   def processEventAsync(processId: java.util.UUID, event: Any): JBakerResponse = {
     implicit val executionContext = actorSystem.dispatcher
 
-    val response = baker.handleEventAsync(processId, event)
+    val response = baker.handleEventAsync(processId, event)(defaultHandleEventAsyncTimeout)
     JBakerResponse(response.receivedFuture, response.completedFuture)
   }
 
