@@ -109,33 +109,6 @@ class BakerSetupSpec extends TestRecipeHelper {
 
         } should have('message("Invalid implementation provided for interaction: InteractionOne"))
       }
-
-      "with the list of ingredient serialization validation errors for Ingredients provided by Interactions" in {
-
-        val recipe = Recipe("NonSerializableIngredientTest")
-          .withInteraction(NonSerializableIngredientInteraction)
-          .withSensoryEvent(initialEvent)
-
-        intercept[NonSerializableException] {
-          new Baker(
-            compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-            implementations = mockImplementations)
-
-        } should have('message("Ingredient nonSerializableIngredient of class com.ing.baker.NonSerializableObject is not serializable by akka"))
-      }
-
-      "with the list of ingredient serialization validation errors for Ingredients provided by Events" in {
-
-        val recipe = Recipe("NonSerializableIngredientFromEventTest")
-          .withSensoryEvent(eventWithANonSerializableIngredient)
-
-        intercept[NonSerializableException] {
-          new Baker(
-            compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-            implementations = mockImplementations)
-
-        } should have('message("Ingredient nonSerializableIngredient of class com.ing.baker.NonSerializableObject is not serializable by akka"))
-      }
     }
   }
 }

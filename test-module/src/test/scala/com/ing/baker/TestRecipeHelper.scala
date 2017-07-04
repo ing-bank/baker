@@ -20,9 +20,6 @@ import org.scalatest.mock.MockitoSugar
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-
-class NonSerializableObject()
-
 object TestRecipeHelper {
   //Ingredients as used in the recipe
   val initialIngredientOld = Ingredient[String]("initialIngredientOld")
@@ -36,7 +33,6 @@ object TestRecipeHelper {
   val interactionFiveIngredient = Ingredient[String]("interactionFiveIngredient")
   val interactionSixIngredient = Ingredient[String]("interactionSixIngredient")
   val sievedIngredient = Ingredient[String]("sievedIngredient")
-  val nonSerializableIngredient = Ingredient[NonSerializableObject]("nonSerializableIngredient")
 
   //Events as used in the recipe & objects used in runtime
   val initialEvent = Event("InitialEvent", initialIngredient)
@@ -50,8 +46,6 @@ object TestRecipeHelper {
   case class NotUsedSensoryEvent()
   val eventFromInteractionTwo = Event("EventFromInteractionTwo", interactionTwoIngredient)
   case class EventFromInteractionTwo(interactionTwoIngredient: String)
-  val eventWithANonSerializableIngredient = Event("EventWithANonSerializableIngredient", nonSerializableIngredient)
-  case class EventWithANonSerializableIngredient(nonSerializableObject: NonSerializableObject)
 
   //Interactions used in the recipe & implementations (we use traits instead of case classes since we use mocks for the real implementations
   val interactionOne = Interaction("InteractionOne", Ingredients(processId, initialIngredient), ProvidesIngredient(interactionOneOriginalIngredient))
@@ -99,18 +93,6 @@ object TestRecipeHelper {
   trait SieveInteractionWithoutDefaultConstructorImpl {
     val name: String = "SieveInteractionWithoutDefaultConstructor"
     def apply(processId: String, initialIngredient: String): String
-  }
-
-  val NonSerializableEventInteraction = Interaction("NonSerializableEventInteraction", Ingredients(initialIngredient), FiresOneOfEvents(eventWithANonSerializableIngredient))
-  trait NonSerializableEventInteractionImpl {
-    val name: String = "NonSerializableEventInteraction"
-    def apply(initialIngredient: String): EventWithANonSerializableIngredient
-  }
-
-  val NonSerializableIngredientInteraction = Interaction("NonSerializableIngredientInteraction", Ingredients(initialIngredient), ProvidesIngredient(nonSerializableIngredient))
-  trait NonSerializableIngredientInteractionImpl {
-    val name: String = "NonSerializableIngredientInteraction"
-    def apply(initialIngredient: String): NonSerializableObject
   }
 
   val NonMatchingReturnTypeInteraction = Interaction("NonMatchingReturnTypeInteraction", Ingredients(initialIngredient), FiresOneOfEvents(eventFromInteractionTwo))
@@ -215,10 +197,6 @@ trait TestRecipeHelper
   protected val testInteractionFourMock: InteractionFourImpl = mock[InteractionFourImpl]
   protected val testInteractionFiveMock: InteractionFiveImpl = mock[InteractionFiveImpl]
   protected val testInteractionSixMock: InteractionSixImpl = mock[InteractionSixImpl]
-  protected val testNonSerializableEventInteractionMock: NonSerializableEventInteractionImpl =
-    mock[NonSerializableEventInteractionImpl]
-  protected val testNonSerializableIngredientInteractionMock: NonSerializableIngredientInteractionImpl =
-    mock[NonSerializableIngredientInteractionImpl]
   protected val testNonMatchingReturnTypeInteractionMock: NonMatchingReturnTypeInteractionImpl =
     mock[NonMatchingReturnTypeInteractionImpl]
   protected val testSieveInteractionMock: SieveInteractionImpl = mock[SieveInteractionImpl]
@@ -231,8 +209,6 @@ trait TestRecipeHelper
       "InteractionFour" -> testInteractionFourMock,
       "InteractionFive" -> testInteractionFiveMock,
       "InteractionSix" -> testInteractionSixMock,
-      "NonSerializableIngredientInteraction" -> testNonSerializableIngredientInteractionMock,
-      "NonSerializableEventInteraction" -> testNonSerializableEventInteractionMock,
       "NonMatchingReturnTypeInteraction" -> testNonMatchingReturnTypeInteractionMock,
       "SieveInteraction" -> testSieveInteractionMock)
 
@@ -405,7 +381,5 @@ trait TestRecipeHelper
       testInteractionFourMock,
       testInteractionFiveMock,
       testInteractionSixMock,
-      testNonMatchingReturnTypeInteractionMock,
-      testNonSerializableEventInteractionMock,
-      testNonSerializableIngredientInteractionMock)
+      testNonMatchingReturnTypeInteractionMock)
 }

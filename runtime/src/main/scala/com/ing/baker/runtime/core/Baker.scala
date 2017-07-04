@@ -18,6 +18,7 @@ import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.{RecipeRuntime, ReflectedInteractionTask}
+import com.twitter.chill.akka.AkkaSerializer
 import fs2.Strategy
 import io.kagera.akka.actor.PetriNetInstanceProtocol._
 import io.kagera.akka.actor._
@@ -43,22 +44,6 @@ object Baker {
     compiledRecipe.petriNet.transitions.findByLabel(runtimeEvent.name).getOrElse {
       throw new IllegalArgumentException(s"No such event known in recipe: $runtimeEvent")
     }
-
-  @throws[NonSerializableException]
-  def assertIngredientsAreSerializable(compiledRecipe: CompiledRecipe)(implicit actorSystem: ActorSystem): Unit = {
-    val serialization = SerializationExtension(actorSystem)
-
-    val hasAkkaSerializer = (clazz: Class[_]) => Try { serialization.serializerFor(clazz) }.isSuccess
-
-    val ingredientSerializationErrors: Seq[String] =
-      compiledRecipe.ingredients.mapValues(_.clazz)
-        .filterNot{case (c, v) => hasAkkaSerializer(v) }
-        .map{case (c, v) => s"Ingredient $c of $v is not serializable by akka"}.toSeq
-
-    val allErrors: Seq[String] = ingredientSerializationErrors
-
-    if (allErrors.nonEmpty) throw new NonSerializableException(allErrors.mkString(", "))
-  }
 }
 
 /**
@@ -94,9 +79,6 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   if (compiledRecipe.validationErrors.nonEmpty)
     throw new RecipeValidationException(compiledRecipe.validationErrors.mkString(", "))
-
-  //Validate if all events and ingredients are serializable
-  assertIngredientsAreSerializable(compiledRecipe)
 
   /**
     * We do this to force initialization of the journal (database) connection.
