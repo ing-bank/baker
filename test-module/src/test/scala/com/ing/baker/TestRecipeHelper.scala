@@ -102,7 +102,7 @@ object TestRecipeHelper {
     def apply(processId: String, initialIngredient: String): String
   }
 
-  val complexIngredientInteraction = Interaction("NonSerializableIngredientInteraction", Ingredients(initialIngredient), ProvidesIngredient(complexObjectIngredient))
+  val complexIngredientInteraction = Interaction("ComplexIngredientInteraction", Ingredients(initialIngredient), ProvidesIngredient(complexObjectIngredient))
   trait ComplexIngredientInteractionImpl {
     val name: String = "ComplexIngredientInteraction"
     def apply(initialIngredient: String): ComplexObjectIngredient
@@ -211,7 +211,7 @@ trait TestRecipeHelper
   protected val testInteractionFourMock: InteractionFourImpl = mock[InteractionFourImpl]
   protected val testInteractionFiveMock: InteractionFiveImpl = mock[InteractionFiveImpl]
   protected val testInteractionSixMock: InteractionSixImpl = mock[InteractionSixImpl]
-  protected val testComplexIngredientInteractionMock: ComplexIngredientInteractionImpl = mock[ComplexIngredientInteractionImpl],
+  protected val testComplexIngredientInteractionMock: ComplexIngredientInteractionImpl = mock[ComplexIngredientInteractionImpl]
   protected val testNonMatchingReturnTypeInteractionMock: NonMatchingReturnTypeInteractionImpl =
     mock[NonMatchingReturnTypeInteractionImpl]
   protected val testSieveInteractionMock: SieveInteractionImpl = mock[SieveInteractionImpl]
