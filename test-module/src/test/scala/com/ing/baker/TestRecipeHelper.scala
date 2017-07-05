@@ -8,7 +8,7 @@ import com.ing.baker.TestRecipeHelper._
 import com.ing.baker.Webshop._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
-import com.ing.baker.recipe.scaladsl
+import com.ing.baker.recipe.{javadsl, scaladsl}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, Recipe, processId}
 import com.ing.baker.runtime.core.{Baker, RuntimeEvent}
 import com.typesafe.config.{Config, ConfigFactory}
@@ -19,6 +19,12 @@ import org.scalatest.mock.MockitoSugar
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
+import com.ing.baker.recipe.javadsl
+import com.ing.baker.runtime.core.Baker
+
+//By adding the javadsl Ingredient tag the object will be serialized by Kryo
+class ComplexObjectIngredient(value: String) extends javadsl.Ingredient {}
+
 
 object TestRecipeHelper {
   //Ingredients as used in the recipe
@@ -33,6 +39,7 @@ object TestRecipeHelper {
   val interactionFiveIngredient = Ingredient[String]("interactionFiveIngredient")
   val interactionSixIngredient = Ingredient[String]("interactionSixIngredient")
   val sievedIngredient = Ingredient[String]("sievedIngredient")
+  val complexObjectIngredient = Ingredient[ComplexObjectIngredient]("complexOjectIngredient")
 
   //Events as used in the recipe & objects used in runtime
   val initialEvent = Event("InitialEvent", initialIngredient)
@@ -94,6 +101,13 @@ object TestRecipeHelper {
     val name: String = "SieveInteractionWithoutDefaultConstructor"
     def apply(processId: String, initialIngredient: String): String
   }
+
+  val complexIngredientInteraction = Interaction("NonSerializableIngredientInteraction", Ingredients(initialIngredient), ProvidesIngredient(complexObjectIngredient))
+  trait ComplexIngredientInteractionImpl {
+    val name: String = "ComplexIngredientInteraction"
+    def apply(initialIngredient: String): ComplexObjectIngredient
+  }
+
 
   val NonMatchingReturnTypeInteraction = Interaction("NonMatchingReturnTypeInteraction", Ingredients(initialIngredient), FiresOneOfEvents(eventFromInteractionTwo))
   trait NonMatchingReturnTypeInteractionImpl {
@@ -197,6 +211,7 @@ trait TestRecipeHelper
   protected val testInteractionFourMock: InteractionFourImpl = mock[InteractionFourImpl]
   protected val testInteractionFiveMock: InteractionFiveImpl = mock[InteractionFiveImpl]
   protected val testInteractionSixMock: InteractionSixImpl = mock[InteractionSixImpl]
+  protected val testComplexIngredientInteractionMock: ComplexIngredientInteractionImpl = mock[ComplexIngredientInteractionImpl],
   protected val testNonMatchingReturnTypeInteractionMock: NonMatchingReturnTypeInteractionImpl =
     mock[NonMatchingReturnTypeInteractionImpl]
   protected val testSieveInteractionMock: SieveInteractionImpl = mock[SieveInteractionImpl]
@@ -209,6 +224,7 @@ trait TestRecipeHelper
       "InteractionFour" -> testInteractionFourMock,
       "InteractionFive" -> testInteractionFiveMock,
       "InteractionSix" -> testInteractionSixMock,
+      "ComplexIngredientInteraction" -> testComplexIngredientInteractionMock,
       "NonMatchingReturnTypeInteraction" -> testNonMatchingReturnTypeInteractionMock,
       "SieveInteraction" -> testSieveInteractionMock)
 

@@ -70,6 +70,16 @@ class BakerSetupSpec extends TestRecipeHelper {
           compiledRecipe = RecipeCompiler.compileRecipe(recipe),
           implementations = Seq(new InteractionOneInterfaceImplementation()))
       }
+
+      "the recipe contains complex ingredients that are serializable" in {
+        val recipe = Recipe("complexIngredientInteractionRecipe")
+          .withInteraction(complexIngredientInteraction)
+          .withSensoryEvent(initialEvent)
+
+        new Baker(
+          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+          implementations = mockImplementations)
+      }
     }
 
     "throw a exception" when {
