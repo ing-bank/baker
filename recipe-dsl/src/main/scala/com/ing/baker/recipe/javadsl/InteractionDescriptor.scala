@@ -187,8 +187,8 @@ case class InteractionDescriptor private(
         interaction.output match{
           case FiresOneOfEvents(events) =>
             if (!events.contains(originalEvent))
-              throw new RecipeValidationException(s"Event transformation given for Interaction $name but does not fire event $originalEvent ")
-          case _ => throw new RecipeValidationException(s"Event transformation given for Interaction $name but does not fire any event ")
+              throw new RecipeValidationException(s"Event transformation given for Interaction $name but does not fire event $originalEvent")
+          case _ => throw new RecipeValidationException(s"Event transformation given for Interaction $name but does not fire any event")
         }
 
     val eventOutputTransformer = EventOutputTransformer(newEventName, ingredientRenames)

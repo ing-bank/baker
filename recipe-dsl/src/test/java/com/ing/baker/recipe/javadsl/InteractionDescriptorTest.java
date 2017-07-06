@@ -1,12 +1,11 @@
 package com.ing.baker.recipe.javadsl;
 
 import com.ing.baker.recipe.common.RecipeValidationException;
+import com.ing.baker.recipe.javadsl.events.InteractionProvidedEvent;
+import com.ing.baker.recipe.javadsl.events.InteractionProvidedEvent2;
 import com.ing.baker.recipe.javadsl.events.SensoryEventWithIngredient;
 import com.ing.baker.recipe.javadsl.events.SensoryEventWithoutIngredient;
-import com.ing.baker.recipe.javadsl.interactions.ProvidesIngredientAndFireseventInteraction;
-import com.ing.baker.recipe.javadsl.interactions.ProvidesIngredientInteraction;
-import com.ing.baker.recipe.javadsl.interactions.RequiresProcessIdStringInteraction;
-import com.ing.baker.recipe.javadsl.interactions.RequiresProcessIdUUIDInteraction;
+import com.ing.baker.recipe.javadsl.interactions.*;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -15,6 +14,7 @@ import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
 import static com.ing.baker.recipe.javadsl.JavadslTestHelper.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 public class InteractionDescriptorTest {
     @Rule
@@ -114,6 +114,43 @@ public class InteractionDescriptorTest {
 
         assertTrue(idWithOverriddenOutputIngredientName.overriddenOutputIngredientName().isDefined());
         assertEquals(idWithOverriddenOutputIngredientName.overriddenOutputIngredientName().get(), "Renamed");
+    }
+
+    @Test
+    public void shouldUpdateTheEventOutputTransformers(){
+        InteractionDescriptor id = of(FiresEventInteraction.class);
+        assertTrue(id.eventOutputTransformers().isEmpty());
+
+        InteractionDescriptor idWithOutputEventTransformer =
+                id.withEventTransformation(InteractionProvidedEvent.class, "transformedEventName");
+
+        assertFalse(idWithOutputEventTransformer.eventOutputTransformers().isEmpty());
+    }
+
+    @Test
+    public void shouldNotUpdateTheEventOutputTransformersWhenNotFiringEvent(){
+        InteractionDescriptor id = of(ProvidesIngredientInteraction.class);
+        assertTrue(id.eventOutputTransformers().isEmpty());
+
+        exception.expect(RecipeValidationException.class);
+        exception.expectMessage("Event transformation given for Interaction ProvidesIngredientInteraction but does not fire any event");
+        InteractionDescriptor idWithOutputEventTransformer =
+                id.withEventTransformation(InteractionProvidedEvent.class, "transformedEventName");
+
+        assertTrue(idWithOutputEventTransformer.eventOutputTransformers().isEmpty());
+    }
+
+    @Test
+    public void shouldNotUpdateTheEventOutputTransformersWhenSpecificEventNotFired(){
+        InteractionDescriptor id = of(FiresEventInteraction.class);
+        assertTrue(id.eventOutputTransformers().isEmpty());
+
+        exception.expect(RecipeValidationException.class);
+        exception.expectMessage("Event transformation given for Interaction FiresEventInteraction but does not fire event name: InteractionProvidedEvent2");
+        InteractionDescriptor idWithOutputEventTransformer =
+                id.withEventTransformation(InteractionProvidedEvent2.class, "transformedEventName");
+
+        assertTrue(idWithOutputEventTransformer.eventOutputTransformers().isEmpty());
     }
 
     //TODO add tests for all InteractionDescriptor methods
