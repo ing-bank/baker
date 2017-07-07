@@ -44,6 +44,7 @@ object Dependencies {
   val jodaConvert =               "org.joda"                   %  "joda-convert"                       % "1.8.1"
   val scalaXml =                  "org.scala-lang.modules"     %% "scala-xml"                          % "1.0.4"
   val slf4jApi =                  "org.slf4j"                  %  "slf4j-api"                          % "1.7.25"
+  val scalaCheck =                "org.scalacheck"             %% "scalacheck"                         % "1.13.4"
 
   def scopeDeps(scope: String, modules: Seq[ModuleID]) =  modules.map(m => m % scope)
   def compileDeps(modules: ModuleID*) = modules.toSeq

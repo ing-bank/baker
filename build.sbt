@@ -101,7 +101,8 @@ lazy val testModule = project.in(file("test-module"))
         scalaTest,
         junitInterface,
         levelDB,
-        levelDBJni
+        levelDBJni,
+        scalaCheck
       )
   )
   .dependsOn(recipedsl, compiler, intermediateLanguage, runtime)
