@@ -36,6 +36,11 @@ package object il {
         case _ => false
       }
 
+    def isSensoryEvent: Boolean = transition match {
+      case EventTransition(_, true) => true
+      case _ => false
+    }
+
     def isEvent: Boolean =
       !(transition.isInstanceOf[InteractionTransition[_]] || transition.label.contains(":"))
   }

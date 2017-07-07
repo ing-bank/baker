@@ -141,6 +141,12 @@ class BakerExecutionSpec extends TestRecipeHelper {
     "execute an interaction when two events occur (join situation)" in {
       val baker = setupBakerWithRecipe("JoinRecipeForEvents")
 
+      baker.registerEventListener(new EventListener {
+        override def processEvent(processId: String, event: RuntimeEvent): Unit =
+          println(s"event happened for $processId: $event")
+      })
+
+
       val processId = UUID.randomUUID()
       baker.bake(processId)
 

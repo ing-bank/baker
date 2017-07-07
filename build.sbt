@@ -96,6 +96,7 @@ lazy val testModule = project.in(file("test-module"))
     libraryDependencies ++=
       testDeps(
         akkaSlf4j,
+        akkaTestKit,
         logback,
         mockito,
         scalaTest,
