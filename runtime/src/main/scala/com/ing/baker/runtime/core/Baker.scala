@@ -18,6 +18,7 @@ import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.{RecipeRuntime, ReflectedInteractionTask}
 import fs2.Strategy
+import io.kagera.akka.actor.PetriNetInstanceLogger.PetriNetInstanceEvent
 import io.kagera.akka.actor.PetriNetInstanceProtocol._
 import io.kagera.akka.actor.{PetriNetQuery, _}
 import io.kagera.runtime.EventSourcing.{TransitionEvent, TransitionFiredEvent}
@@ -181,14 +182,14 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
     val subscriber = actorSystem.actorOf(Props(new Actor() {
       override def receive: Receive = {
-        case (id: String, e: TransitionFiredEvent[_, _, _]) =>
-          val t = e.transition.asInstanceOf[Transition[_,_]]
-          if (t.isSensoryEvent || t.isInteraction)
-            listener.processEvent(id, e.output.asInstanceOf[RuntimeEvent])
+        case PetriNetInstanceEvent(processType, id, event: TransitionFiredEvent[_,_,_]) if (processType == compiledRecipe.name) =>
+            val t = event.transition.asInstanceOf[Transition[_,_]]
+            if (t.isSensoryEvent || t.isInteraction)
+              listener.processEvent(id, event.output.asInstanceOf[RuntimeEvent])
       }
     }))
 
-    actorSystem.eventStream.subscribe(subscriber.actorRef, classOf[Tuple2[String, TransitionEvent[T] forSome { type T[_,_] }]])
+    actorSystem.eventStream.subscribe(subscriber.actorRef, classOf[PetriNetInstanceEvent])
   }
 
   /**

@@ -103,6 +103,31 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue, "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
     }
 
+    "notify a registered event listener of events" in {
+
+      val listenerMock = mock[EventListener]
+
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
+
+      val recipe =
+        Recipe("EventListenerRecipe")
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent)
+
+      val baker = new Baker(
+        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+        implementations = mockImplementations)
+
+      baker.registerEventListener(listenerMock)
+
+      val processId = UUID.randomUUID()
+      baker.bake(processId)
+      baker.handleEvent(processId, InitialEvent(initialIngredientValue))
+
+      verify(listenerMock).processEvent(processId.toString, RuntimeEvent("InitialEvent", Map("initialIngredient" -> initialIngredientValue)))
+      verify(listenerMock).processEvent(processId.toString, RuntimeEvent("InteractionOne:interactionOneOriginalIngredient", Map("interactionOneOriginalIngredient" -> interactionOneIngredientValue)))
+    }
+
     "execute an interaction when its ingredient is provided and the interaction is renamed" in {
       val recipe =
         Recipe("IngredientProvidedRecipeWithRename")
