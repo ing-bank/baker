@@ -1,10 +1,9 @@
 package com.ing.baker
 
-import com.ing.baker.il.ActionType.{InteractionAction, SieveAction}
 import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing, ProvidesType, Transition}
-import com.ing.baker.il.{ActionType, EventType, EventOutputTransformer, IngredientType, InteractionFailureStrategy}
+import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientType, InteractionFailureStrategy}
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.{Event, Ingredient, InteractionDescriptor}
+import com.ing.baker.recipe.common.InteractionDescriptor
 import io.kagera.api._
 
 import scala.concurrent.duration.Duration
@@ -14,16 +13,6 @@ package object compiler {
   def ingredientsToRuntimeIngredient(ingredient: common.Ingredient): IngredientType = IngredientType(ingredient.name, ingredient.clazz)
 
   def eventToCompiledEvent(event: common.Event): EventType = EventType(event.name, event.providedIngredients.map(ingredientsToRuntimeIngredient))
-
-  def runtimeIngredientToIngredient(ingredient: IngredientType): common.Ingredient = new Ingredient {
-    override val name: String = ingredient.name
-    override val clazz: Class[_] = ingredient.clazz
-  }
-
-  def runtimeEventToEvent(runtimeEvent: EventType): common.Event = new Event {
-    override val name: String = runtimeEvent.name
-    override val providedIngredients: Seq[Ingredient] = runtimeEvent.providedIngredients.map(runtimeIngredientToIngredient)
-  }
 
   implicit class InteractionOps(interaction: InteractionDescriptor) {
 
