@@ -7,7 +7,7 @@ import akka.cluster.Cluster
 import akka.cluster.ddata.Replicator._
 import akka.cluster.ddata.{DistributedData, GSet, GSetKey}
 import akka.cluster.sharding.ShardRegion._
-import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
+import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.config.Config
@@ -24,18 +24,19 @@ object ShardedActorProvider {
     * So we have at most 10 manager actors created, all the petrinet actors will fall under these 10 actors
     * Note, the nrOfShards used here has to be aligned with the nrOfShards used in the shardIdExtractor
     */
-  def indexActorName(recipeName: String, processId: UUID, nrOfShards: Int): String =
+  def entityId(recipeName: String, processId: UUID, nrOfShards: Int): String =
     s"$recipeName-index-${Math.abs(processId.getLeastSignificantBits % nrOfShards)}"
 
   // extracts the actor id -> message from the incoming message
   // Entity id is the first character of the UUID
   def entityIdExtractor(recipeName: String, nrOfShards: Int): ExtractEntityId = {
-    case msg@BakerActorMessage(processId, _) => (indexActorName(recipeName, processId, nrOfShards), msg)
+    case msg@BakerActorMessage(processId, _) => (entityId(recipeName, processId, nrOfShards), msg)
   }
 
   // extracts the shard id from the incoming message
-  def shardIdExtractor(nrOfShards: Int): ExtractShardId = {
-    case BakerActorMessage(processId, _) => Math.abs(processId.getLeastSignificantBits % nrOfShards).toString
+  def shardIdExtractor(recipeName: String, nrOfShards: Int): ExtractShardId = {
+    case BakerActorMessage(processId, _)   => Math.abs(processId.getLeastSignificantBits % nrOfShards).toString
+    case ShardRegion.StartEntity(entityId) => entityId.split(s"$recipeName-index-").last
   }
 }
 
@@ -51,7 +52,7 @@ class ShardedActorProvider(config: Config) extends BakerActorProvider {
       entityProps = ActorIndex.props(petriNetActorProps, recipeMetadata, recipeName),
       settings = ClusterShardingSettings.create(actorSystem),
       extractEntityId = ShardedActorProvider.entityIdExtractor(recipeName, nrOfShards),
-      extractShardId = ShardedActorProvider.shardIdExtractor(nrOfShards)
+      extractShardId = ShardedActorProvider.shardIdExtractor(recipeName, nrOfShards)
     )
     (recipeManagerActor, recipeMetadata)
   }
