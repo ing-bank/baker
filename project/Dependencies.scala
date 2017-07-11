@@ -8,7 +8,11 @@ object Dependencies {
 
   val typeSafeConfig =            "com.typesafe"               %  "config"                             % "1.3.1"
 
-  val akkaInmemoryJournal =       "com.github.dnvriend"        %% "akka-persistence-inmemory"          % "2.5.1.1"
+  val akkaInmemoryJournal =      ("com.github.dnvriend"        %% "akka-persistence-inmemory"          % "2.5.1.1")
+      .exclude("com.typesafe.akka", "akka-actor")
+      .exclude("com.typesafe.akka", "akka-persistence")
+      .exclude("com.typesafe.akka", "akka-persistence-query")
+      .exclude("com.typesafe.akka", "akka-stream")
 
   val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "2.2.6"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
