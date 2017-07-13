@@ -4,7 +4,7 @@ import sbt._
 object Dependencies {
 
   val akkaVersion = "2.5.3"
-  val kageraVersion = "0.2.24-SNAPSHOT"
+  val kageraVersion = "0.2.24"
 
   val typeSafeConfig =            "com.typesafe"               %  "config"                             % "1.3.1"
 
