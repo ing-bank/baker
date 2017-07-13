@@ -3,12 +3,16 @@ import sbt._
 //noinspection TypeAnnotation
 object Dependencies {
 
-  val akkaVersion = "2.4.17"
-  val kageraVersion = "0.2.23"
+  val akkaVersion = "2.5.3"
+  val kageraVersion = "0.2.24"
 
   val typeSafeConfig =            "com.typesafe"               %  "config"                             % "1.3.1"
 
-  val akkaInmemoryJournal =       "com.github.dnvriend"        %% "akka-persistence-inmemory"          % "2.4.17.3"
+  val akkaInmemoryJournal =      ("com.github.dnvriend"        %% "akka-persistence-inmemory"          % "2.5.1.1")
+      .exclude("com.typesafe.akka", "akka-actor")
+      .exclude("com.typesafe.akka", "akka-persistence")
+      .exclude("com.typesafe.akka", "akka-persistence-query")
+      .exclude("com.typesafe.akka", "akka-stream")
 
   val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "2.2.6"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
@@ -20,7 +24,7 @@ object Dependencies {
   val akkaClusterSharding =       "com.typesafe.akka"          %% "akka-cluster-sharding"              % akkaVersion
   val akkaSlf4j =                 "com.typesafe.akka"          %% "akka-slf4j"                         % akkaVersion
   val akkaTestKit =               "com.typesafe.akka"          %% "akka-testkit"                       % akkaVersion
-  val akkaDistributedData =       "com.typesafe.akka"          %% "akka-distributed-data-experimental" % akkaVersion
+  val akkaDistributedData =       "com.typesafe.akka"          %% "akka-distributed-data"              % akkaVersion
   val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.7"
   val levelDBJni =                "org.fusesource.leveldbjni"  %  "leveldbjni-all"                     % "1.8"
 

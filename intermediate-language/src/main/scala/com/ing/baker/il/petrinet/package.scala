@@ -26,11 +26,20 @@ package object petrinet {
     */
   type Arc = WLDiEdge[Node]
 
+  case class Label(value: String) extends AnyVal
+
+  type Labeled[T] = T => Label
+
   implicit def placeLabel[C](p: Place[C]): Label = Label(p.label)
 
-  implicit def placeIdentifier(p: Place[_]): Id = Id(p.id)
-
   implicit def transitionLabeler(t: Transition[_, _]): Label = Label(t.label)
+
+  implicit class LabeledOps[T : Labeled](seq: Iterable[T]) {
+    def findByLabel(label: String): Option[T] = seq.find(e ⇒ implicitly[Labeled[T]].apply(e).value == label)
+    def getByLabel(label: String): T = findByLabel(label).getOrElse { throw new IllegalStateException(s"No element found with label: $label") }
+  }
+
+  implicit def placeIdentifier(p: Place[_]): Id = Id(p.id)
 
   implicit def transitionIdentifier(t: Transition[_, _]): Id = Id(t.id)
 

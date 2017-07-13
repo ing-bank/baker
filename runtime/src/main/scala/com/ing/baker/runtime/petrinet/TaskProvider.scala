@@ -85,7 +85,7 @@ class TaskProvider(interactionFunctions: InteractionTransition[_] => (ProcessSta
           case _ => ()
         }
       }
-      place -> MultiSet(value)
+      place -> MultiSet.copyOff(Seq(value))
     }.toMarking
   }
 }

@@ -1,6 +1,7 @@
 package com.ing.baker.runtime.actor
 
 import akka.actor.ExtendedActorSystem
+import akka.serialization.Serialization
 import com.esotericsoftware.kryo.Kryo
 import com.twitter.chill.akka.AkkaSerializer
 import com.twitter.chill.{IKryoRegistrar, KryoInstantiator}
@@ -9,11 +10,10 @@ import de.javakaffee.kryoserializers.jodatime.{JodaDateTimeSerializer, JodaLocal
 import org.joda.time._
 
 class KryoSerializer(system: ExtendedActorSystem) extends AkkaSerializer(system) {
-  override def kryoInstantiator: KryoInstantiator = {
-    super.kryoInstantiator
-      .withRegistrar(new ExtraKryoSerializersRegistrar)
-  }
 
+  override def kryoInstantiator: KryoInstantiator = {
+    super.kryoInstantiator.withRegistrar(new ExtraKryoSerializersRegistrar)
+  }
 }
 
 // these extra serializers are taken from the example here: https://github.com/magro/kryo-serializers

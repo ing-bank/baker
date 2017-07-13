@@ -1,7 +1,7 @@
 import Dependencies._
 import sbt.Keys._
 
-val scalaV = "2.11.8"
+val scalaV = "2.11.11"
 val jvmV = "1.8"
 
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
@@ -96,6 +96,7 @@ lazy val testModule = project.in(file("test-module"))
     libraryDependencies ++=
       testDeps(
         akkaSlf4j,
+        akkaTestKit,
         logback,
         mockito,
         scalaTest,

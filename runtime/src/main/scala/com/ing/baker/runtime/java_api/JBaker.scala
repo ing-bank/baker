@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.actor.ProcessMetadata
-import com.ing.baker.runtime.core.Baker
+import com.ing.baker.runtime.core.{Baker, EventListener}
 import com.ing.baker.runtime.petrinet.ReflectedInteractionTask
 
 import scala.collection.JavaConverters._
@@ -110,13 +110,34 @@ class JBaker (compiledRecipe: CompiledRecipe,
 
   /**
     * Returns the compiled recipe
-    * @return
+    *
+    * @return The compiled recipe.
     */
   def getCompiledRecipe: CompiledRecipe = compiledRecipe
 
   /**
-    * returns the visual state of the recipe in dot format
-    * @param processId
+    * Registers a listener to all runtime events for this baker instance.
+    *
+    * Note that:
+    *
+    * - The delivery guarantee is *AT MOST ONCE*. Practically this means you can miss events when the application terminates (unexpected or not).
+    * - The delivery is local (JVM) only, you will NOT receive events from other nodes when running in cluster mode.
+    *
+    * Because of these constraints you should not use an event listener for critical functionality. Valid use cases might be:
+    *
+    * - logging
+    * - metrics
+    * - unit tests
+    * - ...
+    *
+    * @param listener The listener to subscribe to events.
+    */
+  def registerEventListener(listener: EventListener): Unit = baker.registerEventListener(listener)
+
+  /**
+    * Returns the visual state of the recipe in dot format
+    *
+    * @param processId The process identifier
     * @param waitTimeoutMillis
     * @return
     */

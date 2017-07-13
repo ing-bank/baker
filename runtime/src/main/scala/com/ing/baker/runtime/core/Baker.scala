@@ -3,12 +3,11 @@ package com.ing.baker.runtime.core
 import java.util.UUID
 
 import akka.NotUsed
-import akka.actor.ActorSystem
+import akka.actor.{Actor, ActorSystem, Props}
 import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
-import akka.serialization.SerializationExtension
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
@@ -18,13 +17,11 @@ import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.{RecipeRuntime, ReflectedInteractionTask}
-import com.twitter.chill.akka.AkkaSerializer
 import fs2.Strategy
+import io.kagera.akka.actor.PetriNetInstanceEvent
 import io.kagera.akka.actor.PetriNetInstanceProtocol._
-import io.kagera.akka.actor._
-import io.kagera.akka.actor.PetriNetQuery
-import io.kagera.api._
-import io.kagera.runtime.EventSourcing.TransitionFiredEvent
+import io.kagera.akka.actor.{PetriNetQuery, _}
+import io.kagera.runtime.EventSourcing.{TransitionEvent, TransitionFiredEvent}
 import io.kagera.runtime.PetriNetRuntime
 import io.kagera.runtime.persistence.Encryption
 import io.kagera.runtime.persistence.Encryption.NoEncryption
@@ -106,7 +103,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
   val petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] = new RecipeRuntime(interactionFunctions)
 
   private val petriNetInstanceActorProps =
-    Util.recipePetriNetProps(compiledRecipe.petriNet,petriNetRuntime,
+    Util.recipePetriNetProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
       PetriNetInstance.Settings(
         evaluationStrategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadPool"),
         serializer = new AkkaObjectSerializer(actorSystem, configuredEncryption),
@@ -118,7 +115,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
   private val petriNetApi = new PetriNetInstanceApi[Place, Transition, ProcessState](compiledRecipe.petriNet, recipeManagerActor)
 
   private val readJournal = PersistenceQuery(actorSystem)
-    .readJournalFor[CurrentEventsByPersistenceIdQuery with AllPersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
+    .readJournalFor[CurrentEventsByPersistenceIdQuery with PersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
 
   private def createEventMsg(processId: java.util.UUID, runtimeEvent: RuntimeEvent) = {
     require(runtimeEvent != null, "Event can not be null")
@@ -177,6 +174,25 @@ class Baker(val compiledRecipe: CompiledRecipe,
   }
 
   /**
+    * Registers a listener to all runtime events.
+    *
+    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
+    */
+  def registerEventListener(listener: EventListener) = {
+
+    val subscriber = actorSystem.actorOf(Props(new Actor() {
+      override def receive: Receive = {
+        case PetriNetInstanceEvent(processType, id, event: TransitionFiredEvent[_,_,_]) if (processType == compiledRecipe.name) =>
+            val t = event.transition.asInstanceOf[Transition[_,_]]
+            if (t.isSensoryEvent || t.isInteraction)
+              listener.processEvent(id, event.output.asInstanceOf[RuntimeEvent])
+      }
+    }))
+
+    actorSystem.eventStream.subscribe(subscriber.actorRef, classOf[PetriNetInstanceEvent])
+  }
+
+  /**
     * Synchronously returns all events that occurred for a process.
     */
   def events(processId: java.util.UUID)(implicit timeout: FiniteDuration): Seq[RuntimeEvent] = {
@@ -194,7 +210,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     */
   def eventsAsync(processId: java.util.UUID): Source[RuntimeEvent, NotUsed] = {
     PetriNetQuery
-      .eventsForInstance[Place, Transition, ProcessState, RuntimeEvent](s"${compiledRecipe.name}-$processId", compiledRecipe.petriNet, configuredEncryption, readJournal, petriNetRuntime.eventSourceFn)
+      .eventsForInstance[Place, Transition, ProcessState, RuntimeEvent](compiledRecipe.name, processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal, petriNetRuntime.eventSourceFn)
       .collect {
         case (_, TransitionFiredEvent(_, _, _, _, _, _, runtimeEvent: RuntimeEvent))
           if runtimeEvent != null && compiledRecipe.allEvents.exists(e => e.name equals runtimeEvent.name) => runtimeEvent

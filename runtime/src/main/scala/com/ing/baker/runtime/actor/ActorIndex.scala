@@ -10,7 +10,7 @@ import ActorIndex._
 
 object ActorIndex {
 
-  def props(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, recipeName: String) = Props(new ActorIndex(petriNetActorProps, recipeMetadata, recipeName))
+  def props(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, recipeName: String) = Props(new ActorIndex(petriNetActorProps, recipeMetadata))
 
   case class ActorMetadata(id: String, createdDateTime: Long)
 
@@ -25,12 +25,11 @@ object ActorIndex {
 
 }
 
-class ActorIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, recipeName: String) extends PersistentActor with ActorLogging {
+class ActorIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata) extends PersistentActor with ActorLogging {
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
 
-  def actorName(id: String) = s"$recipeName-$id"
-  def processId(actorName: String) = actorName.replace(recipeName, "")
+  def actorName(id: String) = id
 
   private[actor] def createChildPetriNetActor(id: String) = {
     val actorRef = context.actorOf(petriNetActorProps, name = actorName(id))
