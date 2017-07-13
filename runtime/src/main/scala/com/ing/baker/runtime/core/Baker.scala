@@ -18,7 +18,7 @@ import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.{RecipeRuntime, ReflectedInteractionTask}
 import fs2.Strategy
-import io.kagera.akka.actor.PetriNetInstanceLogger.PetriNetInstanceEvent
+import io.kagera.akka.actor.PetriNetInstanceEvent
 import io.kagera.akka.actor.PetriNetInstanceProtocol._
 import io.kagera.akka.actor.{PetriNetQuery, _}
 import io.kagera.runtime.EventSourcing.{TransitionEvent, TransitionFiredEvent}
