@@ -49,9 +49,10 @@ object RecipeProperties {
 
   // These parameters determine the size of the recipes
   val initialIngredientPoolUsedBySensoryEvents = 100
-  val maxNrOfIngredientsPerEvent = 5
-  val maxNrOfEventsComingInToAnInteraction = 5
-  val maxNrOfEventsGoingOutFromAnInteraction = 5
+  val maxNrOfIngredientsPerEvent = 3
+  val maxNrOfEventsComingInToAnInteraction = 3
+  val maxNrOfInteractionEventsComingInToAnInteraction = 3
+  val maxNrOfEventsGoingOutFromAnInteraction = 3
 
   // where to output the .dot files of the generated recipe visualizations
   val recipeVisualizationOutputPath: String = System.getProperty("java.io.tmpdir")
@@ -93,18 +94,19 @@ object RecipeProperties {
       if (events.isEmpty) {
         Seq.empty
       } else {
-        val takenEvents = (events ++ interactionEvents).take(rand(maxNrOfEventsComingInToAnInteraction))
-        val inputIngredients = takenEvents.flatMap(_.providedIngredients)
-        val remainingEvents = events.diff(takenEvents)
+        val selectedEvents = events.take(rand(maxNrOfEventsComingInToAnInteraction))
+        val selectedInteractionEvents = interactionEvents.take(rand(maxNrOfInteractionEventsComingInToAnInteraction))
+        val inputIngredients = (selectedEvents ++ selectedInteractionEvents).flatMap(_.providedIngredients)
+        val remainingEvents = events.diff(selectedEvents)
 
         // Do not generate an interaction with 0 ingredients, this is not a valid recipe. Skip this round.
         if (inputIngredients.isEmpty) {
           Seq.empty ++ pickInteractionLoop(idx, remainingEvents, interactionEvents)
         } else {
-          val interactionEvents = randomEvents(maxNrOfEventsGoingOutFromAnInteraction)
-          val interactionOutput = FiresOneOfEvents(interactionEvents)
+          val randomInteractionEvents = randomEvents(maxNrOfEventsGoingOutFromAnInteraction)
+          val interactionOutput = FiresOneOfEvents(randomInteractionEvents)
           val interaction = InteractionDescriptor(Interaction(s"interaction-$idx", inputIngredients, interactionOutput))
-          Seq(interaction) ++ pickInteractionLoop(idx + 1, remainingEvents, interactionEvents ++ interactionEvents)
+          Seq(interaction) ++ pickInteractionLoop(idx + 1, remainingEvents, interactionEvents ++ randomInteractionEvents)
         }
 
       }
