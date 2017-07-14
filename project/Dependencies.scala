@@ -10,7 +10,7 @@ object Dependencies {
 
   val akkaInmemoryJournal =       "com.github.dnvriend"        %% "akka-persistence-inmemory"          % "2.4.17.3"
 
-  val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "2.2.6"
+  val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.0.1"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
 

@@ -1,5 +1,7 @@
 package com.ing.baker
 
+import java.security.MessageDigest
+
 import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing, ProvidesType, Transition}
 import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientType, InteractionFailureStrategy}
 import com.ing.baker.recipe.common
@@ -123,5 +125,12 @@ package object compiler {
   implicit class EventTransitionOps(eventTransitions: Seq[EventTransition]) {
     def findEventTransitionsByEvent: EventType ⇒ Option[EventTransition] =
       event => eventTransitions.find(_.event == event)
+  }
+
+  object Sha256Hashing {
+    val sha256Digest: MessageDigest = MessageDigest.getInstance("SHA-256")
+    def hashCode(str: String): Long = {
+      BigInt(1, sha256Digest.digest(str.getBytes("UTF-8"))).toLong
+    }
   }
 }
