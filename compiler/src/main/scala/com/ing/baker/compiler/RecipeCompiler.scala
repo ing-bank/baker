@@ -3,11 +3,12 @@ package compiler
 
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
-import com.ing.baker.il.{CompiledRecipe, RecipeValidations, EventType, ValidationSettings}
+import com.ing.baker.il.{CompiledRecipe, EventType, RecipeValidations, ValidationSettings}
 import com.ing.baker.recipe.common.{InteractionDescriptor, Recipe}
 import io.kagera.api._
 
 import scala.language.postfixOps
+import scalax.collection.immutable.Graph
 
 object RecipeCompiler {
 
@@ -256,15 +257,16 @@ object RecipeCompiler {
                              ingredientsWithMultipleConsumers,
                              interactionEventTransitions.findEventTransitionsByEvent))
 
-    val petriNet: RecipePetriNet = createPetriNet(
-      interactionArcs
-        ++ eventPreconditionArcs
-        ++ eventOrPreconditionArcs
-        ++ sensoryEventArcs
-        ++ sensoryEventArcsNoIngredientsArcs
-        ++ internalEventArcs
-        ++ multipleOutputFacilitatorArcs: _*)
+    val arcs = (interactionArcs
+      ++ eventPreconditionArcs
+      ++ eventOrPreconditionArcs
+      ++ sensoryEventArcs
+      ++ sensoryEventArcsNoIngredientsArcs
+      ++ internalEventArcs
+      ++ multipleOutputFacilitatorArcs)
 
+    val petriNet = new ScalaGraphPetriNet(Graph(arcs: _*))
+    
     val initialMarking: Marking[Place] = allInteractionTransitions.flatMap { t =>
       t.maximumInteractionCount.map(n =>
         createPlace(s"limit:${t.label}", FiringLimiterPlace) -> Map(() -> n))
