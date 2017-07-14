@@ -52,7 +52,7 @@ trait InteractionDescriptor {
 
   override def toString(): String = {
     s"""${interaction.name}{
-       |requiredIngredients:(${interaction.inputIngredients.foldLeft("")((i, j) => s"$i$j")})
+       |requiredIngredients:(${interaction.inputIngredients.foldLeft("")((i, j) => s"$i $j")})
        |${interaction.output.toString}
        |requiredEvents(${requiredEvents.mkString("\n")})
        |requiredOneOfEvents(${requiredOneOfEvents.mkString("\n")})
