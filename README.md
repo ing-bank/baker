@@ -4,9 +4,11 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.ing.baker/runtime_2.11.svg)](https://maven-badges.herokuapp.com/maven-central/com.ing.baker/runtime_2.11)
 [![codecov.io](http://codecov.io/github/ing-bank/baker/coverage.svg?branch=master)](https://codecov.io/gh/ing-bank/baker?branch=master)
 
+![](baker.png)
+
 # Overview
 
-Baker is a library that reduces the effort to orchestrate (micros)service-based process flows.
+Baker is a library that reduces the effort to orchestrate (micro)service-based process flows.
 Developers declare the orchestration logic in a recipe.
 A recipe is made out of **interactions** (system calls), **ingredients** (data) and **events**.
 A visual representation (shown below) of the recipe allows product owners, architects and developers to talk the same language.
@@ -43,7 +45,7 @@ It becomes interesting when you're able to combine the same interactions in diff
 Applying Baker will only be successful if you make sure that:
 1. You've compared the products your company is selling and there are similarities;
 2. You've defined a catalogue of those capabilities necessary to deliver the products from;
-3. Each capability (**interaction** in Baker terms) is accessible via an API of any sort (could be a micro-service, web-service, so on); 
+3. Each capability (**interaction** in Baker terms) is accessible via an API of any sort (could be a micro-service, web-service, so on);
 
 # Getting Started
 
