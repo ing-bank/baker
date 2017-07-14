@@ -126,7 +126,7 @@ class ActorIndexSpec
   }
 
   private def createActorIndex(petriNetActorRef: ActorRef) = {
-    system.actorOf(Props(new ActorIndex(Props.empty, recipeMetadataMock, "test") {
+    system.actorOf(Props(new ActorIndex(Props.empty, recipeMetadataMock) {
       override private[actor] def createChildPetriNetActor(id: String) = {
         petriNetActorRef
       }

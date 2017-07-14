@@ -18,8 +18,9 @@ import scala.concurrent.duration._
 
 object Util {
 
-  def recipePetriNetProps(petriNet: RecipePetriNet, petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent], settings: Settings): Props =
+  def recipePetriNetProps(recipeName: String, petriNet: RecipePetriNet, petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent], settings: Settings): Props =
     Props(new PetriNetInstance[Place, Transition, ProcessState, RuntimeEvent](
+      recipeName,
       petriNet,
       settings,
       petriNetRuntime,
