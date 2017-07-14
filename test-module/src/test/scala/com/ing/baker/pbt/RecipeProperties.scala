@@ -72,7 +72,7 @@ object RecipeProperties {
   val recipeGen: Gen[Recipe] = for {
     name <- Gen.uuid
     //    sensoryEvents <- Gen.listOf(eventGen)
-    nrOfSensoryEvents <- Gen.choose(0, 100)
+    nrOfSensoryEvents <- Gen.choose(0, 10)
     sensoryEvents <- Gen.listOfN(nrOfSensoryEvents, eventGen)
     allProvidedIngredients = sensoryEvents.flatMap(_.providedIngredients)
     inputIngredients <- Gen.someOf(allProvidedIngredients) if inputIngredients.nonEmpty
