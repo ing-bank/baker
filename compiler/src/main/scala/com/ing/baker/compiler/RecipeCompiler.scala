@@ -4,7 +4,7 @@ package compiler
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
 import com.ing.baker.il.{CompiledRecipe, EventType, RecipeValidations, ValidationSettings}
-import com.ing.baker.recipe.common.{InteractionDescriptor, Recipe}
+import com.ing.baker.recipe.common.{Event, InteractionDescriptor, Recipe}
 import io.kagera.api._
 
 import scala.language.postfixOps
@@ -21,7 +21,7 @@ object RecipeCompiler {
   /**
     * Creates a transition for a missing event in the recipe.
     */
-  private def missingEventTransition[E](event: EventType): MissingEventTransition[E] = MissingEventTransition[E](event.name.hashCode, event.name)
+  private def missingEventTransition[E](event: EventType): MissingEventTransition[E] = MissingEventTransition[E](event.name)
 
   private def buildEventAndPreconditionArcs(
                                              interaction: InteractionDescriptor,
@@ -157,17 +157,16 @@ object RecipeCompiler {
   def compileRecipe(recipe: Recipe,
                     validationSettings: ValidationSettings): CompiledRecipe = {
 
+    assertNoDuplicateElementsExist[InteractionDescriptor](_.name, recipe.interactions.toSet ++ recipe.sieves.toSet)
+    assertNoDuplicateElementsExist[Event](_.name, recipe.sensoryEvents)
+
     val actionDescriptors: Seq[InteractionDescriptor] = recipe.interactions ++ recipe.sieves
 
     // For inputs for which no matching output cannot be found, we do not want to generate a place.
     // It should be provided at runtime from outside the active petri net (marking)
-    val (interactionTransitions, interactionValidationErrors) = recipe.interactions.map {
-      _.toInteractionTransition(recipe.defaultFailureStrategy)
-    }.unzip
+    val interactionTransitions = recipe.interactions.map(_.toInteractionTransition(recipe.defaultFailureStrategy))
 
-    val (sieveTransitions, sieveValidationErrors) = recipe.sieves.map {
-      _.toSieveTransition(recipe.defaultFailureStrategy)
-    }.unzip
+    val sieveTransitions = recipe.sieves.map(_.toSieveTransition(recipe.defaultFailureStrategy))
 
     val allInteractionTransitions = sieveTransitions ++ interactionTransitions
 
@@ -234,7 +233,7 @@ object RecipeCompiler {
     // Add one new transition for each duplicate input (the newly added one in the image above)
     val multipleConsumerFacilitatorTransitions: Seq[Transition[_, _]] =
       ingredientsWithMultipleConsumers.keys
-        .map(name => MultiFacilitatorTransition(id = name.hashCode, label = name))
+        .map(name => MultiFacilitatorTransition(label = name))
         .toSeq
 
     val multipleOutputFacilitatorArcs: Seq[Arc] =
@@ -267,7 +266,7 @@ object RecipeCompiler {
       petriNet = petriNet,
       initialMarking = initialMarking,
       sensoryEvents = recipe.sensoryEvents.map(eventToCompiledEvent),
-      validationErrors = interactionValidationErrors.flatten ++ sieveValidationErrors.flatten ++ preconditionORErrors ++ preconditionANDErrors
+      validationErrors = preconditionORErrors ++ preconditionANDErrors
     )
 
     RecipeValidations.postCompileValidations(compiledRecipe, validationSettings)
@@ -306,6 +305,10 @@ object RecipeCompiler {
     ingredientsWithMultipleConsumers
   }
 
-  private def createPlace(label: String, placeType: PlaceType): Place[Any] = Place(id = Sha256Hashing.hashCode(s"$placeType:$label"), label = s"${placeType.labelPrepend}$label", placeType)
+  private def createPlace(label: String, placeType: PlaceType): Place[Any] = Place(label = s"${placeType.labelPrepend}$label", placeType)
+
+  private def assertNoDuplicateElementsExist[T](compareIdentifier: T => Any, elements: Set[T]) = elements.foreach { e =>
+    (elements - e).find(c => compareIdentifier(c) == compareIdentifier(e)).foreach { c => throw new IllegalStateException(s"Duplicate identifiers found: ${e.getClass.getSimpleName}:$e and ${c.getClass.getSimpleName}:$c") }
+  }
 
 }

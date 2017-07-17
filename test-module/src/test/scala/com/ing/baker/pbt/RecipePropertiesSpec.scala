@@ -85,12 +85,14 @@ object RecipePropertiesSpec {
       if (dumpDir endsWith "/") s"$dumpDir${compiledRecipe.name}.dot"
       else s"$dumpDir/${compiledRecipe.name}.dot"
 
-    val writer = new PrintWriter(new File(fileName))
+    val outFile = new File(fileName)
+    val writer = new PrintWriter(outFile)
 
     try {
       println(s"Dumping the visual recipe ...")
-      writer.write(compiledRecipe.getRecipeVisualization)
-      println(s"Dumped here: $fileName")
+      val dotRepresentation = compiledRecipe.getRecipeVisualization
+      writer.write(dotRepresentation)
+      println(s"Dumped here: $fileName Recipe visualization in bytes: ${dotRepresentation.length}")
     } finally {
       writer.close()
     }

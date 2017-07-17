@@ -1,7 +1,5 @@
 package com.ing.baker
 
-import java.security.MessageDigest
-
 import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing, ProvidesType, Transition}
 import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientType, InteractionFailureStrategy}
 import com.ing.baker.recipe.common
@@ -17,23 +15,11 @@ package object compiler {
 
   implicit class InteractionOps(interaction: InteractionDescriptor) {
 
-    def toInteractionTransition(defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): (InteractionTransition[_], Seq[String]) = {
+    def toInteractionTransition(defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): InteractionTransition[_] =
+      interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.InteractionAction)
 
-      val validationErrors = scala.collection.mutable.MutableList.empty[String]
-
-      val interactionTransition = interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.InteractionAction)
-
-      (interactionTransition, validationErrors)
-    }
-
-    def toSieveTransition(defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): (InteractionTransition[_], Seq[String]) = {
-
-      val validationErrors = scala.collection.mutable.MutableList.empty[String]
-
-      val interactionTransition = interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.SieveAction)
-
-      (interactionTransition, validationErrors)
-    }
+    def toSieveTransition(defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): InteractionTransition[_] =
+      interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.SieveAction)
 
     def interactionTransitionOf(
                                  interactionDescriptor: InteractionDescriptor,
@@ -65,10 +51,8 @@ package object compiler {
         }
       }
 
-      def transformEventOutputTransformer(recipeEventOutputTransformer: common.EventOutputTransformer): EventOutputTransformer = {
-        EventOutputTransformer(recipeEventOutputTransformer.newEventName, recipeEventOutputTransformer.ingredientRenames
-        )
-      }
+      def transformEventOutputTransformer(recipeEventOutputTransformer: common.EventOutputTransformer): EventOutputTransformer =
+        EventOutputTransformer(recipeEventOutputTransformer.newEventName, recipeEventOutputTransformer.ingredientRenames)
 
       def transformEventToCompiledEvent(event: common.Event): EventType = {
         EventType(
@@ -126,10 +110,4 @@ package object compiler {
       event => eventTransitions.find(_.event == event)
   }
 
-  object Sha256Hashing {
-    def hashCode(str: String): Long = {
-      val sha256Digest: MessageDigest = MessageDigest.getInstance("SHA-256")
-      BigInt(1, sha256Digest.digest(str.getBytes("UTF-8"))).toLong
-    }
-  }
 }
