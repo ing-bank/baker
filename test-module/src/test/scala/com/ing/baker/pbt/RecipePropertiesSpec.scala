@@ -2,43 +2,42 @@ package com.ing.baker.pbt
 
 import java.io.{File, PrintWriter}
 
-import com.ing.baker.compiler.{RecipeCompiler, Sha256Hashing}
+import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionOutput, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, InteractionDescriptor, Recipe}
+import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
-import org.scalacheck.{Gen, Properties}
+import org.scalatest.FunSuite
 
-class RecipeProperties extends Properties("Properties of a Recipe") {
+class RecipePropertiesSpec extends FunSuite {
 
-  import RecipeProperties._
+  import RecipePropertiesSpec._
 
-  property("baker compiler uses a (good enough) consistent hash algorithm") = forAll {
-    (s1: String, s2: String) =>
-      if (s1 != s2) Sha256Hashing.hashCode(s1) != Sha256Hashing.hashCode(s2)
-      else Sha256Hashing.hashCode(s1) == Sha256Hashing.hashCode(s2)
-  }
+  test("baker can compile any small or huge recipe") {
+    val prop = forAll(recipeGen) { recipe =>
 
-  property("baker can compile any small or huge recipe") = forAll(recipeGen) { recipe =>
+      logRecipeStats(recipe)
 
-    logRecipeStats(recipe)
+      val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
 
-    val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      logCompiledRecipeStats(compiledRecipe)
 
-    logCompiledRecipeStats(compiledRecipe)
+      if (compiledRecipe.validationErrors.nonEmpty) {
+        println(s"Validation errors: ${compiledRecipe.validationErrors}")
+        dumpVisualRecipe(recipeVisualizationOutputPath, compiledRecipe)
+      }
 
-    if (compiledRecipe.validationErrors.nonEmpty) {
-      println(s"Validation errors: ${compiledRecipe.validationErrors}")
-      dumpVisualRecipe(recipeVisualizationOutputPath, compiledRecipe)
+      compiledRecipe.validationErrors.isEmpty
     }
 
-    compiledRecipe.validationErrors.isEmpty
+    prop.check
   }
 
 }
 
-object RecipeProperties {
+object RecipePropertiesSpec {
 
   // where to output the .dot files of the generated recipe visualizations
   val recipeVisualizationOutputPath: String = System.getProperty("java.io.tmpdir")

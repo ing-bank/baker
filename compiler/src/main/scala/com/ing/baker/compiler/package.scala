@@ -6,7 +6,6 @@ import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, Interaction
 import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientType, InteractionFailureStrategy}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionDescriptor
-import io.kagera.api._
 
 import scala.concurrent.duration.Duration
 
@@ -128,8 +127,8 @@ package object compiler {
   }
 
   object Sha256Hashing {
-    val sha256Digest: MessageDigest = MessageDigest.getInstance("SHA-256")
     def hashCode(str: String): Long = {
+      val sha256Digest: MessageDigest = MessageDigest.getInstance("SHA-256")
       BigInt(1, sha256Digest.digest(str.getBytes("UTF-8"))).toLong
     }
   }
