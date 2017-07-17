@@ -1,5 +1,6 @@
 package com.ing.baker.il.petrinet
 
+import com.ing.baker.il
 import com.ing.baker.il.{ActionType, EventOutputTransformer, InteractionFailureStrategy, _}
 import io.kagera.runtime.TransitionExceptionHandler
 import org.slf4j._
@@ -17,15 +18,6 @@ case object ProvidesNothing extends ProvidesType
 /**
   * A transition that represents an Interaction
   *
-  * @param providesType
-  * @param inputFields
-  * @param interactionName
-  * @param actionType
-  * @param predefinedParameters
-  * @param maximumInteractionCount
-  * @param failureStrategy
-  * @param eventOutputTransformers
-  *
   * @tparam I The class/interface of the interaction
   */
 case class InteractionTransition[I](providesType: ProvidesType,
@@ -42,9 +34,9 @@ case class InteractionTransition[I](providesType: ProvidesType,
 
   val log: Logger = LoggerFactory.getLogger(classOf[InteractionTransition[_]])
 
-  override val id: Long = (interactionName + "InteractionTransition").hashCode.toLong
-
   override val label: String = interactionName
+
+  override val id: Long = il.sha256HashCode(s"InteractionTransition:$label")
 
   override def toString: String = label
 

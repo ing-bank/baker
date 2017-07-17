@@ -1,5 +1,6 @@
 package com.ing.baker.il.petrinet
 
+import com.ing.baker.il
 import com.ing.baker.il.petrinet.Place.PlaceType
 
 
@@ -17,4 +18,6 @@ object Place {
   case object MultiTransitionPlace extends PlaceType
 }
 
-case class Place[C](id: Long, label: String, placeType: PlaceType)
+case class Place[C](label: String, placeType: PlaceType) {
+  val id: Long = il.sha256HashCode(s"$placeType:$label")
+}

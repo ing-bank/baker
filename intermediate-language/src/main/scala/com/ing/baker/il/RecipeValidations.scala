@@ -56,16 +56,6 @@ object RecipeValidations {
     }
   }
 
-  def validateUniqueIdentifiers(compiledRecipe: CompiledRecipe): Seq[String] = {
-
-    def duplicateIds[T](idFn: T => Long, elements: Set[T]) = elements.foldLeft(Seq.empty[String]) {
-      case (duplicates, e) => duplicates ++ (elements - e).find(c => idFn(c) == idFn(e)).map(d => s"Duplicate identifier for: $e and $d")
-    }
-
-    duplicateIds[Place[_]](_.id, compiledRecipe.petriNet.places) ++
-      duplicateIds[Transition[_,_]](_.id, compiledRecipe.petriNet.transitions)
-  }
-
   def validateNoCycles(compiledRecipe: CompiledRecipe): Seq[String] =
     compiledRecipe.petriNet.innerGraph.findCycle
       .map(c => s"The petri net topology contains a cycle: $c")
@@ -87,7 +77,6 @@ object RecipeValidations {
     // TODO don't use a mutable list but instead a more functional solutions such as folding or a writer monad
     val postCompileValidationErrors = mutable.MutableList.empty[String]
 
-    postCompileValidationErrors ++= validateUniqueIdentifiers(compiledRecipe)
     postCompileValidationErrors ++= validateInteractionIngredients(compiledRecipe)
     postCompileValidationErrors ++= validateInteractions(compiledRecipe)
 
