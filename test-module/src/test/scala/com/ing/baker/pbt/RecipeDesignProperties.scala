@@ -85,6 +85,7 @@ object RecipeDesignProperties {
     //each interaction fires a single event
     val output = new FiresOneOfEvents(Seq(eventGen.sample.get))
     val interaction = new Interaction(Gen.alphaNumStr.sample.get, ingredients, output)
+    //return the interaction description and a list of all ingredients that the interaction provides (via the single event)
     (InteractionDescriptor.apply(interaction), output.events.flatMap(e => e.providedIngredients).toList)
   }
 
