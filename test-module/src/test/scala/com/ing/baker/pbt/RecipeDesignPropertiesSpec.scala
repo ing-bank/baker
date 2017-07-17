@@ -1,12 +1,13 @@
 package com.ing.baker.pbt
 
 import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.pbt.RecipePropertiesSpec._
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.FiresOneOfEvents
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, InteractionDescriptor, Recipe}
 import org.scalacheck._
-import RecipePropertiesSpec._
 import org.scalatest.FunSuite
+import org.scalatest.prop.Checkers._
 
 import scala.annotation.tailrec
 import scala.util.Random
@@ -34,7 +35,7 @@ class RecipeDesignPropertiesSpec extends FunSuite {
       compiledRecipe.validationErrors.isEmpty
     }
 
-    property.check(Test.Parameters.defaultVerbose.withMinSuccessfulTests(100))
+    check(property, Test.Parameters.defaultVerbose.withMinSuccessfulTests(100))
   }
 }
 
