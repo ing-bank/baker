@@ -8,14 +8,12 @@ import com.ing.baker.TestRecipeHelper._
 import com.ing.baker.Webshop._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
-import com.ing.baker.recipe.{javadsl, scaladsl}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, Recipe, processId}
-import com.ing.baker.runtime.core.{Baker, RuntimeEvent}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 
 import scala.concurrent.duration._
 import scala.language.postfixOps

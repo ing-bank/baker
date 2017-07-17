@@ -4,7 +4,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 import com.ing.baker.recipe.scaladsl._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{Matchers, WordSpecLike}
 import newCustomerRecipeScala._
 

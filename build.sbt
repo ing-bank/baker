@@ -1,4 +1,4 @@
-import Dependencies._
+import Dependencies.{scalaCheck, _}
 import sbt.Keys._
 
 val scalaV = "2.11.11"
@@ -40,7 +40,7 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
       kagera,
       kageraVisualization,
       slf4jApi
-    ) ++ testDeps(scalaTest)
+    ) ++ testDeps(scalaTest, scalaCheck)
   )
 
 lazy val runtime = project.in(file("runtime"))
@@ -59,7 +59,7 @@ lazy val runtime = project.in(file("runtime"))
         jodaTime,
         jodaConvert,
         slf4jApi
-      ) ++ testDeps(scalaTest)
+      ) ++ testDeps(scalaTest, scalaCheck)
         ++ providedDeps(findbugs)
   )
   .dependsOn(intermediateLanguage)
@@ -69,7 +69,7 @@ lazy val compiler = project.in(file("compiler"))
   .settings(
     moduleName := "compiler",
     libraryDependencies ++=
-      compileDeps(slf4jApi) ++ testDeps(scalaTest)
+      compileDeps(slf4jApi) ++ testDeps(scalaTest, scalaCheck)
   )
   .dependsOn(recipedsl, intermediateLanguage)
 
@@ -84,6 +84,7 @@ lazy val recipedsl = project.in(file("recipe-dsl"))
       ) ++
         testDeps(
           scalaTest,
+          scalaCheck,
           junitInterface
         )
   )
@@ -102,7 +103,8 @@ lazy val testModule = project.in(file("test-module"))
         scalaTest,
         junitInterface,
         levelDB,
-        levelDBJni
+        levelDBJni,
+        scalaCheck
       )
   )
   .dependsOn(recipedsl, compiler, intermediateLanguage, runtime)

@@ -2,7 +2,7 @@ package com.ing.baker.runtime.recipe.transitions
 
 import com.ing.baker.recipe.annotations.RequiresIngredient
 import com.ing.baker.runtime.event_extractors.CompositeEventExtractor
-import org.scalatest.{FunSpec, ShouldMatchers}
+import org.scalatest.{FunSpec, Matchers}
 
 object ActionExecutingTransitionSpec {
 
@@ -15,7 +15,7 @@ object ActionExecutingTransitionSpec {
   }
 }
 
-class ActionExecutingTransitionSpec extends FunSpec with ShouldMatchers {
+class ActionExecutingTransitionSpec extends FunSpec with Matchers {
 
   val ingredientExtractor = new CompositeEventExtractor()
 

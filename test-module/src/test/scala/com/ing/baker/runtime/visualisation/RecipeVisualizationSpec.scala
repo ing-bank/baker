@@ -10,7 +10,7 @@ import com.ing.baker.recipe.scaladsl._
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class iRecipeVisualizationSpec extends TestRecipeHelper {
+class RecipeVisualizationSpec extends TestRecipeHelper {
 
   implicit val timeout: FiniteDuration = 10 seconds
 

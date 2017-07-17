@@ -14,7 +14,7 @@ object Dependencies {
       .exclude("com.typesafe.akka", "akka-persistence-query")
       .exclude("com.typesafe.akka", "akka-stream")
 
-  val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "2.2.6"
+  val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.0.1"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
 
@@ -48,6 +48,7 @@ object Dependencies {
   val jodaConvert =               "org.joda"                   %  "joda-convert"                       % "1.8.1"
   val scalaXml =                  "org.scala-lang.modules"     %% "scala-xml"                          % "1.0.4"
   val slf4jApi =                  "org.slf4j"                  %  "slf4j-api"                          % "1.7.25"
+  val scalaCheck =                "org.scalacheck"             %% "scalacheck"                         % "1.13.4"
 
   def scopeDeps(scope: String, modules: Seq[ModuleID]) =  modules.map(m => m % scope)
   def compileDeps(modules: ModuleID*) = modules.toSeq

@@ -1,10 +1,11 @@
 package com.ing.baker
 
+import java.security.MessageDigest
+
 import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing, ProvidesType, Transition}
 import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientType, InteractionFailureStrategy}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionDescriptor
-import io.kagera.api._
 
 import scala.concurrent.duration.Duration
 
@@ -123,5 +124,12 @@ package object compiler {
   implicit class EventTransitionOps(eventTransitions: Seq[EventTransition]) {
     def findEventTransitionsByEvent: EventType ⇒ Option[EventTransition] =
       event => eventTransitions.find(_.event == event)
+  }
+
+  object Sha256Hashing {
+    def hashCode(str: String): Long = {
+      val sha256Digest: MessageDigest = MessageDigest.getInstance("SHA-256")
+      BigInt(1, sha256Digest.digest(str.getBytes("UTF-8"))).toLong
+    }
   }
 }

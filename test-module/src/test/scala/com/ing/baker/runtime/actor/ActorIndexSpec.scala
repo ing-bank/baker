@@ -13,7 +13,7 @@ import org.mockito
 import org.mockito.Mockito
 import org.mockito.Mockito.verify
 import org.scalatest.concurrent.Eventually
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Matchers, WordSpecLike}
 
 //noinspection TypeAnnotation
