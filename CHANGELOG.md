@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.0.6
+- Using a better consistent hash function for place/transition identifiers in the petri net
+- IMPORTANT: This change is not backwards compatible, on going processing cannot be resumed after a restart
+
+## 1.0.4
+- Migrated to akka 2.5.x
+- A local event bus is implemented so that a listener can be registered to act on baker events. Ex:
+```scala
+      baker.registerEventListener(new EventListener {
+        /**
+          * Called when an event occurred.
+          *
+          * @param processId The process id for which the event occurred.
+          * @param event     The event.
+          */
+        override def processEvent(processId: String, event: RuntimeEvent): Unit = ???
+      })
+```
+
 ## 1.0.1
 - Fixed a bug in the runtime that it could not bind an ingredient multiple times as parameter for an interaction
 - Removed the JCompiledRecipe and moved the functionality to the CompiledRecipe
