@@ -7,11 +7,12 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionOutput, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, InteractionDescriptor, Recipe}
-import org.scalacheck.Gen
+import org.scalacheck.{Gen, Test}
 import org.scalacheck.Prop.forAll
 import org.scalatest.FunSuite
+import org.scalatest.prop.Checkers
 
-class RecipePropertiesSpec extends FunSuite {
+class RecipePropertiesSpec extends FunSuite with Checkers {
 
   import RecipePropertiesSpec._
 
@@ -32,7 +33,7 @@ class RecipePropertiesSpec extends FunSuite {
       compiledRecipe.validationErrors.isEmpty
     }
 
-    prop.check
+    check(prop, Test.Parameters.defaultVerbose)
   }
 
 }
@@ -89,10 +90,10 @@ object RecipePropertiesSpec {
     val writer = new PrintWriter(outFile)
 
     try {
-      println(s"Dumping the visual recipe ...")
+      println(s"Generating the visual recipe ...")
       val dotRepresentation = compiledRecipe.getRecipeVisualization
       writer.write(dotRepresentation)
-      println(s"Dumped here: $fileName Recipe visualization in bytes: ${dotRepresentation.length}")
+      println(s"Recipe visualization in bytes: ${dotRepresentation.length}. Dump location: $fileName")
     } finally {
       writer.close()
     }

@@ -5,37 +5,47 @@ import com.ing.baker.pbt.RecipePropertiesSpec._
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.FiresOneOfEvents
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, InteractionDescriptor, Recipe}
+import org.scalacheck.Prop.forAll
 import org.scalacheck._
 import org.scalatest.FunSuite
-import org.scalatest.prop.Checkers._
+import org.scalatest.prop.Checkers
 
 import scala.annotation.tailrec
 import scala.util.Random
 
-class RecipeDesignPropertiesSpec extends FunSuite {
-  import Prop.forAll
+class RecipeDesignPropertiesSpec extends FunSuite with Checkers {
   import RecipeDesignPropertiesSpec._
 
   test("compiles with no errors") {
-    val property = forAll(recipesGen) { recipe =>
-      val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+    val prop = forAll(recipesGen) { recipe =>
+      try {
+        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
 
-      println(s"PBT stats: recipeName: ${compiledRecipe.name} " +
-        s"nrOfAllIngredients: ${compiledRecipe.ingredients.size} " +
-        s"nrOfSensoryEvents: ${compiledRecipe.sensoryEvents.size} " +
-        s"nrOfInteractionEvents: ${compiledRecipe.interactionEvents.size} " +
-        s"nrOfInteractions: ${compiledRecipe.interactionTransitions.size}")
+        println(s"PBT stats: recipeName: ${compiledRecipe.name} " +
+          s"nrOfAllIngredients: ${compiledRecipe.ingredients.size} " +
+          s"nrOfSensoryEvents: ${compiledRecipe.sensoryEvents.size} " +
+          s"nrOfInteractionEvents: ${compiledRecipe.interactionEvents.size} " +
+          s"nrOfInteractions: ${compiledRecipe.interactionTransitions.size}")
 
-      if (compiledRecipe.validationErrors.nonEmpty) {
-        println(s"Validation errors: ${compiledRecipe.validationErrors}")
-        println(s"Visual recipe: ${compiledRecipe.getRecipeVisualization}")
+        if (compiledRecipe.validationErrors.nonEmpty) {
+          println(s"Validation errors: ${compiledRecipe.validationErrors}")
+          println(s"Visual recipe: ${compiledRecipe.getRecipeVisualization}")
+        }
+
+        dumpVisualRecipe(recipeVisualizationOutputPath, compiledRecipe)
+        compiledRecipe.validationErrors.isEmpty
+      } catch {
+        // skip cases with duplicate identifiers
+        case ex: IllegalStateException if ex.getMessage contains "Duplicate identifiers found" =>
+          println("Duplicate identifier detected, skipping this test case. Exception was: " + ex.toString)
+          true
+        case ex: Exception => fail(ex)
       }
 
-      dumpVisualRecipe(recipeVisualizationOutputPath, compiledRecipe)
-      compiledRecipe.validationErrors.isEmpty
     }
 
-    check(property, Test.Parameters.defaultVerbose.withMinSuccessfulTests(100))
+//    check(prop, Test.Parameters.defaultVerbose.withMinSuccessfulTests(10 * 1000))
+    check(prop, Test.Parameters.defaultVerbose)
   }
 }
 
@@ -45,16 +55,16 @@ object RecipeDesignPropertiesSpec {
   val recipeVisualizationOutputPath: String = System.getProperty("java.io.tmpdir")
 
   val ingredientGen: Gen[Ingredient[_]] = for {
-    name <- Gen.uuid
+    name <- Gen.identifier
   } yield Ingredient[String](name.toString)
 
   val eventGen: Gen[Event] = for {
-    name <- Gen.uuid
+    name <- Gen.identifier
     providedIngredients <- Gen.listOfN(maxNrOfIngredientsPerEvent, ingredientGen)
   } yield Event(name.toString, providedIngredients)
 
   val recipesGen: Gen[Recipe] = for {
-    name <- Gen.uuid
+    name <- Gen.identifier
     sensoryEvents <- Gen.listOf(eventGen)
     interactions <- interactionsGen(getIngredientsFrom(sensoryEvents))
   } yield Recipe(name.toString)
@@ -86,7 +96,7 @@ object RecipeDesignPropertiesSpec {
   def getDescriptor(ingredients: Seq[common.Ingredient]): (InteractionDescriptor, List[common.Ingredient]) = {
     //each interaction fires a single event
     val output = FiresOneOfEvents(Seq(eventGen.sample.get))
-    val interaction = Interaction(Gen.uuid.sample.get.toString, ingredients, output)
+    val interaction = Interaction(Gen.identifier.sample.get.toString, ingredients, output)
     //return the interaction description and a list of all ingredients that the interaction provides (via the single event)
     (InteractionDescriptor(interaction), output.events.flatMap(e => e.providedIngredients).toList)
   }
