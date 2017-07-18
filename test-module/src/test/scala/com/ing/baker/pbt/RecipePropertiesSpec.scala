@@ -15,9 +15,9 @@ import org.scalatest.prop.Checkers
 import scala.annotation.tailrec
 import scala.util.Random
 
-class RecipeDesignPropertiesSpec extends FunSuite with Checkers {
+class RecipePropertiesSpec extends FunSuite with Checkers {
 
-  import RecipeDesignPropertiesSpec._
+  import RecipePropertiesSpec._
 
   test("compiles with no errors") {
     val prop = forAll(recipeGen) { recipe =>
@@ -38,7 +38,7 @@ class RecipeDesignPropertiesSpec extends FunSuite with Checkers {
   }
 }
 
-object RecipeDesignPropertiesSpec {
+object RecipePropertiesSpec {
 
   val maxNrOfIngredientsPerEvent = 3
   val maxNrOfOutputEventsPerInteraction = 3
@@ -53,7 +53,10 @@ object RecipeDesignPropertiesSpec {
 
   val eventGen: Gen[Event] = for {
     name <- nameGen
-    nrOfIngredients <- Gen.choose(0, maxNrOfIngredientsPerEvent)
+    nrOfIngredients <- Gen.frequency(
+      1 -> Gen.const(0),
+      10 -> Gen.choose(1, maxNrOfIngredientsPerEvent)
+    )
     providedIngredients <- Gen.listOfN(nrOfIngredients, ingredientGen)
   } yield Event(name, providedIngredients)
 
@@ -73,16 +76,18 @@ object RecipeDesignPropertiesSpec {
       case Nil => acc
       case ingredientsLeft =>
         //take a subset of ingredients
-        val nrOfIngredientsToConsume = ingredientsLeft.length min Gen.choose(1, maxNrOfIngredientsToConsume).sample.getOrElse(1)
-        val requiredIngredients = Random.shuffle(ingredientsLeft).take(nrOfIngredientsToConsume)
+        // TODO implement supporting also 0 input ingredients for interactions with required events
+        val nrOfIngredientsToConsume = ingredientsLeft.length min sample(Gen.choose(1, maxNrOfIngredientsToConsume))
+        val pickedIngredients = Random.shuffle(ingredientsLeft).take(nrOfIngredientsToConsume)
+        val remainingIngredients = ingredients.diff(pickedIngredients)
 
-        val (interactionDescriptor, outputIngredients) = getDescriptor(requiredIngredients)
+        val (interactionDescriptor, outputIngredients) = getDescriptor(pickedIngredients)
 
-        if (ingredients.diff(requiredIngredients).isEmpty)
+        if (remainingIngredients.isEmpty)
         //those are the last ingredients because the diff is an empty list, so nothing left to weave
           interactionDescriptor :: acc
         else
-          interaction(ingredients.diff(requiredIngredients) ++ outputIngredients, interactionDescriptor :: acc)
+          interaction(remainingIngredients ++ outputIngredients, interactionDescriptor :: acc)
     }
 
     interaction(withIngredients.toList, List.empty)
@@ -92,13 +97,21 @@ object RecipeDesignPropertiesSpec {
     nrOfEvents <- Gen.choose(0, maxNrOfOutputEventsPerInteraction)
     events <- Gen.listOfN(nrOfEvents, eventGen)
     ingredient <- ingredientGen
-    output <- Gen.oneOf(ProvidesNothing, FiresOneOfEvents(events), ProvidesIngredient(ingredient))
+    output <- Gen.frequency(
+//      1 -> Gen.const(ProvidesNothing),
+      5 -> Gen.const(ProvidesIngredient(ingredient)),
+      10 -> Gen.const(FiresOneOfEvents(events)))
   } yield output
+
+  @tailrec def sample[T](gen: Gen[T]): T = gen.sample match {
+    case Some(value) => value
+    case None => sample(gen)
+  }
 
   def getDescriptor(ingredients: Seq[common.Ingredient]): (InteractionDescriptor, List[common.Ingredient]) = {
     //each interaction fires a single event
-    val output = interactionOutputGen.sample.getOrElse(ProvidesNothing)
-    val interaction = Interaction(nameGen.sample.get.toString, ingredients, output)
+    val output = sample(interactionOutputGen)
+    val interaction = Interaction(sample(nameGen), ingredients, output)
 
     //return the interaction description and a list of all ingredients that the interaction provides
     val outputIngredients: List[common.Ingredient] = output match {
@@ -126,7 +139,7 @@ object RecipeDesignPropertiesSpec {
       s"nrOfInteractionEvents: ${compiledRecipe.interactionEvents.size} " +
       s"nrOfInteractions: ${compiledRecipe.interactionTransitions.size} " +
       s"")
-    if (compiledRecipe.validationErrors.nonEmpty) println(compiledRecipe.validationErrors.mkString)
+    if (compiledRecipe.validationErrors.nonEmpty) println(s"***VALIDATION ERRORS: ${compiledRecipe.validationErrors.mkString("\n")}")
   }
 
   def dumpVisualRecipe(dumpDir: String, compiledRecipe: CompiledRecipe): Unit = {
