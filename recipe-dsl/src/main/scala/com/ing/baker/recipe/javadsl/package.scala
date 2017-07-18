@@ -51,7 +51,7 @@ package object javadsl {
           FiresOneOfEvents(events)
         }
         //ProvidesNothing
-        else ProvidesNothing()
+        else ProvidesNothing
       }
     }
 }
