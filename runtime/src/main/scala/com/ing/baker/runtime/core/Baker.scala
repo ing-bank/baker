@@ -66,13 +66,17 @@ class Baker(val compiledRecipe: CompiledRecipe,
           (implicit actorSystem: ActorSystem) =
     this(compiledRecipe, ReflectedInteractionTask.implementationsToProviderMap(implementations))(actorSystem)
 
-  implicit val materializer = ActorMaterializer()
-  private val log = LoggerFactory.getLogger(classOf[Baker])
-
   private val config = actorSystem.settings.config
+
+  if (!config.as[Option[Boolean]]("baker.config-file-included").getOrElse(false))
+    throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
+
   private val bakeTimeout = config.as[FiniteDuration]("baker.bake-timeout")
   private val journalInitializeTimeout = config.as[FiniteDuration]("baker.journal-initialize-timeout")
   private val readJournalIdentifier = config.as[String]("baker.actor.read-journal-plugin")
+
+  implicit val materializer = ActorMaterializer()
+  private val log = LoggerFactory.getLogger(classOf[Baker])
 
   if (compiledRecipe.validationErrors.nonEmpty)
     throw new RecipeValidationException(compiledRecipe.validationErrors.mkString(", "))
