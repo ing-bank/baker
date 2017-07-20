@@ -63,21 +63,24 @@ object RecipePropertiesSpec {
   val recipeGen: Gen[Recipe] = for {
     name <- nameGen
     sensoryEvents <- Gen.listOf(eventGen)
-    interactions <- interactionsGen(getIngredientsFrom(sensoryEvents))
+    interactions <- interactionsGen(sensoryEvents)
   } yield Recipe(name)
     //turn the lists into var args
     .withSensoryEvents(sensoryEvents: _*)
-    .withInteractions(interactions: _*)
+    .withInteractions(interactions.toList: _*)
 
-  def interactionsGen(ingredients: Seq[common.Ingredient]): Gen[List[InteractionDescriptor]] = Gen.const(getInteractions(ingredients))
+  def interactionsGen(events: Iterable[common.Event]): Gen[Set[InteractionDescriptor]] = {
+    val ingredients = getIngredientsFrom(events)
+    Gen.const(getInteractions(ingredients))
+  }
 
-  def getInteractions(withIngredients: Seq[common.Ingredient]): List[InteractionDescriptor] = {
-    @tailrec def interaction(ingredients: List[common.Ingredient], acc: List[InteractionDescriptor]): List[InteractionDescriptor] = ingredients match {
-      case Nil => acc
+  def getInteractions(withIngredients: Iterable[common.Ingredient]): Set[InteractionDescriptor] = {
+    @tailrec def interaction(ingredients: Set[common.Ingredient], acc: Set[InteractionDescriptor]): Set[InteractionDescriptor] = ingredients match {
+      case set if set.isEmpty => acc
       case ingredientsLeft =>
         //take a subset of ingredients
         // TODO implement supporting also 0 input ingredients for interactions with required events
-        val nrOfIngredientsToConsume = ingredientsLeft.length min sample(Gen.choose(1, maxNrOfIngredientsToConsume))
+        val nrOfIngredientsToConsume = ingredientsLeft.size min sample(Gen.choose(1, maxNrOfIngredientsToConsume))
         val pickedIngredients = Random.shuffle(ingredientsLeft).take(nrOfIngredientsToConsume)
         val remainingIngredients = ingredients.diff(pickedIngredients)
 
@@ -85,12 +88,12 @@ object RecipePropertiesSpec {
 
         if (remainingIngredients.isEmpty)
         //those are the last ingredients because the diff is an empty list, so nothing left to weave
-          interactionDescriptor :: acc
+          acc + interactionDescriptor
         else
-          interaction(remainingIngredients ++ outputIngredients, interactionDescriptor :: acc)
+          interaction(remainingIngredients ++ outputIngredients, acc + interactionDescriptor)
     }
 
-    interaction(withIngredients.toList, List.empty)
+    interaction(withIngredients.toSet, Set.empty)
   }
 
   val interactionOutputGen: Gen[InteractionOutput] = for {
@@ -108,22 +111,22 @@ object RecipePropertiesSpec {
     case None => sample(gen)
   }
 
-  def getDescriptor(ingredients: Seq[common.Ingredient]): (InteractionDescriptor, List[common.Ingredient]) = {
+  def getDescriptor(ingredients: Iterable[common.Ingredient]): (InteractionDescriptor, Set[common.Ingredient]) = {
     //each interaction fires a single event
     val output = sample(interactionOutputGen)
-    val interaction = Interaction(sample(nameGen), ingredients, output)
+    val interaction = Interaction(sample(nameGen), ingredients.toSeq, output)
 
     //return the interaction description and a list of all ingredients that the interaction provides
-    val outputIngredients: List[common.Ingredient] = output match {
-      case ProvidesNothing => Nil
-      case FiresOneOfEvents(events) => getIngredientsFrom(events.toList)
-      case ProvidesIngredient(ingredient) => List(ingredient)
+    val outputIngredients: Set[common.Ingredient] = output match {
+      case ProvidesNothing => Set.empty
+      case FiresOneOfEvents(events) => getIngredientsFrom(events.toSet)
+      case ProvidesIngredient(ingredient) => Set(ingredient)
     }
 
     (InteractionDescriptor(interaction), outputIngredients)
   }
 
-  def getIngredientsFrom(events: List[common.Event]): List[common.Ingredient] = events.flatMap(_.providedIngredients)
+  def getIngredientsFrom(events: Iterable[common.Event]): Set[common.Ingredient] = events.flatMap(_.providedIngredients).toSet
 
   def logRecipeStats(recipe: Recipe): Unit = println(s"Generated recipe ::: " +
     s"name: ${recipe.name} " +
