@@ -64,8 +64,11 @@ case class InteractionDescriptor private(
     */
   @SafeVarargs
   @varargs
-  def withRequiredOneOfEvents(requiredOneOfEvents: Class[_]*): InteractionDescriptor =
-  this.copy(requiredOneOfEvents = requiredOneOfEvents.map(eventClassToCommonEvent).toSet)
+  def withRequiredOneOfEvents(requiredOneOfEvents: Class[_]*): InteractionDescriptor = {
+    if (requiredOneOfEvents.nonEmpty && requiredOneOfEvents.size < 2)
+      throw new IllegalArgumentException("At least 2 events should be provided as 'requiredOneOfEvents'")
+    this.copy(requiredOneOfEvents = requiredOneOfEvents.map(eventClassToCommonEvent).toSet)
+  }
 
   /**
     * This sets a input ingredient to a set value. In this case the ingredient wont be taken from the runtime recipe.

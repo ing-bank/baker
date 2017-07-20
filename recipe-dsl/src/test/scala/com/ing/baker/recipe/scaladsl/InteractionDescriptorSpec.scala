@@ -13,6 +13,7 @@ object InteractionDescriptorSpec {
     output = ProvidesIngredient(customerId)
   )
   val agreementsAcceptedEvent = Event("agreementsAccepted")
+  val anOtherEvent = Event("anOtherEvent")
 }
 
 class InteractionDescriptorSpec extends WordSpecLike with Matchers {
@@ -49,6 +50,19 @@ class InteractionDescriptorSpec extends WordSpecLike with Matchers {
       "update the requiredEventsList" in {
         val updated = createCustomer.withRequiredEvent(agreementsAcceptedEvent)
         updated.requiredEvents shouldBe Set(agreementsAcceptedEvent)
+      }
+    }
+
+    "requiredOneOfEvents called" should {
+      "updates the requiredOneOfEventsList" in {
+        val updated = createCustomer.withRequiredOneOfEvents(agreementsAcceptedEvent, anOtherEvent)
+        updated.requiredOneOfEvents shouldBe Set(agreementsAcceptedEvent, anOtherEvent)
+      }
+
+      "throws IllegalArgumentException if nr of events is less than 2" in {
+        intercept[IllegalArgumentException] {
+          createCustomer.withRequiredOneOfEvents(agreementsAcceptedEvent)
+        }
       }
     }
   }

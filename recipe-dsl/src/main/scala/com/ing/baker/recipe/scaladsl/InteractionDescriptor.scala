@@ -28,8 +28,11 @@ case class InteractionDescriptor private(override val interaction: Interaction,
   def withRequiredEvents(events: common.Event*): InteractionDescriptor =
     copy(requiredEvents = requiredEvents ++ events)
 
-  def withRequiredOneOfEvents(requiredOneOfEvents: common.Event*): InteractionDescriptor =
+  def withRequiredOneOfEvents(requiredOneOfEvents: common.Event*): InteractionDescriptor = {
+    if (requiredOneOfEvents.nonEmpty && requiredOneOfEvents.size < 2)
+      throw new IllegalArgumentException("At least 2 events should be provided as 'requiredOneOfEvents'")
     copy(requiredOneOfEvents = requiredOneOfEvents.toSet)
+  }
 
   def withPredefinedIngredients(values: (String, AnyRef)*): InteractionDescriptor =
     copy(predefinedIngredients = values.toMap)

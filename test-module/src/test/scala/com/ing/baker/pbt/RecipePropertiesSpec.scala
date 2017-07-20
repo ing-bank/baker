@@ -6,7 +6,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionOutput, ProvidesIngredient, ProvidesNothing}
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, InteractionDescriptor, Recipe}
+import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, InteractionDescriptor, InteractionDescriptorFactory, Recipe}
 import org.scalacheck.Prop.forAll
 import org.scalacheck._
 import org.scalatest.FunSuite
@@ -43,6 +43,7 @@ object RecipePropertiesSpec {
   val maxNrOfIngredientsPerEvent = 3
   val maxNrOfOutputEventsPerInteraction = 3
   val maxNrOfIngredientsToConsume = 10
+  val maxNrOfPreconditionEvents = 3
   val recipeVisualizationOutputPath: String = System.getProperty("java.io.tmpdir")
 
   val nameGen: Gen[String] = Gen.listOfN(8, Gen.alphaNumChar).map(_.mkString)
@@ -60,6 +61,16 @@ object RecipePropertiesSpec {
     providedIngredients <- Gen.listOfN(nrOfIngredients, ingredientGen)
   } yield Event(name, providedIngredients)
 
+  val interactionOutputGen: Gen[InteractionOutput] = for {
+    nrOfEvents <- Gen.choose(0, maxNrOfOutputEventsPerInteraction)
+    events <- Gen.listOfN(nrOfEvents, eventGen)
+    ingredient <- ingredientGen
+    output <- Gen.frequency(
+      //      1 -> Gen.const(ProvidesNothing),
+      5 -> Gen.const(ProvidesIngredient(ingredient)),
+      10 -> Gen.const(FiresOneOfEvents(events)))
+  } yield output
+
   val recipeGen: Gen[Recipe] = for {
     name <- nameGen
     sensoryEvents <- Gen.listOf(eventGen)
@@ -69,14 +80,11 @@ object RecipePropertiesSpec {
     .withSensoryEvents(sensoryEvents: _*)
     .withInteractions(interactions.toList: _*)
 
-  def interactionsGen(events: Iterable[common.Event]): Gen[Set[InteractionDescriptor]] = {
-    val ingredients = getIngredientsFrom(events)
-    Gen.const(getInteractions(ingredients))
-  }
+  def interactionsGen(events: Iterable[common.Event]): Gen[Set[InteractionDescriptor]] = Gen.const(getInteractions(events))
 
-  def getInteractions(withIngredients: Iterable[common.Ingredient]): Set[InteractionDescriptor] = {
-    @tailrec def interaction(ingredients: Set[common.Ingredient], acc: Set[InteractionDescriptor]): Set[InteractionDescriptor] = ingredients match {
-      case set if set.isEmpty => acc
+  def getInteractions(sensoryEvents: Iterable[common.Event]): Set[InteractionDescriptor] = {
+    @tailrec def interaction(ingredients: Set[common.Ingredient], events: Set[common.Event], acc: Set[InteractionDescriptor]): Set[InteractionDescriptor] = ingredients match {
+      case _ingredients if _ingredients.isEmpty => acc
       case ingredientsLeft =>
         //take a subset of ingredients
         // TODO implement supporting also 0 input ingredients for interactions with required events
@@ -84,49 +92,57 @@ object RecipePropertiesSpec {
         val pickedIngredients = Random.shuffle(ingredientsLeft).take(nrOfIngredientsToConsume)
         val remainingIngredients = ingredients.diff(pickedIngredients)
 
-        val (interactionDescriptor, outputIngredients) = getDescriptor(pickedIngredients)
+        val (interactionDescriptor, outputIngredients, outputEvents) = getInteractionDescriptor(pickedIngredients, events)
 
         if (remainingIngredients.isEmpty)
         //those are the last ingredients because the diff is an empty list, so nothing left to weave
           acc + interactionDescriptor
         else
-          interaction(remainingIngredients ++ outputIngredients, acc + interactionDescriptor)
+          interaction(
+            remainingIngredients ++ outputIngredients ++ getIngredientsFrom(outputEvents),
+            events ++ outputEvents,
+            acc + interactionDescriptor)
     }
 
-    interaction(withIngredients.toSet, Set.empty)
+    val ingredients = getIngredientsFrom(sensoryEvents)
+    interaction(ingredients, sensoryEvents.toSet, Set.empty)
   }
 
-  val interactionOutputGen: Gen[InteractionOutput] = for {
-    nrOfEvents <- Gen.choose(0, maxNrOfOutputEventsPerInteraction)
-    events <- Gen.listOfN(nrOfEvents, eventGen)
-    ingredient <- ingredientGen
-    output <- Gen.frequency(
-//      1 -> Gen.const(ProvidesNothing),
-      5 -> Gen.const(ProvidesIngredient(ingredient)),
-      10 -> Gen.const(FiresOneOfEvents(events)))
-  } yield output
-
-  @tailrec def sample[T](gen: Gen[T]): T = gen.sample match {
-    case Some(value) => value
-    case None => sample(gen)
-  }
-
-  def getDescriptor(ingredients: Iterable[common.Ingredient]): (InteractionDescriptor, Set[common.Ingredient]) = {
+  def getInteractionDescriptor(ingredients: Set[common.Ingredient], events: Set[common.Event]): (InteractionDescriptor, Set[common.Ingredient], Set[common.Event]) = {
     //each interaction fires a single event
     val output = sample(interactionOutputGen)
     val interaction = Interaction(sample(nameGen), ingredients.toSeq, output)
 
     //return the interaction description and a list of all ingredients that the interaction provides
-    val outputIngredients: Set[common.Ingredient] = output match {
-      case ProvidesNothing => Set.empty
-      case FiresOneOfEvents(events) => getIngredientsFrom(events.toSet)
-      case ProvidesIngredient(ingredient) => Set(ingredient)
+    val (outputIngredients: Set[common.Ingredient], outputEvents: Set[common.Event]) = output match {
+      case ProvidesNothing => (Set.empty, Set.empty)
+      case FiresOneOfEvents(_events) => (Set.empty, _events.toSet)
+      case ProvidesIngredient(ingredient) => (Set(ingredient), Set.empty)
     }
 
-    (InteractionDescriptor(interaction), outputIngredients)
+    val nrOfAndPreconditionEvents = sample(Gen.chooseNum(0, maxNrOfPreconditionEvents))
+    val nrOfOrPreconditionEvents = sample(Gen.chooseNum(0, maxNrOfPreconditionEvents))
+
+    val andPreconditionEvents: Set[common.Event] = Random.shuffle(events).take(nrOfAndPreconditionEvents)
+    val orPreconditionEvents: Set[common.Event] = {
+      val pickedEvents = Random.shuffle(events -- andPreconditionEvents).take(nrOfOrPreconditionEvents)
+      if (pickedEvents.size < 2) Set.empty
+      else pickedEvents
+    }
+
+    val interactionDescriptor = InteractionDescriptorFactory(interaction)
+      .withRequiredEvents(andPreconditionEvents.toList: _*)
+      .withRequiredOneOfEvents(orPreconditionEvents.toList: _*)
+
+    (interactionDescriptor, outputIngredients, outputEvents)
   }
 
   def getIngredientsFrom(events: Iterable[common.Event]): Set[common.Ingredient] = events.flatMap(_.providedIngredients).toSet
+
+  @tailrec def sample[T](gen: Gen[T]): T = gen.sample match {
+    case Some(value) => value
+    case None => sample(gen)
+  }
 
   def logRecipeStats(recipe: Recipe): Unit = println(s"Generated recipe ::: " +
     s"name: ${recipe.name} " +

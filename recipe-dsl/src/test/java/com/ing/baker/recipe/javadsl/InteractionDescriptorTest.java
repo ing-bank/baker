@@ -88,6 +88,14 @@ public class InteractionDescriptorTest {
         assertTrue(idWithRequiredOneOfEvents.requiredOneOfEvents().contains(sensoryEventWithoutIngredientCheck()));
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldRejectUsingLessThanTwoOneOfRequiredEvents() {
+        InteractionDescriptor id = of(ProvidesIngredientInteraction.class);
+        assertTrue(id.requiredOneOfEvents().isEmpty());
+
+        id.withRequiredOneOfEvents(SensoryEventWithIngredient.class);
+    }
+
     @Test
     public void shouldUpdateTheMaximumInteractionCount() {
         InteractionDescriptor id = of(ProvidesIngredientInteraction.class);
