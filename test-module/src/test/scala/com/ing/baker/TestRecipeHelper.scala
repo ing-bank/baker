@@ -228,6 +228,8 @@ trait TestRecipeHelper
 
   protected def levelDbConfig(actorSystemName: String, port: Int): Config = ConfigFactory.parseString(
     s"""
+       |include "baker.conf"
+       |
        |akka {
        |  actor.provider = "akka.cluster.ClusterActorRefProvider"
        |
