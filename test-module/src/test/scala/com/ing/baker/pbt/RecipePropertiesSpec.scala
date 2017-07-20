@@ -23,9 +23,11 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
     val prop = forAll(recipeGen) { recipe =>
 
       val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      logRecipeStats(recipe)
+//      logCompiledRecipeStats(compiledRecipe)
+//      dumpVisualRecipe(recipeVisualizationOutputPath, compiledRecipe)
 
       if (compiledRecipe.validationErrors.nonEmpty) {
-        logRecipeStats(recipe)
         logCompiledRecipeStats(compiledRecipe)
         dumpVisualRecipe(recipeVisualizationOutputPath, compiledRecipe)
       }
@@ -86,13 +88,24 @@ object RecipePropertiesSpec {
     @tailrec def interaction(ingredients: Set[common.Ingredient], events: Set[common.Event], acc: Set[InteractionDescriptor]): Set[InteractionDescriptor] = ingredients match {
       case _ingredients if _ingredients.isEmpty => acc
       case ingredientsLeft =>
-        //take a subset of ingredients
-        // TODO implement supporting also 0 input ingredients for interactions with required events
-        val nrOfIngredientsToConsume = ingredientsLeft.size min sample(Gen.choose(1, maxNrOfIngredientsToConsume))
-        val pickedIngredients = Random.shuffle(ingredientsLeft).take(nrOfIngredientsToConsume)
-        val remainingIngredients = ingredients.diff(pickedIngredients)
+        val (andPreconditionEvents, orPreconditionEvents) = getPreconditionEvents(events)
 
-        val (interactionDescriptor, outputIngredients, outputEvents) = getInteractionDescriptor(pickedIngredients, events)
+        // Sometimes 0 number of ingredients is possible if this interaction has some precondition events
+        val minNrOfIngredients =
+          if (andPreconditionEvents.size + orPreconditionEvents.size > 0) 0
+          else 1
+
+        val nrOfIngredientsToConsume = ingredientsLeft.size min sample(Gen.choose(minNrOfIngredients, maxNrOfIngredientsToConsume))
+        val consumedIngredients = Random.shuffle(ingredientsLeft).take(nrOfIngredientsToConsume)
+
+        // Sometimes ingredients should be reused by multiple interactions, so randomizing this behaviour
+        val ingredientsToRemove =
+          if (Random.nextInt(3) == 0) sample(Gen.someOf(consumedIngredients)).toSet
+          else consumedIngredients
+
+        val remainingIngredients = ingredients.diff(ingredientsToRemove)
+
+        val (interactionDescriptor, outputIngredients, outputEvents) = getInteractionDescriptor(consumedIngredients, andPreconditionEvents, orPreconditionEvents)
 
         if (remainingIngredients.isEmpty)
         //those are the last ingredients because the diff is an empty list, so nothing left to weave
@@ -108,7 +121,13 @@ object RecipePropertiesSpec {
     interaction(ingredients, sensoryEvents.toSet, Set.empty)
   }
 
-  def getInteractionDescriptor(ingredients: Set[common.Ingredient], events: Set[common.Event]): (InteractionDescriptor, Set[common.Ingredient], Set[common.Event]) = {
+  /**
+    * generates an interactionDescriptor using all the given ingredients, with ProvidesIngredient or FiresOneOfEvents outputs.
+    * Also uses the given preconditionEvents as AND and OR preconditions.
+    * @param ingredients input ingredients set
+    * @return Tuple3(interactionDescriptor, outputIngredients, outputEvents)
+    */
+  def getInteractionDescriptor(ingredients: Set[common.Ingredient], andPreconditionEvents: Set[common.Event], orPreconditionEvents: Set[common.Event]): (InteractionDescriptor, Set[common.Ingredient], Set[common.Event]) = {
     //each interaction fires a single event
     val output = sample(interactionOutputGen)
     val interaction = Interaction(sample(nameGen), ingredients.toSeq, output)
@@ -120,6 +139,19 @@ object RecipePropertiesSpec {
       case ProvidesIngredient(ingredient) => (Set(ingredient), Set.empty)
     }
 
+    val interactionDescriptor = InteractionDescriptorFactory(interaction)
+      .withRequiredEvents(andPreconditionEvents.toList: _*)
+      .withRequiredOneOfEvents(orPreconditionEvents.toList: _*)
+
+    (interactionDescriptor, outputIngredients, outputEvents)
+  }
+
+  /**
+    * Randomly produce precondition events as a subset of given events
+    * @param events events set
+    * @return Tuple2(andPreconditionEvents, orPreconditionEvents)
+    */
+  def getPreconditionEvents(events: Set[common.Event]): (Set[common.Event], Set[common.Event]) = {
     val nrOfAndPreconditionEvents = sample(Gen.chooseNum(0, maxNrOfPreconditionEvents))
     val nrOfOrPreconditionEvents = sample(Gen.chooseNum(0, maxNrOfPreconditionEvents))
 
@@ -130,15 +162,15 @@ object RecipePropertiesSpec {
       else pickedEvents
     }
 
-    val interactionDescriptor = InteractionDescriptorFactory(interaction)
-      .withRequiredEvents(andPreconditionEvents.toList: _*)
-      .withRequiredOneOfEvents(orPreconditionEvents.toList: _*)
-
-    (interactionDescriptor, outputIngredients, outputEvents)
+    (andPreconditionEvents, orPreconditionEvents)
   }
 
   def getIngredientsFrom(events: Iterable[common.Event]): Set[common.Ingredient] = events.flatMap(_.providedIngredients).toSet
 
+  /**
+    * Recursively check until there's a sample value is returned
+    * @return sample value of the generator
+    */
   @tailrec def sample[T](gen: Gen[T]): T = gen.sample match {
     case Some(value) => value
     case None => sample(gen)
