@@ -75,7 +75,7 @@ object RecipePropertiesSpec {
   val recipeGen: Gen[Recipe] = for {
     name <- nameGen
     sensoryEvents <- Gen.listOf(eventGen) suchThat(_.nonEmpty)
-    interactions <- interactionsGen(sensoryEvents)
+    interactions <- interactionsGen(sensoryEvents) suchThat(_.nonEmpty)
   } yield Recipe(name)
     //turn the lists into var args
     .withSensoryEvents(sensoryEvents: _*)
