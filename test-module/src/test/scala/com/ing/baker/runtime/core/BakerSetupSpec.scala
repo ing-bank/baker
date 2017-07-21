@@ -3,16 +3,12 @@ package com.ing.baker.runtime.core
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.il.NonSerializableException
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.core.implementations.{InteractionOneFieldName, InteractionOneInterfaceImplementation, InteractionOneWrongApply}
 
-import scala.concurrent.duration._
 import scala.language.postfixOps
 
 class BakerSetupSpec extends TestRecipeHelper {
-
-  implicit val timeout: FiniteDuration = 10 seconds
 
   before {
     resetMocks
@@ -86,12 +82,13 @@ class BakerSetupSpec extends TestRecipeHelper {
       "an invalid recipe is given" in {
         val recipe = Recipe("NonProvidedIngredient")
           .withInteraction(interactionOne)
+          .withSensoryEvent(secondEvent)
 
-        a[RecipeValidationException] should be thrownBy {
+        intercept[RecipeValidationException] {
           new Baker(
             compiledRecipe = RecipeCompiler.compileRecipe(recipe),
             implementations = mockImplementations)
-        }
+        } should have('message ("Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction"))
       }
 
       "a recipe does not provide an implementation for an interaction" in {
@@ -104,7 +101,7 @@ class BakerSetupSpec extends TestRecipeHelper {
             compiledRecipe = RecipeCompiler.compileRecipe(recipe),
             implementations = Map.empty[String, () => AnyRef])
 
-        } should have('message("No implementation provided for interaction: InteractionOne"))
+        } should have('message ("No implementation provided for interaction: InteractionOne"))
       }
 
       "a recipe provides an implementation for an interaction and does not comply to the Interaction" in {
@@ -117,7 +114,7 @@ class BakerSetupSpec extends TestRecipeHelper {
             compiledRecipe = RecipeCompiler.compileRecipe(recipe),
             implementations = Map("InteractionOne" -> (() => new InteractionOneWrongApply())))
 
-        } should have('message("Invalid implementation provided for interaction: InteractionOne"))
+        } should have('message ("Invalid implementation provided for interaction: InteractionOne"))
       }
     }
   }

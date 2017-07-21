@@ -24,11 +24,9 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
 
       val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
       logRecipeStats(recipe)
-//      logCompiledRecipeStats(compiledRecipe)
-//      dumpVisualRecipe(recipeVisualizationOutputPath, compiledRecipe)
+      logCompiledRecipeStats(compiledRecipe)
 
       if (compiledRecipe.validationErrors.nonEmpty) {
-        logCompiledRecipeStats(compiledRecipe)
         dumpVisualRecipe(recipeVisualizationOutputPath, compiledRecipe)
       }
 
@@ -36,8 +34,9 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
       compiledRecipe.validationErrors.isEmpty
     }
 
-    check(prop, Test.Parameters.defaultVerbose.withMinSuccessfulTests(1000))
+    check(prop, Test.Parameters.defaultVerbose.withMinSuccessfulTests(100))
   }
+
 }
 
 object RecipePropertiesSpec {
@@ -75,7 +74,7 @@ object RecipePropertiesSpec {
 
   val recipeGen: Gen[Recipe] = for {
     name <- nameGen
-    sensoryEvents <- Gen.listOf(eventGen)
+    sensoryEvents <- Gen.listOf(eventGen) suchThat(_.nonEmpty)
     interactions <- interactionsGen(sensoryEvents)
   } yield Recipe(name)
     //turn the lists into var args
@@ -124,6 +123,7 @@ object RecipePropertiesSpec {
   /**
     * generates an interactionDescriptor using all the given ingredients, with ProvidesIngredient or FiresOneOfEvents outputs.
     * Also uses the given preconditionEvents as AND and OR preconditions.
+    *
     * @param ingredients input ingredients set
     * @return Tuple3(interactionDescriptor, outputIngredients, outputEvents)
     */
@@ -148,6 +148,7 @@ object RecipePropertiesSpec {
 
   /**
     * Randomly produce precondition events as a subset of given events
+    *
     * @param events events set
     * @return Tuple2(andPreconditionEvents, orPreconditionEvents)
     */
@@ -169,6 +170,7 @@ object RecipePropertiesSpec {
 
   /**
     * Recursively check until there's a sample value is returned
+    *
     * @return sample value of the generator
     */
   @tailrec def sample[T](gen: Gen[T]): T = gen.sample match {
@@ -176,7 +178,8 @@ object RecipePropertiesSpec {
     case None => sample(gen)
   }
 
-  def logRecipeStats(recipe: Recipe): Unit = println(s"Generated recipe ::: " +
+  def logRecipeStats(recipe: Recipe): Unit = println(s"\n" +
+    s"Generated recipe ::: " +
     s"name: ${recipe.name} " +
     s"nrOfSensoryEvents: ${recipe.sensoryEvents.size} " +
     s"nrOfInteractions: ${recipe.interactions.size} " +
@@ -202,10 +205,9 @@ object RecipePropertiesSpec {
     val writer = new PrintWriter(outFile)
 
     try {
-      println(s"Generating the visual recipe ...")
       val dotRepresentation = compiledRecipe.getRecipeVisualization
       writer.write(dotRepresentation)
-      println(s"Recipe visualization in bytes: ${dotRepresentation.length}. Dump location: $fileName \n")
+      println(s"Recipe visualization for ${compiledRecipe.name} in bytes: ${dotRepresentation.length}. Dump location: $fileName \n")
     } finally {
       writer.close()
     }

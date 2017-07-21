@@ -314,11 +314,18 @@ object RecipeCompiler {
     throw new IllegalArgumentException(s"$typeName with a null or empty name found")
   }
 
+  private def assertNonEmptyRecipe(recipe: Recipe) = {
+    if (recipe.sensoryEvents.isEmpty) throw new IllegalArgumentException("Not a valid recipe: No sensory events found.")
+    if (recipe.interactions.size + recipe.sieves.size == 0) throw new IllegalArgumentException("Not a valid recipe: No interactions or sieves found.")
+  }
+
   private def preCompileAssertions(recipe: Recipe) = {
     assertValidNames[Recipe](_.name, Seq(recipe), "Recipe")
+    assertNonEmptyRecipe(recipe)
     assertValidNames[InteractionDescriptor](_.name, recipe.interactions, "Interaction")
     assertValidNames[InteractionDescriptor](_.name, recipe.sieves, "Sieve Interaction")
     assertValidNames[Event](_.name, recipe.sensoryEvents, "Event")
+
     val allIngredients = recipe.sensoryEvents.flatMap(_.providedIngredients) ++ recipe.interactions.flatMap(_.interaction.inputIngredients) ++ recipe.sieves.flatMap(_.interaction.inputIngredients)
     assertValidNames[Ingredient](_.name, allIngredients, "Ingredient")
 

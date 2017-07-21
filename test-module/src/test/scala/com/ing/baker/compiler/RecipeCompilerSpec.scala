@@ -6,19 +6,15 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.common.ProvidesNothing
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 
-import scala.concurrent.duration._
 import scala.language.postfixOps
 
 class RecipeCompilerSpec extends TestRecipeHelper {
-
-
-  implicit val timeout: FiniteDuration = 10 seconds
 
   before {
     resetMocks
   }
 
-  "The RecipeCompiler" should {
+  "The RecipeCompiler should" should {
 
     "not have validation errors for a valid recipe" in {
       val recipe: Recipe = getComplexRecipe("ValidRecipe")
@@ -28,6 +24,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
 
     "give a List of missing ingredients if an interaction has an ingredient that is not provided by any other event or interaction" in {
       val recipe = Recipe("NonProvidedIngredient")
+          .withSensoryEvent(secondEvent)
         .withInteractions(interactionOne)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
@@ -60,44 +57,36 @@ class RecipeCompilerSpec extends TestRecipeHelper {
     "fail compilation for an empty or null named interaction" in {
       List("", null) foreach { name =>
         val invalidInteraction = Interaction(name, Seq.empty, ProvidesNothing)
-        val recipe = Recipe("InteractionNameTest").withInteractions(invalidInteraction)
+        val recipe = Recipe("InteractionNameTest").withInteractions(invalidInteraction).withSensoryEvent(initialEvent)
 
-        intercept[IllegalArgumentException] {
-          RecipeCompiler.compileRecipe(recipe)
-        } getMessage() shouldBe "Interaction with a null or empty name found"
+        intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Interaction with a null or empty name found"
       }
     }
 
     "fail compilation for an empty or null named sieve interaction" in {
       List("", null) foreach { name =>
         val invalidSieveInteraction = Interaction(name, Seq.empty, ProvidesNothing)
-        val recipe = Recipe("SieveNameTest").withSieve(invalidSieveInteraction)
+        val recipe = Recipe("SieveNameTest").withSieve(invalidSieveInteraction).withSensoryEvent(initialEvent)
 
-        intercept[IllegalArgumentException] {
-          RecipeCompiler.compileRecipe(recipe)
-        } getMessage() shouldBe "Sieve Interaction with a null or empty name found"
+        intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Sieve Interaction with a null or empty name found"
       }
     }
 
     "fail compilation for an empty or null named event" in {
       List("", null) foreach { name =>
         val invalidEvent = Event(name)
-        val recipe = Recipe("EventNameTest").withSensoryEvent(invalidEvent)
+        val recipe = Recipe("EventNameTest").withSensoryEvent(invalidEvent).withInteraction(interactionOne)
 
-        intercept[IllegalArgumentException] {
-          RecipeCompiler.compileRecipe(recipe)
-        } getMessage() shouldBe "Event with a null or empty name found"
+        intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Event with a null or empty name found"
       }
     }
 
     "fail compilation for an empty or null named ingredient" in {
       List("", null) foreach { name =>
         val invalidIngredient = Ingredient(name)
-        val recipe = Recipe("IngredientNameTest").withSensoryEvent(Event("someEvent", invalidIngredient))
+        val recipe = Recipe("IngredientNameTest").withSensoryEvent(Event("someEvent", invalidIngredient)).withInteraction(interactionOne)
 
-        intercept[IllegalArgumentException] {
-          RecipeCompiler.compileRecipe(recipe)
-        } getMessage() shouldBe "Ingredient with a null or empty name found"
+        intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Ingredient with a null or empty name found"
       }
     }
 
@@ -105,10 +94,13 @@ class RecipeCompilerSpec extends TestRecipeHelper {
       List("", null) foreach { name =>
         val recipe = Recipe(name)
 
-        intercept[IllegalArgumentException] {
-          RecipeCompiler.compileRecipe(recipe)
-        } getMessage() shouldBe "Recipe with a null or empty name found"
+        intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Recipe with a null or empty name found"
       }
+    }
+
+    "fail compilation for an empty/non-logical recipe" in {
+      intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(Recipe("someName"))) getMessage() shouldBe "Not a valid recipe: No sensory events found."
+      intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(Recipe("someName").withSensoryEvent(initialEvent))) getMessage() shouldBe "Not a valid recipe: No interactions or sieves found."
     }
 
   }
