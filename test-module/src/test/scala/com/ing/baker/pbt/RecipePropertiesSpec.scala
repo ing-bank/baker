@@ -1,25 +1,30 @@
 package com.ing.baker.pbt
 
 import java.io.{File, PrintWriter}
+import java.util.UUID
 
+import akka.actor.ActorSystem
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.il.petrinet.InteractionTransition
+import com.ing.baker.il.{CompiledRecipe, EventType, IngredientType, petrinet}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionOutput, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, InteractionDescriptor, InteractionDescriptorFactory, Recipe}
+import com.ing.baker.runtime.core.{Baker, ProcessState, RuntimeEvent}
 import org.scalacheck.Prop.forAll
 import org.scalacheck._
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 
 import scala.annotation.tailrec
+import scala.concurrent.duration.FiniteDuration
 import scala.util.Random
 
 class RecipePropertiesSpec extends FunSuite with Checkers {
 
   import RecipePropertiesSpec._
 
-  test("compiles with no errors") {
+  test("Baker can compile any valid recipe") {
     val prop = forAll(recipeGen) { recipe =>
 
       val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
@@ -32,6 +37,39 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
 
       // assertion of the result
       compiledRecipe.validationErrors.isEmpty
+    }
+
+    check(prop, Test.Parameters.defaultVerbose.withMinSuccessfulTests(100))
+  }
+
+  ignore("Baker can execute a compiled recipe") {
+    implicit val actorSystem = ActorSystem("pbt-actor-system")
+    implicit val duration = FiniteDuration(1, "seconds")
+
+    val prop = forAll(recipeGen) { recipe =>
+
+      val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val sensoryEvents: Set[EventType] = compiledRecipe.sensoryEvents
+      val petriNetInteractionMock: InteractionTransition[_] => ProcessState => RuntimeEvent = { interaction => processState =>
+
+            println(s"Current process state: $processState")
+            interaction.providesType match {
+              case petrinet.FiresOneOfEvents(events, _) => sample(Gen.oneOf(events.map(e => RuntimeEvent(e.name, ingredientValuesFrom(e.providedIngredients)))))
+              case petrinet.ProvidesIngredient(ingredient) => RuntimeEvent(sample(nameGen), ingredientValuesFrom(Seq(ingredient)))
+              case petrinet.ProvidesNothing => RuntimeEvent("ProvidesNothingEvent-" + sample(nameGen), Map.empty)
+            }
+
+      }
+
+      val baker = new Baker(compiledRecipe, petriNetInteractionMock)
+      val processId = UUID.randomUUID()
+      baker.bake(processId)
+      sensoryEvents foreach {
+        baker.handleEvent(processId, _)
+      }
+
+      true
+
     }
 
     check(prop, Test.Parameters.defaultVerbose.withMinSuccessfulTests(100))
@@ -74,8 +112,8 @@ object RecipePropertiesSpec {
 
   val recipeGen: Gen[Recipe] = for {
     name <- nameGen
-    sensoryEvents <- Gen.listOf(eventGen) suchThat(_.nonEmpty)
-    interactions <- interactionsGen(sensoryEvents) suchThat(_.nonEmpty)
+    sensoryEvents <- Gen.listOf(eventGen) suchThat (_.nonEmpty)
+    interactions <- interactionsGen(sensoryEvents) suchThat (_.nonEmpty)
   } yield Recipe(name)
     //turn the lists into var args
     .withSensoryEvents(sensoryEvents: _*)
@@ -167,6 +205,8 @@ object RecipePropertiesSpec {
   }
 
   def getIngredientsFrom(events: Iterable[common.Event]): Set[common.Ingredient] = events.flatMap(_.providedIngredients).toSet
+
+  def ingredientValuesFrom(types: Seq[IngredientType]): Map[String, Any] = types map (t => t.name -> "") toMap
 
   /**
     * Recursively check until there's a sample value is returned
