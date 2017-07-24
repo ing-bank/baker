@@ -19,10 +19,16 @@ object RecipeVisualizer {
     DotAttr("style", "filled")
   )
 
+  private val ingredientAvailableAttributes: List[DotAttr] = List(
+    DotAttr("shape", "circle"),
+    DotAttr("color", "\"#3b823a\""),
+    DotAttr("style", "filled")
+  )
+
   private val missingIngredientAttributes: List[DotAttr] = List(
     DotAttr("shape", "circle"),
     DotAttr("style", "filled"),
-//    DotAttr("fillcolor", "\"#FF6200\""),
+    //    DotAttr("fillcolor", "\"#FF6200\""),
     DotAttr("color", "\"#EE0000\""),
     DotAttr("penwidth", "5.0")
   )
@@ -45,7 +51,7 @@ object RecipeVisualizer {
     DotAttr("shape", "diamond"),
     DotAttr("margin", 0.3D),
     DotAttr("style", "rounded, filled"),
-//    DotAttr("fillcolor", "\"#767676\""),
+    //    DotAttr("fillcolor", "\"#767676\""),
     DotAttr("color", "\"#EE0000\""),
     DotAttr("penwidth", "5.0")
   )
@@ -99,36 +105,37 @@ object RecipeVisualizer {
   )
 
   private def nodeLabelFn: Either[Place[_], Transition[_, _]] ⇒ String = {
-    case Left(place) if place.isEmptyEventIngredient  ⇒ s"empty:${place.label}"
-    case Left(place)  ⇒ place.label
+    case Left(place) if place.isEmptyEventIngredient ⇒ s"empty:${place.label}"
+    case Left(place) ⇒ place.label
     case Right(transition) if transition.isMultiFacilitatorTransition ⇒ s"multi:${transition.label}"
     case Right(transition) => transition.label
   }
 
-  private def nodeDotAttrFn: (RecipePetriNetGraph#NodeT, Seq[String])=> List[DotAttr] =
-    (node: RecipePetriNetGraph#NodeT, events: Seq[String]) ⇒
+  private def nodeDotAttrFn: (RecipePetriNetGraph#NodeT, Set[String], Set[String]) => List[DotAttr] =
+    (node: RecipePetriNetGraph#NodeT, eventNames: Set[String], ingredientNames: Set[String]) ⇒
       node.value match {
-        case Left(place) if place.isInteractionEventOutput    => choiceAttributes
-        case Left(place) if place.isOrEventPrecondition       => preconditionORAttributes
-        case Left(place) if place.isEmptyEventIngredient      ⇒ emptyEventAttributes
-        case Left(place) if node.incomingTransitions.isEmpty  => missingIngredientAttributes
-        case Left(place)                                      ⇒ ingredientAttributes
+        case Left(place) if place.isInteractionEventOutput => choiceAttributes
+        case Left(place) if place.isOrEventPrecondition => preconditionORAttributes
+        case Left(place) if place.isEmptyEventIngredient ⇒ emptyEventAttributes
+        case Left(_) if node.incomingTransitions.isEmpty => missingIngredientAttributes
+        case Left(place) if ingredientNames contains place.label ⇒ ingredientAvailableAttributes
+        case Left(_) ⇒ ingredientAttributes
         case Right(transition) if transition.isMultiFacilitatorTransition => choiceAttributes
-        case Right(transition) if transition.isInteraction      ⇒ interactionAttributes
-        case Right(transition) if transition.isSieve            ⇒ sieveAttributes
-        case Right(transition) if transition.isEventMissing     ⇒ eventTransitionMissingAttributes
-        case Right(transition) if events.contains(transition.label) ⇒ eventTransitionFiredAttributes
-        case Right(transition)                                  ⇒ eventTransitionAttributes
-    }
+        case Right(transition) if transition.isInteraction ⇒ interactionAttributes
+        case Right(transition) if transition.isSieve ⇒ sieveAttributes
+        case Right(transition) if transition.isEventMissing ⇒ eventTransitionMissingAttributes
+        case Right(transition) if eventNames.contains(transition.label) ⇒ eventTransitionFiredAttributes
+        case Right(_) ⇒ eventTransitionAttributes
+      }
 
-  private def generateDot(graph: RecipePetriNetGraph, filter: String => Boolean, events: Seq[String]): String = {
+  private def generateDot(graph: RecipePetriNetGraph, filter: String => Boolean, eventNames: Set[String], ingredientNames: Set[String]): String = {
     val myRoot = DotRootGraph(directed = graph.isDirected,
-                              id = None,
-                              attrStmts = attrStmts,
-                              attrList = rootAttrs)
+      id = None,
+      attrStmts = attrStmts,
+      attrList = rootAttrs)
 
     def myNodeTransformer(innerNode: RecipePetriNetGraph#NodeT): Option[(DotGraph, DotNodeStmt)] = {
-      Some((myRoot, DotNodeStmt(nodeLabelFn(innerNode.value), nodeDotAttrFn(innerNode, events))))
+      Some((myRoot, DotNodeStmt(nodeLabelFn(innerNode.value), nodeDotAttrFn(innerNode, eventNames, ingredientNames))))
     }
 
     def myEdgeTransformer(innerEdge: RecipePetriNetGraph#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
@@ -173,7 +180,7 @@ object RecipeVisualizer {
       case (graphAccumulator, node) =>
         node.value match {
           case Left(place) if !(place.isIngredient | place.isEmptyEventIngredient | place.isOrEventPrecondition) => compactNode(graphAccumulator, node)
-          case _                                  => graphAccumulator
+          case _ => graphAccumulator
         }
     }
 
@@ -187,13 +194,16 @@ object RecipeVisualizer {
     }
 
     graph2DotExport(filteredGraph).toDot(dotRoot = myRoot,
-                                         edgeTransformer = myEdgeTransformer,
-                                         cNodeTransformer = Some(myNodeTransformer))
+      edgeTransformer = myEdgeTransformer,
+      cNodeTransformer = Some(myNodeTransformer))
   }
 
-  def visualiseCompiledRecipe(compiledRecipe: CompiledRecipe, filter: String => Boolean = s => true, events: Seq[String] = Seq.empty) =
-    generateDot(compiledRecipe.petriNet.innerGraph, filter, events)
+  def visualiseCompiledRecipe(compiledRecipe: CompiledRecipe,
+                              filter: String => Boolean = _ => true,
+                              eventNames: Set[String] = Set.empty,
+                              ingredientNames: Set[String] = Set.empty): String =
+    generateDot(compiledRecipe.petriNet.innerGraph, filter, eventNames, ingredientNames)
 
-  def visualisePetrinetOfCompiledRecipe(petriNet: RecipePetriNet) =
+  def visualisePetrinetOfCompiledRecipe(petriNet: RecipePetriNet): String =
     GraphDot.generateDot(petriNet.innerGraph, PetriNetDot.petriNetTheme[Place[_], Transition[_, _]])
 }

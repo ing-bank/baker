@@ -32,7 +32,7 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
       logCompiledRecipeStats(compiledRecipe)
 
       if (compiledRecipe.validationErrors.nonEmpty) {
-        dumpVisualRecipe(recipeVisualizationOutputPath, compiledRecipe)
+        dumpToFile(s"visualRecipe-${compiledRecipe.name}", compiledRecipe.getRecipeVisualization)
       }
 
       // assertion of the result
@@ -42,37 +42,47 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
     check(prop, Test.Parameters.defaultVerbose.withMinSuccessfulTests(100))
   }
 
-  ignore("Baker can execute a compiled recipe") {
+  test("Baker can execute a compiled recipe") {
     implicit val actorSystem = ActorSystem("pbt-actor-system")
     implicit val duration = FiniteDuration(1, "seconds")
 
     val prop = forAll(recipeGen) { recipe =>
 
       val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+
+      logRecipeStats(recipe)
+      logCompiledRecipeStats(compiledRecipe)
+      dumpToFile(s"visualRecipe-${compiledRecipe.name}", compiledRecipe.getRecipeVisualization)
+
       val sensoryEvents: Set[EventType] = compiledRecipe.sensoryEvents
       val petriNetInteractionMock: InteractionTransition[_] => ProcessState => RuntimeEvent = { interaction => processState =>
 
-            println(s"Current process state: $processState")
-            interaction.providesType match {
-              case petrinet.FiresOneOfEvents(events, _) => sample(Gen.oneOf(events.map(e => RuntimeEvent(e.name, ingredientValuesFrom(e.providedIngredients)))))
-              case petrinet.ProvidesIngredient(ingredient) => RuntimeEvent(sample(nameGen), ingredientValuesFrom(Seq(ingredient)))
-              case petrinet.ProvidesNothing => RuntimeEvent("ProvidesNothingEvent-" + sample(nameGen), Map.empty)
-            }
-
+          val outputEvent = interaction.providesType match {
+            case petrinet.FiresOneOfEvents(events, _) =>
+              sample(Gen.oneOf(events.map(e => RuntimeEvent(e.name, ingredientValuesFrom[IngredientType](e.providedIngredients, _.name)))))
+            case petrinet.ProvidesIngredient(ingredient) =>
+              RuntimeEvent(sample(nameGen), ingredientValuesFrom[IngredientType](Seq(ingredient), _.name))
+            case petrinet.ProvidesNothing =>
+              fail("ProvidesNothing type of interaction should not be hit")
+          }
+          println(s"Inside interaction: ${interaction.interactionName}. Firing event ${outputEvent.name}")
+          outputEvent
       }
 
       val baker = new Baker(compiledRecipe, petriNetInteractionMock)
       val processId = UUID.randomUUID()
       baker.bake(processId)
-      sensoryEvents foreach {
-        baker.handleEvent(processId, _)
+      sensoryEvents foreach { event =>
+        println(s"Handle sensory event: ${event.name}")
+        baker.handleEvent(processId, RuntimeEvent(event.name, ingredientValuesFrom[IngredientType](event.providedIngredients, _.name)))
       }
+      dumpToFile(s"visualRecipeState-${compiledRecipe.name}", baker.getVisualState(processId))
 
       true
 
     }
 
-    check(prop, Test.Parameters.defaultVerbose.withMinSuccessfulTests(100))
+    check(prop, Test.Parameters.defaultVerbose.withMinSuccessfulTests(1))
   }
 
 }
@@ -206,7 +216,7 @@ object RecipePropertiesSpec {
 
   def getIngredientsFrom(events: Iterable[common.Event]): Set[common.Ingredient] = events.flatMap(_.providedIngredients).toSet
 
-  def ingredientValuesFrom(types: Seq[IngredientType]): Map[String, Any] = types map (t => t.name -> "") toMap
+  def ingredientValuesFrom[T](ingredients: Seq[T], nameExtractor: T => String): Map[String, Any] = ingredients map (t => nameExtractor(t) -> "") toMap
 
   /**
     * Recursively check until there's a sample value is returned
@@ -236,18 +246,17 @@ object RecipePropertiesSpec {
     if (compiledRecipe.validationErrors.nonEmpty) println(s"***VALIDATION ERRORS: ${compiledRecipe.validationErrors.mkString("\n")}")
   }
 
-  def dumpVisualRecipe(dumpDir: String, compiledRecipe: CompiledRecipe): Unit = {
+  def dumpToFile(name: String, data: String): Unit = {
     val fileName =
-      if (dumpDir endsWith "/") s"$dumpDir${compiledRecipe.name}.dot"
-      else s"$dumpDir/${compiledRecipe.name}.dot"
+      if (recipeVisualizationOutputPath endsWith "/") s"$recipeVisualizationOutputPath$name.dot"
+      else s"$recipeVisualizationOutputPath/$name.dot"
 
     val outFile = new File(fileName)
     val writer = new PrintWriter(outFile)
 
     try {
-      val dotRepresentation = compiledRecipe.getRecipeVisualization
-      writer.write(dotRepresentation)
-      println(s"Recipe visualization for ${compiledRecipe.name} in bytes: ${dotRepresentation.length}. Dump location: $fileName \n")
+      writer.write(data)
+      println(s"Dumped data with ${data.length} length into $fileName \n")
     } finally {
       writer.close()
     }

@@ -182,7 +182,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
     val subscriber = actorSystem.actorOf(Props(new Actor() {
       override def receive: Receive = {
-        case PetriNetInstanceEvent(processType, id, event: TransitionFiredEvent[_,_,_]) if (processType == compiledRecipe.name) =>
+        case PetriNetInstanceEvent(processType, id, event: TransitionFiredEvent[_,_,_]) if processType == compiledRecipe.name =>
             val t = event.transition.asInstanceOf[Transition[_,_]]
             if (t.isSensoryEvent || t.isInteraction)
               listener.processEvent(id, event.output.asInstanceOf[RuntimeEvent])
@@ -233,7 +233,10 @@ class Baker(val compiledRecipe: CompiledRecipe,
     */
   def handleEventAsync(processId: UUID, event: Any)(implicit timeout: FiniteDuration): BakerResponse = {
 
-    val runtimeEvent = Baker.eventExtractor.extractEvent(event)
+    val runtimeEvent = event match {
+      case e: RuntimeEvent => e
+      case e => Baker.eventExtractor.extractEvent(e)
+    }
 
     val eventType = compiledRecipe.sensoryEvents.find(se => se.name == runtimeEvent.name)
       .getOrElse(throw new BakerException(s"Fired event $event is not recognised as any valid sensory event"))
@@ -259,7 +262,10 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   //TODO, decide if Baker can visualise itself or is visualising part of the runtime that the compiler exposes also?
   def getVisualState(processId: java.util.UUID)(implicit timeout: FiniteDuration): String = {
-    RecipeVisualizer.visualiseCompiledRecipe(compiledRecipe, events = this.events(processId).map(_.name))
+    RecipeVisualizer.visualiseCompiledRecipe(
+      compiledRecipe,
+      eventNames = this.events(processId).map(_.name).toSet,
+      ingredientNames = this.getIngredients(processId).keySet)
   }
 
 
