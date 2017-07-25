@@ -1,6 +1,7 @@
 package com.ing.baker.runtime.core
 
 import java.util.UUID
+import java.util.concurrent.TimeoutException
 
 import akka.NotUsed
 import akka.actor.{Actor, ActorSystem, Props}
@@ -150,16 +151,16 @@ class Baker(val compiledRecipe: CompiledRecipe,
   }
 
   /**
-    * Creates an instance of the  process using the recipe.
+    * Creates a process instance of this recipe.
     *
-    * @param processId A unique process id.
+    * @param processId The process identifier
     */
   def bake(processId: java.util.UUID): ProcessState = Await.result(bakeAsync(processId), bakeTimeout)
 
   /**
     * Asynchronously creates an instance of the  process using the recipe.
     *
-    * @param processId A unique process id.
+    * @param processId The process identifier
     * @return A future of the initial process state.
     */
   def bakeAsync(processId: java.util.UUID): Future[ProcessState] = {
@@ -224,16 +225,16 @@ class Baker(val compiledRecipe: CompiledRecipe,
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
     *
-    * @param processId The process id
-    * @param event     The event instance
+    * @param processId The process identifier
+    * @param event     The event object
     */
   def handleEvent(processId: java.util.UUID, event: Any)(implicit timeout: FiniteDuration): Unit = {
     handleEventAsync(processId, event).confirmCompleted
   }
 
   /**
-    * Fires an event to baker for a process. This is fire and forget in the sense that if nothing is done
-    * with the response you have NO guarantee that the event is received by baker.
+    * Fires an event to baker for a process. This call is fire and forget, meaning that if nothing is done
+    * with the response object you have NO guarantee that the event is received the process instance.
     */
   def handleEventAsync(processId: UUID, event: Any)(implicit timeout: FiniteDuration): BakerResponse = {
 
@@ -257,12 +258,13 @@ class Baker(val compiledRecipe: CompiledRecipe,
     *
     * Throws a NoSuchProcessException when the process with the given identifier does not exist.
     *
-    * @param processId The process identifier.
+    * @param processId The process identifier
     * @return The process state.
     */
-  def getProcessState(processId: java.util.UUID)(implicit timeout: FiniteDuration): ProcessState = {
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
+  def getProcessState(processId: java.util.UUID)(implicit timeout: FiniteDuration): ProcessState =
     Await.result(getProcessStateAsync(processId), timeout)
-  }
 
   //TODO, decide if Baker can visualise itself or is visualising part of the runtime that the compiler exposes also?
   def getVisualState(processId: java.util.UUID)(implicit timeout: FiniteDuration): String = {
@@ -279,6 +281,8 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * @param processId The process id of the active process for which the accumulated state needs to be retrieved.
     * @return Accumulated state.
     */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def getIngredients(processId: java.util.UUID)(implicit timeout: FiniteDuration): Map[String, Any] =
     getProcessState(processId).ingredients
 

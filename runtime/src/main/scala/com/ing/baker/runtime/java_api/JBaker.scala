@@ -1,12 +1,12 @@
 package com.ing.baker.runtime.java_api
 
 import java.util.UUID
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.actor.ProcessMetadata
-import com.ing.baker.runtime.core.{Baker, EventListener}
+import com.ing.baker.runtime.core.{Baker, EventListener, NoSuchProcessException}
 import com.ing.baker.runtime.petrinet.ReflectedInteractionTask
 
 import scala.collection.JavaConverters._
@@ -22,7 +22,10 @@ class JBaker (compiledRecipe: CompiledRecipe,
   def this(compiledRecipe: CompiledRecipe, implementations: java.util.List[AnyRef]) =
     this(compiledRecipe, implementations, ActorSystem("BakerActorSystem"))
 
-  val baker: Baker = new Baker(compiledRecipe = compiledRecipe, ReflectedInteractionTask.implementationsToProviderMap(implementations.asScala))(actorSystem = actorSystem)
+  val baker: Baker = new Baker(
+    compiledRecipe = compiledRecipe,
+    implementations = ReflectedInteractionTask.implementationsToProviderMap(implementations.asScala))(actorSystem = actorSystem)
+
   val defaultTimeout: Int = 20 * 1000
   val defaultHandleEventAsyncTimeout: FiniteDuration = FiniteDuration.apply(10, TimeUnit.SECONDS)
 
@@ -39,8 +42,9 @@ class JBaker (compiledRecipe: CompiledRecipe,
   def shutdown(): Unit = baker.shutdown()
 
   /**
-    * This Bakes a new instance of the recipe
-    * @param processId process id
+    * This bakes (creates) a new process instance of the recipe.
+    *
+    * @param processId The process identifier
     */
   def bake(processId: java.util.UUID): Unit =
     baker.bake(processId)
@@ -49,7 +53,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     * This fires the given event in the recipe for the process with the given processId
     * This waits with returning until all steps that can be executed are executed by Baker
     *
-    * @param processId the identifier of the process
+    * @param processId The process identifier
     * @param event The event to fire
     * @return
     */
@@ -58,8 +62,9 @@ class JBaker (compiledRecipe: CompiledRecipe,
 
   /**
     * This fires the given event in the recipe for the process with the given processId
-    * This returns a JBaker response which is a future.
-    * @param processId the identifier of the process
+    * This returns a JBakerResponse which is a future.
+    *
+    * @param processId The process identifier
     * @param event The event to fire
     * @return
     */
@@ -71,11 +76,14 @@ class JBaker (compiledRecipe: CompiledRecipe,
   }
 
   /**
-    * Gets all the ingredients that are created in a given model
-    * @param processId the identifier of the process
+    * Returns all the ingredients that are accumulated for a given process.
+    *
+    * @param processId The process identifier
     * @param waitTimeoutMillis the maximum wait time
     * @return
     */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def getIngredients(processId: java.util.UUID,
                      waitTimeoutMillis: Long): java.util.Map[String, Object] =
     baker
@@ -84,17 +92,21 @@ class JBaker (compiledRecipe: CompiledRecipe,
       .asInstanceOf[java.util.Map[String, Object]]
 
   /**
-    * Gets all the ingredients that are created in a given model
-    * @param processId the identifier of the process
+    * Returns all the ingredients that are accumulated for a given process.
+    *
+    * @param processId The process identifier
     * @return
     */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[TimeoutException]("When the request does not receive a reply within the default deadline")
   def getIngredients(processId: java.util.UUID): java.util.Map[String, Object] =
     getIngredients(processId, defaultTimeout)
 
   /**
-    * Get all events that have occurred for a given process
-    * @param processId the identifier of the process
-    * @param waitTimeoutMillis the maximum wait time
+    * Returns all events that have occurred for a given process.
+    *
+    * @param processId The process identifier
+    * @param waitTimeoutMillis The maximum wait time
     * @return
     *
     */
@@ -102,16 +114,17 @@ class JBaker (compiledRecipe: CompiledRecipe,
     new EventList(baker.events(processId)(waitTimeoutMillis milliseconds))
 
   /**
-    * Get all events that have occurred for a given process
-    * @param processId the identifier of the process
+    * Returns all events that have occurred for a given process.
+    *
+    * @param processId The process identifier
     * @return
     */
   def getEvents(processId: UUID): EventList = getEvents(processId, defaultTimeout)
 
   /**
-    * Returns the compiled recipe
+    * Returns the compiled recipe.
     *
-    * @return The compiled recipe.
+    * @return The compiled recipe
     */
   def getCompiledRecipe: CompiledRecipe = compiledRecipe
 
@@ -138,15 +151,16 @@ class JBaker (compiledRecipe: CompiledRecipe,
     * Returns the visual state of the recipe in dot format
     *
     * @param processId The process identifier
-    * @param waitTimeoutMillis
+    * @param waitTimeoutMillis The maximum time to wait
     * @return
     */
+  @throws[TimeoutException]("When the request does not receive a reply within the default deadline")
   def getVisualState(processId: java.util.UUID, waitTimeoutMillis: Long): String =
     baker.getVisualState(processId)(waitTimeoutMillis milliseconds)
 
   /**
-    * returns the visual state of the recipe in dot format with a default timeout of 20 seconds
-    * @param processId
+    * Returns the visual state of the recipe in dot format with a default timeout of 20 seconds
+    * @param processId The process identifier
     * @return
     */
   def getVisualState(processId: java.util.UUID): String =

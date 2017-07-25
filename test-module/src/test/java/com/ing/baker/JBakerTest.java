@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 
 import static com.ing.baker.compiler.JavaCompiledRecipeTest.setupComplexRecipe;
 import static com.ing.baker.compiler.JavaCompiledRecipeTest.setupSimpleRecipe;
@@ -32,7 +33,7 @@ public class JBakerTest {
     public final ExpectedException exception = ExpectedException.none();
 
     @Test
-    public void shouldSetupJBakerWithDefaultActorFramework() throws BakerException {
+    public void shouldSetupJBakerWithDefaultActorFramework() throws BakerException, TimeoutException {
         JBaker jBaker = new JBaker(RecipeCompiler.compileRecipe(setupSimpleRecipe()), implementationsList);
         assertEquals(jBaker.getCompiledRecipe().getValidationErrors().size(), 0);
         UUID requestId = UUID.randomUUID();
@@ -42,7 +43,7 @@ public class JBakerTest {
     }
 
     @Test
-    public void shouldSetupJBakerWithGivenActorFramework() throws BakerException {
+    public void shouldSetupJBakerWithGivenActorFramework() throws BakerException, TimeoutException {
         com.typesafe.config.Config config = ConfigFactory.load();
         JBaker jBaker = new JBaker(RecipeCompiler.compileRecipe(setupSimpleRecipe()), implementationsList);
         assertEquals(jBaker.getCompiledRecipe().getValidationErrors().size(), 0);
