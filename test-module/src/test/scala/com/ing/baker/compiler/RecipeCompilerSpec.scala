@@ -2,7 +2,7 @@ package com.ing.baker.compiler
 
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
-import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.common.ProvidesNothing
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 
@@ -52,6 +52,17 @@ class RecipeCompilerSpec extends TestRecipeHelper {
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
       compiledRecipe.validationErrors should contain("Predefined argument 'WrongIngredient' is not defined on interaction: 'InteractionOne'")
+    }
+
+    "validate if there are unreachable interactions exist or not" ignore {
+      val recipe = Recipe("RecipeWithUnreachableInteraction")
+        .withInteractions(interactionSeven, interactionEight)
+        .withSensoryEvent(initialEvent)
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe,
+        ValidationSettings(allowNonexecutableInteractions = false))
+
+      compiledRecipe.validationErrors should contain("InteractionEight is not executable")
     }
 
     "fail compilation for an empty or null named interaction" in {

@@ -22,7 +22,7 @@ import fs2.Strategy
 import io.kagera.akka.actor.PetriNetInstanceEvent
 import io.kagera.akka.actor.PetriNetInstanceProtocol._
 import io.kagera.akka.actor.{PetriNetQuery, _}
-import io.kagera.runtime.EventSourcing.{TransitionEvent, TransitionFiredEvent}
+import io.kagera.runtime.EventSourcing.TransitionFiredEvent
 import io.kagera.runtime.PetriNetRuntime
 import io.kagera.runtime.persistence.Encryption
 import io.kagera.runtime.persistence.Encryption.NoEncryption
@@ -38,7 +38,7 @@ object Baker {
 
   val eventExtractor: EventExtractor = new CompositeEventExtractor()
 
-  def transitionForRuntimeEvent(runtimeEvent: RuntimeEvent, compiledRecipe: CompiledRecipe) =
+  def transitionForRuntimeEvent(runtimeEvent: RuntimeEvent, compiledRecipe: CompiledRecipe): Transition[_, _] =
     compiledRecipe.petriNet.transitions.findByLabel(runtimeEvent.name).getOrElse {
       throw new IllegalArgumentException(s"No such event known in recipe: $runtimeEvent")
     }
@@ -171,7 +171,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
     val eventualState = initializeFuture.map {
       case msg: Initialized => msg.state.asInstanceOf[ProcessState]
-      case AlreadyInitialized => throw new IllegalArgumentException(s"Processs with $processId already exists.")
+      case AlreadyInitialized => throw new IllegalArgumentException(s"Process with $processId already exists.")
       case msg@_ => throw new BakerException(s"Unexpected message: $msg")
     }
 
@@ -183,7 +183,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  def registerEventListener(listener: EventListener) = {
+  def registerEventListener(listener: EventListener): Boolean = {
 
     val subscriber = actorSystem.actorOf(Props(new Actor() {
       override def receive: Receive = {

@@ -1,6 +1,6 @@
 package com.ing.baker.il
 
-import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
+import com.ing.baker.il.petrinet.InteractionTransition
 
 import scala.collection.mutable
 
@@ -15,7 +15,7 @@ object RecipeValidations {
 
     // check if the process id argument type is correct, TODO remove overlap with code below
     interactionTransition.inputFields.toMap.get(processIdName).map {
-      case c if c == classOf[String]         =>
+      case c if c == classOf[String] =>
       case c if c == classOf[java.util.UUID] =>
       case c => validationErrors += s"Non supported process id class: ${c.getName} on interaction: '$interactionTransition'"
     }
@@ -24,9 +24,9 @@ object RecipeValidations {
     interactionTransition.predefinedParameters.foreach {
       case (name, value) =>
         val parameterTypeOption: Option[Class[_]] = interactionTransition.inputFields.toMap.get(name)
-        if(parameterTypeOption.isEmpty)
+        if (parameterTypeOption.isEmpty)
           validationErrors += s"Predefined argument '$name' is not defined on interaction: '$interactionTransition'"
-        else if(!parameterTypeOption.get.isInstance(value))
+        else if (!parameterTypeOption.get.isInstance(value))
           validationErrors += s"Predefined argument '$name' is not of type: ${parameterTypeOption.get} on interaction: '$interactionTransition'"
     }
     validationErrors
@@ -58,8 +58,18 @@ object RecipeValidations {
 
   def validateNoCycles(compiledRecipe: CompiledRecipe): Seq[String] =
     compiledRecipe.petriNet.innerGraph.findCycle
-      .map(c => s"The petri net topology contains a cycle: $c")
+      .map(c => s"The petrinet topology contains a cycle: $c")
       .toSeq
+
+  def validateAllInteractionsExecutable(compiledRecipe: CompiledRecipe): Seq[String] = {
+//    val rootNode = Coverability.calculateCoverabilityTree(compiledRecipe.petriNet, compiledRecipe.initialMarking.multiplicities)
+//
+//    compiledRecipe.interactionTransitions filterNot { interaction =>
+//      rootNode.isCoverable(compiledRecipe.petriNet.inMarking(interaction))
+//    } map (interaction => s"$interaction is not executable") toSeq
+
+    Seq.empty
+  }
 
   /**
     * Validates the compiled recipe.
@@ -81,10 +91,13 @@ object RecipeValidations {
     postCompileValidationErrors ++= validateInteractions(compiledRecipe)
 
     if (!validationSettings.allowCycles)
-    postCompileValidationErrors ++= validateNoCycles(compiledRecipe)
+      postCompileValidationErrors ++= validateNoCycles(compiledRecipe)
 
     if (!validationSettings.allowDisconnectedness && !compiledRecipe.petriNet.innerGraph.isConnected)
-    postCompileValidationErrors += "The petri net topology is not completely connected"
+      postCompileValidationErrors += "The petrinet topology is not completely connected"
+
+    if (!validationSettings.allowNonexecutableInteractions)
+      postCompileValidationErrors ++= validateAllInteractionsExecutable(compiledRecipe)
 
     compiledRecipe.copy(
       validationErrors = compiledRecipe.validationErrors ++ postCompileValidationErrors)

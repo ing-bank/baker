@@ -1,9 +1,11 @@
 package com.ing.baker
 package compiler
 
+import com.ing.baker.il.RecipeValidations.postCompileValidations
+import com.ing.baker.il.ValidationSettings.defaultValidationSettings
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
-import com.ing.baker.il.{CompiledRecipe, EventType, RecipeValidations, ValidationSettings}
+import com.ing.baker.il.{CompiledRecipe, EventType, ValidationSettings}
 import com.ing.baker.recipe.common.{Event, Ingredient, InteractionDescriptor, Recipe}
 import io.kagera.api._
 
@@ -268,11 +270,10 @@ object RecipeCompiler {
       validationErrors = preconditionORErrors ++ preconditionANDErrors
     )
 
-    RecipeValidations.postCompileValidations(compiledRecipe, validationSettings)
+    postCompileValidations(compiledRecipe, validationSettings)
   }
 
-  def compileRecipe(recipe: Recipe): CompiledRecipe =
-    compileRecipe(recipe, ValidationSettings.defaultValidationSettings)
+  def compileRecipe(recipe: Recipe): CompiledRecipe = compileRecipe(recipe, defaultValidationSettings)
 
   private def getMultiTransition(internalRepresentationName: String,
                                  transitions: Seq[Transition[_, _]]): Transition[_, _] = {

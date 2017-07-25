@@ -7,6 +7,7 @@ import akka.testkit.TestKit
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker.Webshop._
 import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.il.petrinet.ProvidesNothing
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, Recipe, processId}
 import com.typesafe.config.{Config, ConfigFactory}
@@ -17,7 +18,7 @@ import org.scalatest.mockito.MockitoSugar
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
-import com.ing.baker.recipe.javadsl
+import com.ing.baker.recipe.{common, javadsl}
 import com.ing.baker.runtime.core.Baker
 
 //By adding the javadsl Ingredient tag the object will be serialized by Kryo
@@ -36,6 +37,8 @@ object TestRecipeHelper {
   val interactionFourIngredient = Ingredient[String]("interactionFourIngredient")
   val interactionFiveIngredient = Ingredient[String]("interactionFiveIngredient")
   val interactionSixIngredient = Ingredient[String]("interactionSixIngredient")
+  val interactionSevenIngredient1 = Ingredient[String]("interactionSevenIngredient1")
+  val interactionSevenIngredient2 = Ingredient[String]("interactionSevenIngredient2")
   val sievedIngredient = Ingredient[String]("sievedIngredient")
   val complexObjectIngredient = Ingredient[ComplexObjectIngredient]("complexOjectIngredient")
 
@@ -51,6 +54,10 @@ object TestRecipeHelper {
   case class NotUsedSensoryEvent()
   val eventFromInteractionTwo = Event("EventFromInteractionTwo", interactionTwoIngredient)
   case class EventFromInteractionTwo(interactionTwoIngredient: String)
+  val event1FromInteractionSeven = Event("Event1FromInteractionSeven", interactionSevenIngredient1)
+  case class Event1FromInteractionSeven(interactionSevenIngredient1: String)
+  val event2FromInteractionSeven = Event("Event2FromInteractionSeven", interactionSevenIngredient2)
+  case class Event2FromInteractionSeven(interactionSevenIngredient2: String)
 
   //Interactions used in the recipe & implementations (we use traits instead of case classes since we use mocks for the real implementations
   val interactionOne = Interaction("InteractionOne", Ingredients(processId, initialIngredient), ProvidesIngredient(interactionOneOriginalIngredient))
@@ -86,6 +93,18 @@ object TestRecipeHelper {
   trait InteractionSixImpl {
     val name: String = "InteractionSix"
     def apply(initialIngredientExtendedName: String): String
+  }
+
+  val interactionSeven = Interaction("InteractionSeven", Ingredients(initialIngredient), FiresOneOfEvents(event1FromInteractionSeven, event2FromInteractionSeven))
+  trait InteractionSevenImpl {
+    val name: String = "InteractionSeven"
+    def apply(initialIngredient: String): String
+  }
+
+  val interactionEight = Interaction("InteractionEight", Ingredients(interactionSevenIngredient1, interactionSevenIngredient2), common.ProvidesNothing)
+  trait InteractionEightImpl {
+    val name: String = "InteractionEight"
+    def apply(interactionSevenIngredient1: String, interactionSevenIngredient2: String): String
   }
 
   val sieveInteraction = Interaction("SieveInteraction", Ingredients(processId, initialIngredient), ProvidesIngredient(sievedIngredient))

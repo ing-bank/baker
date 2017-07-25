@@ -5,16 +5,16 @@ object ValidationSettings {
 }
 
 /**
-  *   Depending on the validations settings the following validations are done:
+  * Depending on the validations settings the following validations are done:
   *
-  *   1. Check if all events and interactions are Java serializable
-  *   2. Check if there are any cycles
-  *   3. Check if there is any disconnectedness? (what is this?)
+  *   1. Check if there are any cycles
+  *   2. Check if there is any disconnectedness? (what is this?)
+  *   3. Check if there exist any non-executable interaction or not
   *
   * @param allowCycles
   * @param allowDisconnectedness
+  * @param allowNonexecutableInteractions
   */
-case class ValidationSettings(
-    allowCycles: Boolean = true,
-    allowDisconnectedness: Boolean = true
-)
+case class ValidationSettings(allowCycles: Boolean = true,
+                              allowDisconnectedness: Boolean = true,
+                              allowNonexecutableInteractions: Boolean = true)

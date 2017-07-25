@@ -6,7 +6,7 @@ import java.util.UUID
 import akka.actor.ActorSystem
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.il.{CompiledRecipe, EventType, IngredientType, petrinet}
+import com.ing.baker.il.{CompiledRecipe, EventType, IngredientType, ValidationSettings, petrinet}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionOutput, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, InteractionDescriptor, InteractionDescriptorFactory, Recipe}
@@ -27,12 +27,16 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
   test("Baker can compile any valid recipe") {
     val prop = forAll(recipeGen) { recipe =>
 
-      val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+//      val validations = ValidationSettings(allowCycles = false, allowNonexecutableInteractions = false)
+      val validations = ValidationSettings(allowCycles = false)
+
+      val compiledRecipe = RecipeCompiler.compileRecipe(recipe, validations)
       logRecipeStats(recipe)
       logCompiledRecipeStats(compiledRecipe)
 
       if (compiledRecipe.validationErrors.nonEmpty) {
         dumpToFile(s"visualRecipe-${compiledRecipe.name}", compiledRecipe.getRecipeVisualization)
+        dumpToFile(s"petrinet-${compiledRecipe.name}", compiledRecipe.getPetriNetVisualization)
       }
 
       // assertion of the result

@@ -9,14 +9,15 @@ class RecipeRuntime(interactionFunctions: InteractionTransition[_] => (ProcessSt
 
   override val tokenGame = new RecipeTokenGame()
 
-  override val eventSourceFn: Transition[_,_] => (ProcessState => RuntimeEvent => ProcessState) = t => state => {
-      case null                                    => state
-      case RuntimeEvent(name, providedIngredients) => state.copy(ingredients = state.ingredients ++ providedIngredients)
+  override val eventSourceFn: Transition[_, _] => (ProcessState => RuntimeEvent => ProcessState) =
+    _ => state => {
+      case null => state
+      case RuntimeEvent(_, providedIngredients) => state.copy(ingredients = state.ingredients ++ providedIngredients)
     }
 
-  override val exceptionHandlerFn: Transition[_,_] => TransitionExceptionHandler = {
+  override val exceptionHandlerFn: Transition[_, _] => TransitionExceptionHandler = {
     case interaction: InteractionTransition[_] => interaction.exceptionStrategy
-    case _                                     => (e, n) => BlockTransition
+    case _ => (_, _) => BlockTransition
   }
 
   override val taskProvider = new TaskProvider(interactionFunctions)
