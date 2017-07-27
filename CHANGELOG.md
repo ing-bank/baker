@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.8
+- Added the functionality that if an Ingredient of Java Optional or Scala Option is needed but not provided its provided as empty.
+
 ## 1.0.6
 - Using a better consistent hash function for place/transition identifiers in the petri net
 - IMPORTANT: This change is not backwards compatible, on going processing cannot be resumed after a restart

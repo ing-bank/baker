@@ -114,5 +114,24 @@ class RecipeCompilerSpec extends TestRecipeHelper {
       intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(Recipe("someName").withSensoryEvent(initialEvent))) getMessage() shouldBe "Not a valid recipe: No interactions or sieves found."
     }
 
+    "interactions with OptionalIngredients that are not provided should be provided as empty" in {
+      val recipe: Recipe = Recipe("MissingOptionalRecipe")
+        .withInteraction(optionalIngredientInteraction)
+        .withSensoryEvent(initialEvent)
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.validationErrors shouldBe List.empty
+    }
+
+    "interactions with OptionalIngredients that are provided should not be provided as empty" in {
+      val optionalProviderEvent = Event("optionalProviderEvent", Seq(missingJavaOptional))
+
+      val recipe: Recipe = Recipe("MissingOptionalRecipe")
+        .withInteraction(optionalIngredientInteraction)
+        .withSensoryEvents(initialEvent, optionalProviderEvent)
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.validationErrors shouldBe List.empty
+    }
   }
 }
