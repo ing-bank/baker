@@ -4,8 +4,10 @@ import com.ing.baker.petrinet.runtime.persistence.Encryption.{AESEncryption, DES
 import org.scalacheck.Gen._
 import org.scalacheck.Prop.forAll
 import org.scalacheck._
+import org.scalatest.FunSuite
+import org.scalatest.prop.Checkers
 
-object EncryptionProperties extends Properties("EncryptionProperties") {
+class EncryptionPropertiesSpec extends FunSuite with Checkers {
 
   val desEncryptionGen: Gen[DESEncryption] = for {
     keyChars ← Gen.listOfN(8, alphaChar)
@@ -20,11 +22,15 @@ object EncryptionProperties extends Properties("EncryptionProperties") {
     text ← Gen.alphaStr
   } yield (algorithm, text)
 
-  property("(AES|DES)Encryption: decrypt(encrypt(plaintext)) should be plaintext") = forAll(keyAndTextGen) {
-    case (encryption: JavaCryptoEncryption, plainText: String) ⇒
-      val encryptedBytes = encryption.encrypt(plainText.getBytes)
-      val decryptedPlainText = new String(encryption.decrypt(encryptedBytes))
+  test("(AES|DES)Encryption: decrypt(encrypt(plaintext)) should be plaintext") {
+    val property = forAll(keyAndTextGen) {
+      case (encryption: JavaCryptoEncryption, plainText: String) ⇒
+        val encryptedBytes = encryption.encrypt(plainText.getBytes)
+        val decryptedPlainText = new String(encryption.decrypt(encryptedBytes))
 
-      plainText == decryptedPlainText
+        plainText == decryptedPlainText
+    }
+
+    check(property, Test.Parameters.defaultVerbose.withMinSuccessfulTests(100))
   }
 }
