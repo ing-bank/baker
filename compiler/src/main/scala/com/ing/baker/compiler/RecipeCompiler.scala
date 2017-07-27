@@ -7,6 +7,7 @@ import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
 import com.ing.baker.il.{CompiledRecipe, EventType, ValidationSettings}
 import com.ing.baker.petrinet.api._
+import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{Event, Ingredient, InteractionDescriptor, Recipe}
 
 import scala.language.postfixOps
@@ -161,13 +162,22 @@ object RecipeCompiler {
 
     preCompileAssertions(recipe)
 
+    //All ingredient names provided by sensory events or by interactions
+    val allIngredientNames: Set[String] =
+      recipe.sensoryEvents.flatMap(e => e.providedIngredients.map(i => i.name)) ++
+      recipe.interactions.flatMap(i => i.interaction.output match {
+        case pi: common.ProvidesIngredient => Set(i.overriddenOutputIngredientName.getOrElse(pi.ingredient.name))
+        case fi: common.FiresOneOfEvents => fi.events.flatMap(e => e.providedIngredients.map(i => i.name))
+        case common.ProvidesNothing => Set.empty
+      })
+
     val actionDescriptors: Seq[InteractionDescriptor] = recipe.interactions ++ recipe.sieves
 
     // For inputs for which no matching output cannot be found, we do not want to generate a place.
     // It should be provided at runtime from outside the active petri net (marking)
-    val interactionTransitions = recipe.interactions.map(_.toInteractionTransition(recipe.defaultFailureStrategy))
+    val interactionTransitions = recipe.interactions.map(_.toInteractionTransition(recipe.defaultFailureStrategy, allIngredientNames))
 
-    val sieveTransitions = recipe.sieves.map(_.toSieveTransition(recipe.defaultFailureStrategy))
+    val sieveTransitions = recipe.sieves.map(_.toSieveTransition(recipe.defaultFailureStrategy, allIngredientNames))
 
     val allInteractionTransitions = sieveTransitions ++ interactionTransitions
 

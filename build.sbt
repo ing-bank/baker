@@ -41,10 +41,13 @@ lazy val petrinetApi = project.in(file("petrinet-api"))
     libraryDependencies ++= compileDeps(
       scalaGraph,
       catsCore,
+      slf4jApi,
       fs2Core) ++ testDeps(
       scalaCheck,
       scalaTest,
-      mockito)
+      mockito,
+      logback
+    )
   )
 
 lazy val petrinetAkka = project.in(file("petrinet-akka"))
@@ -62,7 +65,9 @@ lazy val petrinetAkka = project.in(file("petrinet-akka"))
       akkaTestKit,
       akkaStreamTestKit,
       scalaTest,
-      mockito)
+      mockito,
+      logback
+    )
   ).dependsOn(petrinetApi)
 
 lazy val intermediateLanguage = project.in(file("intermediate-language"))
@@ -72,7 +77,7 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
     libraryDependencies ++= compileDeps(
       slf4jApi,
       scalaGraphDot
-    ) ++ testDeps(scalaTest, scalaCheck)
+    ) ++ testDeps(scalaTest, scalaCheck, logback)
   ).dependsOn(petrinetApi)
 
 lazy val recipeRuntime = project.in(file("runtime"))
@@ -90,7 +95,7 @@ lazy val recipeRuntime = project.in(file("runtime"))
         jodaTime,
         jodaConvert,
         slf4jApi
-      ) ++ testDeps(scalaTest, scalaCheck)
+      ) ++ testDeps(scalaTest, scalaCheck, logback)
         ++ providedDeps(findbugs)
   )
   .dependsOn(intermediateLanguage, petrinetAkka)
@@ -107,7 +112,9 @@ lazy val recipeDsl = project.in(file("recipe-dsl"))
         testDeps(
           scalaTest,
           scalaCheck,
-          junitInterface
+          junitInterface,
+          slf4jApi,
+          logback
         )
   )
 
@@ -116,7 +123,7 @@ lazy val recipeCompiler = project.in(file("compiler"))
   .settings(
     moduleName := "compiler",
     libraryDependencies ++=
-      compileDeps(slf4jApi) ++ testDeps(scalaTest, scalaCheck)
+      compileDeps(slf4jApi) ++ testDeps(scalaTest, scalaCheck, logback)
   )
   .dependsOn(recipeDsl, intermediateLanguage, petrinetApi)
 

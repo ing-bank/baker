@@ -17,29 +17,6 @@ import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
 
 object AkkaTestBase {
 
-  val defaultTestConfig = ConfigFactory.parseString(
-    """
-      |
-      |akka {
-      |  loggers = ["akka.testkit.TestEventListener"]
-      |  test.timefactor = 4
-      |  persistence {
-      |    journal.plugin = "inmemory-journal"
-      |    snapshot-store.plugin = "inmemory-snapshot-store"
-      |  }
-      |}
-      |
-      |inmemory-read-journal {
-      |  write-plugin = "inmemory-journal"
-      |  offset-mode = "sequence"
-      |  ask-timeout = "10s"
-      |  refresh-interval = "50ms"
-      |  max-buffer-size = "100"
-      |}
-      |
-      |logging.root.level = WARN
-    """.stripMargin)
-
   case object GetChild
   class MockShardActor(childActorProps: Props, childActorName: String = UUID.randomUUID().toString) extends Actor {
     val childActor = context.actorOf(childActorProps, childActorName)
@@ -52,7 +29,7 @@ object AkkaTestBase {
   }
 }
 
-abstract class AkkaTestBase extends TestKit(ActorSystem("testSystem", AkkaTestBase.defaultTestConfig))
+abstract class AkkaTestBase extends TestKit(ActorSystem("testSystem"))
     with WordSpecLike
     with ImplicitSender
     with BeforeAndAfterAll {

@@ -15,16 +15,17 @@ package object compiler {
 
   implicit class InteractionOps(interaction: InteractionDescriptor) {
 
-    def toInteractionTransition(defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): InteractionTransition[_] =
-      interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.InteractionAction)
+    def toInteractionTransition(defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition[_] =
+      interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.InteractionAction, allIngredientNames)
 
-    def toSieveTransition(defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): InteractionTransition[_] =
-      interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.SieveAction)
+    def toSieveTransition(defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition[_] =
+      interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.SieveAction, allIngredientNames)
 
     def interactionTransitionOf(
                                  interactionDescriptor: InteractionDescriptor,
                                  defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy,
-                                 actionType: ActionType): InteractionTransition[Any] = {
+                                 actionType: ActionType,
+                                 allIngredientNames: Set[String]): InteractionTransition[Any] = {
 
       //This transforms the event using the eventOutputTransformer to the new event
       //If there is no eventOutputTransformer for the event the original event is returned
@@ -83,12 +84,21 @@ package object compiler {
           case common.ProvidesNothing => ProvidesNothing
         }
 
+      val predefinedIngredientsWithOptionalsEmpty: Map[String, Any] =
+        inputFields.flatMap {
+          case (name, clazz) if !allIngredientNames.contains(name) && classOf[java.util.Optional[_]].isAssignableFrom(clazz)
+              => Seq((name, java.util.Optional.empty()))
+          case (name, clazz) if !allIngredientNames.contains(name) && classOf[scala.Option[_]].isAssignableFrom(clazz)
+              => Seq((name, scala.Option.empty))
+          case _ => Seq.empty
+        }.toMap ++ interactionDescriptor.predefinedIngredients
+
       InteractionTransition[Any](
         providesType = providesType,
         inputFields = inputFields,
         interactionName = interactionDescriptor.name,
         originalInteractionName = interactionDescriptor.interaction.name,
-        predefinedParameters = interactionDescriptor.predefinedIngredients,
+        predefinedParameters = predefinedIngredientsWithOptionalsEmpty,
         maximumInteractionCount = interactionDescriptor.maximumInteractionCount,
         failureStrategy = transformFailureStrategy(interactionDescriptor.failureStrategy.getOrElse[common.InteractionFailureStrategy](defaultFailureStrategy)),
         eventOutputTransformers =  interactionDescriptor.eventOutputTransformers.map { case (event, transformer) => eventToCompiledEvent(event) -> transformEventOutputTransformer(transformer) },
