@@ -187,7 +187,6 @@ object TestRecipeHelper {
 
   trait NonMatchingReturnTypeInteractionImpl {
     val name: String = "NonMatchingReturnTypeInteraction"
-
     def apply(initialIngredient: String): EventFromInteractionTwo
   }
 
@@ -200,6 +199,15 @@ object TestRecipeHelper {
         missingScalaOptional2,
         initialIngredient),
       common.ProvidesNothing)
+  trait OptionalIngredientInteractionImpl {
+    val name: String = "OptionalIngredientInteraction"
+    def apply(missingJavaOptional: Optional[String],
+              missingJavaOptional2: Optional[Int],
+              missingScalaOptional: Option[String],
+              missingScalaOptional2: Option[Int],
+              intialIngredient: String
+             )
+  }
 }
 
 object Webshop {
@@ -301,6 +309,7 @@ trait TestRecipeHelper
   protected val testNonMatchingReturnTypeInteractionMock: NonMatchingReturnTypeInteractionImpl =
     mock[NonMatchingReturnTypeInteractionImpl]
   protected val testSieveInteractionMock: SieveInteractionImpl = mock[SieveInteractionImpl]
+  protected val testOptionalIngredientInteractionMock: OptionalIngredientInteractionImpl = mock[OptionalIngredientInteractionImpl]
 
   protected val mockImplementations: Map[String, AnyRef] =
     Map(
@@ -312,7 +321,8 @@ trait TestRecipeHelper
       "InteractionSix" -> testInteractionSixMock,
       "ComplexIngredientInteraction" -> testComplexIngredientInteractionMock,
       "NonMatchingReturnTypeInteraction" -> testNonMatchingReturnTypeInteractionMock,
-      "SieveInteraction" -> testSieveInteractionMock)
+      "SieveInteraction" -> testSieveInteractionMock,
+      "OptionalIngredientInteraction" -> testOptionalIngredientInteractionMock)
 
   protected def levelDbConfig(actorSystemName: String, port: Int): Config = ConfigFactory.parseString(
     s"""

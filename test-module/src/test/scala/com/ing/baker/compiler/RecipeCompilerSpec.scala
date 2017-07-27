@@ -1,5 +1,7 @@
 package com.ing.baker.compiler
 
+import java.util.Optional
+
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
@@ -24,7 +26,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
 
     "give a List of missing ingredients if an interaction has an ingredient that is not provided by any other event or interaction" in {
       val recipe = Recipe("NonProvidedIngredient")
-          .withSensoryEvent(secondEvent)
+        .withSensoryEvent(secondEvent)
         .withInteractions(interactionOne)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
@@ -114,16 +116,25 @@ class RecipeCompilerSpec extends TestRecipeHelper {
       intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(Recipe("someName").withSensoryEvent(initialEvent))) getMessage() shouldBe "Not a valid recipe: No interactions or sieves found."
     }
 
-    "interactions with OptionalIngredients that are not provided should be provided as empty" in {
+    "interactions with optional ingredients that are not provided should be provided as empty" in {
       val recipe: Recipe = Recipe("MissingOptionalRecipe")
         .withInteraction(optionalIngredientInteraction)
         .withSensoryEvent(initialEvent)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
       compiledRecipe.validationErrors shouldBe List.empty
+      compiledRecipe.interactionTransitions
+        .map(it =>
+          if (it.interactionName.equals("OptionalIngredientInteraction")) {
+            it.predefinedParameters.size shouldBe 4
+            it.predefinedParameters("missingJavaOptional") shouldBe Optional.empty()
+            it.predefinedParameters("missingJavaOptional2") shouldBe Optional.empty()
+            it.predefinedParameters("missingScalaOptional") shouldBe Option.empty
+            it.predefinedParameters("missingScalaOptional2") shouldBe Option.empty
+          })
     }
 
-    "interactions with OptionalIngredients that are provided should not be provided as empty" in {
+    "interactions with optional ingredients that are provided should not be provided as empty" in {
       val optionalProviderEvent = Event("optionalProviderEvent", Seq(missingJavaOptional))
 
       val recipe: Recipe = Recipe("MissingOptionalRecipe")
@@ -132,6 +143,36 @@ class RecipeCompilerSpec extends TestRecipeHelper {
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
       compiledRecipe.validationErrors shouldBe List.empty
+      compiledRecipe.interactionTransitions
+        .map(it =>
+          if (it.interactionName.equals("OptionalIngredientInteraction")) {
+            it.predefinedParameters.size shouldBe 3
+            it.predefinedParameters("missingJavaOptional2") shouldBe Optional.empty()
+            it.predefinedParameters("missingScalaOptional") shouldBe Option.empty
+            it.predefinedParameters("missingScalaOptional2") shouldBe Option.empty
+          })
+    }
+
+    "interactions with optional ingredients that are predefined should not be provided as empty" in {
+      val ingredientValue: Optional[String] = java.util.Optional.of("value")
+      val recipe: Recipe = Recipe("MissingOptionalRecipe")
+        .withInteraction(
+          optionalIngredientInteraction
+            .withPredefinedIngredients(("missingJavaOptional", ingredientValue))
+        )
+        .withSensoryEvents(initialEvent)
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.validationErrors shouldBe List.empty
+      compiledRecipe.interactionTransitions
+        .map(it =>
+          if (it.interactionName.equals("OptionalIngredientInteraction")) {
+            it.predefinedParameters.size shouldBe 4
+            it.predefinedParameters("missingJavaOptional") shouldBe ingredientValue
+            it.predefinedParameters("missingJavaOptional2") shouldBe Optional.empty()
+            it.predefinedParameters("missingScalaOptional") shouldBe Option.empty
+            it.predefinedParameters("missingScalaOptional2") shouldBe Option.empty
+          })
     }
   }
 }

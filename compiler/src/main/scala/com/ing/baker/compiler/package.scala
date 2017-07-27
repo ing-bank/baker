@@ -1,7 +1,5 @@
 package com.ing.baker
 
-import java.util.Optional
-
 import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesType, Transition}
 import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientType, InteractionFailureStrategy, petrinet}
 import com.ing.baker.recipe.common
@@ -86,6 +84,10 @@ package object compiler {
           case common.ProvidesNothing => petrinet.ProvidesNothing
         }
 
+      //For each ingredient that is not provided
+      //And is of the type Optional or Option
+      //Add it to the predefinedIngredients List as empty
+      //Add the predefinedIngredients later to overwrite any created empty field with the given predefined value.
       val predefinedIngredientsWithOptionalsEmpty: Map[String, Any] =
         inputFields.flatMap {
           case (name, clazz) if !allIngredientNames.contains(name) && classOf[java.util.Optional[_]].isAssignableFrom(clazz)
