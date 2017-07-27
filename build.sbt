@@ -19,8 +19,8 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     "-language:higherKinds",
     "-language:existentials",
     "-language:implicitConversions",
-    "-language:postfixOps"
-//    "-Xfatal-warnings"
+    "-language:postfixOps",
+    "-Xfatal-warnings"
   )
 )
 

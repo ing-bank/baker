@@ -63,9 +63,9 @@ class ProtobufSerialization[P[_], T[_, _], S](
    */
   def serializeEvent(e: EventSourcing.Event): Instance[P, T, S] ⇒ AnyRef =
     instance ⇒ e match {
-      case e: InitializedEvent[P]              ⇒ serializeInitialized(e)
-      case e: TransitionFiredEvent[P, T, Any]  ⇒ serializeTransitionFired(e)
-      case e: TransitionFailedEvent[P, T, Any] ⇒ serializeTransitionFailed(e)
+      case e: InitializedEvent[_]              ⇒ serializeInitialized(e.asInstanceOf[InitializedEvent[P]])
+      case e: TransitionFiredEvent[_, _, _]  ⇒ serializeTransitionFired(e.asInstanceOf[TransitionFiredEvent[P, T, Any]])
+      case e: TransitionFailedEvent[_, _, _] ⇒ serializeTransitionFailed(e.asInstanceOf[TransitionFailedEvent[P, T, Any]])
     }
 
   private def missingFieldException(field: String) = throw new IllegalStateException(s"Missing field in serialized data: $field")
