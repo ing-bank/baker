@@ -75,7 +75,7 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
     ) ++ testDeps(scalaTest, scalaCheck)
   ).dependsOn(petrinetApi)
 
-lazy val runtime = project.in(file("runtime"))
+lazy val recipeRuntime = project.in(file("runtime"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "runtime",
@@ -95,16 +95,7 @@ lazy val runtime = project.in(file("runtime"))
   )
   .dependsOn(intermediateLanguage, petrinetRuntime)
 
-lazy val compiler = project.in(file("compiler"))
-  .settings(defaultModuleSettings)
-  .settings(
-    moduleName := "compiler",
-    libraryDependencies ++=
-      compileDeps(slf4jApi) ++ testDeps(scalaTest, scalaCheck)
-  )
-  .dependsOn(recipedsl, intermediateLanguage, petrinetApi)
-
-lazy val recipedsl = project.in(file("recipe-dsl"))
+lazy val recipeDsl = project.in(file("recipe-dsl"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "recipe-dsl",
@@ -119,6 +110,15 @@ lazy val recipedsl = project.in(file("recipe-dsl"))
           junitInterface
         )
   )
+
+lazy val recipeCompiler = project.in(file("compiler"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "compiler",
+    libraryDependencies ++=
+      compileDeps(slf4jApi) ++ testDeps(scalaTest, scalaCheck)
+  )
+  .dependsOn(recipeDsl, intermediateLanguage, petrinetApi)
 
 lazy val testModule = project.in(file("test-module"))
   .settings(defaultModuleSettings)
@@ -138,10 +138,10 @@ lazy val testModule = project.in(file("test-module"))
         scalaCheck
       )
   )
-  .dependsOn(recipedsl, compiler, intermediateLanguage, runtime)
+  .dependsOn(recipeDsl, recipeCompiler, intermediateLanguage, recipeRuntime)
 
-lazy val root = project
+lazy val baker = project
   .in(file("."))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
-  .aggregate(petrinetApi, petrinetRuntime, runtime, compiler, recipedsl, intermediateLanguage, testModule)
+  .aggregate(petrinetApi, petrinetRuntime, recipeRuntime, recipeCompiler, recipeDsl, intermediateLanguage, testModule)
