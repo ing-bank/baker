@@ -2,7 +2,7 @@ package com.ing.baker.il
 
 import com.ing.baker.il.petrinet.{Node, Place, RecipePetriNet, Transition}
 import io.kagera.api._
-import io.kagera.dot.{GraphDot, PetriNetDot}
+import dot._
 
 import scala.language.higherKinds
 import scalax.collection.edge.WLDiEdge

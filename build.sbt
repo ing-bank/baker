@@ -1,4 +1,4 @@
-import Dependencies.{scalaCheck, _}
+import Dependencies._
 import sbt.Keys._
 
 val scalaV = "2.11.11"
@@ -19,8 +19,8 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     "-language:higherKinds",
     "-language:existentials",
     "-language:implicitConversions",
-    "-language:postfixOps",
-    "-Xfatal-warnings"
+    "-language:postfixOps"
+//    "-Xfatal-warnings"
   )
 )
 
@@ -32,16 +32,48 @@ lazy val noPublishSettings = Seq(
 
 lazy val defaultModuleSettings = commonSettings ++ Revolver.settings ++ SonatypePublish.settings
 
+lazy val scalaPBSettings = Seq(PB.targets in Compile := Seq(scalapb.gen() -> (sourceManaged in Compile).value))
+
+lazy val petrinetApi = project.in(file("petrinet-api"))
+  .settings(defaultModuleSettings ++ scalaPBSettings)
+  .settings(
+    moduleName := "petrinet-api",
+    libraryDependencies ++= compileDeps(
+      scalaGraph,
+      catsCore,
+      fs2Core) ++ testDeps(
+      scalaCheck,
+      scalaTest,
+      mockito)
+  )
+
+lazy val petrinetRuntime = project.in(file("petrinet-runtime"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "petrinet-runtime",
+    libraryDependencies ++= compileDeps(
+      akkaActor,
+      akkaPersistence,
+      akkaPersistenceQuery,
+      akkaClusterSharding,
+      akkaSlf4j,
+      akkaStream) ++ testDeps(
+      akkaInmemoryJournal,
+      akkaTestKit,
+      akkaStreamTestKit,
+      scalaTest,
+      mockito)
+  ).dependsOn(petrinetApi)
+
 lazy val intermediateLanguage = project.in(file("intermediate-language"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "intermediate-language",
     libraryDependencies ++= compileDeps(
-      kagera,
-      kageraVisualization,
-      slf4jApi
+      slf4jApi,
+      scalaGraphDot
     ) ++ testDeps(scalaTest, scalaCheck)
-  )
+  ).dependsOn(petrinetApi)
 
 lazy val runtime = project.in(file("runtime"))
   .settings(defaultModuleSettings)
@@ -49,7 +81,6 @@ lazy val runtime = project.in(file("runtime"))
     moduleName := "runtime",
     libraryDependencies ++=
       compileDeps(
-        kageraAkka,
         akkaDistributedData,
         akkaInmemoryJournal,
         ficusConfig,
@@ -62,7 +93,7 @@ lazy val runtime = project.in(file("runtime"))
       ) ++ testDeps(scalaTest, scalaCheck)
         ++ providedDeps(findbugs)
   )
-  .dependsOn(intermediateLanguage)
+  .dependsOn(intermediateLanguage, petrinetRuntime)
 
 lazy val compiler = project.in(file("compiler"))
   .settings(defaultModuleSettings)
@@ -71,7 +102,7 @@ lazy val compiler = project.in(file("compiler"))
     libraryDependencies ++=
       compileDeps(slf4jApi) ++ testDeps(scalaTest, scalaCheck)
   )
-  .dependsOn(recipedsl, intermediateLanguage)
+  .dependsOn(recipedsl, intermediateLanguage, petrinetApi)
 
 lazy val recipedsl = project.in(file("recipe-dsl"))
   .settings(defaultModuleSettings)
@@ -113,4 +144,4 @@ lazy val root = project
   .in(file("."))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
-  .aggregate(runtime, compiler, recipedsl, intermediateLanguage, testModule)
+  .aggregate(petrinetApi, petrinetRuntime, runtime, compiler, recipedsl, intermediateLanguage, testModule)

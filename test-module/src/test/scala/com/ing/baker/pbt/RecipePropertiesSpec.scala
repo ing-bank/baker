@@ -27,8 +27,8 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
   test("Baker can compile any valid recipe") {
     val prop = forAll(recipeGen) { recipe =>
 
-//      val validations = ValidationSettings(allowCycles = false, allowNonexecutableInteractions = false)
-      val validations = ValidationSettings(allowCycles = false)
+      val validations = ValidationSettings(allowCycles = false, allowNonexecutableInteractions = false)
+//      val validations = ValidationSettings(allowCycles = false)
 
       val compiledRecipe = RecipeCompiler.compileRecipe(recipe, validations)
       logRecipeStats(recipe)
