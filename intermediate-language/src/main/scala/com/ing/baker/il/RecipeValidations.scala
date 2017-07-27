@@ -57,20 +57,20 @@ object RecipeValidations {
     }
   }
 
-  def validateNoCycles(compiledRecipe: CompiledRecipe): Seq[String] =
-    compiledRecipe.petriNet.innerGraph.findCycle
-      .map(c => s"The petrinet topology contains a cycle: $c")
-      .toSeq
+  def validateNoCycles(compiledRecipe: CompiledRecipe): Seq[String] = {
+    val cycle = compiledRecipe.petriNet.innerGraph.findCycle
+    cycle map (c => s"The petrinet topology contains a cycle: $c") toSeq
+  }
 
   def validateAllInteractionsExecutable(compiledRecipe: CompiledRecipe): Seq[String] = {
 
     val rootNode = PetriNetAnalysis.calculateCoverabilityTree(compiledRecipe.petriNet, compiledRecipe.initialMarking.multiplicities)
+    println(rootNode)
 
     compiledRecipe.interactionTransitions filterNot { interaction =>
       rootNode.isCoverable(compiledRecipe.petriNet.inMarking(interaction))
     } map (interaction => s"$interaction is not executable") toSeq
 
-    Seq.empty
   }
 
   /**

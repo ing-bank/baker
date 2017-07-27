@@ -3,12 +3,12 @@ package io.kagera.api
 object PetriNetAnalysis {
 
   // indicates an unbounded token count in a place
-  val W = -1
+  val W: Int = -1
 
   implicit class WMarkingOps[P](marking: MultiSet[P]) {
     // this checks if marking m 'covers' another
     def >=(other: MultiSet[P]): Boolean = other.forall {
-      case (p, `W`) ⇒ marking.get(p) == Some(W)
+      case (p, `W`) ⇒ marking.get(p).contains(W)
       case (p, n) ⇒ marking.get(p) match {
         case Some(m) ⇒ m >= n || m == W
         case _       ⇒ false
@@ -40,7 +40,7 @@ object PetriNetAnalysis {
       else
         children.values.view.map(_.newNode.map(nodes ⇒ this :: nodes)).find(_.isDefined).map(_.get)
 
-    override def toString = {
+    override def toString: String = {
       val markingString = marking.iterator.map { case (p, n) ⇒ s"$p -> ${if (n == W) 'W' else n}" }.mkString(",")
       s"marking: $markingString, children: $children"
     }
@@ -68,7 +68,7 @@ object PetriNetAnalysis {
       val unboundedOut = unboundedTransitions.foldLeft(MultiSet.empty[P]) {
         case (acc, t) ⇒ acc.multisetSum(petrinet.outMarking(t))
       }.map {
-        case (p, n) ⇒ p -> W
+        case (p, _) ⇒ p -> W
       }
 
       optimize(updatedPetriNet, m0 ++ unboundedOut)
@@ -78,11 +78,11 @@ object PetriNetAnalysis {
   def unboundedEnabled[P, T](petrinet: PetriNet[P, T], m0: MultiSet[P]): Iterable[T] = {
 
     val coldTransitions = petrinet.transitions.filter(t ⇒ petrinet.incomingPlaces(t).isEmpty)
-    val unboundedMarking = m0.filter { case (p, n) ⇒ n == W }
+    val unboundedMarking = m0.filter { case (_, n) ⇒ n == W }
     val enabled = unboundedMarking.keys.map(petrinet.outgoingTransitions).reduceOption(_ ++ _).getOrElse(Set.empty).
       filter(t ⇒ m0 >= petrinet.inMarking(t))
 
-    (coldTransitions ++ enabled)
+    coldTransitions ++ enabled
   }
 
   /**
@@ -97,11 +97,11 @@ object PetriNetAnalysis {
 
     def fire(m0: MultiSet[P], t: T): MultiSet[P] = {
       // unbounded places stay unchanged
-      val (unbounded, bounded) = m0.partition { case (p, n) ⇒ n == W }
+      val (unbounded, bounded) = m0.partition { case (_, n) ⇒ n == W }
 
-      (bounded
+      bounded
         .multisetDifference(inMarking(t))
-        .multisetSum(outMarking(t))) ++ unbounded
+        .multisetSum(outMarking(t)) ++ unbounded
     }
 
     def enabledTransitions(m0: MultiSet[P]): Iterator[T] = {
@@ -138,10 +138,10 @@ object PetriNetAnalysis {
             val postT: MultiSet[P] = fire(M, t)
 
             // ii. if on the path to m there exists a marking that is covered by M1
-            val covereableM: Option[MultiSet[P]] =
+            val coverableM: Option[MultiSet[P]] =
               pathToM.map(_.marking).find(M11 ⇒ postT >= M11 && postT != M11)
 
-            val M1: MultiSet[P] = covereableM.map { M11 ⇒
+            val M1: MultiSet[P] = coverableM.map { M11 ⇒
               postT.map {
                 case (p, n) if n > M11.getOrElse(p, 0) ⇒ p -> W
                 case (p, n)                            ⇒ p -> n
