@@ -62,9 +62,6 @@ class RecipeCompilerSpec extends TestRecipeHelper {
       val compiledRecipe = RecipeCompiler.compileRecipe(recipe,
         ValidationSettings(allowNonexecutableInteractions = false))
 
-      println(compiledRecipe.getRecipeVisualization)
-      println(compiledRecipe.getPetriNetVisualization)
-
       compiledRecipe.validationErrors should contain("InteractionEight is not executable")
     }
 

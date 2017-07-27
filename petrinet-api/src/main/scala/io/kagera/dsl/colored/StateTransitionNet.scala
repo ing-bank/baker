@@ -9,7 +9,7 @@ import scala.util.Random
 
 trait StateTransitionNet[S, E] {
 
-  def eventSourcefunction: S ⇒ E ⇒ S
+  def eventSourceFunction: S ⇒ E ⇒ S
 
   def eventTaskProvider: TransitionTaskProvider[S, Place, Transition] = new TransitionTaskProvider[S, Place, Transition] {
     override def apply[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _]], t: Transition[Input, Output]): TransitionTask[Place, Input, Output, S] =
@@ -21,7 +21,7 @@ trait StateTransitionNet[S, E] {
   }
 
   val runtime: PetriNetRuntime[Place, Transition, S, E] = new PetriNetRuntime[Place, Transition, S, E] {
-    override val eventSourceFn: (Transition[_, _]) ⇒ (S) ⇒ (E) ⇒ S = t ⇒ eventSourcefunction
+    override val eventSourceFn: (Transition[_, _]) ⇒ (S) ⇒ (E) ⇒ S = t ⇒ eventSourceFunction
     override val taskProvider: TransitionTaskProvider[S, Place, Transition] = eventTaskProvider
     override val exceptionHandlerFn = (t: Transition[_, _]) ⇒ t.exceptionStrategy
     override lazy val jobPicker = new JobPicker[Place, Transition](tokenGame) {

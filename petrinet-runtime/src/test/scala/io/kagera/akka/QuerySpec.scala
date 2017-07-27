@@ -42,11 +42,9 @@ class QuerySpec extends AkkaTestBase with BeforeAndAfterEach {
 
     "return a source of events for a petriNet instance" in new StateTransitionNet[Unit, Unit] {
 
-      override val eventSourcefunction: Unit ⇒ Unit ⇒ Unit = s ⇒ e ⇒ s
+      override val eventSourceFunction: Unit ⇒ Unit ⇒ Unit = s ⇒ _ ⇒ s
 
-      val readJournal =
-        PersistenceQuery(system).readJournalFor("inmemory-read-journal")
-          .asInstanceOf[ReadJournal with CurrentEventsByPersistenceIdQuery]
+      val readJournal = PersistenceQuery(system).readJournalFor[ReadJournal with CurrentEventsByPersistenceIdQuery]("inmemory-read-journal")
 
       val p1 = Place[Unit](id = 1)
       val p2 = Place[Unit](id = 2)
@@ -69,7 +67,7 @@ class QuerySpec extends AkkaTestBase with BeforeAndAfterEach {
         petriNet,
         NoEncryption,
         readJournal,
-        t ⇒ eventSourcefunction)
+        t ⇒ eventSourceFunction)
         .map(_._2) // Get the event from the tuple
         .runWith(TestSink.probe)
         .request(3)
@@ -90,11 +88,9 @@ class QuerySpec extends AkkaTestBase with BeforeAndAfterEach {
 
     "return all persisted processIds" in new StateTransitionNet[Unit, Unit] {
 
-      override val eventSourcefunction: Unit ⇒ Unit ⇒ Unit = s ⇒ e ⇒ s
+      override val eventSourceFunction: Unit ⇒ Unit ⇒ Unit = s ⇒ e ⇒ s
 
-      val readJournal =
-        PersistenceQuery(system).readJournalFor("inmemory-read-journal")
-          .asInstanceOf[ReadJournal with PersistenceIdsQuery]
+      val readJournal = PersistenceQuery(system).readJournalFor[ReadJournal with PersistenceIdsQuery]("inmemory-read-journal")
 
       // Setup petriNet and instances
 
@@ -129,11 +125,9 @@ class QuerySpec extends AkkaTestBase with BeforeAndAfterEach {
 
     "return current persisted processIds, stream stopped in the end" in new StateTransitionNet[Unit, Unit] {
 
-      override val eventSourcefunction: Unit ⇒ Unit ⇒ Unit = s ⇒ e ⇒ s
+      override val eventSourceFunction: Unit ⇒ Unit ⇒ Unit = s ⇒ e ⇒ s
 
-      val readJournal =
-        PersistenceQuery(system).readJournalFor("inmemory-read-journal")
-          .asInstanceOf[CurrentPersistenceIdsQuery]
+      val readJournal = PersistenceQuery(system).readJournalFor[ReadJournal with CurrentPersistenceIdsQuery]("inmemory-read-journal")
 
       // Setup petriNet and instances
 

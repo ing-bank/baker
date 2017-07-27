@@ -63,9 +63,7 @@ object RecipeValidations {
   }
 
   def validateAllInteractionsExecutable(compiledRecipe: CompiledRecipe): Seq[String] = {
-
     val rootNode = PetriNetAnalysis.calculateCoverabilityTree(compiledRecipe.petriNet, compiledRecipe.initialMarking.multiplicities)
-    println(rootNode)
 
     compiledRecipe.interactionTransitions filterNot { interaction =>
       rootNode.isCoverable(compiledRecipe.petriNet.inMarking(interaction))
