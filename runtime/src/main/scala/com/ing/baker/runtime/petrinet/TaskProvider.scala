@@ -3,10 +3,10 @@ package com.ing.baker.runtime.petrinet
 import java.lang.reflect.InvocationTargetException
 
 import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, Place, Transition}
+import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import fs2.Task
-import io.kagera.api._
-import io.kagera.runtime.{TransitionTask, TransitionTaskProvider}
+import com.ing.baker.petrinet.runtime.{TransitionTask, TransitionTaskProvider}
 import org.slf4j.LoggerFactory
 
 import scala.util.Try
@@ -58,7 +58,7 @@ class TaskProvider(interactionFunctions: InteractionTransition[_] => (ProcessSta
     }
 
     Try {
-      // returns a delayed task that will get executed by the kagera runtime
+      // returns a delayed task that will get executed by the baker petrinet runtime
       Task
         .delay(fn.apply(processState))
         .map(transformEvent(interaction))

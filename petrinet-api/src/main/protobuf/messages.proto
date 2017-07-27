@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-option java_package = "io.kagera.runtime.persistence";
+option java_package = "com.ing.baker.petrinet.runtime.persistence";
 
 message SerializedData {
     optional int32 serializer_id = 1;

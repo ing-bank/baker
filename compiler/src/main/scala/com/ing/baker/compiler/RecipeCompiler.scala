@@ -6,8 +6,8 @@ import com.ing.baker.il.ValidationSettings.defaultValidationSettings
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
 import com.ing.baker.il.{CompiledRecipe, EventType, ValidationSettings}
+import com.ing.baker.petrinet.api._
 import com.ing.baker.recipe.common.{Event, Ingredient, InteractionDescriptor, Recipe}
-import io.kagera.api._
 
 import scala.language.postfixOps
 import scalax.collection.immutable.Graph

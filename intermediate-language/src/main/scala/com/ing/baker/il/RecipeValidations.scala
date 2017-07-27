@@ -1,7 +1,7 @@
 package com.ing.baker.il
 
 import com.ing.baker.il.petrinet.InteractionTransition
-import io.kagera.api.PetriNetAnalysis
+import com.ing.baker.petrinet.api.PetriNetAnalysis
 
 import scala.collection.mutable
 

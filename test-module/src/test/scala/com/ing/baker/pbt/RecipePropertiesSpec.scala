@@ -31,10 +31,10 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
       val validations = ValidationSettings(allowCycles = false)
 
       val compiledRecipe = RecipeCompiler.compileRecipe(recipe, validations)
-      logRecipeStats(recipe)
-      logCompiledRecipeStats(compiledRecipe)
 
       if (compiledRecipe.validationErrors.nonEmpty) {
+        logRecipeStats(recipe)
+        logCompiledRecipeStats(compiledRecipe)
         dumpToFile(s"visualRecipe-${compiledRecipe.name}", compiledRecipe.getRecipeVisualization)
         dumpToFile(s"petrinet-${compiledRecipe.name}", compiledRecipe.getPetriNetVisualization)
       }
@@ -46,7 +46,7 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
     check(prop, Test.Parameters.defaultVerbose.withMinSuccessfulTests(100))
   }
 
-  test("Baker can execute a compiled recipe") {
+  ignore("Baker can execute a compiled recipe") {
     implicit val actorSystem = ActorSystem("pbt-actor-system")
     implicit val duration = FiniteDuration(1, "seconds")
 
@@ -59,7 +59,7 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
       dumpToFile(s"visualRecipe-${compiledRecipe.name}", compiledRecipe.getRecipeVisualization)
 
       val sensoryEvents: Set[EventType] = compiledRecipe.sensoryEvents
-      val petriNetInteractionMock: InteractionTransition[_] => ProcessState => RuntimeEvent = { interaction => processState =>
+      val petriNetInteractionMock: InteractionTransition[_] => ProcessState => RuntimeEvent = { interaction => _ =>
 
           val outputEvent = interaction.providesType match {
             case petrinet.FiresOneOfEvents(events, _) =>

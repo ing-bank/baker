@@ -1,6 +1,6 @@
 package com.ing.baker.il.dot
 
-import io.kagera.api.MultiSet
+import com.ing.baker.petrinet.api.MultiSet
 
 import scalax.collection.Graph
 import scalax.collection.edge.WLDiEdge

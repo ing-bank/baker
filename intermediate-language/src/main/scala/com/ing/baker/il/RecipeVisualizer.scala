@@ -1,7 +1,7 @@
 package com.ing.baker.il
 
 import com.ing.baker.il.petrinet.{Node, Place, RecipePetriNet, Transition}
-import io.kagera.api._
+import com.ing.baker.petrinet.api._
 import dot._
 
 import scala.language.higherKinds

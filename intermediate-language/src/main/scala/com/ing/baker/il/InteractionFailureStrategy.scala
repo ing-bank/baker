@@ -1,7 +1,7 @@
 package com.ing.baker.il
 
-import io.kagera.runtime.ExceptionStrategy.{BlockTransition, RetryWithDelay}
-import io.kagera.runtime.TransitionExceptionHandler
+import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, RetryWithDelay}
+import com.ing.baker.petrinet.runtime.TransitionExceptionHandler
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 

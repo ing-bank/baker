@@ -14,18 +14,17 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
 import com.ing.baker.il._
 import com.ing.baker.il.petrinet._
+import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
+import com.ing.baker.petrinet.akka._
+import com.ing.baker.petrinet.runtime.EventSourcing.TransitionFiredEvent
+import com.ing.baker.petrinet.runtime.PetriNetRuntime
+import com.ing.baker.petrinet.runtime.persistence.Encryption
+import com.ing.baker.petrinet.runtime.persistence.Encryption.NoEncryption
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.{RecipeRuntime, ReflectedInteractionTask}
 import fs2.Strategy
-import io.kagera.akka.actor.PetriNetInstanceEvent
-import io.kagera.akka.actor.PetriNetInstanceProtocol._
-import io.kagera.akka.actor.{PetriNetQuery, _}
-import io.kagera.runtime.EventSourcing.TransitionFiredEvent
-import io.kagera.runtime.PetriNetRuntime
-import io.kagera.runtime.persistence.Encryption
-import io.kagera.runtime.persistence.Encryption.NoEncryption
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
