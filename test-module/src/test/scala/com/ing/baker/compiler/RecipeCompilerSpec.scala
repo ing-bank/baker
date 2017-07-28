@@ -56,12 +56,12 @@ class RecipeCompilerSpec extends TestRecipeHelper {
       compiledRecipe.validationErrors should contain("Predefined argument 'WrongIngredient' is not defined on interaction: 'InteractionOne'")
     }
 
-    "validate if there are unreachable interactions exist or not" ignore {
+    "validate if there are unreachable interactions exist or not" in {
       val recipe = Recipe("RecipeWithUnreachableInteraction")
-        .withInteractions(interactionSeven, interactionEight)
+        .withInteractions(interactionSeven.withMaximumInteractionCount(1), interactionEight)
         .withSensoryEvent(initialEvent)
 
-      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe,
+      val compiledRecipe = RecipeCompiler.compileRecipe(recipe,
         ValidationSettings(allowNonexecutableInteractions = false))
 
       compiledRecipe.validationErrors should contain("InteractionEight is not executable")

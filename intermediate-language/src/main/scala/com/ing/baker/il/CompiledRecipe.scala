@@ -1,7 +1,7 @@
 package com.ing.baker.il
 
 import com.ing.baker.il.petrinet.{FiresOneOfEvents, InteractionTransition, Place, ProvidesIngredient, RecipePetriNet}
-import io.kagera.api._
+import com.ing.baker.petrinet.api.Marking
 
 import scala.collection.JavaConverters._
 

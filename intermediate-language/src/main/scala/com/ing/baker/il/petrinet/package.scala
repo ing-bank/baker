@@ -1,6 +1,6 @@
 package com.ing.baker.il
 
-import io.kagera.api._
+import com.ing.baker.petrinet.api._
 
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph

@@ -1,6 +1,7 @@
 package com.ing.baker.il
 
 import com.ing.baker.il.petrinet.InteractionTransition
+import com.ing.baker.petrinet.api.PetriNetAnalysis
 
 import scala.collection.mutable
 
@@ -56,19 +57,18 @@ object RecipeValidations {
     }
   }
 
-  def validateNoCycles(compiledRecipe: CompiledRecipe): Seq[String] =
-    compiledRecipe.petriNet.innerGraph.findCycle
-      .map(c => s"The petrinet topology contains a cycle: $c")
-      .toSeq
+  def validateNoCycles(compiledRecipe: CompiledRecipe): Seq[String] = {
+    val cycle = compiledRecipe.petriNet.innerGraph.findCycle
+    cycle map (c => s"The petrinet topology contains a cycle: $c") toSeq
+  }
 
   def validateAllInteractionsExecutable(compiledRecipe: CompiledRecipe): Seq[String] = {
-//    val rootNode = Coverability.calculateCoverabilityTree(compiledRecipe.petriNet, compiledRecipe.initialMarking.multiplicities)
-//
-//    compiledRecipe.interactionTransitions filterNot { interaction =>
-//      rootNode.isCoverable(compiledRecipe.petriNet.inMarking(interaction))
-//    } map (interaction => s"$interaction is not executable") toSeq
+    val rootNode = PetriNetAnalysis.calculateCoverabilityTree(compiledRecipe.petriNet, compiledRecipe.initialMarking.multiplicities)
 
-    Seq.empty
+    compiledRecipe.interactionTransitions filterNot { interaction =>
+      rootNode.isCoverable(compiledRecipe.petriNet.inMarking(interaction))
+    } map (interaction => s"$interaction is not executable") toSeq
+
   }
 
   /**

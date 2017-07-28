@@ -3,7 +3,7 @@ package com.ing.baker.runtime.actor
 import akka.actor.{ActorLogging, Props, Terminated}
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.persistence.{PersistentActor, RecoveryCompleted}
-import io.kagera.akka.actor.PetriNetInstanceProtocol.{AlreadyInitialized, Initialize, Uninitialized}
+import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol.{AlreadyInitialized, Initialize, Uninitialized}
 
 import scala.collection.mutable
 import ActorIndex._

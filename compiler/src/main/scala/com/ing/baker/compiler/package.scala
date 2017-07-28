@@ -1,7 +1,7 @@
 package com.ing.baker
 
-import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesType, Transition}
-import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientType, InteractionFailureStrategy, petrinet}
+import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing, ProvidesType, Transition}
+import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientType, InteractionFailureStrategy}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionDescriptor
 
@@ -81,7 +81,7 @@ package object compiler {
             val originalCompiledEvents = events.map(transformEventToCompiledEvent)
             val compiledEvents = events.map(transformEventType).map(transformEventToCompiledEvent)
             FiresOneOfEvents(compiledEvents, originalCompiledEvents)
-          case common.ProvidesNothing => petrinet.ProvidesNothing
+          case common.ProvidesNothing => ProvidesNothing
         }
 
       //For each ingredient that is not provided

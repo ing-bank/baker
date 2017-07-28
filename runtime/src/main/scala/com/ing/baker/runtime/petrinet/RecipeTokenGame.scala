@@ -1,8 +1,8 @@
 package com.ing.baker.runtime.petrinet
 
 import com.ing.baker.il.petrinet.{PTEdge, Place, Transition}
-import io.kagera.api._
-import io.kagera.runtime.TokenGame
+import com.ing.baker.petrinet.api._
+import com.ing.baker.petrinet.runtime.TokenGame
 
 class RecipeTokenGame extends TokenGame[Place, Transition] {
   override def consumableTokens(petriNet: PetriNet[Place[_], Transition[_, _]])(marking: Marking[Place], p: Place[_], t: Transition[_, _]): MultiSet[_] = {

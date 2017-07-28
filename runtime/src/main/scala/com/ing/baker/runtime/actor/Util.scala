@@ -8,10 +8,10 @@ import akka.util.Timeout
 import GracefulShutdownActor.Leave
 import com.ing.baker.il.petrinet
 import com.ing.baker.il.petrinet._
+import com.ing.baker.petrinet.akka.PetriNetInstance
+import com.ing.baker.petrinet.akka.PetriNetInstance.Settings
 import com.ing.baker.runtime.core._
-import io.kagera.akka.actor.PetriNetInstance
-import io.kagera.akka.actor.PetriNetInstance.Settings
-import io.kagera.runtime.PetriNetRuntime
+import com.ing.baker.petrinet.runtime.PetriNetRuntime
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
