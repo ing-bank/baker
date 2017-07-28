@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.core
 
-import java.util.UUID
+import java.util.{Optional, UUID}
 
 import akka.actor.ActorSystem
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
@@ -100,6 +100,29 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
       baker.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue, "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
+    }
+
+    "execute an interaction with Optionals set to empty when its ingredient is provided" in {
+      val ingredientValue: Optional[String] = java.util.Optional.of("optionalWithValue")
+
+      val recipe =
+        Recipe("IngredientProvidedRecipeWithEmptyOptionals")
+          .withInteraction(
+            optionalIngredientInteraction
+            .withPredefinedIngredients(("missingJavaOptional", ingredientValue)))
+          .withSensoryEvent(initialEvent)
+
+      val baker = new Baker(
+        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+        implementations = mockImplementations)
+
+      val processId = UUID.randomUUID()
+      baker.bake(processId)
+
+      baker.handleEvent(processId, InitialEvent(initialIngredientValue))
+
+      verify(testOptionalIngredientInteractionMock).apply(ingredientValue, Optional.empty(), Option.empty, Option.empty, "initialIngredient")
+      baker.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue)
     }
 
     "notify a registered event listener of events" in {
