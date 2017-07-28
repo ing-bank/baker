@@ -80,7 +80,7 @@ object PetriNetAnalysis {
     val coldTransitions = petrinet.transitions.filter(t ⇒ petrinet.incomingPlaces(t).isEmpty)
     val unboundedMarking = m0.filter { case (_, n) ⇒ n == W }
     val enabled = unboundedMarking.keys.map(petrinet.outgoingTransitions).reduceOption(_ ++ _).getOrElse(Set.empty).
-      filter(t ⇒ m0 >= petrinet.inMarking(t))
+      filter(t ⇒ unboundedMarking >= petrinet.inMarking(t))
 
     coldTransitions ++ enabled
   }
@@ -90,7 +90,7 @@ object PetriNetAnalysis {
    */
   def calculateCoverabilityTree[P, T](petrinet: PetriNet[P, T], m0: MultiSet[P]): Node[P, T] = {
 
-    val (pn, initialMarking) = (petrinet, m0)
+    val (pn, initialMarking) = optimize(petrinet, m0)
 
     val coldTransitions = petrinet.transitions.filter(t ⇒ petrinet.incomingPlaces(t).isEmpty)
     val inMarking = pn.transitions.map(t ⇒ t -> petrinet.inMarking(t)).toMap
@@ -110,7 +110,7 @@ object PetriNetAnalysis {
       val outAdjacent = m0.keys.map(pn.outgoingTransitions).reduceOption(_ ++ _).getOrElse(Set.empty).
         filter(t ⇒ m0 >= inMarking(t))
 
-      outAdjacent.iterator ++ coldTransitions
+      outAdjacent.iterator
     }
 
     // 1. Label the initial marking M0 as the root and tag it 'new'

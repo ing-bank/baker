@@ -96,7 +96,7 @@ object RecipeValidations {
     if (!validationSettings.allowDisconnectedness && !compiledRecipe.petriNet.innerGraph.isConnected)
       postCompileValidationErrors += "The petrinet topology is not completely connected"
 
-    if (!validationSettings.allowNonexecutableInteractions)
+    if (!validationSettings.allowNonExecutableInteractions)
       postCompileValidationErrors ++= validateAllInteractionsExecutable(compiledRecipe)
 
     compiledRecipe.copy(

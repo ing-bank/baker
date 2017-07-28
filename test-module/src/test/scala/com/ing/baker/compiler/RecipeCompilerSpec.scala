@@ -62,7 +62,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .withSensoryEvent(initialEvent)
 
       val compiledRecipe = RecipeCompiler.compileRecipe(recipe,
-        ValidationSettings(allowNonexecutableInteractions = false))
+        ValidationSettings(allowNonExecutableInteractions = false))
 
       compiledRecipe.validationErrors should contain("InteractionEight is not executable")
     }
