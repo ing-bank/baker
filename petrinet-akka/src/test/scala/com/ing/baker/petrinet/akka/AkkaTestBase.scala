@@ -7,7 +7,6 @@ import akka.cluster.sharding.ShardRegion.Passivate
 import akka.testkit.{ImplicitSender, TestKit}
 import com.ing.baker.petrinet.akka.AkkaTestBase.MockShardActor
 import com.ing.baker.petrinet.akka.PetriNetInstance.Settings
-import com.typesafe.config.ConfigFactory
 import fs2.Strategy
 import com.ing.baker.petrinet.dsl.colored
 import com.ing.baker.petrinet.dsl.colored.{ColoredPetriNet, Place, Transition}

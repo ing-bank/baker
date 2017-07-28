@@ -324,6 +324,8 @@ trait TestRecipeHelper
        |  actor {
        |    provider = "akka.cluster.ClusterActorRefProvider"
        |    allow-java-serialization = off
+       |    serialize-messages = off
+       |    serialize-creators = off
        |  }
        |
        |  remote {
