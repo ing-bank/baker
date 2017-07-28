@@ -8,7 +8,6 @@ import akka.testkit.{TestKit, TestProbe}
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.scaladsl.{Recipe, _}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
