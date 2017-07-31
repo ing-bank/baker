@@ -2,7 +2,7 @@ package com.ing.baker.il.petrinet
 
 import com.ing.baker.il
 import com.ing.baker.il.{ActionType, EventOutputTransformer, InteractionFailureStrategy, _}
-import io.kagera.runtime.TransitionExceptionHandler
+import com.ing.baker.petrinet.runtime.TransitionExceptionHandler
 import org.slf4j._
 
 /**

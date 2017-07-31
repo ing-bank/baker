@@ -4,7 +4,6 @@ import sbt._
 object Dependencies {
 
   val akkaVersion = "2.5.3"
-  val kageraVersion = "0.2.24"
 
   val typeSafeConfig =            "com.typesafe"               %  "config"                             % "1.3.1"
 
@@ -19,11 +18,14 @@ object Dependencies {
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
 
   val akkaActor =                 "com.typesafe.akka"          %% "akka-actor"                         % akkaVersion
+  val akkaStream =                "com.typesafe.akka"          %% "akka-stream"                        % akkaVersion
   val akkaPersistence =           "com.typesafe.akka"          %% "akka-persistence"                   % akkaVersion
+  val akkaPersistenceQuery =      "com.typesafe.akka"          %% "akka-persistence-query"             % akkaVersion
   val akkaCluster =               "com.typesafe.akka"          %% "akka-cluster"                       % akkaVersion
   val akkaClusterSharding =       "com.typesafe.akka"          %% "akka-cluster-sharding"              % akkaVersion
   val akkaSlf4j =                 "com.typesafe.akka"          %% "akka-slf4j"                         % akkaVersion
   val akkaTestKit =               "com.typesafe.akka"          %% "akka-testkit"                       % akkaVersion
+  val akkaStreamTestKit =         "com.typesafe.akka"          %% "akka-stream-testkit"                % akkaVersion
   val akkaDistributedData =       "com.typesafe.akka"          %% "akka-distributed-data"              % akkaVersion
   val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.7"
   val levelDBJni =                "org.fusesource.leveldbjni"  %  "leveldbjni-all"                     % "1.8"
@@ -31,9 +33,11 @@ object Dependencies {
   val logback =                   "ch.qos.logback"             %  "logback-classic"                    % "1.2.2"
   val ficusConfig =               "com.iheart"                 %% "ficus"                              % "1.4.0"
 
-  val kagera =                    "io.kagera"                  %% "kagera-api"                         % kageraVersion
-  val kageraAkka =                "io.kagera"                  %% "kagera-akka"                        % kageraVersion
-  val kageraVisualization =       "io.kagera"                  %% "kagera-visualization"               % kageraVersion
+  val scalaGraph  =               "org.scala-graph"            %% "graph-core"                         % "1.11.5"
+  val scalaGraphDot =             "org.scala-graph"            %% "graph-dot"                          % "1.11.5"
+
+  val fs2Core  =                  "co.fs2"                     %% "fs2-core"                           % "0.9.4"
+  val catsCore =                  "org.typelevel"              %% "cats-core"                          % "0.9.0"
 
   val scalaReflect =              "org.scala-lang"             %  "scala-reflect"                      % "2.11.8"
   val javaxInject =               "javax.inject"               %  "javax.inject"                       % "1"

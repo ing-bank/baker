@@ -4,11 +4,11 @@ import java.util.UUID
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{TestKit, TestProbe}
+import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol
+import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
+import com.ing.baker.petrinet.api.Marking
 import com.typesafe.config.ConfigFactory
-import io.kagera.akka.actor.PetriNetInstanceProtocol
-import io.kagera.akka.actor.PetriNetInstanceProtocol.{AlreadyInitialized, Initialize, Uninitialized}
-import io.kagera.api.Marking
-import io.kagera.dsl.colored.Place
+import com.ing.baker.petrinet.dsl.colored.Place
 import org.mockito
 import org.mockito.Mockito
 import org.mockito.Mockito.verify

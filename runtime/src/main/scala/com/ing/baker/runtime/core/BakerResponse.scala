@@ -4,7 +4,7 @@ import akka.NotUsed
 import akka.stream.javadsl.RunnableGraph
 import akka.stream.scaladsl.{Broadcast, GraphDSL, Sink, Source}
 import akka.stream.{ClosedShape, Materializer}
-import io.kagera.akka.actor.PetriNetInstanceProtocol.{TransitionFailed, TransitionFired, TransitionResponse}
+import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol.{TransitionFailed, TransitionFired, TransitionResponse}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, ExecutionContext, Future}

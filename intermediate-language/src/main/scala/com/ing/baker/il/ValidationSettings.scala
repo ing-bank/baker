@@ -13,8 +13,8 @@ object ValidationSettings {
   *
   * @param allowCycles
   * @param allowDisconnectedness
-  * @param allowNonexecutableInteractions
+  * @param allowNonExecutableInteractions
   */
 case class ValidationSettings(allowCycles: Boolean = true,
                               allowDisconnectedness: Boolean = true,
-                              allowNonexecutableInteractions: Boolean = true)
+                              allowNonExecutableInteractions: Boolean = true)

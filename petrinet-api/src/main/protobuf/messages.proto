@@ -1,0 +1,61 @@
+syntax = "proto2";
+
+option java_package = "com.ing.baker.petrinet.runtime.persistence";
+
+message SerializedData {
+    optional int32 serializer_id = 1;
+    optional bytes manifest = 2;
+    optional bytes data = 3;
+}
+
+message ConsumedToken {
+    optional int64 place_id = 1;
+    optional int64 token_id = 2;
+    optional int32 count = 3;
+}
+
+message ProducedToken {
+    optional int64 place_id = 1;
+    optional int64 token_id = 2;
+    optional int32 count = 3;
+    optional SerializedData token_data = 4;
+}
+
+message Initialized {
+   repeated ProducedToken initial_marking = 1;
+   optional SerializedData initial_state = 2;
+}
+
+message TransitionFired {
+    optional int64 job_id = 1;
+    optional int64 correlation_id = 2;
+    optional int64 transition_id = 3;
+    optional int64 time_started = 4;
+    optional int64 time_completed = 5;
+    repeated ConsumedToken consumed = 6;
+    repeated ProducedToken produced = 7;
+    optional SerializedData data = 8;
+}
+
+message FailureStrategy {
+    enum StrategyType {
+        BLOCK_TRANSITION = 0;
+        BLOCK_ALL = 1;
+        RETRY = 2;
+    }
+
+    optional StrategyType strategy_type = 1;
+    optional int64 retry_delay = 2;
+}
+
+message TransitionFailed {
+    optional int64 job_id = 1;
+    optional int64 correlation_id = 2;
+    optional int64 transition_id = 3;
+    optional int64 time_started = 4;
+    optional int64 time_failed = 5;
+    optional SerializedData input_data = 6;
+    optional string failure_reason = 7;
+    optional FailureStrategy failure_strategy = 8;
+    repeated ConsumedToken consumed = 9;
+}

@@ -2,6 +2,16 @@
 
 ## 1.0.8
 - Added the functionality that if an Ingredient of Java Optional or Scala Option is needed but not provided its provided as empty.
+- Side note (no impact for baker users): kagara library is merged into baker, therefore baker has 2 new artifacts now: petrinet-api and petrinet-akka.
+- slf4j MDC field 'kageraEvent' is renamed to 'petrinetEvent' due to new petrinet modules in baker.
+- If io.kagera packages are used/imported in your application (maybe in logback files), you need to change them as com.ing.baker.petrinet 
+- baker.conf file disables java serialization, you don't need to have 'akka.actor.allow-java-serialization = off' setting anymore in your application.conf files
+
+## 1.0.7
+- In your application.conf files, it is mandatory to include also baker.conf file which will set some sensible defaults for baker.
+```
+include "baker.conf"
+```
 
 ## 1.0.6
 - Using a better consistent hash function for place/transition identifiers in the petri net

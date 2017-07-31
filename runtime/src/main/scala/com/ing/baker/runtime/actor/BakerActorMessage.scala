@@ -1,5 +1,5 @@
 package com.ing.baker.runtime.actor
 
-import io.kagera.akka.actor.PetriNetInstanceProtocol
+import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol
 
 case class BakerActorMessage(processId: String, cmd: PetriNetInstanceProtocol.Command) extends InternalBakerMessage
