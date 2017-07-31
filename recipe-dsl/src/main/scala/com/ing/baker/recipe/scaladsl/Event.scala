@@ -4,8 +4,8 @@ import com.ing.baker.recipe.common
 
 case class Event (override val name: String,
                   override val providedIngredients: Seq[common.Ingredient],
-                  override val maxFiringLimit: Option[Int] = None) extends common.Event {
-  def withMaxFiringLimit(firingLimit: Int): Event = {
+                  override val maxFiringLimit: Option[Integer] = None) extends common.Event {
+  def withMaxFiringLimit(firingLimit: Integer): Event = {
     Event(this.name, this.providedIngredients, Some(firingLimit))
   }
 }

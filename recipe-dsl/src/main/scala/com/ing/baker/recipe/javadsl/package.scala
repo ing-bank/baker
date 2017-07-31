@@ -8,21 +8,21 @@ import com.ing.baker.recipe.javadsl.ReflectionHelpers._
 
 package object javadsl {
 
-  private def createIngredient(ingredientName: String, ingredientClazz: Class[_]): common.Ingredient =
+  def createIngredient(ingredientName: String, ingredientClazz: Class[_]): common.Ingredient =
     new common.Ingredient {
       override val name: String = ingredientName
       override val clazz: Class[_] = ingredientClazz
     }
 
 
-  def eventClassToCommonEvent(eventClass: Class[_], firingLimit: Option[Int] = None): common.Event =
+  def eventClassToCommonEvent(eventClass: Class[_], firingLimit: Option[Integer] = None): common.Event =
     new common.Event {
       override val name: String = eventClass.getSimpleName
       override val providedIngredients: Seq[common.Ingredient] =
         eventClass.getDeclaredFields
           .filter(field => !field.isSynthetic)
           .map(f => createIngredient(f.getName, f.getType))
-      override val maxFiringLimit: Option[Int] = firingLimit
+      override val maxFiringLimit: Option[Integer] = firingLimit
     }
 
   def interactionClassToCommonInteraction(interactionClass: Class[_ <: Interaction]): common.Interaction =
