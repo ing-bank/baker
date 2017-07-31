@@ -49,7 +49,7 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
       expectMsg(Initialized(marshal[Place](initialMarking), initialState))
     }
 
-    "Before being initialized respond with an Unitialized message and terminate on receiving a GetState command" in new TestSequenceNet {
+    "Before being initialized respond with an Uninitialized message and terminate on receiving a GetState command" in new TestSequenceNet {
 
       override val sequence = Seq(
         transition()(_ ⇒ Added(1)),
@@ -214,7 +214,7 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
 
     "Re-fire a failed transition with 'Retry' strategy after being restored from persistent storage" in new TestSequenceNet {
       val retryHandler: TransitionExceptionHandler = {
-        case (e, n) ⇒ RetryWithDelay(200)
+        case (e, n) ⇒ RetryWithDelay(500)
       }
       val mockFunction = mock[Set[Int] ⇒ Event]
 
@@ -234,25 +234,24 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
       actor ! FireTransition(1, ())
 
       expectMsgPF() { case TransitionFired(_, 1, _, _, _, _) ⇒ }
-      expectMsgPF() { case TransitionFailed(_, 2, _, _, _, RetryWithDelay(200)) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 2, _, _, _, RetryWithDelay(500)) ⇒ }
+
+      // verify that the mock function was called
+      verify(mockFunction).apply(any[Set[Int]])
 
       // kill the actor
       actor ! SupervisorStrategy.Stop
       syncKillActorWithPoisonPill(actor)
 
-      verify(mockFunction).apply(any[Set[Int]])
-
+      // reset the mock
       reset(mockFunction)
-      when(mockFunction.apply(any[Set[Int]])).thenAnswer(new Answer[Event] {
-
-        override def answer(invocationOnMock: InvocationOnMock): Event = {
-          Added(1)
-        }
-      })
+      when(mockFunction.apply(any[Set[Int]])).thenReturn(Added(1))
 
       // create a new actor with the same persistent identifier
       val newActor = createPetriNetActor[Set[Int], Event](petriNet, runtime, actorName)
-      Thread.sleep(500)
+
+      // TODO find a way to prevent this sleep, perhaps listen on the event bus?
+      Thread.sleep(1000)
 
       verify(mockFunction).apply(any[Set[Int]])
     }
