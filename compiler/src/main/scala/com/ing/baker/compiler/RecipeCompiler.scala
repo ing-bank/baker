@@ -124,7 +124,7 @@ object RecipeCompiler {
     val dataInputArcs = fieldNamesWithoutPrefix.map(fieldName => arc(createPlace(fieldName, IngredientPlace), t, 1))
 
     val limitInteractionCountArc =
-      t.maximumInteractionCount.map(_ => arc(createPlace(s"limit:${t.label}", FiringLimiterPlace), t, 1))
+      t.maximumInteractionCount.map(n => arc(createPlace(s"limit:${t.label}", FiringLimiterPlace(n)), t, 1))
 
     dataInputArcs ++ internalDataInputArcs ++ limitInteractionCountArc
   }
@@ -265,11 +265,10 @@ object RecipeCompiler {
       ++ internalEventArcs
       ++ multipleOutputFacilitatorArcs)
 
-    val petriNet = new ScalaGraphPetriNet(Graph(arcs: _*))
+    val petriNet: ScalaGraphPetriNet[Place[_], Transition[_, _]] = new ScalaGraphPetriNet(Graph(arcs: _*))
 
-    val initialMarking: Marking[Place] = allInteractionTransitions.flatMap { t =>
-      t.maximumInteractionCount.map(n =>
-        createPlace(s"limit:${t.label}", FiringLimiterPlace) -> Map(() -> n))
+    val initialMarking: Marking[Place] = petriNet.places.collect {
+      case p @ Place(_ ,FiringLimiterPlace(n))=> p -> Map(() -> n)
     }.toMarking
 
     val compiledRecipe = CompiledRecipe(
