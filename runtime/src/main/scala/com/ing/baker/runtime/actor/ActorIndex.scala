@@ -1,12 +1,15 @@
 package com.ing.baker.runtime.actor
 
-import akka.actor.{ActorLogging, Props, Terminated}
+import akka.actor.{ActorLogging, ActorRef, Props, Terminated}
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.persistence.{PersistentActor, RecoveryCompleted}
-import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol.{AlreadyInitialized, Initialize, Uninitialized}
+import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol.{AlreadyInitialized, FireTransition, GetState, Initialize, Uninitialized}
 
 import scala.collection.mutable
 import ActorIndex._
+import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol
+
+import scala.concurrent.duration.Duration
 
 object ActorIndex {
 
@@ -23,16 +26,19 @@ object ActorIndex {
   // when an actor is passivated
   case class ActorPassivated(processId: String) extends InternalBakerEvent
 
+  /**
+    * Indicates that a process can no longer receive events because the configured period has expired.
+    */
+  case object ProcessReceivePeriodExpired extends InternalBakerMessage
+
 }
 
-class ActorIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata) extends PersistentActor with ActorLogging {
+class ActorIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, receivePeriod: Duration = Duration.Undefined) extends PersistentActor with ActorLogging {
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
 
-  def actorName(id: String) = id
-
   private[actor] def createChildPetriNetActor(id: String) = {
-    val actorRef = context.actorOf(petriNetActorProps, name = actorName(id))
+    val actorRef = context.actorOf(petriNetActorProps, name = id)
     context.watch(actorRef)
     actorRef
   }
@@ -49,7 +55,7 @@ class ActorIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata) exte
 
       val id = processId.toString
 
-      context.child(actorName(id)) match {
+      context.child(id) match {
         case None if !index.contains(id) =>
           val created = System.currentTimeMillis()
           persist(ActorCreated(id, created)) { _ =>
@@ -65,11 +71,28 @@ class ActorIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata) exte
 
       val id = processId.toString
 
-      context.child(actorName(id)) match {
-        case Some(actorRef) => actorRef.forward(cmd)
+      def forwardIfWithinPeriod(actorRef: ActorRef, msg: PetriNetInstanceProtocol.Command) = {
+        if (receivePeriod.isFinite() && cmd.isInstanceOf[FireTransition]) {
+          index.get(id).foreach { p =>
+            println(s"current: ${System.currentTimeMillis()}, created: ${p.createdDateTime}, period: ${receivePeriod}")
+            if (System.currentTimeMillis() - p.createdDateTime > receivePeriod.toMillis) {
+              println("expired")
+              sender() ! ProcessReceivePeriodExpired
+            }
+            else
+              actorRef.forward(cmd)
+          }
+        }
+        else
+          actorRef.forward(cmd)
+      }
+
+      context.child(id) match {
+        case Some(actorRef) =>
+           forwardIfWithinPeriod(actorRef, cmd)
         case None if index.contains(id) =>
           persist(ActorActivated(id)) { _ =>
-            createChildPetriNetActor(id).forward(cmd)
+            forwardIfWithinPeriod(createChildPetriNetActor(id), cmd)
           }
         case None => sender() ! Uninitialized(processId.toString)
       }
