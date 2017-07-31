@@ -108,7 +108,7 @@ class PetriNetInstance[P[_], T[_, _], S, E](
           .andThen(step)
           .andThen {
             case (updatedInstance, newJobs) ⇒
-              sender() ! TransitionFired(jobId, transitionId, marshal[P](event.consumed.asInstanceOf[Marking[P]]), marshal[P](event.produced.asInstanceOf[Marking[P]]), fromExecutionInstance(updatedInstance), newJobs.map(_.id))
+              sender() ! TransitionFired(jobId, transitionId, marshal[P](consumed.asInstanceOf[Marking[P]]), marshal[P](produced.asInstanceOf[Marking[P]]), fromExecutionInstance(updatedInstance), newJobs.map(_.id))
               context become running(updatedInstance, scheduledRetries - jobId)
               updatedInstance
           }
@@ -185,7 +185,10 @@ class PetriNetInstance[P[_], T[_, _], S, E](
   def executeJob[E](job: Job[P, T, S, E], originalSender: ActorRef) = {
 
     logEvent(Logging.DebugLevel, LogFiringTransition(processId, job.id, job.transition.toString, System.currentTimeMillis()))
-    executor(job).unsafeRunAsyncFuture().pipeTo(context.self)(originalSender)
+
+    // this can potentially happen in non gracefull shutdown situations
+    if (context.self != null)
+      executor(job).unsafeRunAsyncFuture().pipeTo(context.self)(originalSender)
   }
 
   def scheduleFailedJobsForRetry(instance: Instance[P, T, S]): Map[Long, Cancellable] = {
