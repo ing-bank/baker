@@ -46,7 +46,7 @@ class ActorIndexSpec
 
     "create the PetriNetInstance actor when Initialize message is received" in {
       val initializeMsg = Initialize(Marking.empty[Place])
-      val processId = UUID.randomUUID()
+      val processId = UUID.randomUUID().toString
 
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref)
@@ -59,7 +59,7 @@ class ActorIndexSpec
 
     "not create the PetriNetInstance actor if already created" in {
       val initializeMsg = Initialize(Marking.empty[Place])
-      val processId = UUID.randomUUID()
+      val processId = UUID.randomUUID().toString
 
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref)
@@ -77,7 +77,7 @@ class ActorIndexSpec
     "forward messages to the PetriNetInstance actor" in {
       val initializeMsg = Initialize(Marking.empty[Place])
       val otherMsg = mock[PetriNetInstanceProtocol.Command]
-      val processId = UUID.randomUUID()
+      val processId = UUID.randomUUID().toString
 
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref)
@@ -92,7 +92,7 @@ class ActorIndexSpec
 
     "notify ProcessMetadata when a PetriNetInstance actor is created" in {
       val initializeMsg = Initialize(Marking.empty[Place])
-      val processId = UUID.randomUUID()
+      val processId = UUID.randomUUID().toString
 
       val actorIndex = createActorIndex(TestProbe().ref)
 
@@ -110,7 +110,7 @@ class ActorIndexSpec
     }
 
     "not forward messages to uninitialized actors" in {
-      val processId = UUID.randomUUID()
+      val processId = UUID.randomUUID().toString
       val otherMsg = mock[PetriNetInstanceProtocol.Command]
 
       val petriNetActorProbe = TestProbe()

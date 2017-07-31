@@ -1,7 +1,5 @@
 package com.ing.baker.runtime.actor
 
-import java.util.UUID
-
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 import akka.cluster.Cluster
 import akka.cluster.ddata.Replicator._
@@ -10,6 +8,7 @@ import akka.cluster.sharding.ShardRegion._
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.pattern.ask
 import akka.util.Timeout
+import com.ing.baker.il.sha256HashCode
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 
@@ -24,8 +23,8 @@ object ShardedActorProvider {
     * So we have at most 10 manager actors created, all the petrinet actors will fall under these 10 actors
     * Note, the nrOfShards used here has to be aligned with the nrOfShards used in the shardIdExtractor
     */
-  def entityId(recipeName: String, processId: UUID, nrOfShards: Int): String =
-    s"$recipeName-index-${Math.abs(processId.getLeastSignificantBits % nrOfShards)}"
+  def entityId(recipeName: String, processId: String, nrOfShards: Int): String =
+    s"$recipeName-index-${Math.abs(sha256HashCode(recipeName) % nrOfShards)}"
 
   // extracts the actor id -> message from the incoming message
   // Entity id is the first character of the UUID
@@ -35,7 +34,7 @@ object ShardedActorProvider {
 
   // extracts the shard id from the incoming message
   def shardIdExtractor(recipeName: String, nrOfShards: Int): ExtractShardId = {
-    case BakerActorMessage(processId, _)   => Math.abs(processId.getLeastSignificantBits % nrOfShards).toString
+    case BakerActorMessage(processId, _)   => Math.abs(sha256HashCode(recipeName) % nrOfShards).toString
     case ShardRegion.StartEntity(entityId) => entityId.split(s"$recipeName-index-").last
   }
 }
