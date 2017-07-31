@@ -100,8 +100,6 @@ case class Recipe(
   def withSensoryEvents(eventsToAdd: Class[_]*): Recipe =
     copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent(_)))
 
-  def withSensoryEvents(eventsToAdd: Class[_], firingLimit: Int*)
-
   /**
     * This actives the incremental backup retry strategy for all the interactions if failure occurs
     * @param initialDelay the initial delay before the first retry starts
