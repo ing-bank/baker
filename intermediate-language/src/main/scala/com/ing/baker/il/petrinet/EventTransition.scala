@@ -7,7 +7,9 @@ import com.ing.baker.il.EventType
   * Transition providing data from an event.
   */
 case class EventTransition(event: EventType,
-                           isSensoryEvent: Boolean = true) extends Transition[Unit, EventType] {
+                           isSensoryEvent: Boolean = true,
+                           maxFiringLimit: Option[Int] = None
+                          ) extends Transition[Unit, EventType] {
 
   override val label: String = event.name
   override val id: Long = il.sha256HashCode(s"EventTransition:$label")

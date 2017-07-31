@@ -3,7 +3,12 @@ package com.ing.baker.recipe.scaladsl
 import com.ing.baker.recipe.common
 
 case class Event (override val name: String,
-                  override val providedIngredients: Seq[common.Ingredient]) extends common.Event
+                  override val providedIngredients: Seq[common.Ingredient],
+                  override val maxFiringLimit: Option[Int] = None) extends common.Event {
+  def withMaxFiringLimit(firingLimit: Int): Event = {
+    Event(this.name, this.providedIngredients, Some(firingLimit))
+  }
+}
 
 object Event {
   def apply(name: String) : Event = Event(name, Seq.empty)

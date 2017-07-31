@@ -94,6 +94,20 @@ public class RecipeTest {
     }
 
     @Test
+    public void shouldSetupRecipeWithEventWithMaxFiringLimit() {
+        Recipe recipe = new Recipe("EventWithMaxFiringLimitRecipe")
+                .withSensoryEvent(SensoryEventWithIngredient.class, 1)
+                .withSensoryEvent(SensoryEventWithoutIngredient.class, 2);
+        assertEquals(recipe.getEvents().size(), 2);
+        assertEquals(recipe.getInteractions().size(), 0);
+        assertEquals(recipe.getSieves().size(), 0);
+        assertEquals(recipe.getEvents().get(0), sensoryEventWithIngredientCheck());
+        assertEquals(recipe.getEvents().get(1), sensoryEventWithoutIngredientCheck());
+        assertEquals(recipe.getEvents().get(0).maxFiringLimit().get(), 1);
+        assertEquals(recipe.getEvents().get(1).maxFiringLimit().get(), 2);
+    }
+
+    @Test
     public void shouldBeAbleToAddARecipeToARecipe() {
         Recipe subRecipe = new Recipe("OneSensoryEventRecipe")
                 .withSensoryEvent(SensoryEventWithIngredient.class)

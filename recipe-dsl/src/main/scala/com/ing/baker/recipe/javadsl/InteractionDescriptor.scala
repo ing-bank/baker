@@ -45,7 +45,7 @@ case class InteractionDescriptor private(
   @SafeVarargs
   @varargs
   def withRequiredEvents(newRequiredEvents: Class[_]*): InteractionDescriptor =
-  this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.map(eventClassToCommonEvent))
+  this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.map(eventClassToCommonEvent(_)))
 
   /**
     * This sets a requirement for this interaction that some specific events needs to have been fired before it can execute.
@@ -54,7 +54,7 @@ case class InteractionDescriptor private(
     * @return
     */
   def withRequiredEvents(newRequiredEvents: java.util.Set[Class[_]]): InteractionDescriptor =
-  this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.asScala.map(eventClassToCommonEvent))
+  this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.asScala.map(eventClassToCommonEvent(_)))
 
   /**
     * This sets a requirement for this interaction that one of the given events needs to have been fired before it can execute.
@@ -67,7 +67,7 @@ case class InteractionDescriptor private(
   def withRequiredOneOfEvents(requiredOneOfEvents: Class[_]*): InteractionDescriptor = {
     if (requiredOneOfEvents.nonEmpty && requiredOneOfEvents.size < 2)
       throw new IllegalArgumentException("At least 2 events should be provided as 'requiredOneOfEvents'")
-    this.copy(requiredOneOfEvents = requiredOneOfEvents.map(eventClassToCommonEvent).toSet)
+    this.copy(requiredOneOfEvents = requiredOneOfEvents.map(eventClassToCommonEvent(_)).toSet)
   }
 
   /**

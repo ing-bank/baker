@@ -15,13 +15,14 @@ package object javadsl {
     }
 
 
-  def eventClassToCommonEvent(eventClass: Class[_]): common.Event =
+  def eventClassToCommonEvent(eventClass: Class[_], firingLimit: Option[Int] = None): common.Event =
     new common.Event {
       override val name: String = eventClass.getSimpleName
       override val providedIngredients: Seq[common.Ingredient] =
         eventClass.getDeclaredFields
           .filter(field => !field.isSynthetic)
           .map(f => createIngredient(f.getName, f.getType))
+      override val maxFiringLimit: Option[Int] = firingLimit
     }
 
   def interactionClassToCommonInteraction(interactionClass: Class[_ <: Interaction]): common.Interaction =
@@ -47,7 +48,7 @@ package object javadsl {
         //ProvidesEvent
         else if (method.isAnnotationPresent(classOf[annotations.FiresEvent])) {
           val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[annotations.FiresEvent]).oneOf()
-          val events: Seq[common.Event] = outputEventClasses.map(eventClassToCommonEvent)
+          val events: Seq[common.Event] = outputEventClasses.map(eventClassToCommonEvent(_))
           FiresOneOfEvents(events)
         }
         //ProvidesNothing

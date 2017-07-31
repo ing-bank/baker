@@ -86,6 +86,9 @@ case class Recipe(
   def withSensoryEvent(newEvent: Class[_]): Recipe =
     copy(sensoryEvents = sensoryEvents + eventClassToCommonEvent(newEvent))
 
+  def withSensoryEvent(newEvent: Class[_], maxFiringLimit: Int): Recipe =
+    copy(sensoryEvents = sensoryEvents + eventClassToCommonEvent(newEvent, Some(maxFiringLimit)))
+
   /**
     * Adds the sensory events to the recipe
     *
@@ -95,7 +98,9 @@ case class Recipe(
   @SafeVarargs
   @varargs
   def withSensoryEvents(eventsToAdd: Class[_]*): Recipe =
-    copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent))
+    copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent(_)))
+
+  def withSensoryEvents(eventsToAdd: Class[_], firingLimit: Int*)
 
   /**
     * This actives the incremental backup retry strategy for all the interactions if failure occurs

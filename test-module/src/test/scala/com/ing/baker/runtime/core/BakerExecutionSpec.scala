@@ -102,6 +102,58 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue, "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
     }
 
+    "only allow a sensory event be fired once if the max firing limit is set one" in {
+      val recipe =
+        Recipe("maxFiringLimitOfOneOnSensoryEventRecipe")
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent.withMaxFiringLimit(1))
+
+      val baker = new Baker(
+        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+        implementations = mockImplementations)
+
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
+
+      val processId = UUID.randomUUID().toString
+      baker.bake(processId)
+
+      val executedFirst = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
+      executedFirst shouldBe true
+      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+
+      val executedSecond = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
+      executedSecond shouldBe false
+      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+    }
+
+    "only allow a sensory event be fired twice if the max firing limit is set two" in {
+      val recipe =
+        Recipe("maxFiringLimitOfTwoOnSensoryEventRecipe")
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent.withMaxFiringLimit(2))
+
+      val baker = new Baker(
+        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+        implementations = mockImplementations)
+
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
+
+      val processId = UUID.randomUUID().toString
+      baker.bake(processId)
+
+      val executedFirst = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
+      executedFirst shouldBe true
+      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+
+      val executedSecond = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
+      executedSecond shouldBe true
+      verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
+
+      val executedThird = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
+      executedThird shouldBe false
+      verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
+    }
+
     "execute an interaction with Optionals set to empty when its ingredient is provided" in {
       val ingredientValue: Optional[String] = java.util.Optional.of("optionalWithValue")
 

@@ -36,7 +36,7 @@ package object il {
 
     def isSensoryEvent: Boolean =
       transition match {
-      case EventTransition(_, true) => true
+      case EventTransition(_, true, _) => true
       case _ => false
     }
 

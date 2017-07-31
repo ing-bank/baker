@@ -226,7 +226,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * @param processId The process identifier
     * @param event     The event object
     */
-  def handleEvent(processId: String, event: Any)(implicit timeout: FiniteDuration): Unit = {
+  def handleEvent(processId: String, event: Any)(implicit timeout: FiniteDuration): Boolean = {
     handleEventAsync(processId, event).confirmCompleted
   }
 
