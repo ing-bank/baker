@@ -24,7 +24,7 @@ object ShardedActorProvider {
     * Note, the nrOfShards used here has to be aligned with the nrOfShards used in the shardIdExtractor
     */
   def entityId(recipeName: String, processId: String, nrOfShards: Int): String =
-    s"$recipeName-index-${Math.abs(sha256HashCode(recipeName) % nrOfShards)}"
+    s"$recipeName-index-${Math.abs(sha256HashCode(processId) % nrOfShards)}"
 
   // extracts the actor id -> message from the incoming message
   // Entity id is the first character of the UUID
@@ -34,7 +34,7 @@ object ShardedActorProvider {
 
   // extracts the shard id from the incoming message
   def shardIdExtractor(recipeName: String, nrOfShards: Int): ExtractShardId = {
-    case BakerActorMessage(processId, _)   => Math.abs(sha256HashCode(recipeName) % nrOfShards).toString
+    case BakerActorMessage(processId, _)   => Math.abs(sha256HashCode(processId) % nrOfShards).toString
     case ShardRegion.StartEntity(entityId) => entityId.split(s"$recipeName-index-").last
   }
 }
