@@ -7,7 +7,7 @@ import com.ing.baker._
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{ProvidesIngredient, ProvidesNothing}
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, Recipe, processId}
+import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, Recipe}
 
 import scala.language.postfixOps
 
@@ -150,7 +150,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
     }
 
     "interactions with optional ingredients that are provided should not be provided as empty" in {
-      val optionalProviderEvent = Event("optionalProviderEvent", Seq(missingJavaOptional))
+      val optionalProviderEvent = Event("optionalProviderEvent", missingJavaOptional)
 
       val recipe: Recipe = Recipe("MissingOptionalRecipe")
         .withInteraction(optionalIngredientInteraction)

@@ -1,10 +1,10 @@
 package com.ing.baker.recipe
 
 import java.lang.reflect.Method
+import java.util.Optional
 
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient, ProvidesNothing, RecipeValidationException}
 import com.ing.baker.recipe.javadsl.ReflectionHelpers._
-
 
 package object javadsl {
 
@@ -15,7 +15,7 @@ package object javadsl {
     }
 
 
-  def eventClassToCommonEvent(eventClass: Class[_], firingLimit: Option[Integer] = None): common.Event =
+  def eventClassToCommonEvent(eventClass: Class[_], firingLimit: Option[Integer]): common.Event =
     new common.Event {
       override val name: String = eventClass.getSimpleName
       override val providedIngredients: Seq[common.Ingredient] =
@@ -48,7 +48,7 @@ package object javadsl {
         //ProvidesEvent
         else if (method.isAnnotationPresent(classOf[annotations.FiresEvent])) {
           val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[annotations.FiresEvent]).oneOf()
-          val events: Seq[common.Event] = outputEventClasses.map(eventClassToCommonEvent(_))
+          val events: Seq[common.Event] = outputEventClasses.map(eventClassToCommonEvent(_, None))
           FiresOneOfEvents(events)
         }
         //ProvidesNothing
