@@ -29,7 +29,7 @@ object ActorIndex {
   /**
     * Indicates that a process can no longer receive events because the configured period has expired.
     */
-  case object ProcessReceivePeriodExpired extends InternalBakerMessage
+  case object EventReceivePeriodExpired extends InternalBakerMessage
 
 }
 
@@ -74,10 +74,8 @@ class ActorIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, rece
       def forwardIfWithinPeriod(actorRef: ActorRef, msg: PetriNetInstanceProtocol.Command) = {
         if (receivePeriod.isFinite() && cmd.isInstanceOf[FireTransition]) {
           index.get(id).foreach { p =>
-            println(s"current: ${System.currentTimeMillis()}, created: ${p.createdDateTime}, period: ${receivePeriod}")
             if (System.currentTimeMillis() - p.createdDateTime > receivePeriod.toMillis) {
-              println("expired")
-              sender() ! ProcessReceivePeriodExpired
+              sender() ! EventReceivePeriodExpired
             }
             else
               actorRef.forward(cmd)

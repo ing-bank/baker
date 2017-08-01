@@ -9,7 +9,7 @@ import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
 import com.ing.baker.petrinet.api.Marking
 import com.typesafe.config.ConfigFactory
 import com.ing.baker.petrinet.dsl.colored.Place
-import com.ing.baker.runtime.actor.ActorIndex.ProcessReceivePeriodExpired
+import com.ing.baker.runtime.actor.ActorIndex.EventReceivePeriodExpired
 import org.mockito
 import org.mockito.Mockito
 import org.mockito.Mockito.verify
@@ -125,7 +125,7 @@ class ActorIndexSpec extends TestKit(ActorSystem("ActorIndexSpec", ConfigFactory
       expectMsg(Uninitialized(processId.toString))
     }
 
-    "reply with a ProcessReceivePeriodExpired message when attempting to fire an event after expiration period" in {
+    "reply with a EventReceivePeriodExpired message when attempting to fire an event after expiration period" in {
 
       val receivePeriodTimeout = 500 milliseconds
       val petriNetActorProbe = TestProbe("petrinet-probe")
@@ -153,7 +153,7 @@ class ActorIndexSpec extends TestKit(ActorSystem("ActorIndexSpec", ConfigFactory
       actorIndex ! BakerActorMessage(processId, fireTransitionCmd)
       petriNetActorProbe.expectNoMsg(noMsgExpectTimeout)
 
-      expectMsg(ProcessReceivePeriodExpired)
+      expectMsg(EventReceivePeriodExpired)
     }
   }
 
