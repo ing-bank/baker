@@ -118,11 +118,11 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.bake(processId)
 
       val executedFirst = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
-      executedFirst shouldBe true
+      executedFirst shouldBe SensoryEventStatus.Completed
       verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
 
       val executedSecond = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
-      executedSecond shouldBe false
+      executedSecond shouldBe SensoryEventStatus.FiringLimitMet
       verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
     }
 
@@ -142,15 +142,15 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.bake(processId)
 
       val executedFirst = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
-      executedFirst shouldBe true
+      executedFirst shouldBe SensoryEventStatus.Completed
       verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
 
       val executedSecond = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
-      executedSecond shouldBe true
+      executedSecond shouldBe SensoryEventStatus.Completed
       verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
 
       val executedThird = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
-      executedThird shouldBe false
+      executedThird shouldBe SensoryEventStatus.FiringLimitMet
       verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
     }
 

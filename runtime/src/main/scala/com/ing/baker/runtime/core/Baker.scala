@@ -21,6 +21,7 @@ import com.ing.baker.petrinet.runtime.persistence.Encryption
 import com.ing.baker.petrinet.runtime.persistence.Encryption.NoEncryption
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.core.Baker._
+import com.ing.baker.runtime.core.SensoryEventStatus.SensoryEventStatus
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.{RecipeRuntime, ReflectedInteractionTask}
 import fs2.Strategy
@@ -226,13 +227,13 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * @param processId The process identifier
     * @param event     The event object
     */
-  def handleEvent(processId: String, event: Any)(implicit timeout: FiniteDuration): Boolean = {
-    handleEventAsync(processId, event).confirmCompleted
+  def handleEvent(processId: String, event: Any)(implicit timeout: FiniteDuration): SensoryEventStatus = {
+    handleEventAsync(processId, event).confirmCompleted()
   }
 
   /**
     * Fires an event to baker for a process. This call is fire and forget, meaning that if nothing is done
-    * with the response object you have NO guarantee that the event is received the process instance.
+    * with the response object you haveSho NO guarantee that the event is received the process instance.
     */
   def handleEventAsync(processId: String, event: Any)(implicit timeout: FiniteDuration): BakerResponse = {
 

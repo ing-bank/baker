@@ -1,12 +1,16 @@
 package com.ing.baker.runtime.core
 
+import java.time.Duration
+import java.util.concurrent.TimeUnit
+
 import akka.NotUsed
 import akka.stream.javadsl.RunnableGraph
 import akka.stream.scaladsl.{Broadcast, GraphDSL, Sink, Source}
 import akka.stream.{ClosedShape, Materializer}
 import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol.{TransitionFailed, TransitionFired, TransitionNotEnabled, TransitionResponse}
+import com.ing.baker.runtime.core.SensoryEventStatus.SensoryEventStatus
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{FiniteDuration, SECONDS}
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 object BakerResponse {
@@ -69,24 +73,42 @@ class BakerResponse(processId: String, source: Source[TransitionResponse, NotUse
 
   val (receivedFuture, completedFuture) = BakerResponse.createFlow(processId, source)
 
-  def confirmReceived(implicit timeout: FiniteDuration): Boolean = {
+  val defaultWaitTimeout: FiniteDuration = FiniteDuration.apply(10, SECONDS)
+
+  def confirmReceived(): SensoryEventStatus = {
+    confirmReceived(defaultWaitTimeout)
+  }
+
+  def confirmReceived(duration: Duration): SensoryEventStatus = {
+    confirmReceived(FiniteDuration(duration.toNanos, TimeUnit.NANOSECONDS))
+  }
+
+  def confirmReceived(implicit timeout: FiniteDuration): SensoryEventStatus = {
     try {
       Await.result(receivedFuture, timeout)
-      true
+      SensoryEventStatus.Received
     }
     catch {
-      case _ : TransitionNotEnabledException => false
+      case _ : TransitionNotEnabledException => SensoryEventStatus.FiringLimitMet
       case e : Exception => throw e
     }
   }
 
-  def confirmCompleted(implicit timeout: FiniteDuration): Boolean = {
+  def confirmCompleted(): SensoryEventStatus = {
+    confirmCompleted(defaultWaitTimeout)
+  }
+
+  def confirmCompleted(duration: Duration): SensoryEventStatus = {
+    confirmCompleted(FiniteDuration(duration.toNanos, TimeUnit.NANOSECONDS))
+  }
+
+  def confirmCompleted(implicit timeout: FiniteDuration): SensoryEventStatus = {
     try {
       Await.result(completedFuture, timeout)
-      true
+      SensoryEventStatus.Completed
     }
     catch {
-      case _ : TransitionNotEnabledException => false
+      case _ : TransitionNotEnabledException => SensoryEventStatus.FiringLimitMet
       case e : Exception => throw e
     }
   }

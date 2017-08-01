@@ -6,7 +6,7 @@ import java.util.concurrent.{TimeUnit, TimeoutException}
 import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.actor.ProcessMetadata
-import com.ing.baker.runtime.core.{Baker, EventListener, NoSuchProcessException}
+import com.ing.baker.runtime.core.{Baker, BakerResponse, EventListener, NoSuchProcessException}
 import com.ing.baker.runtime.petrinet.ReflectedInteractionTask
 
 import scala.collection.JavaConverters._
@@ -66,7 +66,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     * @return
     */
   def processEvent(processId: String, event: Any): Unit =
-    processEventAsync(processId, event).confirmCompleted
+    processEventAsync(processId, event).confirmCompleted()
 
   /**
     * This fires the given event in the recipe for the process with the given processId
@@ -81,28 +81,26 @@ class JBaker (compiledRecipe: CompiledRecipe,
 
   /**
     * This fires the given event in the recipe for the process with the given processId
-    * This returns a JBakerResponse which is a future.
+    * This returns a BakerResponse.
     *
     * @param processId The process identifier
     * @param event The event to fire
     * @return
     */
-  def processEventAsync(processId: String, event: Any): JBakerResponse = {
+  def processEventAsync(processId: String, event: Any): BakerResponse = {
     implicit val executionContext = actorSystem.dispatcher
-
-    val response = baker.handleEventAsync(processId, event)(defaultHandleEventAsyncTimeout)
-    JBakerResponse(response.receivedFuture, response.completedFuture)
+    baker.handleEventAsync(processId, event)(defaultHandleEventAsyncTimeout)
   }
 
   /**
     * This fires the given event in the recipe for the process with the given processId
-    * This returns a JBakerResponse which is a future.
+    * This returns a BakerResponse.
     *
     * @param processId The process identifier
     * @param event The event to fire
     * @return
     */
-  def processEventAsync(processId: UUID, event: Any): JBakerResponse =
+  def processEventAsync(processId: UUID, event: Any): BakerResponse =
     this.processEventAsync(processId.toString, event)
 
   /**
