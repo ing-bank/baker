@@ -11,10 +11,12 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.time.Duration;
+import java.util.Optional;
 
 import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
 import static com.ing.baker.recipe.javadsl.JavadslTestHelper.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class RecipeTest {
     @Rule
@@ -91,6 +93,37 @@ public class RecipeTest {
         assertEquals(recipe.getSieves().size(), 0);
         assertEquals(recipe.getEvents().get(0), sensoryEventWithIngredientCheck());
         assertEquals(recipe.getEvents().get(1), sensoryEventWithoutIngredientCheck());
+    }
+
+    @Test
+    public void shouldSetupRecipeWithSensoryEventWithMaxFiringLimit() {
+        Recipe recipe = new Recipe("EventWithMaxFiringLimitRecipe")
+                .withSensoryEvent(SensoryEventWithIngredient.class, 1)
+                .withSensoryEvent(SensoryEventWithoutIngredient.class, 2);
+
+        assertEquals(recipe.getEvents().size(), 2);
+        assertEquals(recipe.getInteractions().size(), 0);
+        assertEquals(recipe.getSieves().size(), 0);
+        assertEquals(recipe.getEvents().get(0), sensoryEventWithIngredientCheck());
+        assertEquals(recipe.getEvents().get(1), sensoryEventWithoutIngredientCheck());
+        assertEquals(recipe.getEvents().get(0).maxFiringLimit().get(), new Integer(1));
+        assertEquals(recipe.getEvents().get(1).maxFiringLimit().get(), new Integer(2));
+    }
+
+    @Test
+    public void shouldSetupRecipeWithSensoryEventNoMaxFiringLimit() {
+        Recipe recipe = new Recipe("EventWithMaxFiringLimitRecipe")
+                .withSensoryEventsNoFiringLimit(
+                        SensoryEventWithIngredient.class,
+                        SensoryEventWithoutIngredient.class);
+
+        assertEquals(recipe.getEvents().size(), 2);
+        assertEquals(recipe.getInteractions().size(), 0);
+        assertEquals(recipe.getSieves().size(), 0);
+        assertEquals(recipe.getEvents().get(0), sensoryEventWithIngredientCheck());
+        assertEquals(recipe.getEvents().get(1), sensoryEventWithoutIngredientCheck());
+        assertEquals(recipe.getEvents().get(0).maxFiringLimit(), scala.Option.empty());
+        assertEquals(recipe.getEvents().get(1).maxFiringLimit(), scala.Option.empty());
     }
 
     @Test

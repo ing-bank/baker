@@ -124,7 +124,7 @@ object RecipeCompiler {
     val dataInputArcs = fieldNamesWithoutPrefix.map(fieldName => arc(createPlace(fieldName, IngredientPlace), t, 1))
 
     val limitInteractionCountArc =
-      t.maximumInteractionCount.map(_ => arc(createPlace(s"limit:${t.label}", FiringLimiterPlace), t, 1))
+      t.maximumInteractionCount.map(n => arc(createPlace(s"limit:${t.label}", FiringLimiterPlace(n)), t, 1))
 
     dataInputArcs ++ internalDataInputArcs ++ limitInteractionCountArc
   }
@@ -182,7 +182,7 @@ object RecipeCompiler {
     val allInteractionTransitions = sieveTransitions ++ interactionTransitions
 
     // events provided from outside
-    val sensoryEventTransitions: Seq[EventTransition] = recipe.sensoryEvents.map { event => EventTransition(eventToCompiledEvent(event)) }.toSeq
+    val sensoryEventTransitions: Seq[EventTransition] = recipe.sensoryEvents.map { event => EventTransition(eventToCompiledEvent(event), isSensoryEvent = true, event.maxFiringLimit) }.toSeq
 
     // events provided by other transitions / actions
     val interactionEventTransitions: Seq[EventTransition] = allInteractionTransitions.flatMap { t =>
@@ -205,6 +205,13 @@ object RecipeCompiler {
         case _ => Nil
       }
     }
+
+    val eventLimiterArcs: Seq[Arc] = sensoryEventTransitions.flatMap(
+      t => t.maxFiringLimit match {
+        case Some(n) => Seq(arc(createPlace(s"limit:${t.label}", FiringLimiterPlace(n)), t, 1))
+        case None => Seq.empty
+      }
+    )
 
     // This generates precondition arcs for Required Events (AND).
     val (eventPreconditionArcs, preconditionANDErrors) = actionDescriptors.map { t =>
@@ -260,16 +267,16 @@ object RecipeCompiler {
     val arcs = (interactionArcs
       ++ eventPreconditionArcs
       ++ eventOrPreconditionArcs
+      ++ eventLimiterArcs
       ++ sensoryEventArcs
       ++ sensoryEventArcsNoIngredientsArcs
       ++ internalEventArcs
       ++ multipleOutputFacilitatorArcs)
 
-    val petriNet = new ScalaGraphPetriNet(Graph(arcs: _*))
+    val petriNet: ScalaGraphPetriNet[Place[_], Transition[_, _]] = new ScalaGraphPetriNet(Graph(arcs: _*))
 
-    val initialMarking: Marking[Place] = allInteractionTransitions.flatMap { t =>
-      t.maximumInteractionCount.map(n =>
-        createPlace(s"limit:${t.label}", FiringLimiterPlace) -> Map(() -> n))
+    val initialMarking: Marking[Place] = petriNet.places.collect {
+      case p @ Place(_ ,FiringLimiterPlace(n))=> p -> Map(() -> n)
     }.toMarking
 
     val compiledRecipe = CompiledRecipe(

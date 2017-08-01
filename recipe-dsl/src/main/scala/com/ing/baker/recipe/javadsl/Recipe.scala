@@ -1,5 +1,7 @@
 package com.ing.baker.recipe.javadsl
 
+import java.util.Optional
+
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
 import com.ing.baker.recipe.common._
@@ -84,7 +86,17 @@ case class Recipe(
     * @return
     */
   def withSensoryEvent(newEvent: Class[_]): Recipe =
-    copy(sensoryEvents = sensoryEvents + eventClassToCommonEvent(newEvent))
+    withSensoryEvents(newEvent)
+
+  /**
+    * Adds the sensory event to the recipe
+    *
+    * @param newEvent
+    * @param maxFiringLimit
+    * @return
+    */
+  def withSensoryEvent(newEvent: Class[_], maxFiringLimit: Integer): Recipe =
+    copy(sensoryEvents = sensoryEvents + eventClassToCommonEvent(newEvent, Some(maxFiringLimit)))
 
   /**
     * Adds the sensory events to the recipe
@@ -95,7 +107,29 @@ case class Recipe(
   @SafeVarargs
   @varargs
   def withSensoryEvents(eventsToAdd: Class[_]*): Recipe =
-    copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent))
+    copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent(_, Some(1))))
+
+  /**
+    * Adds the sensory event to the recipe with firing limit set to unlimited
+    *
+    * @param newEvent
+    * @return
+    */
+  def withSensoryEventNoFiringLimit(newEvent: Class[_]): Recipe =
+    withSensoryEventsNoFiringLimit(newEvent)
+
+
+  /**
+    * Adds the sensory events to the recipe with firing limit set to unlimited
+    *
+    * @param eventsToAdd
+    * @return
+    */
+  @SafeVarargs
+  @varargs
+  def withSensoryEventsNoFiringLimit(eventsToAdd: Class[_]*): Recipe =
+  copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent(_, None)))
+
 
   /**
     * This actives the incremental backup retry strategy for all the interactions if failure occurs

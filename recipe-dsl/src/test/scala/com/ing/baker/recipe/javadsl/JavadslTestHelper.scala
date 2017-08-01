@@ -13,10 +13,10 @@ object JavadslTestHelper {
   val ProcessIdStringCheck: common.Ingredient = scaladsl.Ingredient[String]("$ProcessId$")
   val ProcessIdUUIDCheck: common.Ingredient = scaladsl.Ingredient[UUID]("$ProcessId$")
   //Events
-  val interactionProvidedEventCheck: common.Event = scaladsl.Event("InteractionProvidedEvent", Seq.empty)
-  val interactionProvidedEvent2Check: common.Event = scaladsl.Event("InteractionProvidedEvent2", Seq.empty)
-  val sensoryEventWithIngredientCheck: common.Event = scaladsl.Event("SensoryEventWithIngredient", Seq(initialIngredientCheck))
-  val sensoryEventWithoutIngredientCheck: common.Event = scaladsl.Event("SensoryEventWithoutIngredient", Seq.empty)
+  val interactionProvidedEventCheck: common.Event = new scaladsl.Event("InteractionProvidedEvent", Seq.empty, None)
+  val interactionProvidedEvent2Check: common.Event = new scaladsl.Event("InteractionProvidedEvent2", Seq.empty, None)
+  val sensoryEventWithIngredientCheck: common.Event = new scaladsl.Event("SensoryEventWithIngredient", Seq(initialIngredientCheck), Some(1))
+  val sensoryEventWithoutIngredientCheck: common.Event = new scaladsl.Event("SensoryEventWithoutIngredient", Seq.empty, Some(1))
   //Interactions
   val providesIngredientInteractionCheck: common.Interaction = scaladsl.Interaction("ProvidesIngredientInteraction", Seq(initialIngredientCheck), common.ProvidesIngredient(firstProvidedIngredientCheck))
   val requiresProcessIdStringInteractionCheck: common.Interaction = scaladsl.Interaction("RequiresProcessIdStringInteraction", Seq(ProcessIdStringCheck, initialIngredientCheck), common.ProvidesNothing)

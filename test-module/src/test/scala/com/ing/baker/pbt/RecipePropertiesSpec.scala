@@ -112,7 +112,7 @@ object RecipePropertiesSpec {
       10 -> Gen.choose(1, maxNrOfIngredientsPerEvent)
     )
     providedIngredients <- Gen.listOfN(nrOfIngredients, ingredientGen)
-  } yield Event(name, providedIngredients)
+  } yield Event(name, providedIngredients, None)
 
   val interactionOutputGen: Gen[InteractionOutput] = for {
     nrOfEvents <- Gen.choose(0, maxNrOfOutputEventsPerInteraction)
