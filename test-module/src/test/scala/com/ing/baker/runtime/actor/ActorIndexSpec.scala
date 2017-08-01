@@ -55,7 +55,7 @@ class ActorIndexSpec extends TestKit(ActorSystem("ActorIndexSpec", ConfigFactory
 
     "create the PetriNetInstance actor when Initialize message is received" in {
       val initializeCmd = Initialize(Marking.empty[Place])
-      val processId = UUID.randomUUID()
+      val processId = UUID.randomUUID().toString
 
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref)
@@ -67,7 +67,7 @@ class ActorIndexSpec extends TestKit(ActorSystem("ActorIndexSpec", ConfigFactory
 
     "not create the PetriNetInstance actor if already created" in {
       val initializeMsg = Initialize(Marking.empty[Place])
-      val processId = UUID.randomUUID()
+      val processId = UUID.randomUUID().toString
 
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref)
@@ -83,7 +83,7 @@ class ActorIndexSpec extends TestKit(ActorSystem("ActorIndexSpec", ConfigFactory
     "forward messages to the PetriNetInstance actor" in {
       val initializeMsg = Initialize(Marking.empty[Place])
       val otherMsg = mock[PetriNetInstanceProtocol.Command]
-      val processId = UUID.randomUUID()
+      val processId = UUID.randomUUID().toString
 
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref)
@@ -97,7 +97,7 @@ class ActorIndexSpec extends TestKit(ActorSystem("ActorIndexSpec", ConfigFactory
 
     "notify ProcessMetadata when a PetriNetInstance actor is created" in {
       val initializeMsg = Initialize(Marking.empty[Place])
-      val processId = UUID.randomUUID()
+      val processId = UUID.randomUUID().toString
 
       val actorIndex = createActorIndex(TestProbe().ref)
 
@@ -113,7 +113,7 @@ class ActorIndexSpec extends TestKit(ActorSystem("ActorIndexSpec", ConfigFactory
     }
 
     "not forward messages to uninitialized actors" in {
-      val processId = UUID.randomUUID()
+      val processId = UUID.randomUUID().toString
       val otherMsg = mock[PetriNetInstanceProtocol.Command]
 
       val petriNetActorProbe = TestProbe()

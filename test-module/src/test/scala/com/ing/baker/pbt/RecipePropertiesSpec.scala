@@ -74,7 +74,7 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
       }
 
       val baker = new Baker(compiledRecipe, petriNetInteractionMock)
-      val processId = UUID.randomUUID()
+      val processId = UUID.randomUUID().toString
       baker.bake(processId)
       sensoryEvents foreach { event =>
         println(s"Handle sensory event: ${event.name}")
@@ -112,7 +112,7 @@ object RecipePropertiesSpec {
       10 -> Gen.choose(1, maxNrOfIngredientsPerEvent)
     )
     providedIngredients <- Gen.listOfN(nrOfIngredients, ingredientGen)
-  } yield Event(name, providedIngredients)
+  } yield Event(name, providedIngredients, None)
 
   val interactionOutputGen: Gen[InteractionOutput] = for {
     nrOfEvents <- Gen.choose(0, maxNrOfOutputEventsPerInteraction)

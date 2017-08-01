@@ -14,10 +14,9 @@ object RecipeValidations {
     if (compiledRecipe.petriNet.inMarking(interactionTransition).isEmpty)
       validationErrors += s"Interaction $interactionTransition does not have any requirements (ingredients or preconditions)! This will result in an infinite execution loop."
 
-    // check if the process id argument type is correct, TODO remove overlap with code below
+    // check if the process id argument type is correct
     interactionTransition.inputFields.toMap.get(processIdName).map {
       case c if c == classOf[String] =>
-      case c if c == classOf[java.util.UUID] =>
       case c => validationErrors += s"Non supported process id class: ${c.getName} on interaction: '$interactionTransition'"
     }
 

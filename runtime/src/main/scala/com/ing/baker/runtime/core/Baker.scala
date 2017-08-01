@@ -1,6 +1,5 @@
 package com.ing.baker.runtime.core
 
-import java.util.UUID
 import java.util.concurrent.TimeoutException
 
 import akka.NotUsed
@@ -121,7 +120,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
   private val readJournal = PersistenceQuery(actorSystem)
     .readJournalFor[CurrentEventsByPersistenceIdQuery with PersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
 
-  private def createEventMsg(processId: java.util.UUID, runtimeEvent: RuntimeEvent) = {
+  private def createEventMsg(processId: String, runtimeEvent: RuntimeEvent) = {
     require(runtimeEvent != null, "Event can not be null")
     val t: Transition[_, _] = transitionForRuntimeEvent(runtimeEvent, compiledRecipe)
     BakerActorMessage(processId, FireTransition(t.id, runtimeEvent))
@@ -154,7 +153,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     *
     * @param processId The process identifier
     */
-  def bake(processId: java.util.UUID): ProcessState = Await.result(bakeAsync(processId), bakeTimeout)
+  def bake(processId: String): ProcessState = Await.result(bakeAsync(processId), bakeTimeout)
 
   /**
     * Asynchronously creates an instance of the  process using the recipe.
@@ -162,7 +161,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * @param processId The process identifier
     * @return A future of the initial process state.
     */
-  def bakeAsync(processId: java.util.UUID): Future[ProcessState] = {
+  def bakeAsync(processId: String): Future[ProcessState] = {
     implicit val askTimeout = Timeout(bakeTimeout)
 
     val msg = Initialize(marshal(compiledRecipe.initialMarking), ProcessState(processId, Map.empty))
@@ -199,7 +198,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
   /**
     * Synchronously returns all events that occurred for a process.
     */
-  def events(processId: java.util.UUID)(implicit timeout: FiniteDuration): Seq[RuntimeEvent] = {
+  def events(processId: String)(implicit timeout: FiniteDuration): Seq[RuntimeEvent] = {
 
     val futureEventSeq = eventsAsync(processId).runWith(Sink.seq)
 
@@ -212,7 +211,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * @param processId The process identifier.
     * @return The source of events.
     */
-  def eventsAsync(processId: java.util.UUID): Source[RuntimeEvent, NotUsed] = {
+  def eventsAsync(processId: String): Source[RuntimeEvent, NotUsed] = {
     PetriNetQuery
       .eventsForInstance[Place, Transition, ProcessState, RuntimeEvent](compiledRecipe.name, processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal, petriNetRuntime.eventSourceFn)
       .collect {
@@ -227,15 +226,15 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * @param processId The process identifier
     * @param event     The event object
     */
-  def handleEvent(processId: java.util.UUID, event: Any)(implicit timeout: FiniteDuration): Unit = {
-    handleEventAsync(processId, event).confirmCompleted
+  def handleEvent(processId: String, event: Any)(implicit timeout: FiniteDuration): SensoryEventStatus = {
+    handleEventAsync(processId, event).confirmCompleted()
   }
 
   /**
     * Fires an event to baker for a process. This call is fire and forget, meaning that if nothing is done
-    * with the response object you have NO guarantee that the event is received the process instance.
+    * with the response object you haveSho NO guarantee that the event is received the process instance.
     */
-  def handleEventAsync(processId: UUID, event: Any)(implicit timeout: FiniteDuration): BakerResponse = {
+  def handleEventAsync(processId: String, event: Any)(implicit timeout: FiniteDuration): BakerResponse = {
 
     val runtimeEvent = event match {
       case e: RuntimeEvent => e
@@ -262,11 +261,11 @@ class Baker(val compiledRecipe: CompiledRecipe,
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def getProcessState(processId: java.util.UUID)(implicit timeout: FiniteDuration): ProcessState =
+  def getProcessState(processId: String)(implicit timeout: FiniteDuration): ProcessState =
     Await.result(getProcessStateAsync(processId), timeout)
 
   //TODO, decide if Baker can visualise itself or is visualising part of the runtime that the compiler exposes also?
-  def getVisualState(processId: java.util.UUID)(implicit timeout: FiniteDuration): String = {
+  def getVisualState(processId: String)(implicit timeout: FiniteDuration): String = {
     RecipeVisualizer.visualiseCompiledRecipe(
       compiledRecipe,
       eventNames = this.events(processId).map(_.name).toSet,
@@ -282,7 +281,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def getIngredients(processId: java.util.UUID)(implicit timeout: FiniteDuration): Map[String, Any] =
+  def getIngredients(processId: String)(implicit timeout: FiniteDuration): Map[String, Any] =
     getProcessState(processId).ingredients
 
   /**
@@ -291,7 +290,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * @param processId The process id of the active process for which the accumulated state needs to be retrieved.
     * @return Accumulated state.
     */
-  def getProcessStateAsync(processId: java.util.UUID)(implicit timeout: FiniteDuration): Future[ProcessState] = {
+  def getProcessStateAsync(processId: String)(implicit timeout: FiniteDuration): Future[ProcessState] = {
     recipeManagerActor
       .ask(BakerActorMessage(processId, GetState))(Timeout.durationToTimeout(timeout))
       .map {

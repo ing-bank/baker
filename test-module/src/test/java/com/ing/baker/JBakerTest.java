@@ -7,6 +7,8 @@ import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.recipe.javadsl.InteractionDescriptor;
 import com.ing.baker.recipe.javadsl.Recipe;
 import com.ing.baker.runtime.core.BakerException;
+import com.ing.baker.runtime.core.BakerResponse;
+import com.ing.baker.runtime.core.SensoryEventStatus;
 import com.ing.baker.runtime.java_api.JBaker;
 import com.typesafe.config.ConfigFactory;
 import org.junit.Rule;
@@ -19,6 +21,8 @@ import java.util.concurrent.TimeoutException;
 import static com.ing.baker.compiler.JavaCompiledRecipeTest.setupComplexRecipe;
 import static com.ing.baker.compiler.JavaCompiledRecipeTest.setupSimpleRecipe;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 //TODO move to runtime, not possbile now because it references parts of the RecipeCompilerSpec
 public class JBakerTest {
@@ -36,7 +40,7 @@ public class JBakerTest {
     public void shouldSetupJBakerWithDefaultActorFramework() throws BakerException, TimeoutException {
         JBaker jBaker = new JBaker(RecipeCompiler.compileRecipe(setupSimpleRecipe()), implementationsList);
         assertEquals(jBaker.getCompiledRecipe().getValidationErrors().size(), 0);
-        UUID requestId = UUID.randomUUID();
+        String requestId = UUID.randomUUID().toString();
         jBaker.bake(requestId);
         jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
         assertEquals("{RequestIDStringOne=" + requestId.toString() + "}", jBaker.getIngredients(requestId).toString());
@@ -47,7 +51,7 @@ public class JBakerTest {
         com.typesafe.config.Config config = ConfigFactory.load();
         JBaker jBaker = new JBaker(RecipeCompiler.compileRecipe(setupSimpleRecipe()), implementationsList);
         assertEquals(jBaker.getCompiledRecipe().getValidationErrors().size(), 0);
-        UUID requestId = UUID.randomUUID();
+        String requestId = UUID.randomUUID().toString();
         jBaker.bake(requestId);
         jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
         assertEquals("{RequestIDStringOne=" + requestId.toString() + "}", jBaker.getIngredients(requestId).toString());
@@ -63,10 +67,10 @@ public class JBakerTest {
     @Test
     public void shouldExecuteCompleteFlow() throws BakerException {
         JBaker jBaker = new JBaker(RecipeCompiler.compileRecipe(setupComplexRecipe()), implementationsList);
-        UUID processId = UUID.randomUUID();
-        jBaker.bake(processId);
-        jBaker.processEvent(processId, new JavaCompiledRecipeTest.EventOne());
-        jBaker.processEvent(processId, new JavaCompiledRecipeTest.EventTwo());
+        String requestId = UUID.randomUUID().toString();
+        jBaker.bake(requestId);
+        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
+        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventTwo());
     }
 
     @Test
