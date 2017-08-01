@@ -36,7 +36,7 @@ public class JBakerTest {
     public void shouldSetupJBakerWithDefaultActorFramework() throws BakerException, TimeoutException {
         JBaker jBaker = new JBaker(RecipeCompiler.compileRecipe(setupSimpleRecipe()), implementationsList);
         assertEquals(jBaker.getCompiledRecipe().getValidationErrors().size(), 0);
-        UUID requestId = UUID.randomUUID();
+        String requestId = UUID.randomUUID().toString();
         jBaker.bake(requestId);
         jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
         assertEquals("{RequestIDStringOne=" + requestId.toString() + "}", jBaker.getIngredients(requestId).toString());
@@ -47,7 +47,7 @@ public class JBakerTest {
         com.typesafe.config.Config config = ConfigFactory.load();
         JBaker jBaker = new JBaker(RecipeCompiler.compileRecipe(setupSimpleRecipe()), implementationsList);
         assertEquals(jBaker.getCompiledRecipe().getValidationErrors().size(), 0);
-        UUID requestId = UUID.randomUUID();
+        String requestId = UUID.randomUUID().toString();
         jBaker.bake(requestId);
         jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
         assertEquals("{RequestIDStringOne=" + requestId.toString() + "}", jBaker.getIngredients(requestId).toString());
@@ -63,10 +63,10 @@ public class JBakerTest {
     @Test
     public void shouldExecuteCompleteFlow() throws BakerException {
         JBaker jBaker = new JBaker(RecipeCompiler.compileRecipe(setupComplexRecipe()), implementationsList);
-        UUID processId = UUID.randomUUID();
-        jBaker.bake(processId);
-        jBaker.processEvent(processId, new JavaCompiledRecipeTest.EventOne());
-        jBaker.processEvent(processId, new JavaCompiledRecipeTest.EventTwo());
+        String requestId = UUID.randomUUID().toString();
+        jBaker.bake(requestId);
+        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
+        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventTwo());
     }
 
     @Test

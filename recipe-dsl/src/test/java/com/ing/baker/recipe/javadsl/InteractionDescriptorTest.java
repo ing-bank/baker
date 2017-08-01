@@ -33,12 +33,6 @@ public class InteractionDescriptorTest {
     }
 
     @Test
-    public void shouldCreateInteractionDescriptorOfRequiredProcessIdUUIDInteraction() {
-        InteractionDescriptor id = of(RequiresProcessIdUUIDInteraction.class);
-        assertEquals(requiresProcessIdUUIDInteractionCheck(), id.interaction());
-    }
-
-    @Test
     public void shouldNotAllowToCreateInteractionDescriptorWithProvidesIngredientAndFiresEvent() {
         exception.expect(RecipeValidationException.class);
         of(ProvidesIngredientAndFireseventInteraction.class);

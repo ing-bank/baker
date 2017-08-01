@@ -1,7 +1,5 @@
 package com.ing.baker.runtime.core
 
-import java.util.UUID
-
 import akka.NotUsed
 import akka.stream.javadsl.RunnableGraph
 import akka.stream.scaladsl.{Broadcast, GraphDSL, Sink, Source}
@@ -13,7 +11,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 object BakerResponse {
 
-  def firstMessage(processId: java.util.UUID, response: Future[TransitionResponse])(implicit ec: ExecutionContext): Future[Unit] =
+  def firstMessage(processId: String, response: Future[TransitionResponse])(implicit ec: ExecutionContext): Future[Unit] =
     response.flatMap { translateFirstMessage }.recoverWith {
       // TODO this very hacky
       case e: NoSuchElementException => Future.failed(new NoSuchProcessException(s"No such process: $processId"))
@@ -24,7 +22,7 @@ object BakerResponse {
     case msg @ _                 => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
   }
 
-  def allMessages(processId: java.util.UUID, response: Future[Seq[TransitionResponse]])(implicit ec: ExecutionContext): Future[Unit] =
+  def allMessages(processId: String, response: Future[Seq[TransitionResponse]])(implicit ec: ExecutionContext): Future[Unit] =
     response.flatMap { msgs =>
         val futureResponses = msgs.headOption.map(translateFirstMessage)
           .getOrElse(Future.failed(new NoSuchProcessException(s"No such process: $processId"))) +: msgs.drop(1).map(translateOtherMessage)
@@ -37,7 +35,7 @@ object BakerResponse {
     case msg @ _                 => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
   }
 
-  def createFlow(processId: java.util.UUID, source: Source[TransitionResponse, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext): (Future[Unit], Future[Unit]) = {
+  def createFlow(processId: String, source: Source[TransitionResponse, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext): (Future[Unit], Future[Unit]) = {
 
     val sinkHead = Sink.head[TransitionResponse]
     val sinkLast = Sink.seq[TransitionResponse]
@@ -60,7 +58,7 @@ object BakerResponse {
   }
 }
 
-class BakerResponse(processId: UUID, source: Source[TransitionResponse, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext) {
+class BakerResponse(processId: String, source: Source[TransitionResponse, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext) {
 
   val (receivedFuture, completedFuture) = BakerResponse.createFlow(processId, source)
 

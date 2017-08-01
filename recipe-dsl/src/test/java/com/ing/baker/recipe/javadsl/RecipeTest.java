@@ -5,7 +5,7 @@ import com.ing.baker.recipe.javadsl.events.SensoryEventWithIngredient;
 import com.ing.baker.recipe.javadsl.events.SensoryEventWithoutIngredient;
 import com.ing.baker.recipe.javadsl.interactions.FiresTwoEventInteraction;
 import com.ing.baker.recipe.javadsl.interactions.ProvidesIngredientInteraction;
-import com.ing.baker.recipe.javadsl.interactions.RequiresProcessIdUUIDInteraction;
+import com.ing.baker.recipe.javadsl.interactions.RequiresProcessIdStringInteraction;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -34,13 +34,13 @@ public class RecipeTest {
     public void shouldSetupRecipeWithMultipleInteractionDescriptors() {
         Recipe recipe = new Recipe("MultipleInteractionsRecipe")
                 .withInteractions(
-                        of(RequiresProcessIdUUIDInteraction.class),
+                        of(RequiresProcessIdStringInteraction.class),
                         of(FiresTwoEventInteraction.class),
                         of(ProvidesIngredientInteraction.class));
         assertEquals(recipe.getEvents().size(), 0);
         assertEquals(recipe.getInteractions().size(), 3);
         assertEquals(recipe.getSieves().size(), 0);
-        assertEquals(recipe.getInteractions().get(0).interaction(), requiresProcessIdUUIDInteractionCheck());
+        assertEquals(recipe.getInteractions().get(0).interaction(), requiresProcessIdStringInteractionCheck());
         assertEquals(recipe.getInteractions().get(1).interaction(), firesTwoEventInteractionCheck());
         assertEquals(recipe.getInteractions().get(2).interaction(), providesIngredientInteractionCheck());
     }
@@ -59,13 +59,13 @@ public class RecipeTest {
     public void shouldSetupRecipeWithMultipleSieveDescriptors() {
         Recipe recipe = new Recipe("MultipleInteractionsRecipe")
                 .withSieves(
-                        of(RequiresProcessIdUUIDInteraction.class),
+                        of(RequiresProcessIdStringInteraction.class),
                         of(FiresTwoEventInteraction.class),
                         of(ProvidesIngredientInteraction.class));
         assertEquals(recipe.getEvents().size(), 0);
         assertEquals(recipe.getInteractions().size(), 0);
         assertEquals(recipe.getSieves().size(), 3);
-        assertEquals(recipe.getSieves().get(0).interaction(), requiresProcessIdUUIDInteractionCheck());
+        assertEquals(recipe.getSieves().get(0).interaction(), requiresProcessIdStringInteractionCheck());
         assertEquals(recipe.getSieves().get(1).interaction(), firesTwoEventInteractionCheck());
         assertEquals(recipe.getSieves().get(2).interaction(), providesIngredientInteractionCheck());
     }

@@ -132,10 +132,9 @@ object ReflectedInteractionTask {
     */
   def createMethodInput[A](interaction: InteractionTransition[A], state: ProcessState): Seq[AnyRef] = {
 
-    // We support both UUID and String types
+    // We do not support any other type then String types
     val processId: Option[(String, AnyRef)] = interaction.inputFields.toMap.get(processIdName).map {
       case c if c == classOf[String] => state.id.toString
-      case c if c == classOf[java.util.UUID] => state.id
       case _ => throw new IllegalStateException("Type not supported")
     }.map(value => processIdName -> value)
 

@@ -46,7 +46,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     *
     * @param processId The process identifier
     */
-  def bake(processId: java.util.UUID): Unit =
+  def bake(processId: String): Unit =
     baker.bake(processId)
 
   /**
@@ -57,7 +57,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     * @param event The event to fire
     * @return
     */
-  def processEvent(processId: java.util.UUID, event: Any): Unit =
+  def processEvent(processId: String, event: Any): Unit =
     processEventAsync(processId, event).confirmCompleted
 
   /**
@@ -68,7 +68,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     * @param event The event to fire
     * @return
     */
-  def processEventAsync(processId: java.util.UUID, event: Any): JBakerResponse = {
+  def processEventAsync(processId: String, event: Any): JBakerResponse = {
     implicit val executionContext = actorSystem.dispatcher
 
     val response = baker.handleEventAsync(processId, event)(defaultHandleEventAsyncTimeout)
@@ -84,7 +84,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def getIngredients(processId: java.util.UUID,
+  def getIngredients(processId: String,
                      waitTimeoutMillis: Long): java.util.Map[String, Object] =
     baker
       .getIngredients(processId)(waitTimeoutMillis milliseconds)
@@ -99,7 +99,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the default deadline")
-  def getIngredients(processId: java.util.UUID): java.util.Map[String, Object] =
+  def getIngredients(processId: String): java.util.Map[String, Object] =
     getIngredients(processId, defaultTimeout)
 
   /**
@@ -110,7 +110,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     * @return
     *
     */
-  def getEvents(processId: UUID, waitTimeoutMillis: Long): EventList =
+  def getEvents(processId: String, waitTimeoutMillis: Long): EventList =
     new EventList(baker.events(processId)(waitTimeoutMillis milliseconds))
 
   /**
@@ -119,7 +119,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     * @param processId The process identifier
     * @return
     */
-  def getEvents(processId: UUID): EventList = getEvents(processId, defaultTimeout)
+  def getEvents(processId: String): EventList = getEvents(processId, defaultTimeout)
 
   /**
     * Returns the compiled recipe.
@@ -155,7 +155,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     * @return
     */
   @throws[TimeoutException]("When the request does not receive a reply within the default deadline")
-  def getVisualState(processId: java.util.UUID, waitTimeoutMillis: Long): String =
+  def getVisualState(processId: String, waitTimeoutMillis: Long): String =
     baker.getVisualState(processId)(waitTimeoutMillis milliseconds)
 
   /**
@@ -163,7 +163,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     * @param processId The process identifier
     * @return
     */
-  def getVisualState(processId: java.util.UUID): String =
+  def getVisualState(processId: String): String =
     getVisualState(processId, defaultTimeout)
 
   def getAllProcessMetadata: java.util.Set[ProcessMetadata] =
