@@ -21,7 +21,6 @@ import com.ing.baker.petrinet.runtime.persistence.Encryption
 import com.ing.baker.petrinet.runtime.persistence.Encryption.NoEncryption
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.core.Baker._
-import com.ing.baker.runtime.core.SensoryEventStatus.SensoryEventStatus
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.{RecipeRuntime, ReflectedInteractionTask}
 import fs2.Strategy

@@ -1,14 +1,13 @@
 package com.ing.baker.runtime.core
 
 import java.time.Duration
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import akka.NotUsed
 import akka.stream.javadsl.RunnableGraph
 import akka.stream.scaladsl.{Broadcast, GraphDSL, Sink, Source}
 import akka.stream.{ClosedShape, Materializer}
 import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol.{TransitionFailed, TransitionFired, TransitionNotEnabled, TransitionResponse}
-import com.ing.baker.runtime.core.SensoryEventStatus.SensoryEventStatus
 
 import scala.concurrent.duration.{FiniteDuration, SECONDS}
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -75,14 +74,17 @@ class BakerResponse(processId: String, source: Source[TransitionResponse, NotUse
 
   val defaultWaitTimeout: FiniteDuration = FiniteDuration.apply(10, SECONDS)
 
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def confirmReceived(): SensoryEventStatus = {
     confirmReceived(defaultWaitTimeout)
   }
 
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def confirmReceived(duration: Duration): SensoryEventStatus = {
     confirmReceived(FiniteDuration(duration.toNanos, TimeUnit.NANOSECONDS))
   }
 
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def confirmReceived(implicit timeout: FiniteDuration): SensoryEventStatus = {
     try {
       Await.result(receivedFuture, timeout)
@@ -94,14 +96,17 @@ class BakerResponse(processId: String, source: Source[TransitionResponse, NotUse
     }
   }
 
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def confirmCompleted(): SensoryEventStatus = {
     confirmCompleted(defaultWaitTimeout)
   }
 
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def confirmCompleted(duration: Duration): SensoryEventStatus = {
     confirmCompleted(FiniteDuration(duration.toNanos, TimeUnit.NANOSECONDS))
   }
 
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def confirmCompleted(implicit timeout: FiniteDuration): SensoryEventStatus = {
     try {
       Await.result(completedFuture, timeout)
