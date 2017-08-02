@@ -28,6 +28,6 @@ case class Recipe private(override val name: String,
 
 object Recipe {
   def apply(name: String): Recipe = {
-    Recipe(name, Seq.empty, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction)
+    Recipe(name, Seq.empty, Seq.empty, Set.empty, new common.InteractionFailureStrategy.BlockInteraction)
   }
 }

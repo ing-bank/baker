@@ -1,6 +1,5 @@
 package com.ing.baker.recipe.javadsl;
 
-import com.ing.baker.recipe.common.InteractionFailureStrategy;
 import com.ing.baker.recipe.javadsl.events.SensoryEventWithIngredient;
 import com.ing.baker.recipe.javadsl.events.SensoryEventWithoutIngredient;
 import com.ing.baker.recipe.javadsl.interactions.FiresTwoEventInteraction;
@@ -11,12 +10,10 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.time.Duration;
-import java.util.Optional;
 
 import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
 import static com.ing.baker.recipe.javadsl.JavadslTestHelper.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class RecipeTest {
     @Rule
@@ -142,17 +139,31 @@ public class RecipeTest {
     @Test
     public void shouldSetupRecipeWithDefaultBlockedFailureStrategy() {
         Recipe recipe = new Recipe("defaultBlockedFailureStrategyRecipe");
-        assertEquals(InteractionFailureStrategy.BlockInteraction$.class, recipe.defaultFailureStrategy().getClass());
+        assertEquals(
+                com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction.class,
+                recipe.defaultFailureStrategy().getClass());
     }
 
     @Test
     public void shouldUpdateFailureStrategy() {
         Recipe recipe = new Recipe("retryWithIncrementalBackoffFailureStrategyRecipe")
                 .withDefaultRetryFailureStrategy(Duration.ofMillis(100), Duration.ofHours(24));
-        assertEquals(InteractionFailureStrategy.RetryWithIncrementalBackoff.class, recipe.defaultFailureStrategy().getClass());
+        assertEquals(
+                com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.class,
+                recipe.defaultFailureStrategy().getClass());
 
-        recipe = new Recipe("retryWithIncrementalBackoffFailureStrategyRecipe2")
-                .withDefaultRetryFailureStrategy(Duration.ofMillis(100), 1.5, 200);
-        assertEquals(InteractionFailureStrategy.RetryWithIncrementalBackoff.class, recipe.defaultFailureStrategy().getClass());
+        Recipe recipe2 = new Recipe("retryWithIncrementalBackoffFailureStrategyRecipe2")
+                .withDefaultFailureStrategy(
+                        InteractionFailureStrategy.RetryWithIncrementalBackoff(Duration.ofMillis(100), Duration.ofHours(24)));
+        assertEquals(
+                com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.class,
+                recipe2.defaultFailureStrategy().getClass());
+
+        Recipe recipe3 = new Recipe("retryWithIncrementalBackoffFailureStrategyRecipe2")
+                .withDefaultFailureStrategy(
+                        InteractionFailureStrategy.BlockInteraction());
+        assertEquals(
+                com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.class,
+                recipe3.defaultFailureStrategy().getClass());
     }
 }

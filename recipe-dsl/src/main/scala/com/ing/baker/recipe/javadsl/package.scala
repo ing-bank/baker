@@ -1,9 +1,8 @@
 package com.ing.baker.recipe
 
 import java.lang.reflect.Method
-import java.util.Optional
 
-import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient, ProvidesNothing, RecipeValidationException}
+import com.ing.baker.recipe.common._
 import com.ing.baker.recipe.javadsl.ReflectionHelpers._
 
 package object javadsl {
