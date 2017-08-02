@@ -1,7 +1,9 @@
 package com.ing.baker
 
+import com.ing.baker.il.failurestrategy.InteractionFailureStrategy.BlockInteraction
+import com.ing.baker.il.failurestrategy.{InteractionFailureStrategy, RetryWithIncrementalBackoff}
 import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing, ProvidesType, Transition}
-import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientType, InteractionFailureStrategy}
+import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientType}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionDescriptor
 
@@ -46,8 +48,10 @@ package object compiler {
 
       def transformFailureStrategy(recipeStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): InteractionFailureStrategy = {
         recipeStrategy match {
-          case com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout: Duration, backoffFactor: Double, maximumRetries: Int) => InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries)
-          case com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction => InteractionFailureStrategy.BlockInteraction
+          case com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout: Duration, backoffFactor: Double, maximumRetries: Int) =>
+            RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, None)
+          case com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction =>
+            BlockInteraction
           case _ => InteractionFailureStrategy.BlockInteraction
         }
       }
