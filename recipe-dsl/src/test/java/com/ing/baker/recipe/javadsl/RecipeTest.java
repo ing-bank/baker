@@ -159,11 +159,11 @@ public class RecipeTest {
                 com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.class,
                 recipe2.defaultFailureStrategy().getClass());
 
-        Recipe recipe3 = new Recipe("retryWithIncrementalBackoffFailureStrategyRecipe2")
+        Recipe recipe3 = new Recipe("retryWithIncrementalBackoffFailureStrategyRecipe3")
                 .withDefaultFailureStrategy(
                         InteractionFailureStrategy.BlockInteraction());
         assertEquals(
-                com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.class,
+                com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction.class,
                 recipe3.defaultFailureStrategy().getClass());
     }
 }
