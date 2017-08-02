@@ -2,7 +2,6 @@ package com.ing.baker.recipe
 
 import java.lang.reflect.Method
 
-import com.ing.baker.recipe.common._
 import com.ing.baker.recipe.javadsl.ReflectionHelpers._
 
 package object javadsl {
@@ -38,20 +37,20 @@ package object javadsl {
 
       override val output: common.InteractionOutput = {
         if(method.isAnnotationPresent(classOf[annotations.ProvidesIngredient]) && method.isAnnotationPresent(classOf[annotations.FiresEvent]))
-          throw new RecipeValidationException(s"Interaction $name has both ProvidesIngredient and FiresEvent annotation, only one if possible")
+          throw new common.RecipeValidationException(s"Interaction $name has both ProvidesIngredient and FiresEvent annotation, only one if possible")
         //ProvidesIngredient
         else if (method.isAnnotationPresent(classOf[annotations.ProvidesIngredient])) {
           val interactionOutputName: String = method.getAnnotation(classOf[annotations.ProvidesIngredient]).value()
-          ProvidesIngredient(createIngredient(interactionOutputName, method.getReturnType))
+          common.ProvidesIngredient(createIngredient(interactionOutputName, method.getReturnType))
         }
         //ProvidesEvent
         else if (method.isAnnotationPresent(classOf[annotations.FiresEvent])) {
           val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[annotations.FiresEvent]).oneOf()
           val events: Seq[common.Event] = outputEventClasses.map(eventClassToCommonEvent(_, None))
-          FiresOneOfEvents(events)
+          common.FiresOneOfEvents(events)
         }
         //ProvidesNothing
-        else ProvidesNothing
+        else common.ProvidesNothing
       }
     }
 }

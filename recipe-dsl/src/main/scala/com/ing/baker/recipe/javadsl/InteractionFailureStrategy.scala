@@ -28,5 +28,5 @@ object InteractionFailureStrategy {
       None)
   }
 
-  def BlockInteraction(): BlockInteraction = BlockInteraction();
+  def BlockInteraction(): BlockInteraction = new common.InteractionFailureStrategy.BlockInteraction();
 }
