@@ -76,7 +76,7 @@ case class Recipe(
 
   /**
     * Adds the sensory event to the recipe
-    *
+    * The firing limit is set to 1 by default
     * @param newEvent
     * @return
     */
@@ -85,7 +85,7 @@ case class Recipe(
 
   /**
     * Adds the sensory event to the recipe
-    *
+    * The firing limit is set to what is given
     * @param newEvent
     * @param maxFiringLimit
     * @return
@@ -94,7 +94,7 @@ case class Recipe(
     copy(sensoryEvents = sensoryEvents + eventClassToCommonEvent(newEvent, Some(maxFiringLimit)))
 
   /**
-    * Adds the sensory events to the recipe
+    * Adds the sensory events to the recipe with the firing limit set to 1
     *
     * @param eventsToAdd
     * @return

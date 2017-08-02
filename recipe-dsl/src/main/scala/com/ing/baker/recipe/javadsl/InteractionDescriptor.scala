@@ -221,7 +221,7 @@ case class InteractionDescriptor private(
     * @param initialDelay the initial delay before the first retry starts
     * @param deadline     the deadline for how long the retry should run
     * @param maxTimeBetweenRetries     the max time that we will wait between duration
-    * @return\
+    * @return
     * @deprecated replace by withFailureStrategy
     */
   @Deprecated
