@@ -1,16 +1,16 @@
 package com.ing.baker.recipe.common
 
-import com.ing.baker.TestRecipeHelper
 import com.ing.baker.recipe.common.InteractionFailureStrategy._
+import org.scalatest.{Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class InteractionFailureStrategySpec extends TestRecipeHelper {
+class InteractionFailureStrategySpec extends WordSpecLike with Matchers {
 
   "RetryWithIncrementalBackoff " should {
 
-    "derive the correct paramaters when deadline is specified" ignore {
+    "derive the correct parameters when deadline is specified" in {
 
       val deadline              = 24 hours
       val initialDelay          = 2 seconds
@@ -20,6 +20,36 @@ class InteractionFailureStrategySpec extends TestRecipeHelper {
       val expected = RetryWithIncrementalBackoff(initialTimeout = initialDelay,
                                                  backoffFactor,
                                                  maximumRetries = 15)
+
+      actual shouldEqual expected
+    }
+
+    "derive the correct parameters when deadline is specified2" in {
+
+      val deadline              = 16 seconds
+      val initialDelay          = 1 seconds
+      val backoffFactor: Double = 2.0
+
+      val actual = RetryWithIncrementalBackoff(initialDelay, deadline, None)
+      val expected = RetryWithIncrementalBackoff(initialTimeout = initialDelay,
+        backoffFactor,
+        maximumRetries = 4)
+
+      actual shouldEqual expected
+    }
+
+    "derive the correct parameters when deadline is specified and max time between retries set" in {
+
+      val deadline                  = 22 seconds
+      val initialDelay              = 1 seconds
+      val backoffFactor: Double     = 2.0
+      val MaxDurationBetweenRetries = 4 seconds
+
+      val actual = RetryWithIncrementalBackoff(initialDelay, deadline, Some(MaxDurationBetweenRetries))
+      val expected = RetryWithIncrementalBackoff(initialTimeout = initialDelay,
+        backoffFactor,
+        maximumRetries = 6,
+        Some(4 seconds))
 
       actual shouldEqual expected
     }
