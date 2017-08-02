@@ -17,15 +17,15 @@ package object compiler {
 
   implicit class InteractionOps(interaction: InteractionDescriptor) {
 
-    def toInteractionTransition(defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition[_] =
+    def toInteractionTransition(defaultFailureStrategy: common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition[_] =
       interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.InteractionAction, allIngredientNames)
 
-    def toSieveTransition(defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition[_] =
+    def toSieveTransition(defaultFailureStrategy: common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition[_] =
       interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.SieveAction, allIngredientNames)
 
     def interactionTransitionOf(
                                  interactionDescriptor: InteractionDescriptor,
-                                 defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy,
+                                 defaultFailureStrategy: common.InteractionFailureStrategy,
                                  actionType: ActionType,
                                  allIngredientNames: Set[String]): InteractionTransition[Any] = {
 
@@ -46,11 +46,11 @@ package object compiler {
           case _ => event
         }
 
-      def transformFailureStrategy(recipeStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): InteractionFailureStrategy = {
+      def transformFailureStrategy(recipeStrategy: common.InteractionFailureStrategy): InteractionFailureStrategy = {
         recipeStrategy match {
-          case com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout: Duration, backoffFactor: Double, maximumRetries: Int) =>
-            RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, None)
-          case com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction =>
+          case common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout: Duration, backoffFactor: Double, maximumRetries: Int, maxTimeBetweenRetries: Option[Duration]) =>
+            RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, maxTimeBetweenRetries)
+          case common.InteractionFailureStrategy.BlockInteraction =>
             BlockInteraction
           case _ => InteractionFailureStrategy.BlockInteraction
         }

@@ -141,8 +141,26 @@ case class Recipe(
                                       deadline: java.time.Duration): Recipe =
     copy(
       defaultFailureStrategy =
-        RetryWithIncrementalBackoff(Duration(initialDelay.toMillis, duration.MILLISECONDS),
-          Duration(deadline.toMillis, duration.MILLISECONDS)))
+        RetryWithIncrementalBackoff(
+          Duration(initialDelay.toMillis, duration.MILLISECONDS),
+          Duration(deadline.toMillis, duration.MILLISECONDS),
+          None))
+
+  /**
+    * This actives the incremental backup retry strategy for all the interactions if failure occurs
+    * @param initialDelay the initial delay before the first retry starts
+    * @param deadline the deadline for how long the retry should run
+    * @return
+    */
+  def withDefaultRetryFailureStrategy(initialDelay: java.time.Duration,
+                                      deadline: java.time.Duration,
+                                      maxTimeBetweenRetries: java.time.Duration): Recipe =
+    copy(
+      defaultFailureStrategy =
+        RetryWithIncrementalBackoff(
+          Duration(initialDelay.toMillis, duration.MILLISECONDS),
+          Duration(deadline.toMillis, duration.MILLISECONDS),
+          Some(Duration(maxTimeBetweenRetries.toMillis, duration.MILLISECONDS))))
 
   /**
     * This actives the incremental backup retry strategy for all the interactions if failure occurs

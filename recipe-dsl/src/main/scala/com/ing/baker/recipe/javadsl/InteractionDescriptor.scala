@@ -1,7 +1,5 @@
 package com.ing.baker.recipe.javadsl
 
-import java.util.Optional
-
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
 import com.ing.baker.recipe.common.{FiresOneOfEvents, RecipeValidationException}
@@ -211,25 +209,28 @@ case class InteractionDescriptor private(
                                       deadline: java.time.Duration): InteractionDescriptor =
   this.copy(
     failureStrategy = Some(
-      RetryWithIncrementalBackoff(Duration(initialDelay.toMillis, duration.MILLISECONDS),
-        Duration(deadline.toMillis, duration.MILLISECONDS))))
+      RetryWithIncrementalBackoff(
+        Duration(initialDelay.toMillis, duration.MILLISECONDS),
+        Duration(deadline.toMillis, duration.MILLISECONDS),
+        None)))
 
   /**
     * This actives the incremental backup retry strategy for this interaction if failure occurs
     *
-    * @param initialDelay   the initial delay before the first retry starts
-    * @param backoffFactor  the backoff factor for the retry
-    * @param maximumRetries the maximum ammount of retries.
+    * @param initialDelay the initial delay before the first retry starts
+    * @param deadline     the deadline for how long the retry should run
+    * @param maxTimeBetweenRetries     the max time that we will wait between duration
     * @return
     */
   def withIncrementalBackoffOnFailure(initialDelay: java.time.Duration,
-                                      backoffFactor: Double,
-                                      maximumRetries: Int): InteractionDescriptor =
-  this.copy(
-    failureStrategy = Some(
-      RetryWithIncrementalBackoff(Duration(initialDelay.toMillis, duration.MILLISECONDS),
-        backoffFactor,
-        maximumRetries)))
+                                      deadline: java.time.Duration,
+                                      maxTimeBetweenRetries: java.time.Duration): InteractionDescriptor =
+    this.copy(
+      failureStrategy = Some(
+        RetryWithIncrementalBackoff(
+          Duration(initialDelay.toMillis, duration.MILLISECONDS),
+          Duration(deadline.toMillis, duration.MILLISECONDS),
+          Some(Duration(maxTimeBetweenRetries.toMillis, duration.MILLISECONDS)))))
 
   /**
     * Sets the maximum amount of times this interaction can be fired.

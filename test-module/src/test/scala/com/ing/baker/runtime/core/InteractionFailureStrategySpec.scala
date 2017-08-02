@@ -16,7 +16,7 @@ class InteractionFailureStrategySpec extends TestRecipeHelper {
       val initialDelay          = 2 seconds
       val backoffFactor: Double = 2.0
 
-      val actual = RetryWithIncrementalBackoff(initialDelay, deadline)
+      val actual = RetryWithIncrementalBackoff(initialDelay, deadline, None)
       val expected = RetryWithIncrementalBackoff(initialTimeout = initialDelay,
                                                  backoffFactor,
                                                  maximumRetries = 15)
@@ -30,7 +30,7 @@ class InteractionFailureStrategySpec extends TestRecipeHelper {
       val initialDelay = 2 seconds
 
       intercept[IllegalArgumentException] {
-        RetryWithIncrementalBackoff(initialDelay, deadline)
+        RetryWithIncrementalBackoff(initialDelay, deadline, None)
       }
     }
 
@@ -40,7 +40,7 @@ class InteractionFailureStrategySpec extends TestRecipeHelper {
       val initialDelay          = 2 seconds
       val backoffFactor: Double = 2.0
 
-      val actual = RetryWithIncrementalBackoff(initialDelay, deadline)
+      val actual = RetryWithIncrementalBackoff(initialDelay, deadline, None)
       val expected = RetryWithIncrementalBackoff(initialTimeout = initialDelay,
                                                  backoffFactor,
                                                  maximumRetries = 1)
@@ -54,7 +54,7 @@ class InteractionFailureStrategySpec extends TestRecipeHelper {
       val initialDelay          = 2 seconds
       val backoffFactor: Double = 2.0
 
-      val actual = RetryWithIncrementalBackoff(initialDelay, deadline)
+      val actual = RetryWithIncrementalBackoff(initialDelay, deadline, None)
       val expected = RetryWithIncrementalBackoff(initialTimeout = initialDelay,
                                                  backoffFactor,
                                                  maximumRetries = 3)
