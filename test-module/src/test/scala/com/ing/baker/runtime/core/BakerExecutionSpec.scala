@@ -672,6 +672,49 @@ class BakerExecutionSpec extends TestRecipeHelper {
       verify(testInteractionThreeMock, times(1)).apply(interactionOneIngredientValue, interactionOneIngredientValue)
     }
 
+    "reject sensory events after a specified receive period" in {
+
+      val receivePeriod: FiniteDuration = 100 milliseconds
+
+      val recipe: Recipe =
+        "eventReceiveExpirationRecipe"
+            .withSensoryEvents(initialEvent)
+            .withInteractions(interactionOne)
+            .withEventReicevePeriod(receivePeriod)
+
+      val baker = new Baker(
+        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+        implementations = mockImplementations)(defaultActorSystem)
+
+      val processId = UUID.randomUUID().toString
+
+      baker.bake(processId)
+
+      Thread.sleep(receivePeriod.toMillis)
+
+      baker.handleEvent(processId, InitialEvent("")) shouldBe(SensoryEventStatus.ReceivePeriodExpired)
+    }
+
+    "accept sensory events after a specified receive period" in {
+
+      val receivePeriod: FiniteDuration = 10 seconds
+
+      val recipe: Recipe =
+        "eventReceiveInTimeRecipe"
+          .withSensoryEvents(initialEvent)
+          .withInteractions(interactionOne)
+          .withEventReicevePeriod(receivePeriod)
+
+      val baker = new Baker(
+        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+        implementations = mockImplementations)(defaultActorSystem)
+
+      val processId = UUID.randomUUID().toString
+
+      baker.bake(processId)
+
+      baker.handleEvent(processId, InitialEvent("")) shouldBe(SensoryEventStatus.Completed)
+    }
 
 
     "be able to visualize the created interactions with a filter" in {
