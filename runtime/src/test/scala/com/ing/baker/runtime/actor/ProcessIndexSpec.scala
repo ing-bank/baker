@@ -7,20 +7,17 @@ import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol
 import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
 import com.ing.baker.petrinet.api.Marking
-import com.typesafe.config.ConfigFactory
 import com.ing.baker.petrinet.dsl.colored.Place
-import com.ing.baker.runtime.actor.ActorIndex.ReceivePeriodExpired
+import com.ing.baker.runtime.actor.ProcessIndex.ReceivePeriodExpired
+import com.typesafe.config.ConfigFactory
 import org.mockito
-import org.mockito.Mockito
-import org.mockito.Mockito.verify
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Matchers, WordSpecLike}
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.duration._
+import scala.concurrent.duration.{Duration, _}
 
-object ActorIndexSpec {
+object ProcessIndexSpec {
   val config =
     """
       |akka.persistence.journal.plugin = "inmemory-journal"
@@ -30,7 +27,7 @@ object ActorIndexSpec {
 }
 
 //noinspection TypeAnnotation
-class ActorIndexSpec extends TestKit(ActorSystem("ActorIndexSpec", ConfigFactory.parseString(ActorIndexSpec.config)))
+class ProcessIndexSpec extends TestKit(ActorSystem("ActorIndexSpec", ConfigFactory.parseString(ProcessIndexSpec.config)))
     with ImplicitSender
     with WordSpecLike
     with Matchers
@@ -51,7 +48,7 @@ class ActorIndexSpec extends TestKit(ActorSystem("ActorIndexSpec", ConfigFactory
     TestKit.shutdownActorSystem(system)
   }
 
-  "ActorIndex" should {
+  "ProcessIndex" should {
 
     "create the PetriNetInstance actor when Initialize message is received" in {
       val initializeCmd = Initialize(Marking.empty[Place])
@@ -158,7 +155,7 @@ class ActorIndexSpec extends TestKit(ActorSystem("ActorIndexSpec", ConfigFactory
   }
 
   private def createActorIndex(petriNetActorRef: ActorRef, receivePeriod: Duration = Duration.Undefined) = {
-    system.actorOf(Props(new ActorIndex(Props.empty, recipeMetadataMock, receivePeriod) {
+    system.actorOf(Props(new ProcessIndex(Props.empty, recipeMetadataMock, receivePeriod) {
       override private[actor] def createChildPetriNetActor(id: String) = {
         petriNetActorRef
       }

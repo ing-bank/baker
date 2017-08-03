@@ -10,7 +10,7 @@ import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.Timeout
 import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
-import com.ing.baker.runtime.actor.ActorIndex.ReceivePeriodExpired
+import com.ing.baker.runtime.actor.ProcessIndex.ReceivePeriodExpired
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.FiniteDuration

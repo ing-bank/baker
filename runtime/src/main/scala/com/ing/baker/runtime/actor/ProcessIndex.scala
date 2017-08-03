@@ -6,14 +6,14 @@ import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol.{AlreadyInitialized, FireTransition, GetState, Initialize, Uninitialized}
 
 import scala.collection.mutable
-import ActorIndex._
+import ProcessIndex._
 import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol
 
 import scala.concurrent.duration.Duration
 
-object ActorIndex {
+object ProcessIndex {
 
-  def props(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, recipeName: String, receivePeriod: Duration) = Props(new ActorIndex(petriNetActorProps, recipeMetadata, receivePeriod))
+  def props(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, recipeName: String, receivePeriod: Duration) = Props(new ProcessIndex(petriNetActorProps, recipeMetadata, receivePeriod))
 
   case class ActorMetadata(id: String, createdDateTime: Long)
 
@@ -33,7 +33,7 @@ object ActorIndex {
 
 }
 
-class ActorIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, receivePeriod: Duration = Duration.Undefined) extends PersistentActor with ActorLogging {
+class ProcessIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, receivePeriod: Duration = Duration.Undefined) extends PersistentActor with ActorLogging {
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
 

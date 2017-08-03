@@ -23,7 +23,7 @@ class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec")) with WordSpe
   implicit val akkaTimout = Timeout(2 seconds)
   implicit val waitTimeout: FiniteDuration = 2 seconds
 
-  "The PetriNetInstanceApi" should {
+  "The ProcessApi" should {
 
     "Return a source of FireTransition responses resulting from a TransitionFired command" in  {
 
