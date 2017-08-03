@@ -622,8 +622,11 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.bake(processId)
       val response = baker.handleEventAsync(processId, InitialEvent(initialIngredientValue))
       Await.result(response.completedFuture, 3 seconds)
-      response.receivedFuture.value should matchPattern { case Some(Success(())) => }
-      response.completedFuture.value should matchPattern { case Some(Success(())) => }
+      response.receivedFuture.value shouldBe Some(Success((InteractionResponse.Success)))
+      response.completedFuture.value shouldBe Some(Success((InteractionResponse.Failed)))
+
+      response.confirmReceived() shouldBe SensoryEventStatus.Received
+      response.confirmCompleted() shouldBe SensoryEventStatus.Completed
     }
 
     "bind multi transitions correctly even if ingredient name overlaps" in {
