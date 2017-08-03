@@ -1,15 +1,16 @@
-package com.ing.baker.petrinet.akka
+package com.ing.baker.runtime.actor
+
+import java.util.concurrent.TimeoutException
 
 import akka.NotUsed
 import akka.actor.{Actor, ActorRef, ActorSystem, Props, ReceiveTimeout}
+import akka.pattern._
 import akka.stream.scaladsl.{Sink, Source, SourceQueueWithComplete}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.Timeout
-import akka.pattern._
-import PetriNetInstanceProtocol._
-import com.ing.baker.petrinet.api.PetriNet
+import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
-import com.ing.baker.petrinet.dsl.colored._
+import com.ing.baker.runtime.actor.ActorIndex.ReceivePeriodExpired
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.FiniteDuration
@@ -18,7 +19,7 @@ import scala.concurrent.{Await, Future}
 /**
  * An actor that pushes all received messages on a SourceQueueWithComplete.
  */
-class QueuePushingActor(queue: SourceQueueWithComplete[TransitionResponse], waitForRetries: Boolean)(implicit timeout: FiniteDuration) extends Actor {
+class QueuePushingActor(queue: SourceQueueWithComplete[Any], waitForRetries: Boolean)(implicit timeout: FiniteDuration) extends Actor {
   var runningJobs = Set.empty[Long]
 
   context.setReceiveTimeout(timeout)
@@ -40,45 +41,51 @@ class QueuePushingActor(queue: SourceQueueWithComplete[TransitionResponse], wait
       stopActorIfDone
 
     case Uninitialized(id) ⇒
-      completeQueueAndStop()
+      queue.complete()
+      stopActor()
+
+    case msg @ ReceivePeriodExpired =>
+      queue.offer(msg)
+      queue.complete()
+      stopActor()
 
     case msg @ TransitionNotEnabled(id, reason) ⇒
       queue.offer(msg)
-      completeQueueAndStop()
+      queue.complete()
+      stopActor()
 
     case ReceiveTimeout ⇒
-      queue.fail(new IllegalStateException(s"Timeout, no message received in: $timeout"))
-      completeQueueAndStop()
+      queue.fail(new TimeoutException(s"Timeout, no message received in: $timeout"))
+      stopActor()
 
     case msg @ _ ⇒
       queue.fail(new IllegalStateException(s"Unexpected message: $msg"))
-      completeQueueAndStop()
+      stopActor()
   }
 
-  def completeQueueAndStop() = {
-    queue.complete()
-    context.stop(self)
-  }
+  def stopActor() = context.stop(self)
 
   def stopActorIfDone: Unit =
-    if (runningJobs.isEmpty)
-      completeQueueAndStop()
+    if (runningJobs.isEmpty) {
+      queue.complete()
+      stopActor()
+    }
 }
 
 /**
  * Contains some methods to interact with a petri net instance actor.
  */
-class PetriNetInstanceApi[P[_], T[_, _], S](topology: PetriNet[P[_], T[_, _]], actor: ActorRef)(implicit actorSystem: ActorSystem, materializer: Materializer) {
+class ProcessApi(actor: ActorRef)(implicit actorSystem: ActorSystem, materializer: Materializer) {
 
   /**
    * Fires a transition and confirms (waits) for the result of that transition firing.
    */
-  def askAndConfirmFirst[S](msg: Any)(implicit timeout: Timeout): Future[TransitionResponse] = actor.ask(msg).mapTo[TransitionResponse]
+  def askAndConfirmFirst(msg: Any)(implicit timeout: Timeout): Future[Any] = actor.ask(msg).mapTo[Any]
 
   /**
    * Synchronously collects all messages in response to a message sent to a PetriNet instance.
    */
-  def askAndCollectAllSync(msg: Any, waitForRetries: Boolean = false)(implicit timeout: Timeout): Seq[TransitionResponse] = {
+  def askAndCollectAllSync(msg: Any, waitForRetries: Boolean = false)(implicit timeout: Timeout): Seq[Any] = {
     val futureResult = askAndCollectAll(msg, waitForRetries).runWith(Sink.seq)
     Await.result(futureResult, timeout.duration)
   }
@@ -86,15 +93,15 @@ class PetriNetInstanceApi[P[_], T[_, _], S](topology: PetriNet[P[_], T[_, _]], a
   /**
    * Sends a FireTransition command to the actor and returns a Source of TransitionResponse messages
    */
-  def fireTransition(transitionId: Long, input: Any)(implicit timeout: Timeout): Source[TransitionResponse, NotUsed] =
+  def fireTransition(transitionId: Long, input: Any)(implicit timeout: Timeout): Source[Any, NotUsed] =
     askAndCollectAll(FireTransition(transitionId, input))
 
   /**
    * Returns a Source of all the messages from a petri net actor in response to a message.
    *
    */
-  def askAndCollectAll(msg: Any, waitForRetries: Boolean = false)(implicit timeout: Timeout): Source[TransitionResponse, NotUsed] =
-    Source.queue[TransitionResponse](100, OverflowStrategy.fail).mapMaterializedValue { queue ⇒
+  def askAndCollectAll(msg: Any, waitForRetries: Boolean = false)(implicit timeout: Timeout): Source[Any, NotUsed] =
+    Source.queue[Any](100, OverflowStrategy.fail).mapMaterializedValue { queue ⇒
       val sender = actorSystem.actorOf(Props(new QueuePushingActor(queue, waitForRetries)(timeout.duration)))
       actor.tell(msg, sender)
       NotUsed.getInstance()

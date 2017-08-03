@@ -95,7 +95,7 @@ lazy val recipeRuntime = project.in(file("runtime"))
         jodaTime,
         jodaConvert,
         slf4jApi
-      ) ++ testDeps(scalaTest, scalaCheck, logback)
+      ) ++ testDeps(akkaTestKit, akkaStreamTestKit, scalaTest, scalaCheck, logback)
         ++ providedDeps(findbugs)
   )
   .dependsOn(intermediateLanguage, petrinetAkka)

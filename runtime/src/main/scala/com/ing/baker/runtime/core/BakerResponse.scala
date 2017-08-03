@@ -14,7 +14,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 object BakerResponse {
 
-  def firstMessage(processId: String, response: Future[TransitionResponse])(implicit ec: ExecutionContext): Future[Unit] =
+  def firstMessage(processId: String, response: Future[Any])(implicit ec: ExecutionContext): Future[Unit] =
     response.flatMap {
       translateFirstMessage
     }.recoverWith {
@@ -22,21 +22,21 @@ object BakerResponse {
       case e: NoSuchElementException => Future.failed(new NoSuchProcessException(s"No such process: $processId"))
     }
 
-  def translateFirstMessage(msg: TransitionResponse): Future[Unit] = msg match {
+  def translateFirstMessage(msg: Any): Future[Unit] = msg match {
     case t: TransitionFired => Future.successful(())
     case transitionNotEnabled: TransitionNotEnabled =>
       Future.failed(new TransitionNotEnabledException(s"Unexpected actor response message: $transitionNotEnabled"))
     case msg@_ => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
   }
 
-  def allMessages(processId: String, response: Future[Seq[TransitionResponse]])(implicit ec: ExecutionContext): Future[Unit] =
+  def allMessages(processId: String, response: Future[Seq[Any]])(implicit ec: ExecutionContext): Future[Unit] =
     response.flatMap { msgs =>
       val futureResponses = msgs.headOption.map(translateFirstMessage)
         .getOrElse(Future.failed(new NoSuchProcessException(s"No such process: $processId"))) +: msgs.drop(1).map(translateOtherMessage)
       Future.sequence(futureResponses).map(_ => ())
     }
 
-  def translateOtherMessage(msg: TransitionResponse): Future[Unit] = msg match {
+  def translateOtherMessage(msg: Any): Future[Unit] = msg match {
     case t: TransitionFired => Future.successful(())
     case t: TransitionFailed => Future.successful(())
     case transitionNotEnabled: TransitionNotEnabled =>
@@ -44,17 +44,17 @@ object BakerResponse {
     case msg@_ => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
   }
 
-  def createFlow(processId: String, source: Source[TransitionResponse, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext): (Future[Unit], Future[Unit]) = {
+  def createFlow(processId: String, source: Source[Any, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext): (Future[Unit], Future[Unit]) = {
 
-    val sinkHead = Sink.head[TransitionResponse]
-    val sinkLast = Sink.seq[TransitionResponse]
+    val sinkHead = Sink.head[Any]
+    val sinkLast = Sink.seq[Any]
 
     val graph = RunnableGraph.fromGraph(GraphDSL.create(sinkHead, sinkLast)((_, _)) {
       implicit b =>
         (head, last) => {
           import GraphDSL.Implicits._
 
-          val bcast = b.add(Broadcast[TransitionResponse](2))
+          val bcast = b.add(Broadcast[Any](2))
           source ~> bcast.in
           bcast.out(0) ~> head.in
           bcast.out(1) ~> last.in
@@ -68,7 +68,7 @@ object BakerResponse {
   }
 }
 
-class BakerResponse(processId: String, source: Source[TransitionResponse, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext) {
+class BakerResponse(processId: String, source: Source[Any, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext) {
 
   val (receivedFuture, completedFuture) = BakerResponse.createFlow(processId, source)
 
