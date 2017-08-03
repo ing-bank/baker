@@ -4,15 +4,18 @@ import com.ing.baker.recipe.common
 
 import scala.annotation.varargs
 import scala.collection.JavaConverters._
+import scala.concurrent.duration
+import scala.concurrent.duration.Duration
 
 case class Recipe(
-                   override val name: String,
-                   override val interactions: Seq[common.InteractionDescriptor],
-                   override val sieves: Seq[common.InteractionDescriptor],
-                   override val sensoryEvents: Set[common.Event],
-                   override val defaultFailureStrategy: common.InteractionFailureStrategy) extends common.Recipe {
+    override val name: String,
+    override val interactions: Seq[common.InteractionDescriptor],
+    override val sieves: Seq[common.InteractionDescriptor],
+    override val sensoryEvents: Set[common.Event],
+    override val defaultFailureStrategy: common.InteractionFailureStrategy,
+    override val eventReceivePeriod: Duration) extends common.Recipe {
 
-  def this(name: String) = this(name, Seq.empty, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction)
+  def this(name: String) = this(name, Seq.empty, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction, Duration.Undefined)
 
   def getInteractions: java.util.List[common.InteractionDescriptor] = interactions.asJava
 
@@ -171,4 +174,13 @@ case class Recipe(
       InteractionFailureStrategy.RetryWithIncrementalBackoff(
         initialDelay,
         deadline))
+
+  /**
+    * Sets the event receive period. This is the period for which processes can receive sensory events.
+    *
+    * @param recivePeriod The period
+    * @return
+    */
+  def withEventReceivePeriod(recivePeriod: java.time.Duration) =
+    copy(eventReceivePeriod = Duration(recivePeriod.toMillis, duration.MILLISECONDS))
 }

@@ -4,6 +4,7 @@ import com.ing.baker.il.petrinet.{FiresOneOfEvents, InteractionTransition, Place
 import com.ing.baker.petrinet.api.Marking
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.Duration
 
 /**
   * A Compiled recipe.
@@ -12,7 +13,8 @@ case class CompiledRecipe(name: String,
                           petriNet: RecipePetriNet,
                           initialMarking: Marking[Place],
                           sensoryEvents: Set[EventType],
-                          validationErrors: Seq[String] = Seq.empty) {
+                          validationErrors: Seq[String] = Seq.empty,
+                          eventReceivePeriod: Duration) {
 
   def getValidationErrors: java.util.List[String] = validationErrors.toList.asJava
 

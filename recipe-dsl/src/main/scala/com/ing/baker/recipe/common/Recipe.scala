@@ -1,5 +1,7 @@
 package com.ing.baker.recipe.common
 
+import scala.concurrent.duration.Duration
+
 /**
   * A Recipe combines a set of interactions & events.
   */
@@ -26,6 +28,11 @@ trait Recipe {
   val sensoryEvents: Set[Event]
 
   val defaultFailureStrategy: InteractionFailureStrategy
+
+  /**
+    * The period that processes can receive events for this recipe.
+    */
+  val eventReceivePeriod: Duration
 
   override def toString: String = {
     s"""{
