@@ -28,7 +28,7 @@ case class Recipe private(override val name: String,
 
   def withSensoryEvents(newEvents: Event*): Recipe = copy(sensoryEvents = sensoryEvents ++ newEvents)
 
-  def withEventReicevePeriod(duration: Duration): Recipe = copy(eventReceivePeriod = duration)
+  def withEventReceivePeriod(duration: Duration): Recipe = copy(eventReceivePeriod = duration)
 }
 
 object Recipe {

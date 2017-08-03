@@ -15,7 +15,7 @@ case class Recipe(
     override val defaultFailureStrategy: common.InteractionFailureStrategy,
     override val eventReceivePeriod: Duration) extends common.Recipe {
 
-  def this(name: String) = this(name, Seq.empty, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction, Duration.Undefined)
+  def this(name: String) = this(name, Seq.empty, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction(), Duration.Undefined)
 
   def getInteractions: java.util.List[common.InteractionDescriptor] = interactions.asJava
 
@@ -93,7 +93,7 @@ case class Recipe(
     * @param maxFiringLimit
     * @return
     */
-  def withSensoryEvent(newEvent: Class[_], maxFiringLimit: Integer): Recipe =
+  def withSensoryEvent(newEvent: Class[_], maxFiringLimit: Int): Recipe =
     copy(sensoryEvents = sensoryEvents + eventClassToCommonEvent(newEvent, Some(maxFiringLimit)))
 
   /**

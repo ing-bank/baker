@@ -1,8 +1,7 @@
 package com.ing.baker.runtime.core
 
-import com.ing.baker.il.{IngredientType, EventType}
+import com.ing.baker.il.{EventType, IngredientType}
 import com.ing.baker.runtime.core.RuntimeEvent.log
-import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import org.slf4j.LoggerFactory
 
 
@@ -15,7 +14,7 @@ case class RuntimeEvent(name: String,
 
   def validate(eventType: EventType): RuntimeEvent = {
     val correctIngredients = providedIngredients.filter {
-      case (name, value) => eventType.providedIngredients.find(_.name equals name) match {
+      case (ingredientName, value) => eventType.providedIngredients.find(_.name equals ingredientName) match {
         case Some(compiledIngredient) => compiledIngredient.clazz.isAssignableFrom(value.getClass)
         case None => false
       }
@@ -35,8 +34,5 @@ case class RuntimeEvent(name: String,
 }
 
 object RuntimeEvent {
-
   private val log = LoggerFactory.getLogger("com.ing.baker.compiledRecipe.petrinet.EventSource")
-
-  private val eventExtractor: EventExtractor = new CompositeEventExtractor()
 }

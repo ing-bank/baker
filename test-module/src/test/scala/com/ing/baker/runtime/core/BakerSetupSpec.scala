@@ -16,7 +16,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
   "The Baker execution engine during setup" should {
 
-    "startup correctly without throwing an error if provided a correct recipe and correct implementations" when {
+    "bootstrap correctly without throwing an error if provided a correct recipe and correct implementations" when {
 
       "providing the implementation directly in a map" in {
         val recipe = Recipe("directImplementationmap")
