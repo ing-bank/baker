@@ -665,8 +665,11 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.bake(processId)
       val response = baker.handleEventAsync(processId, InitialEvent(initialIngredientValue))
       Await.result(response.completedFuture, 3 seconds)
-      response.receivedFuture.value should matchPattern { case Some(Success(())) => }
-      response.completedFuture.value should matchPattern { case Some(Success(())) => }
+      response.receivedFuture.value shouldBe Some(Success((InteractionResponse.Success)))
+      response.completedFuture.value shouldBe Some(Success((InteractionResponse.Failed)))
+
+      response.confirmReceived() shouldBe SensoryEventStatus.Received
+      response.confirmCompleted() shouldBe SensoryEventStatus.Completed
     }
 
     "bind multi transitions correctly even if ingredient name overlaps" in {
@@ -712,6 +715,49 @@ class BakerExecutionSpec extends TestRecipeHelper {
       verify(testInteractionThreeMock, times(1)).apply(interactionOneIngredientValue, interactionOneIngredientValue)
     }
 
+    "reject sensory events after a specified receive period" in {
+
+      val receivePeriod: FiniteDuration = 100 milliseconds
+
+      val recipe: Recipe =
+        "eventReceiveExpirationRecipe"
+            .withSensoryEvents(initialEvent)
+            .withInteractions(interactionOne)
+            .withEventReicevePeriod(receivePeriod)
+
+      val baker = new Baker(
+        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+        implementations = mockImplementations)(defaultActorSystem)
+
+      val processId = UUID.randomUUID().toString
+
+      baker.bake(processId)
+
+      Thread.sleep(receivePeriod.toMillis  + 100)
+
+      baker.handleEvent(processId, InitialEvent("")) shouldBe(SensoryEventStatus.ReceivePeriodExpired)
+    }
+
+    "accept sensory events before a specified receive period" in {
+
+      val receivePeriod: FiniteDuration = 10 seconds
+
+      val recipe: Recipe =
+        "eventReceiveInTimeRecipe"
+          .withSensoryEvents(initialEvent)
+          .withInteractions(interactionOne)
+          .withEventReicevePeriod(receivePeriod)
+
+      val baker = new Baker(
+        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+        implementations = mockImplementations)(defaultActorSystem)
+
+      val processId = UUID.randomUUID().toString
+
+      baker.bake(processId)
+
+      baker.handleEvent(processId, InitialEvent("")) shouldBe(SensoryEventStatus.Completed)
+    }
 
 
     "be able to visualize the created interactions with a filter" in {

@@ -113,9 +113,9 @@ class Baker(val compiledRecipe: CompiledRecipe,
         idleTTL = actorIdleTimeout))
 
   private val (recipeManagerActor, recipeMetadata) = bakerActorProvider.createRecipeActors(
-    compiledRecipe.name, petriNetInstanceActorProps)
+    compiledRecipe.name, compiledRecipe.eventReceivePeriod, petriNetInstanceActorProps)
 
-  private val petriNetApi = new PetriNetInstanceApi[Place, Transition, ProcessState](compiledRecipe.petriNet, recipeManagerActor)
+  private val petriNetApi = new ProcessApi(recipeManagerActor)
 
   private val readJournal = PersistenceQuery(actorSystem)
     .readJournalFor[CurrentEventsByPersistenceIdQuery with PersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
