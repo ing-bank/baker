@@ -12,9 +12,6 @@ import com.ing.baker.runtime.petrinet.ReflectedInteractionTask
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
-//TODO do we want to accept the implementations as Any?
-//It use to be of the Interaction type but now this is not possible since this is not known here
-//Maybe we can create a InteractionImplementation trait and only accept classes of that type
 class JBaker (compiledRecipe: CompiledRecipe,
               implementations: java.util.List[AnyRef],
               actorSystem: ActorSystem) {
