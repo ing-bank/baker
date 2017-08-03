@@ -36,24 +36,6 @@ class KryoSerializerSpec extends FunSuite with Matchers {
     }
   }
 
-//  test("kryo can serialize/deserialize renamed case classes") {
-//    withKryo { kryo =>
-//      val obj = Test1(5, "test")
-//      val obj2 = Test2(5, "test")
-//
-//      kryo.fromBytes(kryo.toBytesWithClass(obj)) shouldBe obj2
-//    }
-//  }
-//
-//  test("kryo can serialize/deserialize case classes with newer fields") {
-//    withKryo { kryo =>
-//      val obj = Test1(5, "test")
-//      val obj3 = Test3(5, "test", "newfield")
-//
-//      kryo.fromBytes(kryo.toBytesWithClass(obj)) shouldBe obj3
-//    }
-//  }
-
   private def withKryo(f: KryoPool => Unit): Unit = {
     val kryoPool = KryoPool.withByteArrayOutputStream(1, new ScalaKryoInstantiator)
     f(kryoPool)

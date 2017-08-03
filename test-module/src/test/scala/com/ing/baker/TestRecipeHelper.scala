@@ -24,7 +24,6 @@ import scala.language.postfixOps
 class ComplexObjectIngredient(value: String) extends javadsl.Ingredient {}
 case class CaseClassIngredient(a: Int, b: String)
 
-
 object TestRecipeHelper {
   //Ingredients as used in the recipe
   val initialIngredientOld = Ingredient[String]("initialIngredientOld")
