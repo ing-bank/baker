@@ -1,5 +1,6 @@
 package com.ing.baker.runtime.core
 
+import java.io.File.TempDirectory
 import java.util.{Optional, UUID}
 
 import akka.actor.ActorSystem
@@ -10,6 +11,7 @@ import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.{Recipe, _}
 import org.mockito.Matchers._
+import org.mockito.{Matchers, Mockito}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
@@ -100,6 +102,46 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
       baker.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue, "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
+    }
+
+    "backwards compatibility in serialization of case class ingredients" in {
+      val tmpDir = System.getProperty("java.io.tmpdir")
+      val journalPath = tmpDir + "/journal"
+      val snapshotsPath = tmpDir + "/snapshots"
+      println(s"Persisting to these locations. journalPath: $journalPath snapshotsPath: $snapshotsPath")
+      val actorSystem = ActorSystem("backwardsCompatibilityOfEvents", levelDbConfig("backwardsCompatibilityOfEvents", 3004, journalPath, snapshotsPath))
+      val recoveryRecipeName = "backwardsCompatibilityOfEvents"
+      val processId = UUID.fromString("099ac87b-5345-48d8-b590-4c14389e4d58")
+
+      try {
+        val recipe =
+          Recipe(recoveryRecipeName)
+            .withInteraction(caseClassIngredientInteraction)
+            .withInteraction(caseClassIngredientInteraction2)
+            .withSensoryEvent(initialEvent)
+
+        val baker = new Baker(
+          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+          implementations = mockImplementations)(actorSystem)
+
+//        when(testCaseClassIngredientInteractionMock.apply(anyString())).thenReturn(caseClassIngredientValue)
+//        baker.bake(processId)
+//        baker.handleEvent(processId, InitialEvent(initialIngredientValue))
+//
+//        verify(testCaseClassIngredientInteractionMock).apply(initialIngredientValue)
+//        verify(testCaseClassIngredientInteraction2Mock).apply(caseClassIngredientValue)
+//        baker.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue, "caseClassIngredient" -> caseClassIngredientValue)
+
+
+
+        // enable this part after changing the classes, and disable the top part
+        println("Ingredients:" + baker.getIngredients(processId))
+        println("Events:" + baker.events(processId))
+
+
+      } finally {
+        TestKit.shutdownActorSystem(actorSystem)
+      }
     }
 
     "execute an interaction with Optionals set to empty when its ingredient is provided" in {

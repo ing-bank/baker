@@ -22,6 +22,7 @@ import scala.language.postfixOps
 
 //By adding the javadsl Ingredient tag the object will be serialized by Kryo
 class ComplexObjectIngredient(value: String) extends javadsl.Ingredient {}
+case class CaseClassIngredient(a: Int, b: String)
 
 
 object TestRecipeHelper {
@@ -40,6 +41,7 @@ object TestRecipeHelper {
   val interactionSevenIngredient2 = Ingredient[String]("interactionSevenIngredient2")
   val sievedIngredient = Ingredient[String]("sievedIngredient")
   val complexObjectIngredient = Ingredient[ComplexObjectIngredient]("complexOjectIngredient")
+  val caseClassIngredient = Ingredient[CaseClassIngredient]("caseClassIngredient")
   val missingJavaOptional: Ingredient[Optional[String]] = Ingredient[Optional[String]]("missingJavaOptional")
   val missingJavaOptional2: Ingredient[Optional[Int]] = Ingredient[Optional[Int]]("missingJavaOptional2")
   val missingScalaOptional: Ingredient[Option[String]] = Ingredient[Option[String]]("missingScalaOptional")
@@ -73,6 +75,10 @@ object TestRecipeHelper {
   val event2FromInteractionSeven = Event("Event2FromInteractionSeven", interactionSevenIngredient2)
 
   case class Event2FromInteractionSeven(interactionSevenIngredient2: String)
+
+  case class EmptyEvent()
+
+  val emptyEvent = Event("EmptyEvent")
 
   //Interactions used in the recipe & implementations (we use traits instead of case classes since we use mocks for the real implementations
   val interactionOne =
@@ -179,6 +185,27 @@ object TestRecipeHelper {
     def apply(initialIngredient: String): ComplexObjectIngredient
   }
 
+  val caseClassIngredientInteraction =
+    Interaction("CaseClassIngredientInteraction",
+      Ingredients(initialIngredient),
+      ProvidesIngredient(caseClassIngredient))
+
+  trait CaseClassIngredientInteractionImpl {
+    val name: String = "CaseClassIngredientInteraction"
+
+    def apply(initialIngredient: String): CaseClassIngredient
+  }
+
+  val caseClassIngredientInteraction2 =
+    Interaction("CaseClassIngredientInteraction2",
+      Ingredients(caseClassIngredient),
+      FiresOneOfEvents(emptyEvent))
+
+  trait CaseClassIngredientInteraction2Impl {
+    val name: String = "CaseClassIngredientInteraction2"
+
+    def apply(caseClassIngredient: CaseClassIngredient): EmptyEvent
+  }
 
   val NonMatchingReturnTypeInteraction =
     Interaction("NonMatchingReturnTypeInteraction",
@@ -278,6 +305,7 @@ trait TestRecipeHelper
   protected val interactionFourIngredientValue = "interactionFourIngredient"
   protected val interactionFiveIngredientValue = "interactionFiveIngredient"
   protected val interactionSixIngredientValue = "interactionSixIngredient"
+  protected val caseClassIngredientValue = CaseClassIngredient(5, "this is a case class test")
   protected val errorMessage = "This is the error message"
 
   //Can be used to check the state after firing the initialEvent
@@ -306,8 +334,9 @@ trait TestRecipeHelper
   protected val testInteractionFiveMock: InteractionFiveImpl = mock[InteractionFiveImpl]
   protected val testInteractionSixMock: InteractionSixImpl = mock[InteractionSixImpl]
   protected val testComplexIngredientInteractionMock: ComplexIngredientInteractionImpl = mock[ComplexIngredientInteractionImpl]
-  protected val testNonMatchingReturnTypeInteractionMock: NonMatchingReturnTypeInteractionImpl =
-    mock[NonMatchingReturnTypeInteractionImpl]
+  protected val testCaseClassIngredientInteractionMock: CaseClassIngredientInteractionImpl = mock[CaseClassIngredientInteractionImpl]
+  protected val testCaseClassIngredientInteraction2Mock: CaseClassIngredientInteraction2Impl = mock[CaseClassIngredientInteraction2Impl]
+  protected val testNonMatchingReturnTypeInteractionMock: NonMatchingReturnTypeInteractionImpl = mock[NonMatchingReturnTypeInteractionImpl]
   protected val testSieveInteractionMock: SieveInteractionImpl = mock[SieveInteractionImpl]
   protected val testOptionalIngredientInteractionMock: OptionalIngredientInteractionImpl = mock[OptionalIngredientInteractionImpl]
 
@@ -320,11 +349,13 @@ trait TestRecipeHelper
       "InteractionFive" -> testInteractionFiveMock,
       "InteractionSix" -> testInteractionSixMock,
       "ComplexIngredientInteraction" -> testComplexIngredientInteractionMock,
+      "CaseClassIngredientInteraction" -> testCaseClassIngredientInteractionMock,
+      "CaseClassIngredientInteraction2" -> testCaseClassIngredientInteraction2Mock,
       "NonMatchingReturnTypeInteraction" -> testNonMatchingReturnTypeInteractionMock,
       "SieveInteraction" -> testSieveInteractionMock,
       "OptionalIngredientInteraction" -> testOptionalIngredientInteractionMock)
 
-  protected def levelDbConfig(actorSystemName: String, port: Int): Config = ConfigFactory.parseString(
+  protected def levelDbConfig(actorSystemName: String, port: Int, journalPath: String = "target/journal", snapshotsPath: String = "target/snapshots"): Config = ConfigFactory.parseString(
     s"""
        |include "baker.conf"
        |
@@ -349,10 +380,10 @@ trait TestRecipeHelper
        |
        |  persistence {
        |     journal.plugin = "akka.persistence.journal.leveldb"
-       |     journal.leveldb.dir = "target/journal"
+       |     journal.leveldb.dir = "$journalPath"
        |
        |     snapshot-store.plugin = "akka.persistence.snapshot-store.local"
-       |     snapshot-store.local.dir = "target/snapshots"
+       |     snapshot-store.local.dir = "$snapshotsPath"
        |
        |     auto-start-snapshot-stores = [ "akka.persistence.snapshot-store.local"]
        |     auto-start-journals = [ "akka.persistence.journal.leveldb" ]

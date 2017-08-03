@@ -1,28 +1,27 @@
 package com.ing.baker.runtime.actor
 
 import akka.actor.ExtendedActorSystem
-import akka.serialization.Serialization
 import com.esotericsoftware.kryo.Kryo
 import com.twitter.chill.akka.AkkaSerializer
 import com.twitter.chill.{IKryoRegistrar, KryoInstantiator}
 import de.javakaffee.kryoserializers.guava._
 import de.javakaffee.kryoserializers.jodatime.{JodaDateTimeSerializer, JodaLocalDateSerializer, JodaLocalDateTimeSerializer}
-import org.joda.time._
 
 class KryoSerializer(system: ExtendedActorSystem) extends AkkaSerializer(system) {
 
   override def kryoInstantiator: KryoInstantiator = {
     super.kryoInstantiator.withRegistrar(new ExtraKryoSerializersRegistrar)
   }
+
 }
 
 // these extra serializers are taken from the example here: https://github.com/magro/kryo-serializers
 class ExtraKryoSerializersRegistrar extends IKryoRegistrar {
   override def apply(kryo: Kryo): Unit = {
     // joda DateTime, LocalDate and LocalDateTime
-    kryo.register(classOf[DateTime], new JodaDateTimeSerializer())
-    kryo.register(classOf[LocalDate], new JodaLocalDateSerializer())
-    kryo.register(classOf[LocalDateTime], new JodaLocalDateTimeSerializer())
+    kryo.register(classOf[org.joda.time.DateTime], new JodaDateTimeSerializer())
+    kryo.register(classOf[org.joda.time.LocalDate], new JodaLocalDateSerializer())
+    kryo.register(classOf[org.joda.time.LocalDateTime], new JodaLocalDateTimeSerializer())
 
     // guava ImmutableList, ImmutableSet, ImmutableMap, ImmutableMultimap, ReverseList, UnmodifiableNavigableSet
     ImmutableListSerializer.registerSerializers(kryo)
