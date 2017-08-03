@@ -690,7 +690,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       baker.bake(processId)
 
-      Thread.sleep(receivePeriod.toMillis)
+      Thread.sleep(receivePeriod.toMillis  + 100)
 
       baker.handleEvent(processId, InitialEvent("")) shouldBe(SensoryEventStatus.ReceivePeriodExpired)
     }
