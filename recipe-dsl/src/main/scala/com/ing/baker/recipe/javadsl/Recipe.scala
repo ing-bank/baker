@@ -1,20 +1,16 @@
 package com.ing.baker.recipe.javadsl
 
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
-import com.ing.baker.recipe.common._
 
 import scala.annotation.varargs
 import scala.collection.JavaConverters._
-import scala.concurrent.duration
-import scala.concurrent.duration.Duration
 
 case class Recipe(
-    override val name: String,
-    override val interactions: Seq[common.InteractionDescriptor],
-    override val sieves: Seq[common.InteractionDescriptor],
-    override val sensoryEvents: Set[common.Event],
-    override val defaultFailureStrategy: InteractionFailureStrategy) extends common.Recipe {
+                   override val name: String,
+                   override val interactions: Seq[common.InteractionDescriptor],
+                   override val sieves: Seq[common.InteractionDescriptor],
+                   override val sensoryEvents: Set[common.Event],
+                   override val defaultFailureStrategy: common.InteractionFailureStrategy) extends common.Recipe {
 
   def this(name: String) = this(name, Seq.empty, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction)
 
@@ -27,6 +23,7 @@ case class Recipe(
   /**
     * This adds all interactions and sieves of the recipe to this recipe
     * Sensory Events are not added and are expected to be given by the recipe itself
+    *
     * @param recipe
     * @return
     */
@@ -42,7 +39,7 @@ case class Recipe(
     * @return
     */
   def withInteraction(newInteraction: common.InteractionDescriptor): Recipe =
-      withInteractions(Seq(newInteraction): _*)
+    withInteractions(Seq(newInteraction): _*)
 
   /**
     * Adds the interactions to the recipe.
@@ -54,7 +51,7 @@ case class Recipe(
   @SafeVarargs
   @varargs
   def withInteractions(newInteractions: common.InteractionDescriptor*): Recipe =
-    copy(interactions = interactions ++ newInteractions)
+  copy(interactions = interactions ++ newInteractions)
 
   /**
     * Adds a sieve function to the recipe.
@@ -79,15 +76,25 @@ case class Recipe(
 
   /**
     * Adds the sensory event to the recipe
-    *
+    * The firing limit is set to 1 by default
     * @param newEvent
     * @return
     */
   def withSensoryEvent(newEvent: Class[_]): Recipe =
-    copy(sensoryEvents = sensoryEvents + eventClassToCommonEvent(newEvent))
+    withSensoryEvents(newEvent)
 
   /**
-    * Adds the sensory events to the recipe
+    * Adds the sensory event to the recipe
+    * The firing limit is set to what is given
+    * @param newEvent
+    * @param maxFiringLimit
+    * @return
+    */
+  def withSensoryEvent(newEvent: Class[_], maxFiringLimit: Integer): Recipe =
+    copy(sensoryEvents = sensoryEvents + eventClassToCommonEvent(newEvent, Some(maxFiringLimit)))
+
+  /**
+    * Adds the sensory events to the recipe with the firing limit set to 1
     *
     * @param eventsToAdd
     * @return
@@ -95,35 +102,73 @@ case class Recipe(
   @SafeVarargs
   @varargs
   def withSensoryEvents(eventsToAdd: Class[_]*): Recipe =
-    copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent))
+  copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent(_, Some(1))))
+
+  /**
+    * Adds the sensory event to the recipe with firing limit set to unlimited
+    *
+    * @param newEvent
+    * @return
+    */
+  def withSensoryEventNoFiringLimit(newEvent: Class[_]): Recipe =
+    withSensoryEventsNoFiringLimit(newEvent)
+
+
+  /**
+    * Adds the sensory events to the recipe with firing limit set to unlimited
+    *
+    * @param eventsToAdd
+    * @return
+    */
+  @SafeVarargs
+  @varargs
+  def withSensoryEventsNoFiringLimit(eventsToAdd: Class[_]*): Recipe =
+  copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent(_, None)))
+
+
+  /**
+    * This set the failure strategy as default for this recipe.
+    * If a failure strategy is set for the Interaction itself that is taken.
+    *
+    * @param interactionFailureStrategy The failure strategy to follow
+    * @return
+    */
+  def withDefaultFailureStrategy(interactionFailureStrategy: common.InteractionFailureStrategy): Recipe =
+    copy(defaultFailureStrategy = interactionFailureStrategy)
 
   /**
     * This actives the incremental backup retry strategy for all the interactions if failure occurs
+    *
     * @param initialDelay the initial delay before the first retry starts
-    * @param deadline the deadline for how long the retry should run
+    * @param deadline     the deadline for how long the retry should run
     * @return
+    * @deprecated Replaced by withDefaultFailureStrategy
     */
+  @Deprecated
   def withDefaultRetryFailureStrategy(initialDelay: java.time.Duration,
-                                      deadline: java.time.Duration): Recipe =
+                                      deadline: java.time.Duration,
+                                      maxTimeBetweenRetries: java.time.Duration): Recipe =
     copy(
       defaultFailureStrategy =
-        RetryWithIncrementalBackoff(Duration(initialDelay.toMillis, duration.MILLISECONDS),
-          Duration(deadline.toMillis, duration.MILLISECONDS)))
+        InteractionFailureStrategy.RetryWithIncrementalBackoff(
+          initialDelay,
+          deadline,
+          maxTimeBetweenRetries))
 
   /**
     * This actives the incremental backup retry strategy for all the interactions if failure occurs
+    *
     * @param initialDelay the initial delay before the first retry starts
-    * @param backoffFactor the backoff factor for the retry
-    * @param maximumRetries the maximum ammount of retries.
+    * @param deadline     the deadline for how long the retry should run
     * @return
+    * @deprecated Replaced by withDefaultFailureStrategy
     */
+  @Deprecated
   def withDefaultRetryFailureStrategy(initialDelay: java.time.Duration,
-                                      backoffFactor: Double,
-                                      maximumRetries: Int): Recipe =
+                                      deadline: java.time.Duration) =
   copy(
-      defaultFailureStrategy =
-        RetryWithIncrementalBackoff(Duration(initialDelay.toMillis, duration.MILLISECONDS),
-          backoffFactor,
-          maximumRetries))
-
+    defaultFailureStrategy =
+      InteractionFailureStrategy.RetryWithIncrementalBackoff(
+        initialDelay,
+        deadline))
 }

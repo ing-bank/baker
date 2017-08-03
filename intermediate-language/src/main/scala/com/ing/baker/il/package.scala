@@ -13,7 +13,7 @@ package object il {
   implicit class PlaceAdditions(place: Place[_]) {
     def isIngredient: Boolean = place.placeType == IngredientPlace
     def isInteractionEventOutput: Boolean = place.placeType == InteractionEventOutputPlace
-    def isFiringLimiter: Boolean          = place.placeType == FiringLimiterPlace
+    def isFiringLimiter: Boolean          = place.placeType.isInstanceOf[FiringLimiterPlace]
     def isEventPrecondition: Boolean      = place.placeType == EventPreconditionPlace
     def isOrEventPrecondition: Boolean    = place.placeType == EventOrPreconditionPlace
     def isIntermediate: Boolean           = place.placeType == IntermediatePlace
@@ -36,7 +36,7 @@ package object il {
 
     def isSensoryEvent: Boolean =
       transition match {
-      case EventTransition(_, true) => true
+      case EventTransition(_, true, _) => true
       case _ => false
     }
 

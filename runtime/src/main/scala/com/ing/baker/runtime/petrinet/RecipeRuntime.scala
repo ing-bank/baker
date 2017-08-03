@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.petrinet
 
-import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
+import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
 import com.ing.baker.petrinet.runtime._
@@ -21,4 +21,11 @@ class RecipeRuntime(interactionFunctions: InteractionTransition[_] => (ProcessSt
   }
 
   override val taskProvider = new TaskProvider(interactionFunctions)
+
+  override lazy val jobPicker = new JobPicker[Place, Transition](tokenGame) {
+    override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition[_, _]): Boolean = t match {
+      case EventTransition(_, true, _) => false
+      case _ => true
+    }
+  }
 }

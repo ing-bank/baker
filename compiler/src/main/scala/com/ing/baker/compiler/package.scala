@@ -1,7 +1,8 @@
 package com.ing.baker
 
+import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
 import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing, ProvidesType, Transition}
-import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientType, InteractionFailureStrategy}
+import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientType}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionDescriptor
 
@@ -15,15 +16,15 @@ package object compiler {
 
   implicit class InteractionOps(interaction: InteractionDescriptor) {
 
-    def toInteractionTransition(defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition[_] =
+    def toInteractionTransition(defaultFailureStrategy: common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition[_] =
       interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.InteractionAction, allIngredientNames)
 
-    def toSieveTransition(defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition[_] =
+    def toSieveTransition(defaultFailureStrategy: common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition[_] =
       interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.SieveAction, allIngredientNames)
 
     def interactionTransitionOf(
                                  interactionDescriptor: InteractionDescriptor,
-                                 defaultFailureStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy,
+                                 defaultFailureStrategy: common.InteractionFailureStrategy,
                                  actionType: ActionType,
                                  allIngredientNames: Set[String]): InteractionTransition[Any] = {
 
@@ -44,11 +45,12 @@ package object compiler {
           case _ => event
         }
 
-      def transformFailureStrategy(recipeStrategy: com.ing.baker.recipe.common.InteractionFailureStrategy): InteractionFailureStrategy = {
+      def transformFailureStrategy(recipeStrategy: common.InteractionFailureStrategy): InteractionFailureStrategy = {
         recipeStrategy match {
-          case com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout: Duration, backoffFactor: Double, maximumRetries: Int) => InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries)
-          case com.ing.baker.recipe.common.InteractionFailureStrategy.BlockInteraction => InteractionFailureStrategy.BlockInteraction
-          case _ => InteractionFailureStrategy.BlockInteraction
+          case common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout: Duration, backoffFactor: Double, maximumRetries: Int, maxTimeBetweenRetries: Option[Duration]) =>
+            il.failurestrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, maxTimeBetweenRetries)
+          case common.InteractionFailureStrategy.BlockInteraction() => il.failurestrategy.BlockInteraction
+          case _ => il.failurestrategy.BlockInteraction
         }
       }
 
@@ -68,7 +70,6 @@ package object compiler {
         .map(ingredient =>
         if(ingredient.name == common.ProcessIdName) il.processIdName -> ingredient.clazz
         else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.clazz)
-
 
       val providesType: ProvidesType =
         interactionDescriptor.interaction.output match {

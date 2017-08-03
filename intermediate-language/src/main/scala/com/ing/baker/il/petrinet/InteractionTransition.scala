@@ -1,7 +1,8 @@
 package com.ing.baker.il.petrinet
 
 import com.ing.baker.il
-import com.ing.baker.il.{ActionType, EventOutputTransformer, InteractionFailureStrategy, _}
+import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
+import com.ing.baker.il.{ActionType, EventOutputTransformer, _}
 import com.ing.baker.petrinet.runtime.TransitionExceptionHandler
 import org.slf4j._
 
@@ -49,5 +50,5 @@ case class InteractionTransition[I](providesType: ProvidesType,
   val requiredIngredients: Map[String, Class[_]] =
     inputFields.toMap.filterKeys(requiredIngredientNames.contains)
 
-  val exceptionStrategy: TransitionExceptionHandler = InteractionFailureStrategy.asTransitionExceptionHandler(failureStrategy)
+  val exceptionStrategy: TransitionExceptionHandler = failureStrategy.asTransitionExceptionHandler()
 }

@@ -5,8 +5,9 @@ import java.util.Optional
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
-import com.ing.baker.recipe.common.ProvidesNothing
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
+import com.ing.baker.recipe.common
+import com.ing.baker.recipe.common.{ProvidesIngredient, ProvidesNothing}
+import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, Recipe}
 
 import scala.language.postfixOps
 
@@ -31,6 +32,20 @@ class RecipeCompilerSpec extends TestRecipeHelper {
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
       compiledRecipe.validationErrors should contain("Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction")
+    }
+
+    "give an error if the processId is required and is not of the String type" in {
+      val wrongProcessIdInteraction =
+        Interaction("wrongProcessIdInteraction",
+          Ingredients(new Ingredient[Int](common.ProcessIdName), initialIngredient),
+          ProvidesIngredient(interactionOneOriginalIngredient))
+
+      val recipe = Recipe("NonProvidedIngredient")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(wrongProcessIdInteraction)
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.validationErrors should contain("Non supported process id class: int on interaction: 'wrongProcessIdInteraction'")
     }
 
     "give a list of wrong ingredients if an predefined ingredient is of the wrong type" in {
@@ -135,7 +150,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
     }
 
     "interactions with optional ingredients that are provided should not be provided as empty" in {
-      val optionalProviderEvent = Event("optionalProviderEvent", Seq(missingJavaOptional))
+      val optionalProviderEvent = Event("optionalProviderEvent", missingJavaOptional)
 
       val recipe: Recipe = Recipe("MissingOptionalRecipe")
         .withInteraction(optionalIngredientInteraction)
