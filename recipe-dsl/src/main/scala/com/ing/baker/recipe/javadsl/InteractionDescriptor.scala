@@ -1,15 +1,9 @@
 package com.ing.baker.recipe.javadsl
 
-import java.util.Optional
-
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
-import com.ing.baker.recipe.common.{FiresOneOfEvents, RecipeValidationException}
 
 import scala.annotation.varargs
 import scala.collection.JavaConverters._
-import scala.concurrent.duration
-import scala.concurrent.duration.Duration
 
 case class InteractionDescriptor private(
                                           override val interaction: common.Interaction,
@@ -190,14 +184,18 @@ case class InteractionDescriptor private(
                                      ingredientRenames: Map[String, String]): InteractionDescriptor = {
     val originalEvent: common.Event = eventClassToCommonEvent(eventClazz, None)
         interaction.output match{
-          case FiresOneOfEvents(events) =>
+          case common.FiresOneOfEvents(events) =>
             if (!events.contains(originalEvent))
-              throw new RecipeValidationException(s"Event transformation given for Interaction $name but does not fire event $originalEvent")
-          case _ => throw new RecipeValidationException(s"Event transformation given for Interaction $name but does not fire any event")
+              throw new common.RecipeValidationException(s"Event transformation given for Interaction $name but does not fire event $originalEvent")
+          case _ => throw new common.RecipeValidationException(s"Event transformation given for Interaction $name but does not fire any event")
         }
 
     val eventOutputTransformer = EventOutputTransformer(newEventName, ingredientRenames)
     this.copy(eventOutputTransformers = eventOutputTransformers + (originalEvent -> eventOutputTransformer))
+  }
+
+  def withFailureStrategy(interactionFailureStrategy: common.InteractionFailureStrategy) : InteractionDescriptor = {
+    this.copy(failureStrategy = failureStrategy)
   }
 
   /**
@@ -206,30 +204,36 @@ case class InteractionDescriptor private(
     * @param initialDelay the initial delay before the first retry starts
     * @param deadline     the deadline for how long the retry should run
     * @return
+    * @deprecated replace by withFailureStrategy
     */
+  @Deprecated
   def withIncrementalBackoffOnFailure(initialDelay: java.time.Duration,
                                       deadline: java.time.Duration): InteractionDescriptor =
   this.copy(
     failureStrategy = Some(
-      RetryWithIncrementalBackoff(Duration(initialDelay.toMillis, duration.MILLISECONDS),
-        Duration(deadline.toMillis, duration.MILLISECONDS))))
+      InteractionFailureStrategy.RetryWithIncrementalBackoff(
+        initialDelay,
+        deadline)))
 
   /**
     * This actives the incremental backup retry strategy for this interaction if failure occurs
     *
-    * @param initialDelay   the initial delay before the first retry starts
-    * @param backoffFactor  the backoff factor for the retry
-    * @param maximumRetries the maximum ammount of retries.
+    * @param initialDelay the initial delay before the first retry starts
+    * @param deadline     the deadline for how long the retry should run
+    * @param maxTimeBetweenRetries     the max time that we will wait between duration
     * @return
+    * @deprecated replace by withFailureStrategy
     */
+  @Deprecated
   def withIncrementalBackoffOnFailure(initialDelay: java.time.Duration,
-                                      backoffFactor: Double,
-                                      maximumRetries: Int): InteractionDescriptor =
-  this.copy(
-    failureStrategy = Some(
-      RetryWithIncrementalBackoff(Duration(initialDelay.toMillis, duration.MILLISECONDS),
-        backoffFactor,
-        maximumRetries)))
+                                      deadline: java.time.Duration,
+                                      maxTimeBetweenRetries: java.time.Duration): InteractionDescriptor =
+    this.copy(
+      failureStrategy = Some(
+        InteractionFailureStrategy.RetryWithIncrementalBackoff(
+          initialDelay,
+          deadline,
+          maxTimeBetweenRetries)))
 
   /**
     * Sets the maximum amount of times this interaction can be fired.

@@ -24,7 +24,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-//TODO move to runtime, not possbile now because it references parts of the RecipeCompilerSpec
 public class JBakerTest {
 
     java.util.List<Object> implementationsList = ImmutableList.of(

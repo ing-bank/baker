@@ -1,8 +1,6 @@
 package com.ing.baker.recipe.javadsl
 
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
-import com.ing.baker.recipe.common._
 
 import scala.annotation.varargs
 import scala.collection.JavaConverters._
@@ -14,7 +12,7 @@ case class Recipe(
     override val interactions: Seq[common.InteractionDescriptor],
     override val sieves: Seq[common.InteractionDescriptor],
     override val sensoryEvents: Set[common.Event],
-    override val defaultFailureStrategy: InteractionFailureStrategy,
+    override val defaultFailureStrategy: common.InteractionFailureStrategy,
     override val eventReceivePeriod: Duration) extends common.Recipe {
 
   def this(name: String) = this(name, Seq.empty, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction, Duration.Undefined)
@@ -28,6 +26,7 @@ case class Recipe(
   /**
     * This adds all interactions and sieves of the recipe to this recipe
     * Sensory Events are not added and are expected to be given by the recipe itself
+    *
     * @param recipe
     * @return
     */
@@ -43,7 +42,7 @@ case class Recipe(
     * @return
     */
   def withInteraction(newInteraction: common.InteractionDescriptor): Recipe =
-      withInteractions(Seq(newInteraction): _*)
+    withInteractions(Seq(newInteraction): _*)
 
   /**
     * Adds the interactions to the recipe.
@@ -55,7 +54,7 @@ case class Recipe(
   @SafeVarargs
   @varargs
   def withInteractions(newInteractions: common.InteractionDescriptor*): Recipe =
-    copy(interactions = interactions ++ newInteractions)
+  copy(interactions = interactions ++ newInteractions)
 
   /**
     * Adds a sieve function to the recipe.
@@ -80,7 +79,7 @@ case class Recipe(
 
   /**
     * Adds the sensory event to the recipe
-    *
+    * The firing limit is set to 1 by default
     * @param newEvent
     * @return
     */
@@ -89,7 +88,7 @@ case class Recipe(
 
   /**
     * Adds the sensory event to the recipe
-    *
+    * The firing limit is set to what is given
     * @param newEvent
     * @param maxFiringLimit
     * @return
@@ -98,7 +97,7 @@ case class Recipe(
     copy(sensoryEvents = sensoryEvents + eventClassToCommonEvent(newEvent, Some(maxFiringLimit)))
 
   /**
-    * Adds the sensory events to the recipe
+    * Adds the sensory events to the recipe with the firing limit set to 1
     *
     * @param eventsToAdd
     * @return
@@ -106,7 +105,7 @@ case class Recipe(
   @SafeVarargs
   @varargs
   def withSensoryEvents(eventsToAdd: Class[_]*): Recipe =
-    copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent(_, Some(1))))
+  copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent(_, Some(1))))
 
   /**
     * Adds the sensory event to the recipe with firing limit set to unlimited
@@ -131,33 +130,50 @@ case class Recipe(
 
 
   /**
-    * This actives the incremental backup retry strategy for all the interactions if failure occurs
-    * @param initialDelay the initial delay before the first retry starts
-    * @param deadline the deadline for how long the retry should run
+    * This set the failure strategy as default for this recipe.
+    * If a failure strategy is set for the Interaction itself that is taken.
+    *
+    * @param interactionFailureStrategy The failure strategy to follow
     * @return
     */
-  def withDefaultRetryFailureStrategy(initialDelay: java.time.Duration,
-                                      deadline: java.time.Duration): Recipe =
-    copy(
-      defaultFailureStrategy =
-        RetryWithIncrementalBackoff(Duration(initialDelay.toMillis, duration.MILLISECONDS),
-          Duration(deadline.toMillis, duration.MILLISECONDS)))
+  def withDefaultFailureStrategy(interactionFailureStrategy: common.InteractionFailureStrategy): Recipe =
+    copy(defaultFailureStrategy = interactionFailureStrategy)
 
   /**
     * This actives the incremental backup retry strategy for all the interactions if failure occurs
+    *
     * @param initialDelay the initial delay before the first retry starts
-    * @param backoffFactor the backoff factor for the retry
-    * @param maximumRetries the maximum ammount of retries.
+    * @param deadline     the deadline for how long the retry should run
     * @return
+    * @deprecated Replaced by withDefaultFailureStrategy
     */
+  @Deprecated
   def withDefaultRetryFailureStrategy(initialDelay: java.time.Duration,
-                                      backoffFactor: Double,
-                                      maximumRetries: Int): Recipe =
-  copy(
+                                      deadline: java.time.Duration,
+                                      maxTimeBetweenRetries: java.time.Duration): Recipe =
+    copy(
       defaultFailureStrategy =
-        RetryWithIncrementalBackoff(Duration(initialDelay.toMillis, duration.MILLISECONDS),
-          backoffFactor,
-          maximumRetries))
+        InteractionFailureStrategy.RetryWithIncrementalBackoff(
+          initialDelay,
+          deadline,
+          maxTimeBetweenRetries))
+
+  /**
+    * This actives the incremental backup retry strategy for all the interactions if failure occurs
+    *
+    * @param initialDelay the initial delay before the first retry starts
+    * @param deadline     the deadline for how long the retry should run
+    * @return
+    * @deprecated Replaced by withDefaultFailureStrategy
+    */
+  @Deprecated
+  def withDefaultRetryFailureStrategy(initialDelay: java.time.Duration,
+                                      deadline: java.time.Duration) =
+  copy(
+    defaultFailureStrategy =
+      InteractionFailureStrategy.RetryWithIncrementalBackoff(
+        initialDelay,
+        deadline))
 
   /**
     * Sets the event receive period. This is the period for which processes can receive sensory events.

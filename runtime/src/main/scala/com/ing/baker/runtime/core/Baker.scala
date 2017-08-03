@@ -264,7 +264,6 @@ class Baker(val compiledRecipe: CompiledRecipe,
   def getProcessState(processId: String)(implicit timeout: FiniteDuration): ProcessState =
     Await.result(getProcessStateAsync(processId), timeout)
 
-  //TODO, decide if Baker can visualise itself or is visualising part of the runtime that the compiler exposes also?
   def getVisualState(processId: String)(implicit timeout: FiniteDuration): String = {
     RecipeVisualizer.visualiseCompiledRecipe(
       compiledRecipe,
