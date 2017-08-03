@@ -16,7 +16,7 @@ class InteractionFailureStrategySpec extends WordSpecLike with Matchers {
       val initialDelay          = 2 seconds
       val backoffFactor: Double = 2.0
 
-      val actual = RetryWithIncrementalBackoff(initialDelay, deadline, None)
+      val actual = RetryWithIncrementalBackoff(initialDelay, deadline, maxTimeBetweenRetries = None)
       val expected = RetryWithIncrementalBackoff(initialTimeout = initialDelay,
                                                  backoffFactor,
                                                  maximumRetries = 15)

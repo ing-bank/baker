@@ -71,7 +71,6 @@ package object compiler {
         if(ingredient.name == common.ProcessIdName) il.processIdName -> ingredient.clazz
         else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.clazz)
 
-
       val providesType: ProvidesType =
         interactionDescriptor.interaction.output match {
           case common.ProvidesIngredient(outputIngredient) =>

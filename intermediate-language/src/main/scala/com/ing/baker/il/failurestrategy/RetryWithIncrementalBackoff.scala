@@ -22,9 +22,9 @@ case class RetryWithIncrementalBackoff(initialTimeout: Duration,
   }
 
   def determineRetry(): TransitionExceptionHandler = {
-    case (e: Error, _) => BlockTransition
-    case (e, n) if n < maximumRetries => RetryWithDelay(determineTimeToNextRetry(n))
-    case (e, n) => BlockTransition
+    case (_: Error, _) => BlockTransition
+    case (_, n) if n < maximumRetries => RetryWithDelay(determineTimeToNextRetry(n))
+    case (_, _) => BlockTransition
   }
 
   override def asTransitionExceptionHandler(): TransitionExceptionHandler = determineRetry()

@@ -22,7 +22,6 @@ package object runtime {
   /**
    * An event sourcing function associated with a transition
    *
-   * @tparam T The transition type
    * @tparam S The state type
    * @tparam E The event type
    */
