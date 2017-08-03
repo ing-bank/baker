@@ -1,7 +1,5 @@
 package com.ing.baker.recipe.javadsl
 
-import java.util.Optional
-
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
 import com.ing.baker.recipe.common._
@@ -16,9 +14,10 @@ case class Recipe(
     override val interactions: Seq[common.InteractionDescriptor],
     override val sieves: Seq[common.InteractionDescriptor],
     override val sensoryEvents: Set[common.Event],
-    override val defaultFailureStrategy: InteractionFailureStrategy) extends common.Recipe {
+    override val defaultFailureStrategy: InteractionFailureStrategy,
+    override val eventReceivePeriod: Duration) extends common.Recipe {
 
-  def this(name: String) = this(name, Seq.empty, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction)
+  def this(name: String) = this(name, Seq.empty, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction, Duration.Undefined)
 
   def getInteractions: java.util.List[common.InteractionDescriptor] = interactions.asJava
 
@@ -160,4 +159,12 @@ case class Recipe(
           backoffFactor,
           maximumRetries))
 
+  /**
+    * Sets the event receive period. This is the period for which processes can receive sensory events.
+    *
+    * @param recivePeriod The period
+    * @return
+    */
+  def withEventReceivePeriod(recivePeriod: java.time.Duration) =
+    copy(eventReceivePeriod = Duration(recivePeriod.toMillis, duration.MILLISECONDS))
 }

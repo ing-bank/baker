@@ -284,7 +284,8 @@ object RecipeCompiler {
       petriNet = petriNet,
       initialMarking = initialMarking,
       sensoryEvents = recipe.sensoryEvents.map(eventToCompiledEvent),
-      validationErrors = preconditionORErrors ++ preconditionANDErrors
+      validationErrors = preconditionORErrors ++ preconditionANDErrors,
+      eventReceivePeriod = recipe.eventReceivePeriod
     )
 
     postCompileValidations(compiledRecipe, validationSettings)

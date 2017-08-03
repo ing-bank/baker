@@ -13,7 +13,7 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 
 import scala.concurrent.Await
-import scala.concurrent.duration.DurationDouble
+import scala.concurrent.duration.{Duration, DurationDouble}
 
 object ShardedActorProvider {
 
@@ -43,12 +43,12 @@ class ShardedActorProvider(config: Config) extends BakerActorProvider {
 
   private val nrOfShards = config.as[Int]("baker.actor.cluster.nr-of-shards")
 
-  override def createRecipeActors(recipeName: String, petriNetActorProps: Props)(
+  override def createRecipeActors(recipeName: String, receivePeriod: Duration, petriNetActorProps: Props)(
     implicit actorSystem: ActorSystem): (ActorRef, RecipeMetadata) = {
     val recipeMetadata = new ClusterRecipeMetadata(recipeName)
     val recipeManagerActor = ClusterSharding(actorSystem).start(
       typeName = recipeName,
-      entityProps = ActorIndex.props(petriNetActorProps, recipeMetadata, recipeName),
+      entityProps = ActorIndex.props(petriNetActorProps, recipeMetadata, recipeName, receivePeriod),
       settings = ClusterShardingSettings.create(actorSystem),
       extractEntityId = ShardedActorProvider.entityIdExtractor(recipeName, nrOfShards),
       extractShardId = ShardedActorProvider.shardIdExtractor(recipeName, nrOfShards)
