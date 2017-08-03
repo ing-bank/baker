@@ -11,6 +11,8 @@ import com.ing.baker.petrinet.dsl.colored.Place
 import com.ing.baker.runtime.actor.ProcessIndex.ReceivePeriodExpired
 import com.typesafe.config.ConfigFactory
 import org.mockito
+import org.mockito.Mockito
+import org.mockito.Mockito.verify
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Matchers, WordSpecLike}
@@ -27,7 +29,7 @@ object ProcessIndexSpec {
 }
 
 //noinspection TypeAnnotation
-class ProcessIndexSpec extends TestKit(ActorSystem("ActorIndexSpec", ConfigFactory.parseString(ProcessIndexSpec.config)))
+class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ConfigFactory.parseString(ProcessIndexSpec.config)))
     with ImplicitSender
     with WordSpecLike
     with Matchers
