@@ -695,7 +695,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.handleEvent(processId, InitialEvent("")) shouldBe(SensoryEventStatus.ReceivePeriodExpired)
     }
 
-    "accept sensory events after a specified receive period" in {
+    "accept sensory events before a specified receive period" in {
 
       val receivePeriod: FiniteDuration = 10 seconds
 
