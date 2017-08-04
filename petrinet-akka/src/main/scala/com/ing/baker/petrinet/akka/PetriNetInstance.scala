@@ -16,6 +16,7 @@ import com.ing.baker.petrinet.runtime.persistence.ObjectSerializer
 
 import scala.concurrent.duration._
 import scala.language.existentials
+import scala.util.Try
 
 object PetriNetInstance {
 
@@ -186,9 +187,8 @@ class PetriNetInstance[P[_], T[_, _], S, E](
 
     logEvent(Logging.DebugLevel, LogFiringTransition(processId, job.id, job.transition.toString, System.currentTimeMillis()))
 
-    // this can potentially happen in non gracefull shutdown situations
-    if (context.self != null)
-      executor(job).unsafeRunAsyncFuture().pipeTo(context.self)(originalSender)
+    // context.self can be potentially throw NullPointerException in non graceful shutdown situations
+    Try(context.self).foreach(executor(job).unsafeRunAsyncFuture().pipeTo(_)(originalSender))
   }
 
   def scheduleFailedJobsForRetry(instance: Instance[P, T, S]): Map[Long, Cancellable] = {
