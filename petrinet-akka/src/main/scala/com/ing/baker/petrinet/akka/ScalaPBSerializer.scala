@@ -6,18 +6,20 @@ import java.nio.charset.Charset
 
 import akka.actor.ExtendedActorSystem
 import akka.serialization.SerializerWithStringManifest
-import com.trueaccord.scalapb.{GeneratedMessage, GeneratedMessageCompanion, Message}
-import com.ing.baker.petrinet.runtime.persistence.messages._
+import com.trueaccord.scalapb.{GeneratedMessageCompanion, Message}
+import com.typesafe.config.Config
+
+import scala.collection.JavaConversions.asScalaSet
 
 object ScalaPBSerializer {
   import scala.reflect.runtime.{universe => ru}
 
   private lazy val universeMirror = ru.runtimeMirror(getClass.getClassLoader)
 
-  def scalaPBType[T <: GeneratedMessage with Message[T]](implicit tt: ru.TypeTag[T]) = {
-    val messageType = universeMirror.runtimeClass(ru.typeOf[T].typeSymbol.asClass).asInstanceOf[Class[T]]
-    val companionType = universeMirror.reflectModule(ru.typeOf[T].typeSymbol.companion.asModule).instance.asInstanceOf[GeneratedMessageCompanion[T]]
-    messageType -> companionType
+  def scalaPBType(clazz: Class[_ <: AnyRef]): (Class[_ <: AnyRef], GeneratedMessageCompanion[_]) = {
+    val classSymbol = universeMirror.classSymbol(clazz)
+    val moduleMirror = universeMirror.reflectModule(classSymbol.companion.asModule)
+    clazz -> moduleMirror.instance.asInstanceOf[GeneratedMessageCompanion[_] with Message[_]]
   }
 
   val UTF8: Charset = Charset.forName("UTF-8")
@@ -27,21 +29,25 @@ object ScalaPBSerializer {
 class ScalaPBSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
   import com.ing.baker.petrinet.akka.ScalaPBSerializer._
 
-  def manifests: Map[String, (Class[_ <: AnyRef], GeneratedMessageCompanion[_ <: GeneratedMessage])] = Map(
-    "TransitionFired" -> scalaPBType[TransitionFired],
-    "TransitionFailed" -> scalaPBType[TransitionFailed],
-    "Initialized" -> scalaPBType[Initialized]
-  )
+  private val manifests: Map[String, (Class[_ <: AnyRef], GeneratedMessageCompanion[_])] = {
+    val config: Config = system.settings.config.getConfig("baker.scalapb.serialization-manifests")
+    config.entrySet().map { entry =>
+      val manifest = entry.getKey
+      val clazz = Class.forName(entry.getValue.unwrapped().asInstanceOf[String]).asInstanceOf[Class[AnyRef]]
+      manifest -> scalaPBType(clazz)
+    }.toMap
+  }
 
+  //noinspection RedundantCollectionConversion
   private val class2ManifestMap: Map[Class[_ <: AnyRef], String] = manifests.map {
-    case (key, value) => value._1 -> key
+    case (manifest, (clazz, _)) => clazz -> manifest
   }.toMap
 
   override def identifier: Int = ScalaPBSerializer.Identifier
 
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = {
     manifests.get(manifest).
-      map { case (_, companion) => companion.parseFrom(bytes) }.
+      map { case (_, companion) => companion.parseFrom(bytes).asInstanceOf[AnyRef] }.
       getOrElse(throw new IllegalArgumentException(s"Cannot deserialize byte array with manifest $manifest"))
   }
 
