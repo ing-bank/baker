@@ -6,14 +6,14 @@ import org.slf4j.LoggerFactory
 
 
 case class RuntimeEvent(name: String,
-                        providedIngredients: Map[String, Any]) {
+                        ingredients: Map[String, Any]) {
 
   def toCompiledEvent: EventType = {
-    EventType(name, providedIngredients.map(pi => IngredientType(pi._1, pi._2.getClass)).toSeq)
+    EventType(name, ingredients.map(pi => IngredientType(pi._1, pi._2.getClass)).toSeq)
   }
 
   def validate(eventType: EventType): RuntimeEvent = {
-    val correctIngredients = providedIngredients.filter {
+    val correctIngredients = ingredients.filter {
       case (ingredientName, value) => eventType.providedIngredients.find(_.name equals ingredientName) match {
         case Some(compiledIngredient) => compiledIngredient.clazz.isAssignableFrom(value.getClass)
         case None => false

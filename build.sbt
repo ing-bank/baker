@@ -1,4 +1,5 @@
 import Dependencies._
+import jdk.internal.org.objectweb.asm.TypeReference
 import sbt.Keys._
 
 val scalaV = "2.11.11"
@@ -35,12 +36,14 @@ lazy val defaultModuleSettings = commonSettings ++ Revolver.settings ++ Sonatype
 lazy val scalaPBSettings = Seq(PB.targets in Compile := Seq(scalapb.gen() -> (sourceManaged in Compile).value))
 
 lazy val petrinetApi = project.in(file("petrinet-api"))
-  .settings(defaultModuleSettings ++ scalaPBSettings)
+  .settings(defaultModuleSettings)
+  .settings(scalaPBSettings)
   .settings(
     moduleName := "petrinet-api",
     libraryDependencies ++= compileDeps(
       scalaGraph,
       catsCore,
+      scalapbRuntime,
       slf4jApi,
       fs2Core) ++ testDeps(
       scalaCheck,
@@ -82,6 +85,12 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
 
 lazy val recipeRuntime = project.in(file("runtime"))
   .settings(defaultModuleSettings)
+  .settings(scalaPBSettings)
+  // The following settings are needed to depend on common petrinet proto messages, but not re-compile them.
+  .settings(Seq(PB.protoSources in Compile += petrinetApi.base / "src/main/protobuf" ))
+  .settings(Seq(excludeFilter in PB.generate := new SimpleFileFilter(
+    (f: File) => f.getName.endsWith("common.proto") || f.getName.endsWith("petrinet-messages.proto")
+  )))
   .settings(
     moduleName := "runtime",
     libraryDependencies ++=
@@ -91,6 +100,7 @@ lazy val recipeRuntime = project.in(file("runtime"))
         ficusConfig,
         guava,
         chill,
+        scalapbRuntime,
         kryoSerializers,
         jodaTime,
         jodaConvert,

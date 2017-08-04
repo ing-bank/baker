@@ -40,7 +40,7 @@ class TaskProvider(interactionFunctions: InteractionTransition[_] => (ProcessSta
           case Some(eventOutputTransformer) =>
             RuntimeEvent(
               eventOutputTransformer.newEventName,
-              runtimeEvent.providedIngredients.map{ case (name, value) => eventOutputTransformer.ingredientRenames.getOrElse(name, name) -> value })
+              runtimeEvent.ingredients.map{ case (name, value) => eventOutputTransformer.ingredientRenames.getOrElse(name, name) -> value })
           case None => runtimeEvent
         }
       }

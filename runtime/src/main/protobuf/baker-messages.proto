@@ -1,0 +1,25 @@
+syntax = "proto2";
+
+import "common.proto";
+import "scalapb/scalapb.proto";
+
+option java_package = "com.ing.baker.runtime.actor.messages";
+
+option (scalapb.options) = {
+    flat_package: true
+};
+
+message Ingredient {
+    optional string name = 1;
+    optional SerializedData data = 2;
+}
+
+message RuntimeEvent {
+    optional string name = 1;
+    repeated Ingredient ingredients = 2;
+}
+
+message ProcessState {
+    optional string processId = 1;
+    repeated Ingredient ingredients = 2;
+}

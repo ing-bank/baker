@@ -2,12 +2,13 @@ package com.ing.baker.petrinet.runtime.persistence
 
 import com.google.protobuf.ByteString
 import com.ing.baker.petrinet.api._
-import com.ing.baker.petrinet.runtime.persistence.messages.FailureStrategy.StrategyType
-import com.ing.baker.petrinet.runtime.persistence.messages.{FailureStrategy, SerializedData}
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Fatal, RetryWithDelay}
 import com.ing.baker.petrinet.runtime.persistence.ProtobufSerialization._
+import com.ing.baker.petrinet.runtime.persistence.messages.FailureStrategy
+import com.ing.baker.petrinet.runtime.persistence.messages.FailureStrategy.StrategyType
 import com.ing.baker.petrinet.runtime.{EventSourcing, Instance}
+import com.ing.baker.serialization.common.SerializedData
 
 object ProtobufSerialization {
 
@@ -70,13 +71,13 @@ class ProtobufSerialization[P[_], T[_, _], S](
 
   private def missingFieldException(field: String) = throw new IllegalStateException(s"Missing field in serialized data: $field")
 
-  def serializeObject(obj: Any): Option[messages.SerializedData] = {
+  def serializeObject(obj: Any): Option[SerializedData] = {
     (obj != null && !obj.isInstanceOf[Unit]).option {
       serializer.serializeObject(obj.asInstanceOf[AnyRef])
     }
   }
 
-  def deserializeObject(obj: messages.SerializedData): AnyRef = {
+  def deserializeObject(obj: SerializedData): AnyRef = {
     (transformSerializedData _).andThen(serializer.deserializeObject)(obj)
   }
 

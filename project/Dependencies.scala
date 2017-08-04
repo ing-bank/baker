@@ -4,6 +4,7 @@ import sbt._
 object Dependencies {
 
   val akkaVersion = "2.5.3"
+  val scalapbVersion = com.trueaccord.scalapb.compiler.Version.scalapbVersion
 
   val typeSafeConfig =            "com.typesafe"               %  "config"                             % "1.3.1"
 
@@ -46,6 +47,7 @@ object Dependencies {
   val guava =                     "com.google.guava"           %  "guava"                              % "19.0"
   val findbugs =                  "com.google.code.findbugs"   %  "jsr305"                             % "1.3.9"
 
+  val scalapbRuntime =            "com.trueaccord.scalapb"     %% "scalapb-runtime"                    % scalapbVersion % "protobuf"
   val chill =                     "com.twitter"                %% "chill-akka"                         % "0.9.2"
   val kryoSerializers =           "de.javakaffee"              %  "kryo-serializers"                   % "0.41"
   val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.9.9"

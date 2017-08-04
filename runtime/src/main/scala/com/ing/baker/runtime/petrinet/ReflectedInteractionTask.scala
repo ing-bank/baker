@@ -81,7 +81,7 @@ object ReflectedInteractionTask {
     log.trace(s"[$invocationId] invoking '${interaction.originalInteractionName}' with parameters ${inputArgs.toString}")
 
     def invokeMethod(): AnyRef = {
-      MDC.put("processId", processState.id.toString)
+      MDC.put("processId", processState.processId.toString)
       val result = interactionObject.getClass.getMethod("apply", interaction.inputFields.map(_._2): _*) .invoke(interactionObject, inputArgs: _*)
       log.trace(s"[$invocationId] result: $result")
 
@@ -134,7 +134,7 @@ object ReflectedInteractionTask {
 
     // We do not support any other type then String types
     val processId: Option[(String, AnyRef)] = interaction.inputFields.toMap.get(processIdName).map {
-      case c if c == classOf[String] => state.id.toString
+      case c if c == classOf[String] => state.processId.toString
       case _ => throw new IllegalStateException("Type not supported")
     }.map(value => processIdName -> value)
 
