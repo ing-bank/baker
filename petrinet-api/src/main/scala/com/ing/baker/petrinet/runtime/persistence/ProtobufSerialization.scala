@@ -28,12 +28,12 @@ object ProtobufSerialization {
   }
 
   implicit def transformSerializedObject(obj: SerializedObject): SerializedData = {
-    SerializedData(Some(obj.serializerId), Some(ByteString.copyFrom(obj.manifest.getBytes)), Some(ByteString.copyFrom(obj.bytes)))
+    SerializedData(Some(obj.serializerId), Some(obj.manifest), Some(ByteString.copyFrom(obj.bytes)))
   }
 
   implicit def transformSerializedData(serialized: SerializedData): SerializedObject = serialized match {
     case SerializedData(Some(serializerId), Some(manifest), Some(bytes)) ⇒
-      SerializedObject(serializerId, manifest.toStringUtf8, bytes.toByteArray)
+      SerializedObject(serializerId, manifest, bytes.toByteArray)
 
   }
 }
