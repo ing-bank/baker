@@ -291,6 +291,9 @@ trait TestRecipeHelper
     with MockitoSugar
     with BeforeAndAfter
     with BeforeAndAfterAll {
+
+  val actorSystemName: String
+
   //Values to use for setting and checking the ingredients
 
   //Default values to be used for the ingredients in the tests
@@ -403,7 +406,7 @@ trait TestRecipeHelper
        |logging.root.level = DEBUG
     """.stripMargin)
 
-  implicit protected val defaultActorSystem = ActorSystem("BakerSpec")
+  implicit protected val defaultActorSystem = ActorSystem(actorSystemName)
 
   override def afterAll(): Unit = {
     TestKit.shutdownActorSystem(defaultActorSystem)

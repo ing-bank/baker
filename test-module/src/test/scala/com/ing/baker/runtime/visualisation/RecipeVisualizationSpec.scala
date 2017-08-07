@@ -10,6 +10,8 @@ import scala.language.postfixOps
 
 class RecipeVisualizationSpec extends TestRecipeHelper {
 
+  override val actorSystemName = "RecipeVisualizationSpec"
+
   before {
     resetMocks
   }

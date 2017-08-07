@@ -13,6 +13,8 @@ import scala.language.postfixOps
 
 class RecipeCompilerSpec extends TestRecipeHelper {
 
+  override val actorSystemName = "RecipeCompilerSpec"
+
   before {
     resetMocks
   }

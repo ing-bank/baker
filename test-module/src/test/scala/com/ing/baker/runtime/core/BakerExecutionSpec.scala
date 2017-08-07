@@ -22,6 +22,7 @@ import scala.util.Success
 
 class BakerExecutionSpec extends TestRecipeHelper {
 
+  override val actorSystemName = "BakerExecutionSpec"
   implicit val timeout: FiniteDuration = 10 seconds
 
   before {
