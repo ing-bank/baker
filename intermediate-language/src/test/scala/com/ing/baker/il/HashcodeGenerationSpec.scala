@@ -4,7 +4,7 @@ import org.scalacheck.{Gen, Prop, Test}
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 
-class IntermediateLanguageSpec extends FunSuite with Checkers {
+class HashcodeGenerationSpec extends FunSuite with Checkers {
 
 //  def hash(str: String): Long = str.hashCode // Test fails with this hash function
   def hash(str: String): Long = sha256HashCode(str)
@@ -19,4 +19,8 @@ class IntermediateLanguageSpec extends FunSuite with Checkers {
 
     check(prop, Test.Parameters.defaultVerbose.withMinSuccessfulTests(100 * 1000))
   }
+
+//  test("test2") {
+//    assert("sr".hashCode != "u4".hashCode)
+//  }
 }
