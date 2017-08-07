@@ -1,6 +1,6 @@
-package com.ing.baker.petrinet.runtime.persistence
+package com.ing.baker.serialization
 
-import com.ing.baker.petrinet.runtime.persistence.Encryption.{AESEncryption, DESEncryption, JavaCryptoEncryption}
+import com.ing.baker.serialization.Encryption.{AESEncryption, DESEncryption, JavaCryptoEncryption}
 import org.scalacheck.Gen._
 import org.scalacheck.Prop.forAll
 import org.scalacheck._

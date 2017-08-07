@@ -9,11 +9,11 @@ import akka.stream.ActorMaterializer
 import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.TestProbe
 import akka.util.Timeout
-import PetriNetInstanceProtocol._
+import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.dsl.colored._
 import com.ing.baker.petrinet.runtime.EventSourcing.{InitializedEvent, TransitionFiredEvent}
-import com.ing.baker.petrinet.runtime.persistence.Encryption.NoEncryption
+import com.ing.baker.serialization.Encryption.NoEncryption
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Matchers._
 
