@@ -17,12 +17,12 @@ import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
 import com.ing.baker.petrinet.akka._
 import com.ing.baker.petrinet.runtime.EventSourcing.TransitionFiredEvent
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
-import com.ing.baker.petrinet.runtime.persistence.Encryption
-import com.ing.baker.petrinet.runtime.persistence.Encryption.NoEncryption
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.{RecipeRuntime, ReflectedInteractionTask}
+import com.ing.baker.serialization.Encryption
+import com.ing.baker.serialization.Encryption.NoEncryption
 import fs2.Strategy
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory

@@ -3,8 +3,9 @@ package com.ing.baker.petrinet.akka
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
-import com.ing.baker.petrinet.runtime.persistence.{ObjectSerializer, ProtobufSerialization, messages}
+import com.ing.baker.petrinet.runtime.persistence.{ProtobufSerialization, messages}
 import com.ing.baker.petrinet.runtime.{EventSourcing, Instance}
+import com.ing.baker.serialization.ObjectSerializer
 
 abstract class PetriNetInstanceRecovery[P[_], T[_,_], S, E](
      val topology: PetriNet[P[_], T[_,_]],

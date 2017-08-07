@@ -1,6 +1,5 @@
 package com.ing.baker.petrinet.runtime.persistence
 
-import com.google.protobuf.ByteString
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Fatal, RetryWithDelay}
@@ -8,6 +7,7 @@ import com.ing.baker.petrinet.runtime.persistence.ProtobufSerialization._
 import com.ing.baker.petrinet.runtime.persistence.messages.FailureStrategy
 import com.ing.baker.petrinet.runtime.persistence.messages.FailureStrategy.StrategyType
 import com.ing.baker.petrinet.runtime.{EventSourcing, Instance}
+import com.ing.baker.serialization._
 import com.ing.baker.serialization.common.SerializedData
 
 object ProtobufSerialization {
@@ -25,16 +25,6 @@ object ProtobufSerialization {
       -1
     else
       e.hashCode()
-  }
-
-  implicit def transformSerializedObject(obj: SerializedObject): SerializedData = {
-    SerializedData(Some(obj.serializerId), Some(obj.manifest), Some(ByteString.copyFrom(obj.bytes)))
-  }
-
-  implicit def transformSerializedData(serialized: SerializedData): SerializedObject = serialized match {
-    case SerializedData(Some(serializerId), Some(manifest), Some(bytes)) ⇒
-      SerializedObject(serializerId, manifest, bytes.toByteArray)
-
   }
 }
 

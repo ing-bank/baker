@@ -1,4 +1,4 @@
-package com.ing.baker.petrinet.runtime.persistence
+package com.ing.baker.serialization
 
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec

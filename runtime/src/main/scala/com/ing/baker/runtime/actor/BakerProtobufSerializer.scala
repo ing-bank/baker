@@ -4,9 +4,9 @@ import akka.actor.ExtendedActorSystem
 import akka.serialization.SerializerWithStringManifest
 import com.google.protobuf.ByteString
 import com.ing.baker.petrinet.akka.AkkaObjectSerializer
-import com.ing.baker.petrinet.runtime.persistence.SerializedObject
 import com.ing.baker.runtime.actor.messages.Ingredient
 import com.ing.baker.runtime.core
+import com.ing.baker.serialization._
 import com.ing.baker.serialization.common.SerializedData
 
 class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
@@ -26,11 +26,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     ingredients.map { case (name, value) =>
 
       val serializedObject = objectSerializer.serializeObject(value.asInstanceOf[AnyRef])
-      val objectMessage = SerializedData(
-        serializerId = Some(serializedObject.serializerId),
-        manifest = Some(serializedObject.manifest),
-        data = Some(ByteString.copyFrom(serializedObject.bytes))
-      )
+      val objectMessage = transformSerializedObject(serializedObject)
 
       messages.Ingredient(Some(name), Some(objectMessage))
     }.toSeq
@@ -39,13 +35,9 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
   def readIngredients(ingredients: Seq[Ingredient]): Map[String, Any] = {
     ingredients.map {
       case messages.Ingredient(Some(name), Some(data)) =>
-        val deserializedData = data match {
-          case SerializedData(Some(serializerId), Some(manifest), Some(bytes)) ⇒
-            SerializedObject(serializerId, manifest, bytes.toByteArray)
-          case _ => throw new IllegalStateException(s"Failed to deserialize object during ingredient deserialization (missing fields)")
-        }
 
-        val deserializedObject: Any = objectSerializer.deserializeObject(deserializedData)
+        val deserializedData = transformSerializedData(data)
+        val deserializedObject = objectSerializer.deserializeObject(deserializedData)
         name -> deserializedObject
     }.toMap
   }

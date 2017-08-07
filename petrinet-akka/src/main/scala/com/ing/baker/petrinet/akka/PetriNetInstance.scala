@@ -12,7 +12,7 @@ import fs2.Strategy
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
 import com.ing.baker.petrinet.runtime._
-import com.ing.baker.petrinet.runtime.persistence.ObjectSerializer
+import com.ing.baker.serialization.ObjectSerializer
 
 import scala.concurrent.duration._
 import scala.language.existentials

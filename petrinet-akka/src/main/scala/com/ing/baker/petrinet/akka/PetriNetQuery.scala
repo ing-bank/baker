@@ -7,8 +7,9 @@ import akka.stream.scaladsl._
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime._
-import com.ing.baker.petrinet.runtime.persistence.Encryption.NoEncryption
-import com.ing.baker.petrinet.runtime.persistence.{Encryption, ProtobufSerialization}
+import com.ing.baker.petrinet.runtime.persistence.ProtobufSerialization
+import com.ing.baker.serialization.Encryption
+import com.ing.baker.serialization.Encryption.NoEncryption
 
 object PetriNetQuery {
 
