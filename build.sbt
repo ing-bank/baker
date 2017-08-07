@@ -68,6 +68,7 @@ lazy val petrinetAkka = project.in(file("petrinet-akka"))
       akkaTestKit,
       akkaStreamTestKit,
       scalaTest,
+      scalaCheck,
       mockito,
       logback
     )

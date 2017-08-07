@@ -11,12 +11,14 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
 
   lazy val objectSerializer = new AkkaObjectSerializer(system)
 
-  override def identifier: Int = 123
+  // Hardcoded serializerId for this serializer. This should not conflict with other serializers.
+  // Values from 0 to 40 are reserved for Akka internal usage.
+  override def identifier: Int = 101
 
   override def manifest(o: AnyRef): String = {
     o match {
-      case e: core.RuntimeEvent => "RuntimeEvent"
-      case e: core.ProcessState => "ProcessState"
+      case _: core.RuntimeEvent => "RuntimeEvent"
+      case _: core.ProcessState => "ProcessState"
     }
   }
 

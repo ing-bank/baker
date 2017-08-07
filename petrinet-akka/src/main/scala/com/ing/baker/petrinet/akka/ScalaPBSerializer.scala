@@ -1,8 +1,6 @@
 package com.ing.baker.petrinet.akka
 
 import java.io.ByteArrayOutputStream
-import java.nio.ByteBuffer
-import java.nio.charset.Charset
 
 import akka.actor.ExtendedActorSystem
 import akka.serialization.SerializerWithStringManifest
@@ -21,9 +19,6 @@ object ScalaPBSerializer {
     val moduleMirror = universeMirror.reflectModule(classSymbol.companion.asModule)
     clazz -> moduleMirror.instance.asInstanceOf[GeneratedMessageCompanion[_] with Message[_]]
   }
-
-  val UTF8: Charset = Charset.forName("UTF-8")
-  val Identifier: Int = ByteBuffer.wrap("akka-scalapb-serializer".getBytes(UTF8)).getInt
 }
 
 class ScalaPBSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
@@ -43,7 +38,9 @@ class ScalaPBSerializer(system: ExtendedActorSystem) extends SerializerWithStrin
     case (manifest, (clazz, _)) => clazz -> manifest
   }.toMap
 
-  override def identifier: Int = ScalaPBSerializer.Identifier
+  // Hardcoded serializerId for this serializer. This should not conflict with other serializers.
+  // Values from 0 to 40 are reserved for Akka internal usage.
+  override def identifier: Int = 102
 
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = {
     manifests.get(manifest).
@@ -52,7 +49,7 @@ class ScalaPBSerializer(system: ExtendedActorSystem) extends SerializerWithStrin
   }
 
   override def manifest(o: AnyRef): String = {
-    class2ManifestMap(o.getClass)
+    class2ManifestMap.getOrElse(o.getClass, throw new IllegalStateException(s"Manifest config not found for class ${o.getClass}"))
   }
 
   override def toBinary(o: AnyRef): Array[Byte] = {
