@@ -292,7 +292,7 @@ trait TestRecipeHelper
     with BeforeAndAfter
     with BeforeAndAfterAll {
 
-  val actorSystemName: String
+  def actorSystemName: String
 
   //Values to use for setting and checking the ingredients
 

@@ -50,7 +50,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ConfigFac
     TestKit.shutdownActorSystem(system)
   }
 
-  "ProcessIndex" ignore {
+  "ProcessIndex" should {
 
     "create the PetriNetInstance actor when Initialize message is received" in {
       val initializeCmd = Initialize(Marking.empty[Place])

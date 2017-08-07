@@ -11,7 +11,7 @@ import com.ing.baker.serialization.common.SerializedData
 
 class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
 
-  val objectSerializer = new AkkaObjectSerializer(system)
+  lazy val objectSerializer = new AkkaObjectSerializer(system)
 
   override def identifier: Int = 123
 
