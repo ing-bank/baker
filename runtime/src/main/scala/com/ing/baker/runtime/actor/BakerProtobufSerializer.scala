@@ -2,12 +2,10 @@ package com.ing.baker.runtime.actor
 
 import akka.actor.ExtendedActorSystem
 import akka.serialization.SerializerWithStringManifest
-import com.google.protobuf.ByteString
 import com.ing.baker.petrinet.akka.AkkaObjectSerializer
 import com.ing.baker.runtime.actor.messages.Ingredient
 import com.ing.baker.runtime.core
 import com.ing.baker.serialization._
-import com.ing.baker.serialization.common.SerializedData
 
 class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
 
@@ -26,7 +24,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     ingredients.map { case (name, value) =>
 
       val serializedObject = objectSerializer.serializeObject(value.asInstanceOf[AnyRef])
-      val objectMessage = transformSerializedObject(serializedObject)
+      val objectMessage = transformToProto(serializedObject)
 
       messages.Ingredient(Some(name), Some(objectMessage))
     }.toSeq
@@ -36,7 +34,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     ingredients.map {
       case messages.Ingredient(Some(name), Some(data)) =>
 
-        val deserializedData = transformSerializedData(data)
+        val deserializedData = transformFromProto(data)
         val deserializedObject = objectSerializer.deserializeObject(deserializedData)
         name -> deserializedObject
     }.toMap

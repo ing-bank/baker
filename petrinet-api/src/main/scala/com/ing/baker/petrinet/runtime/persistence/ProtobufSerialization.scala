@@ -7,8 +7,8 @@ import com.ing.baker.petrinet.runtime.persistence.ProtobufSerialization._
 import com.ing.baker.petrinet.runtime.persistence.messages.FailureStrategy
 import com.ing.baker.petrinet.runtime.persistence.messages.FailureStrategy.StrategyType
 import com.ing.baker.petrinet.runtime.{EventSourcing, Instance}
-import com.ing.baker.serialization._
 import com.ing.baker.serialization.common.SerializedData
+import com.ing.baker.serialization.{ObjectSerializer, transformFromProto}
 
 object ProtobufSerialization {
 
@@ -54,7 +54,7 @@ class ProtobufSerialization[P[_], T[_, _], S](
    */
   def serializeEvent(e: EventSourcing.Event): Instance[P, T, S] ⇒ AnyRef =
     instance ⇒ e match {
-      case e: InitializedEvent[_]              ⇒ serializeInitialized(e.asInstanceOf[InitializedEvent[P]])
+      case e: InitializedEvent[_]            ⇒ serializeInitialized(e.asInstanceOf[InitializedEvent[P]])
       case e: TransitionFiredEvent[_, _, _]  ⇒ serializeTransitionFired(e.asInstanceOf[TransitionFiredEvent[P, T, Any]])
       case e: TransitionFailedEvent[_, _, _] ⇒ serializeTransitionFailed(e.asInstanceOf[TransitionFailedEvent[P, T, Any]])
     }
@@ -68,12 +68,12 @@ class ProtobufSerialization[P[_], T[_, _], S](
   }
 
   def deserializeObject(obj: SerializedData): AnyRef = {
-    (transformSerializedData _).andThen(serializer.deserializeObject)(obj)
+    (transformFromProto _).andThen(serializer.deserializeObject)(obj)
   }
 
   private def deserializeProducedMarking(instance: Instance[P, T, S], produced: Seq[messages.ProducedToken]): Marking[P] = {
     produced.foldLeft(Marking.empty[P]) {
-      case (accumulated, messages.ProducedToken(Some(placeId), Some(tokenId), Some(count), data)) ⇒
+      case (accumulated, messages.ProducedToken(Some(placeId), Some(_), Some(count), data)) ⇒
         val place = instance.process.places.getById(placeId).asInstanceOf[P[Any]]
         val value = data.map(deserializeObject).getOrElse(())
         accumulated.add(place, value, count)
@@ -191,7 +191,7 @@ class ProtobufSerialization[P[_], T[_, _], S](
     val consumed: Marking[P] = deserializeConsumedMarking(instance, e.consumed)
     val produced: Marking[P] = deserializeProducedMarking(instance, e.produced)
 
-    val output = e.data.map(deserializeObject).getOrElse(null)
+    val output = e.data.map(deserializeObject).orNull
 
     val transitionId = e.transitionId.getOrElse(missingFieldException("transition_id"))
     val transition = instance.process.transitions.getById(transitionId)
