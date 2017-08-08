@@ -62,7 +62,7 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
 
           val outputEvent = interaction.providesType match {
             case petrinet.FiresOneOfEvents(events, _) =>
-              sample(Gen.oneOf(events.map(e => RuntimeEvent(e.name, ingredientValuesFrom[IngredientType](e.providedIngredients, _.name)))))
+              sample(Gen.oneOf(events.map(e => RuntimeEvent(e.name, ingredientValuesFrom[IngredientType](e.ingredientTypes, _.name)))))
             case petrinet.ProvidesIngredient(ingredient) =>
               RuntimeEvent(sample(nameGen), ingredientValuesFrom[IngredientType](Seq(ingredient), _.name))
             case petrinet.ProvidesNothing =>
@@ -77,7 +77,7 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
       baker.bake(processId)
       sensoryEvents foreach { event =>
         println(s"Handle sensory event: ${event.name}")
-        baker.handleEvent(processId, RuntimeEvent(event.name, ingredientValuesFrom[IngredientType](event.providedIngredients, _.name)))
+        baker.handleEvent(processId, RuntimeEvent(event.name, ingredientValuesFrom[IngredientType](event.ingredientTypes, _.name)))
       }
       dumpToFile(s"visualRecipeState-${compiledRecipe.name}", baker.getVisualState(processId))
 

@@ -241,12 +241,10 @@ class Baker(val compiledRecipe: CompiledRecipe,
       case e => Baker.eventExtractor.extractEvent(e)
     }
 
-    val eventType = compiledRecipe.sensoryEvents.find(se => se.name == runtimeEvent.name)
-      .getOrElse(throw new BakerException(s"Fired event $event is not recognised as any valid sensory event"))
+    if (!compiledRecipe.sensoryEvents.exists(_ equals runtimeEvent.eventType))
+      throw new BakerException(s"Fired event ${runtimeEvent.name} is not recognised as any valid sensory event")
 
-    val validatedEvent = runtimeEvent.validate(eventType)
-
-    val msg = createEventMsg(processId, validatedEvent)
+    val msg = createEventMsg(processId, runtimeEvent)
     val source = petriNetApi.askAndCollectAll(msg, waitForRetries = true)(timeout)
     new BakerResponse(processId, source)
   }

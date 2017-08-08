@@ -49,7 +49,7 @@ object TestRecipeHelper {
   //Events as used in the recipe & objects used in runtime
   val initialEvent = Event("InitialEvent", initialIngredient, None)
 
-  case class InitialEvent(initialIngredient: String) {}
+  case class InitialEvent(initialIngredient: String)
 
   val initialEventExtendedName = Event("InitialEventExtendedName", initialIngredientExtendedName)
 

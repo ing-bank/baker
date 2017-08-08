@@ -3,7 +3,7 @@ package com.ing.baker.runtime.petrinet
 import java.util.UUID
 
 import com.ing.baker.il.petrinet.{FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing}
-import com.ing.baker.il.{EventType, IngredientType, processIdName}
+import com.ing.baker.il.{IngredientType, processIdName}
 import com.ing.baker.runtime.core.{BakerException, ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.event_extractors.{EventExtractor, PojoEventExtractor}
 import org.slf4j.{LoggerFactory, MDC}
@@ -16,7 +16,7 @@ object ReflectedInteractionTask {
 
   val eventExtractor: EventExtractor = new PojoEventExtractor()
 
-  def implementationsToProviderMap(implementations: Seq[AnyRef]) : Map[String, AnyRef] = {
+  def implementationsToProviderMap(implementations: Seq[AnyRef]): Map[String, AnyRef] = {
     implementations.flatMap(im => getPossibleInteractionNamesForImplementation(im).map(_ -> im)).toMap
   }
 
@@ -25,14 +25,15 @@ object ReflectedInteractionTask {
     * This is its own class name
     * The class name of any interface it implements
     * The value of the field "name"
+    *
     * @param obj
     * @return List of possible interaction names this obj can be implementing
     */
-  def getPossibleInteractionNamesForImplementation(obj: Any) : Set[String] = {
-    val nameField: String = Try{
+  def getPossibleInteractionNamesForImplementation(obj: Any): Set[String] = {
+    val nameField: String = Try {
       obj.getClass.getDeclaredField("name")
     }.toOption match {
-      case Some(field) if field.getType == classOf[String]  => {
+      case Some(field) if field.getType == classOf[String] => {
         field.setAccessible(true)
         field.get(obj).asInstanceOf[String]
       }
@@ -45,13 +46,13 @@ object ReflectedInteractionTask {
   def createInteractionFunctions(interactions: Set[InteractionTransition[_]], implementations: Map[String, AnyRef]): InteractionTransition[_] => (ProcessState => RuntimeEvent) = {
 
     val implementationErrors = checkIfValidImplementationsProvided(implementations, interactions)
-    if(implementationErrors.nonEmpty)
+    if (implementationErrors.nonEmpty)
       throw new BakerException(implementationErrors.mkString(", "))
 
     (i: InteractionTransition[_]) => ReflectedInteractionTask.interactionTask(i.asInstanceOf[InteractionTransition[AnyRef]], () => implementations.apply(i.originalInteractionName))
   }
 
-  private def checkIfImplementationIsValidForInteraction(implementation: AnyRef, interaction: InteractionTransition[_]): Boolean ={
+  private def checkIfImplementationIsValidForInteraction(implementation: AnyRef, interaction: InteractionTransition[_]): Boolean = {
     Try {
       implementation.getClass.getMethod("apply", interaction.inputFields.map(_._2): _*)
     }.isSuccess
@@ -67,7 +68,8 @@ object ReflectedInteractionTask {
     val invalidImplementations: Seq[String] = neededImplementations.flatMap { case (neededInteractionName, impl) => {
       if (checkIfImplementationIsValidForInteraction(impl, actions.find(_.originalInteractionName == neededInteractionName).get)) None
       else Some(s"Invalid implementation provided for interaction: $neededInteractionName")
-    }}.toSeq
+    }
+    }.toSeq
 
     missingImplementations ++ invalidImplementations
   }
@@ -82,7 +84,7 @@ object ReflectedInteractionTask {
 
     def invokeMethod(): AnyRef = {
       MDC.put("processId", processState.processId.toString)
-      val result = interactionObject.getClass.getMethod("apply", interaction.inputFields.map(_._2): _*) .invoke(interactionObject, inputArgs: _*)
+      val result = interactionObject.getClass.getMethod("apply", interaction.inputFields.map(_._2): _*).invoke(interactionObject, inputArgs: _*)
       log.trace(s"[$invocationId] result: $result")
 
       MDC.remove("processId")
@@ -92,16 +94,14 @@ object ReflectedInteractionTask {
     def createRuntimeEvent(output: Any): RuntimeEvent = {
       interaction.providesType match {
         case FiresOneOfEvents(_, originalEvents) =>
-        {
-          val optionalFoundEvent: Option[EventType] = originalEvents.find(e => e.name equals output.getClass.getSimpleName)
-          if (optionalFoundEvent.isDefined)
-            eventExtractor.extractEvent(output).validate(optionalFoundEvent.get)
-          else {
+          val runtimeEvent = eventExtractor.extractEvent(output)
+          if (originalEvents.exists(_ equals runtimeEvent.eventType)) {
+            runtimeEvent
+          } else {
             val msg: String = s"Output: $output fired by an interaction but could not link it to any known event for the interaction"
             log.error(msg)
             throw new FatalInteractionException(msg)
           }
-        }
         case ProvidesIngredient(ingredient) => runtimeEventForIngredient(interaction.interactionName, output, ingredient)
         case ProvidesNothing => RuntimeEvent(s"${interaction.interactionName}:ProvidedNothing", Map.empty)
       }
@@ -111,7 +111,7 @@ object ReflectedInteractionTask {
   }
 
   def runtimeEventForIngredient(firedInteractionName: String, providedIngredient: Any, ingredientToComplyTo: IngredientType): RuntimeEvent = {
-    if(ingredientToComplyTo.clazz.isAssignableFrom(providedIngredient.getClass))
+    if (ingredientToComplyTo.clazz.isAssignableFrom(providedIngredient.getClass))
       RuntimeEvent(s"$firedInteractionName:${ingredientToComplyTo.name}", Map(ingredientToComplyTo.name -> providedIngredient))
     //TODO Decide what to do when the ingredient is not of the correct typing, for now a Ingredient is create with a null value
     else {

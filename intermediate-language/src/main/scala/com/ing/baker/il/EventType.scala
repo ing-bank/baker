@@ -1,3 +1,3 @@
 package com.ing.baker.il
 
-case class EventType(name: String, providedIngredients: Seq[IngredientType])
+case class EventType(name: String, ingredientTypes: Seq[IngredientType])
