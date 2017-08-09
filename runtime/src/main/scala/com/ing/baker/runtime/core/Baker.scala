@@ -8,6 +8,7 @@ import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
+import akka.serialization.{DisabledJavaSerializer, SerializationExtension}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
@@ -40,6 +41,26 @@ object Baker {
     compiledRecipe.petriNet.transitions.findByLabel(runtimeEvent.name).getOrElse {
       throw new IllegalArgumentException(s"No such event known in recipe: $runtimeEvent")
     }
+
+  def checkIngredientSerializable(compiledRecipe: CompiledRecipe, actorSystem: ActorSystem) = {
+
+    val serialization = SerializationExtension(actorSystem)
+
+    compiledRecipe.ingredients.foreach {
+      case (name, ingredientType) =>
+        try {
+          val serializer = serialization.serializerFor(ingredientType.clazz)
+          if (serializer.isInstanceOf[DisabledJavaSerializer])
+            throw new IllegalStateException("DisabledJavaSerializer is not allowed")
+        } catch {
+          case e: Exception =>
+            throw new IllegalStateException(
+              s"Ingredient '$name' of type '${ingredientType.clazz} cannot be serialized\n" +
+              s"Please add a binding in your application.conf like this:\n" +
+              s"akka.actor.serialization-bindings.${ingredientType.clazz.getName} = kryo", e)
+        }
+    }
+  }
 }
 
 /**
@@ -69,6 +90,8 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   if (!config.as[Option[Boolean]]("baker.config-file-included").getOrElse(false))
     throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
+
+  checkIngredientSerializable(compiledRecipe, actorSystem)
 
   private val bakeTimeout = config.as[FiniteDuration]("baker.bake-timeout")
   private val journalInitializeTimeout = config.as[FiniteDuration]("baker.journal-initialize-timeout")

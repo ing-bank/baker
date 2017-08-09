@@ -10,7 +10,6 @@ class AkkaObjectSerializer(system: ActorSystem, encryption: Encryption = NoEncry
   private val serialization = SerializationExtension.get(system)
 
   override def serializeObject(obj: AnyRef): SerializedObject = {
-    // for now we re-use akka Serialization extension for pluggable serializers
     val serializer = serialization.findSerializerFor(obj)
     val bytes = encryption.encrypt(serializer.toBinary(obj))
 
