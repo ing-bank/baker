@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.9
+
+- Changed serialization mechanism to allow custom akka serializers for ingredients where before only kryo was used.
+
+  You might see these messages for ingredient types without bindings:
+
+  Ingredient 'Bar' of type 'com.example.Foo' cannot be serialized
+  Please add a binding in your application.conf like this:
+  akka.actor.serialization-bindings {
+    "com.example.Foo" = kryo
+  }
+
 ## 1.0.8
 - Added the functionality that if an Ingredient of Java Optional or Scala Option is needed but not provided its provided as empty.
 - Side note (no impact for baker users): kagara library is merged into baker, therefore baker has 2 new artifacts now: petrinet-api and petrinet-akka.
