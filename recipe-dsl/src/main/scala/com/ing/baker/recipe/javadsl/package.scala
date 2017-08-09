@@ -47,7 +47,7 @@ package object javadsl {
         else if (method.isAnnotationPresent(classOf[annotations.FiresEvent])) {
           val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[annotations.FiresEvent]).oneOf()
           val events: Seq[common.Event] = outputEventClasses.map(eventClassToCommonEvent(_, None))
-          common.FiresOneOfEvents(events)
+          common.FiresOneOfEvents(events: _*)
         }
         //ProvidesNothing
         else common.ProvidesNothing

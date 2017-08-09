@@ -20,6 +20,6 @@ object JavadslTestHelper {
   //Interactions
   val providesIngredientInteractionCheck: common.Interaction = scaladsl.Interaction("ProvidesIngredientInteraction", Seq(initialIngredientCheck), common.ProvidesIngredient(firstProvidedIngredientCheck))
   val requiresProcessIdStringInteractionCheck: common.Interaction = scaladsl.Interaction("RequiresProcessIdStringInteraction", Seq(ProcessIdStringCheck, initialIngredientCheck), common.ProvidesNothing)
-  val firesEventInteractionCheck: common.Interaction = scaladsl.Interaction("FiresEventInteraction", Seq(initialIngredientCheck), common.FiresOneOfEvents(Seq(interactionProvidedEventCheck)))
-  val firesTwoEventInteractionCheck: common.Interaction = scaladsl.Interaction("FiresTwoEventInteraction", Seq(initialIngredientCheck), common.FiresOneOfEvents(Seq(interactionProvidedEventCheck, interactionProvidedEvent2Check)))
+  val firesEventInteractionCheck: common.Interaction = scaladsl.Interaction("FiresEventInteraction", Seq(initialIngredientCheck), common.FiresOneOfEvents(interactionProvidedEventCheck))
+  val firesTwoEventInteractionCheck: common.Interaction = scaladsl.Interaction("FiresTwoEventInteraction", Seq(initialIngredientCheck), common.FiresOneOfEvents(interactionProvidedEventCheck, interactionProvidedEvent2Check))
 }

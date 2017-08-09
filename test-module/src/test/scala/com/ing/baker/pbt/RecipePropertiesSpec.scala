@@ -27,7 +27,7 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
   test("Baker can compile any valid recipe") {
     val prop = forAll(recipeGen) { recipe =>
       val validations = ValidationSettings(allowCycles = false, allowNonExecutableInteractions = false)
-//      val validations = ValidationSettings(allowCycles = false)
+      //      val validations = ValidationSettings(allowCycles = false)
 
       val compiledRecipe = RecipeCompiler.compileRecipe(recipe, validations)
 
@@ -58,7 +58,8 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
       dumpToFile(s"visualRecipe-${compiledRecipe.name}", compiledRecipe.getRecipeVisualization)
 
       val sensoryEvents: Set[EventType] = compiledRecipe.sensoryEvents
-      val petriNetInteractionMock: InteractionTransition[_] => ProcessState => RuntimeEvent = { interaction => _ =>
+      val petriNetInteractionMock: InteractionTransition[_] => ProcessState => RuntimeEvent = { interaction =>
+        _ =>
 
           val outputEvent = interaction.providesType match {
             case petrinet.FiresOneOfEvents(events, _) =>
@@ -120,7 +121,7 @@ object RecipePropertiesSpec {
     output <- Gen.frequency(
       //      1 -> Gen.const(ProvidesNothing),
       5 -> Gen.const(ProvidesIngredient(ingredient)),
-      10 -> Gen.const(FiresOneOfEvents(events)))
+      10 -> Gen.const(FiresOneOfEvents(events: _*)))
   } yield output
 
   val recipeGen: Gen[Recipe] = for {
@@ -186,7 +187,7 @@ object RecipePropertiesSpec {
     //return the interaction description and a list of all ingredients that the interaction provides
     val (outputIngredients: Set[common.Ingredient], outputEvents: Set[common.Event]) = output match {
       case ProvidesNothing => (Set.empty, Set.empty)
-      case FiresOneOfEvents(_events) => (Set.empty, _events.toSet)
+      case FiresOneOfEvents(_events@_*) => (Set.empty, _events.toSet)
       case ProvidesIngredient(ingredient) => (Set(ingredient), Set.empty)
     }
 
