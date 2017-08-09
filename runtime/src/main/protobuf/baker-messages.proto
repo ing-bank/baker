@@ -16,7 +16,7 @@ message Ingredient {
 
 message RuntimeEvent {
     optional string name = 1;
-    repeated Ingredient ingredients = 2;
+    repeated Ingredient providedIngredients = 2;
 }
 
 message ProcessState {

@@ -4,11 +4,11 @@ import com.ing.baker.il.{EventType, IngredientType}
 
 
 case class RuntimeEvent(name: String,
-                        ingredients: Map[String, Any]) {
+                        providedIngredients: Map[String, Any]) {
   /**
     * the EventType of this RuntimeEvent (meta information of this event)
     */
-  val eventType: EventType = EventType(name, ingredients.map {
+  val eventType: EventType = EventType(name, providedIngredients.map {
     case (ingredientName, ingredientValue) => IngredientType(ingredientName, ingredientValue.getClass)
   }.toSeq)
 }

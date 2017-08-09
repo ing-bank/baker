@@ -46,7 +46,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     // translate domain model to protobuf
     o match {
       case e: core.RuntimeEvent =>
-        val ingredients = writeIngredients(e.ingredients)
+        val ingredients = writeIngredients(e.providedIngredients)
         val eventMessage = messages.RuntimeEvent(Some(e.name), ingredients)
         messages.RuntimeEvent.toByteArray(eventMessage)
 
