@@ -42,7 +42,7 @@ object Baker {
       throw new IllegalArgumentException(s"No such event known in recipe: $runtimeEvent")
     }
 
-  def checkIngredientSerializable(compiledRecipe: CompiledRecipe, actorSystem: ActorSystem) = {
+  def checkIngredientSerializable(compiledRecipe: CompiledRecipe, actorSystem: ActorSystem): Unit = {
 
     val serialization = SerializationExtension(actorSystem)
 
@@ -55,9 +55,13 @@ object Baker {
         } catch {
           case e: Exception =>
             throw new IllegalStateException(
-              s"Ingredient '$name' of type '${ingredientType.clazz} cannot be serialized\n" +
-              s"Please add a binding in your application.conf like this:\n" +
-              s"akka.actor.serialization-bindings.${ingredientType.clazz.getName} = kryo", e)
+              s"""
+                 |Ingredient '$name' of type '${ingredientType.clazz} cannot be serialized
+                 |Please add a binding in your application.conf like this:
+                 |akka.actor.serialization-bindings {
+                 |  "${ingredientType.clazz.getName}" = kryo
+                 |}
+               """.stripMargin, e)
         }
     }
   }

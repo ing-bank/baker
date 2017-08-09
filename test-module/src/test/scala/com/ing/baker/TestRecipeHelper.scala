@@ -21,7 +21,7 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 
 //By adding the javadsl Ingredient tag the object will be serialized by Kryo
-class ComplexObjectIngredient(value: String) extends javadsl.Ingredient {}
+class ComplexObjectIngredient(value: String)
 case class CaseClassIngredient(a: Int, b: String)
 
 object TestRecipeHelper {
