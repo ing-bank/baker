@@ -15,7 +15,7 @@ class BakerProtobufSerializerSpec extends TestKit(ActorSystem("BakerProtobufSeri
 
   val ingredientTupleGen: Gen[(String, Any)] = for {
     name <- Gen.alphaNumStr
-    data <- Gen.alphaNumStr // using String here because it has kryo bindings already registered
+    data <- Gen.alphaNumStr // this uses akka.remote.serialization.StringSerializer
   } yield (name, data)
 
   val runtimeEventGen: Gen[RuntimeEvent] = for {
