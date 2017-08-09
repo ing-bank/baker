@@ -33,20 +33,4 @@ trait Recipe {
     * The period that processes can receive events for this recipe.
     */
   val eventReceivePeriod: Duration
-
-  override def toString: String = {
-    s"""{
-        |  Recipe: $name
-        |  Interactions:{
-        |${interactions.mkString("\n")}
-        |  }
-        |  Sieves:{
-        |${sieves.mkString("\n")}
-        |  }
-        |  Events:{
-        |${sensoryEvents.mkString("\n")}
-        |  }
-        |}
-        |""".stripMargin
-  }
 }

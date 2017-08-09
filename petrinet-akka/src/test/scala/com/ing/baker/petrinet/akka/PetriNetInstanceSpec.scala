@@ -34,7 +34,7 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
 
   "A persistent petri net actor" should {
 
-    "Respond with an Initialized response after processing an Initialized command" in new TestSequenceNet {
+    "Respond with an Initialized response after processing an Initialize command" in new TestSequenceNet {
 
       override val sequence = Seq(
         transition()(_ ⇒ Added(1)),
@@ -47,6 +47,23 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
 
       actor ! Initialize(marshal[Place](initialMarking), initialState)
       expectMsg(Initialized(marshal[Place](initialMarking), initialState))
+    }
+
+    "Respond with an AlreadyInitialized response after processing an Initialize command for the second time" in new TestSequenceNet {
+
+      override val sequence = Seq(
+        transition()(_ ⇒ Added(1)),
+        transition()(_ ⇒ Added(2))
+      )
+
+      val initialState = Set(1, 2, 3)
+
+      val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
+
+      actor ! Initialize(marshal[Place](initialMarking), initialState)
+      actor ! Initialize(marshal[Place](initialMarking), initialState)
+      expectMsg(Initialized(marshal[Place](initialMarking), initialState))
+      expectMsg(AlreadyInitialized)
     }
 
     "Before being initialized respond with an Uninitialized message and terminate on receiving a GetState command" in new TestSequenceNet {
@@ -63,7 +80,7 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
       expectMsgClass(classOf[Uninitialized])
     }
 
-    "Afer being initialized respond with an InstanceState message on receiving a GetState command" in new TestSequenceNet {
+    "After being initialized respond with an InstanceState message on receiving a GetState command" in new TestSequenceNet {
 
       override val sequence = Seq(
         transition()(_ ⇒ Added(1)),

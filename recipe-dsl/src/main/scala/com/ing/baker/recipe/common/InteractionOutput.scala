@@ -2,19 +2,9 @@ package com.ing.baker.recipe.common
 
 sealed trait InteractionOutput
 
-case class ProvidesIngredient(ingredient: Ingredient) extends InteractionOutput {
-  override def toString: String = toString("")
-  def toString(appender: String): String = {
-    s"""${appender}ProvidesIngredient($ingredient)""".stripMargin
-  }
-}
+case class ProvidesIngredient(ingredient: Ingredient) extends InteractionOutput
 
-case class FiresOneOfEvents(events: Seq[Event]) extends InteractionOutput {
-  override def toString: String = {
-    s"""FiresOneOfEvents:{
-       |${events.mkString("\n")}}""".stripMargin
-  }
-}
+case class FiresOneOfEvents(events: Seq[Event]) extends InteractionOutput
 
 object FiresOneOfEvents {
   def apply(event: Event): FiresOneOfEvents = FiresOneOfEvents(Seq(event))
@@ -24,6 +14,4 @@ object FiresOneOfEvents {
   def apply(eventOne: Event, eventTwo: Event, eventThree: Event, eventFour: Event, eventFive: Event): FiresOneOfEvents = FiresOneOfEvents(Seq(eventOne, eventTwo, eventThree, eventFour, eventFive))
 }
 
-case object ProvidesNothing extends InteractionOutput {
-  override def toString: String = "ProvidesNothing:"
-}
+case object ProvidesNothing extends InteractionOutput

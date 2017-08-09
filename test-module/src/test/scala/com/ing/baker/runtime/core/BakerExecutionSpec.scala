@@ -20,8 +20,11 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.Success
 
+case class SomeNotDefinedEvent(name: String)
+
 class BakerExecutionSpec extends TestRecipeHelper {
 
+  override def actorSystemName = "BakerExecutionSpec"
   implicit val timeout: FiniteDuration = 10 seconds
 
   before {
@@ -79,6 +82,14 @@ class BakerExecutionSpec extends TestRecipeHelper {
       intercept[NoSuchProcessException] {
         Await.result(response.completedFuture, timeout)
       }
+    }
+
+    "throw a BakerException if fired event is not a valid sensory event" in {
+      val baker = setupBakerWithRecipe("NonExistingProcessEventTest")
+
+      intercept[BakerException] {
+        baker.handleEvent(UUID.randomUUID().toString, SomeNotDefinedEvent("bla"))
+      } should have('message("Fired event SomeNotDefinedEvent is not recognised as any valid sensory event"))
     }
 
     "execute an interaction when its ingredient is provided" in {

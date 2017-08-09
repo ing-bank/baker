@@ -2,15 +2,14 @@ package com.ing.baker.petrinet.akka
 
 import akka.actor.ActorSystem
 import akka.serialization.{SerializationExtension, SerializerWithStringManifest}
-import com.ing.baker.petrinet.runtime.persistence.Encryption.NoEncryption
-import com.ing.baker.petrinet.runtime.persistence.{Encryption, ObjectSerializer, SerializedObject}
+import com.ing.baker.serialization.Encryption.NoEncryption
+import com.ing.baker.serialization.{Encryption, ObjectSerializer, SerializedObject}
 
 class AkkaObjectSerializer(system: ActorSystem, encryption: Encryption = NoEncryption) extends ObjectSerializer {
 
   private val serialization = SerializationExtension.get(system)
 
   override def serializeObject(obj: AnyRef): SerializedObject = {
-    // for now we re-use akka Serialization extension for pluggable serializers
     val serializer = serialization.findSerializerFor(obj)
     val bytes = encryption.encrypt(serializer.toBinary(obj))
 

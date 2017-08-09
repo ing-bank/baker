@@ -49,18 +49,4 @@ trait InteractionDescriptor {
     * An optional strategy how to deal with failures. Falls back to the default strategy specified in the recipe.
     */
   val failureStrategy: Option[InteractionFailureStrategy]
-
-  override def toString(): String = {
-    s"""${interaction.name}{
-       |requiredIngredients:(${interaction.inputIngredients.foldLeft("")((i, j) => s"$i $j")})
-       |${interaction.output.toString}
-       |requiredEvents(${requiredEvents.mkString("\n")})
-       |requiredOneOfEvents(${requiredOneOfEvents.mkString("\n")})
-       |predefinedIngredients(${predefinedIngredients})
-       |overriddenIngredientNames(${overriddenIngredientNames})
-       |overriddenOutputIngredientName(${overriddenOutputIngredientName})
-       |maximumInteractionCount(${maximumInteractionCount})
-       |failureStrategy(${failureStrategy})
-       |eventOutputTransformers(${eventOutputTransformers})""".stripMargin
-  }
 }

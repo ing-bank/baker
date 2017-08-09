@@ -8,6 +8,7 @@ import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
+import akka.serialization.{DisabledJavaSerializer, SerializationExtension}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
@@ -17,12 +18,12 @@ import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
 import com.ing.baker.petrinet.akka._
 import com.ing.baker.petrinet.runtime.EventSourcing.TransitionFiredEvent
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
-import com.ing.baker.petrinet.runtime.persistence.Encryption
-import com.ing.baker.petrinet.runtime.persistence.Encryption.NoEncryption
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.{RecipeRuntime, ReflectedInteractionTask}
+import com.ing.baker.serialization.Encryption
+import com.ing.baker.serialization.Encryption.NoEncryption
 import fs2.Strategy
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
@@ -40,6 +41,30 @@ object Baker {
     compiledRecipe.petriNet.transitions.findByLabel(runtimeEvent.name).getOrElse {
       throw new IllegalArgumentException(s"No such event known in recipe: $runtimeEvent")
     }
+
+  def checkIngredientSerializable(compiledRecipe: CompiledRecipe, actorSystem: ActorSystem): Unit = {
+
+    val serialization = SerializationExtension(actorSystem)
+
+    compiledRecipe.ingredients.foreach {
+      case (name, ingredientType) =>
+        try {
+          val serializer = serialization.serializerFor(ingredientType.clazz)
+          if (serializer.isInstanceOf[DisabledJavaSerializer])
+            throw new IllegalStateException("DisabledJavaSerializer is not allowed")
+        } catch {
+          case e: Exception =>
+            throw new IllegalStateException(
+              s"""
+                 |Ingredient '$name' of type '${ingredientType.clazz} cannot be serialized
+                 |Please add a binding in your application.conf like this:
+                 |akka.actor.serialization-bindings {
+                 |  "${ingredientType.clazz.getName}" = kryo
+                 |}
+               """.stripMargin, e)
+        }
+    }
+  }
 }
 
 /**
@@ -69,6 +94,8 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   if (!config.as[Option[Boolean]]("baker.config-file-included").getOrElse(false))
     throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
+
+  checkIngredientSerializable(compiledRecipe, actorSystem)
 
   private val bakeTimeout = config.as[FiniteDuration]("baker.bake-timeout")
   private val journalInitializeTimeout = config.as[FiniteDuration]("baker.journal-initialize-timeout")
@@ -241,12 +268,10 @@ class Baker(val compiledRecipe: CompiledRecipe,
       case e => Baker.eventExtractor.extractEvent(e)
     }
 
-    val eventType = compiledRecipe.sensoryEvents.find(se => se.name == runtimeEvent.name)
-      .getOrElse(throw new BakerException(s"Fired event $event is not recognised as any valid sensory event"))
+    if (!compiledRecipe.sensoryEvents.exists(_ equals runtimeEvent.eventType))
+      throw new BakerException(s"Fired event ${runtimeEvent.name} is not recognised as any valid sensory event")
 
-    val validatedEvent = runtimeEvent.validate(eventType)
-
-    val msg = createEventMsg(processId, validatedEvent)
+    val msg = createEventMsg(processId, runtimeEvent)
     val source = petriNetApi.askAndCollectAll(msg, waitForRetries = true)(timeout)
     new BakerResponse(processId, source)
   }

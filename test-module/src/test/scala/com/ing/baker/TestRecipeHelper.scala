@@ -21,7 +21,7 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 
 //By adding the javadsl Ingredient tag the object will be serialized by Kryo
-class ComplexObjectIngredient(value: String) extends javadsl.Ingredient {}
+class ComplexObjectIngredient(value: String)
 case class CaseClassIngredient(a: Int, b: String)
 
 object TestRecipeHelper {
@@ -49,7 +49,7 @@ object TestRecipeHelper {
   //Events as used in the recipe & objects used in runtime
   val initialEvent = Event("InitialEvent", initialIngredient, None)
 
-  case class InitialEvent(initialIngredient: String) {}
+  case class InitialEvent(initialIngredient: String)
 
   val initialEventExtendedName = Event("InitialEventExtendedName", initialIngredientExtendedName)
 
@@ -291,6 +291,9 @@ trait TestRecipeHelper
     with MockitoSugar
     with BeforeAndAfter
     with BeforeAndAfterAll {
+
+  def actorSystemName: String
+
   //Values to use for setting and checking the ingredients
 
   //Default values to be used for the ingredients in the tests
@@ -403,7 +406,7 @@ trait TestRecipeHelper
        |logging.root.level = DEBUG
     """.stripMargin)
 
-  implicit protected val defaultActorSystem = ActorSystem("BakerSpec")
+  implicit protected val defaultActorSystem = ActorSystem(actorSystemName)
 
   override def afterAll(): Unit = {
     TestKit.shutdownActorSystem(defaultActorSystem)

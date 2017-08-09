@@ -10,6 +10,8 @@ import scala.language.postfixOps
 
 class BakerSetupSpec extends TestRecipeHelper {
 
+  override def actorSystemName = "BakerSetupSpec"
+
   before {
     resetMocks
   }

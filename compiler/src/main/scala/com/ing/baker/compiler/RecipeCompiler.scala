@@ -200,7 +200,7 @@ object RecipeCompiler {
       t.providesType match {
         case FiresOneOfEvents(events, _) =>
           events.flatMap(event =>
-            event.providedIngredients.map(ingredient =>
+            event.ingredientTypes.map(ingredient =>
               arc(interactionEventTransitions.getByLabel(event.name), createPlace(ingredient.name, IngredientPlace), 1)))
         case _ => Nil
       }
@@ -227,11 +227,11 @@ object RecipeCompiler {
         allInteractionTransitions.findTransitionByName)
     }.unzipFlatten
 
-    val (sensoryEventWithoutIngredients, sensoryEventWithIngredients) = sensoryEventTransitions.partition(_.event.providedIngredients.isEmpty)
+    val (sensoryEventWithoutIngredients, sensoryEventWithIngredients) = sensoryEventTransitions.partition(_.event.ingredientTypes.isEmpty)
 
     // It connects a sensory event to an ingredient places
     val sensoryEventArcs: Seq[Arc] = sensoryEventWithIngredients
-      .flatMap(et => et.event.providedIngredients.map(ingredient => arc(et, createPlace(ingredient.name, IngredientPlace), 1)))
+      .flatMap(et => et.event.ingredientTypes.map(ingredient => arc(et, createPlace(ingredient.name, IngredientPlace), 1)))
 
     val eventThatArePreconditions: Seq[String] =
       actionDescriptors.flatMap {
