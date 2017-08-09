@@ -6,7 +6,7 @@
 
   You might see these messages for ingredient types without bindings:
 
-  Ingredient 'Bar' of type 'com.example.Foo' cannot be serialized
+  Ingredient 'foo' of type 'com.example.Foo' cannot be serialized
   Please add a binding in your application.conf like this:
   akka.actor.serialization-bindings {
     "com.example.Foo" = kryo
