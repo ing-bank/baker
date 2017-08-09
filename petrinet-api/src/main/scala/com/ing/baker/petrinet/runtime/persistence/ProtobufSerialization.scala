@@ -1,5 +1,7 @@
 package com.ing.baker.petrinet.runtime.persistence
 
+import java.security.MessageDigest
+
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Fatal, RetryWithDelay}
@@ -18,11 +20,18 @@ object ProtobufSerialization {
     * This approach is fragile, the identifier function cannot change ever or recovery breaks
     * a more robust alternative is to generate the ids and persist them
     */
-  def tokenIdentifier[P[_], C](p: P[C]): Any ⇒ Int = obj ⇒ hashCodeOf[Any](obj)
+  def tokenIdentifier[P[_], C](p: P[C]): Any ⇒ Long = obj ⇒ hashCodeOf[Any](obj)
 
-  // TODO use sha256 hashcode function here
-  def hashCodeOf[T](e: T): Int = if (e == null) -1 else e.hashCode()
+  def sha256(str: String) = {
+    val sha256Digest: MessageDigest = MessageDigest.getInstance("SHA-256")
+    BigInt(1, sha256Digest.digest(str.getBytes("UTF-8"))).toLong
+  }
 
+  def hashCodeOf[T](e: T): Long = e match {
+    case null        => -1
+    case str: String => sha256(str)
+    case obj         => obj.hashCode()
+  }
 }
 
 /**
