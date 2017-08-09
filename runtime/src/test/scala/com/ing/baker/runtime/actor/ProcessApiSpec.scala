@@ -4,28 +4,39 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
+import akka.stream.testkit.TestSubscriber
 import akka.stream.testkit.scaladsl.TestSink
-import akka.testkit.{TestKit, TestProbe}
+import akka.testkit.{TestDuration, TestKit, TestProbe}
 import akka.util.Timeout
 import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Matchers._
 import org.scalatest.WordSpecLike
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec")) with WordSpecLike {
+object ProcessApiSpec {
+  val config: Config = ConfigFactory.parseString(
+    """
+      |akka.persistence.journal.plugin = "inmemory-journal"
+      |akka.persistence.snapshot-store.plugin = "inmemory-snapshot-store"
+      |akka.test.timefactor = 3.0
+    """.stripMargin)
+}
 
-  implicit def materializer = ActorMaterializer()
-  implicit def ec: ExecutionContext = system.dispatcher
+class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec", ProcessApiSpec.config)) with WordSpecLike {
 
-  implicit val akkaTimout = Timeout(2 seconds)
-  implicit val waitTimeout: FiniteDuration = 2 seconds
+  implicit val materializer = ActorMaterializer()
+  implicit val ec: ExecutionContext = system.dispatcher
+
+  // Using dilated timeout to take into account the akka.test.timefactor config
+  implicit val akkaTimeout = Timeout(2.seconds.dilated)
 
   "The ProcessApi" should {
 
-    "Return a source of FireTransition responses resulting from a TransitionFired command" in  {
+    "return a source of FireTransition responses resulting from a TransitionFired command" in {
 
       val processProbe = TestProbe()
 
@@ -35,7 +46,7 @@ class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec")) with WordSpe
 
       val source: Source[Any, NotUsed] = api.askAndCollectAll(fireCmd)
 
-      val runSource = source.map(_.asInstanceOf[TransitionResponse].transitionId).runWith(TestSink.probe)
+      val runSource: TestSubscriber.Probe[Long] = source.map(_.asInstanceOf[TransitionResponse].transitionId).runWith(TestSink.probe)
 
       processProbe.expectMsg(fireCmd)
 
@@ -47,7 +58,7 @@ class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec")) with WordSpe
       runSource.expectComplete()
     }
 
-    "Wait for the completion of all jobs even if one fails with TransitionFailed" in {
+    "wait for the completion of all jobs even if one fails with TransitionFailed" in {
 
       val processProbe = TestProbe()
 
@@ -69,7 +80,7 @@ class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec")) with WordSpe
       runSource.expectComplete()
     }
 
-    "Return an empty source when the petri net instance repsponds with Uninitialized" in {
+    "return an empty source when the petri net instance repsponds with Uninitialized" in {
 
       val processProbe = TestProbe()
       val api = new ProcessApi(processProbe.ref)
