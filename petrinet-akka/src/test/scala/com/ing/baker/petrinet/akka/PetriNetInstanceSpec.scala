@@ -1,9 +1,11 @@
 package com.ing.baker.petrinet.akka
 
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
-import akka.actor.{ActorRef, PoisonPill, SupervisorStrategy, Terminated}
+import akka.actor.{ActorRef, ActorSystem, PoisonPill, SupervisorStrategy, Terminated}
 import akka.pattern.ask
+import akka.testkit.TestDuration
 import akka.util.Timeout
 import com.ing.baker.petrinet.akka.AkkaTestBase.GetChild
 import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
@@ -25,11 +27,13 @@ import scala.util.Success
 
 class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSugar {
 
+  def dilatedMillis(millis: Long)(implicit system: ActorSystem): Long = FiniteDuration(millis, TimeUnit.MILLISECONDS).dilated.toMillis
+
   def syncKillActorWithPoisonPill(actor: ActorRef): Unit = {
     watch(actor)
     actor ! PoisonPill
     expectMsgClass(classOf[Terminated])
-    Thread.sleep(100)
+    Thread.sleep(dilatedMillis(100))
   }
 
   "A persistent petri net actor" should {
@@ -159,7 +163,7 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
     "Retry to execute a transition with a delay when the exception strategy indicates so" in new TestSequenceNet {
 
       val retryHandler: TransitionExceptionHandler = {
-        case (e, n) if n < 3 ⇒ RetryWithDelay((10 * Math.pow(2, n)).toLong)
+        case (e, n) if n < 3 ⇒ RetryWithDelay(dilatedMillis(10 * Math.pow(2, n).toLong))
         case _               ⇒ Fatal
       }
 
@@ -177,9 +181,12 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
 
       actor ! FireTransition(1, ())
 
+      val Delay1: Long = dilatedMillis(20)
+      val Delay2: Long = dilatedMillis(40)
+
       // expect 3 failure messages
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, RetryWithDelay(20)) ⇒ }
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, RetryWithDelay(40)) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, RetryWithDelay(Delay1)) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, RetryWithDelay(Delay2)) ⇒ }
       expectMsgPF() { case TransitionFailed(_, 1, _, _, _, Fatal) ⇒ }
 
       // attempt to fire t1 explicitly
@@ -230,8 +237,10 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
     }
 
     "Re-fire a failed transition with 'Retry' strategy after being restored from persistent storage" in new TestSequenceNet {
+
+      val Delay: Long = dilatedMillis(500)
       val retryHandler: TransitionExceptionHandler = {
-        case (e, n) ⇒ RetryWithDelay(500)
+        case (e, n) ⇒ RetryWithDelay(Delay)
       }
       val mockFunction = mock[Set[Int] ⇒ Event]
 
@@ -251,7 +260,7 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
       actor ! FireTransition(1, ())
 
       expectMsgPF() { case TransitionFired(_, 1, _, _, _, _) ⇒ }
-      expectMsgPF() { case TransitionFailed(_, 2, _, _, _, RetryWithDelay(500)) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 2, _, _, _, RetryWithDelay(Delay)) ⇒ }
 
       // verify that the mock function was called
       verify(mockFunction).apply(any[Set[Int]])
@@ -268,7 +277,7 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
       val newActor = createPetriNetActor[Set[Int], Event](petriNet, runtime, actorName)
 
       // TODO find a way to prevent this sleep, perhaps listen on the event bus?
-      Thread.sleep(1000)
+      Thread.sleep(dilatedMillis(1000))
 
       verify(mockFunction).apply(any[Set[Int]])
     }
@@ -315,8 +324,9 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
 
     "Not execute a transition with scheduled retry after being stopped" in new TestSequenceNet {
 
+      val InitialDelay: Long = dilatedMillis(50)
       val retryHandler: TransitionExceptionHandler = {
-        case (e, n) ⇒ RetryWithDelay(50)
+        case (e, n) ⇒ RetryWithDelay(InitialDelay)
       }
 
       val mockFunction = mock[Set[Int] ⇒ Event]
@@ -329,7 +339,7 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
 
       when(mockFunction.apply(any[Set[Int]])).thenAnswer(new Answer[Event] {
         override def answer(invocationOnMock: InvocationOnMock): Event = {
-          mockPromise.complete(Success(true))
+          mockPromise.complete(Success(true)) // FIXME TRAVIS: sometimes we have PromiseAlreadyCompleted exception here
           throw new RuntimeException("failure")
         }
       })
@@ -340,17 +350,17 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
 
       actor ! Initialize(marshal[Place](initialMarking), Set.empty)
       expectMsgClass(classOf[Initialized])
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, RetryWithDelay(50)) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, RetryWithDelay(InitialDelay)) ⇒ }
 
       whenReady(mockPromise.future) { _ ⇒
 
-        verify(mockFunction).apply(any[Set[Int]])
+        verify(mockFunction).apply(any[Set[Int]]) // FIXME TRAVIS: sometimes executes 2 times
 
         // kill the actor
         actor ! SupervisorStrategy.Stop
         syncKillActorWithPoisonPill(actor)
 
-        Thread.sleep(100)
+        Thread.sleep(dilatedMillis(100))
 
         reset(mockFunction)
 
@@ -360,7 +370,7 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
 
     "When Idle terminate after some time if an idle TTL has been specified" in new TestSequenceNet {
 
-      val ttl = 500 milliseconds
+      val ttl = FiniteDuration(500, MILLISECONDS).dilated
 
       val customSettings = instanceSettings.copy(idleTTL = Some(ttl))
 
@@ -371,7 +381,7 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
 
       val petriNetActor = createPetriNetActor(coloredProps(petriNet, runtime, customSettings), UUID.randomUUID().toString)
 
-      implicit val timeout = Timeout(2 seconds)
+      implicit val timeout = Timeout(dilatedMillis(2000), MILLISECONDS)
       whenReady((petriNetActor ? GetChild).mapTo[ActorRef]) {
         child ⇒
           {
@@ -392,8 +402,8 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
       val p2 = Place[Unit](id = 2)
 
       val t1 = nullTransition[Unit](id = 1, automated = false)
-      val t2 = stateTransition(id = 2, automated = true)(_ ⇒ Thread.sleep(500))
-      val t3 = stateTransition(id = 3, automated = true)(_ ⇒ Thread.sleep(500))
+      val t2 = stateTransition(id = 2, automated = true)(_ ⇒ Thread.sleep(dilatedMillis(500)))
+      val t3 = stateTransition(id = 3, automated = true)(_ ⇒ Thread.sleep(dilatedMillis(500)))
 
       val petriNet = createPetriNet[Unit](
         t1 ~> p1,
@@ -417,7 +427,7 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
 
       import org.scalatest.concurrent.Timeouts._
 
-      failAfter(Span(1000, Milliseconds)) {
+      failAfter(Span(dilatedMillis(1000), Milliseconds)) {
 
         // expect that the two subsequent transitions are fired automatically and in parallel (in any order)
         expectMsgInAnyOrderPF(
