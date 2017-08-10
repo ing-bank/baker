@@ -9,16 +9,22 @@ import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Missin
 
 
 package object il {
-  val processIdName         = "$ProcessID$"
+  val processIdName = "$ProcessID$"
 
   implicit class PlaceAdditions(place: Place[_]) {
     def isIngredient: Boolean = place.placeType == IngredientPlace
+
     def isInteractionEventOutput: Boolean = place.placeType == InteractionEventOutputPlace
-    def isFiringLimiter: Boolean          = place.placeType.isInstanceOf[FiringLimiterPlace]
-    def isEventPrecondition: Boolean      = place.placeType == EventPreconditionPlace
-    def isOrEventPrecondition: Boolean    = place.placeType == EventOrPreconditionPlace
-    def isIntermediate: Boolean           = place.placeType == IntermediatePlace
-    def isEmptyEventIngredient: Boolean   = place.placeType == EmptyEventIngredientPlace
+
+    def isFiringLimiter: Boolean = place.placeType.isInstanceOf[FiringLimiterPlace]
+
+    def isEventPrecondition: Boolean = place.placeType == EventPreconditionPlace
+
+    def isOrEventPrecondition: Boolean = place.placeType == EventOrPreconditionPlace
+
+    def isIntermediate: Boolean = place.placeType == IntermediatePlace
+
+    def isEmptyEventIngredient: Boolean = place.placeType == EmptyEventIngredientPlace
   }
 
   implicit class TransitionAdditions(transition: Transition[_, _]) {
@@ -37,9 +43,9 @@ package object il {
 
     def isSensoryEvent: Boolean =
       transition match {
-      case EventTransition(_, true, _) => true
-      case _ => false
-    }
+        case EventTransition(_, true, _) => true
+        case _ => false
+      }
 
     def isEvent: Boolean =
       !(transition.isInstanceOf[InteractionTransition[_]] || transition.label.contains(":"))
@@ -53,7 +59,21 @@ package object il {
   def getRawClass(t: Type): Class[_] = t match {
     case c: Class[_] => c
     case t: ParameterizedType => getRawClass(t.getRawType)
-    case t @ _ => throw new IllegalArgumentException(s"Unsupported type: $t")
+    case t@_ => throw new IllegalArgumentException(s"Unsupported type: $t")
+  }
+
+  def isAssignableFromType(self: Type, other: Type): Boolean = {
+    self match {
+      case c: Class[_] => c.isAssignableFrom(getRawClass(other))
+      case p: ParameterizedType => other match {
+        case otherP: ParameterizedType =>
+          isAssignableFromType(p.getRawType, otherP.getRawType) &&
+          p.getActualTypeArguments.zip(otherP.getActualTypeArguments).map {
+            case (a, b) => isAssignableFromType(a, b) }.forall(_ == true)
+        case _ => false
+      }
+    }
+    false
   }
 
 }

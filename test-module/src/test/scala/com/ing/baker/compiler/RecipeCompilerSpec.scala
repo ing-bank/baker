@@ -168,6 +168,29 @@ class RecipeCompilerSpec extends TestRecipeHelper {
             it.predefinedParameters("missingScalaOptional") shouldBe Option.empty
             it.predefinedParameters("missingScalaOptional2") shouldBe Option.empty
           })
+
+      println(compiledRecipe.getRecipeVisualization)
+    }
+
+    "interactions with ingredients that are provided but are required as Optionals should give no validation erros" in {
+      val optionalProviderEvent = Event("optionalProviderEvent", missingJavaOptionalDirectString)
+
+      val recipe: Recipe = Recipe("MissingOptionalRecipe")
+        .withInteraction(optionalIngredientInteraction)
+        .withSensoryEvents(initialEvent, optionalProviderEvent)
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.validationErrors shouldBe List.empty
+      compiledRecipe.interactionTransitions
+        .map(it =>
+          if (it.interactionName.equals("OptionalIngredientInteraction")) {
+            it.predefinedParameters.size shouldBe 3
+            it.predefinedParameters("missingJavaOptional2") shouldBe Optional.empty()
+            it.predefinedParameters("missingScalaOptional") shouldBe Option.empty
+            it.predefinedParameters("missingScalaOptional2") shouldBe Option.empty
+          })
+
+      println(compiledRecipe.getRecipeVisualization)
     }
 
     "interactions with optional ingredients that are predefined should not be provided as empty" in {

@@ -42,6 +42,7 @@ object TestRecipeHelper {
   val complexObjectIngredient = Ingredient[ComplexObjectIngredient]("complexOjectIngredient")
   val caseClassIngredient = Ingredient[CaseClassIngredient]("caseClassIngredient")
   val missingJavaOptional: Ingredient[Optional[String]] = Ingredient[Optional[String]]("missingJavaOptional")
+  val missingJavaOptionalDirectString: Ingredient[Int] = Ingredient[Int]("missingJavaOptional")
   val missingJavaOptional2: Ingredient[Optional[Int]] = Ingredient[Optional[Int]]("missingJavaOptional2")
   val missingScalaOptional: Ingredient[Option[String]] = Ingredient[Option[String]]("missingScalaOptional")
   val missingScalaOptional2: Ingredient[Option[Int]] = Ingredient[Option[Int]]("missingScalaOptional2")

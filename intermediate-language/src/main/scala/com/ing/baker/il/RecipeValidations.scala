@@ -3,6 +3,7 @@ package com.ing.baker.il
 import java.lang.reflect.{ParameterizedType, Type}
 
 import com.ing.baker.il.petrinet.InteractionTransition
+import com.ing.baker.il._
 import com.ing.baker.petrinet.api.PetriNetAnalysis
 
 import scala.collection.mutable
@@ -35,6 +36,7 @@ object RecipeValidations {
               case o if o == classOf[Option[_]] => value match {
                 case Some(v) if !getRawClass(pt.getActualTypeArguments.apply(0)).isInstance(v) =>
                   validationErrors += s"Predefined argument '$name' is not of type: ${pt} on interaction: '$interactionTransition'"
+                case _ =>
               }
               case o if o == classOf[java.util.Optional[_]] =>
                 if (value.isInstanceOf[java.util.Optional[_]]) {
@@ -51,18 +53,19 @@ object RecipeValidations {
   def validateInteractions(compiledRecipe: CompiledRecipe): Seq[String] =
     compiledRecipe.interactionTransitions.toSeq.flatMap(validateInteraction(compiledRecipe))
 
+
   /**
     * Validates that all required ingredients for interactions are provided for and of the correct type.
     */
   def validateInteractionIngredients(compiledRecipe: CompiledRecipe): Seq[String] = {
     compiledRecipe.interactionTransitions.toSeq.flatMap { t =>
       t.requiredIngredients.flatMap {
-        case (name, expectedType: Class[_]) =>
+        case (name, expectedType) =>
           compiledRecipe.ingredients.get(name) match {
             case None =>
               Some(
                 s"Ingredient '$name' for interaction '${t.interactionName}' is not provided by any event or interaction")
-            case Some(IngredientType(name, ingredientClass: Class[_])) if !expectedType.isAssignableFrom(ingredientClass) =>
+            case Some(IngredientType(name, ingredientClass)) if isAssignableFromType(expectedType, ingredientClass) =>
               Some(s"Interaction '$t' expects ingredient '$name:$expectedType', however incompatible type: '$ingredientClass' was provided")
             case _ =>
               None
