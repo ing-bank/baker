@@ -133,13 +133,10 @@ object ReflectedInteractionTask {
   def createMethodInput[A](interaction: InteractionTransition[A], state: ProcessState): Seq[AnyRef] = {
 
     // We do not support any other type then String types
-    val processId: Option[(String, AnyRef)] = interaction.inputFields.toMap.get(processIdName).map {
-      case c if c == classOf[String] => state.processId.toString
-      case _ => throw new IllegalStateException("Type not supported")
-    }.map(value => processIdName -> value)
+    val processId: (String, String) = processIdName -> state.processId.toString
 
     // parameterNamesToValues overwrites mapped token values which overwrites context map (in order of importance)
-    val argumentNamesToValues: Map[String, Any] = interaction.predefinedParameters ++ processId ++ state.ingredients
+    val argumentNamesToValues: Map[String, Any] = interaction.predefinedParameters ++ state.ingredients + processId
 
     def notFound = (name: String) => {
       log.warn(
@@ -154,8 +151,7 @@ object ReflectedInteractionTask {
 
     // map the values to the input places, throw an error if a value is not found
     val methodInput: Seq[Any] =
-      interaction.inputFieldNames.map(i =>
-        argumentNamesToValues.getOrElse(i, notFound))
+      interaction.inputFieldNames.map(i => argumentNamesToValues.getOrElse(i, notFound))
 
     methodInput.map(_.asInstanceOf[AnyRef])
   }
