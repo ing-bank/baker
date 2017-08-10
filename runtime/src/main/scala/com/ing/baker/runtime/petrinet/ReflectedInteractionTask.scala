@@ -2,7 +2,6 @@ package com.ing.baker.runtime.petrinet
 
 import java.util.UUID
 
-import cats.Applicative
 import com.ing.baker.il.petrinet.{FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.il._
 import com.ing.baker.runtime.core.{BakerException, ProcessState, RuntimeEvent}
