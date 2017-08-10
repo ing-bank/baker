@@ -1,5 +1,6 @@
 package com.ing.baker
 
+import java.lang.reflect.{ParameterizedType, Type}
 import java.security.MessageDigest
 
 import com.ing.baker.il.ActionType.{InteractionAction, SieveAction}
@@ -47,6 +48,12 @@ package object il {
   def sha256HashCode(str: String): Long = {
     val sha256Digest: MessageDigest = MessageDigest.getInstance("SHA-256")
     BigInt(1, sha256Digest.digest(str.getBytes("UTF-8"))).toLong
+  }
+
+  def getRawClass(t: Type): Class[_] = t match {
+    case c: Class[_] => c
+    case t: ParameterizedType => getRawClass(t.getRawType)
+    case t @ _ => throw new IllegalArgumentException(s"Unsupported type: $t")
   }
 
 }

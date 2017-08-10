@@ -47,7 +47,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .withInteractions(wrongProcessIdInteraction)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("Non supported process id class: int on interaction: 'wrongProcessIdInteraction'")
+      compiledRecipe.validationErrors should contain("Non supported process id type: int on interaction: 'wrongProcessIdInteraction'")
     }
 
     "give a list of wrong ingredients if an predefined ingredient is of the wrong type" in {
@@ -113,7 +113,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
 
     "fail compilation for an empty or null named ingredient" in {
       List("", null) foreach { name =>
-        val invalidIngredient = Ingredient(name)
+        val invalidIngredient = Ingredient[String](name)
         val recipe = Recipe("IngredientNameTest").withSensoryEvent(Event("someEvent", invalidIngredient)).withInteraction(interactionOne)
 
         intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Ingredient with a null or empty name found"

@@ -1,5 +1,4 @@
 import Dependencies._
-import jdk.internal.org.objectweb.asm.TypeReference
 import sbt.Keys._
 
 val scalaV = "2.11.11"
@@ -124,7 +123,8 @@ lazy val recipeDsl = project.in(file("recipe-dsl"))
     libraryDependencies ++=
       compileDeps(
         javaxInject,
-        paranamer
+        paranamer,
+        scalaReflect
       ) ++
         testDeps(
           scalaTest,

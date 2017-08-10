@@ -1,10 +1,14 @@
 package com.ing.baker
 
+import java.lang.reflect.{ParameterizedType, Type}
+
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
 import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing, ProvidesType, Transition}
 import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientType}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionDescriptor
+
+import com.ing.baker.il._
 
 import scala.concurrent.duration.Duration
 
@@ -39,7 +43,7 @@ package object compiler {
               override val providedIngredients: Seq[common.Ingredient] = event.providedIngredients.map(i =>
                 new common.Ingredient {
                   override val name: String = eventOutputTransformer.ingredientRenames.getOrElse(i.name, i.name)
-                  override val clazz: Class[_] = i.clazz
+                  override val clazz: Type = i.clazz
                 })
             }
           case _ => event
@@ -64,7 +68,7 @@ package object compiler {
             .map(i => IngredientType(i.name, i.clazz)))
       }
 
-      val inputFields: Seq[(String, Class[_])] = interactionDescriptor.interaction.inputIngredients
+      val inputFields: Seq[(String, Type)] = interactionDescriptor.interaction.inputIngredients
         //Replace ProcessId to ProcessIdName tag as know in compiledRecipe
         //Replace ingredient tags with overridden tags
         .map(ingredient =>
@@ -91,9 +95,9 @@ package object compiler {
       //Add the predefinedIngredients later to overwrite any created empty field with the given predefined value.
       val predefinedIngredientsWithOptionalsEmpty: Map[String, Any] =
         inputFields.flatMap {
-          case (name, clazz) if !allIngredientNames.contains(name) && classOf[java.util.Optional[_]].isAssignableFrom(clazz)
+          case (name, clazz: ParameterizedType) if !allIngredientNames.contains(name) && classOf[java.util.Optional[_]].isAssignableFrom(getRawClass(clazz))
               => Seq((name, java.util.Optional.empty()))
-          case (name, clazz) if !allIngredientNames.contains(name) && classOf[scala.Option[_]].isAssignableFrom(clazz)
+          case (name, clazz: ParameterizedType) if !allIngredientNames.contains(name) && classOf[scala.Option[_]].isAssignableFrom(getRawClass(clazz))
               => Seq((name, scala.Option.empty))
           case _ => Seq.empty
         }.toMap ++ interactionDescriptor.predefinedIngredients

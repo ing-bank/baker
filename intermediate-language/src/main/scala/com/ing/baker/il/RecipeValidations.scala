@@ -1,5 +1,7 @@
 package com.ing.baker.il
 
+import java.lang.reflect.{ParameterizedType, Type}
+
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.petrinet.api.PetriNetAnalysis
 
@@ -17,17 +19,31 @@ object RecipeValidations {
     // check if the process id argument type is correct
     interactionTransition.inputFields.toMap.get(processIdName).map {
       case c if c == classOf[String] =>
-      case c => validationErrors += s"Non supported process id class: ${c.getName} on interaction: '$interactionTransition'"
+      case c => validationErrors += s"Non supported process id type: ${c} on interaction: '$interactionTransition'"
     }
 
     // check if the predefined ingredient is of the expected type
     interactionTransition.predefinedParameters.foreach {
       case (name, value) =>
-        val parameterTypeOption: Option[Class[_]] = interactionTransition.inputFields.toMap.get(name)
-        if (parameterTypeOption.isEmpty)
-          validationErrors += s"Predefined argument '$name' is not defined on interaction: '$interactionTransition'"
-        else if (!parameterTypeOption.get.isInstance(value))
-          validationErrors += s"Predefined argument '$name' is not of type: ${parameterTypeOption.get} on interaction: '$interactionTransition'"
+        interactionTransition.inputFields.toMap.get(name) match {
+          case None =>
+            validationErrors += s"Predefined argument '$name' is not defined on interaction: '$interactionTransition'"
+          case Some(clazz: Class[_]) if !clazz.isInstance(value) =>
+            validationErrors += s"Predefined argument '$name' is not of type: ${clazz} on interaction: '$interactionTransition'"
+          case Some(pt: ParameterizedType) =>
+            getRawClass(pt) match {
+              case o if o == classOf[Option[_]] => value match {
+                case Some(v) if !getRawClass(pt.getActualTypeArguments.apply(0)).isInstance(v) =>
+                  validationErrors += s"Predefined argument '$name' is not of type: ${pt} on interaction: '$interactionTransition'"
+              }
+              case o if o == classOf[java.util.Optional[_]] =>
+                if (value.isInstanceOf[java.util.Optional[_]]) {
+                  val optionalValue = value.asInstanceOf[java.util.Optional[_]]
+                  if (optionalValue.isPresent && !getRawClass(pt.getActualTypeArguments.apply(0)).isInstance(optionalValue.get()))
+                    validationErrors += s"Predefined argument '$name' is not of type: ${pt} on interaction: '$interactionTransition'"
+                }
+            }
+        }
     }
     validationErrors
   }
@@ -41,14 +57,13 @@ object RecipeValidations {
   def validateInteractionIngredients(compiledRecipe: CompiledRecipe): Seq[String] = {
     compiledRecipe.interactionTransitions.toSeq.flatMap { t =>
       t.requiredIngredients.flatMap {
-        case (name, expectedType) =>
+        case (name, expectedType: Class[_]) =>
           compiledRecipe.ingredients.get(name) match {
             case None =>
               Some(
                 s"Ingredient '$name' for interaction '${t.interactionName}' is not provided by any event or interaction")
-            case Some(ingredient) if !expectedType.isAssignableFrom(ingredient.clazz) =>
-              Some(
-                s"Interaction '$t' expects ingredient '$name:$expectedType', however incompatible type: '$ingredient' was provided")
+            case Some(IngredientType(name, ingredientClass: Class[_])) if !expectedType.isAssignableFrom(ingredientClass) =>
+              Some(s"Interaction '$t' expects ingredient '$name:$expectedType', however incompatible type: '$ingredientClass' was provided")
             case _ =>
               None
           }

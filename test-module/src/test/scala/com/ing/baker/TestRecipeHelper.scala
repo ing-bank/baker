@@ -8,7 +8,7 @@ import com.ing.baker.TestRecipeHelper._
 import com.ing.baker.Webshop._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, Recipe, processId}
+import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.recipe.{common, javadsl}
 import com.ing.baker.runtime.core.Baker
 import com.typesafe.config.{Config, ConfigFactory}

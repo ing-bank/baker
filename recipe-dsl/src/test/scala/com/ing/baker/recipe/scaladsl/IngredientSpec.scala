@@ -5,7 +5,14 @@ import org.scalatest.{Matchers, WordSpecLike}
 class IngredientSpec extends WordSpecLike with Matchers {
   "an Ingredient" when {
 
+
     "calling the Equals method" should {
+
+      "create the correct type" in {
+
+        println("type: " + Ingredient[java.util.Optional[String]]("a").clazz)
+      }
+
       "return true if same ingredient instance" in {
         val customerName = Ingredient[String]("customerName")
         customerName.equals(customerName) shouldBe true

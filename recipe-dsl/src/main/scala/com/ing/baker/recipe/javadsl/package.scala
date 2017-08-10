@@ -1,15 +1,15 @@
 package com.ing.baker.recipe
 
-import java.lang.reflect.Method
+import java.lang.reflect.{Method, Type}
 
 import com.ing.baker.recipe.javadsl.ReflectionHelpers._
 
 package object javadsl {
 
-  def createIngredient(ingredientName: String, ingredientClazz: Class[_]): common.Ingredient =
+  def createIngredient(ingredientName: String, ingredientClazz: Type): common.Ingredient =
     new common.Ingredient {
       override val name: String = ingredientName
-      override val clazz: Class[_] = ingredientClazz
+      override val clazz: Type = ingredientClazz
     }
 
 

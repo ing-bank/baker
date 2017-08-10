@@ -2,8 +2,9 @@ package com.ing.baker.runtime.petrinet
 
 import java.util.UUID
 
+import cats.Applicative
 import com.ing.baker.il.petrinet.{FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing}
-import com.ing.baker.il.{IngredientType, processIdName}
+import com.ing.baker.il._
 import com.ing.baker.runtime.core.{BakerException, ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.event_extractors.{EventExtractor, PojoEventExtractor}
 import org.slf4j.{LoggerFactory, MDC}
@@ -54,7 +55,7 @@ object ReflectedInteractionTask {
 
   private def checkIfImplementationIsValidForInteraction(implementation: AnyRef, interaction: InteractionTransition[_]): Boolean = {
     Try {
-      implementation.getClass.getMethod("apply", interaction.inputFields.map(_._2): _*)
+      implementation.getClass.getMethod("apply", interaction.inputFields.map { case (_, clazz) => getRawClass(clazz) } : _*)
     }.isSuccess
   }
 
@@ -84,7 +85,7 @@ object ReflectedInteractionTask {
 
     def invokeMethod(): AnyRef = {
       MDC.put("processId", processState.processId.toString)
-      val result = interactionObject.getClass.getMethod("apply", interaction.inputFields.map(_._2): _*).invoke(interactionObject, inputArgs: _*)
+      val result = interactionObject.getClass.getMethod("apply", interaction.inputFields.map { case (_, clazz) => getRawClass(clazz)}: _*).invoke(interactionObject, inputArgs: _*)
       log.trace(s"[$invocationId] result: $result")
 
       MDC.remove("processId")
@@ -143,7 +144,7 @@ object ReflectedInteractionTask {
         s"""
            |IllegalArgumentException at Interaction: $toString
            |Missing parameter: $name
-           |Required input   : ${interaction.inputFieldNames.toSeq.sorted.mkString(",")}
+           |Required input   : ${interaction.inputFieldNames.sorted.mkString(",")}
            |Provided input   : ${argumentNamesToValues.keySet.toSeq.sorted.mkString(",")}
          """.stripMargin)
       throw new IllegalArgumentException(s"Missing parameter: $name")
@@ -151,7 +152,14 @@ object ReflectedInteractionTask {
 
     // map the values to the input places, throw an error if a value is not found
     val methodInput: Seq[Any] =
-      interaction.inputFieldNames.map(i => argumentNamesToValues.getOrElse(i, notFound))
+      interaction.inputFieldNames.map { fieldName =>
+        val value = argumentNamesToValues.getOrElse(fieldName, notFound)
+        value
+//        interaction.ingredientInputTransformer.get(fieldName) match {
+//          case None     => value
+//          case Some(fn) => fn(value)
+//        }
+      }
 
     methodInput.map(_.asInstanceOf[AnyRef])
   }

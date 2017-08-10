@@ -1,5 +1,7 @@
 package com.ing.baker.il.petrinet
 
+import java.lang.reflect.Type
+
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
 import com.ing.baker.il.{ActionType, EventOutputTransformer, _}
@@ -22,7 +24,7 @@ case object ProvidesNothing extends ProvidesType
   * @tparam I The class/interface of the interaction
   */
 case class InteractionTransition[I](providesType: ProvidesType,
-                                    inputFields: Seq[(String, Class[_])],
+                                    inputFields: Seq[(String, Type)],
                                     interactionName: String,
                                     originalInteractionName: String,
                                     actionType: ActionType = ActionType.InteractionAction,
@@ -47,7 +49,7 @@ case class InteractionTransition[I](providesType: ProvidesType,
   // the input fields for which places need to be created
   val requiredIngredientNames: Set[String] = inputFieldNames.toSet - processIdName -- predefinedParameters.keySet
 
-  val requiredIngredients: Map[String, Class[_]] =
+  val requiredIngredients: Map[String, Type] =
     inputFields.toMap.filterKeys(requiredIngredientNames.contains)
 
   val exceptionStrategy: TransitionExceptionHandler = failureStrategy.asTransitionExceptionHandler()
