@@ -55,7 +55,7 @@ object ReflectedInteractionTask {
 
   private def checkIfImplementationIsValidForInteraction(implementation: AnyRef, interaction: InteractionTransition[_]): Boolean = {
     Try {
-      implementation.getClass.getMethod("apply", interaction.inputFields.map { case (_, clazz) => getRawClass(clazz) } : _*)
+      implementation.getClass.getMethod("apply", interaction.requiredIngredients.map { case (_, clazz) => getRawClass(clazz) }: _*)
     }.isSuccess
   }
 
@@ -85,7 +85,7 @@ object ReflectedInteractionTask {
 
     def invokeMethod(): AnyRef = {
       MDC.put("processId", processState.processId.toString)
-      val result = interactionObject.getClass.getMethod("apply", interaction.inputFields.map { case (_, clazz) => getRawClass(clazz)}: _*).invoke(interactionObject, inputArgs: _*)
+      val result = interactionObject.getClass.getMethod("apply", interaction.requiredIngredients.map { case (_, clazz) => getRawClass(clazz) }: _*).invoke(interactionObject, inputArgs: _*)
       log.trace(s"[$invocationId] result: $result")
 
       MDC.remove("processId")
@@ -144,21 +144,29 @@ object ReflectedInteractionTask {
         s"""
            |IllegalArgumentException at Interaction: $toString
            |Missing parameter: $name
-           |Required input   : ${interaction.inputFieldNames.sorted.mkString(",")}
+           |Required input   : ${interaction.requiredIngredients.toMap.keySet.toSeq.sorted.mkString(",")}
            |Provided input   : ${argumentNamesToValues.keySet.toSeq.sorted.mkString(",")}
          """.stripMargin)
       throw new IllegalArgumentException(s"Missing parameter: $name")
     }
 
+    def autoBoxIfNeeded(ingredientName: String, ingredientType: java.lang.reflect.Type, value: Any) = {
+      val ingredientClass = getRawClass(ingredientType)
+
+      if (autoBoxClasses.contains(ingredientClass) && !ingredientClass.isAssignableFrom(value.getClass))
+        autoBoxClasses(ingredientClass).apply(value)
+      else
+       value
+    }
+
+
     // map the values to the input places, throw an error if a value is not found
     val methodInput: Seq[Any] =
-      interaction.inputFieldNames.map { fieldName =>
-        val value = argumentNamesToValues.getOrElse(fieldName, notFound)
-        value
-//        interaction.ingredientInputTransformer.get(fieldName) match {
-//          case None     => value
-//          case Some(fn) => fn(value)
-//        }
+      interaction.requiredIngredients.map {
+        case (ingredientName, ingredientType) =>
+
+          val value = argumentNamesToValues.getOrElse(ingredientName, notFound)
+          autoBoxIfNeeded(ingredientName, ingredientType, value)
       }
 
     methodInput.map(_.asInstanceOf[AnyRef])

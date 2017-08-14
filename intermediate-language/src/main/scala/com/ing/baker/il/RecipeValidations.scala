@@ -18,7 +18,7 @@ object RecipeValidations {
       validationErrors += s"Interaction $interactionTransition does not have any requirements (ingredients or preconditions)! This will result in an infinite execution loop."
 
     // check if the process id argument type is correct
-    interactionTransition.inputFields.toMap.get(processIdName).map {
+    interactionTransition.requiredIngredients.toMap.get(processIdName).map {
       case c if c == classOf[String] =>
       case c => validationErrors += s"Non supported process id type: ${c} on interaction: '$interactionTransition'"
     }
@@ -26,7 +26,7 @@ object RecipeValidations {
     // check if the predefined ingredient is of the expected type
     interactionTransition.predefinedParameters.foreach {
       case (name, value) =>
-        interactionTransition.inputFields.toMap.get(name) match {
+        interactionTransition.requiredIngredients.toMap.get(name) match {
           case None =>
             validationErrors += s"Predefined argument '$name' is not defined on interaction: '$interactionTransition'"
           case Some(clazz: Class[_]) if !clazz.isInstance(value) =>
@@ -59,7 +59,7 @@ object RecipeValidations {
     */
   def validateInteractionIngredients(compiledRecipe: CompiledRecipe): Seq[String] = {
     compiledRecipe.interactionTransitions.toSeq.flatMap { t =>
-      t.requiredIngredients.flatMap {
+      t.nonProvidedIngredients.flatMap {
         case (name, expectedType) =>
           compiledRecipe.ingredients.get(name) match {
             case None =>

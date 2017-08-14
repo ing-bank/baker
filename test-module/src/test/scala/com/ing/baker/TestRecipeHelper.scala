@@ -45,6 +45,7 @@ object TestRecipeHelper {
   val missingJavaOptionalDirectString: Ingredient[String] = Ingredient[String]("missingJavaOptional")
   val missingJavaOptional2: Ingredient[Optional[Int]] = Ingredient[Optional[Int]]("missingJavaOptional2")
   val missingScalaOptional: Ingredient[Option[String]] = Ingredient[Option[String]]("missingScalaOptional")
+  val missingScalaOptionalDirectString: Ingredient[String] = Ingredient[String]("missingScalaOptional")
   val missingScalaOptional2: Ingredient[Option[Int]] = Ingredient[Option[Int]]("missingScalaOptional2")
 
   //Events as used in the recipe & objects used in runtime
@@ -79,6 +80,10 @@ object TestRecipeHelper {
   case class EmptyEvent()
 
   val emptyEvent = Event("EmptyEvent")
+
+  val unboxedProviderEvent = Event("UnboxedProviderEvent", missingJavaOptionalDirectString, initialIngredient, missingScalaOptionalDirectString)
+
+  case class UnboxedProviderEvent(missingJavaOptional: String, initialIngredient: String, missingScalaOptional: String)
 
   //Interactions used in the recipe & implementations (we use traits instead of case classes since we use mocks for the real implementations
   val interactionOne =

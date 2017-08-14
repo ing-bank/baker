@@ -104,7 +104,7 @@ package object compiler {
 
       InteractionTransition[Any](
         providesType = providesType,
-        inputFields = inputFields,
+        requiredIngredients = inputFields,
         interactionName = interactionDescriptor.name,
         originalInteractionName = interactionDescriptor.interaction.name,
         predefinedParameters = predefinedIngredientsWithOptionalsEmpty,

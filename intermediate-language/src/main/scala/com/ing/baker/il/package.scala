@@ -69,7 +69,10 @@ package object il {
     * Example: If an ingredient of Option[String] is expected, but String is provided
     * it will be boxed as Option[String]
     */
-  val autoBoxClasses = List(classOf[Option[_]], classOf[Optional[_]])
+  val autoBoxClasses = Map[Class[_], Any => Any](
+    classOf[Option[_]] -> (unboxed => Some(unboxed)),
+    classOf[Optional[_]] -> (unboxed => java.util.Optional.of(unboxed))
+  )
 
   /**
     * other should be assignable to self
@@ -90,7 +93,7 @@ package object il {
               }.forall(_ == true)
           case _ => false
         }
-        if (!check && autoBoxClasses.contains(p.getRawType))
+        if (!check && autoBoxClasses.contains(getRawClass(p.getRawType)))
           isAssignableFromType(p.getActualTypeArguments.apply(0), other)
         else check
       case _ => false

@@ -24,7 +24,7 @@ case object ProvidesNothing extends ProvidesType
   * @tparam I The class/interface of the interaction
   */
 case class InteractionTransition[I](providesType: ProvidesType,
-                                    inputFields: Seq[(String, Type)],
+                                    requiredIngredients: Seq[(String, Type)],
                                     interactionName: String,
                                     originalInteractionName: String,
                                     actionType: ActionType = ActionType.InteractionAction,
@@ -43,14 +43,14 @@ case class InteractionTransition[I](providesType: ProvidesType,
 
   override def toString: String = label
 
-  // all the input fields of the method
-  val inputFieldNames: Seq[String] = inputFields.map(_._1)
+    /**
+    * These are the ingredients that are not pre-defined or processId
+    */
+  val nonProvidedIngredients: Map[String, Type] = {
+    val names = requiredIngredients.toMap.keySet - processIdName -- predefinedParameters.keySet
+    requiredIngredients.toMap.filterKeys(names.contains)
+  }
 
-  // the input fields for which places need to be created
-  val requiredIngredientNames: Set[String] = inputFieldNames.toSet - processIdName -- predefinedParameters.keySet
-
-  val requiredIngredients: Map[String, Type] =
-    inputFields.toMap.filterKeys(requiredIngredientNames.contains)
 
   val exceptionStrategy: TransitionExceptionHandler = failureStrategy.asTransitionExceptionHandler()
 }
