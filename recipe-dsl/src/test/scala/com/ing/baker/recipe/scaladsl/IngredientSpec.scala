@@ -5,13 +5,22 @@ import org.scalatest.{Matchers, WordSpecLike}
 class IngredientSpec extends WordSpecLike with Matchers {
   "an Ingredient" when {
 
+    "constructed" should {
+
+      "correctly derive the type" in {
+
+        val ingredient = Ingredient[String]("foo")
+        ingredient.clazz shouldBe classOf[String]
+      }
+
+      "correctly derive a higher kinded type" in {
+
+        val ingredient = Ingredient[Option[String]]("foo")
+        ingredient.clazz.getTypeName shouldBe "ParameterizedType: class scala.Option[class java.lang.String]"
+      }
+    }
 
     "calling the Equals method" should {
-
-      "create the correct type" in {
-
-        println("type: " + Ingredient[java.util.Optional[String]]("a").clazz)
-      }
 
       "return true if same ingredient instance" in {
         val customerName = Ingredient[String]("customerName")

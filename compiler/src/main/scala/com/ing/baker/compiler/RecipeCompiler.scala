@@ -1,8 +1,6 @@
 package com.ing.baker
 package compiler
 
-import java.util.Optional
-
 import com.ing.baker.il.RecipeValidations.postCompileValidations
 import com.ing.baker.il.ValidationSettings.defaultValidationSettings
 import com.ing.baker.il.petrinet.Place._
@@ -22,34 +20,6 @@ object RecipeCompiler {
       case (a, b) => (a.flatten, b.flatten)
     }
   }
-
-//  trait AutoBox[F[_]] {
-//    def box[T](e: T): F[T]
-//  }
-//
-//  class AutoBoxJavaOptional extends AutoBox[java.util.Optional] {
-//    override def box[T](e: T): Optional[T] = Optional.of(e)
-//  }
-//
-//  class AutboxScalaOption extends AutoBox[Option] {
-//    override def box[T](e: T): Option[T] = Some(e)
-//  }
-//
-//  type BoxClass[T[_]] = Class[T[_]]
-//
-//  val clazz: BoxClass[Optional] = classOf[Optional[T] forSome { type T }]
-//  val value: AutoBox[Optional] = new AutoBoxJavaOptional()
-//
-//  val autoBoxers: HMap[BoxClass, AutoBox] =
-//
-//    HMap[BoxClass, AutoBox](Map.empty) + ( clazz -> value)
-
-//  val autoBoxTypes = Set(classOf[java.util.Optional[_]], classOf[Option[_]])
-//  def autoBox[T](value: T, target: Class[_]) = target match {
-//    case c if c == classOf[java.util.Optional[_]] => Optional.of(value)
-//    case c if c == classOf[Option[_]]             => Some(value)
-//  }
-
 
   /**
     * Creates a transition for a missing event in the recipe.
