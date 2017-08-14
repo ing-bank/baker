@@ -229,8 +229,29 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       baker.handleEvent(processId, InitialEvent(initialIngredientValue))
 
-      verify(testOptionalIngredientInteractionMock).apply(ingredientValue, Optional.empty(), Option.empty, Option.empty, "initialIngredient")
+      verify(testOptionalIngredientInteractionMock).apply(ingredientValue, Optional.empty(), Option.empty, Option.empty, initialIngredientValue)
       baker.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue)
+    }
+
+    "execute an interaction with Optionals boxed when its ingredient is provided as unboxed" in {
+
+      val recipe =
+        Recipe("IngredientProvidedRecipeWithUnboxedOptionals")
+          .withInteraction(
+            optionalIngredientInteraction)
+          .withSensoryEvent(unboxedProviderEvent)
+
+      val baker = new Baker(
+        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+        implementations = mockImplementations)
+
+      val processId = UUID.randomUUID().toString
+      baker.bake(processId).toString
+
+      baker.handleEvent(processId, UnboxedProviderEvent(initialIngredientValue, initialIngredientValue, initialIngredientValue))
+
+      verify(testOptionalIngredientInteractionMock).apply(java.util.Optional.of(initialIngredientValue), Optional.empty(), Some(initialIngredientValue), Option.empty, initialIngredientValue)
+      baker.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue, "missingJavaOptional" -> initialIngredientValue, "missingScalaOptional" -> initialIngredientValue)
     }
 
     "notify a registered event listener of events" in {

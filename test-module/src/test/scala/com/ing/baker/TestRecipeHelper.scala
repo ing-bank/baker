@@ -8,7 +8,7 @@ import com.ing.baker.TestRecipeHelper._
 import com.ing.baker.Webshop._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, Recipe, processId}
+import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.recipe.{common, javadsl}
 import com.ing.baker.runtime.core.Baker
 import com.typesafe.config.{Config, ConfigFactory}
@@ -42,8 +42,10 @@ object TestRecipeHelper {
   val complexObjectIngredient = Ingredient[ComplexObjectIngredient]("complexOjectIngredient")
   val caseClassIngredient = Ingredient[CaseClassIngredient]("caseClassIngredient")
   val missingJavaOptional: Ingredient[Optional[String]] = Ingredient[Optional[String]]("missingJavaOptional")
+  val missingJavaOptionalDirectString: Ingredient[String] = Ingredient[String]("missingJavaOptional")
   val missingJavaOptional2: Ingredient[Optional[Int]] = Ingredient[Optional[Int]]("missingJavaOptional2")
   val missingScalaOptional: Ingredient[Option[String]] = Ingredient[Option[String]]("missingScalaOptional")
+  val missingScalaOptionalDirectString: Ingredient[String] = Ingredient[String]("missingScalaOptional")
   val missingScalaOptional2: Ingredient[Option[Int]] = Ingredient[Option[Int]]("missingScalaOptional2")
 
   //Events as used in the recipe & objects used in runtime
@@ -78,6 +80,10 @@ object TestRecipeHelper {
   case class EmptyEvent()
 
   val emptyEvent = Event("EmptyEvent")
+
+  val unboxedProviderEvent = Event("UnboxedProviderEvent", missingJavaOptionalDirectString, initialIngredient, missingScalaOptionalDirectString)
+
+  case class UnboxedProviderEvent(missingJavaOptional: String, initialIngredient: String, missingScalaOptional: String)
 
   //Interactions used in the recipe & implementations (we use traits instead of case classes since we use mocks for the real implementations
   val interactionOne =

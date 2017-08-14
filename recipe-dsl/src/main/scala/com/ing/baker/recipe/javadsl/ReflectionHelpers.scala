@@ -1,7 +1,7 @@
 package com.ing.baker.recipe.javadsl
 
 import java.lang.annotation.Annotation
-import java.lang.reflect.Method
+import java.lang.reflect.{Method, Type}
 
 import com.ing.baker.recipe.{annotations, common}
 import com.thoughtworks.paranamer.AnnotationParanamer
@@ -12,10 +12,10 @@ object ReflectionHelpers {
     lazy val paramamer         = new RequiresAnnotationParanamer()
     lazy val getParameterNames = paramamer.lookupParameterNames(method)
 
-    def parameterTypeForName(name: String): Option[Class[_]] =
+    def parameterTypeForName(name: String): Option[Type] =
       getParameterNames.indexWhere(_ == name) match {
         case -1 => None
-        case n  => Some(method.getParameterTypes.apply(n))
+        case n  => Some(method.getGenericParameterTypes.apply(n))
       }
   }
 

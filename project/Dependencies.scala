@@ -40,7 +40,7 @@ object Dependencies {
   val fs2Core  =                  "co.fs2"                     %% "fs2-core"                           % "0.9.4"
   val catsCore =                  "org.typelevel"              %% "cats-core"                          % "0.9.0"
 
-  val scalaReflect =              "org.scala-lang"             %  "scala-reflect"                      % "2.11.8"
+  val scalaReflect =              "org.scala-lang"             %  "scala-reflect"                      % "2.11.11"
   val javaxInject =               "javax.inject"               %  "javax.inject"                       % "1"
 
   val paranamer =                 "com.thoughtworks.paranamer" %  "paranamer"                          % "2.8"

@@ -2,8 +2,9 @@ package com.ing.baker.runtime.petrinet
 
 import java.util.UUID
 
+import cats.Applicative
 import com.ing.baker.il.petrinet.{FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing}
-import com.ing.baker.il.{IngredientType, processIdName}
+import com.ing.baker.il._
 import com.ing.baker.runtime.core.{BakerException, ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.event_extractors.{EventExtractor, PojoEventExtractor}
 import org.slf4j.{LoggerFactory, MDC}
@@ -54,7 +55,7 @@ object ReflectedInteractionTask {
 
   private def checkIfImplementationIsValidForInteraction(implementation: AnyRef, interaction: InteractionTransition[_]): Boolean = {
     Try {
-      implementation.getClass.getMethod("apply", interaction.inputFields.map(_._2): _*)
+      implementation.getClass.getMethod("apply", interaction.requiredIngredients.map { case (_, clazz) => getRawClass(clazz) }: _*)
     }.isSuccess
   }
 
@@ -84,7 +85,7 @@ object ReflectedInteractionTask {
 
     def invokeMethod(): AnyRef = {
       MDC.put("processId", processState.processId.toString)
-      val result = interactionObject.getClass.getMethod("apply", interaction.inputFields.map(_._2): _*).invoke(interactionObject, inputArgs: _*)
+      val result = interactionObject.getClass.getMethod("apply", interaction.requiredIngredients.map { case (_, clazz) => getRawClass(clazz) }: _*).invoke(interactionObject, inputArgs: _*)
       log.trace(s"[$invocationId] result: $result")
 
       MDC.remove("processId")
@@ -133,29 +134,40 @@ object ReflectedInteractionTask {
   def createMethodInput[A](interaction: InteractionTransition[A], state: ProcessState): Seq[AnyRef] = {
 
     // We do not support any other type then String types
-    val processId: Option[(String, AnyRef)] = interaction.inputFields.toMap.get(processIdName).map {
-      case c if c == classOf[String] => state.processId.toString
-      case _ => throw new IllegalStateException("Type not supported")
-    }.map(value => processIdName -> value)
+    val processId: (String, String) = processIdName -> state.processId.toString
 
     // parameterNamesToValues overwrites mapped token values which overwrites context map (in order of importance)
-    val argumentNamesToValues: Map[String, Any] = interaction.predefinedParameters ++ processId ++ state.ingredients
+    val argumentNamesToValues: Map[String, Any] = interaction.predefinedParameters ++ state.ingredients + processId
 
     def notFound = (name: String) => {
       log.warn(
         s"""
            |IllegalArgumentException at Interaction: $toString
            |Missing parameter: $name
-           |Required input   : ${interaction.inputFieldNames.toSeq.sorted.mkString(",")}
+           |Required input   : ${interaction.requiredIngredients.toMap.keySet.toSeq.sorted.mkString(",")}
            |Provided input   : ${argumentNamesToValues.keySet.toSeq.sorted.mkString(",")}
          """.stripMargin)
       throw new IllegalArgumentException(s"Missing parameter: $name")
     }
 
+    def autoBoxIfNeeded(ingredientName: String, ingredientType: java.lang.reflect.Type, value: Any) = {
+      val ingredientClass = getRawClass(ingredientType)
+
+      if (autoBoxClasses.contains(ingredientClass) && !ingredientClass.isAssignableFrom(value.getClass))
+        autoBoxClasses(ingredientClass).apply(value)
+      else
+       value
+    }
+
+
     // map the values to the input places, throw an error if a value is not found
     val methodInput: Seq[Any] =
-      interaction.inputFieldNames.map(i =>
-        argumentNamesToValues.getOrElse(i, notFound))
+      interaction.requiredIngredients.map {
+        case (ingredientName, ingredientType) =>
+
+          val value = argumentNamesToValues.getOrElse(ingredientName, notFound)
+          autoBoxIfNeeded(ingredientName, ingredientType, value)
+      }
 
     methodInput.map(_.asInstanceOf[AnyRef])
   }
