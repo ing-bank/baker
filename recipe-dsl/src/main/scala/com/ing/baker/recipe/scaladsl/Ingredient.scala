@@ -9,9 +9,9 @@ object Ingredient {
 
   val mirror: ru.Mirror = ru.runtimeMirror(classOf[Ingredient[_]].getClassLoader)
 
-  def parameterizedType(paramType: ru.Type): java.lang.reflect.Type = {
+  def asJavaType(paramType: ru.Type): java.lang.reflect.Type = {
     val typeConstructor = mirror.runtimeClass(paramType)
-    val innerTypes = paramType.typeArgs.map(parameterizedType).toArray
+    val innerTypes = paramType.typeArgs.map(asJavaType).toArray
 
     if (innerTypes.isEmpty) {
       typeConstructor
@@ -26,7 +26,7 @@ object Ingredient {
   }
 
   def makeType[T : ru.TypeTag]: java.lang.reflect.Type = {
-    parameterizedType(ru.typeOf[T])
+    asJavaType(ru.typeOf[T])
   }
 }
 
