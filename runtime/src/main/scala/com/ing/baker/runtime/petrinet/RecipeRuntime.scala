@@ -1,9 +1,10 @@
 package com.ing.baker.runtime.petrinet
 
+import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
-import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
+import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.petrinet.runtime._
+import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 
 class RecipeRuntime(interactionFunctions: InteractionTransition[_] => (ProcessState => RuntimeEvent)) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
 
@@ -15,9 +16,22 @@ class RecipeRuntime(interactionFunctions: InteractionTransition[_] => (ProcessSt
       case RuntimeEvent(_, providedIngredients) => state.copy(ingredients = state.ingredients ++ providedIngredients)
     }
 
-  override val exceptionHandlerFn: Transition[_, _] => TransitionExceptionHandler = {
-    case interaction: InteractionTransition[_] => interaction.exceptionStrategy
-    case _ => (_, _) => BlockTransition
+  override val exceptionHandlerFn: Transition[_, _] => TransitionExceptionHandler[Place] = {
+    case interaction: InteractionTransition[_] =>
+      {
+        case (_: Error, _, _) => BlockTransition
+        case (_, n, outMarking) => {
+          interaction.failureStrategy.apply(n) match {
+            case ExceptionStrategyOutcome.BlockTransition => BlockTransition
+            case ExceptionStrategyOutcome.RetryWithDelay(delay) => RetryWithDelay(delay)
+            case ExceptionStrategyOutcome.Continue(eventType) => {
+              val runtimeEvent = new RuntimeEvent(eventType.name, Map.empty)
+              Continue(createProducedMarking(interaction, outMarking)(runtimeEvent), runtimeEvent)
+            }
+          }
+        }
+      }
+    case _ => (_, _, _) => BlockTransition
   }
 
   override val taskProvider = new TaskProvider(interactionFunctions)

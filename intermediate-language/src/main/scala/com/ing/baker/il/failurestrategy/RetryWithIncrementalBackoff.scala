@@ -1,14 +1,15 @@
 package com.ing.baker.il.failurestrategy
 
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, RetryWithDelay}
-import com.ing.baker.petrinet.runtime.TransitionExceptionHandler
+import com.ing.baker.il.EventType
+import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome.{BlockTransition, Continue, RetryWithDelay}
 
 import scala.concurrent.duration.Duration
 
 case class RetryWithIncrementalBackoff(initialTimeout: Duration,
                                        backoffFactor: Double,
                                        maximumRetries: Int,
-                                       maxTimeBetweenRetries: Option[Duration])
+                                       maxTimeBetweenRetries: Option[Duration],
+                                       retryExhaustedEvent: Option[EventType])
   extends InteractionFailureStrategy {
   require(backoffFactor >= 1.0, "backoff factor must be greater or equal to 1.0")
   require(maximumRetries >= 1, "maximum retries must be greater or equal to 1")
@@ -21,11 +22,9 @@ case class RetryWithIncrementalBackoff(initialTimeout: Duration,
     }
   }
 
-  def determineRetry(): TransitionExceptionHandler = {
-    case (_: Error, _) => BlockTransition
-    case (_, n) if n < maximumRetries => RetryWithDelay(determineTimeToNextRetry(n))
-    case (_, _) => BlockTransition
+  def apply(n: Int): ExceptionStrategyOutcome = {
+    if(n < maximumRetries) RetryWithDelay(determineTimeToNextRetry(n))
+    else if(retryExhaustedEvent.isDefined) Continue(retryExhaustedEvent.get)
+    else BlockTransition
   }
-
-  override def asTransitionExceptionHandler(): TransitionExceptionHandler = determineRetry()
 }

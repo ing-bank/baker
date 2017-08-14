@@ -47,8 +47,8 @@ package object compiler {
 
       def transformFailureStrategy(recipeStrategy: common.InteractionFailureStrategy): InteractionFailureStrategy = {
         recipeStrategy match {
-          case common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout: Duration, backoffFactor: Double, maximumRetries: Int, maxTimeBetweenRetries: Option[Duration]) =>
-            il.failurestrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, maxTimeBetweenRetries)
+          case common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout: Duration, backoffFactor: Double, maximumRetries: Int, maxTimeBetweenRetries: Option[Duration], retryExhaustedEvent: Option[common.Event]) =>
+            il.failurestrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, maxTimeBetweenRetries, if(retryExhaustedEvent.isDefined) Some(EventType(retryExhaustedEvent.get.name, Seq.empty)) else None)
           case common.InteractionFailureStrategy.BlockInteraction() => il.failurestrategy.BlockInteraction
           case _ => il.failurestrategy.BlockInteraction
         }

@@ -16,7 +16,7 @@ trait PetriNetRuntime[P[_], T[_, _], S, E] {
 
   val eventSourceFn: T[_, _] ⇒ (S ⇒ E ⇒ S) = t ⇒ (s ⇒ e ⇒ s)
 
-  val exceptionHandlerFn: T[_, _] ⇒ TransitionExceptionHandler = t ⇒ ((e, n) ⇒ BlockTransition)
+  val exceptionHandlerFn: T[_, _] ⇒ TransitionExceptionHandler[P] = t ⇒ ((_, _, _) ⇒ BlockTransition)
 
   val taskProvider: TransitionTaskProvider[S, P, T]
 

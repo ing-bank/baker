@@ -49,6 +49,4 @@ case class InteractionTransition[I](providesType: ProvidesType,
 
   val requiredIngredients: Map[String, Class[_]] =
     inputFields.toMap.filterKeys(requiredIngredientNames.contains)
-
-  val exceptionStrategy: TransitionExceptionHandler = failureStrategy.asTransitionExceptionHandler()
 }

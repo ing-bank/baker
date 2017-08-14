@@ -67,25 +67,5 @@ class TaskProvider(interactionFunctions: InteractionTransition[_] => (ProcessSta
     }.recover(failureHandler).get
   }
 
-  /**
-    * Creates the produced marking (tokens) given the output (event) of the interaction.
-    */
-  def createProducedMarking[A](interaction: InteractionTransition[A], outAdjacent: MultiSet[Place[_]]): RuntimeEvent => Marking[Place] = { output =>
-    outAdjacent.keys.map { place =>
-      val value: Any = {
-        interaction.providesType match {
-          case FiresOneOfEvents(events, _) =>
-            events.find(_.name == output.name).map(_.name).getOrElse {
-              throw new IllegalStateException(
-                s"Method output: $output is not an instance of any of the specified events: ${
-                  events
-                    .mkString(",")
-                }")
-            }
-          case _ => ()
-        }
-      }
-      place -> MultiSet.copyOff(Seq(value))
-    }.toMarking
-  }
+
 }

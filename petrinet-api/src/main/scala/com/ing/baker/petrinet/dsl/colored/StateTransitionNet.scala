@@ -31,11 +31,11 @@ trait StateTransitionNet[S, E] {
   }
 
   def stateTransition(id: Long = Math.abs(Random.nextLong), label: Option[String] = None, automated: Boolean = false,
-    exceptionStrategy: TransitionExceptionHandler = (e, n) ⇒ BlockTransition)(fn: S ⇒ E): Transition[Unit, E] =
+    exceptionStrategy: TransitionExceptionHandler[Place] = (e, n, _) ⇒ BlockTransition)(fn: S ⇒ E): Transition[Unit, E] =
     StateTransition(id, label.getOrElse(s"t$id"), automated, exceptionStrategy, (s: S) ⇒ Task.now(fn(s)))
 
   def constantTransition[I, O](id: Long, label: Option[String] = None, automated: Boolean = false, constant: O) =
-    StateTransition[I, O](id, label.getOrElse(s"t$id"), automated, (e, n) ⇒ BlockTransition, s ⇒ Task.now(constant))
+    StateTransition[I, O](id, label.getOrElse(s"t$id"), automated, (e, n, _) ⇒ BlockTransition, s ⇒ Task.now(constant))
 
   def nullTransition[S](id: Long, label: Option[String] = None, automated: Boolean = false): Transition[Unit, Unit] =
     constantTransition[Unit, Unit](id, label, automated, ())

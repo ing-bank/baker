@@ -5,7 +5,7 @@ import fs2.Task
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
 import com.ing.baker.petrinet.runtime.TransitionExceptionHandler
 
-case class TransitionBehaviour[S, E](automated: Boolean, exceptionHandler: TransitionExceptionHandler, fn: S ⇒ E) {
+case class TransitionBehaviour[S, E](automated: Boolean, exceptionHandler: TransitionExceptionHandler[Place], fn: S ⇒ E) {
   def asTransition(id: Long) = StateTransition[S, E](id, s"t$id", automated, exceptionHandler, state ⇒ Task.delay { (fn(state)) })
 }
 
@@ -18,7 +18,7 @@ trait SequenceNet[S, E] extends StateTransitionNet[S, E] {
 
   def place(n: Int) = places(n - 1)
 
-  def transition(automated: Boolean = false, exceptionHandler: TransitionExceptionHandler = (e, n) ⇒ BlockTransition)(fn: S ⇒ E): TransitionBehaviour[S, E] = TransitionBehaviour(automated, exceptionHandler, fn)
+  def transition(automated: Boolean = false, exceptionHandler: TransitionExceptionHandler[Place] = (e, n, _) ⇒ BlockTransition)(fn: S ⇒ E): TransitionBehaviour[S, E] = TransitionBehaviour(automated, exceptionHandler, fn)
 
   lazy val petriNet = {
     val nrOfSteps = sequence.size

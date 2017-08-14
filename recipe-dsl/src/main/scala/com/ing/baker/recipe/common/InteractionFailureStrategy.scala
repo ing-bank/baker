@@ -1,5 +1,7 @@
 package com.ing.baker.recipe.common
 
+import com.ing.baker.recipe.common
+
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
 
@@ -12,7 +14,8 @@ object InteractionFailureStrategy {
   case class RetryWithIncrementalBackoff(initialTimeout: Duration,
                                          backoffFactor: Double,
                                          maximumRetries: Int,
-                                         maxTimeBetweenRetries: Option[Duration] = None) extends InteractionFailureStrategy {
+                                         maxTimeBetweenRetries: Option[Duration] = None,
+                                         retryExhaustedEvent: Option[common.Event] = None) extends InteractionFailureStrategy {
     require(backoffFactor >= 1.0, "backoff factor must be greater or equal to 1.0")
     require(maximumRetries >= 1, "maximum retries must be greater or equal to 1")
   }
@@ -20,7 +23,8 @@ object InteractionFailureStrategy {
   object RetryWithIncrementalBackoff {
     def apply(initialDelay: Duration,
               deadline: Duration,
-              maxTimeBetweenRetries: Option[Duration]): RetryWithIncrementalBackoff = {
+              maxTimeBetweenRetries: Option[Duration],
+              exhaustedEvent: Option[common.Event]): RetryWithIncrementalBackoff = {
 
       require(deadline > initialDelay, "deadline should be greater then initialDelay")
 
@@ -52,7 +56,8 @@ object InteractionFailureStrategy {
           deadline,
           totalDelay = initialDelay,
           timesCounter = 1),
-        maxTimeBetweenRetries)
+        maxTimeBetweenRetries,
+        exhaustedEvent)
     }
   }
 
