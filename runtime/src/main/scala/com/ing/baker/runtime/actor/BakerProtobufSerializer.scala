@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.actor
 
 import akka.actor.ExtendedActorSystem
-import akka.serialization.SerializerWithStringManifest
+import akka.serialization.{Serializer, SerializerWithStringManifest}
 import com.ing.baker.petrinet.akka.AkkaObjectSerializer
 import com.ing.baker.runtime.actor.messages.Ingredient
 import com.ing.baker.runtime.core
@@ -9,7 +9,10 @@ import com.ing.baker.serialization._
 
 class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
 
-  lazy val objectSerializer = new AkkaObjectSerializer(system)
+  lazy val objectSerializer = new AkkaObjectSerializer(system) {
+    // We always use the Kryo serializer for now
+     override def getSerializerFor(obj: AnyRef): Serializer = serialization.serializerByIdentity(8675309)
+  }
 
   // Hardcoded serializerId for this serializer. This should not conflict with other serializers.
   // Values from 0 to 40 are reserved for Akka internal usage.
