@@ -2,6 +2,7 @@ package com.ing.baker
 
 import java.lang.reflect.{ParameterizedType, Type}
 import java.security.MessageDigest
+import java.util.Optional
 
 import com.ing.baker.il.ActionType.{InteractionAction, SieveAction}
 import com.ing.baker.il.petrinet.Place._
@@ -62,18 +63,37 @@ package object il {
     case t@_ => throw new IllegalArgumentException(s"Unsupported type: $t")
   }
 
+  /**
+    * These are the types that can be auto-boxed by baker.
+    *
+    * Example: If an ingredient of Option[String] is expected, but String is provided
+    * it will be boxed as Option[String]
+    */
+  val autoBoxClasses = List(classOf[Option[_]], classOf[Optional[_]])
+
+  /**
+    * other should be assignable to self
+    *
+    * @return
+    */
   def isAssignableFromType(self: Type, other: Type): Boolean = {
     self match {
-      case c: Class[_] => c.isAssignableFrom(getRawClass(other))
-      case p: ParameterizedType => other match {
-        case otherP: ParameterizedType =>
-          isAssignableFromType(p.getRawType, otherP.getRawType) &&
-          p.getActualTypeArguments.zip(otherP.getActualTypeArguments).map {
-            case (a, b) => isAssignableFromType(a, b) }.forall(_ == true)
-        case _ => false
-      }
-    }
-    false
-  }
+      case c: Class[_] =>
+        c.isAssignableFrom(getRawClass(other))
+      case p: ParameterizedType =>
 
+        val check = other match {
+          case otherP: ParameterizedType =>
+            isAssignableFromType(p.getRawType, otherP.getRawType) &&
+              p.getActualTypeArguments.zip(otherP.getActualTypeArguments).map {
+                case (a, b) => isAssignableFromType(a, b)
+              }.forall(_ == true)
+          case _ => false
+        }
+        if (!check && autoBoxClasses.contains(p.getRawType))
+          isAssignableFromType(p.getActualTypeArguments.apply(0), other)
+        else check
+      case _ => false
+    }
+  }
 }

@@ -65,8 +65,8 @@ object RecipeValidations {
             case None =>
               Some(
                 s"Ingredient '$name' for interaction '${t.interactionName}' is not provided by any event or interaction")
-            case Some(IngredientType(name, ingredientClass)) if isAssignableFromType(expectedType, ingredientClass) =>
-              Some(s"Interaction '$t' expects ingredient '$name:$expectedType', however incompatible type: '$ingredientClass' was provided")
+            case Some(IngredientType(name, ingredientType)) if !isAssignableFromType(expectedType, ingredientType) =>
+              Some(s"Interaction '$t' expects ingredient '$name:$expectedType', however incompatible type: '$ingredientType' was provided")
             case _ =>
               None
           }

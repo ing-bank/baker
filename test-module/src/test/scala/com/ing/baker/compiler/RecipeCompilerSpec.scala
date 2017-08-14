@@ -7,7 +7,7 @@ import com.ing.baker._
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{ProvidesIngredient, ProvidesNothing}
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, Recipe}
+import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, Recipe, processId}
 
 import scala.language.postfixOps
 
@@ -50,8 +50,60 @@ class RecipeCompilerSpec extends TestRecipeHelper {
       compiledRecipe.validationErrors should contain("Non supported process id type: int on interaction: 'wrongProcessIdInteraction'")
     }
 
+    "give a list of wrong ingredients if an ingredient is of the wrong type" in {
+      val initialIngredientInt = Ingredient[Int]("initialIngredient")
+      val initialEventInt = Event("InitialEvent", initialIngredientInt, None)
+
+      val recipe = Recipe("WrongTypedIngredient")
+        .withInteractions(
+          interactionOne)
+        .withSensoryEvent(initialEventInt)
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.validationErrors should contain("Interaction 'InteractionOne' expects ingredient 'initialIngredient:class java.lang.String', however incompatible type: 'int' was provided")
+    }
+
+    "give a list of wrong ingredients if an Optional ingredient is of the wrong Optional type" in {
+      val initialIngredientOptionalInt = Ingredient[Optional[Int]]("initialIngredientOptionalInt")
+      val initialIngredientOptionalString = Ingredient[Optional[String]]("initialIngredientOptionalInt")
+      val initialIngredientOptionInt = Ingredient[Option[List[Int]]]("initialIngredientOptionInt")
+      val initialIngredientOptionString = Ingredient[Option[List[String]]]("initialIngredientOptionInt")
+      val initialEventIntOptional = Event("initialEventIntOptional", initialIngredientOptionalString, None)
+      val initialEventIntOption = Event("initialEventIntOption", initialIngredientOptionString, None)
+      val interactionOptional =
+        Interaction("InteractionWithOptional",
+          Ingredients(processId, initialIngredientOptionalInt, initialIngredientOptionInt),
+          ProvidesNothing)
+
+      val recipe = Recipe("WrongTypedOptionalIngredient")
+        .withInteractions(
+          interactionOptional)
+        .withSensoryEvents(initialEventIntOptional, initialEventIntOption)
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionalInt:ParameterizedType: class java.util.Optional[int]', however incompatible type: 'ParameterizedType: class java.util.Optional[class java.lang.String]' was provided")
+      compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionInt:ParameterizedType: class scala.Option[ParameterizedType: class scala.collection.immutable.List[int]]', however incompatible type: 'ParameterizedType: class scala.Option[ParameterizedType: class scala.collection.immutable.List[class java.lang.String]]' was provided")
+    }
+
+    "give no errors if an Optional ingredient is of the correct Optional type" in {
+      val initialIngredientInt = Ingredient[Optional[List[Int]]]("initialIngredient")
+      val initialEventInt = Event("InitialEvent", initialIngredientInt, None)
+      val interactionOptional =
+        Interaction("InteractionWithOptional",
+          Ingredients(processId, initialIngredientInt),
+          ProvidesNothing)
+
+      val recipe = Recipe("CorrectTypedOptionalIngredient")
+        .withInteractions(
+          interactionOptional)
+        .withSensoryEvent(initialEventInt)
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      compiledRecipe.validationErrors shouldBe empty
+    }
+
     "give a list of wrong ingredients if an predefined ingredient is of the wrong type" in {
-      val recipe = Recipe("WrongGivenIngredient")
+      val recipe = Recipe("WrongGivenPredefinedIngredient")
         .withInteractions(
           interactionOne
             .withRequiredEvent(initialEvent)
@@ -169,10 +221,9 @@ class RecipeCompilerSpec extends TestRecipeHelper {
             it.predefinedParameters("missingScalaOptional2") shouldBe Option.empty
           })
 
-      println(compiledRecipe.getRecipeVisualization)
     }
 
-    "interactions with ingredients that are provided but are required as Optionals should give no validation erros" in {
+    "interactions with ingredients that are provided but are required as Optionals should be wrapped into the optional" in {
       val optionalProviderEvent = Event("optionalProviderEvent", missingJavaOptionalDirectString)
 
       val recipe: Recipe = Recipe("MissingOptionalRecipe")
@@ -189,8 +240,6 @@ class RecipeCompilerSpec extends TestRecipeHelper {
             it.predefinedParameters("missingScalaOptional") shouldBe Option.empty
             it.predefinedParameters("missingScalaOptional2") shouldBe Option.empty
           })
-
-      println(compiledRecipe.getRecipeVisualization)
     }
 
     "interactions with optional ingredients that are predefined should not be provided as empty" in {
