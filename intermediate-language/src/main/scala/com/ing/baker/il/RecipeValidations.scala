@@ -45,6 +45,7 @@ object RecipeValidations {
                     validationErrors += s"Predefined argument '$name' is not of type: ${pt} on interaction: '$interactionTransition'"
                 }
             }
+          case _ =>
         }
     }
     validationErrors
