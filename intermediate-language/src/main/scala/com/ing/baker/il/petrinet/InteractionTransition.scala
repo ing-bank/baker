@@ -3,16 +3,8 @@ package com.ing.baker.il.petrinet
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
 import com.ing.baker.il.{ActionType, EventOutputTransformer, _}
-import com.ing.baker.petrinet.runtime.TransitionExceptionHandler
 import org.slf4j._
 
-/**
-  * This trait describes what kind of output the interaction provides
-  */
-sealed trait ProvidesType
-case class ProvidesIngredient(ingredient: IngredientType) extends ProvidesType
-case class FiresOneOfEvents(events: Seq[EventType], originalEvents: Seq[EventType]) extends ProvidesType
-case object ProvidesNothing extends ProvidesType
 
 
 
@@ -21,7 +13,9 @@ case object ProvidesNothing extends ProvidesType
   *
   * @tparam I The class/interface of the interaction
   */
-case class InteractionTransition[I](providesType: ProvidesType,
+case class InteractionTransition[I](eventsToFire: Seq[EventType],
+                                    originalEvents: Seq[EventType],
+                                    providedIngredientEvent: Option[EventType],
                                     inputFields: Seq[(String, Class[_])],
                                     interactionName: String,
                                     originalInteractionName: String,

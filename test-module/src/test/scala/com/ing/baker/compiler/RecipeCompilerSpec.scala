@@ -25,6 +25,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
       val recipe: Recipe = getComplexRecipe("ValidRecipe")
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
       compiledRecipe.validationErrors shouldBe List.empty
+      println(compiledRecipe.getRecipeVisualization)
     }
 
     "give a List of missing ingredients if an interaction has an ingredient that is not provided by any other event or interaction" in {

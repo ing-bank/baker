@@ -1,10 +1,10 @@
 package com.ing.baker
 
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
-import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing, ProvidesType, Transition}
+import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Transition}
 import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientType}
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.InteractionDescriptor
+import com.ing.baker.recipe.common.{InteractionDescriptor, ProvidesNothing}
 
 import scala.concurrent.duration.Duration
 
@@ -71,18 +71,20 @@ package object compiler {
         if(ingredient.name == common.ProcessIdName) il.processIdName -> ingredient.clazz
         else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.clazz)
 
-      val providesType: ProvidesType =
+      val (originalEvents, compiledEvents, providedIngredient): (Seq[EventType], Seq[EventType], Option[EventType]) =
         interactionDescriptor.interaction.output match {
           case common.ProvidesIngredient(outputIngredient) =>
             val ingredientName: String =
               if(interactionDescriptor.overriddenOutputIngredientName.nonEmpty) interactionDescriptor.overriddenOutputIngredientName.get
               else outputIngredient.name
-            ProvidesIngredient(IngredientType(ingredientName, outputIngredient.clazz))
+            val event = EventType(interactionDescriptor.name + "Successful", Seq(IngredientType(ingredientName, outputIngredient.clazz)))
+            val events = Seq(event)
+            (events, events, Some(event))
           case common.FiresOneOfEvents(events @ _*) =>
             val originalCompiledEvents = events.map(transformEventToCompiledEvent)
             val compiledEvents = events.map(transformEventType).map(transformEventToCompiledEvent)
-            FiresOneOfEvents(compiledEvents, originalCompiledEvents)
-          case common.ProvidesNothing => ProvidesNothing
+            (compiledEvents, originalCompiledEvents, None)
+          case ProvidesNothing => (Seq.empty, Seq.empty, None)
         }
 
       //For each ingredient that is not provided
@@ -99,7 +101,9 @@ package object compiler {
         }.toMap ++ interactionDescriptor.predefinedIngredients
 
       InteractionTransition[Any](
-        providesType = providesType,
+        eventsToFire = compiledEvents,
+        originalEvents = originalEvents,
+        providedIngredientEvent = providedIngredient,
         inputFields = inputFields,
         interactionName = interactionDescriptor.name,
         originalInteractionName = interactionDescriptor.interaction.name,

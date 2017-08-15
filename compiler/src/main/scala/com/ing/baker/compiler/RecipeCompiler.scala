@@ -2,13 +2,11 @@ package com.ing.baker
 package compiler
 
 import com.ing.baker.il.RecipeValidations.postCompileValidations
-import com.ing.baker.il.ValidationSettings.defaultValidationSettings
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
 import com.ing.baker.il.{CompiledRecipe, EventType, ValidationSettings}
 import com.ing.baker.petrinet.api._
-import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.{Event, Ingredient, InteractionDescriptor, Recipe}
+import com.ing.baker.recipe.common._
 
 import scala.language.postfixOps
 import scalax.collection.immutable.Graph
@@ -131,11 +129,7 @@ object RecipeCompiler {
 
   private def buildInteractionOutputArcs(t: InteractionTransition[_],
                                          findInternalEventByEvent: EventType => Option[Transition[_, _]]): Seq[Arc] = {
-    t.providesType match {
-      case FiresOneOfEvents(events, _) => interactionEventOutputArc(t, events, findInternalEventByEvent)
-      case ProvidesIngredient(ingredient) => interactionIngredientOutputArc(t, ingredient.name)
-      case ProvidesNothing => Seq.empty
-    }
+    interactionEventOutputArc(t, t.eventsToFire, findInternalEventByEvent)
   }
 
   private def buildInteractionArcs(
@@ -166,9 +160,9 @@ object RecipeCompiler {
     val allIngredientNames: Set[String] =
       recipe.sensoryEvents.flatMap(e => e.providedIngredients.map(i => i.name)) ++
       recipe.interactions.flatMap(i => i.interaction.output match {
-        case pi: common.ProvidesIngredient => Set(i.overriddenOutputIngredientName.getOrElse(pi.ingredient.name))
-        case fi: common.FiresOneOfEvents => fi.events.flatMap(e => e.providedIngredients.map(i => i.name))
-        case common.ProvidesNothing => Set.empty
+        case pi: ProvidesIngredient => Set(i.overriddenOutputIngredientName.getOrElse(pi.ingredient.name))
+        case fi: FiresOneOfEvents => fi.events.flatMap(e => e.providedIngredients.map(i => i.name))
+        case ProvidesNothing => Set.empty
       })
 
     val actionDescriptors: Seq[InteractionDescriptor] = recipe.interactions ++ recipe.sieves
@@ -179,30 +173,23 @@ object RecipeCompiler {
 
     val sieveTransitions = recipe.sieves.map(_.toSieveTransition(recipe.defaultFailureStrategy, allIngredientNames))
 
-    val allInteractionTransitions = sieveTransitions ++ interactionTransitions
+    val allInteractionTransitions: Seq[InteractionTransition[_]] = sieveTransitions ++ interactionTransitions
 
     // events provided from outside
     val sensoryEventTransitions: Seq[EventTransition] = recipe.sensoryEvents.map { event => EventTransition(eventToCompiledEvent(event), isSensoryEvent = true, event.maxFiringLimit) }.toSeq
 
     // events provided by other transitions / actions
     val interactionEventTransitions: Seq[EventTransition] = allInteractionTransitions.flatMap { t =>
-      t.providesType match {
-        case FiresOneOfEvents(events, _) => events.map(event => EventTransition(event, isSensoryEvent = false))
-        case _ => Nil
-      }
-    }
+      t.eventsToFire.map(event => EventTransition(event, isSensoryEvent = false)) }
 
     val allEventTransitions: Seq[EventTransition] = sensoryEventTransitions ++ interactionEventTransitions
 
     // Given the event classes, it is creating the ingredient places and
     // connecting a transition to a ingredient place.
     val internalEventArcs: Seq[Arc] = allInteractionTransitions.flatMap { t =>
-      t.providesType match {
-        case FiresOneOfEvents(events, _) =>
-          events.flatMap(event =>
-            event.ingredientTypes.map(ingredient =>
-              arc(interactionEventTransitions.getByLabel(event.name), createPlace(ingredient.name, IngredientPlace), 1)))
-        case _ => Nil
+      t.eventsToFire.flatMap { event =>
+          event.ingredientTypes.map(ingredient =>
+            arc(interactionEventTransitions.getByLabel(event.name), createPlace(ingredient.name, IngredientPlace), 1))
       }
     }
 
@@ -291,7 +278,7 @@ object RecipeCompiler {
     postCompileValidations(compiledRecipe, validationSettings)
   }
 
-  def compileRecipe(recipe: Recipe): CompiledRecipe = compileRecipe(recipe, defaultValidationSettings)
+  def compileRecipe(recipe: Recipe): CompiledRecipe = compileRecipe(recipe, ValidationSettings.defaultValidationSettings)
 
   private def getMultiTransition(internalRepresentationName: String,
                                  transitions: Seq[Transition[_, _]]): Transition[_, _] = {

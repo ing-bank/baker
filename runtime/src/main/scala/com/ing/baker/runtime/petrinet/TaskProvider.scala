@@ -2,11 +2,11 @@ package com.ing.baker.runtime.petrinet
 
 import java.lang.reflect.InvocationTargetException
 
-import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, Place, Transition}
+import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
 import com.ing.baker.petrinet.api._
+import com.ing.baker.petrinet.runtime.{TransitionTask, TransitionTaskProvider}
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import fs2.Task
-import com.ing.baker.petrinet.runtime.{TransitionTask, TransitionTaskProvider}
 import org.slf4j.LoggerFactory
 
 import scala.util.Try
@@ -34,17 +34,12 @@ class TaskProvider(interactionFunctions: InteractionTransition[_] => (ProcessSta
 
   // function that (optionally) transforms the output event using the event output transformers
   def transformEvent[I](interaction: InteractionTransition[I])(runtimeEvent: RuntimeEvent): RuntimeEvent = {
-    interaction.providesType match {
-      case FiresOneOfEvents(_, _) => {
-        interaction.eventOutputTransformers.get(runtimeEvent.eventType) match {
-          case Some(eventOutputTransformer) =>
-            RuntimeEvent(
-              eventOutputTransformer.newEventName,
-              runtimeEvent.providedIngredients.map{ case (name, value) => eventOutputTransformer.ingredientRenames.getOrElse(name, name) -> value })
-          case None => runtimeEvent
-        }
-      }
-      case _ => runtimeEvent
+    interaction.eventOutputTransformers.get(runtimeEvent.eventType) match {
+      case Some(eventOutputTransformer) =>
+        RuntimeEvent(
+          eventOutputTransformer.newEventName,
+          runtimeEvent.providedIngredients.map { case (name, value) => eventOutputTransformer.ingredientRenames.getOrElse(name, name) -> value })
+      case None => runtimeEvent
     }
   }
 

@@ -39,9 +39,6 @@ package object il {
       case EventTransition(_, true, _) => true
       case _ => false
     }
-
-    def isEvent: Boolean =
-      !(transition.isInstanceOf[InteractionTransition[_]] || transition.label.contains(":"))
   }
 
   def sha256HashCode(str: String): Long = {
