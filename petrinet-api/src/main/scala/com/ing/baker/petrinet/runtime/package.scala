@@ -1,6 +1,6 @@
 package com.ing.baker.petrinet
 
-import com.ing.baker.petrinet.api.Marking
+import com.ing.baker.petrinet.api.{Marking, MultiSet}
 import fs2.Task
 
 package object runtime {
@@ -8,7 +8,7 @@ package object runtime {
   /**
    * An exception handler function associated with a transition.
    */
-  type TransitionExceptionHandler = (Throwable, Int) ⇒ ExceptionStrategy
+  type TransitionExceptionHandler[P[_]] = (Throwable, Int, MultiSet[P[_]]) ⇒ ExceptionStrategy
 
   /**
    * An (asynchronous) function associated with a transition

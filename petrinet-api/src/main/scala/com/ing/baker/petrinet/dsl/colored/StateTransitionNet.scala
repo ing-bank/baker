@@ -23,7 +23,7 @@ trait StateTransitionNet[S, E] {
   val runtime: PetriNetRuntime[Place, Transition, S, E] = new PetriNetRuntime[Place, Transition, S, E] {
     override val eventSourceFn: (Transition[_, _]) ⇒ (S) ⇒ (E) ⇒ S = _ ⇒ eventSourceFunction
     override val taskProvider: TransitionTaskProvider[S, Place, Transition] = eventTaskProvider
-    override val exceptionHandlerFn: (Transition[_, _]) => TransitionExceptionHandler = (t: Transition[_, _]) ⇒ t.exceptionStrategy
+    override val exceptionHandlerFn: (Transition[_, _]) => TransitionExceptionHandler[Place] = (t: Transition[_, _]) ⇒ t.exceptionStrategy
     override lazy val jobPicker = new JobPicker[Place, Transition](tokenGame) {
       override def isAutoFireable[T](instance: Instance[Place, Transition, T], t: Transition[_, _]): Boolean =
         t.isAutomated && instance.isBlockedReason(t).isEmpty
@@ -31,11 +31,11 @@ trait StateTransitionNet[S, E] {
   }
 
   def stateTransition(id: Long = Math.abs(Random.nextLong), label: Option[String] = None, automated: Boolean = false,
-    exceptionStrategy: TransitionExceptionHandler = (_, _) ⇒ BlockTransition)(fn: S ⇒ E): Transition[Unit, E] =
+    exceptionStrategy: TransitionExceptionHandler[Place] = (_, _, _) ⇒ BlockTransition)(fn: S ⇒ E): Transition[Unit, E] =
     StateTransition(id, label.getOrElse(s"t$id"), automated, exceptionStrategy, (s: S) ⇒ Task.now(fn(s)))
 
   def constantTransition[I, O](id: Long, label: Option[String] = None, automated: Boolean = false, constant: O): StateTransition[I, O] =
-    StateTransition[I, O](id, label.getOrElse(s"t$id"), automated, (_, _) ⇒ BlockTransition, _ ⇒ Task.now(constant))
+    StateTransition[I, O](id, label.getOrElse(s"t$id"), automated, (_, _, _) ⇒ BlockTransition, _ ⇒ Task.now(constant))
 
   def nullTransition[O](id: Long, label: Option[String] = None, automated: Boolean = false): Transition[Unit, O] =
     constantTransition[Unit, O](id, label, automated, ().asInstanceOf[O])

@@ -4,7 +4,7 @@ import java.security.MessageDigest
 
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Fatal, RetryWithDelay}
+import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Continue, Fatal, RetryWithDelay}
 import com.ing.baker.petrinet.runtime.persistence.ProtobufSerialization._
 import com.ing.baker.petrinet.runtime.persistence.messages.FailureStrategy
 import com.ing.baker.petrinet.runtime.persistence.messages.FailureStrategy.StrategyType
@@ -162,6 +162,7 @@ class ProtobufSerialization[P[_], T[_, _], S](
       case BlockTransition ⇒ FailureStrategy(Some(StrategyType.BLOCK_TRANSITION))
       case Fatal ⇒ FailureStrategy(Some(StrategyType.BLOCK_ALL))
       case RetryWithDelay(delay) ⇒ FailureStrategy(Some(StrategyType.RETRY), Some(delay))
+      case _ => throw new IllegalArgumentException("Unsupported exception strategy")
     }
 
     messages.TransitionFailed(

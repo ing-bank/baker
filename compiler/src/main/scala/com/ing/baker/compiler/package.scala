@@ -3,10 +3,11 @@ package com.ing.baker
 import java.lang.reflect.{ParameterizedType, Type}
 
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
-import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, ProvidesIngredient, ProvidesNothing, ProvidesType, Transition}
+import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Transition}
 import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientType}
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.InteractionDescriptor
+import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
+import com.ing.baker.recipe.common.{InteractionDescriptor, ProvidesNothing}
 
 import com.ing.baker.il._
 
@@ -51,8 +52,8 @@ package object compiler {
 
       def transformFailureStrategy(recipeStrategy: common.InteractionFailureStrategy): InteractionFailureStrategy = {
         recipeStrategy match {
-          case common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout: Duration, backoffFactor: Double, maximumRetries: Int, maxTimeBetweenRetries: Option[Duration]) =>
-            il.failurestrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, maxTimeBetweenRetries)
+          case common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout: Duration, backoffFactor: Double, maximumRetries: Int, maxTimeBetweenRetries: Option[Duration], retryExhaustedEvent: Option[common.Event]) =>
+            il.failurestrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, maxTimeBetweenRetries, if(retryExhaustedEvent.isDefined) Some(EventType(retryExhaustedEvent.get.name, Seq.empty)) else None)
           case common.InteractionFailureStrategy.BlockInteraction() => il.failurestrategy.BlockInteraction
           case _ => il.failurestrategy.BlockInteraction
         }
@@ -75,18 +76,25 @@ package object compiler {
         if(ingredient.name == common.ProcessIdName) il.processIdName -> ingredient.clazz
         else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.clazz)
 
-      val providesType: ProvidesType =
+      val exhaustedRetryEvent = interactionDescriptor.failureStrategy.flatMap {
+        case RetryWithIncrementalBackoff(_, _, _, _, optionalExhaustedRetryEvent) => optionalExhaustedRetryEvent
+        case _ => None
+      }.map(transformEventToCompiledEvent)
+
+      val (originalEvents, eventsToFire, providedIngredient): (Seq[EventType], Seq[EventType], Option[EventType]) =
         interactionDescriptor.interaction.output match {
           case common.ProvidesIngredient(outputIngredient) =>
             val ingredientName: String =
               if(interactionDescriptor.overriddenOutputIngredientName.nonEmpty) interactionDescriptor.overriddenOutputIngredientName.get
               else outputIngredient.name
-            ProvidesIngredient(IngredientType(ingredientName, outputIngredient.clazz))
+            val event = EventType(interactionDescriptor.name + "Successful", Seq(IngredientType(ingredientName, outputIngredient.clazz)))
+            val events = Seq(event)
+            (events, events, Some(event))
           case common.FiresOneOfEvents(events @ _*) =>
             val originalCompiledEvents = events.map(transformEventToCompiledEvent)
             val compiledEvents = events.map(transformEventType).map(transformEventToCompiledEvent)
-            FiresOneOfEvents(compiledEvents, originalCompiledEvents)
-          case common.ProvidesNothing => ProvidesNothing
+            (originalCompiledEvents, compiledEvents, None)
+          case ProvidesNothing => (Seq.empty, Seq.empty, None)
         }
 
       //For each ingredient that is not provided
@@ -103,7 +111,9 @@ package object compiler {
         }.toMap ++ interactionDescriptor.predefinedIngredients
 
       InteractionTransition[Any](
-        providesType = providesType,
+        eventsToFire = eventsToFire ++ exhaustedRetryEvent,
+        originalEvents = originalEvents ++ exhaustedRetryEvent,
+        providedIngredientEvent = providedIngredient,
         requiredIngredients = inputFields,
         interactionName = interactionDescriptor.name,
         originalInteractionName = interactionDescriptor.interaction.name,

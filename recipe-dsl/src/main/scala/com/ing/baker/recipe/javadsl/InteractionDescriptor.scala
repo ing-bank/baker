@@ -188,7 +188,7 @@ case class InteractionDescriptor private(
   }
 
   def withFailureStrategy(interactionFailureStrategy: common.InteractionFailureStrategy): InteractionDescriptor = {
-    this.copy(failureStrategy = failureStrategy)
+    this.copy(failureStrategy = Some(interactionFailureStrategy))
   }
 
   /**

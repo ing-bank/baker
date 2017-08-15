@@ -10,7 +10,7 @@ import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
 import com.ing.baker.petrinet.api._
 import fs2.Strategy
 import com.ing.baker.petrinet.runtime.EventSourcing._
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
+import com.ing.baker.petrinet.runtime.ExceptionStrategy.{Continue, RetryWithDelay}
 import com.ing.baker.petrinet.runtime._
 import com.ing.baker.serialization.ObjectSerializer
 
@@ -142,6 +142,20 @@ class PetriNetInstance[P[_], T[_, _], S, E](
                 context become running(updatedInstance, scheduledRetries + (jobId -> retry))
               }
           )
+
+        case Continue(produced, out) =>
+          val consumedMarking = consume.asInstanceOf[Marking[P]]
+          val producedMarking = produced.asInstanceOf[Marking[P]]
+          val transitionFiredEvent = TransitionFiredEvent[P, T, E](
+            jobId, transition, timeStarted, timeFailed, consumedMarking, producedMarking, out.asInstanceOf[E])
+
+          persistEvent(instance, transitionFiredEvent)(
+            eventSource.apply(instance)
+              .andThen(step)
+              .andThen { case (updatedInstance, newJobs) ⇒
+                sender() ! TransitionFired(jobId, transitionId, marshal[P](consumedMarking), marshal[P](producedMarking), fromExecutionInstance(updatedInstance), newJobs.map(_.id))
+                context become running(updatedInstance, scheduledRetries - jobId)
+              })
 
         case _ ⇒
           persistEvent(instance, event)(

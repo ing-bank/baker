@@ -2,11 +2,11 @@ package com.ing.baker.runtime.petrinet
 
 import java.lang.reflect.InvocationTargetException
 
-import com.ing.baker.il.petrinet.{EventTransition, FiresOneOfEvents, InteractionTransition, Place, Transition}
+import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
 import com.ing.baker.petrinet.api._
+import com.ing.baker.petrinet.runtime.{TransitionTask, TransitionTaskProvider}
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import fs2.Task
-import com.ing.baker.petrinet.runtime.{TransitionTask, TransitionTaskProvider}
 import org.slf4j.LoggerFactory
 
 import scala.util.Try
@@ -34,17 +34,12 @@ class TaskProvider(interactionFunctions: InteractionTransition[_] => (ProcessSta
 
   // function that (optionally) transforms the output event using the event output transformers
   def transformEvent[I](interaction: InteractionTransition[I])(runtimeEvent: RuntimeEvent): RuntimeEvent = {
-    interaction.providesType match {
-      case FiresOneOfEvents(_, _) => {
-        interaction.eventOutputTransformers.get(runtimeEvent.eventType) match {
-          case Some(eventOutputTransformer) =>
-            RuntimeEvent(
-              eventOutputTransformer.newEventName,
-              runtimeEvent.providedIngredients.map{ case (name, value) => eventOutputTransformer.ingredientRenames.getOrElse(name, name) -> value })
-          case None => runtimeEvent
-        }
-      }
-      case _ => runtimeEvent
+    interaction.eventOutputTransformers.get(runtimeEvent.eventType) match {
+      case Some(eventOutputTransformer) =>
+        RuntimeEvent(
+          eventOutputTransformer.newEventName,
+          runtimeEvent.providedIngredients.map { case (name, value) => eventOutputTransformer.ingredientRenames.getOrElse(name, name) -> value })
+      case None => runtimeEvent
     }
   }
 
@@ -67,25 +62,5 @@ class TaskProvider(interactionFunctions: InteractionTransition[_] => (ProcessSta
     }.recover(failureHandler).get
   }
 
-  /**
-    * Creates the produced marking (tokens) given the output (event) of the interaction.
-    */
-  def createProducedMarking[A](interaction: InteractionTransition[A], outAdjacent: MultiSet[Place[_]]): RuntimeEvent => Marking[Place] = { output =>
-    outAdjacent.keys.map { place =>
-      val value: Any = {
-        interaction.providesType match {
-          case FiresOneOfEvents(events, _) =>
-            events.find(_.name == output.name).map(_.name).getOrElse {
-              throw new IllegalStateException(
-                s"Method output: $output is not an instance of any of the specified events: ${
-                  events
-                    .mkString(",")
-                }")
-            }
-          case _ => ()
-        }
-      }
-      place -> MultiSet.copyOff(Seq(value))
-    }.toMarking
-  }
+
 }

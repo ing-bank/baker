@@ -11,7 +11,7 @@ import com.ing.baker.petrinet.runtime.EventSourcing._
  */
 class JobExecutor[S, P[_], T[_, _]](
     taskProvider: TransitionTaskProvider[S, P, T],
-    exceptionHandlerFn: T[_, _] ⇒ TransitionExceptionHandler) {
+    exceptionHandlerFn: T[_, _] ⇒ TransitionExceptionHandler[P]) {
 
   /**
    * Executes a job returning a Task[TransitionEvent]
@@ -47,7 +47,7 @@ class JobExecutor[S, P[_], T[_, _]](
       }.handle {
         case e: Throwable ⇒
           val failureCount = job.failureCount + 1
-          val failureStrategy = exceptionHandlerFn(transition).apply(e, failureCount)
+          val failureStrategy = exceptionHandlerFn(transition).apply(e, failureCount, topology.outMarking(transition))
 
           val sw = new StringWriter()
           e.printStackTrace(new PrintWriter(sw))

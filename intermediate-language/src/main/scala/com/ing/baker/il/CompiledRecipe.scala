@@ -1,6 +1,6 @@
 package com.ing.baker.il
 
-import com.ing.baker.il.petrinet.{FiresOneOfEvents, InteractionTransition, Place, ProvidesIngredient, RecipePetriNet}
+import com.ing.baker.il.petrinet.{InteractionTransition, Place, RecipePetriNet}
 import com.ing.baker.petrinet.api.Marking
 
 import scala.collection.JavaConverters._
@@ -58,24 +58,13 @@ case class CompiledRecipe(name: String,
     case t: InteractionTransition[_] => t
   }
 
-  val interactionEvents: Set[EventType] =
-    interactionTransitions flatMap  {
-      case InteractionTransition(providesType: FiresOneOfEvents, _, _, _, _, _, _, _, _) => providesType.events
-      case _ => Seq.empty
-    }
+  val interactionEvents: Set[EventType] = interactionTransitions flatMap(it => it.eventsToFire)
 
   val allEvents: Set[EventType] = sensoryEvents ++ interactionEvents
-
-  val allIngredientsProvidedByInteractions: Set[IngredientType] =
-    interactionTransitions map {
-      case InteractionTransition(providesType: ProvidesIngredient, _, _, _, _, _, _, _, _) => providesType.ingredient
-      case _ => null
-    } filterNot(_ == null)
-
 
   val allIngredientsProvidedByEvents: Set[IngredientType] = allEvents.flatMap {
     events => events.ingredientTypes
   }
 
-  val ingredients: Map[String, IngredientType] = (allIngredientsProvidedByInteractions ++ allIngredientsProvidedByEvents).map(i => i.name -> i).toMap
+  val ingredients: Map[String, IngredientType] = allIngredientsProvidedByEvents.map(i => i.name -> i).toMap
 }

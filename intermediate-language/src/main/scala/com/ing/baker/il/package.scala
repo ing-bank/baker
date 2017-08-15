@@ -44,12 +44,9 @@ package object il {
 
     def isSensoryEvent: Boolean =
       transition match {
-        case EventTransition(_, true, _) => true
-        case _ => false
-      }
-
-    def isEvent: Boolean =
-      !(transition.isInstanceOf[InteractionTransition[_]] || transition.label.contains(":"))
+      case EventTransition(_, true, _) => true
+      case _ => false
+    }
   }
 
   def sha256HashCode(str: String): Long = {

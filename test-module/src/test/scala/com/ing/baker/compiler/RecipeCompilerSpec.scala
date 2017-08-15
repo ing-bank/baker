@@ -7,6 +7,7 @@ import com.ing.baker._
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{ProvidesIngredient, ProvidesNothing}
+import scala.concurrent.duration._
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, Recipe, processId}
 
 import scala.language.postfixOps
@@ -25,6 +26,19 @@ class RecipeCompilerSpec extends TestRecipeHelper {
       val recipe: Recipe = getComplexRecipe("ValidRecipe")
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
       compiledRecipe.validationErrors shouldBe List.empty
+    }
+
+    "should add the exhausted retry event to the interaction event output list if defined" in {
+      val exhaustedEvent = Event("RetryExhausted")
+      val recipe = Recipe("RetryExhaustedRecipe")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(interactionOne.withIncrementalBackoffOnFailure(
+          initialDelay = 10 milliseconds,
+          exhaustedRetryEvent = Some(exhaustedEvent)))
+
+      val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+
+      compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
     }
 
     "give a List of missing ingredients if an interaction has an ingredient that is not provided by any other event or interaction" in {

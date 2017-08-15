@@ -1,5 +1,7 @@
 package com.ing.baker.petrinet.runtime
 
+import com.ing.baker.petrinet.api.Marking
+
 object ExceptionStrategy {
 
   /**
@@ -18,6 +20,8 @@ object ExceptionStrategy {
   case class RetryWithDelay(delay: Long) extends ExceptionStrategy {
     require(delay > 0, "Delay must be greater then zero")
   }
+
+  case class Continue[P[_], E](marking: Marking[P], event: E) extends ExceptionStrategy {}
 }
 
 sealed trait ExceptionStrategy

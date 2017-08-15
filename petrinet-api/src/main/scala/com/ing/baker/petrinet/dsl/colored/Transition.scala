@@ -11,7 +11,7 @@ import com.ing.baker.petrinet.runtime.TransitionExceptionHandler
  */
 trait Transition[Input, Output] {
   val id: Long
-  val label: String
-  val isAutomated: Boolean
-  val exceptionStrategy: TransitionExceptionHandler = (_, _) ⇒ BlockTransition
+  def label: String
+  def isAutomated: Boolean
+  def exceptionStrategy: TransitionExceptionHandler[Place] = (e, n, _) ⇒ BlockTransition
 }

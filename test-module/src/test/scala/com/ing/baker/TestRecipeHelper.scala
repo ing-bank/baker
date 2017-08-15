@@ -77,9 +77,11 @@ object TestRecipeHelper {
 
   case class Event2FromInteractionSeven(interactionSevenIngredient2: String)
 
+  val emptyEvent = Event("EmptyEvent")
+
   case class EmptyEvent()
 
-  val emptyEvent = Event("EmptyEvent")
+  val exhaustedEvent = Event("RetryExhausted")
 
   val unboxedProviderEvent = Event("UnboxedProviderEvent", missingJavaOptionalDirectString, initialIngredient, missingScalaOptionalDirectString)
 

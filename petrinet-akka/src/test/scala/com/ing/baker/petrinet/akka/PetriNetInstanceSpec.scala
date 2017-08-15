@@ -162,8 +162,8 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
 
     "Retry to execute a transition with a delay when the exception strategy indicates so" in new TestSequenceNet {
 
-      val retryHandler: TransitionExceptionHandler = {
-        case (e, n) if n < 3 ⇒ RetryWithDelay(dilatedMillis(10 * Math.pow(2, n).toLong))
+      val retryHandler: TransitionExceptionHandler[Place] = {
+        case (e, n, _) if n < 3 ⇒ RetryWithDelay(dilatedMillis(10 * Math.pow(2, n).toLong))
         case _               ⇒ Fatal
       }
 
@@ -239,8 +239,8 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
     "Re-fire a failed transition with 'Retry' strategy after being restored from persistent storage" in new TestSequenceNet {
 
       val Delay: Long = dilatedMillis(500)
-      val retryHandler: TransitionExceptionHandler = {
-        case (e, n) ⇒ RetryWithDelay(Delay)
+      val retryHandler: TransitionExceptionHandler[Place] = {
+        case (e, n, _) ⇒ RetryWithDelay(Delay)
       }
       val mockFunction = mock[Set[Int] ⇒ Event]
 
@@ -325,8 +325,8 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
     "Not execute a transition with scheduled retry after being stopped" in new TestSequenceNet {
 
       val InitialDelay: Long = dilatedMillis(50)
-      val retryHandler: TransitionExceptionHandler = {
-        case (e, n) ⇒ RetryWithDelay(InitialDelay)
+      val retryHandler: TransitionExceptionHandler[Place] = {
+        case (e, n, _) ⇒ RetryWithDelay(InitialDelay)
       }
 
       val mockFunction = mock[Set[Int] ⇒ Event]

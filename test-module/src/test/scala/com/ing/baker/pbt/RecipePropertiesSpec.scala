@@ -1,16 +1,12 @@
 package com.ing.baker.pbt
 
 import java.io.{File, PrintWriter}
-import java.util.UUID
 
-import akka.actor.ActorSystem
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.il.{CompiledRecipe, IngredientType, ValidationSettings, petrinet}
+import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionOutput, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, InteractionDescriptor, InteractionDescriptorFactory, Recipe}
-import com.ing.baker.runtime.core.{Baker, ProcessState, RuntimeEvent}
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Test.Parameters.defaultVerbose
 import org.scalacheck._
@@ -18,7 +14,6 @@ import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 
 import scala.annotation.tailrec
-import scala.concurrent.duration.FiniteDuration
 import scala.util.Random
 
 class RecipePropertiesSpec extends FunSuite with Checkers {
@@ -46,63 +41,63 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
   }
 
   ignore("Baker produces all possible ingredients if all sensory events are fired at least once") {
-    implicit val actorSystem = ActorSystem("pbt-actor-system")
-    implicit val duration = FiniteDuration(1, "seconds")
-
-    val prop = forAll(recipeGen) { recipe =>
-
-      val validations = ValidationSettings(allowCycles = false, allowNonExecutableInteractions = false)
-      val compiledRecipe = RecipeCompiler.compileRecipe(recipe, validations)
-
-      logRecipeStats(recipe)
-      logCompiledRecipeStats(compiledRecipe)
-      dumpToFile(s"visualRecipe-${compiledRecipe.name}", compiledRecipe.getRecipeVisualization)
-
-      var alreadyFiredEvents: Set[RuntimeEvent] = Set.empty
-      val petriNetInteractionMock: InteractionTransition[_] => ProcessState => RuntimeEvent = { interaction =>
-        _ =>
-          val outputEvent = interaction.providesType match {
-            case petrinet.FiresOneOfEvents(events, _) =>
-              // Do not fire events again that were fired before
-              val filteredEvents = events.filterNot(eventType => alreadyFiredEvents.map(_.name).contains(eventType.name))
-              sample(Gen.oneOf(filteredEvents).map(e => RuntimeEvent(e.name, ingredientValuesFrom[IngredientType](e.ingredientTypes, _.name))))
-            case petrinet.ProvidesIngredient(ingredient) =>
-              RuntimeEvent(sample(nameGen), ingredientValuesFrom[IngredientType](Seq(ingredient), _.name))
-            case petrinet.ProvidesNothing =>
-              fail("ProvidesNothing type of interaction should not be hit")
-          }
-          println(s"Inside interaction: ${interaction.interactionName}. Firing event ${outputEvent.name}")
-          alreadyFiredEvents += outputEvent
-          outputEvent
-      }
-
-      val baker = new Baker(compiledRecipe, petriNetInteractionMock)
-      val processId = UUID.randomUUID().toString
-      baker.bake(processId)
-
-      val allIngredients = compiledRecipe.ingredients.keySet
-      var counter: Int = 1
-
-      // We need to fire all sensory events multiple times so that we have a chance of traversing all the paths and produce all possible ingredients
-      // 20 times is just a random pick, we need to find a way to make this smarter
-      while(counter <= 20 && !allIngredients.equals(baker.getIngredients(processId).keys)) {
-        println("******** Firing all sensory events. Counter: " + counter)
-        compiledRecipe.sensoryEvents foreach { event =>
-          println(s"Handling sensory event: ${event.name}")
-          val runtimeEvent = RuntimeEvent(event.name, ingredientValuesFrom[IngredientType](event.ingredientTypes, _.name))
-          baker.handleEvent(processId, runtimeEvent)
-          alreadyFiredEvents += runtimeEvent
-        }
-        counter += 1
-      }
-
-      // Check this visual state to see what is produced and what is not
-      dumpToFile(s"visualRecipeState-${compiledRecipe.name}", baker.getVisualState(processId))
-
-      allIngredients equals baker.getIngredients(processId).keys
-    }
-
-    check(prop, defaultVerbose.withMinSuccessfulTests(1))
+//    implicit val actorSystem = ActorSystem("pbt-actor-system")
+//    implicit val duration = FiniteDuration(1, "seconds")
+//
+//    val prop = forAll(recipeGen) { recipe =>
+//
+//      val validations = ValidationSettings(allowCycles = false, allowNonExecutableInteractions = false)
+//      val compiledRecipe = RecipeCompiler.compileRecipe(recipe, validations)
+//
+//      logRecipeStats(recipe)
+//      logCompiledRecipeStats(compiledRecipe)
+//      dumpToFile(s"visualRecipe-${compiledRecipe.name}", compiledRecipe.getRecipeVisualization)
+//
+//      var alreadyFiredEvents: Set[RuntimeEvent] = Set.empty
+//      val petriNetInteractionMock: InteractionTransition[_] => ProcessState => RuntimeEvent = { interaction =>
+//        _ =>
+//          val outputEvent = interaction.providesType match {
+//            case petrinet.FiresOneOfEvents(events, _) =>
+//              // Do not fire events again that were fired before
+//              val filteredEvents = events.filterNot(eventType => alreadyFiredEvents.map(_.name).contains(eventType.name))
+//              sample(Gen.oneOf(filteredEvents).map(e => RuntimeEvent(e.name, ingredientValuesFrom[IngredientType](e.ingredientTypes, _.name))))
+//            case petrinet.ProvidesIngredient(ingredient) =>
+//              RuntimeEvent(sample(nameGen), ingredientValuesFrom[IngredientType](Seq(ingredient), _.name))
+//            case petrinet.ProvidesNothing =>
+//              fail("ProvidesNothing type of interaction should not be hit")
+//          }
+//          println(s"Inside interaction: ${interaction.interactionName}. Firing event ${outputEvent.name}")
+//          alreadyFiredEvents += outputEvent
+//          outputEvent
+//      }
+//
+//      val baker = new Baker(compiledRecipe, petriNetInteractionMock)
+//      val processId = UUID.randomUUID().toString
+//      baker.bake(processId)
+//
+//      val allIngredients = compiledRecipe.ingredients.keySet
+//      var counter: Int = 1
+//
+//      // We need to fire all sensory events multiple times so that we have a chance of traversing all the paths and produce all possible ingredients
+//      // 20 times is just a random pick, we need to find a way to make this smarter
+//      while(counter <= 20 && !allIngredients.equals(baker.getIngredients(processId).keys)) {
+//        println("******** Firing all sensory events. Counter: " + counter)
+//        compiledRecipe.sensoryEvents foreach { event =>
+//          println(s"Handling sensory event: ${event.name}")
+//          val runtimeEvent = RuntimeEvent(event.name, ingredientValuesFrom[IngredientType](event.ingredientTypes, _.name))
+//          baker.handleEvent(processId, runtimeEvent)
+//          alreadyFiredEvents += runtimeEvent
+//        }
+//        counter += 1
+//      }
+//
+//      // Check this visual state to see what is produced and what is not
+//      dumpToFile(s"visualRecipeState-${compiledRecipe.name}", baker.getVisualState(processId))
+//
+//      allIngredients equals baker.getIngredients(processId).keys
+//    }
+//
+//    check(prop, defaultVerbose.withMinSuccessfulTests(1))
   }
 
 }
