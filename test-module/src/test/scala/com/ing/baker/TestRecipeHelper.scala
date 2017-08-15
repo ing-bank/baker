@@ -75,9 +75,11 @@ object TestRecipeHelper {
 
   case class Event2FromInteractionSeven(interactionSevenIngredient2: String)
 
+  val emptyEvent = Event("EmptyEvent")
+
   case class EmptyEvent()
 
-  val emptyEvent = Event("EmptyEvent")
+  val exhaustedEvent = Event("RetryExhausted")
 
   //Interactions used in the recipe & implementations (we use traits instead of case classes since we use mocks for the real implementations
   val interactionOne =

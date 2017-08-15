@@ -4,6 +4,7 @@ import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Transition}
 import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientType}
 import com.ing.baker.recipe.common
+import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
 import com.ing.baker.recipe.common.{InteractionDescriptor, ProvidesNothing}
 
 import scala.concurrent.duration.Duration
@@ -71,7 +72,12 @@ package object compiler {
         if(ingredient.name == common.ProcessIdName) il.processIdName -> ingredient.clazz
         else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.clazz)
 
-      val (originalEvents, compiledEvents, providedIngredient): (Seq[EventType], Seq[EventType], Option[EventType]) =
+      val exhaustedRetryEvent = interactionDescriptor.failureStrategy.flatMap {
+        case RetryWithIncrementalBackoff(_, _, _, _, optionalExhaustedRetryEvent) => optionalExhaustedRetryEvent
+        case _ => None
+      }.map(transformEventToCompiledEvent)
+
+      val (originalEvents, eventsToFire, providedIngredient): (Seq[EventType], Seq[EventType], Option[EventType]) =
         interactionDescriptor.interaction.output match {
           case common.ProvidesIngredient(outputIngredient) =>
             val ingredientName: String =
@@ -83,7 +89,7 @@ package object compiler {
           case common.FiresOneOfEvents(events @ _*) =>
             val originalCompiledEvents = events.map(transformEventToCompiledEvent)
             val compiledEvents = events.map(transformEventType).map(transformEventToCompiledEvent)
-            (compiledEvents, originalCompiledEvents, None)
+            (originalCompiledEvents, compiledEvents, None)
           case ProvidesNothing => (Seq.empty, Seq.empty, None)
         }
 
@@ -101,8 +107,8 @@ package object compiler {
         }.toMap ++ interactionDescriptor.predefinedIngredients
 
       InteractionTransition[Any](
-        eventsToFire = compiledEvents,
-        originalEvents = originalEvents,
+        eventsToFire = eventsToFire ++ exhaustedRetryEvent,
+        originalEvents = originalEvents ++ exhaustedRetryEvent,
         providedIngredientEvent = providedIngredient,
         inputFields = inputFields,
         interactionName = interactionDescriptor.name,

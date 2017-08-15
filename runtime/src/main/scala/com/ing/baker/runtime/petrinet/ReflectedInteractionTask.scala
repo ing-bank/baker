@@ -92,17 +92,20 @@ object ReflectedInteractionTask {
     }
 
     def createRuntimeEvent(output: Any): RuntimeEvent = {
-      val runtimeEvent = eventExtractor.extractEvent(output)
-      if (interaction.originalEvents.exists(_ equals runtimeEvent.eventType)) {
-        runtimeEvent
-      } else if (interaction.providedIngredientEvent.isDefined) {
+      if (interaction.providedIngredientEvent.isDefined) {
         val eventToComplyTo = interaction.providedIngredientEvent.get
         runtimeEventForIngredient(eventToComplyTo.name, output, eventToComplyTo.ingredientTypes.head)
       }
       else {
-        val msg: String = s"Output: $output fired by an interaction but could not link it to any known event for the interaction"
-        log.error(msg)
-        throw new FatalInteractionException(msg)
+        val runtimeEvent = eventExtractor.extractEvent(output)
+        if (interaction.originalEvents.exists(_ equals runtimeEvent.eventType)) {
+          runtimeEvent
+        }
+        else {
+          val msg: String = s"Output: $output fired by an interaction but could not link it to any known event for the interaction"
+          log.error(msg)
+          throw new FatalInteractionException(msg)
+        }
       }
     }
     createRuntimeEvent(invokeMethod())

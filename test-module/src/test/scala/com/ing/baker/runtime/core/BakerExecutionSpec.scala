@@ -8,6 +8,7 @@ import akka.testkit.{TestKit, TestProbe}
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.scaladsl.{Recipe, _}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
@@ -29,6 +30,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
   before {
     resetMocks
+    setupMockResponse
 
     // Clean inmemory-journal before each test
     val tp = TestProbe()
@@ -182,8 +184,6 @@ class BakerExecutionSpec extends TestRecipeHelper {
             .withSensoryEvent(initialEvent)
 
         val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
-        println(compiledRecipe.getRecipeVisualization)
-        println(compiledRecipe.getPetriNetVisualization)
 
         val baker = new Baker(
           compiledRecipe = compiledRecipe,
@@ -191,11 +191,9 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
         // Bake a new recipe, fire initial event. 2nd time baking with the same processId fails, so comment this part out after creating the process
         baker.bake(processId)
-        println(s"Process '$processId' is baked and using these persistence locations: journalPath: $journalPath snapshotsPath: $snapshotsPath")
 
         when(testCaseClassIngredientInteractionMock.apply(anyString())).thenReturn(caseClassIngredientValue)
         when(testCaseClassIngredientInteraction2Mock.apply(any[CaseClassIngredient]())).thenReturn(EmptyEvent())
-        println(baker.handleEvent(processId, InitialEvent(initialIngredientValue)))
 
         verify(testCaseClassIngredientInteractionMock).apply(initialIngredientValue)
         verify(testCaseClassIngredientInteraction2Mock).apply(caseClassIngredientValue)
@@ -203,8 +201,6 @@ class BakerExecutionSpec extends TestRecipeHelper {
         // Process creation finished
 
         // check if events/ingredients are ok
-        println("Ingredients:" + baker.getIngredients(processId).mkString("\n"))
-        println("Events:" + baker.events(processId).mkString("\n"))
       } finally {
         TestKit.shutdownActorSystem(actorSystem)
       }
@@ -578,6 +574,55 @@ class BakerExecutionSpec extends TestRecipeHelper {
         "initialIngredient" -> initialIngredientValue,
         "sievedIngredient" -> sievedIngredientValue,
         "interactionOneIngredient" -> interactionOneIngredientValue)
+    }
+
+    "fire the exhausted retry event if the max retry times for the interaction is met" in {
+
+      val recipe = Recipe("FireExhaustedEvent")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(interactionOne.withIncrementalBackoffOnFailure(
+          initialDelay = 10 milliseconds,
+          maximumRetries = 1,
+          exhaustedRetryEvent = Some(exhaustedEvent)))
+
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenThrow(new BakerException())
+
+      val baker = new Baker(
+        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+        implementations = mockImplementations)(defaultActorSystem)
+
+      val processId = UUID.randomUUID().toString
+      baker.bake(processId)
+
+      //Handle first event
+      baker.handleEvent(processId, InitialEvent(initialIngredientValue))
+
+      Thread.sleep(50)
+
+      baker.events(processId).map(_.name) should contain (exhaustedEvent.name)
+    }
+
+    "not fire the exhausted retry event if the interaction passes" in {
+      val recipe = Recipe("NotFireExhaustedEvent")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(interactionOne.withIncrementalBackoffOnFailure(
+          initialDelay = 10 milliseconds,
+          maximumRetries = 1,
+          exhaustedRetryEvent = Some(exhaustedEvent)))
+
+      val baker = new Baker(
+        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+        implementations = mockImplementations)(defaultActorSystem)
+
+      val processId = UUID.randomUUID().toString
+      baker.bake(processId)
+
+      //Handle first event
+      baker.handleEvent(processId, InitialEvent(initialIngredientValue))
+
+      Thread.sleep(50)
+
+      baker.events(processId).map(_.name) should not contain (exhaustedEvent.name)
     }
 
     "be able to return all occurred events" in {
