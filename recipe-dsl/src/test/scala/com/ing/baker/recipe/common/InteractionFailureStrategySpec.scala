@@ -16,7 +16,7 @@ class InteractionFailureStrategySpec extends WordSpecLike with Matchers {
       val initialDelay          = 2 seconds
       val backoffFactor: Double = 2.0
 
-      val actual = RetryWithIncrementalBackoff(initialDelay, deadline, maxTimeBetweenRetries = None)
+      val actual = RetryWithIncrementalBackoff(initialDelay, deadline, maxTimeBetweenRetries = None, None)
       val expected = RetryWithIncrementalBackoff(initialTimeout = initialDelay,
                                                  backoffFactor,
                                                  maximumRetries = 15)
@@ -30,7 +30,7 @@ class InteractionFailureStrategySpec extends WordSpecLike with Matchers {
       val initialDelay          = 1 seconds
       val backoffFactor: Double = 2.0
 
-      val actual = RetryWithIncrementalBackoff(initialDelay, deadline, None)
+      val actual = RetryWithIncrementalBackoff(initialDelay, deadline, None, None)
       val expected = RetryWithIncrementalBackoff(initialTimeout = initialDelay,
         backoffFactor,
         maximumRetries = 4)
@@ -45,7 +45,7 @@ class InteractionFailureStrategySpec extends WordSpecLike with Matchers {
       val backoffFactor: Double     = 2.0
       val MaxDurationBetweenRetries = 4 seconds
 
-      val actual = RetryWithIncrementalBackoff(initialDelay, deadline, Some(MaxDurationBetweenRetries))
+      val actual = RetryWithIncrementalBackoff(initialDelay, deadline, Some(MaxDurationBetweenRetries), None)
       val expected = RetryWithIncrementalBackoff(initialTimeout = initialDelay,
         backoffFactor,
         maximumRetries = 6,
@@ -60,7 +60,7 @@ class InteractionFailureStrategySpec extends WordSpecLike with Matchers {
       val initialDelay = 2 seconds
 
       intercept[IllegalArgumentException] {
-        RetryWithIncrementalBackoff(initialDelay, deadline, None)
+        RetryWithIncrementalBackoff(initialDelay, deadline, None, None)
       }
     }
 
@@ -70,7 +70,7 @@ class InteractionFailureStrategySpec extends WordSpecLike with Matchers {
       val initialDelay          = 2 seconds
       val backoffFactor: Double = 2.0
 
-      val actual = RetryWithIncrementalBackoff(initialDelay, deadline, None)
+      val actual = RetryWithIncrementalBackoff(initialDelay, deadline, None, None)
       val expected = RetryWithIncrementalBackoff(initialTimeout = initialDelay,
                                                  backoffFactor,
                                                  maximumRetries = 1)
@@ -84,7 +84,7 @@ class InteractionFailureStrategySpec extends WordSpecLike with Matchers {
       val initialDelay          = 2 seconds
       val backoffFactor: Double = 2.0
 
-      val actual = RetryWithIncrementalBackoff(initialDelay, deadline, None)
+      val actual = RetryWithIncrementalBackoff(initialDelay, deadline, None, None)
       val expected = RetryWithIncrementalBackoff(initialTimeout = initialDelay,
                                                  backoffFactor,
                                                  maximumRetries = 3)

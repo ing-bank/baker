@@ -32,7 +32,7 @@ object ScaladslSpec {
   val openAccount = Interaction(
     name = "OpenAccount",
     inputIngredients =Seq(customerId),
-    output = FiresOneOfEvents(Seq(accountOpenedEvent, accountOpenedFailedEvent)))
+    output = FiresOneOfEvents(accountOpenedEvent, accountOpenedFailedEvent))
 
   val onboardingRecipe: Recipe =
     Recipe("newCustomerRecipe")

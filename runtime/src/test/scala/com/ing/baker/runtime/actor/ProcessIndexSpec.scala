@@ -3,47 +3,50 @@ package com.ing.baker.runtime.actor
 import java.util.UUID
 
 import akka.actor.{ActorRef, ActorSystem, Props}
-import akka.testkit.{ImplicitSender, TestKit, TestProbe}
+import akka.testkit.{ImplicitSender, TestDuration, TestKit, TestProbe}
 import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol
 import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
 import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.petrinet.dsl.colored.Place
 import com.ing.baker.runtime.actor.ProcessIndex.ReceivePeriodExpired
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito
 import org.mockito.Mockito
 import org.mockito.Mockito.verify
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mockito.MockitoSugar
+import org.scalatest.time.Span
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration.{Duration, _}
 
 object ProcessIndexSpec {
-  val config =
+  val config: Config = ConfigFactory.parseString(
     """
       |akka.persistence.journal.plugin = "inmemory-journal"
       |akka.persistence.snapshot-store.plugin = "inmemory-snapshot-store"
       |akka.test.timefactor = 3.0
-    """.stripMargin
+    """.stripMargin)
 }
 
 //noinspection TypeAnnotation
-class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ConfigFactory.parseString(ProcessIndexSpec.config)))
-    with ImplicitSender
-    with WordSpecLike
-    with Matchers
-    with BeforeAndAfterAll
-    with BeforeAndAfter
-    with MockitoSugar
-    with Eventually {
+class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIndexSpec.config))
+  with ImplicitSender
+  with WordSpecLike
+  with Matchers
+  with BeforeAndAfterAll
+  with BeforeAndAfter
+  with MockitoSugar
+  with Eventually {
 
   val recipeMetadataMock = mock[RecipeMetadata]
 
-  val noMsgExpectTimeout: FiniteDuration = 100 milliseconds
+  val noMsgExpectTimeout: FiniteDuration = 100.milliseconds
+
+  val otherMsg = mock[PetriNetInstanceProtocol.Command]
 
   before {
-    Mockito.reset(recipeMetadataMock)
+    Mockito.reset(recipeMetadataMock, otherMsg)
   }
 
   override def afterAll {
@@ -81,7 +84,6 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ConfigFac
 
     "forward messages to the PetriNetInstance actor" in {
       val initializeMsg = Initialize(Marking.empty[Place])
-      val otherMsg = mock[PetriNetInstanceProtocol.Command]
       val processId = UUID.randomUUID().toString
 
       val petriNetActorProbe = TestProbe()
@@ -102,18 +104,19 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ConfigFac
 
       actorIndex ! BakerActorMessage(processId, initializeMsg)
 
-      implicit val patienceConfig = PatienceConfig()
+      val timeout = Span.convertDurationToSpan(500.milliseconds.dilated)
+      val interval = Span.convertDurationToSpan(50.milliseconds.dilated)
+      implicit val patienceConfig = PatienceConfig(timeout, interval)
       eventually {
         verify(recipeMetadataMock)
           .addNewProcessMetadata(
-            mockito.Matchers.eq(processId.toString),
+            mockito.Matchers.eq(processId),
             mockito.Matchers.anyLong())
       }
     }
 
     "not forward messages to uninitialized actors" in {
       val processId = UUID.randomUUID().toString
-      val otherMsg = mock[PetriNetInstanceProtocol.Command]
 
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref)

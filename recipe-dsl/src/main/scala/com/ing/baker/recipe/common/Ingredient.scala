@@ -8,6 +8,4 @@ trait Ingredient {
     case other: Ingredient => this.name == other.name && this.clazz == other.clazz
     case _ => false
   }
-
-  override def toString: String = s"$name: ${clazz.getSimpleName}"
 }

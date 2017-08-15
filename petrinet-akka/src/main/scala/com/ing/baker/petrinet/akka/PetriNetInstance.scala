@@ -12,36 +12,38 @@ import fs2.Strategy
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{Continue, RetryWithDelay}
 import com.ing.baker.petrinet.runtime._
-import com.ing.baker.petrinet.runtime.persistence.ObjectSerializer
+import com.ing.baker.serialization.ObjectSerializer
 
 import scala.concurrent.duration._
 import scala.language.existentials
+import scala.util.Try
 
 object PetriNetInstance {
 
   case class Settings(
-    evaluationStrategy: Strategy,
-    idleTTL: Option[FiniteDuration],
-    serializer: ObjectSerializer)
+                       evaluationStrategy: Strategy,
+                       idleTTL: Option[FiniteDuration],
+                       serializer: ObjectSerializer)
 
   private case class IdleStop(seq: Long)
 
   def processId2PersistenceId(processType: String, processId: String): String = s"process-$processType-$processId"
+
   def persistenceId2ProcessId(processType: String, persistenceId: String): Option[String] = {
     Some(persistenceId.split(s"process-$processType-").last)
   }
 }
 
 /**
- * This actor is responsible for maintaining the state of a single petri net instance.
- */
+  * This actor is responsible for maintaining the state of a single petri net instance.
+  */
 class PetriNetInstance[P[_], T[_, _], S, E](
-    processType: String,
-    processTopology: PetriNet[P[_], T[_, _]],
-    settings: Settings,
-    runtime: PetriNetRuntime[P, T, S, E],
-    override implicit val placeIdentifier: Identifiable[P[_]],
-    override implicit val transitionIdentifier: Identifiable[T[_, _]]) extends PetriNetInstanceRecovery[P, T, S, E](processTopology, settings.serializer, runtime.eventSourceFn) with PetriNetInstanceLogger {
+                                             processType: String,
+                                             processTopology: PetriNet[P[_], T[_, _]],
+                                             settings: Settings,
+                                             runtime: PetriNetRuntime[P, T, S, E],
+                                             override implicit val placeIdentifier: Identifiable[P[_]],
+                                             override implicit val transitionIdentifier: Identifiable[T[_, _]]) extends PetriNetInstanceRecovery[P, T, S, E](processTopology, settings.serializer, runtime.eventSourceFn) with PetriNetInstanceLogger {
 
   import PetriNetInstance._
 
@@ -56,7 +58,7 @@ class PetriNetInstance[P[_], T[_, _], S, E](
   override def receiveCommand = uninitialized
 
   def uninitialized: Receive = {
-    case msg @ Initialize(markingData, state) ⇒
+    case Initialize(markingData, state) ⇒
 
       val initialMarking = unmarshal[P](markingData, topology.places.getById)
       val uninitialized = Instance.uninitialized[P, T, S](topology)
@@ -73,7 +75,7 @@ class PetriNetInstance[P[_], T[_, _], S, E](
               sender() ! Initialized(marshal(initialMarking), state)
           }
       }
-    case msg: Command ⇒
+    case _: Command ⇒
       sender() ! Uninitialized(processId)
       context.parent ! Passivate(SupervisorStrategy.Stop)
 
@@ -82,7 +84,7 @@ class PetriNetInstance[P[_], T[_, _], S, E](
   }
 
   def running(instance: Instance[P, T, S],
-    scheduledRetries: Map[Long, Cancellable]): Receive = {
+              scheduledRetries: Map[Long, Cancellable]): Receive = {
 
     case SupervisorStrategy.Stop ⇒
       scheduledRetries.values.foreach(_.cancel())
@@ -95,7 +97,7 @@ class PetriNetInstance[P[_], T[_, _], S, E](
     case GetState ⇒
       sender() ! fromExecutionInstance(instance)
 
-    case event @ TransitionFiredEvent(jobId, t, timeStarted, timeCompleted, consumed, produced, output) ⇒
+    case event@TransitionFiredEvent(jobId, t, timeStarted, timeCompleted, consumed, produced, output) ⇒
 
       val transition = t.asInstanceOf[T[_, _]]
       val transitionId = transitionIdentifier(transition).value
@@ -114,7 +116,7 @@ class PetriNetInstance[P[_], T[_, _], S, E](
           }
       )
 
-    case event @ TransitionFailedEvent(jobId, t, timeStarted, timeFailed, consume, input, reason, strategy) ⇒
+    case event@TransitionFailedEvent(jobId, t, timeStarted, timeFailed, consume, input, reason, strategy) ⇒
 
       val transition = t.asInstanceOf[T[_, _]]
       val transitionId = transitionIdentifier(transition).value
@@ -133,7 +135,9 @@ class PetriNetInstance[P[_], T[_, _], S, E](
             eventSource.apply(instance)
               .andThen { updatedInstance ⇒
 
-                val retry = system.scheduler.scheduleOnce(delay milliseconds) { executeJob(updatedInstance.jobs(jobId), originalSender) }
+                val retry = system.scheduler.scheduleOnce(delay milliseconds) {
+                  executeJob(updatedInstance.jobs(jobId), originalSender)
+                }
                 sender() ! TransitionFailed(jobId, transitionId, marshal[P](consume.asInstanceOf[Marking[P]]), input, reason, strategy)
                 context become running(updatedInstance, scheduledRetries + (jobId -> retry))
               }
@@ -162,7 +166,7 @@ class PetriNetInstance[P[_], T[_, _], S, E](
               })
       }
 
-    case msg @ FireTransition(transitionId, input, correlationId) ⇒
+    case FireTransition(transitionId, input, _) ⇒
 
       val transition = topology.transitions.getById(transitionId).asInstanceOf[T[Any, Any]]
 
@@ -176,7 +180,7 @@ class PetriNetInstance[P[_], T[_, _], S, E](
 
           sender() ! TransitionNotEnabled(transitionId, reason)
       }
-    case msg: Initialize ⇒
+    case Initialize(_, _) ⇒
       sender() ! AlreadyInitialized
   }
 
@@ -200,14 +204,13 @@ class PetriNetInstance[P[_], T[_, _], S, E](
 
     logEvent(Logging.DebugLevel, LogFiringTransition(processId, job.id, job.transition.toString, System.currentTimeMillis()))
 
-    // this can potentially happen in non gracefull shutdown situations
-    if (context.self != null)
-      executor(job).unsafeRunAsyncFuture().pipeTo(context.self)(originalSender)
+    // context.self can be potentially throw NullPointerException in non graceful shutdown situations
+    Try(context.self).foreach(executor(job).unsafeRunAsyncFuture().pipeTo(_)(originalSender))
   }
 
   def scheduleFailedJobsForRetry(instance: Instance[P, T, S]): Map[Long, Cancellable] = {
     instance.jobs.values.foldLeft(Map.empty[Long, Cancellable]) {
-      case (map, j @ Job(_, _, _, _, _, Some(com.ing.baker.petrinet.runtime.ExceptionState(failureTime, _, _, RetryWithDelay(delay))))) ⇒
+      case (map, j@Job(_, _, _, _, _, Some(com.ing.baker.petrinet.runtime.ExceptionState(failureTime, _, _, RetryWithDelay(delay))))) ⇒
         val newDelay = failureTime + delay - System.currentTimeMillis()
         if (newDelay < 0) {
           executeJob(j, sender())

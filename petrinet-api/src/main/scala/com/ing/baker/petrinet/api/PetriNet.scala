@@ -79,13 +79,6 @@ trait PetriNet[P, T] {
   def outMarking(t: T): MultiSet[P]
 
   /**
-   * Returns all places that are leaves (have no outgoing transitions)
-   *
-   * @return
-   */
-  def leavePlaces: Set[P] = places.filter(p ⇒ outgoingTransitions(p).isEmpty)
-
-  /**
    * The set of nodes (places + transitions) in the petri net.
    *
    * @return The set of nodes.

@@ -1,12 +1,12 @@
 syntax = "proto2";
 
-option java_package = "com.ing.baker.petrinet.runtime.persistence";
+import "common.proto";
+import "scalapb/scalapb.proto";
 
-message SerializedData {
-    optional int32 serializer_id = 1;
-    optional bytes manifest = 2;
-    optional bytes data = 3;
-}
+option java_package = "com.ing.baker.petrinet.runtime.persistence.messages";
+option (scalapb.options) = {
+    flat_package: true
+};
 
 message ConsumedToken {
     optional int64 place_id = 1;

@@ -148,7 +148,7 @@ public class InteractionDescriptorTest {
         assertTrue(id.eventOutputTransformers().isEmpty());
 
         exception.expect(RecipeValidationException.class);
-        exception.expectMessage("Event transformation given for Interaction FiresEventInteraction but does not fire event name: InteractionProvidedEvent2");
+        exception.expectMessage("Event transformation given for Interaction FiresEventInteraction but does not fire event Event(InteractionProvidedEvent2)");
         InteractionDescriptor idWithOutputEventTransformer =
                 id.withEventTransformation(InteractionProvidedEvent2.class, "transformedEventName");
 

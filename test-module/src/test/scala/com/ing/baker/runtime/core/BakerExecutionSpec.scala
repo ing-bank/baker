@@ -20,8 +20,11 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.Success
 
+case class SomeNotDefinedEvent(name: String)
+
 class BakerExecutionSpec extends TestRecipeHelper {
 
+  override def actorSystemName = "BakerExecutionSpec"
   implicit val timeout: FiniteDuration = 10 seconds
 
   before {
@@ -81,11 +84,19 @@ class BakerExecutionSpec extends TestRecipeHelper {
       }
     }
 
+    "throw a BakerException if fired event is not a valid sensory event" in {
+      val baker = setupBakerWithRecipe("NonExistingProcessEventTest")
+
+      intercept[BakerException] {
+        baker.handleEvent(UUID.randomUUID().toString, SomeNotDefinedEvent("bla"))
+      } should have('message("Fired event SomeNotDefinedEvent is not recognised as any valid sensory event"))
+    }
+
     "execute an interaction when its ingredient is provided" in {
       val recipe =
         Recipe("IngredientProvidedRecipe")
-        .withInteraction(interactionOne)
-        .withSensoryEvent(initialEvent)
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent)
 
       val baker = new Baker(
         compiledRecipe = RecipeCompiler.compileRecipe(recipe),
@@ -154,6 +165,51 @@ class BakerExecutionSpec extends TestRecipeHelper {
       verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
     }
 
+    "backwards compatibility in serialization of case class ingredients" ignore {
+      val tmpDir = System.getProperty("java.io.tmpdir")
+      val journalPath = tmpDir + "/journal"
+      val snapshotsPath = tmpDir + "/snapshots"
+      val processId = "test-process-5"
+
+      val actorSystem = ActorSystem("backwardsCompatibilityOfEvents", levelDbConfig("backwardsCompatibilityOfEvents", 3004, journalPath, snapshotsPath))
+      val recoveryRecipeName = "backwardsCompatibilityOfEvents"
+
+      try {
+        val recipe =
+          Recipe(recoveryRecipeName)
+            .withInteraction(caseClassIngredientInteraction)
+            .withInteraction(caseClassIngredientInteraction2)
+            .withSensoryEvent(initialEvent)
+
+        val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        println(compiledRecipe.getRecipeVisualization)
+        println(compiledRecipe.getPetriNetVisualization)
+
+        val baker = new Baker(
+          compiledRecipe = compiledRecipe,
+          implementations = mockImplementations)(actorSystem)
+
+        // Bake a new recipe, fire initial event. 2nd time baking with the same processId fails, so comment this part out after creating the process
+        baker.bake(processId)
+        println(s"Process '$processId' is baked and using these persistence locations: journalPath: $journalPath snapshotsPath: $snapshotsPath")
+
+        when(testCaseClassIngredientInteractionMock.apply(anyString())).thenReturn(caseClassIngredientValue)
+        when(testCaseClassIngredientInteraction2Mock.apply(any[CaseClassIngredient]())).thenReturn(EmptyEvent())
+        println(baker.handleEvent(processId, InitialEvent(initialIngredientValue)))
+
+        verify(testCaseClassIngredientInteractionMock).apply(initialIngredientValue)
+        verify(testCaseClassIngredientInteraction2Mock).apply(caseClassIngredientValue)
+        baker.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue, "caseClassIngredient" -> caseClassIngredientValue)
+        // Process creation finished
+
+        // check if events/ingredients are ok
+        println("Ingredients:" + baker.getIngredients(processId).mkString("\n"))
+        println("Events:" + baker.events(processId).mkString("\n"))
+      } finally {
+        TestKit.shutdownActorSystem(actorSystem)
+      }
+    }
+
     "execute an interaction with Optionals set to empty when its ingredient is provided" in {
       val ingredientValue: Optional[String] = java.util.Optional.of("optionalWithValue")
 
@@ -161,7 +217,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
         Recipe("IngredientProvidedRecipeWithEmptyOptionals")
           .withInteraction(
             optionalIngredientInteraction
-            .withPredefinedIngredients(("missingJavaOptional", ingredientValue)))
+              .withPredefinedIngredients(("missingJavaOptional", ingredientValue)))
           .withSensoryEvent(initialEvent)
 
       val baker = new Baker(
@@ -249,7 +305,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
       verify(testInteractionTwoMock).apply("initialIngredient")
       verify(testInteractionThreeMock).apply("interactionOneIngredient",
-                                             "interactionTwoIngredient")
+        "interactionTwoIngredient")
       verify(testInteractionFourMock).apply()
       baker.getIngredients(processId) shouldBe finalState
     }
@@ -355,10 +411,10 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
     "update the state with new data if an event occurs twice" in {
 
-      val firstData: String  = "firstData"
+      val firstData: String = "firstData"
       val secondData: String = "secondData"
-      val firstResponse      = "firstResponse"
-      val secondResponse     = "secondResponse"
+      val firstResponse = "firstResponse"
+      val secondResponse = "secondResponse"
 
       val baker = setupBakerWithRecipe("UpdateTestRecipe")
 
@@ -374,10 +430,10 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       //Check that the first response returned
       baker.getProcessState(processId).ingredients shouldBe Map(
-        "initialIngredient"          -> firstData,
-        "interactionOneIngredient"   -> firstResponse,
+        "initialIngredient" -> firstData,
+        "interactionOneIngredient" -> firstResponse,
         "sievedIngredient" -> sievedIngredientValue,
-        "interactionTwoIngredient"   -> interactionTwoIngredientValue,
+        "interactionTwoIngredient" -> interactionTwoIngredientValue,
         "interactionThreeIngredient" -> interactionThreeIngredientValue
       )
 
@@ -386,10 +442,10 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       //Check that the second response is given
       baker.getProcessState(processId).ingredients shouldBe Map(
-        "initialIngredient"          -> secondData,
-        "interactionOneIngredient"   -> secondResponse,
+        "initialIngredient" -> secondData,
+        "interactionOneIngredient" -> secondResponse,
         "sievedIngredient" -> sievedIngredientValue,
-        "interactionTwoIngredient"   -> interactionTwoIngredientValue,
+        "interactionTwoIngredient" -> interactionTwoIngredientValue,
         "interactionThreeIngredient" -> interactionThreeIngredientValue
       )
     }
@@ -397,11 +453,11 @@ class BakerExecutionSpec extends TestRecipeHelper {
     "only fire an interaction once if it has an maximum interaction count of 1" in {
 
       val recipe = Recipe("FiringLimitTestRecipe")
-          .withInteractions(
-            interactionOne
-              .withOverriddenOutputIngredientName("interactionOneIngredient")
-              .withMaximumInteractionCount(1))
-          .withSensoryEvent(initialEvent)
+        .withInteractions(
+          interactionOne
+            .withOverriddenOutputIngredientName("interactionOneIngredient")
+            .withMaximumInteractionCount(1))
+        .withSensoryEvent(initialEvent)
 
 
       when(testInteractionOneMock.apply(anyString(), anyString()))
@@ -416,8 +472,8 @@ class BakerExecutionSpec extends TestRecipeHelper {
       verify(testInteractionOneMock).apply(processId.toString, initialIngredientValue)
 
       val result = baker.getProcessState(processId).ingredients
-      result shouldBe Map("initialIngredient"        -> initialIngredientValue,
-                          "interactionOneIngredient" -> interactionOneIngredientValue)
+      result shouldBe Map("initialIngredient" -> initialIngredientValue,
+        "interactionOneIngredient" -> interactionOneIngredientValue)
 
       baker.handleEvent(processId, InitialEvent(initialIngredientValue))
 
@@ -438,7 +494,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val baker = setupBakerWithRecipe("CrashTestRecipe")
 
-      val firstProcessId  = UUID.randomUUID().toString
+      val firstProcessId = UUID.randomUUID().toString
       val secondProcessId = UUID.randomUUID().toString
       when(testInteractionOneMock.apply(firstProcessId.toString, initialIngredientValue))
         .thenReturn(interactionOneIngredientValue)
@@ -462,7 +518,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
     "keep the input data in accumulated state even if the interactions dependent on this event fail to execute" in {
 
-      val baker     = setupBakerWithRecipe("StatePersistentTestRecipe")
+      val baker = setupBakerWithRecipe("StatePersistentTestRecipe")
       val processId = UUID.randomUUID().toString
       when(testInteractionOneMock.apply(processId.toString, initialIngredientValue))
         .thenThrow(new RuntimeException(errorMessage))
@@ -473,7 +529,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val result = baker.getProcessState(processId).ingredients
       result shouldBe Map(
-        "initialIngredient"        -> initialIngredientValue,
+        "initialIngredient" -> initialIngredientValue,
         "sievedIngredient" -> sievedIngredientValue,
         "interactionTwoIngredient" -> interactionTwoIngredientValue)
     }
@@ -501,7 +557,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       /* This test FAILS because passportData FAIL_DATA is included in the marking while it should not! (?)
        * The fact that it is in the marking forces failingUploadPassport to fire again when second event fires!
        */
-      val baker     = setupBakerWithRecipe("ShouldNotReExecute")
+      val baker = setupBakerWithRecipe("ShouldNotReExecute")
       val processId = UUID.randomUUID().toString
 
       when(testInteractionTwoMock.apply(anyString())).thenThrow(new RuntimeException(errorMessage))
@@ -519,7 +575,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val result = baker.getProcessState(processId).ingredients
       result shouldBe Map(
-        "initialIngredient"        -> initialIngredientValue,
+        "initialIngredient" -> initialIngredientValue,
         "sievedIngredient" -> sievedIngredientValue,
         "interactionOneIngredient" -> interactionOneIngredientValue)
     }
@@ -534,24 +590,21 @@ class BakerExecutionSpec extends TestRecipeHelper {
       //Handle first event
       baker.handleEvent(processId, InitialEvent("initialIngredient"))
 
-      val events = baker.events(processId)
-
-      //Check if both the send in event and the events occured in baker are in the
-
-      baker.events(processId) should contain only (
+      //Check if both the new event and the events occurred in the past are in the eventsList
+      baker.events(processId) should contain only(
         RuntimeEvent.apply("InitialEvent", Map[String, Any]("initialIngredient" -> "initialIngredient")),
         RuntimeEvent.apply("EventFromInteractionTwo", Map[String, Any]("interactionTwoIngredient" -> "interactionTwoIngredient"))
-        )
+      )
 
       //Execute another event
       baker.handleEvent(processId, SecondEvent())
 
-      //Check if both the send in event and the events occured in baker are in the
-      baker.events(processId) should contain only (
+      //Check if both the new event and the events occurred in the past are in the eventsList
+      baker.events(processId) should contain only(
         RuntimeEvent.apply("InitialEvent", Map[String, Any]("initialIngredient" -> "initialIngredient")),
         RuntimeEvent.apply("EventFromInteractionTwo", Map[String, Any]("interactionTwoIngredient" -> "interactionTwoIngredient")),
         RuntimeEvent.apply("SecondEvent", Map.empty[String, Any])
-        )
+      )
     }
 
     //Only works if persistence actors are used (think cassandra)
@@ -622,8 +675,8 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.bake(processId)
       val response = baker.handleEventAsync(processId, InitialEvent(initialIngredientValue))
       Await.result(response.completedFuture, 3 seconds)
-      response.receivedFuture.value shouldBe Some(Success((InteractionResponse.Success)))
-      response.completedFuture.value shouldBe Some(Success((InteractionResponse.Failed)))
+      response.receivedFuture.value shouldBe Some(Success(InteractionResponse.Success))
+      response.completedFuture.value shouldBe Some(Success(InteractionResponse.Failed))
 
       response.confirmReceived() shouldBe SensoryEventStatus.Received
       response.confirmCompleted() shouldBe SensoryEventStatus.Completed
@@ -636,7 +689,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       val baker = setupBakerWithRecipe("OverlappingMultiIngredients")
 
       // It is helpful to check the recipe visualization if this test fails
-//      println(baker.compiledRecipe.getRecipeVisualization)
+      //      println(baker.compiledRecipe.getRecipeVisualization)
 
       val processId = UUID.randomUUID().toString
       baker.bake(processId)
@@ -680,7 +733,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
         "eventReceiveExpirationRecipe"
             .withSensoryEvents(initialEvent)
             .withInteractions(interactionOne)
-            .withEventReicevePeriod(receivePeriod)
+            .withEventReceivePeriod(receivePeriod)
 
       val baker = new Baker(
         compiledRecipe = RecipeCompiler.compileRecipe(recipe),
@@ -692,7 +745,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       Thread.sleep(receivePeriod.toMillis  + 100)
 
-      baker.handleEvent(processId, InitialEvent("")) shouldBe(SensoryEventStatus.ReceivePeriodExpired)
+      baker.handleEvent(processId, InitialEvent("")) shouldBe SensoryEventStatus.ReceivePeriodExpired
     }
 
     "accept sensory events before a specified receive period" in {
@@ -703,7 +756,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
         "eventReceiveInTimeRecipe"
           .withSensoryEvents(initialEvent)
           .withInteractions(interactionOne)
-          .withEventReicevePeriod(receivePeriod)
+          .withEventReceivePeriod(receivePeriod)
 
       val baker = new Baker(
         compiledRecipe = RecipeCompiler.compileRecipe(recipe),
@@ -713,9 +766,8 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       baker.bake(processId)
 
-      baker.handleEvent(processId, InitialEvent("")) shouldBe(SensoryEventStatus.Completed)
+      baker.handleEvent(processId, InitialEvent("")) shouldBe SensoryEventStatus.Completed
     }
-
 
     "be able to visualize the created interactions with a filter" in {
       val baker = setupBakerWithRecipe("VisualizationRecipe")

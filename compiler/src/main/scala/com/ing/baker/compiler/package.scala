@@ -78,7 +78,7 @@ package object compiler {
               if(interactionDescriptor.overriddenOutputIngredientName.nonEmpty) interactionDescriptor.overriddenOutputIngredientName.get
               else outputIngredient.name
             ProvidesIngredient(IngredientType(ingredientName, outputIngredient.clazz))
-          case common.FiresOneOfEvents(events) =>
+          case common.FiresOneOfEvents(events @ _*) =>
             val originalCompiledEvents = events.map(transformEventToCompiledEvent)
             val compiledEvents = events.map(transformEventType).map(transformEventToCompiledEvent)
             FiresOneOfEvents(compiledEvents, originalCompiledEvents)

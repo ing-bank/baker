@@ -10,8 +10,5 @@ trait Event {
     case _ => false
   }
 
-  override def toString(): String =  {
-    s"""name: $name
-       |providedIngredients: ${providedIngredients.mkString("(", ", ", ")")}""".stripMargin
-  }
+  override def toString: String = s"Event($name)"
 }
