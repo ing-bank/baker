@@ -41,30 +41,6 @@ object Baker {
     compiledRecipe.petriNet.transitions.findByLabel(runtimeEvent.name).getOrElse {
       throw new IllegalArgumentException(s"No such event known in recipe: $runtimeEvent")
     }
-
-  def checkIngredientSerializable(compiledRecipe: CompiledRecipe, actorSystem: ActorSystem): Unit = {
-
-    val serialization = SerializationExtension(actorSystem)
-
-    compiledRecipe.ingredients.foreach {
-      case (name, ingredientType) =>
-        try {
-          val serializer = serialization.serializerFor(ingredientType.clazz)
-          if (serializer.isInstanceOf[DisabledJavaSerializer])
-            throw new IllegalStateException("DisabledJavaSerializer is not allowed")
-        } catch {
-          case e: Exception =>
-            throw new IllegalStateException(
-              s"""
-                 |Ingredient '$name' of type '${ingredientType.clazz} cannot be serialized
-                 |Please add a binding in your application.conf like this:
-                 |akka.actor.serialization-bindings {
-                 |  "${ingredientType.clazz.getName}" = kryo
-                 |}
-               """.stripMargin, e)
-        }
-    }
-  }
 }
 
 /**
@@ -94,8 +70,6 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   if (!config.as[Option[Boolean]]("baker.config-file-included").getOrElse(false))
     throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
-
-  checkIngredientSerializable(compiledRecipe, actorSystem)
 
   private val bakeTimeout = config.as[FiniteDuration]("baker.bake-timeout")
   private val journalInitializeTimeout = config.as[FiniteDuration]("baker.journal-initialize-timeout")

@@ -1,5 +1,10 @@
 package com.ing.baker.petrinet.api
 
+object HMap {
+
+  def empty[K[_], V[_]] : HMap[K, V] = HMap[K, V](Map.empty)
+}
+
 /**
  * Simple Heterogeneous map implementation.
  *

@@ -13,18 +13,18 @@ case class Event (override val name: String,
 object Event {
   def apply(name: String) : Event = new Event(name, Seq.empty, Some(1))
 
-  def apply(name: String, ingredientOne: Ingredient[_]) : Event =
+  def apply(name: String, ingredientOne: common.Ingredient) : Event =
     new Event(name, Seq(ingredientOne), Some(1))
 
-  def apply(name: String, ingredientOne: Ingredient[_], ingredientTwo: Ingredient[_]) : Event =
+  def apply(name: String, ingredientOne: common.Ingredient, ingredientTwo: common.Ingredient) : Event =
     new Event(name, Seq(ingredientOne, ingredientTwo),Some(1))
 
-  def apply(name: String, ingredientOne: Ingredient[_], ingredientTwo: Ingredient[_], ingredientThree: Ingredient[_]) : Event =
+  def apply(name: String, ingredientOne: common.Ingredient, ingredientTwo: common.Ingredient, ingredientThree: common.Ingredient) : Event =
     new Event(name, Seq(ingredientOne, ingredientTwo, ingredientThree), Some(1))
 
-  def apply(name: String, ingredientOne: Ingredient[_], ingredientTwo: Ingredient[_], ingredientThree: Ingredient[_], ingredientFour: Ingredient[_]) : Event =
+  def apply(name: String, ingredientOne: common.Ingredient, ingredientTwo: common.Ingredient, ingredientThree: common.Ingredient, ingredientFour: common.Ingredient) : Event =
     new Event(name, Seq(ingredientOne, ingredientTwo, ingredientThree, ingredientFour),Some(1))
 
-  def apply(name: String, ingredientOne: Ingredient[_], ingredientTwo: Ingredient[_], ingredientThree: Ingredient[_], ingredientFour: Ingredient[_], ingredientFive: Ingredient[_]) : Event =
+  def apply(name: String, ingredientOne: common.Ingredient, ingredientTwo: common.Ingredient, ingredientThree: common.Ingredient, ingredientFour: common.Ingredient, ingredientFive: common.Ingredient) : Event =
     new Event(name, Seq(ingredientOne, ingredientTwo, ingredientThree, ingredientFour, ingredientFive),Some(1))
 }

@@ -16,6 +16,7 @@ import static com.ing.baker.recipe.javadsl.JavadslTestHelper.*;
 import static org.junit.Assert.assertEquals;
 
 public class RecipeTest {
+
     @Rule
     public final ExpectedException exception = ExpectedException.none();
 
