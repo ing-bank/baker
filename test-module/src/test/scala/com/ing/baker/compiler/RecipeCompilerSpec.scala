@@ -99,6 +99,13 @@ class RecipeCompilerSpec extends TestRecipeHelper {
       compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionInt:ParameterizedType: class scala.Option[ParameterizedType: class scala.collection.immutable.List[int]]', however incompatible type: 'ParameterizedType: class scala.Option[ParameterizedType: class scala.collection.immutable.List[class java.lang.String]]' was provided")
     }
 
+    "give an validation error for an empty/non-logical recipe" in {
+      RecipeCompiler.compileRecipe(Recipe("someName")).validationErrors should contain only(
+        "No sensory events found.",
+        "No interactions or sieves found."
+      )
+    }
+
     "give no errors if an Optional ingredient is of the correct Optional type" in {
       val initialIngredientInt = Ingredient[Optional[List[Int]]]("initialIngredient")
       val initialEventInt = Event("InitialEvent", initialIngredientInt, None)
@@ -192,11 +199,6 @@ class RecipeCompilerSpec extends TestRecipeHelper {
 
         intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Recipe with a null or empty name found"
       }
-    }
-
-    "fail compilation for an empty/non-logical recipe" in {
-      intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(Recipe("someName"))) getMessage() shouldBe "Not a valid recipe: No sensory events found."
-      intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(Recipe("someName").withSensoryEvent(initialEvent))) getMessage() shouldBe "Not a valid recipe: No interactions or sieves found."
     }
 
     "interactions with optional ingredients that are not provided should be provided as empty" in {

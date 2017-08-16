@@ -8,6 +8,7 @@ import com.ing.baker.il.{CompiledRecipe, EventType, ValidationSettings}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.recipe.common._
 
+import scala.collection.mutable
 import scala.language.postfixOps
 import scalax.collection.immutable.Graph
 
@@ -154,7 +155,7 @@ object RecipeCompiler {
   def compileRecipe(recipe: Recipe,
                     validationSettings: ValidationSettings): CompiledRecipe = {
 
-    preCompileAssertions(recipe)
+    val precompileErrors: Seq[String] = preCompileAssertions(recipe)
 
     //All ingredient names provided by sensory events or by interactions
     val allIngredientNames: Set[String] =
@@ -271,7 +272,7 @@ object RecipeCompiler {
       petriNet = petriNet,
       initialMarking = initialMarking,
       sensoryEvents = recipe.sensoryEvents.map(eventToCompiledEvent),
-      validationErrors = preconditionORErrors ++ preconditionANDErrors,
+      validationErrors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors,
       eventReceivePeriod = recipe.eventReceivePeriod
     )
 
@@ -320,22 +321,24 @@ object RecipeCompiler {
     throw new IllegalArgumentException(s"$typeName with a null or empty name found")
   }
 
-  private def assertNonEmptyRecipe(recipe: Recipe) = {
-    if (recipe.sensoryEvents.isEmpty) throw new IllegalArgumentException("Not a valid recipe: No sensory events found.")
-    if (recipe.interactions.size + recipe.sieves.size == 0) throw new IllegalArgumentException("Not a valid recipe: No interactions or sieves found.")
+  private def assertNonEmptyRecipe(recipe: Recipe) : Seq[String] = {
+    val errors = mutable.MutableList.empty[String]
+    if (recipe.sensoryEvents.isEmpty)
+      errors += "No sensory events found."
+    if (recipe.interactions.size + recipe.sieves.size == 0)
+      errors += "No interactions or sieves found."
+    errors
   }
 
-  private def preCompileAssertions(recipe: Recipe) = {
+  private def preCompileAssertions(recipe: Recipe): Seq[String] = {
     assertValidNames[Recipe](_.name, Seq(recipe), "Recipe")
-    assertNonEmptyRecipe(recipe)
     assertValidNames[InteractionDescriptor](_.name, recipe.interactions, "Interaction")
     assertValidNames[InteractionDescriptor](_.name, recipe.sieves, "Sieve Interaction")
     assertValidNames[Event](_.name, recipe.sensoryEvents, "Event")
-
     val allIngredients = recipe.sensoryEvents.flatMap(_.providedIngredients) ++ recipe.interactions.flatMap(_.interaction.inputIngredients) ++ recipe.sieves.flatMap(_.interaction.inputIngredients)
     assertValidNames[Ingredient](_.name, allIngredients, "Ingredient")
-
     assertNoDuplicateElementsExist[InteractionDescriptor](_.name, recipe.interactions.toSet ++ recipe.sieves.toSet)
     assertNoDuplicateElementsExist[Event](_.name, recipe.sensoryEvents)
+    assertNonEmptyRecipe(recipe)
   }
 }
