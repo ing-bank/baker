@@ -41,7 +41,7 @@ package object javadsl {
         //ProvidesIngredient
         else if (method.isAnnotationPresent(classOf[annotations.ProvidesIngredient])) {
           val interactionOutputName: String = method.getAnnotation(classOf[annotations.ProvidesIngredient]).value()
-          common.ProvidesIngredient(createIngredient(interactionOutputName, method.getReturnType))
+          common.ProvidesIngredient(createIngredient(interactionOutputName, method.getGenericReturnType))
         }
         //ProvidesEvent
         else if (method.isAnnotationPresent(classOf[annotations.FiresEvent])) {
