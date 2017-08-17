@@ -81,7 +81,7 @@ package object compiler {
         case _ => None
       }.map(transformEventToCompiledEvent)
 
-      val (originalEvents, eventsToFire, providedIngredient): (Seq[EventType], Seq[EventType], Option[EventType]) =
+      val (originalEvents, eventsToFire, providedIngredientEvent): (Seq[EventType], Seq[EventType], Option[EventType]) =
         interactionDescriptor.interaction.output match {
           case common.ProvidesIngredient(outputIngredient) =>
             val ingredientName: String =
@@ -113,7 +113,7 @@ package object compiler {
       InteractionTransition[Any](
         eventsToFire = eventsToFire ++ exhaustedRetryEvent,
         originalEvents = originalEvents ++ exhaustedRetryEvent,
-        providedIngredientEvent = providedIngredient,
+        providedIngredientEvent = providedIngredientEvent,
         requiredIngredients = inputFields,
         interactionName = interactionDescriptor.name,
         originalInteractionName = interactionDescriptor.interaction.name,

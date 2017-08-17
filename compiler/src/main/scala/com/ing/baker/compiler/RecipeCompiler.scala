@@ -160,7 +160,7 @@ object RecipeCompiler {
     //All ingredient names provided by sensory events or by interactions
     val allIngredientNames: Set[String] =
       recipe.sensoryEvents.flatMap(e => e.providedIngredients.map(i => i.name)) ++
-      recipe.interactions.flatMap(i => i.interaction.output match {
+        (recipe.interactions ++  recipe.sieves).flatMap(i => i.interaction.output match {
         case pi: ProvidesIngredient => Set(i.overriddenOutputIngredientName.getOrElse(pi.ingredient.name))
         case fi: FiresOneOfEvents => fi.events.flatMap(e => e.providedIngredients.map(i => i.name))
         case ProvidesNothing => Set.empty
