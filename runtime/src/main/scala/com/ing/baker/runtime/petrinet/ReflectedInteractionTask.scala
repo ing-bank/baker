@@ -83,11 +83,12 @@ object ReflectedInteractionTask {
 
     log.trace(s"[$invocationId] invoking '${interaction.originalInteractionName}' with parameters ${inputArgs.toString}")
 
+    val method = interactionObject.getClass.getMethod("apply", interaction.requiredIngredients.map { case (_, clazz) => getRawClass(clazz) }: _*)
+
     def invokeMethod(): AnyRef = {
       MDC.put("processId", processState.processId.toString)
-      val result = interactionObject.getClass.getMethod("apply", interaction.requiredIngredients.map { case (_, clazz) => getRawClass(clazz) }: _*).invoke(interactionObject, inputArgs: _*)
+      val result = method.invoke(interactionObject, inputArgs: _*)
       log.trace(s"[$invocationId] result: $result")
-
       MDC.remove("processId")
       result
     }
@@ -119,7 +120,7 @@ object ReflectedInteractionTask {
       throw new FatalInteractionException(
         s"""
            |Ingredient: ${ingredientToComplyTo.name} provided by an interaction but does not comply to the expected type
-           |Expected  : $ingredientToComplyTo
+           |Expected  : ${ingredientToComplyTo.javaType}
            |Provided  : $providedIngredient
          """.stripMargin)
     }

@@ -161,7 +161,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
   private def createActorIndex(petriNetActorRef: ActorRef, receivePeriod: Duration = Duration.Undefined) = {
     system.actorOf(Props(new ProcessIndex(Props.empty, recipeMetadataMock, receivePeriod) {
-      override private[actor] def createChildPetriNetActor(id: String) = {
+      override private[actor] def createProcessActor(id: String) = {
         petriNetActorRef
       }
     }), s"actorIndex-${UUID.randomUUID().toString}")
