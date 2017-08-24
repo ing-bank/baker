@@ -6,11 +6,12 @@ import org.scalatest.{FunSuite, Matchers}
 class RuntimeEventSpec extends FunSuite with Matchers {
 
   test("empty RuntimeEvent has the correct EventType") {
-    RuntimeEvent("name", Map.empty).eventType shouldEqual EventType("name", Seq.empty)
+    RuntimeEvent("name", Seq.empty).eventType shouldEqual EventType("name", Seq.empty)
   }
 
   test("RuntimeEvent with multiple ingredients has the correct EventType") {
-    RuntimeEvent("name", Map("str1" -> "ingredientValue",
+    RuntimeEvent("name", Seq(
+      "str1" -> "ingredientValue",
       "int1" -> 5,
       "long1" -> 9l
     )).eventType shouldEqual EventType("name", Seq(

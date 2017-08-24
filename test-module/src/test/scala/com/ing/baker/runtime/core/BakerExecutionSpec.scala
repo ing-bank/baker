@@ -271,8 +271,8 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.bake(processId)
       baker.handleEvent(processId, InitialEvent(initialIngredientValue))
 
-      verify(listenerMock).processEvent(processId.toString, RuntimeEvent("InitialEvent", Map("initialIngredient" -> initialIngredientValue)))
-      verify(listenerMock).processEvent(processId.toString, RuntimeEvent("InteractionOneSuccessful", Map("interactionOneOriginalIngredient" -> interactionOneIngredientValue)))
+      verify(listenerMock).processEvent(processId.toString, RuntimeEvent("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)))
+      verify(listenerMock).processEvent(processId.toString, RuntimeEvent("InteractionOneSuccessful", Seq("interactionOneOriginalIngredient" -> interactionOneIngredientValue)))
     }
 
     "execute an interaction when its ingredient is provided and the interaction is renamed" in {
@@ -658,11 +658,11 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       //Check if both the new event and the events occurred in the past are in the eventsList
       baker.events(processId) should contain only(
-        RuntimeEvent.apply("InitialEvent", Map[String, Any]("initialIngredient" -> initialIngredientValue)),
-        RuntimeEvent.apply("SieveInteractionSuccessful", Map[String, Any]("sievedIngredient" -> sievedIngredientValue)),
-        RuntimeEvent.apply("EventFromInteractionTwo", Map[String, Any]("interactionTwoIngredient" -> interactionTwoIngredientValue)),
-        RuntimeEvent.apply("InteractionOneSuccessful", Map[String, Any]("interactionOneIngredient" -> interactionOneIngredientValue)),
-        RuntimeEvent.apply("InteractionThreeSuccessful", Map[String, Any]("interactionThreeIngredient" -> interactionThreeIngredientValue))
+        RuntimeEvent("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)),
+        RuntimeEvent("SieveInteractionSuccessful", Seq("sievedIngredient" -> sievedIngredientValue)),
+        RuntimeEvent("EventFromInteractionTwo", Seq("interactionTwoIngredient" -> interactionTwoIngredientValue)),
+        RuntimeEvent("InteractionOneSuccessful", Seq("interactionOneIngredient" -> interactionOneIngredientValue)),
+        RuntimeEvent("InteractionThreeSuccessful", Seq("interactionThreeIngredient" -> interactionThreeIngredientValue))
       )
 
       //Execute another event
@@ -670,13 +670,13 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       //Check if both the new event and the events occurred in the past are in the eventsList
       baker.events(processId) should contain only(
-        RuntimeEvent.apply("InitialEvent", Map[String, Any]("initialIngredient" -> "initialIngredient")),
-        RuntimeEvent.apply("EventFromInteractionTwo", Map[String, Any]("interactionTwoIngredient" -> "interactionTwoIngredient")),
-        RuntimeEvent.apply("SecondEvent", Map.empty[String, Any]),
-        RuntimeEvent.apply("InteractionOneSuccessful", Map[String, Any]("interactionOneIngredient" -> interactionOneIngredientValue)),
-        RuntimeEvent.apply("SieveInteractionSuccessful", Map[String, Any]("sievedIngredient" -> sievedIngredientValue)),
-        RuntimeEvent.apply("InteractionThreeSuccessful", Map[String, Any]("interactionThreeIngredient" -> interactionThreeIngredientValue)),
-        RuntimeEvent.apply("InteractionFourSuccessful", Map[String, Any]("interactionFourIngredient" -> interactionFourIngredientValue))
+        RuntimeEvent.apply("InitialEvent", Seq("initialIngredient" -> "initialIngredient")),
+        RuntimeEvent.apply("EventFromInteractionTwo", Seq("interactionTwoIngredient" -> "interactionTwoIngredient")),
+        RuntimeEvent.apply("SecondEvent", Seq.empty),
+        RuntimeEvent.apply("InteractionOneSuccessful", Seq("interactionOneIngredient" -> interactionOneIngredientValue)),
+        RuntimeEvent.apply("SieveInteractionSuccessful", Seq("sievedIngredient" -> sievedIngredientValue)),
+        RuntimeEvent.apply("InteractionThreeSuccessful", Seq("interactionThreeIngredient" -> interactionThreeIngredientValue)),
+        RuntimeEvent.apply("InteractionFourSuccessful", Seq("interactionFourIngredient" -> interactionFourIngredientValue))
       )
     }
 

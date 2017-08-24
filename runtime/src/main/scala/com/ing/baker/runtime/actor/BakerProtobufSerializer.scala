@@ -25,24 +25,22 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     }
   }
 
-  def writeIngredients(ingredients: Map[String, Any]): Seq[messages.Ingredient] = {
+  def writeIngredients(ingredients: Seq[(String, Any)]): Seq[messages.Ingredient] = {
     ingredients.map { case (name, value) =>
-
       val serializedObject = objectSerializer.serializeObject(value.asInstanceOf[AnyRef])
       val objectMessage = transformToProto(serializedObject)
-
       messages.Ingredient(Some(name), Some(objectMessage))
-    }.toSeq
+    }
   }
 
-  def readIngredients(ingredients: Seq[Ingredient]): Map[String, Any] = {
+  def readIngredients(ingredients: Seq[Ingredient]): Seq[(String, Any)] = {
     ingredients.map {
       case messages.Ingredient(Some(name), Some(data)) =>
 
         val deserializedData = transformFromProto(data)
         val deserializedObject = objectSerializer.deserializeObject(deserializedData)
         name -> deserializedObject
-    }.toMap
+    }
   }
 
   override def toBinary(o: AnyRef): Array[Byte] = {
@@ -54,7 +52,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
         messages.RuntimeEvent.toByteArray(eventMessage)
 
       case e: core.ProcessState =>
-        val ingredients = writeIngredients(e.ingredients)
+        val ingredients = writeIngredients(e.ingredients.toSeq)
         val processsStateMesage = messages.ProcessState(Some(e.processId), ingredients)
         messages.ProcessState.toByteArray(processsStateMesage)
     }
@@ -73,7 +71,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
       case "ProcessState" =>
         val eventMessage = messages.ProcessState.parseFrom(bytes)
         eventMessage match {
-          case messages.ProcessState(Some(id), ingredients) => core.ProcessState(id, readIngredients(ingredients))
+          case messages.ProcessState(Some(id), ingredients) => core.ProcessState(id, readIngredients(ingredients).toMap)
           case _ => throw new IllegalStateException(s"Failed to deserialize ProcessState message (missing 'id' field)")
         }
     }

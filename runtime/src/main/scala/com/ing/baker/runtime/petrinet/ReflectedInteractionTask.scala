@@ -114,7 +114,7 @@ object ReflectedInteractionTask {
 
   def runtimeEventForIngredient(runtimeEventName: String, providedIngredient: Any, ingredientToComplyTo: IngredientType): RuntimeEvent = {
     if (ingredientToComplyTo.clazz.isAssignableFrom(providedIngredient.getClass))
-      RuntimeEvent(runtimeEventName , Map(ingredientToComplyTo.name -> providedIngredient))
+      RuntimeEvent(runtimeEventName , Seq((ingredientToComplyTo.name, providedIngredient)))
     else {
       throw new FatalInteractionException(
         s"""

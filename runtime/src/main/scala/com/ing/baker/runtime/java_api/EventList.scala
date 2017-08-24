@@ -6,10 +6,10 @@ import scala.collection.JavaConverters._
 
 object EventList {
   def CreateFromStringList(events: java.util.List[String]): EventList =
-    new EventList(events.asScala.map(RuntimeEvent(_, Map.empty)))
+    new EventList(events.asScala.map(RuntimeEvent(_, Seq.empty)))
 
   def CreateFromObjectList(events: java.util.List[Object]): EventList =
-    new EventList(events.asScala.map(obj => RuntimeEvent(obj.getClass.getSimpleName, Map.empty)))
+    new EventList(events.asScala.map(obj => RuntimeEvent(obj.getClass.getSimpleName, Seq.empty)))
 }
 
 /**
