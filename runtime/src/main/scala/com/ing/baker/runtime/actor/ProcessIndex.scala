@@ -29,10 +29,6 @@ object ProcessIndex {
   // when an actor is deleted
   case class ActorDeleted(processId: String) extends InternalBakerEvent
 
-
-  case class DeleteProcess(processId: String) extends InternalBakerMessage
-
-
   case object CheckForProcessesToBeDeleted extends InternalBakerMessage
 
   /**
@@ -50,10 +46,12 @@ class ProcessIndex(processActorProps: Props,
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
 
+  import context.dispatcher
+
   if (retentionPeriod.isFinite())
     context.system.scheduler.schedule(cleanupInterval, cleanupInterval, context.self, CheckForProcessesToBeDeleted)
 
-  private[actor] def createProcessActor(id: String) = {
+  private[actor] def getOrCreateProcessActor(id: String): ActorRef = {
     val actorRef = context.actorOf(processActorProps, name = id)
     context.watch(actorRef)
     actorRef
@@ -61,23 +59,19 @@ class ProcessIndex(processActorProps: Props,
 
   def shouldDelete(meta: ActorMetadata) = meta.createdDateTime + cleanupInterval.toMillis < System.currentTimeMillis()
 
+  def deleteProcess(processId: String) = {
+    persist(ActorPassivated(processId)) { _ =>
+      val meta = index(processId)
+      recipeMetadata.remove(ProcessMetadata(meta.id, meta.createdDateTime))
+      index -= processId
+    }
+  }
+
   override def receiveCommand: Receive = {
     case CheckForProcessesToBeDeleted =>
       index.values
-        .filter(_.createdDateTime + cleanupInterval.toMillis < System.currentTimeMillis())
-        .foreach { meta =>
-
-          val processId = meta.id
-
-          // if there is a child (living process) we first stop it
-          context.child(processId).foreach(actor =>
-            actor ! SupervisorStrategy.Stop
-          )
-
-          // otherwise directly remove it from the index
-          if(!context.child(processId).isDefined)
-            persist(ActorDeleted(processId)) { _ => index -= processId }
-        }
+        .filter(shouldDelete)
+        .foreach(meta => getOrCreateProcessActor(meta.id) ! Stop(delete = true))
 
     case Passivate(stopMessage) =>
       sender() ! stopMessage
@@ -85,10 +79,14 @@ class ProcessIndex(processActorProps: Props,
     case Terminated(actorRef) =>
       val processId = actorRef.path.name
 
-      if(shouldDelete(index(processId)))
-        persist(ActorDeleted(processId)) { _ => index -= processId }
-      else
-        persist(ActorPassivated(processId)) { _ => }
+      index.get(processId) match {
+        case Some(meta) if shouldDelete(meta) =>
+          deleteProcess(processId)
+        case Some(meta) =>
+          persist(ActorPassivated(processId)) { _ => }
+        case None =>
+          log.warning("Received Terminated for non indexed actor")
+      }
 
     case BakerActorMessage(processId, cmd@Initialize(_, _)) =>
 
@@ -98,10 +96,10 @@ class ProcessIndex(processActorProps: Props,
         case None if !index.contains(id) =>
           val created = System.currentTimeMillis()
           persist(ActorCreated(id, created)) { _ =>
-            createProcessActor(id).forward(cmd)
+            getOrCreateProcessActor(id).forward(cmd)
             val actorMetadata = ActorMetadata(id, created)
             index += id -> actorMetadata
-            recipeMetadata.addNewProcessMetadata(id, created)
+            recipeMetadata.add(ProcessMetadata(id, created))
           }
         case _ => sender() ! AlreadyInitialized
       }
@@ -129,7 +127,7 @@ class ProcessIndex(processActorProps: Props,
            forwardIfWithinPeriod(actorRef, cmd)
         case None if index.contains(id) =>
           persist(ActorActivated(id)) { _ =>
-            forwardIfWithinPeriod(createProcessActor(id), cmd)
+            forwardIfWithinPeriod(getOrCreateProcessActor(id), cmd)
           }
         case None => sender() ! Uninitialized(processId.toString)
       }
@@ -144,7 +142,6 @@ class ProcessIndex(processActorProps: Props,
   override def receiveRecover: Receive = {
     case ActorCreated(processId, createdTime) =>
       index += processId -> ActorMetadata(processId, createdTime)
-      recipeMetadata.addNewProcessMetadata(processId, createdTime)
       actorsToBeCreated += processId
     case ActorPassivated(processId) =>
       actorsToBeCreated -= processId
@@ -154,7 +151,8 @@ class ProcessIndex(processActorProps: Props,
       actorsToBeCreated -= processId
       index -= processId
     case RecoveryCompleted =>
-      actorsToBeCreated.foreach(id => createProcessActor(id))
+      actorsToBeCreated.foreach(id => getOrCreateProcessActor(id))
+      index.values.foreach(p => recipeMetadata.add(ProcessMetadata(p.id, p.createdDateTime)))
   }
 
   override def persistenceId: String = self.path.name

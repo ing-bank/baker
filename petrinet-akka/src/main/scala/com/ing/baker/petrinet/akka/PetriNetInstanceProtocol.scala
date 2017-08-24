@@ -41,6 +41,11 @@ object PetriNetInstanceProtocol {
    */
   case object GetState extends Command
 
+  /**
+    * Command to stop and optionally delete the process instance.
+    */
+  case class Stop(delete: Boolean = false) extends Command
+
   object Initialize {
 
     def apply[P[_]](marking: Marking[P])(implicit placeIdentifier: Identifiable[P[_]]): Initialize = Initialize(marshal[P](marking), ())

@@ -4,6 +4,7 @@ import akka.actor._
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.Logging
 import akka.pattern.pipe
+import akka.persistence.DeleteMessagesSuccess
 import com.ing.baker.petrinet.akka.PetriNetInstance.Settings
 import com.ing.baker.petrinet.akka.PetriNetInstanceLogger._
 import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
@@ -77,22 +78,30 @@ class PetriNetInstance[P[_], T[_, _], S, E](
       }
     case _: Command ⇒
       sender() ! Uninitialized(processId)
-      context.parent ! Passivate(SupervisorStrategy.Stop)
+      context.parent ! Passivate(Stop(delete = false))
 
     case SupervisorStrategy.Stop ⇒
       context.stop(context.self)
   }
 
+  def waitForDeleteConfirmation: Receive = {
+    case DeleteMessagesSuccess => context.stop(context.self)
+  }
+
   def running(instance: Instance[P, T, S],
               scheduledRetries: Map[Long, Cancellable]): Receive = {
 
-    case SupervisorStrategy.Stop ⇒
+    case Stop(deleteHistory) ⇒
       scheduledRetries.values.foreach(_.cancel())
-      context.stop(context.self)
+      if(deleteHistory) {
+        deleteMessages(lastSequenceNr)
+        context become waitForDeleteConfirmation
+      } else
+        context.stop(context.self)
 
     case IdleStop(n) if n == instance.sequenceNr && instance.activeJobs.isEmpty ⇒
       logEvent(Logging.DebugLevel, LogIdleStop(processId, settings.idleTTL.getOrElse(Duration.Zero)))
-      context.parent ! Passivate(SupervisorStrategy.Stop)
+      context.parent ! Passivate(Stop(delete = false))
 
     case GetState ⇒
       sender() ! fromExecutionInstance(instance)
@@ -184,7 +193,6 @@ class PetriNetInstance[P[_], T[_, _], S, E](
       sender() ! AlreadyInitialized
   }
 
-  // TODO remove side effecting here
   def step(instance: Instance[P, T, S]): (Instance[P, T, S], Set[Job[P, T, S, _]]) = {
 
     runtime.jobPicker.allEnabledJobs.run(instance).value match {

@@ -89,7 +89,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
   private val bakerActorProvider =
     actorSystem.settings.config.as[Option[String]]("baker.actor.provider") match {
       case None | Some("local") => new LocalBakerActorProvider()
-      case Some("cluster-sharded") => new ShardedActorProvider(config)
+      case Some("cluster-sharded") => new ClusterActorProvider(config)
       case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
     }
 
@@ -298,5 +298,5 @@ class Baker(val compiledRecipe: CompiledRecipe,
       }
   }
 
-  def allProcessMetadata: Set[ProcessMetadata] = recipeMetadata.getAllProcessMetadata
+  def allProcessMetadata: Set[ProcessMetadata] = recipeMetadata.getAll
 }
