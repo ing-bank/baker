@@ -80,7 +80,7 @@ class PetriNetInstance[P[_], T[_, _], S, E](
       sender() ! Uninitialized(processId)
       context.parent ! Passivate(Stop(delete = false))
 
-    case SupervisorStrategy.Stop ⇒
+    case Stop(_) ⇒
       context.stop(context.self)
   }
 
