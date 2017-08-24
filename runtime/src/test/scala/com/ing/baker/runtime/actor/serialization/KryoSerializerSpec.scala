@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor
+package com.ing.baker.runtime.actor.serialization
 
 import com.twitter.chill.{KryoPool, ScalaKryoInstantiator}
 import org.scalatest.{FunSuite, Matchers}

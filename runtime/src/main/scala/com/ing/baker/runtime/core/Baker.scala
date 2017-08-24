@@ -19,6 +19,7 @@ import com.ing.baker.petrinet.akka._
 import com.ing.baker.petrinet.runtime.EventSourcing.TransitionFiredEvent
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
 import com.ing.baker.runtime.actor._
+import com.ing.baker.runtime.actor.serialization.AkkaObjectSerializer
 import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.{RecipeRuntime, ReflectedInteractionTask}

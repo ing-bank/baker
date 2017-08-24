@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor
+package com.ing.baker.runtime.actor.serialization
 
 import akka.actor.ExtendedActorSystem
 import com.esotericsoftware.kryo.Kryo

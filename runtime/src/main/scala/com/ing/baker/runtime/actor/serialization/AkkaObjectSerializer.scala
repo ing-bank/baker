@@ -1,4 +1,4 @@
-package com.ing.baker.petrinet.akka
+package com.ing.baker.runtime.actor.serialization
 
 import akka.actor.ActorSystem
 import akka.serialization.{SerializationExtension, Serializer, SerializerWithStringManifest}

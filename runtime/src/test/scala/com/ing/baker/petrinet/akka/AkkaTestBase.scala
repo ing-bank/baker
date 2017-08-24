@@ -11,6 +11,7 @@ import fs2.Strategy
 import com.ing.baker.petrinet.dsl.colored
 import com.ing.baker.petrinet.dsl.colored.{ColoredPetriNet, Place, Transition}
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
+import com.ing.baker.runtime.actor.serialization.AkkaObjectSerializer
 import com.ing.baker.serialization.Encryption.NoEncryption
 import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
 

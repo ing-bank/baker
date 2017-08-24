@@ -1,4 +1,4 @@
-package com.ing.baker.petrinet.akka
+package com.ing.baker.runtime.actor.serialization
 
 import java.io.ByteArrayOutputStream
 
@@ -22,7 +22,8 @@ object ScalaPBSerializer {
 }
 
 class ScalaPBSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
-  import com.ing.baker.petrinet.akka.ScalaPBSerializer._
+
+  import ScalaPBSerializer._
 
   private val manifests: Map[String, (Class[_ <: AnyRef], GeneratedMessageCompanion[_])] = {
     val config: Config = system.settings.config.getConfig("baker.scalapb.serialization-manifests")

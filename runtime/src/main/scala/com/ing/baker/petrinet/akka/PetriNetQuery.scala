@@ -8,6 +8,7 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime._
 import com.ing.baker.petrinet.runtime.persistence.ProtobufSerialization
+import com.ing.baker.runtime.actor.serialization.AkkaObjectSerializer
 import com.ing.baker.serialization.Encryption
 import com.ing.baker.serialization.Encryption.NoEncryption
 

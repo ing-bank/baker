@@ -1,4 +1,4 @@
-package com.ing.baker.petrinet.akka
+package com.ing.baker.runtime.actor.serialization
 
 import akka.actor.ActorSystem
 import akka.serialization.SerializationExtension
@@ -8,8 +8,8 @@ import com.ing.baker.petrinet.runtime.persistence.messages
 import com.ing.baker.serialization.common.SerializedData
 import com.trueaccord.scalapb.GeneratedMessage
 import org.scalacheck.{Gen, Prop, Test}
-import org.scalatest.{FunSuiteLike, Matchers}
 import org.scalatest.prop.Checkers
+import org.scalatest.{FunSuiteLike, Matchers}
 
 class ScalaPBSerializerSpec extends TestKit(ActorSystem("ScalaPBSerializerSpec"))
   with Checkers with FunSuiteLike with Matchers {

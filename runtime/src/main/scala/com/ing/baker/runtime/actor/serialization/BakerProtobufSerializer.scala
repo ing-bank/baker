@@ -1,8 +1,8 @@
-package com.ing.baker.runtime.actor
+package com.ing.baker.runtime.actor.serialization
 
 import akka.actor.ExtendedActorSystem
 import akka.serialization.{Serializer, SerializerWithStringManifest}
-import com.ing.baker.petrinet.akka.AkkaObjectSerializer
+import com.ing.baker.runtime.actor.messages
 import com.ing.baker.runtime.actor.messages.Ingredient
 import com.ing.baker.runtime.core
 import com.ing.baker.serialization._
