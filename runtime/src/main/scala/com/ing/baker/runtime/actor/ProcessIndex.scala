@@ -69,9 +69,9 @@ class ProcessIndex(processActorProps: Props,
 
   override def receiveCommand: Receive = {
     case CheckForProcessesToBeDeleted =>
-      index.values
-        .filter(shouldDelete)
-        .foreach(meta => getOrCreateProcessActor(meta.id) ! Stop(delete = true))
+      val toBeDeleted = index.values.filter(shouldDelete)
+      log.debug(s"Deleting processes: {}", toBeDeleted.mkString(","))
+      toBeDeleted.foreach(meta => getOrCreateProcessActor(meta.id) ! Stop(delete = true))
 
     case Passivate(stopMessage) =>
       sender() ! stopMessage
@@ -85,7 +85,7 @@ class ProcessIndex(processActorProps: Props,
         case Some(meta) =>
           persist(ActorPassivated(processId)) { _ => }
         case None =>
-          log.warning("Received Terminated for non indexed actor")
+          log.warning(s"Received Terminated message for non indexed actor: $actorRef")
       }
 
     case BakerActorMessage(processId, cmd@Initialize(_, _)) =>
