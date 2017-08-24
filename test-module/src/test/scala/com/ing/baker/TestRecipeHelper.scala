@@ -156,7 +156,16 @@ object TestRecipeHelper {
       common.ProvidesNothing)
   trait InteractionEightImpl {
     val name: String = "InteractionEight"
-    def apply(interactionSevenIngredient1: String, interactionSevenIngredient2: String): String
+    def apply(interactionSevenIngredient1: String, interactionSevenIngredient2: String) : Unit
+  }
+
+  val providesNothingInteraction =
+    Interaction("providesNothingInteraction",
+      Ingredients(initialIngredient),
+      common.ProvidesNothing)
+  trait ProvidesNothingInteractionImpl {
+    val name: String = "providesNothingInteraction"
+    def apply(initialIngredient: String) : Unit
   }
 
   val sieveInteraction =
@@ -349,6 +358,7 @@ trait TestRecipeHelper
   protected val testNonMatchingReturnTypeInteractionMock: NonMatchingReturnTypeInteractionImpl = mock[NonMatchingReturnTypeInteractionImpl]
   protected val testSieveInteractionMock: SieveInteractionImpl = mock[SieveInteractionImpl]
   protected val testOptionalIngredientInteractionMock: OptionalIngredientInteractionImpl = mock[OptionalIngredientInteractionImpl]
+  protected val testProvidesNothingInteractionImplMock: ProvidesNothingInteractionImpl = mock[ProvidesNothingInteractionImpl]
 
   protected val mockImplementations: Map[String, AnyRef] =
     Map(
@@ -363,7 +373,8 @@ trait TestRecipeHelper
       "CaseClassIngredientInteraction2" -> testCaseClassIngredientInteraction2Mock,
       "NonMatchingReturnTypeInteraction" -> testNonMatchingReturnTypeInteractionMock,
       "SieveInteraction" -> testSieveInteractionMock,
-      "OptionalIngredientInteraction" -> testOptionalIngredientInteractionMock)
+      "OptionalIngredientInteraction" -> testOptionalIngredientInteractionMock,
+      "providesNothingInteraction" -> testProvidesNothingInteractionImplMock)
 
   protected def levelDbConfig(actorSystemName: String, port: Int, journalPath: String = "target/journal", snapshotsPath: String = "target/snapshots"): Config = ConfigFactory.parseString(
     s"""
@@ -434,6 +445,7 @@ trait TestRecipeHelper
           .withRequiredEvents(secondEvent, eventFromInteractionTwo),
         interactionFive,
         interactionSix,
+        providesNothingInteraction,
         sieveInteraction
       )
       .withSensoryEvents(

@@ -3,8 +3,7 @@ package com.ing.baker.runtime.petrinet
 import java.util.UUID
 
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.il.{EventType, IngredientType, processIdName}
-import com.ing.baker.il._
+import com.ing.baker.il.{IngredientType, processIdName, _}
 import com.ing.baker.runtime.core.{BakerException, ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.event_extractors.{EventExtractor, PojoEventExtractor}
 import org.slf4j.{LoggerFactory, MDC}
@@ -83,9 +82,11 @@ object ReflectedInteractionTask {
 
     log.trace(s"[$invocationId] invoking '${interaction.originalInteractionName}' with parameters ${inputArgs.toString}")
 
+    val method = interactionObject.getClass.getMethod("apply", interaction.requiredIngredients.map { case (_, clazz) => getRawClass(clazz) }: _*)
+
     def invokeMethod(): AnyRef = {
       MDC.put("processId", processState.processId.toString)
-      val result = interactionObject.getClass.getMethod("apply", interaction.requiredIngredients.map { case (_, clazz) => getRawClass(clazz) }: _*).invoke(interactionObject, inputArgs: _*)
+      val result = method.invoke(interactionObject, inputArgs: _*)
       log.trace(s"[$invocationId] result: $result")
 
       MDC.remove("processId")
@@ -103,13 +104,25 @@ object ReflectedInteractionTask {
           runtimeEvent
         }
         else {
-          val msg: String = s"Output: $output fired by an interaction but could not link it to any known event for the interaction"
+          val msg: String = s"Output: $output fired by interaction ${interaction.interactionName} but could not link it to any known event for the interaction"
           log.error(msg)
           throw new FatalInteractionException(msg)
         }
       }
     }
-    createRuntimeEvent(invokeMethod())
+
+    val response: AnyRef = invokeMethod()
+    if (method.getReturnType.equals(Void.TYPE)) {
+      if(interaction.eventsToFire.isEmpty){
+        RuntimeEvent(interaction.interactionName, Seq.empty)
+      }
+      else {
+        val msg: String = s"Void returned by interaction ${interaction.interactionName} but expected a return type"
+        log.error(msg)
+        throw new FatalInteractionException(msg)
+      }
+    }
+    else createRuntimeEvent(response)
   }
 
   def runtimeEventForIngredient(runtimeEventName: String, providedIngredient: Any, ingredientToComplyTo: IngredientType): RuntimeEvent = {
