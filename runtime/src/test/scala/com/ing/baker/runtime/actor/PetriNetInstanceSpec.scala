@@ -1,18 +1,18 @@
-package com.ing.baker.petrinet.akka
+package com.ing.baker.runtime.actor
 
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-import akka.actor.{ActorRef, ActorSystem, PoisonPill, SupervisorStrategy, Terminated}
+import akka.actor.{ActorRef, ActorSystem, PoisonPill, Terminated}
 import akka.pattern.ask
 import akka.testkit.TestDuration
 import akka.util.Timeout
-import com.ing.baker.petrinet.akka.AkkaTestBase.GetChild
-import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.dsl.colored._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Fatal, RetryWithDelay}
 import com.ing.baker.petrinet.runtime.TransitionExceptionHandler
+import com.ing.baker.runtime.actor.AkkaTestBase.GetChild
+import com.ing.baker.runtime.actor.PetriNetInstanceProtocol._
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
@@ -24,6 +24,18 @@ import org.scalatest.time.{Milliseconds, Span}
 import scala.concurrent.Promise
 import scala.concurrent.duration._
 import scala.util.Success
+
+sealed trait Event
+case class Added(n: Int) extends Event
+case class Removed(n: Int) extends Event
+
+trait TestSequenceNet extends SequenceNet[Set[Int], Event] {
+
+  override val eventSourceFunction: Set[Int] ⇒ Event ⇒ Set[Int] = set ⇒ {
+    case Added(c)   ⇒ set + c
+    case Removed(c) ⇒ set - c
+  }
+}
 
 class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSugar {
 

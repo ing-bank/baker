@@ -1,9 +1,0 @@
-syntax = "proto2";
-
-option java_package = "com.ing.baker.serialization";
-
-message SerializedData {
-    optional int32 serializer_id = 1;
-    optional string manifest = 2;
-    optional bytes data = 3;
-}

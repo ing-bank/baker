@@ -1,4 +1,4 @@
-package com.ing.baker.petrinet.akka
+package com.ing.baker.runtime.actor
 
 import akka.NotUsed
 import akka.actor.ActorSystem
@@ -7,10 +7,8 @@ import akka.stream.scaladsl._
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime._
-import com.ing.baker.petrinet.runtime.persistence.ProtobufSerialization
-import com.ing.baker.runtime.actor.serialization.AkkaObjectSerializer
-import com.ing.baker.serialization.Encryption
-import com.ing.baker.serialization.Encryption.NoEncryption
+import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
+import com.ing.baker.runtime.actor.serialization.{AkkaObjectSerializer, Encryption, ProtobufSerialization}
 
 object PetriNetQuery {
 

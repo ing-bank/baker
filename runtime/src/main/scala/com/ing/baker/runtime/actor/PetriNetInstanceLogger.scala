@@ -1,9 +1,9 @@
-package com.ing.baker.petrinet.akka
+package com.ing.baker.runtime.actor
 
 import akka.event.Logging
 import akka.event.Logging.LogLevel
 import akka.persistence.PersistentActor
-import com.ing.baker.petrinet.akka.PetriNetInstanceLogger.LogEvent
+import com.ing.baker.runtime.actor.PetriNetInstanceLogger.LogEvent
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._

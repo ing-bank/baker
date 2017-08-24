@@ -1,4 +1,4 @@
-package com.ing.baker.petrinet.akka
+package com.ing.baker.runtime.actor
 
 import java.util.UUID
 
@@ -9,11 +9,11 @@ import akka.stream.ActorMaterializer
 import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.TestProbe
 import akka.util.Timeout
-import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.dsl.colored._
 import com.ing.baker.petrinet.runtime.EventSourcing.{InitializedEvent, TransitionFiredEvent}
-import com.ing.baker.serialization.Encryption.NoEncryption
+import com.ing.baker.runtime.actor.PetriNetInstanceProtocol._
+import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Matchers._
 
@@ -21,7 +21,7 @@ import scala.collection.immutable._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class QuerySpec extends AkkaTestBase with BeforeAndAfterEach {
+class PetriNetQuerySpec extends AkkaTestBase with BeforeAndAfterEach {
 
   implicit val akkaTimout = Timeout(2 seconds)
   val timeOut: Duration = akkaTimout.duration

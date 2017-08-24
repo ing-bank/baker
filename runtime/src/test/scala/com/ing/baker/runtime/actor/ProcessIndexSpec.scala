@@ -4,18 +4,14 @@ import java.util.UUID
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestDuration, TestKit, TestProbe}
-import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol
-import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
 import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.petrinet.dsl.colored.Place
+import com.ing.baker.runtime.actor.PetriNetInstanceProtocol._
 import com.ing.baker.runtime.actor.ProcessIndex.ReceivePeriodExpired
 import com.typesafe.config.{Config, ConfigFactory}
-import org.mockito
+import org.mockito.Matchers._
 import org.mockito.Mockito
 import org.mockito.Mockito.verify
-
-import org.mockito.Matchers._
-
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.time.Span

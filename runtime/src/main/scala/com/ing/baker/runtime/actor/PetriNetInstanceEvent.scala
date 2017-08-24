@@ -1,4 +1,4 @@
-package com.ing.baker.petrinet.akka
+package com.ing.baker.runtime.actor
 
 import com.ing.baker.petrinet.runtime.EventSourcing.Event
 

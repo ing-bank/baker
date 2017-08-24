@@ -1,16 +1,15 @@
-package com.ing.baker.petrinet.runtime.persistence
+package com.ing.baker.runtime.actor.serialization
 
 import java.security.MessageDigest
 
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Continue, Fatal, RetryWithDelay}
-import com.ing.baker.petrinet.runtime.persistence.ProtobufSerialization._
-import com.ing.baker.petrinet.runtime.persistence.messages.FailureStrategy
-import com.ing.baker.petrinet.runtime.persistence.messages.FailureStrategy.StrategyType
+import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Fatal, RetryWithDelay}
+import com.ing.baker.runtime.actor.messages
+import com.ing.baker.runtime.actor.messages._
 import com.ing.baker.petrinet.runtime.{EventSourcing, Instance}
-import com.ing.baker.serialization.common.SerializedData
-import com.ing.baker.serialization.{ObjectSerializer, transformFromProto}
+import ProtobufSerialization._
+import com.ing.baker.runtime.actor.messages.FailureStrategy.StrategyType
 
 object ProtobufSerialization {
 

@@ -1,6 +1,6 @@
-package com.ing.baker.petrinet.akka
+package com.ing.baker.runtime.actor
 
-import com.ing.baker.petrinet.api._
+import com.ing.baker.petrinet.api.{HMap, Identifiable, Marking, MultiSet}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
 

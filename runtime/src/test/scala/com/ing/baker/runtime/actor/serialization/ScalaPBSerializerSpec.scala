@@ -4,8 +4,7 @@ import akka.actor.ActorSystem
 import akka.serialization.SerializationExtension
 import akka.testkit.TestKit
 import com.google.protobuf.ByteString
-import com.ing.baker.petrinet.runtime.persistence.messages
-import com.ing.baker.serialization.common.SerializedData
+import com.ing.baker.runtime.actor.messages
 import com.trueaccord.scalapb.GeneratedMessage
 import org.scalacheck.{Gen, Prop, Test}
 import org.scalatest.prop.Checkers
@@ -32,19 +31,18 @@ class ScalaPBSerializerSpec extends TestKit(ActorSystem("ScalaPBSerializerSpec")
 
     check(prop, Test.Parameters.defaultVerbose.withMinSuccessfulTests(1000))
   }
-
 }
 
 object ScalaPBSerializerSpec {
   val intGen: Gen[Int] = Gen.chooseNum(Int.MinValue, Int.MaxValue)
   val longGen: Gen[Long] = Gen.chooseNum(Long.MinValue, Long.MaxValue)
 
-  val serializedDataGen: Gen[SerializedData] = for {
+  val serializedDataGen: Gen[messages.SerializedData] = for {
     serializerId <- Gen.option(intGen)
     manifest <- Gen.option(Gen.alphaNumStr)
     // generate an Option[ByteString] using generated list of chars(bytes)
     byteString <- Gen.option(Gen.listOf(Gen.alphaNumChar).map(_.map(_.toByte).toArray).map(ByteString.copyFrom))
-  } yield SerializedData(serializerId, manifest, byteString)
+  } yield messages.SerializedData(serializerId, manifest, byteString)
 
   val consumedTokenGen: Gen[messages.ConsumedToken] = for {
     placeId <- Gen.option(longGen)

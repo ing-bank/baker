@@ -6,7 +6,7 @@
         </encoder>
     </appender>
 
-    <logger name="com.ing.baker.petrinet.akka.PetriNetInstance" level="OFF" />
+    <logger name="com.ing.baker.runtime.actor.PetriNetInstance" level="OFF" />
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>

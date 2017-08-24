@@ -1,4 +1,4 @@
-package com.ing.baker.serialization
+package com.ing.baker.runtime.actor.serialization
 
 /**
   * This object wraps a byte array with some meta data.

@@ -1,23 +1,23 @@
-package com.ing.baker.petrinet.akka
+package com.ing.baker.runtime.actor
 
 import akka.actor._
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.Logging
 import akka.pattern.pipe
 import akka.persistence.DeleteMessagesSuccess
-import com.ing.baker.petrinet.akka.PetriNetInstance.Settings
-import com.ing.baker.petrinet.akka.PetriNetInstanceLogger._
-import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
 import com.ing.baker.petrinet.api._
-import fs2.Strategy
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{Continue, RetryWithDelay}
 import com.ing.baker.petrinet.runtime._
-import com.ing.baker.serialization.ObjectSerializer
+import fs2.Strategy
 
 import scala.concurrent.duration._
 import scala.language.existentials
 import scala.util.Try
+import PetriNetInstance._
+import PetriNetInstanceProtocol._
+import PetriNetInstanceLogger._
+import com.ing.baker.runtime.actor.serialization.ObjectSerializer
 
 object PetriNetInstance {
 
@@ -46,7 +46,6 @@ class PetriNetInstance[P[_], T[_, _], S, E](
                                              override implicit val placeIdentifier: Identifiable[P[_]],
                                              override implicit val transitionIdentifier: Identifiable[T[_, _]]) extends PetriNetInstanceRecovery[P, T, S, E](processTopology, settings.serializer, runtime.eventSourceFn) with PetriNetInstanceLogger {
 
-  import PetriNetInstance._
 
   val processId = context.self.path.name
 

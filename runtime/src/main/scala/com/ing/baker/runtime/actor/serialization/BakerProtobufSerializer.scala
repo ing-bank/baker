@@ -3,9 +3,7 @@ package com.ing.baker.runtime.actor.serialization
 import akka.actor.ExtendedActorSystem
 import akka.serialization.{Serializer, SerializerWithStringManifest}
 import com.ing.baker.runtime.actor.messages
-import com.ing.baker.runtime.actor.messages.Ingredient
 import com.ing.baker.runtime.core
-import com.ing.baker.serialization._
 
 class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
 
@@ -35,7 +33,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     }.toSeq
   }
 
-  def readIngredients(ingredients: Seq[Ingredient]): Map[String, Any] = {
+  def readIngredients(ingredients: Seq[messages.Ingredient]): Map[String, Any] = {
     ingredients.map {
       case messages.Ingredient(Some(name), Some(data)) =>
 

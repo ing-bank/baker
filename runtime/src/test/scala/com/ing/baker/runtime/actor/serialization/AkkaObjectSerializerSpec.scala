@@ -3,7 +3,7 @@ package com.ing.baker.runtime.actor.serialization
 import javax.crypto.BadPaddingException
 
 import akka.actor.ActorSystem
-import com.ing.baker.serialization.Encryption.{AESEncryption, NoEncryption}
+import com.ing.baker.runtime.actor.serialization.Encryption._
 import org.scalatest.{FunSuite, Matchers}
 
 class AkkaObjectSerializerSpec extends FunSuite with Matchers {

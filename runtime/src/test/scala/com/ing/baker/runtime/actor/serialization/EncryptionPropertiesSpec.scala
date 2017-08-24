@@ -1,11 +1,11 @@
-package com.ing.baker.serialization
+package com.ing.baker.runtime.actor.serialization
 
-import com.ing.baker.serialization.Encryption.{AESEncryption, DESEncryption, JavaCryptoEncryption}
 import org.scalacheck.Gen._
 import org.scalacheck.Prop.forAll
 import org.scalacheck._
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
+import Encryption._
 
 class EncryptionPropertiesSpec extends FunSuite with Checkers {
 

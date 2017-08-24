@@ -1,4 +1,4 @@
-package com.ing.baker.serialization
+package com.ing.baker.runtime.actor.serialization
 
 /**
  * Trait responsible for (de)serializing token values and transition output objects.

@@ -2,8 +2,7 @@ package com.ing.baker.runtime.actor.serialization
 
 import akka.actor.ActorSystem
 import akka.serialization.{SerializationExtension, Serializer, SerializerWithStringManifest}
-import com.ing.baker.serialization.Encryption.NoEncryption
-import com.ing.baker.serialization.{Encryption, ObjectSerializer, SerializedObject}
+import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 
 class AkkaObjectSerializer(system: ActorSystem, encryption: Encryption = NoEncryption) extends ObjectSerializer {
 

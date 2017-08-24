@@ -1,4 +1,4 @@
-package com.ing.baker.serialization
+package com.ing.baker.runtime.actor.serialization
 
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
