@@ -163,7 +163,7 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
     "Retry to execute a transition with a delay when the exception strategy indicates so" in new TestSequenceNet {
 
       val retryHandler: TransitionExceptionHandler[Place] = {
-        case (e, n, _) if n < 3 ⇒ RetryWithDelay(dilatedMillis(10 * Math.pow(2, n).toLong))
+        case (_, n, _) if n < 3 ⇒ RetryWithDelay(dilatedMillis(10 * Math.pow(2, n).toLong))
         case _               ⇒ Fatal
       }
 
@@ -181,12 +181,12 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
 
       actor ! FireTransition(1, ())
 
-      val Delay1: Long = dilatedMillis(20)
-      val Delay2: Long = dilatedMillis(40)
+      val delay1: Long = dilatedMillis(20)
+      val delay2: Long = dilatedMillis(40)
 
       // expect 3 failure messages
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, RetryWithDelay(Delay1)) ⇒ }
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, RetryWithDelay(Delay2)) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, RetryWithDelay(delay1)) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, RetryWithDelay(delay2)) ⇒ }
       expectMsgPF() { case TransitionFailed(_, 1, _, _, _, Fatal) ⇒ }
 
       // attempt to fire t1 explicitly
@@ -266,7 +266,7 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
       verify(mockFunction).apply(any[Set[Int]])
 
       // kill the actor
-      actor ! SupervisorStrategy.Stop
+      actor ! Stop(delete = false)
       syncKillActorWithPoisonPill(actor)
 
       // reset the mock
@@ -357,7 +357,7 @@ class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSu
         verify(mockFunction).apply(any[Set[Int]]) // FIXME TRAVIS: sometimes executes 2 times
 
         // kill the actor
-        actor ! SupervisorStrategy.Stop
+        actor ! Stop(delete = false)
         syncKillActorWithPoisonPill(actor)
 
         Thread.sleep(dilatedMillis(100))

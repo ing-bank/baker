@@ -76,15 +76,17 @@ class PetriNetInstance[P[_], T[_, _], S, E](
               sender() ! Initialized(marshal(initialMarking), state)
           }
       }
+
+    case Stop(_) ⇒
+      context.stop(context.self)
+
     case _: Command ⇒
       sender() ! Uninitialized(processId)
       context.parent ! Passivate(Stop(delete = false))
 
-    case Stop(_) ⇒
-      context.stop(context.self)
   }
 
-  def waitForDeleteConfirmation: Receive = {
+  val waitForDeleteConfirmation: Receive = {
     case DeleteMessagesSuccess => context.stop(context.self)
   }
 
