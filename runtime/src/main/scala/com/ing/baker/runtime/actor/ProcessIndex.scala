@@ -59,7 +59,7 @@ class ProcessIndex(processActorProps: Props,
   def shouldDelete(meta: ActorMetadata) = meta.createdDateTime + cleanupInterval.toMillis < System.currentTimeMillis()
 
   def deleteProcess(processId: String) = {
-    persist(ActorPassivated(processId)) { _ =>
+    persist(ActorDeleted(processId)) { _ =>
       val meta = index(processId)
       recipeMetadata.remove(ProcessMetadata(meta.id, meta.createdDateTime))
       index -= processId
@@ -81,7 +81,7 @@ class ProcessIndex(processActorProps: Props,
       index.get(processId) match {
         case Some(meta) if shouldDelete(meta) =>
           deleteProcess(processId)
-        case Some(meta) =>
+        case Some(_) =>
           persist(ActorPassivated(processId)) { _ => }
         case None =>
           log.warning(s"Received Terminated message for non indexed actor: $actorRef")

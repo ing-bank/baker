@@ -123,11 +123,11 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
         cleanupInterval = cleanupInterval)
 
       val processId = UUID.randomUUID().toString
+
       val initializeCmd = Initialize(Marking.empty[Place])
-
       actorIndex ! BakerActorMessage(processId, initializeCmd )
-
       processProbe.expectMsg(initializeCmd)
+
       processProbe.expectMsg(Stop(delete = true))
     }
 
