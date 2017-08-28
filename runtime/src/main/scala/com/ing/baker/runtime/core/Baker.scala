@@ -86,7 +86,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   private val bakerActorProvider =
     actorSystem.settings.config.as[Option[String]]("baker.actor.provider") match {
-      case None | Some("local") => new LocalBakerActorProvider()
+      case None | Some("local") => new LocalBakerActorProvider(config)
       case Some("cluster-sharded") => new ClusterActorProvider(config)
       case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
     }
@@ -289,10 +289,10 @@ class Baker(val compiledRecipe: CompiledRecipe,
   def getProcessStateAsync(processId: String)(implicit timeout: FiniteDuration): Future[ProcessState] = {
     recipeManagerActor
       .ask(BakerActorMessage(processId, GetState))(Timeout.durationToTimeout(timeout))
-      .map {
-        case instanceState: InstanceState => instanceState.state.asInstanceOf[ProcessState]
-        case Uninitialized(id) => throw new NoSuchProcessException(s"No such process with: $id")
-        case msg => throw new BakerException(s"Unexpected actor response message: $msg")
+      .flatMap {
+        case instanceState: InstanceState => Future.successful(instanceState.state.asInstanceOf[ProcessState])
+        case Uninitialized(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
+        case msg => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
       }
   }
 

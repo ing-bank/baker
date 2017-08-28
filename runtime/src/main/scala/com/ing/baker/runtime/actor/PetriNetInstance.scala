@@ -86,7 +86,9 @@ class PetriNetInstance[P[_], T[_, _], S, E](
   }
 
   val waitForDeleteConfirmation: Receive = {
-    case DeleteMessagesSuccess => context.stop(context.self)
+    case DeleteMessagesSuccess(n) =>
+      log.debug(s"Process history successfully deleted ($n event(s)), stopping the actor")
+      context.stop(context.self)
   }
 
   def running(instance: Instance[P, T, S],
@@ -95,6 +97,7 @@ class PetriNetInstance[P[_], T[_, _], S, E](
     case Stop(deleteHistory) ⇒
       scheduledRetries.values.foreach(_.cancel())
       if(deleteHistory) {
+        log.debug("Deleting process history")
         deleteMessages(lastSequenceNr)
         context become waitForDeleteConfirmation
       } else

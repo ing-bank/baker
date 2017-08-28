@@ -12,8 +12,8 @@ import scala.concurrent.duration._
 
 object ProcessIndex {
 
-  def props(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, recipeName: String, receivePeriod: Duration, retentionPeriod: Duration) =
-    Props(new ProcessIndex(petriNetActorProps, recipeMetadata, receivePeriod, retentionPeriod))
+  def props(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, recipeName: String, receivePeriod: Duration, retentionPeriod: Duration, retentionCheckInterval: FiniteDuration) =
+    Props(new ProcessIndex(petriNetActorProps, recipeMetadata, receivePeriod, retentionPeriod, retentionCheckInterval))
 
   case class ActorMetadata(id: String, createdDateTime: Long)
 
@@ -52,12 +52,14 @@ class ProcessIndex(processActorProps: Props,
     context.system.scheduler.schedule(cleanupInterval, cleanupInterval, context.self, CheckForProcessesToBeDeleted)
 
   private[actor] def getOrCreateProcessActor(id: String): ActorRef = {
-    val actorRef = context.actorOf(processActorProps, name = id)
-    context.watch(actorRef)
-    actorRef
+    context.child(id).getOrElse {
+      val actorRef = context.actorOf(processActorProps, name = id)
+      context.watch(actorRef)
+      actorRef
+    }
   }
 
-  def shouldDelete(meta: ActorMetadata) = meta.createdDateTime + cleanupInterval.toMillis < System.currentTimeMillis()
+  def shouldDelete(meta: ActorMetadata) = meta.createdDateTime + retentionPeriod.toMillis < System.currentTimeMillis()
 
   def deleteProcess(processId: String) = {
     persist(ActorDeleted(processId)) { _ =>
@@ -70,7 +72,9 @@ class ProcessIndex(processActorProps: Props,
   override def receiveCommand: Receive = {
     case CheckForProcessesToBeDeleted =>
       val toBeDeleted = index.values.filter(shouldDelete)
-      log.debug(s"Deleting processes: {}", toBeDeleted.mkString(","))
+      if (toBeDeleted.nonEmpty)
+        log.debug(s"Deleting processes: {}", toBeDeleted.mkString(","))
+
       toBeDeleted.foreach(meta => getOrCreateProcessActor(meta.id) ! Stop(delete = true))
 
     case Passivate(stopMessage) =>
@@ -78,6 +82,7 @@ class ProcessIndex(processActorProps: Props,
 
     case Terminated(actorRef) =>
       val processId = actorRef.path.name
+      log.debug(s"Actor terminated: $actorRef")
 
       index.get(processId) match {
         case Some(meta) if shouldDelete(meta) =>
@@ -89,6 +94,8 @@ class ProcessIndex(processActorProps: Props,
       }
 
     case BakerActorMessage(processId, cmd@Initialize(_, _)) =>
+
+      log.error(s"received: $processId -> $cmd")
 
       val id = processId.toString
 
@@ -105,6 +112,8 @@ class ProcessIndex(processActorProps: Props,
       }
 
     case BakerActorMessage(processId, cmd) =>
+
+      log.error(s"received: $processId -> $cmd")
 
       val id = processId.toString
 
