@@ -27,10 +27,22 @@ trait Recipe {
     */
   val sensoryEvents: Set[Event]
 
+  /**
+    * The default interaction failure strategy.
+    */
   val defaultFailureStrategy: InteractionFailureStrategy
 
   /**
     * The period that processes can receive events for this recipe.
+    *
+    * If Duration.Undefined, events will always be accepted.
     */
   val eventReceivePeriod: Duration
+
+  /**
+    * The period that processes are stored.
+    *
+    * If Duration.Undefined, process data will be stored indefinitely.
+    */
+  val retentionPeriod: Duration
 }

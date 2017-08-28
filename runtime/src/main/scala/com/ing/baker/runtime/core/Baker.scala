@@ -112,7 +112,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
         idleTTL = actorIdleTimeout))
 
   private val (recipeManagerActor, recipeMetadata) = bakerActorProvider.createRecipeActors(
-    compiledRecipe.name, compiledRecipe.eventReceivePeriod, petriNetInstanceActorProps)
+    compiledRecipe, petriNetInstanceActorProps)
 
   private val petriNetApi = new ProcessApi(recipeManagerActor)
 

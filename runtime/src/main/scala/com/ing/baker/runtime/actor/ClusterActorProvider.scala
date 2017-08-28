@@ -3,7 +3,7 @@ package com.ing.baker.runtime.actor
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.cluster.sharding.ShardRegion._
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
-import com.ing.baker.il.sha256HashCode
+import com.ing.baker.il.{CompiledRecipe, sha256HashCode}
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 
@@ -37,15 +37,15 @@ class ClusterActorProvider(config: Config) extends BakerActorProvider {
 
   private val nrOfShards = config.as[Int]("baker.actor.cluster.nr-of-shards")
 
-  override def createRecipeActors(recipeName: String, receivePeriod: Duration, petriNetActorProps: Props)(
+  override def createRecipeActors(recipe: CompiledRecipe, petriNetActorProps: Props)(
     implicit actorSystem: ActorSystem): (ActorRef, RecipeMetadata) = {
-    val recipeMetadata = new ClusterRecipeMetadata(recipeName)
+    val recipeMetadata = new ClusterRecipeMetadata(recipe.name)
     val recipeManagerActor = ClusterSharding(actorSystem).start(
-      typeName = recipeName,
-      entityProps = ProcessIndex.props(petriNetActorProps, recipeMetadata, recipeName, receivePeriod),
+      typeName = recipe.name,
+      entityProps = ProcessIndex.props(petriNetActorProps, recipeMetadata, recipe.name, recipe.eventReceivePeriod, recipe.retentionPeriod),
       settings = ClusterShardingSettings.create(actorSystem),
-      extractEntityId = ClusterActorProvider.entityIdExtractor(recipeName, nrOfShards),
-      extractShardId = ClusterActorProvider.shardIdExtractor(recipeName, nrOfShards)
+      extractEntityId = ClusterActorProvider.entityIdExtractor(recipe.name, nrOfShards),
+      extractShardId = ClusterActorProvider.shardIdExtractor(recipe.name, nrOfShards)
     )
     (recipeManagerActor, recipeMetadata)
   }

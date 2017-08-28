@@ -12,7 +12,8 @@ import scala.concurrent.duration._
 
 object ProcessIndex {
 
-  def props(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, recipeName: String, receivePeriod: Duration) = Props(new ProcessIndex(petriNetActorProps, recipeMetadata, receivePeriod))
+  def props(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, recipeName: String, receivePeriod: Duration, retentionPeriod: Duration) =
+    Props(new ProcessIndex(petriNetActorProps, recipeMetadata, receivePeriod, retentionPeriod))
 
   case class ActorMetadata(id: String, createdDateTime: Long)
 

@@ -273,7 +273,8 @@ object RecipeCompiler {
       initialMarking = initialMarking,
       sensoryEvents = recipe.sensoryEvents.map(eventToCompiledEvent),
       validationErrors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors,
-      eventReceivePeriod = recipe.eventReceivePeriod
+      eventReceivePeriod = recipe.eventReceivePeriod,
+      retentionPeriod = recipe.retentionPeriod
     )
 
     postCompileValidations(compiledRecipe, validationSettings)

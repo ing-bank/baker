@@ -13,9 +13,10 @@ case class Recipe(
     override val sieves: Seq[common.InteractionDescriptor],
     override val sensoryEvents: Set[common.Event],
     override val defaultFailureStrategy: common.InteractionFailureStrategy,
-    override val eventReceivePeriod: Duration) extends common.Recipe {
+    override val eventReceivePeriod: Duration,
+    override val retentionPeriod: Duration) extends common.Recipe {
 
-  def this(name: String) = this(name, Seq.empty, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction(), Duration.Undefined)
+  def this(name: String) = this(name, Seq.empty, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction(), Duration.Undefined, Duration.Undefined)
 
   def getInteractions: java.util.List[common.InteractionDescriptor] = interactions.asJava
 
@@ -183,4 +184,14 @@ case class Recipe(
     */
   def withEventReceivePeriod(recivePeriod: java.time.Duration) =
     copy(eventReceivePeriod = Duration(recivePeriod.toMillis, duration.MILLISECONDS))
+
+  /**
+    * Sets the process retention period. This is the period for which data & history for processes is kept.
+    *
+    * @param retentionPeriod The retention period.
+    * @return
+    */
+  def withRetentionPeriod(retentionPeriod: java.time.Duration) =
+    copy(retentionPeriod = Duration(retentionPeriod.toMillis, duration.MILLISECONDS))
+
 }

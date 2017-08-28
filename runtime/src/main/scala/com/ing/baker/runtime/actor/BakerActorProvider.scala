@@ -1,11 +1,11 @@
 package com.ing.baker.runtime.actor
 
 import akka.actor.{ActorRef, ActorSystem, Props}
+import com.ing.baker.il.CompiledRecipe
 
-import scala.concurrent.duration.Duration
 
 trait BakerActorProvider extends {
 
-  def createRecipeActors(recipe: String, receivePeriod: Duration, petriNetActorProps: Props)(implicit actorSystem: ActorSystem): (ActorRef, RecipeMetadata)
+  def createRecipeActors(recipe: CompiledRecipe, petriNetActorProps: Props)(implicit actorSystem: ActorSystem): (ActorRef, RecipeMetadata)
 }
 

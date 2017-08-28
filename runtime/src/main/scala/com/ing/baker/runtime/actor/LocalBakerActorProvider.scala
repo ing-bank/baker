@@ -1,17 +1,14 @@
 package com.ing.baker.runtime.actor
 
 import akka.actor.{ActorRef, ActorSystem, Props}
-import com.google.common.collect.Sets
-
-import scala.collection.JavaConverters._
-import scala.concurrent.duration.Duration
+import com.ing.baker.il.CompiledRecipe
 
 class LocalBakerActorProvider extends BakerActorProvider {
 
-  override def createRecipeActors(recipeName: String, receivePeriod: Duration, petriNetActorProps: Props)(
+  override def createRecipeActors(recipe: CompiledRecipe, petriNetActorProps: Props)(
       implicit actorSystem: ActorSystem): (ActorRef, RecipeMetadata) = {
-    val recipeMetadata = new LocalRecipeMetadata(recipeName)
-    val recipeManagerActor = actorSystem.actorOf(ProcessIndex.props(petriNetActorProps, recipeMetadata, recipeName, receivePeriod), recipeName)
+    val recipeMetadata = new LocalRecipeMetadata(recipe.name)
+    val recipeManagerActor = actorSystem.actorOf(ProcessIndex.props(petriNetActorProps, recipeMetadata, recipe.name, recipe.eventReceivePeriod, recipe.retentionPeriod), recipe.name)
 
     (recipeManagerActor, recipeMetadata)
   }
