@@ -180,7 +180,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
                                retentionPeriod: Duration = Duration.Undefined,
                                cleanupInterval: FiniteDuration = 50 milliseconds) = {
     val props = Props(new ProcessIndex(Props.empty, recipeMetadataMock, receivePeriod, retentionPeriod, cleanupInterval) {
-      override private[actor] def getOrCreateProcessActor(id: String) = petriNetActorRef
+      override def createProcessActor(id: String) = petriNetActorRef
     })
 
     system.actorOf(props, s"actorIndex-${UUID.randomUUID().toString}")

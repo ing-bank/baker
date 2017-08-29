@@ -51,12 +51,13 @@ class ProcessIndex(processActorProps: Props,
   if (retentionPeriod.isFinite())
     context.system.scheduler.schedule(cleanupInterval, cleanupInterval, context.self, CheckForProcessesToBeDeleted)
 
-  private[actor] def getOrCreateProcessActor(processId: String): ActorRef = {
-    context.child(processId).getOrElse {
-      val processActor = context.actorOf(processActorProps, name = processId)
-      context.watch(processActor)
-      processActor
-    }
+  def getOrCreateProcessActor(processId: String): ActorRef =
+    context.child(processId).getOrElse(createProcessActor(processId))
+
+  def createProcessActor(processId: String): ActorRef = {
+    val processActor = context.actorOf(processActorProps, name = processId)
+    context.watch(processActor)
+    processActor
   }
 
   def shouldDelete(meta: ActorMetadata) = meta.createdDateTime + retentionPeriod.toMillis < System.currentTimeMillis()
@@ -99,7 +100,7 @@ class ProcessIndex(processActorProps: Props,
         case None if !index.contains(processId) =>
           val created = System.currentTimeMillis()
           persist(ActorCreated(processId, created)) { _ =>
-            getOrCreateProcessActor(processId).forward(cmd)
+            createProcessActor(processId).forward(cmd)
             val actorMetadata = ActorMetadata(processId, created)
             index += processId -> actorMetadata
             recipeMetadata.add(ProcessMetadata(processId, created))
@@ -128,7 +129,7 @@ class ProcessIndex(processActorProps: Props,
            forwardIfWithinPeriod(actorRef, cmd)
         case None if index.contains(processId) =>
           persist(ActorActivated(processId)) { _ =>
-            forwardIfWithinPeriod(getOrCreateProcessActor(processId), cmd)
+            forwardIfWithinPeriod(createProcessActor(processId), cmd)
           }
         case None => sender() ! Uninitialized(processId.toString)
       }
@@ -152,7 +153,7 @@ class ProcessIndex(processActorProps: Props,
       actorsToBeCreated -= processId
       index -= processId
     case RecoveryCompleted =>
-      actorsToBeCreated.foreach(id => getOrCreateProcessActor(id))
+      actorsToBeCreated.foreach(id => createProcessActor(id))
       index.values.foreach(p => recipeMetadata.add(ProcessMetadata(p.id, p.createdDateTime)))
   }
 
