@@ -14,11 +14,9 @@ class PojoEventExtractor extends EventExtractor {
 
   override def extractEvent(obj: Any): RuntimeEvent = {
     val clazz = obj.getClass
-    val ingredients = clazz.getDeclaredFields.toSeq
+    val ingredients: Seq[(String, AnyRef)] = clazz.getDeclaredFields.toSeq
       .filter(field => !field.isSynthetic())
       .map (field => field.getName -> field.accessAndGet(obj.asInstanceOf[AnyRef]))
-      .toMap
-
     RuntimeEvent(clazz.getSimpleName, ingredients)
   }
 }

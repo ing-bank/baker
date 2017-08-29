@@ -83,12 +83,15 @@ object RecipeCompiler {
                                         events: Seq[EventType],
                                         findInternalEventByEvent: EventType => Option[Transition[_, _]]): Seq[Arc] = {
     val resultPlace = createPlace(label = interaction.label, placeType = InteractionEventOutputPlace)
-    val eventArcs = events.map { event =>
-      val internalEventTransition = findInternalEventByEvent(event).get
-      val filter = (value: Any) => value == event.name
-      arc(resultPlace, internalEventTransition, 1, filter)
+    if(interaction.eventsToFire.nonEmpty) {
+      val eventArcs = events.map { event =>
+        val internalEventTransition = findInternalEventByEvent(event).get
+        val filter = (value: Any) => value == event.name
+        arc(resultPlace, internalEventTransition, 1, filter)
+      }
+      arc(interaction, resultPlace, 1) +: eventArcs
     }
-    arc(interaction, resultPlace, 1) +: eventArcs
+    else Seq.empty
   }
 
   // the (possible) data output arcs / places

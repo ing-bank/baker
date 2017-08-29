@@ -21,7 +21,7 @@ class BakerProtobufSerializerSpec extends TestKit(ActorSystem("BakerProtobufSeri
   val runtimeEventGen: Gen[RuntimeEvent] = for {
     name <- Gen.alphaNumStr
     ingredient <- Gen.mapOf(ingredientTupleGen)
-  } yield RuntimeEvent(name, ingredient)
+  } yield RuntimeEvent(name, ingredient.toSeq)
 
   val processStateGen: Gen[ProcessState] = for {
     name <- Gen.alphaNumStr

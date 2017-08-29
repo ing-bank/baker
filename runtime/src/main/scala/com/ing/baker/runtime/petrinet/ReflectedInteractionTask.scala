@@ -3,8 +3,7 @@ package com.ing.baker.runtime.petrinet
 import java.util.UUID
 
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.il.{EventType, IngredientType, processIdName}
-import com.ing.baker.il._
+import com.ing.baker.il.{IngredientType, processIdName, _}
 import com.ing.baker.runtime.core.{BakerException, ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.event_extractors.{EventExtractor, PojoEventExtractor}
 import org.slf4j.{LoggerFactory, MDC}
@@ -104,18 +103,30 @@ object ReflectedInteractionTask {
           runtimeEvent
         }
         else {
-          val msg: String = s"Output: $output fired by an interaction but could not link it to any known event for the interaction"
+          val msg: String = s"Output: $output fired by interaction ${interaction.interactionName} but could not link it to any known event for the interaction"
           log.error(msg)
           throw new FatalInteractionException(msg)
         }
       }
     }
-    createRuntimeEvent(invokeMethod())
+
+    val response: AnyRef = invokeMethod()
+    if (method.getReturnType.equals(Void.TYPE)) {
+      if(interaction.eventsToFire.isEmpty){
+        RuntimeEvent(interaction.interactionName, Seq.empty)
+      }
+      else {
+        val msg: String = s"Void returned by interaction ${interaction.interactionName} but expected a return type"
+        log.error(msg)
+        throw new FatalInteractionException(msg)
+      }
+    }
+    else createRuntimeEvent(response)
   }
 
   def runtimeEventForIngredient(runtimeEventName: String, providedIngredient: Any, ingredientToComplyTo: IngredientType): RuntimeEvent = {
     if (ingredientToComplyTo.clazz.isAssignableFrom(providedIngredient.getClass))
-      RuntimeEvent(runtimeEventName , Map(ingredientToComplyTo.name -> providedIngredient))
+      RuntimeEvent(runtimeEventName , Seq((ingredientToComplyTo.name, providedIngredient)))
     else {
       throw new FatalInteractionException(
         s"""

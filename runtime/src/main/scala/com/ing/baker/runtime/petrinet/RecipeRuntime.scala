@@ -25,7 +25,7 @@ class RecipeRuntime(interactionFunctions: InteractionTransition[_] => (ProcessSt
             case ExceptionStrategyOutcome.BlockTransition => BlockTransition
             case ExceptionStrategyOutcome.RetryWithDelay(delay) => RetryWithDelay(delay)
             case ExceptionStrategyOutcome.Continue(eventType) => {
-              val runtimeEvent = new RuntimeEvent(eventType.name, Map.empty)
+              val runtimeEvent = new RuntimeEvent(eventType.name, Seq.empty)
               Continue(createProducedMarking(interaction, outMarking)(runtimeEvent), runtimeEvent)
             }
           }

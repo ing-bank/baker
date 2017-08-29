@@ -22,5 +22,4 @@ package object petrinet {
       place -> MultiSet.copyOff(Seq(value))
     }.toMarking
   }
-
 }
