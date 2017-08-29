@@ -1,9 +1,9 @@
 package com.ing.baker.runtime.actor
 
-import akka.actor.{ActorLogging, ActorRef, Props, SupervisorStrategy, Terminated}
+import akka.actor.{ActorLogging, ActorRef, Props, Terminated}
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.persistence.{PersistentActor, RecoveryCompleted}
-import PetriNetInstanceProtocol._
+import com.ing.baker.runtime.actor.PetriNetInstanceProtocol._
 import com.ing.baker.runtime.actor.ProcessIndex._
 
 import scala.collection.mutable
@@ -51,11 +51,11 @@ class ProcessIndex(processActorProps: Props,
   if (retentionPeriod.isFinite())
     context.system.scheduler.schedule(cleanupInterval, cleanupInterval, context.self, CheckForProcessesToBeDeleted)
 
-  private[actor] def getOrCreateProcessActor(id: String): ActorRef = {
-    context.child(id).getOrElse {
-      val actorRef = context.actorOf(processActorProps, name = id)
-      context.watch(actorRef)
-      actorRef
+  private[actor] def getOrCreateProcessActor(processId: String): ActorRef = {
+    context.child(processId).getOrElse {
+      val processActor = context.actorOf(processActorProps, name = processId)
+      context.watch(processActor)
+      processActor
     }
   }
 
@@ -95,31 +95,23 @@ class ProcessIndex(processActorProps: Props,
 
     case BakerActorMessage(processId, cmd@Initialize(_, _)) =>
 
-      log.error(s"received: $processId -> $cmd")
-
-      val id = processId.toString
-
-      context.child(id) match {
-        case None if !index.contains(id) =>
+      context.child(processId) match {
+        case None if !index.contains(processId) =>
           val created = System.currentTimeMillis()
-          persist(ActorCreated(id, created)) { _ =>
-            getOrCreateProcessActor(id).forward(cmd)
-            val actorMetadata = ActorMetadata(id, created)
-            index += id -> actorMetadata
-            recipeMetadata.add(ProcessMetadata(id, created))
+          persist(ActorCreated(processId, created)) { _ =>
+            getOrCreateProcessActor(processId).forward(cmd)
+            val actorMetadata = ActorMetadata(processId, created)
+            index += processId -> actorMetadata
+            recipeMetadata.add(ProcessMetadata(processId, created))
           }
         case _ => sender() ! AlreadyInitialized
       }
 
     case BakerActorMessage(processId, cmd) =>
 
-      log.error(s"received: $processId -> $cmd")
-
-      val id = processId.toString
-
       def forwardIfWithinPeriod(actorRef: ActorRef, msg: PetriNetInstanceProtocol.Command) = {
         if (receivePeriod.isFinite() && cmd.isInstanceOf[FireTransition]) {
-          index.get(id).foreach { p =>
+          index.get(processId).foreach { p =>
             if (System.currentTimeMillis() - p.createdDateTime > receivePeriod.toMillis) {
               sender() ! ReceivePeriodExpired
             }
@@ -131,12 +123,12 @@ class ProcessIndex(processActorProps: Props,
           actorRef.forward(cmd)
       }
 
-      context.child(id) match {
+      context.child(processId) match {
         case Some(actorRef) =>
            forwardIfWithinPeriod(actorRef, cmd)
-        case None if index.contains(id) =>
-          persist(ActorActivated(id)) { _ =>
-            forwardIfWithinPeriod(getOrCreateProcessActor(id), cmd)
+        case None if index.contains(processId) =>
+          persist(ActorActivated(processId)) { _ =>
+            forwardIfWithinPeriod(getOrCreateProcessActor(processId), cmd)
           }
         case None => sender() ! Uninitialized(processId.toString)
       }
