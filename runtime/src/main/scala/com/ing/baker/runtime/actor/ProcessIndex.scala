@@ -60,9 +60,9 @@ class ProcessIndex(processActorProps: Props,
     processActor
   }
 
-  def shouldDelete(meta: ActorMetadata) = meta.createdDateTime + retentionPeriod.toMillis < System.currentTimeMillis()
+  def shouldDelete(meta: ActorMetadata): Boolean = meta.createdDateTime + retentionPeriod.toMillis < System.currentTimeMillis()
 
-  def deleteProcess(processId: String) = {
+  def deleteProcess(processId: String): Unit = {
     persist(ActorDeleted(processId)) { _ =>
       val meta = index(processId)
       recipeMetadata.remove(ProcessMetadata(meta.id, meta.createdDateTime))

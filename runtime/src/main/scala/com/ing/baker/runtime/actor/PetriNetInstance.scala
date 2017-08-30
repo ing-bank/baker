@@ -4,7 +4,7 @@ import akka.actor._
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.Logging
 import akka.pattern.pipe
-import akka.persistence.DeleteMessagesSuccess
+import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{Continue, RetryWithDelay}
@@ -86,8 +86,11 @@ class PetriNetInstance[P[_], T[_, _], S, E](
   }
 
   val waitForDeleteConfirmation: Receive = {
-    case DeleteMessagesSuccess(n) =>
-      log.debug(s"Process history successfully deleted ($n event(s)), stopping the actor")
+    case DeleteMessagesSuccess(toSequenceNr) =>
+      log.debug(s"Process history successfully deleted (up to event sequence $toSequenceNr), stopping the actor")
+      context.stop(context.self)
+    case DeleteMessagesFailure(cause, toSequenceNr) =>
+      log.error(cause, s"Process events are requested to be deleted up to $toSequenceNr sequence number, but delete operation failed. Stopping the actor.")
       context.stop(context.self)
   }
 
