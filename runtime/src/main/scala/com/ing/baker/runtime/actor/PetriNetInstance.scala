@@ -85,13 +85,13 @@ class PetriNetInstance[P[_], T[_, _], S, E](
 
   }
 
-  val waitForDeleteConfirmation: Receive = {
+  def waitForDeleteConfirmation(instance: Instance[P, T, S]): Receive = {
     case DeleteMessagesSuccess(toSequenceNr) =>
       log.debug(s"Process history successfully deleted (up to event sequence $toSequenceNr), stopping the actor")
       context.stop(context.self)
     case DeleteMessagesFailure(cause, toSequenceNr) =>
-      log.error(cause, s"Process events are requested to be deleted up to $toSequenceNr sequence number, but delete operation failed. Stopping the actor.")
-      context.stop(context.self)
+      log.error(cause, s"Process events are requested to be deleted up to $toSequenceNr sequence number, but delete operation failed.")
+      context become running(instance, Map.empty)
   }
 
   def running(instance: Instance[P, T, S],
@@ -102,7 +102,7 @@ class PetriNetInstance[P[_], T[_, _], S, E](
       if(deleteHistory) {
         log.debug("Deleting process history")
         deleteMessages(lastSequenceNr)
-        context become waitForDeleteConfirmation
+        context become waitForDeleteConfirmation(instance)
       } else
         context.stop(context.self)
 
