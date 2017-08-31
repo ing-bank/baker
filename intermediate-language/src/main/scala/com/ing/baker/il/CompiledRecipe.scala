@@ -14,7 +14,8 @@ case class CompiledRecipe(name: String,
                           initialMarking: Marking[Place],
                           sensoryEvents: Set[EventType],
                           validationErrors: Seq[String] = Seq.empty,
-                          eventReceivePeriod: Duration) {
+                          eventReceivePeriod: Duration,
+                          retentionPeriod: Duration) {
 
   def getValidationErrors: java.util.List[String] = validationErrors.toList.asJava
 

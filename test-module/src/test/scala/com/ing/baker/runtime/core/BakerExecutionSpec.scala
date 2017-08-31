@@ -15,6 +15,7 @@ import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.scalatest.time.{Milliseconds, Span}
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -27,6 +28,8 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
   override def actorSystemName = "BakerExecutionSpec"
   implicit val timeout: FiniteDuration = 10 seconds
+
+  val log = LoggerFactory.getLogger(classOf[BakerExecutionSpec])
 
   before {
     resetMocks
@@ -871,6 +874,39 @@ class BakerExecutionSpec extends TestRecipeHelper {
       //      System.out.println(secondEventGraph)
 
       firstEventGraph should not be secondEventGraph
+    }
+
+    "properly handle a retention period" in {
+
+      val retentionPeriod = 2 seconds
+
+      val recipe: Recipe =
+        "RetentionPeriodRecipe"
+          .withSensoryEvents(initialEvent)
+          .withInteractions(interactionOne)
+          .withRetentionPeriod(retentionPeriod)
+
+      val baker = new Baker(
+        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+        implementations = mockImplementations)(defaultActorSystem)
+
+      val processId = UUID.randomUUID().toString
+
+      baker.bake(processId)
+
+      baker.allProcessMetadata.map(_.id) should contain(processId)
+
+      baker.getProcessState(processId)
+
+      Thread.sleep(retentionPeriod.toMillis + 200)
+
+      baker.allProcessMetadata.map(_.id) should not contain(processId)
+
+      intercept[NoSuchProcessException] {
+        baker.getProcessState(processId)
+      }
+
+      baker.events(processId) shouldBe empty
     }
   }
 }

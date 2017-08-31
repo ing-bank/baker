@@ -1,28 +1,23 @@
 package com.ing.baker.runtime.actor
 
 import akka.actor.{ActorRef, ActorSystem, Props}
-import com.google.common.collect.Sets
+import com.ing.baker.il.CompiledRecipe
+import com.typesafe.config.Config
 
-import scala.collection.JavaConverters._
-import scala.concurrent.duration.Duration
+import net.ceedubs.ficus.Ficus._
+import scala.concurrent.duration._
 
-class LocalBakerActorProvider extends BakerActorProvider {
+class LocalBakerActorProvider(config: Config) extends BakerActorProvider {
 
-  override def createRecipeActors(recipeName: String, receivePeriod: Duration, petriNetActorProps: Props)(
+  private val retentionCheckInterval = config.as[Option[FiniteDuration]]("baker.actor.retention-check-interval").getOrElse(1 minute)
+
+  override def createRecipeActors(recipe: CompiledRecipe, petriNetActorProps: Props)(
       implicit actorSystem: ActorSystem): (ActorRef, RecipeMetadata) = {
-    val recipeMetadata = new LocalRecipeMetadata(recipeName)
-    val recipeManagerActor = actorSystem.actorOf(ProcessIndex.props(petriNetActorProps, recipeMetadata, recipeName, receivePeriod), recipeName)
+    val recipeMetadata = new LocalRecipeMetadata(recipe.name)
+    val recipeManagerActor = actorSystem.actorOf(
+      ProcessIndex.props(petriNetActorProps, recipeMetadata, recipe.name, recipe.eventReceivePeriod, recipe.retentionPeriod, retentionCheckInterval), recipe.name)
 
     (recipeManagerActor, recipeMetadata)
   }
 }
 
-class LocalRecipeMetadata(override val recipeName: String) extends RecipeMetadata {
-  private val allProcessesMetadata = Sets.newConcurrentHashSet[ProcessMetadata]()
-
-  override def getAllProcessMetadata: Set[ProcessMetadata] = allProcessesMetadata.asScala.toSet
-
-  override def addNewProcessMetadata(processId: String, created: Long): Unit = {
-    allProcessesMetadata.add(ProcessMetadata(processId, created))
-  }
-}

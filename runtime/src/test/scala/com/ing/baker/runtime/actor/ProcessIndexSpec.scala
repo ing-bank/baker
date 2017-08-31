@@ -4,13 +4,12 @@ import java.util.UUID
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestDuration, TestKit, TestProbe}
-import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol
-import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
 import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.petrinet.dsl.colored.Place
+import com.ing.baker.runtime.actor.PetriNetInstanceProtocol._
 import com.ing.baker.runtime.actor.ProcessIndex.ReceivePeriodExpired
 import com.typesafe.config.{Config, ConfigFactory}
-import org.mockito
+import org.mockito.Matchers._
 import org.mockito.Mockito
 import org.mockito.Mockito.verify
 import org.scalatest.concurrent.Eventually
@@ -108,11 +107,28 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val interval = Span.convertDurationToSpan(50.milliseconds.dilated)
       implicit val patienceConfig = PatienceConfig(timeout, interval)
       eventually {
-        verify(recipeMetadataMock)
-          .addNewProcessMetadata(
-            mockito.Matchers.eq(processId),
-            mockito.Matchers.anyLong())
+        verify(recipeMetadataMock).add(any[ProcessMetadata])
       }
+    }
+
+    "delete a process if a retention period is defined" in {
+
+      val retentionPeriod = 500 milliseconds
+      val cleanupInterval = 50 milliseconds
+
+      val processProbe = TestProbe()
+
+      val actorIndex = createActorIndex(processProbe.ref,
+        retentionPeriod = retentionPeriod,
+        cleanupInterval = cleanupInterval)
+
+      val processId = UUID.randomUUID().toString
+
+      val initializeCmd = Initialize(Marking.empty[Place])
+      actorIndex ! BakerActorMessage(processId, initializeCmd)
+      processProbe.expectMsg(initializeCmd)
+
+      processProbe.expectMsg(Stop(delete = true))
     }
 
     "not forward messages to uninitialized actors" in {
@@ -159,11 +175,14 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
     }
   }
 
-  private def createActorIndex(petriNetActorRef: ActorRef, receivePeriod: Duration = Duration.Undefined) = {
-    system.actorOf(Props(new ProcessIndex(Props.empty, recipeMetadataMock, receivePeriod) {
-      override private[actor] def createChildPetriNetActor(id: String) = {
-        petriNetActorRef
-      }
-    }), s"actorIndex-${UUID.randomUUID().toString}")
+  private def createActorIndex(petriNetActorRef: ActorRef,
+                               receivePeriod: Duration = Duration.Undefined,
+                               retentionPeriod: Duration = Duration.Undefined,
+                               cleanupInterval: FiniteDuration = 50 milliseconds) = {
+    val props = Props(new ProcessIndex(Props.empty, recipeMetadataMock, receivePeriod, retentionPeriod, cleanupInterval) {
+      override def createProcessActor(id: String) = petriNetActorRef
+    })
+
+    system.actorOf(props, s"actorIndex-${UUID.randomUUID().toString}")
   }
 }

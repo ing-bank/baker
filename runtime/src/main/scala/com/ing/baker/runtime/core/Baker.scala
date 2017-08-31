@@ -8,22 +8,20 @@ import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
-import akka.serialization.{DisabledJavaSerializer, SerializationExtension}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
 import com.ing.baker.il._
 import com.ing.baker.il.petrinet._
-import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
-import com.ing.baker.petrinet.akka._
+import com.ing.baker.runtime.actor.PetriNetInstanceProtocol._
 import com.ing.baker.petrinet.runtime.EventSourcing.TransitionFiredEvent
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
 import com.ing.baker.runtime.actor._
+import com.ing.baker.runtime.actor.serialization.{AkkaObjectSerializer, Encryption}
 import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.{RecipeRuntime, ReflectedInteractionTask}
-import com.ing.baker.serialization.Encryption
-import com.ing.baker.serialization.Encryption.NoEncryption
+import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import fs2.Strategy
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
@@ -88,8 +86,8 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   private val bakerActorProvider =
     actorSystem.settings.config.as[Option[String]]("baker.actor.provider") match {
-      case None | Some("local") => new LocalBakerActorProvider()
-      case Some("cluster-sharded") => new ShardedActorProvider(config)
+      case None | Some("local") => new LocalBakerActorProvider(config)
+      case Some("cluster-sharded") => new ClusterActorProvider(config)
       case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
     }
 
@@ -114,7 +112,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
         idleTTL = actorIdleTimeout))
 
   private val (recipeManagerActor, recipeMetadata) = bakerActorProvider.createRecipeActors(
-    compiledRecipe.name, compiledRecipe.eventReceivePeriod, petriNetInstanceActorProps)
+    compiledRecipe, petriNetInstanceActorProps)
 
   private val petriNetApi = new ProcessApi(recipeManagerActor)
 
@@ -291,12 +289,12 @@ class Baker(val compiledRecipe: CompiledRecipe,
   def getProcessStateAsync(processId: String)(implicit timeout: FiniteDuration): Future[ProcessState] = {
     recipeManagerActor
       .ask(BakerActorMessage(processId, GetState))(Timeout.durationToTimeout(timeout))
-      .map {
-        case instanceState: InstanceState => instanceState.state.asInstanceOf[ProcessState]
-        case Uninitialized(id) => throw new NoSuchProcessException(s"No such process with: $id")
-        case msg => throw new BakerException(s"Unexpected actor response message: $msg")
+      .flatMap {
+        case instanceState: InstanceState => Future.successful(instanceState.state.asInstanceOf[ProcessState])
+        case Uninitialized(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
+        case msg => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
       }
   }
 
-  def allProcessMetadata: Set[ProcessMetadata] = recipeMetadata.getAllProcessMetadata
+  def allProcessMetadata: Set[ProcessMetadata] = recipeMetadata.getAll
 }

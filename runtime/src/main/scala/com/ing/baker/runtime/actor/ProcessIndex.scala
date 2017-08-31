@@ -3,17 +3,17 @@ package com.ing.baker.runtime.actor
 import akka.actor.{ActorLogging, ActorRef, Props, Terminated}
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.persistence.{PersistentActor, RecoveryCompleted}
-import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol.{AlreadyInitialized, FireTransition, GetState, Initialize, Uninitialized}
+import com.ing.baker.runtime.actor.PetriNetInstanceProtocol._
+import com.ing.baker.runtime.actor.ProcessIndex._
 
 import scala.collection.mutable
-import ProcessIndex._
-import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol
+import scala.concurrent.duration._
 
-import scala.concurrent.duration.Duration
 
 object ProcessIndex {
 
-  def props(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, recipeName: String, receivePeriod: Duration) = Props(new ProcessIndex(petriNetActorProps, recipeMetadata, receivePeriod))
+  def props(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, recipeName: String, receivePeriod: Duration, retentionPeriod: Duration, retentionCheckInterval: FiniteDuration) =
+    Props(new ProcessIndex(petriNetActorProps, recipeMetadata, receivePeriod, retentionPeriod, retentionCheckInterval))
 
   case class ActorMetadata(id: String, createdDateTime: Long)
 
@@ -26,6 +26,11 @@ object ProcessIndex {
   // when an actor is passivated
   case class ActorPassivated(processId: String) extends InternalBakerEvent
 
+  // when an actor is deleted
+  case class ActorDeleted(processId: String) extends InternalBakerEvent
+
+  case object CheckForProcessesToBeDeleted extends InternalBakerMessage
+
   /**
     * Indicates that a process can no longer receive events because the configured period has expired.
     */
@@ -33,47 +38,81 @@ object ProcessIndex {
 
 }
 
-class ProcessIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, receivePeriod: Duration = Duration.Undefined) extends PersistentActor with ActorLogging {
+class ProcessIndex(processActorProps: Props,
+                   recipeMetadata: RecipeMetadata,
+                   receivePeriod: Duration = Duration.Undefined,
+                   retentionPeriod: Duration = Duration.Undefined,
+                   cleanupInterval: FiniteDuration = 1 minute) extends PersistentActor with ActorLogging {
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
 
-  private[actor] def createChildPetriNetActor(id: String) = {
-    val actorRef = context.actorOf(petriNetActorProps, name = id)
-    context.watch(actorRef)
-    actorRef
+  import context.dispatcher
+
+  if (retentionPeriod.isFinite())
+    context.system.scheduler.schedule(cleanupInterval, cleanupInterval, context.self, CheckForProcessesToBeDeleted)
+
+  def getOrCreateProcessActor(processId: String): ActorRef =
+    context.child(processId).getOrElse(createProcessActor(processId))
+
+  def createProcessActor(processId: String): ActorRef = {
+    val processActor = context.actorOf(processActorProps, name = processId)
+    context.watch(processActor)
+    processActor
+  }
+
+  def shouldDelete(meta: ActorMetadata): Boolean = meta.createdDateTime + retentionPeriod.toMillis < System.currentTimeMillis()
+
+  def deleteProcess(processId: String): Unit = {
+    persist(ActorDeleted(processId)) { _ =>
+      val meta = index(processId)
+      recipeMetadata.remove(ProcessMetadata(meta.id, meta.createdDateTime))
+      index -= processId
+    }
   }
 
   override def receiveCommand: Receive = {
+    case CheckForProcessesToBeDeleted =>
+      val toBeDeleted = index.values.filter(shouldDelete)
+      if (toBeDeleted.nonEmpty)
+        log.debug(s"Deleting processes: {}", toBeDeleted.mkString(","))
+
+      toBeDeleted.foreach(meta => getOrCreateProcessActor(meta.id) ! Stop(delete = true))
+
     case Passivate(stopMessage) =>
       sender() ! stopMessage
 
     case Terminated(actorRef) =>
-      val id = actorRef.path.name
-      persist(ActorPassivated(id)) { _ => }
+      val processId = actorRef.path.name
+      log.debug(s"Actor terminated: $actorRef")
+
+      index.get(processId) match {
+        case Some(meta) if shouldDelete(meta) =>
+          deleteProcess(processId)
+        case Some(_) =>
+          persist(ActorPassivated(processId)) { _ => }
+        case None =>
+          log.warning(s"Received Terminated message for non indexed actor: $actorRef")
+      }
 
     case BakerActorMessage(processId, cmd@Initialize(_, _)) =>
 
-      val id = processId.toString
-
-      context.child(id) match {
-        case None if !index.contains(id) =>
+      context.child(processId) match {
+        case None if !index.contains(processId) =>
           val created = System.currentTimeMillis()
-          persist(ActorCreated(id, created)) { _ =>
-            createChildPetriNetActor(id).forward(cmd)
-            val actorMetadata = ActorMetadata(id, created)
-            index += id -> actorMetadata
-            recipeMetadata.addNewProcessMetadata(id, created)
+          persist(ActorCreated(processId, created)) { _ =>
+            createProcessActor(processId).forward(cmd)
+            val actorMetadata = ActorMetadata(processId, created)
+            index += processId -> actorMetadata
+            recipeMetadata.add(ProcessMetadata(processId, created))
           }
         case _ => sender() ! AlreadyInitialized
       }
 
     case BakerActorMessage(processId, cmd) =>
 
-      val id = processId.toString
-
       def forwardIfWithinPeriod(actorRef: ActorRef, msg: PetriNetInstanceProtocol.Command) = {
         if (receivePeriod.isFinite() && cmd.isInstanceOf[FireTransition]) {
-          index.get(id).foreach { p =>
+          index.get(processId).foreach { p =>
             if (System.currentTimeMillis() - p.createdDateTime > receivePeriod.toMillis) {
               sender() ! ReceivePeriodExpired
             }
@@ -85,12 +124,12 @@ class ProcessIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, re
           actorRef.forward(cmd)
       }
 
-      context.child(id) match {
+      context.child(processId) match {
         case Some(actorRef) =>
            forwardIfWithinPeriod(actorRef, cmd)
-        case None if index.contains(id) =>
-          persist(ActorActivated(id)) { _ =>
-            forwardIfWithinPeriod(createChildPetriNetActor(id), cmd)
+        case None if index.contains(processId) =>
+          persist(ActorActivated(processId)) { _ =>
+            forwardIfWithinPeriod(createProcessActor(processId), cmd)
           }
         case None => sender() ! Uninitialized(processId.toString)
       }
@@ -103,16 +142,19 @@ class ProcessIndex(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, re
   private val actorsToBeCreated: mutable.Set[String] = mutable.Set.empty
 
   override def receiveRecover: Receive = {
-    case ActorCreated(processId, created) =>
-      index += processId -> ActorMetadata(processId, created)
-      recipeMetadata.addNewProcessMetadata(processId, created)
+    case ActorCreated(processId, createdTime) =>
+      index += processId -> ActorMetadata(processId, createdTime)
       actorsToBeCreated += processId
     case ActorPassivated(processId) =>
       actorsToBeCreated -= processId
     case ActorActivated(processId) =>
       actorsToBeCreated += processId
+    case ActorDeleted(processId) =>
+      actorsToBeCreated -= processId
+      index -= processId
     case RecoveryCompleted =>
-      actorsToBeCreated.foreach(id => createChildPetriNetActor(id))
+      actorsToBeCreated.foreach(id => createProcessActor(id))
+      index.values.foreach(p => recipeMetadata.add(ProcessMetadata(p.id, p.createdDateTime)))
   }
 
   override def persistenceId: String = self.path.name

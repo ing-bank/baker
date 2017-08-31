@@ -36,7 +36,6 @@ lazy val scalaPBSettings = Seq(PB.targets in Compile := Seq(scalapb.gen() -> (so
 
 lazy val petrinetApi = project.in(file("petrinet-api"))
   .settings(defaultModuleSettings)
-  .settings(scalaPBSettings)
   .settings(
     moduleName := "petrinet-api",
     libraryDependencies ++= compileDeps(
@@ -52,27 +51,6 @@ lazy val petrinetApi = project.in(file("petrinet-api"))
     )
   )
 
-lazy val petrinetAkka = project.in(file("petrinet-akka"))
-  .settings(defaultModuleSettings)
-  .settings(
-    moduleName := "petrinet-akka",
-    libraryDependencies ++= compileDeps(
-      akkaActor,
-      akkaPersistence,
-      akkaPersistenceQuery,
-      akkaClusterSharding,
-      akkaSlf4j,
-      akkaStream) ++ testDeps(
-      akkaInmemoryJournal,
-      akkaTestKit,
-      akkaStreamTestKit,
-      scalaTest,
-      scalaCheck,
-      mockito,
-      logback
-    )
-  ).dependsOn(petrinetApi)
-
 lazy val intermediateLanguage = project.in(file("intermediate-language"))
   .settings(defaultModuleSettings)
   .settings(
@@ -86,17 +64,18 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
 lazy val recipeRuntime = project.in(file("runtime"))
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
-  // The following settings are needed to depend on common petrinet proto messages, but not re-compile them.
-  .settings(Seq(PB.protoSources in Compile += petrinetApi.base / "src/main/protobuf" ))
-  .settings(Seq(excludeFilter in PB.generate := new SimpleFileFilter(
-    (f: File) => f.getName.endsWith("common.proto") || f.getName.endsWith("petrinet-messages.proto")
-  )))
   .settings(
     moduleName := "runtime",
     libraryDependencies ++=
       compileDeps(
+        akkaActor,
+        akkaPersistence,
+        akkaPersistenceQuery,
+        akkaClusterSharding,
         akkaDistributedData,
         akkaInmemoryJournal,
+        akkaSlf4j,
+        akkaStream,
         ficusConfig,
         guava,
         chill,
@@ -108,13 +87,14 @@ lazy val recipeRuntime = project.in(file("runtime"))
       ) ++ testDeps(
         akkaTestKit,
         akkaStreamTestKit,
+        akkaInmemoryJournal,
         scalaTest,
         scalaCheck,
         mockito,
         logback)
         ++ providedDeps(findbugs)
   )
-  .dependsOn(intermediateLanguage, petrinetAkka)
+  .dependsOn(intermediateLanguage, petrinetApi)
 
 lazy val recipeDsl = project.in(file("recipe-dsl"))
   .settings(defaultModuleSettings)
@@ -168,4 +148,4 @@ lazy val baker = project
   .in(file("."))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
-  .aggregate(petrinetApi, petrinetAkka, recipeRuntime, recipeCompiler, recipeDsl, intermediateLanguage, testModule)
+  .aggregate(petrinetApi, recipeRuntime, recipeCompiler, recipeDsl, intermediateLanguage, testModule)

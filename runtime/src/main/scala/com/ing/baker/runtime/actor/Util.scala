@@ -8,8 +8,7 @@ import akka.util.Timeout
 import GracefulShutdownActor.Leave
 import com.ing.baker.il.petrinet
 import com.ing.baker.il.petrinet._
-import com.ing.baker.petrinet.akka.PetriNetInstance
-import com.ing.baker.petrinet.akka.PetriNetInstance.Settings
+import PetriNetInstance.Settings
 import com.ing.baker.runtime.core._
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
 

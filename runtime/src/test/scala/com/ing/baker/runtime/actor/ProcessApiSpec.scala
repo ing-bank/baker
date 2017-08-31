@@ -8,7 +8,7 @@ import akka.stream.testkit.TestSubscriber
 import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.{TestDuration, TestKit, TestProbe}
 import akka.util.Timeout
-import com.ing.baker.petrinet.akka.PetriNetInstanceProtocol._
+import PetriNetInstanceProtocol._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Matchers._
