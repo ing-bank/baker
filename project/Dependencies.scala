@@ -48,7 +48,9 @@ object Dependencies {
   val findbugs =                  "com.google.code.findbugs"   %  "jsr305"                             % "1.3.9"
 
   val scalapbRuntime =            "com.trueaccord.scalapb"     %% "scalapb-runtime"                    % scalapbVersion % "protobuf"
-  val chill =                     "com.twitter"                %% "chill-akka"                         % "0.9.2"
+  val chill =                    ("com.twitter"                %% "chill-akka"                         % "0.9.2")
+    .exclude("com.typesafe.akka", "akka-actor")
+
   val kryoSerializers =           "de.javakaffee"              %  "kryo-serializers"                   % "0.41"
   val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.9.9"
   val jodaConvert =               "org.joda"                   %  "joda-convert"                       % "1.8.1"
