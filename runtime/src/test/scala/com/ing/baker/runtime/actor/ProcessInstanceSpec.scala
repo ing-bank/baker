@@ -12,7 +12,7 @@ import com.ing.baker.petrinet.dsl.colored._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Fatal, RetryWithDelay}
 import com.ing.baker.petrinet.runtime.TransitionExceptionHandler
 import com.ing.baker.runtime.actor.AkkaTestBase.GetChild
-import com.ing.baker.runtime.actor.PetriNetInstanceProtocol._
+import com.ing.baker.runtime.actor.ProcessInstanceProtocol._
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
@@ -37,7 +37,7 @@ trait TestSequenceNet extends SequenceNet[Set[Int], Event] {
   }
 }
 
-class PetriNetInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSugar {
+class ProcessInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSugar {
 
   def dilatedMillis(millis: Long)(implicit system: ActorSystem): Long = FiniteDuration(millis, TimeUnit.MILLISECONDS).dilated.toMillis
 

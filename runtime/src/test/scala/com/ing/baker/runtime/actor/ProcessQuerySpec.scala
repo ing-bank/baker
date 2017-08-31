@@ -12,7 +12,7 @@ import akka.util.Timeout
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.dsl.colored._
 import com.ing.baker.petrinet.runtime.EventSourcing.{InitializedEvent, TransitionFiredEvent}
-import com.ing.baker.runtime.actor.PetriNetInstanceProtocol._
+import com.ing.baker.runtime.actor.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Matchers._
@@ -21,7 +21,7 @@ import scala.collection.immutable._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class PetriNetQuerySpec extends AkkaTestBase with BeforeAndAfterEach {
+class ProcessQuerySpec extends AkkaTestBase with BeforeAndAfterEach {
 
   implicit val akkaTimout = Timeout(2 seconds)
   val timeOut: Duration = akkaTimout.duration
@@ -60,7 +60,7 @@ class PetriNetQuerySpec extends AkkaTestBase with BeforeAndAfterEach {
       expectMsgPF(timeOut) { case TransitionFired(_, 1, _, _, _, _) ⇒ }
       expectMsgPF(timeOut) { case TransitionFired(_, 2, _, _, _, _) ⇒ }
 
-      PetriNetQuery.eventsForInstance[Place, Transition, Unit, Unit](
+      ProcessQuery.eventsForInstance[Place, Transition, Unit, Unit](
         "test",
         processId,
         petriNet,
@@ -115,7 +115,7 @@ class PetriNetQuerySpec extends AkkaTestBase with BeforeAndAfterEach {
 
       // Setup is finished here, now continue with assertions
 
-      PetriNetQuery.allProcessIds("test", readJournal)
+      ProcessQuery.allProcessIds("test", readJournal)
         .runWith(TestSink.probe)
         .request(3)
         .expectNextUnorderedN(Seq(processId1, processId2, processId3))
@@ -154,7 +154,7 @@ class PetriNetQuerySpec extends AkkaTestBase with BeforeAndAfterEach {
 
       Thread.sleep(1000) // Wait here because otherwise we get an empty completed stream.
 
-      PetriNetQuery.currentProcessIds("test", readJournal)
+      ProcessQuery.currentProcessIds("test", readJournal)
         .runWith(TestSink.probe)
         .request(3)
         .expectNextUnorderedN(Seq(processId1, processId2, processId3))

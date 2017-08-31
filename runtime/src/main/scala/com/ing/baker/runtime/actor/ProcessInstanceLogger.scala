@@ -3,12 +3,12 @@ package com.ing.baker.runtime.actor
 import akka.event.Logging
 import akka.event.Logging.LogLevel
 import akka.persistence.PersistentActor
-import com.ing.baker.runtime.actor.PetriNetInstanceLogger.LogEvent
+import com.ing.baker.runtime.actor.ProcessInstanceLogger.LogEvent
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
-object PetriNetInstanceLogger {
+object ProcessInstanceLogger {
 
   sealed trait LogEvent {
     def mdc: Map[String, Any]
@@ -22,7 +22,7 @@ object PetriNetInstanceLogger {
 
   case class LogFireTransitionRejected(processId: String, transitionId: String, rejectReason: String) extends LogEvent {
     def mdc = Map(
-      "petrinetEvent" -> "FireTransitionRejected",
+      "processEvent" -> "FireTransitionRejected",
       "processId" -> processId,
       "transitionId" -> transitionId,
       "rejectReason" -> rejectReason)
@@ -32,7 +32,7 @@ object PetriNetInstanceLogger {
 
   case class LogTransitionFired(processId: String, transitionId: String, jobId: Long, timeStarted: Long, timeCompleted: Long) extends LogEvent {
     def mdc = Map(
-      "petrinetEvent" -> "TransitionFired",
+      "processEvent" -> "TransitionFired",
       "processId" -> processId,
       "jobId" -> jobId,
       "transitionId" -> transitionId,
@@ -45,7 +45,7 @@ object PetriNetInstanceLogger {
   }
   case class LogTransitionFailed(processId: String, transitionId: String, jobId: Long, timeStarted: Long, timeFailed: Long, failureReason: String) extends LogEvent {
     def mdc = Map(
-      "petrinetEvent" -> "TransitionFailed",
+      "processEvent" -> "TransitionFailed",
       "processId" -> processId,
       "timeStarted" -> timeStarted,
       "timeFailed" -> timeFailed,
@@ -59,7 +59,7 @@ object PetriNetInstanceLogger {
 
   case class LogScheduleRetry(processId: String, transitionId: String, delay: Long) extends LogEvent {
     def mdc = Map(
-      "petrinetEvent" -> "TransitionRetry",
+      "processEvent" -> "TransitionRetry",
       "processId" -> processId,
       "transitionId" -> transitionId)
 
@@ -68,7 +68,7 @@ object PetriNetInstanceLogger {
 
   case class LogFiringTransition(processId: String, jobId: Long, transitionId: String, timeStarted: Long) extends LogEvent {
     def mdc = Map(
-      "petrinetEvent" -> "FiringTransition",
+      "processEvent" -> "FiringTransition",
       "processId" -> processId,
       "jobId" -> jobId,
       "transitionId" -> transitionId,
@@ -78,7 +78,7 @@ object PetriNetInstanceLogger {
   }
 }
 
-trait PetriNetInstanceLogger {
+trait ProcessInstanceLogger {
 
   this: PersistentActor ⇒
 

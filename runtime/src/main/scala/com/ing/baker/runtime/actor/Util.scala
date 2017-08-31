@@ -8,7 +8,7 @@ import akka.util.Timeout
 import GracefulShutdownActor.Leave
 import com.ing.baker.il.petrinet
 import com.ing.baker.il.petrinet._
-import PetriNetInstance.Settings
+import ProcessInstance.Settings
 import com.ing.baker.runtime.core._
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
 
@@ -18,7 +18,7 @@ import scala.concurrent.duration._
 object Util {
 
   def recipePetriNetProps(recipeName: String, petriNet: RecipePetriNet, petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent], settings: Settings): Props =
-    Props(new PetriNetInstance[Place, Transition, ProcessState, RuntimeEvent](
+    Props(new ProcessInstance[Place, Transition, ProcessState, RuntimeEvent](
       recipeName,
       petriNet,
       settings,

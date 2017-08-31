@@ -3,7 +3,7 @@ package com.ing.baker.runtime.actor
 import akka.actor.{ActorLogging, ActorRef, Props, Terminated}
 import akka.cluster.sharding.ShardRegion.Passivate
 import akka.persistence.{PersistentActor, RecoveryCompleted}
-import com.ing.baker.runtime.actor.PetriNetInstanceProtocol._
+import com.ing.baker.runtime.actor.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.ProcessIndex._
 
 import scala.collection.mutable
@@ -110,7 +110,7 @@ class ProcessIndex(processActorProps: Props,
 
     case BakerActorMessage(processId, cmd) =>
 
-      def forwardIfWithinPeriod(actorRef: ActorRef, msg: PetriNetInstanceProtocol.Command) = {
+      def forwardIfWithinPeriod(actorRef: ActorRef, msg: ProcessInstanceProtocol.Command) = {
         if (receivePeriod.isFinite() && cmd.isInstanceOf[FireTransition]) {
           index.get(processId).foreach { p =>
             if (System.currentTimeMillis() - p.createdDateTime > receivePeriod.toMillis) {

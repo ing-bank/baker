@@ -6,7 +6,7 @@ import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestDuration, TestKit, TestProbe}
 import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.petrinet.dsl.colored.Place
-import com.ing.baker.runtime.actor.PetriNetInstanceProtocol._
+import com.ing.baker.runtime.actor.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.ProcessIndex.ReceivePeriodExpired
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers._
@@ -42,7 +42,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
   val noMsgExpectTimeout: FiniteDuration = 100.milliseconds
 
-  val otherMsg = mock[PetriNetInstanceProtocol.Command]
+  val otherMsg = mock[ProcessInstanceProtocol.Command]
 
   before {
     Mockito.reset(recipeMetadataMock, otherMsg)

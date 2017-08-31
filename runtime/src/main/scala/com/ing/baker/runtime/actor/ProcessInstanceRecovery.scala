@@ -7,7 +7,7 @@ import com.ing.baker.petrinet.runtime.{EventSourcing, Instance}
 import com.ing.baker.runtime.actor.messages._
 import com.ing.baker.runtime.actor.serialization.{ObjectSerializer, ProtobufSerialization}
 
-abstract class PetriNetInstanceRecovery[P[_], T[_,_], S, E](
+abstract class ProcessInstanceRecovery[P[_], T[_,_], S, E](
      val topology: PetriNet[P[_], T[_,_]],
      objectSerializer: ObjectSerializer,
      eventSourceFn: T[_,_] => (S => E => S)) extends PersistentActor {

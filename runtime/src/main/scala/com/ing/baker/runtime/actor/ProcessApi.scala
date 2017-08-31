@@ -8,7 +8,7 @@ import akka.pattern._
 import akka.stream.scaladsl.{Sink, Source, SourceQueueWithComplete}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.Timeout
-import PetriNetInstanceProtocol._
+import ProcessInstanceProtocol._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
 import com.ing.baker.runtime.actor.ProcessIndex.ReceivePeriodExpired
 

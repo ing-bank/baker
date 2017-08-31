@@ -7,7 +7,7 @@ import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
 /**
  * Describes the messages to and from a PetriNetInstance actor.
  */
-object PetriNetInstanceProtocol {
+object ProcessInstanceProtocol {
 
   /**
    * Type alias for marking data.
@@ -34,7 +34,7 @@ object PetriNetInstanceProtocol {
   /**
    * A common trait for all commands to a petri net instance.
    */
-  sealed trait Command
+  sealed trait Command extends InternalBakerMessage
 
   /**
    * Command to request the current state of the petri net instance.
@@ -74,7 +74,7 @@ object PetriNetInstanceProtocol {
   /**
    * A common trait for all responses coming from a petri net instance.
    */
-  sealed trait Response
+  sealed trait Response extends InternalBakerMessage
 
   /**
    * A response send in case any other command then 'Initialize' is sent to the actor in unitialized state.

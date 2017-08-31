@@ -10,7 +10,7 @@ import com.ing.baker.petrinet.runtime._
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.actor.serialization.{AkkaObjectSerializer, Encryption, ProtobufSerialization}
 
-object PetriNetQuery {
+object ProcessQuery {
 
   def eventsForInstance[P[_], T[_, _], S, E](processTypeName: String,
     processId: String,
@@ -23,7 +23,7 @@ object PetriNetQuery {
 
     val serializer = new ProtobufSerialization[P, T, S](new AkkaObjectSerializer(actorSystem, encryption))
 
-    val persistentId = PetriNetInstance.processId2PersistenceId(processTypeName, processId)
+    val persistentId = ProcessInstance.processId2PersistenceId(processTypeName, processId)
     val src = readJournal.currentEventsByPersistenceId(persistentId, 0, Long.MaxValue)
     val eventSource = EventSourcing.apply[P, T, S, E](eventSourceFn)
 
@@ -38,7 +38,7 @@ object PetriNetQuery {
 
   def allProcessIds(processType: String, readJournal: PersistenceIdsQuery)(implicit actorSystem: ActorSystem): Source[String, NotUsed] = {
     readJournal.persistenceIds()
-      .map(id ⇒ PetriNetInstance.persistenceId2ProcessId(processType, id)) // This filters out anything that is not a processId (like shard actors, any other actors)
+      .map(id ⇒ ProcessInstance.persistenceId2ProcessId(processType, id)) // This filters out anything that is not a processId (like shard actors, any other actors)
       .collect {
         case Some(processId) ⇒ processId
       }
@@ -46,7 +46,7 @@ object PetriNetQuery {
 
   def currentProcessIds(processType: String, readJournal: CurrentPersistenceIdsQuery)(implicit actorSystem: ActorSystem): Source[String, NotUsed] = {
     readJournal.currentPersistenceIds()
-      .map(id ⇒ PetriNetInstance.persistenceId2ProcessId(processType, id)) // This filters out anything that is not a processId (like shard actors, any other actors)
+      .map(id ⇒ ProcessInstance.persistenceId2ProcessId(processType, id)) // This filters out anything that is not a processId (like shard actors, any other actors)
       .collect {
         case Some(processId) ⇒ processId
       }

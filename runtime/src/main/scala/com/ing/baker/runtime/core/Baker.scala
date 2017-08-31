@@ -13,7 +13,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
 import com.ing.baker.il._
 import com.ing.baker.il.petrinet._
-import com.ing.baker.runtime.actor.PetriNetInstanceProtocol._
+import com.ing.baker.runtime.actor.ProcessInstanceProtocol._
 import com.ing.baker.petrinet.runtime.EventSourcing.TransitionFiredEvent
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
 import com.ing.baker.runtime.actor._
@@ -106,7 +106,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   private val petriNetInstanceActorProps =
     Util.recipePetriNetProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
-      PetriNetInstance.Settings(
+      ProcessInstance.Settings(
         evaluationStrategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadPool"),
         serializer = new AkkaObjectSerializer(actorSystem, configuredEncryption),
         idleTTL = actorIdleTimeout))
@@ -184,14 +184,14 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
     val subscriber = actorSystem.actorOf(Props(new Actor() {
       override def receive: Receive = {
-        case PetriNetInstanceEvent(processType, id, event: TransitionFiredEvent[_,_,_]) if processType == compiledRecipe.name =>
+        case ProcessInstanceEvent(processType, id, event: TransitionFiredEvent[_,_,_]) if processType == compiledRecipe.name =>
             val t = event.transition.asInstanceOf[Transition[_,_]]
             if (t.isSensoryEvent || t.isInteraction)
               listener.processEvent(id, event.output.asInstanceOf[RuntimeEvent])
       }
     }))
 
-    actorSystem.eventStream.subscribe(subscriber.actorRef, classOf[PetriNetInstanceEvent])
+    actorSystem.eventStream.subscribe(subscriber.actorRef, classOf[ProcessInstanceEvent])
   }
 
   /**
@@ -211,7 +211,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * @return The source of events.
     */
   def eventsAsync(processId: String): Source[RuntimeEvent, NotUsed] = {
-    PetriNetQuery
+    ProcessQuery
       .eventsForInstance[Place, Transition, ProcessState, RuntimeEvent](compiledRecipe.name, processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal, petriNetRuntime.eventSourceFn)
       .collect {
         case (_, TransitionFiredEvent(_, _, _, _, _, _, runtimeEvent: RuntimeEvent))

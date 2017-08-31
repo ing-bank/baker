@@ -14,12 +14,12 @@ import fs2.Strategy
 import scala.concurrent.duration._
 import scala.language.existentials
 import scala.util.Try
-import PetriNetInstance._
-import PetriNetInstanceProtocol._
-import PetriNetInstanceLogger._
+import ProcessInstance._
+import ProcessInstanceProtocol._
+import ProcessInstanceLogger._
 import com.ing.baker.runtime.actor.serialization.ObjectSerializer
 
-object PetriNetInstance {
+object ProcessInstance {
 
   case class Settings(
                        evaluationStrategy: Strategy,
@@ -38,13 +38,13 @@ object PetriNetInstance {
 /**
   * This actor is responsible for maintaining the state of a single petri net instance.
   */
-class PetriNetInstance[P[_], T[_, _], S, E](
+class ProcessInstance[P[_], T[_, _], S, E](
                                              processType: String,
                                              processTopology: PetriNet[P[_], T[_, _]],
                                              settings: Settings,
                                              runtime: PetriNetRuntime[P, T, S, E],
                                              override implicit val placeIdentifier: Identifiable[P[_]],
-                                             override implicit val transitionIdentifier: Identifiable[T[_, _]]) extends PetriNetInstanceRecovery[P, T, S, E](processTopology, settings.serializer, runtime.eventSourceFn) with PetriNetInstanceLogger {
+                                             override implicit val transitionIdentifier: Identifiable[T[_, _]]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.serializer, runtime.eventSourceFn) with ProcessInstanceLogger {
 
 
   val processId = context.self.path.name
@@ -64,7 +64,7 @@ class PetriNetInstance[P[_], T[_, _], S, E](
       val uninitialized = Instance.uninitialized[P, T, S](topology)
       val event = InitializedEvent(initialMarking, state)
 
-      system.eventStream.publish(PetriNetInstanceEvent(processType, processId, event))
+      system.eventStream.publish(ProcessInstanceEvent(processType, processId, event))
 
       persistEvent(uninitialized, event) {
         eventSource.apply(uninitialized)
@@ -118,7 +118,7 @@ class PetriNetInstance[P[_], T[_, _], S, E](
       val transition = t.asInstanceOf[T[_, _]]
       val transitionId = transitionIdentifier(transition).value
 
-      system.eventStream.publish(PetriNetInstanceEvent(processType, processId, event))
+      system.eventStream.publish(ProcessInstanceEvent(processType, processId, event))
       logEvent(Logging.DebugLevel, LogTransitionFired(processId, transition.toString, jobId, timeStarted, timeCompleted))
 
       persistEvent(instance, event)(
@@ -137,7 +137,7 @@ class PetriNetInstance[P[_], T[_, _], S, E](
       val transition = t.asInstanceOf[T[_, _]]
       val transitionId = transitionIdentifier(transition).value
 
-      system.eventStream.publish(PetriNetInstanceEvent(processType, processId, event))
+      system.eventStream.publish(ProcessInstanceEvent(processType, processId, event))
       logEvent(Logging.ErrorLevel, LogTransitionFailed(processId, transition.toString, jobId, timeStarted, timeFailed, reason))
 
       strategy match {
