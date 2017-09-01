@@ -99,9 +99,10 @@ object ReflectedInteractionTask {
       }
       else {
         val runtimeEvent = eventExtractor.extractEvent(output)
-        if (interaction.originalEvents.exists(_ equals runtimeEvent.eventType)) {
+
+        if (interaction.originalEvents.exists(runtimeEvent.isInstanceOfEventType(_)))
           runtimeEvent
-        }
+
         else {
           val msg: String = s"Output: $output fired by interaction ${interaction.interactionName} but could not link it to any known event for the interaction"
           log.error(msg)

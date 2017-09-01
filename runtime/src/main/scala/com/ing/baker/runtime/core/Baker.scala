@@ -240,7 +240,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
       case e => Baker.eventExtractor.extractEvent(e)
     }
 
-    if (!compiledRecipe.sensoryEvents.exists(_ equals runtimeEvent.eventType))
+    if (!compiledRecipe.sensoryEvents.exists(runtimeEvent.isInstanceOfEventType(_)))
       throw new BakerException(s"Fired event ${runtimeEvent.name} is not recognised as any valid sensory event")
 
     val msg = createEventMsg(processId, runtimeEvent)

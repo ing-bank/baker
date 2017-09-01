@@ -13,9 +13,23 @@ case class RuntimeEvent(name: String,
   val providedIngredientsMap: Map[String, Any] = providedIngredients.toMap;
 
   /**
-    * the EventType of this RuntimeEvent (meta information of this event)
+    * This checks if the runtime event is an instance of a event type.
+    * @param eventType
+    * @return
     */
-  val eventType: EventType = EventType(name, providedIngredients.map {
-    case (ingredientName, ingredientValue) => IngredientType(ingredientName, ingredientValue.getClass)
-  })
+  def isInstanceOfEventType(eventType: EventType): Boolean = {
+
+    val namesMatch = eventType.name == name
+
+    // we check all the required ingredient types, additional ones are ignored
+    val typesMatch = eventType.ingredientTypes.forall { ingredientType =>
+      providedIngredientsMap.get(ingredientType.name) match {
+        case None        => false
+        // we can only check the class since the type parameters are available on objects
+        case Some(value) => ingredientType.clazz.isInstance(value)
+      }
+    }
+
+    namesMatch && typesMatch
+  }
 }
