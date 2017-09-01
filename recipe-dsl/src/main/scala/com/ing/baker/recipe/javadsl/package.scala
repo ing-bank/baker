@@ -19,7 +19,7 @@ package object javadsl {
       override val providedIngredients: Seq[common.Ingredient] =
         eventClass.getDeclaredFields
           .filter(field => !field.isSynthetic)
-          .map(f => createIngredient(f.getName, f.getType))
+          .map(f => createIngredient(f.getName, f.getGenericType))
       override val maxFiringLimit: Option[Integer] = firingLimit
     }
 
