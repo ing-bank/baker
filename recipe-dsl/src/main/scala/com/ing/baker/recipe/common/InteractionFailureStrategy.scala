@@ -11,6 +11,8 @@ object InteractionFailureStrategy {
 
   case class BlockInteraction() extends InteractionFailureStrategy
 
+  case class FireEventAfterFailure(event: common.Event) extends InteractionFailureStrategy
+
   case class RetryWithIncrementalBackoff(initialTimeout: Duration,
                                          backoffFactor: Double,
                                          maximumRetries: Int,

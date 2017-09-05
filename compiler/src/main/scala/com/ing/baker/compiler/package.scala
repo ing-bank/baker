@@ -6,9 +6,8 @@ import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Transition}
 import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientType}
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
+import com.ing.baker.recipe.common.InteractionFailureStrategy.{FireEventAfterFailure, RetryWithIncrementalBackoff}
 import com.ing.baker.recipe.common.{InteractionDescriptor, ProvidesNothing}
-
 import com.ing.baker.il._
 
 import scala.concurrent.duration.Duration
@@ -55,6 +54,7 @@ package object compiler {
           case common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout: Duration, backoffFactor: Double, maximumRetries: Int, maxTimeBetweenRetries: Option[Duration], retryExhaustedEvent: Option[common.Event]) =>
             il.failurestrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, maxTimeBetweenRetries, if(retryExhaustedEvent.isDefined) Some(EventType(retryExhaustedEvent.get.name, Seq.empty)) else None)
           case common.InteractionFailureStrategy.BlockInteraction() => il.failurestrategy.BlockInteraction
+          case common.InteractionFailureStrategy.FireEventAfterFailure(event) => il.failurestrategy.FireEventAfterFailure(EventType(event.name, Seq.empty))
           case _ => il.failurestrategy.BlockInteraction
         }
       }
@@ -78,6 +78,7 @@ package object compiler {
 
       val exhaustedRetryEvent = interactionDescriptor.failureStrategy.flatMap {
         case RetryWithIncrementalBackoff(_, _, _, _, optionalExhaustedRetryEvent) => optionalExhaustedRetryEvent
+        case FireEventAfterFailure(event) => Some(event)
         case _ => None
       }.map(transformEventToCompiledEvent)
 
