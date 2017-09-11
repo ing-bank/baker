@@ -60,7 +60,8 @@ class ProcessIndex(processActorProps: Props,
     processActor
   }
 
-  def shouldDelete(meta: ActorMetadata): Boolean = meta.createdDateTime + retentionPeriod.toMillis < System.currentTimeMillis()
+  def shouldDelete(meta: ActorMetadata): Boolean =
+    retentionPeriod.isFinite() && (meta.createdDateTime + retentionPeriod.toMillis < System.currentTimeMillis())
 
   def deleteProcess(processId: String): Unit = {
     persist(ActorDeleted(processId)) { _ =>
