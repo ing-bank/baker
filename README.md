@@ -13,7 +13,11 @@ Developers declare the orchestration logic in a recipe.
 A recipe is made out of **interactions** (system calls), **ingredients** (data) and **events**.
 A visual representation (shown below) of the recipe allows product owners, architects and developers to talk the same language.
 
-Events are colored in gray, ingredients in orange and interactions in lilac. An example web-shop recipe is:
+Events are colored in gray, ingredients in orange and interactions in lilac. 
+
+An example web-shop recipe you can find at: [ExamplesSpec](https://github.com/ing-bank/baker/blob/master/test-module/src/test/scala/com/ing/baker/ExamplesSpec.scala) 
+
+The visual representation is:
 
 ![](webshop.png)
 
