@@ -52,7 +52,9 @@ Applying Baker will only be successful if you make sure that:
 To get started with SBT, simply add the following to your build.sbt file:
 
 ```
-libraryDependencies += "com.ing" %% "baker" % "0.2.21"
+libraryDependencies += "com.ing.baker" %% "recipe-dsl_2.11" % "1.1.6"
+libraryDependencies += "com.ing.baker" %% "runtime_2.11" % "1.1.6"
+libraryDependencies += "com.ing.baker" %% "compiler_2.11" % "1.1.6"
 ```
 
 # How to contribute?
@@ -90,13 +92,13 @@ A -> { B C }
 To create a PNG, run:
 
 ```
-dot -v -Tpng -O graph.dot
+dot -v -Tsvg -O graph.dot
 ```
 
 Preview the results:
 
 ```
-open graph.dot.png
+open graph.dot.svg
 ```
 
 You are all set to visualize your recipes now!
