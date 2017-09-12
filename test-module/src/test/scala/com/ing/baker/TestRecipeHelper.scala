@@ -5,7 +5,6 @@ import java.util.{Optional, UUID}
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import com.ing.baker.TestRecipeHelper._
-import com.ing.baker.Webshop._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
 import com.ing.baker.recipe.scaladsl._
@@ -253,55 +252,6 @@ object TestRecipeHelper {
   }
 }
 
-object Webshop {
-
-  //Webshop ingredients, events, interactions
-  case class CustomerObj(name: String, address: String, email: String)
-
-  val order = Ingredient[String]("order")
-  val name = Ingredient[String]("name")
-  val address = Ingredient[String]("address")
-  val email = Ingredient[String]("email")
-  val customerInfo = Ingredient[CustomerObj]("customerInfo")
-  val goods = Ingredient[String]("goods")
-  val trackingId = Ingredient[String]("trackingId")
-  val invoiceWasSent = Ingredient[Boolean]("invoiceWasSent")
-
-  val OrderPlaced = Event("OrderPlaced", order)
-  val Customer = Event("Customer", name, address, email)
-  val CustomerInfoReceived = Event("CustomerInfoReceived", customerInfo)
-  val PaymentMade = Event("PaymentMade")
-  val Valid = Event("Valid")
-  val Sorry = Event("Sorry")
-  val GoodsManufactured = Event("GoodsManufactured", goods)
-  val GoodsShipped = Event("GoodsShipped", trackingId)
-
-  //an interaction can fire one of multiple events
-  val ValidateOrder = Interaction(
-    "ValidateOrder",
-    order,
-    FiresOneOfEvents(Valid, Sorry))
-
-  //an interaction can fire a single event only
-  val ManufactureGoods = Interaction(
-    "ManufactureGoods",
-    order,
-    FiresOneOfEvents(GoodsManufactured))
-
-  val ShipGoods = Interaction(
-    "ShipGoods",
-    Ingredients(goods, customerInfo),
-    FiresOneOfEvents(GoodsShipped))
-
-  //instead of an event, an interaction can directly provide a new ingredient
-  //any primitive type or a case class is supported
-  val SendInvoice = Interaction(
-    "SendInvoice",
-    customerInfo,
-    ProvidesIngredient(invoiceWasSent))
-}
-
-
 trait TestRecipeHelper
   extends WordSpecLike
     with Matchers
@@ -453,21 +403,6 @@ trait TestRecipeHelper
         initialEventExtendedName,
         secondEvent,
         notUsedSensoryEvent)
-
-  protected val getWebshopRecipe: Recipe =
-    Recipe("Webshop")
-      .withInteractions(
-        ValidateOrder,
-        ManufactureGoods
-          .withRequiredEvents(Valid, PaymentMade),
-        ShipGoods,
-        SendInvoice
-          .withRequiredEvent(GoodsShipped)
-      )
-      .withSensoryEvents(
-        CustomerInfoReceived,
-        OrderPlaced,
-        PaymentMade)
 
   /**
     * Returns a Baker instance that contains a simple recipe that can be used in tests
