@@ -2,6 +2,7 @@ package com.ing.baker
 
 import java.util.UUID
 
+import akka.testkit.{TestDuration, TestKit}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.recipe.scaladsl._
@@ -51,6 +52,8 @@ class ExamplesSpec extends TestRecipeHelper with ScalaDSLRuntimeOps {
       // compiles the recipe
       val compiledRecipe = RecipeCompiler.compileRecipe(webShopRecipe)
 
+      println(s"Visual recipe: ${compiledRecipe.getRecipeVisualization}")
+
       // prints any validation errors the compiler found
       compiledRecipe.validationErrors shouldBe empty
     }
@@ -84,7 +87,8 @@ class ExamplesSpec extends TestRecipeHelper with ScalaDSLRuntimeOps {
         (goods: String, customerInfo: CustomerInfo) => goodsShipped.instance(testTrackingId)
       }
 
-      val implementations: InteractionTransition[_] => (ProcessState => RuntimeEvent) = Seq(validateOrderImpl, manifactorGoodsImpl, sendInvoiceImpl, shipGoodsImpl)
+      val implementations: InteractionTransition[_] => (ProcessState => RuntimeEvent) =
+        Seq(validateOrderImpl, manifactorGoodsImpl, sendInvoiceImpl, shipGoodsImpl)
 
       val baker = new Baker(compiledRecipe, implementations)
 
@@ -92,7 +96,7 @@ class ExamplesSpec extends TestRecipeHelper with ScalaDSLRuntimeOps {
 
       baker.bake(processId)
 
-      implicit val timeout: FiniteDuration = 2 seconds
+      implicit val timeout: FiniteDuration = 2.seconds.dilated
 
       // fire events
 
@@ -111,9 +115,6 @@ class ExamplesSpec extends TestRecipeHelper with ScalaDSLRuntimeOps {
       // assert the that all ingredients are provided
       actualIngredients shouldBe expectedIngredients
 
-      // since events are eventually consistent we sleep here
-      Thread.sleep(500)
-
       val expectedEvents = List(
         RuntimeEvent("OrderPlaced", Seq("order" -> testOrder)),
         RuntimeEvent("Valid", Seq.empty),
@@ -123,9 +124,7 @@ class ExamplesSpec extends TestRecipeHelper with ScalaDSLRuntimeOps {
         RuntimeEvent("GoodsShipped", Seq("trackingId" -> testTrackingId)),
         RuntimeEvent("InvoiceWasSent",Seq.empty))
 
-      val actualEvents = baker.events(processId)
-
-      actualEvents shouldBe expectedEvents
+      TestKit.awaitCond(baker.events(processId) equals expectedEvents, 2.seconds.dilated)
     }
   }
 }

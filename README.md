@@ -17,8 +17,24 @@ Events are colored in gray, ingredients in orange and interactions in lilac.
 
 An example web-shop recipe you can find at: [ExamplesSpec](https://github.com/ing-bank/baker/blob/master/test-module/src/test/scala/com/ing/baker/ExamplesSpec.scala) 
 
-The visual representation is:
-
+WebShop Recipe:
+```scala
+  val webShopRecipe: Recipe =
+    Recipe("WebShop")
+      .withInteractions(
+        validateOrder,
+        manufactureGoods
+          .withRequiredEvents(valid, paymentMade),
+        shipGoods,
+        sendInvoice
+          .withRequiredEvent(goodsShipped)
+      )
+      .withSensoryEvents(
+        customerInfoReceived,
+        orderPlaced,
+        paymentMade)
+```
+Visual version of the WebShop recipe:
 ![](webshop.png)
 
 
