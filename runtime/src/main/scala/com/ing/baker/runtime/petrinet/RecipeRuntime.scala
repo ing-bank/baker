@@ -6,7 +6,7 @@ import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Contin
 import com.ing.baker.petrinet.runtime._
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 
-class RecipeRuntime(interactionFunctions: InteractionTransition[_] => (ProcessState => RuntimeEvent)) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
+class RecipeRuntime(interactionFunctions: InteractionTransition[_] => (Seq[Any] => Any)) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
 
   override val tokenGame = new RecipeTokenGame()
 

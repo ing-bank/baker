@@ -49,7 +49,7 @@ object Baker {
   * The Baker can bake a recipe, create a process and respond to events.
   */
 class Baker(val compiledRecipe: CompiledRecipe,
-            val interactionFunctions: InteractionTransition[_] => (ProcessState => RuntimeEvent))
+            val interactionFunctions: InteractionTransition[_] => (Seq[Any] => Any))
            (implicit val actorSystem: ActorSystem) {
 
   import actorSystem.dispatcher

@@ -11,7 +11,7 @@ import com.ing.baker.runtime.core.{Baker, ProcessState, RuntimeEvent}
 import scala.concurrent.duration._
 
 trait ScalaDSLRuntimeOps {
-  implicit def toImplementations(seq: Seq[(String, ProcessState => RuntimeEvent)]): InteractionTransition[_] => (ProcessState => RuntimeEvent) = {
+  implicit def toImplementations(seq: Seq[(String, Seq[Any] => RuntimeEvent)]): InteractionTransition[_] => (Seq[Any] => Any) = {
     val map = seq.toMap
     i => map(i.interactionName)
   }
@@ -22,14 +22,14 @@ trait ScalaDSLRuntimeOps {
 
     val ingredientsFromProcessState = (procesState: ProcessState) => i.inputIngredients.map(_.name).map(procesState.ingredients)
 
-    def implement[A](fn: A => RuntimeEvent): (String, ProcessState => RuntimeEvent) =
-      i.name -> ingredientsFromProcessState.andThen(input => fn(input(0).asInstanceOf[A]))
+    def implement[A](fn: A => RuntimeEvent): (String, Seq[Any] => RuntimeEvent) =
+      i.name -> (input => fn(input(0).asInstanceOf[A]))
 
-    def implement[A, B](fn: (A, B) => RuntimeEvent): (String, ProcessState => RuntimeEvent) =
-      i.name -> ingredientsFromProcessState.andThen(input => fn(input(0).asInstanceOf[A], input(1).asInstanceOf[B]))
+    def implement[A, B](fn: (A, B) => RuntimeEvent): (String, Seq[Any] => RuntimeEvent) =
+      i.name -> (input => fn(input(0).asInstanceOf[A], input(1).asInstanceOf[B]))
 
-    def implement[A, B, C](fn: (A, B, C) => RuntimeEvent): (String, ProcessState => RuntimeEvent) =
-      i.name -> ingredientsFromProcessState.andThen(input => fn(input(0).asInstanceOf[A], input(1).asInstanceOf[B], input(2).asInstanceOf[C]))
+    def implement[A, B, C](fn: (A, B, C) => RuntimeEvent): (String, Seq[Any] => RuntimeEvent) =
+      i.name -> (input => fn(input(0).asInstanceOf[A], input(1).asInstanceOf[B], input(2).asInstanceOf[C]))
   }
 
   implicit class EventOps(e: Event) {
@@ -87,7 +87,7 @@ class ExamplesSpec extends TestRecipeHelper with ScalaDSLRuntimeOps {
         (goods: String, customerInfo: CustomerInfo) => goodsShipped.instance(testTrackingId)
       }
 
-      val implementations: InteractionTransition[_] => (ProcessState => RuntimeEvent) =
+      val implementations: InteractionTransition[_] => (Seq[Any] => Any) =
         Seq(validateOrderImpl, manifactorGoodsImpl, sendInvoiceImpl, shipGoodsImpl)
 
       val baker = new Baker(compiledRecipe, implementations)
