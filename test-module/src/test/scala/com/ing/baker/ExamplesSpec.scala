@@ -9,7 +9,7 @@ import com.ing.baker.runtime.core.{Baker, RuntimeEvent}
 
 import scala.concurrent.duration._
 
-class ExamplesSpec extends TestRecipeHelper {
+class ExamplesSpec extends TestRecipeHelper  {
   override def actorSystemName = "ExamplesSpec"
 
   "The example WebShop recipe" should {
@@ -39,13 +39,18 @@ class ExamplesSpec extends TestRecipeHelper {
       val testTrackingId = "001"
 
       // create implementations of the interactions
-
       val validateOrderImpl = validateOrder implement {
-        (order: String) => valid.instance()
+        (order: String) => {
+          // Some logic here
+          valid.instance() // or maybe invalid event to be returned
+        }
       }
 
-      val manifactorGoodsImpl = manufactureGoods implement {
-        (order: String) => goodsManufactured.instance(testGoods)
+      val manufactureGoodsImpl = manufactureGoods implement {
+        (order: String) => {
+          // Some logic here
+          goodsManufactured.instance(testGoods)
+        }
       }
 
       val sendInvoiceImpl = sendInvoice implement {
@@ -57,7 +62,7 @@ class ExamplesSpec extends TestRecipeHelper {
       }
 
       val implementations =
-        Seq(validateOrderImpl, manifactorGoodsImpl, sendInvoiceImpl, shipGoodsImpl)
+        Seq(validateOrderImpl, manufactureGoodsImpl, sendInvoiceImpl, shipGoodsImpl)
 
       val baker = new Baker(compiledRecipe, implementations)
 
@@ -91,7 +96,7 @@ class ExamplesSpec extends TestRecipeHelper {
         RuntimeEvent("GoodsManufactured", Seq("goods" -> testGoods)),
         RuntimeEvent("CustomerInfoReceived", Seq("customerInfo" -> testCustomerInfoData)),
         RuntimeEvent("GoodsShipped", Seq("trackingId" -> testTrackingId)),
-        RuntimeEvent("InvoiceWasSent",Seq.empty))
+        RuntimeEvent("InvoiceWasSent", Seq.empty))
 
       TestKit.awaitCond(baker.events(processId) equals expectedEvents, 2.seconds.dilated)
     }

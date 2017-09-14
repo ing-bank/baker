@@ -3,6 +3,7 @@ import com.ing.baker.runtime.core.RuntimeEvent
 
 class MapEventExtractor extends EventExtractor {
 
+  // This is the reserved key to extract the event name.
   val eventNameKey = "$EventName$"
 
   /**
