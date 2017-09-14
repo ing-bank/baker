@@ -52,5 +52,9 @@ class CompositeEventExtractor(extractorBindings: Map[Class[_], EventExtractor]) 
       .getOrElse(throw new IllegalStateException(s"No suitable extractor found for $clazz"))
   }
 
-  override def extractEvent(obj: Any): RuntimeEvent = extractorForClass(obj.getClass).extractEvent(obj)
+  override def extractEvent(obj: Any): RuntimeEvent =
+    obj match {
+      case e: RuntimeEvent => e
+      case _               => extractorForClass(obj.getClass).extractEvent(obj)
+    }
 }

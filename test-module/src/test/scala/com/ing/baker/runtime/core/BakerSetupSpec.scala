@@ -5,6 +5,7 @@ import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.core.implementations.{InteractionOneFieldName, InteractionOneInterfaceImplementation, InteractionOneWrongApply}
+import com.ing.baker.runtime.petrinet.ReflectedInteractionTask
 
 import scala.language.postfixOps
 
@@ -36,7 +37,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
         new Baker(
           compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-          implementations = Seq(new implementations.InteractionOne()))
+          implementations = ReflectedInteractionTask.implementationsToProviderMap(Seq(new implementations.InteractionOne())))
       }
 
       "providing the implementation in a sequence and interaction renamed" in {
@@ -46,7 +47,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
         new Baker(
           compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-          implementations = Seq(new implementations.InteractionOne()))
+          implementations = ReflectedInteractionTask.implementationsToProviderMap(Seq(new implementations.InteractionOne())))
       }
 
       "providing the implementation in a sequence with the field name same as the interaction" in {
@@ -56,7 +57,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
         new Baker(
           compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-          implementations = Seq(new InteractionOneFieldName()))
+          implementations = ReflectedInteractionTask.implementationsToProviderMap(Seq(new InteractionOneFieldName())))
       }
 
       "providing the implementation in a sequence with the interface its implementing with the correct name" in {
@@ -66,7 +67,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
         new Baker(
           compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-          implementations = Seq(new InteractionOneInterfaceImplementation()))
+          implementations = ReflectedInteractionTask.implementationsToProviderMap(Seq(new InteractionOneInterfaceImplementation())))
       }
 
       "the recipe contains complex ingredients that are serializable" in {
