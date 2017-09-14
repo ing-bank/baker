@@ -39,6 +39,11 @@ object Baker {
     compiledRecipe.petriNet.transitions.findByLabel(runtimeEvent.name).getOrElse {
       throw new IllegalArgumentException(s"No such event known in recipe: $runtimeEvent")
     }
+
+  def toImplementations(seq: Seq[(String, Seq[Any] => Any)]): InteractionTransition[_] => (Seq[Any] => Any) = {
+      val map = seq.toMap
+      i => map(i.interactionName)
+  }
 }
 
 /**
@@ -60,9 +65,9 @@ class Baker(val compiledRecipe: CompiledRecipe,
     this(compiledRecipe, ReflectedInteractionTask.createInteractionFunctions(compiledRecipe.interactionTransitions, implementations))(actorSystem)
 
   def this(compiledRecipe: CompiledRecipe,
-           implementations: Seq[AnyRef])
+           implementations: Seq[(String, Seq[Any] => Any)])
           (implicit actorSystem: ActorSystem) =
-    this(compiledRecipe, ReflectedInteractionTask.implementationsToProviderMap(implementations))(actorSystem)
+      this(compiledRecipe, Baker.toImplementations(implementations))
 
   private val config = actorSystem.settings.config
 

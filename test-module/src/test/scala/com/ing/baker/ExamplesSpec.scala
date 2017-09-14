@@ -4,43 +4,12 @@ import java.util.UUID
 
 import akka.testkit.{TestDuration, TestKit}
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.recipe.scaladsl._
-import com.ing.baker.runtime.core.{Baker, ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.core.{Baker, RuntimeEvent}
 
 import scala.concurrent.duration._
 
-trait ScalaDSLRuntimeOps {
-  implicit def toImplementations(seq: Seq[(String, Seq[Any] => RuntimeEvent)]): InteractionTransition[_] => (Seq[Any] => Any) = {
-    val map = seq.toMap
-    i => map(i.interactionName)
-  }
-
-  implicit class InteractionOps(i: Interaction) {
-
-    // TODO use shapeless to abstract over function arity and add type safety
-
-    val ingredientsFromProcessState = (procesState: ProcessState) => i.inputIngredients.map(_.name).map(procesState.ingredients)
-
-    def implement[A](fn: A => RuntimeEvent): (String, Seq[Any] => RuntimeEvent) =
-      i.name -> (input => fn(input(0).asInstanceOf[A]))
-
-    def implement[A, B](fn: (A, B) => RuntimeEvent): (String, Seq[Any] => RuntimeEvent) =
-      i.name -> (input => fn(input(0).asInstanceOf[A], input(1).asInstanceOf[B]))
-
-    def implement[A, B, C](fn: (A, B, C) => RuntimeEvent): (String, Seq[Any] => RuntimeEvent) =
-      i.name -> (input => fn(input(0).asInstanceOf[A], input(1).asInstanceOf[B], input(2).asInstanceOf[C]))
-  }
-
-  implicit class EventOps(e: Event) {
-    def instance(values: Any*): RuntimeEvent = {
-      val ingredients = e.providedIngredients.map(_.name).zip(values.toSeq)
-      RuntimeEvent(e.name, ingredients)
-    }
-  }
-}
-
-class ExamplesSpec extends TestRecipeHelper with ScalaDSLRuntimeOps {
+class ExamplesSpec extends TestRecipeHelper {
   override def actorSystemName = "ExamplesSpec"
 
   "The example WebShop recipe" should {
@@ -87,7 +56,7 @@ class ExamplesSpec extends TestRecipeHelper with ScalaDSLRuntimeOps {
         (goods: String, customerInfo: CustomerInfo) => goodsShipped.instance(testTrackingId)
       }
 
-      val implementations: InteractionTransition[_] => (Seq[Any] => Any) =
+      val implementations =
         Seq(validateOrderImpl, manifactorGoodsImpl, sendInvoiceImpl, shipGoodsImpl)
 
       val baker = new Baker(compiledRecipe, implementations)
