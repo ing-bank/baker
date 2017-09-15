@@ -173,7 +173,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
     val eventualState = initializeFuture.map {
       case msg: Initialized => msg.state.asInstanceOf[ProcessState]
-      case AlreadyInitialized => throw new IllegalArgumentException(s"Process with $processId already exists.")
+      case AlreadyInitialized => throw new IllegalArgumentException(s"Process with id '$processId' for recipe '${compiledRecipe.name}' already exists.")
       case msg@_ => throw new BakerException(s"Unexpected message: $msg")
     }
 
@@ -255,8 +255,6 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   /**
     * Returns the process state.
-    *
-    * Throws a NoSuchProcessException when the process with the given identifier does not exist.
     *
     * @param processId The process identifier
     * @return The process state.
