@@ -13,8 +13,28 @@ Developers declare the orchestration logic in a recipe.
 A recipe is made out of **interactions** (system calls), **ingredients** (data) and **events**.
 A visual representation (shown below) of the recipe allows product owners, architects and developers to talk the same language.
 
-Events are colored in gray, ingredients in orange and interactions in lilac. An example web-shop recipe is:
+Events are colored in gray, ingredients in orange and interactions in lilac. 
 
+An example web-shop recipe you can find at: [ExamplesSpec](https://github.com/ing-bank/baker/blob/master/test-module/src/test/scala/com/ing/baker/ExamplesSpec.scala) 
+
+WebShop Recipe:
+```scala
+  val webShopRecipe: Recipe =
+    Recipe("WebShop")
+      .withInteractions(
+        validateOrder,
+        manufactureGoods
+          .withRequiredEvents(valid, paymentMade),
+        shipGoods,
+        sendInvoice
+          .withRequiredEvent(goodsShipped)
+      )
+      .withSensoryEvents(
+        customerInfoReceived,
+        orderPlaced,
+        paymentMade)
+```
+Visual version of the WebShop recipe:
 ![](webshop.png)
 
 
@@ -52,7 +72,9 @@ Applying Baker will only be successful if you make sure that:
 To get started with SBT, simply add the following to your build.sbt file:
 
 ```
-libraryDependencies += "com.ing" %% "baker" % "0.2.21"
+libraryDependencies += "com.ing.baker" %% "recipe-dsl_2.11" % "1.1.6"
+libraryDependencies += "com.ing.baker" %% "runtime_2.11" % "1.1.6"
+libraryDependencies += "com.ing.baker" %% "compiler_2.11" % "1.1.6"
 ```
 
 # How to contribute?
@@ -90,13 +112,13 @@ A -> { B C }
 To create a PNG, run:
 
 ```
-dot -v -Tpng -O graph.dot
+dot -v -Tsvg -O graph.dot
 ```
 
 Preview the results:
 
 ```
-open graph.dot.png
+open graph.dot.svg
 ```
 
 You are all set to visualize your recipes now!
