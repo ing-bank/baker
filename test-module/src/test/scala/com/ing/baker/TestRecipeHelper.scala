@@ -91,6 +91,7 @@ object TestRecipeHelper {
     Interaction("InteractionOne",
       Ingredients(processId, initialIngredient),
       ProvidesIngredient(interactionOneOriginalIngredient))
+
   trait InteractionOne {
     def apply(processId: String, initialIngredient: String): String
   }

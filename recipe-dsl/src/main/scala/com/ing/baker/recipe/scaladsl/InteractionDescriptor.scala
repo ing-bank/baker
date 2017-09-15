@@ -43,6 +43,8 @@ case class InteractionDescriptor private(override val interaction: Interaction,
   def withMaximumInteractionCount(n: Int): InteractionDescriptor =
     copy(maximumInteractionCount = Some(n))
 
+  def withFailureStrategy(failureStrategy: InteractionFailureStrategy) = copy(failureStrategy = Some(failureStrategy))
+
   def withOverriddenIngredientName(oldIngredient: String,
                                    newIngredient: String): InteractionDescriptor =
     copy(overriddenIngredientNames = overriddenIngredientNames + (oldIngredient -> newIngredient))
