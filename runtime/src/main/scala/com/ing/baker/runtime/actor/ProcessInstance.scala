@@ -28,10 +28,16 @@ object ProcessInstance {
 
   private case class IdleStop(seq: Long)
 
-  def processId2PersistenceId(processType: String, processId: String): String = s"process-$processType-$processId"
+  def persistenceIdPrefix(processType: String) = s"process-$processType-"
+
+  def processId2PersistenceId(processType: String, processId: String): String = persistenceIdPrefix(processType) + processId
 
   def persistenceId2ProcessId(processType: String, persistenceId: String): Option[String] = {
-    Some(persistenceId.split(s"process-$processType-").last)
+    val parts = persistenceId.split(persistenceIdPrefix(processType))
+    if (parts.length == 2)
+      Some(parts(1))
+    else
+      None
   }
 }
 
