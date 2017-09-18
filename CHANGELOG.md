@@ -11,6 +11,7 @@
   akka.actor.serialization-bindings {
     "com.example.Foo" = kryo
   }
+- Added validations and better error logging if null is provided by a Interaction or Event
 
 ## 1.0.8
 - Added the functionality that if an Ingredient of Java Optional or Scala Option is needed but not provided its provided as empty.

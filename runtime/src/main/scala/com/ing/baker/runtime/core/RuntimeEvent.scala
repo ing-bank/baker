@@ -17,19 +17,34 @@ case class RuntimeEvent(name: String,
     * @param eventType
     * @return
     */
-  def isInstanceOfEventType(eventType: EventType): Boolean = {
+  def isInstanceOfEventType(eventType: EventType): Boolean = validateEvent(eventType).isEmpty
 
-    val namesMatch = eventType.name == name
+  /**
+    *
+    * Validates the runtime event against a event type and returns a sequence
+    * of validation errors.
+    *
+    * @param eventType The event type to validate against.
+    * @return
+    */
+  def validateEvent(eventType: EventType): Seq[String] = {
 
-    // we check all the required ingredient types, additional ones are ignored
-    val typesMatch = eventType.ingredientTypes.forall { ingredientType =>
-      providedIngredientsMap.get(ingredientType.name) match {
-        case None        => false
-        // we can only check the class since the type parameters are available on objects
-        case Some(value) => ingredientType.clazz.isInstance(value)
-      }
+    if (eventType.name != name)
+      Seq(s"Provided event with name '$name' does not match expected name '${eventType.name}'")
+    else
+      // we check all the required ingredient types, additional ones are ignored
+      eventType.ingredientTypes.flatMap { ingredientType =>
+        providedIngredientsMap.get(ingredientType.name) match {
+          case None        =>
+            Seq(s"no value was provided for ingredient '${ingredientType.name}'")
+          case Some(null)  =>
+            Seq(s"null is not allowed as an ingredient value for '${ingredientType.name}'")
+          // we can only check the class since the type parameters are available on objects
+          case Some(value) if !(ingredientType.clazz.isInstance(value))  =>
+            Seq(s"value is not of the correct type for ingredient '${ingredientType.name}'")
+          case _ =>
+            Seq.empty
+        }
     }
-
-    namesMatch && typesMatch
   }
 }
