@@ -908,5 +908,50 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       baker.events(processId) shouldBe empty
     }
+
+    "block interaction and log error message if a null ingredient is provided directly by a Interaction" in {
+      val recipe =
+        Recipe("NullIngredientRecipe")
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent)
+
+      val baker = new Baker(
+        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+        implementations = mockImplementations)
+
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(null)
+
+      val processId = UUID.randomUUID().toString
+
+      baker.bake(processId)
+
+      baker.handleEvent(processId, InitialEvent(initialIngredientValue))
+
+      verify(testInteractionOneMock).apply(processId.toString(), "initialIngredient")
+      baker.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue)
+    }
+
+    "block interaction and log error message if a null ingredient is provided by an Event provided by a Interaction" in {
+      val recipe =
+        Recipe("NullIngredientFromEventRecipe")
+          .withInteraction(interactionTwo
+            .withOverriddenIngredientName("initialIngredientOld", "initialIngredient"))
+          .withSensoryEvent(initialEvent)
+
+      val baker = new Baker(
+        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+        implementations = mockImplementations)
+
+      when(testInteractionTwoMock.apply(anyString())).thenReturn(EventFromInteractionTwo(null))
+
+      val processId = UUID.randomUUID().toString
+
+      baker.bake(processId)
+
+      baker.handleEvent(processId, InitialEvent(initialIngredientValue))
+
+      verify(testInteractionTwoMock).apply("initialIngredient")
+      baker.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue)
+    }
   }
 }

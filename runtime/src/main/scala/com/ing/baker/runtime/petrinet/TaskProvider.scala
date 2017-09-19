@@ -126,10 +126,19 @@ class TaskProvider(interactionFunctions: InteractionTransition[_] => (Seq[Any] =
 
     else if (interaction.providedIngredientEvent.isDefined) {
       val eventToComplyTo = interaction.providedIngredientEvent.get
-      runtimeEventForIngredient(eventToComplyTo.name, output, eventToComplyTo.ingredientTypes.head)
+      runtimeEventForIngredient(interaction, eventToComplyTo.name, output, eventToComplyTo.ingredientTypes.head)
     }
     else {
       val runtimeEvent = eventExtractor.extractEvent(output)
+
+      val nullIngredientNames = runtimeEvent.providedIngredients.collect {
+        case (name, null) => name
+      }
+      if(nullIngredientNames.nonEmpty) {
+        val msg: String = s"Interaction ${interaction.interactionName} returned null value for ingredients: ${nullIngredientNames.mkString(",")}"
+        log.error(msg)
+        throw new FatalInteractionException(msg)
+      }
 
       if (interaction.originalEvents.exists(runtimeEvent.isInstanceOfEventType(_)))
         runtimeEvent
@@ -142,7 +151,13 @@ class TaskProvider(interactionFunctions: InteractionTransition[_] => (Seq[Any] =
     }
   }
 
-  def runtimeEventForIngredient(runtimeEventName: String, providedIngredient: Any, ingredientToComplyTo: IngredientType): RuntimeEvent = {
+  def runtimeEventForIngredient[I](interaction: InteractionTransition[I], runtimeEventName: String, providedIngredient: Any, ingredientToComplyTo: IngredientType): RuntimeEvent = {
+    if (providedIngredient == null) {
+      val msg: String = s"null value provided for ingredient '${ingredientToComplyTo.name}' for interaction '${interaction.interactionName}'"
+      log.error(msg)
+      throw new FatalInteractionException(msg)
+    }
+
     if (ingredientToComplyTo.clazz.isAssignableFrom(providedIngredient.getClass))
       RuntimeEvent(runtimeEventName , Seq((ingredientToComplyTo.name, providedIngredient)))
     else {
