@@ -107,7 +107,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
   private val actorIdleTimeout = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout")
 
-  val petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] = new RecipeRuntime(interactionFunctions)
+  val petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] = new RecipeRuntime(compiledRecipe.name, interactionFunctions)
 
   private val petriNetInstanceActorProps =
     Util.recipePetriNetProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,

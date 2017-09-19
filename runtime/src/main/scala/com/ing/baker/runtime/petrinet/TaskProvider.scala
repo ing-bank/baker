@@ -13,7 +13,7 @@ import org.slf4j.{LoggerFactory, MDC}
 
 import scala.util.Try
 
-class TaskProvider(interactionFunctions: InteractionTransition[_] => (Seq[Any] => Any)) extends TransitionTaskProvider[ProcessState, Place, Transition] {
+class TaskProvider(recipeName: String, interactionFunctions: InteractionTransition[_] => (Seq[Any] => Any)) extends TransitionTaskProvider[ProcessState, Place, Transition] {
 
   val log = LoggerFactory.getLogger(classOf[TaskProvider])
 
@@ -48,7 +48,7 @@ class TaskProvider(interactionFunctions: InteractionTransition[_] => (Seq[Any] =
 
   def interactionTransitionTask[I, Input, Output](interaction: InteractionTransition[I], fn: Seq[Any] => Any, outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, Input, Output, ProcessState] =
 
-    (consume, processState, input) => {
+    (_, processState, _) => {
 
     def failureHandler[T]: PartialFunction[Throwable, Task[T]] = {
       case e: InvocationTargetException => Task.fail(e.getCause)
@@ -61,15 +61,31 @@ class TaskProvider(interactionFunctions: InteractionTransition[_] => (Seq[Any] =
 
       Task
         .delay {
+          // add MDC values for logging
           MDC.put("processId", processState.processId.toString)
+          MDC.put("recipeName", recipeName)
+
+          // create the interaction input
           val input = createInput(interaction, processState)
+
+          // execute the interaction
           val output = fn.apply(input)
+
+          // create a runtime event from the interaction output
           val event = createRuntimeEvent(interaction, output)
+
+          // transforms the event
+          val transformedEvent = transformEvent(interaction)(event)
+
+          // creates the transition output marking (in the petri net)
+          val outputMarking = createProducedMarking(interaction, outAdjacent)(transformedEvent)
+
+          // remove MDC values
           MDC.remove("processId")
-          event
+          MDC.remove("recipeName")
+
+          (outputMarking, transformedEvent.asInstanceOf[Output])
         }
-        .map(transformEvent(interaction))
-        .map { output => (createProducedMarking(interaction, outAdjacent)(output), output.asInstanceOf[Output]) }
         .handleWith(failureHandler)
     }.recover(failureHandler).get
   }
@@ -87,15 +103,16 @@ class TaskProvider(interactionFunctions: InteractionTransition[_] => (Seq[Any] =
     // parameterNamesToValues overwrites mapped token values which overwrites context map (in order of importance)
     val argumentNamesToValues: Map[String, Any] = interaction.predefinedParameters ++ state.ingredients + processId
 
-    def notFound = (name: String) => {
-      log.warn(
+    def throwMissingInputException = (name: String) => {
+      val msg =
         s"""
            |IllegalArgumentException at Interaction: $toString
            |Missing parameter: $name
            |Required input   : ${interaction.requiredIngredients.toMap.keySet.toSeq.sorted.mkString(",")}
            |Provided input   : ${argumentNamesToValues.keySet.toSeq.sorted.mkString(",")}
-         """.stripMargin)
-      throw new IllegalArgumentException(s"Missing parameter: $name")
+         """.stripMargin
+      log.warn(msg)
+      throw new IllegalArgumentException(msg)
     }
 
     def autoBoxIfNeeded(ingredientName: String, ingredientType: java.lang.reflect.Type, value: Any) = {
@@ -112,7 +129,7 @@ class TaskProvider(interactionFunctions: InteractionTransition[_] => (Seq[Any] =
       interaction.requiredIngredients.map {
         case (ingredientName, ingredientType) =>
 
-          val value = argumentNamesToValues.getOrElse(ingredientName, notFound)
+          val value = argumentNamesToValues.getOrElse(ingredientName, throwMissingInputException)
           autoBoxIfNeeded(ingredientName, ingredientType, value)
       }
 
@@ -121,9 +138,10 @@ class TaskProvider(interactionFunctions: InteractionTransition[_] => (Seq[Any] =
 
   def createRuntimeEvent[I](interaction: InteractionTransition[I], output: Any): RuntimeEvent = {
 
+    // when the interaction does not fire an event, Void or Unit is a valid output type
     if (interaction.eventsToFire.isEmpty && (output.isInstanceOf[Void] || output.isInstanceOf[Unit]))
       RuntimeEvent(interaction.interactionName, Seq.empty)
-
+    // if the interaction directly produces an ingredient
     else if (interaction.providedIngredientEvent.isDefined) {
       val eventToComplyTo = interaction.providedIngredientEvent.get
       runtimeEventForIngredient(interaction, eventToComplyTo.name, output, eventToComplyTo.ingredientTypes.head)
@@ -134,6 +152,7 @@ class TaskProvider(interactionFunctions: InteractionTransition[_] => (Seq[Any] =
       val nullIngredientNames = runtimeEvent.providedIngredients.collect {
         case (name, null) => name
       }
+
       if(nullIngredientNames.nonEmpty) {
         val msg: String = s"Interaction ${interaction.interactionName} returned null value for ingredients: ${nullIngredientNames.mkString(",")}"
         log.error(msg)

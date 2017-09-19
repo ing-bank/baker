@@ -6,7 +6,7 @@ import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Contin
 import com.ing.baker.petrinet.runtime._
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 
-class RecipeRuntime(interactionFunctions: InteractionTransition[_] => (Seq[Any] => Any)) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
+class RecipeRuntime(recipeName: String, interactionFunctions: InteractionTransition[_] => (Seq[Any] => Any)) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
 
   override val tokenGame = new RecipeTokenGame()
 
@@ -34,7 +34,7 @@ class RecipeRuntime(interactionFunctions: InteractionTransition[_] => (Seq[Any] 
     case _ => (_, _, _) => BlockTransition
   }
 
-  override val taskProvider = new TaskProvider(interactionFunctions)
+  override val taskProvider = new TaskProvider(recipeName, interactionFunctions)
 
   override lazy val jobPicker = new JobPicker[Place, Transition](tokenGame) {
     override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition[_, _]): Boolean = t match {
