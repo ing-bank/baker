@@ -52,6 +52,8 @@ object Dependencies {
     .exclude("com.typesafe.akka", "akka-actor")
 
   val kryoSerializers =           "de.javakaffee"              %  "kryo-serializers"                   % "0.41"
+  val objenisis =                 "org.objenesis"              %  "objenesis"                          % "2.5.1"
+
   val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.9.9"
   val jodaConvert =               "org.joda"                   %  "joda-convert"                       % "1.8.1"
   val scalaXml =                  "org.scala-lang.modules"     %% "scala-xml"                          % "1.0.4"

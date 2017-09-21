@@ -79,6 +79,7 @@ lazy val recipeRuntime = project.in(file("runtime"))
         ficusConfig,
         guava,
         chill,
+        objenisis,
         scalapbRuntime,
         kryoSerializers,
         jodaTime,
