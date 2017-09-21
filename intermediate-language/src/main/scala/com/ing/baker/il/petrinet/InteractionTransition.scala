@@ -2,15 +2,10 @@ package com.ing.baker.il.petrinet
 
 import java.lang.reflect.Type
 
-import java.lang.reflect.Type
-
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
 import com.ing.baker.il.{ActionType, EventOutputTransformer, _}
-import com.ing.baker.petrinet.runtime.TransitionExceptionHandler
 import org.slf4j._
-
-
 
 
 /**

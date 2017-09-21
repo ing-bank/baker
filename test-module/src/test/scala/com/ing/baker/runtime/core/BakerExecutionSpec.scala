@@ -9,6 +9,7 @@ import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
 import com.ing.baker.recipe.scaladsl.{Recipe, _}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
@@ -647,6 +648,29 @@ class BakerExecutionSpec extends TestRecipeHelper {
       Thread.sleep(50)
 
       baker.events(processId).map(_.name) should not contain (exhaustedEvent.name)
+    }
+
+    "fire a specified failure event for an interaction immediately after it fails" in {
+
+      val recipe = Recipe("ImmediateFailureEvent")
+        .withSensoryEvent(initialEvent)
+        .withInteractions(interactionOne.withFailureStrategy(FireEventAfterFailure(exhaustedEvent)))
+
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenThrow(new RuntimeException("Some failure happened"))
+
+      val baker = new Baker(
+          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+          implementations = mockImplementations)(defaultActorSystem)
+
+      val processId = UUID.randomUUID().toString
+      baker.bake(processId)
+
+      //Handle first event
+      baker.handleEvent(processId, InitialEvent(initialIngredientValue))
+
+      Thread.sleep(50)
+
+      baker.events(processId).map(_.name) should contain (exhaustedEvent.name)
     }
 
     "be able to return all occurred events" in {
