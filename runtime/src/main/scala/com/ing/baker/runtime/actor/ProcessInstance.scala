@@ -66,7 +66,7 @@ class ProcessInstance[P[_], T[_, _], S, E](
   def uninitialized: Receive = {
     case Initialize(markingData, state) ⇒
 
-      val initialMarking = unmarshal[P](markingData, topology.places.getById)
+      val initialMarking = unmarshal[P](markingData, id => topology.places.getById(id, "place"))
       val uninitialized = Instance.uninitialized[P, T, S](topology)
       val event = InitializedEvent(initialMarking, state)
 
@@ -190,7 +190,7 @@ class ProcessInstance[P[_], T[_, _], S, E](
 
     case FireTransition(transitionId, input, _) ⇒
 
-      val transition = topology.transitions.getById(transitionId).asInstanceOf[T[Any, Any]]
+      val transition = topology.transitions.getById(transitionId, "transition").asInstanceOf[T[Any, Any]]
 
       runtime.jobPicker.createJob[S, Any, Any](transition, input).run(instance).value match {
         case (updatedInstance, Right(job)) ⇒

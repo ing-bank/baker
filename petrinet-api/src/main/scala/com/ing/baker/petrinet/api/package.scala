@@ -35,7 +35,7 @@ package object api extends MultiSetOps with MarkingOps {
 
   implicit class IdentifiableOps[T : Identifiable](seq: Iterable[T]) {
     def findById(id: Long): Option[T] = seq.find(e ⇒ implicitly[Identifiable[T]].apply(e).value == id)
-    def getById(id: Long): T = findById(id).getOrElse { throw new IllegalStateException(s"No element found with id: $id") }
+    def getById(id: Long, name: String = "element"): T = findById(id).getOrElse { throw new IllegalStateException(s"No $name found with id: $id") }
   }
 
   implicit class OptionOps(check: Boolean) {

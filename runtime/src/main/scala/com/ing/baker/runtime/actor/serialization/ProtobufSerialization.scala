@@ -79,7 +79,7 @@ class ProtobufSerialization[P[_], T[_, _], S](
   private def deserializeProducedMarking(instance: Instance[P, T, S], produced: Seq[messages.ProducedToken]): Marking[P] = {
     produced.foldLeft(Marking.empty[P]) {
       case (accumulated, messages.ProducedToken(Some(placeId), Some(_), Some(count), data)) ⇒
-        val place = instance.process.places.getById(placeId).asInstanceOf[P[Any]]
+        val place = instance.process.places.getById(placeId, "place").asInstanceOf[P[Any]]
         val value = data.map(deserializeObject).getOrElse(())
         accumulated.add(place, value, count)
       case _ ⇒ throw new IllegalStateException("Missing data in persisted ProducedToken")
@@ -113,7 +113,7 @@ class ProtobufSerialization[P[_], T[_, _], S](
   private def deserializeConsumedMarking(instance: Instance[P, T, S], persisted: Seq[messages.ConsumedToken]): Marking[P] = {
     persisted.foldLeft(Marking.empty[P]) {
       case (accumulated, messages.ConsumedToken(Some(placeId), Some(tokenId), Some(count))) ⇒
-        val place = instance.marking.keySet.getById(placeId).asInstanceOf[P[Any]]
+        val place = instance.marking.keySet.getById(placeId, "place").asInstanceOf[P[Any]]
         val value = instance.marking(place).keySet.find(e ⇒ tokenIdentifier(place)(e) == tokenId).get
         accumulated.add(place, value, count)
       case _ ⇒ throw new IllegalStateException("Missing data in persisted ConsumedToken")
@@ -150,7 +150,7 @@ class ProtobufSerialization[P[_], T[_, _], S](
         case other@_ ⇒ throw new IllegalStateException(s"Invalid failure strategy: $other")
       }
 
-      val transition = instance.process.transitions.getById(transitionId)
+      val transition = instance.process.transitions.getById(transitionId, "transition")
 
       TransitionFailedEvent[P, T, Any](jobId, transition, timeStarted, timeFailed, consumed, input, failureReason, failureStrategy)
   }
@@ -200,7 +200,7 @@ class ProtobufSerialization[P[_], T[_, _], S](
     val output = e.data.map(deserializeObject).orNull
 
     val transitionId = e.transitionId.getOrElse(missingFieldException("transition_id"))
-    val transition = instance.process.transitions.getById(transitionId)
+    val transition = instance.process.transitions.getById(transitionId, "transition")
     val jobId = e.jobId.getOrElse(missingFieldException("job_id"))
     val timeStarted = e.timeStarted.getOrElse(missingFieldException("time_started"))
     val timeCompleted = e.timeCompleted.getOrElse(missingFieldException("time_completed"))
