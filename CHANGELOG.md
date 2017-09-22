@@ -1,5 +1,52 @@
 # Changelog
 
+## 1.1.9
+
+- Added objenesis dependency runtime module since it is required by kryo at runtime
+- Added InteractionFailureStrategy.FireEvent(SomeEvent.class) option to javadsl (feature from 1.1.8)
+
+## 1.1.8
+
+- Added an option to fire an event immediately on technical failures in interactions.
+- Improved logging/error messages in various places
+
+## 1.1.7
+
+- Implemented a better way to provide interaction implementations for the scala dsl.
+- Improved the WebShop example (using the scala dsl)
+
+## 1.1.6
+
+- Fixed a NullPointer exception involving recipes without a retention period.
+
+## 1.1.5
+
+- Bug fixes involving ingredients with generic types
+
+## 1.1.4
+
+- Added an option to set a retention period on recipes. When set, after the retention period has passed, the process
+instance will be stopped and all persisted messages (history) will be deleted.
+
+- Fixed a NullPointer exception involving interactions with Void/Unit return types.
+
+## 1.1.3
+
+- We now preserve the full generic type for ingredients. (e.g. Option<String>)
+
+## 1.1.2
+
+- Bugfix involving predefined ingredients for optional values.
+
+## 1.1.1
+
+- The compiler now gives a validation error for empty recipes.
+
+## 1.1.0
+
+.....
+
+
 ## 1.0.9
 
 - Changed serialization mechanism to allow custom akka serializers for ingredients where before only kryo was used.
