@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.10
+- bugfix: consuming a token when handling a sensory event with maxFireLimit was not calculated correctly
+
 ## 1.1.9
 
 - Added objenesis dependency runtime module since it is required by kryo at runtime
