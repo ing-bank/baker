@@ -1,7 +1,7 @@
 package com.ing.baker.recipe.javadsl
 
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.InteractionFailureStrategy.{BlockInteraction, RetryWithIncrementalBackoff}
+import com.ing.baker.recipe.common.InteractionFailureStrategy.{BlockInteraction, FireEventAfterFailure, RetryWithIncrementalBackoff}
 
 import scala.concurrent.duration
 import scala.concurrent.duration.Duration
@@ -41,6 +41,10 @@ object InteractionFailureStrategy {
       deadlineDuration,
       Some(Duration(maxTimeBetweenRetries.toMillis, duration.MILLISECONDS)),
       Some(eventClassToCommonEvent(exhaustedEvent, None)))
+  }
+
+  def FireEvent(eventClass: Class[_]): common.InteractionFailureStrategy.FireEventAfterFailure = {
+    FireEventAfterFailure(eventClassToCommonEvent(eventClass, None))
   }
 
   def RetryWithIncrementalBackoff(initialDelay: java.time.Duration,
