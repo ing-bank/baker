@@ -7,6 +7,7 @@ import com.ing.baker._
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{ProvidesIngredient, ProvidesNothing}
+
 import scala.concurrent.duration._
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, Recipe, processId}
 

@@ -46,7 +46,7 @@ trait MultiSetOps {
         case Some(n)               ⇒ mset + (element -> (n - count))
       }
 
-    def multisetIncrement(element: T, count: Int): MultiSet[T] = mset + (element -> (1 + mset.getOrElse(element, 0)))
+    def multisetIncrement(element: T, count: Int): MultiSet[T] = mset + (element -> (count + mset.getOrElse(element, 0)))
 
     def multisetIntersects(other: MultiSet[T]): Boolean = {
       mset.exists { case (p, n) ⇒ other.getOrElse(p, 0) > 0 }

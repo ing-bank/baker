@@ -8,7 +8,6 @@ import akka.testkit.{TestKit, TestProbe}
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
 import com.ing.baker.recipe.scaladsl.{Recipe, _}
 import org.mockito.Matchers._
@@ -34,7 +33,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
   before {
     resetMocks
-    setupMockResponse
+    setupMockResponse()
 
     // Clean inmemory-journal before each test
     val tp = TestProbe()
@@ -153,6 +152,9 @@ class BakerExecutionSpec extends TestRecipeHelper {
         compiledRecipe = RecipeCompiler.compileRecipe(recipe),
         implementations = mockImplementations)
 
+      println(baker.compiledRecipe.petriNet.places)
+      println(baker.compiledRecipe.petriNet.places.map(_.id))
+
       when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
 
       val processId = UUID.randomUUID().toString
@@ -165,6 +167,9 @@ class BakerExecutionSpec extends TestRecipeHelper {
       val executedSecond = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
       executedSecond shouldBe SensoryEventStatus.Completed
       verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
+
+      // This check is added to verify event list is still correct after firing the same event twice
+      baker.events(processId).map(_.name).toList shouldBe List("InitialEvent", "InteractionOneSuccessful", "InitialEvent", "InteractionOneSuccessful")
 
       val executedThird = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
       executedThird shouldBe SensoryEventStatus.FiringLimitMet
@@ -647,7 +652,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       Thread.sleep(50)
 
-      baker.events(processId).map(_.name) should not contain (exhaustedEvent.name)
+      baker.events(processId).map(_.name) should not contain exhaustedEvent.name
     }
 
     "fire a specified failure event for an interaction immediately after it fails" in {
@@ -924,7 +929,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       Thread.sleep(retentionPeriod.toMillis + 200)
 
-      baker.allProcessMetadata.map(_.id) should not contain(processId)
+      baker.allProcessMetadata.map(_.id) should not contain processId
 
       intercept[NoSuchProcessException] {
         baker.getProcessState(processId)
@@ -951,7 +956,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       baker.handleEvent(processId, InitialEvent(initialIngredientValue))
 
-      verify(testInteractionOneMock).apply(processId.toString(), "initialIngredient")
+      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
       baker.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue)
     }
 
