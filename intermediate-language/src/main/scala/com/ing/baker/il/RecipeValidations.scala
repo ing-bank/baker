@@ -44,6 +44,9 @@ object RecipeValidations {
                   if (optionalValue.isPresent && !getRawClass(pt.getActualTypeArguments.apply(0)).isInstance(optionalValue.get()))
                     validationErrors += s"Predefined argument '$name' is not of type: ${pt} on interaction: '$interactionTransition'"
                 }
+              case o if !o.isInstance(value) =>
+                validationErrors += s"Predefined argument '$name' is not of type: ${pt} on interaction: '$interactionTransition'"
+              case o =>
             }
           case _ =>
         }

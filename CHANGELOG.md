@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.11
+- bugfix: predefining a higher order type other then option/optional crashed the recipe validations when compiling a recipe
+
 ## 1.1.10
 - bugfix: consuming a token when handling a sensory event with maxFireLimit was not calculated correctly
 
