@@ -83,7 +83,7 @@ object RecipeCompiler {
                                         events: Seq[EventType],
                                         findInternalEventByEvent: EventType => Option[Transition[_, _]]): Seq[Arc] = {
     val resultPlace = createPlace(label = interaction.label, placeType = InteractionEventOutputPlace)
-    if(interaction.eventsToFire.nonEmpty) {
+    if (interaction.eventsToFire.nonEmpty) {
       val eventArcs = events.map { event =>
         val internalEventTransition = findInternalEventByEvent(event).get
         val filter = (value: Any) => value == event.name
@@ -163,11 +163,17 @@ object RecipeCompiler {
     //All ingredient names provided by sensory events or by interactions
     val allIngredientNames: Set[String] =
       recipe.sensoryEvents.flatMap(e => e.providedIngredients.map(i => i.name)) ++
-        (recipe.interactions ++  recipe.sieves).flatMap(i => i.interaction.output match {
-        case pi: ProvidesIngredient => Set(i.overriddenOutputIngredientName.getOrElse(pi.ingredient.name))
-        case fi: FiresOneOfEvents => fi.events.flatMap(e => e.providedIngredients.map(i => i.name))
-        case ProvidesNothing => Set.empty
-      })
+        (recipe.interactions ++ recipe.sieves).flatMap(i => i.interaction.output match {
+          case pi: ProvidesIngredient => Set(i.overriddenOutputIngredientName.getOrElse(pi.ingredient.name))
+          case fi: FiresOneOfEvents => fi.events.flatMap { e =>
+            // check if the event was renamed (check if there is a transformer for this event)
+            i.eventOutputTransformers.get(e) match {
+              case Some(transformer) => e.providedIngredients.map(ingredient => transformer.ingredientRenames.getOrElse(ingredient.name, ingredient.name))
+              case None => e.providedIngredients.map(_.name)
+            }
+          }
+          case ProvidesNothing => Set.empty
+        })
 
     val actionDescriptors: Seq[InteractionDescriptor] = recipe.interactions ++ recipe.sieves
 
@@ -184,7 +190,8 @@ object RecipeCompiler {
 
     // events provided by other transitions / actions
     val interactionEventTransitions: Seq[EventTransition] = allInteractionTransitions.flatMap { t =>
-      t.eventsToFire.map(event => EventTransition(event, isSensoryEvent = false)) }
+      t.eventsToFire.map(event => EventTransition(event, isSensoryEvent = false))
+    }
 
     val allEventTransitions: Seq[EventTransition] = sensoryEventTransitions ++ interactionEventTransitions
 
@@ -192,8 +199,8 @@ object RecipeCompiler {
     // connecting a transition to a ingredient place.
     val internalEventArcs: Seq[Arc] = allInteractionTransitions.flatMap { t =>
       t.eventsToFire.flatMap { event =>
-          event.ingredientTypes.map(ingredient =>
-            arc(interactionEventTransitions.getByLabel(event.name), createPlace(ingredient.name, IngredientPlace), 1))
+        event.ingredientTypes.map(ingredient =>
+          arc(interactionEventTransitions.getByLabel(event.name), createPlace(ingredient.name, IngredientPlace), 1))
       }
     }
 
@@ -267,7 +274,7 @@ object RecipeCompiler {
     val petriNet: ScalaGraphPetriNet[Place[_], Transition[_, _]] = new ScalaGraphPetriNet(Graph(arcs: _*))
 
     val initialMarking: Marking[Place] = petriNet.places.collect {
-      case p @ Place(_ ,FiringLimiterPlace(n))=> p -> Map(() -> n)
+      case p@Place(_, FiringLimiterPlace(n)) => p -> Map(() -> n)
     }.toMarking
 
     val compiledRecipe = CompiledRecipe(
@@ -325,7 +332,7 @@ object RecipeCompiler {
     throw new IllegalArgumentException(s"$typeName with a null or empty name found")
   }
 
-  private def assertNonEmptyRecipe(recipe: Recipe) : Seq[String] = {
+  private def assertNonEmptyRecipe(recipe: Recipe): Seq[String] = {
     val errors = mutable.MutableList.empty[String]
     if (recipe.sensoryEvents.isEmpty)
       errors += "No sensory events found."

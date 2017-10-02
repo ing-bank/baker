@@ -6,11 +6,10 @@ import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.{ProvidesIngredient, ProvidesNothing}
-
-import scala.concurrent.duration._
+import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, Recipe, processId}
 
+import scala.concurrent.duration._
 import scala.language.postfixOps
 
 class RecipeCompilerSpec extends TestRecipeHelper {
@@ -202,7 +201,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
       }
     }
 
-    "interactions with optional ingredients that are not provided should be provided as empty" in {
+    "interactions with optional ingredients that are NOT provided should be provided as empty" in {
       val recipe: Recipe = Recipe("MissingOptionalRecipe")
         .withInteraction(optionalIngredientInteraction)
         .withSensoryEvent(initialEvent)
@@ -220,7 +219,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
           })
     }
 
-    "interactions with optional ingredients that are provided should not be provided as empty" in {
+    "interactions with optional ingredients that are provided should NOT be provided as empty" in {
       val optionalProviderEvent = Event("optionalProviderEvent", missingJavaOptional)
 
       val recipe: Recipe = Recipe("MissingOptionalRecipe")
@@ -238,6 +237,29 @@ class RecipeCompilerSpec extends TestRecipeHelper {
             it.predefinedParameters("missingScalaOptional2") shouldBe Option.empty
           })
 
+    }
+
+    "interactions with RENAMED optional ingredients via events that are provided should NOT be provided as empty" in {
+      val stringOptionIngredient = Ingredient[Option[String]]("stringOptionIngredient")
+      val renamedStringOptionIngredient = Ingredient[Option[String]]("renamedStringOptionIngredient")
+
+      val eventWithOptionIngredient = Event("eventWithOptionIngredient", stringOptionIngredient)
+
+      val interactionWithOptionIngredient = Interaction("interactionWithOptionIngredient", Seq(initialIngredient), FiresOneOfEvents(eventWithOptionIngredient))
+      val secondInteraction = Interaction("secondInteraction", Seq(renamedStringOptionIngredient), ProvidesIngredient(Ingredient[String]("someIngredient")))
+
+      val recipe = Recipe("interactionWithEventOutputTransformer")
+        .withSensoryEvent(initialEvent)
+        .withInteraction(interactionWithOptionIngredient
+          .withEventOutputTransformer(eventWithOptionIngredient, "RenamedEventWithOptionIngredient", Map("stringOptionIngredient" -> "renamedStringOptionIngredient")))
+        .withInteraction(secondInteraction)
+
+      val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      println(compiledRecipe.getRecipeVisualization)
+      compiledRecipe.validationErrors shouldBe empty
+
+      val transition = compiledRecipe.interactionTransitions.find(_.interactionName == "secondInteraction").get
+      transition.nonProvidedIngredients.keys should contain("renamedStringOptionIngredient")
     }
 
     "interactions with ingredients that are provided but are required as Optionals should be wrapped into the optional" in {
@@ -280,5 +302,6 @@ class RecipeCompilerSpec extends TestRecipeHelper {
             it.predefinedParameters("missingScalaOptional2") shouldBe Option.empty
           })
     }
+
   }
 }
