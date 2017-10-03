@@ -153,6 +153,9 @@ class JBaker (compiledRecipe: CompiledRecipe,
   /**
     * Returns all events that have occurred for a given process.
     *
+    * Note that this list is eventually consistent. This means that it might take some
+    * time before an event that occurred in the process is appended to the list.
+    *
     * @param processId The process identifier
     * @param waitTimeoutMillis The maximum wait time
     * @return
@@ -163,6 +166,9 @@ class JBaker (compiledRecipe: CompiledRecipe,
 
   /**
     * Returns all events that have occurred for a given process.
+    *
+    * Note that this list is eventually consistent. This means that it might take some
+    * time before an event that occurred in the process is appended to the list.
     *
     * @param processId The process identifier
     * @param waitTimeoutMillis The maximum wait time
@@ -175,6 +181,10 @@ class JBaker (compiledRecipe: CompiledRecipe,
   /**
     * Returns all events that have occurred for a given process.
     *
+    *
+    * Note that this list is eventually consistent. This means that it might take some
+    * time before an event that occurred in the process is appended to the list.
+    *
     * @param processId The process identifier
     * @return
     */
@@ -183,6 +193,9 @@ class JBaker (compiledRecipe: CompiledRecipe,
 
   /**
     * Returns all events that have occurred for a given process.
+    *
+    * Note that this list is eventually consistent. This means that it might take some
+    * time before an event that occurred in the process is appended to the list.
     *
     * @param processId The process identifier
     * @return
@@ -240,6 +253,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
 
   /**
     * Returns the visual state of the recipe in dot format with a default timeout of 20 seconds
+    *
     * @param processId The process identifier
     * @return
     */
@@ -248,6 +262,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
 
   /**
     * Returns the visual state of the recipe in dot format with a default timeout of 20 seconds
+    *
     * @param processId The process identifier
     * @return
     */

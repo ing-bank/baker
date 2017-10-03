@@ -6,9 +6,9 @@ package com.ing.baker.runtime.core
 trait EventListener {
 
   /**
-    * Called when an event occured.
+    * Called when an event occurred.
     *
-    * @param processId The process id for which the event occured.
+    * @param processId The process id for which the event occurred.
     * @param event The event.
     */
   def processEvent(processId: String, event: RuntimeEvent)
