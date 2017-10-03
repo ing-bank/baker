@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.12
+- bugfix for issue #43: interaction is not compiled into petrinet when requires a renamed optional ingredient provided through a renamed event
+
 ## 1.1.11
 - bugfix: predefining a higher order type other then option/optional crashed the recipe validations when compiling a recipe
 
