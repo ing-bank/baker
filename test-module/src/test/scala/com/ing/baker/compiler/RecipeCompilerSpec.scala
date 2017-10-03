@@ -1,6 +1,5 @@
 package com.ing.baker.compiler
 
-import java.lang.reflect.Type
 import java.util.Optional
 
 import com.ing.baker.TestRecipeHelper._
@@ -156,24 +155,6 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         ValidationSettings(allowNonExecutableInteractions = false))
 
       compiledRecipe.validationErrors should contain("InteractionEight is not executable")
-    }
-
-    "validate that ingredients are not of primitive types" in {
-
-      val primitiveIntIngredient = new common.Ingredient {
-        override val name: String = "age"
-        override val clazz: Type = Integer.TYPE
-      }
-
-      val interactionRequiringPrimitive = Interaction("DoSomething", Seq(primitiveIntIngredient), ProvidesNothing)
-
-      val eventProvidingPrimitive = Event("FooEvent", primitiveIntIngredient)
-
-      val recipe = Recipe("RecipeWithPrimitiveTypedIngredients")
-          .withInteraction(interactionRequiringPrimitive)
-            .withSensoryEvent(eventProvidingPrimitive)
-
-      RecipeCompiler.compileRecipe(recipe).validationErrors should contain ("Ingredient 'age' is of primitive type 'int', primitive types are not supported for ingredients")
     }
 
     "fail compilation for an empty or null named interaction" in {
