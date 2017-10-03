@@ -78,6 +78,13 @@ object RecipeValidations {
     }
   }
 
+  def validateNonPrimitiveTypedIngredients(compiledRecipe: CompiledRecipe): Seq[String] = {
+    compiledRecipe.ingredients.collect {
+      case (name, iType) if iType.clazz.isPrimitive =>
+        s"Ingredient '$name' is of primitive type '${iType.clazz.getSimpleName}', primitive types are not supported for ingredients"
+    }.toSeq
+  }
+
   def validateNoCycles(compiledRecipe: CompiledRecipe): Seq[String] = {
     val cycle = compiledRecipe.petriNet.innerGraph.findCycle
     cycle map (c => s"The petrinet topology contains a cycle: $c") toSeq
@@ -110,6 +117,7 @@ object RecipeValidations {
 
     postCompileValidationErrors ++= validateInteractionIngredients(compiledRecipe)
     postCompileValidationErrors ++= validateInteractions(compiledRecipe)
+    postCompileValidationErrors ++= validateNonPrimitiveTypedIngredients(compiledRecipe)
 
     if (!validationSettings.allowCycles)
       postCompileValidationErrors ++= validateNoCycles(compiledRecipe)

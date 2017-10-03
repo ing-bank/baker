@@ -11,9 +11,9 @@ import newCustomerRecipeScala._
 object newCustomerRecipeScala {
   //Ingredients
   val customerName = Ingredient[String]("customerName")
-  val customerId = Ingredient[Int]("customerId")
+  val customerId = Ingredient[Integer]("customerId")
   val accountName = Ingredient[String]("accountName")
-  val accountId = Ingredient[Int]("accountId")
+  val accountId = Ingredient[Integer]("accountId")
   val email = Ingredient[String]("email")
 
   //Sensory Events
