@@ -172,8 +172,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
       val recipe = Recipe("RecipeWithPrimitiveTypedIngredients")
           .withInteraction(interactionRequiringPrimitive)
             .withSensoryEvent(eventProvidingPrimitive)
-
-      // there is only one ingredient, enought to check
+      
       RecipeCompiler.compileRecipe(recipe).validationErrors should contain ("Ingredient 'age' is of primitive type 'int', primitive types are not supported for ingredients")
     }
 
