@@ -1,5 +1,7 @@
 package com.ing.baker.il
 
+import java.io.{File, IOException}
+
 import com.ing.baker.il.petrinet.{InteractionTransition, Place, RecipePetriNet}
 import com.ing.baker.petrinet.api.Marking
 
@@ -25,6 +27,19 @@ case class CompiledRecipe(name: String,
     */
   def getRecipeVisualization: String =
     RecipeVisualizer.visualiseCompiledRecipe(this)
+
+  /**
+    * Writes the visual recipe as an SVG to a given file.
+    */
+  @throws[IOException]("When failing to write to the file for any reason")
+  def writeVisualRecipeToSVGFile(file: File): Unit = {
+
+    import guru.nidi.graphviz.engine.{Format, Graphviz}
+    import guru.nidi.graphviz.parse.Parser
+
+    val g = Parser.read(getRecipeVisualization)
+    Graphviz.fromGraph(g).render(Format.SVG).toFile(file)
+  }
 
   /**
     * Visualise the compiled recipe in DOT format
