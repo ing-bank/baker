@@ -78,10 +78,20 @@ object RecipeValidations {
     }
   }
 
+  val primitiveTypeMapping: Map[Class[_], Class[_]] = Map(
+    java.lang.Boolean.TYPE   -> classOf[java.lang.Boolean],
+    java.lang.Byte.TYPE      -> classOf[java.lang.Byte],
+    java.lang.Short.TYPE     -> classOf[java.lang.Short],
+    java.lang.Character.TYPE -> classOf[java.lang.Character],
+    java.lang.Integer.TYPE   -> classOf[java.lang.Integer],
+    java.lang.Long.TYPE      -> classOf[java.lang.Long],
+    java.lang.Float.TYPE     -> classOf[java.lang.Float],
+    java.lang.Double.TYPE    -> classOf[java.lang.Double])
+
   def validateNonPrimitiveTypedIngredients(compiledRecipe: CompiledRecipe): Seq[String] = {
     compiledRecipe.ingredients.collect {
       case (name, iType) if iType.clazz.isPrimitive =>
-        s"Ingredient '$name' is of primitive type '${iType.clazz.getSimpleName}', primitive types are not supported for ingredients"
+        s"Ingredient '$name' is of type '${iType.clazz.getSimpleName}', primitive types are not supported for ingredients, use '${primitiveTypeMapping(iType.clazz).getName}' instead"
     }.toSeq
   }
 

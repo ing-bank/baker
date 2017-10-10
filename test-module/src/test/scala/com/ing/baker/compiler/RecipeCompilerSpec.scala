@@ -173,7 +173,8 @@ class RecipeCompilerSpec extends TestRecipeHelper {
           .withInteraction(interactionRequiringPrimitive)
             .withSensoryEvent(eventProvidingPrimitive)
       
-      RecipeCompiler.compileRecipe(recipe).validationErrors should contain ("Ingredient 'age' is of primitive type 'int', primitive types are not supported for ingredients")
+      RecipeCompiler.compileRecipe(recipe).validationErrors should contain
+        ("Ingredient 'age' is of type 'int', primitive types are not supported for ingredients, use 'java.lang.Integer' instead")
     }
 
     "fail compilation for an empty or null named interaction" in {
