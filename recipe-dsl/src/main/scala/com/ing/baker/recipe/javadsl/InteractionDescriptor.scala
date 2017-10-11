@@ -8,8 +8,8 @@ import scala.collection.JavaConverters._
 
 case class InteractionDescriptor private(
                                           override val interaction: common.Interaction,
-                                          override val requiredEvents: Set[common.Event],
-                                          override val requiredOneOfEvents: Set[common.Event],
+                                          override val requiredEvents: Set[String],
+                                          override val requiredOneOfEvents: Set[String],
                                           override val predefinedIngredients: Map[String, AnyRef],
                                           override val overriddenIngredientNames: Map[String, String],
                                           override val overriddenOutputIngredientName: Option[String] = Option.empty[String],
@@ -31,7 +31,7 @@ case class InteractionDescriptor private(
     * @return
     */
   def withRequiredEvent(newRequiredEvent: Class[_]): InteractionDescriptor =
-    this.copy(requiredEvents = requiredEvents + eventClassToCommonEvent(newRequiredEvent, None))
+    this.copy(requiredEvents = requiredEvents + newRequiredEvent.getSimpleName)
 
   /**
     * This sets a requirement for this interaction that some specific events needs to have been fired before it can execute.
@@ -42,7 +42,7 @@ case class InteractionDescriptor private(
   @SafeVarargs
   @varargs
   def withRequiredEvents(newRequiredEvents: Class[_]*): InteractionDescriptor =
-  this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.map(eventClassToCommonEvent(_, None)))
+  this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.map(_.getSimpleName))
 
   /**
     * This sets a requirement for this interaction that some specific events needs to have been fired before it can execute.
@@ -51,7 +51,7 @@ case class InteractionDescriptor private(
     * @return
     */
   def withRequiredEvents(newRequiredEvents: java.util.Set[Class[_]]): InteractionDescriptor =
-    this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.asScala.map(eventClassToCommonEvent(_, None)))
+    this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.asScala.map(_.getSimpleName))
 
   /**
     * This sets a requirement for this interaction that one of the given events needs to have been fired before it can execute.
@@ -64,7 +64,7 @@ case class InteractionDescriptor private(
   def withRequiredOneOfEvents(requiredOneOfEvents: Class[_]*): InteractionDescriptor = {
     if (requiredOneOfEvents.nonEmpty && requiredOneOfEvents.size < 2)
       throw new IllegalArgumentException("At least 2 events should be provided as 'requiredOneOfEvents'")
-    this.copy(requiredOneOfEvents = requiredOneOfEvents.map(eventClassToCommonEvent(_, None)).toSet)
+    this.copy(requiredOneOfEvents = requiredOneOfEvents.map(_.getSimpleName).toSet)
   }
 
   /**

@@ -33,12 +33,12 @@ case class CompiledRecipe(name: String,
     */
   @throws[IOException]("When failing to write to the file for any reason")
   def writeVisualRecipeToSVGFile(file: File): Unit = {
-
-    import guru.nidi.graphviz.engine.{Format, Graphviz}
-    import guru.nidi.graphviz.parse.Parser
-
-    val g = Parser.read(getRecipeVisualization)
-    Graphviz.fromGraph(g).render(Format.SVG).toFile(file)
+//
+//    import guru.nidi.graphviz.engine.{Format, Graphviz}
+//    import guru.nidi.graphviz.parse.Parser
+//
+//    val g = Parser.read(getRecipeVisualization)
+//    Graphviz.fromGraph(g).render(Format.SVG).toFile(file)
   }
 
   /**

@@ -54,7 +54,7 @@ object Dependencies {
   val kryoSerializers =           "de.javakaffee"              %  "kryo-serializers"                   % "0.41"
   val objenisis =                 "org.objenesis"              %  "objenesis"                          % "2.5.1"
 
-  val graphvizJava =              "guru.nidi"                  % "graphviz-java"                       % "0.2.2"
+//  val graphvizJava =              "guru.nidi"                  % "graphviz-java"                       % "0.2.2"
 
   val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.9.9"
   val jodaConvert =               "org.joda"                   %  "joda-convert"                       % "1.8.1"

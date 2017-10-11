@@ -138,6 +138,8 @@ package object compiler {
   implicit class EventTransitionOps(eventTransitions: Seq[EventTransition]) {
     def findEventTransitionsByEvent: EventType ⇒ Option[EventTransition] =
       event => eventTransitions.find(_.event == event)
+    def findEventTransitionsByEventName: String ⇒ Option[EventTransition] =
+      eventName => eventTransitions.find(_.event.name == eventName)
   }
 
 }
