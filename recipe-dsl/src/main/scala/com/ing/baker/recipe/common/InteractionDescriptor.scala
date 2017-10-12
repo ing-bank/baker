@@ -10,14 +10,14 @@ trait InteractionDescriptor {
   val name: String
 
   /**
-    * A set of AND preconditions (events)
+    * A set of names of the events AND preconditions (events)
     */
-  val requiredEvents: Set[Event]
+  val requiredEvents: Set[String]
 
   /**
-    * A set of OR preconditions (events)
+    * A set of names of the events OR preconditions (events)
     */
-  val requiredOneOfEvents: Set[Event]
+  val requiredOneOfEvents: Set[String]
 
   /**
     * A map of predefined parameter values, not provided from the recipe.

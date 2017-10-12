@@ -23,18 +23,20 @@ object RecipeCompiler {
   /**
     * Creates a transition for a missing event in the recipe.
     */
-  private def missingEventTransition[E](event: EventType): MissingEventTransition[E] = MissingEventTransition[E](event.name)
+  private def missingEventTransition[E](eventName: String): MissingEventTransition[E] = MissingEventTransition[E](eventName)
 
   private def buildEventAndPreconditionArcs(
                                              interaction: InteractionDescriptor,
-                                             preconditionTransition: EventType => Option[Transition[_, _]],
+                                             preconditionTransition: String => Option[Transition[_, _]],
                                              interactionTransition: String => Option[Transition[_, _]]): (Seq[Arc], Seq[String]) = {
 
-    interaction.requiredEvents.toSeq.map { event =>
-      // a new `Place` generated for each AND events
-      val eventPreconditionPlace = createPlace(label = s"${event.name}-${interaction.name}", placeType = EventPreconditionPlace)
+    //Find the event in available events
 
-      buildEventPreconditionArcs(eventToCompiledEvent(event),
+    interaction.requiredEvents.toSeq.map { eventName =>
+      // a new `Place` generated for each AND events
+      val eventPreconditionPlace = createPlace(label = s"${eventName}-${interaction.name}", placeType = EventPreconditionPlace)
+
+      buildEventPreconditionArcs(eventName,
         eventPreconditionPlace,
         preconditionTransition,
         interactionTransition(interaction.name).get)
@@ -43,14 +45,14 @@ object RecipeCompiler {
 
   private def buildEventORPreconditionArcs(
                                             interaction: InteractionDescriptor,
-                                            preconditionTransition: EventType => Option[Transition[_, _]],
+                                            preconditionTransition: String => Option[Transition[_, _]],
                                             interactionTransition: String => Option[Transition[_, _]]): (Seq[Arc], Seq[String]) = {
 
     // only one `Place` for all the OR events
     val eventPreconditionPlace = createPlace(label = interaction.name, placeType = EventOrPreconditionPlace)
 
-    interaction.requiredOneOfEvents.toSeq.map { event =>
-      buildEventPreconditionArcs(eventToCompiledEvent(event),
+    interaction.requiredOneOfEvents.toSeq.map { eventName =>
+      buildEventPreconditionArcs(eventName,
         eventPreconditionPlace,
         preconditionTransition,
         interactionTransition(interaction.name).get)
@@ -58,20 +60,20 @@ object RecipeCompiler {
   }
 
   private def buildEventPreconditionArcs(
-                                          event: EventType,
+                                          eventName: String,
                                           preconditionPlace: Place[_],
-                                          preconditionTransition: EventType => Option[Transition[_, _]],
+                                          preconditionTransition: String => Option[Transition[_, _]],
                                           interactionTransition: Transition[_, _]): (Seq[Arc], Seq[String]) = {
 
-    val eventTransition = preconditionTransition(event)
+    val eventTransition = preconditionTransition(eventName)
 
     val notProvidedError = eventTransition match {
-      case None => Seq(s"Event '$event' for '$interactionTransition' is not provided in the recipe")
+      case None => Seq(s"Event '$eventName' for '$interactionTransition' is not provided in the recipe")
       case Some(_) => Seq.empty
     }
 
     val arcs = Seq(
-      arc(eventTransition.getOrElse(missingEventTransition(event)), preconditionPlace, 1),
+      arc(eventTransition.getOrElse(missingEventTransition(eventName)), preconditionPlace, 1),
       arc(preconditionPlace, interactionTransition, 1)
     )
 
@@ -204,6 +206,7 @@ object RecipeCompiler {
       }
     }
 
+    //Create event limiter places so that events can only fire x amount of times.
     val eventLimiterArcs: Seq[Arc] = sensoryEventTransitions.flatMap(
       t => t.maxFiringLimit match {
         case Some(n) => Seq(arc(createPlace(s"limit:${t.label}", FiringLimiterPlace(n)), t, 1))
@@ -214,14 +217,14 @@ object RecipeCompiler {
     // This generates precondition arcs for Required Events (AND).
     val (eventPreconditionArcs, preconditionANDErrors) = actionDescriptors.map { t =>
       buildEventAndPreconditionArcs(t,
-        allEventTransitions.findEventTransitionsByEvent,
+        allEventTransitions.findEventTransitionsByEventName,
         allInteractionTransitions.findTransitionByName)
     }.unzipFlatten
 
     // This generates precondition arcs for Required Events (OR).
     val (eventOrPreconditionArcs, preconditionORErrors) = actionDescriptors.map { t =>
       buildEventORPreconditionArcs(t,
-        allEventTransitions.findEventTransitionsByEvent,
+        allEventTransitions.findEventTransitionsByEventName,
         allInteractionTransitions.findTransitionByName)
     }.unzipFlatten
 
@@ -233,7 +236,7 @@ object RecipeCompiler {
 
     val eventThatArePreconditions: Seq[String] =
       actionDescriptors.flatMap {
-        actionDescriptor => actionDescriptor.requiredEvents.map(_.name) ++ actionDescriptor.requiredOneOfEvents.map(_.name)
+        actionDescriptor => actionDescriptor.requiredEvents ++ actionDescriptor.requiredOneOfEvents
       }
 
     // It connects a sensory event to a dummy ingredient so it can be modelled into the Petri net

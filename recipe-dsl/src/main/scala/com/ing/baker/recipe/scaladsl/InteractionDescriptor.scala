@@ -6,8 +6,8 @@ import com.ing.baker.recipe.common._
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
 
 case class InteractionDescriptor private(override val interaction: Interaction,
-                                         override val requiredEvents: Set[common.Event] = Set.empty,
-                                         override val requiredOneOfEvents: Set[common.Event] = Set.empty,
+                                         override val requiredEvents: Set[String] = Set.empty,
+                                         override val requiredOneOfEvents: Set[String] = Set.empty,
                                          override val predefinedIngredients: Map[String, AnyRef] = Map.empty,
                                          override val overriddenIngredientNames: Map[String, String] = Map.empty,
                                          override val overriddenOutputIngredientName: Option[String] = None,
@@ -23,15 +23,15 @@ case class InteractionDescriptor private(override val interaction: Interaction,
   }
 
   def withRequiredEvent(event: common.Event): InteractionDescriptor =
-    copy(requiredEvents = requiredEvents + event)
+    copy(requiredEvents = requiredEvents + event.name)
 
   def withRequiredEvents(events: common.Event*): InteractionDescriptor =
-    copy(requiredEvents = requiredEvents ++ events)
+    copy(requiredEvents = requiredEvents ++ events.map(_.name))
 
   def withRequiredOneOfEvents(requiredOneOfEvents: common.Event*): InteractionDescriptor = {
     if (requiredOneOfEvents.nonEmpty && requiredOneOfEvents.size < 2)
       throw new IllegalArgumentException("At least 2 events should be provided as 'requiredOneOfEvents'")
-    copy(requiredOneOfEvents = requiredOneOfEvents.toSet)
+    copy(requiredOneOfEvents = requiredOneOfEvents.map(_.name).toSet)
   }
 
   def withPredefinedIngredients(values: (String, AnyRef)*): InteractionDescriptor =
