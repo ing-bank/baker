@@ -84,7 +84,7 @@ public class InteractionDescriptorTest {
         assertTrue(idWithRequiredEvent.requiredEvents().contains(sensoryEventWithIngredientName));
 
         InteractionDescriptor idWithRequiredEvents =
-                id.withRequiredEvents(SensoryEventWithIngredient.class, SensoryEventWithoutIngredient.class);
+                id.withRequiredEventsFromName(sensoryEventWithIngredientName, sensoryEventWithoutIngredientName);
 
         assertEquals(idWithRequiredEvents.requiredEvents().size(), 2);
         assertTrue(idWithRequiredEvents.requiredEvents().contains(sensoryEventWithIngredientName));
@@ -113,7 +113,7 @@ public class InteractionDescriptorTest {
         final String sensoryEventWithoutIngredientName = SensoryEventWithoutIngredient.class.getSimpleName();
 
         InteractionDescriptor idWithRequiredOneOfEvents =
-                id.withRequiredOneOfEvents(SensoryEventWithIngredient.class, SensoryEventWithoutIngredient.class);
+                id.withRequiredOneOfEventsFromName(sensoryEventWithIngredientName, sensoryEventWithoutIngredientName);
 
         assertEquals(idWithRequiredOneOfEvents.requiredOneOfEvents().size(), 2);
         assertTrue(idWithRequiredOneOfEvents.requiredOneOfEvents().contains(sensoryEventWithIngredientName));
