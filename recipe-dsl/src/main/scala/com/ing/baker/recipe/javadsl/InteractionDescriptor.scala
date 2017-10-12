@@ -53,6 +53,36 @@ case class InteractionDescriptor private(
   def withRequiredEvents(newRequiredEvents: java.util.Set[Class[_]]): InteractionDescriptor =
     this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.asScala.map(_.getSimpleName))
 
+
+  /**
+    * This sets a requirement for this interaction that a specific event needs to have been fired before it can execute.
+    *
+    * @param newRequiredEventName the name of the events that needs to have been fired
+    * @return
+    */
+  def withRequiredEventFromName(newRequiredEventName: String): InteractionDescriptor =
+    this.copy(requiredEvents = requiredEvents + newRequiredEventName)
+
+  /**
+    * This sets a requirement for this interaction that some specific events needs to have been fired before it can execute.
+    *
+    * @param newRequiredEventNames the names of the events.
+    * @return
+    */
+  @SafeVarargs
+  @varargs
+  def withRequiredEventsFromName(newRequiredEventNames: String*): InteractionDescriptor =
+  this.copy(requiredEvents = requiredEvents ++ newRequiredEventNames)
+
+  /**
+    * This sets a requirement for this interaction that some specific events needs to have been fired before it can execute.
+    *
+    * @param newRequiredEvents the names of the events.
+    * @return
+    */
+  def withRequiredEventsFromName(newRequiredEvents: java.util.Set[String]): InteractionDescriptor =
+    this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.asScala)
+
   /**
     * This sets a requirement for this interaction that one of the given events needs to have been fired before it can execute.
     *
@@ -65,6 +95,20 @@ case class InteractionDescriptor private(
     if (requiredOneOfEvents.nonEmpty && requiredOneOfEvents.size < 2)
       throw new IllegalArgumentException("At least 2 events should be provided as 'requiredOneOfEvents'")
     this.copy(requiredOneOfEvents = requiredOneOfEvents.map(_.getSimpleName).toSet)
+  }
+
+  /**
+    * This sets a requirement for this interaction that one of the given events needs to have been fired before it can execute.
+    *
+    * @param requiredOneOfEvents the names of the events.
+    * @return
+    */
+  @SafeVarargs
+  @varargs
+  def withRequiredOneOfEventsFromName(requiredOneOfEvents: String*): InteractionDescriptor = {
+    if (requiredOneOfEvents.nonEmpty && requiredOneOfEvents.size < 2)
+      throw new IllegalArgumentException("At least 2 events should be provided as 'requiredOneOfEvents'")
+    this.copy(requiredOneOfEvents = requiredOneOfEvents.toSet)
   }
 
   /**

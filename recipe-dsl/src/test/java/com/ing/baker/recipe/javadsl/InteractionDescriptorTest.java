@@ -51,7 +51,7 @@ public class InteractionDescriptorTest {
     }
 
     @Test
-    public void shouldUpdateTheRequiredEventList() {
+    public void shouldUpdateTheRequiredEventListFromClass() {
         InteractionDescriptor id = of(ProvidesIngredientInteraction.class);
         assertTrue(id.requiredEvents().isEmpty());
 
@@ -70,7 +70,29 @@ public class InteractionDescriptorTest {
     }
 
     @Test
-    public void shouldUpdateTheRequiredOneOfEventList() {
+    public void shouldUpdateTheRequiredEventListFromName() {
+        InteractionDescriptor id = of(ProvidesIngredientInteraction.class);
+        assertTrue(id.requiredEvents().isEmpty());
+
+        final String sensoryEventWithIngredientName = SensoryEventWithIngredient.class.getSimpleName();
+        final String sensoryEventWithoutIngredientName = SensoryEventWithoutIngredient.class.getSimpleName();
+
+        InteractionDescriptor idWithRequiredEvent =
+                id.withRequiredEventFromName(sensoryEventWithIngredientName);
+
+        assertEquals(idWithRequiredEvent.requiredEvents().size(), 1);
+        assertTrue(idWithRequiredEvent.requiredEvents().contains(sensoryEventWithIngredientName));
+
+        InteractionDescriptor idWithRequiredEvents =
+                id.withRequiredEvents(SensoryEventWithIngredient.class, SensoryEventWithoutIngredient.class);
+
+        assertEquals(idWithRequiredEvents.requiredEvents().size(), 2);
+        assertTrue(idWithRequiredEvents.requiredEvents().contains(sensoryEventWithIngredientName));
+        assertTrue(idWithRequiredEvents.requiredEvents().contains(sensoryEventWithoutIngredientName));
+    }
+
+    @Test
+    public void shouldUpdateTheRequiredOneOfEventListFromClass() {
         InteractionDescriptor id = of(ProvidesIngredientInteraction.class);
         assertTrue(id.requiredOneOfEvents().isEmpty());
 
@@ -81,6 +103,23 @@ public class InteractionDescriptorTest {
         assertTrue(idWithRequiredOneOfEvents.requiredOneOfEvents().contains(sensoryEventWithIngredientCheck().name()));
         assertTrue(idWithRequiredOneOfEvents.requiredOneOfEvents().contains(sensoryEventWithoutIngredientCheck().name()));
     }
+
+    @Test
+    public void shouldUpdateTheRequiredOneOfEventListFromName() {
+        InteractionDescriptor id = of(ProvidesIngredientInteraction.class);
+        assertTrue(id.requiredOneOfEvents().isEmpty());
+
+        final String sensoryEventWithIngredientName = SensoryEventWithIngredient.class.getSimpleName();
+        final String sensoryEventWithoutIngredientName = SensoryEventWithoutIngredient.class.getSimpleName();
+
+        InteractionDescriptor idWithRequiredOneOfEvents =
+                id.withRequiredOneOfEvents(SensoryEventWithIngredient.class, SensoryEventWithoutIngredient.class);
+
+        assertEquals(idWithRequiredOneOfEvents.requiredOneOfEvents().size(), 2);
+        assertTrue(idWithRequiredOneOfEvents.requiredOneOfEvents().contains(sensoryEventWithIngredientName));
+        assertTrue(idWithRequiredOneOfEvents.requiredOneOfEvents().contains(sensoryEventWithoutIngredientName));
+    }
+
 
     @Test(expected = IllegalArgumentException.class)
     public void shouldRejectUsingLessThanTwoOneOfRequiredEvents() {
