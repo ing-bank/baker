@@ -1,7 +1,7 @@
 # Changelog
 
 ## 1.1.13
-- bugfix for issue #46: now allowed to require an event on the name only, still possible to require on event class in the JavaDSL
+- bugfix for issue #46: it's now allowed to require an event on the name only, however it's still possible to require on event class in the JavaDSL
 
 ## 1.1.12
 - bugfix for issue #43: interaction is not compiled into petrinet when requires a renamed optional ingredient provided through a renamed event
