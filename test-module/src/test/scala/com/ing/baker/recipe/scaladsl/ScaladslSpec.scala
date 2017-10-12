@@ -10,8 +10,8 @@ object ScaladslSpec {
   //Ingredients
   val customerName = Ingredient[String]("customerName")
   val customerId = Ingredient[String]("customerId")
-  val accountId = Ingredient[Int]("accountId")
-  val accountName = Ingredient[Int]("accountName")
+  val accountId = Ingredient[Integer]("accountId")
+  val accountName = Ingredient[Integer]("accountName")
 
   //Events
   val agreementsAcceptedEvent = Event("agreementsAccepted")
