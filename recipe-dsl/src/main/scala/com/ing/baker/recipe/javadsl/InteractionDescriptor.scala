@@ -1,7 +1,6 @@
 package com.ing.baker.recipe.javadsl
 
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.Event
 
 import scala.annotation.varargs
 import scala.collection.JavaConverters._
@@ -72,7 +71,7 @@ case class InteractionDescriptor private(
   @SafeVarargs
   @varargs
   def withRequiredEventsFromName(newRequiredEventNames: String*): InteractionDescriptor =
-  this.copy(requiredEvents = requiredEvents ++ newRequiredEventNames)
+    this.copy(requiredEvents = requiredEvents ++ newRequiredEventNames)
 
   /**
     * This sets a requirement for this interaction that some specific events needs to have been fired before it can execute.

@@ -57,7 +57,8 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
     moduleName := "intermediate-language",
     libraryDependencies ++= compileDeps(
       slf4jApi,
-      scalaGraphDot
+      scalaGraphDot,
+      graphvizJava
     ) ++ testDeps(scalaTest, scalaCheck, logback)
   ).dependsOn(petrinetApi)
 
