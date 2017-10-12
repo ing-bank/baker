@@ -41,7 +41,7 @@ case class InteractionDescriptor private(
   @SafeVarargs
   @varargs
   def withRequiredEvents(newRequiredEvents: Class[_]*): InteractionDescriptor =
-  this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.map(_.getSimpleName))
+    this.copy(requiredEvents = requiredEvents ++ newRequiredEvents.map(_.getSimpleName))
 
   /**
     * This sets a requirement for this interaction that some specific events needs to have been fired before it can execute.
