@@ -259,7 +259,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
     // TODO check in advance if the event can fire (using petri net coverability algorithm)
 
-    val optionalEventFuture: Future[SensoryEventStatus] = stream.collect {
+    val eventStatusFuture: Future[SensoryEventStatus] = stream.collect {
       case TransitionNotEnabled(_,_) => SensoryEventStatus.FiringLimitMet
       case ReceivePeriodExpired => SensoryEventStatus.ReceivePeriodExpired
       case TransitionFired(_, _, _, _, _, _, RuntimeEvent(`eventName`, _)) => SensoryEventStatus.EventFired
@@ -269,7 +269,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
         case None         => SensoryEventStatus.EventNotFired
       }
 
-    Await.result(optionalEventFuture, timeout)
+    Await.result(eventStatusFuture, timeout)
   }
 
 
