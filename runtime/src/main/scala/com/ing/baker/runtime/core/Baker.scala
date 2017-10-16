@@ -44,6 +44,23 @@ object Baker {
       val map = seq.toMap
       i => map(i.interactionName)
   }
+
+  /**
+    * Translates a petri net TransitionFiredEvent to an optional RuntimeEvent
+    */
+  def toRuntimeEvent[P[_], T[_,_], E](event: TransitionFiredEvent[P, T ,E]): Option[RuntimeEvent] = {
+    val t = event.transition.asInstanceOf[Transition[_,_]]
+    if (t.isSensoryEvent || t.isInteraction)
+      Some(event.output.asInstanceOf[RuntimeEvent])
+    else
+      None
+  }
+
+  private def createEventMsg(recipe: CompiledRecipe, processId: String, runtimeEvent: RuntimeEvent) = {
+    require(runtimeEvent != null, "Event can not be null")
+    val t: Transition[_, _] = transitionForRuntimeEvent(runtimeEvent, recipe)
+    BakerActorMessage(processId, FireTransition(t.id, runtimeEvent))
+  }
 }
 
 /**
@@ -124,11 +141,6 @@ class Baker(val compiledRecipe: CompiledRecipe,
   private val readJournal = PersistenceQuery(actorSystem)
     .readJournalFor[CurrentEventsByPersistenceIdQuery with PersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
 
-  private def createEventMsg(processId: String, runtimeEvent: RuntimeEvent) = {
-    require(runtimeEvent != null, "Event can not be null")
-    val t: Transition[_, _] = transitionForRuntimeEvent(runtimeEvent, compiledRecipe)
-    BakerActorMessage(processId, FireTransition(t.id, runtimeEvent))
-  }
 
   /**
     * Attempts to gracefully shutdown the baker system.
@@ -190,9 +202,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     val subscriber = actorSystem.actorOf(Props(new Actor() {
       override def receive: Receive = {
         case ProcessInstanceEvent(processType, id, event: TransitionFiredEvent[_,_,_]) if processType == compiledRecipe.name =>
-            val t = event.transition.asInstanceOf[Transition[_,_]]
-            if (t.isSensoryEvent || t.isInteraction)
-              listener.processEvent(id, event.output.asInstanceOf[RuntimeEvent])
+          toRuntimeEvent(event).foreach(e => listener.processEvent(id, e))
       }
     }))
 
@@ -235,8 +245,10 @@ class Baker(val compiledRecipe: CompiledRecipe,
   }
 
   /**
-    * Fires an event to baker for a process. This call is fire and forget, meaning that if nothing is done
-    * with the response object you haveSho NO guarantee that the event is received the process instance.
+    * Fires an event to baker for a process.
+    *
+    * This call is fire and forget: If  nothing is done
+    * with the response object you NO guarantee that the event is received the process instance.
     */
   def handleEventAsync(processId: String, event: Any)(implicit timeout: FiniteDuration): BakerResponse = {
 
@@ -248,7 +260,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
     if (!compiledRecipe.sensoryEvents.exists(runtimeEvent.isInstanceOfEventType(_)))
       throw new BakerException(s"Fired event ${runtimeEvent.name} is not recognised as any valid sensory event")
 
-    val msg = createEventMsg(processId, runtimeEvent)
+    val msg = createEventMsg(compiledRecipe, processId, runtimeEvent)
     val source = petriNetApi.askAndCollectAll(msg, waitForRetries = true)(timeout)
     new BakerResponse(processId, source)
   }
@@ -264,6 +276,13 @@ class Baker(val compiledRecipe: CompiledRecipe,
   def getProcessState(processId: String)(implicit timeout: FiniteDuration): ProcessState =
     Await.result(getProcessStateAsync(processId), timeout)
 
+  /**
+    * Returns the visual state (.dot) for a given process.
+    *
+    * @param processId The process identifier.
+    * @param timeout How long to wait to retreive the process state.
+    * @return A visual (.dot) representation of the process state.
+    */
   def getVisualState(processId: String)(implicit timeout: FiniteDuration): String = {
     RecipeVisualizer.visualiseCompiledRecipe(
       compiledRecipe,
@@ -271,25 +290,29 @@ class Baker(val compiledRecipe: CompiledRecipe,
       ingredientNames = this.getIngredients(processId).keySet)
   }
 
+  /**
+    * Returns a future of all the provided ingredients for a given process id.
+    *
+    * @param processId The process id.
+    * @return A future of the provided ingredients.
+    */
+  def getIngredientsAsync(processId: String)(implicit timeout: FiniteDuration): Future[Map[String, Any]] = {
+    getProcessStateAsync(processId).map(_.ingredients)
+  }
 
   /**
-    * Get all state that is or was available in the Petri Net marking.
+    * Returns all provided ingredients for a given process id.
     *
-    * @param processId The process id of the active process for which the accumulated state needs to be retrieved.
-    * @return Accumulated state.
+    * @param processId The process id.
+    * @return The provided ingredients.
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def getIngredients(processId: String)(implicit timeout: FiniteDuration): Map[String, Any] =
     getProcessState(processId).ingredients
 
-  /**
-    * Get all state that is or was available in the Petri Net marking.
-    *
-    * @param processId The process id of the active process for which the accumulated state needs to be retrieved.
-    * @return Accumulated state.
-    */
-  def getProcessStateAsync(processId: String)(implicit timeout: FiniteDuration): Future[ProcessState] = {
+
+  private def getProcessStateAsync(processId: String)(implicit timeout: FiniteDuration): Future[ProcessState] = {
     recipeManagerActor
       .ask(BakerActorMessage(processId, GetState))(Timeout.durationToTimeout(timeout))
       .flatMap {

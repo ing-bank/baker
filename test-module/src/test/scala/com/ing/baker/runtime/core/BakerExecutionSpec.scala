@@ -60,12 +60,12 @@ class BakerExecutionSpec extends TestRecipeHelper {
       }
     }
 
-    "throw a NoSuchProcessException when requesting the state of a non existing process" in {
+    "throw a NoSuchProcessException when requesting the ingredients of a non existing process" in {
 
       val baker = setupBakerWithRecipe("NonExistingProcessTest")
 
       intercept[NoSuchProcessException] {
-        baker.getProcessState(UUID.randomUUID().toString)
+        baker.getIngredients(UUID.randomUUID().toString)
       }
     }
 
@@ -455,7 +455,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.handleEvent(processId, InitialEvent(firstData))
 
       //Check that the first response returned
-      baker.getProcessState(processId).ingredients shouldBe Map(
+      baker.getIngredients(processId) shouldBe Map(
         "initialIngredient" -> firstData,
         "interactionOneIngredient" -> firstResponse,
         "sievedIngredient" -> sievedIngredientValue,
@@ -467,7 +467,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.handleEvent(processId, InitialEvent(secondData))
 
       //Check that the second response is given
-      baker.getProcessState(processId).ingredients shouldBe Map(
+      baker.getIngredients(processId) shouldBe Map(
         "initialIngredient" -> secondData,
         "interactionOneIngredient" -> secondResponse,
         "sievedIngredient" -> sievedIngredientValue,
@@ -497,7 +497,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       verify(testInteractionOneMock).apply(processId.toString, initialIngredientValue)
 
-      val result = baker.getProcessState(processId).ingredients
+      val result = baker.getIngredients(processId)
       result shouldBe Map("initialIngredient" -> initialIngredientValue,
         "interactionOneIngredient" -> interactionOneIngredientValue)
 
@@ -539,7 +539,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.handleEvent(firstProcessId, SecondEvent())
 
       // expect first process state is correct
-      baker.getProcessState(firstProcessId).ingredients shouldBe finalState
+      baker.getIngredients(firstProcessId) shouldBe finalState
     }
 
     "keep the input data in accumulated state even if the interactions dependent on this event fail to execute" in {
@@ -553,7 +553,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       // Send failing event and after that send succeeding event
       baker.handleEvent(processId, InitialEvent(initialIngredientValue))
 
-      val result = baker.getProcessState(processId).ingredients
+      val result = baker.getIngredients(processId)
       result shouldBe Map(
         "initialIngredient" -> initialIngredientValue,
         "sievedIngredient" -> sievedIngredientValue,
@@ -599,7 +599,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       verify(testInteractionTwoMock, never()).apply(anyString())
 
-      val result = baker.getProcessState(processId).ingredients
+      val result = baker.getIngredients(processId)
       result shouldBe Map(
         "initialIngredient" -> initialIngredientValue,
         "sievedIngredient" -> sievedIngredientValue,
@@ -725,7 +725,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
         baker1.handleEvent(processId, InitialEvent(initialIngredientValue))
         baker1.handleEvent(processId, SecondEvent())
 
-        baker1.getProcessState(processId).ingredients shouldBe finalState
+        baker1.getIngredients(processId) shouldBe finalState
       } finally {
         TestKit.shutdownActorSystem(system1)
       }
@@ -733,7 +733,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       val system2 = ActorSystem("persistenceTest2", levelDbConfig("persistenceTest2", 3003))
       try {
         val baker2 = new Baker(compiledRecipe = RecipeCompiler.compileRecipe(getComplexRecipe(recoveryRecipeName)), mockImplementations)(system2)
-        baker2.getProcessState(processId).ingredients shouldBe finalState
+        baker2.getIngredients(processId) shouldBe finalState
       } finally {
         TestKit.shutdownActorSystem(system2)
       }
@@ -925,14 +925,14 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       baker.allProcessMetadata.map(_.id) should contain(processId)
 
-      baker.getProcessState(processId)
+      baker.getIngredients(processId)
 
       Thread.sleep(retentionPeriod.toMillis + 200)
 
       baker.allProcessMetadata.map(_.id) should not contain processId
 
       intercept[NoSuchProcessException] {
-        baker.getProcessState(processId)
+        baker.getIngredients(processId)
       }
 
       baker.events(processId) shouldBe empty
