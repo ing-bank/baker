@@ -254,11 +254,11 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * @param event
     * @return
     */
-  def handleEvent(processId: String, event: Any, eventName: String)(implicit timeout: FiniteDuration): SensoryEventStatus = {
+  def handleEventAndConfirmEvent(processId: String, event: Any, eventName: String)(implicit timeout: FiniteDuration): SensoryEventStatus = {
     val stream = handleEventStream(processId, event)
 
     // TODO check in advance if the event can fire (using petri net coverability algorithm)
-    
+
     val optionalEventFuture: Future[SensoryEventStatus] = stream.collect {
       case TransitionNotEnabled(_,_) => SensoryEventStatus.FiringLimitMet
       case ReceivePeriodExpired => SensoryEventStatus.ReceivePeriodExpired
