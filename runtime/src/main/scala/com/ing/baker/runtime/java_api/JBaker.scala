@@ -84,7 +84,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     * @param event The event to fire
     * @param eventName The name of the event to confirm.
     */
-  def handleEventAndConfirmEvent(processId: String, event: Any, eventName: String): SensoryEventStatus =
+  def processEventAndConfirmEvent(processId: String, event: Any, eventName: String): SensoryEventStatus =
     baker.handleEventAndConfirmEvent(processId, event, eventName)(defaultHandleEventAsyncTimeout)
 
   /**
