@@ -3,7 +3,7 @@ import sbt._
 //noinspection TypeAnnotation
 object Dependencies {
 
-  val akkaVersion = "2.5.3"
+  val akkaVersion = "2.5.6"
   val scalapbVersion = com.trueaccord.scalapb.compiler.Version.scalapbVersion
 
   val typeSafeConfig =            "com.typesafe"               %  "config"                             % "1.3.1"

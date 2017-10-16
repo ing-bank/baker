@@ -119,7 +119,7 @@ class ProcessQuerySpec extends AkkaTestBase with BeforeAndAfterEach {
         .runWith(TestSink.probe)
         .request(3)
         .expectNextUnorderedN(Seq(processId1, processId2, processId3))
-        .expectNoMsg(1.second)
+        .expectNoMessage(1.second)
     }
 
     "return current persisted processIds, stream stopped in the end" in new StateTransitionNet[Unit, Unit] {
