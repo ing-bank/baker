@@ -47,6 +47,8 @@ package object il {
       case EventTransition(_, true, _) => true
       case _ => false
     }
+
+    def producesRuntimeEvent: Boolean = isInteraction || isSensoryEvent
   }
 
   def sha256HashCode(str: String): Long = {

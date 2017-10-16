@@ -50,9 +50,9 @@ class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec", ProcessApiSpe
 
       processProbe.expectMsg(fireCmd)
 
-      processProbe.reply(TransitionFired(1, 1, Map.empty, Map.empty, null, Set(2, 3)))
-      processProbe.reply(TransitionFired(2, 2, Map.empty, Map.empty, null, Set.empty))
-      processProbe.reply(TransitionFired(3, 3, Map.empty, Map.empty, null, Set.empty))
+      processProbe.reply(TransitionFired(1, 1, Map.empty, Map.empty, null, Set(2, 3), null))
+      processProbe.reply(TransitionFired(2, 2, Map.empty, Map.empty, null, Set.empty, null))
+      processProbe.reply(TransitionFired(3, 3, Map.empty, Map.empty, null, Set.empty, null))
 
       runSource.request(3).expectNext(1, 2, 3)
       runSource.expectComplete()
@@ -72,9 +72,9 @@ class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec", ProcessApiSpe
 
       processProbe.expectMsg(fireCmd)
 
-      processProbe.reply(TransitionFired(1, 1, Map.empty, Map.empty, null, Set(2, 3)))
+      processProbe.reply(TransitionFired(1, 1, Map.empty, Map.empty, null, Set(2, 3), null))
       processProbe.reply(TransitionFailed(2, 2, Map.empty, null, "", ExceptionStrategy.BlockTransition))
-      processProbe.reply(TransitionFired(3, 3, Map.empty, Map.empty, null, Set.empty))
+      processProbe.reply(TransitionFired(3, 3, Map.empty, Map.empty, null, Set.empty, null))
 
       runSource.request(3).expectNext(1, 2, 3)
       runSource.expectComplete()
