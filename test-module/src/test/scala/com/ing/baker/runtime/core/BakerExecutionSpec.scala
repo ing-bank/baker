@@ -89,12 +89,12 @@ class BakerExecutionSpec extends TestRecipeHelper {
       }
     }
 
-    "throw a BakerException if fired event is not a valid sensory event" in {
+    "throw a IllegalArgumentException if fired event is not a valid sensory event" in {
       val baker = setupBakerWithRecipe("NonExistingProcessEventTest")
 
-      intercept[BakerException] {
+      intercept[IllegalArgumentException] {
         baker.handleEvent(UUID.randomUUID().toString, SomeNotDefinedEvent("bla"))
-      } should have('message("Fired event SomeNotDefinedEvent is not recognised as any valid sensory event"))
+      } should have('message("No event with name 'SomeNotDefinedEvent' found in the recipe"))
     }
 
     "execute an interaction when its ingredient is provided" in {

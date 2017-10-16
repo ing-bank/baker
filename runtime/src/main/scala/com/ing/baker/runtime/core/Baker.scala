@@ -252,13 +252,16 @@ class Baker(val compiledRecipe: CompiledRecipe,
     */
   def handleEventAsync(processId: String, event: Any)(implicit timeout: FiniteDuration): BakerResponse = {
 
-    val runtimeEvent = event match {
-      case e: RuntimeEvent => e
-      case e => Baker.eventExtractor.extractEvent(e)
-    }
+    val runtimeEvent = Baker.eventExtractor.extractEvent(event)
 
-    if (!compiledRecipe.sensoryEvents.exists(runtimeEvent.isInstanceOfEventType(_)))
-      throw new BakerException(s"Fired event ${runtimeEvent.name} is not recognised as any valid sensory event")
+    val sensoryEvent: EventType = compiledRecipe.sensoryEvents
+      .find(_.name.equals(runtimeEvent.name))
+      .getOrElse(throw new IllegalArgumentException(s"No event with name '${runtimeEvent.name}' found in the recipe"))
+
+    val eventValidationErrors = runtimeEvent.validateEvent(sensoryEvent)
+
+    if (eventValidationErrors.nonEmpty)
+      throw new IllegalArgumentException("Invalid event: " + eventValidationErrors.mkString(","))
 
     val msg = createEventMsg(compiledRecipe, processId, runtimeEvent)
     val source = petriNetApi.askAndCollectAll(msg, waitForRetries = true)(timeout)
