@@ -29,6 +29,19 @@ case class CompiledRecipe(name: String,
     RecipeVisualizer.visualiseCompiledRecipe(this)
 
   /**
+    * Returns a SVG string representation of the recipe.
+    *
+    * @return An SVG string.
+    */
+  def getVisualRecipeAsSVG: String = {
+    import guru.nidi.graphviz.engine.{Format, Graphviz}
+    import guru.nidi.graphviz.parse.Parser
+
+    val g = Parser.read(getRecipeVisualization)
+    Graphviz.fromGraph(g).render(Format.SVG).toString
+  }
+
+  /**
     * Writes the visual recipe as an SVG to a given file.
     */
   @throws[IOException]("When failing to write to the file for any reason")
