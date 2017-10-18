@@ -38,11 +38,11 @@ object RecipeHandler {
 }
 
 class RecipeHandler(val compiledRecipe: CompiledRecipe,
-                    val interactionFunctions: InteractionTransition[_] => (Seq[Any] => Any),
-                    val configuredEncryption: Encryption,
-                    val actorIdleTimeout: Option[FiniteDuration],
-                    val readJournal: CurrentEventsByPersistenceIdQuery with PersistenceIdsQuery with CurrentPersistenceIdsQuery,
-                    val bakerActorProvider: BakerActorProvider)
+                    interactionFunctions: InteractionTransition[_] => (Seq[Any] => Any),
+                    configuredEncryption: Encryption,
+                    actorIdleTimeout: Option[FiniteDuration],
+                    readJournal: CurrentEventsByPersistenceIdQuery with PersistenceIdsQuery with CurrentPersistenceIdsQuery,
+                    bakerActorProvider: BakerActorProvider)
                    (implicit val actorSystem: ActorSystem,
                     implicit val materializer: ActorMaterializer ) {
 

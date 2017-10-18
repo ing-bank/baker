@@ -27,7 +27,7 @@ class ExamplesSpec extends TestRecipeHelper  {
       compiledRecipe.validationErrors shouldBe empty
     }
 
-    "run a happy flow" in {
+    "run a happy flow" ignore {
 
       // compiles the recipe
       val compiledRecipe = RecipeCompiler.compileRecipe(webShopRecipe)

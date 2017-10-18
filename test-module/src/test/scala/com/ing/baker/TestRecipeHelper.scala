@@ -93,6 +93,7 @@ object TestRecipeHelper {
       ProvidesIngredient(interactionOneOriginalIngredient))
 
   trait InteractionOne {
+    def name: String = "InteractionOne"
     def apply(processId: String, initialIngredient: String): String
   }
 
@@ -100,7 +101,7 @@ object TestRecipeHelper {
     Interaction("InteractionTwo",
       Ingredients(initialIngredientOld),
       FiresOneOfEvents(eventFromInteractionTwo))
-  trait InteractionTwoImpl {
+  trait InteractionTwo {
     val name: String = "InteractionTwo"
     def apply(initialIngredientOld: String): EventFromInteractionTwo
   }
@@ -109,7 +110,7 @@ object TestRecipeHelper {
     Interaction("InteractionThree",
       Ingredients(interactionOneIngredient, interactionTwoIngredient),
       ProvidesIngredient(interactionThreeIngredient))
-  trait InteractionThreeImpl {
+  trait InteractionThree {
     val name: String = "InteractionThree"
     def apply(interactionOneIngredient: String, interactionTwoIngredient: String): String
   }
@@ -118,7 +119,7 @@ object TestRecipeHelper {
     Interaction("InteractionFour",
       Ingredients(),
       ProvidesIngredient(interactionFourIngredient))
-  trait InteractionFourImpl {
+  trait InteractionFour {
     val name: String = "InteractionFour"
     def apply(): String
   }
@@ -127,7 +128,7 @@ object TestRecipeHelper {
     Interaction("InteractionFive",
       Ingredients(processId, initialIngredient, initialIngredientExtendedName),
       ProvidesIngredient(interactionFiveIngredient))
-  trait InteractionFiveImpl {
+  trait InteractionFive {
     val name: String = "InteractionFive"
     def apply(processId: String, initialIngredient: String, initialIngredientExtendedName: String): String
   }
@@ -136,7 +137,7 @@ object TestRecipeHelper {
     Interaction("InteractionSix",
       Ingredients(initialIngredientExtendedName),
       ProvidesIngredient(interactionSixIngredient))
-  trait InteractionSixImpl {
+  trait InteractionSix {
     val name: String = "InteractionSix"
     def apply(initialIngredientExtendedName: String): String
   }
@@ -145,7 +146,7 @@ object TestRecipeHelper {
     Interaction("InteractionSeven",
       Ingredients(initialIngredient),
       FiresOneOfEvents(event1FromInteractionSeven, event2FromInteractionSeven))
-  trait InteractionSevenImpl {
+  trait InteractionSeven {
     val name: String = "InteractionSeven"
     def apply(initialIngredient: String): String
   }
@@ -154,17 +155,17 @@ object TestRecipeHelper {
     Interaction("InteractionEight",
       Ingredients(interactionSevenIngredient1, interactionSevenIngredient2),
       common.ProvidesNothing)
-  trait InteractionEightImpl {
+  trait InteractionEight {
     val name: String = "InteractionEight"
     def apply(interactionSevenIngredient1: String, interactionSevenIngredient2: String) : Unit
   }
 
   val providesNothingInteraction =
-    Interaction("providesNothingInteraction",
+    Interaction("ProvidesNothingInteraction",
       Ingredients(initialIngredient),
       common.ProvidesNothing)
-  trait ProvidesNothingInteractionImpl {
-    val name: String = "providesNothingInteraction"
+  trait ProvidesNothingInteraction {
+    val name: String = "ProvidesNothingInteraction"
     def apply(initialIngredient: String) : Unit
   }
 
@@ -173,7 +174,7 @@ object TestRecipeHelper {
       Ingredients(processId, initialIngredient),
       ProvidesIngredient(sievedIngredient))
 
-  trait SieveInteractionImpl {
+  trait SieveInteraction {
     val name: String = "SieveInteraction"
 
     def apply(processId: String, initialIngredient: String): String
@@ -184,7 +185,7 @@ object TestRecipeHelper {
       Ingredients(processId, initialIngredient),
       ProvidesIngredient(sievedIngredient))
 
-  trait SieveInteractionWithoutDefaultConstructorImpl {
+  trait SieveInteractionWithoutDefaultConstructor {
     val name: String = "SieveInteractionWithoutDefaultConstructor"
 
     def apply(processId: String, initialIngredient: String): String
@@ -195,7 +196,7 @@ object TestRecipeHelper {
       Ingredients(initialIngredient),
       ProvidesIngredient(complexObjectIngredient))
 
-  trait ComplexIngredientInteractionImpl {
+  trait ComplexIngredientInteraction {
     val name: String = "ComplexIngredientInteraction"
 
     def apply(initialIngredient: String): ComplexObjectIngredient
@@ -206,7 +207,7 @@ object TestRecipeHelper {
       Ingredients(initialIngredient),
       ProvidesIngredient(caseClassIngredient))
 
-  trait CaseClassIngredientInteractionImpl {
+  trait CaseClassIngredientInteraction {
     val name: String = "CaseClassIngredientInteraction"
 
     def apply(initialIngredient: String): CaseClassIngredient
@@ -217,7 +218,7 @@ object TestRecipeHelper {
       Ingredients(caseClassIngredient),
       FiresOneOfEvents(emptyEvent))
 
-  trait CaseClassIngredientInteraction2Impl {
+  trait CaseClassIngredientInteraction2 {
     val name: String = "CaseClassIngredientInteraction2"
 
     def apply(caseClassIngredient: CaseClassIngredient): EmptyEvent
@@ -228,7 +229,7 @@ object TestRecipeHelper {
       Ingredients(initialIngredient),
       FiresOneOfEvents(eventFromInteractionTwo))
 
-  trait NonMatchingReturnTypeInteractionImpl {
+  trait NonMatchingReturnTypeInteraction {
     val name: String = "NonMatchingReturnTypeInteraction"
     def apply(initialIngredient: String): EventFromInteractionTwo
   }
@@ -242,7 +243,7 @@ object TestRecipeHelper {
         missingScalaOptional2,
         initialIngredient),
       common.ProvidesNothing)
-  trait OptionalIngredientInteractionImpl {
+  trait OptionalIngredientInteraction {
     val name: String = "OptionalIngredientInteraction"
     def apply(missingJavaOptional: Optional[String],
               missingJavaOptional2: Optional[Int],
@@ -298,34 +299,34 @@ trait TestRecipeHelper
   )
 
   protected val testInteractionOneMock: InteractionOne = mock[InteractionOne]
-  protected val testInteractionTwoMock: InteractionTwoImpl = mock[InteractionTwoImpl]
-  protected val testInteractionThreeMock: InteractionThreeImpl = mock[InteractionThreeImpl]
-  protected val testInteractionFourMock: InteractionFourImpl = mock[InteractionFourImpl]
-  protected val testInteractionFiveMock: InteractionFiveImpl = mock[InteractionFiveImpl]
-  protected val testInteractionSixMock: InteractionSixImpl = mock[InteractionSixImpl]
-  protected val testComplexIngredientInteractionMock: ComplexIngredientInteractionImpl = mock[ComplexIngredientInteractionImpl]
-  protected val testCaseClassIngredientInteractionMock: CaseClassIngredientInteractionImpl = mock[CaseClassIngredientInteractionImpl]
-  protected val testCaseClassIngredientInteraction2Mock: CaseClassIngredientInteraction2Impl = mock[CaseClassIngredientInteraction2Impl]
-  protected val testNonMatchingReturnTypeInteractionMock: NonMatchingReturnTypeInteractionImpl = mock[NonMatchingReturnTypeInteractionImpl]
-  protected val testSieveInteractionMock: SieveInteractionImpl = mock[SieveInteractionImpl]
-  protected val testOptionalIngredientInteractionMock: OptionalIngredientInteractionImpl = mock[OptionalIngredientInteractionImpl]
-  protected val testProvidesNothingInteractionImplMock: ProvidesNothingInteractionImpl = mock[ProvidesNothingInteractionImpl]
+  protected val testInteractionTwoMock: InteractionTwo = mock[InteractionTwo]
+  protected val testInteractionThreeMock: InteractionThree = mock[InteractionThree]
+  protected val testInteractionFourMock: InteractionFour = mock[InteractionFour]
+  protected val testInteractionFiveMock: InteractionFive = mock[InteractionFive]
+  protected val testInteractionSixMock: InteractionSix = mock[InteractionSix]
+  protected val testComplexIngredientInteractionMock: ComplexIngredientInteraction = mock[ComplexIngredientInteraction]
+  protected val testCaseClassIngredientInteractionMock: CaseClassIngredientInteraction = mock[CaseClassIngredientInteraction]
+  protected val testCaseClassIngredientInteraction2Mock: CaseClassIngredientInteraction2 = mock[CaseClassIngredientInteraction2]
+  protected val testNonMatchingReturnTypeInteractionMock: NonMatchingReturnTypeInteraction = mock[NonMatchingReturnTypeInteraction]
+  protected val testSieveInteractionMock: SieveInteraction = mock[SieveInteraction]
+  protected val testOptionalIngredientInteractionMock: OptionalIngredientInteraction = mock[OptionalIngredientInteraction]
+  protected val testProvidesNothingInteractionMock: ProvidesNothingInteraction = mock[ProvidesNothingInteraction]
 
-  protected val mockImplementations: Map[String, AnyRef] =
-    Map(
-      "InteractionOne" -> testInteractionOneMock,
-      "InteractionTwo" -> testInteractionTwoMock,
-      "InteractionThree" -> testInteractionThreeMock,
-      "InteractionFour" -> testInteractionFourMock,
-      "InteractionFive" -> testInteractionFiveMock,
-      "InteractionSix" -> testInteractionSixMock,
-      "ComplexIngredientInteraction" -> testComplexIngredientInteractionMock,
-      "CaseClassIngredientInteraction" -> testCaseClassIngredientInteractionMock,
-      "CaseClassIngredientInteraction2" -> testCaseClassIngredientInteraction2Mock,
-      "NonMatchingReturnTypeInteraction" -> testNonMatchingReturnTypeInteractionMock,
-      "SieveInteraction" -> testSieveInteractionMock,
-      "OptionalIngredientInteraction" -> testOptionalIngredientInteractionMock,
-      "providesNothingInteraction" -> testProvidesNothingInteractionImplMock)
+  protected val mockImplementations: Seq[AnyRef] =
+    Seq(
+      testInteractionOneMock,
+      testInteractionTwoMock,
+      testInteractionThreeMock,
+      testInteractionFourMock,
+      testInteractionFiveMock,
+      testInteractionSixMock,
+      testComplexIngredientInteractionMock,
+      testCaseClassIngredientInteractionMock,
+      testCaseClassIngredientInteraction2Mock,
+      testNonMatchingReturnTypeInteractionMock,
+      testSieveInteractionMock,
+      testOptionalIngredientInteractionMock,
+      testProvidesNothingInteractionMock)
 
   protected def levelDbConfig(actorSystemName: String, port: Int, journalPath: String = "target/journal", snapshotsPath: String = "target/snapshots"): Config = ConfigFactory.parseString(
     s"""
@@ -459,6 +460,11 @@ trait TestRecipeHelper
       implementations = mockImplementations)(actorSystem)
   }
 
+  protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Baker = {
+    setupMockResponse()
+    new Baker(mockImplementations)(actorSystem)
+  }
+
   protected def setupMockResponse(): Unit = {
     when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
     when(testInteractionTwoMock.apply(anyString())).thenReturn(interactionTwoEventValue)
@@ -467,6 +473,20 @@ trait TestRecipeHelper
     when(testInteractionFiveMock.apply(anyString(), anyString(), anyString())).thenReturn(interactionFiveIngredientValue)
     when(testInteractionSixMock.apply(anyString())).thenReturn(interactionSixIngredientValue)
     when(testSieveInteractionMock.apply(anyString(), anyString())).thenReturn(sievedIngredientValue)
+
+//    when(testInteractionOneMock.name).thenReturn("InteractionOne");
+//    when(testInteractionTwoMock.name).thenReturn("InteractionTwo");
+//    when(testInteractionThreeMock.name).thenReturn("InteractionThree")
+//    when(testInteractionFourMock.name).thenReturn("InteractionFour")
+//    when(testInteractionFiveMock.name).thenReturn("InteractionFive")
+//    when(testInteractionSixMock.name).thenReturn("InteractionSix")
+//    when(testComplexIngredientInteractionMock.name).thenReturn("ComplexIngredientInteraction")
+//    when(testCaseClassIngredientInteractionMock.name).thenReturn("CaseClassIngredientInteraction")
+//    when(testCaseClassIngredientInteraction2Mock.name).thenReturn("CaseClassIngredientInteraction2")
+//    when(testNonMatchingReturnTypeInteractionMock.name).thenReturn("NonMatchingReturnTypeInteraction")
+//    when(testSieveInteractionMock.name).thenReturn("SieveInteraction")
+//    when(testOptionalIngredientInteractionMock.name).thenReturn("OptionalIngredientInteraction")
+//    when(testProvidesNothingInteractionMock.name).thenReturn("providesNothingInteraction")
   }
 
   protected def timeBlockInMilliseconds[T](block: => T): Long = {

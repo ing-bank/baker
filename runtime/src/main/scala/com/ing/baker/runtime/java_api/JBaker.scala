@@ -21,7 +21,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
 
   val baker: Baker = new Baker(
     compiledRecipe = compiledRecipe,
-    implementations = ReflectedInteractionTask.implementationsToProviderMap(implementations.asScala))(actorSystem = actorSystem)
+    implementations = implementations.asScala)(actorSystem = actorSystem)
 
   val defaultTimeout: Int = 20 * 1000
   val defaultHandleEventAsyncTimeout: FiniteDuration = FiniteDuration.apply(10, TimeUnit.SECONDS)

@@ -56,10 +56,12 @@ object Baker {
   * - A list of events
   * The Baker can bake a recipe, create a process and respond to events.
   */
-class Baker(val interactionFunctions: InteractionTransition[_] => (Seq[Any] => Any))
+class Baker(implementations: Map[String, AnyRef])
            (implicit val actorSystem: ActorSystem) {
 
   import actorSystem.dispatcher
+
+
 
   private val config = actorSystem.settings.config
   private val bakeTimeout = config.as[FiniteDuration]("baker.bake-timeout")
@@ -90,28 +92,42 @@ class Baker(val interactionFunctions: InteractionTransition[_] => (Seq[Any] => A
 
   var recipeHandlers: Seq[RecipeHandler] = Seq()
 
-  def addRecipe(compiledRecipe: CompiledRecipe) = {
-    recipeHandlers = recipeHandlers :+ new RecipeHandler(
+  def this(implementations: Seq[AnyRef])
+          (implicit actorSystem: ActorSystem) = {
+    this(ReflectedInteractionTask.implementationsToProviderMap(implementations))(actorSystem)
+  }
+
+  def this(compiledRecipe: CompiledRecipe,
+           implementations: Seq[AnyRef])
+          (implicit actorSystem: ActorSystem) = {
+    this(implementations)(actorSystem)
+    addRecipe(compiledRecipe)
+  }
+
+  def addRecipe(compiledRecipe: CompiledRecipe) : RecipeHandler = {
+    if(recipeHandlers.exists(_.compiledRecipe.name == compiledRecipe.name))
+      throw new BakerException("Recipe with this name already exists")
+
+    val recipeHandler = new RecipeHandler(
       compiledRecipe,
-      interactionFunctions,
+      ReflectedInteractionTask.createInteractionFunctions(
+        compiledRecipe.interactionTransitions,
+        implementations
+        ),
       configuredEncryption,
       actorIdleTimeout,
       readJournal,
       bakerActorProvider)
+
+    recipeHandlers = recipeHandlers :+ recipeHandler
+    recipeHandler
   }
 
-  def this(compiledRecipe: CompiledRecipe,
-           implementations: Map[String, AnyRef])
-          (implicit actorSystem: ActorSystem) = {
-    this(ReflectedInteractionTask.createInteractionFunctions(compiledRecipe.interactionTransitions, implementations))(actorSystem)
-    addRecipe(compiledRecipe)
-  }
-
-  def this(compiledRecipe: CompiledRecipe,
-           implementations: Seq[(String, Seq[Any] => Any)])
-          (implicit actorSystem: ActorSystem) = {
-    this(Baker.toImplementations(implementations))
-    addRecipe(compiledRecipe)
+  def getRecipeHandler(name: String): RecipeHandler = {
+    recipeHandlers.find(_.compiledRecipe.name == name) match {
+      case Some(recipeHandler) => recipeHandler
+      case None => throw new BakerException(s"No Recipe Handler available for recipe with name: $name")
+    }
   }
 
   if (!config.as[Option[Boolean]]("baker.config-file-included").getOrElse(false))
@@ -136,7 +152,7 @@ class Baker(val interactionFunctions: InteractionTransition[_] => (Seq[Any] => A
           actorSystem.terminate()
         }
         implicit val akkaTimeout = Timeout(timeout)
-        Util.handOverShardsAndLeaveCluster(Seq(recipeHandlers(0).compiledRecipe.name))
+        Util.handOverShardsAndLeaveCluster(recipeHandlers.map(_.compiledRecipe.name))
       case Success(_) =>
         log.debug("ActorSystem not a member of cluster")
         actorSystem.terminate()
@@ -161,7 +177,7 @@ class Baker(val interactionFunctions: InteractionTransition[_] => (Seq[Any] => A
     * @return A future of the initial process state.
     */
   def bakeAsync(processId: String): Future[ProcessState] =
-    recipeHandlers(0).bakeAsync(processId, bakeTimeout)
+    recipeHandlers.head.bakeAsync(processId, bakeTimeout)
 
 
   /**
@@ -170,11 +186,10 @@ class Baker(val interactionFunctions: InteractionTransition[_] => (Seq[Any] => A
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
   def registerEventListener(listener: EventListener): Boolean = {
-
     val subscriber = actorSystem.actorOf(Props(new Actor() {
       override def receive: Receive = {
         case ProcessInstanceEvent(processType, id, event: TransitionFiredEvent[_, _, _])
-          if processType == recipeHandlers(0).compiledRecipe.name =>
+          if recipeHandlers.exists(_.compiledRecipe.name == processType) =>
           toRuntimeEvent(event).foreach(e => listener.processEvent(id, e))
       }
     }))
@@ -186,7 +201,7 @@ class Baker(val interactionFunctions: InteractionTransition[_] => (Seq[Any] => A
     * Synchronously returns all events that occurred for a process.
     */
   def events(processId: String)(implicit timeout: FiniteDuration): Seq[RuntimeEvent] = {
-    recipeHandlers(0).events(processId)
+    recipeHandlers.head.events(processId)
   }
 
   /**
@@ -196,7 +211,7 @@ class Baker(val interactionFunctions: InteractionTransition[_] => (Seq[Any] => A
     * @return The source of events.
     */
   def eventsAsync(processId: String): Source[RuntimeEvent, NotUsed] =
-    recipeHandlers(0).eventsAsync(processId)
+    recipeHandlers.head.eventsAsync(processId)
 
 
   /**
@@ -216,7 +231,7 @@ class Baker(val interactionFunctions: InteractionTransition[_] => (Seq[Any] => A
     * with the response object you NO guarantee that the event is received the process instance.
     */
   def handleEventAsync(processId: String, event: Any)(implicit timeout: FiniteDuration): BakerResponse = {
-    recipeHandlers(0).handleEventAsync(processId, event)
+    recipeHandlers.head.handleEventAsync(processId, event)
   }
 
   /**
@@ -228,7 +243,7 @@ class Baker(val interactionFunctions: InteractionTransition[_] => (Seq[Any] => A
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def getProcessState(processId: String)(implicit timeout: FiniteDuration): ProcessState =
-  Await.result(recipeHandlers(0).getProcessStateAsync(processId), timeout)
+  Await.result(recipeHandlers.head.getProcessStateAsync(processId), timeout)
 
   /**
     * Returns the visual state (.dot) for a given process.
@@ -238,7 +253,7 @@ class Baker(val interactionFunctions: InteractionTransition[_] => (Seq[Any] => A
     * @return A visual (.dot) representation of the process state.
     */
   def getVisualState(processId: String)(implicit timeout: FiniteDuration): String = {
-    recipeHandlers(0).getVisualState(processId)
+    recipeHandlers.head.getVisualState(processId)
   }
 
   /**
@@ -248,7 +263,7 @@ class Baker(val interactionFunctions: InteractionTransition[_] => (Seq[Any] => A
     * @return A future of the provided ingredients.
     */
   def getIngredientsAsync(processId: String)(implicit timeout: FiniteDuration): Future[Map[String, Any]] = {
-    recipeHandlers(0).getProcessStateAsync(processId).map(_.ingredients)
+    recipeHandlers.head.getProcessStateAsync(processId).map(_.ingredients)
   }
 
   /**
