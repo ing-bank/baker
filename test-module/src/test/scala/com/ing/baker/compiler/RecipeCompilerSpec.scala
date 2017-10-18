@@ -275,7 +275,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .withInteraction(secondInteraction)
 
       val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      println(compiledRecipe.getRecipeVisualization)
+//      println(compiledRecipe.getRecipeVisualization)
       compiledRecipe.validationErrors shouldBe empty
 
       val transition = compiledRecipe.interactionTransitions.find(_.interactionName == "secondInteraction").get

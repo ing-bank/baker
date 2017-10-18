@@ -152,9 +152,6 @@ class BakerExecutionSpec extends TestRecipeHelper {
         compiledRecipe = RecipeCompiler.compileRecipe(recipe),
         implementations = mockImplementations)
 
-      println(baker.compiledRecipe.petriNet.places)
-      println(baker.compiledRecipe.petriNet.places.map(_.id))
-
       when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
 
       val processId = UUID.randomUUID().toString
@@ -872,12 +869,6 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.bake(processId)
 
       baker.handleEvent(processId, InitialEvent("")) shouldBe SensoryEventStatus.Completed
-    }
-
-    "be able to visualize the created interactions with a filter" in {
-      val baker = setupBakerWithRecipe("VisualizationRecipe")
-      baker.compiledRecipe.getFilteredRecipeVisualization(e => !e.contains("interactionFour")) shouldNot contain(
-        "interactionFour")
     }
 
     "be able to visualize events that have been fired" in {
