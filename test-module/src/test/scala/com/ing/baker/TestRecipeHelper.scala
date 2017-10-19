@@ -263,6 +263,8 @@ trait TestRecipeHelper
 
   def actorSystemName: String
 
+  implicit val timeout: FiniteDuration = 10 seconds
+
   //Values to use for setting and checking the ingredients
 
   //Default values to be used for the ingredients in the tests

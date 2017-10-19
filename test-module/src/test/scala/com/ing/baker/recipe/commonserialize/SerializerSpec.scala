@@ -1,10 +1,14 @@
 package com.ing.baker.recipe.commonserialize
 
+import java.util.UUID
+
 import com.ing.baker.TestRecipeHelper
+import com.ing.baker.TestRecipeHelper.InitialEvent
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.core.Baker
+import com.ing.baker.runtime.core.{Baker, SensoryEventStatus}
 import com.twitter.chill.{KryoPool, ScalaKryoInstantiator}
+import org.mockito.Mockito.{verify, verifyZeroInteractions}
 
 class SerializerSpec extends TestRecipeHelper {
   override def actorSystemName: String = "SerializerSpec"
@@ -21,15 +25,28 @@ class SerializerSpec extends TestRecipeHelper {
         val deserializedRecipe: Recipe = kryo.fromBytes(serializedRecipe).asInstanceOf[Recipe]
 
         val compiledRecipeDeserialized: CompiledRecipe = RecipeCompiler.compileRecipe(orignalRecipe);
-        println(compiledRecipeDeserialized.getRecipeVisualization)
-
-
-        val baker = new Baker(mockImplementations)
-        val recipeHandler = baker.addRecipe(compiledRecipeDeserialized)
-
+//        println(compiledRecipeDeserialized.getRecipeVisualization)
         compiledRecipeDeserialized.getRecipeVisualization shouldBe compiledRecipeOriginal.getRecipeVisualization
 
-//        kryo.fromBytes(kryo.toBytesWithClass(onboardingRecipe)) shouldBe onboardingRecipe
+
+        resetMocks
+        val baker = new Baker(mockImplementations)
+
+        val recipeHandler = baker.addRecipe(compiledRecipeDeserialized)
+
+        val processId = UUID.randomUUID().toString
+        recipeHandler.bake(processId)
+
+        verifyZeroInteractions(testInteractionOneMock)
+
+        val received = recipeHandler.handleEvent(processId, InitialEvent(initialIngredientValue))
+        received shouldBe SensoryEventStatus.Completed
+
+        verify(testInteractionTwoMock).apply(initialIngredientValue)
+        verify(testProvidesNothingInteractionMock).apply(initialIngredientValue)
+        verify(testSieveInteractionMock).apply(processId.toString, initialIngredientValue)
+        verify(testInteractionOneMock).apply(processId.toString, initialIngredientValue)
+
       }
     }
   }

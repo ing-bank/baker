@@ -27,7 +27,6 @@ case class SomeNotDefinedEvent(name: String)
 class BakerExecutionSpec extends TestRecipeHelper {
 
   override def actorSystemName = "BakerExecutionSpec"
-  implicit val timeout: FiniteDuration = 10 seconds
 
   val log = LoggerFactory.getLogger(classOf[BakerExecutionSpec])
 
