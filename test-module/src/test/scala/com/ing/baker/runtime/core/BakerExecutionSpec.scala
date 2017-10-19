@@ -89,12 +89,12 @@ class BakerExecutionSpec extends TestRecipeHelper {
       }
     }
 
-    "throw a BakerException if fired event is not a valid sensory event" in {
+    "throw a IllegalArgumentException if fired event is not a valid sensory event" in {
       val baker = setupBakerWithRecipe("NonExistingProcessEventTest")
 
-      intercept[BakerException] {
+      intercept[IllegalArgumentException] {
         baker.handleEvent(UUID.randomUUID().toString, SomeNotDefinedEvent("bla"))
-      } should have('message("Fired event SomeNotDefinedEvent is not recognised as any valid sensory event"))
+      } should have('message("No event with name 'SomeNotDefinedEvent' found in the recipe"))
     }
 
     "execute an interaction when its ingredient is provided" in {
@@ -660,6 +660,10 @@ class BakerExecutionSpec extends TestRecipeHelper {
           compiledRecipe = RecipeCompiler.compileRecipe(recipe),
           implementations = mockImplementations)(defaultActorSystem)
 
+      val listenerMock = mock[EventListener]
+
+      baker.registerEventListener(listenerMock)
+
       val processId = UUID.randomUUID().toString
       baker.bake(processId)
 
@@ -667,6 +671,10 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.handleEvent(processId, InitialEvent(initialIngredientValue))
 
       Thread.sleep(50)
+
+      // verify that both the initial and retryexhausted event are given to the listener
+      verify(listenerMock).processEvent(processId.toString, RuntimeEvent("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)))
+      verify(listenerMock).processEvent(processId.toString, RuntimeEvent("RetryExhausted", Seq.empty))
 
       baker.events(processId).map(_.name) should contain (exhaustedEvent.name)
     }

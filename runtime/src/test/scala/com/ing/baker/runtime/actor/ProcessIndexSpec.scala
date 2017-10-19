@@ -77,7 +77,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       actorIndex ! BakerActorMessage(processId, initializeMsg)
 
       petriNetActorProbe.expectMsg(initializeMsg)
-      petriNetActorProbe.expectNoMsg(noMsgExpectTimeout)
+      petriNetActorProbe.expectNoMessage(noMsgExpectTimeout)
       expectMsg(AlreadyInitialized)
     }
 
@@ -139,7 +139,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       actorIndex ! BakerActorMessage(processId, otherMsg)
 
-      petriNetActorProbe.expectNoMsg(noMsgExpectTimeout)
+      petriNetActorProbe.expectNoMessage(noMsgExpectTimeout)
       expectMsg(Uninitialized(processId.toString))
     }
 
@@ -169,7 +169,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       Thread.sleep(receivePeriodTimeout.toMillis)
 
       actorIndex ! BakerActorMessage(processId, fireTransitionCmd)
-      petriNetActorProbe.expectNoMsg(noMsgExpectTimeout)
+      petriNetActorProbe.expectNoMessage(noMsgExpectTimeout)
 
       expectMsg(ReceivePeriodExpired)
     }
