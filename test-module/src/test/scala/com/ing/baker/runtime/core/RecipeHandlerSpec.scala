@@ -1,10 +1,15 @@
 package com.ing.baker.runtime.core
 
+import java.util.UUID
+
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.testkit.TestProbe
+import com.ing.baker.TestRecipeHelper.InitialEvent
 import com.ing.baker._
+import com.ing.baker.compiler.RecipeCompiler
 import org.slf4j.LoggerFactory
 
+import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -28,46 +33,56 @@ class RecipeExecutionSpec extends TestRecipeHelper {
   "The Baker execution engine" should {
 
     "bake a process successful if baking for the first time" in {
-//      val baker = setupBakerWithRecipe("FirstTimeBaking")
-//
-//      val id = UUID.randomUUID().toString
-//      baker.bake(id)
-      assert(true)
+      val baker = setupBakerWithNoRecipe()
+      val recipeName = "firtTimeBakingRecipeHandler"
+
+      val recipeHandler: RecipeHandler = baker.addRecipe(RecipeCompiler.compileRecipe(getComplexRecipe(recipeName)))
+
+      val id = UUID.randomUUID().toString
+      recipeHandler.bake(id)
+    }
+
+    "throw an IllegalArgumentException if a baking a process with the same identifier twice" in {
+      val baker = setupBakerWithNoRecipe()
+      val recipeName = "DuplicateIdentifierRecipeRecipeHandler"
+
+      val recipeHandler: RecipeHandler = baker.addRecipe(RecipeCompiler.compileRecipe(getComplexRecipe(recipeName)))
+
+      val id = UUID.randomUUID().toString
+      recipeHandler.bake(id)
+      a[IllegalArgumentException] should be thrownBy {
+        recipeHandler.bake(id)
+      }
     }
 //
-//    "throw an IllegalArgumentException if a baking a process with the same identifier twice" in {
-//      val baker = setupBakerWithRecipe("DuplicateIdentifierRecipe")
-//
-//      val id = UUID.randomUUID().toString
-//      baker.bake(id)
-//      a[IllegalArgumentException] should be thrownBy {
-//        baker.bake(id)
-//      }
-//    }
-//
-//    "throw a NoSuchProcessException when requesting the ingredients of a non existing process" in {
-//
-//      val baker = setupBakerWithRecipe("NonExistingProcessTest")
-//
-//      intercept[NoSuchProcessException] {
-//        baker.getIngredients(UUID.randomUUID().toString)
-//      }
-//    }
-//
-//    "throw a NoSuchProcessException when attempting to fire an event for a non existing process" in {
-//      val baker = setupBakerWithRecipe("NonExistingProcessEventTest")
-//
-//      val event = InitialEvent("initialIngredient")
-//
-//      intercept[NoSuchProcessException] {
-//        baker.handleEvent(UUID.randomUUID().toString, event)
-//      }
-//
-//      val response = baker.handleEventAsync(UUID.randomUUID().toString, event)
-//
-//      intercept[NoSuchProcessException] {
-//        Await.result(response.receivedFuture, timeout)
-//      }
+    "throw a NoSuchProcessException when requesting the ingredients of a non existing process" in {
+
+      val baker = setupBakerWithNoRecipe()
+      val recipeName = "NonExistingProcessTestRecipeHandler"
+      val recipeHandler: RecipeHandler = baker.addRecipe(RecipeCompiler.compileRecipe(getComplexRecipe(recipeName)))
+
+      intercept[NoSuchProcessException] {
+        recipeHandler.getIngredients(UUID.randomUUID().toString)
+      }
+    }
+
+    "throw a NoSuchProcessException when attempting to fire an event for a non existing process" in {
+      val baker = setupBakerWithNoRecipe()
+      val recipeName = "NonExistingProcessTestRecipeHandler"
+      val recipeHandler: RecipeHandler = baker.addRecipe(RecipeCompiler.compileRecipe(getComplexRecipe(recipeName)))
+
+      val event = InitialEvent("initialIngredient")
+
+      intercept[NoSuchProcessException] {
+        recipeHandler.handleEvent(UUID.randomUUID().toString, event)
+      }
+
+      val response = baker.handleEventAsync(UUID.randomUUID().toString, event)
+
+      intercept[NoSuchProcessException] {
+        Await.result(response.receivedFuture, timeout)
+      }
+    }
 //
 //      intercept[NoSuchProcessException] {
 //        Await.result(response.completedFuture, timeout)

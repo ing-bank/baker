@@ -116,6 +116,7 @@ class Baker(implementations: Map[String, AnyRef])
         ),
       configuredEncryption,
       actorIdleTimeout,
+      bakeTimeout,
       readJournal,
       bakerActorProvider)
 

@@ -41,6 +41,7 @@ class RecipeHandler(val compiledRecipe: CompiledRecipe,
                     interactionFunctions: InteractionTransition[_] => (Seq[Any] => Any),
                     configuredEncryption: Encryption,
                     actorIdleTimeout: Option[FiniteDuration],
+                    bakeTimeout: FiniteDuration,
                     readJournal: CurrentEventsByPersistenceIdQuery with PersistenceIdsQuery with CurrentPersistenceIdsQuery,
                     bakerActorProvider: BakerActorProvider)
                    (implicit val actorSystem: ActorSystem,
@@ -66,6 +67,14 @@ class RecipeHandler(val compiledRecipe: CompiledRecipe,
   private val petriNetApi = new ProcessApi(recipeManagerActor)
 
   /**
+    * Creates a process instance of this recipe.
+    *
+    * @param processId The process identifier
+    */
+  def bake(processId: String): ProcessState =
+    Await.result(bakeAsync(processId, bakeTimeout), bakeTimeout)
+
+  /**
     * Asynchronously creates an instance of the  process using the recipe.
     *
     * @param processId The process identifier
@@ -84,6 +93,16 @@ class RecipeHandler(val compiledRecipe: CompiledRecipe,
     }
 
     eventualState
+  }
+
+  /**
+    * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
+    *
+    * @param processId The process identifier
+    * @param event     The event object
+    */
+  def handleEvent(processId: String, event: Any)(implicit timeout: FiniteDuration): SensoryEventStatus = {
+    handleEventAsync(processId, event).confirmCompleted()
   }
 
   /**
