@@ -24,18 +24,25 @@ object InteractionResponse {
 
 object BakerResponse {
 
-  def firstMessage(processId: String, response: Future[Any])(implicit ec: ExecutionContext): Future[InteractionResponse] =
-    response.flatMap { translateFirstMessage }
-
   def translateFirstMessage(msg: Any): Future[InteractionResponse] = msg match {
-    case x: TransitionFired       => Future.successful(Success)
-    case x: TransitionNotEnabled  => Future.successful(NotEnabled)
+    case _: TransitionFired       => Future.successful(Success)
+    case _: TransitionNotEnabled  => Future.successful(NotEnabled)
     case ReceivePeriodExpired     => Future.successful(PeriodExpired)
     case Uninitialized(processId) => Future.failed(new NoSuchProcessException(s"No such process: $processId"))
-    case msg @ _                  => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
+    case _                        => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
   }
 
-  def allMessages(processId: String, response: Future[Seq[Any]])(implicit ec: ExecutionContext): Future[InteractionResponse] =
+  def translateOtherMessage(msg: Any): Future[InteractionResponse] = msg match {
+    case _: TransitionFired      => Future.successful(Success)
+    case _: TransitionFailed     => Future.successful(Failed)
+    case _: TransitionNotEnabled => Future.successful(NotEnabled)
+    case _                       => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
+  }
+
+  def receivedResponse(processId: String, response: Future[Any])(implicit ec: ExecutionContext): Future[InteractionResponse] =
+    response.flatMap { translateFirstMessage }
+
+  def completedResponse(processId: String, response: Future[Seq[Any]])(implicit ec: ExecutionContext): Future[InteractionResponse] =
     response.flatMap { msgs =>
 
       val futureResponses = msgs.headOption.map(translateFirstMessage) ++ msgs.drop(1).map(translateOtherMessage)
@@ -49,21 +56,9 @@ object BakerResponse {
       })
     }
 
-  def translateOtherMessage(msg: Any): Future[InteractionResponse] = msg match {
-    case x: TransitionFired      => Future.successful(Success)
-    case x: TransitionFailed     => Future.successful(Failed)
-    case x: TransitionNotEnabled => Future.successful(NotEnabled)
-    case x @_                    => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
-  }
-
   def createFlow(processId: String, source: Source[Any, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext): (Future[InteractionResponse], Future[InteractionResponse]) = {
 
-    val sinkHead = Sink.head[Any]
-    val sinkLast = Sink.seq[Any]
-
-    Sink.queue()
-
-    val graph = RunnableGraph.fromGraph(GraphDSL.create(sinkHead, sinkLast)((_, _)) {
+    val graph = GraphDSL.create(Sink.head[Any], Sink.seq[Any])((_, _)) {
       implicit b =>
         (head, last) => {
           import GraphDSL.Implicits._
@@ -74,11 +69,11 @@ object BakerResponse {
           bcast.out(1) ~> last.in
           ClosedShape
         }
-    })
+    }
 
-    val (firstResponse, allResponses) = graph.run(materializer)
+    val (firstResponse, allResponses) = RunnableGraph.fromGraph(graph).run(materializer)
 
-    (firstMessage(processId, firstResponse), allMessages(processId, allResponses))
+    (receivedResponse(processId, firstResponse), completedResponse(processId, allResponses))
   }
 }
 

@@ -80,19 +80,21 @@ class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec", ProcessApiSpe
       runSource.expectComplete()
     }
 
-    "return an empty source when the petri net instance repsponds with Uninitialized" in {
+    "return a source with a single Unitialized object when the petri net instance repsponds with Uninitialized" in {
 
       val processProbe = TestProbe()
+      val processId = "123"
       val api = new ProcessApi(processProbe.ref)
       val fireTransitionCmd = FireTransition(1, ())
 
       val source: Source[Any, NotUsed] = api.askAndCollectAll(fireTransitionCmd)
-      val runSource = source.map(_.asInstanceOf[TransitionFired].transitionId).runWith(TestSink.probe)
+      val runSource = source.runWith(TestSink.probe)
 
       processProbe.expectMsg(fireTransitionCmd)
-      processProbe.reply(Uninitialized(""))
+      processProbe.reply(Uninitialized(processId))
 
-      runSource.expectSubscriptionAndComplete()
+      runSource.request(1).expectNext(Uninitialized(processId))
+      runSource.expectComplete()
     }
   }
 }

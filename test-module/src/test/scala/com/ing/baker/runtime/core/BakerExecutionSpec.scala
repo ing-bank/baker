@@ -156,7 +156,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       val processId = UUID.randomUUID().toString
 
       baker.bake(processId)
-      baker.handleEventAndConfirmEvent(processId, InitialEvent("foo"), "EventFromInteractionTwo") shouldBe(SensoryEventStatus.EventFired)
+      baker.handleEventAndWaitForEvent(processId, InitialEvent("foo"), "EventFromInteractionTwo") shouldBe(SensoryEventStatus.EventFired)
     }
 
     "be able to confirm the NOT firing of an event when firing a sensory event" in {
@@ -166,7 +166,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       val processId = UUID.randomUUID().toString
 
       baker.bake(processId)
-      baker.handleEventAndConfirmEvent(processId, InitialEvent("foo"), "SecondEvent") shouldBe(SensoryEventStatus.EventNotFired)
+      baker.handleEventAndWaitForEvent(processId, InitialEvent("foo"), "SecondEvent") shouldBe(SensoryEventStatus.EventNotFired)
     }
 
     "backwards compatibility in serialization of case class ingredients" ignore {
