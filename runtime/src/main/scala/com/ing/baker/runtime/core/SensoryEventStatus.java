@@ -5,6 +5,7 @@ public enum SensoryEventStatus {
     EventNotFired,
     EventFired,
     Completed,
+
     FiringLimitMet,
     ReceivePeriodExpired
 }

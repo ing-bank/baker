@@ -13,19 +13,17 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
 import com.ing.baker.il._
 import com.ing.baker.il.petrinet._
-import com.ing.baker.runtime.actor.ProcessInstanceProtocol._
 import com.ing.baker.petrinet.runtime.EventSourcing.{TransitionFailedEvent, TransitionFiredEvent}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
-import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.actor.ProcessIndex.ReceivePeriodExpired
+import com.ing.baker.runtime.actor.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor._
+import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.actor.serialization.{AkkaObjectSerializer, Encryption}
 import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.{RecipeRuntime, ReflectedInteractionTask}
-import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
-import com.ing.baker.runtime.core.InteractionResponse.{NotEnabled, PeriodExpired}
 import fs2.Strategy
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
@@ -261,15 +259,16 @@ class Baker(val compiledRecipe: CompiledRecipe,
     * @param event
     * @return
     */
-  def handleEventAndConfirmEvent(processId: String, event: Any, eventName: String)(implicit timeout: FiniteDuration): SensoryEventStatus = {
+  def handleEventAndWaitForEvent(processId: String, event: Any, eventName: String)(implicit timeout: FiniteDuration): SensoryEventStatus = {
     val stream = handleEventStream(processId, event)
 
     // TODO check in advance if the event can fire (using petri net coverability algorithm)
 
     val eventStatusFuture: Future[SensoryEventStatus] = stream.collect {
-      case TransitionNotEnabled(_,_) => SensoryEventStatus.FiringLimitMet
-      case ReceivePeriodExpired => SensoryEventStatus.ReceivePeriodExpired
+      case TransitionNotEnabled(_,_)                                       => SensoryEventStatus.FiringLimitMet
+      case ReceivePeriodExpired                                            => SensoryEventStatus.ReceivePeriodExpired
       case TransitionFired(_, _, _, _, _, _, RuntimeEvent(`eventName`, _)) => SensoryEventStatus.EventFired
+      case Uninitialized(processId)                                        => throw new NoSuchProcessException(processId)
     }.runWith(Sink.headOption)
       .map {
         case Some(status) => status
