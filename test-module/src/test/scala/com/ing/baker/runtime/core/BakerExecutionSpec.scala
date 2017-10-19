@@ -667,6 +667,10 @@ class BakerExecutionSpec extends TestRecipeHelper {
           compiledRecipe = RecipeCompiler.compileRecipe(recipe),
           implementations = mockImplementations)(defaultActorSystem)
 
+      val listenerMock = mock[EventListener]
+
+      baker.registerEventListener(listenerMock)
+
       val processId = UUID.randomUUID().toString
       baker.bake(processId)
 
@@ -674,6 +678,10 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.handleEvent(processId, InitialEvent(initialIngredientValue))
 
       Thread.sleep(50)
+
+      // verify that both the initial and retryexhausted event are given to the listener
+      verify(listenerMock).processEvent(processId.toString, RuntimeEvent("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)))
+      verify(listenerMock).processEvent(processId.toString, RuntimeEvent("RetryExhausted", Seq.empty))
 
       baker.events(processId).map(_.name) should contain (exhaustedEvent.name)
     }

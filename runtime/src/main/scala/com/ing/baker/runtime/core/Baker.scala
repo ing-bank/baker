@@ -14,7 +14,8 @@ import akka.util.Timeout
 import com.ing.baker.il._
 import com.ing.baker.il.petrinet._
 import com.ing.baker.runtime.actor.ProcessInstanceProtocol._
-import com.ing.baker.petrinet.runtime.EventSourcing.TransitionFiredEvent
+import com.ing.baker.petrinet.runtime.EventSourcing.{TransitionFailedEvent, TransitionFiredEvent}
+import com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.serialization.{AkkaObjectSerializer, Encryption}
@@ -50,7 +51,7 @@ object Baker {
     */
   def toRuntimeEvent[P[_], T[_,_], E](event: TransitionFiredEvent[P, T ,E]): Option[RuntimeEvent] = {
     val t = event.transition.asInstanceOf[Transition[_,_]]
-    if (t.isSensoryEvent || t.isInteraction)
+    if ((t.isSensoryEvent || t.isInteraction) && event.output.isInstanceOf[RuntimeEvent])
       Some(event.output.asInstanceOf[RuntimeEvent])
     else
       None
@@ -201,8 +202,14 @@ class Baker(val compiledRecipe: CompiledRecipe,
 
     val subscriber = actorSystem.actorOf(Props(new Actor() {
       override def receive: Receive = {
-        case ProcessInstanceEvent(processType, id, event: TransitionFiredEvent[_,_,_]) if processType == compiledRecipe.name =>
-          toRuntimeEvent(event).foreach(e => listener.processEvent(id, e))
+        case ProcessInstanceEvent(processType, processId, event: TransitionFiredEvent[_,_,_]) if processType == compiledRecipe.name =>
+          toRuntimeEvent(event).foreach(e => listener.processEvent(processId, e))
+        case ProcessInstanceEvent(processType, processId, event: TransitionFailedEvent[_,_,_]) if processType == compiledRecipe.name =>
+          event.exceptionStrategy match {
+            case Continue(_, event: RuntimeEvent) =>
+              listener.processEvent(processId, event)
+            case _ =>
+          }
       }
     }))
 
