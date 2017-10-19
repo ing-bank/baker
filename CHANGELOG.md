@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.14
+- Fix for issue #53: EventListeners are now notified of retry-exhausted events.
+- Added a method to CompiledRecipe to obtain an SVG String: ```getVisualRecipeAsSVG```
+- Updated to akka 2.5.6
+
 ## 1.1.13
 - Fix for issue #47: added writeVisualrecipeToSVGFile to write away the CompiledRecipe to a file.
 - bugfix for issue #46: it's now allowed to require an event on the name only, however it's still possible to require on event class in the JavaDSL.
