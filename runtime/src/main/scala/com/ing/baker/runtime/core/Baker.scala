@@ -1,15 +1,10 @@
 package com.ing.baker.runtime.core
 
-import java.util.concurrent.TimeoutException
-
-import akka.NotUsed
-import akka.actor.{Actor, ActorSystem, Props}
+import akka.actor.ActorSystem
 import akka.cluster.Cluster
-import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.Source
 import akka.util.Timeout
 import com.ing.baker.il._
 import com.ing.baker.il.petrinet._
@@ -17,14 +12,12 @@ import com.ing.baker.petrinet.runtime.EventSourcing.TransitionFiredEvent
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
-import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.ReflectedInteractionTask
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
@@ -58,10 +51,6 @@ object Baker {
   */
 class Baker(implementations: Map[String, AnyRef])
            (implicit val actorSystem: ActorSystem) {
-
-  import actorSystem.dispatcher
-
-
 
   private val config = actorSystem.settings.config
   private val bakeTimeout = config.as[FiniteDuration]("baker.bake-timeout")
