@@ -6,7 +6,7 @@ import java.util.concurrent.{TimeUnit, TimeoutException}
 import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.actor.ProcessMetadata
-import com.ing.baker.runtime.core.{Baker, BakerResponse, EventListener, NoSuchProcessException}
+import com.ing.baker.runtime.core._
 import com.ing.baker.runtime.petrinet.ReflectedInteractionTask
 
 import scala.collection.JavaConverters._
@@ -20,8 +20,9 @@ class JBaker (compiledRecipe: CompiledRecipe,
     this(compiledRecipe, implementations, ActorSystem("BakerActorSystem"))
 
   val baker: Baker = new Baker(
-    compiledRecipe = compiledRecipe,
     implementations = implementations.asScala)(actorSystem = actorSystem)
+
+  val recipeHandler: RecipeHandler = baker.addRecipe(compiledRecipe)
 
   val defaultTimeout: Int = 20 * 1000
   val defaultHandleEventAsyncTimeout: FiniteDuration = FiniteDuration.apply(10, TimeUnit.SECONDS)
@@ -44,7 +45,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     * @param processId The process identifier
     */
   def bake(processId: String): Unit =
-    baker.bake(processId)
+    recipeHandler.bake(processId)
 
   /**
     * This bakes (creates) a new process instance of the recipe.
@@ -86,7 +87,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     */
   def processEventAsync(processId: String, event: Any): BakerResponse = {
     implicit val executionContext = actorSystem.dispatcher
-    baker.handleEventAsync(processId, event)(defaultHandleEventAsyncTimeout)
+    recipeHandler.handleEventAsync(processId, event)(defaultHandleEventAsyncTimeout)
   }
 
   /**
@@ -110,7 +111,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def getIngredients(processId: String, waitTimeoutMillis: Long): java.util.Map[String, Object] =
-    baker
+  recipeHandler
       .getIngredients(processId)(waitTimeoutMillis milliseconds)
       .asJava
       .asInstanceOf[java.util.Map[String, Object]]
@@ -162,7 +163,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     *
     */
   def getEvents(processId: String, waitTimeoutMillis: Long): EventList =
-    new EventList(baker.events(processId)(waitTimeoutMillis milliseconds))
+    new EventList(recipeHandler.events(processId)(waitTimeoutMillis milliseconds))
 
   /**
     * Returns all events that have occurred for a given process.
@@ -227,7 +228,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     *
     * @param listener The listener to subscribe to events.
     */
-  def registerEventListener(listener: EventListener): Unit = baker.registerEventListener(listener)
+  def registerEventListener(listener: EventListener): Unit = recipeHandler.registerEventListener(listener)
 
   /**
     * Returns the visual state of the recipe in dot format
@@ -238,7 +239,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     */
   @throws[TimeoutException]("When the request does not receive a reply within the default deadline")
   def getVisualState(processId: String, waitTimeoutMillis: Long): String =
-    baker.getVisualState(processId)(waitTimeoutMillis milliseconds)
+  recipeHandler.getVisualState(processId)(waitTimeoutMillis milliseconds)
 
   /**
     * Returns the visual state of the recipe in dot format

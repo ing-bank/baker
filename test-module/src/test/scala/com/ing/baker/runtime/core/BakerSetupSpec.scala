@@ -27,7 +27,6 @@ class BakerSetupSpec extends TestRecipeHelper {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
         new Baker(
-          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
           implementations = mockImplementations)
       }
 
@@ -37,7 +36,6 @@ class BakerSetupSpec extends TestRecipeHelper {
           .withSensoryEvent(initialEvent)
 
         new Baker(
-          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
           implementations = Seq(new implementations.InteractionOne()))
       }
 
@@ -46,9 +44,9 @@ class BakerSetupSpec extends TestRecipeHelper {
           .withInteraction((interactionOne, "interactionOneRenamed"))
           .withSensoryEvent(initialEvent)
 
-        new Baker(
-          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-          implementations = Seq(new implementations.InteractionOne()))
+        val baker = new Baker(implementations = Seq(new implementations.InteractionOne()))
+
+        baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
       }
 
       "providing the implementation in a sequence with the field name same as the interaction" in {
@@ -56,9 +54,9 @@ class BakerSetupSpec extends TestRecipeHelper {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        new Baker(
-          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-          implementations = Seq(new InteractionOneFieldName()))
+        val baker = new Baker(implementations = Seq(new InteractionOneFieldName()))
+
+        baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
       }
 
       "providing the implementation in a sequence with the interface its implementing with the correct name" in {
@@ -66,9 +64,9 @@ class BakerSetupSpec extends TestRecipeHelper {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        new Baker(
-          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-          implementations = Seq(new InteractionOneInterfaceImplementation()))
+        val baker = new Baker(implementations = Seq(new InteractionOneInterfaceImplementation()))
+
+        baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
       }
 
       "the recipe contains complex ingredients that are serializable" in {
@@ -76,10 +74,9 @@ class BakerSetupSpec extends TestRecipeHelper {
           .withInteraction(complexIngredientInteraction)
           .withSensoryEvent(initialEvent)
 
-        new Baker(
-          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-          implementations = Seq(mock[ComplexIngredientInteraction])
-        )
+        val baker = new Baker(implementations = Seq(mock[ComplexIngredientInteraction]))
+
+        baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
       }
     }
 
@@ -89,10 +86,10 @@ class BakerSetupSpec extends TestRecipeHelper {
           .withInteraction(interactionOne)
           .withSensoryEvent(secondEvent)
 
+        val baker = new Baker(implementations = mockImplementations)
+
         intercept[RecipeValidationException] {
-          new Baker(
-            compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-            implementations = mockImplementations)
+          baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
         } should have('message ("Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction"))
       }
 
@@ -101,11 +98,10 @@ class BakerSetupSpec extends TestRecipeHelper {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        intercept[BakerException] {
-          new Baker(
-            compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-            implementations = Seq.empty)
+        val baker = new Baker(implementations = Seq.empty)
 
+        intercept[BakerException] {
+          baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
         } should have('message ("No implementation provided for interaction: InteractionOne"))
       }
 
@@ -114,11 +110,10 @@ class BakerSetupSpec extends TestRecipeHelper {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        intercept[BakerException] {
-          new Baker(
-            compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-            implementations = Seq(new InteractionOneWrongApply()))
+        val baker = new Baker(Seq(new InteractionOneWrongApply()))
 
+        intercept[BakerException] {
+          baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
         } should have('message ("Invalid implementation provided for interaction: InteractionOne"))
       }
     }

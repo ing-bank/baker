@@ -9,7 +9,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
 import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.recipe.{common, javadsl}
-import com.ing.baker.runtime.core.Baker
+import com.ing.baker.runtime.core.{Baker, RecipeHandler}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
@@ -450,14 +450,13 @@ trait TestRecipeHelper
     * @return
     */
   protected def setupBakerWithRecipe(recipeName: String, appendUUIDToTheRecipeName: Boolean = true)
-                                    (implicit actorSystem: ActorSystem): Baker = {
+                                    (implicit actorSystem: ActorSystem): RecipeHandler = {
     val newRecipeName = if (appendUUIDToTheRecipeName) s"$recipeName-${UUID.randomUUID().toString}" else recipeName
     val recipe = getComplexRecipe(newRecipeName)
     setupMockResponse()
 
-    new Baker(
-      compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-      implementations = mockImplementations)(actorSystem)
+    val baker = new Baker(implementations = mockImplementations)(actorSystem)
+    baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
   }
 
   protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Baker = {

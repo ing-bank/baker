@@ -97,13 +97,6 @@ class Baker(implementations: Map[String, AnyRef])
     this(ReflectedInteractionTask.implementationsToProviderMap(implementations))(actorSystem)
   }
 
-  def this(compiledRecipe: CompiledRecipe,
-           implementations: Seq[AnyRef])
-          (implicit actorSystem: ActorSystem) = {
-    this(implementations)(actorSystem)
-    addRecipe(compiledRecipe)
-  }
-
   def addRecipe(compiledRecipe: CompiledRecipe) : RecipeHandler = {
     if(recipeHandlers.exists(_.compiledRecipe.name == compiledRecipe.name))
       throw new BakerException("Recipe with this name already exists")
@@ -162,121 +155,6 @@ class Baker(implementations: Map[String, AnyRef])
         actorSystem.terminate()
     }
   }
-
-  /**
-    * Creates a process instance of this recipe.
-    *
-    * @param processId The process identifier
-    */
-  def bake(processId: String): ProcessState =
-    Await.result(bakeAsync(processId), bakeTimeout)
-
-  /**
-    * Asynchronously creates an instance of the  process using the recipe.
-    *
-    * @param processId The process identifier
-    * @return A future of the initial process state.
-    */
-  def bakeAsync(processId: String): Future[ProcessState] =
-    recipeHandlers.head.bakeAsync(processId, bakeTimeout)
-
-
-  /**
-    * Registers a listener to all runtime events.
-    *
-    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
-    */
-  def registerEventListener(listener: EventListener): Boolean = {
-    val subscriber = actorSystem.actorOf(Props(new Actor() {
-      override def receive: Receive = {
-        case ProcessInstanceEvent(processType, id, event: TransitionFiredEvent[_, _, _])
-          if recipeHandlers.exists(_.compiledRecipe.name == processType) =>
-          toRuntimeEvent(event).foreach(e => listener.processEvent(id, e))
-      }
-    }))
-
-    actorSystem.eventStream.subscribe(subscriber.actorRef, classOf[ProcessInstanceEvent])
-  }
-
-  /**
-    * Synchronously returns all events that occurred for a process.
-    */
-  def events(processId: String)(implicit timeout: FiniteDuration): Seq[RuntimeEvent] = {
-    recipeHandlers.head.events(processId)
-  }
-
-  /**
-    * Returns a Source of baker events for a process.
-    *
-    * @param processId The process identifier.
-    * @return The source of events.
-    */
-  def eventsAsync(processId: String): Source[RuntimeEvent, NotUsed] =
-    recipeHandlers.head.eventsAsync(processId)
-
-
-  /**
-    * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
-    *
-    * @param processId The process identifier
-    * @param event     The event object
-    */
-  def handleEvent(processId: String, event: Any)(implicit timeout: FiniteDuration): SensoryEventStatus = {
-    handleEventAsync(processId, event).confirmCompleted()
-  }
-
-  /**
-    * Fires an event to baker for a process.
-    *
-    * This call is fire and forget: If  nothing is done
-    * with the response object you NO guarantee that the event is received the process instance.
-    */
-  def handleEventAsync(processId: String, event: Any)(implicit timeout: FiniteDuration): BakerResponse = {
-    recipeHandlers.head.handleEventAsync(processId, event)
-  }
-
-  /**
-    * Returns the process state.
-    *
-    * @param processId The process identifier
-    * @return The process state.
-    */
-  @throws[NoSuchProcessException]("When no process exists for the given id")
-  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def getProcessState(processId: String)(implicit timeout: FiniteDuration): ProcessState =
-  Await.result(recipeHandlers.head.getProcessStateAsync(processId), timeout)
-
-  /**
-    * Returns the visual state (.dot) for a given process.
-    *
-    * @param processId The process identifier.
-    * @param timeout   How long to wait to retreive the process state.
-    * @return A visual (.dot) representation of the process state.
-    */
-  def getVisualState(processId: String)(implicit timeout: FiniteDuration): String = {
-    recipeHandlers.head.getVisualState(processId)
-  }
-
-  /**
-    * Returns a future of all the provided ingredients for a given process id.
-    *
-    * @param processId The process id.
-    * @return A future of the provided ingredients.
-    */
-  def getIngredientsAsync(processId: String)(implicit timeout: FiniteDuration): Future[Map[String, Any]] = {
-    recipeHandlers.head.getProcessStateAsync(processId).map(_.ingredients)
-  }
-
-  /**
-    * Returns all provided ingredients for a given process id.
-    *
-    * @param processId The process id.
-    * @return The provided ingredients.
-    */
-  @throws[NoSuchProcessException]("When no process exists for the given id")
-  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def getIngredients(processId: String)(implicit timeout: FiniteDuration): Map[String, Any] =
-  getProcessState(processId).ingredients
 
   def allProcessMetadata: Set[ProcessMetadata] = recipeHandlers.flatMap(_.recipeMetadata.getAll).toSet
 }

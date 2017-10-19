@@ -21,7 +21,7 @@ class ExamplesSpec extends TestRecipeHelper  {
       // compiles the recipe
       val compiledRecipe = RecipeCompiler.compileRecipe(webShopRecipe)
 
-      println(s"Visual recipe: ${compiledRecipe.getRecipeVisualization}")
+//      println(s"Visual recipe: ${compiledRecipe.getRecipeVisualization}")
 
       // prints any validation errors the compiler found
       compiledRecipe.validationErrors shouldBe empty
@@ -64,19 +64,21 @@ class ExamplesSpec extends TestRecipeHelper  {
       val implementations =
         Seq(validateOrderImpl, manufactureGoodsImpl, sendInvoiceImpl, shipGoodsImpl)
 
-      val baker = new Baker(compiledRecipe, implementations)
+      val baker = new Baker(implementations)
+
+      val recipeHandler = baker.addRecipe(compiledRecipe)
 
       val processId = UUID.randomUUID().toString
 
-      baker.bake(processId)
+      recipeHandler.bake(processId)
 
       implicit val timeout: FiniteDuration = 2.seconds.dilated
 
       // fire events
 
-      baker.handleEvent(processId, orderPlaced.instance(testOrder))
-      baker.handleEvent(processId, paymentMade.instance())
-      baker.handleEvent(processId, customerInfoReceived.instance(testCustomerInfoData))
+      recipeHandler.handleEvent(processId, orderPlaced.instance(testOrder))
+      recipeHandler.handleEvent(processId, paymentMade.instance())
+      recipeHandler.handleEvent(processId, customerInfoReceived.instance(testCustomerInfoData))
 
       val expectedIngredients = Map(
         "order" -> testOrder,
@@ -84,7 +86,7 @@ class ExamplesSpec extends TestRecipeHelper  {
         "customerInfo" -> testCustomerInfoData,
         "trackingId" -> testTrackingId)
 
-      val actualIngredients = baker.getIngredients(processId)
+      val actualIngredients = recipeHandler.getIngredients(processId)
 
       // assert the that all ingredients are provided
       actualIngredients shouldBe expectedIngredients
@@ -98,7 +100,7 @@ class ExamplesSpec extends TestRecipeHelper  {
         RuntimeEvent("GoodsShipped", Seq("trackingId" -> testTrackingId)),
         RuntimeEvent("InvoiceWasSent", Seq.empty))
 
-      TestKit.awaitCond(baker.events(processId) equals expectedEvents, 2.seconds.dilated)
+      TestKit.awaitCond(recipeHandler.events(processId) equals expectedEvents, 2.seconds.dilated)
     }
   }
 }

@@ -3,7 +3,7 @@ package com.ing.baker.runtime.core
 import java.util.concurrent.TimeoutException
 
 import akka.NotUsed
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.pattern.ask
 import akka.persistence.query.scaladsl.{CurrentEventsByPersistenceIdQuery, CurrentPersistenceIdsQuery, PersistenceIdsQuery}
 import akka.stream.ActorMaterializer
@@ -16,6 +16,7 @@ import com.ing.baker.petrinet.runtime.PetriNetRuntime
 import com.ing.baker.runtime.actor.ProcessInstanceProtocol.{AlreadyInitialized, FireTransition, GetState, Initialize, Initialized, InstanceState, Response, Uninitialized, marshal}
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.serialization.{AkkaObjectSerializer, Encryption}
+import com.ing.baker.runtime.core.Baker.toRuntimeEvent
 import com.ing.baker.runtime.core.RecipeHandler._
 import com.ing.baker.runtime.petrinet.RecipeRuntime
 import fs2.Strategy
@@ -208,4 +209,21 @@ class RecipeHandler(val compiledRecipe: CompiledRecipe,
       ingredientNames = this.getIngredients(processId).keySet)
   }
 
+  /**
+    * Registers a listener to all runtime events.
+    *
+    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
+    */
+  def registerEventListener(listener: EventListener): Boolean = {
+    val subscriber = actorSystem.actorOf(Props(new Actor() {
+      override def receive: Receive = {
+        case ProcessInstanceEvent(processType, id, event: TransitionFiredEvent[_, _, _])
+          if compiledRecipe.name == processType =>
+          toRuntimeEvent(event).foreach(e => listener.processEvent(id, e))
+      }
+    }))
+    actorSystem.eventStream.subscribe(subscriber.actorRef, classOf[ProcessInstanceEvent])
+  }
+
+  def allProcessMetadata: Set[ProcessMetadata] = recipeMetadata.getAll
 }
