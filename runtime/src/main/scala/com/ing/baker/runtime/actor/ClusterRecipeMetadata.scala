@@ -1,14 +1,14 @@
 package com.ing.baker.runtime.actor
 
-import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
-import akka.util.Timeout
-import akka.cluster.ddata._
-import akka.cluster.ddata.Replicator._
+import akka.actor.{ActorRef, ActorSystem}
 import akka.cluster.Cluster
-import scala.concurrent.duration._
+import akka.cluster.ddata.Replicator._
+import akka.cluster.ddata._
 import akka.pattern.ask
+import akka.util.Timeout
 
 import scala.concurrent.Await
+import scala.concurrent.duration._
 
 object ClusterRecipeMetadata {
   private val DataKey = ORSetKey.create[ProcessMetadata]("allProcessIds")
@@ -19,18 +19,9 @@ class ClusterRecipeMetadata(override val recipeName: String)(implicit actorSyste
   import ClusterRecipeMetadata._
 
   implicit val timeout = Timeout(5 seconds)
+  implicit val cluster = Cluster(actorSystem)
 
   private val replicator = DistributedData(actorSystem).replicator
-  implicit val node = Cluster(actorSystem)
-
-  private val senderActor = actorSystem.actorOf(Props.apply(new Actor with ActorLogging {
-    //noinspection TypeAnnotation
-    override def receive = {
-      case msg => log.debug("Ignoring message: {}", msg)
-    }
-  }))
-
-  replicator ! Subscribe(DataKey, senderActor)
 
   override def getAll: Set[ProcessMetadata] = {
     import actorSystem.dispatcher
@@ -45,10 +36,10 @@ class ClusterRecipeMetadata(override val recipeName: String)(implicit actorSyste
   }
 
   override def add(meta: ProcessMetadata): Unit = {
-    replicator.tell(Update(DataKey, ORSet.empty[ProcessMetadata], WriteMajority(timeout.duration))(_ + meta), senderActor)
+    replicator.tell(Update(DataKey, ORSet.empty[ProcessMetadata], WriteMajority(timeout.duration))(_ + meta), ActorRef.noSender)
   }
 
   override def remove(meta: ProcessMetadata): Unit = {
-    replicator.tell(Update(DataKey, ORSet.empty[ProcessMetadata], WriteMajority(timeout.duration))(_ - meta), senderActor)
+    replicator.tell(Update(DataKey, ORSet.empty[ProcessMetadata], WriteMajority(timeout.duration))(_ - meta), ActorRef.noSender)
   }
 }
