@@ -238,6 +238,7 @@ class ProcessInstance[P[_], T[_, _], S, E](
           map
         } else {
           val cancellable = system.scheduler.scheduleOnce(newDelay milliseconds) {
+            logEvent(Logging.InfoLevel, LogScheduleRetry(processId, j.transition.toString, delay))
             executeJob(j, sender())
           }
           map + (j.id -> cancellable)
