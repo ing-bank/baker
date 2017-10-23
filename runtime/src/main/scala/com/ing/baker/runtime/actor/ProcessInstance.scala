@@ -114,7 +114,7 @@ class ProcessInstance[P[_], T[_, _], S, E](
 
     case IdleStop(n) if n == instance.sequenceNr && instance.activeJobs.isEmpty ⇒
       logEvent(Logging.DebugLevel, LogIdleStop(processId, settings.idleTTL.getOrElse(Duration.Zero)))
-      context.parent ! Passivate(Stop(delete = false))
+      context.stop(context.self)
 
     case GetState ⇒
       sender() ! fromExecutionInstance(instance)

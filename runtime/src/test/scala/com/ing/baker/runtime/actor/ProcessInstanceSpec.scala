@@ -392,18 +392,14 @@ class ProcessInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSug
       )
 
       val petriNetActor = createPetriNetActor(coloredProps(petriNet, runtime, customSettings), UUID.randomUUID().toString)
+      watch(petriNetActor)
 
       implicit val timeout = Timeout(dilatedMillis(2000), MILLISECONDS)
-      whenReady((petriNetActor ? GetChild).mapTo[ActorRef]) {
-        child ⇒
-          {
-            petriNetActor ! Initialize(marshal[Place](initialMarking), ())
-            expectMsgClass(classOf[Initialized])
 
-            watch(child)
-            expectMsgClass(classOf[Terminated])
-          }
-      }
+      petriNetActor ! Initialize(marshal[Place](initialMarking), ())
+      expectMsgClass(classOf[Initialized])
+
+      expectMsgClass(classOf[Terminated])
     }
 
     "fire automated transitions in parallel when possible" in new StateTransitionNet[Unit, Unit] {
