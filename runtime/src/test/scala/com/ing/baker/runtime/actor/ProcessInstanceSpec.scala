@@ -4,14 +4,12 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import akka.actor.{ActorRef, ActorSystem, PoisonPill, Terminated}
-import akka.pattern.ask
 import akka.testkit.TestDuration
 import akka.util.Timeout
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.dsl.colored._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Fatal, RetryWithDelay}
 import com.ing.baker.petrinet.runtime.TransitionExceptionHandler
-import com.ing.baker.runtime.actor.AkkaTestBase.GetChild
 import com.ing.baker.runtime.actor.ProcessInstanceProtocol._
 import org.mockito.Matchers._
 import org.mockito.Mockito._
