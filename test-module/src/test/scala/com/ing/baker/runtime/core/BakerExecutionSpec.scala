@@ -118,62 +118,55 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue, "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
     }
 
-    "only allow a sensory event be fired once if the max firing limit is set one" in {
-      val recipe =
-        Recipe("maxFiringLimitOfOneOnSensoryEventRecipe")
-          .withInteraction(interactionOne)
-          .withSensoryEvent(initialEvent.withMaxFiringLimit(1))
-
-      val baker = new Baker(
-        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-        implementations = mockImplementations)
+    "only allow a sensory event to be fired n times if the max firing limit is set to n" in {
 
       when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
 
-      val processId = UUID.randomUUID().toString
-      baker.bake(processId)
+      (1 to 3).foreach { limit =>
 
-      val executedFirst = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
-      executedFirst shouldBe SensoryEventStatus.Completed
-      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+        val recipe =
+          Recipe(s"maxFiringLimitOf${limit}OnSensoryEventRecipe")
+            .withInteraction(interactionOne)
+            .withSensoryEvent(initialEvent.withMaxFiringLimit(limit))
 
-      val executedSecond = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
-      executedSecond shouldBe SensoryEventStatus.FiringLimitMet
-      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+        val baker = new Baker(
+          compiledRecipe = RecipeCompiler.compileRecipe(recipe),
+          implementations = mockImplementations)
+
+        val processId = UUID.randomUUID().toString
+        baker.bake(processId)
+
+        // fire the event to limit times
+        (1 to limit).foreach { n =>
+          val executedBeforeLimit = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
+          executedBeforeLimit shouldBe SensoryEventStatus.Completed
+          verify(testInteractionOneMock, times(n)).apply(processId.toString, "initialIngredient")
+        }
+
+        val executedAfterLimit = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
+        executedAfterLimit shouldBe SensoryEventStatus.FiringLimitMet
+        verify(testInteractionOneMock, times(limit)).apply(processId.toString, "initialIngredient")
+      }
     }
 
-    "only allow a sensory event be fired twice if the max firing limit is set two" in {
-      val recipe =
-        Recipe("maxFiringLimitOfTwoOnSensoryEventRecipe")
-          .withInteraction(interactionOne)
-          .withSensoryEvent(initialEvent.withMaxFiringLimit(2))
+    "be able to confirm the firing of an event when firing a sensory event" in {
 
-      val baker = new Baker(
-        compiledRecipe = RecipeCompiler.compileRecipe(recipe),
-        implementations = mockImplementations)
-
-      println(baker.compiledRecipe.petriNet.places)
-      println(baker.compiledRecipe.petriNet.places.map(_.id))
-
-      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
+      val baker = setupBakerWithRecipe("ConfirmEventRecipe")
 
       val processId = UUID.randomUUID().toString
+
       baker.bake(processId)
+      baker.handleEventAndWaitForEvent(processId, InitialEvent("foo"), "EventFromInteractionTwo") shouldBe(SensoryEventStatus.EventFired)
+    }
 
-      val executedFirst = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
-      executedFirst shouldBe SensoryEventStatus.Completed
-      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+    "be able to confirm the NOT firing of an event when firing a sensory event" in {
 
-      val executedSecond = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
-      executedSecond shouldBe SensoryEventStatus.Completed
-      verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
+      val baker = setupBakerWithRecipe("ConfirmNOTEventRecipe")
 
-      // This check is added to verify event list is still correct after firing the same event twice
-      baker.events(processId).map(_.name).toList shouldBe List("InitialEvent", "InteractionOneSuccessful", "InitialEvent", "InteractionOneSuccessful")
+      val processId = UUID.randomUUID().toString
 
-      val executedThird = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
-      executedThird shouldBe SensoryEventStatus.FiringLimitMet
-      verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
+      baker.bake(processId)
+      baker.handleEventAndWaitForEvent(processId, InitialEvent("foo"), "SecondEvent") shouldBe(SensoryEventStatus.EventNotFired)
     }
 
     "backwards compatibility in serialization of case class ingredients" ignore {

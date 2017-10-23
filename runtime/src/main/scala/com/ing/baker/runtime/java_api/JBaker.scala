@@ -6,7 +6,7 @@ import java.util.concurrent.{TimeUnit, TimeoutException}
 import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.actor.ProcessMetadata
-import com.ing.baker.runtime.core.{Baker, BakerResponse, EventListener, NoSuchProcessException}
+import com.ing.baker.runtime.core._
 import com.ing.baker.runtime.petrinet.ReflectedInteractionTask
 
 import scala.collection.JavaConverters._
@@ -75,6 +75,17 @@ class JBaker (compiledRecipe: CompiledRecipe,
     */
   def processEvent(processId: UUID, event: Any): Unit =
     this.processEvent(processId.toString, event)
+
+
+  /**
+    * Processes an event and awaits confirms the firing of a specific event.
+    *
+    * @param processId The process identifier
+    * @param event The event to fire
+    * @param eventName The name of the event to confirm.
+    */
+  def processEventAndConfirmEvent(processId: String, event: Any, eventName: String): SensoryEventStatus =
+    baker.handleEventAndWaitForEvent(processId, event, eventName)(defaultHandleEventAsyncTimeout)
 
   /**
     * This fires the given event in the recipe for the process with the given processId

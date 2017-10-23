@@ -113,7 +113,8 @@ object ProcessInstanceProtocol {
     consumed: MarkingData,
     produced: MarkingData,
     result: InstanceState,
-    newJobsIds: Set[Long]) extends TransitionResponse
+    newJobsIds: Set[Long],
+    output: Any) extends TransitionResponse
 
   /**
    * Response indicating that a transition has failed.

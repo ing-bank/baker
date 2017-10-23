@@ -119,7 +119,7 @@ class ProcessInstance[P[_], T[_, _], S, E](
     case GetState ⇒
       sender() ! fromExecutionInstance(instance)
 
-    case event@TransitionFiredEvent(jobId, t, timeStarted, timeCompleted, consumed, produced, output) ⇒
+    case event @ TransitionFiredEvent(jobId, t, timeStarted, timeCompleted, consumed, produced, output) ⇒
 
       val transition = t.asInstanceOf[T[_, _]]
       val transitionId = transitionIdentifier(transition).value
@@ -132,13 +132,13 @@ class ProcessInstance[P[_], T[_, _], S, E](
           .andThen(step)
           .andThen {
             case (updatedInstance, newJobs) ⇒
-              sender() ! TransitionFired(jobId, transitionId, marshal[P](consumed.asInstanceOf[Marking[P]]), marshal[P](produced.asInstanceOf[Marking[P]]), fromExecutionInstance(updatedInstance), newJobs.map(_.id))
+              sender() ! TransitionFired(jobId, transitionId, marshal[P](consumed.asInstanceOf[Marking[P]]), marshal[P](produced.asInstanceOf[Marking[P]]), fromExecutionInstance(updatedInstance), newJobs.map(_.id), output)
               context become running(updatedInstance, scheduledRetries - jobId)
               updatedInstance
           }
       )
 
-    case event@TransitionFailedEvent(jobId, t, timeStarted, timeFailed, consume, input, reason, strategy) ⇒
+    case event @ TransitionFailedEvent(jobId, t, timeStarted, timeFailed, consume, input, reason, strategy) ⇒
 
       val transition = t.asInstanceOf[T[_, _]]
       val transitionId = transitionIdentifier(transition).value
@@ -175,7 +175,7 @@ class ProcessInstance[P[_], T[_, _], S, E](
             eventSource.apply(instance)
               .andThen(step)
               .andThen { case (updatedInstance, newJobs) ⇒
-                sender() ! TransitionFired(jobId, transitionId, marshal[P](consumedMarking), marshal[P](producedMarking), fromExecutionInstance(updatedInstance), newJobs.map(_.id))
+                sender() ! TransitionFired(jobId, transitionId, marshal[P](consumedMarking), marshal[P](producedMarking), fromExecutionInstance(updatedInstance), newJobs.map(_.id), out)
                 context become running(updatedInstance, scheduledRetries - jobId)
               })
 

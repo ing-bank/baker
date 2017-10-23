@@ -40,7 +40,8 @@ class QueuePushingActor(queue: SourceQueueWithComplete[Any], waitForRetries: Boo
       queue.offer(msg)
       stopActorIfDone
 
-    case Uninitialized(id) ⇒
+    case msg @ Uninitialized(id) ⇒
+      queue.offer(msg)
       queue.complete()
       stopActor()
 

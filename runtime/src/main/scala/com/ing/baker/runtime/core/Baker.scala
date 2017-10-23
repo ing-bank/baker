@@ -13,16 +13,17 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
 import com.ing.baker.il._
 import com.ing.baker.il.petrinet._
-import com.ing.baker.runtime.actor.ProcessInstanceProtocol._
 import com.ing.baker.petrinet.runtime.EventSourcing.{TransitionFailedEvent, TransitionFiredEvent}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
+import com.ing.baker.runtime.actor.ProcessIndex.ReceivePeriodExpired
+import com.ing.baker.runtime.actor.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor._
+import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.actor.serialization.{AkkaObjectSerializer, Encryption}
 import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.{RecipeRuntime, ReflectedInteractionTask}
-import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import fs2.Strategy
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
@@ -252,13 +253,33 @@ class Baker(val compiledRecipe: CompiledRecipe,
   }
 
   /**
-    * Fires an event to baker for a process.
+    * Handles an event and awaits confirms the firing of a specific event.
     *
-    * This call is fire and forget: If  nothing is done
-    * with the response object you NO guarantee that the event is received the process instance.
+    * @param processId
+    * @param event
+    * @return
     */
-  def handleEventAsync(processId: String, event: Any)(implicit timeout: FiniteDuration): BakerResponse = {
+  def handleEventAndWaitForEvent(processId: String, event: Any, eventName: String)(implicit timeout: FiniteDuration): SensoryEventStatus = {
+    val stream = handleEventStream(processId, event)
 
+    // TODO check in advance if the event can fire (using petri net coverability algorithm)
+
+    val eventStatusFuture: Future[SensoryEventStatus] = stream.collect {
+      case TransitionNotEnabled(_,_)                                       => SensoryEventStatus.FiringLimitMet
+      case ReceivePeriodExpired                                            => SensoryEventStatus.ReceivePeriodExpired
+      case TransitionFired(_, _, _, _, _, _, RuntimeEvent(`eventName`, _)) => SensoryEventStatus.EventFired
+      case Uninitialized(processId)                                        => throw new NoSuchProcessException(processId)
+    }.runWith(Sink.headOption)
+      .map {
+        case Some(status) => status
+        case None         => SensoryEventStatus.EventNotFired
+      }
+
+    Await.result(eventStatusFuture, timeout)
+  }
+
+
+  private def handleEventStream(processId: String, event: Any)(implicit timeout: FiniteDuration): Source[Any, NotUsed] = {
     val runtimeEvent = Baker.eventExtractor.extractEvent(event)
 
     val sensoryEvent: EventType = compiledRecipe.sensoryEvents
@@ -271,8 +292,18 @@ class Baker(val compiledRecipe: CompiledRecipe,
       throw new IllegalArgumentException("Invalid event: " + eventValidationErrors.mkString(","))
 
     val msg = createEventMsg(compiledRecipe, processId, runtimeEvent)
-    val source = petriNetApi.askAndCollectAll(msg, waitForRetries = true)(timeout)
-    new BakerResponse(processId, source)
+    petriNetApi.askAndCollectAll(msg, waitForRetries = true)(timeout)
+  }
+
+  /**
+    * Fires an event to baker for a process.
+    *
+    * This call is fire and forget: If  nothing is done
+    * with the response object you NO guarantee that the event is received the process instance.
+    */
+  def handleEventAsync(processId: String, event: Any)(implicit timeout: FiniteDuration): BakerResponse = {
+    val stream = handleEventStream(processId, event)
+    new BakerResponse(processId, stream)
   }
 
   /**
