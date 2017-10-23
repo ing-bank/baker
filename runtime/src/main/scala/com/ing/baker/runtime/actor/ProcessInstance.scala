@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.actor
 
 import akka.actor._
-import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.Logging
 import akka.pattern.pipe
 import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
@@ -87,7 +86,7 @@ class ProcessInstance[P[_], T[_, _], S, E](
 
     case _: Command ⇒
       sender() ! Uninitialized(processId)
-      context.parent ! Passivate(Stop(delete = false))
+      context.stop(context.self)
 
   }
 
