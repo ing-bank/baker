@@ -13,6 +13,7 @@ import com.ing.baker.runtime.core.{Baker, RecipeHandler}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
+import org.mockito.stubbing.Answer
 import org.scalatest._
 import org.scalatest.mockito.MockitoSugar
 

@@ -10,4 +10,12 @@ case class EventOutputTransformer(override val newEventName: String,
     this(
       eventOutputTransformer.newEventName,
       eventOutputTransformer.ingredientRenames)
+
+  override def equals(obj: Any): Boolean = {
+    if (!obj.isInstanceOf[common.EventOutputTransformer])
+      return false
+    val other: common.EventOutputTransformer = obj.asInstanceOf[common.EventOutputTransformer]
+    this.newEventName == other.newEventName &&
+      this.ingredientRenames == other.ingredientRenames
+  }
 }

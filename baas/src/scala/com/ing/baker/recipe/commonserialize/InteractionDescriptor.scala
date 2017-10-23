@@ -26,7 +26,24 @@ case class InteractionDescriptor private(override val name: String,
       id.overriddenOutputIngredientName,
       id.maximumInteractionCount,
       id.failureStrategy,
-      id.eventOutputTransformers.map{
+      id.eventOutputTransformers.map {
         case (event: common.Event, transformer: common.EventOutputTransformer) =>
-          new Event(event) -> new EventOutputTransformer(transformer)})
+          new Event(event) -> new EventOutputTransformer(transformer)
+      })
+
+  override def equals(obj: scala.Any): Boolean = {
+    if (!obj.isInstanceOf[common.InteractionDescriptor])
+      return false
+    val other: common.InteractionDescriptor = obj.asInstanceOf[common.InteractionDescriptor]
+    this.name == other.name &&
+      this.interaction == other.interaction &&
+      this.maximumInteractionCount == other.maximumInteractionCount &&
+      this.requiredEvents == other.requiredEvents &&
+      this.requiredOneOfEvents == other.requiredOneOfEvents &&
+      this.overriddenIngredientNames == other.overriddenIngredientNames &&
+      this.predefinedIngredients == other.predefinedIngredients &&
+      this.failureStrategy == other.failureStrategy &&
+      this.eventOutputTransformers == other.eventOutputTransformers &&
+      this.overriddenOutputIngredientName == other.overriddenOutputIngredientName
+  }
 }
