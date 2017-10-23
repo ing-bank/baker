@@ -92,6 +92,7 @@ class ProcessInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSug
       watch(actor)
       actor ! GetState
       expectMsgClass(classOf[Uninitialized])
+      expectMsgClass(classOf[Terminated])
     }
 
     "After being initialized respond with an InstanceState message on receiving a GetState command" in new TestSequenceNet {
