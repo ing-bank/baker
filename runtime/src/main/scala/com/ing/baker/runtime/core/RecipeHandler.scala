@@ -54,7 +54,7 @@ class RecipeHandler(val compiledRecipe: CompiledRecipe,
                    (implicit val actorSystem: ActorSystem,
                     implicit val materializer: ActorMaterializer) {
 
-  val implementationErrors = checkIfValidImplementationsProvided(interactionManager, compiledRecipe.interactionTransitions)
+  private val implementationErrors = checkIfValidImplementationsProvided(interactionManager, compiledRecipe.interactionTransitions)
   if(implementationErrors.nonEmpty)
     throw new BakerException(implementationErrors.mkString(", "))
 
