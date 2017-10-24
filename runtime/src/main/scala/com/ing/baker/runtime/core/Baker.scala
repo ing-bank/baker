@@ -84,8 +84,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   def this(implementations: Seq[AnyRef])
           (implicit actorSystem: ActorSystem) = {
     this()(actorSystem)
-    implementations.flatMap(MethodInteractionImplementation.anyRefToInteractionImplementations)
-      .foreach(interactionManager.addInteractionImplementation)
+    implementations.foreach(addInteractionImplementation)
   }
 
   def addRecipe(compiledRecipe: CompiledRecipe) : RecipeHandler = {
@@ -111,6 +110,13 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       case None => throw new BakerException(s"No Recipe Handler available for recipe with name: $name")
     }
   }
+
+  def addInteractionImplementation(anyRef: AnyRef) =
+    MethodInteractionImplementation.anyRefToInteractionImplementations(anyRef)
+      .foreach(interactionManager.addInteractionImplementation)
+
+  def addInteractionImplementation(interactionImplementation: InteractionImplementation) =
+    interactionManager.addInteractionImplementation(interactionImplementation)
 
   if (!config.as[Option[Boolean]]("baker.config-file-included").getOrElse(false))
     throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
