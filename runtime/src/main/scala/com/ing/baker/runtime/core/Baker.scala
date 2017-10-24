@@ -210,6 +210,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
               listener.processEvent(processId, event)
             case _ =>
           }
+        case _: ProcessInstanceEvent => // purposely ignored in order to not have unnecessary unhandled messages logged
       }
     }))
 
