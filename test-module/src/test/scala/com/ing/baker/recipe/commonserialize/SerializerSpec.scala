@@ -7,7 +7,8 @@ import com.ing.baker.TestRecipeHelper.InitialEvent
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.commonserialize.SerializerSpec.withKryo
-import com.ing.baker.recipe.{commonserialize, scaladsl}
+import com.ing.baker.recipe.scaladsl
+import com.ing.baker.recipe.commonserialize
 import com.ing.baker.runtime.core.{Baker, SensoryEventStatus}
 import com.twitter.chill.{KryoPool, ScalaKryoInstantiator}
 import org.mockito.Mockito.{verify, verifyZeroInteractions}
@@ -30,7 +31,6 @@ class SerializerSpec extends TestRecipeHelper {
 
       commonSerializeRecipe shouldBe scalaDSLRecipe
     }
-
 
     "Serialize and deserialize a common recipe" in {
       withKryo { kryo =>
@@ -58,7 +58,7 @@ class SerializerSpec extends TestRecipeHelper {
         val compiledRecipeDeserialized: CompiledRecipe = RecipeCompiler.compileRecipe(deserializedRecipe);
         compiledRecipeDeserialized.getRecipeVisualization shouldBe compiledRecipeOriginal.getRecipeVisualization
 
-        println(compiledRecipeDeserialized.getPetriNetVisualization)
+//        println(compiledRecipeDeserialized.getPetriNetVisualization)
 
         val baker = new Baker(mockImplementations)
 

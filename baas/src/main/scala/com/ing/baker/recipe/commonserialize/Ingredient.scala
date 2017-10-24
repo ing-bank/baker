@@ -5,11 +5,11 @@ import java.lang.reflect.Type
 import com.ing.baker.recipe.common
 
 case class Ingredient(override val name: String,
-                      typeName: String) extends common.Ingredient {
+                      override val clazz: Type) extends common.Ingredient {
 
-  val clazz: Type = Class.forName(typeName)
+//  val clazz: Type = Class.forName(typeName)
 
-  def this(ingredient: common.Ingredient) = this(ingredient.name, ingredient.clazz.getTypeName)
+  def this(ingredient: common.Ingredient) = this(ingredient.name, ingredient.clazz)
 
   override def equals(obj: Any): Boolean = {
     if (!obj.isInstanceOf[common.Ingredient])

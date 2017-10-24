@@ -18,6 +18,6 @@ case class Event(override val name: String,
     val other: common.Event = obj.asInstanceOf[common.Event]
     this.name == other.name &&
       this.providedIngredients.equals(other.providedIngredients) &&
-      this.maxFiringLimit == other.maxFiringLimit
+      this.maxFiringLimit.equals(other.maxFiringLimit)
   }
 }
