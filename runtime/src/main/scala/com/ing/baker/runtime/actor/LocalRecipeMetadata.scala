@@ -1,6 +1,7 @@
 package com.ing.baker.runtime.actor
 
 import com.google.common.collect.Sets
+
 import scala.collection.convert.decorateAsScala._
 
 

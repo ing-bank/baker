@@ -6,6 +6,7 @@ import akka.cluster.ddata.Replicator._
 import akka.cluster.ddata._
 import akka.pattern.ask
 import akka.util.Timeout
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -17,6 +18,9 @@ object ClusterRecipeMetadata {
 class ClusterRecipeMetadata(override val recipeName: String)(implicit actorSystem: ActorSystem) extends RecipeMetadata {
 
   import ClusterRecipeMetadata._
+
+  private val logger = LoggerFactory.getLogger(classOf[ClusterRecipeMetadata])
+  logger.info("Starting ddata replicator to share recipe metadata for recipe {}", recipeName)
 
   implicit val timeout = Timeout(5 seconds)
   implicit val cluster = Cluster(actorSystem)
