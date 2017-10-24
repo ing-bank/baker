@@ -7,13 +7,14 @@ import com.ing.baker.il.{IngredientType, autoBoxClasses, getRawClass, processIdN
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.{TransitionTask, TransitionTaskProvider}
 import com.ing.baker.runtime.core.Baker.eventExtractor
+import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import fs2.Task
 import org.slf4j.{LoggerFactory, MDC}
 
 import scala.util.Try
 
-class TaskProvider(recipeName: String, interactionFunctions: InteractionTransition[_] => (Seq[Any] => Any)) extends TransitionTaskProvider[ProcessState, Place, Transition] {
+class TaskProvider(recipeName: String, interactionManager: InteractionManager) extends TransitionTaskProvider[ProcessState, Place, Transition] {
 
   val log = LoggerFactory.getLogger(classOf[TaskProvider])
 
@@ -22,7 +23,7 @@ class TaskProvider(recipeName: String, interactionFunctions: InteractionTransiti
   override def apply[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _]], t: Transition[Input, Output]): TransitionTask[Place, Input, Output, ProcessState] = {
     t match {
       case interaction: InteractionTransition[_] =>
-        interactionTransitionTask[AnyRef, Input, Output](interaction.asInstanceOf[InteractionTransition[AnyRef]], interactionFunctions(interaction), petriNet.outMarking(interaction))
+        interactionTransitionTask[AnyRef, Input, Output](interaction.asInstanceOf[InteractionTransition[AnyRef]], interactionManager, petriNet.outMarking(interaction))
       case t: EventTransition  => eventTransitionTask(petriNet, t)
       case t                   => passThroughTransitionTask(petriNet, t)
     }
@@ -46,7 +47,7 @@ class TaskProvider(recipeName: String, interactionFunctions: InteractionTransiti
     }
   }
 
-  def interactionTransitionTask[I, Input, Output](interaction: InteractionTransition[I], fn: Seq[Any] => Any, outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, Input, Output, ProcessState] =
+  def interactionTransitionTask[I, Input, Output](interaction: InteractionTransition[I], interactionManager: InteractionManager, outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, Input, Output, ProcessState] =
 
     (_, processState, _) => {
 
@@ -54,7 +55,6 @@ class TaskProvider(recipeName: String, interactionFunctions: InteractionTransiti
       case e: InvocationTargetException => Task.fail(e.getCause)
       case e: Throwable => Task.fail(e)
     }
-
 
     Try {
       // returns a delayed task that will get executed by the baker petrinet runtime
@@ -69,7 +69,10 @@ class TaskProvider(recipeName: String, interactionFunctions: InteractionTransiti
           val input = createInput(interaction, processState)
 
           // execute the interaction
-          val output = fn.apply(input)
+//          val output = fn.apply(input)
+
+          //TODO move the error scenario away from this location
+          val output = interactionManager.getInteractionImplementation(interaction).get.execute(input)
 
           // create a runtime event from the interaction output
           val event = createRuntimeEvent(interaction, output)
@@ -159,7 +162,7 @@ class TaskProvider(recipeName: String, interactionFunctions: InteractionTransiti
         throw new FatalInteractionException(msg)
       }
 
-      if (interaction.originalEvents.exists(runtimeEvent.isInstanceOfEventType(_)))
+      if (interaction.originalEvents.exists(runtimeEvent.isInstanceOfEventType))
         runtimeEvent
 
       else {

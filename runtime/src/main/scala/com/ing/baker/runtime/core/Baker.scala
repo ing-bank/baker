@@ -12,8 +12,8 @@ import com.ing.baker.petrinet.runtime.EventSourcing.TransitionFiredEvent
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
+import com.ing.baker.runtime.core.interations.{InteractionImplementation, InteractionManager}
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
-import com.ing.baker.runtime.petrinet.ReflectedInteractionTask
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
@@ -49,7 +49,7 @@ object Baker {
   * - A list of events
   * The Baker can bake a recipe, create a process and respond to events.
   */
-class Baker(implementations: Map[String, AnyRef])
+class Baker(val interactionManager: InteractionManager)
            (implicit val actorSystem: ActorSystem) {
 
   private val config = actorSystem.settings.config
@@ -83,7 +83,7 @@ class Baker(implementations: Map[String, AnyRef])
 
   def this(implementations: Seq[AnyRef])
           (implicit actorSystem: ActorSystem) = {
-    this(ReflectedInteractionTask.implementationsToProviderMap(implementations))(actorSystem)
+    this(new InteractionManager(implementations.flatMap(InteractionImplementation.anyToInteractionImplementations)))(actorSystem)
   }
 
   def addRecipe(compiledRecipe: CompiledRecipe) : RecipeHandler = {
@@ -92,10 +92,7 @@ class Baker(implementations: Map[String, AnyRef])
 
     val recipeHandler = new RecipeHandler(
       compiledRecipe,
-      ReflectedInteractionTask.createInteractionFunctions(
-        compiledRecipe.interactionTransitions,
-        implementations
-        ),
+      interactionManager,
       configuredEncryption,
       actorIdleTimeout,
       bakeTimeout,

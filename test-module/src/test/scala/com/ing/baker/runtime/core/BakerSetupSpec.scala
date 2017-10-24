@@ -5,8 +5,6 @@ import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.core.implementations.{InteractionOneFieldName, InteractionOneInterfaceImplementation, InteractionOneWrongApply}
-import com.ing.baker.runtime.petrinet.ReflectedInteractionTask
-import org.mockito.Mockito.when
 
 import scala.language.postfixOps
 
@@ -114,7 +112,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
         intercept[BakerException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
-        } should have('message ("Invalid implementation provided for interaction: InteractionOne"))
+        } should have('message ("No implementation provided for interaction: InteractionOne"))
       }
     }
   }

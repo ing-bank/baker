@@ -18,12 +18,13 @@ import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.serialization.{AkkaObjectSerializer, Encryption}
 import com.ing.baker.runtime.core.Baker.toRuntimeEvent
 import com.ing.baker.runtime.core.RecipeHandler._
+import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.petrinet.RecipeRuntime
 import fs2.Strategy
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
 
 object RecipeHandler {
   def transitionForRuntimeEvent(runtimeEvent: RuntimeEvent, compiledRecipe: CompiledRecipe): Transition[_, _] =
@@ -36,24 +37,32 @@ object RecipeHandler {
     val t: Transition[_, _] = transitionForRuntimeEvent(runtimeEvent, recipe)
     BakerActorMessage(processId, FireTransition(t.id, runtimeEvent))
   }
+
+  private def checkIfValidImplementationsProvided(interactionManager: InteractionManager, actions: Set[InteractionTransition[_]]): Set[String] = {
+    actions.filterNot(interactionManager.hasInteractionImplementation)
+      .map(s => s"No implementation provided for interaction: ${s.originalInteractionName}")
+  }
 }
 
 class RecipeHandler(val compiledRecipe: CompiledRecipe,
-                    interactionFunctions: InteractionTransition[_] => (Seq[Any] => Any),
+                    interactionManager: InteractionManager,
                     configuredEncryption: Encryption,
                     actorIdleTimeout: Option[FiniteDuration],
                     bakeTimeout: FiniteDuration,
                     readJournal: CurrentEventsByPersistenceIdQuery with PersistenceIdsQuery with CurrentPersistenceIdsQuery,
                     bakerActorProvider: BakerActorProvider)
                    (implicit val actorSystem: ActorSystem,
-                    implicit val materializer: ActorMaterializer ) {
+                    implicit val materializer: ActorMaterializer) {
 
+  val implementationErrors = checkIfValidImplementationsProvided(interactionManager, compiledRecipe.interactionTransitions)
+  if(implementationErrors.nonEmpty)
+    throw new BakerException(implementationErrors.mkString(", "))
 
   if (compiledRecipe.validationErrors.nonEmpty)
     throw new RecipeValidationException(compiledRecipe.validationErrors.mkString(", "))
 
   val petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] =
-    new RecipeRuntime(compiledRecipe.name, interactionFunctions)
+    new RecipeRuntime(compiledRecipe.name, interactionManager)
 
   val petriNetInstanceActorProps =
     Util.recipePetriNetProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
@@ -199,7 +208,7 @@ class RecipeHandler(val compiledRecipe: CompiledRecipe,
     * Returns the visual state (.dot) for a given process.
     *
     * @param processId The process identifier.
-    * @param timeout How long to wait to retreive the process state.
+    * @param timeout   How long to wait to retreive the process state.
     * @return A visual (.dot) representation of the process state.
     */
   def getVisualState(processId: String)(implicit timeout: FiniteDuration): String = {
