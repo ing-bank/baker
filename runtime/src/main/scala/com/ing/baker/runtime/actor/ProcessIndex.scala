@@ -79,9 +79,6 @@ class ProcessIndex(processActorProps: Props,
 
       toBeDeleted.foreach(meta => getOrCreateProcessActor(meta.id) ! Stop(delete = true))
 
-    case Passivate(stopMessage) =>
-      sender() ! stopMessage
-
     case Terminated(actorRef) =>
       val processId = actorRef.path.name
       log.debug(s"Actor terminated: $actorRef")
@@ -132,7 +129,7 @@ class ProcessIndex(processActorProps: Props,
           persist(ActorActivated(processId)) { _ =>
             forwardIfWithinPeriod(createProcessActor(processId), cmd)
           }
-        case None => sender() ! Uninitialized(processId.toString)
+        case None => sender() ! Uninitialized(processId)
       }
 
     case cmd =>

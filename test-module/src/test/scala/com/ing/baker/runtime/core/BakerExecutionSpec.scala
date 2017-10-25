@@ -149,6 +149,8 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val baker = new Baker(mockImplementations)
 
+//      println(baker.compiledRecipe.petriNet.places)
+//      println(baker.compiledRecipe.petriNet.places.map(_.id))
       val recipeHandler = baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
 
       when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
@@ -351,6 +353,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       // reset interaction mocks and fire the other event for the second process
       resetMocks
+      setupMockResponse()
 
       val secondProcessId = UUID.randomUUID().toString
       recipeHandler.bake(secondProcessId)
@@ -667,6 +670,9 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val recipeHandler = baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
 
+      val listenerMock = mock[EventListener]
+      recipeHandler.registerEventListener(listenerMock)
+
       val processId = UUID.randomUUID().toString
       recipeHandler.bake(processId)
 
@@ -674,6 +680,8 @@ class BakerExecutionSpec extends TestRecipeHelper {
       recipeHandler.handleEvent(processId, InitialEvent(initialIngredientValue))
 
       Thread.sleep(50)
+      verify(listenerMock).processEvent(processId.toString, RuntimeEvent("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)))
+      verify(listenerMock).processEvent(processId.toString, RuntimeEvent("RetryExhausted", Seq.empty))
 
       recipeHandler.events(processId).map(_.name) should contain (exhaustedEvent.name)
     }

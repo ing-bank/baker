@@ -11,7 +11,8 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
 import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventType, RecipeVisualizer}
-import com.ing.baker.petrinet.runtime.EventSourcing.TransitionFiredEvent
+import com.ing.baker.petrinet.runtime.EventSourcing.{TransitionFailedEvent, TransitionFiredEvent}
+import com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
 import com.ing.baker.runtime.actor.ProcessInstanceProtocol.{AlreadyInitialized, FireTransition, GetState, Initialize, Initialized, InstanceState, Response, Uninitialized, marshal}
 import com.ing.baker.runtime.actor._
@@ -55,7 +56,7 @@ class RecipeHandler(val compiledRecipe: CompiledRecipe,
                     implicit val materializer: ActorMaterializer) {
 
   private val implementationErrors = checkIfValidImplementationsProvided(interactionManager, compiledRecipe.interactionTransitions)
-  if(implementationErrors.nonEmpty)
+  if (implementationErrors.nonEmpty)
     throw new BakerException(implementationErrors.mkString(", "))
 
   if (compiledRecipe.validationErrors.nonEmpty)
@@ -82,7 +83,7 @@ class RecipeHandler(val compiledRecipe: CompiledRecipe,
     * @param processId The process identifier
     */
   def bake(processId: String): ProcessState =
-    Await.result(bakeAsync(processId, bakeTimeout), bakeTimeout)
+    Await.result(bakeAsync(processId), bakeTimeout)
 
   /**
     * Asynchronously creates an instance of the  process using the recipe.
@@ -90,7 +91,7 @@ class RecipeHandler(val compiledRecipe: CompiledRecipe,
     * @param processId The process identifier
     * @return A future of the initial process state.
     */
-  def bakeAsync(processId: String, bakeTimeout: FiniteDuration): Future[ProcessState] = {
+  def bakeAsync(processId: String): Future[ProcessState] = {
     implicit val askTimeout = Timeout(bakeTimeout)
 
     val msg = Initialize(marshal(compiledRecipe.initialMarking), ProcessState(processId, Map.empty))
@@ -226,9 +227,15 @@ class RecipeHandler(val compiledRecipe: CompiledRecipe,
   def registerEventListener(listener: EventListener): Boolean = {
     val subscriber = actorSystem.actorOf(Props(new Actor() {
       override def receive: Receive = {
-        case ProcessInstanceEvent(processType, id, event: TransitionFiredEvent[_, _, _])
-          if compiledRecipe.name == processType =>
-          toRuntimeEvent(event).foreach(e => listener.processEvent(id, e))
+        case ProcessInstanceEvent(processType, processId, event: TransitionFiredEvent[_, _, _]) if processType == compiledRecipe.name =>
+          toRuntimeEvent(event).foreach(e => listener.processEvent(processId, e))
+        case ProcessInstanceEvent(processType, processId, event: TransitionFailedEvent[_, _, _]) if processType == compiledRecipe.name =>
+          event.exceptionStrategy match {
+            case Continue(_, event: RuntimeEvent) =>
+              listener.processEvent(processId, event)
+            case _ =>
+          }
+        case _: ProcessInstanceEvent =>  // purposely ignored in order to not have unnecessary unhandled messages logged
       }
     }))
     actorSystem.eventStream.subscribe(subscriber.actorRef, classOf[ProcessInstanceEvent])

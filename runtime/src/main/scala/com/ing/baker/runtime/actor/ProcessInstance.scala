@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.actor
 
 import akka.actor._
-import akka.cluster.sharding.ShardRegion.Passivate
 import akka.event.Logging
 import akka.pattern.pipe
 import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
@@ -87,7 +86,7 @@ class ProcessInstance[P[_], T[_, _], S, E](
 
     case _: Command ⇒
       sender() ! Uninitialized(processId)
-      context.parent ! Passivate(Stop(delete = false))
+      context.stop(context.self)
 
   }
 
@@ -114,7 +113,7 @@ class ProcessInstance[P[_], T[_, _], S, E](
 
     case IdleStop(n) if n == instance.sequenceNr && instance.activeJobs.isEmpty ⇒
       logEvent(Logging.DebugLevel, LogIdleStop(processId, settings.idleTTL.getOrElse(Duration.Zero)))
-      context.parent ! Passivate(Stop(delete = false))
+      context.stop(context.self)
 
     case GetState ⇒
       sender() ! fromExecutionInstance(instance)
@@ -238,6 +237,7 @@ class ProcessInstance[P[_], T[_, _], S, E](
           map
         } else {
           val cancellable = system.scheduler.scheduleOnce(newDelay milliseconds) {
+            logEvent(Logging.InfoLevel, LogScheduleRetry(processId, j.transition.toString, delay))
             executeJob(j, sender())
           }
           map + (j.id -> cancellable)

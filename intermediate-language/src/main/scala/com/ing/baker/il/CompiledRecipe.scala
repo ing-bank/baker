@@ -29,8 +29,23 @@ case class CompiledRecipe(name: String,
     RecipeVisualizer.visualiseCompiledRecipe(this)
 
   /**
+    * Returns a SVG string representation of the recipe.
+    *
+    * @return An SVG string.
+    */
+  @deprecated(message = "SVG generation support will be removed in 1.2.0", since = "1.1.15")
+  def getVisualRecipeAsSVG: String = {
+    import guru.nidi.graphviz.engine.{Format, Graphviz}
+    import guru.nidi.graphviz.parse.Parser
+
+    val g = Parser.read(getRecipeVisualization)
+    Graphviz.fromGraph(g).render(Format.SVG).toString
+  }
+
+  /**
     * Writes the visual recipe as an SVG to a given file.
     */
+  @deprecated(message = "SVG generation support will be removed in 1.2.0", since = "1.1.15")
   @throws[IOException]("When failing to write to the file for any reason")
   def writeVisualRecipeToSVGFile(file: File): Unit = {
 

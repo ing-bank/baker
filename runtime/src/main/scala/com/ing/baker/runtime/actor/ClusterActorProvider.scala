@@ -37,10 +37,11 @@ class ClusterActorProvider(config: Config) extends BakerActorProvider {
 
   private val nrOfShards = config.as[Int]("baker.actor.cluster.nr-of-shards")
   private val retentionCheckInterval = config.as[Option[FiniteDuration]]("baker.actor.retention-check-interval").getOrElse(1 minute)
+  private val distributedProcessMetadataEnabled = config.as[Boolean]("baker.distributed-process-metadata-enabled")
 
   override def createRecipeActors(recipe: CompiledRecipe, petriNetActorProps: Props)(
     implicit actorSystem: ActorSystem): (ActorRef, RecipeMetadata) = {
-    val recipeMetadata = new ClusterRecipeMetadata(recipe.name)
+    val recipeMetadata = if (distributedProcessMetadataEnabled) new ClusterRecipeMetadata(recipe.name) else new DisabledRecipeMetadata(recipe.name)
     val recipeManagerActor = ClusterSharding(actorSystem).start(
       typeName = recipe.name,
       entityProps = ProcessIndex.props(petriNetActorProps, recipeMetadata, recipe.name, recipe.eventReceivePeriod, recipe.retentionPeriod, retentionCheckInterval),
