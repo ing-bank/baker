@@ -1,18 +1,14 @@
 package com.ing.baker.baas
 
-import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpMessage, HttpRequest, HttpResponse, StatusCodes}
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import com.ing.baker.TestRecipeHelper
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.recipe.commonserialize
-import com.ing.baker.recipe.scaladsl
-import org.apache.commons.io.FileUtils
+import com.ing.baker.recipe.{commonserialize, scaladsl}
 
 import scala.concurrent.duration._
-import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
 class BAASSpec extends TestRecipeHelper {
@@ -26,14 +22,10 @@ class BAASSpec extends TestRecipeHelper {
     deserializedRecipe shouldBe originalRecipe
   }
 
-  "Write recipe to file" in {
+  "Send recipe to the BAAS API" in {
     val originalRecipe: scaladsl.Recipe = getComplexRecipe("recipename")
 
     val serializedRecipe = BAAS.serializeRecipe(originalRecipe)
-
-    val deserializedRecipe = BAAS.deserializeRecipe(serializedRecipe)
-
-    RecipeCompiler.compileRecipe(deserializedRecipe);
 
     implicit val materializer = ActorMaterializer()
     import defaultActorSystem.dispatcher
@@ -51,8 +43,8 @@ class BAASSpec extends TestRecipeHelper {
           println("Got response, body: " + body.utf8String)
         }
       case resp @ HttpResponse(code, _, _, _) =>
-        println("Request failed, response code: " + code)
         resp.discardEntityBytes()
+//        fail("Request failed, response code: " + code)
     }
   }
 }
