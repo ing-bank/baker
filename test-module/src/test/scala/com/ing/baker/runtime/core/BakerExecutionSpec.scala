@@ -152,8 +152,8 @@ class BakerExecutionSpec extends TestRecipeHelper {
         compiledRecipe = RecipeCompiler.compileRecipe(recipe),
         implementations = mockImplementations)
 
-      println(baker.compiledRecipe.petriNet.places)
-      println(baker.compiledRecipe.petriNet.places.map(_.id))
+//      println(baker.compiledRecipe.petriNet.places)
+//      println(baker.compiledRecipe.petriNet.places.map(_.id))
 
       when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
 
@@ -357,6 +357,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       // reset interaction mocks and fire the other event for the second process
       resetMocks
+      setupMockResponse()
 
       val secondProcessId = UUID.randomUUID().toString
       baker.bake(secondProcessId)
