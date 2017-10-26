@@ -3,7 +3,7 @@ package com.ing.baker.runtime.petrinet
 import java.lang.reflect.InvocationTargetException
 
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
-import com.ing.baker.il.{IngredientType, autoBoxClasses, getRawClass, processIdName}
+import com.ing.baker.il.{IngredientDescriptor, autoBoxClasses, getRawClass, processIdName}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.{TransitionTask, TransitionTaskProvider}
 import com.ing.baker.runtime.core.Baker.eventExtractor
@@ -173,7 +173,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
     }
   }
 
-  def runtimeEventForIngredient[I](interaction: InteractionTransition[I], runtimeEventName: String, providedIngredient: Any, ingredientToComplyTo: IngredientType): RuntimeEvent = {
+  def runtimeEventForIngredient[I](interaction: InteractionTransition[I], runtimeEventName: String, providedIngredient: Any, ingredientToComplyTo: IngredientDescriptor): RuntimeEvent = {
     if (providedIngredient == null) {
       val msg: String = s"null value provided for ingredient '${ingredientToComplyTo.name}' for interaction '${interaction.interactionName}'"
       log.error(msg)
@@ -186,7 +186,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
       throw new FatalInteractionException(
         s"""
            |Ingredient: ${ingredientToComplyTo.name} provided by an interaction but does not comply to the expected type
-           |Expected  : ${ingredientToComplyTo.javaType}
+           |Expected  : ${ingredientToComplyTo.ingredientType}
            |Provided  : $providedIngredient
          """.stripMargin)
     }

@@ -16,7 +16,7 @@ import org.slf4j._
 case class InteractionTransition[I](eventsToFire: Seq[EventType],
                                     originalEvents: Seq[EventType],
                                     providedIngredientEvent: Option[EventType],
-                                    requiredIngredients: Seq[(String, Type)],
+                                    requiredIngredients: Seq[IngredientDescriptor],
                                     interactionName: String,
                                     originalInteractionName: String,
                                     actionType: ActionType = ActionType.InteractionAction,
@@ -38,8 +38,6 @@ case class InteractionTransition[I](eventsToFire: Seq[EventType],
     /**
     * These are the ingredients that are not pre-defined or processId
     */
-  val nonProvidedIngredients: Map[String, Type] = {
-    val names = requiredIngredients.toMap.keySet - processIdName -- predefinedParameters.keySet
-    requiredIngredients.toMap.filterKeys(names.contains)
-  }
+  val nonProvidedIngredients: Seq[IngredientDescriptor] =
+    requiredIngredients.filterNot(i => i.name == processIdName || predefinedParameters.keySet.contains(i.name))
 }

@@ -7,10 +7,10 @@ import com.ing.baker.recipe.javadsl.ReflectionHelpers._
 package object javadsl {
 
   def createIngredient(ingredientName: String, ingredientClazz: Type): common.Ingredient =
-    new common.Ingredient {
-      override val name: String = ingredientName
-      override val clazz: Type = ingredientClazz
-    }
+    new common.Ingredient(
+      name = ingredientName,
+      ingredientType = common.ingredientTypeFromType(ingredientClazz)
+  )
 
 
   def eventClassToCommonEvent(eventClass: Class[_], firingLimit: Option[Integer]): common.Event =

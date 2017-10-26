@@ -12,8 +12,8 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
 class BAASClient(val baseAddress: String, val port: Int) {
-  val baseUri = baseAddress + port;
-  implicit val actorSystem: ActorSystem = ActorSystem("BAASUserManagerActorSystem")
+  val baseUri = baseAddress + ":" +  port;
+  implicit val actorSystem: ActorSystem = ActorSystem("BAASClientActorSystem")
   implicit val materializer = ActorMaterializer()
 
   def addRecipe(recipe: common.Recipe) : Unit = {

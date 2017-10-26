@@ -110,7 +110,7 @@ object RecipeCompiler {
                                          ingredientsWithMultipleConsumers: Map[String, Seq[InteractionTransition[_]]]): Seq[Arc] = {
 
     val (fieldNamesWithPrefixMulti, fieldNamesWithoutPrefix) =
-      t.nonProvidedIngredients.keySet.toSeq.partition(ingredientsWithMultipleConsumers.contains)
+      t.nonProvidedIngredients.map(_.name).partition(ingredientsWithMultipleConsumers.contains)
 
     // the extra arcs to model multiple output transitions from one place
     val internalDataInputArcs = fieldNamesWithPrefixMulti flatMap { fieldName =>
@@ -312,7 +312,7 @@ object RecipeCompiler {
     // Obtain a list of field name with their transition
     val placeNameWithTransition: Seq[(String, InteractionTransition[_])] = for {
       transition <- actionTransitions
-      inputPlaceName <- transition.nonProvidedIngredients.keySet
+      inputPlaceName <- transition.nonProvidedIngredients.map(_.name)
     } yield (inputPlaceName, transition)
 
     // Then obtain the places with multiple out-adjacent transitions

@@ -93,9 +93,7 @@ case class CompiledRecipe(name: String,
 
   val allEvents: Set[EventType] = sensoryEvents ++ interactionEvents
 
-  val allIngredientsProvidedByEvents: Set[IngredientType] = allEvents.flatMap {
+  val allIngredients: Set[IngredientDescriptor] = allEvents.flatMap {
     events => events.ingredientTypes
   }
-
-  val ingredients: Map[String, IngredientType] = allIngredientsProvidedByEvents.map(i => i.name -> i).toMap
 }
