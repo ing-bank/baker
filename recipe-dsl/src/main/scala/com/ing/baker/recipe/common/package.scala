@@ -11,14 +11,14 @@ package object common {
 
   // TODO should be string identifier instead
   val supportedBaseTypes: Set[Type] = Set(
-//    java.lang.Boolean.TYPE,
-//    java.lang.Byte.TYPE,
-//    java.lang.Short.TYPE,
-//    java.lang.Character.TYPE,
-//    java.lang.Integer.TYPE,
-//    java.lang.Long.TYPE,
-//    java.lang.Float.TYPE,
-//    java.lang.Double.TYPE,
+    java.lang.Boolean.TYPE,
+    java.lang.Byte.TYPE,
+    java.lang.Short.TYPE,
+    java.lang.Character.TYPE,
+    java.lang.Integer.TYPE,
+    java.lang.Long.TYPE,
+    java.lang.Float.TYPE,
+    java.lang.Double.TYPE,
     classOf[java.lang.Boolean],
     classOf[java.lang.Byte],
     classOf[java.lang.Short],
@@ -75,9 +75,9 @@ package object common {
       case enumClass: Class[_] if enumClass.isEnum =>
         EnumType(enumClass.asInstanceOf[Class[Enum[_]]].getEnumConstants.map(_.name).toSet)
       case pojoClass: Class[_] =>
-        val fields = clazz.getClass.getDeclaredFields.filterNot(_.isSynthetic)
+        val fields = pojoClass.getDeclaredFields.filterNot(_.isSynthetic)
         val ingredients = fields.map(f => new Ingredient(f.getName, ingredientTypeFromType(f.getGenericType)))
-        RecordType(ingredients)
+        POJOType(ingredients)
       case unsupportedType =>
         throw new IllegalArgumentException(s"UnsupportedType: $unsupportedType")
     }

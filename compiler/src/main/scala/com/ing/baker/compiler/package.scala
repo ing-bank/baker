@@ -18,7 +18,7 @@ package object compiler {
       case common.BaseType(javaType) => BaseType(javaType)
       case common.OptionType(entryType) => OptionType(convertDSLTypeToType(entryType))
       case common.ListType(entryType) => ListType(convertDSLTypeToType(entryType))
-      case common.RecordType(fields) => RecordType(fields.map { i =>
+      case common.POJOType(fields) => POJOType(fields.map { i =>
         IngredientDescriptor(i.name, convertDSLTypeToType(i.ingredientType))
       })
       case common.EnumType(options) => EnumType(options)

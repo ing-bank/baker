@@ -1,4 +1,4 @@
-package com.ing.baker.recipe.common;
+package com.ing.baker.recipe.common.ingredients;
 
 
 public enum EnumExample {

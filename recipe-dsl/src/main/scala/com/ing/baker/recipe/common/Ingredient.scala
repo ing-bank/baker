@@ -7,4 +7,6 @@ class Ingredient(val name: String,
     case other: Ingredient => this.name == other.name && this.ingredientType == other.ingredientType
     case _ => false
   }
+
+  override def toString: String = s"Ingredient($name, $ingredientType)"
 }
