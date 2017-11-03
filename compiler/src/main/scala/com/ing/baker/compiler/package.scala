@@ -3,8 +3,9 @@ package com.ing.baker
 import java.lang.reflect.ParameterizedType
 
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
-import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Transition}
-import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientDescriptor, _}
+import com.ing.baker.il.petrinet._
+import com.ing.baker.il._
+import com.ing.baker.il.types._
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy.{FireEventAfterFailure, RetryWithIncrementalBackoff}
 import com.ing.baker.recipe.common.{InteractionDescriptor, ProvidesNothing}
@@ -13,12 +14,12 @@ import scala.concurrent.duration.Duration
 
 package object compiler {
 
-  implicit def convertDSLTypeToType(dslType: common.IngredientType): IngredientType = {
+  implicit def convertDSLTypeToType(dslType: common.IngredientType): BType = {
     dslType match {
-      case common.BaseType(javaType) => BaseType(javaType)
+      case common.PrimitiveType(clazz) => PrimitiveType(clazz)
       case common.OptionType(entryType) => OptionType(convertDSLTypeToType(entryType))
       case common.ListType(entryType) => ListType(convertDSLTypeToType(entryType))
-      case common.POJOType(fields) => POJOType(fields.map { i =>
+      case common.POJOType(fields) => RecordType(fields.map { i =>
         IngredientDescriptor(i.name, convertDSLTypeToType(i.ingredientType))
       })
       case common.EnumType(options) => EnumType(options)
@@ -76,7 +77,7 @@ package object compiler {
           event.providedIngredients.map(ingredientToCompiledIngredient))
       }
 
-      val inputFields: Seq[(String, IngredientType)] = interactionDescriptor.interaction.inputIngredients
+      val inputFields: Seq[(String, BType)] = interactionDescriptor.interaction.inputIngredients
         //Replace ProcessId to ProcessIdName tag as know in compiledRecipe
         //Replace ingredient tags with overridden tags
         .map(ingredient =>

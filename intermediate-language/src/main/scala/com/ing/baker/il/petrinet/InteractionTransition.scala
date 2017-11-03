@@ -4,6 +4,7 @@ import java.lang.reflect.Type
 
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
+import com.ing.baker.il.types.IngredientDescriptor
 import com.ing.baker.il.{ActionType, EventOutputTransformer, _}
 import org.slf4j._
 

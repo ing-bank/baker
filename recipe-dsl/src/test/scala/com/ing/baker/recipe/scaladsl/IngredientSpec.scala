@@ -1,6 +1,6 @@
 package com.ing.baker.recipe.scaladsl
 
-import com.ing.baker.recipe.common.{BaseType, OptionType}
+import com.ing.baker.recipe.common.{PrimitiveType, OptionType}
 import org.scalatest.{Matchers, WordSpecLike}
 
 class IngredientSpec extends WordSpecLike with Matchers {
@@ -12,14 +12,14 @@ class IngredientSpec extends WordSpecLike with Matchers {
 
         val ingredient = Ingredient[String]("foo")
         ingredient.name shouldBe "foo"
-        ingredient.ingredientType shouldBe BaseType(classOf[String])
+        ingredient.ingredientType shouldBe PrimitiveType(classOf[String])
       }
 
       "correctly derive a higher kinded type" in {
 
         val ingredient = Ingredient[Option[String]]("foo")
         ingredient.name shouldBe "foo"
-        ingredient.ingredientType shouldBe OptionType(BaseType(classOf[String]))
+        ingredient.ingredientType shouldBe OptionType(PrimitiveType(classOf[String]))
       }
     }
 

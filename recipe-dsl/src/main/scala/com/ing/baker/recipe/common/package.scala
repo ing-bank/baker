@@ -10,7 +10,7 @@ package object common {
   val mirror: ru.Mirror = ru.runtimeMirror(classOf[IngredientType].getClassLoader)
 
   // TODO should be string identifier instead
-  val supportedBaseTypes: Set[Type] = Set(
+  val supportedPrimitiveClasses: Set[Class[_]] = Set(
     java.lang.Boolean.TYPE,
     java.lang.Byte.TYPE,
     java.lang.Short.TYPE,
@@ -64,8 +64,8 @@ package object common {
   def ingredientTypeFromType(clazz: Type): IngredientType = {
 
     clazz match {
-      case clazz if supportedBaseTypes.contains(clazz) =>
-        BaseType(clazz)
+      case clazz: Class[_] if supportedPrimitiveClasses.contains(clazz) =>
+        PrimitiveType(clazz)
       case clazz: ParameterizedType if classOf[scala.Option[_]].isAssignableFrom(getRawClass(clazz)) || classOf[java.util.Optional[_]].isAssignableFrom(getRawClass(clazz)) =>
         val entryType = ingredientTypeFromType(clazz.getActualTypeArguments()(0))
         OptionType(entryType)

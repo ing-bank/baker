@@ -3,7 +3,8 @@ package com.ing.baker.runtime.petrinet
 import java.lang.reflect.InvocationTargetException
 
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
-import com.ing.baker.il.{IngredientDescriptor, autoBoxClasses, getRawClass, processIdName}
+import com.ing.baker.il.types.IngredientDescriptor
+import com.ing.baker.il.{autoBoxClasses, getRawClass, processIdName}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.{TransitionTask, TransitionTaskProvider}
 import com.ing.baker.runtime.core.Baker.eventExtractor

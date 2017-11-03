@@ -1,11 +1,9 @@
 package com.ing.baker.recipe.common
 
-import java.lang.reflect.Type
-
 sealed trait IngredientType
 
 //Direct ingredients
-case class BaseType(javaType: Type) extends IngredientType
+case class PrimitiveType(clazz: Class[_]) extends IngredientType
 
 case class ListType(entryType: IngredientType) extends IngredientType
 

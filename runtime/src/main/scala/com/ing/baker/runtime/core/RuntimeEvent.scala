@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.core
 
-import com.ing.baker.il.{EventType, IngredientDescriptor}
+import com.ing.baker.il.EventType
 
 
 case class RuntimeEvent(name: String,
