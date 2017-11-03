@@ -6,6 +6,10 @@ package object types {
 
   type IngredientDescriptor = RecordField
 
+  implicit class AsValueAddition(obj: Any) {
+    def toValue: Value = Converters.toValue(obj)
+  }
+
   val javaPrimitiveMappings: Map[Class[_], Class[_]] = Map(
     classOf[java.lang.Boolean]   -> java.lang.Boolean.TYPE,
     classOf[java.lang.Byte]      -> java.lang.Byte.TYPE,
@@ -26,7 +30,41 @@ package object types {
 
   // TYPES
 
-  sealed trait BType
+  sealed trait BType {
+
+    def isAssignableFrom(other: BType): Boolean = {
+
+      (this, other) match {
+        case (PrimitiveType(clazzA), PrimitiveType(clazzB)) =>
+          if (clazzA.isPrimitive)
+            clazzB.equals(clazzA) || javaPrimitiveMappings.get(clazzB).equals(Some(clazzA))
+          else
+            clazzB.equals(clazzA)
+
+        case (OptionType(entryTypeA), OptionType(entryTypeB)) =>
+          entryTypeA.isAssignableFrom(entryTypeB)
+
+        case (OptionType(entryType), otherType) =>
+          entryType.isAssignableFrom(otherType)
+
+        case (ListType(entryTypeA), ListType(entryTypeB)) =>
+          entryTypeA.isAssignableFrom(entryTypeB)
+
+        case (RecordType(entriesA), RecordType(entriesB)) =>
+          val entriesMap: Map[String, BType] = entriesB.map(f => f.name -> f.`type`).toMap
+          entriesA.forall { f =>
+            entriesMap.get(f.name) match {
+              case None            => false
+              case Some(fieldType) => f.`type`.isAssignableFrom(fieldType)
+            }
+          }
+        case (EnumType(optionsA), EnumType(optionsB)) =>
+          optionsB.subsetOf(optionsA)
+
+        case _ => false
+      }
+    }
+  }
 
   case class PrimitiveType(clazz: Class[_]) extends BType
 
@@ -49,6 +87,7 @@ package object types {
     def isInstanceOf(t: BType): Boolean = (t, this) match {
       case (PrimitiveType(clazz), v: PrimitiveValue)          => v.isAssignableTo(clazz)
       case (ListType(entryType), ListValue(entries))          => entries.forall(_.isInstanceOf(entryType))
+      case (OptionType(_), NullValue)                         => true
       case (OptionType(entryType), v: Value)                  => v.isInstanceOf(entryType)
       case (EnumType(options), PrimitiveValue(value: String)) => options.contains(value)
       case (RecordType(entryTypes), RecordValue(entryValues)) => entryTypes.forall { f =>

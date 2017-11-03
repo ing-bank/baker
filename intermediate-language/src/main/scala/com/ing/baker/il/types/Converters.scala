@@ -2,6 +2,7 @@ package com.ing.baker.il.types
 
 import java.lang.reflect.{Modifier, ParameterizedType, Type}
 import java.util
+import java.util.Optional
 
 import com.ing.baker.il.CompiledRecipe
 import org.objenesis.ObjenesisStd
@@ -91,12 +92,25 @@ object Converters {
         primitive.value
       case (_, generic: ParameterizedType) if getRawClass(generic.getRawType) == classOf[Option[_]] =>
         val optionType = generic.getActualTypeArguments()(0)
-        val optionValue = toJava(value, optionType)
-        Some(optionValue)
+        value match {
+          case NullValue =>
+            None
+          case _ =>
+            val optionValue = toJava(value, optionType)
+            Some(optionValue)
+        }
+
       case (_, generic: ParameterizedType) if getRawClass(generic.getRawType) == classOf[java.util.Optional[_]] =>
         val optionType = generic.getActualTypeArguments()(0)
-        val optionValue = toJava(value, optionType)
-        java.util.Optional.of(optionValue)
+
+        value match {
+          case NullValue =>
+            Optional.empty()
+          case _ =>
+            val optionValue = toJava(value, optionType)
+            java.util.Optional.of(optionValue)
+        }
+
       case (ListValue(entries), generic: ParameterizedType) if classOf[List[_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
         val listType = generic.getActualTypeArguments()(0)
         entries.map(e => toJava(e, listType))

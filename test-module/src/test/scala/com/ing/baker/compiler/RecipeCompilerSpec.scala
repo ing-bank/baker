@@ -5,6 +5,7 @@ import java.util.Optional
 
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
+import com.ing.baker.il.types.{NullValue, PrimitiveValue}
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient, ProvidesNothing}
@@ -213,10 +214,10 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .map(it =>
           if (it.interactionName.equals("OptionalIngredientInteraction")) {
             it.predefinedParameters.size shouldBe 4
-            it.predefinedParameters("missingJavaOptional") shouldBe Optional.empty()
-            it.predefinedParameters("missingJavaOptional2") shouldBe Optional.empty()
-            it.predefinedParameters("missingScalaOptional") shouldBe Option.empty
-            it.predefinedParameters("missingScalaOptional2") shouldBe Option.empty
+            it.predefinedParameters("missingJavaOptional") shouldBe NullValue
+            it.predefinedParameters("missingJavaOptional2") shouldBe NullValue
+            it.predefinedParameters("missingScalaOptional") shouldBe NullValue
+            it.predefinedParameters("missingScalaOptional2") shouldBe NullValue
           })
     }
 
@@ -233,9 +234,9 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .map(it =>
           if (it.interactionName.equals("OptionalIngredientInteraction")) {
             it.predefinedParameters.size shouldBe 3
-            it.predefinedParameters("missingJavaOptional2") shouldBe Optional.empty()
-            it.predefinedParameters("missingScalaOptional") shouldBe Option.empty
-            it.predefinedParameters("missingScalaOptional2") shouldBe Option.empty
+            it.predefinedParameters("missingJavaOptional2") shouldBe NullValue
+            it.predefinedParameters("missingScalaOptional") shouldBe NullValue
+            it.predefinedParameters("missingScalaOptional2") shouldBe NullValue
           })
 
     }
@@ -276,9 +277,9 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .map(it =>
           if (it.interactionName.equals("OptionalIngredientInteraction")) {
             it.predefinedParameters.size shouldBe 3
-            it.predefinedParameters("missingJavaOptional2") shouldBe Optional.empty()
-            it.predefinedParameters("missingScalaOptional") shouldBe Option.empty
-            it.predefinedParameters("missingScalaOptional2") shouldBe Option.empty
+            it.predefinedParameters("missingJavaOptional2") shouldBe NullValue
+            it.predefinedParameters("missingScalaOptional") shouldBe NullValue
+            it.predefinedParameters("missingScalaOptional2") shouldBe NullValue
           })
     }
 
@@ -297,10 +298,10 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .map(it =>
           if (it.interactionName.equals("OptionalIngredientInteraction")) {
             it.predefinedParameters.size shouldBe 4
-            it.predefinedParameters("missingJavaOptional") shouldBe ingredientValue
-            it.predefinedParameters("missingJavaOptional2") shouldBe Optional.empty()
-            it.predefinedParameters("missingScalaOptional") shouldBe Option.empty
-            it.predefinedParameters("missingScalaOptional2") shouldBe Option.empty
+            it.predefinedParameters("missingJavaOptional") shouldBe PrimitiveValue("value")
+            it.predefinedParameters("missingJavaOptional2") shouldBe NullValue
+            it.predefinedParameters("missingScalaOptional") shouldBe NullValue
+            it.predefinedParameters("missingScalaOptional2") shouldBe NullValue
           })
     }
 

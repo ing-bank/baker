@@ -17,6 +17,8 @@ import org.mockito.stubbing.Answer
 import org.scalatest.time.{Milliseconds, Span}
 import org.slf4j.LoggerFactory
 
+import com.ing.baker.il.types._
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -29,6 +31,9 @@ class BakerExecutionSpec extends TestRecipeHelper {
   override def actorSystemName = "BakerExecutionSpec"
 
   val log = LoggerFactory.getLogger(classOf[BakerExecutionSpec])
+
+  def ingredientMap(entries: (String, Any)*): Map[String, Value] =
+    entries.map { case (name, obj) => name -> Converters.toValue(obj) }.toMap
 
   before {
     resetMocks
@@ -114,7 +119,10 @@ class BakerExecutionSpec extends TestRecipeHelper {
       recipeHandler.handleEvent(processId, InitialEvent(initialIngredientValue))
 
       verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
-      recipeHandler.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue, "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
+      recipeHandler.getIngredients(processId) shouldBe
+        ingredientMap(
+          "initialIngredient"                -> initialIngredientValue,
+          "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
     }
 
     "only allow a sensory event be fired once if the max firing limit is set one" in {
@@ -149,8 +157,6 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val baker = new Baker(mockImplementations)
 
-//      println(baker.compiledRecipe.petriNet.places)
-//      println(baker.compiledRecipe.petriNet.places.map(_.id))
       val recipeHandler = baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
 
       when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
@@ -231,7 +237,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       recipeHandler.handleEvent(processId, InitialEvent(initialIngredientValue))
 
       verify(testOptionalIngredientInteractionMock).apply(ingredientValue, Optional.empty(), Option.empty, Option.empty, initialIngredientValue)
-      recipeHandler.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue)
+      recipeHandler.getIngredients(processId) shouldBe ingredientMap("initialIngredient" -> initialIngredientValue)
     }
 
     "execute an interaction with Optionals boxed when its ingredient is provided as unboxed" in {
@@ -252,7 +258,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       recipeHandler.handleEvent(processId, UnboxedProviderEvent(initialIngredientValue, initialIngredientValue, initialIngredientValue))
 
       verify(testOptionalIngredientInteractionMock).apply(java.util.Optional.of(initialIngredientValue), Optional.empty(), Some(initialIngredientValue), Option.empty, initialIngredientValue)
-      recipeHandler.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue, "missingJavaOptional" -> initialIngredientValue, "missingScalaOptional" -> initialIngredientValue)
+      recipeHandler.getIngredients(processId) shouldBe ingredientMap("initialIngredient" -> initialIngredientValue, "missingJavaOptional" -> initialIngredientValue, "missingScalaOptional" -> initialIngredientValue)
     }
 
     "notify a registered event listener of events" in {
@@ -300,7 +306,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       recipeHandler.handleEvent(processId, InitialEvent(initialIngredientValue))
 
       verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
-      recipeHandler.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue, "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
+      recipeHandler.getIngredients(processId) shouldBe ingredientMap("initialIngredient" -> initialIngredientValue, "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
     }
 
     "execute an interaction when both ingredients are provided (join situation)" in {
@@ -452,7 +458,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       recipeHandler.handleEvent(processId, InitialEvent(firstData))
 
       //Check that the first response returned
-      recipeHandler.getIngredients(processId) shouldBe Map(
+      recipeHandler.getIngredients(processId) shouldBe ingredientMap(
         "initialIngredient" -> firstData,
         "interactionOneIngredient" -> firstResponse,
         "sievedIngredient" -> sievedIngredientValue,
@@ -464,7 +470,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       recipeHandler.handleEvent(processId, InitialEvent(secondData))
 
       //Check that the second response is given
-      recipeHandler.getIngredients(processId) shouldBe Map(
+      recipeHandler.getIngredients(processId) shouldBe ingredientMap(
         "initialIngredient" -> secondData,
         "interactionOneIngredient" -> secondResponse,
         "sievedIngredient" -> sievedIngredientValue,
@@ -498,7 +504,8 @@ class BakerExecutionSpec extends TestRecipeHelper {
       verify(testInteractionOneMock).apply(processId.toString, initialIngredientValue)
 
       val result = recipeHandler.getIngredients(processId)
-      result shouldBe Map("initialIngredient" -> initialIngredientValue,
+      result shouldBe ingredientMap(
+        "initialIngredient" -> initialIngredientValue,
         "interactionOneIngredient" -> interactionOneIngredientValue)
 
       recipeHandler.handleEvent(processId, InitialEvent(initialIngredientValue))
@@ -554,7 +561,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       recipeHandler.handleEvent(processId, InitialEvent(initialIngredientValue))
 
       val result = recipeHandler.getIngredients(processId)
-      result shouldBe Map(
+      result shouldBe ingredientMap(
         "initialIngredient" -> initialIngredientValue,
         "sievedIngredient" -> sievedIngredientValue,
         "interactionTwoIngredient" -> interactionTwoIngredientValue)
@@ -600,7 +607,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       verify(testInteractionTwoMock, never()).apply(anyString())
 
       val result = recipeHandler.getIngredients(processId)
-      result shouldBe Map(
+      result shouldBe ingredientMap(
         "initialIngredient" -> initialIngredientValue,
         "sievedIngredient" -> sievedIngredientValue,
         "interactionOneIngredient" -> interactionOneIngredientValue)
@@ -966,7 +973,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       recipeHandler.handleEvent(processId, InitialEvent(initialIngredientValue))
 
       verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
-      recipeHandler.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue)
+      recipeHandler.getIngredients(processId) shouldBe ingredientMap("initialIngredient" -> initialIngredientValue)
     }
 
     "block interaction and log error message if a null ingredient is provided by an Event provided by a Interaction" in {
@@ -990,7 +997,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       recipeHandler.handleEvent(processId, InitialEvent(initialIngredientValue))
 
       verify(testInteractionTwoMock).apply("initialIngredient")
-      recipeHandler.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue)
+      recipeHandler.getIngredients(processId) shouldBe ingredientMap("initialIngredient" -> initialIngredientValue)
     }
   }
 }

@@ -117,10 +117,7 @@ package object compiler {
 
       val predefinedIngredientsWithOptionalsEmpty: Map[String, Value] =
         inputFields.flatMap {
-          case (name, clazz: ParameterizedType) if !allIngredientNames.contains(name) && classOf[java.util.Optional[_]].isAssignableFrom(getRawClass(clazz))
-              => Seq(name -> NullValue)
-          case (name, clazz: ParameterizedType) if !allIngredientNames.contains(name) && classOf[scala.Option[_]].isAssignableFrom(getRawClass(clazz))
-              => Seq(name -> NullValue)
+          case (name, OptionType(_)) if !allIngredientNames.contains(name) => Seq(name -> NullValue)
           case _ => Seq.empty
         }.toMap ++ mappedPredefinedIngredients
 
