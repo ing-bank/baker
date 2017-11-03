@@ -18,7 +18,7 @@ autoscale: true
 
 ---
 
-## Symptoms of a Failing Microservices Architecture
+## Symptoms of a Failing (Microservices) Architecture
 
 ---
 
@@ -52,7 +52,8 @@ autoscale: true
 
 ## Simplify
 ### Domain Specific Language for orchestration flows
-### Declarative instead of imperative
+### Declarative
+### Easy to change
 
 ---
 
