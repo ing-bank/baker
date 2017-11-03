@@ -20,13 +20,13 @@ package object compiler {
       case common.OptionType(entryType) => OptionType(convertDSLTypeToType(entryType))
       case common.ListType(entryType) => ListType(convertDSLTypeToType(entryType))
       case common.POJOType(fields) => RecordType(fields.map { i =>
-        IngredientDescriptor(i.name, convertDSLTypeToType(i.ingredientType))
+        RecordField(i.name, convertDSLTypeToType(i.ingredientType))
       })
       case common.EnumType(options) => EnumType(options)
     }
   }
 
-  def ingredientToCompiledIngredient(ingredient: common.Ingredient): IngredientDescriptor = IngredientDescriptor(ingredient.name, convertDSLTypeToType(ingredient.ingredientType))
+  def ingredientToCompiledIngredient(ingredient: common.Ingredient): RecordField = RecordField(ingredient.name, convertDSLTypeToType(ingredient.ingredientType))
 
   def eventToCompiledEvent(event: common.Event): EventType = EventType(event.name, event.providedIngredients.map(ingredientToCompiledIngredient))
 
@@ -96,7 +96,7 @@ package object compiler {
             val ingredientName: String =
               if(interactionDescriptor.overriddenOutputIngredientName.nonEmpty) interactionDescriptor.overriddenOutputIngredientName.get
               else outputIngredient.name
-            val event = EventType(interactionDescriptor.name + "Successful", Seq(IngredientDescriptor(ingredientName, outputIngredient.ingredientType)))
+            val event = EventType(interactionDescriptor.name + "Successful", Seq(RecordField(ingredientName, outputIngredient.ingredientType)))
             val events = Seq(event)
             (events, events, Some(event))
           case common.FiresOneOfEvents(events @ _*) =>
@@ -110,20 +110,26 @@ package object compiler {
       //And is of the type Optional or Option
       //Add it to the predefinedIngredients List as empty
       //Add the predefinedIngredients later to overwrite any created empty field with the given predefined value.
-      val predefinedIngredientsWithOptionalsEmpty: Map[String, Any] =
+
+      val mappedPredefinedIngredients = interactionDescriptor.predefinedIngredients.map {
+        case (name, obj) => name -> Converters.toValue(obj)
+      }
+
+      val predefinedIngredientsWithOptionalsEmpty: Map[String, Value] =
         inputFields.flatMap {
           case (name, clazz: ParameterizedType) if !allIngredientNames.contains(name) && classOf[java.util.Optional[_]].isAssignableFrom(getRawClass(clazz))
-              => Seq((name, java.util.Optional.empty()))
+              => Seq(name -> NullValue)
           case (name, clazz: ParameterizedType) if !allIngredientNames.contains(name) && classOf[scala.Option[_]].isAssignableFrom(getRawClass(clazz))
-              => Seq((name, scala.Option.empty))
+              => Seq(name -> NullValue)
           case _ => Seq.empty
-        }.toMap ++ interactionDescriptor.predefinedIngredients
+        }.toMap ++ mappedPredefinedIngredients
+
 
       InteractionTransition[Any](
         eventsToFire = eventsToFire ++ exhaustedRetryEvent,
         originalEvents = originalEvents ++ exhaustedRetryEvent,
         providedIngredientEvent = providedIngredientEvent,
-        requiredIngredients = inputFields.map { case (name, ingredientType) => IngredientDescriptor(name, ingredientType) },
+        requiredIngredients = inputFields.map { case (name, ingredientType) => RecordField(name, ingredientType) },
         interactionName = interactionDescriptor.name,
         originalInteractionName = interactionDescriptor.interaction.name,
         predefinedParameters = predefinedIngredientsWithOptionalsEmpty,

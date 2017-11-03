@@ -1,7 +1,7 @@
 package com.ing.baker.il.types
 
-import java.math.BigInteger
 import java.util
+import java.util.Optional
 
 import org.scalatest.{Matchers, WordSpecLike}
 import Converters._
@@ -18,103 +18,103 @@ class PersonPojo(val name: String, val age: Int) {
 
 class ConvertersSpec extends WordSpecLike with Matchers {
 
+  val primitiveExamples = List(
+    42,
+    Int.box(42),
+    42l,
+    Long.box(42l),
+    42:Short,
+    Short.box(42:Short),
+    'C',
+    Char.box('C'),
+    12.34d,
+    Double.box(12.34d),
+    12.34f,
+    Float.box(12.34f),
+    "foobar",
+    BigDecimal(1.123456789),
+    new java.math.BigDecimal(1.123456789),
+    BigInt(123456789),
+    BigInt(123456789).bigInteger)
+
+  val recordPerson = RecordValue(Map("name" -> PrimitiveValue("john"), "age" -> PrimitiveValue(42)))
+
+  val listValue = ListValue(List(PrimitiveValue(1), PrimitiveValue(2), PrimitiveValue(3)))
+
   "The converters utility" should {
 
     "be able to parse primitive types" in {
-      val primitives = List(
-        42,
-        Int.box(42),
-        42l,
-        Long.box(42l),
-        42:Short,
-        Short.box(42:Short),
-        'C',
-        Char.box('C'),
-        12.34d,
-        Double.box(12.34d),
-        12.34f,
-        Float.box(12.34f),
-        "foobar",
-        BigDecimal(1.123456789),
-        new java.math.BigDecimal(1.123456789),
-        BigInt(123456789),
-        BigInt(123456789).bigInteger)
 
-      primitives.foreach { obj =>
-
-        asValue(obj) shouldBe PrimitiveValue(obj)
+      primitiveExamples.foreach { obj =>
+        toValue(obj) shouldBe PrimitiveValue(obj)
       }
+    }
+
+    "be able to create primitive types" in {
+
+      primitiveExamples.foreach { obj =>
+        toJava(PrimitiveValue(obj), obj.getClass) shouldBe obj
+      }
+    }
+
+    "be able to autobox scala Option objects" in {
+
+      toJava[Option[Int]](PrimitiveValue(42)) shouldBe Some(42)
+    }
+
+    "be able to autobox java Optional objects" in {
+
+      toJava[Optional[Int]](PrimitiveValue(42)) shouldBe Optional.of(42)
     }
 
     "be able to parse scala.collection.immutable.List objects" in {
 
-      val list = List(1, 2, 3)
-      val expectedValue = ListValue(List(PrimitiveValue(1), PrimitiveValue(2), PrimitiveValue(3)))
-
-      asValue(list) shouldBe expectedValue
+      toValue(List(1, 2, 3)) shouldBe listValue
     }
 
     "be able to create scala.collection.immutable.List objects" in {
 
-      val listValue = ListValue(List(PrimitiveValue(1), PrimitiveValue(2), PrimitiveValue(3)))
-      val expectedObject = List(1, 2, 3)
-
-      toJava[List[Int]](listValue) shouldBe expectedObject
+      toJava[List[Int]](listValue) shouldBe List(1, 2, 3)
     }
 
     "be able to parse java.util.List objects" in {
 
-      val list = new util.ArrayList[Int]()
-      list.add(1)
-      list.add(2)
-      list.add(3)
+      val javaList = new util.ArrayList[Int]()
+      javaList.add(1)
+      javaList.add(2)
+      javaList.add(3)
 
-      val expectedValue = ListValue(List(PrimitiveValue(1), PrimitiveValue(2), PrimitiveValue(3)))
-
-      asValue(list) shouldBe expectedValue
+      toValue(javaList) shouldBe listValue
     }
 
     "be able to create java.util.List objects" in {
 
-      val listValue = ListValue(List(PrimitiveValue(1), PrimitiveValue(2), PrimitiveValue(3)))
-      val expectedObject = new util.ArrayList[Int]()
-      expectedObject.add(1)
-      expectedObject.add(2)
-      expectedObject.add(3)
+      val javaList = new util.ArrayList[Int]()
+      javaList.add(1)
+      javaList.add(2)
+      javaList.add(3)
 
-      toJava[java.util.List[Int]](listValue) shouldBe expectedObject
+      toJava[java.util.List[Int]](listValue) shouldBe javaList
     }
 
     "be able to parse case class objects" in {
 
-      val person = PersonCaseClass("john", 42)
-      val expectedValue = RecordValue(Map("name" -> PrimitiveValue("john"), "age" -> PrimitiveValue(42)))
-
-      asValue(person) shouldBe expectedValue
+      toValue(PersonCaseClass("john", 42)) shouldBe recordPerson
     }
 
     "be able to create case class objects" in {
 
-      val record = RecordValue(Map("name" -> PrimitiveValue("john"), "age" -> PrimitiveValue(42)))
-      val expectedObject = PersonCaseClass("john", 42)
-
-      toJava[PersonCaseClass](record) shouldBe expectedObject
+      toJava[PersonCaseClass](recordPerson) shouldBe PersonCaseClass("john", 42)
     }
 
     "be able to parse pojo objects" in {
 
-      val obj = new PersonPojo("john", 42)
-      val expectedValue = RecordValue(Map("name" -> PrimitiveValue("john"), "age" -> PrimitiveValue(42)))
-
-      asValue(obj) shouldBe expectedValue
+      toValue(new PersonPojo("john", 42)) shouldBe recordPerson
     }
 
     "be able to create pojo objects" in {
 
-      val record = RecordValue(Map("name" -> PrimitiveValue("john"), "age" -> PrimitiveValue(42)))
-      val expectedObject = new PersonPojo("john", 42)
-
-      toJava[PersonPojo](record) shouldBe expectedObject
+      toJava[PersonPojo](recordPerson) shouldBe new PersonPojo("john", 42)
     }
   }
 }

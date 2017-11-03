@@ -10,7 +10,9 @@ import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Missin
 
 
 package object il {
+
   val processIdName = "$ProcessID$"
+
 
   implicit class PlaceAdditions(place: Place[_]) {
     def isIngredient: Boolean = place.placeType == IngredientPlace

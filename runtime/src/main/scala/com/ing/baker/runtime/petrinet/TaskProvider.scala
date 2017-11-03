@@ -3,8 +3,8 @@ package com.ing.baker.runtime.petrinet
 import java.lang.reflect.InvocationTargetException
 
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
-import com.ing.baker.il.types.IngredientDescriptor
-import com.ing.baker.il.{autoBoxClasses, getRawClass, processIdName}
+import com.ing.baker.il.processIdName
+import com.ing.baker.il.types.{IngredientDescriptor, PrimitiveValue, RecordField, Value}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.{TransitionTask, TransitionTaskProvider}
 import com.ing.baker.runtime.core.Baker.eventExtractor
@@ -66,14 +66,16 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
           MDC.put("processId", processState.processId.toString)
           MDC.put("recipeName", recipeName)
 
+          // obtain the interaction implementation
+          val implementation = interactionManager.getInteractionImplementation(interaction).getOrElse(
+            throw new FatalInteractionException("No implementation available for interaction")
+          )
+
           // create the interaction input
           val input = createInput(interaction, processState)
 
           // execute the interaction
-//          val output = fn.apply(input)
-
-          //TODO move the error scenario away from this location
-          val output = interactionManager.getInteractionImplementation(interaction).get.execute(input)
+          val output = implementation.execute(input)
 
           // create a runtime event from the interaction output
           val event = createRuntimeEvent(interaction, output)
@@ -99,52 +101,41 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
     *
     * @return Sequence of values in order of argument lists
     */
-  def createInput[A](interaction: InteractionTransition[A], state: ProcessState): Seq[AnyRef] = {
+  def createInput[A](interaction: InteractionTransition[A], state: ProcessState): Seq[Value] = {
 
     // We do not support any other type then String types
-    val processId: (String, String) = processIdName -> state.processId.toString
+    val processId: (String, Value) = processIdName -> PrimitiveValue(state.processId.toString)
 
     // parameterNamesToValues overwrites mapped token values which overwrites context map (in order of importance)
-    val argumentNamesToValues: Map[String, Any] = interaction.predefinedParameters ++ state.ingredients + processId
+    val argumentNamesToValues: Map[String, Value] = interaction.predefinedParameters ++ state.ingredients + processId
 
     def throwMissingInputException = (name: String) => {
       val msg =
         s"""
            |IllegalArgumentException at Interaction: $toString
            |Missing parameter: $name
-           |Required input   : ${interaction.requiredIngredients.toMap.keySet.toSeq.sorted.mkString(",")}
+           |Required input   : ${interaction.requiredIngredients.mkString(",")}
            |Provided input   : ${argumentNamesToValues.keySet.toSeq.sorted.mkString(",")}
          """.stripMargin
       log.warn(msg)
       throw new IllegalArgumentException(msg)
     }
 
-    def autoBoxIfNeeded(ingredientName: String, ingredientType: java.lang.reflect.Type, value: Any) = {
-      val ingredientClass = getRawClass(ingredientType)
-
-      if (autoBoxClasses.contains(ingredientClass) && !ingredientClass.isAssignableFrom(value.getClass))
-        autoBoxClasses(ingredientClass).apply(value)
-      else
-        value
-    }
-
     // map the values to the input places, throw an error if a value is not found
-    val methodInput: Seq[Any] =
+    val interactionInput: Seq[Value] =
       interaction.requiredIngredients.map {
-        case (ingredientName, ingredientType) =>
-
-          val value = argumentNamesToValues.getOrElse(ingredientName, throwMissingInputException)
-          autoBoxIfNeeded(ingredientName, ingredientType, value)
+        case RecordField(name, _) => argumentNamesToValues.getOrElse(name, throwMissingInputException).asInstanceOf[Value]
       }
 
-    methodInput.map(_.asInstanceOf[AnyRef])
+    interactionInput
   }
 
-  def createRuntimeEvent[I](interaction: InteractionTransition[I], output: Any): RuntimeEvent = {
+  def createRuntimeEvent[I](interaction: InteractionTransition[I], output: Value): RuntimeEvent = {
 
     // when the interaction does not fire an event, Void or Unit is a valid output type
-    if (interaction.eventsToFire.isEmpty && (output.isInstanceOf[Void] || output.isInstanceOf[Unit]))
+    if (interaction.eventsToFire.isEmpty && output.isNull)
       RuntimeEvent(interaction.interactionName, Seq.empty)
+
     // if the interaction directly produces an ingredient
     else if (interaction.providedIngredientEvent.isDefined) {
       val eventToComplyTo = interaction.providedIngredientEvent.get
@@ -174,20 +165,20 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
     }
   }
 
-  def runtimeEventForIngredient[I](interaction: InteractionTransition[I], runtimeEventName: String, providedIngredient: Any, ingredientToComplyTo: IngredientDescriptor): RuntimeEvent = {
+  def runtimeEventForIngredient[I](interaction: InteractionTransition[I], runtimeEventName: String, providedIngredient: Value, ingredientToComplyTo: IngredientDescriptor): RuntimeEvent = {
     if (providedIngredient == null) {
       val msg: String = s"null value provided for ingredient '${ingredientToComplyTo.name}' for interaction '${interaction.interactionName}'"
       log.error(msg)
       throw new FatalInteractionException(msg)
     }
 
-    if (ingredientToComplyTo.clazz.isAssignableFrom(providedIngredient.getClass))
+    if (providedIngredient.isInstanceOf(ingredientToComplyTo.`type`))
       RuntimeEvent(runtimeEventName , Seq((ingredientToComplyTo.name, providedIngredient)))
     else {
       throw new FatalInteractionException(
         s"""
            |Ingredient: ${ingredientToComplyTo.name} provided by an interaction but does not comply to the expected type
-           |Expected  : ${ingredientToComplyTo.ingredientType}
+           |Expected  : ${ingredientToComplyTo.`type`}
            |Provided  : $providedIngredient
          """.stripMargin)
     }

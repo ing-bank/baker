@@ -4,7 +4,7 @@ import java.lang.reflect.Type
 
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
-import com.ing.baker.il.types.IngredientDescriptor
+import com.ing.baker.il.types.{IngredientDescriptor, Value}
 import com.ing.baker.il.{ActionType, EventOutputTransformer, _}
 import org.slf4j._
 
@@ -21,7 +21,7 @@ case class InteractionTransition[I](eventsToFire: Seq[EventType],
                                     interactionName: String,
                                     originalInteractionName: String,
                                     actionType: ActionType = ActionType.InteractionAction,
-                                    predefinedParameters: Map[String, Any],
+                                    predefinedParameters: Map[String, Value],
                                     maximumInteractionCount: Option[Int],
                                     failureStrategy: InteractionFailureStrategy,
                                     eventOutputTransformers: Map[EventType, EventOutputTransformer] = Map.empty)

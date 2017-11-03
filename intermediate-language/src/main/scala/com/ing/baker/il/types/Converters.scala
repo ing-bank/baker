@@ -50,21 +50,21 @@ object Converters {
     * @param obj
     * @return
     */
-  def asValue(obj: Any): Value = {
+  def toValue(obj: Any): Value = {
 
     obj match {
       case value if isEmpty(value)          => throw new IllegalArgumentException(s"Non supported value: $obj")
       case value if isPrimitiveValue(value) => PrimitiveValue(value)
-      case list: List[_]                    => ListValue(list.map(asValue))
-      case list: java.util.List[_]          => ListValue(list.asScala.toList.map(asValue))
-      case Some(optionValue)                => asValue(optionValue)
-      case option: java.util.Optional[_] if option.isPresent => asValue(option.get)
+      case list: List[_]                    => ListValue(list.map(toValue))
+      case list: java.util.List[_]          => ListValue(list.asScala.toList.map(toValue))
+      case Some(optionValue)                => toValue(optionValue)
+      case option: java.util.Optional[_] if option.isPresent => toValue(option.get)
       case pojo                             =>
         val fields = pojo.getClass.getDeclaredFields.filterNot(_.isSynthetic)
         fields.foreach(_.setAccessible(true))
 
         val entries: Map[String, Value] = fields
-          .map(f => f.getName -> asValue(f.get(pojo))).toMap
+          .map(f => f.getName -> toValue(f.get(pojo))).toMap
 
         RecordValue(entries)
     }

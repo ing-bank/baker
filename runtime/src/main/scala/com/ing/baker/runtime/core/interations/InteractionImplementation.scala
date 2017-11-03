@@ -3,6 +3,7 @@ package com.ing.baker.runtime.core.interations
 import java.lang.reflect.Type
 
 import com.ing.baker.il.petrinet.InteractionTransition
+import com.ing.baker.il.types.Value
 
 trait InteractionImplementation {
 
@@ -14,5 +15,11 @@ trait InteractionImplementation {
 
   def isValidForInteraction(interaction: InteractionTransition[_]) : Boolean
 
-  def execute(input: Seq[Any]) : Any
+  /**
+    * Executes the interaction.
+    *
+    * @param input
+    * @return
+    */
+  def execute(input: Seq[Value]): Value
 }

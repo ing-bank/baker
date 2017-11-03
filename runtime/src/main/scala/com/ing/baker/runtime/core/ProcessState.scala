@@ -1,3 +1,5 @@
 package com.ing.baker.runtime.core
 
-case class ProcessState(processId: String, ingredients: Map[String, Any]) extends Serializable
+import com.ing.baker.il.types.Value
+
+case class ProcessState(processId: String, ingredients: Map[String, Value]) extends Serializable

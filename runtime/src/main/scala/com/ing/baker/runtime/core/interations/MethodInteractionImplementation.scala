@@ -3,8 +3,8 @@ package com.ing.baker.runtime.core.interations
 import java.lang.reflect.{Method, Type}
 import java.util.UUID
 
-import com.ing.baker.il.getRawClass
 import com.ing.baker.il.petrinet.InteractionTransition
+import com.ing.baker.il.types.{Converters, Value}
 import com.ing.baker.runtime.core.BakerException
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -55,29 +55,26 @@ case class MethodInteractionImplementation(override val name: String,
 
   val log: Logger = LoggerFactory.getLogger(MethodInteractionImplementation.getClass)
 
-  override def isValidForInteraction(interaction: InteractionTransition[_]): Boolean = {
-    interaction.originalInteractionName == name &&
-      Try {
-        implementation.getClass.getMethod("apply", interaction.requiredIngredients.map { case (_, clazz) => getRawClass(clazz) }: _*)
-      }.isSuccess
-  }
+  val method = implementation.getClass().getMethods.find(_.getName == "apply").get
 
-  override def execute(input: Seq[Any]): Any = {
-    interactionTask.apply(input)
-  }
+  override def isValidForInteraction(interaction: InteractionTransition[_]): Boolean = true
 
-  private val interactionTask: Seq[Any] => Any = inputArgs => {
+  override def execute(input: Seq[Value]): Value = interactionTask.apply(input)
+
+  private val interactionTask: Seq[Value] => Value = inputValues => {
 
     val invocationId = UUID.randomUUID().toString
 
-    log.trace(s"[$invocationId] invoking '$name' with parameters ${inputArgs.toString}")
+    val inputArgs = inputValues.zip(method.getGenericParameterTypes).map {
+      case (value, targetType) => value.toJava(targetType)
+    }
 
-    val method = implementation.getClass.getMethod("apply", requiredIngredients.map {
-      getRawClass
-    }: _*)
+    log.trace(s"[$invocationId] invoking '$name' with parameters ${inputArgs.toString}")
 
     val result = method.invoke(implementation, inputArgs.asInstanceOf[Seq[AnyRef]]: _*)
     log.trace(s"[$invocationId] result: $result")
-    result
+
+    val value = Converters.toValue(result)
+    value
   }
 }

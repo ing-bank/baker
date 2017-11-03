@@ -4,6 +4,8 @@ import scala.reflect.runtime.universe
 
 package object types {
 
+  type IngredientDescriptor = RecordField
+
   val javaPrimitiveMappings: Map[Class[_], Class[_]] = Map(
     classOf[java.lang.Boolean]   -> java.lang.Boolean.TYPE,
     classOf[java.lang.Byte]      -> java.lang.Byte.TYPE,
@@ -34,17 +36,41 @@ package object types {
 
   case class EnumType(options: Set[String]) extends BType
 
-  case class RecordType(fields: Seq[IngredientDescriptor]) extends BType
+  case class RecordType(fields: Seq[RecordField]) extends BType
+
+  case class RecordField(name: String, `type`: BType)
 
   // VALUES
 
-  sealed trait Value {
+  sealed trait Value extends Serializable {
 
-    def isInstanceOf(t: BType): Boolean = ???
+    def isNull: Boolean = this == NullValue
+
+    def isInstanceOf(t: BType): Boolean = (t, this) match {
+      case (PrimitiveType(clazz), v: PrimitiveValue)          => v.isAssignableTo(clazz)
+      case (ListType(entryType), ListValue(entries))          => entries.forall(_.isInstanceOf(entryType))
+      case (OptionType(entryType), v: Value)                  => v.isInstanceOf(entryType)
+      case (EnumType(options), PrimitiveValue(value: String)) => options.contains(value)
+      case (RecordType(entryTypes), RecordValue(entryValues)) => entryTypes.forall { f =>
+        entryValues.get(f.name) match {
+          case None        => false
+          case Some(value) => value.isInstanceOf(f.`type`)
+        }
+      }
+      case _ => false
+    }
+
     def toJava(javaType: java.lang.reflect.Type) = Converters.toJava(this, javaType)
+
     def toJava[T : universe.TypeTag] = Converters.toJava[T](this)
   }
 
+  /**
+    * Indicates the absence of a value.
+    *
+    * null, void, none, empty, etc...
+    *
+    */
   case object NullValue extends Value
 
   // should inherit AnyVal

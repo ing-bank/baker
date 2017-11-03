@@ -3,7 +3,7 @@ package com.ing.baker.il
 import java.io.{File, IOException}
 
 import com.ing.baker.il.petrinet.{InteractionTransition, Place, RecipePetriNet}
-import com.ing.baker.il.types.IngredientDescriptor
+import com.ing.baker.il.types.RecordField
 import com.ing.baker.petrinet.api.Marking
 
 import scala.collection.JavaConverters._
@@ -94,7 +94,7 @@ case class CompiledRecipe(name: String,
 
   val allEvents: Set[EventType] = sensoryEvents ++ interactionEvents
 
-  val allIngredients: Set[IngredientDescriptor] = allEvents.flatMap {
+  val allIngredients: Set[RecordField] = allEvents.flatMap {
     events => events.ingredientTypes
   }
 }

@@ -1,19 +1,27 @@
 package com.ing.baker.runtime.core
 
 import com.ing.baker.il.EventType
+import com.ing.baker.il.types.Value
 
+
+object RuntimeEvent {
+
+  
+
+}
 
 case class RuntimeEvent(name: String,
-                        providedIngredients: Seq[(String, Any)]) {
+                        providedIngredients: Seq[(String, Value)]) {
 
   /**
     * The provided ingredients in the form of a Map
     * This is useful when a EventListener is used in Java.
     */
-  val providedIngredientsMap: Map[String, Any] = providedIngredients.toMap;
+  val providedIngredientsMap: Map[String, Value] = providedIngredients.toMap;
 
   /**
     * This checks if the runtime event is an instance of a event type.
+    *
     * @param eventType
     * @return
     */
@@ -33,15 +41,15 @@ case class RuntimeEvent(name: String,
       Seq(s"Provided event with name '$name' does not match expected name '${eventType.name}'")
     else
       // we check all the required ingredient types, additional ones are ignored
-      eventType.ingredientTypes.flatMap { ingredientType =>
-        providedIngredientsMap.get(ingredientType.name) match {
+      eventType.ingredientTypes.flatMap { ingredient =>
+        providedIngredientsMap.get(ingredient.name) match {
           case None        =>
-            Seq(s"no value was provided for ingredient '${ingredientType.name}'")
+            Seq(s"no value was provided for ingredient '${ingredient.name}'")
           case Some(null)  =>
-            Seq(s"null is not allowed as an ingredient value for '${ingredientType.name}'")
+            Seq(s"null is not allowed as an ingredient value for '${ingredient.name}'")
           // we can only check the class since the type parameters are available on objects
-          case Some(value) if !(ingredientType.clazz.isInstance(value))  =>
-            Seq(s"value is not of the correct type for ingredient '${ingredientType.name}'")
+          case Some(value) if !value.isInstanceOf(ingredient.`type`)  =>
+            Seq(s"value is not of the correct type for ingredient '${ingredient.name}'")
           case _ =>
             Seq.empty
         }

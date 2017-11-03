@@ -1,7 +1,7 @@
 package com.ing.baker.il
 
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.il.types.{PrimitiveType, IngredientDescriptor}
+import com.ing.baker.il.types.{IngredientDescriptor, PrimitiveType, RecordField}
 import com.ing.baker.petrinet.api.PetriNetAnalysis
 
 import scala.collection.mutable
@@ -17,7 +17,7 @@ object RecipeValidations {
 
     // check if the process id argument type is correct
     interactionTransition.requiredIngredients.filter(id => id.name.equals(processIdName)).map {
-      case IngredientDescriptor(_ , PrimitiveType(javaType)) if javaType == classOf[String] =>
+      case RecordField(_ , PrimitiveType(javaType)) if javaType == classOf[String] =>
       case ingredientDescriptor => validationErrors += s"Non supported process id type: ${ingredientDescriptor} on interaction: '$interactionTransition'"
     }
 
@@ -64,12 +64,12 @@ object RecipeValidations {
   def validateInteractionIngredients(compiledRecipe: CompiledRecipe): Seq[String] = {
     compiledRecipe.interactionTransitions.toSeq.flatMap { t =>
       t.nonProvidedIngredients.flatMap {
-        case (IngredientDescriptor(name, expectedType)) =>
+        case (RecordField(name, expectedType)) =>
           compiledRecipe.allIngredients.find(_.name == name) match {
             case None =>
               Some(
                 s"Ingredient '$name' for interaction '${t.interactionName}' is not provided by any event or interaction")
-            case Some(IngredientDescriptor(name, ingredientType)) if expectedType.equals(ingredientType) =>
+            case Some(RecordField(name, ingredientType)) if expectedType.equals(ingredientType) =>
               Some(s"Interaction '$t' expects ingredient '$name:$expectedType', however incompatible type: '$ingredientType' was provided")
             case _ =>
               None
