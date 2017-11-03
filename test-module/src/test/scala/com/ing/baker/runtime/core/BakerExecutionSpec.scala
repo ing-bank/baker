@@ -277,8 +277,8 @@ class BakerExecutionSpec extends TestRecipeHelper {
       recipeHandler.bake(processId)
       recipeHandler.handleEvent(processId, InitialEvent(initialIngredientValue))
 
-      verify(listenerMock).processEvent(processId.toString, RuntimeEvent("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)))
-      verify(listenerMock).processEvent(processId.toString, RuntimeEvent("InteractionOneSuccessful", Seq("interactionOneOriginalIngredient" -> interactionOneIngredientValue)))
+      verify(listenerMock).processEvent(processId.toString, RuntimeEvent.create("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)))
+      verify(listenerMock).processEvent(processId.toString, RuntimeEvent.create("InteractionOneSuccessful", Seq("interactionOneOriginalIngredient" -> interactionOneIngredientValue)))
     }
 
     "execute an interaction when its ingredient is provided and the interaction is renamed" in {
@@ -680,8 +680,8 @@ class BakerExecutionSpec extends TestRecipeHelper {
       recipeHandler.handleEvent(processId, InitialEvent(initialIngredientValue))
 
       Thread.sleep(50)
-      verify(listenerMock).processEvent(processId.toString, RuntimeEvent("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)))
-      verify(listenerMock).processEvent(processId.toString, RuntimeEvent("RetryExhausted", Seq.empty))
+      verify(listenerMock).processEvent(processId.toString, RuntimeEvent.create("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)))
+      verify(listenerMock).processEvent(processId.toString, RuntimeEvent.create("RetryExhausted", Seq.empty))
 
       recipeHandler.events(processId).map(_.name) should contain (exhaustedEvent.name)
     }
@@ -698,11 +698,11 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       //Check if both the new event and the events occurred in the past are in the eventsList
       recipeHandler.events(processId) should contain only(
-        RuntimeEvent("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)),
-        RuntimeEvent("SieveInteractionSuccessful", Seq("sievedIngredient" -> sievedIngredientValue)),
-        RuntimeEvent("EventFromInteractionTwo", Seq("interactionTwoIngredient" -> interactionTwoIngredientValue)),
-        RuntimeEvent("InteractionOneSuccessful", Seq("interactionOneIngredient" -> interactionOneIngredientValue)),
-        RuntimeEvent("InteractionThreeSuccessful", Seq("interactionThreeIngredient" -> interactionThreeIngredientValue))
+        RuntimeEvent.create("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)),
+        RuntimeEvent.create("SieveInteractionSuccessful", Seq("sievedIngredient" -> sievedIngredientValue)),
+        RuntimeEvent.create("EventFromInteractionTwo", Seq("interactionTwoIngredient" -> interactionTwoIngredientValue)),
+        RuntimeEvent.create("InteractionOneSuccessful", Seq("interactionOneIngredient" -> interactionOneIngredientValue)),
+        RuntimeEvent.create("InteractionThreeSuccessful", Seq("interactionThreeIngredient" -> interactionThreeIngredientValue))
       )
 
       //Execute another event
@@ -710,13 +710,13 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       //Check if both the new event and the events occurred in the past are in the eventsList
       recipeHandler.events(processId) should contain only(
-        RuntimeEvent.apply("InitialEvent", Seq("initialIngredient" -> "initialIngredient")),
-        RuntimeEvent.apply("EventFromInteractionTwo", Seq("interactionTwoIngredient" -> "interactionTwoIngredient")),
-        RuntimeEvent.apply("SecondEvent", Seq.empty),
-        RuntimeEvent.apply("InteractionOneSuccessful", Seq("interactionOneIngredient" -> interactionOneIngredientValue)),
-        RuntimeEvent.apply("SieveInteractionSuccessful", Seq("sievedIngredient" -> sievedIngredientValue)),
-        RuntimeEvent.apply("InteractionThreeSuccessful", Seq("interactionThreeIngredient" -> interactionThreeIngredientValue)),
-        RuntimeEvent.apply("InteractionFourSuccessful", Seq("interactionFourIngredient" -> interactionFourIngredientValue))
+        RuntimeEvent.create("InitialEvent", Seq("initialIngredient" -> "initialIngredient")),
+        RuntimeEvent.create("EventFromInteractionTwo", Seq("interactionTwoIngredient" -> "interactionTwoIngredient")),
+        RuntimeEvent.create("SecondEvent", Seq.empty),
+        RuntimeEvent.create("InteractionOneSuccessful", Seq("interactionOneIngredient" -> interactionOneIngredientValue)),
+        RuntimeEvent.create("SieveInteractionSuccessful", Seq("sievedIngredient" -> sievedIngredientValue)),
+        RuntimeEvent.create("InteractionThreeSuccessful", Seq("interactionThreeIngredient" -> interactionThreeIngredientValue)),
+        RuntimeEvent.create("InteractionFourSuccessful", Seq("interactionFourIngredient" -> interactionFourIngredientValue))
       )
     }
 

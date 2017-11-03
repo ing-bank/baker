@@ -92,13 +92,13 @@ class ExamplesSpec extends TestRecipeHelper  {
       actualIngredients shouldBe expectedIngredients
 
       val expectedEvents = List(
-        RuntimeEvent("OrderPlaced", Seq("order" -> testOrder)),
-        RuntimeEvent("Valid", Seq.empty),
-        RuntimeEvent("PaymentMade", Seq.empty),
-        RuntimeEvent("GoodsManufactured", Seq("goods" -> testGoods)),
-        RuntimeEvent("CustomerInfoReceived", Seq("customerInfo" -> testCustomerInfoData)),
-        RuntimeEvent("GoodsShipped", Seq("trackingId" -> testTrackingId)),
-        RuntimeEvent("InvoiceWasSent", Seq.empty))
+        RuntimeEvent.create("OrderPlaced", Seq("order" -> testOrder)),
+        RuntimeEvent.create("Valid", Seq.empty),
+        RuntimeEvent.create("PaymentMade", Seq.empty),
+        RuntimeEvent.create("GoodsManufactured", Seq("goods" -> testGoods)),
+        RuntimeEvent.create("CustomerInfoReceived", Seq("customerInfo" -> testCustomerInfoData)),
+        RuntimeEvent.create("GoodsShipped", Seq("trackingId" -> testTrackingId)),
+        RuntimeEvent.create("InvoiceWasSent", Seq.empty))
 
       TestKit.awaitCond(recipeHandler.events(processId) equals expectedEvents, 2.seconds.dilated)
     }

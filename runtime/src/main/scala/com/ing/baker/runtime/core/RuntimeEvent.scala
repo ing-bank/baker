@@ -1,12 +1,18 @@
 package com.ing.baker.runtime.core
 
 import com.ing.baker.il.EventType
-import com.ing.baker.il.types.Value
+import com.ing.baker.il.types.{Converters, Value}
 
 
 object RuntimeEvent {
 
-  
+  def create(name: String, ingredients: Seq[(String, Any)]): RuntimeEvent = {
+    val ingredientValues = ingredients.map {
+      case (name, obj) => name -> Converters.toValue(obj)
+    }
+
+    RuntimeEvent(name, ingredientValues)
+  }
 
 }
 

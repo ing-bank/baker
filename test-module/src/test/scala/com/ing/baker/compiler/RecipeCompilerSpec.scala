@@ -158,25 +158,6 @@ class RecipeCompilerSpec extends TestRecipeHelper {
       compiledRecipe.validationErrors should contain("InteractionEight is not executable")
     }
 
-    "validate that ingredients are not of primitive types" in {
-
-      val primitiveIntIngredient = new common.Ingredient {
-        override val name: String = "age"
-        override val clazz: Type = Integer.TYPE
-      }
-
-      val interactionRequiringPrimitive = Interaction("DoSomething", Seq(primitiveIntIngredient), ProvidesNothing)
-
-      val eventProvidingPrimitive = Event("FooEvent", primitiveIntIngredient)
-
-      val recipe = Recipe("RecipeWithPrimitiveTypedIngredients")
-          .withInteraction(interactionRequiringPrimitive)
-            .withSensoryEvent(eventProvidingPrimitive)
-      
-      RecipeCompiler.compileRecipe(recipe).validationErrors should contain
-        ("Ingredient 'age' is of type 'int', primitive types are not supported for ingredients, use 'java.lang.Integer' instead")
-    }
-
     "fail compilation for an empty or null named interaction" in {
       List("", null) foreach { name =>
         val invalidInteraction = Interaction(name, Seq.empty, ProvidesNothing)
@@ -279,7 +260,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
       compiledRecipe.validationErrors shouldBe empty
 
       val transition = compiledRecipe.interactionTransitions.find(_.interactionName == "secondInteraction").get
-      transition.nonProvidedIngredients.keys should contain("renamedStringOptionIngredient")
+      transition.nonProvidedIngredients.map(_.name) should contain("renamedStringOptionIngredient")
     }
 
     "interactions with ingredients that are provided but are required as Optionals should be wrapped into the optional" in {

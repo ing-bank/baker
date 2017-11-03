@@ -69,7 +69,7 @@ object RecipeValidations {
             case None =>
               Some(
                 s"Ingredient '$name' for interaction '${t.interactionName}' is not provided by any event or interaction")
-            case Some(RecordField(name, ingredientType)) if expectedType.equals(ingredientType) =>
+            case Some(RecordField(name, ingredientType)) if !expectedType.equals(ingredientType) =>
               Some(s"Interaction '$t' expects ingredient '$name:$expectedType', however incompatible type: '$ingredientType' was provided")
             case _ =>
               None
