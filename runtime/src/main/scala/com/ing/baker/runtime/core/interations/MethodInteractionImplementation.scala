@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.core.interations
 
-import java.lang.reflect.{Method, Type}
+import java.lang.reflect.{Method, ParameterizedType, Type}
 import java.util.UUID
 
 import com.ing.baker.il.petrinet.InteractionTransition
@@ -57,7 +57,7 @@ case class MethodInteractionImplementation(override val name: String,
 
   val method = implementation.getClass().getMethods.find(_.getName == "apply").get
 
-  override def isValidForInteraction(interaction: InteractionTransition[_]): Boolean = true
+  override def isValidForInteraction(interaction: InteractionTransition[_]): Boolean = interaction.originalInteractionName == name
 
   override def execute(input: Seq[Value]): Value = interactionTask.apply(input)
 
@@ -65,8 +65,16 @@ case class MethodInteractionImplementation(override val name: String,
 
     val invocationId = UUID.randomUUID().toString
 
+    println(s"name: $name")
+    println("types: " + method.getGenericParameterTypes.mkString(","))
+
     val inputArgs = inputValues.zip(method.getGenericParameterTypes).map {
-      case (value, targetType) => value.toJava(targetType)
+      case (value, targetType) =>
+        println(s"input: $value")
+        println(s"target type: $targetType")
+        println(s"is generic type: ${targetType.isInstanceOf[ParameterizedType]}")
+
+        value.toJava(targetType)
     }
 
     log.trace(s"[$invocationId] invoking '$name' with parameters ${inputArgs.toString}")

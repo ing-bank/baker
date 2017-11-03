@@ -203,7 +203,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
       }
     }
 
-    "interactions with optional ingredients that are NOT provided should be provided as empty" in {
+    "interactions with optional ingredients that are NOT provided SHOULD be provided as empty" in {
       val recipe: Recipe = Recipe("MissingOptionalRecipe")
         .withInteraction(optionalIngredientInteraction)
         .withSensoryEvent(initialEvent)
@@ -221,7 +221,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
           })
     }
 
-    "interactions with optional ingredients that are provided should NOT be provided as empty" in {
+    "interactions with optional ingredients that ARE provided SHOULD NOT be provided as empty" in {
       val optionalProviderEvent = Event("optionalProviderEvent", missingJavaOptional)
 
       val recipe: Recipe = Recipe("MissingOptionalRecipe")
@@ -241,7 +241,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
 
     }
 
-    "interactions with RENAMED optional ingredients via events that are provided should NOT be provided as empty" in {
+    "interactions with RENAMED optional ingredients via events that ARE provided SHOULD NOT be provided as empty" in {
       val stringOptionIngredient = Ingredient[Option[String]]("stringOptionIngredient")
       val renamedStringOptionIngredient = Ingredient[Option[String]]("renamedStringOptionIngredient")
 
@@ -283,7 +283,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
           })
     }
 
-    "interactions with optional ingredients that are predefined should not be provided as empty" in {
+    "interactions with optional ingredients that are predefined SHOULD NOT be provided as empty" in {
       val ingredientValue: Optional[String] = java.util.Optional.of("value")
       val recipe: Recipe = Recipe("MissingOptionalRecipe")
         .withInteraction(
