@@ -8,13 +8,23 @@ autoscale: true
 
 ---
 
+![](poffertjes.jpeg)
+
+---
+
 ## Symptoms of a Failing Restaurant
 
 ---
 
-* It takes too long
-* It tastes like garbage
-* It's not enjoyable
+![](slow.jpg)
+
+---
+	
+![](garbage.jpg)
+
+---
+
+![](enjoyable.jpg)
 
 ---
 
@@ -61,6 +71,7 @@ autoscale: true
 
 ## Reuse
 ### Recipes
+### Interactions
 ### Ingredients
 ### Events
 
@@ -74,6 +85,114 @@ autoscale: true
 ### Reason About Comfortably
 
 ---
+
+## Design-time
+
+---
+
+```[.highlight: 1,6,7]
+public interface RegisterIndividual extends Interaction {
+    @FiresEvent(oneOf = {RegisterIndividualSuccessful.class,
+            RegisterIndividualFailed.class})
+    RegisterIndividualOutcome apply(
+            @ProcessId String processId,
+            @RequiresIngredient("name") String name,
+            @RequiresIngredient("address") String address
+    );
+}
+
+```
+
+---
+
+```[.highlight: 2,3]
+public interface RegisterIndividual extends Interaction {
+    @FiresEvent(oneOf = {RegisterIndividualSuccessful.class,
+            RegisterIndividualFailed.class})
+    RegisterIndividualOutcome apply(
+            @ProcessId String processId,
+            @RequiresIngredient("name") String name,
+            @RequiresIngredient("address") String address
+    );
+}
+
+```
+
+---
+
+![](individual.png)
+
+---
+
+![](account.png)
+
+---
+
+![](assign.png)
+
+---
+
+```java, [.highlight: 3-6]
+public Recipe get(){
+    return new Recipe("MuConf2017Demo").
+            withInteractions(
+                    of(AssignAccount.class),
+                    of(GetAccount.class),
+                    of(RegisterIndividual.class));
+}
+```
+
+---
+
+![fit](recipe-no-sensory.png)
+
+---
+
+```java, [.highlight: 5, 7-9]
+return new Recipe("MuConf2017Demo").
+        withInteractions(
+                of(AssignAccount.class),
+                of(GetAccount.class).
+                        withRequiredEvent(TermsAndConditionsAccepted.class),
+                of(RegisterIndividual.class)).
+        withSensoryEvents(
+                TermsAndConditionsAccepted.class,
+                IndividualInformationSubmitted.class);
+}
+```
+
+---
+
+![fit](recipe.png)
+
+---
+
+## Run-time
+
+---
+
+```java, [.highlight: 2,4,5,8,9,13]
+//for each process instance, bake the recipe
+baker.bake(processId);
+//notify Baker when events occur
+baker.processEvent(processId, new SensoryEvents.IndividualInformationSubmitted(name, address));
+baker.processEvent(processId, new SensoryEvents.TermsAndConditionsAccepted());
+
+//retrieve ingredients stored in the accumulated state
+assert(baker.getIngredients(processId).get("customerId").equals(customerId));
+assert(baker.getIngredients(processId).get("iban").equals(iban));
+
+//retrieve all events that have occurred
+Set<String> occurredEvents = new HashSet<>(
+        baker.getEvents(processId).getEventNameList()
+);
+```
+
+---
+
+## Under the Hood
+
+---	
 
 Speed of change matters to anyone building software. Many engineering teams have identified Microservices as an important component of this architectural approach to designing more flexible systems that can meet the needs of their fast changing businesses. Applying this approach however, is hard. And ideas and practices are still very much evolving. To help with that, we've launched muCon - a conference to learn about emerging technologies and approaches, share challenges and evolve practices and ideas.
 
