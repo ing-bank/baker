@@ -62,14 +62,15 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
 
       Task
         .delay {
+
           // add MDC values for logging
           MDC.put("processId", processState.processId.toString)
           MDC.put("recipeName", recipeName)
 
           // obtain the interaction implementation
-          val implementation = interactionManager.getInteractionImplementation(interaction).getOrElse(
+          val implementation = interactionManager.getInteractionImplementation(interaction).getOrElse {
             throw new FatalInteractionException("No implementation available for interaction")
-          )
+          }
 
           // create the interaction input
           val input = createInput(interaction, processState)

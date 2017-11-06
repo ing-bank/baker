@@ -59,7 +59,8 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
       slf4jApi,
       scalaGraphDot,
       graphvizJava,
-      objenisis
+      objenisis,
+      jodaTime
     ) ++ testDeps(scalaTest, scalaCheck, logback)
   ).dependsOn(petrinetApi)
 
@@ -107,7 +108,8 @@ lazy val recipeDsl = project.in(file("recipe-dsl"))
       compileDeps(
         javaxInject,
         paranamer,
-        scalaReflect
+        scalaReflect,
+        jodaTime
       ) ++
         testDeps(
           scalaTest,

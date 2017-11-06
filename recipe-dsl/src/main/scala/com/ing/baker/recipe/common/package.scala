@@ -1,6 +1,6 @@
 package com.ing.baker.recipe
 
-import java.lang.reflect.{ParameterizedType, Type}
+import java.lang.reflect.{Modifier, ParameterizedType, Type}
 
 import scala.reflect.runtime.{universe => ru}
 
@@ -29,10 +29,10 @@ package object common {
     classOf[java.lang.Double],
     classOf[java.lang.String],
     classOf[java.math.BigDecimal],
-    classOf[java.math.BigInteger]
-    //  classOf[org.joda.time.DateTime],
-    //  classOf[org.joda.time.LocalDate],
-    //  classOf[org.joda.time.LocalDateTime],
+    classOf[java.math.BigInteger],
+    classOf[org.joda.time.DateTime],
+    classOf[org.joda.time.LocalDate],
+    classOf[org.joda.time.LocalDateTime]
   )
 
   def asJavaType(paramType: ru.Type): java.lang.reflect.Type = {
@@ -75,7 +75,7 @@ package object common {
       case enumClass: Class[_] if enumClass.isEnum =>
         EnumType(enumClass.asInstanceOf[Class[Enum[_]]].getEnumConstants.map(_.name).toSet)
       case pojoClass: Class[_] =>
-        val fields = pojoClass.getDeclaredFields.filterNot(_.isSynthetic)
+        val fields = pojoClass.getDeclaredFields.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
         val ingredients = fields.map(f => new Ingredient(f.getName, ingredientTypeFromType(f.getGenericType)))
         POJOType(ingredients)
       case unsupportedType =>

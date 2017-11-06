@@ -5,6 +5,7 @@ import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.il.types.Value
 import com.ing.baker.runtime.actor.ProcessMetadata
 import com.ing.baker.runtime.core._
 
@@ -109,11 +110,11 @@ class JBaker (compiledRecipe: CompiledRecipe,
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def getIngredients(processId: String, waitTimeoutMillis: Long): java.util.Map[String, Object] =
+  def getIngredients(processId: String, waitTimeoutMillis: Long): java.util.Map[String, Value] =
   recipeHandler
       .getIngredients(processId)(waitTimeoutMillis milliseconds)
       .asJava
-      .asInstanceOf[java.util.Map[String, Object]]
+      .asInstanceOf[java.util.Map[String, Value]]
 
 
   /**
@@ -125,7 +126,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def getIngredients(processId: UUID, waitTimeoutMillis: Long): java.util.Map[String, Object] =
+  def getIngredients(processId: UUID, waitTimeoutMillis: Long): java.util.Map[String, Value] =
     getIngredients(processId.toString, waitTimeoutMillis)
 
   /**
@@ -136,7 +137,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the default deadline")
-  def getIngredients(processId: String): java.util.Map[String, Object] =
+  def getIngredients(processId: String): java.util.Map[String, Value] =
     getIngredients(processId, defaultTimeout)
 
   /**
@@ -147,7 +148,7 @@ class JBaker (compiledRecipe: CompiledRecipe,
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the default deadline")
-  def getIngredients(processId: UUID): java.util.Map[String, Object] =
+  def getIngredients(processId: UUID): java.util.Map[String, Value] =
     getIngredients(processId.toString)
 
   /**

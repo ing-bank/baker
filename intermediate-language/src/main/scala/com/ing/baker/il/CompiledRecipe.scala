@@ -94,7 +94,11 @@ case class CompiledRecipe(name: String,
 
   val allEvents: Set[EventType] = sensoryEvents ++ interactionEvents
 
+  def getAllEvents: java.util.Set[EventType] = allEvents.asJava
+
   val allIngredients: Set[RecordField] = allEvents.flatMap {
     events => events.ingredientTypes
   }
+
+  def getAllIngredients: java.util.Set[RecordField] = allIngredients.asJava
 }

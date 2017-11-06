@@ -153,7 +153,6 @@ case class MethodInteractionImplementation(override val name: String,
     }
 
     log.trace(s"[$invocationId] invoking '$name' with parameters ${inputArgs.toString}")
-
     val output = method.invoke(implementation, inputArgs.asInstanceOf[Seq[AnyRef]]: _*)
     log.trace(s"[$invocationId] result: $output")
 

@@ -60,8 +60,9 @@ object Converters {
       case list: java.util.List[_]          => ListValue(list.asScala.toList.map(toValue))
       case Some(optionValue)                => toValue(optionValue)
       case option: java.util.Optional[_] if option.isPresent => toValue(option.get)
+      case enum if enum.getClass.isEnum     => PrimitiveValue(enum.asInstanceOf[Enum[_]].name())
       case pojo                             =>
-        val fields = pojo.getClass.getDeclaredFields.filterNot(_.isSynthetic)
+        val fields = pojo.getClass.getDeclaredFields.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
         fields.foreach(_.setAccessible(true))
 
         val entries: Map[String, Value] = fields
@@ -83,6 +84,13 @@ object Converters {
     (value, javaType) match {
       case (primitive: PrimitiveValue, clazz: Class[_]) if primitive.isAssignableTo(clazz) =>
         primitive.value
+
+      case (PrimitiveValue(option: String), clazz: Class[_]) if clazz.isEnum =>
+        clazz.asInstanceOf[Class[Enum[_]]].getEnumConstants.find(_.name() == option) match {
+          case Some(enumValue) => enumValue
+          case None => throw new IllegalArgumentException(s"option '$option' is not an instance of enum $clazz")
+        }
+
       case (_, generic: ParameterizedType) if classOf[Option[_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
         val optionType = generic.getActualTypeArguments()(0)
         value match {
@@ -104,9 +112,13 @@ object Converters {
             java.util.Optional.of(optionValue)
         }
 
+      case (NullValue, _) =>
+        null
+
       case (ListValue(entries), generic: ParameterizedType) if classOf[List[_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
         val listType = generic.getActualTypeArguments()(0)
         entries.map(e => toJava(e, listType))
+
       case (ListValue(entries), generic: ParameterizedType) if classOf[java.util.List[_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
         val listType = generic.getActualTypeArguments()(0)
         val list = new util.ArrayList[Any]()
@@ -125,7 +137,7 @@ object Converters {
 
         val pojoInstance = classInstantiator.newInstance()
 
-        val fields = pojoClass.getDeclaredFields.filterNot(_.isSynthetic)
+        val fields = pojoClass.getDeclaredFields.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
 
         fields.foreach { f =>
           entries.get(f.getName).foreach { entryValue =>

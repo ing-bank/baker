@@ -1,6 +1,7 @@
 package com.ing.baker.baas
 
 import akka.actor.ActorSystem
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.commonserialize.Recipe
 import com.ing.baker.recipe.{common, commonserialize}
 import com.ing.baker.runtime.core.Baker
@@ -16,6 +17,14 @@ object BAAS{
 
   def deserializeRecipe(serializedRecipe: Array[Byte]): commonserialize.Recipe = {
     kryoPool.fromBytes(serializedRecipe).asInstanceOf[commonserialize.Recipe]
+  }
+
+  def serializeCompiledRecipe(compiledRecipe: CompiledRecipe): Array[Byte] = {
+    kryoPool.toBytesWithClass(compiledRecipe)
+  }
+
+  def deserializeCompiledRecipe(serializedRecipe: Array[Byte]): CompiledRecipe = {
+    kryoPool.fromBytes(serializedRecipe).asInstanceOf[CompiledRecipe]
   }
 }
 
