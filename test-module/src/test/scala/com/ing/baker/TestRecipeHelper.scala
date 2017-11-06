@@ -6,6 +6,7 @@ import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.il.types.{Converters, Value}
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
 import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.recipe.{common, javadsl}
@@ -282,8 +283,12 @@ trait TestRecipeHelper
   protected val caseClassIngredientValue = CaseClassIngredient(5, "this is a case class test")
   protected val errorMessage = "This is the error message"
 
+
+  def ingredientMap(entries: (String, Any)*): Map[String, Value] =
+    entries.map { case (name, obj) => name -> Converters.toValue(obj) }.toMap
+
   //Can be used to check the state after firing the initialEvent
-  protected val afterInitialState = Map(
+  protected val afterInitialState = ingredientMap(
     "initialIngredient" -> initialIngredientValue,
     "sievedIngredient" -> sievedIngredientValue,
     "interactionOneIngredient" -> interactionOneIngredientValue,
@@ -292,7 +297,7 @@ trait TestRecipeHelper
   )
 
   //Can be used to check the state after firing the initialEvent and SecondEvent
-  protected val finalState = Map(
+  protected val finalState = ingredientMap(
     "initialIngredient" -> initialIngredientValue,
     "sievedIngredient" -> sievedIngredientValue,
     "interactionOneIngredient" -> interactionOneIngredientValue,

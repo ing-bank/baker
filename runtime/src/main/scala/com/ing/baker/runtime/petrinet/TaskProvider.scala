@@ -75,10 +75,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
           val input = createInput(interaction, processState)
 
           // execute the interaction
-          val output = implementation.execute(input)
-
-          // create a runtime event from the interaction output
-          val event = createRuntimeEvent(interaction, output)
+          val event = implementation.execute(interaction, input)
 
           // transforms the event
           val transformedEvent = transformEvent(interaction)(event)
@@ -128,59 +125,5 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
       }
 
     interactionInput
-  }
-
-  def createRuntimeEvent[I](interaction: InteractionTransition[I], output: Value): RuntimeEvent = {
-
-    // when the interaction does not fire an event, Void or Unit is a valid output type
-    if (interaction.eventsToFire.isEmpty && output.isNull)
-      RuntimeEvent(interaction.interactionName, Seq.empty)
-
-    // if the interaction directly produces an ingredient
-    else if (interaction.providedIngredientEvent.isDefined) {
-      val eventToComplyTo = interaction.providedIngredientEvent.get
-      runtimeEventForIngredient(interaction, eventToComplyTo.name, output, eventToComplyTo.ingredientTypes.head)
-    }
-    else {
-      val runtimeEvent = eventExtractor.extractEvent(output)
-
-      val nullIngredientNames = runtimeEvent.providedIngredients.collect {
-        case (name, null) => name
-      }
-
-      if(nullIngredientNames.nonEmpty) {
-        val msg: String = s"Interaction ${interaction.interactionName} returned null value for ingredients: ${nullIngredientNames.mkString(",")}"
-        log.error(msg)
-        throw new FatalInteractionException(msg)
-      }
-
-      if (interaction.originalEvents.exists(runtimeEvent.isInstanceOfEventType))
-        runtimeEvent
-
-      else {
-        val msg: String = s"Output: $output fired by interaction ${interaction.interactionName} but could not link it to any known event for the interaction"
-        log.error(msg)
-        throw new FatalInteractionException(msg)
-      }
-    }
-  }
-
-  def runtimeEventForIngredient[I](interaction: InteractionTransition[I], runtimeEventName: String, providedIngredient: Value, ingredientToComplyTo: IngredientDescriptor): RuntimeEvent = {
-    if (providedIngredient == null) {
-      val msg: String = s"null value provided for ingredient '${ingredientToComplyTo.name}' for interaction '${interaction.interactionName}'"
-      log.error(msg)
-      throw new FatalInteractionException(msg)
-    }
-
-    if (providedIngredient.isInstanceOf(ingredientToComplyTo.`type`))
-      RuntimeEvent(runtimeEventName , Seq((ingredientToComplyTo.name, providedIngredient)))
-    else {
-      throw new FatalInteractionException(
-        s"""
-           |Ingredient: ${ingredientToComplyTo.name} provided by an interaction but does not comply to the expected type
-           |Expected  : ${ingredientToComplyTo.`type`}
-           |Provided  : $providedIngredient
-         """.stripMargin)
-    }
   }
 }

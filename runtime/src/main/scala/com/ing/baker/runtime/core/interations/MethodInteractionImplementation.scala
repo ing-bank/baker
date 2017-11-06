@@ -4,13 +4,19 @@ import java.lang.reflect.{Method, ParameterizedType, Type}
 import java.util.UUID
 
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.il.types.{Converters, Value}
-import com.ing.baker.runtime.core.BakerException
+import com.ing.baker.il.types.{Converters, IngredientDescriptor, Value}
+import com.ing.baker.runtime.core.Baker.eventExtractor
+import com.ing.baker.runtime.core.{BakerException, RuntimeEvent}
+import com.ing.baker.runtime.petrinet.FatalInteractionException
 import org.slf4j.{Logger, LoggerFactory}
+import MethodInteractionImplementation._
 
 import scala.util.Try
 
 object MethodInteractionImplementation {
+
+  val log = LoggerFactory.getLogger(classOf[MethodInteractionImplementation])
+
   /**
     * This method looks for any valid name that this interaction implements
     * This is its own class name
@@ -59,6 +65,63 @@ object MethodInteractionImplementation {
     else
       method
   }
+
+  def createRuntimeEvent[I](interaction: InteractionTransition[I], output: Any): RuntimeEvent = {
+
+    // when the interaction does not fire an event, Void or Unit is a valid output type
+    if (interaction.eventsToFire.isEmpty && output == null)
+      RuntimeEvent(interaction.interactionName, Seq.empty)
+
+    // if the interaction directly produces an ingredient
+    else if (interaction.providedIngredientEvent.isDefined) {
+      val eventToComplyTo = interaction.providedIngredientEvent.get
+      eventForProvidedIngredient(interaction.interactionName, eventToComplyTo.name, output, eventToComplyTo.ingredientTypes.head)
+    }
+    else {
+      val runtimeEvent = eventExtractor.extractEvent(output)
+
+      val nullIngredientNames = runtimeEvent.providedIngredients.collect {
+        case (name, null) => name
+      }
+
+      if(nullIngredientNames.nonEmpty) {
+        val msg: String = s"Interaction ${interaction.interactionName} returned null value for ingredients: ${nullIngredientNames.mkString(",")}"
+        log.error(msg)
+        throw new FatalInteractionException(msg)
+      }
+
+      if (interaction.originalEvents.exists(runtimeEvent.isInstanceOfEventType))
+        runtimeEvent
+
+      else {
+        val msg: String = s"Output: $output fired by interaction ${interaction.interactionName} but could not link it to any known event for the interaction"
+        log.error(msg)
+        throw new FatalInteractionException(msg)
+      }
+    }
+  }
+
+  def eventForProvidedIngredient[I](interactionName: String, runtimeEventName: String, providedIngredient: Any, ingredientToComplyTo: IngredientDescriptor): RuntimeEvent = {
+
+    if (providedIngredient == null) {
+      val msg: String = s"null value provided for ingredient '${ingredientToComplyTo.name}' for interaction '${interactionName}'"
+      log.error(msg)
+      throw new FatalInteractionException(msg)
+    }
+
+    val ingredientValue = Converters.toValue(providedIngredient)
+
+    if (ingredientValue.isInstanceOf(ingredientToComplyTo.`type`))
+      RuntimeEvent(runtimeEventName , Seq((ingredientToComplyTo.name, ingredientValue)))
+    else {
+      throw new FatalInteractionException(
+        s"""
+           |Ingredient: ${ingredientToComplyTo.name} provided by an interaction but does not comply to the expected type
+           |Expected  : ${ingredientToComplyTo.`type`}
+           |Provided  : $providedIngredient
+         """.stripMargin)
+    }
+  }
 }
 
 case class MethodInteractionImplementation(override val name: String,
@@ -72,7 +135,7 @@ case class MethodInteractionImplementation(override val name: String,
 
   override def isValidForInteraction(interaction: InteractionTransition[_]): Boolean = interaction.originalInteractionName == name
 
-  override def execute(input: Seq[Value]): Value =  {
+  override def execute(interaction: InteractionTransition[_], input: Seq[Value]): RuntimeEvent =  {
 
     val invocationId = UUID.randomUUID().toString
 
@@ -84,10 +147,11 @@ case class MethodInteractionImplementation(override val name: String,
 
     log.trace(s"[$invocationId] invoking '$name' with parameters ${inputArgs.toString}")
 
-    val result = method.invoke(implementation, inputArgs.asInstanceOf[Seq[AnyRef]]: _*)
-    log.trace(s"[$invocationId] result: $result")
+    val output = method.invoke(implementation, inputArgs.asInstanceOf[Seq[AnyRef]]: _*)
+    log.trace(s"[$invocationId] result: $output")
 
-    val value = Converters.toValue(result)
-    value
+    val event = createRuntimeEvent(interaction, output)
+
+    event
   }
 }

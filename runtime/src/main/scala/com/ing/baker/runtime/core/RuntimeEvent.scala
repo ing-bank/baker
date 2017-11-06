@@ -51,8 +51,6 @@ case class RuntimeEvent(name: String,
         providedIngredientsMap.get(ingredient.name) match {
           case None        =>
             Seq(s"no value was provided for ingredient '${ingredient.name}'")
-          case Some(null)  =>
-            Seq(s"null is not allowed as an ingredient value for '${ingredient.name}'")
           // we can only check the class since the type parameters are available on objects
           case Some(value) if !value.isInstanceOf(ingredient.`type`)  =>
             Seq(s"value is not of the correct type for ingredient '${ingredient.name}'")

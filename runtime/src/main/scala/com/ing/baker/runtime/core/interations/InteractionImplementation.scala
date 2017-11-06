@@ -4,6 +4,7 @@ import java.lang.reflect.Type
 
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.il.types.Value
+import com.ing.baker.runtime.core.RuntimeEvent
 
 trait InteractionImplementation {
 
@@ -18,8 +19,10 @@ trait InteractionImplementation {
   /**
     * Executes the interaction.
     *
+    * TODO input could be map instead of sequence??
+    *
     * @param input
     * @return
     */
-  def execute(input: Seq[Value]): Value
+  def execute(interaction: InteractionTransition[_], input: Seq[Value]): RuntimeEvent
 }

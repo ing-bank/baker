@@ -1,5 +1,6 @@
 package com.ing.baker.runtime.core
 
+import java.lang.reflect.Method
 import java.util.{Optional, UUID}
 
 import akka.actor.ActorSystem
@@ -16,7 +17,6 @@ import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.scalatest.time.{Milliseconds, Span}
 import org.slf4j.LoggerFactory
-
 import com.ing.baker.il.types._
 
 import scala.concurrent.Await
@@ -32,8 +32,6 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
   val log = LoggerFactory.getLogger(classOf[BakerExecutionSpec])
 
-  def ingredientMap(entries: (String, Any)*): Map[String, Value] =
-    entries.map { case (name, obj) => name -> Converters.toValue(obj) }.toMap
 
   before {
     resetMocks
@@ -229,7 +227,9 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val baker = new Baker(implementations = mockImplementations)
 
-      val recipeHandler = baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+      val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+
+      val recipeHandler = baker.addRecipe(compiledRecipe)
 
       val processId = UUID.randomUUID().toString
       recipeHandler.bake(processId).toString
