@@ -46,6 +46,19 @@ object MethodInteractionImplementation {
       new MethodInteractionImplementation(name, any, applyMethod.getParameterTypes.toSeq, applyMethod.getReturnType)
     }.toSeq
   }
+
+  def applyMethod(clazz: Class[_]): Method = {
+    val method = clazz.getMethods.find(_.getName == "apply").get
+    val className = method.getDeclaringClass.getName
+
+    if (className.contains("$$EnhancerByMockitoWithCGLIB$$")) {
+      val originalName: String = className.split("\\$\\$EnhancerByMockitoWithCGLIB\\$\\$")(0)
+      val orginalClass = clazz.getClassLoader.loadClass(originalName)
+      applyMethod(orginalClass)
+    }
+    else
+      method
+  }
 }
 
 case class MethodInteractionImplementation(override val name: String,
@@ -55,24 +68,16 @@ case class MethodInteractionImplementation(override val name: String,
 
   val log: Logger = LoggerFactory.getLogger(MethodInteractionImplementation.getClass)
 
-  val method = implementation.getClass().getMethods.find(_.getName == "apply").get
+  val method = MethodInteractionImplementation.applyMethod(implementation.getClass())
 
   override def isValidForInteraction(interaction: InteractionTransition[_]): Boolean = interaction.originalInteractionName == name
 
-  override def execute(input: Seq[Value]): Value = interactionTask.apply(input)
-
-  private val interactionTask: Seq[Value] => Value = inputValues => {
+  override def execute(input: Seq[Value]): Value =  {
 
     val invocationId = UUID.randomUUID().toString
 
-    println(s"name: $name")
-    println("types: " + method.getGenericParameterTypes.mkString(","))
-
-    val inputArgs = inputValues.zip(method.getGenericParameterTypes).map {
+    val inputArgs = input.zip(method.getGenericParameterTypes).map {
       case (value, targetType) =>
-        println(s"input: $value")
-        println(s"target type: $targetType")
-        println(s"is generic type: ${targetType.isInstanceOf[ParameterizedType]}")
 
         value.toJava(targetType)
     }

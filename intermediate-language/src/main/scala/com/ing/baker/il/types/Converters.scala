@@ -54,7 +54,7 @@ object Converters {
   def toValue(obj: Any): Value = {
 
     obj match {
-      case value if isEmpty(value)          => throw new IllegalArgumentException(s"Non supported value: $obj")
+      case value if isEmpty(value)          => NullValue
       case value if isPrimitiveValue(value) => PrimitiveValue(value)
       case list: List[_]                    => ListValue(list.map(toValue))
       case list: java.util.List[_]          => ListValue(list.asScala.toList.map(toValue))
@@ -72,13 +72,6 @@ object Converters {
   }
 
   /**
-    * This check is not exhaustive, see also:
-    *
-    * https://stackoverflow.com/questions/7525142/how-to-programmatically-determine-if-the-the-class-is-a-case-class-or-a-simple-c
-    */
-  def isCaseClass(clazz: Class[_]) = clazz.getInterfaces.exists(_ == classOf[scala.Product])
-
-  /**
     * Attempts to convert a value to a desired java type.
     *
     * @param value    The value
@@ -90,7 +83,7 @@ object Converters {
     (value, javaType) match {
       case (primitive: PrimitiveValue, clazz: Class[_]) if primitive.isAssignableTo(clazz) =>
         primitive.value
-      case (_, generic: ParameterizedType) if getRawClass(generic.getRawType) == classOf[Option[_]] =>
+      case (_, generic: ParameterizedType) if classOf[Option[_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
         val optionType = generic.getActualTypeArguments()(0)
         value match {
           case NullValue =>
@@ -100,7 +93,7 @@ object Converters {
             Some(optionValue)
         }
 
-      case (_, generic: ParameterizedType) if getRawClass(generic.getRawType) == classOf[java.util.Optional[_]] =>
+      case (_, generic: ParameterizedType) if classOf[java.util.Optional[_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
         val optionType = generic.getActualTypeArguments()(0)
 
         value match {
