@@ -10,6 +10,7 @@ import com.ing.baker.runtime.core.{BakerException, RuntimeEvent}
 import com.ing.baker.runtime.petrinet.FatalInteractionException
 import org.slf4j.{Logger, LoggerFactory}
 import MethodInteractionImplementation._
+import com.ing.baker.il.EventType
 
 import scala.util.Try
 
@@ -47,10 +48,14 @@ object MethodInteractionImplementation {
       case n if n > 1 => throw new BakerException("Method has multiple apply functions")
       case _ => ()
     }
+
     val applyMethod: Method = any.getClass.getMethods.find(m => m.getName == "apply").get
     getPossibleInteractionNamesForImplementation(any).map { name =>
-      new MethodInteractionImplementation(name, any, applyMethod.getParameterTypes.toSeq, applyMethod.getReturnType)
+      // TODO give the actual event types, not Set.empty
+
+      new MethodInteractionImplementation(name, any, applyMethod.getParameterTypes.toSeq, Set.empty)
     }.toSeq
+
   }
 
   def applyMethod(clazz: Class[_]): Method = {
@@ -127,13 +132,15 @@ object MethodInteractionImplementation {
 case class MethodInteractionImplementation(override val name: String,
                                            implementation: AnyRef,
                                            override val requiredIngredients: Seq[Type],
-                                           override val returnType: Type) extends InteractionImplementation {
+                                           override val returnType: Set[EventType]) extends InteractionImplementation {
 
   val log: Logger = LoggerFactory.getLogger(MethodInteractionImplementation.getClass)
 
   val method = MethodInteractionImplementation.applyMethod(implementation.getClass())
 
-  override def isValidForInteraction(interaction: InteractionTransition[_]): Boolean = interaction.originalInteractionName == name
+  override def isValidForInteraction(interaction: InteractionTransition[_]): Boolean =
+
+    interaction.originalInteractionName == name
 
   override def execute(interaction: InteractionTransition[_], input: Seq[Value]): RuntimeEvent =  {
 

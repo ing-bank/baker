@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.JavaCompiledRecipeTest;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
+import com.ing.baker.il.types.Converters;
 import com.ing.baker.recipe.javadsl.InteractionDescriptor;
 import com.ing.baker.recipe.javadsl.Recipe;
 import com.ing.baker.runtime.core.BakerException;
@@ -38,7 +39,11 @@ public class JBakerTest {
         String requestId = UUID.randomUUID().toString();
         jBaker.bake(requestId);
         jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
-        assertEquals("{RequestIDStringOne=" + requestId.toString() + "}", jBaker.getIngredients(requestId).toString());
+
+        assertEquals(jBaker.getIngredients(requestId).size(), 1);
+
+        Object requestIdstringOne = jBaker.getIngredients(requestId).get("RequestIDStringOne");
+        assertEquals(Converters.toValue(requestId.toString()), requestIdstringOne);
     }
 
     @Test
@@ -49,7 +54,11 @@ public class JBakerTest {
         String requestId = UUID.randomUUID().toString();
         jBaker.bake(requestId);
         jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
-        assertEquals("{RequestIDStringOne=" + requestId.toString() + "}", jBaker.getIngredients(requestId).toString());
+
+        assertEquals(jBaker.getIngredients(requestId).size(), 1);
+
+        Object requestIdstringOne = jBaker.getIngredients(requestId).get("RequestIDStringOne");
+        assertEquals(Converters.toValue(requestId.toString()), requestIdstringOne);
     }
 
     @Test

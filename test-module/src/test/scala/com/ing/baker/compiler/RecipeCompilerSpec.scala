@@ -63,7 +63,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .withInteractions(wrongProcessIdInteraction)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("Non supported process id type: int on interaction: 'wrongProcessIdInteraction'")
+      compiledRecipe.validationErrors should contain("Non supported process id type: PrimitiveType(int) on interaction: 'wrongProcessIdInteraction'")
     }
 
     "give a list of wrong ingredients if an ingredient is of the wrong type" in {
@@ -76,7 +76,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .withSensoryEvent(initialEventInt)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("Interaction 'InteractionOne' expects ingredient 'initialIngredient:class java.lang.String', however incompatible type: 'int' was provided")
+      compiledRecipe.validationErrors should contain("Interaction 'InteractionOne' expects ingredient 'initialIngredient:PrimitiveType(class java.lang.String)', however incompatible type: 'PrimitiveType(int)' was provided")
     }
 
     "give a list of wrong ingredients if an Optional ingredient is of the wrong Optional type" in {
@@ -97,8 +97,8 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .withSensoryEvents(initialEventIntOptional, initialEventIntOption)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionalInt:ParameterizedType: class java.util.Optional[int]', however incompatible type: 'ParameterizedType: class java.util.Optional[class java.lang.String]' was provided")
-      compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionInt:ParameterizedType: class scala.Option[ParameterizedType: class scala.collection.immutable.List[int]]', however incompatible type: 'ParameterizedType: class scala.Option[ParameterizedType: class scala.collection.immutable.List[class java.lang.String]]' was provided")
+      compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionalInt:OptionType(PrimitiveType(int))', however incompatible type: 'OptionType(PrimitiveType(class java.lang.String))' was provided")
+      compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionInt:OptionType(ListType(PrimitiveType(int)))', however incompatible type: 'OptionType(ListType(PrimitiveType(class java.lang.String)))' was provided")
     }
 
     "give an validation error for an empty/non-logical recipe" in {
@@ -134,7 +134,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .withSensoryEvent(initialEvent)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("Predefined argument 'initialIngredient' is not of type: class java.lang.String on interaction: 'InteractionOne'")
+      compiledRecipe.validationErrors should contain("Predefined argument 'initialIngredient' is not of type: PrimitiveType(class java.lang.String) on interaction: 'InteractionOne'")
     }
 
     "give a list of wrong ingredients if an predefined ingredient is not needed by the interaction" in {

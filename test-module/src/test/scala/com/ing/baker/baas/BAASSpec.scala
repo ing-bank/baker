@@ -22,7 +22,7 @@ class BAASSpec extends TestRecipeHelper {
     deserializedRecipe shouldBe originalRecipe
   }
 
-  "Send recipe to the BAAS API" in {
+  "Send recipe to the BAAS API" ignore {
     val originalRecipe: scaladsl.Recipe = getComplexRecipe("recipename")
 
     val serializedRecipe = BAAS.serializeRecipe(originalRecipe)

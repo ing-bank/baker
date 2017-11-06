@@ -18,38 +18,21 @@ object RecipeValidations {
     // check if the process id argument type is correct
     interactionTransition.requiredIngredients.filter(id => id.name.equals(processIdName)).map {
       case RecordField(_ , PrimitiveType(javaType)) if javaType == classOf[String] =>
-      case ingredientDescriptor => validationErrors += s"Non supported process id type: ${ingredientDescriptor} on interaction: '$interactionTransition'"
+      case RecordField(_ , incompatibleType) => validationErrors += s"Non supported process id type: ${incompatibleType} on interaction: '$interactionTransition'"
     }
 
-    //TODO enable this once RuntimeIngredient is created
     // check if the predefined ingredient is of the expected type
-//    interactionTransition.predefinedParameters.foreach {
-//      case (name, value) =>
-//        interactionTransition.requiredIngredients.toMap.get(name) match {
-//          case None =>
-//            validationErrors += s"Predefined argument '$name' is not defined on interaction: '$interactionTransition'"
-//          case Some(clazz: Class[_]) if !clazz.isInstance(value) =>
-//            validationErrors += s"Predefined argument '$name' is not of type: ${clazz} on interaction: '$interactionTransition'"
-//          case Some(pt: ParameterizedType) =>
-//            getRawClass(pt) match {
-//              case o if o == classOf[Option[_]] => value match {
-//                case Some(v) if !getRawClass(pt.getActualTypeArguments.apply(0)).isInstance(v) =>
-//                  validationErrors += s"Predefined argument '$name' is not of type: ${pt} on interaction: '$interactionTransition'"
-//                case _ =>
-//              }
-//              case o if o == classOf[java.util.Optional[_]] =>
-//                if (value.isInstanceOf[java.util.Optional[_]]) {
-//                  val optionalValue = value.asInstanceOf[java.util.Optional[_]]
-//                  if (optionalValue.isPresent && !getRawClass(pt.getActualTypeArguments.apply(0)).isInstance(optionalValue.get()))
-//                    validationErrors += s"Predefined argument '$name' is not of type: ${pt} on interaction: '$interactionTransition'"
-//                }
-//              case o if !o.isInstance(value) =>
-//                validationErrors += s"Predefined argument '$name' is not of type: ${pt} on interaction: '$interactionTransition'"
-//              case o =>
-//            }
-//          case _ =>
-//        }
-//    }
+    interactionTransition.predefinedParameters.foreach {
+      case (name, value) =>
+        interactionTransition.requiredIngredients.find(_.name == name) match {
+          case None =>
+            validationErrors += s"Predefined argument '$name' is not defined on interaction: '$interactionTransition'"
+          case Some(ingredientDescriptor) if !value.isInstanceOf(ingredientDescriptor.`type`) =>
+            validationErrors += s"Predefined argument '$name' is not of type: ${ingredientDescriptor.`type`} on interaction: '$interactionTransition'"
+          case _ =>
+        }
+    }
+
     validationErrors
   }
 
