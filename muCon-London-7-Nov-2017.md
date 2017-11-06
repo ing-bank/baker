@@ -1,7 +1,7 @@
 slidenumbers: true
 autoscale: true
 # Declare, verify and execute microservices-based process flows with Baker
-
+### Nikola Kasev | ING
 ---
 
 ![](dirty-kitchen.jpg)
@@ -32,13 +32,26 @@ autoscale: true
 
 ---
 
-* We are afraid to change the code
-* Functionality breaks unexpectedly
-* Slow time to market
+![original](afraid.jpg)
+## Afraid to change the application code
 
 ---
 
-## How to Turn a "Hell's Kitchen" into a Successful Restaurant?
+![original](breaks.jpg)
+## Functionality breaks unexpectedly
+
+---
+
+![original](time-to-market.jpg)
+## Slow time to market
+
+---
+
+## How to turn this around?
+
+---
+
+![](gordon-ramsay.jpg)
 
 ---
 
@@ -193,6 +206,62 @@ Set<String> occurredEvents = new HashSet<>(
 ## Under the Hood
 
 ---	
+
+### Why Scala?
+
+- Fits best for developing DSLs on the JVM
+- Compile-time recipe validation
+- Type Safety
+
+---
+
+### Why Akka?
+
+- Event Sourcing (events can be replayed)
+- Persistent actors (with Cassandra)
+- Distributed actors across machines (with cluster sharding)
+
+---
+
+### Why Petri net?[^1]
+
+[^1]: https://en.wikipedia.org/wiki/Petri_net
+
+---
+
+![](reachability.png)
+
+---
+
+![](unreachable.png)
+
+---
+
+![](dead-code.png)
+
+
+---
+
+![](path.png)
+
+---
+
+![](bottleneck.png)
+
+---
+
+## Best Practices
+
+---
+
+![](call-to-action.jpg)
+## https://github.com/ing-bank/baker
+
+---
+
+![](pbt.png)
+
+---
 
 Speed of change matters to anyone building software. Many engineering teams have identified Microservices as an important component of this architectural approach to designing more flexible systems that can meet the needs of their fast changing businesses. Applying this approach however, is hard. And ideas and practices are still very much evolving. To help with that, we've launched muCon - a conference to learn about emerging technologies and approaches, share challenges and evolve practices and ideas.
 
