@@ -1,7 +1,8 @@
 slidenumbers: true
 autoscale: true
 # Declare, verify and execute microservices-based process flows with Baker
-### Nikola Kasev | ING
+### 7 November 2017, muCon in London
+### http://github.com/nikolakasev | ING
 ---
 
 ![](dirty-kitchen.jpg)
@@ -209,23 +210,27 @@ Set<String> occurredEvents = new HashSet<>(
 
 ### Why Scala?
 
-- Fits best for developing DSLs on the JVM
+- Best fit for developing DSLs[^1] on the JVM
 - Compile-time recipe validation
-- Type Safety
+- Type safety
+
+[^1]: https://martinfowler.com/books/dsl.html
 
 ---
 
 ### Why Akka?
 
-- Event Sourcing (events can be replayed)
+- Event Sourcing[^2] (events can be replayed)
 - Persistent actors (with Cassandra)
 - Distributed actors across machines (with cluster sharding)
 
+[^2]: http://martinfowler.com/eaaDev/EventSourcing.html
+
 ---
 
-### Why Petri net?[^1]
+### Why Petri net?[^3]
 
-[^1]: https://en.wikipedia.org/wiki/Petri_net
+[^3]: https://en.wikipedia.org/wiki/Petri_net
 
 ---
 
