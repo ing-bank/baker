@@ -208,6 +208,10 @@ Set<String> occurredEvents = new HashSet<>(
 
 ---
 
+![fit](end-state.png)
+
+---
+
 ## Under the Hood
 
 ---	
