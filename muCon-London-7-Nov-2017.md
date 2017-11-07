@@ -1,11 +1,15 @@
 slidenumbers: true
 autoscale: true
 # Declare, verify and execute microservices-based process flows with Baker
-### 7 November 2017, muCon in London
+### 7 November 2017, 1500 hours, at muCon in London
 ### http://github.com/nikolakasev | ING
 ---
+	
+![](baby.jpg)
 
-![](dirty-kitchen.jpg)
+---
+
+![](situation.jpg)
 
 ---
 
@@ -256,6 +260,52 @@ Set<String> occurredEvents = new HashSet<>(
 ---
 
 ## Best Practices
+
+---
+
+### Short-lived vs. long-running flows
+
+---
+
+### State is taken care of:
+
+- Cassandra for persistent storage
+- Ingredients encrypted by default
+- State recovered automatically
+
+---
+
+### Run Baker inside of your API
+### "Smart endpoints and dumb pipes"
+
+---
+
+### When failure occurs:
+
+- Baker retries technical failures with exponential backoff
+- Works well with **idempotent** services
+- Deal with functional failure in your recipe
+
+---
+
+Baker Capability Matrix:
+
+- Investigate not one, not two, but **all business processes** in your company
+- Where do you see re-use?
+- Map using MoSCoW[^4] to give importance (M = 10, S = 5, C = 2, W = 1)
+
+[^4]: https://en.wikipedia.org/wiki/MoSCoW_method
+
+---
+
+| Checking Account | Savings Account | Customer Onboarding |
+| :--- | :---: | ---: |
+| Verify Identity | Verify Identity | Verify Identity |
+| Register Individual | Register Individual | Register Individual |
+| Open *Checking* Account | Open *Savings* Account | `n/a` |
+| Issue Debit Card | `n/a` | `n/a` |
+| Send Message | Send Message | Send Message |
+| Register Product Owner | Register Product Owner | `n/a` |
 
 ---
 
