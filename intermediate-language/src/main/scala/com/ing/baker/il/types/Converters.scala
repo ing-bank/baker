@@ -93,6 +93,9 @@ object Converters {
   def toJava(value: Value, javaType: java.lang.reflect.Type): Any = {
 
     (value, javaType) match {
+      case (_, clazz) if clazz == classOf[Object] =>
+        throw new IllegalArgumentException(s"Unsupported type: $clazz")
+
       case (primitive: PrimitiveValue, clazz: Class[_]) if primitive.isAssignableTo(clazz) =>
         primitive.value
 
