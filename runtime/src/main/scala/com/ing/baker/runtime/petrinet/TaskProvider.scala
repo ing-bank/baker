@@ -78,6 +78,14 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
           // execute the interaction
           val event = implementation.execute(interaction, input)
 
+          // check if no null ingredients are provided
+          val nullIngredients = event.providedIngredients.collect {
+            case (name, v) if v.isNull => s"null value provided for ingredient $name"
+          }
+
+          if (nullIngredients.nonEmpty)
+            throw new FatalInteractionException(nullIngredients.mkString(","))
+
           // transforms the event
           val transformedEvent = transformEvent(interaction)(event)
 
