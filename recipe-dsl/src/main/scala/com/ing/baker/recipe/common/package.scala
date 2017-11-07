@@ -32,7 +32,8 @@ package object common {
     classOf[java.math.BigInteger],
     classOf[org.joda.time.DateTime],
     classOf[org.joda.time.LocalDate],
-    classOf[org.joda.time.LocalDateTime]
+    classOf[org.joda.time.LocalDateTime],
+    classOf[Array[Byte]]
   )
 
   def asJavaType(paramType: ru.Type): java.lang.reflect.Type = {

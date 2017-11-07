@@ -35,7 +35,8 @@ class ConvertersSpec extends WordSpecLike with Matchers {
     BigDecimal(1.123456789),
     new java.math.BigDecimal(1.123456789),
     BigInt(123456789),
-    BigInt(123456789).bigInteger)
+    BigInt(123456789).bigInteger,
+    Array[Byte](-1, 0, 1))
 
   val recordPerson = RecordValue(Map("name" -> PrimitiveValue("john"), "age" -> PrimitiveValue(42)))
 

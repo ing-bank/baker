@@ -26,7 +26,8 @@ package object types {
     classOf[BigInt],
     classOf[org.joda.time.DateTime],
     classOf[org.joda.time.LocalDate],
-    classOf[org.joda.time.LocalDateTime]
+    classOf[org.joda.time.LocalDateTime],
+    classOf[Array[Byte]]
   ) ++ javaPrimitiveMappings.keys ++ javaPrimitiveMappings.values
 
   // TYPES
