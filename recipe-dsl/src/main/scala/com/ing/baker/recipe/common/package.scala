@@ -65,6 +65,8 @@ package object common {
   def ingredientTypeFromType(clazz: Type): IngredientType = {
 
     clazz match {
+      case clazz if clazz == classOf[Object] =>
+        throw new IllegalArgumentException(s"Unsupported type: $clazz")
       case clazz: Class[_] if supportedPrimitiveClasses.contains(clazz) =>
         PrimitiveType(clazz)
       case clazz: ParameterizedType if classOf[scala.Option[_]].isAssignableFrom(getRawClass(clazz)) || classOf[java.util.Optional[_]].isAssignableFrom(getRawClass(clazz)) =>
