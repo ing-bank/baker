@@ -16,13 +16,13 @@ package object compiler {
 
   implicit def convertDSLTypeToType(dslType: common.IngredientType): BType = {
     dslType match {
-      case common.PrimitiveType(clazz) => PrimitiveType(clazz)
-      case common.OptionType(entryType) => OptionType(convertDSLTypeToType(entryType))
-      case common.ListType(entryType) => ListType(convertDSLTypeToType(entryType))
-      case common.POJOType(fields) => RecordType(fields.map { i =>
+      case common.PrimitiveType(clazz) => types.PrimitiveType(clazz)
+      case common.OptionType(entryType) => types.OptionType(convertDSLTypeToType(entryType))
+      case common.ListType(entryType) => types.ListType(convertDSLTypeToType(entryType))
+      case common.POJOType(fields) => types.RecordType(fields.map { i =>
         RecordField(i.name, convertDSLTypeToType(i.ingredientType))
       })
-      case common.EnumType(options) => EnumType(options)
+      case common.EnumType(options) => types.EnumType(options)
     }
   }
 
@@ -117,7 +117,7 @@ package object compiler {
 
       val predefinedIngredientsWithOptionalsEmpty: Map[String, Value] =
         inputFields.flatMap {
-          case (name, OptionType(_)) if !allIngredientNames.contains(name) => Seq(name -> NullValue)
+          case (name, types.OptionType(_)) if !allIngredientNames.contains(name) => Seq(name -> NullValue)
           case _ => Seq.empty
         }.toMap ++ mappedPredefinedIngredients
 
