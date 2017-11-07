@@ -73,9 +73,9 @@ Applying Baker will only be successful if you make sure that:
 To get started with SBT, simply add the following to your build.sbt file:
 
 ```
-libraryDependencies += "com.ing.baker" %% "recipe-dsl_2.11" % "1.1.12"
-libraryDependencies += "com.ing.baker" %% "runtime_2.11" % "1.1.12"
-libraryDependencies += "com.ing.baker" %% "compiler_2.11" % "1.1.12"
+libraryDependencies += "com.ing.baker" % "recipe-dsl_2.11" % "1.1.12"
+libraryDependencies += "com.ing.baker" % "runtime_2.11" % "1.1.12"
+libraryDependencies += "com.ing.baker" % "compiler_2.11" % "1.1.12"
 ```
 
 # How to contribute?
