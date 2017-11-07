@@ -6,6 +6,8 @@ import java.util.Optional
 import org.scalatest.{Matchers, WordSpecLike}
 import Converters._
 
+import scala.collection.JavaConverters._
+
 case class PersonCaseClass(name: String, age: Int)
 
 class PersonPojo(val name: String, val age: Int) {
@@ -116,6 +118,41 @@ class ConvertersSpec extends WordSpecLike with Matchers {
     "be able to create pojo objects" in {
 
       toJava[PersonPojo](recordPerson) shouldBe new PersonPojo("john", 42)
+    }
+
+    val valueMap = RecordValue(Map(
+      "a" -> PrimitiveValue(1),
+      "b" -> PrimitiveValue(2),
+      "c" -> PrimitiveValue(3)
+    ))
+
+    val scalaMap = Map(
+      "a" -> 1,
+      "b" -> 2,
+      "c" -> 3
+    )
+
+    val javaMap: util.Map[String, Int] = scalaMap.asJava
+
+    "be able to parse scala.collection.immutable.Map objects" in {
+
+      toValue(scalaMap) shouldBe valueMap
+    }
+
+    "be able to create scala.collection.immutable.Map objects" in {
+
+      toJava[Map[String, Int]](valueMap) shouldBe scalaMap
+    }
+
+
+    "be able to parse java.util.Map objects" in {
+
+      toValue(javaMap) shouldBe valueMap
+    }
+
+    "be able to create java.util.Map objects" in {
+
+      toJava[java.util.Map[String, Int]](valueMap) shouldBe javaMap
     }
   }
 }

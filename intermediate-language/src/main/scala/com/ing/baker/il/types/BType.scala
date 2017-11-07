@@ -31,6 +31,9 @@ sealed trait BType {
       case (EnumType(optionsA), EnumType(optionsB)) =>
         optionsB.subsetOf(optionsA)
 
+      case (MapType(valueTypeA), MapType(valueTypeB)) =>
+        valueTypeA.isAssignableFrom(valueTypeB)
+
       case _ => false
     }
   }
@@ -45,5 +48,7 @@ case class OptionType(entryType: BType) extends BType
 case class EnumType(options: Set[String]) extends BType
 
 case class RecordType(fields: Seq[RecordField]) extends BType
+
+case class MapType(valueType: BType) extends BType
 
 case class RecordField(name: String, `type`: BType)

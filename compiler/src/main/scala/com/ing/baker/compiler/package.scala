@@ -1,10 +1,8 @@
 package com.ing.baker
 
-import java.lang.reflect.ParameterizedType
-
+import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
 import com.ing.baker.il.petrinet._
-import com.ing.baker.il._
 import com.ing.baker.il.types._
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy.{FireEventAfterFailure, RetryWithIncrementalBackoff}
@@ -23,6 +21,7 @@ package object compiler {
         RecordField(i.name, convertDSLTypeToType(i.ingredientType))
       })
       case common.EnumType(options) => types.EnumType(options)
+      case common.MapType(valueType) => types.MapType(convertDSLTypeToType(valueType))
     }
   }
 

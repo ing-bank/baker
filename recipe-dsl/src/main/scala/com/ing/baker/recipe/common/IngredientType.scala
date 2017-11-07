@@ -11,6 +11,8 @@ case class OptionType(entryType: IngredientType) extends IngredientType
 
 case class EnumType(options: Set[String]) extends IngredientType
 
+case class MapType(valueType: IngredientType) extends IngredientType
+
 //POJO ingredient
 case class POJOType(fields: Seq[Ingredient]) extends IngredientType
 

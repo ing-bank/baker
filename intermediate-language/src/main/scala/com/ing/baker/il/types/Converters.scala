@@ -58,6 +58,17 @@ object Converters {
       case value if isPrimitiveValue(value) => PrimitiveValue(value)
       case list: List[_]                    => ListValue(list.map(toValue))
       case list: java.util.List[_]          => ListValue(list.asScala.toList.map(toValue))
+      case map: java.util.Map[_, _]         =>
+        val entries: Map[String, Value] = map.entrySet().iterator().asScala.map {
+          e => e.getKey.asInstanceOf[String] -> e.getValue.toValue
+        }.toMap
+        RecordValue(entries)
+      case map: Map[_, _] =>
+        val entries: Map[String, Value] = map.map {
+          case (name, value) => name.asInstanceOf[String] -> toValue(value)
+        }
+        RecordValue(entries)
+
       case Some(optionValue)                => toValue(optionValue)
       case option: java.util.Optional[_] if option.isPresent => toValue(option.get)
       case enum if enum.getClass.isEnum     => PrimitiveValue(enum.asInstanceOf[Enum[_]].name())
@@ -127,6 +138,30 @@ object Converters {
           list.add(value)
         }
         list
+
+      case (RecordValue(entries), generic: ParameterizedType) if classOf[java.util.Map[_,_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
+        val keyType = generic.getActualTypeArguments()(0)
+
+        if (keyType != classOf[String])
+          throw new IllegalArgumentException(s"Unsuported key type for map: $keyType")
+
+        val valueType = generic.getActualTypeArguments()(1)
+
+        val javaMap: java.util.Map[String, Any] = new util.HashMap[String, Any]()
+
+        entries.foreach { case (name, value) => javaMap.put(name, toJava(value, valueType)) }
+
+        javaMap
+
+      case (RecordValue(entries), generic: ParameterizedType) if classOf[Map[_,_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
+        val keyType = generic.getActualTypeArguments()(0)
+
+        if (keyType != classOf[String])
+          throw new IllegalArgumentException(s"Unsuported key type for map: $keyType")
+
+        val valueType = generic.getActualTypeArguments()(1)
+
+        entries.map { case (name, value) => name -> toJava(value, valueType) }
 
       case (RecordValue(entries), pojoClass: Class[_]) =>
 

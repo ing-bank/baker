@@ -73,6 +73,15 @@ package object common {
       case clazz: ParameterizedType if getRawClass(clazz.getRawType).isAssignableFrom(classOf[List[_]]) || getRawClass(clazz.getRawType).isAssignableFrom(classOf[java.util.List[_]]) =>
         val entryType = ingredientTypeFromType(clazz.getActualTypeArguments()(0))
         ListType(entryType)
+      case clazz: ParameterizedType if getRawClass(clazz.getRawType).isAssignableFrom(classOf[Map[_,_]]) || getRawClass(clazz.getRawType).isAssignableFrom(classOf[java.util.Map[_,_]]) =>
+        val keyType = clazz.getActualTypeArguments()(0)
+
+        if (keyType != classOf[String])
+          throw new IllegalArgumentException(s"Unsupported key type for map: $keyType")
+
+        val valueType = ingredientTypeFromType(clazz.getActualTypeArguments()(1))
+        MapType(valueType)
+
       case enumClass: Class[_] if enumClass.isEnum =>
         EnumType(enumClass.asInstanceOf[Class[Enum[_]]].getEnumConstants.map(_.name).toSet)
       case pojoClass: Class[_] =>

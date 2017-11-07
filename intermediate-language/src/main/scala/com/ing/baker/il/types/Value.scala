@@ -18,6 +18,7 @@ sealed trait Value extends Serializable {
         case Some(value) => value.isInstanceOf(f.`type`)
       }
     }
+    case (MapType(valueType), RecordValue(entries))         => entries.values.forall(_.isInstanceOf(valueType))
     case _ => false
   }
 
@@ -53,7 +54,7 @@ case class PrimitiveValue(value: Any) extends Value {
 
 case class RecordValue(entries: Map[String, Value]) extends Value {
 
-  override def toString(): String = entries.map { case (name, value) => "\"" + name + "\" : " + value  }.mkString("{", ",", "}")
+  override def toString(): String = entries.map   { case (name, value) => "\"" + name + "\" : " + value  }.mkString("{", ",", "}")
 }
 
 case class ListValue(entries: List[Value]) extends Value {
