@@ -6,6 +6,10 @@
         </encoder>
     </appender>
 
+    <logger name="com.ing.baker.runtime.actor" level="info" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
     <logger name="com.ing.baker.runtime.actor.ProcessInstance" level="OFF" />
 
     <root level="INFO">

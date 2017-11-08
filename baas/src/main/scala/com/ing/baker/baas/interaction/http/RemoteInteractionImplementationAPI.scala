@@ -24,7 +24,7 @@ case class RemoteInteractionImplementationAPI(InteractionImplementation: Interac
   private val bindingFuture = new AtomicReference[Future[Http.ServerBinding]]()
 
   def start(): Future[Done] = {
-    log.info(s"Starting remote interaction implementation for: ${InteractionImplementation.name} ")
+    log.info(s"Starting remote interaction implementation for: ${InteractionImplementation.name} on $hostname:$port ")
     val serverBindingPromise = Promise[Http.ServerBinding]()
     if (bindingFuture.compareAndSet(null, serverBindingPromise.future)) {
       val routes = RouteResult.route2HandlerFlow(

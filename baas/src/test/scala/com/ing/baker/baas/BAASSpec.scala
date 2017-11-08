@@ -47,7 +47,7 @@ class BAASSpec extends WordSpecLike with Matchers {
     baasClient.addImplementation(InteractionOne);
   }
 
-  "Happy flow simple recipe BAAS" in {
+  "Happy flow simple recipe BAAS" ignore {
     val recipeName = "simpleRecipe" + UUID.randomUUID().toString
     val recipe = setupSimpleRecipe(recipeName)
 

@@ -19,16 +19,15 @@ object RemoteInteractionImplementationRoutes extends Directives {
           entity(as[ByteString]) { string =>
             log.info(s"interaction implementation called for: ${interactionImplementation.name}")
             val byteArray: Array[Byte] = string.toArray
-            //Get the request opbject
             val request = kryoPool.fromBytes(byteArray).asInstanceOf[ExecuteInteractionHTTPRequest]
             try {
               log.info(s"Executing interaction: ${interactionImplementation.name}")
               val runtimeEvent = interactionImplementation.execute(request.interaction, request.input)
               log.info(s"Interaction executed: ${interactionImplementation.name}")
-              complete(kryoPool.toBytesWithClass(runtimeEvent))
+              complete(kryoPool.toBytesWithClass(ExecuteInteractionHTTPResponse(runtimeEvent)))
             } catch {
               case e: Exception => {
-                println(s"Exception when adding recipe: ${e.getMessage}")
+                println(s"Exception when executing interaction: ${e.getMessage}")
                 throw e
               }
             }

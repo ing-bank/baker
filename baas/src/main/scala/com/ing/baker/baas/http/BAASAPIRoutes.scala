@@ -47,10 +47,11 @@ object BAASAPIRoutes extends Directives {
             val interactionImplementation = RemoteInteractionImplementation(request.name, request.hostname, request.port)
             println(s"Adding interaction called: ${request.name}")
 
-
             //Register it to BAAS
             baas.baker.addInteractionImplementation(interactionImplementation)
-            complete("send")
+
+            //return response
+            complete(s"Interaction: ${interactionImplementation.name} added")
           }
         }
       } ~

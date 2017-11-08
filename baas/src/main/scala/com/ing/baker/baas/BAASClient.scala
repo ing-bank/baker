@@ -41,7 +41,7 @@ class BAASClient(val host: String, val port: Int) {
       case resp @ HttpResponse(code, _, _, _) =>
         resp.discardEntityBytes()
         log.error("Add recipe failed, response code: " + code)
-        throw new RuntimeException
+        throw new RuntimeException("Adding interaction failed")
     }
   }
 
