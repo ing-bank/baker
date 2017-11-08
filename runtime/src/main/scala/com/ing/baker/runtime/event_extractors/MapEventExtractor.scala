@@ -1,5 +1,5 @@
 package com.ing.baker.runtime.event_extractors
-import com.ing.baker.il.types.Converters
+import com.ing.baker.types.Converters
 import com.ing.baker.runtime.core.RuntimeEvent
 
 class MapEventExtractor extends EventExtractor {

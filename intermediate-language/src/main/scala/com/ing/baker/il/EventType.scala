@@ -1,6 +1,6 @@
 package com.ing.baker.il
 
-import com.ing.baker.il.types.RecordField
+import com.ing.baker.types.RecordField
 
 case class EventType(name: String,
                      ingredientTypes: Seq[RecordField])

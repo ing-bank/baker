@@ -1,10 +1,10 @@
-package com.ing.baker.il.types
+package com.ing.baker.types
 
 import java.util
 import java.util.Optional
 
+import com.ing.baker.types.Converters._
 import org.scalatest.{Matchers, WordSpecLike}
-import Converters._
 
 import scala.collection.JavaConverters._
 

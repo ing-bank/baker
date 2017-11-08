@@ -11,10 +11,6 @@ import com.ing.baker.baas.BAAS
 
 import scala.concurrent.{Future, Promise}
 
-object BAASAPI extends App {
-  new BAASAPI(new BAAS())(ActorSystem("BAASAPIActorSystem")).start()
-}
-
 class BAASAPI(baas: BAAS)(implicit actorSystem: ActorSystem) extends Directives {
 
   private implicit val materializer = ActorMaterializer()

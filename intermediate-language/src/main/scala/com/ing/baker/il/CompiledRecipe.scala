@@ -3,7 +3,7 @@ package com.ing.baker.il
 import java.io.{File, IOException}
 
 import com.ing.baker.il.petrinet.{InteractionTransition, Place, RecipePetriNet}
-import com.ing.baker.il.types.RecordField
+import com.ing.baker.types.RecordField
 import com.ing.baker.petrinet.api.Marking
 
 import scala.collection.JavaConverters._

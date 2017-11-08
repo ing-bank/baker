@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.core
 
 import com.ing.baker.il.EventType
-import com.ing.baker.il.types.{Converters, Value}
+import com.ing.baker.types.{Converters, Value}
 
 
 object RuntimeEvent {

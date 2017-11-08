@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.event_extractors
 
-import com.ing.baker.il.types.{Converters, RecordValue}
+import com.ing.baker.types.{Converters, RecordValue}
 import com.ing.baker.runtime.core.RuntimeEvent
 
 class PojoEventExtractor extends EventExtractor {

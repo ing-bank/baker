@@ -1,4 +1,4 @@
-package com.ing.baker.il.types
+package com.ing.baker.types
 
 import scala.reflect.runtime.universe
 

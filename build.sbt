@@ -51,6 +51,19 @@ lazy val petrinetApi = project.in(file("petrinet-api"))
     )
   )
 
+
+lazy val bakertypes = project.in(file("bakertypes"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "bakertypese",
+    libraryDependencies ++= compileDeps(
+      slf4jApi,
+      objenisis,
+      jodaTime,
+      scalaReflect
+    ) ++ testDeps(scalaTest, scalaCheck, logback)
+  )
+
 lazy val intermediateLanguage = project.in(file("intermediate-language"))
   .settings(defaultModuleSettings)
   .settings(
@@ -62,7 +75,8 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
       objenisis,
       jodaTime
     ) ++ testDeps(scalaTest, scalaCheck, logback)
-  ).dependsOn(petrinetApi)
+  ).dependsOn(petrinetApi, bakertypes)
+
 
 lazy val recipeRuntime = project.in(file("runtime"))
   .settings(defaultModuleSettings)
@@ -173,4 +187,4 @@ lazy val baker = project
   .in(file("."))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
-  .aggregate(petrinetApi, recipeRuntime, recipeCompiler, recipeDsl, intermediateLanguage, baas, testModule)
+  .aggregate(bakertypes, petrinetApi, recipeRuntime, recipeCompiler, recipeDsl, intermediateLanguage, baas, testModule)

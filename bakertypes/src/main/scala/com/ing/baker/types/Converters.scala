@@ -1,18 +1,18 @@
-package com.ing.baker.il.types
+package com.ing.baker.types
 
 import java.lang.reflect.{Modifier, ParameterizedType, Type}
 import java.util
 import java.util.Optional
 
-import com.ing.baker.il.CompiledRecipe
 import org.objenesis.ObjenesisStd
 
 import scala.collection.JavaConverters._
+
 import scala.reflect.runtime.universe
 
 object Converters {
 
-  val mirror: universe.Mirror = universe.runtimeMirror(classOf[CompiledRecipe].getClassLoader)
+  val mirror: universe.Mirror = universe.runtimeMirror(classOf[ClassForMirror].getClassLoader)
 
   def getRawClass(t: Type): Class[_] = t match {
     case c: Class[_] => c

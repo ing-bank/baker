@@ -1,4 +1,4 @@
-package com.ing.baker.il
+package com.ing.baker
 
 package object types {
 

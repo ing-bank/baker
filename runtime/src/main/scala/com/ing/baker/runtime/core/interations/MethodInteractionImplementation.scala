@@ -4,7 +4,7 @@ import java.lang.reflect.{Method, ParameterizedType, Type}
 import java.util.UUID
 
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.il.types.{Converters, IngredientDescriptor, Value}
+import com.ing.baker.types.{Converters, IngredientDescriptor, Value}
 import com.ing.baker.runtime.core.Baker.eventExtractor
 import com.ing.baker.runtime.core.{BakerException, RuntimeEvent}
 import com.ing.baker.runtime.petrinet.FatalInteractionException

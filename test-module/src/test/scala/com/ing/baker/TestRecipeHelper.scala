@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.il.types.{Converters, Value}
+import com.ing.baker.types.{Converters, Value}
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
 import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.recipe.{common, javadsl}

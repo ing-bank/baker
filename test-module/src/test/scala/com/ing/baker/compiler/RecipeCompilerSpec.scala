@@ -5,7 +5,7 @@ import java.util.Optional
 
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
-import com.ing.baker.il.types.{NullValue, PrimitiveValue}
+import com.ing.baker.types.{NullValue, PrimitiveValue}
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient, ProvidesNothing}

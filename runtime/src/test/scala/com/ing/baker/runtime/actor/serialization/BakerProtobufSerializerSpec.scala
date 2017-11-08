@@ -3,7 +3,7 @@ package com.ing.baker.runtime.actor.serialization
 import akka.actor.ActorSystem
 import akka.serialization.SerializationExtension
 import akka.testkit.TestKit
-import com.ing.baker.il.types.{PrimitiveValue, Value}
+import com.ing.baker.types.{PrimitiveValue, Value}
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import org.scalacheck.Prop.forAll
 import org.scalacheck.{Gen, Test}

@@ -4,7 +4,7 @@ import java.lang.reflect.InvocationTargetException
 
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
 import com.ing.baker.il.processIdName
-import com.ing.baker.il.types.{IngredientDescriptor, PrimitiveValue, RecordField, Value}
+import com.ing.baker.types.{IngredientDescriptor, PrimitiveValue, RecordField, Value}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.{TransitionTask, TransitionTaskProvider}
 import com.ing.baker.runtime.core.Baker.eventExtractor

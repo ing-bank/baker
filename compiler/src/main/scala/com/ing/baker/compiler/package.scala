@@ -3,7 +3,7 @@ package com.ing.baker
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
 import com.ing.baker.il.petrinet._
-import com.ing.baker.il.types._
+import com.ing.baker.types._
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy.{FireEventAfterFailure, RetryWithIncrementalBackoff}
 import com.ing.baker.recipe.common.{InteractionDescriptor, ProvidesNothing}

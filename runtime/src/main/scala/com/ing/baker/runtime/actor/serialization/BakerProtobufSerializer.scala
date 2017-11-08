@@ -2,7 +2,7 @@ package com.ing.baker.runtime.actor.serialization
 
 import akka.actor.ExtendedActorSystem
 import akka.serialization.{Serializer, SerializerWithStringManifest}
-import com.ing.baker.il.types.Value
+import com.ing.baker.types.Value
 import com.ing.baker.runtime.actor.messages
 import com.ing.baker.runtime.core
 

@@ -5,7 +5,7 @@ import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.il.types.Value
+import com.ing.baker.types.Value
 import com.ing.baker.runtime.actor.ProcessMetadata
 import com.ing.baker.runtime.core._
 

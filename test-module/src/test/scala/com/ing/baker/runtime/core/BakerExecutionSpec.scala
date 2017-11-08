@@ -17,7 +17,7 @@ import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.scalatest.time.{Milliseconds, Span}
 import org.slf4j.LoggerFactory
-import com.ing.baker.il.types._
+import com.ing.baker.types._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
