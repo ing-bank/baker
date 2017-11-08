@@ -8,12 +8,15 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.RouteResult
 import akka.stream.ActorMaterializer
 import com.ing.baker.runtime.core.interations.InteractionImplementation
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Future, Promise}
 
-case class RemoteInteractionImplementationClient(InteractionImplementation: InteractionImplementation,
-                                                 hostname: String,
-                                                 port: Int) {
+case class RemoteInteractionImplementationAPI(InteractionImplementation: InteractionImplementation,
+                                              hostname: String,
+                                              port: Int) {
+  val log = LoggerFactory.getLogger(classOf[RemoteInteractionImplementationAPI])
+
   implicit val defaultActorSystem = ActorSystem()
   import defaultActorSystem.dispatcher
   implicit val materializer = ActorMaterializer()(defaultActorSystem)
@@ -21,6 +24,7 @@ case class RemoteInteractionImplementationClient(InteractionImplementation: Inte
   private val bindingFuture = new AtomicReference[Future[Http.ServerBinding]]()
 
   def start(): Future[Done] = {
+    log.info(s"Starting remote interaction implementation for: ${InteractionImplementation.name} ")
     val serverBindingPromise = Promise[Http.ServerBinding]()
     if (bindingFuture.compareAndSet(null, serverBindingPromise.future)) {
       val routes = RouteResult.route2HandlerFlow(

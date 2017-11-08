@@ -124,7 +124,10 @@ class RecipeHandler(val compiledRecipe: CompiledRecipe,
     */
   def handleEventAsync(processId: String, event: Any)(implicit timeout: FiniteDuration): BakerResponse = {
 
-    val runtimeEvent = Baker.eventExtractor.extractEvent(event)
+    val runtimeEvent: RuntimeEvent = event match {
+      case runtimeEvent:  RuntimeEvent => runtimeEvent
+      case _ => Baker.eventExtractor.extractEvent(event)
+    }
 
     val sensoryEvent: EventType = compiledRecipe.sensoryEvents
       .find(_.name.equals(runtimeEvent.name))
