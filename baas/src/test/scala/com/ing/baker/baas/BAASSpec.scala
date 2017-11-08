@@ -47,7 +47,7 @@ class BAASSpec extends WordSpecLike with Matchers {
     baasClient.addImplementation(InteractionOne);
   }
 
-  "Happy flow simple recipe BAAS" ignore {
+  "Happy flow simple recipe BAAS" in {
     val recipeName = "simpleRecipe" + UUID.randomUUID().toString
     val recipe = setupSimpleRecipe(recipeName)
 
@@ -62,11 +62,13 @@ class BAASSpec extends WordSpecLike with Matchers {
 
     val requestState: GetStateHTTResponse = baasClient.getState(recipeName, requestId)
 
-    println(s"procesState : ${requestState.processState}")
-    println(s"visualState : ${requestState.visualState}")
+    requestState.processState.ingredients.keys should contain("initialIngredient")
+    requestState.processState.ingredients.keys should contain("interactionOneIngredient")
+//    println(s"procesState : ${requestState.processState}")
+//    println(s"visualState : ${requestState.visualState}")
   }
 
-  "Happy flow simple recipe baker" in {
+  "Happy flow simple recipe baker" ignore {
     implicit val timeout = 30 seconds
 
     val recipeName = "simpleRecipe" + UUID.randomUUID().toString
