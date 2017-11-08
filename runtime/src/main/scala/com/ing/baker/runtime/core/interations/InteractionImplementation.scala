@@ -1,19 +1,12 @@
 package com.ing.baker.runtime.core.interations
 
-import java.lang.reflect.Type
-
-import com.ing.baker.il.EventType
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.types.Value
 import com.ing.baker.runtime.core.RuntimeEvent
+import com.ing.baker.types.Value
 
 trait InteractionImplementation {
 
   val name: String
-
-  val requiredIngredients: Seq[Type]
-
-  val returnType: Set[EventType]
 
   def isValidForInteraction(interaction: InteractionTransition[_]) : Boolean
 

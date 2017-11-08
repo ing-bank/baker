@@ -22,7 +22,8 @@ class BAASAPI(baas: BAAS)(implicit actorSystem: ActorSystem) extends Directives 
   def start(): Future[Done] = {
     val serverBindingPromise = Promise[Http.ServerBinding]()
     if (bindingFuture.compareAndSet(null, serverBindingPromise.future)) {
-      val routes = RouteResult.route2HandlerFlow(BAASAPIRoutes(baas))
+      val routes = RouteResult.route2HandlerFlow(
+        BAASAPIRoutes(baas))
 
       val serverFutureBinding = Http().bindAndHandle(routes, "localhost", 8081)
 

@@ -110,15 +110,15 @@ package object compiler {
       //Add it to the predefinedIngredients List as empty
       //Add the predefinedIngredients later to overwrite any created empty field with the given predefined value.
 
-      val mappedPredefinedIngredients = interactionDescriptor.predefinedIngredients.map {
-        case (name, obj) => name -> Converters.toValue(obj)
-      }
+//      val mappedPredefinedIngredients = interactionDescriptor.predefinedIngredients.map {
+//        case (name, obj) => name -> obj
+//      }
 
       val predefinedIngredientsWithOptionalsEmpty: Map[String, Value] =
         inputFields.flatMap {
           case (name, types.OptionType(_)) if !allIngredientNames.contains(name) => Seq(name -> NullValue)
           case _ => Seq.empty
-        }.toMap ++ mappedPredefinedIngredients
+        }.toMap ++ interactionDescriptor.predefinedIngredients
 
 
       InteractionTransition[Any](

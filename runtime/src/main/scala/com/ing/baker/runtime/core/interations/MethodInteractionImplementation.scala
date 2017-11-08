@@ -131,15 +131,14 @@ object MethodInteractionImplementation {
 
 case class MethodInteractionImplementation(override val name: String,
                                            implementation: AnyRef,
-                                           override val requiredIngredients: Seq[Type],
-                                           override val returnType: Set[EventType]) extends InteractionImplementation {
+                                           requiredIngredients: Seq[Type],
+                                           returnType: Set[EventType]) extends InteractionImplementation {
 
   val log: Logger = LoggerFactory.getLogger(MethodInteractionImplementation.getClass)
 
   val method = MethodInteractionImplementation.applyMethod(implementation.getClass())
 
   override def isValidForInteraction(interaction: InteractionTransition[_]): Boolean =
-
     interaction.originalInteractionName == name
 
   override def execute(interaction: InteractionTransition[_], input: Seq[Value]): RuntimeEvent =  {

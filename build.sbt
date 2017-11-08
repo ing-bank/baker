@@ -132,7 +132,7 @@ lazy val recipeDsl = project.in(file("recipe-dsl"))
           slf4jApi,
           logback
         )
-  )
+  ).dependsOn(bakertypes)
 
 lazy val recipeCompiler = project.in(file("compiler"))
   .settings(defaultModuleSettings)

@@ -1,18 +1,24 @@
 package com.ing.baker.baas
 
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpMessage, HttpRequest, HttpResponse, StatusCodes}
-import akka.stream.ActorMaterializer
-import akka.util.ByteString
+import akka.actor.ActorSystem
 import com.ing.baker.TestRecipeHelper
-import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.TestRecipeHelper.{initialEvent, interactionOne}
+import com.ing.baker.baas.http.BAASAPI
 import com.ing.baker.recipe.{commonserialize, scaladsl}
 
+import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
 
 class BAASSpec extends TestRecipeHelper {
   override def actorSystemName: String = "BAASSpec"
+
+  //Startup a empty BAAS cluster
+  val baasAPI: BAASAPI = new BAASAPI(new BAAS())(ActorSystem("BAASAPIActorSystem"))
+  Await.result(baasAPI.start(), 10 seconds)
+
+  //Start a BAAS API
+  val baasClient: BAASClient = new BAASClient("http://localhost", 8081)
+
 
   "Serialize and deserialize a common recipe" in {
     val originalRecipe: commonserialize.Recipe = new commonserialize.Recipe(getComplexRecipe("name"))
@@ -24,27 +30,28 @@ class BAASSpec extends TestRecipeHelper {
 
   "Send recipe to the BAAS API" ignore {
     val originalRecipe: scaladsl.Recipe = getComplexRecipe("recipename")
+    baasClient.addRecipe(originalRecipe)
+  }
 
-    val serializedRecipe = BAAS.serializeRecipe(originalRecipe)
+  "Get all recipe names from the BAAS API" ignore {
+    val originalRecipe: scaladsl.Recipe = getComplexRecipe("recipename")
+    baasClient.addRecipe(originalRecipe)
+  }
 
-    implicit val materializer = ActorMaterializer()
-    import defaultActorSystem.dispatcher
+  "Add a implementation to the BAAS API" ignore {
+    baasClient.addImplementation(InteractionOne());
+  }
 
-    val responseFuture: Future[HttpResponse] = Http()
-      .singleRequest(HttpRequest(
-        uri = "http://localhost:8081/recipe",
-        method = akka.http.scaladsl.model.HttpMethods.POST,
-        entity = ByteString.fromArray(serializedRecipe)))
+  case class InteractionOne(name: String = "InteractionOne") {
+    def apply(processId: String, initialIngredient: String): String = initialIngredient
+  }
 
-    val returnMessage: HttpMessage = Await.result(responseFuture, 10 seconds)
-    returnMessage match {
-      case HttpResponse(StatusCodes.OK, headers, entity, _) =>
-        entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
-          println("Got response, body: " + body.utf8String)
-        }
-      case resp @ HttpResponse(code, _, _, _) =>
-        resp.discardEntityBytes()
-//        fail("Request failed, response code: " + code)
-    }
+  "Add implementations and recipe to BAASAPI" in {
+    val recipe = scaladsl.Recipe("simpleRecipe")
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent)
+
+    baasClient.addImplementation(InteractionOne());
+    baasClient.addRecipe(recipe)
   }
 }

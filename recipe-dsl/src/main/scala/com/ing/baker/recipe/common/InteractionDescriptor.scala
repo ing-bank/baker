@@ -1,5 +1,7 @@
 package com.ing.baker.recipe.common
 
+import com.ing.baker.types
+
 /**
   * An interaction is some code that requires input (ingredients) and produces output (ingredients)
   */
@@ -22,7 +24,7 @@ trait InteractionDescriptor {
   /**
     * A map of predefined parameter values, not provided from the recipe.
     */
-  val predefinedIngredients: Map[String, AnyRef]
+  val predefinedIngredients: Map[String, types.Value]
 
   /**
     * A map of overridden Ingredient Names for the input

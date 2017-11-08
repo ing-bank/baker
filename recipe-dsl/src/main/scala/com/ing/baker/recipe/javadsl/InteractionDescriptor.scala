@@ -1,6 +1,7 @@
 package com.ing.baker.recipe.javadsl
 
 import com.ing.baker.recipe.common
+import com.ing.baker.types.Converters
 
 import scala.annotation.varargs
 import scala.collection.JavaConverters._
@@ -9,7 +10,7 @@ case class InteractionDescriptor private(
                                           override val interaction: common.Interaction,
                                           override val requiredEvents: Set[String],
                                           override val requiredOneOfEvents: Set[String],
-                                          override val predefinedIngredients: Map[String, AnyRef],
+                                          override val predefinedIngredients: Map[String, com.ing.baker.types.Value],
                                           override val overriddenIngredientNames: Map[String, String],
                                           override val overriddenOutputIngredientName: Option[String] = Option.empty[String],
                                           override val maximumInteractionCount: Option[Int],
@@ -165,13 +166,11 @@ case class InteractionDescriptor private(
     * @param newPredefinedIngredients The map containing ingredientName and ingredientValue for ingredients you want to set
     * @return
     */
-  def withPredefinedIngredients(
-                                 newPredefinedIngredients: java.util.Map[String, AnyRef]): InteractionDescriptor =
-    this.copy(
-      predefinedIngredients = predefinedIngredients ++ newPredefinedIngredients.asScala.toMap)
+  def withPredefinedIngredients(newPredefinedIngredients: java.util.Map[String, AnyRef]): InteractionDescriptor =
+    addPredefinedIngredient(newPredefinedIngredients.asScala.toMap)
 
   private def addPredefinedIngredient(params: Map[String, AnyRef]): InteractionDescriptor =
-    this.copy(predefinedIngredients = predefinedIngredients ++ params)
+    this.copy(predefinedIngredients = predefinedIngredients ++ params.map{case (key, value) => key -> Converters.toValue(value)})
 
   /**
     * This renames the ingredient that is created by this interaction

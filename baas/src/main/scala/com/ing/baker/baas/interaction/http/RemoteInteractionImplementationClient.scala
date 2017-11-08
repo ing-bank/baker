@@ -1,0 +1,39 @@
+package com.ing.baker.baas.interaction.http
+
+import java.util.concurrent.atomic.AtomicReference
+
+import akka.Done
+import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.server.RouteResult
+import akka.stream.ActorMaterializer
+import com.ing.baker.runtime.core.interations.InteractionImplementation
+
+import scala.concurrent.{Future, Promise}
+
+case class RemoteInteractionImplementationClient(InteractionImplementation: InteractionImplementation,
+                                                 hostname: String,
+                                                 port: Int) {
+  implicit val defaultActorSystem = ActorSystem()
+  import defaultActorSystem.dispatcher
+  implicit val materializer = ActorMaterializer()(defaultActorSystem)
+
+  private val bindingFuture = new AtomicReference[Future[Http.ServerBinding]]()
+
+  def start(): Future[Done] = {
+    val serverBindingPromise = Promise[Http.ServerBinding]()
+    if (bindingFuture.compareAndSet(null, serverBindingPromise.future)) {
+      val routes = RouteResult.route2HandlerFlow(
+        RemoteInteractionImplementationRoutes(InteractionImplementation))
+      val serverFutureBinding = Http().bindAndHandle(routes, hostname, port)
+      serverBindingPromise.completeWith(serverFutureBinding)
+      serverBindingPromise.future.map(_ => Done)
+    }
+    else {
+      Future(Done)
+    }
+  }
+
+}
+
+
