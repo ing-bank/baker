@@ -2,13 +2,17 @@ package com.ing.baker.baas
 
 import java.util.UUID
 
+import akka.actor.ActorSystem
 import com.ing.baker.baas.BAASSpec.{InteractionOne, _}
 import com.ing.baker.baas.http.GetStateHTTResponse
+import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common.ProvidesIngredient
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, processId}
 import com.ing.baker.recipe.{commonserialize, scaladsl}
-import com.ing.baker.runtime.core.SensoryEventStatus
+import com.ing.baker.runtime.core.{Baker, SensoryEventStatus}
 import org.scalatest.{Matchers, WordSpecLike}
+
+import scala.concurrent.duration._
 
 class BAASSpec extends WordSpecLike with Matchers {
   def actorSystemName: String = "BAASSpec"
@@ -18,7 +22,7 @@ class BAASSpec extends WordSpecLike with Matchers {
 //  Await.result(baasAPI.start(), 10 seconds)
 
   //Start a BAAS API
-  val baasClient: BAASClient = new BAASClient("http://localhost", 8081)
+  val baasClient: BAASClient = new BAASClient("localhost", 8081)
 
 
   "Serialize and deserialize a common recipe" in {
@@ -43,7 +47,7 @@ class BAASSpec extends WordSpecLike with Matchers {
     baasClient.addImplementation(InteractionOne);
   }
 
-  "Add implementations and recipe to BAASAPI" ignore {
+  "Happy flow simple recipe BAAS" in {
     val recipeName = "simpleRecipe" + UUID.randomUUID().toString
     val recipe = setupSimpleRecipe(recipeName)
 
@@ -60,6 +64,29 @@ class BAASSpec extends WordSpecLike with Matchers {
 
     println(s"procesState : ${requestState.processState}")
     println(s"visualState : ${requestState.visualState}")
+  }
+
+  "Happy flow simple recipe baker" in {
+    implicit val timeout = 30 seconds
+
+    val recipeName = "simpleRecipe" + UUID.randomUUID().toString
+    val recipe = setupSimpleRecipe(recipeName)
+
+    val baker = new Baker()(ActorSystem("testActorSystem"))
+    baker.addInteractionImplementation(InteractionOne())
+
+    val recipeHandler = baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+
+    val requestId = UUID.randomUUID().toString
+
+    recipeHandler.bake(requestId)
+
+    val sensoryEventStatusResponse: SensoryEventStatus =
+      recipeHandler.handleEvent(requestId, InitialEvent("initialIngredient"))
+    sensoryEventStatusResponse shouldBe SensoryEventStatus.Completed
+
+    val visualState = recipeHandler.getVisualState(requestId)
+    println(s"visualState : $visualState")
   }
 }
 

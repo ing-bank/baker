@@ -11,7 +11,9 @@ import com.ing.baker.baas.BAAS
 
 import scala.concurrent.{Future, Promise}
 
-class BAASAPI(baas: BAAS)(implicit actorSystem: ActorSystem) extends Directives {
+class BAASAPI(baas: BAAS,
+              host: String,
+              port: Int)(implicit actorSystem: ActorSystem) extends Directives {
 
   private implicit val materializer = ActorMaterializer()
 
@@ -25,7 +27,7 @@ class BAASAPI(baas: BAAS)(implicit actorSystem: ActorSystem) extends Directives 
       val routes = RouteResult.route2HandlerFlow(
         BAASAPIRoutes(baas))
 
-      val serverFutureBinding = Http().bindAndHandle(routes, "localhost", 8081)
+      val serverFutureBinding = Http().bindAndHandle(routes, host, port)
 
       serverBindingPromise.completeWith(serverFutureBinding)
       serverBindingPromise.future.map(_ => Done)

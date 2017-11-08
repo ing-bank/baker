@@ -1,7 +1,5 @@
 package com.ing.baker.baas
 
-import java.util.UUID
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpMessage, HttpRequest, HttpResponse, StatusCodes}
@@ -11,16 +9,16 @@ import com.ing.baker.baas.BAAS.kryoPool
 import com.ing.baker.baas.http._
 import com.ing.baker.baas.interaction.http.RemoteInteractionImplementationAPI
 import com.ing.baker.recipe.common
-import com.ing.baker.runtime.core.{Baker, SensoryEventStatus}
 import com.ing.baker.runtime.core.interations.{InteractionImplementation, MethodInteractionImplementation}
+import com.ing.baker.runtime.core.{Baker, SensoryEventStatus}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-class BAASClient(val baseAddress: String, val port: Int) {
-  val baseUri = baseAddress + ":" +  port;
+class BAASClient(val host: String, val port: Int) {
+  val baseUri = s"http://$host:$port"
   implicit val actorSystem: ActorSystem = ActorSystem("BAASClientActorSystem")
   implicit val materializer = ActorMaterializer()
 
@@ -57,7 +55,8 @@ class BAASClient(val baseAddress: String, val port: Int) {
     portCounter = portCounter + 1
 
     log.info("Creating method implementation from Anyref")
-    val methodInteractionImplementation: InteractionImplementation = MethodInteractionImplementation.anyRefToInteractionImplementations(anyRef).head
+    val methodInteractionImplementation: InteractionImplementation =
+      MethodInteractionImplementation.anyRefToInteractionImplementations(anyRef).head
 
     //Create the locally running interaction implementation
     log.info("Creating RemoteImplementationClient")
