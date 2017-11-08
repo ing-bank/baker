@@ -18,8 +18,8 @@ object BAASAPIRunner extends App {
   Await.result(baasAPI.start(), 10 seconds)
 
   //Add the implementation to the BAASAPI
-  val baasClient: BAASClient = new BAASClient(s"$host", port)
-  baasClient.addImplementation(InteractionOne())
+//  val baasClient: BAASClient = new BAASClient(s"$host", port)
+//  baasClient.addImplementation(InteractionOne())
 }
 
 class BAASAPIRunner {

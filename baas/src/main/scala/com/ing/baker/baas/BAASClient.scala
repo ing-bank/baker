@@ -51,17 +51,25 @@ class BAASClient(val host: String, val port: Int) {
   def addImplementation(anyRef: AnyRef): Unit = {
     log.info("Creating interaction implementation")
     //Create the implementation that is used locally
-    val portToUse = portCounter
-    portCounter = portCounter + 1
 
     log.info("Creating method implementation from Anyref")
-    val methodInteractionImplementation: InteractionImplementation =
-      MethodInteractionImplementation.anyRefToInteractionImplementations(anyRef).head
+    val methodInteractionImplementations: Seq[InteractionImplementation] =
+      MethodInteractionImplementation.anyRefToInteractionImplementations(anyRef)
 
+    methodInteractionImplementations.foreach{ im =>
+      val portToUse = portCounter
+      portCounter = portCounter + 1
+      createRemoteForImplementation(im, portToUse)
+    }
+
+
+  }
+
+  private def createRemoteForImplementation(interactionImplementation: InteractionImplementation, portToUse: Int): Unit = {
     //Create the locally running interaction implementation
     log.info("Creating RemoteImplementationClient")
     val remoteInteractionImplementationClient: RemoteInteractionImplementationAPI =
-      RemoteInteractionImplementationAPI(methodInteractionImplementation, hostname, portToUse)
+      RemoteInteractionImplementationAPI(interactionImplementation, hostname, portToUse)
 
     //start the Remote interaction implementation
     log.info("Starting RemoteImplementationClient")
@@ -70,7 +78,7 @@ class BAASClient(val host: String, val port: Int) {
     //Create the request to Add the interaction implmentation to Baas
     log.info("Registering remote implementation client")
     val addInteractionHTTPRequest: AddInteractionHTTPRequest =
-      AddInteractionHTTPRequest(methodInteractionImplementation.name, hostname, portToUse);
+      AddInteractionHTTPRequest(interactionImplementation.name, hostname, portToUse);
 
     //Send the request to BAAS
     log.info("Sending request to baas")

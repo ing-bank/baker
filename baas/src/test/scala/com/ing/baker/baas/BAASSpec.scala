@@ -51,6 +51,8 @@ class BAASSpec extends WordSpecLike with Matchers {
     val recipeName = "simpleRecipe" + UUID.randomUUID().toString
     val recipe = setupSimpleRecipe(recipeName)
 
+    baasClient.addImplementation(InteractionOne())
+
     baasClient.addRecipe(recipe)
 
     val requestId = UUID.randomUUID().toString
