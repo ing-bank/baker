@@ -1,28 +1,28 @@
 package com.ing.baker.baas.http
 
 import akka.http.scaladsl.server.{Directives, Route}
-import akka.util.ByteString
 import com.ing.baker.baas.BAAS
 import com.ing.baker.baas.BAAS.kryoPool
 import com.ing.baker.baas.interaction.RemoteInteractionImplementation
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.commonserialize
-import com.ing.baker.runtime.core.ProcessState
+import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 
 import scala.concurrent.duration._
 
-object BAASAPIRoutes extends Directives {
+object BAASAPIRoutes extends Directives with BaasMarshalling {
 
   implicit val timeout: FiniteDuration = 30 seconds
 
   def apply(baas: BAAS): Route = {
     val baasRoutes = {
+
       path("recipe") {
         post {
-          entity(as[ByteString]) { string =>
-            val byteArray: Array[Byte] = string.toArray
-            val deserializedRecipe: commonserialize.Recipe = BAAS.deserializeRecipe(byteArray)
-            val compiledRecipe = RecipeCompiler.compileRecipe(deserializedRecipe)
+          entity(as[commonserialize.Recipe]) { recipe =>
+
+            val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+
             try {
               println(s"Adding recipe called: ${compiledRecipe.name}")
               baas.baker.addRecipe(compiledRecipe)
@@ -38,9 +38,7 @@ object BAASAPIRoutes extends Directives {
       } ~
       path("implementation") {
         post {
-          entity(as[ByteString]) { string =>
-            val byteArray: Array[Byte] = string.toArray
-            val request = kryoPool.fromBytes(byteArray).asInstanceOf[AddInteractionHTTPRequest]
+          entity(as[AddInteractionHTTPRequest]) { request =>
             println(s"Request received for adding interaction: $request}")
 
             //Create a RemoteInteractionImplementation
@@ -55,57 +53,41 @@ object BAASAPIRoutes extends Directives {
           }
         }
       } ~
-      path("event") {
+      path(Segment / Segment / "event") {  (recipeName, requestId) =>
         post {
-          entity(as[ByteString]) { string =>
-            val byteArray: Array[Byte] = string.toArray
-            val request = kryoPool.fromBytes(byteArray).asInstanceOf[HandleEventHTTPRequest]
-            println(s"Request received for handling event: $request}")
+          entity(as[RuntimeEvent]) { event =>
+            println(s"Request received for handling event: $requestId}")
 
-            val recipeHandler = baas.baker.getRecipeHandler(request.recipeName)
-
-            val sensoryEventStatus = recipeHandler.handleEvent(request.requestId, request.runtimeEvent)
+            val recipeHandler = baas.baker.getRecipeHandler(recipeName)
+            val sensoryEventStatus = recipeHandler.handleEvent(requestId, event)
 
             val response = HandleEventHTTPResponse(sensoryEventStatus)
             complete(kryoPool.toBytesWithClass(response))
           }
         }
       } ~
-      path("bake") {
+      path(Segment / Segment / "bake") { (recipeName, requestId) =>
         post {
-          entity(as[ByteString]) { string =>
-            val byteArray: Array[Byte] = string.toArray
-            val request = kryoPool.fromBytes(byteArray).asInstanceOf[BakeHTTPRequest]
-            println(s"Request received for baking: $request}")
-
-            val recipeHandler = baas.baker.getRecipeHandler(request.recipeName)
-
-            val requestId: ProcessState = recipeHandler.bake(request.requestId)
+            val recipeHandler = baas.baker.getRecipeHandler(recipeName)
+            val state: ProcessState = recipeHandler.bake(requestId)
 
             val response = BakeHTTPResponse()
             complete(kryoPool.toBytesWithClass(response))
           }
-        }
       } ~
-      path("state") {
-        post {
-          entity(as[ByteString]) { string =>
-            val byteArray: Array[Byte] = string.toArray
-            val request = kryoPool.fromBytes(byteArray).asInstanceOf[GetStateHTTPRequest]
-            println(s"Request received for getting state: $request}")
+      path(Segment / Segment / "state") { (recipeName, requestId) =>
+        get {
 
-            val recipeHandler = baas.baker.getRecipeHandler(request.recipeName)
+            val recipeHandler = baas.baker.getRecipeHandler(recipeName)
 
-            val processState: ProcessState =
-              recipeHandler.getProcessState(request.requestId)
+            val processState: ProcessState = recipeHandler.getProcessState(requestId)
 
-            val visualState = recipeHandler.getVisualState(request.requestId)
+            val visualState = recipeHandler.getVisualState(requestId)
 
             val response = GetStateHTTResponse(processState, visualState)
             complete(kryoPool.toBytesWithClass(response))
           }
         }
-      }
     }
     baasRoutes
   }

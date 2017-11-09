@@ -2,7 +2,8 @@ package com.ing.baker.baas
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpMessage, HttpRequest, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.HttpMethods._
+import akka.http.scaladsl.model._
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import com.ing.baker.baas.BAAS.kryoPool
@@ -18,11 +19,19 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
 class BAASClient(val host: String, val port: Int) {
+
   val baseUri = s"http://$host:$port"
+
   implicit val actorSystem: ActorSystem = ActorSystem("BAASClientActorSystem")
   implicit val materializer = ActorMaterializer()
 
   val log = LoggerFactory.getLogger(classOf[BAASClient])
+  val requestTimeout = 30 seconds
+
+  def entityFromResponse[T](entity: ResponseEntity): T = {
+    val byteString = Await.result(entity.dataBytes.runFold(ByteString(""))(_ ++ _), requestTimeout)
+    kryoPool.fromBytes(byteString.toArray).asInstanceOf[T]
+  }
 
   def addRecipe(recipe: common.Recipe) : Unit = {
     val serializedRecipe = BAAS.serializeRecipe(recipe)
@@ -32,7 +41,8 @@ class BAASClient(val host: String, val port: Int) {
         method = akka.http.scaladsl.model.HttpMethods.POST,
         entity = ByteString.fromArray(serializedRecipe)))
 
-    val returnMessage: HttpMessage = Await.result(responseFuture, 30 seconds)
+    val returnMessage: HttpMessage = Await.result(responseFuture, requestTimeout)
+
     returnMessage match {
       case HttpResponse(StatusCodes.OK, headers, entity, _) =>
         entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
@@ -61,8 +71,6 @@ class BAASClient(val host: String, val port: Int) {
       portCounter = portCounter + 1
       createRemoteForImplementation(im, portToUse)
     }
-
-
   }
 
   private def createRemoteForImplementation(interactionImplementation: InteractionImplementation, portToUse: Int): Unit = {
@@ -85,14 +93,14 @@ class BAASClient(val host: String, val port: Int) {
     val responseFuture: Future[HttpResponse] = Http()
       .singleRequest(HttpRequest(
         uri = baseUri +  "/implementation",
-        method = akka.http.scaladsl.model.HttpMethods.POST,
+        method = POST,
         entity = ByteString.fromArray(kryoPool.toBytesWithClass(addInteractionHTTPRequest))))
 
     //Handle the response of BAAS
     log.info("Waiting for response from baas")
-    val returnMessage: HttpMessage = Await.result(responseFuture, 30 seconds)
+    val returnMessage: HttpMessage = Await.result(responseFuture, requestTimeout)
     returnMessage match {
-      case HttpResponse(StatusCodes.OK, headers, entity, _) =>
+      case HttpResponse(StatusCodes.OK, _, entity, _) =>
         entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
           log.info("Adding interaction succeeded, body: " + body.utf8String)
         }
@@ -108,24 +116,19 @@ class BAASClient(val host: String, val port: Int) {
     log.info("Creating runtime event to fire")
     val runtimeEvent = Baker.eventExtractor.extractEvent(event)
 
-    log.info("Creating handle event request")
-    val request = HandleEventHTTPRequest(recipeName, requestId, runtimeEvent)
-
     //Send the request to BAAS
     log.info("Sending handle event request to BAAS")
     val responseFuture: Future[HttpResponse] = Http()
       .singleRequest(HttpRequest(
-        uri = baseUri +  "/event",
-        method = akka.http.scaladsl.model.HttpMethods.POST,
-        entity = ByteString.fromArray(kryoPool.toBytesWithClass(request))))
+        uri =  s"$baseUri/$recipeName/$requestId/bake",
+        method = POST))
 
     //Handle the response from BAAS
     log.info("Waiting for response from baas")
-    val returnMessage: HttpMessage = Await.result(responseFuture, 30 seconds)
+    val returnMessage: HttpMessage = Await.result(responseFuture, requestTimeout)
     returnMessage match {
-      case HttpResponse(StatusCodes.OK, headers, entity, _) =>
-        val body: ByteString = Await.result(entity.dataBytes.runFold(ByteString(""))(_ ++ _), 30 seconds)
-        val response = kryoPool.fromBytes(body.toArray).asInstanceOf[HandleEventHTTPResponse]
+      case HttpResponse(StatusCodes.OK, _, entity, _) =>
+        val response = entityFromResponse[HandleEventHTTPResponse](entity)
         response.sensoryEventStatus
       case resp @ HttpResponse(code, _, _, _) =>
         resp.discardEntityBytes()
@@ -135,24 +138,20 @@ class BAASClient(val host: String, val port: Int) {
   }
 
   def bake(recipeName: String, requestId: String): Unit = {
-    log.info("Creating bake request")
-    val request = BakeHTTPRequest(recipeName, requestId)
 
     //Send the request to BAAS
     log.info("Sending bake request to BAAS")
     val responseFuture: Future[HttpResponse] = Http()
       .singleRequest(HttpRequest(
-        uri = baseUri +  "/bake",
-        method = akka.http.scaladsl.model.HttpMethods.POST,
-        entity = ByteString.fromArray(kryoPool.toBytesWithClass(request))))
+        uri = baseUri +  s"/$recipeName/$requestId/bake",
+        method = POST))
 
     //Handle the response from BAAS
     log.info("Waiting for response from baas")
-    val returnMessage: HttpMessage = Await.result(responseFuture, 30 seconds)
+    val returnMessage: HttpMessage = Await.result(responseFuture, requestTimeout)
     returnMessage match {
-      case HttpResponse(StatusCodes.OK, headers, entity, _) =>
-        val body: ByteString = Await.result(entity.dataBytes.runFold(ByteString(""))(_ ++ _), 30 seconds)
-        val response = kryoPool.fromBytes(body.toArray).asInstanceOf[BakeHTTPResponse]
+      case HttpResponse(StatusCodes.OK, _, entity, _) =>
+        val response = entityFromResponse[BakeHTTPResponse](entity)
         log.info(response.toString)
       case resp @ HttpResponse(code, _, _, _) =>
         resp.discardEntityBytes()
@@ -162,24 +161,20 @@ class BAASClient(val host: String, val port: Int) {
   }
 
   def getState(recipeName: String, requestId: String): GetStateHTTResponse = {
-    log.info("Getting state for request")
-    val request = GetStateHTTPRequest(recipeName, requestId)
-
     //Send the request to BAAS
     log.info("Sending bake request to BAAS")
     val responseFuture: Future[HttpResponse] = Http()
       .singleRequest(HttpRequest(
-        uri = baseUri +  "/state",
-        method = akka.http.scaladsl.model.HttpMethods.POST,
-        entity = ByteString.fromArray(kryoPool.toBytesWithClass(request))))
+        uri = baseUri +  s"/$recipeName/$requestId/state",
+        method = GET))
 
     //Handle the response from BAAS
     log.info("Waiting for response from baas")
-    val returnMessage: HttpMessage = Await.result(responseFuture, 30 seconds)
+    val returnMessage: HttpMessage = Await.result(responseFuture, requestTimeout)
+
     returnMessage match {
-      case HttpResponse(StatusCodes.OK, headers, entity, _) =>
-        val body: ByteString = Await.result(entity.dataBytes.runFold(ByteString(""))(_ ++ _), 30 seconds)
-        val response = kryoPool.fromBytes(body.toArray).asInstanceOf[GetStateHTTResponse]
+      case HttpResponse(StatusCodes.OK, _, entity, _) =>
+        val response = entityFromResponse[GetStateHTTResponse](entity)
         log.info(response.toString)
         response
       case resp @ HttpResponse(code, _, _, _) =>
