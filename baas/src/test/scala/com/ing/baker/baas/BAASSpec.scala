@@ -21,7 +21,7 @@ class BAASSpec extends WordSpecLike with Matchers {
   val host = "localhost"
   val port = 8081
 
-  //Startup a empty BAAS cluster
+//  Startup a empty BAAS cluster
   val baasAPI: BAASAPI = new BAASAPI(new BAAS(), host, port)(ActorSystem("BAASAPIActorSystem"))
   Await.result(baasAPI.start(), 10 seconds)
 
