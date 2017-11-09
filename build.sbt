@@ -148,7 +148,9 @@ lazy val baas = project.in(file("baas"))
   .settings(
     moduleName := "baas",
     libraryDependencies ++=
-      compileDeps(akkaHttp) ++
+      compileDeps(
+        akkaHttp,
+        akkaPersistenceCassandra) ++
       testDeps(
         akkaSlf4j,
         akkaTestKit,

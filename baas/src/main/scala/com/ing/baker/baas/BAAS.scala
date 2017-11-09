@@ -4,11 +4,14 @@ import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.commonserialize.Recipe
 import com.ing.baker.recipe.{common, commonserialize}
+import com.ing.baker.runtime.actor.serialization.ExtraKryoSerializersRegistrar
 import com.ing.baker.runtime.core.Baker
 import com.twitter.chill.{KryoPool, ScalaKryoInstantiator}
 
 object BAAS{
-  val kryoPool = KryoPool.withByteArrayOutputStream(1, new ScalaKryoInstantiator)
+  val kryoPool: KryoPool = KryoPool.withByteArrayOutputStream(1,
+    new ScalaKryoInstantiator()
+      .withRegistrar(new ExtraKryoSerializersRegistrar))
 
   def serializeRecipe(recipe: common.Recipe): Array[Byte] = {
     val commonSerializeRecipe: commonserialize.Recipe = new Recipe(recipe)
@@ -29,5 +32,5 @@ object BAAS{
 }
 
 class BAAS {
-  val baker: Baker = new Baker()(ActorSystem("BAASActorSystem"));
+  val baker: Baker = new Baker()(ActorSystem("BAAS"));
 }
