@@ -120,7 +120,7 @@ class BAASClient(val host: String, val port: Int) {
     val runtimeEvent = Baker.eventExtractor.extractEvent(event)
 
     val request = HttpRequest(
-        uri =  s"$baseUri/$recipeName/$requestId/bake",
+        uri =  s"$baseUri/$recipeName/$requestId/event",
         method = POST,
         entity = ByteString.fromArray(kryoPool.toBytesWithClass(runtimeEvent)))
 
