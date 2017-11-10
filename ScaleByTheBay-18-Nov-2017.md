@@ -119,7 +119,7 @@ val registerIndividual = Interaction(
 ---
 
 ```scala
-val openAccountRecipe = Recipe("OpenAccountRecipe")
+val recipe = Recipe("OpenAccountRecipe")
   .withInteractions(
     assignAccount,
     getAccount,
@@ -133,7 +133,7 @@ val openAccountRecipe = Recipe("OpenAccountRecipe")
 ---
 
 ```scala
-val openAccountRecipe = Recipe("OpenAccountRecipe")
+val recipe = Recipe("OpenAccountRecipe")
   .withInteractions(
     assignAccount,
     getAccount.withRequiredEvent(termsAndConditionsAccepted),
