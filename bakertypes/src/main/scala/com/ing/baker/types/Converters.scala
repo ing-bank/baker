@@ -7,12 +7,12 @@ import java.util.Optional
 import org.objenesis.ObjenesisStd
 
 import scala.collection.JavaConverters._
-
 import scala.reflect.runtime.universe
+import scala.reflect.runtime.universe.TypeTag
 
 object Converters {
 
-  val mirror: universe.Mirror = universe.runtimeMirror(classOf[ClassForMirror].getClassLoader)
+  val mirror: universe.Mirror = universe.runtimeMirror(classOf[Value].getClassLoader)
 
   def getRawClass(t: Type): Class[_] = t match {
     case c: Class[_] => c
@@ -33,6 +33,41 @@ object Converters {
         override def getOwnerType: java.lang.reflect.Type = null
         override def toString() = s"ParameterizedType: $typeConstructor[${getActualTypeArguments.mkString(",")}]"
       }
+    }
+  }
+
+  def readJavaType[T : TypeTag]: BType = readJavaType(createJavaType(mirror.typeOf[T]))
+
+  def readJavaType(javaType: Type): BType = {
+
+    javaType match {
+      case clazz if clazz == classOf[Object] =>
+        throw new IllegalArgumentException(s"Unsupported type: $clazz")
+      case clazz: Class[_] if supportedPrimitiveClasses.contains(clazz) =>
+        PrimitiveType(clazz)
+      case clazz: ParameterizedType if classOf[scala.Option[_]].isAssignableFrom(getRawClass(clazz)) || classOf[java.util.Optional[_]].isAssignableFrom(getRawClass(clazz)) =>
+        val entryType = readJavaType(clazz.getActualTypeArguments()(0))
+        OptionType(entryType)
+      case clazz: ParameterizedType if getRawClass(clazz.getRawType).isAssignableFrom(classOf[List[_]]) || getRawClass(clazz.getRawType).isAssignableFrom(classOf[java.util.List[_]]) =>
+        val entryType = readJavaType(clazz.getActualTypeArguments()(0))
+        ListType(entryType)
+      case clazz: ParameterizedType if getRawClass(clazz.getRawType).isAssignableFrom(classOf[Map[_,_]]) || getRawClass(clazz.getRawType).isAssignableFrom(classOf[java.util.Map[_,_]]) =>
+        val keyType = clazz.getActualTypeArguments()(0)
+
+        if (keyType != classOf[String])
+          throw new IllegalArgumentException(s"Unsupported key type for map: $keyType")
+
+        val valueType = readJavaType(clazz.getActualTypeArguments()(1))
+        MapType(valueType)
+
+      case enumClass: Class[_] if enumClass.isEnum =>
+        EnumType(enumClass.asInstanceOf[Class[Enum[_]]].getEnumConstants.map(_.name).toSet)
+      case pojoClass: Class[_] =>
+        val fields = pojoClass.getDeclaredFields.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
+        val ingredients = fields.map(f => RecordField(f.getName, readJavaType(f.getGenericType)))
+        RecordType(ingredients)
+      case unsupportedType =>
+        throw new IllegalArgumentException(s"UnsupportedType: $unsupportedType")
     }
   }
 

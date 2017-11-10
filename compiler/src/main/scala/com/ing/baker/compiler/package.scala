@@ -12,20 +12,7 @@ import scala.concurrent.duration.Duration
 
 package object compiler {
 
-  implicit def convertDSLTypeToType(dslType: common.IngredientType): BType = {
-    dslType match {
-      case common.PrimitiveType(clazz) => types.PrimitiveType(clazz)
-      case common.OptionType(entryType) => types.OptionType(convertDSLTypeToType(entryType))
-      case common.ListType(entryType) => types.ListType(convertDSLTypeToType(entryType))
-      case common.POJOType(fields) => types.RecordType(fields.map { i =>
-        RecordField(i.name, convertDSLTypeToType(i.ingredientType))
-      })
-      case common.EnumType(options) => types.EnumType(options)
-      case common.MapType(valueType) => types.MapType(convertDSLTypeToType(valueType))
-    }
-  }
-
-  def ingredientToCompiledIngredient(ingredient: common.Ingredient): RecordField = RecordField(ingredient.name, convertDSLTypeToType(ingredient.ingredientType))
+  def ingredientToCompiledIngredient(ingredient: common.Ingredient): RecordField = RecordField(ingredient.name, ingredient.ingredientType)
 
   def eventToCompiledEvent(event: common.Event): EventType = EventType(event.name, event.providedIngredients.map(ingredientToCompiledIngredient))
 
@@ -76,12 +63,13 @@ package object compiler {
           event.providedIngredients.map(ingredientToCompiledIngredient))
       }
 
+      //Replace ProcessId to ProcessIdName tag as know in compiledRecipe-
+      //Replace ingredient tags with overridden tags
       val inputFields: Seq[(String, BType)] = interactionDescriptor.interaction.inputIngredients
-        //Replace ProcessId to ProcessIdName tag as know in compiledRecipe
-        //Replace ingredient tags with overridden tags
-        .map(ingredient =>
-        if(ingredient.name == common.ProcessIdName) il.processIdName -> convertDSLTypeToType(ingredient.ingredientType)
-        else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> convertDSLTypeToType(ingredient.ingredientType))
+        .map { ingredient =>
+          if(ingredient.name == common.ProcessIdName) il.processIdName -> ingredient.ingredientType
+          else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.ingredientType
+        }
 
       val exhaustedRetryEvent = interactionDescriptor.failureStrategy.flatMap {
         case RetryWithIncrementalBackoff(_, _, _, _, optionalExhaustedRetryEvent) => optionalExhaustedRetryEvent
@@ -109,10 +97,6 @@ package object compiler {
       //And is of the type Optional or Option
       //Add it to the predefinedIngredients List as empty
       //Add the predefinedIngredients later to overwrite any created empty field with the given predefined value.
-
-//      val mappedPredefinedIngredients = interactionDescriptor.predefinedIngredients.map {
-//        case (name, obj) => name -> obj
-//      }
 
       val predefinedIngredientsWithOptionalsEmpty: Map[String, Value] =
         inputFields.flatMap {

@@ -1,6 +1,6 @@
 package com.ing.baker.recipe.scaladsl
 
-import com.ing.baker.recipe.common.{PrimitiveType, OptionType}
+import com.ing.baker.types._
 import org.scalatest.{Matchers, WordSpecLike}
 
 class IngredientSpec extends WordSpecLike with Matchers {

@@ -148,7 +148,7 @@ case class MethodInteractionImplementation(override val name: String,
     val inputArgs = input.zip(method.getGenericParameterTypes).map {
       case (value, targetType) =>
 
-        value.toJava(targetType)
+        value.as(targetType)
     }
 
     log.trace(s"[$invocationId] invoking '$name' with parameters ${inputArgs.toString}")

@@ -3,13 +3,14 @@ package com.ing.baker.recipe
 import java.lang.reflect.{Method, Type}
 
 import com.ing.baker.recipe.javadsl.ReflectionHelpers._
+import com.ing.baker.types.Converters
 
 package object javadsl {
 
   def createIngredient(ingredientName: String, ingredientClazz: Type): common.Ingredient =
     new common.Ingredient(
       name = ingredientName,
-      ingredientType = common.ingredientTypeFromType(ingredientClazz)
+      ingredientType = Converters.readJavaType(ingredientClazz)
   )
 
 

@@ -3,26 +3,26 @@ package com.ing.baker.baas
 import java.util.UUID
 
 import akka.actor.ActorSystem
+import akka.testkit.TestKit
 import com.ing.baker.baas.BAASSpec.{InteractionOne, _}
 import com.ing.baker.baas.http.{BAASAPI, GetStateHTTResponse}
-import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common.ProvidesIngredient
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, processId}
 import com.ing.baker.recipe.{commonserialize, scaladsl}
-import com.ing.baker.runtime.core.{Baker, SensoryEventStatus}
-import org.scalatest.{Matchers, WordSpecLike}
+import com.ing.baker.runtime.core.SensoryEventStatus
+import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class BAASSpec extends WordSpecLike with Matchers {
+class BAASSpec extends TestKit(ActorSystem("BAASAPIActorSystem")) with WordSpecLike with Matchers with BeforeAndAfterAll {
   def actorSystemName: String = "BAASSpec"
 
   val host = "localhost"
   val port = 8081
 
 //  Startup a empty BAAS cluster
-  val baasAPI: BAASAPI = new BAASAPI(new BAAS(), host, port)(ActorSystem("BAASAPIActorSystem"))
+  val baasAPI: BAASAPI = new BAASAPI(new BAAS(), host, port)(system)
   Await.result(baasAPI.start(), 10 seconds)
 
   //Start a BAAS API
@@ -68,6 +68,8 @@ class BAASSpec extends WordSpecLike with Matchers {
 //    println(s"procesState : ${requestState.processState}")
 //    println(s"visualState : ${requestState.visualState}")
   }
+
+  override def afterAll() = shutdown(system)
 }
 
 object BAASSpec {
@@ -104,4 +106,5 @@ object BAASSpec {
       .withInteraction(interactionOne)
       .withSensoryEvent(initialEvent)
   }
+
 }

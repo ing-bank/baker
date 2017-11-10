@@ -144,7 +144,6 @@ class ConvertersSpec extends WordSpecLike with Matchers {
       toJava[Map[String, Int]](valueMap) shouldBe scalaMap
     }
 
-
     "be able to parse java.util.Map objects" in {
 
       toValue(javaMap) shouldBe valueMap
@@ -153,6 +152,47 @@ class ConvertersSpec extends WordSpecLike with Matchers {
     "be able to create java.util.Map objects" in {
 
       toJava[java.util.Map[String, Int]](valueMap) shouldBe javaMap
+    }
+
+    "correctly parse all the supported base types" in {
+      supportedPrimitiveClasses.foreach { t =>
+        readJavaType(t) shouldBe PrimitiveType(t)
+      }
+    }
+
+    "correctly parse option types" in {
+      readJavaType[Option[String]] shouldBe OptionType(PrimitiveType(classOf[String]))
+    }
+
+    "correctly parse list types" in {
+      readJavaType[List[String]] shouldBe ListType(PrimitiveType(classOf[String]))
+    }
+
+    "correctly parse enum types" in {
+      readJavaType[EnumExample] shouldBe EnumType(options = Set("A", "B", "C"))
+    }
+
+    "correctly parse basic POJO types" in {
+      val simplePOJOFields = Seq(
+        new RecordField("integer", PrimitiveType(classOf[Integer])),
+        new RecordField("string", PrimitiveType(classOf[String])),
+        new RecordField("boolean", PrimitiveType(classOf[Boolean])))
+
+      readJavaType[SimplePOJOExample] shouldBe RecordType(simplePOJOFields)
+    }
+
+    "correctly parse POJO types in POJO types" in {
+      val simplePOJOExampleSeq = Seq(
+        new RecordField("integer", PrimitiveType(classOf[Integer])),
+        new RecordField("string", PrimitiveType(classOf[String])),
+        new RecordField("boolean", PrimitiveType(classOf[Boolean])))
+
+      val complexPOJOExampleSeq = Seq(
+        new RecordField("simplePOJOExample", RecordType(simplePOJOExampleSeq)),
+        new RecordField("string", PrimitiveType(classOf[String])),
+        new RecordField("boolean", PrimitiveType(classOf[Boolean])))
+
+      readJavaType[ComplexPOJOExample] shouldBe RecordType(complexPOJOExampleSeq)
     }
   }
 }

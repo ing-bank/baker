@@ -22,11 +22,11 @@ sealed trait Value extends Serializable {
     case _ => false
   }
 
-  def toJava(javaType: java.lang.reflect.Type) = Converters.toJava(this, javaType)
+  def as(javaType: java.lang.reflect.Type): Any = Converters.toJava(this, javaType)
 
-  def toJava[T](clazz: Class[T]): T = Converters.toJava(this, clazz).asInstanceOf[T]
+  def as[T](clazz: Class[T]): T = Converters.toJava(this, clazz).asInstanceOf[T]
 
-  def toJava[T : universe.TypeTag] = Converters.toJava[T](this)
+  def as[T : universe.TypeTag]: T = Converters.toJava[T](this)
 }
 
 /**
