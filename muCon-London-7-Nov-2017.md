@@ -1,8 +1,11 @@
 slidenumbers: true
 autoscale: true
-# Declare, verify and execute microservices-based process flows with Baker
-### 7 November 2017, 1500 hours, at muCon in London
+footer: https://skillsmatter.com/skillscasts/10705-declare-verify-and-execute-microservices-based-process-flows-with-baker
+# Declare, verify and execute microservices-based process flows with Baker[^6]
 ### http://github.com/nikolakasev | ING
+	
+[^6]: 
+
 ---
 	
 ![](baby.jpg)
