@@ -86,32 +86,22 @@ autoscale: true
 
 ---
 
-```[.highlight: 1,6,7]
-public interface RegisterIndividual extends Interaction {
-    @FiresEvent(oneOf = {RegisterIndividualSuccessful.class,
-            RegisterIndividualFailed.class})
-    RegisterIndividualOutcome apply(
-            @ProcessId String processId,
-            @RequiresIngredient("name") String name,
-            @RequiresIngredient("address") String address
-    );
-}
-
+```scala
+val registerIndividual = Interaction(
+  name = "RegisterIndividual",
+  inputIngredients = Seq.empty,
+  output = FiresOneOfEvents(registerIndividualSuccessful, registerIndividualFailed)
+)
 ```
 
 ---
 
-```[.highlight: 2,3]
-public interface RegisterIndividual extends Interaction {
-    @FiresEvent(oneOf = {RegisterIndividualSuccessful.class,
-            RegisterIndividualFailed.class})
-    RegisterIndividualOutcome apply(
-            @ProcessId String processId,
-            @RequiresIngredient("name") String name,
-            @RequiresIngredient("address") String address
-    );
-}
-
+```scala
+val registerIndividual = Interaction(
+  name = "RegisterIndividual",
+  inputIngredients = Seq.empty,
+  output = FiresOneOfEvents(registerIndividualSuccessful, registerIndividualFailed)
+)
 ```
 
 ---
@@ -128,14 +118,12 @@ public interface RegisterIndividual extends Interaction {
 
 ---
 
-```java, [.highlight: 3-6]
-public Recipe get(){
-    return new Recipe("Demo").
-            withInteractions(
-                    of(AssignAccount.class),
-                    of(GetAccount.class),
-                    of(RegisterIndividual.class));
-}
+```scala
+val openAccountRecipe = Recipe("OpenAccountRecipe")
+  .withInteractions(
+    assignAccount,
+    getAccount,
+    registerIndividual)
 ```
 
 ---
@@ -144,17 +132,15 @@ public Recipe get(){
 
 ---
 
-```java, [.highlight: 5, 7-9]
-return new Recipe("Demo").
-        withInteractions(
-                of(AssignAccount.class),
-                of(GetAccount.class).
-                        withRequiredEvent(TermsAndConditionsAccepted.class),
-                of(RegisterIndividual.class)).
-        withSensoryEvents(
-                TermsAndConditionsAccepted.class,
-                IndividualInformationSubmitted.class);
-}
+```scala
+val openAccountRecipe = Recipe("OpenAccountRecipe")
+  .withInteractions(
+    assignAccount,
+    getAccount.withRequiredEvent(termsAndConditionsAccepted),
+    registerIndividual)
+  .withSensoryEvents(
+    termsAndConditionsAccepted,
+    individualInformationSubmitted)
 ```
 
 ---
@@ -167,21 +153,19 @@ return new Recipe("Demo").
 
 ---
 
-```java, [.highlight: 2,4,5,8,9,13]
+```scala
 //for each process instance, bake the recipe
 baker.bake(processId);
 //notify Baker when events occur
-baker.processEvent(processId, new SensoryEvents.IndividualInformationSubmitted(name, address));
-baker.processEvent(processId, new SensoryEvents.TermsAndConditionsAccepted());
+baker.processEvent(processId, individualInformationSubmitted.instance(name, address));
+baker.processEvent(processId, termsAndConditionsAccepted.instance());
 
 //retrieve ingredients stored in the accumulated state
 assert(baker.getIngredients(processId).get("customerId").equals(customerId));
 assert(baker.getIngredients(processId).get("iban").equals(iban));
 
 //retrieve all events that have occurred
-Set<String> occurredEvents = new HashSet<>(
-        baker.getEvents(processId).getEventNameList()
-);
+baker.events(processId)
 ```
 
 ---

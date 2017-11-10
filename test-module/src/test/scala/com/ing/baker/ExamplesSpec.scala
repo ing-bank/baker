@@ -12,9 +12,9 @@ import scala.concurrent.duration._
 class ExamplesSpec extends TestRecipeHelper  {
   override def actorSystemName = "ExamplesSpec"
 
-  "The example WebShop recipe" should {
+  "The WebShop recipe" should {
 
-    import WebShop._
+    import Examples.webshop._
 
     "compile without validation errors" in {
 
@@ -99,6 +99,20 @@ class ExamplesSpec extends TestRecipeHelper  {
         RuntimeEvent("InvoiceWasSent", Seq.empty))
 
       TestKit.awaitCond(baker.events(processId) equals expectedEvents, 2.seconds.dilated)
+    }
+  }
+
+  "The open account recipe" should {
+
+    import Examples.open_account._
+
+    "compile without validation errors" in {
+
+      // compiles the recipe
+      val compiledRecipe = RecipeCompiler.compileRecipe(openAccountRecipe)
+
+      // prints any validation errors the compiler found
+      compiledRecipe.validationErrors shouldBe empty
     }
   }
 }
