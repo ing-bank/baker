@@ -11,7 +11,7 @@ import com.ing.baker.baas.http._
 import com.ing.baker.baas.interaction.http.RemoteInteractionImplementationAPI
 import com.ing.baker.recipe.common
 import com.ing.baker.runtime.core.interations.{InteractionImplementation, MethodInteractionImplementation}
-import com.ing.baker.runtime.core.{Baker, SensoryEventStatus}
+import com.ing.baker.runtime.core.{Baker, ProcessState, SensoryEventStatus}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -33,13 +33,12 @@ class BAASClient(val host: String, val port: Int) {
     kryoPool.fromBytes(byteString.toArray).asInstanceOf[T]
   }
 
-
   def logEntity = (entity: ResponseEntity) =>
     entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
       log.info("Got response body: " + body.utf8String)
     }
 
-  def doRequestAndHandleResponse[T](httpRequest: HttpRequest): T = {
+  def doRequestAndParseResponse[T](httpRequest: HttpRequest): T = {
 
     doRequest(httpRequest, e => entityFromResponse[T](e))
   }
@@ -124,7 +123,7 @@ class BAASClient(val host: String, val port: Int) {
         method = POST,
         entity = ByteString.fromArray(kryoPool.toBytesWithClass(runtimeEvent)))
 
-    doRequestAndHandleResponse[HandleEventHTTPResponse](request).sensoryEventStatus
+    doRequestAndParseResponse[SensoryEventStatus](request)
   }
 
   def bake(recipeName: String, requestId: String): Unit = {
@@ -133,15 +132,24 @@ class BAASClient(val host: String, val port: Int) {
         uri = baseUri +  s"/$recipeName/$requestId/bake",
         method = POST)
 
-    doRequestAndHandleResponse[BakeHTTPResponse](request)
+    doRequestAndParseResponse[ProcessState](request)
   }
 
-  def getState(recipeName: String, requestId: String): GetStateHTTResponse = {
+  def getState(recipeName: String, requestId: String): ProcessState = {
 
     val request = HttpRequest(
         uri = baseUri +  s"/$recipeName/$requestId/state",
         method = GET)
 
-    doRequestAndHandleResponse[GetStateHTTResponse](request)
+    doRequestAndParseResponse[ProcessState](request)
+  }
+
+  def getVisualState(recipeName: String, requestId: String): String = {
+
+    val request = HttpRequest(
+      uri = baseUri +  s"/$recipeName/$requestId/visual_state",
+      method = GET)
+
+    doRequestAndParseResponse[String](request)
   }
 }

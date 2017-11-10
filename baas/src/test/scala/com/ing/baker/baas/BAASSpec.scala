@@ -5,11 +5,11 @@ import java.util.UUID
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import com.ing.baker.baas.BAASSpec.{InteractionOne, _}
-import com.ing.baker.baas.http.{BAASAPI, GetStateHTTResponse}
+import com.ing.baker.baas.http.BAASAPI
 import com.ing.baker.recipe.common.ProvidesIngredient
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, processId}
 import com.ing.baker.recipe.{commonserialize, scaladsl}
-import com.ing.baker.runtime.core.SensoryEventStatus
+import com.ing.baker.runtime.core.{ProcessState, SensoryEventStatus}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.Await
@@ -28,7 +28,7 @@ class BAASSpec extends TestKit(ActorSystem("BAASAPIActorSystem")) with WordSpecL
   //Start a BAAS API
   val baasClient: BAASClient = new BAASClient(host, port)
 
-  baasClient.addImplementation(InteractionOne());
+  baasClient.addImplementation(InteractionOne())
 
 
   "Serialize and deserialize a common recipe" in {
@@ -61,10 +61,10 @@ class BAASSpec extends TestKit(ActorSystem("BAASAPIActorSystem")) with WordSpecL
     val sensoryEventStatusResponse: SensoryEventStatus = baasClient.handleEvent(recipeName, requestId, InitialEvent("initialIngredient"))
     sensoryEventStatusResponse shouldBe SensoryEventStatus.Completed
 
-    val requestState: GetStateHTTResponse = baasClient.getState(recipeName, requestId)
+    val processState: ProcessState = baasClient.getState(recipeName, requestId)
 
-    requestState.processState.ingredients.keys should contain("initialIngredient")
-    requestState.processState.ingredients.keys should contain("interactionOneIngredient")
+    processState.ingredients.keys should contain("initialIngredient")
+    processState.ingredients.keys should contain("interactionOneIngredient")
 //    println(s"procesState : ${requestState.processState}")
 //    println(s"visualState : ${requestState.visualState}")
   }

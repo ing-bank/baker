@@ -25,7 +25,7 @@ class BAASAPI(baas: BAAS,
     val serverBindingPromise = Promise[Http.ServerBinding]()
     if (bindingFuture.compareAndSet(null, serverBindingPromise.future)) {
       val routes = RouteResult.route2HandlerFlow(
-        BAASAPIRoutes(baas))
+        APIRoutes(baas.baker))
 
       val serverFutureBinding = Http().bindAndHandle(routes, host, port)
 
