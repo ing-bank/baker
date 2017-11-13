@@ -31,6 +31,6 @@ object BAAS{
   }
 }
 
-class BAAS {
-  val baker: Baker = new Baker()(ActorSystem("BAAS"));
+class BAAS(val actorSystem: ActorSystem) {
+  val baker: Baker = new Baker()(actorSystem);
 }

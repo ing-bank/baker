@@ -6,7 +6,6 @@ import akka.http.scaladsl.model.{HttpMessage, HttpRequest, HttpResponse, StatusC
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import com.ing.baker.baas.BAAS.kryoPool
-import com.ing.baker.baas.http.HandleEventHTTPResponse
 import com.ing.baker.baas.interaction.http.{ExecuteInteractionHTTPRequest, ExecuteInteractionHTTPResponse}
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.core.RuntimeEvent
@@ -21,7 +20,7 @@ import scala.concurrent.{Await, Future}
 //This communicates with a RemoteInteractionimplementatoinClient that execute the request.
 case class RemoteInteractionImplementation(override val name: String,
                                            hostname: String,
-                                           port: Int) extends InteractionImplementation {
+                                           port: Int)(implicit val actorSystem: ActorSystem) extends InteractionImplementation {
 
   val log = LoggerFactory.getLogger(classOf[RemoteInteractionImplementation])
 
@@ -38,8 +37,8 @@ case class RemoteInteractionImplementation(override val name: String,
     */
   override def execute(interaction: InteractionTransition[_], input: Seq[Value]): RuntimeEvent = {
     //Call HTTP endpoint
-    implicit val defaultActorSystem = ActorSystem()
-    implicit val materializer = ActorMaterializer()(defaultActorSystem)
+//    implicit val defaultActorSystem = ActorSystem()
+    implicit val materializer = ActorMaterializer()
 
     val uri = s"http://$hostname:$port/$name"
     log.info(s"Calling remote execution of interaction: $name on $uri")

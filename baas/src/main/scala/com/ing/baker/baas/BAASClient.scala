@@ -18,11 +18,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-class BAASClient(val host: String, val port: Int) {
+class BAASClient(val host: String, val port: Int)(implicit val actorSystem: ActorSystem) {
 
   val baseUri = s"http://$host:$port"
 
-  implicit val actorSystem: ActorSystem = ActorSystem("BAASClientActorSystem")
+//  implicit val actorSystem: ActorSystem = ActorSystem("BAASClientActorSystem")
   implicit val materializer = ActorMaterializer()
 
   val log = LoggerFactory.getLogger(classOf[BAASClient])

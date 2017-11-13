@@ -22,7 +22,7 @@ class BAASSpec extends TestKit(ActorSystem("BAASAPIActorSystem")) with WordSpecL
   val port = 8081
 
 //  Startup a empty BAAS cluster
-  val baasAPI: BAASAPI = new BAASAPI(new BAAS(), host, port)(system)
+  val baasAPI: BAASAPI = new BAASAPI(new BAAS(ActorSystem("BAAS")), host, port)(system)
   Await.result(baasAPI.start(), 10 seconds)
 
   //Start a BAAS API

@@ -10,10 +10,11 @@ object BAASAPIRunner extends App {
 
   val host = "localhost"
   val port = 8081
-  val baas = new BAAS()
+  val actorSystem = ActorSystem("BAASAPIActorSystem")
+  val baas = new BAAS(actorSystem)
 
   //Startup the BAASAPI
-  val baasAPI = new BAASAPI(baas, host, port)(ActorSystem("BAASAPIActorSystem"))
+  val baasAPI = new BAASAPI(baas, host, port)(actorSystem)
   Await.result(baasAPI.start(), 10 seconds)
 }
 

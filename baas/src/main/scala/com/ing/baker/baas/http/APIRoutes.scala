@@ -1,5 +1,6 @@
 package com.ing.baker.baas.http
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import com.ing.baker.baas.interaction.RemoteInteractionImplementation
 import com.ing.baker.compiler.RecipeCompiler
@@ -12,7 +13,7 @@ object APIRoutes extends Directives with BaasMarshalling {
 
   implicit val timeout: FiniteDuration = 30 seconds
 
-  def apply(baker: Baker): Route = {
+  def apply(baker: Baker)(implicit actorSystem: ActorSystem): Route = {
 
     def recipeRoutes(recipeName: String, requestId: String) = {
 

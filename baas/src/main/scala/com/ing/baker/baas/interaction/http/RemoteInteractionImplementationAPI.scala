@@ -14,12 +14,11 @@ import scala.concurrent.{Future, Promise}
 
 case class RemoteInteractionImplementationAPI(InteractionImplementation: InteractionImplementation,
                                               hostname: String,
-                                              port: Int) {
+                                              port: Int)(implicit val actorSystem: ActorSystem) {
   val log = LoggerFactory.getLogger(classOf[RemoteInteractionImplementationAPI])
 
-  implicit val defaultActorSystem = ActorSystem()
-  import defaultActorSystem.dispatcher
-  implicit val materializer = ActorMaterializer()(defaultActorSystem)
+  import actorSystem.dispatcher
+  implicit val materializer = ActorMaterializer()(actorSystem)
 
   private val bindingFuture = new AtomicReference[Future[Http.ServerBinding]]()
 
