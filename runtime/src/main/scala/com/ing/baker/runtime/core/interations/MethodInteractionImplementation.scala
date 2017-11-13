@@ -11,6 +11,7 @@ import com.ing.baker.runtime.petrinet.FatalInteractionException
 import org.slf4j.{Logger, LoggerFactory}
 import MethodInteractionImplementation._
 import com.ing.baker.il.EventType
+import scala.collection.JavaConverters._
 
 import scala.util.Try
 
@@ -57,9 +58,11 @@ object MethodInteractionImplementation {
     }.toSeq
 
   }
+  def toImplementationMap(implementations: java.lang.Iterable[AnyRef]): Map[String, InteractionImplementation] =
+    toImplementationMap(implementations.asScala)
 
   def toImplementationMap(implementations: Iterable[AnyRef]): Map[String, InteractionImplementation] =
-    implementations.flatMap(MethodInteractionImplementation.anyRefToInteractionImplementations _).map {
+    implementations.flatMap(anyRefToInteractionImplementations _).map {
       i => i.name -> i
     }.toMap
 
