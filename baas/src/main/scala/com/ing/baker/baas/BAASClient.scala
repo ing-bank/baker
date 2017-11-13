@@ -8,7 +8,7 @@ import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import com.ing.baker.baas.BAAS.kryoPool
 import com.ing.baker.baas.http._
-import com.ing.baker.baas.interaction.http.RemoteInteractionImplementationAPI
+import com.ing.baker.baas.interaction.http.RemoteInteractionLauncher
 import com.ing.baker.recipe.common
 import com.ing.baker.runtime.core.interations.{InteractionImplementation, MethodInteractionImplementation}
 import com.ing.baker.runtime.core.{Baker, ProcessState, SensoryEventStatus}
@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import ClientUtils.{log, _}
 
 class BAASClient(val host: String, val port: Int)(implicit val actorSystem: ActorSystem) {
 
@@ -24,39 +25,13 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
 
   implicit val materializer = ActorMaterializer()
 
-  val log = LoggerFactory.getLogger(classOf[BAASClient])
-  val requestTimeout = 30 seconds
-
-  def entityFromResponse[T](entity: ResponseEntity): T = {
-    val byteString = Await.result(entity.dataBytes.runFold(ByteString(""))(_ ++ _), requestTimeout)
-    kryoPool.fromBytes(byteString.toArray).asInstanceOf[T]
-  }
-
   def logEntity = (entity: ResponseEntity) =>
     entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
       log.info("Got response body: " + body.utf8String)
     }
 
-  def doRequestAndParseResponse[T](httpRequest: HttpRequest): T = {
-
-    doRequest(httpRequest, e => entityFromResponse[T](e))
-  }
-
-  def doRequest[T](httpRequest: HttpRequest, fn: ResponseEntity => T): T = {
-
-    log.info(s"Sending request: $httpRequest")
-
-    val response: HttpMessage = Await.result(Http().singleRequest(httpRequest), requestTimeout)
-
-    response match {
-      case HttpResponse(StatusCodes.OK, _, entity, _) =>
-        fn(entity)
-      case resp @ HttpResponse(code, _, _, _) =>
-        resp.discardEntityBytes()
-        log.error("Request failed with response code: " + code)
-        throw new RuntimeException("Request failed with response code: " + code)
-    }
-  }
+  val log = LoggerFactory.getLogger(classOf[BAASClient])
+  implicit val requestTimeout: FiniteDuration = 30 seconds
 
   def addRecipe(recipe: common.Recipe) : Unit = {
 
@@ -91,8 +66,8 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
   private def createRemoteForImplementation(interactionImplementation: InteractionImplementation, portToUse: Int): Unit = {
     //Create the locally running interaction implementation
     log.info("Creating RemoteImplementationClient")
-    val remoteInteractionImplementationClient: RemoteInteractionImplementationAPI =
-      RemoteInteractionImplementationAPI(interactionImplementation, hostname, portToUse)
+    val remoteInteractionImplementationClient: RemoteInteractionLauncher =
+      RemoteInteractionLauncher(interactionImplementation, hostname, portToUse)
 
     //start the Remote interaction implementation
     log.info("Starting RemoteImplementationClient")

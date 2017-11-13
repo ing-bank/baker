@@ -25,4 +25,5 @@ trait BaasMarshalling {
 
   implicit val sensoryEventStatusMarhaller = kryoMarhaller[SensoryEventStatus]
   implicit val processStateMarhaller = kryoMarhaller[ProcessState]
+  implicit val eventMarshaller = kryoMarhaller[RuntimeEvent]
 }

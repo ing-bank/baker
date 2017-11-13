@@ -4,8 +4,6 @@ import akka.actor.ActorSystem
 import com.ing.baker.baas.BAASSpec.InteractionOne
 import com.ing.baker.baas.{BAAS, BAASClient}
 
-class ImplementationRunner {
-}
 object ImplementationRunner extends App {
 
   val host = "localhost"

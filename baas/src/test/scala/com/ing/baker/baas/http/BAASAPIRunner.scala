@@ -17,7 +17,3 @@ object BAASAPIRunner extends App {
   val baasAPI = new BAASAPI(baas, host, port)(actorSystem)
   Await.result(baasAPI.start(), 10 seconds)
 }
-
-class BAASAPIRunner {
-
-}

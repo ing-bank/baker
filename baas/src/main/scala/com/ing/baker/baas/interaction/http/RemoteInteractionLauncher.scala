@@ -12,10 +12,11 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Future, Promise}
 
-case class RemoteInteractionImplementationAPI(InteractionImplementation: InteractionImplementation,
-                                              hostname: String,
-                                              port: Int)(implicit val actorSystem: ActorSystem) {
-  val log = LoggerFactory.getLogger(classOf[RemoteInteractionImplementationAPI])
+case class RemoteInteractionLauncher(interactionImplementation: InteractionImplementation,
+                                     hostname: String,
+                                     port: Int)(implicit val actorSystem: ActorSystem) {
+
+  val log = LoggerFactory.getLogger(classOf[RemoteInteractionLauncher])
 
   import actorSystem.dispatcher
   implicit val materializer = ActorMaterializer()(actorSystem)
@@ -23,11 +24,10 @@ case class RemoteInteractionImplementationAPI(InteractionImplementation: Interac
   private val bindingFuture = new AtomicReference[Future[Http.ServerBinding]]()
 
   def start(): Future[Done] = {
-    log.info(s"Starting remote interaction implementation for: ${InteractionImplementation.name} on $hostname:$port ")
+    log.info(s"Starting remote interaction implementation for: ${interactionImplementation.name} on $hostname:$port ")
     val serverBindingPromise = Promise[Http.ServerBinding]()
     if (bindingFuture.compareAndSet(null, serverBindingPromise.future)) {
-      val routes = RouteResult.route2HandlerFlow(
-        RemoteInteractionImplementationRoutes(InteractionImplementation))
+      val routes = RouteResult.route2HandlerFlow(RemoteInteractionRoutes(interactionImplementation))
       val serverFutureBinding = Http().bindAndHandle(routes, hostname, port)
       serverBindingPromise.completeWith(serverFutureBinding)
       serverBindingPromise.future.map(_ => Done)

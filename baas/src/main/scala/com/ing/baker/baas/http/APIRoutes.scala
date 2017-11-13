@@ -2,7 +2,7 @@ package com.ing.baker.baas.http
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
-import com.ing.baker.baas.interaction.RemoteInteractionImplementation
+import com.ing.baker.baas.interaction.RemoteInteractionClient
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.commonserialize
 import com.ing.baker.runtime.core.{Baker, RuntimeEvent}
@@ -87,7 +87,7 @@ object APIRoutes extends Directives with BaasMarshalling {
           entity(as[AddInteractionHTTPRequest]) { request =>
 
             //Create a RemoteInteractionImplementation
-            val interactionImplementation = RemoteInteractionImplementation(request.name, request.hostname, request.port)
+            val interactionImplementation = RemoteInteractionClient(request.name, request.hostname, request.port)
             println(s"Adding interaction called: ${request.name}")
 
             //Register it to BAAS
