@@ -11,9 +11,9 @@ class InteractionManager(private var interactionImplementations: Seq[Interaction
     interactionImplementations = interactionImplementations.filter(_.name != interactionImplementation.name)
 
   def getInteractionImplementation(interactionTransition: InteractionTransition[_]) : Option[InteractionImplementation] =
-    interactionImplementations.find(_.isValidForInteraction(interactionTransition))
+    interactionImplementations.find(_.name == interactionTransition.originalInteractionName)
 
   def hasInteractionImplementation(interactionTransition: InteractionTransition[_]): Boolean = {
-    interactionImplementations.exists(_.isValidForInteraction(interactionTransition))
+    getInteractionImplementation(interactionTransition).isDefined
   }
 }

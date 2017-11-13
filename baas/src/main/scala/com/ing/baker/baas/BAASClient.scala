@@ -9,7 +9,7 @@ import com.ing.baker.baas.BAAS.kryoPool
 import com.ing.baker.baas.ClientUtils._
 import com.ing.baker.baas.http.AddInteractionHTTPRequest
 import com.ing.baker.recipe.common
-import com.ing.baker.runtime.core.{Baker, ProcessState, SensoryEventStatus}
+import com.ing.baker.runtime.core.{Baker, ProcessState, RuntimeEvent, SensoryEventStatus}
 import com.ing.baker.types.Value
 import org.slf4j.LoggerFactory
 
@@ -99,6 +99,6 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
     doRequestAndParseResponse[String](request)
   }
 
-  def getEvents(recipeName: String, requestId: String): List[String] = ???
+  def getEvents(recipeName: String, requestId: String): List[RuntimeEvent] = ???
 
 }

@@ -25,8 +25,6 @@ case class RemoteInteractionClient(override val name: String,
   implicit val timout: FiniteDuration = 30 seconds
   implicit val materializer = ActorMaterializer()
 
-  override def isValidForInteraction(interaction: InteractionTransition[_]): Boolean = interaction.originalInteractionName == name
-
   /**
     * Executes the interaction.
     *

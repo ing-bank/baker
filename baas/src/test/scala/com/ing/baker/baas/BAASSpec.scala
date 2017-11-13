@@ -33,12 +33,9 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
   // implementations
   val localImplementations = Seq(InteractionOne(), InteractionTwo())
 
-  val map = localImplementations.flatMap(MethodInteractionImplementation.anyRefToInteractionImplementations _).map {
-    i => i.name -> i
-  }.toMap
-
   // host the local implementations
-  RemoteInteractionLauncher.apply(map, "localhost", 8090).start()
+  RemoteInteractionLauncher.apply(
+    MethodInteractionImplementation.toImplementationMap(localImplementations), "localhost", 8090).start()
 
 
   "Serialize and deserialize a common recipe" in {

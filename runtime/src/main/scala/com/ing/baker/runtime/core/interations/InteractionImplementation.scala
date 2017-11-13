@@ -6,9 +6,10 @@ import com.ing.baker.types.Value
 
 trait InteractionImplementation {
 
+  /**
+    * The name of the interaction
+    */
   val name: String
-
-  def isValidForInteraction(interaction: InteractionTransition[_]) : Boolean
 
   /**
     * Executes the interaction.

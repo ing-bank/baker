@@ -7,10 +7,12 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.RouteResult
 import akka.stream.ActorMaterializer
+import com.ing.baker.baas.BAASClient
 import com.ing.baker.runtime.core.interations.InteractionImplementation
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Future, Promise}
+
 
 case class RemoteInteractionLauncher(implementations: Map[String, InteractionImplementation],
                                      hostname: String,
@@ -36,6 +38,12 @@ case class RemoteInteractionLauncher(implementations: Map[String, InteractionImp
     }
     else {
       Future(Done)
+    }
+  }
+
+  def registerToBaker(baker: BAASClient) = {
+    implementations.foreach { 
+      case (name, _) => baker.addRemoteImplementation(name, s"http://$hostname:$port/$name")
     }
   }
 }

@@ -58,6 +58,11 @@ object MethodInteractionImplementation {
 
   }
 
+  def toImplementationMap(implementations: Iterable[AnyRef]): Map[String, InteractionImplementation] =
+    implementations.flatMap(MethodInteractionImplementation.anyRefToInteractionImplementations _).map {
+      i => i.name -> i
+    }.toMap
+
   def applyMethod(clazz: Class[_]): Method = {
     val method = clazz.getMethods.find(_.getName == "apply").get
     val className = method.getDeclaringClass.getName
@@ -137,9 +142,6 @@ case class MethodInteractionImplementation(override val name: String,
   val log: Logger = LoggerFactory.getLogger(MethodInteractionImplementation.getClass)
 
   val method = MethodInteractionImplementation.applyMethod(implementation.getClass())
-
-  override def isValidForInteraction(interaction: InteractionTransition[_]): Boolean =
-    interaction.originalInteractionName == name
 
   override def execute(interaction: InteractionTransition[_], input: Seq[Value]): RuntimeEvent =  {
 
