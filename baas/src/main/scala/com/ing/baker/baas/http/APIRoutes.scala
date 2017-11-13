@@ -13,6 +13,8 @@ object APIRoutes extends Directives with BaasMarshalling {
 
   implicit val timeout: FiniteDuration = 30 seconds
 
+  val defaultEventConfirm = "receive"
+
   def apply(baker: Baker)(implicit actorSystem: ActorSystem): Route = {
 
     def recipeRoutes(recipeName: String, requestId: String) = {
@@ -21,37 +23,41 @@ object APIRoutes extends Directives with BaasMarshalling {
 
       path("event") {
         post {
-          entity(as[RuntimeEvent]) { event =>
+          (entity(as[RuntimeEvent]) & parameter('confirm.as[String] ?)) { (event, confirm) =>
 
-            val sensoryEventStatus = recipeHandler.handleEvent(requestId, event)
+            val sensoryEventStatus = confirm.getOrElse(defaultEventConfirm) match {
+              case "received"  => recipeHandler.handleEventAsync(requestId, event).confirmReceived()
+              case "completed" => recipeHandler.handleEventAsync(requestId, event).confirmCompleted()
+              case other      => throw new IllegalArgumentException(s"Unsupported confirm type: $other")
+            }
 
             complete(sensoryEventStatus)
           }
         }
       } ~
-        path("bake") {
-          post {
-            val processState = recipeHandler.bake(requestId)
+      path("bake") {
+        post {
+          val processState = recipeHandler.bake(requestId)
 
-            complete(processState)
-          }
-        } ~
-        path("state") {
-          get {
-
-            val processState = recipeHandler.getProcessState(requestId)
-
-            complete(processState)
-          }
-        } ~
-        path("visual_state") {
-          get {
-
-            val visualState = recipeHandler.getVisualState(requestId)
-
-            complete(visualState)
-          }
+          complete(processState)
         }
+      } ~
+      path("state") {
+        get {
+
+          val processState = recipeHandler.getProcessState(requestId)
+
+          complete(processState)
+        }
+      } ~
+      path("visual_state") {
+        get {
+
+          val visualState = recipeHandler.getVisualState(requestId)
+
+          complete(visualState)
+        }
+      }
     }
 
 

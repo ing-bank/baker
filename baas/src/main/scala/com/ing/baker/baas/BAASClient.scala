@@ -22,7 +22,6 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
 
   val baseUri = s"http://$host:$port"
 
-//  implicit val actorSystem: ActorSystem = ActorSystem("BAASClientActorSystem")
   implicit val materializer = ActorMaterializer()
 
   val log = LoggerFactory.getLogger(classOf[BAASClient])
@@ -112,14 +111,14 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
     doRequest(request, logEntity)
   }
 
-  def handleEvent(recipeName: String, requestId: String, event: Any): SensoryEventStatus = {
+  def handleEvent(recipeName: String, requestId: String, event: Any, confirmation: EventConfirmation): SensoryEventStatus = {
 
     //Create request to give to Baker
     log.info("Creating runtime event to fire")
     val runtimeEvent = Baker.eventExtractor.extractEvent(event)
 
     val request = HttpRequest(
-        uri =  s"$baseUri/$recipeName/$requestId/event",
+        uri =  s"$baseUri/$recipeName/$requestId/event?confirm=${confirmation.name}",
         method = POST,
         entity = ByteString.fromArray(kryoPool.toBytesWithClass(runtimeEvent)))
 

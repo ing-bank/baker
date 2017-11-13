@@ -15,14 +15,14 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class BAASSpec extends TestKit(ActorSystem("BAASAPIActorSystem")) with WordSpecLike with Matchers with BeforeAndAfterAll {
+class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with Matchers with BeforeAndAfterAll {
   def actorSystemName: String = "BAASSpec"
 
   val host = "localhost"
   val port = 8081
 
 //  Startup a empty BAAS cluster
-  val baasAPI: BAASAPI = new BAASAPI(new BAAS(ActorSystem("BAAS")), host, port)(system)
+  val baasAPI: BAASAPI = new BAASAPI(new BAAS(system), host, port)(system)
   Await.result(baasAPI.start(), 10 seconds)
 
   //Start a BAAS API
@@ -58,7 +58,8 @@ class BAASSpec extends TestKit(ActorSystem("BAASAPIActorSystem")) with WordSpecL
 
     baasClient.bake(recipeName, requestId)
 
-    val sensoryEventStatusResponse: SensoryEventStatus = baasClient.handleEvent(recipeName, requestId, InitialEvent("initialIngredient"))
+    val sensoryEventStatusResponse: SensoryEventStatus =
+      baasClient.handleEvent(recipeName, requestId, InitialEvent("initialIngredient"), EventConfirmation.COMPLETED)
     sensoryEventStatusResponse shouldBe SensoryEventStatus.Completed
 
     val processState: ProcessState = baasClient.getState(recipeName, requestId)
