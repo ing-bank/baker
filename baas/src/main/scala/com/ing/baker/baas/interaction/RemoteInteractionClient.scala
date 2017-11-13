@@ -18,18 +18,14 @@ import scala.concurrent.duration._
 //This is the interactionImplementation as running in the BAAS cluster
 //This communicates with a RemoteInteractionimplementatoinClient that execute the request.
 case class RemoteInteractionClient(override val name: String,
-                                   hostname: String,
-                                   port: Int)(implicit val actorSystem: ActorSystem) extends InteractionImplementation {
+                                   uri: String)(implicit val actorSystem: ActorSystem) extends InteractionImplementation {
 
   val log = LoggerFactory.getLogger(classOf[RemoteInteractionClient])
-
-  val uri = s"http://$hostname:$port/$name"
 
   implicit val timout: FiniteDuration = 30 seconds
   implicit val materializer = ActorMaterializer()
 
-  override def isValidForInteraction(interaction: InteractionTransition[_]): Boolean =
-    interaction.originalInteractionName == name
+  override def isValidForInteraction(interaction: InteractionTransition[_]): Boolean = interaction.originalInteractionName == name
 
   /**
     * Executes the interaction.

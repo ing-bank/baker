@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Future, Promise}
 
-case class RemoteInteractionLauncher(interactionImplementation: InteractionImplementation,
+case class RemoteInteractionLauncher(implementations: Map[String, InteractionImplementation],
                                      hostname: String,
                                      port: Int)(implicit val actorSystem: ActorSystem) {
 
@@ -24,10 +24,12 @@ case class RemoteInteractionLauncher(interactionImplementation: InteractionImple
   private val bindingFuture = new AtomicReference[Future[Http.ServerBinding]]()
 
   def start(): Future[Done] = {
-    log.info(s"Starting remote interaction implementation for: ${interactionImplementation.name} on $hostname:$port ")
+    log.info(s"Starting remote http server on $hostname:$port for interactions: ${implementations.keys.mkString(",")}")
+
     val serverBindingPromise = Promise[Http.ServerBinding]()
+
     if (bindingFuture.compareAndSet(null, serverBindingPromise.future)) {
-      val routes = RouteResult.route2HandlerFlow(RemoteInteractionRoutes(interactionImplementation))
+      val routes = RouteResult.route2HandlerFlow(RemoteInteractionRoutes(implementations))
       val serverFutureBinding = Http().bindAndHandle(routes, hostname, port)
       serverBindingPromise.completeWith(serverFutureBinding)
       serverBindingPromise.future.map(_ => Done)
@@ -36,7 +38,6 @@ case class RemoteInteractionLauncher(interactionImplementation: InteractionImple
       Future(Done)
     }
   }
-
 }
 
 

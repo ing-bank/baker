@@ -6,9 +6,11 @@ import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import com.ing.baker.baas.BAASSpec.{InteractionOne, _}
 import com.ing.baker.baas.http.BAASAPI
+import com.ing.baker.baas.interaction.http.RemoteInteractionLauncher
 import com.ing.baker.recipe.common.ProvidesIngredient
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, processId}
 import com.ing.baker.recipe.{commonserialize, scaladsl}
+import com.ing.baker.runtime.core.interations.MethodInteractionImplementation
 import com.ing.baker.runtime.core.{ProcessState, SensoryEventStatus}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
@@ -28,7 +30,15 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
   //Start a BAAS API
   val baasClient: BAASClient = new BAASClient(host, port)
 
-  baasClient.addImplementation(InteractionOne())
+  // implementations
+  val localImplementations = Seq(InteractionOne(), InteractionTwo())
+
+  val map = localImplementations.flatMap(MethodInteractionImplementation.anyRefToInteractionImplementations _).map {
+    i => i.name -> i
+  }.toMap
+
+  // host the local implementations
+  RemoteInteractionLauncher.apply(map, "localhost", 8090).start()
 
 
   "Serialize and deserialize a common recipe" in {
@@ -39,13 +49,14 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     deserializedRecipe shouldBe originalRecipe
   }
 
+  "Add a implementation to the BAAS API" in {
+    baasClient.addRemoteImplementation("InteractionOne", "http://localhost:8090/InteractionTwo")
+    baasClient.addRemoteImplementation("InteractionTwo", "http://localhost:8090/InteractionTwo");
+  }
+
   "Send recipe to the BAAS API" in {
     val originalRecipe: scaladsl.Recipe = setupSimpleRecipe("recipename")
     baasClient.addRecipe(originalRecipe)
-  }
-
-  "Add a implementation to the BAAS API" in {
-    baasClient.addImplementation(InteractionTwo());
   }
 
   "Happy flow simple recipe BAAS" in {

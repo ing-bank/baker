@@ -1,23 +1,20 @@
 package com.ing.baker.baas
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpMethods._
 import akka.http.scaladsl.model._
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import com.ing.baker.baas.BAAS.kryoPool
-import com.ing.baker.baas.http._
-import com.ing.baker.baas.interaction.http.RemoteInteractionLauncher
+import com.ing.baker.baas.ClientUtils._
+import com.ing.baker.baas.http.AddInteractionHTTPRequest
 import com.ing.baker.recipe.common
-import com.ing.baker.runtime.core.interations.{InteractionImplementation, MethodInteractionImplementation}
 import com.ing.baker.runtime.core.{Baker, ProcessState, SensoryEventStatus}
+import com.ing.baker.types.Value
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
-import ClientUtils.{log, _}
 
 class BAASClient(val host: String, val port: Int)(implicit val actorSystem: ActorSystem) {
 
@@ -45,43 +42,16 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
     doRequest(httpRequest, logEntity)
   }
 
-  var portCounter: Int = 8090
-  var hostname: String = "localhost"
-
-  def addImplementation(anyRef: AnyRef): Unit = {
-    log.info("Creating interaction implementation")
-    //Create the implementation that is used locally
-
-    log.info("Creating method implementation from Anyref")
-    val methodInteractionImplementations: Seq[InteractionImplementation] =
-      MethodInteractionImplementation.anyRefToInteractionImplementations(anyRef)
-
-    methodInteractionImplementations.foreach{ im =>
-      val portToUse = portCounter
-      portCounter = portCounter + 1
-      createRemoteForImplementation(im, portToUse)
-    }
-  }
-
-  private def createRemoteForImplementation(interactionImplementation: InteractionImplementation, portToUse: Int): Unit = {
-    //Create the locally running interaction implementation
-    log.info("Creating RemoteImplementationClient")
-    val remoteInteractionImplementationClient: RemoteInteractionLauncher =
-      RemoteInteractionLauncher(interactionImplementation, hostname, portToUse)
-
-    //start the Remote interaction implementation
-    log.info("Starting RemoteImplementationClient")
-    Await.result(remoteInteractionImplementationClient.start(), 10 seconds)
+  def addRemoteImplementation(interactionName: String, uri: String) = {
 
     //Create the request to Add the interaction implmentation to Baas
     log.info("Registering remote implementation client")
-    val addInteractionHTTPRequest: AddInteractionHTTPRequest =
-      AddInteractionHTTPRequest(interactionImplementation.name, hostname, portToUse)
+    val addInteractionHTTPRequest = AddInteractionHTTPRequest(interactionName, uri)
 
     val request = HttpRequest(
-        uri = baseUri +  "/implementation",
-        method = POST,
-        entity = ByteString.fromArray(kryoPool.toBytesWithClass(addInteractionHTTPRequest)))
+      uri = baseUri +  "/implementation",
+      method = POST,
+      entity = ByteString.fromArray(kryoPool.toBytesWithClass(addInteractionHTTPRequest)))
 
     doRequest(request, logEntity)
   }
@@ -118,6 +88,8 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
     doRequestAndParseResponse[ProcessState](request)
   }
 
+  def getIngredients(recipeName: String, requestId: String): Map[String, Value] = getState(recipeName, requestId).ingredients
+
   def getVisualState(recipeName: String, requestId: String): String = {
 
     val request = HttpRequest(
@@ -126,4 +98,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
 
     doRequestAndParseResponse[String](request)
   }
+
+  def getEvents(recipeName: String, requestId: String): List[String] = ???
+
 }

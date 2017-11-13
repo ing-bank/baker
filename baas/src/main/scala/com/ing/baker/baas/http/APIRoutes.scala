@@ -87,7 +87,7 @@ object APIRoutes extends Directives with BaasMarshalling {
           entity(as[AddInteractionHTTPRequest]) { request =>
 
             //Create a RemoteInteractionImplementation
-            val interactionImplementation = RemoteInteractionClient(request.name, request.hostname, request.port)
+            val interactionImplementation = RemoteInteractionClient(request.name, request.uri)
             println(s"Adding interaction called: ${request.name}")
 
             //Register it to BAAS

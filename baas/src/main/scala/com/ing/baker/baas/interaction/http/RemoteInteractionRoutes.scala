@@ -12,22 +12,24 @@ object RemoteInteractionRoutes extends Directives with BaasMarshalling {
 
   val log = LoggerFactory.getLogger(RemoteInteractionRoutes.getClass.getName)
 
-  def apply(interactionImplementation: InteractionImplementation): Route = {
+  def apply(implementations: Map[String, InteractionImplementation]): Route = {
     val baasRoutes = {
-      path(interactionImplementation.name) {
+      path(Segment) { interactionName =>
         post {
           entity(as[ByteString]) { string =>
 
-            log.info(s"interaction implementation called for: ${interactionImplementation.name}")
+            log.info(s"interaction implementation called for: ${interactionName}")
 
             val byteArray: Array[Byte] = string.toArray
             val request = kryoPool.fromBytes(byteArray).asInstanceOf[ExecuteInteractionHTTPRequest]
 
-            log.info(s"Executing interaction: ${interactionImplementation.name}")
+            log.info(s"Executing interaction: $interactionName")
 
-            val runtimeEvent = interactionImplementation.execute(request.interaction, request.input)
+            val implementation = implementations.getOrElse(interactionName, throw new IllegalArgumentException(s"No such interaction: $interactionName"))
 
-            log.info(s"Interaction executed: ${interactionImplementation.name}")
+            val runtimeEvent = implementation.execute(request.interaction, request.input)
+
+            log.info(s"Interaction executed: ${interactionName}")
 
             complete(runtimeEvent)
           }
