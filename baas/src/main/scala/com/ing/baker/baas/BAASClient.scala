@@ -99,6 +99,12 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
     doRequestAndParseResponse[String](request)
   }
 
-  def getEvents(recipeName: String, requestId: String): List[RuntimeEvent] = ???
+  def getEvents(recipeName: String, requestId: String): List[RuntimeEvent] = {
 
+    val request = HttpRequest(
+      uri = baseUri +  s"/$recipeName/$requestId/events",
+      method = GET)
+
+    doRequestAndParseResponse[List[RuntimeEvent]](request)
+  }
 }

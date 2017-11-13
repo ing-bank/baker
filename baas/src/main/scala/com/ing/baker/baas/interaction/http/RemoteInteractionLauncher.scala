@@ -42,7 +42,7 @@ case class RemoteInteractionLauncher(implementations: Map[String, InteractionImp
   }
 
   def registerToBaker(baker: BAASClient) = {
-    implementations.foreach { 
+    implementations.foreach {
       case (name, _) => baker.addRemoteImplementation(name, s"http://$hostname:$port/$name")
     }
   }

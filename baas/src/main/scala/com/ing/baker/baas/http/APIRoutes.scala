@@ -35,6 +35,12 @@ object APIRoutes extends Directives with BaasMarshalling {
           }
         }
       } ~
+      path("events") {
+        get {
+          val events = recipeHandler.events(requestId).toList
+          complete(events)
+        }
+      } ~
       path("bake") {
         post {
           val processState = recipeHandler.bake(requestId)

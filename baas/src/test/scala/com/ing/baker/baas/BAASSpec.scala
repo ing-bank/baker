@@ -74,6 +74,11 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
 
     processState.ingredients.keys should contain("initialIngredient")
     processState.ingredients.keys should contain("interactionOneIngredient")
+
+    val events = baasClient.getEvents(recipeName, requestId)
+
+    println(s"events: $events")
+
 //    println(s"procesState : ${requestState.processState}")
 //    println(s"visualState : ${requestState.visualState}")
   }
