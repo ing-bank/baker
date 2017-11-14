@@ -57,13 +57,30 @@ object ProcessInstanceLogger {
     val msg = s"Transition '$transitionId' failed with: $failureReason"
   }
 
+  import org.joda.time.format.PeriodFormatterBuilder
+  val duration = new org.joda.time.Duration(123456)
+  // in milliseconds
+
+  val durationFormatter = new PeriodFormatterBuilder()
+    .appendDays.appendSuffix("d")
+    .appendSeparator(" ")
+    .appendHours.appendSuffix("h")
+    .appendSeparator(" ")
+    .appendMinutes.appendSuffix("m")
+    .appendSeparator(" ")
+    .appendSeconds.appendSuffix("s")
+    .appendSeparator(" ")
+    .appendMillis.appendSuffix("ms")
+    .appendSeparator(" ")
+    .toFormatter
+
   case class LogScheduleRetry(processId: String, transitionId: String, delay: Long) extends LogEvent {
     def mdc = Map(
       "processEvent" -> "TransitionRetry",
       "processId" -> processId,
       "transitionId" -> transitionId)
 
-    def msg = s"Scheduling a retry of transition '$transitionId' in ${Duration(delay, MILLISECONDS).toString()}"
+    def msg = s"Scheduling a retry of transition '$transitionId' in ${durationFormatter.print(new org.joda.time.Duration(delay).toPeriod)}"
   }
 
   case class LogFiringTransition(processId: String, jobId: Long, transitionId: String, timeStarted: Long) extends LogEvent {
