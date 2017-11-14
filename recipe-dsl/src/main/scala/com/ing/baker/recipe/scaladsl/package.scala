@@ -35,6 +35,11 @@ package object scaladsl {
       e.providedIngredients.map(_.name).zip(values.toSeq).toMap + ("$EventName$" -> e.name)
     }
   }
+
+  implicit class IngredientOps(ingredients: Map[String, Any]) {
+
+    def get[T](ingredient: Ingredient[T]): Option[T] = ingredients.get(ingredient.name).map(_.asInstanceOf[T])
+  }
 }
 
 

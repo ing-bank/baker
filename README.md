@@ -73,9 +73,9 @@ Applying Baker will only be successful if you make sure that:
 To get started with SBT, simply add the following to your build.sbt file:
 
 ```
-libraryDependencies += "com.ing.baker" %% "recipe-dsl_2.11" % "1.1.12"
-libraryDependencies += "com.ing.baker" %% "runtime_2.11" % "1.1.12"
-libraryDependencies += "com.ing.baker" %% "compiler_2.11" % "1.1.12"
+libraryDependencies += "com.ing.baker" % "recipe-dsl_2.11" % "1.1.12"
+libraryDependencies += "com.ing.baker" % "runtime_2.11" % "1.1.12"
+libraryDependencies += "com.ing.baker" % "compiler_2.11" % "1.1.12"
 ```
 
 # How to contribute?
@@ -87,7 +87,7 @@ Execute the following commands in your terminal to get started with the developm
 $ git clone https://github.com/ing-bank/baker.git
 $ cd baker
 $ sbt
-$ compile
+> compile
 ```
 
 # How to visualize your recipe?
@@ -137,5 +137,5 @@ Model the result of a synchronous interaction with two events: **Successful** an
 Model the acknowledgment from an asynchronous operation with an **Accepted** event. The actual result (received at a later stage) of the interaction is modelled as above.
 
 # References
-1. DOT Graph Description Language (https://en.wikipedia.org/wiki/DOT_(graph_description_language)) - explain more about the format Baker uses to product a graphical representation of the recipe;
+1. DOT Graph Description Language (https://en.wikipedia.org/wiki/DOT_(graph_description_language)) - explain more about the format Baker uses to produce a graphical representation of the recipe;
 2. Order fulfillment (https://en.wikipedia.org/wiki/Order_fulfillment) - gives an idea about the theory behind order fulfillment strategies. As you are in the business of producing and selling products to people, you are in the business of fulfillment;
