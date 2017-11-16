@@ -141,7 +141,11 @@ case class MethodInteractionImplementation(override val name: String,
   /**
     * The required input.
     */
-  override val inputTypes: Seq[BType] = method.getGenericParameterTypes.map(Converters.readJavaType _).toSeq
+  override val inputTypes: Seq[BType] = method.getGenericParameterTypes.map {
+    jType => try { Converters.readJavaType(jType) } catch {
+      case e: Exception => throw new IllegalArgumentException(s"Illegal parameter type for interaction implementation '$name'", e)
+    }
+  }.toSeq
 
   override def execute(interaction: InteractionTransition[_], input: Seq[Value]): RuntimeEvent =  {
 
