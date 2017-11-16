@@ -118,10 +118,10 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
   def addInteractionImplementation(anyRef: AnyRef) =
     MethodInteractionImplementation.anyRefToInteractionImplementations(anyRef)
-      .foreach(interactionManager.addInteractionImplementation)
+      .foreach(interactionManager.add)
 
   def addInteractionImplementation(interactionImplementation: InteractionImplementation) =
-    interactionManager.addInteractionImplementation(interactionImplementation)
+    interactionManager.add(interactionImplementation)
 
   if (!config.as[Option[Boolean]]("baker.config-file-included").getOrElse(false))
     throw new IllegalStateException("You must 'include baker.conf' in your application.conf")

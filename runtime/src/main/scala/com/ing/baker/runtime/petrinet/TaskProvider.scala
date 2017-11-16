@@ -68,7 +68,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
           MDC.put("recipeName", recipeName)
 
           // obtain the interaction implementation
-          val implementation = interactionManager.getInteractionImplementation(interaction).getOrElse {
+          val implementation = interactionManager.get(interaction).getOrElse {
             throw new FatalInteractionException("No implementation available for interaction")
           }
 

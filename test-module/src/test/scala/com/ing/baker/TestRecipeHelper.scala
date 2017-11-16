@@ -248,11 +248,10 @@ object TestRecipeHelper {
   trait OptionalIngredientInteraction {
     val name: String = "OptionalIngredientInteraction"
     def apply(missingJavaOptional: Optional[String],
-              missingJavaOptional2: Optional[Int],
+              missingJavaOptional2: Optional[Integer],
               missingScalaOptional: Option[String],
-              missingScalaOptional2: Option[Int],
-              intialIngredient: String
-             )
+              missingScalaOptional2: Option[Integer],
+              intialIngredient: String)
   }
 }
 

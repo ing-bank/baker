@@ -1,3 +1,5 @@
 package com.ing.baker.baas.http
 
-case class AddInteractionHTTPRequest(name: String, uri: String)
+import com.ing.baker.types.BType
+
+case class AddInteractionHTTPRequest(name: String, uri: String, inputTypes: Seq[BType])

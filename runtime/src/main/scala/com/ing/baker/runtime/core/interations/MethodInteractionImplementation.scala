@@ -4,60 +4,66 @@ import java.lang.reflect.{Method, ParameterizedType, Type}
 import java.util.UUID
 
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.types.{Converters, IngredientDescriptor, Value}
+import com.ing.baker.types.{BType, Converters, IngredientDescriptor, Value}
 import com.ing.baker.runtime.core.Baker.eventExtractor
 import com.ing.baker.runtime.core.{BakerException, RuntimeEvent}
 import com.ing.baker.runtime.petrinet.FatalInteractionException
 import org.slf4j.{Logger, LoggerFactory}
 import MethodInteractionImplementation._
 import com.ing.baker.il.EventType
-import scala.collection.JavaConverters._
 
+import scala.collection.JavaConverters._
 import scala.util.Try
 
 object MethodInteractionImplementation {
 
   val log = LoggerFactory.getLogger(classOf[MethodInteractionImplementation])
 
-  /**
-    * This method looks for any valid name that this interaction implements
-    * This is its own class name
-    * The class name of any interface it implements
-    * The value of the field "name"
-    *
-    * @param obj
-    * @return List of possible interaction names this obj can be implementing
-    */
-  def getPossibleInteractionNamesForImplementation(obj: Any): Set[String] = {
-    val nameField: String = Try {
-      obj.getClass.getDeclaredField("name")
+  def getInteractionName(impl: Any, method: Method): String = {
+
+    Try {
+      method.getDeclaringClass.getDeclaredField("name")
     }.toOption match {
-      case Some(field) if field.getType == classOf[String] => {
+      case Some(field) if field.getType == classOf[String] =>
         field.setAccessible(true)
-        field.get(obj).asInstanceOf[String]
-      }
-      case None => ""
+        field.get(impl).asInstanceOf[String]
+      case None =>
+        method.getDeclaringClass.getInterfaces.find {
+          clazz => Try { clazz.getMethod(method.getName, method.getParameterTypes.toSeq: _*) }.isSuccess
+        }.getOrElse(method.getDeclaringClass).getSimpleName
     }
-    val interfaceNames: Seq[String] = obj.getClass.getInterfaces.map(_.getSimpleName).toSeq
-    Set[String](obj.getClass.getSimpleName, nameField).filterNot(s => s equals "") ++ interfaceNames
   }
 
+  def getApplyMethod(clazz: Class[_]): Method = {
 
-  def anyRefToInteractionImplementations(any: AnyRef): Seq[InteractionImplementation] = {
-    any.getClass.getMethods.count(m => m.getName == "apply") match {
-      case 0 => throw new BakerException("Method does not have a apply function")
+    clazz.getMethods.count(_.getName == "apply") match {
+      case 0          => throw new BakerException("Method does not have a apply function")
       case n if n > 1 => throw new BakerException("Method has multiple apply functions")
       case _ => ()
     }
 
-    val applyMethod: Method = any.getClass.getMethods.find(m => m.getName == "apply").get
-    getPossibleInteractionNamesForImplementation(any).map { name =>
-      // TODO give the actual event types, not Set.empty
+    val method = clazz.getMethods.find(_.getName == "apply").get
 
-      new MethodInteractionImplementation(name, any, applyMethod.getParameterTypes.toSeq, Set.empty)
-    }.toSeq
+    val className = method.getDeclaringClass.getName
 
+    if (className.contains("$$EnhancerByMockitoWithCGLIB$$")) {
+      val originalName: String = className.split("\\$\\$EnhancerByMockitoWithCGLIB\\$\\$")(0)
+      val orginalClass = clazz.getClassLoader.loadClass(originalName)
+      getApplyMethod(orginalClass)
+    }
+    else
+      method
   }
+
+  def anyRefToInteractionImplementations(impl: AnyRef): Seq[InteractionImplementation] = {
+
+    val applyMethod: Method = getApplyMethod(impl.getClass)
+
+    val interactionNames = Set(getInteractionName(impl, getApplyMethod(impl.getClass)))
+
+    interactionNames.map { name => new MethodInteractionImplementation(name, impl, applyMethod, Set.empty)}.toSeq
+  }
+
   def toImplementationMap(implementations: java.lang.Iterable[AnyRef]): Map[String, InteractionImplementation] =
     toImplementationMap(implementations.asScala)
 
@@ -66,18 +72,6 @@ object MethodInteractionImplementation {
       i => i.name -> i
     }.toMap
 
-  def applyMethod(clazz: Class[_]): Method = {
-    val method = clazz.getMethods.find(_.getName == "apply").get
-    val className = method.getDeclaringClass.getName
-
-    if (className.contains("$$EnhancerByMockitoWithCGLIB$$")) {
-      val originalName: String = className.split("\\$\\$EnhancerByMockitoWithCGLIB\\$\\$")(0)
-      val orginalClass = clazz.getClassLoader.loadClass(originalName)
-      applyMethod(orginalClass)
-    }
-    else
-      method
-  }
 
   def createRuntimeEvent[I](interaction: InteractionTransition[I], output: Any): RuntimeEvent = {
 
@@ -139,21 +133,22 @@ object MethodInteractionImplementation {
 
 case class MethodInteractionImplementation(override val name: String,
                                            implementation: AnyRef,
-                                           requiredIngredients: Seq[Type],
+                                           method: Method,
                                            returnType: Set[EventType]) extends InteractionImplementation {
 
   val log: Logger = LoggerFactory.getLogger(MethodInteractionImplementation.getClass)
 
-  val method = MethodInteractionImplementation.applyMethod(implementation.getClass())
+  /**
+    * The required input.
+    */
+  override val inputTypes: Seq[BType] = method.getGenericParameterTypes.map(Converters.readJavaType _).toSeq
 
   override def execute(interaction: InteractionTransition[_], input: Seq[Value]): RuntimeEvent =  {
 
     val invocationId = UUID.randomUUID().toString
 
     val inputArgs = input.zip(method.getGenericParameterTypes).map {
-      case (value, targetType) =>
-
-        value.as(targetType)
+      case (value, targetType) => value.as(targetType)
     }
 
     log.trace(s"[$invocationId] invoking '$name' with parameters ${inputArgs.toString}")
@@ -164,4 +159,5 @@ case class MethodInteractionImplementation(override val name: String,
 
     event
   }
+
 }

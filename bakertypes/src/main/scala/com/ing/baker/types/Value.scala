@@ -49,12 +49,15 @@ case class PrimitiveValue(value: Any) extends Value {
     (supportedPrimitiveClasses.contains(clazz) && clazz.isInstance(value)) ||
       (clazz.isPrimitive && javaPrimitiveMappings.get(value.getClass) == Some(clazz))
 
-  override def toString(): String = value.toString
+  override def toString(): String = value match {
+    case str: String => "\"" + str + "\""
+    case other => other.toString
+  }
 }
 
 case class RecordValue(entries: Map[String, Value]) extends Value {
 
-  override def toString(): String = entries.map   { case (name, value) => "\"" + name + "\" : " + value  }.mkString("{", ",", "}")
+  override def toString(): String = entries.map { case (name, value) => "\"" + name + "\" : " + value  }.mkString("{", ",", "}")
 }
 
 case class ListValue(entries: List[Value]) extends Value {

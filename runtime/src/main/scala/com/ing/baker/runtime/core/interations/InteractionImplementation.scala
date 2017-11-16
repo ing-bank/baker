@@ -2,7 +2,7 @@ package com.ing.baker.runtime.core.interations
 
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.core.RuntimeEvent
-import com.ing.baker.types.Value
+import com.ing.baker.types.{BType, Value}
 
 trait InteractionImplementation {
 
@@ -10,6 +10,11 @@ trait InteractionImplementation {
     * The name of the interaction
     */
   val name: String
+
+  /**
+    * The required input.
+    */
+  val inputTypes: Seq[BType]
 
   /**
     * Executes the interaction.

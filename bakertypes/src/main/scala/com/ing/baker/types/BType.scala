@@ -2,14 +2,19 @@ package com.ing.baker.types
 
 sealed trait BType {
 
+  /**
+    * Checks if an instance of other is also an instance of this type.
+    *
+    * @param other
+    * @return
+    */
   def isAssignableFrom(other: BType): Boolean = {
 
     (this, other) match {
       case (PrimitiveType(clazzA), PrimitiveType(clazzB)) =>
-        if (clazzA.isPrimitive)
-          clazzB.equals(clazzA) || javaPrimitiveMappings.get(clazzB).equals(Some(clazzA))
-        else
-          clazzB.equals(clazzA)
+        clazzB.equals(clazzA) ||
+        javaPrimitiveMappings.get(clazzB).equals(Some(clazzA)) ||
+          javaPrimitiveMappings.get(clazzA).equals(Some(clazzB))
 
       case (OptionType(entryTypeA), OptionType(entryTypeB)) =>
         entryTypeA.isAssignableFrom(entryTypeB)

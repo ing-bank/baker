@@ -14,28 +14,42 @@ object RemoteInteractionRoutes extends Directives with BaasMarshalling {
 
   def apply(implementations: Map[String, InteractionImplementation]): Route = {
     val baasRoutes = {
-      path(Segment) { interactionName =>
-        post {
-          entity(as[ByteString]) { string =>
+      pathPrefix(Segment) { interactionName =>
 
-            log.info(s"interaction implementation called for: ${interactionName}")
+        val implementation = implementations.getOrElse(interactionName, throw new IllegalArgumentException(s"No such interaction: $interactionName"))
 
-            val byteArray: Array[Byte] = string.toArray
-            val request = kryoPool.fromBytes(byteArray).asInstanceOf[ExecuteInteractionHTTPRequest]
+        path("execute") {
+          post {
+            entity(as[ByteString]) { string =>
 
-            log.info(s"Executing interaction: $interactionName")
+              log.info(s"interaction implementation called for: ${interactionName}")
 
-            val implementation = implementations.getOrElse(interactionName, throw new IllegalArgumentException(s"No such interaction: $interactionName"))
+              val byteArray: Array[Byte] = string.toArray
+              val request = kryoPool.fromBytes(byteArray).asInstanceOf[ExecuteInteractionHTTPRequest]
 
-            val runtimeEvent = implementation.execute(request.interaction, request.input)
+              log.info(s"Executing interaction: $interactionName")
 
-            log.info(s"Interaction executed: ${interactionName}")
+              val runtimeEvent = implementation.execute(request.interaction, request.input)
 
-            complete(runtimeEvent)
+              log.info(s"Interaction executed: ${interactionName}")
+
+              complete(runtimeEvent)
+            }
+          }
+        } ~
+        path("keepalive") {
+          get {
+            complete("OK")
+          }
+        } ~
+        path("input") {
+          get {
+            complete("")
           }
         }
       }
     }
+
     baasRoutes
   }
 }

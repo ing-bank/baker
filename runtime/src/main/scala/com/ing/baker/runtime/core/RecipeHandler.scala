@@ -40,7 +40,7 @@ object RecipeHandler {
   }
 
   private def checkIfValidImplementationsProvided(interactionManager: InteractionManager, actions: Set[InteractionTransition[_]]): Set[String] = {
-    actions.filterNot(interactionManager.hasInteractionImplementation)
+    actions.filterNot(interactionManager.hasCompatibleImplementation)
       .map(s => s"No implementation provided for interaction: ${s.originalInteractionName}")
   }
 }

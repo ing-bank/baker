@@ -34,8 +34,10 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
   val localImplementations = Seq(InteractionOne(), InteractionTwo())
 
   // host the local implementations
-  RemoteInteractionLauncher.apply(
-    MethodInteractionImplementation.toImplementationMap(localImplementations), "localhost", 8090).start()
+  val launcher = RemoteInteractionLauncher.apply(
+    MethodInteractionImplementation.toImplementationMap(localImplementations), "localhost", 8090)
+
+  launcher.start()
 
 
   "Serialize and deserialize a common recipe" in {
@@ -47,8 +49,7 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
   }
 
   "Add a implementation to the BAAS API" in {
-    baasClient.addRemoteImplementation("InteractionOne", "http://localhost:8090/InteractionTwo")
-    baasClient.addRemoteImplementation("InteractionTwo", "http://localhost:8090/InteractionTwo");
+    launcher.registerToBaker(baasClient)
   }
 
   "Send recipe to the BAAS API" in {

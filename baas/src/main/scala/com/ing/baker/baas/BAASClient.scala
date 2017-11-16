@@ -10,7 +10,7 @@ import com.ing.baker.baas.ClientUtils._
 import com.ing.baker.baas.http.AddInteractionHTTPRequest
 import com.ing.baker.recipe.common
 import com.ing.baker.runtime.core.{Baker, ProcessState, RuntimeEvent, SensoryEventStatus}
-import com.ing.baker.types.Value
+import com.ing.baker.types.{BType, Value}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -42,14 +42,14 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
     doRequest(httpRequest, logEntity)
   }
 
-  def addRemoteImplementation(interactionName: String, uri: String) = {
+  def addRemoteImplementation(interactionName: String, uri: String, inputTypes: Seq[BType]) = {
 
     //Create the request to Add the interaction implmentation to Baas
     log.info("Registering remote implementation client")
-    val addInteractionHTTPRequest = AddInteractionHTTPRequest(interactionName, uri)
+    val addInteractionHTTPRequest = AddInteractionHTTPRequest(interactionName, uri, inputTypes)
 
     val request = HttpRequest(
-      uri = baseUri +  "/implementation",
+      uri = s"$baseUri/implementation",
       method = POST,
       entity = ByteString.fromArray(kryoPool.toBytesWithClass(addInteractionHTTPRequest)))
 
@@ -73,7 +73,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
   def bake(recipeName: String, requestId: String): Unit = {
 
     val request = HttpRequest(
-        uri = baseUri +  s"/$recipeName/$requestId/bake",
+        uri = s"$baseUri/$recipeName/$requestId/bake",
         method = POST)
 
     doRequestAndParseResponse[ProcessState](request)
@@ -82,7 +82,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
   def getState(recipeName: String, requestId: String): ProcessState = {
 
     val request = HttpRequest(
-        uri = baseUri +  s"/$recipeName/$requestId/state",
+        uri = s"$baseUri/$recipeName/$requestId/state",
         method = GET)
 
     doRequestAndParseResponse[ProcessState](request)
@@ -93,7 +93,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
   def getVisualState(recipeName: String, requestId: String): String = {
 
     val request = HttpRequest(
-      uri = baseUri +  s"/$recipeName/$requestId/visual_state",
+      uri = s"$baseUri/$recipeName/$requestId/visual_state",
       method = GET)
 
     doRequestAndParseResponse[String](request)
@@ -102,7 +102,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
   def getEvents(recipeName: String, requestId: String): List[RuntimeEvent] = {
 
     val request = HttpRequest(
-      uri = baseUri +  s"/$recipeName/$requestId/events",
+      uri = s"$baseUri/$recipeName/$requestId/events",
       method = GET)
 
     doRequestAndParseResponse[List[RuntimeEvent]](request)

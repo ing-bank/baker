@@ -4,16 +4,19 @@ import com.ing.baker.il.petrinet.InteractionTransition
 
 class InteractionManager(private var interactionImplementations: Seq[InteractionImplementation] = Seq.empty) {
 
-  def addInteractionImplementation(interactionImplementation: InteractionImplementation) =
-    interactionImplementations = interactionImplementations :+ interactionImplementation
+  def add(interactionImplementation: InteractionImplementation) =
+    interactionImplementations :+= interactionImplementation
 
-  def removedInteractionImplementation(interactionImplementation: InteractionImplementation) =
+  def remove(interactionImplementation: InteractionImplementation) =
     interactionImplementations = interactionImplementations.filter(_.name != interactionImplementation.name)
 
-  def getInteractionImplementation(interactionTransition: InteractionTransition[_]) : Option[InteractionImplementation] =
+  def get(interactionTransition: InteractionTransition[_]) : Option[InteractionImplementation] =
     interactionImplementations.find(_.name == interactionTransition.originalInteractionName)
 
-  def hasInteractionImplementation(interactionTransition: InteractionTransition[_]): Boolean = {
-    getInteractionImplementation(interactionTransition).isDefined
-  }
+  def hasCompatibleImplementation(interaction: InteractionTransition[_]): Boolean =
+    get(interaction).map(implementation =>
+      implementation.inputTypes.zip(interaction.requiredIngredients.map(_.`type`)).forall {
+        case (typeA, typeB) => typeA.isAssignableFrom(typeB)
+      }
+    ).getOrElse(false)
 }
