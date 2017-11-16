@@ -96,16 +96,6 @@ val registerIndividual = Interaction(
 
 ---
 
-```scala
-val registerIndividual = Interaction(
-  name = "RegisterIndividual",
-  inputIngredients = Seq.empty,
-  output = FiresOneOfEvents(registerIndividualSuccessful, registerIndividualFailed)
-)
-```
-
----
-
 ![](individual.png)
 
 ---

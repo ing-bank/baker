@@ -1,10 +1,7 @@
 slidenumbers: true
 autoscale: true
-footer: https://skillsmatter.com/skillscasts/10705-declare-verify-and-execute-microservices-based-process-flows-with-baker
-# Declare, verify and execute microservices-based process flows with Baker[^6]
+# Declare, verify and execute microservices-based process flows with Baker
 ### http://github.com/nikolakasev | ING
-	
-[^6]: 
 
 ---
 	
