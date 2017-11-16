@@ -143,7 +143,7 @@ case class MethodInteractionImplementation(override val name: String,
     */
   override val inputTypes: Seq[BType] = method.getGenericParameterTypes.map {
     jType => try { Converters.readJavaType(jType) } catch {
-      case e: Exception => throw new IllegalArgumentException(s"Illegal parameter type for interaction implementation '$name'", e)
+      case e: Exception => throw new IllegalArgumentException(s"Unsupported parameter type for interaction implementation '$name'", e)
     }
   }.toSeq
 

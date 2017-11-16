@@ -27,7 +27,7 @@ package object javadsl {
       override val providedIngredients: Seq[common.Ingredient] =
         eventClass.getDeclaredFields
           .filter(field => !field.isSynthetic)
-          .map(f => createIngredient(f.getName, parseType(f.getGenericType, s"Illegal type for ingredient '${f.getName}' on event '${eventClass.getSimpleName}'")))
+          .map(f => createIngredient(f.getName, parseType(f.getGenericType, s"Unsupported type for ingredient '${f.getName}' on event '${eventClass.getSimpleName}'")))
       override val maxFiringLimit: Option[Integer] = firingLimit
     }
 
@@ -42,7 +42,7 @@ package object javadsl {
           s"No method named '$interactionMethodName' defined on '${interactionClass.getName}'"))
 
       override val inputIngredients: Seq[common.Ingredient] =
-        method.getParameterNames.map(s => createIngredient(s, parseType(method.parameterTypeForName(s).get, s"Illegal type for ingredient '$s' on interaction '${interactionClass.getName}'")))
+        method.getParameterNames.map(s => createIngredient(s, parseType(method.parameterTypeForName(s).get, s"Unsupported type for ingredient '$s' on interaction '${interactionClass.getName}'")))
 
       override val output: common.InteractionOutput = {
         if(method.isAnnotationPresent(classOf[annotations.ProvidesIngredient]) && method.isAnnotationPresent(classOf[annotations.FiresEvent]))
@@ -50,7 +50,7 @@ package object javadsl {
         //ProvidesIngredient
         else if (method.isAnnotationPresent(classOf[annotations.ProvidesIngredient])) {
           val interactionOutputName: String = method.getAnnotation(classOf[annotations.ProvidesIngredient]).value()
-          common.ProvidesIngredient(createIngredient(interactionOutputName, parseType(method.getGenericReturnType, s"Illegal return type for interaction '${interactionClass.getSimpleName}'")))
+          common.ProvidesIngredient(createIngredient(interactionOutputName, parseType(method.getGenericReturnType, s"Unsupported return type for interaction '${interactionClass.getSimpleName}'")))
         }
         //ProvidesEvent
         else if (method.isAnnotationPresent(classOf[annotations.FiresEvent])) {
