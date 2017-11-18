@@ -11,22 +11,33 @@ autoscale: true
 
 ---
 
-## Symptoms of a Failing Application Architecture
+![original](ing.png)
+
+### Global Financial Institution in Over 40 Countries
+### Software Company with a Banking License
+### Microservices Architecture
+
+---
+
+## Our Challenge
+### Interact with 12 Different Systems
+### A Flow with 27 Steps
+### From 2 minutes to 6 hours
 
 ---
 
 ![original](afraid.jpg)
-## Afraid to change the application code
+## Afraid to Change the Application Code
 
 ---
 
 ![original](breaks.jpg)
-## Functionality breaks unexpectedly
+## Functionality Breaks Unexpectedly
 
 ---
 
 ![original](time-to-market.jpg)
-## Slow time to market
+## Slow Time to Market
 
 ---
 
@@ -38,35 +49,22 @@ autoscale: true
 
 ---
 
-![](simplify.jpg)
-
----
-	
-![](fresh.jpg)
-
----
-	
-![](communicate.jpg)
-
----
-
-![](baker-github.png)
+![original 270%](baker.png)
 
 ---
 
 ![left](simplify.jpg)
 
 ## Simplify
-### Domain Specific Language for orchestration flows
+### Domain Specific Language for Orchestration Flows
 ### Declarative
-### Easy to change
+### Easy to Change
 
 ---
 
 ![left](fresh.jpg)
 
-## Reuse
-### Recipes
+## Recipes
 ### Interactions
 ### Ingredients
 ### Events
@@ -79,6 +77,107 @@ autoscale: true
 ### Visualize your code
 ### Non-IT understand as well
 ### Reason About Comfortably
+
+---
+
+![fit](challenge.png)
+
+---
+
+![fit](real-recipe.png)
+
+---
+
+## Let's Cook Some Crepes!
+
+---
+
+## Good to Know
+
+---
+
+### Short-lived vs. long-running flows
+
+---
+
+### State is taken care of:
+
+- Cassandra for persistent storage
+- Ingredients encrypted by default
+- State recovered automatically
+
+---
+
+### When failure occurs:
+
+- Baker retries technical failures with exponential backoff
+- Works well with **idempotent** services
+- Deal with functional failure in your recipe
+
+---
+
+Baker Capability Matrix:
+
+- Investigate not one, not two, but **all business processes** in your company
+- Where do you see re-use?
+- Map using MoSCoW[^4] to give importance (M = 10, S = 5, C = 2, W = 1)
+
+[^4]: https://en.wikipedia.org/wiki/MoSCoW_method
+
+---
+
+| Checking Account | Savings Account | Customer Onboarding |
+| :--- | :---: | ---: |
+| Verify Identity | Verify Identity | Verify Identity |
+| Register Individual | Register Individual | Register Individual |
+| Open *Checking* Account | Open *Savings* Account | `n/a` |
+| Issue Debit Card | `n/a` | `n/a` |
+| Send Message | Send Message | Send Message |
+| Register Ownerhip | Register Ownership | `n/a` |
+
+---
+
+![](call-to-action.jpg)
+## https://github.com/ing-bank/baker
+
+---
+
+### Why Petri net?[^3]
+
+[^3]: https://en.wikipedia.org/wiki/Petri_net
+
+---
+
+![](reachability.png)
+
+---
+
+![](unreachable.png)
+
+---
+
+![](dead-code.png)
+
+
+---
+
+![](path.png)
+
+---
+
+![](bottleneck.png)
+
+---
+
+**I love cooking food** and for the rest of the talk I'll be using analogies from there. It's very **similar to our industry**: long hours, hard work, and delivering experiences to our customers.
+
+Have you been woken up at 3 o'clock in the morning on a **Saturday morning** after a night of partying, having to go to the war room and resolve an application incident. I've been there. When I remember the cold of the **airconditioners**, it still **makes me shiver**.
+
+If we are building microservices or a monolith or any type of application in general we are **serving business logic to our clients**. So no matter what, we cannot escape the **architectural discussion**. If we are not careful of how we architect our applications we end up serving a bad meal to our clients.
+
+---
+
+![](pbt.png)
 
 ---
 
@@ -161,126 +260,4 @@ baker.events(processId)
 ---
 
 ![fit](end-state.png)
-
----
-
-## Under the Hood
-
----	
-
-### Why Scala?
-
-- Best fit for developing DSLs[^1] on the JVM
-- Compile-time recipe validation
-- Type safety
-
-[^1]: https://martinfowler.com/books/dsl.html
-
----
-
-### Why Akka?
-
-- Event Sourcing[^2] (events can be replayed)
-- Persistent actors (with Cassandra)
-- Distributed actors across machines (with cluster sharding)
-
-[^2]: http://martinfowler.com/eaaDev/EventSourcing.html
-
----
-
-
-
-## Best Practices
-
----
-
-### Short-lived vs. long-running flows
-
----
-
-### State is taken care of:
-
-- Cassandra for persistent storage
-- Ingredients encrypted by default
-- State recovered automatically
-
----
-
-### Run Baker inside of your API
-### "Smart endpoints and dumb pipes"
-
----
-
-### When failure occurs:
-
-- Baker retries technical failures with exponential backoff
-- Works well with **idempotent** services
-- Deal with functional failure in your recipe
-
----
-
-Baker Capability Matrix:
-
-- Investigate not one, not two, but **all business processes** in your company
-- Where do you see re-use?
-- Map using MoSCoW[^4] to give importance (M = 10, S = 5, C = 2, W = 1)
-
-[^4]: https://en.wikipedia.org/wiki/MoSCoW_method
-
----
-
-| Checking Account | Savings Account | Customer Onboarding |
-| :--- | :---: | ---: |
-| Verify Identity | Verify Identity | Verify Identity |
-| Register Individual | Register Individual | Register Individual |
-| Open *Checking* Account | Open *Savings* Account | `n/a` |
-| Issue Debit Card | `n/a` | `n/a` |
-| Send Message | Send Message | Send Message |
-| Register Product Owner | Register Product Owner | `n/a` |
-
----
-
-![](call-to-action.jpg)
-## https://github.com/ing-bank/baker
-
----
-
-![](pbt.png)
-
----
-
-### Why Petri net?[^3]
-
-[^3]: https://en.wikipedia.org/wiki/Petri_net
-
----
-
-![](reachability.png)
-
----
-
-![](unreachable.png)
-
----
-
-![](dead-code.png)
-
-
----
-
-![](path.png)
-
----
-
-![](bottleneck.png)
-
----
-
-**I love cooking food** and for the rest of the talk I'll be using analogies from there. It's very **similar to our industry**: long hours, hard work, and delivering experiences to our customers.
-
-Have you been woken up at 3 o'clock in the morning on a **Saturday morning** after a night of partying, having to go to the war room and resolve an application incident. I've been there. When I remember the cold of the **airconditioners**, it still **makes me shiver**.
-
-If we are building microservices or a monolith or any type of application in general we are **serving business logic to our clients**. So no matter what, we cannot escape the **architectural discussion**. If we are not careful of how we architect our applications we end up serving a bad meal to our clients.
-
-
 
