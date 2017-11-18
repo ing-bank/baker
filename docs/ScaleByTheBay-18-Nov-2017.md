@@ -14,14 +14,14 @@ autoscale: true
 ![original](ing.png)
 
 ### Global Financial Institution in Over 40 Countries
-### Software Company with a Banking License
+### **Software Company** with a Banking License
 ### Microservices Architecture
 
 ---
 
 ## Our Challenge
 ### Interact with 12 Different Systems
-### A Flow with 27 Steps
+### A Flow of 27 Steps
 ### From 2 minutes to 6 hours
 
 ---
@@ -88,7 +88,7 @@ autoscale: true
 
 ---
 
-## Let's Cook Some Crepes!
+## Let's Cook Some Crêpes!
 
 ---
 
@@ -260,4 +260,20 @@ baker.events(processId)
 ---
 
 ![fit](end-state.png)
+
+---
+
+val groceriesDone = new Event("GroceriesDone", Seq(milk, eggs, flour, butter, creme), Some(1))
+
+val mixFirstThree = Interaction(
+  name = "MixFirstThree",
+  inputIngredients = Seq(milk, eggs, flour),
+  output = FiresOneOfEvents(batterMixed)
+)
+
+val mixFirstThreeImpl = mixFirstThree implement {
+  (milk: String, eggs: String, flour: String) =>
+    println(s"mixing $milk, $eggs, and $flour")
+    batterMixed.instance("batter")
+}
 
