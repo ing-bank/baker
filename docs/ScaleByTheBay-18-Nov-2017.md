@@ -41,7 +41,7 @@ autoscale: true
 
 ---
 
-## How to turn this around?
+## How to Turn This Around?
 
 ---
 
@@ -169,14 +169,6 @@ Baker Capability Matrix:
 
 ---
 
-**I love cooking food** and for the rest of the talk I'll be using analogies from there. It's very **similar to our industry**: long hours, hard work, and delivering experiences to our customers.
-
-Have you been woken up at 3 o'clock in the morning on a **Saturday morning** after a night of partying, having to go to the war room and resolve an application incident. I've been there. When I remember the cold of the **airconditioners**, it still **makes me shiver**.
-
-If we are building microservices or a monolith or any type of application in general we are **serving business logic to our clients**. So no matter what, we cannot escape the **architectural discussion**. If we are not careful of how we architect our applications we end up serving a bad meal to our clients.
-
----
-
 ![](pbt.png)
 
 ---
@@ -188,7 +180,7 @@ If we are building microservices or a monolith or any type of application in gen
 ```scala
 val registerIndividual = Interaction(
   name = "RegisterIndividual",
-  inputIngredients = Seq.empty,
+  inputIngredients = Seq(name, address),
   output = FiresOneOfEvents(registerIndividualSuccessful, registerIndividualFailed)
 )
 ```
@@ -277,3 +269,10 @@ val mixFirstThreeImpl = mixFirstThree implement {
     batterMixed.instance("batter")
 }
 
+---
+
+**I love cooking food** and for the rest of the talk I'll be using examples from there. It's very **similar to our industry**: long hours, hard work, and delivering experiences to our customers.
+
+Have you been woken up at 3 o'clock in the morning on a **Saturday morning** after a night of partying, having to go to the war room and resolve an application incident. I've been there. When I remember the cold of the **airconditioners**, it still **makes me shiver**.
+
+If we are building microservices or a monolith or any type of application in general we are **serving business logic to our clients**. So no matter what, we cannot escape the **architectural discussion**. If we are not careful of how we architect our applications we end up serving a bad meal to our clients.
