@@ -7,7 +7,7 @@ class CommonMacrosSpec extends WordSpecLike with Matchers {
   "an Ingredient" when {
     "constructed using macro" should {
       "correctly derive the class and the name" in {
-        val myIngredient = ngredient[String]
+        val myIngredient = Ingredient[String]
         myIngredient.clazz shouldBe classOf[String]
         myIngredient.name shouldBe "myIngredient"
       }

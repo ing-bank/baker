@@ -1,9 +1,5 @@
 package com.ing.baker.recipe.scaladsl
 
-import com.ing.baker.recipe
-import com.ing.baker.recipe.common
-
-import scala.reflect.runtime.universe.TypeTag
 import scala.language.experimental.macros
 import scala.reflect.NameTransformer.LOCAL_SUFFIX_STRING
 import scala.reflect.macros.blackbox
@@ -34,8 +30,4 @@ object CommonMacros {
     val eventName = getEnclosingName(c)
     q"Event($eventName, ..$ingredients)"
   }
-}
-
-object ngredient {
-  def apply[T: TypeTag]: Ingredient[T] = macro CommonMacros.ingredientImpl[T]
 }
