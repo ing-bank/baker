@@ -33,4 +33,3 @@ object Ingredient {
 case class Ingredient[T : ru.TypeTag](name: String) extends common.Ingredient {
   override val clazz: java.lang.reflect.Type = Ingredient.makeType[T]
 }
-

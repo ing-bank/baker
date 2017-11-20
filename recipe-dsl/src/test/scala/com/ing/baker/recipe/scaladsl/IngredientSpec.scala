@@ -20,14 +20,6 @@ class IngredientSpec extends WordSpecLike with Matchers {
       }
     }
 
-    "constructed using macro" should {
-      "correctly derive the name" in {
-        val myIngredient = ngredient[String]
-        myIngredient.clazz shouldBe classOf[String]
-        myIngredient.name shouldBe "myIngredient"
-      }
-    }
-
     "calling the Equals method" should {
 
       "return true if same ingredient instance" in {
