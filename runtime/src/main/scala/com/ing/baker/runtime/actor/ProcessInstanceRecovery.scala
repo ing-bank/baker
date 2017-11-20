@@ -4,6 +4,7 @@ import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.{EventSourcing, Instance}
+import com.ing.baker.runtime.actor.ProcessInstanceProtocol.{Initialized, TransitionFailed, TransitionFired}
 import com.ing.baker.runtime.actor.messages._
 import com.ing.baker.runtime.actor.serialization.{ObjectSerializer, ProtobufSerialization}
 
