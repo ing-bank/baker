@@ -15,8 +15,6 @@ case class Event (override val name: String,
 object Event {
   def apply(ingredients: common.Ingredient*) : Event = macro CommonMacros.eventImpl
 
-  def apply(name: String) : Event = new Event(name, Seq.empty, Some(1))
-
   def apply(name: String, ingredients: common.Ingredient*) : Event =
     new Event(name, ingredients, Some(1))
 }

@@ -17,7 +17,7 @@ class CommonMacrosSpec extends WordSpecLike with Matchers {
   "an Event" when {
     "constructed using macro" should {
       "correctly derive the name" in {
-        val myEvent = vent()
+        val myEvent = Event()
         myEvent.name shouldBe "myEvent"
       }
     }

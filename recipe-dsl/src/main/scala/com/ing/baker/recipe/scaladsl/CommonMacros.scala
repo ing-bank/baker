@@ -39,7 +39,3 @@ object CommonMacros {
 object ngredient {
   def apply[T: TypeTag]: Ingredient[T] = macro CommonMacros.ingredientImpl[T]
 }
-
-object vent {
-  def apply(ingredients: recipe.common.Ingredient*): Event = macro CommonMacros.eventImpl
-}
