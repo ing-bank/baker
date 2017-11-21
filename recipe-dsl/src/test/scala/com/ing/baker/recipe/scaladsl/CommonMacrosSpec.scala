@@ -11,6 +11,12 @@ class CommonMacrosSpec extends WordSpecLike with Matchers {
         myIngredient.clazz shouldBe classOf[String]
         myIngredient.name shouldBe "myIngredient"
       }
+
+      "do not derive the name if explicitly set" in {
+        val myIngredient = Ingredient[String]("someIngredientName")
+        myIngredient.clazz shouldBe classOf[String]
+        myIngredient.name shouldBe "someIngredientName"
+      }
     }
   }
 
@@ -20,6 +26,11 @@ class CommonMacrosSpec extends WordSpecLike with Matchers {
       "correctly derive the name" in {
         val myEvent = Event()
         myEvent.name shouldBe "myEvent"
+      }
+
+      "do not derive the name if explicitly set" in {
+        val myEvent = Event("someEventName")
+        myEvent.name shouldBe "someEventName"
       }
 
       "correctly derive the name when one ingredient is given" in {
