@@ -3,6 +3,7 @@ package com.ing.baker.recipe.scaladsl
 
 import com.ing.baker.recipe.common
 
+import scala.language.experimental.macros
 import scala.reflect.runtime.{universe => ru}
 
 object Ingredient {
@@ -28,6 +29,8 @@ object Ingredient {
   def makeType[T : ru.TypeTag]: java.lang.reflect.Type = {
     asJavaType(ru.typeOf[T])
   }
+
+  def apply[T: ru.TypeTag]: Ingredient[T] = macro CommonMacros.ingredientImpl[T]
 }
 
 case class Ingredient[T : ru.TypeTag](name: String) extends common.Ingredient {
