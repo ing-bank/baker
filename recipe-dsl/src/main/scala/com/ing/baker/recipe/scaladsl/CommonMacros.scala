@@ -30,4 +30,10 @@ object CommonMacros {
     val eventName = getEnclosingName(c)
     q"Event($eventName, ..$ingredients)"
   }
+
+  def recipeImpl(c: blackbox.Context)() : c.Tree = {
+    import c.universe._
+    val recipeName = getEnclosingName(c)
+    q"Recipe($recipeName)"
+  }
 }

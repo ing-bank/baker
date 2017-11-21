@@ -3,7 +3,17 @@ package com.ing.baker.recipe.scaladsl
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 
+import scala.language.experimental.macros
+
 import scala.concurrent.duration.Duration
+
+object Recipe {
+  def apply() : Recipe = macro CommonMacros.recipeImpl
+
+  def apply(name: String): Recipe = {
+    Recipe(name, Seq.empty, Seq.empty, Set.empty, new common.InteractionFailureStrategy.BlockInteraction, Duration.Undefined, Duration.Undefined)
+  }
+}
 
 /**
   * A Recipe combines a set of interactions & events.
@@ -32,10 +42,4 @@ case class Recipe private(override val name: String,
   def withEventReceivePeriod(duration: Duration): Recipe = copy(eventReceivePeriod = duration)
 
   def withRetentionPeriod(duration: Duration): Recipe = copy(retentionPeriod = duration)
-}
-
-object Recipe {
-  def apply(name: String): Recipe = {
-    Recipe(name, Seq.empty, Seq.empty, Set.empty, new common.InteractionFailureStrategy.BlockInteraction, Duration.Undefined, Duration.Undefined)
-  }
 }

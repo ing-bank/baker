@@ -49,4 +49,19 @@ class CommonMacrosSpec extends WordSpecLike with Matchers {
       }
     }
   }
+
+  "a Recipe" when {
+    "constructed using macro" should {
+
+      "correctly derive the name" in {
+        val myRecipe = Recipe()
+        myRecipe.name shouldBe "myRecipe"
+      }
+
+      "do not derive the name if explicitly set" in {
+        val myRecipe = Recipe("recipeName")
+        myRecipe.name shouldBe "recipeName"
+      }
+    }
+  }
 }
