@@ -73,8 +73,30 @@ class JBaker (compiledRecipe: CompiledRecipe,
     * @param event The event to fire
     * @return
     */
+  def processEvent(processId: String, event: Any, waitTimeoutMillis: Long): Unit =
+    processEventAsync(processId, event, waitTimeoutMillis).confirmCompleted()
+
+  /**
+    * This fires the given event in the recipe for the process with the given processId
+    * This waits with returning until all steps that can be executed are executed by Baker
+    *
+    * @param processId The process identifier
+    * @param event The event to fire
+    * @return
+    */
   def processEvent(processId: UUID, event: Any): Unit =
     this.processEvent(processId.toString, event)
+
+  /**
+    * This fires the given event in the recipe for the process with the given processId
+    * This waits with returning until all steps that can be executed are executed by Baker
+    *
+    * @param processId The process identifier
+    * @param event The event to fire
+    * @return
+    */
+  def processEvent(processId: UUID, event: Any, waitTimeoutMillis: Long): Unit =
+    this.processEvent(processId.toString, event, waitTimeoutMillis)
 
   /**
     * This fires the given event in the recipe for the process with the given processId
@@ -97,8 +119,32 @@ class JBaker (compiledRecipe: CompiledRecipe,
     * @param event The event to fire
     * @return
     */
+  def processEventAsync(processId: String, event: Any, waitTimeoutMillis: Long): BakerResponse = {
+    implicit val executionContext = actorSystem.dispatcher
+    baker.handleEventAsync(processId, event)(waitTimeoutMillis milliseconds)
+  }
+
+  /**
+    * This fires the given event in the recipe for the process with the given processId
+    * This returns a BakerResponse.
+    *
+    * @param processId The process identifier
+    * @param event The event to fire
+    * @return
+    */
   def processEventAsync(processId: UUID, event: Any): BakerResponse =
     this.processEventAsync(processId.toString, event)
+
+  /**
+    * This fires the given event in the recipe for the process with the given processId
+    * This returns a BakerResponse.
+    *
+    * @param processId The process identifier
+    * @param event The event to fire
+    * @return
+    */
+  def processEventAsync(processId: UUID, event: Any, waitTimeoutMillis: Long): BakerResponse =
+    this.processEventAsync(processId.toString, event, waitTimeoutMillis)
 
   /**
     * Returns all the ingredients that are accumulated for a given process.
