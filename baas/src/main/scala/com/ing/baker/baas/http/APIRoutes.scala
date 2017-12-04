@@ -45,15 +45,15 @@ object APIRoutes extends Directives with BaasMarshalling {
         post {
           val processState = recipeHandler.bake(requestId)
 
-          complete(processState)
+          complete(processState.processId)
         }
       } ~
-      path("state") {
+      path("ingredients") {
         get {
 
-          val processState = recipeHandler.getProcessState(requestId)
+          val ingredients = recipeHandler.getIngredients(requestId)
 
-          complete(processState)
+          complete(ingredients)
         }
       } ~
       path("visual_state") {

@@ -76,7 +76,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
         uri = s"$baseUri/$recipeName/$requestId/bake",
         method = POST)
 
-    doRequestAndParseResponse[ProcessState](request)
+    doRequestAndParseResponse[String](request)
   }
 
   def getState(recipeName: String, requestId: String): ProcessState = {

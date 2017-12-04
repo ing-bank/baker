@@ -20,49 +20,55 @@ class BakerSetupSpec extends TestRecipeHelper {
 
     "bootstrap correctly without throwing an error if provided a correct recipe and correct implementations" when {
 
-      "providing the implementation directly in a map" in {
-        val recipe = Recipe("directImplementationmap")
-          .withInteraction(interactionOne)
-          .withSensoryEvent(initialEvent)
-        new Baker(
-          implementations = mockImplementations)
+      "providing implementations in a sequence" in {
+
+        val baker = new Baker()
+
+        baker.addInteractionImplementations(mockImplementations)
       }
 
-      "providing the implementation in a sequence with the class simplename same as the interaction" in {
-        val recipe = Recipe("simpleNameImplementation")
-          .withInteraction(interactionOne)
-          .withSensoryEvent(initialEvent)
+      "providing an implementation with the class simplename same as the interaction" in {
 
-        new Baker(
-          implementations = Seq(new implementations.InteractionOne()))
+        val baker = new Baker()
+
+        baker.addInteractionImplementation(new implementations.InteractionOne())
       }
 
-      "providing the implementation in a sequence and interaction renamed" in {
+      "providing an implementation for a renamed interaction" in {
+
         val recipe = Recipe("simpleNameImplementationWithRename")
           .withInteraction((interactionOne, "interactionOneRenamed"))
           .withSensoryEvent(initialEvent)
 
-        val baker = new Baker(implementations = Seq(new implementations.InteractionOne()))
+        val baker = new Baker()
+
+        baker.addInteractionImplementation(new implementations.InteractionOne())
 
         baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
       }
 
-      "providing the implementation in a sequence with the field name same as the interaction" in {
+      "providing an implementation with a name field" in {
+
         val recipe = Recipe("fieldNameImplementation")
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = new Baker(implementations = Seq(new InteractionOneFieldName()))
+        val baker = new Baker()
+
+        baker.addInteractionImplementation(new InteractionOneFieldName())
 
         baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
       }
 
       "providing the implementation in a sequence with the interface its implementing with the correct name" in {
+
         val recipe = Recipe("interfaceImplementation")
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = new Baker(implementations = Seq(new InteractionOneInterfaceImplementation()))
+        val baker = new Baker()
+
+        baker.addInteractionImplementation(new InteractionOneInterfaceImplementation())
 
         baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
       }
@@ -72,7 +78,9 @@ class BakerSetupSpec extends TestRecipeHelper {
           .withInteraction(complexIngredientInteraction)
           .withSensoryEvent(initialEvent)
 
-        val baker = new Baker(implementations = Seq(mock[ComplexIngredientInteraction]))
+        val baker = new Baker()
+
+        baker.addInteractionImplementation(mock[ComplexIngredientInteraction])
 
         baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
       }
@@ -80,11 +88,14 @@ class BakerSetupSpec extends TestRecipeHelper {
 
     "throw a exception" when {
       "an invalid recipe is given" in {
+
         val recipe = Recipe("NonProvidedIngredient")
           .withInteraction(interactionOne)
           .withSensoryEvent(secondEvent)
 
-        val baker = new Baker(implementations = mockImplementations)
+        val baker = new Baker()
+
+        baker.addInteractionImplementations(mockImplementations)
 
         intercept[RecipeValidationException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
@@ -92,11 +103,12 @@ class BakerSetupSpec extends TestRecipeHelper {
       }
 
       "a recipe does not provide an implementation for an interaction" in {
+
         val recipe = Recipe("MissingImplementation")
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = new Baker(implementations = Seq.empty)
+        val baker = new Baker()
 
         intercept[BakerException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
@@ -105,11 +117,14 @@ class BakerSetupSpec extends TestRecipeHelper {
 
       // TODO uncheck ignore when fixed
       "a recipe provides an implementation for an interaction and does not comply to the Interaction" ignore {
+
         val recipe = Recipe("WrongImplementation")
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = new Baker(Seq(new InteractionOneWrongApply()))
+        val baker = new Baker()
+
+        baker.addInteractionImplementation(new InteractionOneWrongApply())
 
         intercept[BakerException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))

@@ -24,7 +24,8 @@ trait BaasMarshalling {
   implicit val recipeUnmarshaller = kryoUnmarshaller[Recipe]
 
   implicit val sensoryEventStatusMarhaller = kryoMarhaller[SensoryEventStatus]
-  implicit val processStateMarhaller = kryoMarhaller[ProcessState]
+  implicit val ingredientsMarhaller = kryoMarhaller[Map[String, Any]]
   implicit val eventMarshaller = kryoMarhaller[RuntimeEvent]
   implicit val eventListMarshaller = kryoMarhaller[List[RuntimeEvent]]
+  implicit val stringMarshaller = kryoMarhaller[String]
 }

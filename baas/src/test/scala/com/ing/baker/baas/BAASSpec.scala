@@ -57,7 +57,7 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     baasClient.addRecipe(originalRecipe)
   }
 
-  "Happy flow simple recipe BAAS" in {
+  "Happy flow simple recipe BAAS" ignore {
     val recipeName = "simpleRecipe" + UUID.randomUUID().toString
     val recipe = setupSimpleRecipe(recipeName)
 

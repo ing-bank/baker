@@ -174,8 +174,8 @@ class RecipeHandler(val compiledRecipe: CompiledRecipe,
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def getProcessState(processId: String)(implicit timeout: FiniteDuration): ProcessState =
-  Await.result(getProcessStateAsync(processId), timeout)
+  private def getProcessState(processId: String)(implicit timeout: FiniteDuration): ProcessState =
+    Await.result(getProcessStateAsync(processId), timeout)
 
   def getProcessStateAsync(processId: String)(implicit timeout: FiniteDuration): Future[ProcessState] = {
     recipeManagerActor
@@ -196,7 +196,7 @@ class RecipeHandler(val compiledRecipe: CompiledRecipe,
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def getIngredients(processId: String)(implicit timeout: FiniteDuration): Map[String, Any] =
-  getProcessState(processId).ingredients
+    getProcessState(processId).ingredients
 
   /**
     * Returns a future of all the provided ingredients for a given process id.

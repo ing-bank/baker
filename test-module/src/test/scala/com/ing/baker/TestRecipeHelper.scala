@@ -462,13 +462,22 @@ trait TestRecipeHelper
     val recipe = getComplexRecipe(newRecipeName)
     setupMockResponse()
 
-    val baker = new Baker(implementations = mockImplementations)(actorSystem)
+    setupBakerWithRecipe(recipe, mockImplementations)(actorSystem)
+  }
+
+  protected def setupBakerWithRecipe(recipe: common.Recipe, implementations: Seq[AnyRef])
+                                    (implicit actorSystem: ActorSystem): RecipeHandler = {
+
+    val baker = new Baker()(actorSystem)
+    baker.addInteractionImplementations(implementations)
     baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
   }
 
   protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Baker = {
     setupMockResponse()
-    new Baker(mockImplementations)(actorSystem)
+    val baker = new Baker()(actorSystem)
+    baker.addInteractionImplementations(mockImplementations)
+    baker
   }
 
   protected def setupMockResponse(): Unit = {

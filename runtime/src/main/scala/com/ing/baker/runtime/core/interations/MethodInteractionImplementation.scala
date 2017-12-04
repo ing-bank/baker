@@ -1,16 +1,16 @@
 package com.ing.baker.runtime.core.interations
 
-import java.lang.reflect.{Method, ParameterizedType, Type}
+import java.lang.reflect.Method
 import java.util.UUID
 
+import com.ing.baker.il.EventType
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.types.{BType, Converters, IngredientDescriptor, Value}
 import com.ing.baker.runtime.core.Baker.eventExtractor
+import com.ing.baker.runtime.core.interations.MethodInteractionImplementation._
 import com.ing.baker.runtime.core.{BakerException, RuntimeEvent}
 import com.ing.baker.runtime.petrinet.FatalInteractionException
+import com.ing.baker.types.{BType, Converters, IngredientDescriptor, Value}
 import org.slf4j.{Logger, LoggerFactory}
-import MethodInteractionImplementation._
-import com.ing.baker.il.EventType
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -71,7 +71,6 @@ object MethodInteractionImplementation {
     implementations.flatMap(anyRefToInteractionImplementations _).map {
       i => i.name -> i
     }.toMap
-
 
   def createRuntimeEvent[I](interaction: InteractionTransition[I], output: Any): RuntimeEvent = {
 

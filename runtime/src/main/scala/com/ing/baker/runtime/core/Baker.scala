@@ -86,12 +86,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
   var recipeHandlers: Seq[RecipeHandler] = Seq()
 
-  def this(implementations: Seq[AnyRef])
-          (implicit actorSystem: ActorSystem) = {
-    this()(actorSystem)
-    implementations.foreach(addInteractionImplementation)
-  }
-
   def addRecipe(compiledRecipe: CompiledRecipe) : RecipeHandler = {
     if(recipeHandlers.exists(_.compiledRecipe.name == compiledRecipe.name))
       throw new BakerException("Recipe with this name already exists")
@@ -116,9 +110,11 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     }
   }
 
-  def addInteractionImplementation(anyRef: AnyRef) =
-    MethodInteractionImplementation.anyRefToInteractionImplementations(anyRef)
-      .foreach(interactionManager.add)
+  def addInteractionImplementation(implementation: AnyRef) =
+    MethodInteractionImplementation.anyRefToInteractionImplementations(implementation).foreach(interactionManager.add)
+
+  def addInteractionImplementations(implementations: Seq[AnyRef]) =
+    implementations.foreach(addInteractionImplementation)
 
   def addInteractionImplementation(interactionImplementation: InteractionImplementation) =
     interactionManager.add(interactionImplementation)
@@ -126,12 +122,10 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   if (!config.as[Option[Boolean]]("baker.config-file-included").getOrElse(false))
     throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
 
-
   /**
     * We do this to force initialization of the journal (database) connection.
     */
   Util.createPersistenceWarmupActor()(actorSystem, journalInitializeTimeout)
-
 
   /**
     * Attempts to gracefully shutdown the baker system.
@@ -172,7 +166,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   @deprecated("Use recipe handler instead" , "2.0.01")
   def bakeAsync(processId: String): Future[ProcessState] =
     recipeHandlers.head.bakeAsync(processId)
-
 
   /**
     * Registers a listener to all runtime events.
@@ -221,18 +214,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     recipeHandlers.head.handleEventAsync(processId, event)
 
   /**
-    * Returns the process state.
-    *
-    * @param processId The process identifier
-    * @return The process state.
-    */
-  @deprecated("Use recipe handler instead" , "2.0.01")
-  @throws[NoSuchProcessException]("When no process exists for the given id")
-  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def getProcessState(processId: String)(implicit timeout: FiniteDuration): ProcessState =
-    recipeHandlers.head.getProcessState(processId)
-
-  /**
     * Returns the visual state (.dot) for a given process.
     *
     * @param processId The process identifier.
@@ -263,12 +244,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def getIngredients(processId: String)(implicit timeout: FiniteDuration): Map[String, Any] =
-  recipeHandlers.head.getProcessState(processId).ingredients
-
-  @deprecated("Use recipe handler instead" , "2.0.01")
-  private def getProcessStateAsync(processId: String)(implicit timeout: FiniteDuration): Future[ProcessState] =
-    recipeHandlers.head.getProcessStateAsync(processId)
-
+    recipeHandlers.head.getIngredients(processId)
 
   def allProcessMetadata: Set[ProcessMetadata] = recipeHandlers.flatMap(_.recipeMetadata.getAll).toSet
 }

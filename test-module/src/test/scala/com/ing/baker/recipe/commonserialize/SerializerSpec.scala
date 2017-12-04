@@ -60,9 +60,7 @@ class SerializerSpec extends TestRecipeHelper {
 
 //        println(compiledRecipeDeserialized.getPetriNetVisualization)
 
-        val baker = new Baker(mockImplementations)
-
-        val recipeHandler = baker.addRecipe(compiledRecipeDeserialized)
+        val recipeHandler = setupBakerWithRecipe(deserializedRecipe, mockImplementations)
 
         val processId = UUID.randomUUID().toString
         recipeHandler.bake(processId)
