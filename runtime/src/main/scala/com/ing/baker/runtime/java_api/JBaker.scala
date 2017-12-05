@@ -12,16 +12,16 @@ import com.ing.baker.runtime.petrinet.ReflectedInteractionTask
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
-class JBaker (compiledRecipe: CompiledRecipe,
-              implementations: java.util.List[AnyRef],
-              actorSystem: ActorSystem) {
+class JBaker(compiledRecipe: CompiledRecipe,
+             implementations: java.util.List[AnyRef],
+             actorSystem: ActorSystem) {
 
   def this(compiledRecipe: CompiledRecipe, implementations: java.util.List[AnyRef]) =
     this(compiledRecipe, implementations, ActorSystem("BakerActorSystem"))
 
   val baker: Baker = new Baker(
     compiledRecipe = compiledRecipe,
-    implementations = ReflectedInteractionTask.implementationsToProviderMap(implementations.asScala))(actorSystem = actorSystem)
+    implementations = ReflectedInteractionTask.implementationsToProviderMap(implementations.asScala))(actorSystem)
 
   val defaultTimeout: Int = 20 * 1000
   val defaultHandleEventAsyncTimeout: FiniteDuration = FiniteDuration.apply(10, TimeUnit.SECONDS)
