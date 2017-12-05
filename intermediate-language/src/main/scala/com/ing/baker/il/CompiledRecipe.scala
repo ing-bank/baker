@@ -1,10 +1,8 @@
 package com.ing.baker.il
 
-import java.io.{File, IOException}
-
 import com.ing.baker.il.petrinet.{InteractionTransition, Place, RecipePetriNet}
-import com.ing.baker.types.RecordField
 import com.ing.baker.petrinet.api.Marking
+import com.ing.baker.types.RecordField
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
@@ -41,20 +39,6 @@ case class CompiledRecipe(name: String,
 
     val g = Parser.read(getRecipeVisualization)
     Graphviz.fromGraph(g).render(Format.SVG).toString
-  }
-
-  /**
-    * Writes the visual recipe as an SVG to a given file.
-    */
-  @deprecated(message = "SVG generation support will be removed in 1.2.0", since = "1.1.15")
-  @throws[IOException]("When failing to write to the file for any reason")
-  def writeVisualRecipeToSVGFile(file: File): Unit = {
-
-    import guru.nidi.graphviz.engine.{Format, Graphviz}
-    import guru.nidi.graphviz.parse.Parser
-
-    val g = Parser.read(getRecipeVisualization)
-    Graphviz.fromGraph(g).render(Format.SVG).toFile(file)
   }
 
   /**
