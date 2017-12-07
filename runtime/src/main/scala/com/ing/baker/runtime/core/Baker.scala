@@ -3,7 +3,7 @@ package com.ing.baker.runtime.core
 import java.util.concurrent.TimeoutException
 
 import akka.NotUsed
-import akka.actor.{Actor, ActorSystem, Props}
+import akka.actor.{Actor, ActorSystem, Address, AddressFromURIString, Props}
 import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
@@ -13,16 +13,16 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
 import com.ing.baker.il._
 import com.ing.baker.il.petrinet._
-import com.ing.baker.runtime.actor.ProcessInstanceProtocol._
 import com.ing.baker.petrinet.runtime.EventSourcing.{TransitionFailedEvent, TransitionFiredEvent}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
-import com.ing.baker.runtime.actor._
+import com.ing.baker.runtime.actor.ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.actor.serialization.{AkkaObjectSerializer, Encryption}
+import com.ing.baker.runtime.actor.{LocalBakerActorProvider, _}
 import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.{RecipeRuntime, ReflectedInteractionTask}
-import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import fs2.Strategy
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
@@ -80,7 +80,7 @@ class Baker(val compiledRecipe: CompiledRecipe,
   def this(compiledRecipe: CompiledRecipe,
            implementations: Map[String, AnyRef])
           (implicit actorSystem: ActorSystem) =
-    this(compiledRecipe, ReflectedInteractionTask.createInteractionFunctions(compiledRecipe.interactionTransitions, implementations))(actorSystem)
+    this(compiledRecipe, ReflectedInteractionTask.createInteractionFunctions(compiledRecipe.interactionTransitions, implementations))
 
   def this(compiledRecipe: CompiledRecipe,
            implementations: Seq[(String, Seq[Any] => Any)])
@@ -102,17 +102,36 @@ class Baker(val compiledRecipe: CompiledRecipe,
   if (compiledRecipe.validationErrors.nonEmpty)
     throw new RecipeValidationException(compiledRecipe.validationErrors.mkString(", "))
 
-  /**
-    * We do this to force initialization of the journal (database) connection.
-    */
-  Util.createPersistenceWarmupActor()(actorSystem, journalInitializeTimeout)
+  private def initializeCluster() = {
+
+    val seedNodes: List[Address] = config.as[Option[List[String]]]("baker.cluster.seed-nodes") match {
+      case Some(_seedNodes) if _seedNodes.nonEmpty =>
+        _seedNodes map AddressFromURIString.parse
+      case None =>
+        throw new BakerException("Baker cluster configuration without baker.cluster.seed-nodes")
+    }
+
+    /**
+      * Join cluster after waiting for the persistenceInit actor, otherwise terminate here.
+      */
+    Await.result(Util.persistenceInit(journalInitializeTimeout), journalInitializeTimeout)
+
+    // join the cluster
+    log.info("PersistenceInit actor started successfully, joining cluster seed nodes {}", seedNodes)
+    Cluster.get(actorSystem).joinSeedNodes(seedNodes)
+  }
 
   private val bakerActorProvider =
-    actorSystem.settings.config.as[Option[String]]("baker.actor.provider") match {
-      case None | Some("local") => new LocalBakerActorProvider(config)
-      case Some("cluster-sharded") => new ClusterActorProvider(config)
-      case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
+    config.as[Option[String]]("baker.actor.provider") match {
+      case None | Some("local")    =>
+        new LocalBakerActorProvider(config)
+      case Some("cluster-sharded") =>
+        initializeCluster()
+        new ClusterActorProvider(config)
+      case Some(other)             =>
+        throw new IllegalArgumentException(s"Unsupported actor provider: $other")
     }
+
 
   private val configuredEncryption: Encryption = {
     val encryptionEnabled = config.getAs[Boolean]("baker.encryption.enabled").getOrElse(false)
