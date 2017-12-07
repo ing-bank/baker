@@ -7,11 +7,11 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, RouteResult}
 import akka.stream.ActorMaterializer
-import com.ing.baker.baas.BAAS
+import com.ing.baker.runtime.core.Baker
 
 import scala.concurrent.{Future, Promise}
 
-class BAASAPI(baas: BAAS,
+class BAASAPI(baker: Baker,
               host: String,
               port: Int)(implicit actorSystem: ActorSystem) extends Directives {
 
@@ -25,7 +25,7 @@ class BAASAPI(baas: BAAS,
     val serverBindingPromise = Promise[Http.ServerBinding]()
     if (bindingFuture.compareAndSet(null, serverBindingPromise.future)) {
       val routes = RouteResult.route2HandlerFlow(
-        APIRoutes(baas.baker))
+        APIRoutes(baker))
 
       val serverFutureBinding = Http().bindAndHandle(routes, host, port)
 

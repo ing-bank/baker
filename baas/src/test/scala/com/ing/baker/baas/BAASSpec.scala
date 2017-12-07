@@ -7,11 +7,13 @@ import akka.testkit.TestKit
 import com.ing.baker.baas.BAASSpec.{InteractionOne, _}
 import com.ing.baker.baas.http.BAASAPI
 import com.ing.baker.baas.interaction.http.RemoteInteractionLauncher
+import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.common.ProvidesIngredient
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, processId}
 import com.ing.baker.recipe.{commonserialize, scaladsl}
 import com.ing.baker.runtime.core.interations.MethodInteractionImplementation
-import com.ing.baker.runtime.core.{ProcessState, SensoryEventStatus}
+import com.ing.baker.runtime.core.{Baker, ProcessState, SensoryEventStatus}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.Await
@@ -24,7 +26,8 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
   val port = 8081
 
 //  Startup a empty BAAS cluster
-  val baasAPI: BAASAPI = new BAASAPI(new BAAS(system), host, port)(system)
+  val baker = new Baker()(system)
+  val baasAPI: BAASAPI = new BAASAPI(baker, host, port)(system)
   Await.result(baasAPI.start(), 10 seconds)
 
   //Start a BAAS API
@@ -42,10 +45,19 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
 
   "Serialize and deserialize a common recipe" in {
     val originalRecipe: commonserialize.Recipe = new commonserialize.Recipe(setupSimpleRecipe("name"))
-    val serializedRecipe = BAAS.serializeRecipe(originalRecipe)
-    val deserializedRecipe = BAAS.deserializeRecipe(serializedRecipe)
+    val serializedRecipe = KryoUtil.serialize(originalRecipe)
+    val deserializedRecipe = KryoUtil.deserialize[commonserialize.Recipe](serializedRecipe)
 
     deserializedRecipe shouldBe originalRecipe
+  }
+
+  "Serialize and deserialize a compiled recipe" in {
+    val compiledRecipe = RecipeCompiler.compileRecipe(setupSimpleRecipe("test"))
+
+    val serializedRecipe = KryoUtil.serialize(compiledRecipe)
+    val deserializedRecipe = KryoUtil.deserialize[CompiledRecipe](serializedRecipe)
+
+    deserializedRecipe shouldBe compiledRecipe
   }
 
   "Add a implementation to the BAAS API" in {
@@ -53,7 +65,7 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
   }
 
   "Send recipe to the BAAS API" in {
-    val originalRecipe: scaladsl.Recipe = setupSimpleRecipe("recipename")
+    val originalRecipe = new commonserialize.Recipe(setupSimpleRecipe("recipename"))
     baasClient.addRecipe(originalRecipe)
   }
 

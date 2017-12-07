@@ -1,14 +1,17 @@
 package com.ing.baker.baas.http
 
-import akka.http.scaladsl.unmarshalling.PredefinedFromEntityUnmarshallers
 import akka.http.scaladsl.marshalling.PredefinedToEntityMarshallers
-import com.ing.baker.baas.BAAS.kryoPool
+import akka.http.scaladsl.unmarshalling.PredefinedFromEntityUnmarshallers
+import com.ing.baker.baas.KryoUtil
 import com.ing.baker.recipe.commonserialize.Recipe
-import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, SensoryEventStatus}
+import com.ing.baker.runtime.core.{RuntimeEvent, SensoryEventStatus}
+import com.twitter.chill.KryoPool
 
 import scala.reflect.ClassTag
 
 trait BaasMarshalling {
+
+  val kryoPool: KryoPool = KryoUtil.defaultKryoPool
 
   def kryoUnmarshaller[T] = PredefinedFromEntityUnmarshallers.byteStringUnmarshaller.map { string =>
     val byteArray: Array[Byte] = string.toArray

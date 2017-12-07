@@ -2,6 +2,7 @@ package com.ing.baker.baas.http
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
+import com.ing.baker.baas.KryoUtil
 import com.ing.baker.baas.interaction.RemoteInteractionClient
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.commonserialize

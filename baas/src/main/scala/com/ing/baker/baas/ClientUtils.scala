@@ -5,7 +5,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.stream.Materializer
 import akka.util.ByteString
-import com.ing.baker.baas.BAAS.kryoPool
+import com.ing.baker.baas.KryoUtil.defaultKryoPool
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Await
@@ -17,7 +17,7 @@ object ClientUtils {
 
   def entityFromResponse[T](entity: ResponseEntity)(implicit materializer: Materializer, timeout: FiniteDuration): T = {
     val byteString = Await.result(entity.dataBytes.runFold(ByteString(""))(_ ++ _), timeout)
-    kryoPool.fromBytes(byteString.toArray).asInstanceOf[T]
+    defaultKryoPool.fromBytes(byteString.toArray).asInstanceOf[T]
   }
 
   def doRequestAndParseResponse[T](httpRequest: HttpRequest)(implicit actorSystem: ActorSystem, materializer: Materializer, timeout: FiniteDuration): T = {

@@ -53,6 +53,8 @@ object Dependencies {
   val chill =                    ("com.twitter"                %% "chill-akka"                         % "0.9.2")
     .exclude("com.typesafe.akka", "akka-actor")
 
+  val kryo =                      "com.esotericsoftware"       % "kryo"                                % "4.0.0"
+
   val kryoSerializers =           "de.javakaffee"              %  "kryo-serializers"                   % "0.41"
   val objenisis =                 "org.objenesis"              %  "objenesis"                          % "2.5.1"
 

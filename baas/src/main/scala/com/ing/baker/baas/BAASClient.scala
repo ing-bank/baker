@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.HttpMethods._
 import akka.http.scaladsl.model._
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
-import com.ing.baker.baas.BAAS.kryoPool
+import com.ing.baker.baas.KryoUtil.defaultKryoPool
 import com.ing.baker.baas.ClientUtils._
 import com.ing.baker.baas.http.AddInteractionHTTPRequest
 import com.ing.baker.recipe.common
@@ -32,7 +32,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
 
   def addRecipe(recipe: common.Recipe) : Unit = {
 
-    val serializedRecipe = BAAS.serializeRecipe(recipe)
+    val serializedRecipe = KryoUtil.serialize(recipe)
 
     val httpRequest = HttpRequest(
         uri = baseUri +  "/recipe",
@@ -51,7 +51,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
     val request = HttpRequest(
       uri = s"$baseUri/implementation",
       method = POST,
-      entity = ByteString.fromArray(kryoPool.toBytesWithClass(addInteractionHTTPRequest)))
+      entity = ByteString.fromArray(defaultKryoPool.toBytesWithClass(addInteractionHTTPRequest)))
 
     doRequest(request, logEntity)
   }
@@ -65,7 +65,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
     val request = HttpRequest(
         uri =  s"$baseUri/$recipeName/$requestId/event?confirm=${confirmation.name}",
         method = POST,
-        entity = ByteString.fromArray(kryoPool.toBytesWithClass(runtimeEvent)))
+        entity = ByteString.fromArray(defaultKryoPool.toBytesWithClass(runtimeEvent)))
 
     doRequestAndParseResponse[SensoryEventStatus](request)
   }

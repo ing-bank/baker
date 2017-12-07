@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpRequest
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
-import com.ing.baker.baas.BAAS.kryoPool
+import com.ing.baker.baas.KryoUtil.defaultKryoPool
 import com.ing.baker.baas.ClientUtils._
 import com.ing.baker.baas.interaction.http.ExecuteInteractionHTTPRequest
 import com.ing.baker.il.petrinet.InteractionTransition
@@ -43,7 +43,7 @@ case class RemoteInteractionClient(override val name: String,
     val httpRequest = HttpRequest(
         uri = s"$uri/execute",
         method = akka.http.scaladsl.model.HttpMethods.POST,
-        entity = ByteString.fromArray(kryoPool.toBytesWithClass(request)))
+        entity = ByteString.fromArray(defaultKryoPool.toBytesWithClass(request)))
 
     doRequestAndParseResponse[RuntimeEvent](httpRequest)
   }

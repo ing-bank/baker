@@ -43,6 +43,7 @@ lazy val petrinetApi = project.in(file("petrinet-api"))
       catsCore,
       scalapbRuntime,
       slf4jApi,
+      kryo,
       fs2Core) ++ testDeps(
       scalaCheck,
       scalaTest,

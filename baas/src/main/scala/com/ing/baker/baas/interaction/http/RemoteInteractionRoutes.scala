@@ -2,7 +2,7 @@ package com.ing.baker.baas.interaction.http
 
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.util.ByteString
-import com.ing.baker.baas.BAAS.kryoPool
+import com.ing.baker.baas.KryoUtil.defaultKryoPool
 import com.ing.baker.baas.http.BaasMarshalling
 import com.ing.baker.runtime.core.interations.InteractionImplementation
 import org.slf4j.LoggerFactory
