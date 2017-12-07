@@ -1,6 +1,6 @@
 package com.ing.baker.recipe.common
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * A Recipe combines a set of interactions & events.
@@ -37,12 +37,12 @@ trait Recipe {
     *
     * If Duration.Undefined, events will always be accepted.
     */
-  val eventReceivePeriod: Duration
+  val eventReceivePeriod: Option[FiniteDuration]
 
   /**
     * The period that processes are stored.
     *
     * If Duration.Undefined, process data will be stored indefinitely.
     */
-  val retentionPeriod: Duration
+  val retentionPeriod: Option[FiniteDuration]
 }

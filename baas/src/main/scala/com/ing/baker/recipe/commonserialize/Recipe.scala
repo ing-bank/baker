@@ -3,15 +3,15 @@ package com.ing.baker.recipe.commonserialize
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
 case class Recipe private(override val name: String,
                           override val interactions: Seq[common.InteractionDescriptor],
                           override val sieves: Seq[common.InteractionDescriptor],
                           override val sensoryEvents: Set[common.Event],
                           override val defaultFailureStrategy: InteractionFailureStrategy,
-                          override val eventReceivePeriod: Duration,
-                          override val retentionPeriod: Duration)
+                          override val eventReceivePeriod: Option[FiniteDuration],
+                          override val retentionPeriod: Option[FiniteDuration])
   extends common.Recipe {
 
   def this(recipe: common.Recipe) =
@@ -40,8 +40,8 @@ case class Recipe private(override val name: String,
       this.sieves == other.sieves &&
       this.sensoryEvents == other.sensoryEvents
       this.defaultFailureStrategy == other.defaultFailureStrategy &&
-      equalsOnDuration(this.eventReceivePeriod, other.eventReceivePeriod) &&
-      equalsOnDuration(this.retentionPeriod, other.retentionPeriod)
+      this.eventReceivePeriod == other.eventReceivePeriod &&
+      this.retentionPeriod == other.retentionPeriod
   }
 
   /**
@@ -60,14 +60,7 @@ case class Recipe private(override val name: String,
       this.sieves == other.sieves &&
       this.sensoryEvents == other.sensoryEvents &&
       this.defaultFailureStrategy == other.defaultFailureStrategy &&
-      equalsOnDuration(this.eventReceivePeriod, other.eventReceivePeriod) &&
-      equalsOnDuration(this.retentionPeriod, other.retentionPeriod)
-  }
-
-  def equalsOnDuration(original: Duration, other: Duration): Boolean = {
-    (original, other) match {
-      case (x, y) if !x.isFinite() && !y.isFinite() => true
-      case (x, y) => x == y
-    }
+      this.eventReceivePeriod == other.eventReceivePeriod &&
+      this.retentionPeriod == other.retentionPeriod
   }
 }

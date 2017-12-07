@@ -5,7 +5,7 @@ import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.types.RecordField
 
 import scala.collection.JavaConverters._
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
 /**
   * A Compiled recipe.
@@ -15,8 +15,8 @@ case class CompiledRecipe(name: String,
                           initialMarking: Marking[Place],
                           sensoryEvents: Set[EventType],
                           validationErrors: Seq[String] = Seq.empty,
-                          eventReceivePeriod: Duration,
-                          retentionPeriod: Duration) {
+                          eventReceivePeriod: Option[FiniteDuration],
+                          retentionPeriod: Option[FiniteDuration]) {
 
   def getValidationErrors: java.util.List[String] = validationErrors.toList.asJava
 

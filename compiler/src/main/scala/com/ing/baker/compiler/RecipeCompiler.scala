@@ -88,7 +88,8 @@ object RecipeCompiler {
     if (interaction.eventsToFire.nonEmpty) {
       val eventArcs = events.map { event =>
         val internalEventTransition = findInternalEventByEvent(event).get
-        val filter = (value: Any) => value == event.name
+        val filter = EventNameFilter(event.name)
+
         arc(resultPlace, internalEventTransition, 1, filter)
       }
       arc(interaction, resultPlace, 1) +: eventArcs

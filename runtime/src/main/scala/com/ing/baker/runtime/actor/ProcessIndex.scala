@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 
 object ProcessIndex {
 
-  def props(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, recipeName: String, receivePeriod: Duration, retentionPeriod: Duration, retentionCheckInterval: FiniteDuration) =
+  def props(petriNetActorProps: Props, recipeMetadata: RecipeMetadata, recipeName: String, receivePeriod: Option[FiniteDuration], retentionPeriod: Option[FiniteDuration], retentionCheckInterval: FiniteDuration) =
     Props(new ProcessIndex(petriNetActorProps, recipeMetadata, receivePeriod, retentionPeriod, retentionCheckInterval))
 
   case class ActorMetadata(id: String, createdDateTime: Long)
@@ -40,15 +40,15 @@ object ProcessIndex {
 
 class ProcessIndex(processActorProps: Props,
                    recipeMetadata: RecipeMetadata,
-                   receivePeriod: Duration = Duration.Undefined,
-                   retentionPeriod: Duration = Duration.Undefined,
+                   receivePeriod: Option[FiniteDuration] = None,
+                   retentionPeriod: Option[FiniteDuration] = None,
                    cleanupInterval: FiniteDuration = 1 minute) extends PersistentActor with ActorLogging {
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
 
   import context.dispatcher
 
-  if (retentionPeriod.isFinite())
+  if (retentionPeriod.isDefined)
     context.system.scheduler.schedule(cleanupInterval, cleanupInterval, context.self, CheckForProcessesToBeDeleted)
 
   def getOrCreateProcessActor(processId: String): ActorRef =
@@ -61,7 +61,7 @@ class ProcessIndex(processActorProps: Props,
   }
 
   def shouldDelete(meta: ActorMetadata): Boolean =
-    retentionPeriod.isFinite() && (meta.createdDateTime + retentionPeriod.toMillis < System.currentTimeMillis())
+    retentionPeriod.map { p => meta.createdDateTime + p.toMillis < System.currentTimeMillis() }.getOrElse(false)
 
   def deleteProcess(processId: String): Unit = {
     persist(ActorDeleted(processId)) { _ =>
@@ -109,9 +109,9 @@ class ProcessIndex(processActorProps: Props,
     case BakerActorMessage(processId, cmd) =>
 
       def forwardIfWithinPeriod(actorRef: ActorRef, msg: ProcessInstanceProtocol.Command) = {
-        if (receivePeriod.isFinite() && cmd.isInstanceOf[FireTransition]) {
+        if (receivePeriod.isDefined && cmd.isInstanceOf[FireTransition]) {
           index.get(processId).foreach { p =>
-            if (System.currentTimeMillis() - p.createdDateTime > receivePeriod.toMillis) {
+            if (System.currentTimeMillis() - p.createdDateTime > receivePeriod.get.toMillis) {
               sender() ! ReceivePeriodExpired
             }
             else
