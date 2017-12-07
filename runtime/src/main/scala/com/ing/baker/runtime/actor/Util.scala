@@ -14,7 +14,7 @@ import com.ing.baker.runtime.actor.GracefulShutdownActor.Leave
 import com.ing.baker.runtime.actor.ProcessInstance.Settings
 import com.ing.baker.runtime.core._
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 
 object Util {
@@ -29,29 +29,6 @@ object Util {
       petrinet.transitionIdentifier)
     )
 
-  def persistEventsForActor(actorPersistenceId: String, serializableEvents: List[AnyRef])(implicit actorSystem: ActorSystem, timeout: Timeout) = {
-
-    case class PersistAllEvents(events: List[AnyRef])
-    case object PersistAllEventsDone
-
-    val actor = actorSystem.actorOf(Props(new PersistentActor() {
-
-      override val persistenceId = actorPersistenceId
-      override def receiveRecover = Map.empty
-
-      override def receiveCommand: Receive = {
-        case PersistAllEvents(events) =>
-          persistAll(events) { _ =>
-            context.stop(self)
-            sender() ! PersistAllEventsDone
-          }
-      }
-    }))
-
-    import akka.pattern.ask
-    Await.result(actor.ask(PersistAllEvents(serializableEvents)), timeout.duration)
-  }
-
   def handOverShardsAndLeaveCluster(typeNames: Seq[String])(implicit timeout: Timeout, actorSystem: ActorSystem): Unit = {
 
     // first hand over the shards
@@ -63,39 +40,34 @@ object Util {
     cluster.leave(cluster.selfAddress)
   }
 
+  case object Ping extends InternalBakerMessage
+  case object Pong extends InternalBakerMessage
+
   class AwaitPersistenceInit extends PersistentActor with ActorLogging {
+
     override val persistenceId: String = s"persistenceInit-${UUID.randomUUID()}"
+
     log.info("Starting PersistenceInit actor with id: {}", persistenceId)
 
-    def receiveRecover: Receive = {
-      case _ => // intentionally left empty
-    }
+    // intentionally left empty
+    def receiveRecover: Receive = Map.empty
 
+    // intentionally left empty
     def receiveCommand: Receive = {
-      case msg =>
-        log.info("Received message {}", msg)
-        persist(msg) { _ =>
-          log.info("Successfully persisted a simple event. Sending message {} back...", msg)
-          sender() ! msg
-        }
+      case Ping =>
+        log.info("Received persistence init")
+        sender() ! Pong
+        context.self ! PoisonPill
     }
-
   }
 
   // Executes the given function 'executeAfterInit' only after PersistenceInit actor initialises and returns response
-  def awaitPersistenceInit(journalInitializeTimeout: FiniteDuration)
-                          (executeAfterInit: => Unit)
-                          (implicit system: ActorSystem): Unit = {
+  def persistenceInit(journalInitializeTimeout: FiniteDuration)(implicit system: ActorSystem): Future[Unit] = {
+
     val persistenceInitActor = system.actorOf(Props(classOf[AwaitPersistenceInit]), s"persistenceInit-${UUID.randomUUID().toString}")
-    try {
-      Await.result(persistenceInitActor.ask("ping")(Timeout(journalInitializeTimeout)).mapTo[String], journalInitializeTimeout)
-      executeAfterInit
-    } catch {
-      case e: Exception => throw new BakerException("Cannot initialize the PersistenceInit actor", e)
-    } finally {
-      persistenceInitActor ! PoisonPill
-    }
 
+    import system.dispatcher
+
+    persistenceInitActor.ask(Ping)(Timeout(journalInitializeTimeout)).map(_ => ())
   }
-
 }

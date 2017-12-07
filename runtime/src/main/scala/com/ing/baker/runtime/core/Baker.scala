@@ -3,7 +3,7 @@ package com.ing.baker.runtime.core
 import java.util.concurrent.TimeoutException
 
 import akka.NotUsed
-import akka.actor.{Actor, ActorSystem, AddressFromURIString, Props}
+import akka.actor.{Actor, ActorSystem, Address, AddressFromURIString, Props}
 import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
@@ -102,29 +102,36 @@ class Baker(val compiledRecipe: CompiledRecipe,
   if (compiledRecipe.validationErrors.nonEmpty)
     throw new RecipeValidationException(compiledRecipe.validationErrors.mkString(", "))
 
-  private val bakerActorProvider =
-    actorSystem.settings.config.as[Option[String]]("baker.actor.provider") match {
-      case None | Some("local") => new LocalBakerActorProvider(config)
-      case Some("cluster-sharded") => new ClusterActorProvider(config)
-      case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
+  private def initializeCluster() = {
+
+    val seedNodes: List[Address] = config.as[Option[List[String]]]("baker.cluster.seed-nodes") match {
+      case Some(seedNodes) if seedNodes.nonEmpty =>
+        seedNodes map AddressFromURIString.parse
+      case None =>
+        throw new BakerException("Baker cluster configuration without baker.cluster.seed-nodes")
     }
 
-  /**
-    * Join cluster after waiting for the persistenceInit actor, otherwise terminate here.
-    */
-  Util.awaitPersistenceInit(journalInitializeTimeout) {
-    if (bakerActorProvider.isInstanceOf[ClusterActorProvider]) {
-      actorSystem.settings.config.as[Option[List[String]]]("baker.cluster.seed-nodes") match {
-        case Some(seedNodes) if seedNodes.nonEmpty =>
-          val cluster = Cluster.get(actorSystem)
-          val parsedAddresses = seedNodes map AddressFromURIString.parse
-          log.info("PersistenceInit actor started successfully, joining cluster seed nodes {}", parsedAddresses)
-          cluster.joinSeedNodes(parsedAddresses)
-        case None =>
-          throw new BakerException("Baker cluster configuration without baker.cluster.seed-nodes")
-      }
-    }
+    /**
+      * Join cluster after waiting for the persistenceInit actor, otherwise terminate here.
+      */
+    Await.result(Util.persistenceInit(journalInitializeTimeout), journalInitializeTimeout)
+
+    // join the cluster
+    log.info("PersistenceInit actor started successfully, joining cluster seed nodes {}", seedNodes)
+    Cluster.get(actorSystem).joinSeedNodes(seedNodes)
   }
+
+  private val bakerActorProvider =
+    config.as[Option[String]]("baker.actor.provider") match {
+      case None | Some("local")    =>
+        new LocalBakerActorProvider(config)
+      case Some("cluster-sharded") =>
+        initializeCluster()
+        new ClusterActorProvider(config)
+      case Some(other)             =>
+        throw new IllegalArgumentException(s"Unsupported actor provider: $other")
+    }
+
 
   private val configuredEncryption: Encryption = {
     val encryptionEnabled = config.getAs[Boolean]("baker.encryption.enabled").getOrElse(false)
