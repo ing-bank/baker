@@ -23,27 +23,7 @@ case class Recipe private(override val name: String,
       recipe.defaultFailureStrategy,
       recipe.eventReceivePeriod,
       recipe.retentionPeriod)
-
-
-  /**
-    * This is the same as equals but does not checks if they represent the same recipe
-    *
-    * @param that
-    * @return
-    */
-  def same(that: common.Recipe): Boolean = {
-    if (!that.isInstanceOf[common.Recipe])
-      return false
-    val other: common.Recipe = that.asInstanceOf[common.Recipe]
-    this.name == other.name &&
-      this.interactions == other.interactions &&
-      this.sieves == other.sieves &&
-      this.sensoryEvents == other.sensoryEvents
-      this.defaultFailureStrategy == other.defaultFailureStrategy &&
-      this.eventReceivePeriod == other.eventReceivePeriod &&
-      this.retentionPeriod == other.retentionPeriod
-  }
-
+  
   /**
     * Compares to the other object with just the field gotten from the common.Recipe
     *
