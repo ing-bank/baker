@@ -105,8 +105,8 @@ class Baker(val compiledRecipe: CompiledRecipe,
   private def initializeCluster() = {
 
     val seedNodes: List[Address] = config.as[Option[List[String]]]("baker.cluster.seed-nodes") match {
-      case Some(seedNodes) if seedNodes.nonEmpty =>
-        seedNodes map AddressFromURIString.parse
+      case Some(_seedNodes) if _seedNodes.nonEmpty =>
+        _seedNodes map AddressFromURIString.parse
       case None =>
         throw new BakerException("Baker cluster configuration without baker.cluster.seed-nodes")
     }
