@@ -1,9 +1,6 @@
 import Dependencies._
 import sbt.Keys._
 
-val scalaV = "2.11.11"
-val jvmV = "1.8"
-
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
   scalaVersion := scalaV,
