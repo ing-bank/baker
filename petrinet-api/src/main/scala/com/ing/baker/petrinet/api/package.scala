@@ -1,5 +1,8 @@
 package com.ing.baker.petrinet
 
+import com.esotericsoftware.kryo.io.{Input, Output}
+import com.esotericsoftware.kryo.{Kryo, KryoSerializable}
+
 import scala.PartialFunction._
 import scalax.collection.Graph
 import scalax.collection.GraphPredef._
@@ -61,7 +64,7 @@ package object api extends MultiSetOps with MarkingOps {
     * TODO; can we remove this wrapper? It seems only needed because we need to mix in other traits with PetriNet
     * which cannot be done with Graph.apply
     */
-  class ScalaGraphPetriNet[P, T](val innerGraph: BiPartiteGraph[P, T, WLDiEdge]) extends PetriNet[P, T] {
+  case class ScalaGraphPetriNet[P, T](val innerGraph: BiPartiteGraph[P, T, WLDiEdge]) extends PetriNet[P, T]  {
 
     override def inMarking(t: T): MultiSet[P] = innerGraph.inMarking(t)
     override def outMarking(t: T): MultiSet[P] = innerGraph.outMarking(t)
@@ -73,7 +76,7 @@ package object api extends MultiSetOps with MarkingOps {
     override lazy val places = innerGraph.places().toSet
     override lazy val transitions = innerGraph.transitions().toSet
 
-    override def nodes = innerGraph.nodes.map(_.value)
+    override def nodes: scala.collection.Set[Either[P, T]] = innerGraph.nodes.map(_.value)
   }
 
   implicit def placeToNode[P, T](p: P): Either[P, T] = Left(p)
@@ -90,12 +93,6 @@ package object api extends MultiSetOps with MarkingOps {
       case Right(t) ⇒ t
       case _        ⇒ throw new IllegalStateException(s"node $node is not a transition!")
     }
-
-    def incomingEdgeB(b: B) = node.incoming.find(_.source.value == Right(b)).map(_.toOuter)
-    def outgoingEdgeB(b: B) = node.outgoing.find(_.target.value == Right(b)).map(_.toOuter)
-
-    def incomingEdgeA(a: A) = node.incoming.find(_.source.value == Left(a)).map(_.toOuter)
-    def outgoingEdgeA(a: A) = node.outgoing.find(_.target.value == Left(a)).map(_.toOuter)
 
     def incomingPlaces = node.incoming.map(_.source.asPlace)
     def incomingTransitions = node.incoming.map(_.source.asTransition)

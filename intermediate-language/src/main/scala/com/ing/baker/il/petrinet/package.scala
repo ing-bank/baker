@@ -11,7 +11,7 @@ package object petrinet {
 
   def arc(t: Transition[_, _], p: Place[_], weight: Long): Arc = WLDiEdge[Node, String](Right(t), Left(p))(weight, "")
 
-  def arc[C](p: Place[C], t: Transition[_, _], weight: Long, filter: C ⇒ Boolean = (token: C) ⇒ true): Arc = {
+  def arc[C](p: Place[C], t: Transition[_, _], weight: Long, filter: C ⇒ Boolean = NoFilter): Arc = {
     val innerEdge = new PTEdge[C](weight, filter)
     WLDiEdge[Node, PTEdge[C]](Left(p), Right(t))(weight, innerEdge)
   }

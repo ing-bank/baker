@@ -238,8 +238,8 @@ val recipe = Recipe("OpenAccountRecipe")
 //for each process instance, bake the recipe
 baker.bake(processId);
 //notify Baker when events occur
-baker.processEvent(processId, individualInformationSubmitted.instance(name, address));
-baker.processEvent(processId, termsAndConditionsAccepted.instance());
+baker.handleEvent(processId, individualInformationSubmitted.instance(name, address));
+baker.handleEvent(processId, termsAndConditionsAccepted.instance());
 
 //retrieve ingredients stored in the accumulated state
 assert(baker.getIngredients(processId).get("customerId").equals(customerId));

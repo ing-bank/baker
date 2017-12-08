@@ -1,9 +1,7 @@
 package com.ing.baker.il
 
-import java.lang.reflect.{ParameterizedType, Type}
-
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.il._
+import com.ing.baker.types.{PrimitiveType, RecordField}
 import com.ing.baker.petrinet.api.PetriNetAnalysis
 
 import scala.collection.mutable
@@ -18,44 +16,29 @@ object RecipeValidations {
       validationErrors += s"Interaction $interactionTransition does not have any requirements (ingredients or preconditions)! This will result in an infinite execution loop."
 
     // check if the process id argument type is correct
-    interactionTransition.requiredIngredients.toMap.get(processIdName).map {
-      case c if c == classOf[String] =>
-      case c => validationErrors += s"Non supported process id type: ${c} on interaction: '$interactionTransition'"
+    interactionTransition.requiredIngredients.filter(id => id.name.equals(processIdName)).map {
+      case RecordField(_ , PrimitiveType(javaType)) if javaType == classOf[String] =>
+      case RecordField(_ , incompatibleType) => validationErrors += s"Non supported process id type: ${incompatibleType} on interaction: '$interactionTransition'"
     }
 
     // check if the predefined ingredient is of the expected type
     interactionTransition.predefinedParameters.foreach {
       case (name, value) =>
-        interactionTransition.requiredIngredients.toMap.get(name) match {
+        interactionTransition.requiredIngredients.find(_.name == name) match {
           case None =>
             validationErrors += s"Predefined argument '$name' is not defined on interaction: '$interactionTransition'"
-          case Some(clazz: Class[_]) if !clazz.isInstance(value) =>
-            validationErrors += s"Predefined argument '$name' is not of type: ${clazz} on interaction: '$interactionTransition'"
-          case Some(pt: ParameterizedType) =>
-            getRawClass(pt) match {
-              case o if o == classOf[Option[_]] => value match {
-                case Some(v) if !getRawClass(pt.getActualTypeArguments.apply(0)).isInstance(v) =>
-                  validationErrors += s"Predefined argument '$name' is not of type: ${pt} on interaction: '$interactionTransition'"
-                case _ =>
-              }
-              case o if o == classOf[java.util.Optional[_]] =>
-                if (value.isInstanceOf[java.util.Optional[_]]) {
-                  val optionalValue = value.asInstanceOf[java.util.Optional[_]]
-                  if (optionalValue.isPresent && !getRawClass(pt.getActualTypeArguments.apply(0)).isInstance(optionalValue.get()))
-                    validationErrors += s"Predefined argument '$name' is not of type: ${pt} on interaction: '$interactionTransition'"
-                }
-              case o if !o.isInstance(value) =>
-                validationErrors += s"Predefined argument '$name' is not of type: ${pt} on interaction: '$interactionTransition'"
-              case o =>
-            }
+          case Some(ingredientDescriptor) if !value.isInstanceOf(ingredientDescriptor.`type`) =>
+            validationErrors += s"Predefined argument '$name' is not of type: ${ingredientDescriptor.`type`} on interaction: '$interactionTransition'"
           case _ =>
         }
     }
+
     validationErrors
   }
 
-  def validateInteractions(compiledRecipe: CompiledRecipe): Seq[String] =
+  def validateInteractions(compiledRecipe: CompiledRecipe): Seq[String] = {
     compiledRecipe.interactionTransitions.toSeq.flatMap(validateInteraction(compiledRecipe))
+  }
 
 
   /**
@@ -64,35 +47,18 @@ object RecipeValidations {
   def validateInteractionIngredients(compiledRecipe: CompiledRecipe): Seq[String] = {
     compiledRecipe.interactionTransitions.toSeq.flatMap { t =>
       t.nonProvidedIngredients.flatMap {
-        case (name, expectedType) =>
-          compiledRecipe.ingredients.get(name) match {
+        case (RecordField(name, expectedType)) =>
+          compiledRecipe.allIngredients.find(_.name == name) match {
             case None =>
               Some(
                 s"Ingredient '$name' for interaction '${t.interactionName}' is not provided by any event or interaction")
-            case Some(IngredientType(name, ingredientType)) if !isAssignableFromType(expectedType, ingredientType) =>
+            case Some(RecordField(name, ingredientType)) if !expectedType.isAssignableFrom(ingredientType) =>
               Some(s"Interaction '$t' expects ingredient '$name:$expectedType', however incompatible type: '$ingredientType' was provided")
             case _ =>
               None
           }
       }
     }
-  }
-
-  val primitiveTypeMapping: Map[Class[_], Class[_]] = Map(
-    java.lang.Boolean.TYPE   -> classOf[java.lang.Boolean],
-    java.lang.Byte.TYPE      -> classOf[java.lang.Byte],
-    java.lang.Short.TYPE     -> classOf[java.lang.Short],
-    java.lang.Character.TYPE -> classOf[java.lang.Character],
-    java.lang.Integer.TYPE   -> classOf[java.lang.Integer],
-    java.lang.Long.TYPE      -> classOf[java.lang.Long],
-    java.lang.Float.TYPE     -> classOf[java.lang.Float],
-    java.lang.Double.TYPE    -> classOf[java.lang.Double])
-
-  def validateNonPrimitiveTypedIngredients(compiledRecipe: CompiledRecipe): Seq[String] = {
-    compiledRecipe.ingredients.collect {
-      case (name, iType) if iType.clazz.isPrimitive =>
-        s"Ingredient '$name' is of type '${iType.clazz.getSimpleName}', primitive types are not supported for ingredients, use '${primitiveTypeMapping(iType.clazz).getName}' instead"
-    }.toSeq
   }
 
   def validateNoCycles(compiledRecipe: CompiledRecipe): Seq[String] = {
@@ -127,7 +93,6 @@ object RecipeValidations {
 
     postCompileValidationErrors ++= validateInteractionIngredients(compiledRecipe)
     postCompileValidationErrors ++= validateInteractions(compiledRecipe)
-    postCompileValidationErrors ++= validateNonPrimitiveTypedIngredients(compiledRecipe)
 
     if (!validationSettings.allowCycles)
       postCompileValidationErrors ++= validateNoCycles(compiledRecipe)
@@ -141,5 +106,5 @@ object RecipeValidations {
     compiledRecipe.copy(
       validationErrors = compiledRecipe.validationErrors ++ postCompileValidationErrors)
   }
-
 }
+

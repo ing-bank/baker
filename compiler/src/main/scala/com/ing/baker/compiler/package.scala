@@ -1,22 +1,20 @@
 package com.ing.baker
 
-import java.lang.reflect.{ParameterizedType, Type}
-
+import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
-import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Transition}
-import com.ing.baker.il.{ActionType, EventOutputTransformer, EventType, IngredientType}
+import com.ing.baker.il.petrinet._
+import com.ing.baker.types._
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy.{FireEventAfterFailure, RetryWithIncrementalBackoff}
 import com.ing.baker.recipe.common.{InteractionDescriptor, ProvidesNothing}
-import com.ing.baker.il._
 
 import scala.concurrent.duration.Duration
 
 package object compiler {
 
-  def ingredientsToRuntimeIngredient(ingredient: common.Ingredient): IngredientType = IngredientType(ingredient.name, ingredient.clazz)
+  def ingredientToCompiledIngredient(ingredient: common.Ingredient): RecordField = RecordField(ingredient.name, ingredient.ingredientType)
 
-  def eventToCompiledEvent(event: common.Event): EventType = EventType(event.name, event.providedIngredients.map(ingredientsToRuntimeIngredient))
+  def eventToCompiledEvent(event: common.Event): EventType = EventType(event.name, event.providedIngredients.map(ingredientToCompiledIngredient))
 
   implicit class InteractionOps(interaction: InteractionDescriptor) {
 
@@ -41,10 +39,7 @@ package object compiler {
             new common.Event {
               override val name: String = eventOutputTransformer.newEventName
               override val providedIngredients: Seq[common.Ingredient] = event.providedIngredients.map(i =>
-                new common.Ingredient {
-                  override val name: String = eventOutputTransformer.ingredientRenames.getOrElse(i.name, i.name)
-                  override val clazz: Type = i.clazz
-                })
+                new common.Ingredient(eventOutputTransformer.ingredientRenames.getOrElse(i.name, i.name), i.ingredientType))
             }
           case _ => event
         }
@@ -65,16 +60,16 @@ package object compiler {
       def transformEventToCompiledEvent(event: common.Event): EventType = {
         EventType(
           event.name,
-          event.providedIngredients
-            .map(i => IngredientType(i.name, i.clazz)))
+          event.providedIngredients.map(ingredientToCompiledIngredient))
       }
 
+      //Replace ProcessId to ProcessIdName tag as know in compiledRecipe-
+      //Replace ingredient tags with overridden tags
       val inputFields: Seq[(String, Type)] = interactionDescriptor.interaction.inputIngredients
-        //Replace ProcessId to ProcessIdName tag as know in compiledRecipe
-        //Replace ingredient tags with overridden tags
-        .map(ingredient =>
-        if(ingredient.name == common.ProcessIdName) il.processIdName -> ingredient.clazz
-        else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.clazz)
+        .map { ingredient =>
+          if(ingredient.name == common.ProcessIdName) il.processIdName -> ingredient.ingredientType
+          else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.ingredientType
+        }
 
       val exhaustedRetryEvent = interactionDescriptor.failureStrategy.flatMap {
         case RetryWithIncrementalBackoff(_, _, _, _, optionalExhaustedRetryEvent) => optionalExhaustedRetryEvent
@@ -88,7 +83,7 @@ package object compiler {
             val ingredientName: String =
               if(interactionDescriptor.overriddenOutputIngredientName.nonEmpty) interactionDescriptor.overriddenOutputIngredientName.get
               else outputIngredient.name
-            val event = EventType(interactionDescriptor.name + "Successful", Seq(IngredientType(ingredientName, outputIngredient.clazz)))
+            val event = EventType(interactionDescriptor.name + "Successful", Seq(RecordField(ingredientName, outputIngredient.ingredientType)))
             val events = Seq(event)
             (events, events, Some(event))
           case common.FiresOneOfEvents(events @ _*) =>
@@ -102,20 +97,19 @@ package object compiler {
       //And is of the type Optional or Option
       //Add it to the predefinedIngredients List as empty
       //Add the predefinedIngredients later to overwrite any created empty field with the given predefined value.
-      val predefinedIngredientsWithOptionalsEmpty: Map[String, Any] =
+
+      val predefinedIngredientsWithOptionalsEmpty: Map[String, Value] =
         inputFields.flatMap {
-          case (name, clazz: ParameterizedType) if !allIngredientNames.contains(name) && classOf[java.util.Optional[_]].isAssignableFrom(getRawClass(clazz))
-              => Seq((name, java.util.Optional.empty()))
-          case (name, clazz: ParameterizedType) if !allIngredientNames.contains(name) && classOf[scala.Option[_]].isAssignableFrom(getRawClass(clazz))
-              => Seq((name, scala.Option.empty))
+          case (name, types.OptionType(_)) if !allIngredientNames.contains(name) => Seq(name -> NullValue)
           case _ => Seq.empty
         }.toMap ++ interactionDescriptor.predefinedIngredients
+
 
       InteractionTransition[Any](
         eventsToFire = eventsToFire ++ exhaustedRetryEvent,
         originalEvents = originalEvents ++ exhaustedRetryEvent,
         providedIngredientEvent = providedIngredientEvent,
-        requiredIngredients = inputFields,
+        requiredIngredients = inputFields.map { case (name, ingredientType) => RecordField(name, ingredientType) },
         interactionName = interactionDescriptor.name,
         originalInteractionName = interactionDescriptor.interaction.name,
         predefinedParameters = predefinedIngredientsWithOptionalsEmpty,

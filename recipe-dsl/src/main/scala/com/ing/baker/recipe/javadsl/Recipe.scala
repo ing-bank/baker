@@ -5,7 +5,7 @@ import com.ing.baker.recipe.common
 import scala.annotation.varargs
 import scala.collection.JavaConverters._
 import scala.concurrent.duration
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
 case class Recipe(
     override val name: String,
@@ -13,10 +13,10 @@ case class Recipe(
     override val sieves: Seq[common.InteractionDescriptor],
     override val sensoryEvents: Set[common.Event],
     override val defaultFailureStrategy: common.InteractionFailureStrategy,
-    override val eventReceivePeriod: Duration,
-    override val retentionPeriod: Duration) extends common.Recipe {
+    override val eventReceivePeriod: Option[FiniteDuration],
+    override val retentionPeriod: Option[FiniteDuration]) extends common.Recipe {
 
-  def this(name: String) = this(name, Seq.empty, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction(), Duration.Undefined, Duration.Undefined)
+  def this(name: String) = this(name, Seq.empty, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction(), None, None)
 
   def getInteractions: java.util.List[common.InteractionDescriptor] = interactions.asJava
 
@@ -183,7 +183,7 @@ case class Recipe(
     * @return
     */
   def withEventReceivePeriod(recivePeriod: java.time.Duration) =
-    copy(eventReceivePeriod = Duration(recivePeriod.toMillis, duration.MILLISECONDS))
+    copy(eventReceivePeriod = Some(Duration(recivePeriod.toMillis, duration.MILLISECONDS)))
 
   /**
     * Sets the process retention period. This is the period for which data & history for processes is kept.
@@ -192,6 +192,6 @@ case class Recipe(
     * @return
     */
   def withRetentionPeriod(retentionPeriod: java.time.Duration) =
-    copy(retentionPeriod = Duration(retentionPeriod.toMillis, duration.MILLISECONDS))
+    copy(retentionPeriod = Some(Duration(retentionPeriod.toMillis, duration.MILLISECONDS)))
 
 }

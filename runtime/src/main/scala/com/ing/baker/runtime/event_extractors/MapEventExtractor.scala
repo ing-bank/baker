@@ -1,4 +1,5 @@
 package com.ing.baker.runtime.event_extractors
+import com.ing.baker.types.Converters
 import com.ing.baker.runtime.core.RuntimeEvent
 
 class MapEventExtractor extends EventExtractor {
@@ -16,9 +17,14 @@ class MapEventExtractor extends EventExtractor {
 
     obj match {
       case map: Map[_, _] =>
-        val values = map.asInstanceOf[Map[String, Any]]
-        val eventName = values(eventNameKey).asInstanceOf[String]
-        val ingredients = (values - eventNameKey).toSeq
+        val castMap = map.asInstanceOf[Map[String, Any]]
+
+        val eventName = castMap(eventNameKey).asInstanceOf[String]
+        val ingredients =
+          (castMap - eventNameKey)
+          .mapValues(Converters.toValue)
+          .toSeq
+
         RuntimeEvent(eventName, ingredients)
 
       case _ => throw new IllegalArgumentException(s"Cannot translate object into RuntimeEvent: $obj")

@@ -253,7 +253,7 @@ object RecipePropertiesSpec {
   def logCompiledRecipeStats(compiledRecipe: CompiledRecipe): Unit = {
     println(s"Compiled recipe ::: " +
       s"name: ${compiledRecipe.name} " +
-      s"nrOfAllIngredients: ${compiledRecipe.ingredients.size} " +
+      s"nrOfAllIngredients: ${compiledRecipe.allIngredients.size} " +
       s"nrOfSensoryEvents: ${compiledRecipe.sensoryEvents.size} " +
       s"nrOfInteractionEvents: ${compiledRecipe.interactionEvents.size} " +
       s"nrOfInteractions: ${compiledRecipe.interactionTransitions.size} " +

@@ -4,6 +4,7 @@ import scala.concurrent.duration.Duration
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common._
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
+import com.ing.baker.types.Converters
 
 object InteractionDescriptorFactory {
   def apply(interaction: Interaction): InteractionDescriptor = InteractionDescriptor(interaction)
@@ -13,7 +14,7 @@ object InteractionDescriptorFactory {
 case class InteractionDescriptor private(override val interaction: Interaction,
                                          override val requiredEvents: Set[String] = Set.empty,
                                          override val requiredOneOfEvents: Set[String] = Set.empty,
-                                         override val predefinedIngredients: Map[String, AnyRef] = Map.empty,
+                                         override val predefinedIngredients: Map[String, com.ing.baker.types.Value] = Map.empty,
                                          override val overriddenIngredientNames: Map[String, String] = Map.empty,
                                          override val overriddenOutputIngredientName: Option[String] = None,
                                          override val maximumInteractionCount: Option[Int] = None,
@@ -40,10 +41,10 @@ case class InteractionDescriptor private(override val interaction: Interaction,
   }
 
   def withPredefinedIngredients(values: (String, AnyRef)*): InteractionDescriptor =
-    copy(predefinedIngredients = values.toMap)
+    withPredefinedIngredients(values.toMap)
 
   def withPredefinedIngredients(data: Map[String, AnyRef]): InteractionDescriptor =
-    copy(predefinedIngredients = data)
+    copy(predefinedIngredients = predefinedIngredients ++ data.map{case (key, value) => key -> Converters.toValue(value)})
 
   def withMaximumInteractionCount(n: Int): InteractionDescriptor =
     copy(maximumInteractionCount = Some(n))

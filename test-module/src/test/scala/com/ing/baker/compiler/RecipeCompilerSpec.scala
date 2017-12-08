@@ -5,6 +5,7 @@ import java.util.Optional
 
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
+import com.ing.baker.types.{NullValue, PrimitiveValue}
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient, ProvidesNothing}
@@ -62,7 +63,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .withInteractions(wrongProcessIdInteraction)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("Non supported process id type: int on interaction: 'wrongProcessIdInteraction'")
+      compiledRecipe.validationErrors should contain("Non supported process id type: PrimitiveType(int) on interaction: 'wrongProcessIdInteraction'")
     }
 
     "give a list of wrong ingredients if an ingredient is of the wrong type" in {
@@ -75,7 +76,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .withSensoryEvent(initialEventInt)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("Interaction 'InteractionOne' expects ingredient 'initialIngredient:class java.lang.String', however incompatible type: 'int' was provided")
+      compiledRecipe.validationErrors should contain("Interaction 'InteractionOne' expects ingredient 'initialIngredient:PrimitiveType(class java.lang.String)', however incompatible type: 'PrimitiveType(int)' was provided")
     }
 
     "give a list of wrong ingredients if an Optional ingredient is of the wrong Optional type" in {
@@ -96,8 +97,8 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .withSensoryEvents(initialEventIntOptional, initialEventIntOption)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionalInt:ParameterizedType: class java.util.Optional[int]', however incompatible type: 'ParameterizedType: class java.util.Optional[class java.lang.String]' was provided")
-      compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionInt:ParameterizedType: class scala.Option[ParameterizedType: class scala.collection.immutable.List[int]]', however incompatible type: 'ParameterizedType: class scala.Option[ParameterizedType: class scala.collection.immutable.List[class java.lang.String]]' was provided")
+      compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionalInt:OptionType(PrimitiveType(int))', however incompatible type: 'OptionType(PrimitiveType(class java.lang.String))' was provided")
+      compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionInt:OptionType(ListType(PrimitiveType(int)))', however incompatible type: 'OptionType(ListType(PrimitiveType(class java.lang.String)))' was provided")
     }
 
     "give an validation error for an empty/non-logical recipe" in {
@@ -133,7 +134,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .withSensoryEvent(initialEvent)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("Predefined argument 'initialIngredient' is not of type: class java.lang.String on interaction: 'InteractionOne'")
+      compiledRecipe.validationErrors should contain("Predefined argument 'initialIngredient' is not of type: PrimitiveType(class java.lang.String) on interaction: 'InteractionOne'")
     }
 
     "give a list of wrong ingredients if an predefined ingredient is not needed by the interaction" in {
@@ -156,25 +157,6 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         ValidationSettings(allowNonExecutableInteractions = false))
 
       compiledRecipe.validationErrors should contain("InteractionEight is not executable")
-    }
-
-    "validate that ingredients are not of primitive types" in {
-
-      val primitiveIntIngredient = new common.Ingredient {
-        override val name: String = "age"
-        override val clazz: Type = Integer.TYPE
-      }
-
-      val interactionRequiringPrimitive = Interaction("DoSomething", Seq(primitiveIntIngredient), ProvidesNothing)
-
-      val eventProvidingPrimitive = Event("FooEvent", primitiveIntIngredient)
-
-      val recipe = Recipe("RecipeWithPrimitiveTypedIngredients")
-          .withInteraction(interactionRequiringPrimitive)
-            .withSensoryEvent(eventProvidingPrimitive)
-      
-      RecipeCompiler.compileRecipe(recipe).validationErrors should contain
-        ("Ingredient 'age' is of type 'int', primitive types are not supported for ingredients, use 'java.lang.Integer' instead")
     }
 
     "fail compilation for an empty or null named interaction" in {
@@ -221,7 +203,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
       }
     }
 
-    "interactions with optional ingredients that are NOT provided should be provided as empty" in {
+    "interactions with optional ingredients that are NOT provided SHOULD be provided as empty" in {
       val recipe: Recipe = Recipe("MissingOptionalRecipe")
         .withInteraction(optionalIngredientInteraction)
         .withSensoryEvent(initialEvent)
@@ -232,14 +214,14 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .map(it =>
           if (it.interactionName.equals("OptionalIngredientInteraction")) {
             it.predefinedParameters.size shouldBe 4
-            it.predefinedParameters("missingJavaOptional") shouldBe Optional.empty()
-            it.predefinedParameters("missingJavaOptional2") shouldBe Optional.empty()
-            it.predefinedParameters("missingScalaOptional") shouldBe Option.empty
-            it.predefinedParameters("missingScalaOptional2") shouldBe Option.empty
+            it.predefinedParameters("missingJavaOptional") shouldBe NullValue
+            it.predefinedParameters("missingJavaOptional2") shouldBe NullValue
+            it.predefinedParameters("missingScalaOptional") shouldBe NullValue
+            it.predefinedParameters("missingScalaOptional2") shouldBe NullValue
           })
     }
 
-    "interactions with optional ingredients that are provided should NOT be provided as empty" in {
+    "interactions with optional ingredients that ARE provided SHOULD NOT be provided as empty" in {
       val optionalProviderEvent = Event("optionalProviderEvent", missingJavaOptional)
 
       val recipe: Recipe = Recipe("MissingOptionalRecipe")
@@ -252,14 +234,14 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .map(it =>
           if (it.interactionName.equals("OptionalIngredientInteraction")) {
             it.predefinedParameters.size shouldBe 3
-            it.predefinedParameters("missingJavaOptional2") shouldBe Optional.empty()
-            it.predefinedParameters("missingScalaOptional") shouldBe Option.empty
-            it.predefinedParameters("missingScalaOptional2") shouldBe Option.empty
+            it.predefinedParameters("missingJavaOptional2") shouldBe NullValue
+            it.predefinedParameters("missingScalaOptional") shouldBe NullValue
+            it.predefinedParameters("missingScalaOptional2") shouldBe NullValue
           })
 
     }
 
-    "interactions with RENAMED optional ingredients via events that are provided should NOT be provided as empty" in {
+    "interactions with RENAMED optional ingredients via events that ARE provided SHOULD NOT be provided as empty" in {
       val stringOptionIngredient = Ingredient[Option[String]]("stringOptionIngredient")
       val renamedStringOptionIngredient = Ingredient[Option[String]]("renamedStringOptionIngredient")
 
@@ -275,11 +257,11 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .withInteraction(secondInteraction)
 
       val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      println(compiledRecipe.getRecipeVisualization)
+//      println(compiledRecipe.getRecipeVisualization)
       compiledRecipe.validationErrors shouldBe empty
 
       val transition = compiledRecipe.interactionTransitions.find(_.interactionName == "secondInteraction").get
-      transition.nonProvidedIngredients.keys should contain("renamedStringOptionIngredient")
+      transition.nonProvidedIngredients.map(_.name) should contain("renamedStringOptionIngredient")
     }
 
     "interactions with ingredients that are provided but are required as Optionals should be wrapped into the optional" in {
@@ -295,13 +277,13 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .map(it =>
           if (it.interactionName.equals("OptionalIngredientInteraction")) {
             it.predefinedParameters.size shouldBe 3
-            it.predefinedParameters("missingJavaOptional2") shouldBe Optional.empty()
-            it.predefinedParameters("missingScalaOptional") shouldBe Option.empty
-            it.predefinedParameters("missingScalaOptional2") shouldBe Option.empty
+            it.predefinedParameters("missingJavaOptional2") shouldBe NullValue
+            it.predefinedParameters("missingScalaOptional") shouldBe NullValue
+            it.predefinedParameters("missingScalaOptional2") shouldBe NullValue
           })
     }
 
-    "interactions with optional ingredients that are predefined should not be provided as empty" in {
+    "interactions with optional ingredients that are predefined SHOULD NOT be provided as empty" in {
       val ingredientValue: Optional[String] = java.util.Optional.of("value")
       val recipe: Recipe = Recipe("MissingOptionalRecipe")
         .withInteraction(
@@ -316,10 +298,10 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .map(it =>
           if (it.interactionName.equals("OptionalIngredientInteraction")) {
             it.predefinedParameters.size shouldBe 4
-            it.predefinedParameters("missingJavaOptional") shouldBe ingredientValue
-            it.predefinedParameters("missingJavaOptional2") shouldBe Optional.empty()
-            it.predefinedParameters("missingScalaOptional") shouldBe Option.empty
-            it.predefinedParameters("missingScalaOptional2") shouldBe Option.empty
+            it.predefinedParameters("missingJavaOptional") shouldBe PrimitiveValue("value")
+            it.predefinedParameters("missingJavaOptional2") shouldBe NullValue
+            it.predefinedParameters("missingScalaOptional") shouldBe NullValue
+            it.predefinedParameters("missingScalaOptional2") shouldBe NullValue
           })
     }
 

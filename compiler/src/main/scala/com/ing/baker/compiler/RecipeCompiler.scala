@@ -88,7 +88,8 @@ object RecipeCompiler {
     if (interaction.eventsToFire.nonEmpty) {
       val eventArcs = events.map { event =>
         val internalEventTransition = findInternalEventByEvent(event).get
-        val filter = (value: Any) => value == event.name
+        val filter = EventNameFilter(event.name)
+
         arc(resultPlace, internalEventTransition, 1, filter)
       }
       arc(interaction, resultPlace, 1) +: eventArcs
@@ -110,7 +111,7 @@ object RecipeCompiler {
                                          ingredientsWithMultipleConsumers: Map[String, Seq[InteractionTransition[_]]]): Seq[Arc] = {
 
     val (fieldNamesWithPrefixMulti, fieldNamesWithoutPrefix) =
-      t.nonProvidedIngredients.keySet.toSeq.partition(ingredientsWithMultipleConsumers.contains)
+      t.nonProvidedIngredients.map(_.name).partition(ingredientsWithMultipleConsumers.contains)
 
     // the extra arcs to model multiple output transitions from one place
     val internalDataInputArcs = fieldNamesWithPrefixMulti flatMap { fieldName =>
@@ -160,7 +161,7 @@ object RecipeCompiler {
   def compileRecipe(recipe: Recipe,
                     validationSettings: ValidationSettings): CompiledRecipe = {
 
-    val precompileErrors: Seq[String] = preCompileAssertions(recipe)
+    val precompileErrors: Seq[String] = Assertions.preCompileAssertions(recipe)
 
     //All ingredient names provided by sensory events or by interactions
     val allIngredientNames: Set[String] =
@@ -312,7 +313,7 @@ object RecipeCompiler {
     // Obtain a list of field name with their transition
     val placeNameWithTransition: Seq[(String, InteractionTransition[_])] = for {
       transition <- actionTransitions
-      inputPlaceName <- transition.nonProvidedIngredients.keySet
+      inputPlaceName <- transition.nonProvidedIngredients.map(_.name)
     } yield (inputPlaceName, transition)
 
     // Then obtain the places with multiple out-adjacent transitions
@@ -326,33 +327,4 @@ object RecipeCompiler {
   }
 
   private def createPlace(label: String, placeType: PlaceType): Place[Any] = Place(label = s"${placeType.labelPrepend}$label", placeType)
-
-  private def assertNoDuplicateElementsExist[T](compareIdentifier: T => Any, elements: Set[T]) = elements.foreach { e =>
-    (elements - e).find(c => compareIdentifier(c) == compareIdentifier(e)).foreach { c => throw new IllegalStateException(s"Duplicate identifiers found: ${e.getClass.getSimpleName}:$e and ${c.getClass.getSimpleName}:$c") }
-  }
-
-  private def assertValidNames[T](nameFunc: T => String, list: Iterable[T], typeName: String) = list.map(nameFunc).filter(name => name == null || name.isEmpty).foreach { _ =>
-    throw new IllegalArgumentException(s"$typeName with a null or empty name found")
-  }
-
-  private def assertNonEmptyRecipe(recipe: Recipe): Seq[String] = {
-    val errors = mutable.MutableList.empty[String]
-    if (recipe.sensoryEvents.isEmpty)
-      errors += "No sensory events found."
-    if (recipe.interactions.size + recipe.sieves.size == 0)
-      errors += "No interactions or sieves found."
-    errors
-  }
-
-  private def preCompileAssertions(recipe: Recipe): Seq[String] = {
-    assertValidNames[Recipe](_.name, Seq(recipe), "Recipe")
-    assertValidNames[InteractionDescriptor](_.name, recipe.interactions, "Interaction")
-    assertValidNames[InteractionDescriptor](_.name, recipe.sieves, "Sieve Interaction")
-    assertValidNames[Event](_.name, recipe.sensoryEvents, "Event")
-    val allIngredients = recipe.sensoryEvents.flatMap(_.providedIngredients) ++ recipe.interactions.flatMap(_.interaction.inputIngredients) ++ recipe.sieves.flatMap(_.interaction.inputIngredients)
-    assertValidNames[Ingredient](_.name, allIngredients, "Ingredient")
-    assertNoDuplicateElementsExist[InteractionDescriptor](_.name, recipe.interactions.toSet ++ recipe.sieves.toSet)
-    assertNoDuplicateElementsExist[Event](_.name, recipe.sensoryEvents)
-    assertNonEmptyRecipe(recipe)
-  }
 }

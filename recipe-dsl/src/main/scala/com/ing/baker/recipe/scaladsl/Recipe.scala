@@ -3,15 +3,14 @@ package com.ing.baker.recipe.scaladsl
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 
+import scala.concurrent.duration.FiniteDuration
 import scala.language.experimental.macros
-
-import scala.concurrent.duration.Duration
 
 object Recipe {
   def apply() : Recipe = macro CommonMacros.recipeImpl
 
   def apply(name: String): Recipe = {
-    Recipe(name, Seq.empty, Seq.empty, Set.empty, new common.InteractionFailureStrategy.BlockInteraction, Duration.Undefined, Duration.Undefined)
+    Recipe(name, Seq.empty, Seq.empty, Set.empty, new common.InteractionFailureStrategy.BlockInteraction, None, None)
   }
 }
 
@@ -23,8 +22,8 @@ case class Recipe private(override val name: String,
                           override val sieves: Seq[InteractionDescriptor],
                           override val sensoryEvents: Set[common.Event],
                           override val defaultFailureStrategy: InteractionFailureStrategy,
-                          override val eventReceivePeriod: Duration,
-                          override val retentionPeriod: Duration)
+                          override val eventReceivePeriod: Option[FiniteDuration],
+                          override val retentionPeriod: Option[FiniteDuration])
   extends common.Recipe {
 
   def withInteraction(newInteraction: InteractionDescriptor): Recipe = copy(interactions = interactions :+ newInteraction)
@@ -39,7 +38,7 @@ case class Recipe private(override val name: String,
 
   def withSensoryEvents(newEvents: Event*): Recipe = copy(sensoryEvents = sensoryEvents ++ newEvents)
 
-  def withEventReceivePeriod(duration: Duration): Recipe = copy(eventReceivePeriod = duration)
+  def withEventReceivePeriod(duration: FiniteDuration): Recipe = copy(eventReceivePeriod = Some(duration))
 
-  def withRetentionPeriod(duration: Duration): Recipe = copy(retentionPeriod = duration)
+  def withRetentionPeriod(duration: FiniteDuration): Recipe = copy(retentionPeriod = Some(duration))
 }

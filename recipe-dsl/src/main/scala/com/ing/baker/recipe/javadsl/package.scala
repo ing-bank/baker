@@ -1,17 +1,25 @@
 package com.ing.baker.recipe
 
-import java.lang.reflect.{Method, Type}
+import java.lang.reflect.{Method, Type => JType}
 
 import com.ing.baker.recipe.javadsl.ReflectionHelpers._
+import com.ing.baker.types.{Type, Converters}
 
 package object javadsl {
 
-  def createIngredient(ingredientName: String, ingredientClazz: Type): common.Ingredient =
-    new common.Ingredient {
-      override val name: String = ingredientName
-      override val clazz: Type = ingredientClazz
-    }
+  def createIngredient(ingredientName: String, ingredientType: Type): common.Ingredient =
+    new common.Ingredient(
+      name = ingredientName,
+      ingredientType = ingredientType
+  )
 
+  def parseType(jType: JType, errorMessage: String) = {
+    try {
+      Converters.readJavaType(jType)
+    } catch {
+      case e: Exception => throw new IllegalArgumentException(errorMessage, e)
+    }
+  }
 
   def eventClassToCommonEvent(eventClass: Class[_], firingLimit: Option[Integer]): common.Event =
     new common.Event {
@@ -19,7 +27,7 @@ package object javadsl {
       override val providedIngredients: Seq[common.Ingredient] =
         eventClass.getDeclaredFields
           .filter(field => !field.isSynthetic)
-          .map(f => createIngredient(f.getName, f.getGenericType))
+          .map(f => createIngredient(f.getName, parseType(f.getGenericType, s"Unsupported type for ingredient '${f.getName}' on event '${eventClass.getSimpleName}'")))
       override val maxFiringLimit: Option[Integer] = firingLimit
     }
 
@@ -33,7 +41,8 @@ package object javadsl {
         .getOrElse(throw new IllegalStateException(
           s"No method named '$interactionMethodName' defined on '${interactionClass.getName}'"))
 
-      override val inputIngredients: Seq[common.Ingredient] = method.getParameterNames.map(s => createIngredient(s, method.parameterTypeForName(s).get))
+      override val inputIngredients: Seq[common.Ingredient] =
+        method.getParameterNames.map(s => createIngredient(s, parseType(method.parameterTypeForName(s).get, s"Unsupported type for ingredient '$s' on interaction '${interactionClass.getName}'")))
 
       override val output: common.InteractionOutput = {
         if(method.isAnnotationPresent(classOf[annotations.ProvidesIngredient]) && method.isAnnotationPresent(classOf[annotations.FiresEvent]))
@@ -41,7 +50,7 @@ package object javadsl {
         //ProvidesIngredient
         else if (method.isAnnotationPresent(classOf[annotations.ProvidesIngredient])) {
           val interactionOutputName: String = method.getAnnotation(classOf[annotations.ProvidesIngredient]).value()
-          common.ProvidesIngredient(createIngredient(interactionOutputName, method.getGenericReturnType))
+          common.ProvidesIngredient(createIngredient(interactionOutputName, parseType(method.getGenericReturnType, s"Unsupported return type for interaction '${interactionClass.getSimpleName}'")))
         }
         //ProvidesEvent
         else if (method.isAnnotationPresent(classOf[annotations.FiresEvent])) {

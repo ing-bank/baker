@@ -22,12 +22,14 @@ object Dependencies {
   val akkaStream =                "com.typesafe.akka"          %% "akka-stream"                        % akkaVersion
   val akkaPersistence =           "com.typesafe.akka"          %% "akka-persistence"                   % akkaVersion
   val akkaPersistenceQuery =      "com.typesafe.akka"          %% "akka-persistence-query"             % akkaVersion
+  val akkaPersistenceCassandra =  "com.typesafe.akka"          %% "akka-persistence-cassandra"         % "0.54"
   val akkaCluster =               "com.typesafe.akka"          %% "akka-cluster"                       % akkaVersion
   val akkaClusterSharding =       "com.typesafe.akka"          %% "akka-cluster-sharding"              % akkaVersion
   val akkaSlf4j =                 "com.typesafe.akka"          %% "akka-slf4j"                         % akkaVersion
   val akkaTestKit =               "com.typesafe.akka"          %% "akka-testkit"                       % akkaVersion
   val akkaStreamTestKit =         "com.typesafe.akka"          %% "akka-stream-testkit"                % akkaVersion
   val akkaDistributedData =       "com.typesafe.akka"          %% "akka-distributed-data"              % akkaVersion
+  val akkaHttp =                  "com.typesafe.akka"          %% "akka-http"                          % "10.0.10"
   val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.7"
   val levelDBJni =                "org.fusesource.leveldbjni"  %  "leveldbjni-all"                     % "1.8"
 
@@ -50,6 +52,8 @@ object Dependencies {
   val scalapbRuntime =            "com.trueaccord.scalapb"     %% "scalapb-runtime"                    % scalapbVersion % "protobuf"
   val chill =                    ("com.twitter"                %% "chill-akka"                         % "0.9.2")
     .exclude("com.typesafe.akka", "akka-actor")
+
+  val kryo =                      "com.esotericsoftware"       % "kryo"                                % "4.0.0"
 
   val kryoSerializers =           "de.javakaffee"              %  "kryo-serializers"                   % "0.41"
   val objenisis =                 "org.objenesis"              %  "objenesis"                          % "2.5.1"

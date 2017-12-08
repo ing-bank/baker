@@ -46,7 +46,10 @@ class JobExecutor[S, P[_], T[_, _]](
           TransitionFiredEvent(job.id, transition, startTime, System.currentTimeMillis(), job.consume, produced, out)
       }.handle {
         case e: Throwable ⇒
+
+          // TODO how to deal with exceptions in this code block?
           val failureCount = job.failureCount + 1
+
           val failureStrategy = exceptionHandlerFn(transition).apply(e, failureCount, topology.outMarking(transition))
 
           val sw = new StringWriter()

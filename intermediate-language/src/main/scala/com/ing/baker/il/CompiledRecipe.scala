@@ -1,12 +1,11 @@
 package com.ing.baker.il
 
-import java.io.{File, IOException}
-
 import com.ing.baker.il.petrinet.{InteractionTransition, Place, RecipePetriNet}
 import com.ing.baker.petrinet.api.Marking
+import com.ing.baker.types.RecordField
 
 import scala.collection.JavaConverters._
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
 /**
   * A Compiled recipe.
@@ -16,8 +15,8 @@ case class CompiledRecipe(name: String,
                           initialMarking: Marking[Place],
                           sensoryEvents: Set[EventType],
                           validationErrors: Seq[String] = Seq.empty,
-                          eventReceivePeriod: Duration,
-                          retentionPeriod: Duration) {
+                          eventReceivePeriod: Option[FiniteDuration],
+                          retentionPeriod: Option[FiniteDuration]) {
 
   def getValidationErrors: java.util.List[String] = validationErrors.toList.asJava
 
@@ -40,20 +39,6 @@ case class CompiledRecipe(name: String,
 
     val g = Parser.read(getRecipeVisualization)
     Graphviz.fromGraph(g).render(Format.SVG).toString
-  }
-
-  /**
-    * Writes the visual recipe as an SVG to a given file.
-    */
-  @deprecated(message = "SVG generation support will be removed in 1.2.0", since = "1.1.15")
-  @throws[IOException]("When failing to write to the file for any reason")
-  def writeVisualRecipeToSVGFile(file: File): Unit = {
-
-    import guru.nidi.graphviz.engine.{Format, Graphviz}
-    import guru.nidi.graphviz.parse.Parser
-
-    val g = Parser.read(getRecipeVisualization)
-    Graphviz.fromGraph(g).render(Format.SVG).toFile(file)
   }
 
   /**
@@ -93,9 +78,11 @@ case class CompiledRecipe(name: String,
 
   val allEvents: Set[EventType] = sensoryEvents ++ interactionEvents
 
-  val allIngredientsProvidedByEvents: Set[IngredientType] = allEvents.flatMap {
+  def getAllEvents: java.util.Set[EventType] = allEvents.asJava
+
+  val allIngredients: Set[RecordField] = allEvents.flatMap {
     events => events.ingredientTypes
   }
 
-  val ingredients: Map[String, IngredientType] = allIngredientsProvidedByEvents.map(i => i.name -> i).toMap
+  def getAllIngredients: java.util.Set[RecordField] = allIngredients.asJava
 }

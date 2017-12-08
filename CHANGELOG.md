@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.0.0
+- Baker now has it's own type system that does not depend on java classes. This means that:
+  - The baker runtime does not have any knowledge/dependency of java classes of ingredients
+  - CompiledRecipes are completely serializable and can be stored & recovered later.
+  - Process history/state can be recovered even if ingredient classes change or disappear.
+- Baker now supports multiple recipes, individual recipes are managed by a 'RecipeHandler'
+- It is possible to add interaction implementations at runtime.
+- Scala/Java DSL alignment: renamed `processEvent -> handleEvent` and `processEventAsync -> handleEventAsync`
+
+## 1.1.17
+- Fix #72: do not join to akka cluster when there are persistence problems. `akka.cluster.seed-nodes` configuration should be renamed to `baker.cluster.seed-nodes` to support this "late cluster join" feature.
+
+## 1.1.16
+- Fix #55: Improved readability of duration of scheduled retry log entries 
+- DSL syntactic sugar: Variable name is inferred as 'name' for the Ingredients, Events and Recipes, if not defined explicitly.
+  Example:
+  ```scala
+    val myIngredient = Ingredient[String]
+    myIngredient.name shouldBe "myIngredient"
+  ```
+- Scala/Java dsl alignment: JBaker.processEventAsync now supports a timeout parameter
+
 ## 1.1.15
 - Fix #62: internal IdleStop message for the ProcessInstance actor is now configured to be serialized by Kryo
 - Fix #59: disabled the usage of Akka Distributed Data until the growing memory issue in the shared process metadata feature is solved.

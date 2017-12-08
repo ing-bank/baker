@@ -119,7 +119,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val processProbe = TestProbe()
 
       val actorIndex = createActorIndex(processProbe.ref,
-        retentionPeriod = retentionPeriod,
+        retentionPeriod = Some(retentionPeriod),
         cleanupInterval = cleanupInterval)
 
       val processId = UUID.randomUUID().toString
@@ -147,7 +147,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val receivePeriodTimeout = 500 milliseconds
       val petriNetActorProbe = TestProbe("petrinet-probe")
-      val actorIndex = createActorIndex(petriNetActorProbe.ref, receivePeriod = receivePeriodTimeout)
+      val actorIndex = createActorIndex(petriNetActorProbe.ref, receivePeriod = Some(receivePeriodTimeout))
 
       val processId = UUID.randomUUID().toString
 
@@ -176,8 +176,8 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
   }
 
   private def createActorIndex(petriNetActorRef: ActorRef,
-                               receivePeriod: Duration = Duration.Undefined,
-                               retentionPeriod: Duration = Duration.Undefined,
+                               receivePeriod: Option[FiniteDuration] = None,
+                               retentionPeriod: Option[FiniteDuration] = None,
                                cleanupInterval: FiniteDuration = 50 milliseconds) = {
     val props = Props(new ProcessIndex(Props.empty, recipeMetadataMock, receivePeriod, retentionPeriod, cleanupInterval) {
       override def createProcessActor(id: String) = petriNetActorRef

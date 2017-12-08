@@ -2,6 +2,7 @@ package com.ing.baker.runtime.actor.serialization
 
 import akka.actor.ExtendedActorSystem
 import akka.serialization.{Serializer, SerializerWithStringManifest}
+import com.ing.baker.types.Value
 import com.ing.baker.runtime.actor.messages
 import com.ing.baker.runtime.core
 
@@ -23,20 +24,20 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     }
   }
 
-  def writeIngredients(ingredients: Seq[(String, Any)]): Seq[messages.Ingredient] = {
+  def writeIngredients(ingredients: Seq[(String, Value)]): Seq[messages.Ingredient] = {
     ingredients.map { case (name, value) =>
-      val serializedObject = objectSerializer.serializeObject(value.asInstanceOf[AnyRef])
+      val serializedObject = objectSerializer.serializeObject(value)
       val objectMessage = transformToProto(serializedObject)
       messages.Ingredient(Some(name), Some(objectMessage))
     }
   }
 
-  def readIngredients(ingredients: Seq[messages.Ingredient]): Seq[(String, Any)] = {
+  def readIngredients(ingredients: Seq[messages.Ingredient]): Seq[(String, Value)] = {
     ingredients.map {
       case messages.Ingredient(Some(name), Some(data)) =>
 
         val deserializedData = transformFromProto(data)
-        val deserializedObject = objectSerializer.deserializeObject(deserializedData)
+        val deserializedObject = objectSerializer.deserializeObject(deserializedData).asInstanceOf[Value]
         name -> deserializedObject
     }
   }
