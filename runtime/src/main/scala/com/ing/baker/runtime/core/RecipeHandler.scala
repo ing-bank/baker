@@ -231,11 +231,11 @@ class RecipeHandler(val compiledRecipe: CompiledRecipe,
     val subscriber = actorSystem.actorOf(Props(new Actor() {
       override def receive: Receive = {
         case ProcessInstanceEvent(processType, processId, event: TransitionFiredEvent[_, _, _]) if processType == compiledRecipe.name =>
-          toRuntimeEvent(event).foreach(e => listener.processEvent(processId, e))
+          toRuntimeEvent(event).foreach(e => listener.handleEvent(processId, e))
         case ProcessInstanceEvent(processType, processId, event: TransitionFailedEvent[_, _, _]) if processType == compiledRecipe.name =>
           event.exceptionStrategy match {
             case Continue(_, event: RuntimeEvent) =>
-              listener.processEvent(processId, event)
+              listener.handleEvent(processId, event)
             case _ =>
           }
         case _: ProcessInstanceEvent =>  // purposely ignored in order to not have unnecessary unhandled messages logged

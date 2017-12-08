@@ -270,8 +270,8 @@ class BakerExecutionSpec extends TestRecipeHelper {
       recipeHandler.bake(processId)
       recipeHandler.handleEvent(processId, InitialEvent(initialIngredientValue))
 
-      verify(listenerMock).processEvent(processId.toString, RuntimeEvent.create("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)))
-      verify(listenerMock).processEvent(processId.toString, RuntimeEvent.create("InteractionOneSuccessful", Seq("interactionOneOriginalIngredient" -> interactionOneIngredientValue)))
+      verify(listenerMock).handleEvent(processId.toString, RuntimeEvent.create("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)))
+      verify(listenerMock).handleEvent(processId.toString, RuntimeEvent.create("InteractionOneSuccessful", Seq("interactionOneOriginalIngredient" -> interactionOneIngredientValue)))
     }
 
     "execute an interaction when its ingredient is provided and the interaction is renamed" in {
@@ -656,8 +656,8 @@ class BakerExecutionSpec extends TestRecipeHelper {
       recipeHandler.handleEvent(processId, InitialEvent(initialIngredientValue))
 
       Thread.sleep(50)
-      verify(listenerMock).processEvent(processId.toString, RuntimeEvent.create("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)))
-      verify(listenerMock).processEvent(processId.toString, RuntimeEvent.create("RetryExhausted", Seq.empty))
+      verify(listenerMock).handleEvent(processId.toString, RuntimeEvent.create("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)))
+      verify(listenerMock).handleEvent(processId.toString, RuntimeEvent.create("RetryExhausted", Seq.empty))
 
       recipeHandler.events(processId).map(_.name) should contain (exhaustedEvent.name)
     }

@@ -40,7 +40,7 @@ class JRecipeHandler(recipeHandler: RecipeHandler)(implicit val actorSystem: Act
     * @param event The event to fire
     * @return
     */
-  def processEvent(processId: String, event: Any): Unit = processEventAsync(processId, event).confirmCompleted()
+  def handleEvent(processId: String, event: Any): Unit = handleEventAsync(processId, event).confirmCompleted()
 
   /**
     * This fires the given event in the recipe for the process with the given processId
@@ -50,7 +50,7 @@ class JRecipeHandler(recipeHandler: RecipeHandler)(implicit val actorSystem: Act
     * @param event The event to fire
     * @return
     */
-  def processEvent(processId: UUID, event: Any): Unit = processEvent(processId.toString, event)
+  def handleEvent(processId: UUID, event: Any): Unit = handleEvent(processId.toString, event)
 
   /**
     * This fires the given event in the recipe for the process with the given processId
@@ -60,7 +60,7 @@ class JRecipeHandler(recipeHandler: RecipeHandler)(implicit val actorSystem: Act
     * @param event The event to fire
     * @return
     */
-  def processEventAsync(processId: String, event: Any): BakerResponse = {
+  def handleEventAsync(processId: String, event: Any): BakerResponse = {
     implicit val executionContext = actorSystem.dispatcher
     recipeHandler.handleEventAsync(processId, event)(defaultHandleEventAsyncTimeout)
   }
@@ -73,8 +73,8 @@ class JRecipeHandler(recipeHandler: RecipeHandler)(implicit val actorSystem: Act
     * @param event The event to fire
     * @return
     */
-  def processEventAsync(processId: UUID, event: Any): BakerResponse =
-    processEventAsync(processId.toString, event)
+  def handleEventAsync(processId: UUID, event: Any): BakerResponse =
+    handleEventAsync(processId.toString, event)
 
   /**
     * Returns all the ingredients that are accumulated for a given process.

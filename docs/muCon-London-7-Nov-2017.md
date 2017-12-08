@@ -193,8 +193,8 @@ return new Recipe("MuConf2017Demo").
 //for each process instance, bake the recipe
 baker.bake(processId);
 //notify Baker when events occur
-baker.processEvent(processId, new SensoryEvents.IndividualInformationSubmitted(name, address));
-baker.processEvent(processId, new SensoryEvents.TermsAndConditionsAccepted());
+baker.handleEvent(processId, new SensoryEvents.IndividualInformationSubmitted(name, address));
+baker.handleEvent(processId, new SensoryEvents.TermsAndConditionsAccepted());
 
 //retrieve ingredients stored in the accumulated state
 assert(baker.getIngredients(processId).get("customerId").equals(customerId));

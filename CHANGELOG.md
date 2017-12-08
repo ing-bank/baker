@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.0
+- TODO 
+
 ## 1.1.15
 - Fix #62: internal IdleStop message for the ProcessInstance actor is now configured to be serialized by Kryo
 - Fix #59: disabled the usage of Akka Distributed Data until the growing memory issue in the shared process metadata feature is solved.

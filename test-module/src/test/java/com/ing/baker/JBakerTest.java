@@ -11,7 +11,6 @@ import com.ing.baker.recipe.javadsl.Recipe;
 import com.ing.baker.runtime.core.BakerException;
 import com.ing.baker.runtime.java_api.JBaker;
 import com.typesafe.config.ConfigFactory;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -48,7 +47,7 @@ public class JBakerTest {
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
         String requestId = UUID.randomUUID().toString();
         recipeHandler.bake(requestId);
-        recipeHandler.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
+        recipeHandler.handleEvent(requestId, new JavaCompiledRecipeTest.EventOne());
 
         assertEquals(recipeHandler.getIngredients(requestId).size(), 1);
 
@@ -71,7 +70,7 @@ public class JBakerTest {
 
         String requestId = UUID.randomUUID().toString();
         recipeHandler.bake(requestId);
-        recipeHandler.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
+        recipeHandler.handleEvent(requestId, new JavaCompiledRecipeTest.EventOne());
 
         assertEquals(recipeHandler.getIngredients(requestId).size(), 1);
 
@@ -102,8 +101,8 @@ public class JBakerTest {
 
         String requestId = UUID.randomUUID().toString();
         recipeHandler.bake(requestId);
-        recipeHandler.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
-        recipeHandler.processEvent(requestId, new JavaCompiledRecipeTest.EventTwo());
+        recipeHandler.handleEvent(requestId, new JavaCompiledRecipeTest.EventOne());
+        recipeHandler.handleEvent(requestId, new JavaCompiledRecipeTest.EventTwo());
     }
 
     @Test

@@ -43,8 +43,8 @@ return new Recipe("DemoAtTwitterHQ").
 
 ```java
 //notify Baker when events occur
-baker.processEvent(processId, new SensoryEvents.IndividualInformationSubmitted(name, address));
-baker.processEvent(processId, new SensoryEvents.TermsAndConditionsAccepted());
+baker.handleEvent(processId, new SensoryEvents.IndividualInformationSubmitted(name, address));
+baker.handleEvent(processId, new SensoryEvents.TermsAndConditionsAccepted());
 ```
 
 ---
