@@ -1,14 +1,10 @@
 package com.ing.baker.runtime.core
 
-import java.util.concurrent.TimeoutException
-
-import akka.NotUsed
 import akka.actor.{ActorSystem, Address, AddressFromURIString}
 import akka.cluster.Cluster
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.Source
 import akka.util.Timeout
 import com.ing.baker.il._
 import com.ing.baker.il.petrinet._
@@ -21,7 +17,7 @@ import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExt
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Await
 import scala.concurrent.duration.{FiniteDuration, _}
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
@@ -168,103 +164,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
         actorSystem.terminate()
     }
   }
-
-  /**
-    * Creates a process instance of this recipe.
-    *
-    * @param processId The process identifier
-    */
-  @deprecated("Use recipe handler instead" , "2.0.01")
-  def bake(processId: String): ProcessState = recipeHandlers.head.bake(processId)
-
-  /**
-    * Asynchronously creates an instance of the  process using the recipe.
-    *
-    * @param processId The process identifier
-    * @return A future of the initial process state.
-    */
-  @deprecated("Use recipe handler instead" , "2.0.01")
-  def bakeAsync(processId: String): Future[ProcessState] =
-    recipeHandlers.head.bakeAsync(processId)
-
-  /**
-    * Registers a listener to all runtime events.
-    *
-    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
-    */
-  @deprecated("Use recipe handler instead" , "2.0.01")
-  def registerEventListener(listener: EventListener): Boolean =
-    recipeHandlers.head.registerEventListener(listener)
-
-  /**
-    * Synchronously returns all events that occurred for a process.
-    */
-  @deprecated("Use recipe handler instead" , "2.0.01")
-  def events(processId: String)(implicit timeout: FiniteDuration): Seq[RuntimeEvent] =
-    recipeHandlers.head.events(processId)(timeout)
-
-  /**
-    * Returns a Source of baker events for a process.
-    *
-    * @param processId The process identifier.
-    * @return The source of events.
-    */
-  @deprecated("Use recipe handler instead" , "2.0.01")
-  def eventsAsync(processId: String): Source[RuntimeEvent, NotUsed] =
-    recipeHandlers.head.eventsAsync(processId)
-
-  /**
-    * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
-    *
-    * @param processId The process identifier
-    * @param event     The event object
-    */
-  @deprecated("Use recipe handler instead" , "2.0.01")
-  def handleEvent(processId: String, event: Any)(implicit timeout: FiniteDuration): SensoryEventStatus =
-    recipeHandlers.head.handleEvent(processId, event)
-
-  /**
-    * Fires an event to baker for a process.
-    *
-    * This call is fire and forget: If  nothing is done
-    * with the response object you NO guarantee that the event is received the process instance.
-    */
-  @deprecated("Use recipe handler instead" , "2.0.01")
-  def handleEventAsync(processId: String, event: Any)(implicit timeout: FiniteDuration): BakerResponse =
-    recipeHandlers.head.handleEventAsync(processId, event)
-
-  /**
-    * Returns the visual state (.dot) for a given process.
-    *
-    * @param processId The process identifier.
-    * @param timeout How long to wait to retreive the process state.
-    * @return A visual (.dot) representation of the process state.
-    */
-  @deprecated("Use recipe handler instead" , "2.0.01")
-  def getVisualState(processId: String)(implicit timeout: FiniteDuration): String =
-    recipeHandlers.head.getVisualState(processId)
-
-  /**
-    * Returns a future of all the provided ingredients for a given process id.
-    *
-    * @param processId The process id.
-    * @return A future of the provided ingredients.
-    */
-  @deprecated("Use recipe handler instead" , "2.0.01")
-  def getIngredientsAsync(processId: String)(implicit timeout: FiniteDuration): Future[Map[String, Any]] =
-    recipeHandlers.head.getIngredientsAsync(processId)
-
-  /**
-    * Returns all provided ingredients for a given process id.
-    *
-    * @param processId The process id.
-    * @return The provided ingredients.
-    */
-  @deprecated("Use recipe handler instead" , "2.0.01")
-  @throws[NoSuchProcessException]("When no process exists for the given id")
-  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def getIngredients(processId: String)(implicit timeout: FiniteDuration): Map[String, Any] =
-    recipeHandlers.head.getIngredients(processId)
 
   def allProcessMetadata: Set[ProcessMetadata] = recipeHandlers.flatMap(_.recipeMetadata.getAll).toSet
 }
