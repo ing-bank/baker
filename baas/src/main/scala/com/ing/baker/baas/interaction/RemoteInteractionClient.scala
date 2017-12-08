@@ -10,16 +10,16 @@ import com.ing.baker.baas.interaction.http.ExecuteInteractionHTTPRequest
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.core.RuntimeEvent
 import com.ing.baker.runtime.core.interations.InteractionImplementation
-import com.ing.baker.types.{BType, Value}
+import com.ing.baker.types.{Type, Value}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration._
 
 //This is the interactionImplementation as running in the BAAS cluster
-//This communicates with a RemoteInteractionimplementatoinClient that execute the request.
+//This communicates with a RemoteInteractionImplementationClient that execute the request.
 case class RemoteInteractionClient(override val name: String,
                                    uri: String,
-                                   override val inputTypes: Seq[BType])(implicit val actorSystem: ActorSystem) extends InteractionImplementation {
+                                   override val inputTypes: Seq[Type])(implicit val actorSystem: ActorSystem) extends InteractionImplementation {
 
   val log = LoggerFactory.getLogger(classOf[RemoteInteractionClient])
 

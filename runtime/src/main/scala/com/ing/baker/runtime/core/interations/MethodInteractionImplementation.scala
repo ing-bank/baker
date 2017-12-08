@@ -9,7 +9,7 @@ import com.ing.baker.runtime.core.Baker.eventExtractor
 import com.ing.baker.runtime.core.interations.MethodInteractionImplementation._
 import com.ing.baker.runtime.core.{BakerException, RuntimeEvent}
 import com.ing.baker.runtime.petrinet.FatalInteractionException
-import com.ing.baker.types.{BType, Converters, IngredientDescriptor, Value}
+import com.ing.baker.types.{Type, Converters, IngredientDescriptor, Value}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConverters._
@@ -140,7 +140,7 @@ case class MethodInteractionImplementation(override val name: String,
   /**
     * The required input.
     */
-  override val inputTypes: Seq[BType] = method.getGenericParameterTypes.map {
+  override val inputTypes: Seq[Type] = method.getGenericParameterTypes.map {
     jType => try { Converters.readJavaType(jType) } catch {
       case e: Exception => throw new IllegalArgumentException(s"Unsupported parameter type for interaction implementation '$name'", e)
     }

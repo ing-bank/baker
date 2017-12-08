@@ -6,7 +6,7 @@ sealed trait Value extends Serializable {
 
   def isNull: Boolean = this == NullValue
 
-  def isInstanceOf(t: BType): Boolean = (t, this) match {
+  def isInstanceOf(t: Type): Boolean = (t, this) match {
     case (_, NullValue)                                     => true
     case (PrimitiveType(clazz), v: PrimitiveValue)          => v.isAssignableTo(clazz)
     case (ListType(entryType), ListValue(entries))          => entries.forall(_.isInstanceOf(entryType))

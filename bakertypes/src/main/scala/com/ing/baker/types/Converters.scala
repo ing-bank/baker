@@ -1,6 +1,6 @@
 package com.ing.baker.types
 
-import java.lang.reflect.{Modifier, ParameterizedType, Type}
+import java.lang.reflect.{Modifier, ParameterizedType, Type => JType}
 import java.util
 import java.util.Optional
 
@@ -14,7 +14,7 @@ object Converters {
 
   val mirror: universe.Mirror = universe.runtimeMirror(classOf[Value].getClassLoader)
 
-  def getRawClass(t: Type): Class[_] = t match {
+  def getRawClass(t: JType): Class[_] = t match {
     case c: Class[_] => c
     case t: ParameterizedType => getRawClass(t.getRawType)
     case t@_ => throw new IllegalArgumentException(s"Unsupported type: $t")
@@ -36,9 +36,9 @@ object Converters {
     }
   }
 
-  def readJavaType[T : TypeTag]: BType = readJavaType(createJavaType(mirror.typeOf[T]))
+  def readJavaType[T : TypeTag]: Type = readJavaType(createJavaType(mirror.typeOf[T]))
 
-  def readJavaType(javaType: Type): BType = {
+  def readJavaType(javaType: JType): Type = {
 
     javaType match {
       case clazz if clazz == classOf[Object] =>

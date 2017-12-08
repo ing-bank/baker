@@ -1,19 +1,19 @@
 package com.ing.baker.recipe
 
-import java.lang.reflect.{Method, Type}
+import java.lang.reflect.{Method, Type => JType}
 
 import com.ing.baker.recipe.javadsl.ReflectionHelpers._
-import com.ing.baker.types.{BType, Converters}
+import com.ing.baker.types.{Type, Converters}
 
 package object javadsl {
 
-  def createIngredient(ingredientName: String, ingredientType: BType): common.Ingredient =
+  def createIngredient(ingredientName: String, ingredientType: Type): common.Ingredient =
     new common.Ingredient(
       name = ingredientName,
       ingredientType = ingredientType
   )
 
-  def parseType(jType: Type, errorMessage: String) = {
+  def parseType(jType: JType, errorMessage: String) = {
     try {
       Converters.readJavaType(jType)
     } catch {

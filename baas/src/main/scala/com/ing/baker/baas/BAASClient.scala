@@ -10,7 +10,7 @@ import com.ing.baker.baas.ClientUtils._
 import com.ing.baker.baas.http.AddInteractionHTTPRequest
 import com.ing.baker.recipe.common
 import com.ing.baker.runtime.core.{Baker, ProcessState, RuntimeEvent, SensoryEventStatus}
-import com.ing.baker.types.{BType, Value}
+import com.ing.baker.types.{Type, Value}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -42,7 +42,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
     doRequest(httpRequest, logEntity)
   }
 
-  def addRemoteImplementation(interactionName: String, uri: String, inputTypes: Seq[BType]) = {
+  def addRemoteImplementation(interactionName: String, uri: String, inputTypes: Seq[Type]) = {
 
     //Create the request to Add the interaction implmentation to Baas
     log.info("Registering remote implementation client")

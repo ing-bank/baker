@@ -1,10 +1,10 @@
 package com.ing.baker.recipe
 
-import com.ing.baker.types.BType
+import com.ing.baker.types.Type
 
 package object common {
 
-  type IngredientType = BType
+  type IngredientType = Type
 
   val ProcessIdName = "$ProcessId$"
 }

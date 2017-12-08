@@ -1,6 +1,6 @@
 package com.ing.baker.types
 
-sealed trait BType {
+sealed trait Type {
 
   /**
     * Checks if an instance of other is also an instance of this type.
@@ -8,7 +8,7 @@ sealed trait BType {
     * @param other
     * @return
     */
-  def isAssignableFrom(other: BType): Boolean = {
+  def isAssignableFrom(other: Type): Boolean = {
 
     (this, other) match {
       case (PrimitiveType(clazzA), PrimitiveType(clazzB)) =>
@@ -26,7 +26,7 @@ sealed trait BType {
         entryTypeA.isAssignableFrom(entryTypeB)
 
       case (RecordType(entriesA), RecordType(entriesB)) =>
-        val entriesMap: Map[String, BType] = entriesB.map(f => f.name -> f.`type`).toMap
+        val entriesMap: Map[String, Type] = entriesB.map(f => f.name -> f.`type`).toMap
         entriesA.forall { f =>
           entriesMap.get(f.name) match {
             case None            => false
@@ -44,16 +44,16 @@ sealed trait BType {
   }
 }
 
-case class PrimitiveType(clazz: Class[_]) extends BType
+case class PrimitiveType(clazz: Class[_]) extends Type
 
-case class ListType(entryType: BType) extends BType
+case class ListType(entryType: Type) extends Type
 
-case class OptionType(entryType: BType) extends BType
+case class OptionType(entryType: Type) extends Type
 
-case class EnumType(options: Set[String]) extends BType
+case class EnumType(options: Set[String]) extends Type
 
-case class RecordType(fields: Seq[RecordField]) extends BType
+case class RecordType(fields: Seq[RecordField]) extends Type
 
-case class MapType(valueType: BType) extends BType
+case class MapType(valueType: Type) extends Type
 
-case class RecordField(name: String, `type`: BType)
+case class RecordField(name: String, `type`: Type)
