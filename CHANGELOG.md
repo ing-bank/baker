@@ -1,16 +1,13 @@
 # Changelog
-## 2.0.0
 
+## 2.0.0
 - Baker now has it's own type system that does not depend on java classes. This means that:
   - The baker runtime does not have any knowledge/dependency of java classes of ingredients
   - CompiledRecipes are completely serializable and can be stored & recovered later.
-  - Process history/state can be recovered even if ingredient classes change or dissapear.
+  - Process history/state can be recovered even if ingredient classes change or disappear.
 - Baker now supports multiple recipes, individual recipes are managed by a 'RecipeHandler'
 - It is possible to add interaction implementations at runtime.
-
-
-## 2.0.0
-- TODO
+- Scala/Java DSL alignment: renamed `processEvent -> handleEvent` and `processEventAsync -> handleEventAsync`
 
 ## 1.1.17
 - Fix #72: do not join to akka cluster when there are persistence problems. `akka.cluster.seed-nodes` configuration should be renamed to `baker.cluster.seed-nodes` to support this "late cluster join" feature.
