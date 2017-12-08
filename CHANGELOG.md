@@ -1,4 +1,13 @@
 # Changelog
+## 2.0.0
+
+- Baker now has it's own type system that does not depend on java classes. This means that:
+  - The baker runtime does not have any knowledge/dependency of java classes of ingredients
+  - CompiledRecipes are completely serializable and can be stored & recovered later.
+  - Process history/state can be recovered even if ingredient classes change or dissapear.
+- Baker now supports multiple recipes, individual recipes are managed by a 'RecipeHandler'
+- It is possible to add interaction implementations at runtime.
+
 
 ## 2.0.0
 - TODO 
