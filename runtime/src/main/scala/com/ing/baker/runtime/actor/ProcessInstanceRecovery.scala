@@ -4,7 +4,6 @@ import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.{EventSourcing, Instance}
-import com.ing.baker.runtime.actor.messages._
 import com.ing.baker.runtime.actor.serialization.{ObjectSerializer, ProtobufSerialization}
 
 abstract class ProcessInstanceRecovery[P[_], T[_,_], S, E](
@@ -35,9 +34,9 @@ abstract class ProcessInstanceRecovery[P[_], T[_,_], S, E](
   }
 
   override def receiveRecover: Receive = {
-    case e: Initialized      ⇒ applyToRecoveringState(e)
-    case e: TransitionFired  ⇒ applyToRecoveringState(e)
-    case e: TransitionFailed ⇒ applyToRecoveringState(e)
+    case e: messages.Initialized      ⇒ applyToRecoveringState(e)
+    case e: messages.TransitionFired  ⇒ applyToRecoveringState(e)
+    case e: messages.TransitionFailed ⇒ applyToRecoveringState(e)
     case RecoveryCompleted ⇒
       if (recoveringState.sequenceNr > 0)
         onRecoveryCompleted(recoveringState)

@@ -3,7 +3,7 @@ package com.ing.baker.runtime.core
 import java.util.concurrent.TimeoutException
 
 import akka.NotUsed
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Address, AddressFromURIString}
 import akka.cluster.Cluster
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
@@ -21,7 +21,7 @@ import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExt
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.{FiniteDuration, _}
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
@@ -62,18 +62,43 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   private val journalInitializeTimeout = config.as[FiniteDuration]("baker.journal-initialize-timeout")
   private val readJournalIdentifier = config.as[String]("baker.actor.read-journal-plugin")
   private val actorIdleTimeout: Option[FiniteDuration] = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout")
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
   private val log = LoggerFactory.getLogger(classOf[Baker])
+
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   private val readJournal = PersistenceQuery(actorSystem)
     .readJournalFor[CurrentEventsByPersistenceIdQuery with PersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
 
-  private val bakerActorProvider =
-    actorSystem.settings.config.as[Option[String]]("baker.actor.provider") match {
-      case None | Some("local") => new LocalBakerActorProvider(config)
-      case Some("cluster-sharded") => new ClusterActorProvider(config)
-      case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
+  private def initializeCluster() = {
+
+    val seedNodes: List[Address] = config.as[Option[List[String]]]("baker.cluster.seed-nodes") match {
+      case Some(_seedNodes) if _seedNodes.nonEmpty =>
+        _seedNodes map AddressFromURIString.parse
+      case None =>
+        throw new BakerException("Baker cluster configuration without baker.cluster.seed-nodes")
     }
+
+    /**
+      * Join cluster after waiting for the persistenceInit actor, otherwise terminate here.
+      */
+    Await.result(Util.persistenceInit(journalInitializeTimeout), journalInitializeTimeout)
+
+    // join the cluster
+    log.info("PersistenceInit actor started successfully, joining cluster seed nodes {}", seedNodes)
+    Cluster.get(actorSystem).joinSeedNodes(seedNodes)
+  }
+
+  private val bakerActorProvider =
+    config.as[Option[String]]("baker.actor.provider") match {
+      case None | Some("local")    =>
+        new LocalBakerActorProvider(config)
+      case Some("cluster-sharded") =>
+        initializeCluster()
+        new ClusterActorProvider(config)
+      case Some(other)             =>
+        throw new IllegalArgumentException(s"Unsupported actor provider: $other")
+    }
+
 
   private val configuredEncryption: Encryption = {
     val encryptionEnabled = config.getAs[Boolean]("baker.encryption.enabled").getOrElse(false)
@@ -121,11 +146,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
   if (!config.as[Option[Boolean]]("baker.config-file-included").getOrElse(false))
     throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
-
-  /**
-    * We do this to force initialization of the journal (database) connection.
-    */
-  Util.createPersistenceWarmupActor()(actorSystem, journalInitializeTimeout)
 
   /**
     * Attempts to gracefully shutdown the baker system.

@@ -9,7 +9,8 @@ import com.ing.baker.runtime.core._
 import scala.concurrent.duration._
 import scala.collection.JavaConverters._
 
-class JBaker(actorSystem: ActorSystem) {
+class JBaker (
+              actorSystem: ActorSystem) {
 
   def this() = this(ActorSystem("BakerActorSystem"))
 

@@ -6,6 +6,11 @@ import com.ing.baker.recipe.common._
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
 import com.ing.baker.types.Converters
 
+object InteractionDescriptorFactory {
+  def apply(interaction: Interaction): InteractionDescriptor = InteractionDescriptor(interaction)
+  def apply(interaction: Interaction, name: String): InteractionDescriptor = InteractionDescriptor(interaction, newName = name)
+}
+
 case class InteractionDescriptor private(override val interaction: Interaction,
                                          override val requiredEvents: Set[String] = Set.empty,
                                          override val requiredOneOfEvents: Set[String] = Set.empty,
@@ -62,9 +67,4 @@ case class InteractionDescriptor private(override val interaction: Interaction,
 
   def withEventOutputTransformer(event: Event, newEventName: String, ingredientRenames: Map[String, String]): InteractionDescriptor =
     copy(eventOutputTransformers = eventOutputTransformers + (event -> EventOutputTransformer(newEventName, ingredientRenames)))
-}
-
-object InteractionDescriptorFactory {
-  def apply(interaction: Interaction): InteractionDescriptor = InteractionDescriptor(interaction)
-  def apply(interaction: Interaction, name: String): InteractionDescriptor = InteractionDescriptor(interaction, newName = name)
 }

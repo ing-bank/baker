@@ -6,15 +6,14 @@ import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.types.{Converters, Value}
+import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
 import com.ing.baker.recipe.scaladsl._
-import com.ing.baker.recipe.{common, javadsl}
 import com.ing.baker.runtime.core.{Baker, RecipeHandler}
+import com.ing.baker.types.{Converters, Value}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
-import org.mockito.stubbing.Answer
 import org.scalatest._
 import org.scalatest.mockito.MockitoSugar
 
@@ -335,7 +334,7 @@ trait TestRecipeHelper
       testOptionalIngredientInteractionMock,
       testProvidesNothingInteractionMock)
 
-  protected def levelDbConfig(actorSystemName: String, port: Int, journalPath: String = "target/journal", snapshotsPath: String = "target/snapshots"): Config = ConfigFactory.parseString(
+  protected def levelDbConfig(actorSystemName: String, port: Int, journalInitializeTimeout: FiniteDuration = 10 seconds, journalPath: String = "target/journal", snapshotsPath: String = "target/snapshots"): Config = ConfigFactory.parseString(
     s"""
        |include "baker.conf"
        |
@@ -355,8 +354,6 @@ trait TestRecipeHelper
        |      port = $port
        |    }
        |  }
-       |
-       |  cluster.seed-nodes = ["akka.tcp://$actorSystemName@localhost:$port"]
        |
        |  persistence {
        |     journal.plugin = "akka.persistence.journal.leveldb"
@@ -379,6 +376,8 @@ trait TestRecipeHelper
        |baker {
        |  actor.provider = "cluster-sharded"
        |  actor.read-journal-plugin = "akka.persistence.query.journal.leveldb"
+       |  journal-initialize-timeout = $journalInitializeTimeout
+       |  cluster.seed-nodes = ["akka.tcp://$actorSystemName@localhost:$port"]
        |}
        |
        |logging.root.level = DEBUG
