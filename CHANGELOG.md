@@ -10,7 +10,20 @@
 
 
 ## 2.0.0
-- TODO 
+- TODO
+
+## 1.1.17
+- Fix #72: do not join to akka cluster when there are persistence problems. `akka.cluster.seed-nodes` configuration should be renamed to `baker.cluster.seed-nodes` to support this "late cluster join" feature.
+
+## 1.1.16
+- Fix #55: Improved readability of duration of scheduled retry log entries 
+- DSL syntactic sugar: Variable name is inferred as 'name' for the Ingredients, Events and Recipes, if not defined explicitly.
+  Example:
+  ```scala
+    val myIngredient = Ingredient[String]
+    myIngredient.name shouldBe "myIngredient"
+  ```
+- Scala/Java dsl alignment: JBaker.processEventAsync now supports a timeout parameter
 
 ## 1.1.15
 - Fix #62: internal IdleStop message for the ProcessInstance actor is now configured to be serialized by Kryo
