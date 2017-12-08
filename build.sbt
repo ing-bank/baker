@@ -56,7 +56,7 @@ lazy val petrinetApi = project.in(file("petrinet-api"))
 lazy val bakertypes = project.in(file("bakertypes"))
   .settings(defaultModuleSettings)
   .settings(
-    moduleName := "bakertypese",
+    moduleName := "baker-types",
     libraryDependencies ++= compileDeps(
       slf4jApi,
       objenisis,
@@ -68,7 +68,7 @@ lazy val bakertypes = project.in(file("bakertypes"))
 lazy val intermediateLanguage = project.in(file("intermediate-language"))
   .settings(defaultModuleSettings)
   .settings(
-    moduleName := "intermediate-language",
+    moduleName := "baker-intermediate-language",
     libraryDependencies ++= compileDeps(
       slf4jApi,
       scalaGraphDot,
@@ -83,7 +83,7 @@ lazy val recipeRuntime = project.in(file("runtime"))
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
   .settings(
-    moduleName := "runtime",
+    moduleName := "baker-runtime",
     libraryDependencies ++=
       compileDeps(
         akkaActor,
@@ -118,7 +118,7 @@ lazy val recipeRuntime = project.in(file("runtime"))
 lazy val recipeDsl = project.in(file("recipe-dsl"))
   .settings(defaultModuleSettings)
   .settings(
-    moduleName := "recipe-dsl",
+    moduleName := "baker-recipe-dsl",
     libraryDependencies ++=
       compileDeps(
         javaxInject,
@@ -138,7 +138,7 @@ lazy val recipeDsl = project.in(file("recipe-dsl"))
 lazy val recipeCompiler = project.in(file("compiler"))
   .settings(defaultModuleSettings)
   .settings(
-    moduleName := "compiler",
+    moduleName := "baker-compiler",
     libraryDependencies ++=
       compileDeps(slf4jApi) ++ testDeps(scalaTest, scalaCheck, logback)
   )
@@ -147,7 +147,7 @@ lazy val recipeCompiler = project.in(file("compiler"))
 lazy val baas = project.in(file("baas"))
   .settings(defaultModuleSettings)
   .settings(
-    moduleName := "baas",
+    moduleName := "baker-baas",
     libraryDependencies ++=
       compileDeps(
         akkaHttp,
