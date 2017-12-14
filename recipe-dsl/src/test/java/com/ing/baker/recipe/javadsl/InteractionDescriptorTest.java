@@ -99,9 +99,9 @@ public class InteractionDescriptorTest {
         InteractionDescriptor idWithRequiredOneOfEvents =
                 id.withRequiredOneOfEvents(SensoryEventWithIngredient.class, SensoryEventWithoutIngredient.class);
 
-        assertEquals(idWithRequiredOneOfEvents.requiredOneOfEvents().size(), 2);
-        assertTrue(idWithRequiredOneOfEvents.requiredOneOfEvents().contains(sensoryEventWithIngredientCheck().name()));
-        assertTrue(idWithRequiredOneOfEvents.requiredOneOfEvents().contains(sensoryEventWithoutIngredientCheck().name()));
+        assertEquals(idWithRequiredOneOfEvents.requiredOneOfEvents().head().size(), 2);
+        assertTrue(idWithRequiredOneOfEvents.requiredOneOfEvents().head().contains(sensoryEventWithIngredientCheck().name()));
+        assertTrue(idWithRequiredOneOfEvents.requiredOneOfEvents().head().contains(sensoryEventWithoutIngredientCheck().name()));
     }
 
     @Test
@@ -115,11 +115,10 @@ public class InteractionDescriptorTest {
         InteractionDescriptor idWithRequiredOneOfEvents =
                 id.withRequiredOneOfEventsFromName(sensoryEventWithIngredientName, sensoryEventWithoutIngredientName);
 
-        assertEquals(idWithRequiredOneOfEvents.requiredOneOfEvents().size(), 2);
-        assertTrue(idWithRequiredOneOfEvents.requiredOneOfEvents().contains(sensoryEventWithIngredientName));
-        assertTrue(idWithRequiredOneOfEvents.requiredOneOfEvents().contains(sensoryEventWithoutIngredientName));
+        assertEquals(idWithRequiredOneOfEvents.requiredOneOfEvents().head().size(), 2);
+        assertTrue(idWithRequiredOneOfEvents.requiredOneOfEvents().head().contains(sensoryEventWithIngredientName));
+        assertTrue(idWithRequiredOneOfEvents.requiredOneOfEvents().head().contains(sensoryEventWithoutIngredientName));
     }
-
 
     @Test(expected = IllegalArgumentException.class)
     public void shouldRejectUsingLessThanTwoOneOfRequiredEvents() {
