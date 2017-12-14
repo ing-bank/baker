@@ -1,5 +1,6 @@
 package com.ing.baker.runtime.java_api
 
+import java.util.Collections
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
@@ -9,8 +10,11 @@ import com.ing.baker.runtime.core._
 import scala.concurrent.duration._
 import scala.collection.JavaConverters._
 
-class JBaker (
-              actorSystem: ActorSystem) {
+class JBaker (actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRef]) {
+
+  addImplementations(implementations)
+
+  def this(actorSystem: ActorSystem) = this(actorSystem, Collections.emptyList[AnyRef])
 
   def this() = this(ActorSystem("BakerActorSystem"))
 
