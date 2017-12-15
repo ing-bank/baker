@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.actor
 
 import akka.actor._
-import akka.event.Logging
+import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.pattern.pipe
 import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import com.ing.baker.petrinet.api._
@@ -49,8 +49,10 @@ class ProcessInstance[P[_], T[_, _], S, E](
                                              settings: Settings,
                                              runtime: PetriNetRuntime[P, T, S, E],
                                              override implicit val placeIdentifier: Identifiable[P[_]],
-                                             override implicit val transitionIdentifier: Identifiable[T[_, _]]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.serializer, runtime.eventSourceFn) with ProcessInstanceLogger {
+                                             override implicit val transitionIdentifier: Identifiable[T[_, _]]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.serializer, runtime.eventSourceFn) {
 
+
+  val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
   val processId = context.self.path.name
 
@@ -112,7 +114,7 @@ class ProcessInstance[P[_], T[_, _], S, E](
         context.stop(context.self)
 
     case IdleStop(n) if n == instance.sequenceNr && instance.activeJobs.isEmpty ⇒
-      logEvent(Logging.DebugLevel, LogIdleStop(processId, settings.idleTTL.getOrElse(Duration.Zero)))
+      log.idleStop(processId, settings.idleTTL.getOrElse(Duration.Zero))
       context.stop(context.self)
 
     case GetState ⇒
@@ -124,7 +126,7 @@ class ProcessInstance[P[_], T[_, _], S, E](
       val transitionId = transitionIdentifier(transition).value
 
       system.eventStream.publish(ProcessInstanceEvent(processType, processId, event))
-      logEvent(Logging.DebugLevel, LogTransitionFired(processId, transition.toString, jobId, timeStarted, timeCompleted))
+      log.transitionFired(processId, transition.toString, jobId, timeStarted, timeCompleted)
 
       persistEvent(instance, event)(
         eventSource.apply(instance)
@@ -143,12 +145,12 @@ class ProcessInstance[P[_], T[_, _], S, E](
       val transitionId = transitionIdentifier(transition).value
 
       system.eventStream.publish(ProcessInstanceEvent(processType, processId, event))
-      logEvent(Logging.ErrorLevel, LogTransitionFailed(processId, transition.toString, jobId, timeStarted, timeFailed, reason))
+      log.transitionFailed(processId, transition.toString, jobId, timeStarted, timeFailed, reason)
 
       strategy match {
         case RetryWithDelay(delay) ⇒
 
-          logEvent(Logging.InfoLevel, LogScheduleRetry(processId, transition.toString, delay))
+          log.scheduleRetry(processId, transition.toString, delay)
 
           val originalSender = sender()
 
@@ -197,7 +199,7 @@ class ProcessInstance[P[_], T[_, _], S, E](
           context become running(updatedInstance, scheduledRetries)
         case (_, Left(reason)) ⇒
 
-          logEvent(Logging.WarningLevel, LogFireTransitionRejected(processId, transition.toString, reason))
+          log.fireTransitionRejected(processId, transition.toString, reason)
 
           sender() ! TransitionNotEnabled(transitionId, reason)
       }
@@ -222,7 +224,7 @@ class ProcessInstance[P[_], T[_, _], S, E](
 
   def executeJob[E](job: Job[P, T, S, E], originalSender: ActorRef) = {
 
-    logEvent(Logging.DebugLevel, LogFiringTransition(processId, job.id, job.transition.toString, System.currentTimeMillis()))
+    log.firingTransition(processId, job.id, job.transition.toString, System.currentTimeMillis())
 
     // context.self can be potentially throw NullPointerException in non graceful shutdown situations
     Try(context.self).foreach(executor(job).unsafeRunAsyncFuture().pipeTo(_)(originalSender))
@@ -237,7 +239,7 @@ class ProcessInstance[P[_], T[_, _], S, E](
           map
         } else {
           val cancellable = system.scheduler.scheduleOnce(newDelay milliseconds) {
-            logEvent(Logging.InfoLevel, LogScheduleRetry(processId, j.transition.toString, delay))
+            log.scheduleRetry(processId, j.transition.toString, delay)
             executeJob(j, sender())
           }
           map + (j.id -> cancellable)
