@@ -2,6 +2,7 @@ package com.ing.baker.runtime.core
 
 import com.ing.baker.il.EventType
 import com.ing.baker.types.{Converters, Value}
+import scala.collection.JavaConverters._
 
 
 object RuntimeEvent {
@@ -20,10 +21,17 @@ case class RuntimeEvent(name: String,
                         providedIngredients: Seq[(String, Value)]) {
 
   /**
-    * The provided ingredients in the form of a Map
-    * This is useful when a EventListener is used in Java.
+    * Returns a scala.collection.immutable.Map of the ingredients provided by this event.
+    *
     */
-  val providedIngredientsMap: Map[String, Value] = providedIngredients.toMap
+  def providedIngredientsMap: Map[String, Value] = providedIngredients.toMap
+
+  /**
+    * Returns a java.util.Map of the ingredients provided by this event.
+    *
+    * @return a map of the provided ingredients.
+    */
+  def getProvidedIngredients: java.util.Map[String, Value] = providedIngredientsMap.asJava
 
   /**
     * This checks if the runtime event is an instance of a event type.
