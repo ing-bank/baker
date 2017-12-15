@@ -56,8 +56,6 @@ object Baker {
   */
 class Baker()(implicit val actorSystem: ActorSystem) {
 
-  import scala.compat.java8.FunctionConverters
-
   private val interactionManager: InteractionManager = new InteractionManager()
   private val config = actorSystem.settings.config
   private val bakeTimeout = config.as[FiniteDuration]("baker.bake-timeout")
