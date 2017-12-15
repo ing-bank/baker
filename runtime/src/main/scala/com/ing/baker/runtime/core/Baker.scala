@@ -1,5 +1,7 @@
 package com.ing.baker.runtime.core
 
+import java.util.concurrent.ConcurrentHashMap
+
 import akka.actor.{ActorSystem, Address, AddressFromURIString}
 import akka.cluster.Cluster
 import akka.persistence.query.PersistenceQuery
@@ -17,6 +19,8 @@ import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExt
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
+import scala.compat.java8.FunctionConverters._
+import scala.collection.JavaConverters._
 import scala.concurrent.Await
 import scala.concurrent.duration.{FiniteDuration, _}
 import scala.language.postfixOps
@@ -51,6 +55,8 @@ object Baker {
   * The Baker can bake a recipe, create a process and respond to events.
   */
 class Baker()(implicit val actorSystem: ActorSystem) {
+
+  import scala.compat.java8.FunctionConverters
 
   private val interactionManager: InteractionManager = new InteractionManager()
   private val config = actorSystem.settings.config
@@ -105,13 +111,21 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     }
   }
 
-  var recipeHandlers: Seq[RecipeHandler] = Seq()
+  val recipeHandlers: ConcurrentHashMap[String, RecipeHandler] = new ConcurrentHashMap[String, RecipeHandler]()
 
-  def addRecipe(compiledRecipe: CompiledRecipe) : RecipeHandler = {
-    if(recipeHandlers.exists(_.compiledRecipe.name == compiledRecipe.name))
-      throw new BakerException("Recipe with this name already exists")
+  /**
+    * Adds a recipe to baker and returns a handler for the recipe.
+    *
+    * This function is idempotent, if the same (equal) recipe was added earlier this will return the existing handler.
+    *
+    * If a different (not equal) recipe with the same name was added earlier this will throw an IllegalStateException.
+    *
+    * @param compiledRecipe The compiled recipe.
+    * @return A handler for the recipe.
+    */
+  def addRecipe(compiledRecipe: CompiledRecipe): RecipeHandler = {
 
-    val recipeHandler = new RecipeHandler(
+    val recipeHandlerProvider: String => RecipeHandler = _ => new RecipeHandler(
       compiledRecipe,
       interactionManager,
       configuredEncryption,
@@ -120,14 +134,19 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       readJournal,
       bakerActorProvider)
 
-    recipeHandlers = recipeHandlers :+ recipeHandler
+    val recipeHandler = recipeHandlers.computeIfAbsent(compiledRecipe.name, recipeHandlerProvider.asJava)
+
+    if (recipeHandler.compiledRecipe != compiledRecipe)
+      throw new BakerException(s"Recipe with name '${compiledRecipe.name}' already exists")
+
     recipeHandler
   }
 
   def getRecipeHandler(name: String): RecipeHandler = {
-    recipeHandlers.find(_.compiledRecipe.name == name) match {
-      case Some(recipeHandler) => recipeHandler
-      case None => throw new BakerException(s"No Recipe Handler available for recipe with name: $name")
+
+    recipeHandlers.get(name) match {
+      case null          => throw new BakerException(s"No Recipe Handler available for recipe with name: $name")
+      case recipeHandler => recipeHandler
     }
   }
 
@@ -155,7 +174,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
           actorSystem.terminate()
         }
         implicit val akkaTimeout = Timeout(timeout)
-        Util.handOverShardsAndLeaveCluster(recipeHandlers.map(_.compiledRecipe.name))
+        Util.handOverShardsAndLeaveCluster(recipeHandlers.values.asScala.toSeq.map(_.compiledRecipe.name))
       case Success(_) =>
         log.debug("ActorSystem not a member of cluster")
         actorSystem.terminate()
@@ -165,5 +184,5 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     }
   }
 
-  def allProcessMetadata: Set[ProcessMetadata] = recipeHandlers.flatMap(_.recipeMetadata.getAll).toSet
+  def allProcessMetadata: Set[ProcessMetadata] = recipeHandlers.values.asScala.flatMap(_.recipeMetadata.getAll).toSet
 }

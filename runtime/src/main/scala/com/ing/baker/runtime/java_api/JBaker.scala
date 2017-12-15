@@ -10,7 +10,7 @@ import com.ing.baker.runtime.core._
 import scala.concurrent.duration._
 import scala.collection.JavaConverters._
 
-class JBaker (actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRef]) {
+class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRef]) {
 
   addImplementations(implementations)
 

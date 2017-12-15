@@ -23,7 +23,7 @@ case class RuntimeEvent(name: String,
     * The provided ingredients in the form of a Map
     * This is useful when a EventListener is used in Java.
     */
-  val providedIngredientsMap: Map[String, Value] = providedIngredients.toMap;
+  val providedIngredientsMap: Map[String, Value] = providedIngredients.toMap
 
   /**
     * This checks if the runtime event is an instance of a event type.

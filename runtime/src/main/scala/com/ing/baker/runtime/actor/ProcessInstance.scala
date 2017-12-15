@@ -254,4 +254,3 @@ class ProcessInstance[P[_], T[_, _], S, E](
     context become running(updatedInstance, scheduledRetries)
   }
 }
-
