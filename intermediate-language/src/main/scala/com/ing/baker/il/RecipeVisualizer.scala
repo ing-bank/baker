@@ -47,6 +47,13 @@ object RecipeVisualizer {
     DotAttr("color", "\"#3b823a\"")
   )
 
+  private val eventEndAttributes: List[DotAttr] = List(
+    DotAttr("shape", "diamond"),
+    DotAttr("margin", 0.3D),
+    DotAttr("style", "rounded, filled"),
+    DotAttr("color", "\"#60a6da\"")
+  )
+
   private val eventTransitionMissingAttributes: List[DotAttr] = List(
     DotAttr("shape", "diamond"),
     DotAttr("margin", 0.3D),
@@ -125,8 +132,18 @@ object RecipeVisualizer {
         case Right(transition) if transition.isSieve ⇒ sieveAttributes
         case Right(transition) if transition.isEventMissing ⇒ eventTransitionMissingAttributes
         case Right(transition) if eventNames.contains(transition.label) ⇒ eventTransitionFiredAttributes
+        case Right(_) if isEnd(node) ⇒ eventEndAttributes
         case Right(_) ⇒ eventTransitionAttributes
       }
+
+  private def isEnd(node: RecipePetriNetGraph#NodeT): Boolean = {
+    node.diSuccessors.forall { successor =>
+      successor.value match {
+        case Left(_) => !successor.hasSuccessors
+        case Right(_) => false
+      }
+    }
+  }
 
   private def generateDot(graph: RecipePetriNetGraph, filter: String => Boolean, eventNames: Set[String], ingredientNames: Set[String]): String = {
     val myRoot = DotRootGraph(directed = graph.isDirected,

@@ -49,5 +49,21 @@ class RecipeVisualizationSpec extends TestRecipeHelper {
       val dot: String = RecipeVisualizer.visualiseCompiledRecipe(compileRecipe)
       dot should include("#EE0000")
     }
+
+    "should visualize ending event in Indigo color" in {
+      val recipe: Recipe = Recipe("misisngEvent")
+        .withInteraction(interactionSeven)
+        .withSensoryEvent(initialEvent)
+      val compileRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val dot: String = RecipeVisualizer.visualiseCompiledRecipe(compileRecipe)
+      dot should include("#60a6da")
+    }
+
+    "should not visualize ending event in Indigo color if its only an end because of a filter" ignore {
+      val recipe = getComplexRecipe("endWithFilter")
+      val compileRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+      val dot: String = RecipeVisualizer.visualiseCompiledRecipe(compileRecipe, _.contains("Two"))
+      dot should not include("#60a6da")
+    }
   }
 }
