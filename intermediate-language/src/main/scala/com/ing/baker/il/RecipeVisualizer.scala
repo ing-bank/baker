@@ -51,7 +51,7 @@ object RecipeVisualizer {
     DotAttr("shape", "diamond"),
     DotAttr("margin", 0.3D),
     DotAttr("style", "rounded, filled"),
-    DotAttr("color", "\"#60a6da\"")
+    DotAttr("color", "\"#474646\"")
   )
 
   private val eventTransitionMissingAttributes: List[DotAttr] = List(
