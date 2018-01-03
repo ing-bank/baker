@@ -8,6 +8,8 @@
 - Baker now supports multiple recipes, individual recipes are managed by a 'RecipeHandler'
 - It is possible to add interaction implementations at runtime.
 - Scala/Java DSL alignment: renamed `processEvent -> handleEvent` and `processEventAsync -> handleEventAsync`
+- Exhausted Retry events are now always set with a default name. Its not possible to give the event anymore.
+  Now its just a configuration with a boolean on the RetryWithIncrementalBackoff retry strategy
 
 ## 1.1.17
 - Fix #72: do not join to akka cluster when there are persistence problems. `akka.cluster.seed-nodes` configuration should be renamed to `baker.cluster.seed-nodes` to support this "late cluster join" feature.

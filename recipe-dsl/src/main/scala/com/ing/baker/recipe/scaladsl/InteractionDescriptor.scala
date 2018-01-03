@@ -62,8 +62,8 @@ case class InteractionDescriptor private(override val interaction: Interaction,
                                       backoffFactor: Double = 2.0,
                                       maximumRetries: Int = 50,
                                       maxTimeBetweenRetries: Option[Duration] = None,
-                                      exhaustedRetryEvent: Option[Event] = None): InteractionDescriptor =
-    copy(failureStrategy = Some(new RetryWithIncrementalBackoff(initialDelay, backoffFactor, maximumRetries, maxTimeBetweenRetries, exhaustedRetryEvent)))
+                                      fireExhaustedEvent: Boolean = false): InteractionDescriptor =
+    copy(failureStrategy = Some(new RetryWithIncrementalBackoff(initialDelay, backoffFactor, maximumRetries, maxTimeBetweenRetries, fireExhaustedEvent)))
 
   def withEventOutputTransformer(event: Event, newEventName: String, ingredientRenames: Map[String, String]): InteractionDescriptor =
     copy(eventOutputTransformers = eventOutputTransformers + (event -> EventOutputTransformer(newEventName, ingredientRenames)))

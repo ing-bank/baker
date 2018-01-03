@@ -12,6 +12,8 @@ import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Missin
 package object il {
 
   val processIdName = "$ProcessID$"
+  val SuccessEventAppend = "Successful"
+  val exhaustedEventAppend = "RetryExhausted"
 
 
   implicit class PlaceAdditions(place: Place[_]) {

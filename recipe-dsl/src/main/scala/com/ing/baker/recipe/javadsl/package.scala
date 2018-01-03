@@ -31,6 +31,13 @@ package object javadsl {
       override val maxFiringLimit: Option[Integer] = firingLimit
     }
 
+  def stringToCommonEvent(eventName: String, firingLimit: Option[Integer]): common.Event =
+    new common.Event {
+      override val name: String = eventName
+      override val providedIngredients: Seq[common.Ingredient] = Seq.empty
+      override val maxFiringLimit: Option[Integer] = firingLimit
+    }
+
   def interactionClassToCommonInteraction(interactionClass: Class[_ <: Interaction]): common.Interaction =
     new common.Interaction {
       override val name: String = interactionClass.getSimpleName
