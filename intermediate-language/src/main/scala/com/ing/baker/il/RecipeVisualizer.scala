@@ -29,8 +29,7 @@ object RecipeVisualizer {
     DotAttr("shape", "circle"),
     DotAttr("style", "filled"),
     //    DotAttr("fillcolor", "\"#FF6200\""),
-    DotAttr("color", "\"#EE0000\""),
-    DotAttr("penwidth", "5.0")
+    DotAttr("color", "\"#EE0000\"")
   )
 
   private val eventTransitionAttributes: List[DotAttr] = List(
@@ -51,7 +50,9 @@ object RecipeVisualizer {
     DotAttr("shape", "diamond"),
     DotAttr("margin", 0.3D),
     DotAttr("style", "rounded, filled"),
-    DotAttr("color", "\"#474646\"")
+    DotAttr("fillcolor", "\"#767676\""),
+    DotAttr("penwidth", 6),
+    DotAttr("color", "\"#453e3d\"")
   )
 
   private val eventTransitionMissingAttributes: List[DotAttr] = List(
@@ -59,16 +60,14 @@ object RecipeVisualizer {
     DotAttr("margin", 0.3D),
     DotAttr("style", "rounded, filled"),
     //    DotAttr("fillcolor", "\"#767676\""),
-    DotAttr("color", "\"#EE0000\""),
-    DotAttr("penwidth", "5.0")
+    DotAttr("color", "\"#EE0000\"")
   )
 
   private val interactionAttributes: List[DotAttr] = List(
     DotAttr("shape", "rect"),
     DotAttr("margin", 0.5D),
     DotAttr("color", "\"#525199\""),
-    DotAttr("style", "rounded, filled"),
-    DotAttr("penwidth", 2)
+    DotAttr("style", "rounded, filled")
   )
 
   private val choiceAttributes: List[DotAttr] = List(
@@ -97,8 +96,7 @@ object RecipeVisualizer {
     DotAttr("shape", "rect"),
     DotAttr("margin", 0.5D),
     DotAttr("color", "\"#7594d6\""),
-    DotAttr("style", "rounded, filled"),
-    DotAttr("penwidth", 2)
+    DotAttr("style", "rounded, filled")
   )
 
   private val attrStmts = List(
