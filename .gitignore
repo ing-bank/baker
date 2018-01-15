@@ -19,3 +19,4 @@ native/
 *.dot
 .ensime
 /**/*.pdf
+/**/.DS_Store
