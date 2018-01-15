@@ -97,7 +97,7 @@ object ProcessInstanceLogger {
         "processId" -> processId,
         "transitionId" -> transitionId)
 
-      val msg = s"Scheduling a retry of transition '$transitionId' in ${durationFormatter.print(new org.joda.time.Duration(delay).toPeriod)}"
+      val msg = s"Scheduling a retry of transition '$transitionId' in ${durationFormatter.print(new org.joda.time.Period(delay))}"
 
       logWithMDC(Logging.InfoLevel, msg, mdc)
     }

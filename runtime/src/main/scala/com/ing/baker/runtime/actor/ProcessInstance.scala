@@ -238,10 +238,8 @@ class ProcessInstance[P[_], T[_, _], S, E](
           executeJob(j, sender())
           map
         } else {
-          val cancellable = system.scheduler.scheduleOnce(newDelay milliseconds) {
-            log.scheduleRetry(processId, j.transition.toString, delay)
-            executeJob(j, sender())
-          }
+          log.scheduleRetry(processId, j.transition.toString, newDelay)
+          val cancellable = system.scheduler.scheduleOnce(newDelay milliseconds) { executeJob(j, sender()) }
           map + (j.id -> cancellable)
         }
       case (acc, _) ⇒ acc
