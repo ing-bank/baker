@@ -18,17 +18,15 @@ object APIRoutes extends Directives with BaasMarshalling {
 
   def apply(baker: Baker)(implicit actorSystem: ActorSystem): Route = {
 
-    def recipeRoutes(recipeName: String, requestId: String) = {
-
-      val recipeHandler = baker.getRecipeHandler(recipeName)
+    def recipeRoutes(requestId: String) = {
 
       path("event") {
         post {
           (entity(as[RuntimeEvent]) & parameter('confirm.as[String] ?)) { (event, confirm) =>
 
             val sensoryEventStatus = confirm.getOrElse(defaultEventConfirm) match {
-              case "received"  => recipeHandler.handleEventAsync(requestId, event).confirmReceived()
-              case "completed" => recipeHandler.handleEventAsync(requestId, event).confirmCompleted()
+              case "received"  => baker.handleEventAsync(requestId, event).confirmReceived()
+              case "completed" => baker.handleEventAsync(requestId, event).confirmCompleted()
               case other      => throw new IllegalArgumentException(s"Unsupported confirm type: $other")
             }
 
@@ -38,21 +36,20 @@ object APIRoutes extends Directives with BaasMarshalling {
       } ~
       path("events") {
         get {
-          val events = recipeHandler.events(requestId).toList
+          val events = baker.events(requestId).toList
           complete(events)
         }
       } ~
-      path("bake") {
+      path(Segment / "bake")  { recipeId =>
         post {
-          val processState = recipeHandler.bake(requestId)
-
+          val processState = baker.bake(recipeId, requestId)
           complete(processState.processId)
         }
       } ~
       path("ingredients") {
         get {
 
-          val ingredients = recipeHandler.getIngredients(requestId)
+          val ingredients = baker.getIngredients(requestId)
 
           complete(ingredients)
         }
@@ -60,7 +57,7 @@ object APIRoutes extends Directives with BaasMarshalling {
       path("visual_state") {
         get {
 
-          val visualState = recipeHandler.getVisualState(requestId)
+          val visualState = baker.getVisualState(requestId)
 
           complete(visualState)
         }
@@ -78,14 +75,14 @@ object APIRoutes extends Directives with BaasMarshalling {
 
             try {
               println(s"Adding recipe called: ${compiledRecipe.name}")
-              baker.addRecipe(compiledRecipe)
+              val recipeId = baker.addRecipe(compiledRecipe)
+              complete(recipeId)
             } catch {
               case e: Exception => {
                 println(s"Exception when adding recipe: ${e.getMessage}")
                 throw e
               }
             }
-            complete(compiledRecipe.getRecipeVisualization)
           }
         }
       } ~
@@ -104,7 +101,7 @@ object APIRoutes extends Directives with BaasMarshalling {
             complete(s"Interaction: ${interactionImplementation.name} added")
           }
         }
-      } ~ pathPrefix(Segment / Segment) { recipeRoutes _ }
+      } ~ pathPrefix(Segment) { recipeRoutes _ }
     }
     baasRoutes
   }

@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor
+package com.ing.baker.runtime.actor.processinstance
 
 import com.ing.baker.petrinet.runtime.EventSourcing.Event
 

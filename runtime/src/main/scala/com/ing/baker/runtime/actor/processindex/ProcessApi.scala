@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor
+package com.ing.baker.runtime.actor.processindex
 
 import java.util.concurrent.TimeoutException
 
@@ -8,9 +8,9 @@ import akka.pattern._
 import akka.stream.scaladsl.{Sink, Source, SourceQueueWithComplete}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.Timeout
-import ProcessInstanceProtocol._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
-import com.ing.baker.runtime.actor.ProcessIndex.ReceivePeriodExpired
+import com.ing.baker.runtime.actor.processindex.ProcessIndex.{InvalidEvent, ReceivePeriodExpired}
+import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.FiniteDuration
@@ -45,6 +45,11 @@ class QueuePushingActor(queue: SourceQueueWithComplete[Any], waitForRetries: Boo
       stopActor()
 
     case msg @ ReceivePeriodExpired =>
+      queue.offer(msg)
+      queue.complete()
+      stopActor()
+
+    case msg @ InvalidEvent(message) =>
       queue.offer(msg)
       queue.complete()
       stopActor()

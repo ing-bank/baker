@@ -7,15 +7,19 @@ import com.ing.baker.petrinet.runtime._
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 
-class RecipeRuntime(recipeName: String, interactionManager: InteractionManager) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
-
-  override val tokenGame = new RecipeTokenGame()
-
-  override val eventSourceFn: Transition[_, _] => (ProcessState => RuntimeEvent => ProcessState) =
+object RecipeRuntime {
+  def eventSourceFn: Transition[_, _] => (ProcessState => RuntimeEvent => ProcessState) =
     _ => state => {
       case null => state
       case RuntimeEvent(_, providedIngredients) => state.copy(ingredients = state.ingredients ++ providedIngredients)
     }
+}
+
+class RecipeRuntime(recipeName: String, interactionManager: InteractionManager) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
+
+  override val tokenGame = new RecipeTokenGame()
+
+  override val eventSourceFn: Transition[_, _] => (ProcessState => RuntimeEvent => ProcessState) = RecipeRuntime.eventSourceFn
 
   override val exceptionHandlerFn: Transition[_, _] => TransitionExceptionHandler[Place] = {
     case interaction: InteractionTransition[_] =>

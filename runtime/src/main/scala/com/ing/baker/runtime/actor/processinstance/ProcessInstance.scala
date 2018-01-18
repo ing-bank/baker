@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor
+package com.ing.baker.runtime.actor.processinstance
 
 import akka.actor._
 import akka.event.{DiagnosticLoggingAdapter, Logging}
@@ -8,15 +8,16 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{Continue, RetryWithDelay}
 import com.ing.baker.petrinet.runtime._
+import com.ing.baker.runtime.actor.InternalBakerMessage
+import com.ing.baker.runtime.actor.processinstance.ProcessInstance._
+import com.ing.baker.runtime.actor.processinstance.ProcessInstanceLogger._
+import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.serialization.ObjectSerializer
 import fs2.Strategy
 
 import scala.concurrent.duration._
 import scala.language.existentials
 import scala.util.Try
-import ProcessInstance._
-import ProcessInstanceProtocol._
-import ProcessInstanceLogger._
-import com.ing.baker.runtime.actor.serialization.ObjectSerializer
 
 object ProcessInstance {
 
@@ -25,7 +26,7 @@ object ProcessInstance {
                        idleTTL: Option[FiniteDuration],
                        serializer: ObjectSerializer)
 
-  private case class IdleStop(seq: Long)
+  private case class IdleStop(seq: Long) extends InternalBakerMessage
 
   def persistenceIdPrefix(processType: String) = s"process-$processType-"
 

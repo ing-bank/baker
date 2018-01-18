@@ -30,7 +30,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
   val log = LoggerFactory.getLogger(classOf[BAASClient])
   implicit val requestTimeout: FiniteDuration = 30 seconds
 
-  def addRecipe(recipe: common.Recipe) : Unit = {
+  def addRecipe(recipe: common.Recipe) : String = {
 
     val serializedRecipe = KryoUtil.serialize(recipe)
 
@@ -39,7 +39,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
         method = akka.http.scaladsl.model.HttpMethods.POST,
         entity = ByteString.fromArray(serializedRecipe))
 
-    doRequest(httpRequest, logEntity)
+    doRequestAndParseResponse[String](httpRequest)
   }
 
   def addRemoteImplementation(interactionName: String, uri: String, inputTypes: Seq[Type]) = {
@@ -56,53 +56,53 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
     doRequest(request, logEntity)
   }
 
-  def handleEvent(recipeName: String, requestId: String, event: Any, confirmation: EventConfirmation): SensoryEventStatus = {
+  def handleEvent(requestId: String, event: Any, confirmation: EventConfirmation): SensoryEventStatus = {
 
     //Create request to give to Baker
     log.info("Creating runtime event to fire")
     val runtimeEvent = Baker.eventExtractor.extractEvent(event)
 
     val request = HttpRequest(
-        uri =  s"$baseUri/$recipeName/$requestId/event?confirm=${confirmation.name}",
+        uri =  s"$baseUri/$requestId/event?confirm=${confirmation.name}",
         method = POST,
         entity = ByteString.fromArray(defaultKryoPool.toBytesWithClass(runtimeEvent)))
 
     doRequestAndParseResponse[SensoryEventStatus](request)
   }
 
-  def bake(recipeName: String, requestId: String): Unit = {
+  def bake(recipeId: String, requestId: String): Unit = {
 
     val request = HttpRequest(
-        uri = s"$baseUri/$recipeName/$requestId/bake",
+        uri = s"$baseUri/$requestId/$recipeId/bake",
         method = POST)
 
     doRequestAndParseResponse[String](request)
   }
 
-  def getState(recipeName: String, requestId: String): ProcessState = {
+  def getState(requestId: String): ProcessState = {
 
     val request = HttpRequest(
-        uri = s"$baseUri/$recipeName/$requestId/state",
+        uri = s"$baseUri/$requestId/state",
         method = GET)
 
     doRequestAndParseResponse[ProcessState](request)
   }
 
-  def getIngredients(recipeName: String, requestId: String): Map[String, Value] = getState(recipeName, requestId).ingredients
+  def getIngredients(requestId: String): Map[String, Value] = getState(requestId).ingredients
 
-  def getVisualState(recipeName: String, requestId: String): String = {
+  def getVisualState(requestId: String): String = {
 
     val request = HttpRequest(
-      uri = s"$baseUri/$recipeName/$requestId/visual_state",
+      uri = s"$baseUri/$requestId/visual_state",
       method = GET)
 
     doRequestAndParseResponse[String](request)
   }
 
-  def getEvents(recipeName: String, requestId: String): List[RuntimeEvent] = {
+  def getEvents(requestId: String): List[RuntimeEvent] = {
 
     val request = HttpRequest(
-      uri = s"$baseUri/$recipeName/$requestId/events",
+      uri = s"$baseUri/$requestId/events",
       method = GET)
 
     doRequestAndParseResponse[List[RuntimeEvent]](request)

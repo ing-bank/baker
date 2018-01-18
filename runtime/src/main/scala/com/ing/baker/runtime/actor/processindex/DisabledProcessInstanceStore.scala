@@ -1,7 +1,7 @@
-package com.ing.baker.runtime.actor
+package com.ing.baker.runtime.actor.processindex
 
 
-class DisabledRecipeMetadata(override val recipeName: String) extends RecipeMetadata {
+class DisabledProcessInstanceStore extends ProcessInstanceStore {
   override val getAll: Set[ProcessMetadata] = Set.empty
 
   override def add(meta: ProcessMetadata): Unit = {

@@ -1,8 +1,9 @@
-package com.ing.baker.runtime.actor
+package com.ing.baker.runtime.actor.processinstance
 
 import com.ing.baker.petrinet.api.{HMap, Identifiable, Marking, MultiSet}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
+import com.ing.baker.runtime.actor.InternalBakerMessage
 
 /**
  * Describes the messages to and from a PetriNetInstance actor.
@@ -82,6 +83,13 @@ object ProcessInstanceProtocol {
    * @param id The identifier of the unitialized actor.
    */
   case class Uninitialized(id: String) extends Response
+
+  /**
+    * A response send in case when a command is done for a not existing recipe
+    *
+    * @param recipeId The identifier of the recipe
+    */
+  case class RecipeNotAvailable(recipeId: String) extends Response
 
   /**
    * Returned in case a second Initialize is send after a first is processed

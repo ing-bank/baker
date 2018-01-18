@@ -7,9 +7,8 @@ import akka.NotUsed
 import akka.stream.javadsl.RunnableGraph
 import akka.stream.scaladsl.{Broadcast, GraphDSL, Sink, Source}
 import akka.stream.{ClosedShape, Materializer}
-import com.ing.baker.il.petrinet.Transition
-import com.ing.baker.runtime.actor.ProcessInstanceProtocol.{TransitionFailed, TransitionFired, TransitionNotEnabled, TransitionResponse}
-import com.ing.baker.runtime.actor.ProcessIndex.ReceivePeriodExpired
+import com.ing.baker.runtime.actor.processindex.ProcessIndex.{InvalidEvent, ReceivePeriodExpired}
+import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol.{TransitionFailed, TransitionFired, TransitionNotEnabled}
 import com.ing.baker.runtime.core.InteractionResponse._
 
 import scala.concurrent.duration.{FiniteDuration, SECONDS}
@@ -37,6 +36,7 @@ object BakerResponse {
     case t: TransitionFired => Future.successful(Success)
     case msg: TransitionNotEnabled => Future.successful(NotEnabled)
     case ReceivePeriodExpired => Future.successful(PeriodExpired)
+    case InvalidEvent(msg) => Future.failed(new IllegalArgumentException(msg))
     case msg@_ => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
   }
 

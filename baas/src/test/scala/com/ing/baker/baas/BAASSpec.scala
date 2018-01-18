@@ -73,22 +73,22 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     val recipeName = "simpleRecipe" + UUID.randomUUID().toString
     val recipe = setupSimpleRecipe(recipeName)
 
-    baasClient.addRecipe(recipe)
+    val recipeId = baasClient.addRecipe(recipe)
 
     val requestId = UUID.randomUUID().toString
 
-    baasClient.bake(recipeName, requestId)
+    baasClient.bake(recipeId, requestId)
 
     val sensoryEventStatusResponse: SensoryEventStatus =
-      baasClient.handleEvent(recipeName, requestId, InitialEvent("initialIngredient"), EventConfirmation.COMPLETED)
+      baasClient.handleEvent(requestId, InitialEvent("initialIngredient"), EventConfirmation.COMPLETED)
     sensoryEventStatusResponse shouldBe SensoryEventStatus.Completed
 
-    val processState: ProcessState = baasClient.getState(recipeName, requestId)
+    val processState: ProcessState = baasClient.getState(requestId)
 
     processState.ingredients.keys should contain("initialIngredient")
     processState.ingredients.keys should contain("interactionOneIngredient")
 
-    val events = baasClient.getEvents(recipeName, requestId)
+    val events = baasClient.getEvents(requestId)
 
     println(s"events: $events")
 
