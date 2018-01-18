@@ -19,7 +19,7 @@ trait InteractionDescriptor {
   /**
     * A set of names of the events OR preconditions (events)
     */
-  val requiredOneOfEvents: Set[String]
+  val requiredOneOfEvents: Set[Set[String]]
 
   /**
     * A map of predefined parameter values, not provided from the recipe.

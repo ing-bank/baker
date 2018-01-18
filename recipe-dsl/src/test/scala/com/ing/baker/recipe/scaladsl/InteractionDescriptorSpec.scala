@@ -56,7 +56,7 @@ class InteractionDescriptorSpec extends WordSpecLike with Matchers {
     "requiredOneOfEvents called" should {
       "updates the requiredOneOfEventsList" in {
         val updated = createCustomer.withRequiredOneOfEvents(agreementsAcceptedEvent, anOtherEvent)
-        updated.requiredOneOfEvents shouldBe Set(agreementsAcceptedEvent.name, anOtherEvent.name)
+        updated.requiredOneOfEvents.head shouldBe Set(agreementsAcceptedEvent.name, anOtherEvent.name)
       }
 
       "throws IllegalArgumentException if nr of events is less than 2" in {
