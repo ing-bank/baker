@@ -16,7 +16,6 @@ import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.scalatest.time.{Milliseconds, Span}
 import org.slf4j.LoggerFactory
-import com.ing.baker.types._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -119,7 +118,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
       baker.getIngredients(processId) shouldBe
         ingredientMap(
-          "initialIngredient"                -> initialIngredientValue,
+          "initialIngredient" -> initialIngredientValue,
           "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
     }
 
@@ -349,6 +348,26 @@ class BakerExecutionSpec extends TestRecipeHelper {
       baker.bake(recipeId, secondProcessId)
 
       baker.handleEvent(secondProcessId, SecondEvent())
+      verify(testInteractionFourMock).apply()
+    }
+
+    "execute an interaction when one of the two events occur with two or conditions (OR situation 2)" in {
+      val recipe = Recipe("ORPreconditionedRecipeForEvents2")
+        .withInteractions(interactionFour
+          .withRequiredOneOfEvents(initialEvent, secondEvent)
+          .withRequiredOneOfEvents(thirdEvent, fourthEvent))
+        .withSensoryEvents(initialEvent, secondEvent, thirdEvent, fourthEvent)
+
+      val recipeHandler = setupBakerWithRecipe(recipe, mockImplementations)
+
+      val firstProcessId = UUID.randomUUID().toString
+      recipeHandler.bake(firstProcessId)
+
+      // Fire one of the events for the first process
+      recipeHandler.handleEvent(firstProcessId, InitialEvent("initialIngredient"))
+      verify(testInteractionFourMock, times(0)).apply()
+
+      recipeHandler.handleEvent(firstProcessId, ThirdEvent())
       verify(testInteractionFourMock).apply()
     }
 
@@ -615,7 +634,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       Thread.sleep(50)
 
-      baker.events(processId).map(_.name) should contain (exhaustedEvent.name)
+      baker.events(processId).map(_.name) should contain(exhaustedEvent.name)
     }
 
     "not fire the exhausted retry event if the interaction passes" in {
@@ -662,7 +681,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       verify(listenerMock).handleEvent(processId.toString, RuntimeEvent.create("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)))
       verify(listenerMock).handleEvent(processId.toString, RuntimeEvent.create("RetryExhausted", Seq.empty))
 
-      baker.events(processId).map(_.name) should contain (exhaustedEvent.name)
+      baker.events(processId).map(_.name) should contain(exhaustedEvent.name)
     }
 
     "be able to return all occurred events" in {
@@ -731,83 +750,83 @@ class BakerExecutionSpec extends TestRecipeHelper {
       }
     }
 
-//    "do not join to akka cluster and fail to bootstrap if persistence init actor times out" in {
-//      val recipeName = "lazyClusterJoinTest"
-//      val persistenceInitDuration = 3 seconds
-//      val journalInitializeTimeout = 2 seconds
-//      val actorSystem = ActorSystem(recipeName, levelDbConfig(recipeName, 3005, journalInitializeTimeout))
-//
-//      val persistenceInitActorProps = Props(new Actor() {
-//        override def receive = {
-//          case msg =>
-//            Thread.sleep(persistenceInitDuration.toMillis)
-//            sender() ! msg
-//            context.stop(self)
-//        }
-//      })
-//
-//      intercept[TimeoutException] {
-//        try {
-//          setupBakerWithRecipe(recipeName, appendUUIDToTheRecipeName = false, persistenceInitActorProps)(actorSystem)
-//        } finally {
-//          TestKit.shutdownActorSystem(actorSystem)
-//        }
-//      }
-//
-//    }
-//
-//    "join to akka cluster after the persistence init actor returns within predefined timeout config" in {
-//      val recipeName = "lazyClusterJoinTest"
-//      val persistenceInitDuration = 2 seconds
-//      val journalInitializeTimeout = 3 seconds
-//      val actorSystem1 = ActorSystem(recipeName, levelDbConfig(recipeName, 3005, journalInitializeTimeout))
-//      val lock = new ReentrantLock()
-//
-//      println("system1 init members: " + Cluster(actorSystem1).state.members)
-////      println("system2 init members: " + Cluster(actorSystem2).state.members)
-//
-//      def persistenceInitActorProps = Props(new Actor() {
-//        override def receive = {
-//          case msg =>
-//            lock.lock()
-//            Thread.sleep(persistenceInitDuration.toMillis)
-//            sender() ! msg
-//            lock.unlock()
-//            context.stop(self)
-//        }
-//      })
-//
-//      try {
-//        setupBakerWithRecipe(recipeName, appendUUIDToTheRecipeName = false, persistenceInitActorProps)(actorSystem1)
-//        println("system1 members after first node: " + Cluster(actorSystem1).state.members)
-////        println("system2 members after first node: " + Cluster(actorSystem2).state.members)
-//
-//        val actorSystem2 = ActorSystem(recipeName, levelDbConfig(recipeName, 3006, journalInitializeTimeout))
-//        try {
-//          lock.lock()
-//          setupBakerWithRecipe(recipeName, appendUUIDToTheRecipeName = false, persistenceInitActorProps)(actorSystem2)
-//        } catch {
-//          case _: TimeoutException =>
-//            println("system1 after timeout members: " + Cluster(actorSystem1).state.members)
-//            println("system2 after timeout members: " + Cluster(actorSystem2).state.members)
-//            TestKit.shutdownActorSystem(actorSystem2)
-//          case e: Exception => fail("Unexpected exception here: " + e.getMessage)
-//        }
-//
-//        val actorSystem3 = ActorSystem(recipeName, levelDbConfig(recipeName, 3007, journalInitializeTimeout))
-//        try {
-//          lock.unlock()
-//          setupBakerWithRecipe(recipeName, appendUUIDToTheRecipeName = false, persistenceInitActorProps)(actorSystem3)
-//          println("system1 members: " + Cluster(actorSystem1).state.members)
-//          println("system3 members: " + Cluster(actorSystem3).state.members)
-//        } finally {
-//          TestKit.shutdownActorSystem(actorSystem3)
-//        }
-//      } finally {
-//        TestKit.shutdownActorSystem(actorSystem1)
-//      }
-//
-//    }
+    //    "do not join to akka cluster and fail to bootstrap if persistence init actor times out" in {
+    //      val recipeName = "lazyClusterJoinTest"
+    //      val persistenceInitDuration = 3 seconds
+    //      val journalInitializeTimeout = 2 seconds
+    //      val actorSystem = ActorSystem(recipeName, levelDbConfig(recipeName, 3005, journalInitializeTimeout))
+    //
+    //      val persistenceInitActorProps = Props(new Actor() {
+    //        override def receive = {
+    //          case msg =>
+    //            Thread.sleep(persistenceInitDuration.toMillis)
+    //            sender() ! msg
+    //            context.stop(self)
+    //        }
+    //      })
+    //
+    //      intercept[TimeoutException] {
+    //        try {
+    //          setupBakerWithRecipe(recipeName, appendUUIDToTheRecipeName = false, persistenceInitActorProps)(actorSystem)
+    //        } finally {
+    //          TestKit.shutdownActorSystem(actorSystem)
+    //        }
+    //      }
+    //
+    //    }
+    //
+    //    "join to akka cluster after the persistence init actor returns within predefined timeout config" in {
+    //      val recipeName = "lazyClusterJoinTest"
+    //      val persistenceInitDuration = 2 seconds
+    //      val journalInitializeTimeout = 3 seconds
+    //      val actorSystem1 = ActorSystem(recipeName, levelDbConfig(recipeName, 3005, journalInitializeTimeout))
+    //      val lock = new ReentrantLock()
+    //
+    //      println("system1 init members: " + Cluster(actorSystem1).state.members)
+    ////      println("system2 init members: " + Cluster(actorSystem2).state.members)
+    //
+    //      def persistenceInitActorProps = Props(new Actor() {
+    //        override def receive = {
+    //          case msg =>
+    //            lock.lock()
+    //            Thread.sleep(persistenceInitDuration.toMillis)
+    //            sender() ! msg
+    //            lock.unlock()
+    //            context.stop(self)
+    //        }
+    //      })
+    //
+    //      try {
+    //        setupBakerWithRecipe(recipeName, appendUUIDToTheRecipeName = false, persistenceInitActorProps)(actorSystem1)
+    //        println("system1 members after first node: " + Cluster(actorSystem1).state.members)
+    ////        println("system2 members after first node: " + Cluster(actorSystem2).state.members)
+    //
+    //        val actorSystem2 = ActorSystem(recipeName, levelDbConfig(recipeName, 3006, journalInitializeTimeout))
+    //        try {
+    //          lock.lock()
+    //          setupBakerWithRecipe(recipeName, appendUUIDToTheRecipeName = false, persistenceInitActorProps)(actorSystem2)
+    //        } catch {
+    //          case _: TimeoutException =>
+    //            println("system1 after timeout members: " + Cluster(actorSystem1).state.members)
+    //            println("system2 after timeout members: " + Cluster(actorSystem2).state.members)
+    //            TestKit.shutdownActorSystem(actorSystem2)
+    //          case e: Exception => fail("Unexpected exception here: " + e.getMessage)
+    //        }
+    //
+    //        val actorSystem3 = ActorSystem(recipeName, levelDbConfig(recipeName, 3007, journalInitializeTimeout))
+    //        try {
+    //          lock.unlock()
+    //          setupBakerWithRecipe(recipeName, appendUUIDToTheRecipeName = false, persistenceInitActorProps)(actorSystem3)
+    //          println("system1 members: " + Cluster(actorSystem1).state.members)
+    //          println("system3 members: " + Cluster(actorSystem3).state.members)
+    //        } finally {
+    //          TestKit.shutdownActorSystem(actorSystem3)
+    //        }
+    //      } finally {
+    //        TestKit.shutdownActorSystem(actorSystem1)
+    //      }
+    //
+    //    }
 
     "when acknowledging the first event, not wait on the rest" in {
       val (baker, recipeId) = setupBakerWithRecipe("NotWaitForTheRest")
@@ -900,9 +919,9 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val recipe: Recipe =
         "eventReceiveExpirationRecipe"
-            .withSensoryEvents(initialEvent)
-            .withInteractions(interactionOne)
-            .withEventReceivePeriod(receivePeriod)
+          .withSensoryEvents(initialEvent)
+          .withInteractions(interactionOne)
+          .withEventReceivePeriod(receivePeriod)
 
       val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
 

@@ -6,7 +6,7 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy
 case class InteractionDescriptor private(override val name: String,
                                          override val interaction: Interaction,
                                          override val requiredEvents: Set[String] = Set.empty,
-                                         override val requiredOneOfEvents: Set[String] = Set.empty,
+                                         override val requiredOneOfEvents: Set[Set[String]] = Set.empty,
                                          override val predefinedIngredients: Map[String, com.ing.baker.types.Value] = Map.empty,
                                          override val overriddenIngredientNames: Map[String, String] = Map.empty,
                                          override val overriddenOutputIngredientName: Option[String] = None,
