@@ -358,16 +358,16 @@ class BakerExecutionSpec extends TestRecipeHelper {
           .withRequiredOneOfEvents(thirdEvent, fourthEvent))
         .withSensoryEvents(initialEvent, secondEvent, thirdEvent, fourthEvent)
 
-      val recipeHandler = setupBakerWithRecipe(recipe, mockImplementations)
+      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
 
       val firstProcessId = UUID.randomUUID().toString
-      recipeHandler.bake(firstProcessId)
+      baker.bake(recipeId, firstProcessId)
 
       // Fire one of the events for the first process
-      recipeHandler.handleEvent(firstProcessId, InitialEvent("initialIngredient"))
+      baker.handleEvent(firstProcessId, InitialEvent("initialIngredient"))
       verify(testInteractionFourMock, times(0)).apply()
 
-      recipeHandler.handleEvent(firstProcessId, ThirdEvent())
+      baker.handleEvent(firstProcessId, ThirdEvent())
       verify(testInteractionFourMock).apply()
     }
 
