@@ -219,6 +219,14 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     */
   def getCompiledRecipe(recipeId: String): CompiledRecipe = baker.getRecipe(recipeId)
 
+
+  /**
+    * Returns all recipes added to baker.
+    *
+    * @return
+    */
+  def getAllRecipes(): java.util.Map[String, CompiledRecipe] = baker.getAllRecipes.asJava
+
   /**
     * Registers a listener to all runtime events for this baker instance.
     *

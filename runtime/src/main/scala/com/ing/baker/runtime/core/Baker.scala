@@ -150,7 +150,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     if (compiledRecipe.validationErrors.nonEmpty)
       throw new RecipeValidationException(compiledRecipe.validationErrors.mkString(", "))
 
-    // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
     val futureResult = recipeManager.ask(AddRecipe(compiledRecipe))(timeout)
     Await.result(futureResult, timeout) match {
       case AddRecipeResponse(recipeId) => recipeId
@@ -158,13 +157,28 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     }
   }
 
+  /**
+    * Returns the
+    *
+    * @param recipeId
+    * @return
+    */
   def getRecipe(recipeId: String): CompiledRecipe = {
-    // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
     val futureResult = recipeManager.ask(GetRecipe(recipeId))(timeout)
     Await.result(futureResult, timeout) match {
       case RecipeFound(compiledRecipe) => compiledRecipe
-      case NoRecipeFound => throw new IllegalArgumentException(s"No recipe found for recipe with id: ${recipeId}")
+      case NoRecipeFound               => throw new IllegalArgumentException(s"No recipe found for recipe with id: ${recipeId}")
     }
+  }
+
+  /**
+    * Returns all recipes added to this baker instance.
+    *
+    * @return All recipes
+    */
+  def getAllRecipes: Map[String, CompiledRecipe] = {
+    val futureResult = recipeManager.ask(GetAllRecipes)(timeout).mapTo[AllRecipes]
+    Await.result(futureResult, timeout).compiledRecipes
   }
 
   /**
