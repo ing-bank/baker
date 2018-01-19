@@ -2,7 +2,7 @@
 
 ---
 
-## Baker
+## Baker is a Java Library
 ### Declare the Logic Like a Recipe
 ### Visualize the Logic
 ### Don't Worry About Retries and State
@@ -13,7 +13,7 @@
 
 ---
 
-## Up to 4x Faster Time to Market
+## Rapid Time to Market
 ## Less Incidents
 ## Business and IT Speak the Same Language
 
