@@ -14,6 +14,7 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 
 import scala.concurrent.duration._
+import ClusterBakerActorProvider._
 
 object ClusterBakerActorProvider {
 
@@ -47,6 +48,8 @@ object ClusterBakerActorProvider {
     //    case BakerActorMessage(processId, _) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
     case ShardRegion.StartEntity(entityId) => entityId.split(s"index-").last
   }
+
+  val recipeManagerName = "RecipeManager"
 }
 
 class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption) extends BakerActorProvider {
@@ -70,16 +73,18 @@ class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption
   }
 
   override def createRecipeManagerActor()(implicit actorSystem: ActorSystem): ActorRef = {
-    actorSystem.actorOf(
-      ClusterSingletonManager.props(
-        RecipeManager.props(),
-        terminationMessage = "RecipeManager terminated",
-        settings = ClusterSingletonManagerSettings(actorSystem)),
-      "RecipeManager")
-    actorSystem.actorOf(
-      ClusterSingletonProxy.props(
-        singletonManagerPath = "/user/RecipeManager",
-        settings = ClusterSingletonProxySettings(actorSystem)),
-      name = "consumerProxy")
+
+    val singletonManagerProps = ClusterSingletonManager.props(
+      RecipeManager.props(),
+      terminationMessage = "RecipeManager terminated",
+      settings = ClusterSingletonManagerSettings(actorSystem))
+
+    actorSystem.actorOf(props = singletonManagerProps, name = recipeManagerName)
+
+    val singletonProxyProps = ClusterSingletonProxy.props(
+        singletonManagerPath = s"/user/$recipeManagerName",
+        settings = ClusterSingletonProxySettings(actorSystem))
+
+    actorSystem.actorOf(props = singletonProxyProps, name = "RecipeManagerProxy")
   }
 }

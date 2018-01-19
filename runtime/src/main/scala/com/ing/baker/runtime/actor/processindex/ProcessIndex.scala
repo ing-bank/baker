@@ -231,7 +231,7 @@ class ProcessIndex(processInstanceStore: ProcessInstanceStore,
       }
 
       //Handles the event, assumes the process is created
-      def HandleEventWithActor(actorRef: ActorRef) = {
+      def handleEventWithActor(actorRef: ActorRef) = {
         val recipeId = index.get(processId) match {
           case Some(actorMetadata) =>
             val recipeId = actorMetadata.recipeId
@@ -246,10 +246,10 @@ class ProcessIndex(processInstanceStore: ProcessInstanceStore,
       //If not check if it is available and start
       //If not return a Uninitialized message
       context.child(processId) match {
-        case Some(actorRef) => HandleEventWithActor(actorRef)
+        case Some(actorRef) => handleEventWithActor(actorRef)
         case None if index.contains(processId) =>
           persist(ActorActivated(processId)) { _ =>
-            HandleEventWithActor(createProcessActor(processId))
+            handleEventWithActor(createProcessActor(processId))
           }
         case None => sender() ! Uninitialized(processId)
       }

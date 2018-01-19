@@ -236,7 +236,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     *
     * @param listener The listener to subscribe to events.
     */
-  def registerEventListener(listener: EventListener, recipeName: String): Unit = baker.registerEventListener(listener, "recipeName")
+  def registerEventListener(recipeName: String, listener: EventListener): Unit = baker.registerEventListener(recipeName, listener)
 
   /**
     * Returns the visual state of the recipe in dot format

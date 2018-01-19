@@ -326,7 +326,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  def registerEventListener(listener: EventListener, recipeName: String): Boolean = {
+  def registerEventListener(recipeName: String, listener: EventListener): Boolean = {
     val subscriber = actorSystem.actorOf(Props(new Actor() {
       override def receive: Receive = {
         case ProcessInstanceEvent(processType, processId, event: TransitionFiredEvent[_, _, _]) if processType == recipeName =>
