@@ -1,11 +1,9 @@
 package com.ing.baker.il.petrinet
 
-import java.lang.reflect.Type
-
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
-import com.ing.baker.types.{IngredientDescriptor, Value}
 import com.ing.baker.il.{ActionType, EventOutputTransformer, _}
+import com.ing.baker.types.Value
 import org.slf4j._
 
 

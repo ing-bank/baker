@@ -3,13 +3,13 @@ package com.ing.baker.runtime.core.interations
 import java.lang.reflect.Method
 import java.util.UUID
 
-import com.ing.baker.il.EventType
+import com.ing.baker.il.{EventType, IngredientDescriptor}
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.core.Baker.eventExtractor
 import com.ing.baker.runtime.core.interations.MethodInteractionImplementation._
 import com.ing.baker.runtime.core.{BakerException, RuntimeEvent}
 import com.ing.baker.runtime.petrinet.FatalInteractionException
-import com.ing.baker.types.{Type, Converters, IngredientDescriptor, Value}
+import com.ing.baker.types.{Converters, Type, Value}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConverters._
