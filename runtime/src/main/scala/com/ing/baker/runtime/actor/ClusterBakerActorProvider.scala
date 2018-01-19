@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.actor
 
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.{ActorRef, ActorSystem, PoisonPill}
 import akka.cluster.sharding.ShardRegion._
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
@@ -41,10 +41,10 @@ object ClusterBakerActorProvider {
   // extracts the shard id from the incoming message
   def shardIdExtractor(nrOfShards: Int): ExtractShardId = {
     //TODO decide how to shard now without the BakerActorMessage
-    case msg@CreateProcess(_, processId) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
-    case msg@HandleEvent(processId, _) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
-    case msg@GetProcessState(processId) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
-    case msg@GetCompiledRecipe(processId) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
+    case CreateProcess(_, processId) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
+    case HandleEvent(processId, _) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
+    case GetProcessState(processId) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
+    case GetCompiledRecipe(processId) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
     //    case BakerActorMessage(processId, _) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
     case ShardRegion.StartEntity(entityId) => entityId.split(s"index-").last
   }
@@ -76,7 +76,7 @@ class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption
 
     val singletonManagerProps = ClusterSingletonManager.props(
       RecipeManager.props(),
-      terminationMessage = "RecipeManager terminated",
+      terminationMessage = PoisonPill,
       settings = ClusterSingletonManagerSettings(actorSystem))
 
     actorSystem.actorOf(props = singletonManagerProps, name = recipeManagerName)
