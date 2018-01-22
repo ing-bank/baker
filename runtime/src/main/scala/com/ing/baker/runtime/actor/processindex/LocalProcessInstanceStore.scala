@@ -2,8 +2,7 @@ package com.ing.baker.runtime.actor.processindex
 
 import com.google.common.collect.Sets
 
-import scala.collection.convert.decorateAsScala._
-
+import scala.collection.JavaConverters._
 
 class LocalProcessInstanceStore extends ProcessInstanceStore {
   private val allProcessesMetadata = Sets.newConcurrentHashSet[ProcessMetadata]()
