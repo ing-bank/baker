@@ -242,9 +242,29 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * - unit tests
     * - ...
     *
+    * @param recipeName the name of all recipes this event listener should be triggered for
     * @param listener The listener to subscribe to events.
     */
   def registerEventListener(recipeName: String, listener: EventListener): Unit = baker.registerEventListener(recipeName, listener)
+
+  /**
+    * Registers a listener to all runtime events for this baker instance.
+    *
+    * Note that:
+    *
+    * - The delivery guarantee is *AT MOST ONCE*. Practically this means you can miss events when the application terminates (unexpected or not).
+    * - The delivery is local (JVM) only, you will NOT receive events from other nodes when running in cluster mode.
+    *
+    * Because of these constraints you should not use an event listener for critical functionality. Valid use cases might be:
+    *
+    * - logging
+    * - metrics
+    * - unit tests
+    * - ...
+    *
+    * @param listener The listener to subscribe to events.
+    */
+  def registerEventListener(listener: EventListener): Unit = baker.registerEventListener(listener)
 
   /**
     * Returns the visual state of the recipe in dot format

@@ -335,17 +335,12 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     }
   }
 
-  /**
-    * Registers a listener to all runtime events.
-    *
-    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
-    */
-  def registerEventListener(recipeName: String, listener: EventListener): Boolean = {
+  private def doRegisterEventListener(listener: EventListener, fn: String => Boolean): Boolean = {
     val subscriber = actorSystem.actorOf(Props(new Actor() {
       override def receive: Receive = {
-        case ProcessInstanceEvent(processType, processId, event: TransitionFiredEvent[_, _, _]) if processType == recipeName =>
+        case ProcessInstanceEvent(processType, processId, event: TransitionFiredEvent[_, _, _]) if fn(processType) =>
           toRuntimeEvent(event).foreach(e => listener.handleEvent(processId, e))
-        case ProcessInstanceEvent(processType, processId, event: TransitionFailedEvent[_, _, _]) if processType == recipeName =>
+        case ProcessInstanceEvent(processType, processId, event: TransitionFailedEvent[_, _, _]) if fn(processType) =>
           event.exceptionStrategy match {
             case Continue(_, event: RuntimeEvent) =>
               listener.handleEvent(processId, event)
@@ -356,6 +351,23 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     }))
     actorSystem.eventStream.subscribe(subscriber.actorRef, classOf[ProcessInstanceEvent])
   }
+
+  /**
+    * Registers a listener to all runtime events for recipes with the given name run in this baker instance.
+    *
+    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
+    */
+  def registerEventListener(recipeName: String, listener: EventListener): Boolean =
+    doRegisterEventListener(listener, _ == recipeName)
+
+  /**
+    * Registers a listener to all runtime events for all recipes that run in this Baker instance.
+    *
+    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
+    */
+  def registerEventListener(listener: EventListener): Boolean =
+    doRegisterEventListener(listener, _ => true)
+
 
   def addInteractionImplementation(implementation: AnyRef) =
     MethodInteractionImplementation.anyRefToInteractionImplementations(implementation).foreach(interactionManager.add)
