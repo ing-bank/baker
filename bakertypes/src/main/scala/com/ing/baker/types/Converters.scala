@@ -137,7 +137,7 @@ object Converters {
       case (PrimitiveValue(option: String), clazz: Class[_]) if clazz.isEnum =>
         clazz.asInstanceOf[Class[Enum[_]]].getEnumConstants.find(_.name() == option) match {
           case Some(enumValue) => enumValue
-          case None => throw new IllegalArgumentException(s"option '$option' is not an instance of enum $clazz")
+          case None => throw new IllegalArgumentException(s"value '$option' is not an instance of enum: $clazz")
         }
 
       case (_, generic: ParameterizedType) if classOf[Option[_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
@@ -181,7 +181,7 @@ object Converters {
         val keyType = generic.getActualTypeArguments()(0)
 
         if (keyType != classOf[String])
-          throw new IllegalArgumentException(s"Unsuported key type for map: $keyType")
+          throw new IllegalArgumentException(s"Unsuported key type: $keyType")
 
         val valueType = generic.getActualTypeArguments()(1)
 
@@ -195,7 +195,7 @@ object Converters {
         val keyType = generic.getActualTypeArguments()(0)
 
         if (keyType != classOf[String])
-          throw new IllegalArgumentException(s"Unsuported key type for map: $keyType")
+          throw new IllegalArgumentException(s"Unsuported key type: $keyType")
 
         val valueType = generic.getActualTypeArguments()(1)
 
@@ -214,9 +214,15 @@ object Converters {
 
         fields.foreach { f =>
           entries.get(f.getName).foreach { entryValue =>
-            val value = toJava(entryValue, f.getGenericType)
-            f.setAccessible(true)
-            f.set(pojoInstance, value)
+
+            val fieldType = f.getGenericType()
+            try {
+              val value = toJava(entryValue, fieldType)
+              f.setAccessible(true)
+              f.set(pojoInstance, value)
+            } catch {
+              case e: Exception => throw new IllegalStateException(s"Failed to convert field '${f.getName}' to type: $fieldType", e)
+            }
           }
         }
 
