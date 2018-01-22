@@ -46,7 +46,7 @@ public class JBakerTest {
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
         String requestId = UUID.randomUUID().toString();
         jBaker.bake(recipeId, requestId);
-        jBaker.handleEvent(requestId, new JavaCompiledRecipeTest.EventOne());
+        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
 
         assertEquals(jBaker.getIngredients(requestId).size(), 1);
 
@@ -69,7 +69,7 @@ public class JBakerTest {
 
         String requestId = UUID.randomUUID().toString();
         jBaker.bake(recipeId, requestId);
-        jBaker.handleEvent(requestId, new JavaCompiledRecipeTest.EventOne());
+        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
 
         assertEquals(jBaker.getIngredients(requestId).size(), 1);
 
@@ -100,8 +100,8 @@ public class JBakerTest {
 
         String requestId = UUID.randomUUID().toString();
         jBaker.bake(recipeId, requestId);
-        jBaker.handleEvent(requestId, new JavaCompiledRecipeTest.EventOne());
-        jBaker.handleEvent(requestId, new JavaCompiledRecipeTest.EventTwo());
+        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
+        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventTwo());
     }
 
     @Test

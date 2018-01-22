@@ -218,8 +218,8 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @param processId The process identifier
     * @param event     The event object
     */
-  def handleEvent(processId: String, event: Any)(implicit timeout: FiniteDuration): SensoryEventStatus = {
-    handleEventAsync(processId, event).confirmCompleted()
+  def processEvent(processId: String, event: Any)(implicit timeout: FiniteDuration): SensoryEventStatus = {
+    processEventAsync(processId, event).confirmCompleted()
   }
 
   /**
@@ -228,7 +228,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * This call is fire and forget: If  nothing is done
     * with the response object you NO guarantee that the event is received the process instance.
     */
-  def handleEventAsync(processId: String, event: Any)(implicit timeout: FiniteDuration): BakerResponse = {
+  def processEventAsync(processId: String, event: Any)(implicit timeout: FiniteDuration): BakerResponse = {
 
     val runtimeEvent: RuntimeEvent = event match {
       case runtimeEvent: RuntimeEvent => runtimeEvent
@@ -339,11 +339,11 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     val subscriber = actorSystem.actorOf(Props(new Actor() {
       override def receive: Receive = {
         case ProcessInstanceEvent(processType, processId, event: TransitionFiredEvent[_, _, _]) if fn(processType) =>
-          toRuntimeEvent(event).foreach(e => listener.handleEvent(processId, e))
+          toRuntimeEvent(event).foreach(e => listener.processEvent(processId, e))
         case ProcessInstanceEvent(processType, processId, event: TransitionFailedEvent[_, _, _]) if fn(processType) =>
           event.exceptionStrategy match {
             case Continue(_, event: RuntimeEvent) =>
-              listener.handleEvent(processId, event)
+              listener.processEvent(processId, event)
             case _ =>
           }
         case _: ProcessInstanceEvent => // purposely ignored in order to not have unnecessary unhandled messages logged

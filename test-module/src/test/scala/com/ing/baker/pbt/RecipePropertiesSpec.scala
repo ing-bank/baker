@@ -85,7 +85,7 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
 //        compiledRecipe.sensoryEvents foreach { event =>
 //          println(s"Handling sensory event: ${event.name}")
 //          val runtimeEvent = RuntimeEvent(event.name, ingredientValuesFrom[IngredientType](event.ingredientTypes, _.name))
-//          baker.handleEvent(processId, runtimeEvent)
+//          baker.processEvent(processId, runtimeEvent)
 //          alreadyFiredEvents += runtimeEvent
 //        }
 //        counter += 1

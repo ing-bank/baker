@@ -56,7 +56,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
     doRequest(request, logEntity)
   }
 
-  def handleEvent(requestId: String, event: Any, confirmation: EventConfirmation): SensoryEventStatus = {
+  def processEvent(requestId: String, event: Any, confirmation: EventConfirmation): SensoryEventStatus = {
 
     //Create request to give to Baker
     log.info("Creating runtime event to fire")

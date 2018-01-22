@@ -65,7 +65,7 @@ class SerializerSpec extends TestRecipeHelper {
 
         verifyZeroInteractions(testInteractionOneMock)
 
-        val received = baker.handleEvent(processId, InitialEvent(initialIngredientValue))
+        val received = baker.processEvent(processId, InitialEvent(initialIngredientValue))
         received shouldBe SensoryEventStatus.Completed
 
         verify(testInteractionTwoMock).apply(initialIngredientValue)

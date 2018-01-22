@@ -77,9 +77,9 @@ class ExamplesSpec extends TestRecipeHelper  {
 
       // fire events
 
-      baker.handleEvent(processId, orderPlaced.instance(testOrder))
-      baker.handleEvent(processId, paymentMade.instance())
-      baker.handleEvent(processId, customerInfoReceived.instance(testCustomerInfoData))
+      baker.processEvent(processId, orderPlaced.instance(testOrder))
+      baker.processEvent(processId, paymentMade.instance())
+      baker.processEvent(processId, customerInfoReceived.instance(testCustomerInfoData))
 
       val expectedIngredients = Map(
         "order" -> testOrder,

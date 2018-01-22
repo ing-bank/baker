@@ -80,7 +80,7 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     baasClient.bake(recipeId, requestId)
 
     val sensoryEventStatusResponse: SensoryEventStatus =
-      baasClient.handleEvent(requestId, InitialEvent("initialIngredient"), EventConfirmation.COMPLETED)
+      baasClient.processEvent(requestId, InitialEvent("initialIngredient"), EventConfirmation.COMPLETED)
     sensoryEventStatusResponse shouldBe SensoryEventStatus.Completed
 
     val processState: ProcessState = baasClient.getState(requestId)

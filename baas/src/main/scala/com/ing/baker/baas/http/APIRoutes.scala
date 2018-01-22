@@ -25,8 +25,8 @@ object APIRoutes extends Directives with BaasMarshalling {
           (entity(as[RuntimeEvent]) & parameter('confirm.as[String] ?)) { (event, confirm) =>
 
             val sensoryEventStatus = confirm.getOrElse(defaultEventConfirm) match {
-              case "received"  => baker.handleEventAsync(requestId, event).confirmReceived()
-              case "completed" => baker.handleEventAsync(requestId, event).confirmCompleted()
+              case "received"  => baker.processEventAsync(requestId, event).confirmReceived()
+              case "completed" => baker.processEventAsync(requestId, event).confirmCompleted()
               case other      => throw new IllegalArgumentException(s"Unsupported confirm type: $other")
             }
 

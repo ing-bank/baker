@@ -76,7 +76,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param event     The event to fire
     * @return
     */
-  def handleEvent(processId: String, event: Any): Unit = handleEventAsync(processId, event).confirmCompleted()
+  def processEvent(processId: String, event: Any): Unit = processEventAsync(processId, event).confirmCompleted()
 
   /**
     * This fires the given event in the recipe for the process with the given processId
@@ -86,7 +86,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param event     The event to fire
     * @return
     */
-  def handleEvent(processId: UUID, event: Any): Unit = handleEvent(processId.toString, event)
+  def processEvent(processId: UUID, event: Any): Unit = processEvent(processId.toString, event)
 
   /**
     * This fires the given event in the recipe for the process with the given processId
@@ -96,9 +96,9 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param event     The event to fire
     * @return
     */
-  def handleEventAsync(processId: String, event: Any): BakerResponse = {
+  def processEventAsync(processId: String, event: Any): BakerResponse = {
     implicit val executionContext = actorSystem.dispatcher
-    baker.handleEventAsync(processId, event)(defaultHandleEventAsyncTimeout)
+    baker.processEventAsync(processId, event)(defaultHandleEventAsyncTimeout)
   }
 
   /**
@@ -109,8 +109,8 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param event     The event to fire
     * @return
     */
-  def handleEventAsync(processId: UUID, event: Any): BakerResponse =
-    handleEventAsync(processId.toString, event)
+  def processEventAsync(processId: UUID, event: Any): BakerResponse =
+    processEventAsync(processId.toString, event)
 
   /**
     * Returns all the ingredients that are accumulated for a given process.

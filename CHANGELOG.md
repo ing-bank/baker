@@ -13,7 +13,7 @@
   If a Recipe is added with the same name we see this a new recipe.
   Meaning the already baked instances will use the original Recipe they are baked with for the execution.
 - It is possible to add interaction implementations at runtime.
-- Scala/Java DSL alignment: renamed `processEvent -> handleEvent` and `processEventAsync -> handleEventAsync`
+- Scala/Java DSL alignment: renamed `handleEvent -> processEvent` and `handleEventAsync -> processEventAsync`
 
 ## 1.1.17
 - Fix #72: do not join to akka cluster when there are persistence problems. `akka.cluster.seed-nodes` configuration should be renamed to `baker.cluster.seed-nodes` to support this "late cluster join" feature.
