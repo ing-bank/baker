@@ -116,6 +116,7 @@ lazy val recipeDsl = project.in(file("recipe-dsl"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "baker-recipe-dsl",
+    publishArtifact in (Compile, packageDoc) := false,
     libraryDependencies ++=
       compileDeps(
         javaxInject,
