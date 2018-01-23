@@ -2,7 +2,7 @@ package com.ing.baker.recipe.javadsl
 
 import com.ing.baker.recipe.common
 
-object util {
+object Util {
   /**
     * Creates the retry exhausted event name for the interaction the class represents.
     *
