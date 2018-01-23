@@ -16,7 +16,7 @@ object InteractionFailureStrategy {
       initialDelayDuration,
       deadlineDuration,
       Some(Duration(maxTimeBetweenRetries.toMillis, duration.MILLISECONDS)),
-      None)
+      false)
   }
 
   def RetryWithIncrementalBackoff(initialDelay: java.time.Duration,
@@ -27,37 +27,25 @@ object InteractionFailureStrategy {
       initialDelayDuration,
       deadlineDuration,
       None,
-      None)
+      false)
   }
 
   def RetryWithIncrementalBackoff(initialDelay: java.time.Duration,
                                   deadline: java.time.Duration,
                                   maxTimeBetweenRetries: java.time.Duration,
-                                  exhaustedEvent: Class[_]): RetryWithIncrementalBackoff = {
+                                  fireRetryExhaustedEvent: Boolean): RetryWithIncrementalBackoff = {
     val initialDelayDuration = Duration(initialDelay.toMillis, duration.MILLISECONDS)
     val deadlineDuration = Duration(deadline.toMillis, duration.MILLISECONDS)
     common.InteractionFailureStrategy.RetryWithIncrementalBackoff(
       initialDelayDuration,
       deadlineDuration,
       Some(Duration(maxTimeBetweenRetries.toMillis, duration.MILLISECONDS)),
-      Some(eventClassToCommonEvent(exhaustedEvent, None)))
+      fireRetryExhaustedEvent)
   }
 
-  def FireEvent(eventClass: Class[_]): common.InteractionFailureStrategy.FireEventAfterFailure = {
-    FireEventAfterFailure(eventClassToCommonEvent(eventClass, None))
-  }
+  def FireEvent(): common.InteractionFailureStrategy.FireEventAfterFailure =
+    common.InteractionFailureStrategy.FireEventAfterFailure()
 
-  def RetryWithIncrementalBackoff(initialDelay: java.time.Duration,
-                                  deadline: java.time.Duration,
-                                  exhaustedEvent: Class[_]): RetryWithIncrementalBackoff = {
-    val initialDelayDuration = Duration(initialDelay.toMillis, duration.MILLISECONDS)
-    val deadlineDuration = Duration(deadline.toMillis, duration.MILLISECONDS)
-    common.InteractionFailureStrategy.RetryWithIncrementalBackoff(
-      initialDelayDuration,
-      deadlineDuration,
-      None,
-      Some(eventClassToCommonEvent(exhaustedEvent, None)))
-  }
-
-  def BlockInteraction(): BlockInteraction = common.InteractionFailureStrategy.BlockInteraction()
+  def BlockInteraction(): BlockInteraction =
+    common.InteractionFailureStrategy.BlockInteraction()
 }

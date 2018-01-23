@@ -617,7 +617,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
         .withInteractions(interactionOne.withIncrementalBackoffOnFailure(
           initialDelay = 10 milliseconds,
           maximumRetries = 1,
-          exhaustedRetryEvent = Some(exhaustedEvent)))
+          fireExhaustedEvent = true))
 
       when(testInteractionOneMock.apply(anyString(), anyString())).thenThrow(new BakerException())
 
@@ -631,7 +631,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       Thread.sleep(50)
 
-      recipeHandler.events(processId).map(_.name) should contain(exhaustedEvent.name)
+      recipeHandler.events(processId).map(_.name) should contain(interactionOne.retryExhaustedEventName)
     }
 
     "not fire the exhausted retry event if the interaction passes" in {
@@ -640,7 +640,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
         .withInteractions(interactionOne.withIncrementalBackoffOnFailure(
           initialDelay = 10 milliseconds,
           maximumRetries = 1,
-          exhaustedRetryEvent = Some(exhaustedEvent)))
+          fireExhaustedEvent = true))
 
       val recipeHandler = setupBakerWithRecipe(recipe, mockImplementations)
 
@@ -652,14 +652,14 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       Thread.sleep(50)
 
-      recipeHandler.events(processId).map(_.name) should not contain exhaustedEvent.name
+      recipeHandler.events(processId).map(_.name) should not contain interactionOne.retryExhaustedEventName
     }
 
     "fire a specified failure event for an interaction immediately after it fails" in {
 
       val recipe = Recipe("ImmediateFailureEvent")
         .withSensoryEvent(initialEvent)
-        .withInteractions(interactionOne.withFailureStrategy(FireEventAfterFailure(exhaustedEvent)))
+        .withInteractions(interactionOne.withFailureStrategy(FireEventAfterFailure()))
 
       when(testInteractionOneMock.apply(anyString(), anyString())).thenThrow(new RuntimeException("Some failure happened"))
 
@@ -676,9 +676,9 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       Thread.sleep(50)
       verify(listenerMock).handleEvent(processId.toString, RuntimeEvent.create("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)))
-      verify(listenerMock).handleEvent(processId.toString, RuntimeEvent.create("RetryExhausted", Seq.empty))
+      verify(listenerMock).handleEvent(processId.toString, RuntimeEvent.create(interactionOne.retryExhaustedEventName, Seq.empty))
 
-      recipeHandler.events(processId).map(_.name) should contain(exhaustedEvent.name)
+      recipeHandler.events(processId).map(_.name) should contain(interactionOne.retryExhaustedEventName)
     }
 
     "be able to return all occurred events" in {

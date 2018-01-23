@@ -10,4 +10,6 @@ trait Interaction {
       this.name == other.name && this.inputIngredients == other.inputIngredients && this.output == other.output
     case _ => false
   }
+
+  def retryExhaustedEventName: String = this.name + exhaustedEventAppend
 }

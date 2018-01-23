@@ -7,4 +7,7 @@ package object common {
   type IngredientType = Type
 
   val ProcessIdName = "$ProcessId$"
+  val SuccessEventAppend = "Successful"
+  val exhaustedEventAppend = "RetryExhausted"
+
 }
