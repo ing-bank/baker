@@ -47,11 +47,13 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     *
     * @param timeout The time to wait for the shard handover.
     */
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
   def shutdown(timeout: java.time.Duration): Unit = baker.shutdown(Duration(timeout.toMillis, TimeUnit.MILLISECONDS))
 
   /**
     * Attempts to gracefully shutdown the baker system.
     */
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
   def shutdown(): Unit = baker.shutdown()
 
   /**
@@ -60,6 +62,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param recipeId  The recipe this instance will be baked for
     * @param processId The process identifier
     */
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
   def bake(recipeId: String, processId: String): Unit =
     baker.bake(recipeId, processId)
 
@@ -70,6 +73,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param processId The process identifier
     * @param timeout   the timeout for the Bake
     */
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
   def bake(recipeId: String, processId: String, timeout: java.time.Duration): Unit =
     baker.bake(recipeId, processId, timeout.toScala)
 
@@ -79,6 +83,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param recipeId  The recipe this instance will be baked for
     * @param processId The process identifier
     */
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
   def bake(recipeId: String, processId: UUID): Unit = bake(recipeId, processId.toString)
 
   /**
@@ -88,6 +93,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param processId The process identifier
     * @param timeout   the timeout for the Bake
     */
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
   def bake(recipeId: String, processId: UUID, timeout: java.time.Duration): Unit =
     bake(recipeId, processId.toString, timeout)
 
@@ -99,6 +105,8 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param event     The event to fire
     * @return
     */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
   def processEvent(processId: String, event: Any): Unit =
     baker.processEvent(processId, event)
 
@@ -110,6 +118,8 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param event     The event to fire
     * @return
     */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
   def processEvent(processId: String, event: Any, timeout: java.time.Duration): Unit =
     baker.processEvent(processId, event, timeout.toScala)
 
@@ -121,6 +131,8 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param event     The event to fire
     * @return
     */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
   def processEvent(processId: UUID, event: Any): Unit =
     processEvent(processId.toString, event)
 
@@ -132,6 +144,8 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param event     The event to fire
     * @return
     */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
   def processEvent(processId: UUID, event: Any, timeout: java.time.Duration): Unit =
     processEvent(processId.toString, event, timeout)
 
@@ -180,6 +194,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param event     The event to fire
     * @return
     */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
   def processEventAsync(processId: UUID, event: Any, timeout: java.time.Duration): BakerResponse =
     processEventAsync(processId.toString, event, timeout)
 
@@ -191,7 +206,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @return
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
-  @throws[TimeoutException]("When the process does not respond within the default deadline")
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
   def getIngredients(processId: String, timeout: java.time.Duration): java.util.Map[String, Value] =
     baker
       .getIngredients(processId, timeout.toScala)
@@ -207,7 +222,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @return
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
-  @throws[TimeoutException]("When the process does not respond within the default deadline")
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
   def getIngredients(processId: UUID, timeout: java.time.Duration): java.util.Map[String, Value] =
     getIngredients(processId.toString, timeout)
 
@@ -244,6 +259,8 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @return
     *
     */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
   def getEvents(processId: String, timeout: java.time.Duration): EventList =
     new EventList(baker.events(processId, timeout.toScala))
 
@@ -258,6 +275,8 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @return
     *
     */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
   def getEvents(processId: UUID, timeout: java.time.Duration): EventList =
     getEvents(processId.toString, timeout)
 
@@ -271,6 +290,8 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param processId The process identifier
     * @return
     */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[TimeoutException]("When the process does not respond within the default deadline")
   def getEvents(processId: String): EventList = getEvents(processId)
 
   /**
@@ -282,6 +303,8 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param processId The process identifier
     * @return
     */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[TimeoutException]("When the process does not respond within the default deadline")
   def getEvents(processId: UUID): EventList = getEvents(processId.toString)
 
   /**
@@ -289,6 +312,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     *
     * @return The compiled recipe
     */
+  @throws[TimeoutException]("When the process does not respond within the default deadline")
   def getCompiledRecipe(recipeId: String): CompiledRecipe = baker.getRecipe(recipeId)
 
 
@@ -297,6 +321,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     *
     * @return
     */
+  @throws[TimeoutException]("When the process does not respond within the default deadline")
   def getAllRecipes(): java.util.Map[String, CompiledRecipe] = baker.getAllRecipes.asJava
 
   /**
@@ -377,6 +402,8 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param processId The process identifier
     * @return
     */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[TimeoutException]("When the process does not respond within the default deadline")
   def getVisualState(processId: UUID): String =
     getVisualState(processId.toString)
 

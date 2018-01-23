@@ -88,7 +88,7 @@ public class JBakerTest {
     }
 
     @Test
-    public void shouldExecuteCompleteFlow() throws BakerException {
+    public void shouldExecuteCompleteFlow() throws BakerException, TimeoutException {
 
         JBaker jBaker = new JBaker();
 
