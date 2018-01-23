@@ -3,7 +3,7 @@ package com.ing.baker.recipe
 import java.lang.reflect.{Method, Type => JType}
 
 import com.ing.baker.recipe.javadsl.ReflectionHelpers._
-import com.ing.baker.types.{Type, Converters}
+import com.ing.baker.types.{Converters, Type}
 
 package object javadsl {
 
@@ -11,7 +11,7 @@ package object javadsl {
     new common.Ingredient(
       name = ingredientName,
       ingredientType = ingredientType
-  )
+    )
 
   def parseType(jType: JType, errorMessage: String) = {
     try {
@@ -20,6 +20,13 @@ package object javadsl {
       case e: Exception => throw new IllegalArgumentException(errorMessage, e)
     }
   }
+
+  def retryExhaustedEvent(interactionClass: Class[_]): common.Event =
+    new common.Event {
+      override val name: String = interactionClass.getSimpleName + common.exhaustedEventAppend
+      override val providedIngredients: Seq[common.Ingredient] = Seq.empty
+      override val maxFiringLimit: Option[Integer] = Option.empty
+    }
 
   def eventClassToCommonEvent(eventClass: Class[_], firingLimit: Option[Integer]): common.Event =
     new common.Event {
@@ -52,7 +59,7 @@ package object javadsl {
         method.getParameterNames.map(s => createIngredient(s, parseType(method.parameterTypeForName(s).get, s"Unsupported type for ingredient '$s' on interaction '${interactionClass.getName}'")))
 
       override val output: common.InteractionOutput = {
-        if(method.isAnnotationPresent(classOf[annotations.ProvidesIngredient]) && method.isAnnotationPresent(classOf[annotations.FiresEvent]))
+        if (method.isAnnotationPresent(classOf[annotations.ProvidesIngredient]) && method.isAnnotationPresent(classOf[annotations.FiresEvent]))
           throw new common.RecipeValidationException(s"Interaction $name has both ProvidesIngredient and FiresEvent annotation, only one if possible")
         //ProvidesIngredient
         else if (method.isAnnotationPresent(classOf[annotations.ProvidesIngredient])) {
