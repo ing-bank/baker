@@ -27,11 +27,12 @@ import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.runtime.core.interations.{InteractionImplementation, InteractionManager, MethodInteractionImplementation}
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.RecipeRuntime
+import com.ing.baker.types.Value
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.duration.{Duration, FiniteDuration, _}
 import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
@@ -73,7 +74,9 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
   private val interactionManager: InteractionManager = new InteractionManager()
   private val config = actorSystem.settings.config
-  private val bakeTimeout = config.as[FiniteDuration]("baker.bake-timeout")
+  private val defaultBakeTimeout = config.as[FiniteDuration]("baker.bake-timeout")
+  private val defaultProcessEventTimeout = config.as[FiniteDuration]("baker.process-event-timeout")
+  private val defaultInquireTimeout = config.as[FiniteDuration]("baker.process-inquire-timeout")
   private val journalInitializeTimeout = config.as[FiniteDuration]("baker.journal-initialize-timeout")
   private val readJournalIdentifier = config.as[String]("baker.actor.read-journal-plugin")
   private val log = LoggerFactory.getLogger(classOf[Baker])
@@ -186,7 +189,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     *
     * @param processId The process identifier
     */
-  def bake(recipeId: String, processId: String): ProcessState =
+  def bake(recipeId: String, processId: String, bakeTimeout: FiniteDuration = defaultBakeTimeout): ProcessState =
     Await.result(bakeAsync(recipeId, processId), bakeTimeout)
 
   /**
@@ -195,7 +198,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @param processId The process identifier
     * @return A future of the initial process state.
     */
-  def bakeAsync(recipeId: String, processId: String): Future[ProcessState] = {
+  def bakeAsync(recipeId: String, processId: String, bakeTimeout: FiniteDuration = defaultBakeTimeout): Future[ProcessState] = {
     implicit val askTimeout = Timeout(bakeTimeout)
 
     val msg = CreateProcess(recipeId, processId)
@@ -218,7 +221,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @param processId The process identifier
     * @param event     The event object
     */
-  def processEvent(processId: String, event: Any)(implicit timeout: FiniteDuration): SensoryEventStatus = {
+  def processEvent(processId: String, event: Any, timeout: FiniteDuration = defaultProcessEventTimeout): SensoryEventStatus = {
     processEventAsync(processId, event).confirmCompleted()
   }
 
@@ -228,7 +231,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * This call is fire and forget: If  nothing is done
     * with the response object you NO guarantee that the event is received the process instance.
     */
-  def processEventAsync(processId: String, event: Any)(implicit timeout: FiniteDuration): BakerResponse = {
+  def processEventAsync(processId: String, event: Any, timeout: FiniteDuration = defaultProcessEventTimeout): BakerResponse = {
 
     val runtimeEvent: RuntimeEvent = event match {
       case runtimeEvent: RuntimeEvent => runtimeEvent
@@ -242,7 +245,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   /**
     * Synchronously returns all events that occurred for a process.
     */
-  def events(processId: String)(implicit timeout: FiniteDuration): Seq[RuntimeEvent] = {
+  def events(processId: String, timeout: FiniteDuration = defaultInquireTimeout): Seq[RuntimeEvent] = {
     val futureEventSeq = eventsAsync(processId).runWith(Sink.seq)
     Await.result(futureEventSeq, timeout)
   }
@@ -281,10 +284,10 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  private def getProcessState(processId: String)(implicit timeout: FiniteDuration): ProcessState =
+  private def getProcessState(processId: String, timeout: FiniteDuration = defaultInquireTimeout): ProcessState =
     Await.result(getProcessStateAsync(processId), timeout)
 
-  def getProcessStateAsync(processId: String)(implicit timeout: FiniteDuration): Future[ProcessState] = {
+  def getProcessStateAsync(processId: String, timeout: FiniteDuration = defaultInquireTimeout): Future[ProcessState] = {
     processIndexActor
       .ask(GetProcessState(processId))(Timeout.durationToTimeout(timeout))
       .flatMap {
@@ -302,7 +305,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def getIngredients(processId: String)(implicit timeout: FiniteDuration): Map[String, Any] =
+  def getIngredients(processId: String, timeout: FiniteDuration = defaultInquireTimeout): Map[String, Value] =
     getProcessState(processId).ingredients
 
   /**
@@ -311,7 +314,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @param processId The process id.
     * @return A future of the provided ingredients.
     */
-  def getIngredientsAsync(processId: String)(implicit timeout: FiniteDuration): Future[Map[String, Any]] = {
+  def getIngredientsAsync(processId: String, timeout: FiniteDuration = defaultInquireTimeout): Future[Map[String, Value]] = {
     getProcessStateAsync(processId).map(_.ingredients)
   }
 
@@ -322,7 +325,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @param timeout   How long to wait to retreive the process state.
     * @return A visual (.dot) representation of the process state.
     */
-  def getVisualState(processId: String)(implicit timeout: FiniteDuration): String = {
+  def getVisualState(processId: String, timeout: FiniteDuration = defaultInquireTimeout): String = {
     // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
     val futureResult = processIndexActor.ask(GetCompiledRecipe(processId))(timeout)
     Await.result(futureResult, timeout) match {

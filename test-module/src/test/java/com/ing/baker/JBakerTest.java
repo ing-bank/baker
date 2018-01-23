@@ -48,7 +48,7 @@ public class JBakerTest {
         jBaker.bake(recipeId, requestId);
         jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
 
-        assertEquals(jBaker.getIngredients(requestId).size(), 1);
+        assertEquals(1, jBaker.getIngredients(requestId).size());
 
         Object requestIdstringOne = jBaker.getIngredients(requestId).get("RequestIDStringOne");
         assertEquals(Converters.toValue(requestId.toString()), requestIdstringOne);
@@ -71,7 +71,7 @@ public class JBakerTest {
         jBaker.bake(recipeId, requestId);
         jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
 
-        assertEquals(jBaker.getIngredients(requestId).size(), 1);
+        assertEquals(1, jBaker.getIngredients(requestId).size());
 
         Object requestIdstringOne = jBaker.getIngredients(requestId).get("RequestIDStringOne");
         assertEquals(Converters.toValue(requestId.toString()), requestIdstringOne);
