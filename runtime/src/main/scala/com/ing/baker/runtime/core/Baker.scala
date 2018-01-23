@@ -1,28 +1,38 @@
 package com.ing.baker.runtime.core
 
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeoutException
 
-import akka.actor.{ActorSystem, Address, AddressFromURIString}
+import akka.NotUsed
+import akka.actor.{Actor, ActorRef, ActorSystem, Address, AddressFromURIString, Props}
 import akka.cluster.Cluster
+import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
 import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
 import com.ing.baker.il._
 import com.ing.baker.il.petrinet._
-import com.ing.baker.petrinet.runtime.EventSourcing.TransitionFiredEvent
+import com.ing.baker.petrinet.runtime.EventSourcing.{TransitionFailedEvent, TransitionFiredEvent}
+import com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue
 import com.ing.baker.runtime.actor._
+import com.ing.baker.runtime.actor.processindex.ProcessIndex.{CreateProcess, GetCompiledRecipe, GetProcessState, HandleEvent}
+import com.ing.baker.runtime.actor.processindex.{ProcessApi, ProcessInstanceStore, ProcessMetadata}
+import com.ing.baker.runtime.actor.processinstance.ProcessInstanceEvent
+import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol.{AlreadyInitialized, Initialized, InstanceState, RecipeNotAvailable, Response, Uninitialized}
+import com.ing.baker.runtime.actor.recipemanager.RecipeManager._
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
+import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.runtime.core.interations.{InteractionImplementation, InteractionManager, MethodInteractionImplementation}
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
+import com.ing.baker.runtime.petrinet.RecipeRuntime
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
-import scala.compat.java8.FunctionConverters._
-import scala.collection.JavaConverters._
-import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
@@ -45,6 +55,11 @@ object Baker {
     else
       None
   }
+
+  private def checkIfValidImplementationsProvided(interactionManager: InteractionManager, actions: Set[InteractionTransition[_]]): Set[String] = {
+    actions.filterNot(interactionManager.hasCompatibleImplementation)
+      .map(s => s"No implementation provided for interaction: ${s.originalInteractionName}")
+  }
 }
 
 /**
@@ -61,10 +76,11 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   private val bakeTimeout = config.as[FiniteDuration]("baker.bake-timeout")
   private val journalInitializeTimeout = config.as[FiniteDuration]("baker.journal-initialize-timeout")
   private val readJournalIdentifier = config.as[String]("baker.actor.read-journal-plugin")
-  private val actorIdleTimeout: Option[FiniteDuration] = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout")
   private val log = LoggerFactory.getLogger(classOf[Baker])
 
   implicit val materializer: ActorMaterializer = ActorMaterializer()
+
+  implicit val timeout: FiniteDuration = 5 seconds
 
   private val readJournal = PersistenceQuery(actorSystem)
     .readJournalFor[CurrentEventsByPersistenceIdQuery with PersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
@@ -88,18 +104,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     Cluster.get(actorSystem).joinSeedNodes(seedNodes)
   }
 
-  private val bakerActorProvider =
-    config.as[Option[String]]("baker.actor.provider") match {
-      case None | Some("local")    =>
-        new LocalBakerActorProvider(config)
-      case Some("cluster-sharded") =>
-        initializeCluster()
-        new ClusterActorProvider(config)
-      case Some(other)             =>
-        throw new IllegalArgumentException(s"Unsupported actor provider: $other")
-    }
-
-
   private val configuredEncryption: Encryption = {
     val encryptionEnabled = config.getAs[Boolean]("baker.encryption.enabled").getOrElse(false)
     if (encryptionEnabled) {
@@ -109,7 +113,23 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     }
   }
 
-  val recipeHandlers: ConcurrentHashMap[String, RecipeHandler] = new ConcurrentHashMap[String, RecipeHandler]()
+  private val bakerActorProvider =
+    config.as[Option[String]]("baker.actor.provider") match {
+      case None | Some("local") =>
+        new LocalBakerActorProvider(config)
+      case Some("cluster-sharded") =>
+        initializeCluster()
+        new ClusterBakerActorProvider(config, configuredEncryption)
+      case Some(other) =>
+        throw new IllegalArgumentException(s"Unsupported actor provider: $other")
+    }
+
+  val recipeManager: ActorRef = bakerActorProvider.createRecipeManagerActor()
+
+  val (processIndexActor: ActorRef, processInstanceStore: ProcessInstanceStore) =
+    bakerActorProvider.createProcessIndexActor(interactionManager, recipeManager)
+
+  private val petriNetApi = new ProcessApi(processIndexActor)
 
   /**
     * Adds a recipe to baker and returns a handler for the recipe.
@@ -121,32 +141,233 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @param compiledRecipe The compiled recipe.
     * @return A handler for the recipe.
     */
-  def addRecipe(compiledRecipe: CompiledRecipe): RecipeHandler = {
+  def addRecipe(compiledRecipe: CompiledRecipe): String = {
 
-    val recipeHandlerProvider: String => RecipeHandler = _ => new RecipeHandler(
-      compiledRecipe,
-      interactionManager,
-      configuredEncryption,
-      actorIdleTimeout,
-      bakeTimeout,
-      readJournal,
-      bakerActorProvider)
+    val implementationErrors = checkIfValidImplementationsProvided(interactionManager, compiledRecipe.interactionTransitions)
+    if (implementationErrors.nonEmpty)
+      throw new BakerException(implementationErrors.mkString(", "))
 
-    val recipeHandler = recipeHandlers.computeIfAbsent(compiledRecipe.name, recipeHandlerProvider.asJava)
+    if (compiledRecipe.validationErrors.nonEmpty)
+      throw new RecipeValidationException(compiledRecipe.validationErrors.mkString(", "))
 
-    if (recipeHandler.compiledRecipe != compiledRecipe)
-      throw new BakerException(s"Recipe with name '${compiledRecipe.name}' already exists")
-
-    recipeHandler
-  }
-
-  def getRecipeHandler(name: String): RecipeHandler = {
-
-    recipeHandlers.get(name) match {
-      case null          => throw new BakerException(s"No Recipe Handler available for recipe with name: $name")
-      case recipeHandler => recipeHandler
+    val futureResult = recipeManager.ask(AddRecipe(compiledRecipe))(timeout)
+    Await.result(futureResult, timeout) match {
+      case AddRecipeResponse(recipeId) => recipeId
+      case _ => throw new BakerException(s"Unexpected error happened when adding recipe")
     }
   }
+
+  /**
+    * Returns the
+    *
+    * @param recipeId
+    * @return
+    */
+  def getRecipe(recipeId: String): CompiledRecipe = {
+    val futureResult = recipeManager.ask(GetRecipe(recipeId))(timeout)
+    Await.result(futureResult, timeout) match {
+      case RecipeFound(compiledRecipe) => compiledRecipe
+      case NoRecipeFound               => throw new IllegalArgumentException(s"No recipe found for recipe with id: ${recipeId}")
+    }
+  }
+
+  /**
+    * Returns all recipes added to this baker instance.
+    *
+    * @return All recipes
+    */
+  def getAllRecipes: Map[String, CompiledRecipe] = {
+    val futureResult = recipeManager.ask(GetAllRecipes)(timeout).mapTo[AllRecipes]
+    Await.result(futureResult, timeout).compiledRecipes
+  }
+
+  /**
+    * Creates a process instance of this recipe.
+    *
+    * @param processId The process identifier
+    */
+  def bake(recipeId: String, processId: String): ProcessState =
+    Await.result(bakeAsync(recipeId, processId), bakeTimeout)
+
+  /**
+    * Asynchronously creates an instance of the  process using the recipe.
+    *
+    * @param processId The process identifier
+    * @return A future of the initial process state.
+    */
+  def bakeAsync(recipeId: String, processId: String): Future[ProcessState] = {
+    implicit val askTimeout = Timeout(bakeTimeout)
+
+    val msg = CreateProcess(recipeId, processId)
+    val initializeFuture = (processIndexActor ? msg).mapTo[Response]
+
+    val eventualState: Future[ProcessState] = initializeFuture.map {
+      case msg: Initialized => msg.state.asInstanceOf[ProcessState]
+      case AlreadyInitialized =>
+        throw new IllegalArgumentException(s"Process with id '$processId' already exists.")
+      case RecipeNotAvailable(_) => throw new IllegalArgumentException(s"Recipe with id '$recipeId' does ont exist.")
+      case msg@_ => throw new BakerException(s"Unexpected message: $msg")
+    }
+
+    eventualState
+  }
+
+  /**
+    * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
+    *
+    * @param processId The process identifier
+    * @param event     The event object
+    */
+  def processEvent(processId: String, event: Any)(implicit timeout: FiniteDuration): SensoryEventStatus = {
+    processEventAsync(processId, event).confirmCompleted()
+  }
+
+  /**
+    * Fires an event to baker for a process.
+    *
+    * This call is fire and forget: If  nothing is done
+    * with the response object you NO guarantee that the event is received the process instance.
+    */
+  def processEventAsync(processId: String, event: Any)(implicit timeout: FiniteDuration): BakerResponse = {
+
+    val runtimeEvent: RuntimeEvent = event match {
+      case runtimeEvent: RuntimeEvent => runtimeEvent
+      case _ => Baker.eventExtractor.extractEvent(event)
+    }
+
+    val source = petriNetApi.askAndCollectAll(HandleEvent(processId, runtimeEvent), waitForRetries = true)(timeout)
+    new BakerResponse(processId, source)
+  }
+
+  /**
+    * Synchronously returns all events that occurred for a process.
+    */
+  def events(processId: String)(implicit timeout: FiniteDuration): Seq[RuntimeEvent] = {
+    val futureEventSeq = eventsAsync(processId).runWith(Sink.seq)
+    Await.result(futureEventSeq, timeout)
+  }
+
+  /**
+    * Returns a Source of baker events for a process.
+    *
+    * @param processId The process identifier.
+    * @return The source of events.
+    */
+  def eventsAsync(processId: String): Source[RuntimeEvent, NotUsed] = {
+
+    def getEventsForRecipe(compiledRecipe: CompiledRecipe) : Source[RuntimeEvent, NotUsed] = {
+      ProcessQuery
+        .eventsForInstance[Place, Transition, ProcessState, RuntimeEvent](compiledRecipe.name, processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal, RecipeRuntime.eventSourceFn)
+        .collect {
+          case (_, TransitionFiredEvent(_, _, _, _, _, _, runtimeEvent: RuntimeEvent))
+            if runtimeEvent != null && compiledRecipe.allEvents.exists(e => e.name equals runtimeEvent.name) => runtimeEvent
+        }
+    }
+
+    // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
+    val futureResult = processIndexActor.ask(GetCompiledRecipe(processId))(timeout)
+    Await.result(futureResult, timeout) match {
+      case RecipeFound(compiledRecipe) => getEventsForRecipe(compiledRecipe)
+      case Uninitialized(_) => throw new NoSuchProcessException(s"No process found for ${processId}")
+      case _ => throw new BakerException("Unknown response received")
+    }
+  }
+
+  /**
+    * Returns the process state.
+    *
+    * @param processId The process identifier
+    * @return The process state.
+    */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
+  private def getProcessState(processId: String)(implicit timeout: FiniteDuration): ProcessState =
+    Await.result(getProcessStateAsync(processId), timeout)
+
+  def getProcessStateAsync(processId: String)(implicit timeout: FiniteDuration): Future[ProcessState] = {
+    processIndexActor
+      .ask(GetProcessState(processId))(Timeout.durationToTimeout(timeout))
+      .flatMap {
+        case instanceState: InstanceState => Future.successful(instanceState.state.asInstanceOf[ProcessState])
+        case Uninitialized(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
+        case msg => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
+      }
+  }
+
+  /**
+    * Returns all provided ingredients for a given process id.
+    *
+    * @param processId The process id.
+    * @return The provided ingredients.
+    */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
+  def getIngredients(processId: String)(implicit timeout: FiniteDuration): Map[String, Any] =
+    getProcessState(processId).ingredients
+
+  /**
+    * Returns a future of all the provided ingredients for a given process id.
+    *
+    * @param processId The process id.
+    * @return A future of the provided ingredients.
+    */
+  def getIngredientsAsync(processId: String)(implicit timeout: FiniteDuration): Future[Map[String, Any]] = {
+    getProcessStateAsync(processId).map(_.ingredients)
+  }
+
+  /**
+    * Returns the visual state (.dot) for a given process.
+    *
+    * @param processId The process identifier.
+    * @param timeout   How long to wait to retreive the process state.
+    * @return A visual (.dot) representation of the process state.
+    */
+  def getVisualState(processId: String)(implicit timeout: FiniteDuration): String = {
+    // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
+    val futureResult = processIndexActor.ask(GetCompiledRecipe(processId))(timeout)
+    Await.result(futureResult, timeout) match {
+      case RecipeFound(compiledRecipe) =>
+        RecipeVisualizer.visualiseCompiledRecipe(
+          compiledRecipe,
+          eventNames = this.events(processId).map(_.name).toSet,
+          ingredientNames = this.getIngredients(processId).keySet)
+      case _ => throw new IllegalArgumentException(s"No process found for ${processId}")
+    }
+  }
+
+  private def doRegisterEventListener(listener: EventListener, fn: String => Boolean): Boolean = {
+    val subscriber = actorSystem.actorOf(Props(new Actor() {
+      override def receive: Receive = {
+        case ProcessInstanceEvent(processType, processId, event: TransitionFiredEvent[_, _, _]) if fn(processType) =>
+          toRuntimeEvent(event).foreach(e => listener.processEvent(processId, e))
+        case ProcessInstanceEvent(processType, processId, event: TransitionFailedEvent[_, _, _]) if fn(processType) =>
+          event.exceptionStrategy match {
+            case Continue(_, event: RuntimeEvent) =>
+              listener.processEvent(processId, event)
+            case _ =>
+          }
+        case _: ProcessInstanceEvent => // purposely ignored in order to not have unnecessary unhandled messages logged
+      }
+    }))
+    actorSystem.eventStream.subscribe(subscriber.actorRef, classOf[ProcessInstanceEvent])
+  }
+
+  /**
+    * Registers a listener to all runtime events for recipes with the given name run in this baker instance.
+    *
+    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
+    */
+  def registerEventListener(recipeName: String, listener: EventListener): Boolean =
+    doRegisterEventListener(listener, _ == recipeName)
+
+  /**
+    * Registers a listener to all runtime events for all recipes that run in this Baker instance.
+    *
+    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
+    */
+  def registerEventListener(listener: EventListener): Boolean =
+    doRegisterEventListener(listener, _ => true)
+
 
   def addInteractionImplementation(implementation: AnyRef) =
     MethodInteractionImplementation.anyRefToInteractionImplementations(implementation).foreach(interactionManager.add)
@@ -172,7 +393,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
           actorSystem.terminate()
         }
         implicit val akkaTimeout = Timeout(timeout)
-        Util.handOverShardsAndLeaveCluster(recipeHandlers.values.asScala.toSeq.map(_.compiledRecipe.name))
+        Util.handOverShardsAndLeaveCluster(Seq("ProcessIndexActor", "RecipeManager"))
       case Success(_) =>
         log.debug("ActorSystem not a member of cluster")
         actorSystem.terminate()
@@ -182,5 +403,5 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     }
   }
 
-  def allProcessMetadata: Set[ProcessMetadata] = recipeHandlers.values.asScala.flatMap(_.recipeMetadata.getAll).toSet
+  def allProcessMetadata: Set[ProcessMetadata] = processInstanceStore.getAll
 }

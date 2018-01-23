@@ -1,9 +1,10 @@
-package com.ing.baker.runtime.actor
+package com.ing.baker.runtime.actor.processinstance
 
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.{EventSourcing, Instance}
+import com.ing.baker.runtime.actor.messages
 import com.ing.baker.runtime.actor.serialization.{ObjectSerializer, ProtobufSerialization}
 
 abstract class ProcessInstanceRecovery[P[_], T[_,_], S, E](

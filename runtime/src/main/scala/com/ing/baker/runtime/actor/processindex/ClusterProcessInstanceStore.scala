@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor
+package com.ing.baker.runtime.actor.processindex
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.cluster.Cluster
@@ -11,16 +11,16 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-object ClusterRecipeMetadata {
+object ClusterProcessInstanceStore {
   private val DataKey = ORSetKey.create[ProcessMetadata]("allProcessIds")
 }
 
-class ClusterRecipeMetadata(override val recipeName: String)(implicit actorSystem: ActorSystem) extends RecipeMetadata {
+class ClusterProcessInstanceStore(implicit actorSystem: ActorSystem) extends ProcessInstanceStore {
 
-  import ClusterRecipeMetadata._
+  import ClusterProcessInstanceStore._
 
-  private val logger = LoggerFactory.getLogger(classOf[ClusterRecipeMetadata])
-  logger.info("Starting ddata replicator to share recipe metadata for recipe {}", recipeName)
+  private val logger = LoggerFactory.getLogger(classOf[ClusterProcessInstanceStore])
+  logger.info("Starting ddata replicator to share metadata")
 
   implicit val timeout = Timeout(5 seconds)
   implicit val cluster = Cluster(actorSystem)

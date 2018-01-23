@@ -1,11 +1,10 @@
-package com.ing.baker.runtime.actor
+package com.ing.baker.runtime.actor.processindex
 
 import com.google.common.collect.Sets
 
-import scala.collection.convert.decorateAsScala._
+import scala.collection.JavaConverters._
 
-
-class LocalRecipeMetadata(override val recipeName: String) extends RecipeMetadata {
+class LocalProcessInstanceStore extends ProcessInstanceStore {
   private val allProcessesMetadata = Sets.newConcurrentHashSet[ProcessMetadata]()
 
   override def getAll: Set[ProcessMetadata] = allProcessesMetadata.asScala.toSet

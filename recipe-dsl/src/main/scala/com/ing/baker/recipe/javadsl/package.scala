@@ -21,13 +21,6 @@ package object javadsl {
     }
   }
 
-  def retryExhaustedEvent(interactionClass: Class[_]): common.Event =
-    new common.Event {
-      override val name: String = interactionClass.getSimpleName + common.exhaustedEventAppend
-      override val providedIngredients: Seq[common.Ingredient] = Seq.empty
-      override val maxFiringLimit: Option[Integer] = Option.empty
-    }
-
   def eventClassToCommonEvent(eventClass: Class[_], firingLimit: Option[Integer]): common.Event =
     new common.Event {
       override val name: String = eventClass.getSimpleName

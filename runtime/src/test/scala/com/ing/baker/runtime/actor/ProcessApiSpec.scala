@@ -8,8 +8,9 @@ import akka.stream.testkit.TestSubscriber
 import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.{TestDuration, TestKit, TestProbe}
 import akka.util.Timeout
-import ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy
+import com.ing.baker.runtime.actor.processindex.ProcessApi
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Matchers._
 import org.scalatest.WordSpecLike

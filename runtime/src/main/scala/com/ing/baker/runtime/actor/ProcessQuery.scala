@@ -7,6 +7,7 @@ import akka.stream.scaladsl._
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime._
+import com.ing.baker.runtime.actor.processinstance.ProcessInstance
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.actor.serialization.{AkkaObjectSerializer, Encryption, ProtobufSerialization}
 

@@ -1,13 +1,19 @@
 # Changelog
 
-## 2.0.0
+## 1.2.0
 - Baker now has it's own type system that does not depend on java classes. This means that:
   - The baker runtime does not have any knowledge/dependency of java classes of ingredients
   - CompiledRecipes are completely serializable and can be stored & recovered later.
   - Process history/state can be recovered even if ingredient classes change or disappear.
-- Baker now supports multiple recipes, individual recipes are managed by a 'RecipeHandler'
+- Baker now supports multiple recipes
+  this is done by adding recipes to Baker, this will return a recipeId.
+  This Id can in turn be used to Bake instances of that recipe.
+- CompilesRecipes are now also persisted if using Persistence Actors
+  This ensures a process always uses the recipe it was Baked for.
+  If a Recipe is added with the same name we see this a new recipe.
+  Meaning the already baked instances will use the original Recipe they are baked with for the execution.
 - It is possible to add interaction implementations at runtime.
-- Scala/Java DSL alignment: renamed `processEvent -> handleEvent` and `processEventAsync -> handleEventAsync`
+- Scala/Java DSL alignment: renamed `handleEvent -> processEvent` and `handleEventAsync -> processEventAsync`
 - Exhausted Retry events are now always set with a default name. Its not possible to give the event anymore.
   Now its just a configuration with a boolean on the RetryWithIncrementalBackoff retry strategy
 

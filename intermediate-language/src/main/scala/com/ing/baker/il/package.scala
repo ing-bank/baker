@@ -7,6 +7,7 @@ import java.util.Optional
 import com.ing.baker.il.ActionType.{InteractionAction, SieveAction}
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, MissingEventTransition, MultiFacilitatorTransition, Place, Transition}
+import com.ing.baker.types.RecordField
 
 
 package object il {
@@ -15,6 +16,7 @@ package object il {
   val SuccessEventAppend = "Successful"
   val exhaustedEventAppend = "RetryExhausted"
 
+  type IngredientDescriptor = RecordField
 
   implicit class PlaceAdditions(place: Place[_]) {
     def isIngredient: Boolean = place.placeType == IngredientPlace

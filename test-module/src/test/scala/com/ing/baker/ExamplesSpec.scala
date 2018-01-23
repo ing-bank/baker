@@ -67,19 +67,19 @@ class ExamplesSpec extends TestRecipeHelper  {
       val baker = new Baker()
       baker.addInteractionImplementations(implementations)
 
-      val recipeHandler = baker.addRecipe(compiledRecipe)
+      val recipeId = baker.addRecipe(compiledRecipe)
 
       val processId = UUID.randomUUID().toString
 
-      recipeHandler.bake(processId)
+      baker.bake(recipeId, processId)
 
       implicit val timeout: FiniteDuration = 2.seconds.dilated
 
       // fire events
 
-      recipeHandler.handleEvent(processId, orderPlaced.instance(testOrder))
-      recipeHandler.handleEvent(processId, paymentMade.instance())
-      recipeHandler.handleEvent(processId, customerInfoReceived.instance(testCustomerInfoData))
+      baker.processEvent(processId, orderPlaced.instance(testOrder))
+      baker.processEvent(processId, paymentMade.instance())
+      baker.processEvent(processId, customerInfoReceived.instance(testCustomerInfoData))
 
       val expectedIngredients = Map(
         "order" -> testOrder,
@@ -87,7 +87,7 @@ class ExamplesSpec extends TestRecipeHelper  {
         "customerInfo" -> testCustomerInfoData,
         "trackingId" -> testTrackingId)
 
-      val actualIngredients = recipeHandler.getIngredients(processId)
+      val actualIngredients = baker.getIngredients(processId)
 
       // assert the that all ingredients are provided
       actualIngredients shouldBe expectedIngredients
@@ -101,7 +101,7 @@ class ExamplesSpec extends TestRecipeHelper  {
         RuntimeEvent.create("GoodsShipped", Seq("trackingId" -> testTrackingId)),
         RuntimeEvent.create("InvoiceWasSent", Seq.empty))
 
-      TestKit.awaitCond(recipeHandler.events(processId) equals expectedEvents, 2.seconds.dilated)
+      TestKit.awaitCond(baker.events(processId) equals expectedEvents, 2.seconds.dilated)
     }
   }
 

@@ -9,7 +9,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
 import com.ing.baker.recipe.scaladsl._
-import com.ing.baker.runtime.core.{Baker, RecipeHandler}
+import com.ing.baker.runtime.core.Baker
 import com.ing.baker.types.{Converters, Value}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers._
@@ -22,6 +22,7 @@ import scala.language.postfixOps
 
 //By adding the javadsl Ingredient tag the object will be serialized by Kryo
 class ComplexObjectIngredient(value: String)
+
 case class CaseClassIngredient(a: Int, b: String)
 
 object TestRecipeHelper {
@@ -103,6 +104,7 @@ object TestRecipeHelper {
 
   trait InteractionOne {
     def name: String = "InteractionOne"
+
     def apply(processId: String, initialIngredient: String): String
   }
 
@@ -110,8 +112,10 @@ object TestRecipeHelper {
     Interaction("InteractionTwo",
       Ingredients(initialIngredientOld),
       FiresOneOfEvents(eventFromInteractionTwo))
+
   trait InteractionTwo {
     val name: String = "InteractionTwo"
+
     def apply(initialIngredientOld: String): EventFromInteractionTwo
   }
 
@@ -119,8 +123,10 @@ object TestRecipeHelper {
     Interaction("InteractionThree",
       Ingredients(interactionOneIngredient, interactionTwoIngredient),
       ProvidesIngredient(interactionThreeIngredient))
+
   trait InteractionThree {
     val name: String = "InteractionThree"
+
     def apply(interactionOneIngredient: String, interactionTwoIngredient: String): String
   }
 
@@ -128,8 +134,10 @@ object TestRecipeHelper {
     Interaction("InteractionFour",
       Ingredients(),
       ProvidesIngredient(interactionFourIngredient))
+
   trait InteractionFour {
     val name: String = "InteractionFour"
+
     def apply(): String
   }
 
@@ -137,8 +145,10 @@ object TestRecipeHelper {
     Interaction("InteractionFive",
       Ingredients(processId, initialIngredient, initialIngredientExtendedName),
       ProvidesIngredient(interactionFiveIngredient))
+
   trait InteractionFive {
     val name: String = "InteractionFive"
+
     def apply(processId: String, initialIngredient: String, initialIngredientExtendedName: String): String
   }
 
@@ -146,8 +156,10 @@ object TestRecipeHelper {
     Interaction("InteractionSix",
       Ingredients(initialIngredientExtendedName),
       ProvidesIngredient(interactionSixIngredient))
+
   trait InteractionSix {
     val name: String = "InteractionSix"
+
     def apply(initialIngredientExtendedName: String): String
   }
 
@@ -155,8 +167,10 @@ object TestRecipeHelper {
     Interaction("InteractionSeven",
       Ingredients(initialIngredient),
       FiresOneOfEvents(event1FromInteractionSeven, event2FromInteractionSeven))
+
   trait InteractionSeven {
     val name: String = "InteractionSeven"
+
     def apply(initialIngredient: String): String
   }
 
@@ -164,18 +178,22 @@ object TestRecipeHelper {
     Interaction("InteractionEight",
       Ingredients(interactionSevenIngredient1, interactionSevenIngredient2),
       common.ProvidesNothing)
+
   trait InteractionEight {
     val name: String = "InteractionEight"
-    def apply(interactionSevenIngredient1: String, interactionSevenIngredient2: String) : Unit
+
+    def apply(interactionSevenIngredient1: String, interactionSevenIngredient2: String): Unit
   }
 
   val providesNothingInteraction =
     Interaction("ProvidesNothingInteraction",
       Ingredients(initialIngredient),
       common.ProvidesNothing)
+
   trait ProvidesNothingInteraction {
     val name: String = "ProvidesNothingInteraction"
-    def apply(initialIngredient: String) : Unit
+
+    def apply(initialIngredient: String): Unit
   }
 
   val sieveInteraction =
@@ -240,6 +258,7 @@ object TestRecipeHelper {
 
   trait NonMatchingReturnTypeInteraction {
     val name: String = "NonMatchingReturnTypeInteraction"
+
     def apply(initialIngredient: String): EventFromInteractionTwo
   }
 
@@ -252,14 +271,17 @@ object TestRecipeHelper {
         missingScalaOptional2,
         initialIngredient),
       common.ProvidesNothing)
+
   trait OptionalIngredientInteraction {
     val name: String = "OptionalIngredientInteraction"
+
     def apply(missingJavaOptional: Optional[String],
               missingJavaOptional2: Optional[Integer],
               missingScalaOptional: Option[String],
               missingScalaOptional2: Option[Integer],
               intialIngredient: String)
   }
+
 }
 
 trait TestRecipeHelper
@@ -464,7 +486,7 @@ trait TestRecipeHelper
     * @return
     */
   protected def setupBakerWithRecipe(recipeName: String, appendUUIDToTheRecipeName: Boolean = true)
-                                    (implicit actorSystem: ActorSystem): RecipeHandler = {
+                                    (implicit actorSystem: ActorSystem): (Baker, String) = {
     val newRecipeName = if (appendUUIDToTheRecipeName) s"$recipeName-${UUID.randomUUID().toString}" else recipeName
     val recipe = getComplexRecipe(newRecipeName)
     setupMockResponse()
@@ -473,11 +495,12 @@ trait TestRecipeHelper
   }
 
   protected def setupBakerWithRecipe(recipe: common.Recipe, implementations: Seq[AnyRef])
-                                    (implicit actorSystem: ActorSystem): RecipeHandler = {
+                                    (implicit actorSystem: ActorSystem): (Baker, String) = {
 
     val baker = new Baker()(actorSystem)
     baker.addInteractionImplementations(implementations)
-    baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+    val recipeId = baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+    (baker, recipeId)
   }
 
   protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Baker = {
@@ -496,19 +519,19 @@ trait TestRecipeHelper
     when(testInteractionSixMock.apply(anyString())).thenReturn(interactionSixIngredientValue)
     when(testSieveInteractionMock.apply(anyString(), anyString())).thenReturn(sievedIngredientValue)
 
-//    when(testInteractionOneMock.name).thenReturn("InteractionOne");
-//    when(testInteractionTwoMock.name).thenReturn("InteractionTwo");
-//    when(testInteractionThreeMock.name).thenReturn("InteractionThree")
-//    when(testInteractionFourMock.name).thenReturn("InteractionFour")
-//    when(testInteractionFiveMock.name).thenReturn("InteractionFive")
-//    when(testInteractionSixMock.name).thenReturn("InteractionSix")
-//    when(testComplexIngredientInteractionMock.name).thenReturn("ComplexIngredientInteraction")
-//    when(testCaseClassIngredientInteractionMock.name).thenReturn("CaseClassIngredientInteraction")
-//    when(testCaseClassIngredientInteraction2Mock.name).thenReturn("CaseClassIngredientInteraction2")
-//    when(testNonMatchingReturnTypeInteractionMock.name).thenReturn("NonMatchingReturnTypeInteraction")
-//    when(testSieveInteractionMock.name).thenReturn("SieveInteraction")
-//    when(testOptionalIngredientInteractionMock.name).thenReturn("OptionalIngredientInteraction")
-//    when(testProvidesNothingInteractionMock.name).thenReturn("providesNothingInteraction")
+    //    when(testInteractionOneMock.name).thenReturn("InteractionOne");
+    //    when(testInteractionTwoMock.name).thenReturn("InteractionTwo");
+    //    when(testInteractionThreeMock.name).thenReturn("InteractionThree")
+    //    when(testInteractionFourMock.name).thenReturn("InteractionFour")
+    //    when(testInteractionFiveMock.name).thenReturn("InteractionFive")
+    //    when(testInteractionSixMock.name).thenReturn("InteractionSix")
+    //    when(testComplexIngredientInteractionMock.name).thenReturn("ComplexIngredientInteraction")
+    //    when(testCaseClassIngredientInteractionMock.name).thenReturn("CaseClassIngredientInteraction")
+    //    when(testCaseClassIngredientInteraction2Mock.name).thenReturn("CaseClassIngredientInteraction2")
+    //    when(testNonMatchingReturnTypeInteractionMock.name).thenReturn("NonMatchingReturnTypeInteraction")
+    //    when(testSieveInteractionMock.name).thenReturn("SieveInteraction")
+    //    when(testOptionalIngredientInteractionMock.name).thenReturn("OptionalIngredientInteraction")
+    //    when(testProvidesNothingInteractionMock.name).thenReturn("providesNothingInteraction")
   }
 
   protected def timeBlockInMilliseconds[T](block: => T): Long = {

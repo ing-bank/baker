@@ -10,7 +10,7 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.dsl.colored._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Fatal, RetryWithDelay}
 import com.ing.baker.petrinet.runtime.TransitionExceptionHandler
-import com.ing.baker.runtime.actor.ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock

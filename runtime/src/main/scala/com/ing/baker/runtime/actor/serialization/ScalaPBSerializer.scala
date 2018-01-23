@@ -7,7 +7,7 @@ import akka.serialization.SerializerWithStringManifest
 import com.trueaccord.scalapb.{GeneratedMessageCompanion, Message}
 import com.typesafe.config.Config
 
-import scala.collection.JavaConversions.asScalaSet
+import scala.collection.JavaConverters._
 
 object ScalaPBSerializer {
   import scala.reflect.runtime.{universe => ru}
@@ -27,7 +27,7 @@ class ScalaPBSerializer(system: ExtendedActorSystem) extends SerializerWithStrin
 
   private val manifests: Map[String, (Class[_ <: AnyRef], GeneratedMessageCompanion[_])] = {
     val config: Config = system.settings.config.getConfig("baker.scalapb.serialization-manifests")
-    config.entrySet().map { entry =>
+    config.entrySet().asScala.map { entry =>
       val manifest = entry.getKey
       val clazz = Class.forName(entry.getValue.unwrapped().asInstanceOf[String]).asInstanceOf[Class[AnyRef]]
       manifest -> scalaPBType(clazz)

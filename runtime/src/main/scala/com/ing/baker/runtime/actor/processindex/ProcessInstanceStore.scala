@@ -1,9 +1,6 @@
-package com.ing.baker.runtime.actor
+package com.ing.baker.runtime.actor.processindex
 
-
-trait RecipeMetadata {
-
-  val recipeName: String
+trait ProcessInstanceStore {
 
   def getAll: Set[ProcessMetadata]
 

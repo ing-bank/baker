@@ -58,16 +58,14 @@ class SerializerSpec extends TestRecipeHelper {
         val compiledRecipeDeserialized: CompiledRecipe = RecipeCompiler.compileRecipe(deserializedRecipe);
         compiledRecipeDeserialized.getRecipeVisualization shouldBe compiledRecipeOriginal.getRecipeVisualization
 
-//        println(compiledRecipeDeserialized.getPetriNetVisualization)
-
-        val recipeHandler = setupBakerWithRecipe(deserializedRecipe, mockImplementations)
+        val (baker, recipeId) = setupBakerWithRecipe(deserializedRecipe, mockImplementations)
 
         val processId = UUID.randomUUID().toString
-        recipeHandler.bake(processId)
+        baker.bake(recipeId, processId)
 
         verifyZeroInteractions(testInteractionOneMock)
 
-        val received = recipeHandler.handleEvent(processId, InitialEvent(initialIngredientValue))
+        val received = baker.processEvent(processId, InitialEvent(initialIngredientValue))
         received shouldBe SensoryEventStatus.Completed
 
         verify(testInteractionTwoMock).apply(initialIngredientValue)

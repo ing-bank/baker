@@ -1,6 +1,7 @@
 package com.ing.baker.types
 
 import scala.reflect.runtime.universe
+import scala.util.Try
 
 sealed trait Value extends Serializable {
 
@@ -27,6 +28,8 @@ sealed trait Value extends Serializable {
   def as[T](clazz: Class[T]): T = Converters.toJava(this, clazz).asInstanceOf[T]
 
   def as[T : universe.TypeTag]: T = Converters.toJava[T](this)
+
+  def equalsObject(obj: Any): Boolean = Try { equals(Converters.toValue(obj)) }.getOrElse(false)
 }
 
 /**

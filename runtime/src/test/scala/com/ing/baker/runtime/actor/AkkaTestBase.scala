@@ -7,7 +7,8 @@ import akka.testkit.{ImplicitSender, TestKit}
 import com.ing.baker.petrinet.dsl.colored
 import com.ing.baker.petrinet.dsl.colored.{ColoredPetriNet, Place, Transition}
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
-import com.ing.baker.runtime.actor.ProcessInstance.Settings
+import com.ing.baker.runtime.actor.processinstance.ProcessInstance
+import com.ing.baker.runtime.actor.processinstance.ProcessInstance.Settings
 import com.ing.baker.runtime.actor.serialization.AkkaObjectSerializer
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import fs2.Strategy

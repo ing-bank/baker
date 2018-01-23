@@ -35,10 +35,10 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
   def readIngredients(ingredients: Seq[messages.Ingredient]): Seq[(String, Value)] = {
     ingredients.map {
       case messages.Ingredient(Some(name), Some(data)) =>
-
         val deserializedData = transformFromProto(data)
         val deserializedObject = objectSerializer.deserializeObject(deserializedData).asInstanceOf[Value]
         name -> deserializedObject
+      case _ => throw new IllegalArgumentException("Missing fields in Protobuf data when deserializing ingredients")
     }
   }
 

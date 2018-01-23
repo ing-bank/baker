@@ -2,7 +2,6 @@ package com.ing.baker
 
 package object types {
 
-  type IngredientDescriptor = RecordField
 
   implicit class AsValueAddition(obj: Any) {
     def toValue: Value = Converters.toValue(obj)

@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.JavaCompiledRecipeTest;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.java_api.JRecipeHandler;
 import com.ing.baker.types.Converters;
 import com.ing.baker.recipe.javadsl.InteractionDescriptor;
 import com.ing.baker.recipe.javadsl.Recipe;
@@ -42,16 +41,16 @@ public class JBakerTest {
 
         JBaker jBaker = new JBaker();
         jBaker.addImplementations(implementationsList);
-        JRecipeHandler recipeHandler = jBaker.addRecipe(compiledRecipe);
+        String recipeId = jBaker.addRecipe(compiledRecipe);
 
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
         String requestId = UUID.randomUUID().toString();
-        recipeHandler.bake(requestId);
-        recipeHandler.handleEvent(requestId, new JavaCompiledRecipeTest.EventOne());
+        jBaker.bake(recipeId, requestId);
+        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
 
-        assertEquals(recipeHandler.getIngredients(requestId).size(), 1);
+        assertEquals(jBaker.getIngredients(requestId).size(), 1);
 
-        Object requestIdstringOne = recipeHandler.getIngredients(requestId).get("RequestIDStringOne");
+        Object requestIdstringOne = jBaker.getIngredients(requestId).get("RequestIDStringOne");
         assertEquals(Converters.toValue(requestId.toString()), requestIdstringOne);
     }
 
@@ -66,15 +65,15 @@ public class JBakerTest {
 
         JBaker jBaker = new JBaker();
         jBaker.addImplementations(implementationsList);
-        JRecipeHandler recipeHandler =  jBaker.addRecipe(compiledRecipe);
+        String recipeId =  jBaker.addRecipe(compiledRecipe);
 
         String requestId = UUID.randomUUID().toString();
-        recipeHandler.bake(requestId);
-        recipeHandler.handleEvent(requestId, new JavaCompiledRecipeTest.EventOne());
+        jBaker.bake(recipeId, requestId);
+        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
 
-        assertEquals(recipeHandler.getIngredients(requestId).size(), 1);
+        assertEquals(jBaker.getIngredients(requestId).size(), 1);
 
-        Object requestIdstringOne = recipeHandler.getIngredients(requestId).get("RequestIDStringOne");
+        Object requestIdstringOne = jBaker.getIngredients(requestId).get("RequestIDStringOne");
         assertEquals(Converters.toValue(requestId.toString()), requestIdstringOne);
     }
 
@@ -97,12 +96,12 @@ public class JBakerTest {
 
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(setupComplexRecipe());
 
-        JRecipeHandler recipeHandler = jBaker.addRecipe(compiledRecipe);
+        String recipeId = jBaker.addRecipe(compiledRecipe);
 
         String requestId = UUID.randomUUID().toString();
-        recipeHandler.bake(requestId);
-        recipeHandler.handleEvent(requestId, new JavaCompiledRecipeTest.EventOne());
-        recipeHandler.handleEvent(requestId, new JavaCompiledRecipeTest.EventTwo());
+        jBaker.bake(recipeId, requestId);
+        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
+        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventTwo());
     }
 
     @Test
