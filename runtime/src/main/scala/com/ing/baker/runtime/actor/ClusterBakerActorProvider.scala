@@ -34,18 +34,14 @@ object ClusterBakerActorProvider {
     case msg@HandleEvent(processId, _) => (entityId(processId, nrOfShards), msg)
     case msg@GetProcessState(processId) => (entityId(processId, nrOfShards), msg)
     case msg@GetCompiledRecipe(processId) => (entityId(processId, nrOfShards), msg)
-    //TODO decide how to shard now without the BakerActorMessage
-    //    case msg@BakerActorMessage(processId, _) => (entityId(recipeName, processId, nrOfShards), msg)
   }
 
   // extracts the shard id from the incoming message
   def shardIdExtractor(nrOfShards: Int): ExtractShardId = {
-    //TODO decide how to shard now without the BakerActorMessage
     case CreateProcess(_, processId) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
     case HandleEvent(processId, _) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
     case GetProcessState(processId) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
     case GetCompiledRecipe(processId) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
-    //    case BakerActorMessage(processId, _) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
     case ShardRegion.StartEntity(entityId) => entityId.split(s"index-").last
   }
 
