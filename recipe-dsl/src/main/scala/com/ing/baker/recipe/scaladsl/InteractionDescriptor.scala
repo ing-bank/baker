@@ -13,7 +13,7 @@ object InteractionDescriptorFactory {
 
 case class InteractionDescriptor private(override val interaction: Interaction,
                                          override val requiredEvents: Set[String] = Set.empty,
-                                         override val requiredOneOfEvents: Set[String] = Set.empty,
+                                         override val requiredOneOfEvents: Set[Set[String]] = Set.empty,
                                          override val predefinedIngredients: Map[String, com.ing.baker.types.Value] = Map.empty,
                                          override val overriddenIngredientNames: Map[String, String] = Map.empty,
                                          override val overriddenOutputIngredientName: Option[String] = None,
@@ -34,10 +34,13 @@ case class InteractionDescriptor private(override val interaction: Interaction,
   def withRequiredEvents(events: common.Event*): InteractionDescriptor =
     copy(requiredEvents = requiredEvents ++ events.map(_.name))
 
-  def withRequiredOneOfEvents(requiredOneOfEvents: common.Event*): InteractionDescriptor = {
-    if (requiredOneOfEvents.nonEmpty && requiredOneOfEvents.size < 2)
+  def withRequiredOneOfEvents(newRequiredOneOfEvents: common.Event*): InteractionDescriptor = {
+    if (newRequiredOneOfEvents.nonEmpty && newRequiredOneOfEvents.size < 2)
       throw new IllegalArgumentException("At least 2 events should be provided as 'requiredOneOfEvents'")
-    copy(requiredOneOfEvents = requiredOneOfEvents.map(_.name).toSet)
+
+    val newRequired: Set[Set[String]] = requiredOneOfEvents + newRequiredOneOfEvents.map(_.name).toSet
+
+    copy(requiredOneOfEvents = newRequired)
   }
 
   def withPredefinedIngredients(values: (String, AnyRef)*): InteractionDescriptor =

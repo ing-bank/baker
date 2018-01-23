@@ -348,6 +348,26 @@ class BakerExecutionSpec extends TestRecipeHelper {
       verify(testInteractionFourMock).apply()
     }
 
+    "execute an interaction when one of the two events occur with two or conditions (OR situation 2)" in {
+      val recipe = Recipe("ORPreconditionedRecipeForEvents2")
+        .withInteractions(interactionFour
+          .withRequiredOneOfEvents(initialEvent, secondEvent)
+          .withRequiredOneOfEvents(thirdEvent, fourthEvent))
+        .withSensoryEvents(initialEvent, secondEvent, thirdEvent, fourthEvent)
+
+      val recipeHandler = setupBakerWithRecipe(recipe, mockImplementations)
+
+      val firstProcessId = UUID.randomUUID().toString
+      recipeHandler.bake(firstProcessId)
+
+      // Fire one of the events for the first process
+      recipeHandler.handleEvent(firstProcessId, InitialEvent("initialIngredient"))
+      verify(testInteractionFourMock, times(0)).apply()
+
+      recipeHandler.handleEvent(firstProcessId, ThirdEvent())
+      verify(testInteractionFourMock).apply()
+    }
+
     "execute two interactions which depend on same ingredient (fork situation)" in {
 
       val recipeHandler = setupBakerWithRecipe("MultipleInteractionsFromOneIngredient")

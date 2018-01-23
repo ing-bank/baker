@@ -9,7 +9,7 @@ import scala.collection.JavaConverters._
 case class InteractionDescriptor private(
                                           override val interaction: common.Interaction,
                                           override val requiredEvents: Set[String],
-                                          override val requiredOneOfEvents: Set[String],
+                                          override val requiredOneOfEvents: Set[Set[String]],
                                           override val predefinedIngredients: Map[String, com.ing.baker.types.Value],
                                           override val overriddenIngredientNames: Map[String, String],
                                           override val overriddenOutputIngredientName: Option[String] = Option.empty[String],
@@ -86,29 +86,34 @@ case class InteractionDescriptor private(
   /**
     * This sets a requirement for this interaction that one of the given events needs to have been fired before it can execute.
     *
-    * @param requiredOneOfEvents the classes of the events.
+    * @param newRequiredOneOfEvents the classes of the events.
     * @return
     */
   @SafeVarargs
   @varargs
-  def withRequiredOneOfEvents(requiredOneOfEvents: Class[_]*): InteractionDescriptor = {
-    if (requiredOneOfEvents.nonEmpty && requiredOneOfEvents.size < 2)
+  def withRequiredOneOfEvents(newRequiredOneOfEvents: Class[_]*): InteractionDescriptor = {
+    if (newRequiredOneOfEvents.nonEmpty && newRequiredOneOfEvents.size < 2)
       throw new IllegalArgumentException("At least 2 events should be provided as 'requiredOneOfEvents'")
-    this.copy(requiredOneOfEvents = requiredOneOfEvents.map(_.getSimpleName).toSet)
-  }
 
+    val newRequired: Set[Set[String]] = requiredOneOfEvents + newRequiredOneOfEvents.map(_.getSimpleName).toSet
+
+    copy(requiredOneOfEvents = newRequired)
+  }
+//ipv assign, toevoegen in deze functie
   /**
     * This sets a requirement for this interaction that one of the given events needs to have been fired before it can execute.
     *
-    * @param requiredOneOfEvents the names of the events.
+    * @param newRequiredOneOfEvents the names of the events.
     * @return
     */
   @SafeVarargs
   @varargs
-  def withRequiredOneOfEventsFromName(requiredOneOfEvents: String*): InteractionDescriptor = {
-    if (requiredOneOfEvents.nonEmpty && requiredOneOfEvents.size < 2)
+  def withRequiredOneOfEventsFromName(newRequiredOneOfEvents: String*): InteractionDescriptor = {
+    if (newRequiredOneOfEvents.nonEmpty && newRequiredOneOfEvents.size < 2)
       throw new IllegalArgumentException("At least 2 events should be provided as 'requiredOneOfEvents'")
-    this.copy(requiredOneOfEvents = requiredOneOfEvents.toSet)
+    val newRequired: Set[Set[String]] = requiredOneOfEvents + newRequiredOneOfEvents.toSet
+
+    copy(requiredOneOfEvents = newRequired)
   }
 
   /**

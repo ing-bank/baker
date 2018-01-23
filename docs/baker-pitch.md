@@ -1,4 +1,4 @@
-# [fit]Complex Orchestration Logic is Hard to Change
+# [fit] Orchestration Logic is Hard to Change
 
 ---
 
@@ -9,16 +9,20 @@
 
 ---
 
-## Under the Hood
-### DSL for Recipes
-### Actor Model with Petri nets
-### Event-Driven Architecture
+![fit](recipe.png)
 
 ---
 
 ## Up to 4x Faster Time to Market
 ## Less Incidents
 ## Business and IT Speak the Same Language
+
+---
+
+## Under the Hood
+### DSL for Recipes
+### Actor Model with Petri nets
+### Event-Driven Architecture
 
 ---
 
@@ -34,10 +38,6 @@ return new Recipe("DemoAtTwitterHQ").
                 IndividualInformationSubmitted.class);
 }
 ```
-
----
-
-![fit](recipe.png)
 
 ---
 

@@ -61,6 +61,14 @@ object TestRecipeHelper {
 
   case class SecondEvent()
 
+  val thirdEvent = Event("ThirdEvent")
+
+  case class ThirdEvent()
+
+  val fourthEvent = Event("FourthEvent")
+
+  case class FourthEvent()
+
   val notUsedSensoryEvent = Event("NotUsedSensoryEvent")
 
   case class NotUsedSensoryEvent()

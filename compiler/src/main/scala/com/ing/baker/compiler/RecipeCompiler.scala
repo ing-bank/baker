@@ -48,14 +48,16 @@ object RecipeCompiler {
                                             preconditionTransition: String => Option[Transition[_, _]],
                                             interactionTransition: String => Option[Transition[_, _]]): (Seq[Arc], Seq[String]) = {
 
-    // only one `Place` for all the OR events
-    val eventPreconditionPlace = createPlace(label = interaction.name, placeType = EventOrPreconditionPlace)
+    interaction.requiredOneOfEvents.toSeq.zipWithIndex.map { case (orGroup: Set[String], index: Int) =>
+      // only one `Place` for all the OR events
+      val eventPreconditionPlace = createPlace(label = s"${interaction.name}-or-$index" , placeType = EventOrPreconditionPlace)
 
-    interaction.requiredOneOfEvents.toSeq.map { eventName =>
-      buildEventPreconditionArcs(eventName,
-        eventPreconditionPlace,
-        preconditionTransition,
-        interactionTransition(interaction.name).get)
+      orGroup.toSeq.map { eventName =>
+        buildEventPreconditionArcs(eventName,
+          eventPreconditionPlace,
+          preconditionTransition,
+          interactionTransition(interaction.name).get)
+      }.unzipFlatten
     }.unzipFlatten
   }
 
@@ -237,7 +239,7 @@ object RecipeCompiler {
 
     val eventThatArePreconditions: Seq[String] =
       actionDescriptors.flatMap {
-        actionDescriptor => actionDescriptor.requiredEvents ++ actionDescriptor.requiredOneOfEvents
+        actionDescriptor => actionDescriptor.requiredEvents ++ actionDescriptor.requiredOneOfEvents.flatten
       }
 
     // It connects a sensory event to a dummy ingredient so it can be modelled into the Petri net
