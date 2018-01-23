@@ -13,6 +13,8 @@ import com.ing.baker.types.RecordField
 package object il {
 
   val processIdName = "$ProcessID$"
+  val SuccessEventAppend = "Successful"
+  val exhaustedEventAppend = "RetryExhausted"
 
   type IngredientDescriptor = RecordField
 

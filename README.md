@@ -13,7 +13,9 @@ Developers declare the orchestration logic in a recipe.
 A recipe is made out of **interactions** (system calls), **ingredients** (data) and **events**.
 A visual representation (shown below) of the recipe allows product owners, architects and developers to talk the same language.
 
-An introductory presentation of Baker could be found here: [Baker talk @ Amsterdam.Scala meetup](https://www.slideshare.net/BekirOguz/designing-process-flows-with-baker)
+An introductory presentation of Baker: [Baker talk @ Amsterdam.Scala meetup](https://www.slideshare.net/BekirOguz/designing-process-flows-with-baker).
+
+A talk about Baker at the Scale By the Bay 2017 conference: [Declare, verify and execute microservices-based process flows](https://www.youtube.com/watch?v=0bWQwUmeXHU).
 
 An example web-shop recipe you can find at: [ExamplesSpec](https://github.com/ing-bank/baker/blob/master/test-module/src/test/scala/com/ing/baker/ExamplesSpec.scala) 
 

@@ -36,11 +36,11 @@ class RecipeCompilerSpec extends TestRecipeHelper {
         .withSensoryEvent(initialEvent)
         .withInteractions(interactionOne.withIncrementalBackoffOnFailure(
           initialDelay = 10 milliseconds,
-          exhaustedRetryEvent = Some(exhaustedEvent)))
+          fireExhaustedEvent = true))
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
 
-      compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
+      compiledRecipe.allEvents.map(_.name) should contain(interactionOne.retryExhaustedEventName)
     }
 
     "give a List of missing ingredients if an interaction has an ingredient that is not provided by any other event or interaction" in {

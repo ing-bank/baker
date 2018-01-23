@@ -129,7 +129,6 @@ case class Recipe(
   def withSensoryEventsNoFiringLimit(eventsToAdd: Class[_]*): Recipe =
   copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent(_, None)))
 
-
   /**
     * This set the failure strategy as default for this recipe.
     * If a failure strategy is set for the Interaction itself that is taken.
@@ -139,42 +138,6 @@ case class Recipe(
     */
   def withDefaultFailureStrategy(interactionFailureStrategy: common.InteractionFailureStrategy): Recipe =
     copy(defaultFailureStrategy = interactionFailureStrategy)
-
-  /**
-    * This actives the incremental backup retry strategy for all the interactions if failure occurs
-    *
-    * @param initialDelay the initial delay before the first retry starts
-    * @param deadline     the deadline for how long the retry should run
-    * @return
-    * @deprecated Replaced by withDefaultFailureStrategy
-    */
-  @Deprecated
-  def withDefaultRetryFailureStrategy(initialDelay: java.time.Duration,
-                                      deadline: java.time.Duration,
-                                      maxTimeBetweenRetries: java.time.Duration): Recipe =
-    copy(
-      defaultFailureStrategy =
-        InteractionFailureStrategy.RetryWithIncrementalBackoff(
-          initialDelay,
-          deadline,
-          maxTimeBetweenRetries))
-
-  /**
-    * This actives the incremental backup retry strategy for all the interactions if failure occurs
-    *
-    * @param initialDelay the initial delay before the first retry starts
-    * @param deadline     the deadline for how long the retry should run
-    * @return
-    * @deprecated Replaced by withDefaultFailureStrategy
-    */
-  @Deprecated
-  def withDefaultRetryFailureStrategy(initialDelay: java.time.Duration,
-                                      deadline: java.time.Duration) =
-  copy(
-    defaultFailureStrategy =
-      InteractionFailureStrategy.RetryWithIncrementalBackoff(
-        initialDelay,
-        deadline))
 
   /**
     * Sets the event receive period. This is the period for which processes can receive sensory events.
