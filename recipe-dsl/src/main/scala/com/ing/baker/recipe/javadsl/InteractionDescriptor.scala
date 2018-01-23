@@ -180,23 +180,23 @@ case class InteractionDescriptor private(
   /**
     * This renames the ingredient that is created by this interaction
     *
-    * @param newIngredientName the new ingredient name
+    * @param toName the new ingredient name
     * @return
     */
-  def renameProvidedIngredient(newIngredientName: String): InteractionDescriptor =
-    this.copy(overriddenOutputIngredientName = Some(newIngredientName))
+  def renameProvidedIngredient(toName: String): InteractionDescriptor =
+    this.copy(overriddenOutputIngredientName = Some(toName))
 
   /**
     * This renames a input ingredient
     *
-    * @param oldIngredientName the name of the input ingredient you want to rename
-    * @param newIngredientName the new name for the ouput ingredient
+    * @param name the name of the input ingredient you want to rename
+    * @param toName the new name for the ouput ingredient
     * @return
     */
-  def renameRequiredIngredient(oldIngredientName: String,
-                               newIngredientName: String): InteractionDescriptor =
+  def renameRequiredIngredient(name: String,
+                               toName: String): InteractionDescriptor =
     this.copy(
-      overriddenIngredientNames = overriddenIngredientNames + (oldIngredientName -> newIngredientName))
+      overriddenIngredientNames = overriddenIngredientNames + (name -> toName))
 
   /**
     * This renames the given input ingredients
