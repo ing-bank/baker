@@ -47,13 +47,13 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     *
     * @param timeout The time to wait for the shard handover.
     */
-  @throws[TimeoutException]("When the process does not respond within the given deadline")
+  @throws[TimeoutException]("When the Baker does not shut down within the given deadline")
   def shutdown(timeout: java.time.Duration): Unit = baker.shutdown(Duration(timeout.toMillis, TimeUnit.MILLISECONDS))
 
   /**
     * Attempts to gracefully shutdown the baker system.
     */
-  @throws[TimeoutException]("When the process does not respond within the given deadline")
+  @throws[TimeoutException]("When the Baker does not shut down within the given deadline")
   def shutdown(): Unit = baker.shutdown()
 
   /**
@@ -62,7 +62,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param recipeId  The recipe this instance will be baked for
     * @param processId The process identifier
     */
-  @throws[TimeoutException]("When the process does not respond within the given deadline")
+  @throws[TimeoutException]("When the process is not baked within the given deadline")
   def bake(recipeId: String, processId: String): Unit =
     baker.bake(recipeId, processId)
 
@@ -73,7 +73,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param processId The process identifier
     * @param timeout   the timeout for the Bake
     */
-  @throws[TimeoutException]("When the process does not respond within the given deadline")
+  @throws[TimeoutException]("When the process is not baked within the given deadline")
   def bake(recipeId: String, processId: String, timeout: java.time.Duration): Unit =
     baker.bake(recipeId, processId, timeout.toScala)
 
@@ -308,21 +308,44 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
   def getEvents(processId: UUID): EventList = getEvents(processId.toString)
 
   /**
-    * Returns the compiled recipe.
+    * Returns the compiled recipe for the given recipeId
     *
+    * @param recipeId the recipeId
+    * @throws TimeoutException
     * @return The compiled recipe
     */
-  @throws[TimeoutException]("When the process does not respond within the default deadline")
+  @throws[TimeoutException]("When the compiled recipe is not found within the default deadline")
   def getCompiledRecipe(recipeId: String): CompiledRecipe = baker.getRecipe(recipeId)
 
+  /**
+    * Returns the compiled recipe for the given recipeId
+    *
+    * @param recipeId the recipeId
+    * @param timeout the maxium wait time
+    * @throws TimeoutException
+    * @return The compiled recipe
+    */
+  @throws[TimeoutException]("When the compiled recipe is not found within the given deadline")
+  def getCompiledRecipe(recipeId: String, timeout: java.time.Duration): CompiledRecipe =
+    baker.getRecipe(recipeId, timeout.toScala)
 
   /**
-    * Returns all recipes added to baker.
-    *
-    * @return
+    * Return alls compiled recipes added to this Baker
+    * @throws TimeoutException
+    * @return A map with all recipes from recipeId -> CompiledRecipe
     */
-  @throws[TimeoutException]("When the process does not respond within the default deadline")
-  def getAllRecipes(): java.util.Map[String, CompiledRecipe] = baker.getAllRecipes.asJava
+  @throws[TimeoutException]("When the Baker does not respond within the default deadline")
+  def getAllRecipes(): java.util.Map[String, CompiledRecipe] = baker.getAllRecipes().asJava
+
+  /**
+    * Return alls compiled recipes added to this Baker
+    * @param timeout
+    * @throws TimeoutException
+    * @return A map with all recipes from recipeId -> CompiledRecipe
+    */
+  @throws[TimeoutException]("When the Baker does not respond within the given deadline")
+  def getAllRecipes(timeout: java.time.Duration): java.util.Map[String, CompiledRecipe] =
+    baker.getAllRecipes(timeout.toScala).asJava
 
   /**
     * Registers a listener to all runtime events for this baker instance.
