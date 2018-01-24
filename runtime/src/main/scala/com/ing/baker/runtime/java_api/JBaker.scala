@@ -292,7 +292,8 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the process does not respond within the default deadline")
-  def getEvents(processId: String): EventList = getEvents(processId)
+    def getEvents(processId: String): EventList =
+      new EventList(baker.events(processId))
 
   /**
     * Returns all events that have occurred for a given process.
