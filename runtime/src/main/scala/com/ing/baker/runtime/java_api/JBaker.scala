@@ -311,7 +311,6 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * Returns the compiled recipe for the given recipeId
     *
     * @param recipeId the recipeId
-    * @throws TimeoutException
     * @return The compiled recipe
     */
   @throws[TimeoutException]("When the compiled recipe is not found within the default deadline")
@@ -322,7 +321,6 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     *
     * @param recipeId the recipeId
     * @param timeout the maxium wait time
-    * @throws TimeoutException
     * @return The compiled recipe
     */
   @throws[TimeoutException]("When the compiled recipe is not found within the given deadline")
@@ -331,7 +329,6 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
 
   /**
     * Return alls compiled recipes added to this Baker
-    * @throws TimeoutException
     * @return A map with all recipes from recipeId -> CompiledRecipe
     */
   @throws[TimeoutException]("When the Baker does not respond within the default deadline")
@@ -340,7 +337,6 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
   /**
     * Return alls compiled recipes added to this Baker
     * @param timeout
-    * @throws TimeoutException
     * @return A map with all recipes from recipeId -> CompiledRecipe
     */
   @throws[TimeoutException]("When the Baker does not respond within the given deadline")
