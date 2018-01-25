@@ -414,7 +414,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the process does not respond within the default deadline")
   def getVisualState(processId: String): String =
-    getVisualState(processId)
+    baker.getVisualState(processId)
 
   /**
     * Returns the visual state of the recipe in dot format with a default timeout of 20 seconds
