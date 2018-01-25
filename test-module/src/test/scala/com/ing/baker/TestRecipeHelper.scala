@@ -279,7 +279,7 @@ object TestRecipeHelper {
               missingJavaOptional2: Optional[Integer],
               missingScalaOptional: Option[String],
               missingScalaOptional2: Option[Integer],
-              intialIngredient: String)
+              initialIngredient: String)
   }
 
 }
