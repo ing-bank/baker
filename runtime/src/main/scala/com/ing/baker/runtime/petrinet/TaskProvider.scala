@@ -79,7 +79,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
 
           // check if no null ingredients are provided
           val nullIngredients = event.providedIngredients.collect {
-            case (name, v) if v.isNull => s"null value provided for ingredient $name"
+            case (name, null) => s"null value provided for ingredient $name"
           }
 
           if (nullIngredients.nonEmpty)

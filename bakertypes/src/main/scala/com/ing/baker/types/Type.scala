@@ -42,6 +42,13 @@ sealed trait Type {
       case _ => false
     }
   }
+
+  def isPrimitive: Boolean = isInstanceOf[PrimitiveType]
+  def isOption: Boolean = isInstanceOf[OptionType]
+  def isList: Boolean = isInstanceOf[ListType]
+  def isEnum: Boolean = isInstanceOf[EnumType]
+  def isMap: Boolean = isInstanceOf[MapType]
+  def isRecord: Boolean = isInstanceOf[RecordType]
 }
 
 case class PrimitiveType(clazz: Class[_]) extends Type
