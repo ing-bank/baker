@@ -2,6 +2,10 @@ package com.ing.baker
 
 package object types {
 
+  import org.joda.time.format.DateTimeFormatter
+  import org.joda.time.format.ISODateTimeFormat
+
+  val isoDateTimeFormatter: DateTimeFormatter = ISODateTimeFormat.dateTime
 
   implicit class AsValueAddition(obj: Any) {
     def toValue: Value = Converters.toValue(obj)

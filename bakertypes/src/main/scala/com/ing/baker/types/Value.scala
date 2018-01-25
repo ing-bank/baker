@@ -1,5 +1,7 @@
 package com.ing.baker.types
 
+import java.nio.charset.StandardCharsets
+
 import scala.reflect.runtime.universe
 import scala.util.Try
 
@@ -53,7 +55,16 @@ case class PrimitiveValue(value: Any) extends Value {
       (clazz.isPrimitive && javaPrimitiveMappings.get(value.getClass) == Some(clazz))
 
   override def toString(): String = value match {
-    case str: String => "\"" + str + "\""
+    case str: String                         => "\"" + str + "\""
+    case date: org.joda.time.ReadableInstant => "\"" + isoDateTimeFormatter.print(date) + "\""
+    case n: java.math.BigDecimal             => "\"" + n.toString + "\""
+    case n: java.math.BigInteger             => "\"" + n.toString + "\""
+    case n: BigDecimal                       => "\"" + n.toString + "\""
+    case n: BigInt                           => "\"" + n.toString + "\""
+    case bytes: Array[_]                     =>
+      val str = new String(bytes.asInstanceOf[Array[Byte]], StandardCharsets.UTF_8)
+      "\"" + str + "\""
+
     case other => other.toString
   }
 }

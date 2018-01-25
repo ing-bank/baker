@@ -12,15 +12,15 @@ import scala.reflect.runtime.universe.TypeTag
 
 object Converters {
 
-  val mirror: universe.Mirror = universe.runtimeMirror(classOf[Value].getClassLoader)
+  private val mirror: universe.Mirror = universe.runtimeMirror(classOf[Value].getClassLoader)
 
-  def getRawClass(t: JType): Class[_] = t match {
+  private def getRawClass(t: JType): Class[_] = t match {
     case c: Class[_] => c
     case t: ParameterizedType => getRawClass(t.getRawType)
     case t@_ => throw new IllegalArgumentException(s"Unsupported type: $t")
   }
 
-  def createJavaType(paramType: universe.Type): java.lang.reflect.Type = {
+  private def createJavaType(paramType: universe.Type): java.lang.reflect.Type = {
     val typeConstructor = mirror.runtimeClass(paramType)
     val innerTypes = paramType.typeArgs.map(createJavaType).toArray
 
@@ -33,6 +33,15 @@ object Converters {
         override def getOwnerType: java.lang.reflect.Type = null
         override def toString() = s"ParameterizedType: $typeConstructor[${getActualTypeArguments.mkString(",")}]"
       }
+    }
+  }
+
+  private def isEmpty(obj: Any) = {
+    obj match {
+      case null => true
+      case None => true
+      case option: java.util.Optional[_] if !option.isPresent => true
+      case _ => false
     }
   }
 
@@ -71,20 +80,12 @@ object Converters {
     }
   }
 
-  def isEmpty(obj: Any) = {
-    obj match {
-      case null => true
-      case None => true
-      case option: java.util.Optional[_] if !option.isPresent => true
-      case _ => false
-    }
-  }
 
   /**
     * Attempts to convert a java object to a value.
     *
-    * @param obj
-    * @return
+    * @param obj The java object
+    * @return a Value
     */
   def toValue(obj: Any): Value = {
 
@@ -123,7 +124,9 @@ object Converters {
     *
     * @param value    The value
     * @param javaType The desired java type.
+    *
     * @return An instance of the java type.
+    * @throws IllegalArgumentException If failing to convert to the desired java type.
     */
   def toJava(value: Value, javaType: java.lang.reflect.Type): Any = {
 
