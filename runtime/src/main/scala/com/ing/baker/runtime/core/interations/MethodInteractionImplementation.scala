@@ -3,8 +3,8 @@ package com.ing.baker.runtime.core.interations
 import java.lang.reflect.Method
 import java.util.UUID
 
-import com.ing.baker.il.{EventType, IngredientDescriptor}
 import com.ing.baker.il.petrinet.InteractionTransition
+import com.ing.baker.il.{EventType, IngredientDescriptor}
 import com.ing.baker.runtime.core.Baker.eventExtractor
 import com.ing.baker.runtime.core.interations.MethodInteractionImplementation._
 import com.ing.baker.runtime.core.{BakerException, RuntimeEvent}
@@ -96,14 +96,17 @@ object MethodInteractionImplementation {
         throw new FatalInteractionException(msg)
       }
 
-      if (interaction.originalEvents.exists(runtimeEvent.isInstanceOfEventType))
-        runtimeEvent
+      interaction.originalEvents.find(_.name == runtimeEvent.name) match {
+        case None =>
+          throw new FatalInteractionException(s"No event with name '${runtimeEvent.name}' is known by this interaction")
+        case Some(eventType) =>
+          val errors = runtimeEvent.validateEvent(eventType)
 
-      else {
-        val msg: String = s"Output: $output fired by interaction ${interaction.interactionName} but could not link it to any known event for the interaction"
-        log.error(msg)
-        throw new FatalInteractionException(msg)
+          if (errors.nonEmpty)
+            throw new FatalInteractionException(s"Event '${runtimeEvent.name}' does not match the expected type: ${errors.mkString}")
       }
+
+      runtimeEvent
     }
   }
 

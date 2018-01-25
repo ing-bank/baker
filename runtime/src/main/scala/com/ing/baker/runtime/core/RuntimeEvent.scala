@@ -1,7 +1,8 @@
 package com.ing.baker.runtime.core
 
 import com.ing.baker.il.EventType
-import com.ing.baker.types.{Converters, Value}
+import com.ing.baker.types.{Converters, NullValue, Value}
+
 import scala.collection.JavaConverters._
 
 
@@ -60,6 +61,8 @@ case class RuntimeEvent(name: String,
           case None        =>
             Seq(s"no value was provided for ingredient '${ingredient.name}'")
           // we can only check the class since the type parameters are available on objects
+          case Some(NullValue) if !ingredient.`type`.isOption =>
+            Seq(s"NullValue is not allowed for non optional ingredient '${ingredient.name}'")
           case Some(value) if !value.isInstanceOf(ingredient.`type`)  =>
             Seq(s"value is not of the correct type for ingredient '${ingredient.name}'")
           case _ =>

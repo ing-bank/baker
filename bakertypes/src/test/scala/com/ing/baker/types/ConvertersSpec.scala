@@ -70,6 +70,14 @@ class ConvertersSpec extends WordSpecLike with Matchers {
       toJava[Optional[Int]](PrimitiveValue(42)) shouldBe Optional.of(42)
     }
 
+    "be able to read scala.Option.None" in {
+      toValue(None) shouldBe NullValue
+    }
+
+    "be able to read java Optional.empty()" in {
+      toValue(Optional.empty()) shouldBe NullValue
+    }
+
     "be able to parse scala.collection.immutable.List objects" in {
 
       toValue(List(1, 2, 3)) shouldBe listValue
