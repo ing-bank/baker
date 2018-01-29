@@ -1006,7 +1006,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       }
 
       intercept[NoSuchProcessException] {
-        baker.events(processId) shouldBe empty
+        baker.events(processId)
       }
     }
 
