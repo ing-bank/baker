@@ -35,7 +35,7 @@ object BakerResponse {
   def translateFirstMessage(msg: Any): Future[InteractionResponse] = msg match {
     case t: TransitionFired => Future.successful(Success)
     case msg: TransitionNotEnabled => Future.successful(NotEnabled)
-    case ReceivePeriodExpired => Future.successful(PeriodExpired)
+    case ReceivePeriodExpired(_) => Future.successful(PeriodExpired)
     case InvalidEvent(msg) => Future.failed(new IllegalArgumentException(msg))
     case msg@_ => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
   }

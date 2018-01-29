@@ -31,7 +31,7 @@ object ClusterBakerActorProvider {
   // Entity id is the first character of the UUID
   def entityIdExtractor(nrOfShards: Int): ExtractEntityId = {
     case msg@CreateProcess(_, processId) => (entityId(processId, nrOfShards), msg)
-    case msg@HandleEvent(processId, _) => (entityId(processId, nrOfShards), msg)
+    case msg@ProcessEvent(processId, _) => (entityId(processId, nrOfShards), msg)
     case msg@GetProcessState(processId) => (entityId(processId, nrOfShards), msg)
     case msg@GetCompiledRecipe(processId) => (entityId(processId, nrOfShards), msg)
   }
@@ -39,7 +39,7 @@ object ClusterBakerActorProvider {
   // extracts the shard id from the incoming message
   def shardIdExtractor(nrOfShards: Int): ExtractShardId = {
     case CreateProcess(_, processId) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
-    case HandleEvent(processId, _) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
+    case ProcessEvent(processId, _) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
     case GetProcessState(processId) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
     case GetCompiledRecipe(processId) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
     case ShardRegion.StartEntity(entityId) => entityId.split(s"index-").last

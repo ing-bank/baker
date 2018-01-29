@@ -85,13 +85,6 @@ object ProcessInstanceProtocol {
   case class Uninitialized(id: String) extends Response
 
   /**
-    * A response send in case when a command is done for a not existing recipe
-    *
-    * @param recipeId The identifier of the recipe
-    */
-  case class RecipeNotAvailable(recipeId: String) extends Response
-
-  /**
    * Returned in case a second Initialize is send after a first is processed
    */
   case object AlreadyInitialized extends Response

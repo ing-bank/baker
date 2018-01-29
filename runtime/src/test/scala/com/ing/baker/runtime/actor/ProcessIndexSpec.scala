@@ -7,7 +7,7 @@ import akka.testkit.{ImplicitSender, TestDuration, TestKit, TestProbe}
 import com.ing.baker.il.petrinet.{EventTransition, RecipePetriNet, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventType}
 import com.ing.baker.petrinet.api.{Marking, ScalaGraphPetriNet}
-import com.ing.baker.runtime.actor.processindex.ProcessIndex.{CreateProcess, HandleEvent, InvalidEvent, ReceivePeriodExpired}
+import com.ing.baker.runtime.actor.processindex.ProcessIndex._
 import com.ing.baker.runtime.actor.processindex.{ProcessIndex, ProcessInstanceStore, ProcessMetadata}
 import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol
 import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
@@ -107,7 +107,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       actorIndex ! CreateProcess(recipeId, processId)
 
       petriNetActorProbe.expectNoMessage(noMsgExpectTimeout)
-      expectMsg(AlreadyInitialized)
+      expectMsg(ProcessAlreadyInitialized(processId))
     }
 
     "notify ProcessMetadata when a PetriNetInstance actor is created" in {
@@ -180,7 +180,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val runtimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! HandleEvent(processId, runtimeEvent)
+      actorIndex ! ProcessEvent(processId, runtimeEvent)
 
       petriNetActorProbe.expectMsgAllClassOf(classOf[FireTransition])
     }
@@ -195,8 +195,6 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val processId = UUID.randomUUID().toString
 
-      val initializeMsg = Initialize(Map.empty, ProcessState(processId, Map.empty))
-
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
       val eventType = EventType("Event", Seq.empty)
       val transitions: Set[Transition[_, _]] = Set(EventTransition(eventType, true, None))
@@ -204,9 +202,9 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val RuntimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! HandleEvent(processId, RuntimeEvent)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent)
 
-      expectMsg(Uninitialized(processId))
+      expectMsg(ProcessUninitialized(processId))
     }
 
     "reply with a InvalidEvent message when attempting to fire an event that is now know in the compiledRecipe" in {
@@ -231,7 +229,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val RuntimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! HandleEvent(processId, RuntimeEvent)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent)
 
       expectMsg(InvalidEvent(s"No event with name 'Event' found in recipe 'name'"))
     }
@@ -263,7 +261,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val RuntimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! HandleEvent(processId, RuntimeEvent)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent)
 
       expectMsg(InvalidEvent(s"Invalid event: no value was provided for ingredient 'ingredientName'"))
     }
@@ -295,17 +293,17 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val RuntimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! HandleEvent(processId, RuntimeEvent)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent)
 
       petriNetActorProbe.expectMsgAllClassOf(classOf[FireTransition])
 
       Thread.sleep(receivePeriodTimeout.toMillis * 2)
 
-      actorIndex ! HandleEvent(processId, RuntimeEvent)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent)
 
       petriNetActorProbe.expectNoMessage(noMsgExpectTimeout)
 
-      expectMsg(ReceivePeriodExpired)
+      expectMsg(ReceivePeriodExpired(processId))
     }
   }
 

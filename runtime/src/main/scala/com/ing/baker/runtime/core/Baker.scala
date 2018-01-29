@@ -16,10 +16,10 @@ import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.runtime.EventSourcing.{TransitionFailedEvent, TransitionFiredEvent}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue
 import com.ing.baker.runtime.actor._
-import com.ing.baker.runtime.actor.processindex.ProcessIndex.{CreateProcess, GetCompiledRecipe, GetProcessState, HandleEvent}
-import com.ing.baker.runtime.actor.processindex.{ProcessApi, ProcessInstanceStore, ProcessMetadata}
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceEvent
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol.{AlreadyInitialized, Initialized, InstanceState, RecipeNotAvailable, Response, Uninitialized}
+import com.ing.baker.runtime.actor.processindex.ProcessIndex._
+import com.ing.baker.runtime.actor.processindex.{ProcessApi, ProcessIndex, ProcessInstanceStore, ProcessMetadata}
+import com.ing.baker.runtime.actor.processinstance.{ProcessInstanceEvent, ProcessInstanceProtocol}
+import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol.{AlreadyInitialized, Initialized, InstanceState, Response, Uninitialized}
 import com.ing.baker.runtime.actor.recipemanager.RecipeManager._
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
@@ -153,7 +153,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       case _ => throw new BakerException(s"Unexpected error happened when adding recipe")
     }
   }
-
+  
   /**
     * Returns the recipe for the given RecipeId
     *
@@ -199,11 +199,11 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     implicit val askTimeout = Timeout(timeout)
 
     val msg = CreateProcess(recipeId, processId)
-    val initializeFuture = (processIndexActor ? msg).mapTo[Response]
+    val initializeFuture = processIndexActor ? msg
 
     val eventualState: Future[ProcessState] = initializeFuture.map {
       case msg: Initialized => msg.state.asInstanceOf[ProcessState]
-      case AlreadyInitialized =>
+      case ProcessAlreadyInitialized(_) =>
         throw new IllegalArgumentException(s"Process with id '$processId' already exists.")
       case RecipeNotAvailable(_) => throw new IllegalArgumentException(s"Recipe with id '$recipeId' does ont exist.")
       case msg@_ => throw new BakerException(s"Unexpected message: $msg")
@@ -235,7 +235,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       case _ => Baker.eventExtractor.extractEvent(event)
     }
 
-    val source = petriNetApi.askAndCollectAll(HandleEvent(processId, runtimeEvent), waitForRetries = true)(timeout)
+    val source = petriNetApi.askAndCollectAll(ProcessEvent(processId, runtimeEvent), waitForRetries = true)(timeout)
     new BakerResponse(processId, source)
   }
 
@@ -268,7 +268,8 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     val futureResult = processIndexActor.ask(GetCompiledRecipe(processId))(defaultInquireTimeout)
     Await.result(futureResult, defaultInquireTimeout) match {
       case RecipeFound(compiledRecipe) => getEventsForRecipe(compiledRecipe)
-      case Uninitialized(_) => throw new NoSuchProcessException(s"No process found for ${processId}")
+      case ProcessDeleted(_) => throw new NoSuchProcessException(s"No process found for $processId")
+      case ProcessUninitialized(_) => throw new NoSuchProcessException(s"No process found for $processId")
       case _ => throw new BakerException("Unknown response received")
     }
   }
@@ -295,7 +296,8 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       .ask(GetProcessState(processId))(Timeout.durationToTimeout(timeout))
       .flatMap {
         case instanceState: InstanceState => Future.successful(instanceState.state.asInstanceOf[ProcessState])
-        case Uninitialized(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
+        case ProcessInstanceProtocol.Uninitialized(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
+        case ProcessIndex.ProcessUninitialized(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
         case msg => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
       }
   }

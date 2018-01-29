@@ -9,7 +9,7 @@ import akka.stream.scaladsl.{Sink, Source, SourceQueueWithComplete}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.Timeout
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
-import com.ing.baker.runtime.actor.processindex.ProcessIndex.{InvalidEvent, ReceivePeriodExpired}
+import com.ing.baker.runtime.actor.processindex.ProcessIndex.{InvalidEvent, ProcessDeleted, ProcessUninitialized, ReceivePeriodExpired}
 import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
 
 import scala.collection.immutable.Seq
@@ -40,21 +40,29 @@ class QueuePushingActor(queue: SourceQueueWithComplete[Any], waitForRetries: Boo
       queue.offer(msg)
       stopActorIfDone
 
-    case Uninitialized(id) ⇒
+    case Uninitialized(_) ⇒
       queue.complete()
       stopActor()
 
-    case msg @ ReceivePeriodExpired =>
+    case ProcessUninitialized(_) ⇒
+      queue.complete()
+      stopActor()
+
+    case ProcessDeleted(_) =>
+      queue.complete()
+      stopActor()
+
+    case msg: ReceivePeriodExpired =>
       queue.offer(msg)
       queue.complete()
       stopActor()
 
-    case msg @ InvalidEvent(message) =>
+    case msg: InvalidEvent =>
       queue.offer(msg)
       queue.complete()
       stopActor()
 
-    case msg @ TransitionNotEnabled(id, reason) ⇒
+    case msg: TransitionNotEnabled ⇒
       queue.offer(msg)
       queue.complete()
       stopActor()
