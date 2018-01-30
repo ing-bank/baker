@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor
+package com.ing.baker.runtime.actor.process_index
 
 import java.util.UUID
 
@@ -7,11 +7,10 @@ import akka.testkit.{ImplicitSender, TestDuration, TestKit, TestProbe}
 import com.ing.baker.il.petrinet.{EventTransition, RecipePetriNet, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventType}
 import com.ing.baker.petrinet.api.{Marking, ScalaGraphPetriNet}
-import com.ing.baker.runtime.actor.processindex.ProcessIndex.{CreateProcess, HandleEvent, InvalidEvent, ReceivePeriodExpired}
-import com.ing.baker.runtime.actor.processindex.{ProcessIndex, ProcessInstanceStore, ProcessMetadata}
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.actor.recipemanager.RecipeManager.{AllRecipes, GetAllRecipes}
+import com.ing.baker.runtime.actor.process_index.ProcessIndex.{CreateProcess, HandleEvent, InvalidEvent, ReceivePeriodExpired}
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.{AllRecipes, GetAllRecipes}
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}

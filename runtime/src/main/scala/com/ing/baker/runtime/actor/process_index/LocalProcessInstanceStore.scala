@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor.processindex
+package com.ing.baker.runtime.actor.process_index
 
 import com.google.common.collect.Sets
 

@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor.processinstance
+package com.ing.baker.runtime.actor.process_instance
 
 import com.ing.baker.petrinet.api.{HMap, Identifiable, Marking, MultiSet}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy

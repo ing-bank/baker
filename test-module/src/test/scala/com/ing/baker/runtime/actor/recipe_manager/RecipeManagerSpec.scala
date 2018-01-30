@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor.recipemanager
+package com.ing.baker.runtime.actor.recipe_manager
 
 import java.util.UUID
 
@@ -6,7 +6,7 @@ import akka.actor.ActorRef
 import akka.pattern.ask
 import com.ing.baker.TestRecipeHelper
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.runtime.actor.recipemanager.RecipeManager.{AddRecipe, GetRecipe, NoRecipeFound, RecipeFound}
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.{AddRecipe, GetRecipe, NoRecipeFound, RecipeFound}
 import com.ing.baker.runtime.core.BakerExecutionSpec
 import com.typesafe.config.{Config, ConfigFactory}
 import org.slf4j.LoggerFactory

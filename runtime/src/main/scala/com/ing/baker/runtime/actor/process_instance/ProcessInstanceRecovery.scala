@@ -1,11 +1,10 @@
-package com.ing.baker.runtime.actor.processinstance
+package com.ing.baker.runtime.actor.process_instance
 
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.{EventSourcing, Instance}
-import com.ing.baker.runtime.actor.messages
-import com.ing.baker.runtime.actor.serialization.{Encryption, ObjectSerializer, ProtobufSerialization}
+import com.ing.baker.runtime.actor.serialization.{Encryption, ObjectSerializer}
 
 abstract class ProcessInstanceRecovery[P[_], T[_,_], S, E](
      val topology: PetriNet[P[_], T[_,_]],
@@ -18,7 +17,7 @@ abstract class ProcessInstanceRecovery[P[_], T[_,_], S, E](
 
   val eventSource = EventSourcing.apply[P, T, S, E](eventSourceFn)
 
-  val serializer = new ProtobufSerialization[P, T, S](new ObjectSerializer(system, encryption))
+  val serializer = new ProcessInstanceSerialization[P, T, S](new ObjectSerializer(system, encryption))
 
   def onRecoveryCompleted(state: Instance[P, T, S])
 
@@ -35,9 +34,9 @@ abstract class ProcessInstanceRecovery[P[_], T[_,_], S, E](
   }
 
   override def receiveRecover: Receive = {
-    case e: messages.Initialized      ⇒ applyToRecoveringState(e)
-    case e: messages.TransitionFired  ⇒ applyToRecoveringState(e)
-    case e: messages.TransitionFailed ⇒ applyToRecoveringState(e)
+    case e: protobuf.Initialized      ⇒ applyToRecoveringState(e)
+    case e: protobuf.TransitionFired  ⇒ applyToRecoveringState(e)
+    case e: protobuf.TransitionFailed ⇒ applyToRecoveringState(e)
     case RecoveryCompleted ⇒
       if (recoveringState.sequenceNr > 0)
         onRecoveryCompleted(recoveringState)

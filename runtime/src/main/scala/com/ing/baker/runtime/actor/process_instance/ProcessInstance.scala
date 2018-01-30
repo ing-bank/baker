@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor.processinstance
+package com.ing.baker.runtime.actor.process_instance
 
 import akka.actor._
 import akka.event.{DiagnosticLoggingAdapter, Logging}
@@ -9,9 +9,9 @@ import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{Continue, RetryWithDelay}
 import com.ing.baker.petrinet.runtime._
 import com.ing.baker.runtime.actor.InternalBakerMessage
-import com.ing.baker.runtime.actor.processinstance.ProcessInstance._
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceLogger._
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstance._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceLogger._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.serialization.{Encryption, ObjectSerializer}
 import fs2.Strategy
 

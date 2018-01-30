@@ -5,7 +5,7 @@ import java.util.{Collections, UUID}
 
 import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.actor.processindex.ProcessMetadata
+import com.ing.baker.runtime.actor.process_index.ProcessMetadata
 import com.ing.baker.runtime.core._
 import com.ing.baker.types.Value
 

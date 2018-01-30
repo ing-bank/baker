@@ -7,8 +7,8 @@ import akka.NotUsed
 import akka.stream.javadsl.RunnableGraph
 import akka.stream.scaladsl.{Broadcast, GraphDSL, Sink, Source}
 import akka.stream.{ClosedShape, Materializer}
-import com.ing.baker.runtime.actor.processindex.ProcessIndex.{InvalidEvent, ReceivePeriodExpired}
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol.{TransitionFailed, TransitionFired, TransitionNotEnabled}
+import com.ing.baker.runtime.actor.process_index.ProcessIndex.{InvalidEvent, ReceivePeriodExpired}
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{TransitionFailed, TransitionFired, TransitionNotEnabled}
 import com.ing.baker.runtime.core.InteractionResponse._
 
 import scala.concurrent.duration.{FiniteDuration, SECONDS}

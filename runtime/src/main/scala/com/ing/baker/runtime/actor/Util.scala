@@ -11,8 +11,8 @@ import com.ing.baker.il.petrinet
 import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
 import com.ing.baker.runtime.actor.GracefulShutdownActor.Leave
-import com.ing.baker.runtime.actor.processinstance.ProcessInstance
-import com.ing.baker.runtime.actor.processinstance.ProcessInstance.Settings
+import com.ing.baker.runtime.actor.process_instance.ProcessInstance
+import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
 import com.ing.baker.runtime.core._
 
 import scala.concurrent.duration._

@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor.processindex
+package com.ing.baker.runtime.actor.process_index
 
 import java.util.concurrent.TimeoutException
 
@@ -9,8 +9,8 @@ import akka.stream.scaladsl.{Sink, Source, SourceQueueWithComplete}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.Timeout
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{Continue, RetryWithDelay}
-import com.ing.baker.runtime.actor.processindex.ProcessIndex.{InvalidEvent, ReceivePeriodExpired}
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.process_index.ProcessIndex.{InvalidEvent, ReceivePeriodExpired}
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 
 import scala.collection.immutable.Seq
 import scala.concurrent.duration.FiniteDuration

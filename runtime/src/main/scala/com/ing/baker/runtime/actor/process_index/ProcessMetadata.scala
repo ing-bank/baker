@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor.processindex
+package com.ing.baker.runtime.actor.process_index
 
 /**
   * This class is to store some metadata information of a baker process

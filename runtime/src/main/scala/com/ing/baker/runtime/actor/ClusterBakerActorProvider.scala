@@ -5,9 +5,9 @@ import akka.cluster.sharding.ShardRegion._
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
 import com.ing.baker.il.sha256HashCode
-import com.ing.baker.runtime.actor.processindex.ProcessIndex._
-import com.ing.baker.runtime.actor.processindex._
-import com.ing.baker.runtime.actor.recipemanager.RecipeManager
+import com.ing.baker.runtime.actor.process_index.ProcessIndex._
+import com.ing.baker.runtime.actor.process_index._
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.typesafe.config.Config

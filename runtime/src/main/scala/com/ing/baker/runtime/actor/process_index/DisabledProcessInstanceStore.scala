@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor.processindex
+package com.ing.baker.runtime.actor.process_index
 
 
 class DisabledProcessInstanceStore extends ProcessInstanceStore {

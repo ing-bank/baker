@@ -16,11 +16,11 @@ import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.runtime.EventSourcing.{TransitionFailedEvent, TransitionFiredEvent}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue
 import com.ing.baker.runtime.actor._
-import com.ing.baker.runtime.actor.processindex.ProcessIndex.{CreateProcess, GetCompiledRecipe, GetProcessState, HandleEvent}
-import com.ing.baker.runtime.actor.processindex.{ProcessApi, ProcessInstanceStore, ProcessMetadata}
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceEvent
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol.{AlreadyInitialized, Initialized, InstanceState, RecipeNotAvailable, Response, Uninitialized}
-import com.ing.baker.runtime.actor.recipemanager.RecipeManager._
+import com.ing.baker.runtime.actor.process_index.ProcessIndex.{CreateProcess, GetCompiledRecipe, GetProcessState, HandleEvent}
+import com.ing.baker.runtime.actor.process_index.{ProcessApi, ProcessInstanceStore, ProcessMetadata}
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEvent
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{AlreadyInitialized, Initialized, InstanceState, RecipeNotAvailable, Response, Uninitialized}
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManager._
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.core.Baker._

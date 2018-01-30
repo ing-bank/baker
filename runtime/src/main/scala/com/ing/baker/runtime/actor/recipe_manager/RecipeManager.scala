@@ -1,11 +1,11 @@
-package com.ing.baker.runtime.actor.recipemanager
+package com.ing.baker.runtime.actor.recipe_manager
 
 import java.util.UUID
 
 import akka.actor.{ActorLogging, Props}
 import akka.persistence.PersistentActor
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.actor.recipemanager.RecipeManager._
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManager._
 import com.ing.baker.runtime.actor.{InternalBakerEvent, InternalBakerMessage}
 
 import scala.collection.mutable

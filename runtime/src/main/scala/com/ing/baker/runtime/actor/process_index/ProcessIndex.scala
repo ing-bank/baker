@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor.processindex
+package com.ing.baker.runtime.actor.process_index
 
 import akka.actor.{ActorLogging, ActorRef, Props, Terminated}
 import akka.pattern.ask
@@ -7,10 +7,10 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.{Place, Transition}
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
 import com.ing.baker.runtime.actor._
-import com.ing.baker.runtime.actor.processindex.ProcessIndex._
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.actor.processinstance.{ProcessInstance, ProcessInstanceProtocol}
-import com.ing.baker.runtime.actor.recipemanager.RecipeManager.{AllRecipes, GetAllRecipes, RecipeFound}
+import com.ing.baker.runtime.actor.process_index.ProcessIndex._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol}
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.{AllRecipes, GetAllRecipes, RecipeFound}
 import com.ing.baker.runtime.actor.serialization.{Encryption, ObjectSerializer}
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}

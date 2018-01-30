@@ -1,0 +1,25 @@
+syntax = "proto2";
+
+import "scalapb/scalapb.proto";
+
+option java_package = "com.ing.baker.runtime.actor.process_index.protobuf";
+option (scalapb.options) = {
+    flat_package: true
+};
+
+message ActorCreated {
+    optional string processId = 1;
+    optional int64 dateCreated = 2;
+}
+
+message ActorPassivated {
+    optional string processId = 1;
+}
+
+message ActorActivated {
+    optional string processId = 1;
+}
+
+message ActorDeleted {
+    optional string processId = 1;
+}
