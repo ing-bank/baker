@@ -6,7 +6,7 @@ import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardReg
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
 import com.ing.baker.il.sha256HashCode
 import com.ing.baker.runtime.actor.ClusterBakerActorProvider._
-import com.ing.baker.runtime.actor.processindex.ProcessIndex._
+import com.ing.baker.runtime.actor.processindex.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.processindex._
 import com.ing.baker.runtime.actor.recipemanager.RecipeManager
 import com.ing.baker.runtime.actor.serialization.Encryption
@@ -30,19 +30,15 @@ object ClusterBakerActorProvider {
   // extracts the actor id -> message from the incoming message
   // Entity id is the first character of the UUID
   def entityIdExtractor(nrOfShards: Int): ExtractEntityId = {
-    case msg@CreateProcess(_, processId) => (entityId(processId, nrOfShards), msg)
-    case msg@ProcessEvent(processId, _) => (entityId(processId, nrOfShards), msg)
-    case msg@GetProcessState(processId) => (entityId(processId, nrOfShards), msg)
-    case msg@GetCompiledRecipe(processId) => (entityId(processId, nrOfShards), msg)
+    case msg:ProcessIndexMessage => (entityId(msg.processId, nrOfShards), msg)
+    case msg => throw new IllegalArgumentException(s"Message not recognized: $msg")
   }
 
   // extracts the shard id from the incoming message
   def shardIdExtractor(nrOfShards: Int): ExtractShardId = {
-    case CreateProcess(_, processId) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
-    case ProcessEvent(processId, _) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
-    case GetProcessState(processId) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
-    case GetCompiledRecipe(processId) => Math.abs(sha256HashCode(processId) % nrOfShards).toString
+    case msg:ProcessIndexMessage => Math.abs(sha256HashCode(msg.processId) % nrOfShards).toString
     case ShardRegion.StartEntity(entityId) => entityId.split(s"index-").last
+    case msg => throw new IllegalArgumentException(s"Message not recognized: $msg")
   }
 
   val recipeManagerName = "RecipeManager"

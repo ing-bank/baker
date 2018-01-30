@@ -8,9 +8,10 @@ import com.ing.baker.il.petrinet.{Place, Transition}
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.processindex.ProcessIndex._
+import com.ing.baker.runtime.actor.processindex.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol.{FireTransition, Initialize, Stop}
 import com.ing.baker.runtime.actor.processinstance.{ProcessInstance, ProcessInstanceProtocol}
-import com.ing.baker.runtime.actor.recipemanager.RecipeManager.{AllRecipes, GetAllRecipes, RecipeFound}
+import com.ing.baker.runtime.actor.recipemanager.RecipeManager.{AllRecipes, GetAllRecipes, NoRecipeFound, RecipeFound}
 import com.ing.baker.runtime.actor.serialization.{AkkaObjectSerializer, Encryption}
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
@@ -33,6 +34,9 @@ object ProcessIndex {
 
   sealed trait ProcessStatus
 
+  //message
+  case object CheckForProcessesToBeDeleted extends InternalBakerMessage
+
   //The process is created and not deleted
   case object Active extends ProcessStatus
 
@@ -40,54 +44,6 @@ object ProcessIndex {
   case object Deleted extends ProcessStatus
 
   case class ActorMetadata(recipeId: String, processId: String, createdDateTime: Long, processStatus: ProcessStatus)
-
-  // -- Messages
-  sealed trait ProcessIndexMessage extends InternalBakerMessage
-
-  case object CheckForProcessesToBeDeleted extends ProcessIndexMessage
-
-  case class CreateProcess(recipeId: String, processId: String) extends ProcessIndexMessage
-
-  case class ProcessEvent(processId: String, event: RuntimeEvent) extends ProcessIndexMessage
-
-  case class GetProcessState(processId: String) extends ProcessIndexMessage
-
-  case class GetCompiledRecipe(processId: String) extends ProcessIndexMessage
-
-  /**
-    * Indicates that a process can no longer receive events because the configured period has expired.
-    */
-  case class ReceivePeriodExpired(processId: String) extends ProcessIndexMessage
-
-  /**
-    * @param msg error message for the request
-    */
-  case class InvalidEvent(msg: String) extends ProcessIndexMessage
-
-  /**
-    * Returned if a process has been deleted
-    */
-  case class ProcessDeleted(processId: String) extends ProcessIndexMessage
-
-  /**
-    * Returned if the process is unitialized
-    */
-  case class ProcessUninitialized(processId: String) extends ProcessIndexMessage
-
-  /**
-    * A response send in case when a process was already created in the past
-    *
-    * @param processId The identifier of the processId
-    */
-  case class ProcessAlreadyInitialized(processId: String) extends ProcessIndexMessage
-
-  /**
-    * A response send in case when a command is done for a not existing recipe
-    *
-    * @param recipeId The identifier of the recipe
-    */
-  case class RecipeNotAvailable(recipeId: String) extends ProcessIndexMessage
-
 
   // --- Events
 
@@ -222,17 +178,17 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
                 createProcessActor(processId, compiledRecipe).forward(initialize)
                 val actorMetadata = ActorMetadata(recipeId, processId, created, Active)
                 index += processId -> actorMetadata
-              case None => sender() ! RecipeNotAvailable(recipeId)
+              case None => sender() ! NoRecipeFound(recipeId)
             }
           }
         case _ if isDeleted(index(processId)) => sender() ! ProcessDeleted(processId)
         case _ => sender() ! ProcessAlreadyInitialized(processId)
       }
 
-    case ProcessEvent(processId: String, event: RuntimeEvent) =>
+    case ProcessEvent(processId: String, eventToFire: RuntimeEvent) =>
       //Forwards the event message to the Actor if its in the Receive period for the compiledRecipe
       def forwardEventIfInReceivePeriod(actorRef: ActorRef, compiledRecipe: CompiledRecipe) = {
-        val cmd = createFireTransitionCmd(compiledRecipe, processId, event)
+        val cmd = createFireTransitionCmd(compiledRecipe, processId, eventToFire)
         compiledRecipe.eventReceivePeriod match {
           case Some(receivePeriod) =>
             index.get(processId).foreach { p =>
@@ -252,17 +208,16 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
       //If not return a InvalidEvent message to the sender
       //Otherwise forwardEventIfInReceivePeriod
       def validateEventAvailableForRecipe(actorRef: ActorRef, compiledRecipe: CompiledRecipe) = {
-        compiledRecipe.sensoryEvents.find(_.name.equals(event.name)) match {
-          case None => sender() ! InvalidEvent(s"No event with name '${event.name}' found in recipe '${compiledRecipe.name}'")
-          case Some(sensoryEvent) => {
+        compiledRecipe.sensoryEvents.find(sensoryEvent => sensoryEvent.name == eventToFire.name) match {
+          case None => sender() ! InvalidEvent(processId, s"No event with name '${eventToFire.name}' found in recipe '${compiledRecipe.name}'")
+          case Some(sensoryEvent) =>
             //Check If the sensory event is valid for this recipe
-            val eventValidationErrors = event.validateEvent(sensoryEvent)
+            val eventValidationErrors = eventToFire.validateEvent(sensoryEvent)
             if (eventValidationErrors.nonEmpty)
-              sender() ! InvalidEvent(s"Invalid event: " + eventValidationErrors.mkString(","))
+              sender() ! InvalidEvent(processId, s"Invalid event: " + eventValidationErrors.mkString(","))
             else {
               forwardEventIfInReceivePeriod(actorRef, compiledRecipe)
             }
-          }
         }
       }
 

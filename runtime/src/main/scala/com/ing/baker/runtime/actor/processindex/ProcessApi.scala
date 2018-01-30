@@ -9,7 +9,7 @@ import akka.stream.scaladsl.{Sink, Source, SourceQueueWithComplete}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.Timeout
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
-import com.ing.baker.runtime.actor.processindex.ProcessIndex.{InvalidEvent, ProcessDeleted, ProcessUninitialized, ReceivePeriodExpired}
+import com.ing.baker.runtime.actor.processindex.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
 
 import scala.collection.immutable.Seq

@@ -24,13 +24,14 @@ object RecipeManager {
 
   case class RecipeFound(compiledRecipe: CompiledRecipe) extends InternalBakerMessage
 
-  case object NoRecipeFound extends InternalBakerMessage
+  case class NoRecipeFound(recipeId: String) extends InternalBakerMessage
 
   //Get alla recipe
   case object GetAllRecipes extends InternalBakerMessage
 
   case class AllRecipes(compiledRecipes: Map[String, CompiledRecipe]) extends InternalBakerMessage
 
+  //Events
   //When a recipe is added
   case class RecipeAdded(recipeId: String, compiledRecipe: CompiledRecipe) extends InternalBakerEvent
 }
@@ -64,7 +65,7 @@ class RecipeManager extends PersistentActor with ActorLogging {
     case GetRecipe(recipeId: String) => {
       compiledRecipes.get(recipeId) match {
         case Some(compiledRecipe) => sender() ! RecipeFound(compiledRecipe)
-        case None => sender() ! NoRecipeFound
+        case None => sender() ! NoRecipeFound(recipeId)
       }
     }
     case GetAllRecipes => {

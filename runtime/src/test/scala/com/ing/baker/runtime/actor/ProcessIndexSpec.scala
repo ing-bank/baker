@@ -8,7 +8,7 @@ import com.ing.baker.il.petrinet.{EventTransition, RecipePetriNet, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventType}
 import com.ing.baker.petrinet.api.{Marking, ScalaGraphPetriNet}
 import com.ing.baker.runtime.actor.processindex.ProcessIndex
-import com.ing.baker.runtime.actor.processindex.ProcessIndex._
+import com.ing.baker.runtime.actor.processindex.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol
 import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.recipemanager.RecipeManager.{AllRecipes, GetAllRecipes}
@@ -207,7 +207,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       actorIndex ! ProcessEvent(processId, RuntimeEvent)
 
-      expectMsg(InvalidEvent(s"No event with name 'Event' found in recipe 'name'"))
+      expectMsg(InvalidEvent(processId ,s"No event with name 'Event' found in recipe 'name'"))
     }
 
     "reply with a InvalidEvent message when attempting to fire an event that does not comply to the recipe" in {
@@ -239,7 +239,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       actorIndex ! ProcessEvent(processId, RuntimeEvent)
 
-      expectMsg(InvalidEvent(s"Invalid event: no value was provided for ingredient 'ingredientName'"))
+      expectMsg(InvalidEvent(processId ,s"Invalid event: no value was provided for ingredient 'ingredientName'"))
     }
 
     "reply with a EventReceivePeriodExpired message when attempting to fire an event after expiration period" in {

@@ -16,9 +16,9 @@ import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.runtime.EventSourcing.{TransitionFailedEvent, TransitionFiredEvent}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue
 import com.ing.baker.runtime.actor._
-import com.ing.baker.runtime.actor.processindex.ProcessIndex._
+import com.ing.baker.runtime.actor.processindex.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.processindex.{ProcessApi, ProcessIndex}
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol.{Initialized, InstanceState}
+import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
 import com.ing.baker.runtime.actor.processinstance.{ProcessInstanceEvent, ProcessInstanceProtocol}
 import com.ing.baker.runtime.actor.recipemanager.RecipeManager._
 import com.ing.baker.runtime.actor.serialization.Encryption
@@ -207,7 +207,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       case msg: Initialized => msg.state.asInstanceOf[ProcessState]
       case ProcessAlreadyInitialized(_) =>
         throw new IllegalArgumentException(s"Process with id '$processId' already exists.")
-      case RecipeNotAvailable(_) => throw new IllegalArgumentException(s"Recipe with id '$recipeId' does ont exist.")
+      case NoRecipeFound(_) => throw new IllegalArgumentException(s"Recipe with id '$recipeId' does ont exist.")
       case msg@_ => throw new BakerException(s"Unexpected message: $msg")
     }
 
@@ -298,8 +298,8 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       .ask(GetProcessState(processId))(Timeout.durationToTimeout(timeout))
       .flatMap {
         case instanceState: InstanceState => Future.successful(instanceState.state.asInstanceOf[ProcessState])
-        case ProcessInstanceProtocol.Uninitialized(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
-        case ProcessIndex.ProcessUninitialized(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
+        case Uninitialized(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
+        case ProcessUninitialized(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
         case msg => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
       }
   }
