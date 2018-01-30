@@ -11,7 +11,7 @@ import com.ing.baker.runtime.actor.processindex.ProcessIndex._
 import com.ing.baker.runtime.actor.processindex.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol.{FireTransition, Initialize, Stop}
 import com.ing.baker.runtime.actor.processinstance.{ProcessInstance, ProcessInstanceProtocol}
-import com.ing.baker.runtime.actor.recipemanager.RecipeManager.{AllRecipes, GetAllRecipes, NoRecipeFound, RecipeFound}
+import com.ing.baker.runtime.actor.recipemanager.RecipeManagerProtocol.{AllRecipes, GetAllRecipes, NoRecipeFound, RecipeFound}
 import com.ing.baker.runtime.actor.serialization.{AkkaObjectSerializer, Encryption}
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}

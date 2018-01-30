@@ -16,11 +16,11 @@ import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.runtime.EventSourcing.{TransitionFailedEvent, TransitionFiredEvent}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue
 import com.ing.baker.runtime.actor._
+import com.ing.baker.runtime.actor.processindex.ProcessApi
 import com.ing.baker.runtime.actor.processindex.ProcessIndexProtocol._
-import com.ing.baker.runtime.actor.processindex.{ProcessApi, ProcessIndex}
+import com.ing.baker.runtime.actor.processinstance.ProcessInstanceEvent
 import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
-import com.ing.baker.runtime.actor.processinstance.{ProcessInstanceEvent, ProcessInstanceProtocol}
-import com.ing.baker.runtime.actor.recipemanager.RecipeManager._
+import com.ing.baker.runtime.actor.recipemanager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.core.Baker._
@@ -164,7 +164,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     val futureResult = recipeManager.ask(GetRecipe(recipeId))(timeout)
     Await.result(futureResult, timeout) match {
       case RecipeFound(compiledRecipe) => compiledRecipe
-      case NoRecipeFound => throw new IllegalArgumentException(s"No recipe found for recipe with id: ${recipeId}")
+      case NoRecipeFound(_) => throw new IllegalArgumentException(s"No recipe found for recipe with id: $recipeId")
     }
   }
 
