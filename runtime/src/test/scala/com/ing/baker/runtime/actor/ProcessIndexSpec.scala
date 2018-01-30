@@ -3,12 +3,12 @@ package com.ing.baker.runtime.actor
 import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
-import akka.testkit.{ImplicitSender, TestDuration, TestKit, TestProbe}
+import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import com.ing.baker.il.petrinet.{EventTransition, RecipePetriNet, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventType}
 import com.ing.baker.petrinet.api.{Marking, ScalaGraphPetriNet}
+import com.ing.baker.runtime.actor.processindex.ProcessIndex
 import com.ing.baker.runtime.actor.processindex.ProcessIndex._
-import com.ing.baker.runtime.actor.processindex.{ProcessIndex, ProcessInstanceStore, ProcessMetadata}
 import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol
 import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.recipemanager.RecipeManager.{AllRecipes, GetAllRecipes}
@@ -17,12 +17,10 @@ import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.types.{PrimitiveType, RecordField}
 import com.typesafe.config.{Config, ConfigFactory}
-import org.mockito.Matchers._
 import org.mockito.Mockito
-import org.mockito.Mockito.{verify, when}
+import org.mockito.Mockito.when
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mockito.MockitoSugar
-import org.scalatest.time.Span
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
@@ -47,14 +45,12 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
   with MockitoSugar
   with Eventually {
 
-  val recipeMetadataMock = mock[ProcessInstanceStore]
-
   val noMsgExpectTimeout: FiniteDuration = 100.milliseconds
 
   val otherMsg = mock[ProcessInstanceProtocol.Command]
 
   before {
-    Mockito.reset(recipeMetadataMock, otherMsg)
+    Mockito.reset(otherMsg)
   }
 
   override def afterAll {
@@ -110,26 +106,6 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       expectMsg(ProcessAlreadyInitialized(processId))
     }
 
-    "notify ProcessMetadata when a PetriNetInstance actor is created" in {
-
-      val processId = UUID.randomUUID().toString
-      val initializeMsg = Initialize(Map.empty, ProcessState(processId, Map.empty))
-
-      val petriNetActorProbe = TestProbe()
-
-      val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
-
-      actorIndex ! CreateProcess(recipeId, processId)
-
-      petriNetActorProbe.expectMsg(initializeMsg)
-
-      val timeout = Span.convertDurationToSpan(500.milliseconds.dilated)
-      val interval = Span.convertDurationToSpan(50.milliseconds.dilated)
-      implicit val patienceConfig = PatienceConfig(timeout, interval)
-      eventually {
-        verify(recipeMetadataMock).add(any[ProcessMetadata])
-      }
-    }
 
     "delete a process if a retention period is defined, stop command is received" in {
 
@@ -313,7 +289,6 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
 
     val props = Props(new ProcessIndex(
-      recipeMetadataMock,
       cleanupInterval,
       Option.empty,
       Encryption.NoEncryption,

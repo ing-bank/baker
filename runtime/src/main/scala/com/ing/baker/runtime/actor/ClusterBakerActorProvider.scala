@@ -5,6 +5,7 @@ import akka.cluster.sharding.ShardRegion._
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
 import com.ing.baker.il.sha256HashCode
+import com.ing.baker.runtime.actor.ClusterBakerActorProvider._
 import com.ing.baker.runtime.actor.processindex.ProcessIndex._
 import com.ing.baker.runtime.actor.processindex._
 import com.ing.baker.runtime.actor.recipemanager.RecipeManager
@@ -14,7 +15,6 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 
 import scala.concurrent.duration._
-import ClusterBakerActorProvider._
 
 object ClusterBakerActorProvider {
 
@@ -52,20 +52,16 @@ class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption
 
   private val nrOfShards = config.as[Int]("baker.actor.cluster.nr-of-shards")
   private val retentionCheckInterval = config.as[Option[FiniteDuration]]("baker.actor.retention-check-interval").getOrElse(1 minute)
-  private val distributedProcessMetadataEnabled = config.as[Boolean]("baker.distributed-process-metadata-enabled")
   private val actorIdleTimeout: Option[FiniteDuration] = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout")
 
-  override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(implicit actorSystem: ActorSystem): (ActorRef, ProcessInstanceStore) = {
-    val processInstanceStore = if (distributedProcessMetadataEnabled) new ClusterProcessInstanceStore()
-    else new DisabledProcessInstanceStore
-    val processIndexActor = ClusterSharding(actorSystem).start(
+  override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(implicit actorSystem: ActorSystem): ActorRef = {
+    ClusterSharding(actorSystem).start(
       typeName = "ProcessIndexActor",
-      entityProps = ProcessIndex.props(processInstanceStore, retentionCheckInterval, actorIdleTimeout, configuredEncryption, interactionManager, recipeManager),
+      entityProps = ProcessIndex.props(retentionCheckInterval, actorIdleTimeout, configuredEncryption, interactionManager, recipeManager),
       settings = ClusterShardingSettings.create(actorSystem),
       extractEntityId = ClusterBakerActorProvider.entityIdExtractor(nrOfShards),
       extractShardId = ClusterBakerActorProvider.shardIdExtractor(nrOfShards)
     )
-    (processIndexActor, processInstanceStore)
   }
 
   override def createRecipeManagerActor()(implicit actorSystem: ActorSystem): ActorRef = {
@@ -78,8 +74,8 @@ class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption
     actorSystem.actorOf(props = singletonManagerProps, name = recipeManagerName)
 
     val singletonProxyProps = ClusterSingletonProxy.props(
-        singletonManagerPath = s"/user/$recipeManagerName",
-        settings = ClusterSingletonProxySettings(actorSystem))
+      singletonManagerPath = s"/user/$recipeManagerName",
+      settings = ClusterSingletonProxySettings(actorSystem))
 
     actorSystem.actorOf(props = singletonProxyProps, name = "RecipeManagerProxy")
   }

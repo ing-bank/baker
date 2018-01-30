@@ -8,7 +8,7 @@ import com.ing.baker.il.petrinet.{Place, Transition}
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.processindex.ProcessIndex._
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol.{AlreadyInitialized, FireTransition, Initialize, Stop}
+import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol.{FireTransition, Initialize, Stop}
 import com.ing.baker.runtime.actor.processinstance.{ProcessInstance, ProcessInstanceProtocol}
 import com.ing.baker.runtime.actor.recipemanager.RecipeManager.{AllRecipes, GetAllRecipes, RecipeFound}
 import com.ing.baker.runtime.actor.serialization.{AkkaObjectSerializer, Encryption}
@@ -24,13 +24,12 @@ import scala.concurrent.duration._
 
 object ProcessIndex {
 
-  def props(processInstanceStore: ProcessInstanceStore,
-            cleanupInterval: FiniteDuration = 1 minute,
+  def props(cleanupInterval: FiniteDuration = 1 minute,
             processIdleTimeout: Option[FiniteDuration],
             configuredEncryption: Encryption,
             interactionManager: InteractionManager,
             recipeManager: ActorRef) =
-    Props(new ProcessIndex(processInstanceStore, cleanupInterval, processIdleTimeout, configuredEncryption, interactionManager, recipeManager))
+    Props(new ProcessIndex(cleanupInterval, processIdleTimeout, configuredEncryption, interactionManager, recipeManager))
 
   sealed trait ProcessStatus
 
@@ -117,8 +116,7 @@ object ProcessIndex {
   }
 }
 
-class ProcessIndex(processInstanceStore: ProcessInstanceStore,
-                   cleanupInterval: FiniteDuration = 1 minute,
+class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
                    processIdleTimeout: Option[FiniteDuration],
                    configuredEncryption: Encryption,
                    interactionManager: InteractionManager,
@@ -185,7 +183,6 @@ class ProcessIndex(processInstanceStore: ProcessInstanceStore,
   def deleteProcess(processId: String): Unit = {
     persist(ActorDeleted(processId)) { _ =>
       val meta = index(processId)
-      processInstanceStore.remove(ProcessMetadata(meta.recipeId, meta.processId, meta.createdDateTime))
       index.update(processId, index(processId).copy(processStatus = Deleted))
     }
   }
@@ -225,7 +222,6 @@ class ProcessIndex(processInstanceStore: ProcessInstanceStore,
                 createProcessActor(processId, compiledRecipe).forward(initialize)
                 val actorMetadata = ActorMetadata(recipeId, processId, created, Active)
                 index += processId -> actorMetadata
-                processInstanceStore.add(ProcessMetadata(recipeId, processId, created))
               case None => sender() ! RecipeNotAvailable(recipeId)
             }
           }
@@ -336,7 +332,6 @@ class ProcessIndex(processInstanceStore: ProcessInstanceStore,
       index.update(processId, index(processId).copy(processStatus = Deleted))
     case RecoveryCompleted =>
       actorsToBeCreated.foreach(id => createProcessActor(id))
-      index.values.foreach(p => processInstanceStore.add(ProcessMetadata(p.recipeId, p.processId, p.createdDateTime)))
   }
 
   override def persistenceId: String = self.path.name

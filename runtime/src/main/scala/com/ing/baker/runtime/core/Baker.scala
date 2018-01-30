@@ -17,9 +17,9 @@ import com.ing.baker.petrinet.runtime.EventSourcing.{TransitionFailedEvent, Tran
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.processindex.ProcessIndex._
-import com.ing.baker.runtime.actor.processindex.{ProcessApi, ProcessIndex, ProcessInstanceStore, ProcessMetadata}
+import com.ing.baker.runtime.actor.processindex.{ProcessApi, ProcessIndex}
+import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol.{Initialized, InstanceState}
 import com.ing.baker.runtime.actor.processinstance.{ProcessInstanceEvent, ProcessInstanceProtocol}
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol.{AlreadyInitialized, Initialized, InstanceState, Response, Uninitialized}
 import com.ing.baker.runtime.actor.recipemanager.RecipeManager._
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
@@ -32,7 +32,7 @@ import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.{Duration, FiniteDuration, _}
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
@@ -125,7 +125,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
   val recipeManager: ActorRef = bakerActorProvider.createRecipeManagerActor()
 
-  val (processIndexActor: ActorRef, processInstanceStore: ProcessInstanceStore) =
+  val processIndexActor: ActorRef =
     bakerActorProvider.createProcessIndexActor(interactionManager, recipeManager)
 
   private val petriNetApi = new ProcessApi(processIndexActor)
@@ -153,7 +153,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       case _ => throw new BakerException(s"Unexpected error happened when adding recipe")
     }
   }
-  
+
   /**
     * Returns the recipe for the given RecipeId
     *
@@ -164,7 +164,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     val futureResult = recipeManager.ask(GetRecipe(recipeId))(timeout)
     Await.result(futureResult, timeout) match {
       case RecipeFound(compiledRecipe) => compiledRecipe
-      case NoRecipeFound               => throw new IllegalArgumentException(s"No recipe found for recipe with id: ${recipeId}")
+      case NoRecipeFound => throw new IllegalArgumentException(s"No recipe found for recipe with id: ${recipeId}")
     }
   }
 
@@ -180,7 +180,8 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
   /**
     * Creates a process instance for the given recipeId with the given processId as identifier
-    * @param recipeId The recipeId for the recipe to bake
+    *
+    * @param recipeId  The recipeId for the recipe to bake
     * @param processId The identifier for the newly baked process
     * @param timeout
     * @return
@@ -190,7 +191,8 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
   /**
     * Asynchronously creates a process instance for the given recipeId with the given processId as identifier
-    * @param recipeId The recipeId for the recipe to bake
+    *
+    * @param recipeId  The recipeId for the recipe to bake
     * @param processId The identifier for the newly baked process
     * @param timeout
     * @return
@@ -255,7 +257,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     */
   def eventsAsync(processId: String): Source[RuntimeEvent, NotUsed] = {
 
-    def getEventsForRecipe(compiledRecipe: CompiledRecipe) : Source[RuntimeEvent, NotUsed] = {
+    def getEventsForRecipe(compiledRecipe: CompiledRecipe): Source[RuntimeEvent, NotUsed] = {
       ProcessQuery
         .eventsForInstance[Place, Transition, ProcessState, RuntimeEvent](compiledRecipe.name, processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal, RecipeRuntime.eventSourceFn)
         .collect {
@@ -283,7 +285,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   private def getProcessState(processId: String, timeout: FiniteDuration = defaultInquireTimeout): ProcessState =
-    Await.result(getProcessStateAsync(processId), timeout)
+  Await.result(getProcessStateAsync(processId), timeout)
 
   /**
     * returns a future with the process state.
@@ -311,7 +313,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def getIngredients(processId: String, timeout: FiniteDuration = defaultInquireTimeout): Map[String, Value] =
-    getProcessState(processId).ingredients
+  getProcessState(processId).ingredients
 
   /**
     * Returns a future of all the provided ingredients for a given process id.
@@ -410,6 +412,4 @@ class Baker()(implicit val actorSystem: ActorSystem) {
         actorSystem.terminate()
     }
   }
-
-  def allProcessMetadata: Set[ProcessMetadata] = processInstanceStore.getAll
 }
