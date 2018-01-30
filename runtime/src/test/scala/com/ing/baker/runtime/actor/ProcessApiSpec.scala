@@ -8,9 +8,10 @@ import akka.stream.testkit.TestSubscriber
 import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.{TestDuration, TestKit, TestProbe}
 import akka.util.Timeout
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy
-import com.ing.baker.runtime.actor.processindex.ProcessApi
+import com.ing.baker.runtime.actor.processindex.{ProcessApi, ProcessIndexProtocol}
+import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol
+import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Matchers._
 import org.scalatest.WordSpecLike
@@ -81,19 +82,28 @@ class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec", ProcessApiSpe
       runSource.expectComplete()
     }
 
-    "return an empty source when the petri net instance repsponds with Uninitialized" in {
+    "return the msg when the petrinet instance responds with the error scenario response messages" in {
+      check(ProcessInstanceProtocol.Uninitialized("someId"))
+      check(ProcessInstanceProtocol.TransitionNotEnabled(123, "some reason"))
 
-      val processProbe = TestProbe()
-      val api = new ProcessApi(processProbe.ref)
-      val fireTransitionCmd = FireTransition(1, ())
+      check(ProcessIndexProtocol.ProcessUninitialized("someProcessId"))
+      check(ProcessIndexProtocol.ReceivePeriodExpired("someProcessId"))
+      check(ProcessIndexProtocol.ProcessDeleted("someProcessId"))
+      check(ProcessIndexProtocol.InvalidEvent("someProcessId", "some message"))
 
-      val source: Source[Any, NotUsed] = api.askAndCollectAll(fireTransitionCmd)
-      val runSource = source.map(_.asInstanceOf[TransitionFired].transitionId).runWith(TestSink.probe)
+      def check(msg: Any) = {
+        val processProbe = TestProbe()
+        val api = new ProcessApi(processProbe.ref)
+        val fireTransitionCmd = FireTransition(1, ())
 
-      processProbe.expectMsg(fireTransitionCmd)
-      processProbe.reply(Uninitialized(""))
+        val source: Source[Any, NotUsed] = api.askAndCollectAll(fireTransitionCmd)
+        val runSource: TestSubscriber.Probe[Any] = source.runWith(TestSink.probe)
 
-      runSource.expectSubscriptionAndComplete()
+        processProbe.expectMsg(fireTransitionCmd)
+        processProbe.reply(msg)
+
+        runSource.request(1).expectNext(msg)
+      }
     }
   }
 }

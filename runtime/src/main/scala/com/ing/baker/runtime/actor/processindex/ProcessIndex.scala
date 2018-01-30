@@ -223,7 +223,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
       //Handles the event, assumes the process is created
       def handleEventWithActor(actorRef: ActorRef) = {
-        val recipeId = index.get(processId) match {
+        index.get(processId) match {
           case Some(actorMetadata) =>
             val recipeId = actorMetadata.recipeId
             getCompiledRecipe(recipeId).foreach { compiledRecipe: CompiledRecipe =>
@@ -248,13 +248,14 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
     case GetProcessState(processId) =>
       context.child(processId) match {
-        case Some(actorRef) => actorRef.forward(ProcessInstanceProtocol.GetState)
+        case None if !index.contains(processId) => sender() ! ProcessUninitialized(processId)
+        case None if isDeleted(index(processId)) => sender() ! ProcessDeleted(processId)
         case None if index.contains(processId) =>
           persist(ActorActivated(processId)) {
             _ =>
               createProcessActor(processId).forward(ProcessInstanceProtocol.GetState)
           }
-        case None => sender() ! ProcessUninitialized(processId)
+        case Some(actorRef) => actorRef.forward(ProcessInstanceProtocol.GetState)
       }
 
     case GetCompiledRecipe(processId) =>

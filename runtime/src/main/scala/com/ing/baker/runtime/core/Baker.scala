@@ -270,7 +270,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     val futureResult = processIndexActor.ask(GetCompiledRecipe(processId))(defaultInquireTimeout)
     Await.result(futureResult, defaultInquireTimeout) match {
       case RecipeFound(compiledRecipe) => getEventsForRecipe(compiledRecipe)
-      case ProcessDeleted(_) => throw new NoSuchProcessException(s"No process found for $processId")
+      case ProcessDeleted(_) => throw new ProcessDeletedException(s"Process $processId is deleted")
       case ProcessUninitialized(_) => throw new NoSuchProcessException(s"No process found for $processId")
       case _ => throw new BakerException("Unknown response received")
     }
@@ -300,6 +300,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
         case instanceState: InstanceState => Future.successful(instanceState.state.asInstanceOf[ProcessState])
         case Uninitialized(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
         case ProcessUninitialized(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
+        case ProcessDeleted(id) => Future.failed(new ProcessDeletedException(s"Process $id is deleted"))
         case msg => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
       }
   }

@@ -25,6 +25,13 @@ class QueuePushingActor(queue: SourceQueueWithComplete[Any], waitForRetries: Boo
   context.setReceiveTimeout(timeout)
 
   override def receive: Receive = {
+    //Messages from the ProcessIndex
+    case msg@ (_:ProcessDeleted | _:ProcessUninitialized | _:ReceivePeriodExpired | _:InvalidEvent) ⇒
+      queue.offer(msg)
+      queue.complete()
+      stopActor()
+
+    //Messages from the ProcessInstances
     case e: TransitionFired ⇒
       queue.offer(e)
 
@@ -40,33 +47,12 @@ class QueuePushingActor(queue: SourceQueueWithComplete[Any], waitForRetries: Boo
       queue.offer(msg)
       stopActorIfDone
 
-    case Uninitialized(_) ⇒
-      queue.complete()
-      stopActor()
-
-    case ProcessUninitialized(_) ⇒
-      queue.complete()
-      stopActor()
-
-    case ProcessDeleted(_) =>
-      queue.complete()
-      stopActor()
-
-    case msg: ReceivePeriodExpired =>
+    case msg@ (_:TransitionNotEnabled | _:Uninitialized) ⇒
       queue.offer(msg)
       queue.complete()
       stopActor()
 
-    case msg: InvalidEvent =>
-      queue.offer(msg)
-      queue.complete()
-      stopActor()
-
-    case msg: TransitionNotEnabled ⇒
-      queue.offer(msg)
-      queue.complete()
-      stopActor()
-
+    //Akka default cases
     case ReceiveTimeout ⇒
       queue.fail(new TimeoutException(s"Timeout, no message received in: $timeout"))
       stopActor()

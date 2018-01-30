@@ -1001,11 +1001,11 @@ class BakerExecutionSpec extends TestRecipeHelper {
       Thread.sleep(retentionPeriod.toMillis + 200)
 
       //Should fail
-      intercept[NoSuchProcessException] {
+      intercept[ProcessDeletedException] {
         baker.getIngredients(processId)
       }
 
-      intercept[NoSuchProcessException] {
+      intercept[ProcessDeletedException] {
         baker.events(processId)
       }
     }
