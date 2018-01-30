@@ -7,8 +7,92 @@ option (scalapb.options) = {
     flat_package: true
 };
 
+// wrapper object for 'any' data
 message SerializedData {
     optional int32 serializer_id = 1;
     optional string manifest = 2;
     optional bytes data = 3;
+}
+
+// -- types
+
+enum PrimitiveType {
+    BOOLEAN = 1;
+    BYTE = 2;
+    SHORT = 3;
+    CHARACTER = 4;
+    INTEGER = 5;
+    LONG = 6;
+    FLOAT = 7;
+    DOUBLE = 8;
+    STRING = 9;
+    BIG_DECIMAL = 10;
+    BIG_INT = 11;
+    BYTE_ARRAY = 12;
+    JODA_DATETIME = 13;
+    JODA_LOCAL_DATE = 14;
+    JODA_LOCAL_DATETIME = 15;
+}
+
+message OptionalType {
+    optional Type entryType = 1;
+}
+
+message ListType {
+    optional Type entryType = 1;
+}
+
+message RecordField {
+    optional string name = 1;
+    optional Type type = 2;
+}
+
+message RecordType {
+    repeated RecordField fields = 1;
+}
+
+message MapType {
+    optional Type valueType = 1;
+}
+
+message EnumType {
+    repeated string options = 1;
+}
+
+message Type {
+    oneof type {
+        PrimitiveType primitive = 1;
+        OptionalType optional = 2;
+        ListType list = 3;
+        RecordType record = 4;
+        MapType map = 5;
+        EnumType enum = 6;
+    }
+}
+
+// --- core baker messages
+
+message Ingredient {
+    optional string name = 1;
+    optional SerializedData data = 2;
+}
+
+message IngredientType {
+    optional string name = 1;
+    optional Type type = 2;
+}
+
+message EventType {
+    optional string name = 1;
+    optional Type type = 2;
+}
+
+message RuntimeEvent {
+    optional string name = 1;
+    repeated Ingredient providedIngredients = 2;
+}
+
+message ProcessState {
+    optional string processId = 1;
+    repeated Ingredient ingredients = 2;
 }

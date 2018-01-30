@@ -1,6 +1,7 @@
 syntax = "proto2";
 
 import "common.proto";
+import "process_instance.proto";
 import "scalapb/scalapb.proto";
 
 option java_package = "com.ing.baker.runtime.actor.messages";
@@ -9,17 +10,24 @@ option (scalapb.options) = {
     flat_package: true
 };
 
-message Ingredient {
-    optional string name = 1;
-    optional SerializedData data = 2;
+message Edge {
+    optional int64 from = 1;
+    optional int64 to = 2;
+    optional int64 weight = 3;
+    optional SerializedData label = 4;
 }
 
-message RuntimeEvent {
-    optional string name = 1;
-    repeated Ingredient providedIngredients = 2;
+message Graph {
+    repeated SerializedData nodes = 1;
+    repeated Edge edges = 2;
 }
 
-message ProcessState {
-    optional string processId = 1;
-    repeated Ingredient ingredients = 2;
+message CompiledRecipe {
+    optional string name = 1;
+    optional Graph petrinet = 2;
+//    repeated ProducedToken initialMarking = 3;
+    repeated EventType sensoryEvents = 4;
+    repeated string validationErrors = 5;
+    optional int64 eventReceivePeriod = 6;
+    optional int64 retentionPeriod = 7;
 }

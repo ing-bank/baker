@@ -22,8 +22,8 @@ message ProducedToken {
 }
 
 message Initialized {
-   repeated ProducedToken initial_marking = 1;
-   optional SerializedData initial_state = 2;
+    repeated ProducedToken initial_marking = 1;
+    optional SerializedData initial_state = 2;
 }
 
 message TransitionFired {

@@ -6,13 +6,13 @@ import akka.actor.ActorSystem
 import com.ing.baker.runtime.actor.serialization.Encryption._
 import org.scalatest.{FunSuite, Matchers}
 
-class AkkaObjectSerializerSpec extends FunSuite with Matchers {
+class ObjectSerializerSpec extends FunSuite with Matchers {
 
   test("serialize/deserialize data with encryption") {
     val someEvent = "some event"
     val actorSystem = ActorSystem()
-    val serializer1 = new AkkaObjectSerializer(actorSystem, new AESEncryption("0123456789123456"))
-    val serializer2 = new AkkaObjectSerializer(actorSystem, new AESEncryption("0123456789123456"))
+    val serializer1 = new ObjectSerializer(actorSystem, new AESEncryption("0123456789123456"))
+    val serializer2 = new ObjectSerializer(actorSystem, new AESEncryption("0123456789123456"))
 
     val serializedData = serializer1.serializeObject(someEvent)
 
@@ -22,8 +22,8 @@ class AkkaObjectSerializerSpec extends FunSuite with Matchers {
   test("cannot deserialize data back if another encryption secret is used") {
     val someEvent = "some event"
     val actorSystem = ActorSystem()
-    val serializer1 = new AkkaObjectSerializer(actorSystem, new AESEncryption("0123456789123456"))
-    val serializer2 = new AkkaObjectSerializer(actorSystem, new AESEncryption("0123456789123459"))
+    val serializer1 = new ObjectSerializer(actorSystem, new AESEncryption("0123456789123456"))
+    val serializer2 = new ObjectSerializer(actorSystem, new AESEncryption("0123456789123459"))
 
     val serializedData = serializer1.serializeObject(someEvent)
 
@@ -36,8 +36,8 @@ class AkkaObjectSerializerSpec extends FunSuite with Matchers {
   test("serialize/deserialize data without encryption") {
     val someEvent = "some event"
     val actorSystem = ActorSystem()
-    val serializer1 = new AkkaObjectSerializer(actorSystem, NoEncryption)
-    val serializer2 = new AkkaObjectSerializer(actorSystem, NoEncryption)
+    val serializer1 = new ObjectSerializer(actorSystem, NoEncryption)
+    val serializer2 = new ObjectSerializer(actorSystem, NoEncryption)
 
     val serializedData = serializer1.serializeObject(someEvent)
 

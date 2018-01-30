@@ -9,7 +9,7 @@ import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime._
 import com.ing.baker.runtime.actor.processinstance.ProcessInstance
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
-import com.ing.baker.runtime.actor.serialization.{AkkaObjectSerializer, Encryption, ProtobufSerialization}
+import com.ing.baker.runtime.actor.serialization.{Encryption, ObjectSerializer, ProtobufSerialization}
 
 object ProcessQuery {
 
@@ -22,7 +22,7 @@ object ProcessQuery {
       placeIdentifier: Identifiable[P[_]],
       transitionIdentifier: Identifiable[T[_, _]]): Source[(Instance[P, T, S], Event), NotUsed] = {
 
-    val serializer = new ProtobufSerialization[P, T, S](new AkkaObjectSerializer(actorSystem, encryption))
+    val serializer = new ProtobufSerialization[P, T, S](new ObjectSerializer(actorSystem, encryption))
 
     val persistentId = ProcessInstance.processId2PersistenceId(processTypeName, processId)
     val src = readJournal.currentEventsByPersistenceId(persistentId, 0, Long.MaxValue)

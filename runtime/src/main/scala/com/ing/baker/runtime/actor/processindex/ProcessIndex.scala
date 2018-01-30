@@ -11,9 +11,9 @@ import com.ing.baker.runtime.actor.processindex.ProcessIndex._
 import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.processinstance.{ProcessInstance, ProcessInstanceProtocol}
 import com.ing.baker.runtime.actor.recipemanager.RecipeManager.{AllRecipes, GetAllRecipes, RecipeFound}
-import com.ing.baker.runtime.actor.serialization.{AkkaObjectSerializer, Encryption}
+import com.ing.baker.runtime.actor.serialization.{Encryption, ObjectSerializer}
 import com.ing.baker.runtime.core.interations.InteractionManager
-import com.ing.baker.runtime.core.{BakerException, ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.petrinet.RecipeRuntime
 import fs2.Strategy
 
@@ -132,7 +132,7 @@ class ProcessIndex(processInstanceStore: ProcessInstanceStore,
       Util.recipePetriNetProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
         ProcessInstance.Settings(
           evaluationStrategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadPool"),
-          serializer = new AkkaObjectSerializer(context.system, configuredEncryption),
+          encryption = configuredEncryption,
           idleTTL = processIdleTimeout))
 
     val processActor = context.actorOf(processActorProps, name = processId)

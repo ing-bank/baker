@@ -5,11 +5,11 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.{EventSourcing, Instance}
 import com.ing.baker.runtime.actor.messages
-import com.ing.baker.runtime.actor.serialization.{ObjectSerializer, ProtobufSerialization}
+import com.ing.baker.runtime.actor.serialization.{Encryption, ObjectSerializer, ProtobufSerialization}
 
 abstract class ProcessInstanceRecovery[P[_], T[_,_], S, E](
      val topology: PetriNet[P[_], T[_,_]],
-     objectSerializer: ObjectSerializer,
+     encryption: Encryption,
      eventSourceFn: T[_,_] => (S => E => S)) extends PersistentActor {
 
   implicit val system = context.system
@@ -18,7 +18,7 @@ abstract class ProcessInstanceRecovery[P[_], T[_,_], S, E](
 
   val eventSource = EventSourcing.apply[P, T, S, E](eventSourceFn)
 
-  val serializer = new ProtobufSerialization[P, T, S](objectSerializer)
+  val serializer = new ProtobufSerialization[P, T, S](new ObjectSerializer(system, encryption))
 
   def onRecoveryCompleted(state: Instance[P, T, S])
 
