@@ -138,6 +138,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @param compiledRecipe The compiled recipe.
     * @return A recipeId
     */
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def addRecipe(compiledRecipe: CompiledRecipe, timeout: FiniteDuration = defaultBakeTimeout): String = {
 
     val implementationErrors = checkIfValidImplementationsProvided(interactionManager, compiledRecipe.interactionTransitions)
@@ -160,6 +161,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @param recipeId
     * @return
     */
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def getRecipe(recipeId: String, timeout: FiniteDuration = defaultInquireTimeout): CompiledRecipe = {
     val futureResult = recipeManager.ask(GetRecipe(recipeId))(timeout)
     Await.result(futureResult, timeout) match {
@@ -173,6 +175,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     *
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def getAllRecipes(timeout: FiniteDuration = defaultInquireTimeout): Map[String, CompiledRecipe] = {
     val futureResult = recipeManager.ask(GetAllRecipes)(timeout).mapTo[AllRecipes]
     Await.result(futureResult, timeout).compiledRecipes
@@ -186,6 +189,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @param timeout
     * @return
     */
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def bake(recipeId: String, processId: String, timeout: FiniteDuration = defaultBakeTimeout): ProcessState =
     Await.result(bakeAsync(recipeId, processId), timeout)
 
@@ -220,6 +224,9 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @param processId The process identifier
     * @param event     The event object
     */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[ProcessDeletedException]("If the process is already deleted")
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def processEvent(processId: String, event: Any, timeout: FiniteDuration = defaultProcessEventTimeout): SensoryEventStatus = {
     processEventAsync(processId, event).confirmCompleted()
   }
@@ -293,6 +300,9 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @param processId The process identifier
     * @return The process state.
     */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[ProcessDeletedException]("If the process is already deleted")
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def getProcessStateAsync(processId: String, timeout: FiniteDuration = defaultInquireTimeout): Future[ProcessState] = {
     processIndexActor
       .ask(GetProcessState(processId))(Timeout.durationToTimeout(timeout))
@@ -312,6 +322,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @return The provided ingredients.
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def getIngredients(processId: String, timeout: FiniteDuration = defaultInquireTimeout): Map[String, Value] =
   getProcessState(processId).ingredients
@@ -330,9 +341,11 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * Returns the visual state (.dot) for a given process.
     *
     * @param processId The process identifier.
-    * @param timeout   How long to wait to retreive the process state.
+    * @param timeout   How long to wait to retrieve the process state.
     * @return A visual (.dot) representation of the process state.
     */
+  @throws[ProcessDeletedException]("If the process is already deleted")
+  @throws[NoSuchProcessException]("If the process is not found")
   def getVisualState(processId: String, timeout: FiniteDuration = defaultInquireTimeout): String = {
     // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
     val futureResult = processIndexActor.ask(GetCompiledRecipe(processId))(timeout)
@@ -342,7 +355,8 @@ class Baker()(implicit val actorSystem: ActorSystem) {
           compiledRecipe,
           eventNames = this.events(processId).map(_.name).toSet,
           ingredientNames = this.getIngredients(processId).keySet)
-      case _ => throw new IllegalArgumentException(s"No process found for ${processId}")
+      case ProcessDeleted(_) => throw new ProcessDeletedException(s"Process $processId is deleted")
+      case Uninitialized(_) => throw new NoSuchProcessException(s"Process $processId is not found")
     }
   }
 
