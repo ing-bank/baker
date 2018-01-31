@@ -8,6 +8,7 @@ import akka.testkit.{TestKit, TestProbe}
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
 import com.ing.baker.recipe.scaladsl.{Recipe, _}
 import org.mockito.Matchers._
@@ -617,10 +618,10 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val recipe = Recipe("FireExhaustedEvent")
         .withSensoryEvent(initialEvent)
-        .withInteractions(interactionOne.withIncrementalBackoffOnFailure(
+        .withInteractions(interactionOne.withFailureStrategy(InteractionFailureStrategy.RetryWithIncrementalBackoff(
           initialDelay = 10 milliseconds,
           maximumRetries = 1,
-          fireExhaustedEvent = true))
+          fireRetryExhaustedEvent = Some(com.ing.baker.recipe.common.defaultEventExhaustedName))))
 
       when(testInteractionOneMock.apply(anyString(), anyString())).thenThrow(new BakerException())
 
@@ -640,10 +641,10 @@ class BakerExecutionSpec extends TestRecipeHelper {
     "not fire the exhausted retry event if the interaction passes" in {
       val recipe = Recipe("NotFireExhaustedEvent")
         .withSensoryEvent(initialEvent)
-        .withInteractions(interactionOne.withIncrementalBackoffOnFailure(
+        .withInteractions(interactionOne.withFailureStrategy(InteractionFailureStrategy.RetryWithIncrementalBackoff(
           initialDelay = 10 milliseconds,
           maximumRetries = 1,
-          fireExhaustedEvent = true))
+          fireRetryExhaustedEvent = Some(com.ing.baker.recipe.common.defaultEventExhaustedName))))
 
       val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
 

@@ -239,43 +239,6 @@ case class InteractionDescriptor private(
   }
 
   /**
-    * This actives the incremental backup retry strategy for this interaction if failure occurs
-    *
-    * @param initialDelay the initial delay before the first retry starts
-    * @param deadline     the deadline for how long the retry should run
-    * @return
-    * @deprecated replace by withFailureStrategy
-    */
-  @Deprecated
-  def withIncrementalBackoffOnFailure(initialDelay: java.time.Duration,
-                                      deadline: java.time.Duration): InteractionDescriptor =
-  this.copy(
-    failureStrategy = Some(
-      InteractionFailureStrategy.RetryWithIncrementalBackoff(
-        initialDelay,
-        deadline)))
-
-  /**
-    * This actives the incremental backup retry strategy for this interaction if failure occurs
-    *
-    * @param initialDelay          the initial delay before the first retry starts
-    * @param deadline              the deadline for how long the retry should run
-    * @param maxTimeBetweenRetries the max time that we will wait between duration
-    * @return
-    * @deprecated replace by withFailureStrategy
-    */
-  @Deprecated
-  def withIncrementalBackoffOnFailure(initialDelay: java.time.Duration,
-                                      deadline: java.time.Duration,
-                                      maxTimeBetweenRetries: java.time.Duration): InteractionDescriptor =
-  this.copy(
-    failureStrategy = Some(
-      InteractionFailureStrategy.RetryWithIncrementalBackoff(
-        initialDelay,
-        deadline,
-        maxTimeBetweenRetries)))
-
-  /**
     * Sets the maximum amount of times this interaction can be fired.
     *
     * @param times maximum amount of times this interaction can be fired
