@@ -656,6 +656,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       Thread.sleep(50)
 
+      //Since the defaultEventExhaustedName is set the retryExhaustedEventName of interactionOne will be picked.
       baker.events(processId).map(_.name) should not contain interactionOne.retryExhaustedEventName
     }
 
