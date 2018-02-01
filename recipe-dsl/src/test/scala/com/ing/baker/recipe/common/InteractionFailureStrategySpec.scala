@@ -1,5 +1,6 @@
 package com.ing.baker.recipe.common
 
+import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.{UntilDeadline, UntilMaximumRetries}
 import com.ing.baker.recipe.common.InteractionFailureStrategy._
 import org.scalatest.{Matchers, WordSpecLike}
 
@@ -19,12 +20,12 @@ class InteractionFailureStrategySpec extends WordSpecLike with Matchers {
       val actual = RetryWithIncrementalBackoff.builder()
         .withInitialDelay(initialDelay)
         .withBackoffFactor(backoffFactor)
-        .withDeadline(deadline)
+        .withUntil(Some(UntilDeadline(deadline)))
         .build()
       val expected = RetryWithIncrementalBackoff.builder()
         .withInitialDelay(initialDelay)
         .withBackoffFactor(backoffFactor)
-        .withMaximumRetries(15)
+        .withUntil(Some(UntilMaximumRetries(15)))
         .build()
 
       actual shouldEqual expected
@@ -36,16 +37,16 @@ class InteractionFailureStrategySpec extends WordSpecLike with Matchers {
       val initialDelay = 1 seconds
       val backoffFactor: Double = 2.0
 
-
       val actual = RetryWithIncrementalBackoff.builder()
         .withInitialDelay(initialDelay)
         .withBackoffFactor(backoffFactor)
-        .withDeadline(deadline)
+        .withUntil(Some(UntilDeadline(deadline)))
         .build()
+
       val expected = RetryWithIncrementalBackoff.builder()
         .withInitialDelay(initialDelay)
         .withBackoffFactor(backoffFactor)
-        .withMaximumRetries(4)
+        .withUntil(Some(UntilMaximumRetries(4)))
         .build()
 
       actual shouldEqual expected
@@ -56,19 +57,20 @@ class InteractionFailureStrategySpec extends WordSpecLike with Matchers {
       val deadline = 22 seconds
       val initialDelay = 1 seconds
       val backoffFactor: Double = 2.0
-      val MaxDurationBetweenRetries = 4 seconds
+      val maxDurationBetweenRetries = 4 seconds
 
       val actual = RetryWithIncrementalBackoff.builder()
         .withInitialDelay(initialDelay)
         .withBackoffFactor(backoffFactor)
-        .withMaxTimeBetweenRetries(MaxDurationBetweenRetries)
-        .withDeadline(deadline)
+        .withMaxTimeBetweenRetries(Some(maxDurationBetweenRetries))
+        .withUntil(Some(UntilDeadline(deadline)))
         .build()
+
       val expected = RetryWithIncrementalBackoff.builder()
         .withInitialDelay(initialDelay)
         .withBackoffFactor(backoffFactor)
-        .withMaxTimeBetweenRetries(MaxDurationBetweenRetries)
-        .withMaximumRetries(6)
+        .withMaxTimeBetweenRetries(Some(maxDurationBetweenRetries))
+        .withUntil(Some(UntilMaximumRetries(6)))
         .build()
 
       actual shouldEqual expected
@@ -82,7 +84,7 @@ class InteractionFailureStrategySpec extends WordSpecLike with Matchers {
       intercept[IllegalArgumentException] {
         RetryWithIncrementalBackoff.builder()
           .withInitialDelay(initialDelay)
-          .withDeadline(deadline)
+          .withUntil(Some(UntilDeadline(deadline)))
           .build()
       }
     }
@@ -95,12 +97,12 @@ class InteractionFailureStrategySpec extends WordSpecLike with Matchers {
 
       val actual = RetryWithIncrementalBackoff.builder()
         .withInitialDelay(initialDelay)
-        .withDeadline(deadline)
+        .withUntil(Some(UntilDeadline(deadline)))
         .build()
       val expected = RetryWithIncrementalBackoff.builder()
         .withInitialDelay(initialDelay)
         .withBackoffFactor(backoffFactor)
-        .withMaximumRetries(1)
+        .withUntil(Some(UntilMaximumRetries(1)))
         .build()
 
       actual shouldEqual expected
@@ -115,12 +117,12 @@ class InteractionFailureStrategySpec extends WordSpecLike with Matchers {
       val actual = RetryWithIncrementalBackoff.builder()
         .withInitialDelay(initialDelay)
         .withBackoffFactor(backoffFactor)
-        .withDeadline(deadline)
+        .withUntil(Some(UntilDeadline(deadline)))
         .build()
       val expected = RetryWithIncrementalBackoff.builder()
         .withInitialDelay(initialDelay)
         .withBackoffFactor(backoffFactor)
-        .withMaximumRetries(3)
+        .withUntil(Some(UntilMaximumRetries(3)))
         .build()
 
       actual shouldEqual expected

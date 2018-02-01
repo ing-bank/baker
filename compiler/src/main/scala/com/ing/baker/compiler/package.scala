@@ -7,8 +7,6 @@ import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{InteractionDescriptor, ProvidesNothing}
 import com.ing.baker.types._
 
-import scala.concurrent.duration.Duration
-
 package object compiler {
 
   def ingredientToCompiledIngredient(ingredient: common.Ingredient): RecordField = RecordField(ingredient.name, ingredient.ingredientType)
@@ -87,7 +85,7 @@ package object compiler {
 
       val (failureStrategy: InteractionFailureStrategy, exhaustedRetryEvent: Option[EventType]) = {
         interactionDescriptor.failureStrategy.getOrElse[common.InteractionFailureStrategy](defaultFailureStrategy) match {
-          case common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout: Duration, backoffFactor: Double, maximumRetries: Int, maxTimeBetweenRetries: Option[Duration], fireRetryExhaustedEvent: Option[String]) =>
+          case common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, maxTimeBetweenRetries, fireRetryExhaustedEvent) =>
             val exhaustedRetryEvent: Option[EventType] = fireRetryExhaustedEvent match {
               case Some(eventName) if eventName == common.defaultEventExhaustedName => Some(EventType(interactionDescriptor.name + exhaustedEventAppend, Seq.empty))
               case Some(eventName) => Some(EventType(eventName, Seq.empty))

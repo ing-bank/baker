@@ -6,7 +6,7 @@ import org.junit.rules.ExpectedException;
 
 import java.time.Duration;
 
-import static com.ing.baker.recipe.common.InteractionFailureStrategy.*;
+import static com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff;
 import static org.junit.Assert.assertEquals;
 
 
@@ -30,7 +30,7 @@ public class InteractionFailureStrategyTest {
     @Test
     public void shouldGiveErrorIfNoInitialDelay() {
         exception.expect(IllegalArgumentException.class);
-        RetryWithIncrementalBackoff retryWithIncrementalBackoff = new InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder()
+        new InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder()
                 .withMaximumRetries(10)
                 .build();
     }
@@ -38,7 +38,7 @@ public class InteractionFailureStrategyTest {
     @Test
     public void shouldGiveErrorIfNoDeadlineOrMaxRetries() {
         exception.expect(IllegalArgumentException.class);
-        RetryWithIncrementalBackoff retryWithIncrementalBackoff = new InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder()
+        new InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder()
                 .withInitialDelay(Duration.ofMillis(100))
                 .build();
     }
