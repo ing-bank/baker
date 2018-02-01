@@ -399,7 +399,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
           actorSystem.terminate()
         }
         implicit val akkaTimeout = Timeout(timeout)
-        Util.handOverShardsAndLeaveCluster(Seq("ProcessIndexActor", "RecipeManager"))
+        Util.handOverShardsAndLeaveCluster(Seq("ProcessIndexActor"))
       case Success(_) =>
         log.debug("ActorSystem not a member of cluster")
         actorSystem.terminate()
