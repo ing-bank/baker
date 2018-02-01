@@ -96,3 +96,27 @@ message ProcessState {
     optional string processId = 1;
     repeated Ingredient ingredients = 2;
 }
+
+// --- petri net
+
+message Edge {
+    optional int32 from = 1;
+    optional int32 to = 2;
+    optional int64 weight = 3;
+    optional SerializedData label = 4;
+}
+
+message Graph {
+    repeated SerializedData nodes = 1;
+    repeated Edge edges = 2;
+}
+
+message CompiledRecipe {
+    optional string name = 1;
+    optional Graph petrinet = 2;
+    //    repeated ProducedToken initialMarking = 3;
+    repeated EventType sensoryEvents = 4;
+    repeated string validationErrors = 5;
+    optional int64 eventReceivePeriod = 6;
+    optional int64 retentionPeriod = 7;
+}

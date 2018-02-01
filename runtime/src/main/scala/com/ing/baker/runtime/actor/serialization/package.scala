@@ -18,9 +18,4 @@ package object serialization {
       }
     def deserialize(implicit objectSerializer: ObjectSerializer): AnyRef = objectSerializer.deserializeObject(serialized.toDomain)
   }
-
-  implicit class PetriNetFns[P, T](pn: PetriNet[P, T]) {
-
-
-  }
 }

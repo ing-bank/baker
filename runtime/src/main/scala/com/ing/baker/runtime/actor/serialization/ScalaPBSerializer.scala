@@ -14,10 +14,21 @@ object ScalaPBSerializer {
 
   private lazy val universeMirror = ru.runtimeMirror(getClass.getClassLoader)
 
-  def scalaPBType(clazz: Class[_ <: AnyRef]): (Class[_ <: AnyRef], GeneratedMessageCompanion[_]) = {
+  def scalaPBTypes(clazz: Class[_ <: AnyRef]): (Class[_ <: AnyRef], GeneratedMessageCompanion[_]) = {
     val classSymbol = universeMirror.classSymbol(clazz)
     val moduleMirror = universeMirror.reflectModule(classSymbol.companion.asModule)
     clazz -> moduleMirror.instance.asInstanceOf[GeneratedMessageCompanion[_] with Message[_]]
+  }
+
+  def getManifests(config: Config): Map[String, (Class[_ <: AnyRef], GeneratedMessageCompanion[_])] = {
+    config.entrySet().asScala.map { entry =>
+
+      val manifest = entry.getKey
+      val className = entry.getValue.unwrapped().asInstanceOf[String]
+      val clazz = Class.forName(className).asInstanceOf[Class[AnyRef]]
+
+      manifest -> scalaPBTypes(clazz)
+    }.toMap
   }
 }
 
@@ -25,14 +36,8 @@ class ScalaPBSerializer(system: ExtendedActorSystem) extends SerializerWithStrin
 
   import ScalaPBSerializer._
 
-  private val manifests: Map[String, (Class[_ <: AnyRef], GeneratedMessageCompanion[_])] = {
-    val config: Config = system.settings.config.getConfig("baker.scalapb.serialization-manifests")
-    config.entrySet().asScala.map { entry =>
-      val manifest = entry.getKey
-      val clazz = Class.forName(entry.getValue.unwrapped().asInstanceOf[String]).asInstanceOf[Class[AnyRef]]
-      manifest -> scalaPBType(clazz)
-    }.toMap
-  }
+  private val manifests: Map[String, (Class[_ <: AnyRef], GeneratedMessageCompanion[_])] =
+    getManifests(system.settings.config.getConfig("baker.scalapb.serialization-manifests"))
 
   //noinspection RedundantCollectionConversion
   private val class2ManifestMap: Map[Class[_ <: AnyRef], String] = manifests.map {
