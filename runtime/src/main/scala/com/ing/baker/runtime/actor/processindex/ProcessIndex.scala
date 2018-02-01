@@ -70,6 +70,8 @@ object ProcessIndex {
     val t: Transition[_, _] = transitionForRuntimeEvent(runtimeEvent, recipe)
     FireTransition(t.id, runtimeEvent)
   }
+
+  private val strategy: Strategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadPool")
 }
 
 class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
@@ -116,7 +118,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
     val processActorProps =
       Util.recipePetriNetProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
         ProcessInstance.Settings(
-          evaluationStrategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadPool"),
+          evaluationStrategy = strategy,
           serializer = new AkkaObjectSerializer(context.system, configuredEncryption),
           idleTTL = processIdleTimeout))
 
