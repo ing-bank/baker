@@ -80,16 +80,9 @@ object ProcessInstanceProtocol {
   /**
    * A response send in case any other command then 'Initialize' is sent to the actor in unitialized state.
    *
-   * @param id The identifier of the unitialized actor.
+   * @param id The identifier of the uninitialized actor.
    */
   case class Uninitialized(id: String) extends Response
-
-  /**
-    * A response send in case when a command is done for a not existing recipe
-    *
-    * @param recipeId The identifier of the recipe
-    */
-  case class RecipeNotAvailable(recipeId: String) extends Response
 
   /**
    * Returned in case a second Initialize is send after a first is processed

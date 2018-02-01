@@ -6,7 +6,7 @@ import akka.actor.ActorRef
 import akka.pattern.ask
 import com.ing.baker.TestRecipeHelper
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.runtime.actor.recipemanager.RecipeManager.{AddRecipe, GetRecipe, NoRecipeFound, RecipeFound}
+import com.ing.baker.runtime.actor.recipemanager.RecipeManagerProtocol._
 import com.ing.baker.runtime.core.BakerExecutionSpec
 import com.typesafe.config.{Config, ConfigFactory}
 import org.slf4j.LoggerFactory
@@ -34,15 +34,15 @@ class RecipeManagerSpec  extends TestRecipeHelper {
       val recipeManager: ActorRef = defaultActorSystem.actorOf(RecipeManager.props(),  s"recipeManager-${UUID.randomUUID().toString}")
 
       val futureAddResult = recipeManager.ask(AddRecipe(compiledRecipe))(timeout)
-      val recipeId = Await.result(futureAddResult, timeout) match {
-        case RecipeManager.AddRecipeResponse(x) => x
+      val recipeId: String = Await.result(futureAddResult, timeout) match {
+        case AddRecipeResponse(x) => x
         case _ => fail("Adding recipe failed")
       }
 
       val futureGetResult = recipeManager.ask(GetRecipe(recipeId))(timeout)
       Await.result(futureGetResult, timeout) match {
         case RecipeFound(recipe) => recipe
-        case NoRecipeFound => fail("Recipe not found")
+        case NoRecipeFound(_) => fail("Recipe not found")
         case _ => fail("Unknown response received")
       }
     }
