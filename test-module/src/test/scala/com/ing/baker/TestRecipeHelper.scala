@@ -7,7 +7,7 @@ import akka.testkit.TestKit
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
+import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy, ProvidesIngredient}
 import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.runtime.core.Baker
 import com.ing.baker.types.{Converters, Value}
@@ -424,7 +424,7 @@ trait TestRecipeHelper
       .withInteractions(
         interactionOne
           .withOverriddenOutputIngredientName("interactionOneIngredient")
-          .withIncrementalBackoffOnFailure(initialDelay = 10 millisecond, maximumRetries = 3),
+          .withFailureStrategy(InteractionFailureStrategy.RetryWithIncrementalBackoff(initialDelay = 10 millisecond, maximumRetries = 3)),
         interactionTwo
           .withOverriddenIngredientName("initialIngredientOld", "initialIngredient"),
         interactionThree
