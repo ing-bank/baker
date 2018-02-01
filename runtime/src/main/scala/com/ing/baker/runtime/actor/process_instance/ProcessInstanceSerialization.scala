@@ -66,11 +66,11 @@ class ProcessInstanceSerialization[P[_], T[_, _], S](serializer: ObjectSerialize
 
   def serializeObject(obj: Any): Option[SerializedData] = {
     (obj != null && !obj.isInstanceOf[Unit]).option {
-      serializer.serializeObject(obj.asInstanceOf[AnyRef]).toProto
+      serializer.serializeObject(obj.asInstanceOf[AnyRef])
     }
   }
 
-  def deserializeObject(obj: SerializedData): AnyRef = serializer.deserializeObject(obj.toDomain)
+  def deserializeObject(obj: SerializedData): AnyRef = serializer.deserializeObject(obj)
 
   private def deserializeProducedMarking(instance: Instance[P, T, S], produced: Seq[protobuf.ProducedToken]): Marking[P] = {
     produced.foldLeft(Marking.empty[P]) {

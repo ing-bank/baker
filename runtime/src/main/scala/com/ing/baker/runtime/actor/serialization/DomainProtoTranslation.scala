@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 import com.ing.baker.il.{CompiledRecipe, EventType}
 import com.ing.baker.il.petrinet.{Node, RecipePetriNet}
 import com.ing.baker.petrinet.api.{Marking, ScalaGraphPetriNet}
+import com.ing.baker.runtime.actor.messages.SerializedData
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.RecipeAdded
 import com.ing.baker.runtime.actor.{messages, recipe_manager}
 import com.ing.baker.runtime.core
@@ -21,16 +22,14 @@ trait DomainProtoTranslation {
   def writeIngredients(ingredients: Seq[(String, Value)]): Seq[messages.Ingredient] = {
     ingredients.map { case (name, value) =>
       val serializedObject = objectSerializer.serializeObject(value)
-      val objectMessage = serializedObject.toProto
-      messages.Ingredient(Some(name), Some(objectMessage))
+      messages.Ingredient(Some(name), Some(serializedObject))
     }
   }
 
   def readIngredients(ingredients: Seq[messages.Ingredient]): Seq[(String, Value)] = {
     ingredients.map {
       case messages.Ingredient(Some(name), Some(data)) =>
-        val deserializedData = data.toDomain
-        val deserializedObject = objectSerializer.deserializeObject(deserializedData).asInstanceOf[Value]
+        val deserializedObject = objectSerializer.deserializeObject(data).asInstanceOf[Value]
         name -> deserializedObject
       case _ => throw new IllegalArgumentException("Missing fields in Protobuf data when deserializing ingredients")
     }
@@ -61,9 +60,9 @@ trait DomainProtoTranslation {
   def toDomain(protobuf: GeneratedMessage): AnyRef = {
     protobuf match {
 
-      case messages.SerializedData(Some(serializerId), Some(manifest), Some(data)) =>
-        val obj = SerializedObject(serializerId, manifest, data.toByteArray)
-        objectSerializer.deserializeObject(obj)
+      case msg: SerializedData =>
+
+        objectSerializer.deserializeObject(msg)
 
       case messages.RuntimeEvent(Some(name), ingredients) =>
         core.RuntimeEvent(name, readIngredients(ingredients))
