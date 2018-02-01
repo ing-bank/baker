@@ -8,8 +8,9 @@ option (scalapb.options) = {
 };
 
 message ActorCreated {
-    optional string processId = 1;
-    optional int64 dateCreated = 2;
+    optional string recipeId = 1;
+    optional string processId = 2;
+    optional int64 dateCreated = 3;
 }
 
 message ActorPassivated {

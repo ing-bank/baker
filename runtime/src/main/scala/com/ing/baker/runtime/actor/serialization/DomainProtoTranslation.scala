@@ -6,8 +6,9 @@ import com.ing.baker.il.{CompiledRecipe, EventType}
 import com.ing.baker.il.petrinet.{Node, RecipePetriNet}
 import com.ing.baker.petrinet.api.{Marking, ScalaGraphPetriNet}
 import com.ing.baker.runtime.actor.messages.SerializedData
+import com.ing.baker.runtime.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.RecipeAdded
-import com.ing.baker.runtime.actor.{messages, recipe_manager}
+import com.ing.baker.runtime.actor.{messages, process_index, recipe_manager}
 import com.ing.baker.runtime.core
 import com.ing.baker.types.Value
 import com.trueaccord.scalapb.GeneratedMessage
@@ -54,6 +55,16 @@ trait DomainProtoTranslation {
         val graph: Option[messages.Graph] = None
 
         messages.CompiledRecipe(Some(name), graph, sensoryEventMsg, validationErrors, eventReceiveMillis, retentionMillis)
+
+      case ProcessIndex.ActorCreated(recipeId, processId, createdDateTime) =>
+
+        process_index.protobuf.ActorCreated(Some(recipeId), Some(processId), Some(createdDateTime))
+      case ProcessIndex.ActorPassivated(processId) =>
+        process_index.protobuf.ActorPassivated(Some(processId))
+      case ProcessIndex.ActorActivated(processId) =>
+        process_index.protobuf.ActorActivated(Some(processId))
+      case ProcessIndex.ActorDeleted(processId) =>
+        process_index.protobuf.ActorDeleted(Some(processId))
     }
   }
 
@@ -104,6 +115,17 @@ trait DomainProtoTranslation {
         val compiledRecipe = toDomain(compiledRecipeMsg).asInstanceOf[CompiledRecipe]
         RecipeAdded(recipeId, compiledRecipe)
 
+      case process_index.protobuf.ActorCreated(Some(recipeId), Some(processId), Some(dateCreated)) =>
+        ProcessIndex.ActorCreated(recipeId, processId, dateCreated)
+
+      case process_index.protobuf.ActorPassivated(Some(processId)) =>
+        ProcessIndex.ActorPassivated(processId)
+
+      case process_index.protobuf.ActorActivated(Some(processId)) =>
+        ProcessIndex.ActorActivated(processId)
+
+      case process_index.protobuf.ActorDeleted(Some(processId)) =>
+        ProcessIndex.ActorDeleted(processId)
 
       case _ => throw new IllegalStateException(s"Unkown protobuf message: $protobuf")
 

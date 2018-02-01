@@ -6,6 +6,7 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.actor.serialization.ScalaPBSerializer.getManifests
 import com.ing.baker.runtime.core
 import com.trueaccord.scalapb.{GeneratedMessage, GeneratedMessageCompanion}
+import com.ing.baker.runtime.actor.process_index.ProcessIndex
 
 class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest with DomainProtoTranslation {
 
@@ -23,9 +24,13 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
 
   override def manifest(o: AnyRef): String = {
     o match {
-      case _: core.RuntimeEvent => "RuntimeEvent"
-      case _: core.ProcessState => "ProcessState"
-      case _: CompiledRecipe    => "CompiledRecipe"
+      case _: core.RuntimeEvent            => "RuntimeEvent"
+      case _: core.ProcessState            => "ProcessState"
+      case _: CompiledRecipe               => "CompiledRecipe"
+      case _: ProcessIndex.ActorCreated    => "ActorCreated"
+      case _: ProcessIndex.ActorPassivated => "ActorPassivated"
+      case _: ProcessIndex.ActorActivated  => "ActorActivated"
+      case _: ProcessIndex.ActorDeleted    => "ActorDeleted"
     }
   }
 
