@@ -127,6 +127,7 @@ object Converters {
     *
     * @return An instance of the java type.
     */
+  @throws[IllegalArgumentException]("If failing to convert to the desired java type")
   def toJava(value: Value, javaType: java.lang.reflect.Type): Any = {
 
     (value, javaType) match {

@@ -5,8 +5,9 @@ import java.util.UUID
 import akka.actor.{ActorLogging, Props}
 import akka.persistence.PersistentActor
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.actor.InternalBakerEvent
 import com.ing.baker.runtime.actor.recipemanager.RecipeManager._
-import com.ing.baker.runtime.actor.{InternalBakerEvent, InternalBakerMessage}
+import com.ing.baker.runtime.actor.recipemanager.RecipeManagerProtocol._
 
 import scala.collection.mutable
 
@@ -14,23 +15,7 @@ object RecipeManager {
 
   def props() = Props(new RecipeManager)
 
-  //Add a recipe
-  case class AddRecipe(compiledRecipe: CompiledRecipe) extends InternalBakerMessage
-
-  case class AddRecipeResponse(recipeId: String) extends InternalBakerMessage
-
-  //Get a specific recipe
-  case class GetRecipe(recipeId: String) extends InternalBakerMessage
-
-  case class RecipeFound(compiledRecipe: CompiledRecipe) extends InternalBakerMessage
-
-  case object NoRecipeFound extends InternalBakerMessage
-
-  //Get alla recipe
-  case object GetAllRecipes extends InternalBakerMessage
-
-  case class AllRecipes(compiledRecipes: Map[String, CompiledRecipe]) extends InternalBakerMessage
-
+  //Events
   //When a recipe is added
   case class RecipeAdded(recipeId: String, compiledRecipe: CompiledRecipe) extends InternalBakerEvent
 }
@@ -64,7 +49,7 @@ class RecipeManager extends PersistentActor with ActorLogging {
     case GetRecipe(recipeId: String) => {
       compiledRecipes.get(recipeId) match {
         case Some(compiledRecipe) => sender() ! RecipeFound(compiledRecipe)
-        case None => sender() ! NoRecipeFound
+        case None => sender() ! NoRecipeFound(recipeId)
       }
     }
     case GetAllRecipes => {

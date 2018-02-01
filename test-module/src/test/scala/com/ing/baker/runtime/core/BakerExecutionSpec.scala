@@ -995,20 +995,20 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       baker.bake(recipeId, processId)
 
-      baker.allProcessMetadata.map(_.processId) should contain(processId)
-
+      //Should not fail
       baker.getIngredients(processId)
+
+      baker.events(processId)
 
       Thread.sleep(retentionPeriod.toMillis + 200)
 
-      baker.allProcessMetadata.map(_.processId) should not contain processId
-
-      intercept[NoSuchProcessException] {
+      //Should fail
+      intercept[ProcessDeletedException] {
         baker.getIngredients(processId)
       }
 
-      intercept[NoSuchProcessException] {
-        baker.events(processId) shouldBe empty
+      intercept[ProcessDeletedException] {
+        baker.events(processId)
       }
     }
 

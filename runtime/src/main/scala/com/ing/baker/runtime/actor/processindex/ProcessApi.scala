@@ -9,7 +9,7 @@ import akka.stream.scaladsl.{Sink, Source, SourceQueueWithComplete}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.Timeout
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
-import com.ing.baker.runtime.actor.processindex.ProcessIndex.{InvalidEvent, ReceivePeriodExpired}
+import com.ing.baker.runtime.actor.processindex.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
 
 import scala.collection.immutable.Seq
@@ -25,6 +25,13 @@ class QueuePushingActor(queue: SourceQueueWithComplete[Any], waitForRetries: Boo
   context.setReceiveTimeout(timeout)
 
   override def receive: Receive = {
+    //Messages from the ProcessIndex
+    case msg@ (_:ProcessDeleted | _:ProcessUninitialized | _:ReceivePeriodExpired | _:InvalidEvent) ⇒
+      queue.offer(msg)
+      queue.complete()
+      stopActor()
+
+    //Messages from the ProcessInstances
     case e: TransitionFired ⇒
       queue.offer(e)
 
@@ -40,25 +47,12 @@ class QueuePushingActor(queue: SourceQueueWithComplete[Any], waitForRetries: Boo
       queue.offer(msg)
       stopActorIfDone
 
-    case Uninitialized(id) ⇒
-      queue.complete()
-      stopActor()
-
-    case msg @ ReceivePeriodExpired =>
+    case msg@ (_:TransitionNotEnabled | _:Uninitialized) ⇒
       queue.offer(msg)
       queue.complete()
       stopActor()
 
-    case msg @ InvalidEvent(message) =>
-      queue.offer(msg)
-      queue.complete()
-      stopActor()
-
-    case msg @ TransitionNotEnabled(id, reason) ⇒
-      queue.offer(msg)
-      queue.complete()
-      stopActor()
-
+    //Akka default cases
     case ReceiveTimeout ⇒
       queue.fail(new TimeoutException(s"Timeout, no message received in: $timeout"))
       stopActor()
