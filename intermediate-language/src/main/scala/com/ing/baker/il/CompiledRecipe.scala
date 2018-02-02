@@ -13,7 +13,7 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 case class CompiledRecipe(name: String,
                           petriNet: RecipePetriNet,
                           initialMarking: Marking[Place],
-                          sensoryEvents: Set[EventType],
+                          sensoryEvents: Set[EventDescriptor],
                           validationErrors: Seq[String] = Seq.empty,
                           eventReceivePeriod: Option[FiniteDuration],
                           retentionPeriod: Option[FiniteDuration]) {
@@ -74,14 +74,14 @@ case class CompiledRecipe(name: String,
     case t: InteractionTransition[_] => t
   }
 
-  val interactionEvents: Set[EventType] = interactionTransitions flatMap(it => it.eventsToFire)
+  val interactionEvents: Set[EventDescriptor] = interactionTransitions flatMap(it => it.eventsToFire)
 
-  val allEvents: Set[EventType] = sensoryEvents ++ interactionEvents
+  val allEvents: Set[EventDescriptor] = sensoryEvents ++ interactionEvents
 
-  def getAllEvents: java.util.Set[EventType] = allEvents.asJava
+  def getAllEvents: java.util.Set[EventDescriptor] = allEvents.asJava
 
   val allIngredients: Set[IngredientDescriptor] = allEvents.flatMap {
-    events => events.ingredientTypes
+    events => events.ingredients
   }
 
   def getAllIngredients: java.util.Set[IngredientDescriptor] = allIngredients.asJava

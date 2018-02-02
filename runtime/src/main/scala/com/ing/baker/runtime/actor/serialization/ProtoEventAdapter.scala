@@ -2,8 +2,9 @@ package com.ing.baker.runtime.actor.serialization
 
 import java.util.concurrent.TimeUnit
 
+import com.ing.baker.il
 import com.ing.baker.il.petrinet.{Node, Place, RecipePetriNet}
-import com.ing.baker.il.{CompiledRecipe, EventType, IngredientDescriptor}
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api.{Marking, ScalaGraphPetriNet}
 import com.ing.baker.runtime.actor.messages.SerializedData
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
@@ -47,23 +48,23 @@ trait ProtoEventAdapter {
         val ingredients = writeIngredients(e.ingredients.toSeq)
         messages.ProcessState(Some(e.processId), ingredients)
 
-      case EventType(name, ingredientTypes) =>
+      case il.EventDescriptor(name, ingredients) =>
 
-        val protoIngredients = ingredientTypes.map(i => toProto(i).asInstanceOf[messages.IngredientType])
+        val protoIngredients = ingredients.map(i => toProto(i).asInstanceOf[messages.IngredientDescriptor])
 
-        messages.EventType(Some(name), protoIngredients)
+        messages.EventDescriptor(Some(name), protoIngredients)
 
-      case IngredientDescriptor(name, t) =>
+      case il.IngredientDescriptor(name, t) =>
 
         val `type` = toProto(t).asInstanceOf[messages.Type]
 
-        messages.IngredientType(Some(name), Some(`type`))
+        messages.IngredientDescriptor(Some(name), Some(`type`))
 
-      case CompiledRecipe(name, petriNet, initialMarking, sensoryEvents, validationErrors, eventReceivePeriod, retentionPeriod) =>
+      case il.CompiledRecipe(name, petriNet, initialMarking, sensoryEvents, validationErrors, eventReceivePeriod, retentionPeriod) =>
 
         val eventReceiveMillis = eventReceivePeriod.map(_.toMillis)
         val retentionMillis = retentionPeriod.map(_.toMillis)
-        val sensoryEventsProto = sensoryEvents.map(e => toProto(e).asInstanceOf[messages.EventType]).toSeq
+        val sensoryEventsProto = sensoryEvents.map(e => toProto(e).asInstanceOf[messages.EventDescriptor]).toSeq
         val graph: Option[messages.Graph] = None
         val producedTokens = Seq.empty
 
@@ -100,10 +101,10 @@ trait ProtoEventAdapter {
 
         val params = protoEdges.map {
 
-          case messages.Edge(Some(from), Some(to), Some(weight), Some(labelMsg)) =>
+          case messages.Edge(Some(from), Some(to), Some(weight), Some(protoLabel)) =>
           val fromNode = nodes.apply(from.toInt)
           val toNode = nodes.apply(to.toInt)
-          val label = toDomain(labelMsg)
+          val label = toDomain(protoLabel)
 
           WLDiEdge[Any, Any](fromNode, toNode)(weight, label)
         }
@@ -114,18 +115,17 @@ trait ProtoEventAdapter {
       case msg: messages.Type =>
         msg.companion
 
-      case messages.EventType(Some(name), ingredients) =>
+      case messages.EventDescriptor(Some(name), protoIngredients) =>
+        il.EventDescriptor(name, protoIngredients.map(e => toDomain(e).asInstanceOf[il.IngredientDescriptor]))
 
-        EventType(name, null)
-
-      case messages.CompiledRecipe(Some(name), Some(graphMsg), producedTokens, sensoryEventMsg, validationErrors, eventReceiveMillis, retentionMillis) =>
+      case messages.CompiledRecipe(Some(name), Some(graphMsg), producedTokens, protoSensoryEvents, validationErrors, eventReceiveMillis, retentionMillis) =>
 
         val eventReceivePeriod = eventReceiveMillis.map(Duration(_, TimeUnit.MILLISECONDS))
         val retentionPeriod = retentionMillis.map(Duration(_, TimeUnit.MILLISECONDS))
 
         val graph = toDomain(graphMsg).asInstanceOf[scalax.collection.immutable.Graph[Node, WLDiEdge]]
         val petriNet: RecipePetriNet = ScalaGraphPetriNet(graph)
-        val sensoryEvents = sensoryEventMsg.map(e => toDomain(e).asInstanceOf[EventType]).toSet
+        val sensoryEvents = protoSensoryEvents.map(e => toDomain(e).asInstanceOf[EventDescriptor]).toSet
         val initialMarking = Marking.empty[Place]
 
         CompiledRecipe(name, petriNet, initialMarking, sensoryEvents, validationErrors, eventReceivePeriod, retentionPeriod)

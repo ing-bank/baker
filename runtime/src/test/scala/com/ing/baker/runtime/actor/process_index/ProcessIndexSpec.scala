@@ -5,7 +5,7 @@ import java.util.UUID
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestDuration, TestKit, TestProbe}
 import com.ing.baker.il.petrinet.{EventTransition, RecipePetriNet, Transition}
-import com.ing.baker.il.{CompiledRecipe, EventType}
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor, IngredientDescriptor}
 import com.ing.baker.petrinet.api.{Marking, ScalaGraphPetriNet}
 import com.ing.baker.runtime.actor.process_index.ProcessIndex.{CreateProcess, HandleEvent, InvalidEvent, ReceivePeriodExpired}
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
@@ -166,7 +166,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val initializeMsg = Initialize(Map.empty, ProcessState(processId, Map.empty))
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
-      val eventType = EventType("Event", Seq.empty)
+      val eventType = EventDescriptor("Event", Seq.empty)
       val transitions: Set[Transition[_,_]] = Set(EventTransition(eventType, true, None))
       when(petrinetMock.transitions).thenReturn(transitions)
 
@@ -197,7 +197,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val initializeMsg = Initialize(Map.empty, ProcessState(processId, Map.empty))
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
-      val eventType = EventType("Event", Seq.empty)
+      val eventType = EventDescriptor("Event", Seq.empty)
       val transitions: Set[Transition[_, _]] = Set(EventTransition(eventType, true, None))
       when(petrinetMock.transitions).thenReturn(transitions)
 
@@ -249,7 +249,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val initializeMsg = Initialize(Map.empty, ProcessState(processId, Map.empty))
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
-      val eventType = EventType("Event", Seq(RecordField("ingredientName", PrimitiveType(classOf[String]))))
+      val eventType = EventDescriptor("Event", Seq(IngredientDescriptor("ingredientName", PrimitiveType(classOf[String]))))
       val transitions: Set[Transition[_,_]] = Set(EventTransition(eventType, true, None))
       when(petrinetMock.transitions).thenReturn(transitions)
 
@@ -281,7 +281,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val initializeMsg = Initialize(Map.empty, ProcessState(processId, Map.empty))
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
-      val eventType = EventType("Event", Seq.empty)
+      val eventType = EventDescriptor("Event", Seq.empty)
       val transitions: Set[Transition[_,_]] = Set(EventTransition(eventType, true, None))
       when(petrinetMock.transitions).thenReturn(transitions)
 

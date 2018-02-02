@@ -4,7 +4,7 @@ import java.lang.reflect.Method
 import java.util.UUID
 
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.il.{EventType, IngredientDescriptor}
+import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
 import com.ing.baker.runtime.core.Baker.eventExtractor
 import com.ing.baker.runtime.core.interations.MethodInteractionImplementation._
 import com.ing.baker.runtime.core.{BakerException, RuntimeEvent}
@@ -81,7 +81,7 @@ object MethodInteractionImplementation {
     // if the interaction directly produces an ingredient
     else if (interaction.providedIngredientEvent.isDefined) {
       val eventToComplyTo = interaction.providedIngredientEvent.get
-      eventForProvidedIngredient(interaction.interactionName, eventToComplyTo.name, output, eventToComplyTo.ingredientTypes.head)
+      eventForProvidedIngredient(interaction.interactionName, eventToComplyTo.name, output, eventToComplyTo.ingredients.head)
     }
     else {
       val runtimeEvent = eventExtractor.extractEvent(output)
@@ -136,7 +136,7 @@ object MethodInteractionImplementation {
 case class MethodInteractionImplementation(override val name: String,
                                            implementation: AnyRef,
                                            method: Method,
-                                           returnType: Set[EventType]) extends InteractionImplementation {
+                                           returnType: Set[EventDescriptor]) extends InteractionImplementation {
 
   val log: Logger = LoggerFactory.getLogger(MethodInteractionImplementation.getClass)
 

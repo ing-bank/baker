@@ -14,8 +14,7 @@ message SerializedData {
     optional bytes data = 3;
 }
 
-// -- types
-
+// Baker type system messages
 enum PrimitiveType {
     BOOLEAN = 1;
     BYTE = 2;
@@ -69,22 +68,13 @@ message Type {
         EnumType enum = 6;
     }
 }
+// END -- Baker type system messages
 
-// --- core baker messages
 
+//  DATA (Runtime messages)
 message Ingredient {
     optional string name = 1;
     optional SerializedData data = 2;
-}
-
-message IngredientType {
-    optional string name = 1;
-    optional Type type = 2;
-}
-
-message EventType {
-    optional string name = 1;
-    repeated IngredientType type = 2;
 }
 
 message RuntimeEvent {
@@ -96,10 +86,32 @@ message ProcessState {
     optional string processId = 1;
     repeated Ingredient ingredients = 2;
 }
+// END DATA
+
+// DESCRIPTORS (Intermediate Language messages)
+message IngredientDescriptor {
+    optional string name = 1;
+    optional Type type = 2;
+}
+
+message EventDescriptor {
+    optional string name = 1;
+    repeated IngredientDescriptor ingredients = 2;
+}
+
+message CompiledRecipe {
+    optional string name = 1;
+    optional Graph petrinet = 2;
+    repeated ProducedToken initialMarking = 3;
+    repeated EventDescriptor sensoryEvents = 4;
+    repeated string validationErrors = 5;
+    optional int64 eventReceivePeriod = 6;
+    optional int64 retentionPeriod = 7;
+}
+// END DESCRIPTORS
 
 
-// --- petri net
-
+// PETRINET
 message Edge {
     optional int32 from = 1;
     optional int32 to = 2;
@@ -112,19 +124,10 @@ message Graph {
     repeated Edge edges = 2;
 }
 
-message CompiledRecipe {
-    optional string name = 1;
-    optional Graph petrinet = 2;
-    repeated ProducedToken initialMarking = 3;
-    repeated EventType sensoryEvents = 4;
-    repeated string validationErrors = 5;
-    optional int64 eventReceivePeriod = 6;
-    optional int64 retentionPeriod = 7;
-}
-
 message ProducedToken {
     optional int64 place_id = 1;
     optional int64 token_id = 2;
     optional int32 count = 3;
     optional SerializedData token_data = 4;
 }
+// END PETRINET
