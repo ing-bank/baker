@@ -57,47 +57,4 @@ package object il {
     val sha256Digest: MessageDigest = MessageDigest.getInstance("SHA-256")
     BigInt(1, sha256Digest.digest(str.getBytes("UTF-8"))).toLong
   }
-
-  def getRawClass(t: Type): Class[_] = t match {
-    case c: Class[_] => c
-    case t: ParameterizedType => getRawClass(t.getRawType)
-    case t@_ => throw new IllegalArgumentException(s"Unsupported type: $t")
-  }
-
-  /**
-    * These are the types that can be auto-boxed by baker.
-    *
-    * Example: If an ingredient of Option[String] is expected, but String is provided
-    * it will be boxed as Option[String]
-    */
-  val autoBoxClasses = Map[Class[_], Any => Any](
-    classOf[Option[_]] -> (unboxed => Some(unboxed)),
-    classOf[Optional[_]] -> (unboxed => java.util.Optional.of(unboxed))
-  )
-
-  /**
-    * other should be assignable to self
-    *
-    * @return
-    */
-  def isAssignableFromType(self: Type, other: Type): Boolean = {
-    self match {
-      case c: Class[_] =>
-        c.isAssignableFrom(getRawClass(other))
-      case p: ParameterizedType =>
-
-        val check = other match {
-          case otherP: ParameterizedType =>
-            isAssignableFromType(p.getRawType, otherP.getRawType) &&
-              p.getActualTypeArguments.zip(otherP.getActualTypeArguments).map {
-                case (a, b) => isAssignableFromType(a, b)
-              }.forall(_ == true)
-          case _ => false
-        }
-        if (!check && autoBoxClasses.contains(getRawClass(p.getRawType)))
-          isAssignableFromType(p.getActualTypeArguments.apply(0), other)
-        else check
-      case _ => false
-    }
-  }
 }
