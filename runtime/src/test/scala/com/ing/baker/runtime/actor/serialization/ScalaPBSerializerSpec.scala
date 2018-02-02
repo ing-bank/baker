@@ -51,12 +51,12 @@ object ScalaPBSerializerSpec {
     count <- Gen.option(intGen)
   } yield protobuf.ConsumedToken(placeId, tokenId, count)
 
-  val producedTokenGen: Gen[protobuf.ProducedToken] = for {
+  val producedTokenGen: Gen[messages.ProducedToken] = for {
     placeId <- Gen.option(longGen)
     tokenId <- Gen.option(longGen)
     count <- Gen.option(intGen)
     tokenData <- Gen.option(serializedDataGen)
-  } yield protobuf.ProducedToken(placeId, tokenId, count, tokenData)
+  } yield messages.ProducedToken(placeId, tokenId, count, tokenData)
 
   val initializedMessageGen: Gen[protobuf.Initialized] = for {
     initialMarking <- Gen.listOf(producedTokenGen)

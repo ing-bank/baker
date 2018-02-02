@@ -14,12 +14,6 @@ message ConsumedToken {
     optional int32 count = 3;
 }
 
-message ProducedToken {
-    optional int64 place_id = 1;
-    optional int64 token_id = 2;
-    optional int32 count = 3;
-    optional SerializedData token_data = 4;
-}
 
 message Initialized {
     repeated ProducedToken initial_marking = 1;

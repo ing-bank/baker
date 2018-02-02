@@ -8,12 +8,9 @@ import com.ing.baker.runtime.core
 import com.trueaccord.scalapb.{GeneratedMessage, GeneratedMessageCompanion}
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
 
-class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest with DomainProtoTranslation {
+class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest with ProtoEventAdapter {
 
-  lazy val objectSerializer = new ObjectSerializer(system) {
-    // We always use the Kryo serializer for now
-     override def getSerializerFor(obj: AnyRef): Serializer = serialization.serializerByIdentity(8675309)
-  }
+  lazy val objectSerializer = new ObjectSerializer(system)
 
   private val manifests: Map[String, (Class[_ <: AnyRef], GeneratedMessageCompanion[_])] =
     getManifests(system.settings.config.getConfig("baker.scalapb.serialization-manifests"))
@@ -27,6 +24,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
       case _: core.RuntimeEvent            => "RuntimeEvent"
       case _: core.ProcessState            => "ProcessState"
       case _: CompiledRecipe               => "CompiledRecipe"
+
       case _: ProcessIndex.ActorCreated    => "ActorCreated"
       case _: ProcessIndex.ActorPassivated => "ActorPassivated"
       case _: ProcessIndex.ActorActivated  => "ActorActivated"
