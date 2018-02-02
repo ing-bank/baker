@@ -16,8 +16,6 @@ package object il {
   val SuccessEventAppend = "Successful"
   val exhaustedEventAppend = "RetryExhausted"
 
-  type IngredientDescriptor = RecordField
-
   implicit class PlaceAdditions(place: Place[_]) {
     def isIngredient: Boolean = place.placeType == IngredientPlace
 

@@ -2,8 +2,8 @@ package com.ing.baker.runtime.actor.serialization
 
 import java.util.concurrent.TimeUnit
 
-import com.ing.baker.il.{CompiledRecipe, EventType}
 import com.ing.baker.il.petrinet.{Node, Place, RecipePetriNet}
+import com.ing.baker.il.{CompiledRecipe, EventType, IngredientDescriptor}
 import com.ing.baker.petrinet.api.{Marking, ScalaGraphPetriNet}
 import com.ing.baker.runtime.actor.messages.SerializedData
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
@@ -47,14 +47,27 @@ trait ProtoEventAdapter {
         val ingredients = writeIngredients(e.ingredients.toSeq)
         messages.ProcessState(Some(e.processId), ingredients)
 
+      case EventType(name, ingredientTypes) =>
+
+        val protoIngredients = ingredientTypes.map(i => toProto(i).asInstanceOf[messages.IngredientType])
+
+        messages.EventType(Some(name), protoIngredients)
+
+      case IngredientDescriptor(name, t) =>
+
+        val `type` = toProto(t).asInstanceOf[messages.Type]
+
+        messages.IngredientType(Some(name), Some(`type`))
+
       case CompiledRecipe(name, petriNet, initialMarking, sensoryEvents, validationErrors, eventReceivePeriod, retentionPeriod) =>
 
         val eventReceiveMillis = eventReceivePeriod.map(_.toMillis)
         val retentionMillis = retentionPeriod.map(_.toMillis)
-        val sensoryEventMsg = sensoryEvents.map(e => toProto(e).asInstanceOf[messages.EventType]).toSeq
+        val sensoryEventsProto = sensoryEvents.map(e => toProto(e).asInstanceOf[messages.EventType]).toSeq
         val graph: Option[messages.Graph] = None
+        val producedTokens = Seq.empty
 
-        messages.CompiledRecipe(Some(name), graph, Seq.empty, sensoryEventMsg, validationErrors, eventReceiveMillis, retentionMillis)
+        messages.CompiledRecipe(Some(name), graph, producedTokens, sensoryEventsProto, validationErrors, eventReceiveMillis, retentionMillis)
 
       case ProcessIndex.ActorCreated(recipeId, processId, createdDateTime) =>
 
@@ -101,7 +114,8 @@ trait ProtoEventAdapter {
       case msg: messages.Type =>
         msg.companion
 
-      case messages.EventType(Some(name), Some(eventType)) =>
+      case messages.EventType(Some(name), ingredients) =>
+
         EventType(name, null)
 
       case messages.CompiledRecipe(Some(name), Some(graphMsg), producedTokens, sensoryEventMsg, validationErrors, eventReceiveMillis, retentionMillis) =>

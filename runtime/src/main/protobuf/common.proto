@@ -84,7 +84,7 @@ message IngredientType {
 
 message EventType {
     optional string name = 1;
-    optional Type type = 2;
+    repeated IngredientType type = 2;
 }
 
 message RuntimeEvent {

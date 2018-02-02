@@ -11,7 +11,7 @@ import scala.concurrent.duration.Duration
 
 package object compiler {
 
-  def ingredientToCompiledIngredient(ingredient: common.Ingredient): RecordField = RecordField(ingredient.name, ingredient.ingredientType)
+  def ingredientToCompiledIngredient(ingredient: common.Ingredient): IngredientDescriptor = IngredientDescriptor(ingredient.name, ingredient.ingredientType)
 
   def eventToCompiledEvent(event: common.Event): EventType = EventType(event.name, event.providedIngredients.map(ingredientToCompiledIngredient))
 
@@ -65,7 +65,7 @@ package object compiler {
             val ingredientName: String =
               if (interactionDescriptor.overriddenOutputIngredientName.nonEmpty) interactionDescriptor.overriddenOutputIngredientName.get
               else outputIngredient.name
-            val event = EventType(interactionDescriptor.name + SuccessEventAppend, Seq(RecordField(ingredientName, outputIngredient.ingredientType)))
+            val event = EventType(interactionDescriptor.name + SuccessEventAppend, Seq(IngredientDescriptor(ingredientName, outputIngredient.ingredientType)))
             val events = Seq(event)
             (events, events, Some(event))
           case common.FiresOneOfEvents(events@_*) =>
@@ -103,7 +103,7 @@ package object compiler {
         eventsToFire = eventsToFire ++ exhaustedRetryEvent,
         originalEvents = originalEvents ++ exhaustedRetryEvent,
         providedIngredientEvent = providedIngredientEvent,
-        requiredIngredients = inputFields.map { case (name, ingredientType) => RecordField(name, ingredientType) },
+        requiredIngredients = inputFields.map { case (name, ingredientType) => IngredientDescriptor(name, ingredientType) },
         interactionName = interactionDescriptor.name,
         originalInteractionName = interactionDescriptor.interaction.name,
         predefinedParameters = predefinedIngredientsWithOptionalsEmpty,

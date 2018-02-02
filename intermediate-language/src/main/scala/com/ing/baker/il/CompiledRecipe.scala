@@ -80,9 +80,9 @@ case class CompiledRecipe(name: String,
 
   def getAllEvents: java.util.Set[EventType] = allEvents.asJava
 
-  val allIngredients: Set[RecordField] = allEvents.flatMap {
+  val allIngredients: Set[IngredientDescriptor] = allEvents.flatMap {
     events => events.ingredientTypes
   }
 
-  def getAllIngredients: java.util.Set[RecordField] = allIngredients.asJava
+  def getAllIngredients: java.util.Set[IngredientDescriptor] = allIngredients.asJava
 }

@@ -3,7 +3,7 @@ package com.ing.baker.runtime.petrinet
 import java.lang.reflect.InvocationTargetException
 
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
-import com.ing.baker.il.processIdName
+import com.ing.baker.il.{IngredientDescriptor, processIdName}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.{TransitionTask, TransitionTaskProvider}
 import com.ing.baker.runtime.core.interations.InteractionManager
@@ -129,7 +129,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
     // map the values to the input places, throw an error if a value is not found
     val interactionInput: Seq[Value] =
       interaction.requiredIngredients.map {
-        case RecordField(name, _) => argumentNamesToValues.getOrElse(name, throwMissingInputException).asInstanceOf[Value]
+        case IngredientDescriptor(name, _) => argumentNamesToValues.getOrElse(name, throwMissingInputException).asInstanceOf[Value]
       }
 
     interactionInput

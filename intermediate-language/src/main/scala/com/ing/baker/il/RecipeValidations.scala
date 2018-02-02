@@ -17,8 +17,8 @@ object RecipeValidations {
 
     // check if the process id argument type is correct
     interactionTransition.requiredIngredients.filter(id => id.name.equals(processIdName)).map {
-      case RecordField(_ , PrimitiveType(javaType)) if javaType == classOf[String] =>
-      case RecordField(_ , incompatibleType) => validationErrors += s"Non supported process id type: ${incompatibleType} on interaction: '$interactionTransition'"
+      case IngredientDescriptor(_ , PrimitiveType(javaType)) if javaType == classOf[String] =>
+      case IngredientDescriptor(_ , incompatibleType) => validationErrors += s"Non supported process id type: ${incompatibleType} on interaction: '$interactionTransition'"
     }
 
     // check if the predefined ingredient is of the expected type
@@ -47,12 +47,12 @@ object RecipeValidations {
   def validateInteractionIngredients(compiledRecipe: CompiledRecipe): Seq[String] = {
     compiledRecipe.interactionTransitions.toSeq.flatMap { t =>
       t.nonProvidedIngredients.flatMap {
-        case (RecordField(name, expectedType)) =>
+        case (IngredientDescriptor(name, expectedType)) =>
           compiledRecipe.allIngredients.find(_.name == name) match {
             case None =>
               Some(
                 s"Ingredient '$name' for interaction '${t.interactionName}' is not provided by any event or interaction")
-            case Some(RecordField(name, ingredientType)) if !expectedType.isAssignableFrom(ingredientType) =>
+            case Some(IngredientDescriptor(name, ingredientType)) if !expectedType.isAssignableFrom(ingredientType) =>
               Some(s"Interaction '$t' expects ingredient '$name:$expectedType', however incompatible type: '$ingredientType' was provided")
             case _ =>
               None
