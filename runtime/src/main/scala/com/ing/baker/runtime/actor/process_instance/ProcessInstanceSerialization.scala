@@ -7,10 +7,9 @@ import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Fatal, RetryWithDelay}
 import com.ing.baker.petrinet.runtime.{EventSourcing, Instance}
 import com.ing.baker.runtime.actor.process_instance.protobuf._
-import com.ing.baker.runtime.actor.messages
-import com.ing.baker.runtime.actor.messages._
 import com.ing.baker.runtime.actor.process_instance.protobuf.FailureStrategy.StrategyType
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization._
+import com.ing.baker.runtime.actor.protobuf.{ProducedToken, SerializedData}
 import com.ing.baker.runtime.actor.serialization.ObjectSerializer
 
 object ProcessInstanceSerialization {
@@ -72,9 +71,9 @@ class ProcessInstanceSerialization[P[_], T[_, _], S](serializer: ObjectSerialize
 
   private def deserializeObject(obj: SerializedData): AnyRef = serializer.deserializeObject(obj)
 
-  private def deserializeProducedMarking(instance: Instance[P, T, S], produced: Seq[messages.ProducedToken]): Marking[P] = {
+  private def deserializeProducedMarking(instance: Instance[P, T, S], produced: Seq[ProducedToken]): Marking[P] = {
     produced.foldLeft(Marking.empty[P]) {
-      case (accumulated, messages.ProducedToken(Some(placeId), Some(_), Some(count), data)) ⇒
+      case (accumulated, ProducedToken(Some(placeId), Some(_), Some(count), data)) ⇒
         val place = instance.process.places.getById(placeId, "place in petrinet").asInstanceOf[P[Any]]
         val value = data.map(deserializeObject).orNull // In the colored petrinet, tokens have values and they could be null.
         accumulated.add(place, value, count)
@@ -82,10 +81,10 @@ class ProcessInstanceSerialization[P[_], T[_, _], S](serializer: ObjectSerialize
     }
   }
 
-  private def serializeProducedMarking(produced: Marking[P]): Seq[messages.ProducedToken] = {
+  private def serializeProducedMarking(produced: Marking[P]): Seq[ProducedToken] = {
     produced.data.toSeq.flatMap {
       case (place, tokens) ⇒ tokens.toSeq.map {
-        case (value, count) ⇒ messages.ProducedToken(
+        case (value, count) ⇒ ProducedToken(
           placeId = Some(placeIdentifier(place).value),
           tokenId = Some(tokenIdentifier(place)(value)),
           count = Some(count),

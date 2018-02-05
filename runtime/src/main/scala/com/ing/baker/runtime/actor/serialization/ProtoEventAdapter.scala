@@ -4,19 +4,18 @@ import java.util.concurrent.TimeUnit
 
 import com.ing.baker.il.petrinet.{Node, RecipePetriNet}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
-import com.ing.baker.petrinet.api.{Marking, ScalaGraphPetriNet}
-import com.ing.baker.runtime.actor.messages._
+import com.ing.baker.petrinet.api.{IdentifiableOps, Marking, ScalaGraphPetriNet}
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization.tokenIdentifier
+import com.ing.baker.runtime.actor.protobuf._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.RecipeAdded
-import com.ing.baker.runtime.actor.{messages, process_index, recipe_manager}
+import com.ing.baker.runtime.actor.{process_index, protobuf, recipe_manager}
 import com.ing.baker.runtime.core
-import com.ing.baker.{il, types}
 import com.ing.baker.types.Value
+import com.ing.baker.{il, types}
 import com.trueaccord.scalapb.GeneratedMessage
 import org.joda.time
-import com.ing.baker.petrinet.api.IdentifiableOps
 
 import scala.concurrent.duration.Duration
 import scalax.collection.edge.WLDiEdge
@@ -25,16 +24,16 @@ trait ProtoEventAdapter {
 
   val objectSerializer: ObjectSerializer
 
-  def writeIngredients(ingredients: Seq[(String, Value)]): Seq[messages.Ingredient] = {
+  def writeIngredients(ingredients: Seq[(String, Value)]): Seq[protobuf.Ingredient] = {
     ingredients.map { case (name, value) =>
       val serializedObject = objectSerializer.serializeObject(value)
-      messages.Ingredient(Some(name), Some(serializedObject))
+      protobuf.Ingredient(Some(name), Some(serializedObject))
     }
   }
 
-  def readIngredients(ingredients: Seq[messages.Ingredient]): Seq[(String, Value)] = {
+  def readIngredients(ingredients: Seq[protobuf.Ingredient]): Seq[(String, Value)] = {
     ingredients.map {
-      case messages.Ingredient(Some(name), Some(data)) =>
+      case protobuf.Ingredient(Some(name), Some(data)) =>
         val deserializedObject = objectSerializer.deserializeObject(data).asInstanceOf[Value]
         name -> deserializedObject
       case _ => throw new IllegalArgumentException("Missing fields in Protobuf data when deserializing ingredients")
@@ -43,28 +42,28 @@ trait ProtoEventAdapter {
 
   def toProto(obj: AnyRef): com.trueaccord.scalapb.GeneratedMessage = {
 
-    def createPrimitive(p: PrimitiveType) = messages.Type(Type.OneofType.Primitive(p))
+    def createPrimitive(p: PrimitiveType) = protobuf.Type(Type.OneofType.Primitive(p))
 
     obj match {
       case e: core.RuntimeEvent =>
         val ingredients = writeIngredients(e.providedIngredients)
-        messages.RuntimeEvent(Some(e.name), ingredients)
+        protobuf.RuntimeEvent(Some(e.name), ingredients)
 
       case e: core.ProcessState =>
         val ingredients = writeIngredients(e.ingredients.toSeq)
-        messages.ProcessState(Some(e.processId), ingredients)
+        protobuf.ProcessState(Some(e.processId), ingredients)
 
       case il.EventDescriptor(name, ingredients) =>
 
-        val protoIngredients = ingredients.map(i => toProto(i).asInstanceOf[messages.IngredientDescriptor])
+        val protoIngredients = ingredients.map(i => toProto(i).asInstanceOf[protobuf.IngredientDescriptor])
 
-        messages.EventDescriptor(Some(name), protoIngredients)
+        protobuf.EventDescriptor(Some(name), protoIngredients)
 
       case il.IngredientDescriptor(name, t) =>
 
-        val `type` = toProto(t).asInstanceOf[messages.Type]
+        val `type` = toProto(t).asInstanceOf[protobuf.Type]
 
-        messages.IngredientDescriptor(Some(name), Some(`type`))
+        protobuf.IngredientDescriptor(Some(name), Some(`type`))
 
       case types.PrimitiveType(clazz) if clazz == classOf[Boolean] =>
         createPrimitive(PrimitiveType.BOOLEAN)
@@ -118,34 +117,34 @@ trait ProtoEventAdapter {
         createPrimitive(PrimitiveType.JODA_LOCAL_DATETIME)
 
       case types.OptionType(entryType) =>
-        val entryProto = toProto(entryType).asInstanceOf[messages.Type]
-        messages.Type(Type.OneofType.Optional(OptionalType(Some(entryProto))))
+        val entryProto = toProto(entryType).asInstanceOf[protobuf.Type]
+        protobuf.Type(Type.OneofType.Optional(OptionalType(Some(entryProto))))
 
       case types.ListType(entryType) =>
-        val entryProto = toProto(entryType).asInstanceOf[messages.Type]
-        messages.Type(Type.OneofType.List(ListType(Some(entryProto))))
+        val entryProto = toProto(entryType).asInstanceOf[protobuf.Type]
+        protobuf.Type(Type.OneofType.List(ListType(Some(entryProto))))
 
       case types.RecordType(fields) =>
 
         val protoFields = fields.map { f =>
-          val protoType = toProto(f.`type`).asInstanceOf[messages.Type]
-          messages.RecordField(Some(f.name), Some(protoType))
+          val protoType = toProto(f.`type`).asInstanceOf[protobuf.Type]
+          protobuf.RecordField(Some(f.name), Some(protoType))
         }
 
-        messages.Type(Type.OneofType.Record(RecordType(protoFields)))
+        protobuf.Type(Type.OneofType.Record(RecordType(protoFields)))
 
       case types.MapType(valueType) =>
-        val valueProto = toProto(valueType).asInstanceOf[messages.Type]
-        messages.Type(Type.OneofType.Map(MapType(Some(valueProto))))
+        val valueProto = toProto(valueType).asInstanceOf[protobuf.Type]
+        protobuf.Type(Type.OneofType.Map(MapType(Some(valueProto))))
 
       case types.EnumType(options) =>
-        messages.Type(Type.OneofType.Enum(EnumType(options.toSeq)))
+        protobuf.Type(Type.OneofType.Enum(EnumType(options.toSeq)))
 
       case il.CompiledRecipe(name, petriNet, initialMarking, sensoryEvents, validationErrors, eventReceivePeriod, retentionPeriod) =>
 
         val eventReceiveMillis = eventReceivePeriod.map(_.toMillis)
         val retentionMillis = retentionPeriod.map(_.toMillis)
-        val sensoryEventsProto = sensoryEvents.map(e => toProto(e).asInstanceOf[messages.EventDescriptor]).toSeq
+        val sensoryEventsProto = sensoryEvents.map(e => toProto(e).asInstanceOf[protobuf.EventDescriptor]).toSeq
 
         val nodeList = petriNet.nodes.toList
 
@@ -159,15 +158,15 @@ trait ProtoEventAdapter {
           val from = nodeList.indexOf(e.source.value)
           val to = nodeList.indexOf(e.target.value)
 
-          messages.Edge(Some(from), Some(to), Some(e.weight), Some(labelSerializedData))
+          Edge(Some(from), Some(to), Some(e.weight), Some(labelSerializedData))
         }
 
-        val graph: Option[messages.Graph] = Some(Graph(protoNodes, protoEdges))
+        val graph: Option[protobuf.Graph] = Some(Graph(protoNodes, protoEdges))
 
         // from InitialMarking to Seq[ProducedToken]
         val producedTokens: Seq[ProducedToken] = initialMarking.data.toSeq.flatMap {
           case (place, tokens) ⇒ tokens.toSeq.map {
-            case (value, count) ⇒ messages.ProducedToken(
+            case (value, count) ⇒ ProducedToken(
               placeId = Option(place.id),
               tokenId = Option(tokenIdentifier(place)(value)),
               count = Option(count),
@@ -176,11 +175,11 @@ trait ProtoEventAdapter {
           }
         }
 
-        messages.CompiledRecipe(Some(name), graph, producedTokens, sensoryEventsProto, validationErrors, eventReceiveMillis, retentionMillis)
+        protobuf.CompiledRecipe(Some(name), graph, producedTokens, sensoryEventsProto, validationErrors, eventReceiveMillis, retentionMillis)
 
       case RecipeManager.RecipeAdded(recipeId, compiledRecipe) =>
 
-        val compiledRecipeProto = toProto(compiledRecipe).asInstanceOf[messages.CompiledRecipe]
+        val compiledRecipeProto = toProto(compiledRecipe).asInstanceOf[protobuf.CompiledRecipe]
 
         recipe_manager.protobuf.RecipeAdded(Some(recipeId), Some(compiledRecipeProto))
 
@@ -196,26 +195,26 @@ trait ProtoEventAdapter {
     }
   }
 
-  def toDomain(protobuf: GeneratedMessage): AnyRef = {
-    protobuf match {
+  def toDomain(serializedMessage: GeneratedMessage): AnyRef = {
+    serializedMessage match {
 
       case msg: SerializedData =>
 
         objectSerializer.deserializeObject(msg)
 
-      case messages.RuntimeEvent(Some(name), ingredients) =>
+      case protobuf.RuntimeEvent(Some(name), ingredients) =>
         core.RuntimeEvent(name, readIngredients(ingredients))
 
-      case messages.ProcessState(Some(id), ingredients) =>
+      case protobuf.ProcessState(Some(id), ingredients) =>
         core.ProcessState(id, readIngredients(ingredients).toMap)
 
-      case messages.Graph(protoNodes, protoEdges) =>
+      case protobuf.Graph(protoNodes, protoEdges) =>
 
         val nodes = protoNodes.map(n => toDomain(n)).toList
 
         val params = protoEdges.map {
 
-          case messages.Edge(Some(from), Some(to), Some(weight), Some(protoLabel)) =>
+          case protobuf.Edge(Some(from), Some(to), Some(weight), Some(protoLabel)) =>
           val fromNode = nodes.apply(from.toInt)
           val toNode = nodes.apply(to.toInt)
           val label = toDomain(protoLabel)
@@ -225,7 +224,7 @@ trait ProtoEventAdapter {
 
         scalax.collection.immutable.Graph(params: _*)
 
-      case msg: messages.Type =>
+      case msg: protobuf.Type =>
 
         msg.`oneofType` match {
           case Type.OneofType.Primitive(PrimitiveType.BOOLEAN) => types.PrimitiveType(classOf[Boolean])
@@ -253,7 +252,7 @@ trait ProtoEventAdapter {
 
           case Type.OneofType.Record(RecordType(fields)) =>
             val mapped = fields.map {
-              case messages.RecordField(Some(name), Some(fieldType)) =>
+              case protobuf.RecordField(Some(name), Some(fieldType)) =>
                 val `type` = toDomain(fieldType).asInstanceOf[types.Type]
                 types.RecordField(name, `type`)
 
@@ -269,14 +268,14 @@ trait ProtoEventAdapter {
           case _ => throw new IllegalStateException(s"Proto message mith missing fields: $msg")
         }
 
-      case messages.EventDescriptor(Some(name), protoIngredients) =>
+      case protobuf.EventDescriptor(Some(name), protoIngredients) =>
         il.EventDescriptor(name, protoIngredients.map(e => toDomain(e).asInstanceOf[il.IngredientDescriptor]))
 
 
-      case messages.IngredientDescriptor(Some(name), Some(ingredientType)) =>
+      case protobuf.IngredientDescriptor(Some(name), Some(ingredientType)) =>
         il.IngredientDescriptor(name, toDomain(ingredientType).asInstanceOf[types.Type])
 
-      case messages.CompiledRecipe(Some(name), Some(graphMsg), producedTokens, protoSensoryEvents, validationErrors, eventReceiveMillis, retentionMillis) =>
+      case protobuf.CompiledRecipe(Some(name), Some(graphMsg), producedTokens, protoSensoryEvents, validationErrors, eventReceiveMillis, retentionMillis) =>
 
         val eventReceivePeriod = eventReceiveMillis.map(Duration(_, TimeUnit.MILLISECONDS))
         val retentionPeriod = retentionMillis.map(Duration(_, TimeUnit.MILLISECONDS))
@@ -285,7 +284,7 @@ trait ProtoEventAdapter {
         val petriNet: RecipePetriNet = ScalaGraphPetriNet(graph)
         val sensoryEvents = protoSensoryEvents.map(e => toDomain(e).asInstanceOf[EventDescriptor]).toSet
         val initialMarking = producedTokens.foldLeft(Marking.empty[il.petrinet.Place]) {
-          case (accumulated, messages.ProducedToken(Some(placeId), Some(_), Some(count), _)) ⇒ // Option[SerializedData] is always None, and we don't use it here.
+          case (accumulated, protobuf.ProducedToken(Some(placeId), Some(_), Some(count), _)) ⇒ // Option[SerializedData] is always None, and we don't use it here.
             val place = petriNet.places.getById(placeId, "place in petrinet").asInstanceOf[il.petrinet.Place[Any]]
             val value = null // Values are not serialized (not interested in) in the serialized recipe
             accumulated.add(place, value, count)
@@ -311,7 +310,7 @@ trait ProtoEventAdapter {
       case process_index.protobuf.ActorDeleted(Some(processId)) =>
         ProcessIndex.ActorDeleted(processId)
 
-      case _ => throw new IllegalStateException(s"Unkown protobuf message: $protobuf")
+      case _ => throw new IllegalStateException(s"Unkown protobuf message: $serializedMessage")
 
     }
   }

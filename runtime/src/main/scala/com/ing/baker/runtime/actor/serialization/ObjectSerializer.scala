@@ -3,7 +3,7 @@ package com.ing.baker.runtime.actor.serialization
 import akka.actor.ActorSystem
 import akka.serialization.{SerializationExtension, Serializer, SerializerWithStringManifest}
 import com.google.protobuf.ByteString
-import com.ing.baker.runtime.actor.messages.SerializedData
+import com.ing.baker.runtime.actor.protobuf.SerializedData
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 
 class ObjectSerializer(system: ActorSystem, encryption: Encryption = NoEncryption) {

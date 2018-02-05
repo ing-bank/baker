@@ -4,12 +4,12 @@ import akka.actor.ActorSystem
 import akka.serialization.SerializationExtension
 import akka.testkit.TestKit
 import com.google.protobuf.ByteString
-import com.ing.baker.runtime.actor.messages
+import com.ing.baker.runtime.actor.process_instance.protobuf.{ConsumedToken, Initialized, TransitionFailed, TransitionFired}
+import com.ing.baker.runtime.actor.protobuf.{ProducedToken, SerializedData}
 import com.trueaccord.scalapb.GeneratedMessage
 import org.scalacheck.{Gen, Prop, Test}
 import org.scalatest.prop.Checkers
 import org.scalatest.{FunSuiteLike, Matchers}
-import com.ing.baker.runtime.actor.process_instance.protobuf
 
 class ScalaPBSerializerSpec extends TestKit(ActorSystem("ScalaPBSerializerSpec"))
   with Checkers with FunSuiteLike with Matchers {
@@ -38,32 +38,32 @@ object ScalaPBSerializerSpec {
   val intGen: Gen[Int] = Gen.chooseNum(Int.MinValue, Int.MaxValue)
   val longGen: Gen[Long] = Gen.chooseNum(Long.MinValue, Long.MaxValue)
 
-  val serializedDataGen: Gen[messages.SerializedData] = for {
+  val serializedDataGen: Gen[SerializedData] = for {
     serializerId <- Gen.option(intGen)
     manifest <- Gen.option(Gen.alphaNumStr)
     // generate an Option[ByteString] using generated list of chars(bytes)
     byteString <- Gen.option(Gen.listOf(Gen.alphaNumChar).map(_.map(_.toByte).toArray).map(ByteString.copyFrom))
-  } yield messages.SerializedData(serializerId, manifest, byteString)
+  } yield SerializedData(serializerId, manifest, byteString)
 
-  val consumedTokenGen: Gen[protobuf.ConsumedToken] = for {
+  val consumedTokenGen: Gen[ConsumedToken] = for {
     placeId <- Gen.option(longGen)
     tokenId <- Gen.option(longGen)
     count <- Gen.option(intGen)
-  } yield protobuf.ConsumedToken(placeId, tokenId, count)
+  } yield ConsumedToken(placeId, tokenId, count)
 
-  val producedTokenGen: Gen[messages.ProducedToken] = for {
+  val producedTokenGen: Gen[ProducedToken] = for {
     placeId <- Gen.option(longGen)
     tokenId <- Gen.option(longGen)
     count <- Gen.option(intGen)
     tokenData <- Gen.option(serializedDataGen)
-  } yield messages.ProducedToken(placeId, tokenId, count, tokenData)
+  } yield ProducedToken(placeId, tokenId, count, tokenData)
 
-  val initializedMessageGen: Gen[protobuf.Initialized] = for {
+  val initializedMessageGen: Gen[Initialized] = for {
     initialMarking <- Gen.listOf(producedTokenGen)
     initialState <- Gen.option(serializedDataGen)
-  } yield protobuf.Initialized(initialMarking, initialState)
+  } yield Initialized(initialMarking, initialState)
 
-  val transitionFiredGen: Gen[protobuf.TransitionFired] = for {
+  val transitionFiredGen: Gen[TransitionFired] = for {
     jobId <- Gen.option(longGen)
     correlationId <- Gen.option(longGen)
     transitionId <- Gen.option(longGen)
@@ -72,9 +72,9 @@ object ScalaPBSerializerSpec {
     consumed <- Gen.listOf(consumedTokenGen)
     produced <- Gen.listOf(producedTokenGen)
     data <- Gen.option(serializedDataGen)
-  } yield protobuf.TransitionFired(jobId, correlationId, transitionId, timeStarted, timeCompleted, consumed, produced, data)
+  } yield TransitionFired(jobId, correlationId, transitionId, timeStarted, timeCompleted, consumed, produced, data)
 
-  val transitionFailedGen: Gen[protobuf.TransitionFailed] = for {
+  val transitionFailedGen: Gen[TransitionFailed] = for {
     jobId <- Gen.option(longGen)
     correlationId <- Gen.option(longGen)
     transitionId <- Gen.option(longGen)
@@ -82,6 +82,6 @@ object ScalaPBSerializerSpec {
     timeCompleted <- Gen.option(longGen)
     inputData <- Gen.option(serializedDataGen)
     failureReason <- Gen.option(Gen.alphaNumStr)
-  } yield protobuf.TransitionFailed(jobId, correlationId, transitionId, timeStarted, timeCompleted, inputData, failureReason)
+  } yield TransitionFailed(jobId, correlationId, transitionId, timeStarted, timeCompleted, inputData, failureReason)
 
 }
