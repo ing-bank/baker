@@ -1,18 +1,22 @@
 package com.ing.baker.runtime.actor.serialization
 
 import java.util.concurrent.TimeUnit
+import java.util.function.DoubleToIntFunction
 
 import com.ing.baker.il
 import com.ing.baker.il.petrinet.{Node, Place, RecipePetriNet}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api.{Marking, ScalaGraphPetriNet}
-import com.ing.baker.runtime.actor.messages.SerializedData
+import com.ing.baker.runtime.actor.messages._
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.RecipeAdded
 import com.ing.baker.runtime.actor.{messages, process_index, recipe_manager}
 import com.ing.baker.runtime.core
 import com.ing.baker.types.Value
+import com.ing.baker.types
 import com.trueaccord.scalapb.GeneratedMessage
+import org.joda.time
 
 import scala.concurrent.duration.Duration
 import scalax.collection.edge.WLDiEdge
@@ -39,6 +43,8 @@ trait ProtoEventAdapter {
 
   def toProto(obj: AnyRef): com.trueaccord.scalapb.GeneratedMessage = {
 
+    def createPrimitive(p: PrimitiveType) = messages.Type(Type.OneofType.Primitive(p))
+
     obj match {
       case e: core.RuntimeEvent =>
         val ingredients = writeIngredients(e.providedIngredients)
@@ -60,15 +66,112 @@ trait ProtoEventAdapter {
 
         messages.IngredientDescriptor(Some(name), Some(`type`))
 
+      case types.PrimitiveType(clazz) if clazz == classOf[Boolean] =>
+        createPrimitive(PrimitiveType.BOOLEAN)
+      case types.PrimitiveType(clazz) if clazz == java.lang.Boolean.TYPE =>
+        createPrimitive(PrimitiveType.BOOLEAN)
+      case types.PrimitiveType(clazz) if clazz == classOf[Byte] =>
+        createPrimitive(PrimitiveType.BYTE)
+      case types.PrimitiveType(clazz) if clazz == java.lang.Byte.TYPE =>
+        createPrimitive(PrimitiveType.BYTE)
+      case types.PrimitiveType(clazz) if clazz == classOf[Short] =>
+        createPrimitive(PrimitiveType.SHORT)
+      case types.PrimitiveType(clazz) if clazz == java.lang.Short.TYPE =>
+        createPrimitive(PrimitiveType.SHORT)
+      case types.PrimitiveType(clazz) if clazz == classOf[Character] =>
+        createPrimitive(PrimitiveType.CHARACTER)
+      case types.PrimitiveType(clazz) if clazz == java.lang.Character.TYPE =>
+        createPrimitive(PrimitiveType.CHARACTER)
+      case types.PrimitiveType(clazz) if clazz == classOf[Integer] =>
+        createPrimitive(PrimitiveType.INTEGER)
+      case types.PrimitiveType(clazz) if clazz == java.lang.Integer.TYPE =>
+        createPrimitive(PrimitiveType.INT)
+      case types.PrimitiveType(clazz) if clazz == classOf[Long] =>
+        createPrimitive(PrimitiveType.LONG)
+      case types.PrimitiveType(clazz) if clazz == java.lang.Long.TYPE =>
+        createPrimitive(PrimitiveType.LONG)
+      case types.PrimitiveType(clazz) if clazz == classOf[Float] =>
+        createPrimitive(PrimitiveType.FLOAT)
+      case types.PrimitiveType(clazz) if clazz == java.lang.Float.TYPE =>
+        createPrimitive(PrimitiveType.FLOAT)
+      case types.PrimitiveType(clazz) if clazz == classOf[Double] =>
+        createPrimitive(PrimitiveType.DOUBLE)
+      case types.PrimitiveType(clazz) if clazz == java.lang.Double.TYPE =>
+        createPrimitive(PrimitiveType.DOUBLE)
+      case types.PrimitiveType(clazz) if clazz == classOf[String] =>
+        createPrimitive(PrimitiveType.STRING)
+      case types.PrimitiveType(clazz) if clazz == classOf[BigDecimal] =>
+        createPrimitive(PrimitiveType.BIG_DECIMAL_SCALA)
+      case types.PrimitiveType(clazz) if clazz == classOf[java.math.BigDecimal] =>
+        createPrimitive(PrimitiveType.BIG_DECIMAL_JAVA)
+      case types.PrimitiveType(clazz) if clazz == classOf[BigInt] =>
+        createPrimitive(PrimitiveType.BIG_INT_SCALA)
+      case types.PrimitiveType(clazz) if clazz == classOf[java.math.BigInteger] =>
+        createPrimitive(PrimitiveType.BIG_INT_JAVA)
+      case types.PrimitiveType(clazz) if clazz == classOf[Array[Byte]] =>
+        createPrimitive(PrimitiveType.BYTE_ARRAY)
+      case types.PrimitiveType(clazz) if clazz == classOf[org.joda.time.DateTime] =>
+        createPrimitive(PrimitiveType.JODA_DATETIME)
+      case types.PrimitiveType(clazz) if clazz == classOf[org.joda.time.LocalDate] =>
+        createPrimitive(PrimitiveType.JODA_LOCAL_DATE)
+      case types.PrimitiveType(clazz) if clazz == classOf[org.joda.time.LocalDateTime] =>
+        createPrimitive(PrimitiveType.JODA_LOCAL_DATETIME)
+
+      case types.OptionType(entryType) =>
+        val entryProto = toProto(entryType).asInstanceOf[messages.Type]
+        messages.Type(Type.OneofType.Optional(OptionalType(Some(entryProto))))
+
+      case types.ListType(entryType) =>
+        val entryProto = toProto(entryType).asInstanceOf[messages.Type]
+        messages.Type(Type.OneofType.List(ListType(Some(entryProto))))
+
+      case types.RecordType(fields) =>
+
+        val protoFields = fields.map { f =>
+          val protoType = toProto(f.`type`).asInstanceOf[messages.Type]
+          messages.RecordField(Some(f.name), Some(protoType))
+        }
+
+        messages.Type(Type.OneofType.Record(RecordType(protoFields)))
+
+      case types.MapType(valueType) =>
+        val valueProto = toProto(valueType).asInstanceOf[messages.Type]
+        messages.Type(Type.OneofType.Map(MapType(Some(valueProto))))
+
+      case types.EnumType(options) =>
+        messages.Type(Type.OneofType.Enum(EnumType(options.toSeq)))
+
       case il.CompiledRecipe(name, petriNet, initialMarking, sensoryEvents, validationErrors, eventReceivePeriod, retentionPeriod) =>
 
         val eventReceiveMillis = eventReceivePeriod.map(_.toMillis)
         val retentionMillis = retentionPeriod.map(_.toMillis)
         val sensoryEventsProto = sensoryEvents.map(e => toProto(e).asInstanceOf[messages.EventDescriptor]).toSeq
-        val graph: Option[messages.Graph] = None
+
+        val nodeList = petriNet.nodes.toList
+
+        val protoNodes = petriNet.nodes.map(n => objectSerializer.serializeObject(n)).toSeq
+        val protoEdges = petriNet.innerGraph.edges.toList.map{ e =>
+
+          val labelSerializedData = objectSerializer.serializeObject(e.label.asInstanceOf[AnyRef])
+
+//          val protoLabel = toProto(e.label.asInstanceOf[AnyRef]).asInstanceOf[SerializedData]
+
+          val from = nodeList.indexOf(e.source.value)
+          val to = nodeList.indexOf(e.target.value)
+
+          messages.Edge(Some(from), Some(to), Some(e.weight), Some(labelSerializedData))
+        }
+
+        val graph: Option[messages.Graph] = Some(Graph(protoNodes, protoEdges))
         val producedTokens = Seq.empty
 
         messages.CompiledRecipe(Some(name), graph, producedTokens, sensoryEventsProto, validationErrors, eventReceiveMillis, retentionMillis)
+
+      case RecipeManager.RecipeAdded(recipeId, compiledRecipe) =>
+
+        val compiledRecipeProto = toProto(compiledRecipe).asInstanceOf[messages.CompiledRecipe]
+
+        recipe_manager.protobuf.RecipeAdded(Some(recipeId), Some(compiledRecipeProto))
 
       case ProcessIndex.ActorCreated(recipeId, processId, createdDateTime) =>
 
@@ -97,7 +200,7 @@ trait ProtoEventAdapter {
 
       case messages.Graph(protoNodes, protoEdges) =>
 
-        val nodes = protoNodes.map(n => toDomain(n))
+        val nodes = protoNodes.map(n => toDomain(n)).toList
 
         val params = protoEdges.map {
 
@@ -111,12 +214,56 @@ trait ProtoEventAdapter {
 
         scalax.collection.immutable.Graph(params: _*)
 
-
       case msg: messages.Type =>
-        msg.companion
+
+        msg.`oneofType` match {
+          case Type.OneofType.Primitive(PrimitiveType.BOOLEAN) => types.PrimitiveType(classOf[Boolean])
+          case Type.OneofType.Primitive(PrimitiveType.BYTE) => types.PrimitiveType(classOf[Byte])
+          case Type.OneofType.Primitive(PrimitiveType.SHORT) => types.PrimitiveType(classOf[Short])
+          case Type.OneofType.Primitive(PrimitiveType.CHARACTER) => types.PrimitiveType(classOf[Character])
+          case Type.OneofType.Primitive(PrimitiveType.INTEGER) => types.PrimitiveType(classOf[Integer])
+          case Type.OneofType.Primitive(PrimitiveType.INT) => types.PrimitiveType(classOf[Int])
+          case Type.OneofType.Primitive(PrimitiveType.LONG) => types.PrimitiveType(classOf[Long])
+          case Type.OneofType.Primitive(PrimitiveType.FLOAT) => types.PrimitiveType(classOf[Float])
+          case Type.OneofType.Primitive(PrimitiveType.DOUBLE) => types.PrimitiveType(classOf[Double])
+          case Type.OneofType.Primitive(PrimitiveType.STRING) => types.PrimitiveType(classOf[String])
+          case Type.OneofType.Primitive(PrimitiveType.BIG_DECIMAL_SCALA) => types.PrimitiveType(classOf[BigDecimal])
+          case Type.OneofType.Primitive(PrimitiveType.BIG_DECIMAL_JAVA) => types.PrimitiveType(classOf[java.math.BigDecimal])
+          case Type.OneofType.Primitive(PrimitiveType.BIG_INT_SCALA) => types.PrimitiveType(classOf[BigInt])
+          case Type.OneofType.Primitive(PrimitiveType.BIG_INT_JAVA) => types.PrimitiveType(classOf[java.math.BigInteger])
+          case Type.OneofType.Primitive(PrimitiveType.BYTE_ARRAY) => types.PrimitiveType(classOf[Array[Byte]])
+          case Type.OneofType.Primitive(PrimitiveType.JODA_DATETIME) => types.PrimitiveType(classOf[time.DateTime])
+          case Type.OneofType.Primitive(PrimitiveType.JODA_LOCAL_DATE) => types.PrimitiveType(classOf[time.LocalDate])
+          case Type.OneofType.Primitive(PrimitiveType.JODA_LOCAL_DATETIME) => types.PrimitiveType(classOf[time.LocalDateTime])
+
+          case Type.OneofType.Optional(OptionalType(Some(value))) => types.OptionType(toDomain(value).asInstanceOf[types.Type])
+
+          case Type.OneofType.List(ListType(Some(value))) => types.ListType(toDomain(value).asInstanceOf[types.Type])
+
+          case Type.OneofType.Record(RecordType(fields)) =>
+            val mapped = fields.map {
+              case messages.RecordField(Some(name), Some(fieldType)) =>
+                val `type` = toDomain(fieldType).asInstanceOf[types.Type]
+                types.RecordField(name, `type`)
+
+              case _ => throw new IllegalStateException(s"Invalid value for record field (properties may not be None)")
+            }
+
+            types.RecordType(mapped)
+
+          case Type.OneofType.Map(MapType(Some(value))) => types.MapType(toDomain(value).asInstanceOf[types.Type])
+
+          case Type.OneofType.Enum(EnumType(options)) => types.EnumType(options.toSet).asInstanceOf[types.Type]
+
+          case _ => throw new IllegalStateException(s"Proto message mith missing fields: $msg")
+        }
 
       case messages.EventDescriptor(Some(name), protoIngredients) =>
         il.EventDescriptor(name, protoIngredients.map(e => toDomain(e).asInstanceOf[il.IngredientDescriptor]))
+
+
+      case messages.IngredientDescriptor(Some(name), Some(ingredientType)) =>
+        il.IngredientDescriptor(name, toDomain(ingredientType).asInstanceOf[types.Type])
 
       case messages.CompiledRecipe(Some(name), Some(graphMsg), producedTokens, protoSensoryEvents, validationErrors, eventReceiveMillis, retentionMillis) =>
 

@@ -21,16 +21,19 @@ enum PrimitiveType {
     SHORT = 3;
     CHARACTER = 4;
     INTEGER = 5;
-    LONG = 6;
-    FLOAT = 7;
-    DOUBLE = 8;
-    STRING = 9;
-    BIG_DECIMAL = 10;
-    BIG_INT = 11;
-    BYTE_ARRAY = 12;
-    JODA_DATETIME = 13;
-    JODA_LOCAL_DATE = 14;
-    JODA_LOCAL_DATETIME = 15;
+    INT = 6;
+    LONG = 7;
+    FLOAT = 8;
+    DOUBLE = 9;
+    STRING = 10;
+    BIG_DECIMAL_SCALA = 11;
+    BIG_DECIMAL_JAVA = 12;
+    BIG_INT_SCALA = 13;
+    BIG_INT_JAVA = 14;
+    BYTE_ARRAY = 15;
+    JODA_DATETIME = 16;
+    JODA_LOCAL_DATE = 17;
+    JODA_LOCAL_DATETIME = 18;
 }
 
 message OptionalType {
@@ -59,7 +62,7 @@ message EnumType {
 }
 
 message Type {
-    oneof type {
+    oneof oneof_type {
         PrimitiveType primitive = 1;
         OptionalType optional = 2;
         ListType list = 3;

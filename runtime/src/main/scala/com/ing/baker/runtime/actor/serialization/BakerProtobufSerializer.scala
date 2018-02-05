@@ -7,6 +7,7 @@ import com.ing.baker.runtime.actor.serialization.ScalaPBSerializer.getManifests
 import com.ing.baker.runtime.core
 import com.trueaccord.scalapb.{GeneratedMessage, GeneratedMessageCompanion}
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
 
 class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest with ProtoEventAdapter {
 
@@ -29,6 +30,8 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
       case _: ProcessIndex.ActorPassivated => "ActorPassivated"
       case _: ProcessIndex.ActorActivated  => "ActorActivated"
       case _: ProcessIndex.ActorDeleted    => "ActorDeleted"
+
+      case _: RecipeManager.RecipeAdded    => "RecipeAdded"
     }
   }
 
