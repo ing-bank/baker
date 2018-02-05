@@ -109,7 +109,7 @@ package object compiler {
         predefinedParameters = predefinedIngredientsWithOptionalsEmpty,
         maximumInteractionCount = interactionDescriptor.maximumInteractionCount,
         failureStrategy = failureStrategy,
-        eventOutputTransformers = interactionDescriptor.eventOutputTransformers.map { case (event, transformer) => eventToCompiledEvent(event) -> transformEventOutputTransformer(transformer) },
+        eventOutputTransformers = interactionDescriptor.eventOutputTransformers.map { case (event, transformer) => event.name -> transformEventOutputTransformer(transformer) },
         actionType = actionType)
     }
   }

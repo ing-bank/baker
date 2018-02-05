@@ -71,6 +71,40 @@ message Type {
         EnumType enum = 6;
     }
 }
+
+message Value {
+    oneof oneof_value {
+        bool NullValue = 1;
+        bool BooleanValue = 2;
+        int32 ByteValue = 3;
+        int32 ShortValue = 4;
+        int32 CharValue = 5;
+        int32 IntValue = 6;
+        int64 LongValue = 7;
+        float FloatValue = 8;
+        double DoubleValue = 9;
+        string StringValue = 10;
+        string BigDecimalValue = 11;
+        string BigIntValue = 12;
+        bytes ByteArrayValue = 13;
+        int64 JodaDatetimeValue = 14;
+        int64 JodaLocaldateValue = 15;
+        int64 JodaLocaldatetimeValue = 16;
+
+        Record RecordValue = 50;
+        List ListValue = 51;
+    }
+}
+
+message Record {
+    map<string, Value> fields = 1;
+}
+
+message List {
+    repeated Value entries = 1;
+}
+
+
 // END -- Baker type system messages
 
 
@@ -167,6 +201,45 @@ message MissingEventTransition {
 
 message MultiFacilitatorTransition {
     optional string label = 1;
+}
+
+message BlockInteraction {}
+message FireEventAfterFailure {
+    optional EventDescriptor event = 1;
+}
+message RetryWithIncrementalBackoff {
+    optional int64 initialTimeout = 1;
+    optional double backoffFactor = 2;
+    optional int32 maximumRetries = 3;
+    optional int64 maxTimeBetweenRetries = 4;
+    optional EventDescriptor retryExhaustedEvent = 5;
+}
+
+message InteractionFailureStrategy {
+    oneof oneof_type {
+        BlockInteraction blockInteraction = 1;
+        FireEventAfterFailure fireEventAfterFailure = 2;
+        RetryWithIncrementalBackoff retryWithIncrementalBackoff = 3;
+    }
+}
+
+message EventOutputTransformer {
+    optional string newEventName = 1;
+    map<string, string> ingredientRenames = 2;
+}
+
+message InteractionTransition {
+    repeated EventDescriptor eventsToFire = 1;
+    repeated EventDescriptor originalEvents = 2;
+    optional EventDescriptor providedIngredientEvent = 3;
+    repeated IngredientDescriptor requiredIngredients = 4;
+    optional string interactionName = 5;
+    optional string originalInteractionName = 6;
+    optional bool isSieve = 7;
+    map<string, Value> predefinedParameters = 8;
+    optional int32 maximumInteractionCount = 9;
+    optional InteractionFailureStrategy failureStrategy = 10;
+    map<string, EventOutputTransformer> eventOutputTransformers = 11;
 }
 
 // END PETRINET

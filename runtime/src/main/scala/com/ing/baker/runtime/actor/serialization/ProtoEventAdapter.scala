@@ -2,18 +2,20 @@ package com.ing.baker.runtime.actor.serialization
 
 import java.util.concurrent.TimeUnit
 
-import com.ing.baker.il.petrinet.Place.{FiringLimiterPlace, IngredientPlace}
+import com.google.protobuf.ByteString
+import com.ing.baker.il.ActionType.SieveAction
 import com.ing.baker.il.petrinet.{Node, RecipePetriNet}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api.{IdentifiableOps, Marking, ScalaGraphPetriNet}
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization.tokenIdentifier
+import com.ing.baker.runtime.actor.protobuf.Value.OneofValue.NullValue
 import com.ing.baker.runtime.actor.protobuf._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.RecipeAdded
 import com.ing.baker.runtime.actor.{process_index, protobuf, recipe_manager}
 import com.ing.baker.runtime.core
-import com.ing.baker.types.Value
+import com.ing.baker.types.{PrimitiveValue, Value}
 import com.ing.baker.{il, types}
 import com.trueaccord.scalapb.GeneratedMessage
 import org.joda.time
@@ -209,6 +211,59 @@ trait ProtoEventAdapter {
 
       case il.petrinet.MultiFacilitatorTransition(label) =>
         protobuf.MultiFacilitatorTransition(Option(label))
+
+      case s: il.failurestrategy.InteractionFailureStrategy => s match {
+        case il.failurestrategy.BlockInteraction => protobuf.BlockInteraction()
+        case il.failurestrategy.FireEventAfterFailure(eventDescriptor) => protobuf.FireEventAfterFailure(Option(toProto(eventDescriptor).asInstanceOf[protobuf.EventDescriptor]))
+        case strategy: il.failurestrategy.RetryWithIncrementalBackoff =>
+          protobuf.RetryWithIncrementalBackoff(
+            initialTimeout = Option(strategy.initialTimeout.toMillis),
+            backoffFactor = Option(strategy.backoffFactor),
+            maximumRetries = Option(strategy.maximumRetries),
+            maxTimeBetweenRetries = strategy.maxTimeBetweenRetries.map(_.toMillis),
+            retryExhaustedEvent = strategy.retryExhaustedEvent.map(toProto(_).asInstanceOf[protobuf.EventDescriptor])
+          )
+      }
+
+      case il.EventOutputTransformer(newEventName, ingredientRenames) =>
+        protobuf.EventOutputTransformer(Option(newEventName), ingredientRenames)
+
+      case t: il.petrinet.InteractionTransition[_] =>
+        protobuf.InteractionTransition(
+          eventsToFire = t.eventsToFire.map(toProto(_).asInstanceOf[protobuf.EventDescriptor]),
+          originalEvents = t.originalEvents.map(toProto(_).asInstanceOf[protobuf.EventDescriptor]),
+          providedIngredientEvent = t.providedIngredientEvent.map(toProto(_).asInstanceOf[protobuf.EventDescriptor]),
+          requiredIngredients = t.requiredIngredients.map(toProto(_).asInstanceOf[protobuf.IngredientDescriptor]),
+          interactionName = Option(t.interactionName),
+          originalInteractionName = Option(t.originalInteractionName),
+          isSieve = Option(t.actionType.equals(SieveAction)),
+          predefinedParameters = t.predefinedParameters.mapValues(toProto(_).asInstanceOf[protobuf.Value]),
+          maximumInteractionCount = t.maximumInteractionCount,
+          failureStrategy = Option(toProto(t.failureStrategy).asInstanceOf[protobuf.InteractionFailureStrategy]),
+          eventOutputTransformers = t.eventOutputTransformers.mapValues(toProto(_).asInstanceOf[protobuf.EventOutputTransformer])
+        )
+
+      case v: types.Value => v match {
+        case types.NullValue => protobuf.Value(protobuf.Value.OneofValue.NullValue(true))
+        case types.PrimitiveValue(value: Boolean) => protobuf.Value(protobuf.Value.OneofValue.BooleanValue(value))
+        case types.PrimitiveValue(value: Byte) => protobuf.Value(protobuf.Value.OneofValue.ByteValue(value))
+        case types.PrimitiveValue(value: Short) => protobuf.Value(protobuf.Value.OneofValue.ShortValue(value))
+        case types.PrimitiveValue(value: Char) => protobuf.Value(protobuf.Value.OneofValue.CharValue(value))
+        case types.PrimitiveValue(value: Int) => protobuf.Value(protobuf.Value.OneofValue.IntValue(value))
+        case types.PrimitiveValue(value: Long) => protobuf.Value(protobuf.Value.OneofValue.LongValue(value))
+        case types.PrimitiveValue(value: Float) => protobuf.Value(protobuf.Value.OneofValue.FloatValue(value))
+        case types.PrimitiveValue(value: Double) => protobuf.Value(protobuf.Value.OneofValue.DoubleValue(value))
+        case types.PrimitiveValue(value: String) => protobuf.Value(protobuf.Value.OneofValue.StringValue(value))
+        case types.PrimitiveValue(value: BigDecimal) => protobuf.Value(protobuf.Value.OneofValue.BigDecimalValue(value.toString()))
+        case types.PrimitiveValue(value: BigInt) => protobuf.Value(protobuf.Value.OneofValue.BigIntValue(value.toString()))
+        case types.PrimitiveValue(value: Array[Byte]) => protobuf.Value(protobuf.Value.OneofValue.ByteArrayValue(ByteString.copyFrom(value)))
+        case types.PrimitiveValue(value: org.joda.time.DateTime) => protobuf.Value(protobuf.Value.OneofValue.JodaDatetimeValue(value.getMillis))
+        case types.PrimitiveValue(value: org.joda.time.LocalDate) => protobuf.Value(protobuf.Value.OneofValue.JodaLocaldateValue(value.toDate.getTime))
+        case types.PrimitiveValue(value: org.joda.time.LocalDateTime) => protobuf.Value(protobuf.Value.OneofValue.JodaLocaldatetimeValue(value.toDate.getTime))
+        case types.PrimitiveValue(value) => throw new IllegalStateException(s"Unknown primitive value: $value")
+        case types.RecordValue(entries) => protobuf.Value(protobuf.Value.OneofValue.RecordValue(protobuf.Record(entries.mapValues(toProto(_).asInstanceOf[protobuf.Value]))))
+        case types.ListValue(entries) => protobuf.Value(protobuf.Value.OneofValue.ListValue(protobuf.List(entries.map(toProto(_).asInstanceOf[protobuf.Value]))))
+      }
     }
   }
 
@@ -282,7 +337,7 @@ trait ProtoEventAdapter {
 
           case Type.OneofType.Enum(EnumType(options)) => types.EnumType(options.toSet).asInstanceOf[types.Type]
 
-          case _ => throw new IllegalStateException(s"Proto message mith missing fields: $msg")
+          case _ => throw new IllegalStateException(s"Proto message with missing fields: $msg")
         }
 
       case protobuf.EventDescriptor(Some(name), protoIngredients) =>

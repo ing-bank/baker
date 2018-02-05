@@ -18,11 +18,11 @@ case class InteractionTransition[I](eventsToFire: Seq[EventDescriptor],
                                     requiredIngredients: Seq[IngredientDescriptor],
                                     interactionName: String,
                                     originalInteractionName: String,
-                                    actionType: ActionType = ActionType.InteractionAction,
+                                    actionType: ActionType = ActionType.InteractionAction, // TODO This can be removed later.
                                     predefinedParameters: Map[String, Value],
                                     maximumInteractionCount: Option[Int],
                                     failureStrategy: InteractionFailureStrategy,
-                                    eventOutputTransformers: Map[EventDescriptor, EventOutputTransformer] = Map.empty)
+                                    eventOutputTransformers: Map[String, EventOutputTransformer] = Map.empty)
 
   extends Transition[Unit, AnyRef] {
 

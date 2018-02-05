@@ -36,7 +36,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
   // function that (optionally) transforms the output event using the event output transformers
   def transformEvent[I](interaction: InteractionTransition[I])(runtimeEvent: RuntimeEvent): RuntimeEvent = {
     interaction.eventOutputTransformers
-      .find { case (eventType, _) => runtimeEvent.isInstanceOfEventType(eventType) } match {
+      .find { case (eventName, _) => runtimeEvent.name.equals(eventName) } match {
       case Some((_, eventOutputTransformer)) =>
         RuntimeEvent(
           eventOutputTransformer.newEventName,
