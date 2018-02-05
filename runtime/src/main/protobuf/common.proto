@@ -157,4 +157,16 @@ message EventTransition {
     optional int32 maxFiringLimit = 3;
 }
 
+message IntermediateTransition {
+    optional string label = 1;
+}
+
+message MissingEventTransition {
+    optional string label = 1;
+}
+
+message MultiFacilitatorTransition {
+    optional string label = 1;
+}
+
 // END PETRINET

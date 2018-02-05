@@ -201,6 +201,14 @@ trait ProtoEventAdapter {
       case il.petrinet.EventTransition(eventDescriptor, isSensoryEvent, maxFiringLimit) =>
         protobuf.EventTransition(Option(toProto(eventDescriptor).asInstanceOf[protobuf.EventDescriptor]), Option(isSensoryEvent), maxFiringLimit)
 
+      case il.petrinet.IntermediateTransition(label) =>
+        protobuf.IntermediateTransition(Option(label))
+
+      case il.petrinet.MissingEventTransition(label) =>
+        protobuf.MissingEventTransition(Option(label))
+
+      case il.petrinet.MultiFacilitatorTransition(label) =>
+        protobuf.MultiFacilitatorTransition(Option(label))
     }
   }
 
@@ -324,6 +332,15 @@ trait ProtoEventAdapter {
 
       case protobuf.EventTransition(Some(eventDescriptor), Some(isSensoryEvent), maxFiringLimit) =>
         il.petrinet.EventTransition(toDomain(eventDescriptor).asInstanceOf[il.EventDescriptor], isSensoryEvent, maxFiringLimit)
+
+      case protobuf.IntermediateTransition(Some(label)) =>
+        il.petrinet.IntermediateTransition(label)
+
+      case protobuf.MissingEventTransition(Some(label)) =>
+        il.petrinet.MissingEventTransition(label)
+
+      case protobuf.MultiFacilitatorTransition(Some(label)) =>
+        il.petrinet.MultiFacilitatorTransition(label)
 
       case _ => throw new IllegalStateException(s"Unknown protobuf message: $serializedMessage")
 

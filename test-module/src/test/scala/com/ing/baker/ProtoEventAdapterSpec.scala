@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
-import com.ing.baker.il.petrinet.{EventTransition, Place}
+import com.ing.baker.il.petrinet.{EventTransition, IntermediateTransition, Place}
 import com.ing.baker.il.petrinet.Place.IngredientPlace
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.RecipeAdded
 import com.ing.baker.runtime.actor.serialization.{ObjectSerializer, ProtoEventAdapter}
@@ -31,9 +31,14 @@ class ProtoEventAdapterSpec extends TestKit(ActorSystem("BakerProtobufSerializer
     domainObject shouldBe eventAdapter.toDomain(eventAdapter.toProto(domainObject))
   }
 
-  test("should serialize Transition") {
+  test("should serialize EventTransition") {
     val ingredients = Seq(IngredientDescriptor("ingredient1", PrimitiveType(classOf[String])), IngredientDescriptor("ingredient2", PrimitiveType(classOf[Int])))
     val domainObject = EventTransition(EventDescriptor("someEvent", ingredients), maxFiringLimit = Some(3))
+    domainObject shouldBe eventAdapter.toDomain(eventAdapter.toProto(domainObject))
+  }
+
+  test("should serialize IntermediateTransition") {
+    val domainObject = IntermediateTransition("someCustomLabel")
     domainObject shouldBe eventAdapter.toDomain(eventAdapter.toProto(domainObject))
   }
 
