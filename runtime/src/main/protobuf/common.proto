@@ -133,4 +133,21 @@ message ProducedToken {
     optional int32 count = 3;
     optional SerializedData token_data = 4;
 }
+
+enum PlaceType {
+    IngredientPlace = 1;
+    InteractionEventOutputPlace = 2;
+    FiringLimiterPlace = 3;
+    EventPreconditionPlace = 4;
+    EventOrPreconditionPlace = 5;
+    IntermediatePlace = 6;
+    EmptyEventIngredientPlace = 7;
+    MultiTransitionPlace = 8;
+}
+
+message Place {
+    optional string label = 1;
+    optional PlaceType placeType = 2;
+    optional int32 firingLimiterPlaceMaxLimit = 3;
+}
 // END PETRINET

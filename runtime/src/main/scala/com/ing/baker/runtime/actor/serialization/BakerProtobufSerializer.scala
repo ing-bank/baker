@@ -1,13 +1,13 @@
 package com.ing.baker.runtime.actor.serialization
 
 import akka.actor.ExtendedActorSystem
-import akka.serialization.{Serializer, SerializerWithStringManifest}
+import akka.serialization.SerializerWithStringManifest
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.actor.process_index.ProcessIndex
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
 import com.ing.baker.runtime.actor.serialization.ScalaPBSerializer.getManifests
 import com.ing.baker.runtime.core
 import com.trueaccord.scalapb.{GeneratedMessage, GeneratedMessageCompanion}
-import com.ing.baker.runtime.actor.process_index.ProcessIndex
-import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
 
 class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest with ProtoEventAdapter {
 

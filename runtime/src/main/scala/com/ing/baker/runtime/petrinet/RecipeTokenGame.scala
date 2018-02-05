@@ -10,7 +10,7 @@ class RecipeTokenGame extends TokenGame[Place, Transition] {
 
     marking.get(p) match {
       case None         ⇒ MultiSet.empty
-      case Some(tokens) ⇒ tokens.filter { case (e, count) ⇒ edge.filter(e) }
+      case Some(tokens) ⇒ tokens.filter { case (e, count) ⇒ edge.isAllowed(e) }
     }
   }
 }

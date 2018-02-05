@@ -2,6 +2,7 @@ package com.ing.baker.runtime.actor.serialization
 
 import java.util.concurrent.TimeUnit
 
+import com.ing.baker.il.petrinet.Place.{FiringLimiterPlace, IngredientPlace}
 import com.ing.baker.il.petrinet.{Node, RecipePetriNet}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api.{IdentifiableOps, Marking, ScalaGraphPetriNet}
@@ -158,7 +159,7 @@ trait ProtoEventAdapter {
           val from = nodeList.indexOf(e.source.value)
           val to = nodeList.indexOf(e.target.value)
 
-          Edge(Some(from), Some(to), Some(e.weight), Some(labelSerializedData))
+          Edge(Option(from), Option(to), Option(e.weight), Option(labelSerializedData))
         }
 
         val graph: Option[protobuf.Graph] = Some(Graph(protoNodes, protoEdges))
@@ -175,23 +176,28 @@ trait ProtoEventAdapter {
           }
         }
 
-        protobuf.CompiledRecipe(Some(name), graph, producedTokens, sensoryEventsProto, validationErrors, eventReceiveMillis, retentionMillis)
+        protobuf.CompiledRecipe(Option(name), graph, producedTokens, sensoryEventsProto, validationErrors, eventReceiveMillis, retentionMillis)
 
       case RecipeManager.RecipeAdded(recipeId, compiledRecipe) =>
-
         val compiledRecipeProto = toProto(compiledRecipe).asInstanceOf[protobuf.CompiledRecipe]
-
-        recipe_manager.protobuf.RecipeAdded(Some(recipeId), Some(compiledRecipeProto))
+        recipe_manager.protobuf.RecipeAdded(Option(recipeId), Option(compiledRecipeProto))
 
       case ProcessIndex.ActorCreated(recipeId, processId, createdDateTime) =>
+        process_index.protobuf.ActorCreated(Option(recipeId), Option(processId), Option(createdDateTime))
 
-        process_index.protobuf.ActorCreated(Some(recipeId), Some(processId), Some(createdDateTime))
       case ProcessIndex.ActorPassivated(processId) =>
-        process_index.protobuf.ActorPassivated(Some(processId))
+        process_index.protobuf.ActorPassivated(Option(processId))
+
       case ProcessIndex.ActorActivated(processId) =>
-        process_index.protobuf.ActorActivated(Some(processId))
+        process_index.protobuf.ActorActivated(Option(processId))
+
       case ProcessIndex.ActorDeleted(processId) =>
-        process_index.protobuf.ActorDeleted(Some(processId))
+        process_index.protobuf.ActorDeleted(Option(processId))
+
+      case il.petrinet.Place(label, placeType) =>
+        val (protoPlaceType, limit) = toProtoPlaceType(placeType)
+        protobuf.Place(Option(label), protoPlaceType, limit)
+
     }
   }
 
@@ -310,8 +316,35 @@ trait ProtoEventAdapter {
       case process_index.protobuf.ActorDeleted(Some(processId)) =>
         ProcessIndex.ActorDeleted(processId)
 
-      case _ => throw new IllegalStateException(s"Unkown protobuf message: $serializedMessage")
+      case protobuf.Place(Some(label), Some(placeType), limit) =>
+        il.petrinet.Place(label, toDomainPlaceType(placeType, limit))
+
+      case _ => throw new IllegalStateException(s"Unknown protobuf message: $serializedMessage")
 
     }
   }
+
+  private def toProtoPlaceType(placeType: il.petrinet.Place.PlaceType): (Option[protobuf.PlaceType], Option[Int]) = placeType match {
+    case il.petrinet.Place.IngredientPlace => Option(protobuf.PlaceType.IngredientPlace) -> None
+    case il.petrinet.Place.InteractionEventOutputPlace => Option(protobuf.PlaceType.InteractionEventOutputPlace) -> None
+    case il.petrinet.Place.FiringLimiterPlace(limit) => Option(protobuf.PlaceType.FiringLimiterPlace) -> Option(limit)
+    case il.petrinet.Place.EventPreconditionPlace => Option(protobuf.PlaceType.EventPreconditionPlace) -> None
+    case il.petrinet.Place.EventOrPreconditionPlace => Option(protobuf.PlaceType.EventOrPreconditionPlace) -> None
+    case il.petrinet.Place.IntermediatePlace => Option(protobuf.PlaceType.IntermediatePlace) -> None
+    case il.petrinet.Place.EmptyEventIngredientPlace => Option(protobuf.PlaceType.EmptyEventIngredientPlace) -> None
+    case il.petrinet.Place.MultiTransitionPlace => Option(protobuf.PlaceType.MultiTransitionPlace) -> None
+  }
+
+  private def toDomainPlaceType(protoPlaceType: protobuf.PlaceType, limit: Option[Int]) = protoPlaceType match {
+    case protobuf.PlaceType.IngredientPlace => il.petrinet.Place.IngredientPlace
+    case protobuf.PlaceType.InteractionEventOutputPlace => il.petrinet.Place.InteractionEventOutputPlace
+    case protobuf.PlaceType.FiringLimiterPlace => il.petrinet.Place.FiringLimiterPlace(limit.getOrElse(throw new IllegalStateException("Cannot deserialize FiringLimiterPlace without a limit")))
+    case protobuf.PlaceType.EventPreconditionPlace => il.petrinet.Place.EventPreconditionPlace
+    case protobuf.PlaceType.EventOrPreconditionPlace => il.petrinet.Place.EventOrPreconditionPlace
+    case protobuf.PlaceType.IntermediatePlace => il.petrinet.Place.IntermediatePlace
+    case protobuf.PlaceType.EmptyEventIngredientPlace => il.petrinet.Place.EmptyEventIngredientPlace
+    case protobuf.PlaceType.MultiTransitionPlace => il.petrinet.Place.MultiTransitionPlace
+    case _ => throw new IllegalStateException(s"Unknown protobuf message: $protoPlaceType")
+  }
+
 }
