@@ -1,22 +1,22 @@
 package com.ing.baker.runtime.actor.serialization
 
 import java.util.concurrent.TimeUnit
-import java.util.function.DoubleToIntFunction
 
-import com.ing.baker.il
-import com.ing.baker.il.petrinet.{Node, Place, RecipePetriNet}
+import com.ing.baker.il.petrinet.{Node, RecipePetriNet}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api.{Marking, ScalaGraphPetriNet}
 import com.ing.baker.runtime.actor.messages._
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization.tokenIdentifier
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.RecipeAdded
 import com.ing.baker.runtime.actor.{messages, process_index, recipe_manager}
 import com.ing.baker.runtime.core
+import com.ing.baker.{il, types}
 import com.ing.baker.types.Value
-import com.ing.baker.types
 import com.trueaccord.scalapb.GeneratedMessage
 import org.joda.time
+import com.ing.baker.petrinet.api.IdentifiableOps
 
 import scala.concurrent.duration.Duration
 import scalax.collection.edge.WLDiEdge
@@ -149,7 +149,7 @@ trait ProtoEventAdapter {
 
         val nodeList = petriNet.nodes.toList
 
-        val protoNodes = petriNet.nodes.map(n => objectSerializer.serializeObject(n)).toSeq
+        val protoNodes = nodeList.map(n => objectSerializer.serializeObject(n)).toSeq
         val protoEdges = petriNet.innerGraph.edges.toList.map{ e =>
 
           val labelSerializedData = objectSerializer.serializeObject(e.label.asInstanceOf[AnyRef])
@@ -163,7 +163,18 @@ trait ProtoEventAdapter {
         }
 
         val graph: Option[messages.Graph] = Some(Graph(protoNodes, protoEdges))
-        val producedTokens = Seq.empty
+
+        // from InitialMarking to Seq[ProducedToken]
+        val producedTokens: Seq[ProducedToken] = initialMarking.data.toSeq.flatMap {
+          case (place, tokens) ⇒ tokens.toSeq.map {
+            case (value, count) ⇒ messages.ProducedToken(
+              placeId = Option(place.id),
+              tokenId = Option(tokenIdentifier(place)(value)),
+              count = Option(count),
+              tokenData = Option(objectSerializer.serializeObject(value.asInstanceOf[AnyRef]))
+            )
+          }
+        }
 
         messages.CompiledRecipe(Some(name), graph, producedTokens, sensoryEventsProto, validationErrors, eventReceiveMillis, retentionMillis)
 
@@ -273,7 +284,13 @@ trait ProtoEventAdapter {
         val graph = toDomain(graphMsg).asInstanceOf[scalax.collection.immutable.Graph[Node, WLDiEdge]]
         val petriNet: RecipePetriNet = ScalaGraphPetriNet(graph)
         val sensoryEvents = protoSensoryEvents.map(e => toDomain(e).asInstanceOf[EventDescriptor]).toSet
-        val initialMarking = Marking.empty[Place]
+        val initialMarking = producedTokens.foldLeft(Marking.empty[il.petrinet.Place]) {
+          case (accumulated, messages.ProducedToken(Some(placeId), Some(_), Some(count), _)) ⇒ // Option[SerializedData] is always None, and we don't use it here.
+            val place = petriNet.places.getById(placeId, "place in petrinet").asInstanceOf[il.petrinet.Place[Any]]
+            val value = null // Values are not serialized (not interested in) in the serialized recipe
+            accumulated.add(place, value, count)
+          case _ ⇒ throw new IllegalStateException("Missing data in persisted ProducedToken")
+        }
 
         CompiledRecipe(name, petriNet, initialMarking, sensoryEvents, validationErrors, eventReceivePeriod, retentionPeriod)
 

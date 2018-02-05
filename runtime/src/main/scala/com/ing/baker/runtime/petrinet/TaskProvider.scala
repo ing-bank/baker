@@ -8,7 +8,7 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.{TransitionTask, TransitionTaskProvider}
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
-import com.ing.baker.types.{PrimitiveValue, RecordField, Value}
+import com.ing.baker.types.{PrimitiveValue, Value}
 import fs2.Task
 import org.slf4j.{LoggerFactory, MDC}
 
@@ -17,8 +17,6 @@ import scala.util.Try
 class TaskProvider(recipeName: String, interactionManager: InteractionManager) extends TransitionTaskProvider[ProcessState, Place, Transition] {
 
   val log = LoggerFactory.getLogger(classOf[TaskProvider])
-
-  def toMarking[P[_]](mset: MultiSet[P[_]]): Marking[P] = mset.map { case (p, n) ⇒ p -> Map(() -> n) }.toMarking
 
   override def apply[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _]], t: Transition[Input, Output]): TransitionTask[Place, Input, Output, ProcessState] = {
     t match {

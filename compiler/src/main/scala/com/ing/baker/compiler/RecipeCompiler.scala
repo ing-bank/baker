@@ -34,7 +34,7 @@ object RecipeCompiler {
 
     interaction.requiredEvents.toSeq.map { eventName =>
       // a new `Place` generated for each AND events
-      val eventPreconditionPlace = createPlace(label = s"${eventName}-${interaction.name}", placeType = EventPreconditionPlace)
+      val eventPreconditionPlace = createPlace(label = s"$eventName-${interaction.name}", placeType = EventPreconditionPlace)
 
       buildEventPreconditionArcs(eventName,
         eventPreconditionPlace,
@@ -280,7 +280,7 @@ object RecipeCompiler {
     val petriNet: ScalaGraphPetriNet[Place[_], Transition[_, _]] = new ScalaGraphPetriNet(Graph(arcs: _*))
 
     val initialMarking: Marking[Place] = petriNet.places.collect {
-      case p@Place(_, FiringLimiterPlace(n)) => p -> Map(() -> n)
+      case p@Place(_, FiringLimiterPlace(n)) => p -> Map((null, n))
     }.toMarking
 
     val compiledRecipe = CompiledRecipe(

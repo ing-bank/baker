@@ -18,38 +18,8 @@ class ProtoEventAdapterSpec extends TestKit(ActorSystem("BakerProtobufSerializer
     val recipe = Examples.open_account.openAccountRecipe
     val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
 
-    val protoMessage = eventAdapter.toProto(RecipeAdded("recipeId", compiledRecipe))
-    val asDomain = eventAdapter.toDomain(protoMessage)
-
-    true
+    val domainObject = RecipeAdded("recipeId", compiledRecipe)
+    domainObject shouldBe eventAdapter.toDomain(eventAdapter.toProto(domainObject))
   }
 
 }
-
-
-/*
-
-recipeId: "recipeId"
-compiledRecipe {
-  name: "OpenAccountRecipe"
-  sensoryEvents {
-    name: "TermsAndConditionsAccepted"
-  }
-  sensoryEvents {
-    name: "individualInformationSubmitted"
-    ingredients {
-      name: "name"
-      type {
-        primitive: STRING
-      }
-    }
-    ingredients {
-      name: "address"
-      type {
-        primitive: STRING
-      }
-    }
-  }
-}
-
- */

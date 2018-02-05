@@ -36,7 +36,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
   }
 
   def pbTypeForManifest(manifest: String): GeneratedMessageCompanion[_] = manifests.get(manifest) match {
-    case None                 => throw new IllegalArgumentException(s"Unkown manifest: $manifest")
+    case None                 => throw new IllegalArgumentException(s"Unknown manifest: $manifest")
     case Some((_, companion)) => companion
   }
 

@@ -70,13 +70,13 @@ class ProcessInstanceSerialization[P[_], T[_, _], S](serializer: ObjectSerialize
     }
   }
 
-  def deserializeObject(obj: SerializedData): AnyRef = serializer.deserializeObject(obj)
+  private def deserializeObject(obj: SerializedData): AnyRef = serializer.deserializeObject(obj)
 
   private def deserializeProducedMarking(instance: Instance[P, T, S], produced: Seq[messages.ProducedToken]): Marking[P] = {
     produced.foldLeft(Marking.empty[P]) {
       case (accumulated, messages.ProducedToken(Some(placeId), Some(_), Some(count), data)) ⇒
         val place = instance.process.places.getById(placeId, "place in petrinet").asInstanceOf[P[Any]]
-        val value = data.map(deserializeObject).getOrElse(())
+        val value = data.map(deserializeObject).orNull // In the colored petrinet, tokens have values and they could be null.
         accumulated.add(place, value, count)
       case _ ⇒ throw new IllegalStateException("Missing data in persisted ProducedToken")
     }
