@@ -213,16 +213,20 @@ trait ProtoEventAdapter {
         protobuf.MultiFacilitatorTransition(Option(label))
 
       case s: il.failurestrategy.InteractionFailureStrategy => s match {
-        case il.failurestrategy.BlockInteraction => protobuf.BlockInteraction()
-        case il.failurestrategy.FireEventAfterFailure(eventDescriptor) => protobuf.FireEventAfterFailure(Option(toProto(eventDescriptor).asInstanceOf[protobuf.EventDescriptor]))
+        case il.failurestrategy.BlockInteraction =>
+          protobuf.InteractionFailureStrategy(protobuf.InteractionFailureStrategy.OneofType.BlockInteraction(protobuf.BlockInteraction()))
+        case il.failurestrategy.FireEventAfterFailure(eventDescriptor) =>
+          val fireAfterFailure = protobuf.FireEventAfterFailure(Option(toProto(eventDescriptor).asInstanceOf[protobuf.EventDescriptor]))
+          protobuf.InteractionFailureStrategy(protobuf.InteractionFailureStrategy.OneofType.FireEventAfterFailure(fireAfterFailure))
         case strategy: il.failurestrategy.RetryWithIncrementalBackoff =>
-          protobuf.RetryWithIncrementalBackoff(
+          val retry = protobuf.RetryWithIncrementalBackoff(
             initialTimeout = Option(strategy.initialTimeout.toMillis),
             backoffFactor = Option(strategy.backoffFactor),
             maximumRetries = Option(strategy.maximumRetries),
             maxTimeBetweenRetries = strategy.maxTimeBetweenRetries.map(_.toMillis),
             retryExhaustedEvent = strategy.retryExhaustedEvent.map(toProto(_).asInstanceOf[protobuf.EventDescriptor])
           )
+          protobuf.InteractionFailureStrategy(protobuf.InteractionFailureStrategy.OneofType.RetryWithIncrementalBackoff(retry))
       }
 
       case il.EventOutputTransformer(newEventName, ingredientRenames) =>
@@ -340,9 +344,25 @@ trait ProtoEventAdapter {
           case _ => throw new IllegalStateException(s"Proto message with missing fields: $msg")
         }
 
+      case fs: protobuf.InteractionFailureStrategy => fs.oneofType match {
+        case protobuf.InteractionFailureStrategy.OneofType.BlockInteraction(_) =>
+          il.failurestrategy.BlockInteraction
+        case protobuf.InteractionFailureStrategy.OneofType.FireEventAfterFailure(protobuf.FireEventAfterFailure(Some(event))) =>
+          il.failurestrategy.FireEventAfterFailure(toDomain(event).asInstanceOf[il.EventDescriptor])
+        case protobuf.InteractionFailureStrategy.OneofType.RetryWithIncrementalBackoff(
+            protobuf.RetryWithIncrementalBackoff(Some(initialTimeout), Some(backoff), Some(maximumRetries), maxBetween, exhaustedEvent)
+          ) =>
+          il.failurestrategy.RetryWithIncrementalBackoff(
+            initialTimeout = Duration(initialTimeout, TimeUnit.MILLISECONDS),
+            backoffFactor = backoff,
+            maximumRetries = maximumRetries,
+            maxTimeBetweenRetries = maxBetween.map(Duration(_, TimeUnit.MILLISECONDS)),
+            retryExhaustedEvent = exhaustedEvent.map(toDomain(_).asInstanceOf[il.EventDescriptor]))
+        case f => throw new IllegalStateException(s"Unknown failure strategy $f")
+      }
+
       case protobuf.EventDescriptor(Some(name), protoIngredients) =>
         il.EventDescriptor(name, protoIngredients.map(e => toDomain(e).asInstanceOf[il.IngredientDescriptor]))
-
 
       case protobuf.IngredientDescriptor(Some(name), Some(ingredientType)) =>
         il.IngredientDescriptor(name, toDomain(ingredientType).asInstanceOf[types.Type])
