@@ -150,4 +150,11 @@ message Place {
     optional PlaceType placeType = 2;
     optional int32 firingLimiterPlaceMaxLimit = 3;
 }
+
+message EventTransition {
+    optional EventDescriptor eventDescriptor = 1;
+    optional bool isSensoryEvent = 2;
+    optional int32 maxFiringLimit = 3;
+}
+
 // END PETRINET

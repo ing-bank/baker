@@ -198,6 +198,9 @@ trait ProtoEventAdapter {
         val (protoPlaceType, limit) = toProtoPlaceType(placeType)
         protobuf.Place(Option(label), protoPlaceType, limit)
 
+      case il.petrinet.EventTransition(eventDescriptor, isSensoryEvent, maxFiringLimit) =>
+        protobuf.EventTransition(Option(toProto(eventDescriptor).asInstanceOf[protobuf.EventDescriptor]), Option(isSensoryEvent), maxFiringLimit)
+
     }
   }
 
@@ -318,6 +321,9 @@ trait ProtoEventAdapter {
 
       case protobuf.Place(Some(label), Some(placeType), limit) =>
         il.petrinet.Place(label, toDomainPlaceType(placeType, limit))
+
+      case protobuf.EventTransition(Some(eventDescriptor), Some(isSensoryEvent), maxFiringLimit) =>
+        il.petrinet.EventTransition(toDomain(eventDescriptor).asInstanceOf[il.EventDescriptor], isSensoryEvent, maxFiringLimit)
 
       case _ => throw new IllegalStateException(s"Unknown protobuf message: $serializedMessage")
 

@@ -8,7 +8,7 @@ import com.ing.baker.il.EventDescriptor
   */
 case class EventTransition(event: EventDescriptor,
                            isSensoryEvent: Boolean = true,
-                           maxFiringLimit: Option[Integer] = None
+                           maxFiringLimit: Option[Int] = None
                           ) extends Transition[Unit, EventDescriptor] {
 
   override val label: String = event.name
