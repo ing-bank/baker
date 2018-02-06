@@ -1,6 +1,6 @@
 package com.ing.baker.il
 
-import com.ing.baker.il.petrinet.{InteractionTransition, Place, RecipePetriNet}
+import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, RecipePetriNet}
 import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.types.RecordField
 
@@ -13,10 +13,13 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 case class CompiledRecipe(name: String,
                           petriNet: RecipePetriNet,
                           initialMarking: Marking[Place],
-                          sensoryEvents: Set[EventDescriptor],
                           validationErrors: Seq[String] = Seq.empty,
                           eventReceivePeriod: Option[FiniteDuration],
                           retentionPeriod: Option[FiniteDuration]) {
+
+  def sensoryEvents: Set[EventDescriptor] = petriNet.transitions.collect {
+    case EventTransition(eventDescriptor, true, _) => eventDescriptor
+  }.toSet
 
   def getValidationErrors: java.util.List[String] = validationErrors.toList.asJava
 

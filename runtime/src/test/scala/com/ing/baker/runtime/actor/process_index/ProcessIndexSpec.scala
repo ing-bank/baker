@@ -62,7 +62,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
     override def receive: Receive = {
       case GetAllRecipes => {
         sender ! AllRecipes(Map[String, CompiledRecipe](recipeId ->
-          CompiledRecipe("name", ScalaGraphPetriNet(Graph.empty), Marking.empty, Set.empty, Seq.empty, Option.empty, Option.empty)))
+          CompiledRecipe("name", ScalaGraphPetriNet(Graph.empty), Marking.empty, Seq.empty, Option.empty, Option.empty)))
       }
     }
   }))
@@ -121,7 +121,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
       recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", ScalaGraphPetriNet(Graph.empty), Marking.empty, Set.empty, Seq.empty, Option.empty, Some(recipeRetentionPeriod)))))
+        CompiledRecipe("name", ScalaGraphPetriNet(Graph.empty), Marking.empty, Seq.empty, Option.empty, Some(recipeRetentionPeriod)))))
 
       val initializeMsg = Initialize(Map.empty, ProcessState(processId, Map.empty))
       processProbe.expectMsg(initializeMsg)
@@ -149,7 +149,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
       recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", petrinetMock, Marking.empty, Set(eventType), Seq.empty, Option.empty, Option.empty))))
+        CompiledRecipe("name", petrinetMock, Marking.empty, Seq.empty, Option.empty, Option.empty))))
 
       petriNetActorProbe.expectMsg(initializeMsg)
 
@@ -198,7 +198,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
       recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", ScalaGraphPetriNet(Graph.empty), Marking.empty, Set.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty))))
+        CompiledRecipe("name", ScalaGraphPetriNet(Graph.empty), Marking.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty))))
 
       petriNetActorProbe.expectMsg(initializeMsg)
 
@@ -230,7 +230,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
       recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", petrinetMock, Marking.empty, Set(eventType), Seq.empty, Some(receivePeriodTimeout), Option.empty))))
+        CompiledRecipe("name", petrinetMock, Marking.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty))))
 
       petriNetActorProbe.expectMsg(initializeMsg)
 
@@ -262,7 +262,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
       recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", petrinetMock, Marking.empty, Set(eventType), Seq.empty, Some(receivePeriodTimeout), Option.empty))))
+        CompiledRecipe("name", petrinetMock, Marking.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty))))
 
       petriNetActorProbe.expectMsg(initializeMsg)
 

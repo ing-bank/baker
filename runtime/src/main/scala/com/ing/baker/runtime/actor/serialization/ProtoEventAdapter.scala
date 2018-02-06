@@ -153,11 +153,10 @@ trait ProtoEventAdapter {
       case types.EnumType(options) =>
         protobuf.Type(Type.OneofType.Enum(EnumType(options.toSeq)))
 
-      case il.CompiledRecipe(name, petriNet, initialMarking, sensoryEvents, validationErrors, eventReceivePeriod, retentionPeriod) =>
+      case il.CompiledRecipe(name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod) =>
 
         val eventReceiveMillis = eventReceivePeriod.map(_.toMillis)
         val retentionMillis = retentionPeriod.map(_.toMillis)
-        val sensoryEventsProto = sensoryEvents.map(e => toProto(e).asInstanceOf[protobuf.EventDescriptor]).toSeq
 
         val nodeList = petriNet.nodes.toList
 
@@ -233,7 +232,7 @@ trait ProtoEventAdapter {
           }
         }
 
-        protobuf.CompiledRecipe(Option(name), graph, producedTokens, sensoryEventsProto, validationErrors, eventReceiveMillis, retentionMillis)
+        protobuf.CompiledRecipe(Option(name), graph, producedTokens, validationErrors, eventReceiveMillis, retentionMillis)
 
       case RecipeManager.RecipeAdded(recipeId, compiledRecipe) =>
         val compiledRecipeProto = toProto(compiledRecipe).asInstanceOf[protobuf.CompiledRecipe]
@@ -461,14 +460,13 @@ trait ProtoEventAdapter {
       case protobuf.IngredientDescriptor(Some(name), Some(ingredientType)) =>
         il.IngredientDescriptor(name, toDomain(ingredientType).asInstanceOf[types.Type])
 
-      case protobuf.CompiledRecipe(Some(name), Some(graphMsg), producedTokens, protoSensoryEvents, validationErrors, eventReceiveMillis, retentionMillis) =>
+      case protobuf.CompiledRecipe(Some(name), Some(graphMsg), producedTokens, validationErrors, eventReceiveMillis, retentionMillis) =>
 
         val eventReceivePeriod = eventReceiveMillis.map(Duration(_, TimeUnit.MILLISECONDS))
         val retentionPeriod = retentionMillis.map(Duration(_, TimeUnit.MILLISECONDS))
 
         val graph = toDomain(graphMsg).asInstanceOf[scalax.collection.immutable.Graph[Node, WLDiEdge]]
         val petriNet: RecipePetriNet = ScalaGraphPetriNet(graph)
-        val sensoryEvents = protoSensoryEvents.map(e => toDomain(e).asInstanceOf[EventDescriptor]).toSet
         val initialMarking = producedTokens.foldLeft(Marking.empty[il.petrinet.Place]) {
           case (accumulated, protobuf.ProducedToken(Some(placeId), Some(_), Some(count), _)) ⇒ // Option[SerializedData] is always None, and we don't use it here.
             val place = petriNet.places.getById(placeId, "place in petrinet").asInstanceOf[il.petrinet.Place[Any]]
@@ -477,7 +475,7 @@ trait ProtoEventAdapter {
           case _ ⇒ throw new IllegalStateException("Missing data in persisted ProducedToken")
         }
 
-        CompiledRecipe(name, petriNet, initialMarking, sensoryEvents, validationErrors, eventReceivePeriod, retentionPeriod)
+        CompiledRecipe(name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
 
       case recipe_manager.protobuf.RecipeAdded(Some(recipeId), (Some(compiledRecipeMsg))) =>
 

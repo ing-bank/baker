@@ -140,10 +140,9 @@ message CompiledRecipe {
     optional string name = 1;
     optional PetriNet petrinet = 2;
     repeated ProducedToken initialMarking = 3;
-    repeated EventDescriptor sensoryEvents = 4;
-    repeated string validationErrors = 5;
-    optional int64 eventReceivePeriod = 6;
-    optional int64 retentionPeriod = 7;
+    repeated string validationErrors = 4;
+    optional int64 eventReceivePeriod = 5;
+    optional int64 retentionPeriod = 6;
 }
 // END DESCRIPTORS
 
