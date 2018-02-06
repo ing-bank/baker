@@ -5,25 +5,33 @@ import java.util.concurrent.TimeUnit
 import com.google.protobuf.ByteString
 import com.ing.baker.il.ActionType.SieveAction
 import com.ing.baker.il.petrinet.{Node, RecipePetriNet}
-import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
+import com.ing.baker.il.{ActionType, CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api.{IdentifiableOps, Marking, ScalaGraphPetriNet}
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization.tokenIdentifier
-import com.ing.baker.runtime.actor.protobuf.Value.OneofValue.NullValue
 import com.ing.baker.runtime.actor.protobuf._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.RecipeAdded
 import com.ing.baker.runtime.actor.{process_index, protobuf, recipe_manager}
 import com.ing.baker.runtime.core
-import com.ing.baker.types.{PrimitiveValue, Value}
+import com.ing.baker.types.Value
 import com.ing.baker.{il, types}
 import com.trueaccord.scalapb.GeneratedMessage
 import org.joda.time
+import org.joda.time.DateTimeZone
 
 import scala.concurrent.duration.Duration
 import scalax.collection.edge.WLDiEdge
 
 trait ProtoEventAdapter {
+
+  implicit class OptionOps[T](option: Option[T]) {
+    def getOrMissing(field: String) = option.getOrElse(throw new IllegalStateException(s"missing field: $field"))
+  }
+
+  implicit class MsgOptionOps[T <: GeneratedMessage](option: Option[T]) {
+    def mapToDomain[B]: Option[B] = option.map(e => toDomainType[B](e))
+  }
 
   val objectSerializer: ObjectSerializer
 
@@ -43,6 +51,8 @@ trait ProtoEventAdapter {
     }
   }
 
+  def toProtoType[T <: GeneratedMessage](obj: AnyRef): T = toProto(obj).asInstanceOf[T]
+
   def toProto(obj: AnyRef): com.trueaccord.scalapb.GeneratedMessage = {
 
     def createPrimitive(p: PrimitiveType) = protobuf.Type(Type.OneofType.Primitive(p))
@@ -58,13 +68,13 @@ trait ProtoEventAdapter {
 
       case il.EventDescriptor(name, ingredients) =>
 
-        val protoIngredients = ingredients.map(i => toProto(i).asInstanceOf[protobuf.IngredientDescriptor])
+        val protoIngredients = ingredients.map(toProtoType[protobuf.IngredientDescriptor])
 
         protobuf.EventDescriptor(Some(name), protoIngredients)
 
       case il.IngredientDescriptor(name, t) =>
 
-        val `type` = toProto(t).asInstanceOf[protobuf.Type]
+        val `type` = toProtoType[protobuf.Type](t)
 
         protobuf.IngredientDescriptor(Some(name), Some(`type`))
 
@@ -120,24 +130,24 @@ trait ProtoEventAdapter {
         createPrimitive(PrimitiveType.JODA_LOCAL_DATETIME)
 
       case types.OptionType(entryType) =>
-        val entryProto = toProto(entryType).asInstanceOf[protobuf.Type]
+        val entryProto = toProtoType[protobuf.Type](entryType)
         protobuf.Type(Type.OneofType.Optional(OptionalType(Some(entryProto))))
 
       case types.ListType(entryType) =>
-        val entryProto = toProto(entryType).asInstanceOf[protobuf.Type]
+        val entryProto = toProtoType[protobuf.Type](entryType)
         protobuf.Type(Type.OneofType.List(ListType(Some(entryProto))))
 
       case types.RecordType(fields) =>
 
         val protoFields = fields.map { f =>
-          val protoType = toProto(f.`type`).asInstanceOf[protobuf.Type]
+          val protoType = toProtoType[protobuf.Type](f.`type`)
           protobuf.RecordField(Some(f.name), Some(protoType))
         }
 
         protobuf.Type(Type.OneofType.Record(RecordType(protoFields)))
 
       case types.MapType(valueType) =>
-        val valueProto = toProto(valueType).asInstanceOf[protobuf.Type]
+        val valueProto = toProtoType[protobuf.Type](valueType)
         protobuf.Type(Type.OneofType.Map(MapType(Some(valueProto))))
 
       case types.EnumType(options) =>
@@ -151,12 +161,10 @@ trait ProtoEventAdapter {
 
         val nodeList = petriNet.nodes.toList
 
-        val protoNodes = nodeList.map(n => objectSerializer.serializeObject(n)).toSeq
+        val protoNodes = nodeList.map(n => objectSerializer.serializeObject(n))
         val protoEdges = petriNet.innerGraph.edges.toList.map{ e =>
 
           val labelSerializedData = objectSerializer.serializeObject(e.label.asInstanceOf[AnyRef])
-
-//          val protoLabel = toProto(e.label.asInstanceOf[AnyRef]).asInstanceOf[SerializedData]
 
           val from = nodeList.indexOf(e.source.value)
           val to = nodeList.indexOf(e.target.value)
@@ -224,7 +232,7 @@ trait ProtoEventAdapter {
             backoffFactor = Option(strategy.backoffFactor),
             maximumRetries = Option(strategy.maximumRetries),
             maxTimeBetweenRetries = strategy.maxTimeBetweenRetries.map(_.toMillis),
-            retryExhaustedEvent = strategy.retryExhaustedEvent.map(toProto(_).asInstanceOf[protobuf.EventDescriptor])
+            retryExhaustedEvent = strategy.retryExhaustedEvent.map(toProtoType[protobuf.EventDescriptor])
           )
           protobuf.InteractionFailureStrategy(protobuf.InteractionFailureStrategy.OneofType.RetryWithIncrementalBackoff(retry))
       }
@@ -234,17 +242,17 @@ trait ProtoEventAdapter {
 
       case t: il.petrinet.InteractionTransition[_] =>
         protobuf.InteractionTransition(
-          eventsToFire = t.eventsToFire.map(toProto(_).asInstanceOf[protobuf.EventDescriptor]),
-          originalEvents = t.originalEvents.map(toProto(_).asInstanceOf[protobuf.EventDescriptor]),
-          providedIngredientEvent = t.providedIngredientEvent.map(toProto(_).asInstanceOf[protobuf.EventDescriptor]),
-          requiredIngredients = t.requiredIngredients.map(toProto(_).asInstanceOf[protobuf.IngredientDescriptor]),
+          eventsToFire = t.eventsToFire.map(toProtoType[protobuf.EventDescriptor]),
+          originalEvents = t.originalEvents.map(toProtoType[protobuf.EventDescriptor]),
+          providedIngredientEvent = t.providedIngredientEvent.map(toProtoType[protobuf.EventDescriptor]),
+          requiredIngredients = t.requiredIngredients.map(toProtoType[protobuf.IngredientDescriptor]),
           interactionName = Option(t.interactionName),
           originalInteractionName = Option(t.originalInteractionName),
           isSieve = Option(t.actionType.equals(SieveAction)),
-          predefinedParameters = t.predefinedParameters.mapValues(toProto(_).asInstanceOf[protobuf.Value]),
+          predefinedParameters = t.predefinedParameters.mapValues(toProtoType[protobuf.Value]),
           maximumInteractionCount = t.maximumInteractionCount,
-          failureStrategy = Option(toProto(t.failureStrategy).asInstanceOf[protobuf.InteractionFailureStrategy]),
-          eventOutputTransformers = t.eventOutputTransformers.mapValues(toProto(_).asInstanceOf[protobuf.EventOutputTransformer])
+          failureStrategy = Option(toProtoType[protobuf.InteractionFailureStrategy](t.failureStrategy)),
+          eventOutputTransformers = t.eventOutputTransformers.mapValues(toProtoType[protobuf.EventOutputTransformer])
         )
 
       case v: types.Value => v match {
@@ -265,11 +273,13 @@ trait ProtoEventAdapter {
         case types.PrimitiveValue(value: org.joda.time.LocalDate) => protobuf.Value(protobuf.Value.OneofValue.JodaLocaldateValue(value.toDate.getTime))
         case types.PrimitiveValue(value: org.joda.time.LocalDateTime) => protobuf.Value(protobuf.Value.OneofValue.JodaLocaldatetimeValue(value.toDate.getTime))
         case types.PrimitiveValue(value) => throw new IllegalStateException(s"Unknown primitive value: $value")
-        case types.RecordValue(entries) => protobuf.Value(protobuf.Value.OneofValue.RecordValue(protobuf.Record(entries.mapValues(toProto(_).asInstanceOf[protobuf.Value]))))
-        case types.ListValue(entries) => protobuf.Value(protobuf.Value.OneofValue.ListValue(protobuf.List(entries.map(toProto(_).asInstanceOf[protobuf.Value]))))
+        case types.RecordValue(entries) => protobuf.Value(protobuf.Value.OneofValue.RecordValue(protobuf.Record(entries.mapValues(toProtoType[protobuf.Value]))))
+        case types.ListValue(entries) => protobuf.Value(protobuf.Value.OneofValue.ListValue(protobuf.List(entries.map(toProtoType[protobuf.Value]))))
       }
     }
   }
+
+  def toDomainType[T](serializedMessage: GeneratedMessage): T = toDomain(serializedMessage).asInstanceOf[T]
 
   def toDomain(serializedMessage: GeneratedMessage): AnyRef = {
     serializedMessage match {
@@ -302,34 +312,36 @@ trait ProtoEventAdapter {
 
       case msg: protobuf.Type =>
 
+        import Type.OneofType
+
         msg.`oneofType` match {
-          case Type.OneofType.Primitive(PrimitiveType.BOOLEAN) => types.PrimitiveType(classOf[Boolean])
-          case Type.OneofType.Primitive(PrimitiveType.BYTE) => types.PrimitiveType(classOf[Byte])
-          case Type.OneofType.Primitive(PrimitiveType.SHORT) => types.PrimitiveType(classOf[Short])
-          case Type.OneofType.Primitive(PrimitiveType.CHARACTER) => types.PrimitiveType(classOf[Character])
-          case Type.OneofType.Primitive(PrimitiveType.INTEGER) => types.PrimitiveType(classOf[Integer])
-          case Type.OneofType.Primitive(PrimitiveType.INT) => types.PrimitiveType(classOf[Int])
-          case Type.OneofType.Primitive(PrimitiveType.LONG) => types.PrimitiveType(classOf[Long])
-          case Type.OneofType.Primitive(PrimitiveType.FLOAT) => types.PrimitiveType(classOf[Float])
-          case Type.OneofType.Primitive(PrimitiveType.DOUBLE) => types.PrimitiveType(classOf[Double])
-          case Type.OneofType.Primitive(PrimitiveType.STRING) => types.PrimitiveType(classOf[String])
-          case Type.OneofType.Primitive(PrimitiveType.BIG_DECIMAL_SCALA) => types.PrimitiveType(classOf[BigDecimal])
-          case Type.OneofType.Primitive(PrimitiveType.BIG_DECIMAL_JAVA) => types.PrimitiveType(classOf[java.math.BigDecimal])
-          case Type.OneofType.Primitive(PrimitiveType.BIG_INT_SCALA) => types.PrimitiveType(classOf[BigInt])
-          case Type.OneofType.Primitive(PrimitiveType.BIG_INT_JAVA) => types.PrimitiveType(classOf[java.math.BigInteger])
-          case Type.OneofType.Primitive(PrimitiveType.BYTE_ARRAY) => types.PrimitiveType(classOf[Array[Byte]])
-          case Type.OneofType.Primitive(PrimitiveType.JODA_DATETIME) => types.PrimitiveType(classOf[time.DateTime])
-          case Type.OneofType.Primitive(PrimitiveType.JODA_LOCAL_DATE) => types.PrimitiveType(classOf[time.LocalDate])
-          case Type.OneofType.Primitive(PrimitiveType.JODA_LOCAL_DATETIME) => types.PrimitiveType(classOf[time.LocalDateTime])
+          case OneofType.Primitive(PrimitiveType.BOOLEAN) => types.PrimitiveType(classOf[Boolean])
+          case OneofType.Primitive(PrimitiveType.BYTE) => types.PrimitiveType(classOf[Byte])
+          case OneofType.Primitive(PrimitiveType.SHORT) => types.PrimitiveType(classOf[Short])
+          case OneofType.Primitive(PrimitiveType.CHARACTER) => types.PrimitiveType(classOf[Character])
+          case OneofType.Primitive(PrimitiveType.INTEGER) => types.PrimitiveType(classOf[Integer])
+          case OneofType.Primitive(PrimitiveType.INT) => types.PrimitiveType(classOf[Int])
+          case OneofType.Primitive(PrimitiveType.LONG) => types.PrimitiveType(classOf[Long])
+          case OneofType.Primitive(PrimitiveType.FLOAT) => types.PrimitiveType(classOf[Float])
+          case OneofType.Primitive(PrimitiveType.DOUBLE) => types.PrimitiveType(classOf[Double])
+          case OneofType.Primitive(PrimitiveType.STRING) => types.PrimitiveType(classOf[String])
+          case OneofType.Primitive(PrimitiveType.BIG_DECIMAL_SCALA) => types.PrimitiveType(classOf[BigDecimal])
+          case OneofType.Primitive(PrimitiveType.BIG_DECIMAL_JAVA) => types.PrimitiveType(classOf[java.math.BigDecimal])
+          case OneofType.Primitive(PrimitiveType.BIG_INT_SCALA) => types.PrimitiveType(classOf[BigInt])
+          case OneofType.Primitive(PrimitiveType.BIG_INT_JAVA) => types.PrimitiveType(classOf[java.math.BigInteger])
+          case OneofType.Primitive(PrimitiveType.BYTE_ARRAY) => types.PrimitiveType(classOf[Array[Byte]])
+          case OneofType.Primitive(PrimitiveType.JODA_DATETIME) => types.PrimitiveType(classOf[time.DateTime])
+          case OneofType.Primitive(PrimitiveType.JODA_LOCAL_DATE) => types.PrimitiveType(classOf[time.LocalDate])
+          case OneofType.Primitive(PrimitiveType.JODA_LOCAL_DATETIME) => types.PrimitiveType(classOf[time.LocalDateTime])
 
-          case Type.OneofType.Optional(OptionalType(Some(value))) => types.OptionType(toDomain(value).asInstanceOf[types.Type])
+          case OneofType.Optional(OptionalType(Some(value))) => types.OptionType(toDomainType[types.Type](value))
 
-          case Type.OneofType.List(ListType(Some(value))) => types.ListType(toDomain(value).asInstanceOf[types.Type])
+          case OneofType.List(ListType(Some(value))) => types.ListType(toDomainType[types.Type](value))
 
-          case Type.OneofType.Record(RecordType(fields)) =>
+          case OneofType.Record(RecordType(fields)) =>
             val mapped = fields.map {
               case protobuf.RecordField(Some(name), Some(fieldType)) =>
-                val `type` = toDomain(fieldType).asInstanceOf[types.Type]
+                val `type` = toDomainType[types.Type](fieldType)
                 types.RecordField(name, `type`)
 
               case _ => throw new IllegalStateException(s"Invalid value for record field (properties may not be None)")
@@ -337,11 +349,37 @@ trait ProtoEventAdapter {
 
             types.RecordType(mapped)
 
-          case Type.OneofType.Map(MapType(Some(value))) => types.MapType(toDomain(value).asInstanceOf[types.Type])
+          case OneofType.Map(MapType(Some(value))) => types.MapType(toDomainType[types.Type](value))
 
-          case Type.OneofType.Enum(EnumType(options)) => types.EnumType(options.toSet).asInstanceOf[types.Type]
+          case OneofType.Enum(EnumType(options)) => types.EnumType(options.toSet)
 
           case _ => throw new IllegalStateException(s"Proto message with missing fields: $msg")
+        }
+
+      case msg: protobuf.Value =>
+
+        import protobuf.Value.OneofValue
+
+        msg.oneofValue match {
+          case OneofValue.NullValue(_) => types.NullValue
+          case OneofValue.BooleanValue(bool) => types.PrimitiveValue(bool)
+          case OneofValue.ByteValue(byte) => types.PrimitiveValue(byte.toByte)
+          case OneofValue.ShortValue(short) => types.PrimitiveValue(short.toShort)
+          case OneofValue.CharValue(char) => types.PrimitiveValue(char.toChar)
+          case OneofValue.IntValue(int) => types.PrimitiveValue(int)
+          case OneofValue.LongValue(long) => types.PrimitiveValue(long)
+          case OneofValue.FloatValue(float) => types.PrimitiveValue(float)
+          case OneofValue.DoubleValue(double) => types.PrimitiveValue(double)
+          case OneofValue.StringValue(string) => types.PrimitiveValue(string)
+          case OneofValue.BigDecimalValue(bigdecimal) => types.PrimitiveValue(BigDecimal(bigdecimal))
+          case OneofValue.BigIntValue(bigint) => types.PrimitiveValue(BigInt(bigint))
+          case OneofValue.ByteArrayValue(byteArray) => types.PrimitiveValue(byteArray.toByteArray)
+          case OneofValue.JodaDatetimeValue(millis) => types.PrimitiveValue(new org.joda.time.DateTime(millis, DateTimeZone.UTC))
+          case OneofValue.JodaLocaldateValue(millis) => types.PrimitiveValue(new org.joda.time.DateTime(millis, DateTimeZone.UTC).toLocalDate)
+          case OneofValue.JodaLocaldatetimeValue(millis) => types.PrimitiveValue(new org.joda.time.DateTime(millis, DateTimeZone.UTC).toLocalDateTime)
+          case OneofValue.RecordValue(Record(fields)) => types.RecordValue(fields.mapValues(toDomainType[types.Value]))
+          case OneofValue.ListValue(List(entries)) => types.ListValue(entries.map(toDomainType[types.Value]).toList)
+          case OneofValue.Empty => throw new IllegalStateException("Empty value cannot be deserializialized")
         }
 
       case fs: protobuf.InteractionFailureStrategy => fs.oneofType match {
@@ -406,7 +444,7 @@ trait ProtoEventAdapter {
         il.petrinet.Place(label, toDomainPlaceType(placeType, limit))
 
       case protobuf.EventTransition(Some(eventDescriptor), Some(isSensoryEvent), maxFiringLimit) =>
-        il.petrinet.EventTransition(toDomain(eventDescriptor).asInstanceOf[il.EventDescriptor], isSensoryEvent, maxFiringLimit)
+        il.petrinet.EventTransition(toDomainType[il.EventDescriptor](eventDescriptor), isSensoryEvent, maxFiringLimit)
 
       case protobuf.IntermediateTransition(Some(label)) =>
         il.petrinet.IntermediateTransition(label)
@@ -416,6 +454,22 @@ trait ProtoEventAdapter {
 
       case protobuf.MultiFacilitatorTransition(Some(label)) =>
         il.petrinet.MultiFacilitatorTransition(label)
+
+      case i: protobuf.InteractionTransition =>
+
+        il.petrinet.InteractionTransition(
+          eventsToFire = i.eventsToFire.map(toDomainType[il.EventDescriptor]),
+          originalEvents = i.originalEvents.map(toDomainType[il.EventDescriptor]),
+          providedIngredientEvent = i.providedIngredientEvent.map(toDomainType[il.EventDescriptor]),
+          requiredIngredients = i.requiredIngredients.map(toDomainType[il.IngredientDescriptor]),
+          interactionName = i.interactionName.getOrMissing("interactionName"),
+          originalInteractionName = i.originalInteractionName.getOrMissing("originalInteractionName"),
+          actionType = if (i.isSieve.getOrElse(false)) ActionType.SieveAction else ActionType.InteractionAction,
+          predefinedParameters = i.predefinedParameters.mapValues(toDomainType[Value]),
+          maximumInteractionCount = i.maximumInteractionCount,
+          failureStrategy = i.failureStrategy.map(toDomainType[il.failurestrategy.InteractionFailureStrategy]).getOrMissing("failureStrategy"),
+          eventOutputTransformers = i.eventOutputTransformers.mapValues(toDomainType[il.EventOutputTransformer])
+        )
 
       case _ => throw new IllegalStateException(s"Unknown protobuf message: $serializedMessage")
 
@@ -436,7 +490,7 @@ trait ProtoEventAdapter {
   private def toDomainPlaceType(protoPlaceType: protobuf.PlaceType, limit: Option[Int]) = protoPlaceType match {
     case protobuf.PlaceType.IngredientPlace => il.petrinet.Place.IngredientPlace
     case protobuf.PlaceType.InteractionEventOutputPlace => il.petrinet.Place.InteractionEventOutputPlace
-    case protobuf.PlaceType.FiringLimiterPlace => il.petrinet.Place.FiringLimiterPlace(limit.getOrElse(throw new IllegalStateException("Cannot deserialize FiringLimiterPlace without a limit")))
+    case protobuf.PlaceType.FiringLimiterPlace => il.petrinet.Place.FiringLimiterPlace(limit.getOrMissing("firing limit"))
     case protobuf.PlaceType.EventPreconditionPlace => il.petrinet.Place.EventPreconditionPlace
     case protobuf.PlaceType.EventOrPreconditionPlace => il.petrinet.Place.EventOrPreconditionPlace
     case protobuf.PlaceType.IntermediatePlace => il.petrinet.Place.IntermediatePlace
