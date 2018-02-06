@@ -30,39 +30,39 @@ class ProtoEventAdapterSpec extends TestKit(ActorSystem("BakerProtobufSerializer
     domainObject shouldBe eventAdapter.toDomain(eventAdapter.toProto(domainObject))
   }
 
-  test("should serialize Place") {
-    val domainObject = Place("somePlace", IngredientPlace)
-    domainObject shouldBe eventAdapter.toDomain(eventAdapter.toProto(domainObject))
-  }
-
-  test("should serialize EventTransition") {
-    val ingredients = Seq(IngredientDescriptor("ingredient1", PrimitiveType(classOf[String])), IngredientDescriptor("ingredient2", PrimitiveType(classOf[Int])))
-    val domainObject = EventTransition(EventDescriptor("someEvent", ingredients), maxFiringLimit = Some(3))
-    domainObject shouldBe eventAdapter.toDomain(eventAdapter.toProto(domainObject))
-  }
-
-  test("should serialize IntermediateTransition") {
-    val domainObject = IntermediateTransition("someCustomLabel")
-    domainObject shouldBe eventAdapter.toDomain(eventAdapter.toProto(domainObject))
-  }
-
-  ignore("should serialize InteractionTransition") {
-    val domainObject = InteractionTransition(
-      eventsToFire = Seq(EventDescriptor("someEvent", Seq(IngredientDescriptor("someIngredient", PrimitiveType(classOf[String]))))),
-      originalEvents = Seq(EventDescriptor("someEvent", Seq(IngredientDescriptor("someIngredient", PrimitiveType(classOf[String]))))),
-      providedIngredientEvent = Some(EventDescriptor("someEvent", Seq(IngredientDescriptor("someIngredient", PrimitiveType(classOf[String]))))),
-      requiredIngredients = Seq(IngredientDescriptor("someIngredient", PrimitiveType(classOf[String]))),
-      interactionName = "someInteraction",
-      originalInteractionName = "someOriginalInteractionName",
-      actionType = SieveAction,
-      predefinedParameters = Map("someIngredient" -> NullValue),
-      maximumInteractionCount = Some(3),
-      failureStrategy = RetryWithIncrementalBackoff(10 seconds, 2.0, 5, Some(24 hours),
-        Some(EventDescriptor("someEvent", Seq(IngredientDescriptor("someIngredient", PrimitiveType(classOf[String])))))
-      ),
-      eventOutputTransformers = Map("oldEventName" -> EventOutputTransformer("newEventName", Map("oldIngredient" -> "newIngredient")))
-    )
-    domainObject shouldBe eventAdapter.toDomain(eventAdapter.toProto(domainObject))
-  }
+//  test("should serialize Place") {
+//    val domainObject = Place("somePlace", IngredientPlace)
+//    domainObject shouldBe eventAdapter.toDomain(eventAdapter.toProto(domainObject))
+//  }
+//
+//  test("should serialize EventTransition") {
+//    val ingredients = Seq(IngredientDescriptor("ingredient1", PrimitiveType(classOf[String])), IngredientDescriptor("ingredient2", PrimitiveType(classOf[Int])))
+//    val domainObject = EventTransition(EventDescriptor("someEvent", ingredients), maxFiringLimit = Some(3))
+//    domainObject shouldBe eventAdapter.toDomain(eventAdapter.toProto(domainObject))
+//  }
+//
+//  test("should serialize IntermediateTransition") {
+//    val domainObject = IntermediateTransition("someCustomLabel")
+//    domainObject shouldBe eventAdapter.toDomain(eventAdapter.toProto(domainObject))
+//  }
+//
+//  test("should serialize InteractionTransition") {
+//    val domainObject = InteractionTransition(
+//      eventsToFire = Seq(EventDescriptor("someEvent", Seq(IngredientDescriptor("someIngredient", PrimitiveType(classOf[String]))))),
+//      originalEvents = Seq(EventDescriptor("someEvent", Seq(IngredientDescriptor("someIngredient", PrimitiveType(classOf[String]))))),
+//      providedIngredientEvent = Some(EventDescriptor("someEvent", Seq(IngredientDescriptor("someIngredient", PrimitiveType(classOf[String]))))),
+//      requiredIngredients = Seq(IngredientDescriptor("someIngredient", PrimitiveType(classOf[String]))),
+//      interactionName = "someInteraction",
+//      originalInteractionName = "someOriginalInteractionName",
+//      actionType = SieveAction,
+//      predefinedParameters = Map("someIngredient" -> NullValue),
+//      maximumInteractionCount = Some(3),
+//      failureStrategy = RetryWithIncrementalBackoff(10 seconds, 2.0, 5, Some(24 hours),
+//        Some(EventDescriptor("someEvent", Seq(IngredientDescriptor("someIngredient", PrimitiveType(classOf[String])))))
+//      ),
+//      eventOutputTransformers = Map("oldEventName" -> EventOutputTransformer("newEventName", Map("oldIngredient" -> "newIngredient")))
+//    )
+//    domainObject shouldBe eventAdapter.toDomain(eventAdapter.toProto(domainObject))
+//  }
 
 }

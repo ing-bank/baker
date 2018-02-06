@@ -161,18 +161,65 @@ trait ProtoEventAdapter {
 
         val nodeList = petriNet.nodes.toList
 
-        val protoNodes = nodeList.map(n => objectSerializer.serializeObject(n))
+        val protoNodes: Seq[protobuf.Node] = nodeList.map {
+
+          case Left(il.petrinet.Place(label, placeType)) =>
+            val (protoPlaceType, limit) = toProtoPlaceType(placeType)
+            val protoPlace = protobuf.Place(Option(label), protoPlaceType, limit)
+
+            protobuf.Node(protobuf.Node.OneofNode.Place(protoPlace))
+
+          case Right(transition) => transition match {
+
+            case il.petrinet.EventTransition(eventDescriptor, isSensoryEvent, maxFiringLimit) =>
+              val t = protobuf.EventTransition(Option(toProto(eventDescriptor).asInstanceOf[protobuf.EventDescriptor]), Option(isSensoryEvent), maxFiringLimit)
+              protobuf.Node(protobuf.Node.OneofNode.EventTransition(t))
+
+            case il.petrinet.IntermediateTransition(label) =>
+              val t = protobuf.IntermediateTransition(Option(label))
+              protobuf.Node(protobuf.Node.OneofNode.IntermediateTransition(t))
+
+            case il.petrinet.MissingEventTransition(label) =>
+              val t = protobuf.MissingEventTransition(Option(label))
+              protobuf.Node(protobuf.Node.OneofNode.MissingEventTransition(t))
+
+            case il.petrinet.MultiFacilitatorTransition(label) =>
+              val t = protobuf.MultiFacilitatorTransition(Option(label))
+              protobuf.Node(protobuf.Node.OneofNode.MultiFacilitatorTransition(t))
+
+            case t: il.petrinet.InteractionTransition[_] =>
+              val pt = protobuf.InteractionTransition(
+                eventsToFire = t.eventsToFire.map(toProtoType[protobuf.EventDescriptor]),
+                originalEvents = t.originalEvents.map(toProtoType[protobuf.EventDescriptor]),
+                providedIngredientEvent = t.providedIngredientEvent.map(toProtoType[protobuf.EventDescriptor]),
+                requiredIngredients = t.requiredIngredients.map(toProtoType[protobuf.IngredientDescriptor]),
+                interactionName = Option(t.interactionName),
+                originalInteractionName = Option(t.originalInteractionName),
+                isSieve = Option(t.actionType.equals(SieveAction)),
+                predefinedParameters = t.predefinedParameters.mapValues(toProtoType[protobuf.Value]),
+                maximumInteractionCount = t.maximumInteractionCount,
+                failureStrategy = Option(toProtoType[protobuf.InteractionFailureStrategy](t.failureStrategy)),
+                eventOutputTransformers = t.eventOutputTransformers.mapValues(toProtoType[protobuf.EventOutputTransformer])
+              )
+
+              protobuf.Node(protobuf.Node.OneofNode.InteractionTransition(pt))
+
+            case t => throw new IllegalStateException(s"Unkown transition type: $t")
+          }
+
+          case n => throw new IllegalStateException(s"Unkown node type: $n")
+        }
+
         val protoEdges = petriNet.innerGraph.edges.toList.map{ e =>
 
-          val labelSerializedData = objectSerializer.serializeObject(e.label.asInstanceOf[AnyRef])
-
+          val edge = e.label.asInstanceOf[il.petrinet.Edge[_]]
           val from = nodeList.indexOf(e.source.value)
           val to = nodeList.indexOf(e.target.value)
 
-          Edge(Option(from), Option(to), Option(e.weight), Option(labelSerializedData))
+          Edge(Option(from), Option(to), Option(e.weight), edge.eventAllowed)
         }
 
-        val graph: Option[protobuf.Graph] = Some(Graph(protoNodes, protoEdges))
+        val graph: Option[protobuf.PetriNet] = Some(protobuf.PetriNet(protoNodes, protoEdges))
 
         // from InitialMarking to Seq[ProducedToken]
         val producedTokens: Seq[ProducedToken] = initialMarking.data.toSeq.flatMap {
@@ -204,22 +251,6 @@ trait ProtoEventAdapter {
       case ProcessIndex.ActorDeleted(processId) =>
         process_index.protobuf.ActorDeleted(Option(processId))
 
-      case il.petrinet.Place(label, placeType) =>
-        val (protoPlaceType, limit) = toProtoPlaceType(placeType)
-        protobuf.Place(Option(label), protoPlaceType, limit)
-
-      case il.petrinet.EventTransition(eventDescriptor, isSensoryEvent, maxFiringLimit) =>
-        protobuf.EventTransition(Option(toProto(eventDescriptor).asInstanceOf[protobuf.EventDescriptor]), Option(isSensoryEvent), maxFiringLimit)
-
-      case il.petrinet.IntermediateTransition(label) =>
-        protobuf.IntermediateTransition(Option(label))
-
-      case il.petrinet.MissingEventTransition(label) =>
-        protobuf.MissingEventTransition(Option(label))
-
-      case il.petrinet.MultiFacilitatorTransition(label) =>
-        protobuf.MultiFacilitatorTransition(Option(label))
-
       case s: il.failurestrategy.InteractionFailureStrategy => s match {
         case il.failurestrategy.BlockInteraction =>
           protobuf.InteractionFailureStrategy(protobuf.InteractionFailureStrategy.OneofType.BlockInteraction(protobuf.BlockInteraction()))
@@ -239,21 +270,6 @@ trait ProtoEventAdapter {
 
       case il.EventOutputTransformer(newEventName, ingredientRenames) =>
         protobuf.EventOutputTransformer(Option(newEventName), ingredientRenames)
-
-      case t: il.petrinet.InteractionTransition[_] =>
-        protobuf.InteractionTransition(
-          eventsToFire = t.eventsToFire.map(toProtoType[protobuf.EventDescriptor]),
-          originalEvents = t.originalEvents.map(toProtoType[protobuf.EventDescriptor]),
-          providedIngredientEvent = t.providedIngredientEvent.map(toProtoType[protobuf.EventDescriptor]),
-          requiredIngredients = t.requiredIngredients.map(toProtoType[protobuf.IngredientDescriptor]),
-          interactionName = Option(t.interactionName),
-          originalInteractionName = Option(t.originalInteractionName),
-          isSieve = Option(t.actionType.equals(SieveAction)),
-          predefinedParameters = t.predefinedParameters.mapValues(toProtoType[protobuf.Value]),
-          maximumInteractionCount = t.maximumInteractionCount,
-          failureStrategy = Option(toProtoType[protobuf.InteractionFailureStrategy](t.failureStrategy)),
-          eventOutputTransformers = t.eventOutputTransformers.mapValues(toProtoType[protobuf.EventOutputTransformer])
-        )
 
       case v: types.Value => v match {
         case types.NullValue => protobuf.Value(protobuf.Value.OneofValue.NullValue(true))
@@ -294,18 +310,58 @@ trait ProtoEventAdapter {
       case protobuf.ProcessState(Some(id), ingredients) =>
         core.ProcessState(id, readIngredients(ingredients).toMap)
 
-      case protobuf.Graph(protoNodes, protoEdges) =>
+      case protobuf.PetriNet(protoNodes, protoEdges) =>
 
-        val nodes = protoNodes.map(n => toDomain(n)).toList
+        val nodes = protoNodes.map { n =>
+
+          import protobuf.Node.OneofNode
+
+          n.oneofNode match {
+
+            case OneofNode.Place(protobuf.Place(Some(label), Some(placeType), limit)) =>
+              val p = il.petrinet.Place(label, toDomainPlaceType(placeType, limit))
+              Left(p)
+
+            case OneofNode.EventTransition(protobuf.EventTransition(Some(eventDescriptor), Some(isSensoryEvent), maxFiringLimit)) =>
+              Right(il.petrinet.EventTransition(toDomainType[il.EventDescriptor](eventDescriptor), isSensoryEvent, maxFiringLimit))
+
+            case OneofNode.IntermediateTransition(protobuf.IntermediateTransition(Some(label))) =>
+              Right(il.petrinet.IntermediateTransition(label))
+
+            case OneofNode.MissingEventTransition(protobuf.MissingEventTransition(Some(label))) =>
+              Right(il.petrinet.MissingEventTransition(label))
+
+            case OneofNode.MultiFacilitatorTransition(protobuf.MultiFacilitatorTransition(Some(label))) =>
+              Right(il.petrinet.MultiFacilitatorTransition(label))
+
+            case OneofNode.InteractionTransition(t: protobuf.InteractionTransition) =>
+
+              Right(il.petrinet.InteractionTransition(
+                eventsToFire = t.eventsToFire.map(toDomainType[il.EventDescriptor]),
+                originalEvents = t.originalEvents.map(toDomainType[il.EventDescriptor]),
+                providedIngredientEvent = t.providedIngredientEvent.map(toDomainType[il.EventDescriptor]),
+                requiredIngredients = t.requiredIngredients.map(toDomainType[il.IngredientDescriptor]),
+                interactionName = t.interactionName.getOrMissing("interactionName"),
+                originalInteractionName = t.originalInteractionName.getOrMissing("originalInteractionName"),
+                actionType = if (t.isSieve.getOrElse(false)) ActionType.SieveAction else ActionType.InteractionAction,
+                predefinedParameters = t.predefinedParameters.mapValues(toDomainType[Value]),
+                maximumInteractionCount = t.maximumInteractionCount,
+                failureStrategy = t.failureStrategy.map(toDomainType[il.failurestrategy.InteractionFailureStrategy]).getOrMissing("failureStrategy"),
+                eventOutputTransformers = t.eventOutputTransformers.mapValues(toDomainType[il.EventOutputTransformer])
+              ))
+
+            case other => throw new IllegalStateException(s"Unkown node type: $other")
+          }
+        }
 
         val params = protoEdges.map {
 
-          case protobuf.Edge(Some(from), Some(to), Some(weight), Some(protoLabel)) =>
+          case protobuf.Edge(Some(from), Some(to), Some(weight), eventAllowed) =>
           val fromNode = nodes.apply(from.toInt)
           val toNode = nodes.apply(to.toInt)
-          val label = toDomain(protoLabel)
+          val edge = il.petrinet.Edge[Any](eventAllowed)
 
-          WLDiEdge[Any, Any](fromNode, toNode)(weight, label)
+          WLDiEdge[Any, Any](fromNode, toNode)(weight, edge)
         }
 
         scalax.collection.immutable.Graph(params: _*)
@@ -439,37 +495,6 @@ trait ProtoEventAdapter {
 
       case process_index.protobuf.ActorDeleted(Some(processId)) =>
         ProcessIndex.ActorDeleted(processId)
-
-      case protobuf.Place(Some(label), Some(placeType), limit) =>
-        il.petrinet.Place(label, toDomainPlaceType(placeType, limit))
-
-      case protobuf.EventTransition(Some(eventDescriptor), Some(isSensoryEvent), maxFiringLimit) =>
-        il.petrinet.EventTransition(toDomainType[il.EventDescriptor](eventDescriptor), isSensoryEvent, maxFiringLimit)
-
-      case protobuf.IntermediateTransition(Some(label)) =>
-        il.petrinet.IntermediateTransition(label)
-
-      case protobuf.MissingEventTransition(Some(label)) =>
-        il.petrinet.MissingEventTransition(label)
-
-      case protobuf.MultiFacilitatorTransition(Some(label)) =>
-        il.petrinet.MultiFacilitatorTransition(label)
-
-      case i: protobuf.InteractionTransition =>
-
-        il.petrinet.InteractionTransition(
-          eventsToFire = i.eventsToFire.map(toDomainType[il.EventDescriptor]),
-          originalEvents = i.originalEvents.map(toDomainType[il.EventDescriptor]),
-          providedIngredientEvent = i.providedIngredientEvent.map(toDomainType[il.EventDescriptor]),
-          requiredIngredients = i.requiredIngredients.map(toDomainType[il.IngredientDescriptor]),
-          interactionName = i.interactionName.getOrMissing("interactionName"),
-          originalInteractionName = i.originalInteractionName.getOrMissing("originalInteractionName"),
-          actionType = if (i.isSieve.getOrElse(false)) ActionType.SieveAction else ActionType.InteractionAction,
-          predefinedParameters = i.predefinedParameters.mapValues(toDomainType[Value]),
-          maximumInteractionCount = i.maximumInteractionCount,
-          failureStrategy = i.failureStrategy.map(toDomainType[il.failurestrategy.InteractionFailureStrategy]).getOrMissing("failureStrategy"),
-          eventOutputTransformers = i.eventOutputTransformers.mapValues(toDomainType[il.EventOutputTransformer])
-        )
 
       case _ => throw new IllegalStateException(s"Unknown protobuf message: $serializedMessage")
 

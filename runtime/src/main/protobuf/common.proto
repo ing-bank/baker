@@ -138,7 +138,7 @@ message EventDescriptor {
 
 message CompiledRecipe {
     optional string name = 1;
-    optional Graph petrinet = 2;
+    optional PetriNet petrinet = 2;
     repeated ProducedToken initialMarking = 3;
     repeated EventDescriptor sensoryEvents = 4;
     repeated string validationErrors = 5;
@@ -153,11 +153,22 @@ message Edge {
     optional int32 from = 1;
     optional int32 to = 2;
     optional int64 weight = 3;
-    optional SerializedData label = 4;
+    optional string eventFilter = 4;
 }
 
-message Graph {
-    repeated SerializedData nodes = 1;
+message Node {
+    oneof oneof_node {
+        Place place = 1;
+        EventTransition eventTransition = 11;
+        InteractionTransition interactionTransition = 12;
+        IntermediateTransition intermediateTransition = 13;
+        MultiFacilitatorTransition multiFacilitatorTransition = 14;
+        MissingEventTransition missingEventTransition = 15;
+    }
+}
+
+message PetriNet {
+    repeated Node nodes = 1;
     repeated Edge edges = 2;
 }
 
@@ -185,24 +196,6 @@ message Place {
     optional int32 firingLimiterPlaceMaxLimit = 3;
 }
 
-message EventTransition {
-    optional EventDescriptor eventDescriptor = 1;
-    optional bool isSensoryEvent = 2;
-    optional int32 maxFiringLimit = 3;
-}
-
-message IntermediateTransition {
-    optional string label = 1;
-}
-
-message MissingEventTransition {
-    optional string label = 1;
-}
-
-message MultiFacilitatorTransition {
-    optional string label = 1;
-}
-
 message BlockInteraction {}
 message FireEventAfterFailure {
     optional EventDescriptor event = 1;
@@ -226,6 +219,24 @@ message InteractionFailureStrategy {
 message EventOutputTransformer {
     optional string newEventName = 1;
     map<string, string> ingredientRenames = 2;
+}
+
+message EventTransition {
+    optional EventDescriptor eventDescriptor = 1;
+    optional bool isSensoryEvent = 2;
+    optional int32 maxFiringLimit = 3;
+}
+
+message IntermediateTransition {
+    optional string label = 1;
+}
+
+message MissingEventTransition {
+    optional string label = 1;
+}
+
+message MultiFacilitatorTransition {
+    optional string label = 1;
 }
 
 message InteractionTransition {

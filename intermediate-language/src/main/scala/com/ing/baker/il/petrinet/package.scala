@@ -9,11 +9,10 @@ package object petrinet {
 
   type RecipePetriNet = PetriNet[Place[_], Transition[_, _]]
 
-  def arc(t: Transition[_, _], p: Place[_], weight: Long): Arc = WLDiEdge[Node, String](Right(t), Left(p))(weight, "")
+  def arc(t: Transition[_, _], p: Place[_], weight: Long): Arc = WLDiEdge[Node, Edge[Any]](Right(t), Left(p))(weight, Edge[Any](None))
 
   def arc[C](p: Place[C], t: Transition[_, _], weight: Long, eventFilter: Option[String] = None): Arc = {
-    val innerEdge = new PTEdge[C](weight, eventFilter)
-    WLDiEdge[Node, PTEdge[C]](Left(p), Right(t))(weight, innerEdge)
+    WLDiEdge[Node, Edge[C]](Left(p), Right(t))(weight, Edge[C](eventFilter))
   }
 
   /**
