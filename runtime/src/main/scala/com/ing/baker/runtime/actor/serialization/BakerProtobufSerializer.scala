@@ -8,10 +8,16 @@ import com.ing.baker.runtime.actor.protobuf
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
 import com.ing.baker.runtime.{actor, core}
 import com.trueaccord.scalapb.{GeneratedMessage, GeneratedMessageCompanion, Message}
+import org.slf4j.LoggerFactory
 
-case class Entry[A <: GeneratedMessage with Message[A]](manifest: String, domainClass: Class[_], pbt: GeneratedMessageCompanion[A])
+object BakerProtobufSerializer {
+  case class Entry[A <: GeneratedMessage with Message[A]](manifest: String, domainClass: Class[_], pbt: GeneratedMessageCompanion[A])
+
+  private val log = LoggerFactory.getLogger(classOf[BakerProtobufSerializer])
+}
 
 class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest with ProtoEventAdapter {
+  import BakerProtobufSerializer._
 
   lazy val objectSerializer = new ObjectSerializer(system)
 
@@ -40,17 +46,30 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
       .getOrElse(throw new IllegalStateException(s"Unsupported object: $o"))
   }
 
-  override def toBinary(o: AnyRef): Array[Byte] = toProto(o).toByteArray
+  override def toBinary(o: AnyRef): Array[Byte] = {
+    try {
+      toProto(o).toByteArray
+    } catch {
+      case e: Throwable =>
+        log.error(s"Failed to serialize object $o", e)
+        throw e;
+    }
+  }
 
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = {
+    try {
+      val pbt = manifestInfo
+        .find(_.manifest == manifest)
+        .map(_.pbt)
+        .getOrElse(throw new IllegalStateException(s"Unknown manifest: $manifest"))
 
-    val pbt = manifestInfo
-      .find(_.manifest == manifest)
-      .map(_.pbt)
-      .getOrElse(throw new IllegalStateException(s"Unkown manifest: $manifest"))
+      val protobuf = pbt.parseFrom(bytes).asInstanceOf[GeneratedMessage]
 
-    val protobuf = pbt.parseFrom(bytes).asInstanceOf[GeneratedMessage]
-
-    toDomain(protobuf)
+      toDomain(protobuf)
+    } catch {
+      case e: Throwable =>
+        log.error(s"Failed to deserialize bytes with manifest $manifest", e)
+        throw e;
+    }
   }
 }

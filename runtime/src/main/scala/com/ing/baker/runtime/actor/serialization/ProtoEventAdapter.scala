@@ -78,39 +78,39 @@ trait ProtoEventAdapter {
 
         protobuf.IngredientDescriptor(Some(name), Some(`type`))
 
-      case types.PrimitiveType(clazz) if clazz == classOf[Boolean] =>
+      case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Boolean] =>
         createPrimitive(PrimitiveType.BOOLEAN)
       case types.PrimitiveType(clazz) if clazz == java.lang.Boolean.TYPE =>
         createPrimitive(PrimitiveType.BOOLEAN)
-      case types.PrimitiveType(clazz) if clazz == classOf[Byte] =>
+      case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Byte] =>
         createPrimitive(PrimitiveType.BYTE)
       case types.PrimitiveType(clazz) if clazz == java.lang.Byte.TYPE =>
         createPrimitive(PrimitiveType.BYTE)
-      case types.PrimitiveType(clazz) if clazz == classOf[Short] =>
+      case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Short] =>
         createPrimitive(PrimitiveType.SHORT)
       case types.PrimitiveType(clazz) if clazz == java.lang.Short.TYPE =>
         createPrimitive(PrimitiveType.SHORT)
-      case types.PrimitiveType(clazz) if clazz == classOf[Character] =>
+      case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Character] =>
         createPrimitive(PrimitiveType.CHARACTER)
       case types.PrimitiveType(clazz) if clazz == java.lang.Character.TYPE =>
         createPrimitive(PrimitiveType.CHARACTER)
-      case types.PrimitiveType(clazz) if clazz == classOf[Integer] =>
+      case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Integer] =>
         createPrimitive(PrimitiveType.INTEGER)
       case types.PrimitiveType(clazz) if clazz == java.lang.Integer.TYPE =>
         createPrimitive(PrimitiveType.INT)
-      case types.PrimitiveType(clazz) if clazz == classOf[Long] =>
+      case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Long] =>
         createPrimitive(PrimitiveType.LONG)
       case types.PrimitiveType(clazz) if clazz == java.lang.Long.TYPE =>
         createPrimitive(PrimitiveType.LONG)
-      case types.PrimitiveType(clazz) if clazz == classOf[Float] =>
+      case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Float] =>
         createPrimitive(PrimitiveType.FLOAT)
       case types.PrimitiveType(clazz) if clazz == java.lang.Float.TYPE =>
         createPrimitive(PrimitiveType.FLOAT)
-      case types.PrimitiveType(clazz) if clazz == classOf[Double] =>
+      case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Double] =>
         createPrimitive(PrimitiveType.DOUBLE)
       case types.PrimitiveType(clazz) if clazz == java.lang.Double.TYPE =>
         createPrimitive(PrimitiveType.DOUBLE)
-      case types.PrimitiveType(clazz) if clazz == classOf[String] =>
+      case types.PrimitiveType(clazz) if clazz == classOf[java.lang.String] =>
         createPrimitive(PrimitiveType.STRING)
       case types.PrimitiveType(clazz) if clazz == classOf[BigDecimal] =>
         createPrimitive(PrimitiveType.BIG_DECIMAL_SCALA)
@@ -291,6 +291,8 @@ trait ProtoEventAdapter {
         case types.RecordValue(entries) => protobuf.Value(protobuf.Value.OneofValue.RecordValue(protobuf.Record(entries.mapValues(toProtoType[protobuf.Value]))))
         case types.ListValue(entries) => protobuf.Value(protobuf.Value.OneofValue.ListValue(protobuf.List(entries.map(toProtoType[protobuf.Value]))))
       }
+
+      case o => throw new IllegalStateException(s"Cannot serialize object $o")
     }
   }
 
@@ -349,7 +351,7 @@ trait ProtoEventAdapter {
                 eventOutputTransformers = t.eventOutputTransformers.mapValues(toDomainType[il.EventOutputTransformer])
               ))
 
-            case other => throw new IllegalStateException(s"Unkown node type: $other")
+            case other => throw new IllegalStateException(s"Unknown node type: $other")
           }
         }
 
@@ -493,6 +495,9 @@ trait ProtoEventAdapter {
 
       case process_index.protobuf.ActorDeleted(Some(processId)) =>
         ProcessIndex.ActorDeleted(processId)
+
+      case protobuf.EventOutputTransformer(newEventName, ingredientRenames) =>
+        il.EventOutputTransformer(newEventName.getOrMissing("newEventName"), ingredientRenames)
 
       case _ => throw new IllegalStateException(s"Unknown protobuf message: $serializedMessage")
 
