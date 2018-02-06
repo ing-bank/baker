@@ -1,8 +1,8 @@
 package com.ing.baker.il
 
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.types.{PrimitiveType, RecordField}
 import com.ing.baker.petrinet.api.PetriNetAnalysis
+import com.ing.baker.types.PrimitiveType
 
 import scala.collection.mutable
 

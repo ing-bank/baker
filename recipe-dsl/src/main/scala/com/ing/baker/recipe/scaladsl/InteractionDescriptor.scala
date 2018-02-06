@@ -1,9 +1,7 @@
 package com.ing.baker.recipe.scaladsl
 
-import scala.concurrent.duration.Duration
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common._
-import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
 import com.ing.baker.types.Converters
 
 object InteractionDescriptorFactory {
@@ -60,13 +58,6 @@ case class InteractionDescriptor private(override val interaction: Interaction,
 
   def withOverriddenOutputIngredientName(newIngredientOutputName: String): InteractionDescriptor =
     copy(overriddenOutputIngredientName = Some(newIngredientOutputName))
-
-  def withIncrementalBackoffOnFailure(initialDelay: Duration,
-                                      backoffFactor: Double = 2.0,
-                                      maximumRetries: Int = 50,
-                                      maxTimeBetweenRetries: Option[Duration] = None,
-                                      fireExhaustedEvent: Boolean = false): InteractionDescriptor =
-    copy(failureStrategy = Some(new RetryWithIncrementalBackoff(initialDelay, backoffFactor, maximumRetries, maxTimeBetweenRetries, fireExhaustedEvent)))
 
   def withEventOutputTransformer(event: Event, newEventName: String, ingredientRenames: Map[String, String]): InteractionDescriptor =
     copy(eventOutputTransformers = eventOutputTransformers + (event -> EventOutputTransformer(newEventName, ingredientRenames)))

@@ -80,15 +80,19 @@ package object compiler {
       //Add it to the predefinedIngredients List as empty
       //Add the predefinedIngredients later to overwrite any created empty field with the given predefined value.
       val predefinedIngredientsWithOptionalsEmpty: Map[String, Value] =
-        inputFields.flatMap {
-          case (name, types.OptionType(_)) if !allIngredientNames.contains(name) => Seq(name -> NullValue)
-          case _ => Seq.empty
-        }.toMap ++ interactionDescriptor.predefinedIngredients
+      inputFields.flatMap {
+        case (name, types.OptionType(_)) if !allIngredientNames.contains(name) => Seq(name -> NullValue)
+        case _ => Seq.empty
+      }.toMap ++ interactionDescriptor.predefinedIngredients
 
       val (failureStrategy: InteractionFailureStrategy, exhaustedRetryEvent: Option[EventDescriptor]) = {
         interactionDescriptor.failureStrategy.getOrElse[common.InteractionFailureStrategy](defaultFailureStrategy) match {
-          case common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout: Duration, backoffFactor: Double, maximumRetries: Int, maxTimeBetweenRetries: Option[Duration], fireRetryExhaustedEvent: Boolean) =>
-            val exhaustedRetryEvent: Option[EventDescriptor] = if (fireRetryExhaustedEvent) Some(EventDescriptor(interactionDescriptor.name + exhaustedEventAppend, Seq.empty)) else None
+          case common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, maxTimeBetweenRetries, fireRetryExhaustedEvent) =>
+            val exhaustedRetryEvent: Option[EventDescriptor] = fireRetryExhaustedEvent match {
+              case Some(eventName) if eventName == common.defaultEventExhaustedName => Some(EventDescriptor(interactionDescriptor.name + exhaustedEventAppend, Seq.empty))
+              case Some(eventName) => Some(EventDescriptor(eventName, Seq.empty))
+              case None => None
+            }
             (il.failurestrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, maxTimeBetweenRetries, exhaustedRetryEvent), exhaustedRetryEvent)
           case common.InteractionFailureStrategy.BlockInteraction() => (
             il.failurestrategy.BlockInteraction, None)

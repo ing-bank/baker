@@ -1,13 +1,10 @@
 package com.ing.baker
 
-import java.lang.reflect.{ParameterizedType, Type}
 import java.security.MessageDigest
-import java.util.Optional
 
 import com.ing.baker.il.ActionType.{InteractionAction, SieveAction}
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, MissingEventTransition, MultiFacilitatorTransition, Place, Transition}
-import com.ing.baker.types.RecordField
 
 
 package object il {

@@ -9,5 +9,6 @@ package object common {
   val ProcessIdName = "$ProcessId$"
   val SuccessEventAppend = "Successful"
   val exhaustedEventAppend = "RetryExhausted"
+  val defaultEventExhaustedName = "defaultEventExhaustedName"
 
 }

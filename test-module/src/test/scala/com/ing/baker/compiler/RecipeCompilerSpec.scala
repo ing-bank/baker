@@ -1,15 +1,15 @@
 package com.ing.baker.compiler
 
-import java.lang.reflect.Type
 import java.util.Optional
 
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
-import com.ing.baker.types.{NullValue, PrimitiveValue}
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient, ProvidesNothing}
+import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
+import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, Recipe, processId}
+import com.ing.baker.types.{NullValue, PrimitiveValue}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -34,13 +34,16 @@ class RecipeCompilerSpec extends TestRecipeHelper {
       val exhaustedEvent = Event("RetryExhausted")
       val recipe = Recipe("RetryExhaustedRecipe")
         .withSensoryEvent(initialEvent)
-        .withInteractions(interactionOne.withIncrementalBackoffOnFailure(
-          initialDelay = 10 milliseconds,
-          fireExhaustedEvent = true))
+        .withInteractions(interactionOne.withFailureStrategy(
+          InteractionFailureStrategy.RetryWithIncrementalBackoff.builder()
+              .withInitialDelay(10 milliseconds)
+              .withUntil(Some(UntilDeadline(10 seconds)))
+              .withFireRetryExhaustedEvent(exhaustedEvent)
+              .build()))
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
 
-      compiledRecipe.allEvents.map(_.name) should contain(interactionOne.retryExhaustedEventName)
+      compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
     }
 
     "give a List of missing ingredients if an interaction has an ingredient that is not provided by any other event or interaction" in {

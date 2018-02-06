@@ -7,8 +7,8 @@ import akka.NotUsed
 import akka.stream.javadsl.RunnableGraph
 import akka.stream.scaladsl.{Broadcast, GraphDSL, Sink, Source}
 import akka.stream.{ClosedShape, Materializer}
-import com.ing.baker.runtime.actor.process_index.ProcessIndex.{InvalidEvent, ReceivePeriodExpired}
-import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{TransitionFailed, TransitionFired, TransitionNotEnabled}
+import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.core.InteractionResponse._
 
 import scala.concurrent.duration.{FiniteDuration, SECONDS}
@@ -20,27 +20,26 @@ object InteractionResponse {
   case object Failed extends InteractionResponse
   case object NotEnabled extends InteractionResponse
   case object PeriodExpired extends InteractionResponse
+  case object ProcessDeleted extends InteractionResponse
 }
 
 object BakerResponse {
 
-  def firstMessage(processId: String, response: Future[Any])(implicit ec: ExecutionContext): Future[InteractionResponse] =
-    response.flatMap {
-      translateFirstMessage
-    }.recoverWith {
-      // TODO this very hacky
-      case e: NoSuchElementException => Future.failed(new NoSuchProcessException(s"No such process: $processId"))
-    }
+  private def firstMessage(processId: String, response: Future[Any])(implicit ec: ExecutionContext): Future[InteractionResponse] =
+    response.flatMap(translateFirstMessage)
 
-  def translateFirstMessage(msg: Any): Future[InteractionResponse] = msg match {
-    case t: TransitionFired => Future.successful(Success)
-    case msg: TransitionNotEnabled => Future.successful(NotEnabled)
-    case ReceivePeriodExpired => Future.successful(PeriodExpired)
-    case InvalidEvent(msg) => Future.failed(new IllegalArgumentException(msg))
+  private def translateFirstMessage(msg: Any): Future[InteractionResponse] = msg match {
+    case ProcessInstanceProtocol.Uninitialized(processId) => Future.failed(new NoSuchProcessException(s"No such process: $processId"))
+    case _: ProcessInstanceProtocol.TransitionFired => Future.successful(InteractionResponse.Success)
+    case _: ProcessInstanceProtocol.TransitionNotEnabled => Future.successful(InteractionResponse.NotEnabled)
+    case ProcessIndexProtocol.ProcessUninitialized(processId) => Future.failed(new NoSuchProcessException(s"No such process: $processId"))
+    case ProcessIndexProtocol.ReceivePeriodExpired(_) => Future.successful(InteractionResponse.PeriodExpired)
+    case ProcessIndexProtocol.ProcessDeleted(_) => Future.successful(InteractionResponse.ProcessDeleted)
+    case ProcessIndexProtocol.InvalidEvent(_, invalidEventMessage) => Future.failed(new IllegalArgumentException(invalidEventMessage))
     case msg@_ => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
   }
 
-  def allMessages(processId: String, response: Future[Seq[Any]])(implicit ec: ExecutionContext): Future[InteractionResponse] =
+  private def allMessages(processId: String, response: Future[Seq[Any]])(implicit ec: ExecutionContext): Future[InteractionResponse] =
     response.flatMap { msgs =>
       val futureResponses = msgs.headOption.map(translateFirstMessage)
         .getOrElse(Future.failed(new NoSuchProcessException(s"No such process: $processId"))) +: msgs.drop(1).map(translateOtherMessage)
@@ -49,18 +48,18 @@ object BakerResponse {
       sequenced.map(seq => seq.headOption match {
         case Some(NotEnabled) => NotEnabled
         case Some(PeriodExpired) => PeriodExpired
-        case _ => if (seq.exists(_ == Failed)) Failed else Success
+        case _ => if (seq.contains(Failed)) Failed else Success
       })
     }
 
-  def translateOtherMessage(msg: Any): Future[InteractionResponse] = msg match {
-    case t: TransitionFired => Future.successful(Success)
-    case t: TransitionFailed => Future.successful(Failed)
-    case transitionNotEnabled: TransitionNotEnabled => Future.successful(NotEnabled)
+  private def translateOtherMessage(msg: Any): Future[InteractionResponse] = msg match {
+    case _: ProcessInstanceProtocol.TransitionFired => Future.successful(Success)
+    case _: ProcessInstanceProtocol.TransitionFailed => Future.successful(Failed)
+    case _: ProcessInstanceProtocol.TransitionNotEnabled => Future.successful(NotEnabled)
     case msg @_ => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
   }
 
-  def createFlow(processId: String, source: Source[Any, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext): (Future[InteractionResponse], Future[InteractionResponse]) = {
+  private def createFlow(processId: String, source: Source[Any, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext): (Future[InteractionResponse], Future[InteractionResponse]) = {
 
     val sinkHead = Sink.head[Any]
     val sinkLast = Sink.seq[Any]
@@ -108,9 +107,10 @@ class BakerResponse(processId: String, source: Source[Any, NotUsed])(implicit ma
     val result = Await.result(receivedFuture, timeout)
 
     result match {
-      case Success => SensoryEventStatus.Received
-      case NotEnabled => SensoryEventStatus.FiringLimitMet
-      case PeriodExpired => SensoryEventStatus.ReceivePeriodExpired
+      case InteractionResponse.Success => SensoryEventStatus.Received
+      case InteractionResponse.NotEnabled => SensoryEventStatus.FiringLimitMet
+      case InteractionResponse.PeriodExpired => SensoryEventStatus.ReceivePeriodExpired
+      case InteractionResponse.ProcessDeleted => SensoryEventStatus.ReceivePeriodExpired
       case _ => throw new BakerException("Unknown exception while handeling sensory event")
     }
   }
@@ -131,11 +131,12 @@ class BakerResponse(processId: String, source: Source[Any, NotUsed])(implicit ma
     val result = Await.result(completedFuture, timeout)
 
     result match {
-      case Success => SensoryEventStatus.Completed
-      case Failed => SensoryEventStatus.Completed
-      case NotEnabled => SensoryEventStatus.FiringLimitMet
-      case PeriodExpired => SensoryEventStatus.ReceivePeriodExpired
-      case _ => throw new BakerException("Unknown exception while handeling sensory event")
+      case InteractionResponse.Success => SensoryEventStatus.Completed
+      case InteractionResponse.Failed => SensoryEventStatus.Completed
+      case InteractionResponse.NotEnabled => SensoryEventStatus.FiringLimitMet
+      case InteractionResponse.PeriodExpired => SensoryEventStatus.ReceivePeriodExpired
+      case InteractionResponse.ProcessDeleted => SensoryEventStatus.ProcessDeleted
+      case _ => throw new BakerException("Unknown exception while handling sensory event")
     }
   }
 }

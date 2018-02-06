@@ -8,10 +8,11 @@ import com.ing.baker.il.petrinet.{Place, Transition}
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.process_index.ProcessIndex._
+import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol}
-import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.{AllRecipes, GetAllRecipes, RecipeFound}
-import com.ing.baker.runtime.actor.serialization.{Encryption, ObjectSerializer}
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
+import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.petrinet.RecipeRuntime
@@ -24,40 +25,25 @@ import scala.concurrent.duration._
 
 object ProcessIndex {
 
-  def props(processInstanceStore: ProcessInstanceStore,
-            cleanupInterval: FiniteDuration = 1 minute,
+  def props(cleanupInterval: FiniteDuration = 1 minute,
             processIdleTimeout: Option[FiniteDuration],
             configuredEncryption: Encryption,
             interactionManager: InteractionManager,
             recipeManager: ActorRef) =
-    Props(new ProcessIndex(processInstanceStore, cleanupInterval, processIdleTimeout, configuredEncryption, interactionManager, recipeManager))
+    Props(new ProcessIndex(cleanupInterval, processIdleTimeout, configuredEncryption, interactionManager, recipeManager))
 
-  case class ActorMetadata(recipeId: String, processId: String, createdDateTime: Long)
+  sealed trait ProcessStatus
 
-  // -- Messages
+  //message
+  case object CheckForProcessesToBeDeleted extends InternalBakerMessage
 
-  sealed trait ProcessIndexMessage extends InternalBakerMessage
+  //The process is created and not deleted
+  case object Active extends ProcessStatus
 
-  case object CheckForProcessesToBeDeleted extends ProcessIndexMessage
+  //The process was deleted
+  case object Deleted extends ProcessStatus
 
-  case class CreateProcess(recipeId: String, processId: String) extends ProcessIndexMessage
-
-  case class HandleEvent(processId: String, event: RuntimeEvent) extends ProcessIndexMessage
-
-  case class GetProcessState(processId: String) extends ProcessIndexMessage
-
-  case class GetCompiledRecipe(processId: String) extends ProcessIndexMessage
-
-
-  /**
-    * Indicates that a process can no longer receive events because the configured period has expired.
-    */
-  case object ReceivePeriodExpired extends ProcessIndexMessage
-
-  /**
-    * @param msg error message for the request
-    */
-  case class InvalidEvent(msg: String) extends ProcessIndexMessage
+  case class ActorMetadata(recipeId: String, processId: String, createdDateTime: Long, processStatus: ProcessStatus)
 
   // --- Events
 
@@ -84,10 +70,11 @@ object ProcessIndex {
     val t: Transition[_, _] = transitionForRuntimeEvent(runtimeEvent, recipe)
     FireTransition(t.id, runtimeEvent)
   }
+
+  private val strategy: Strategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadPool")
 }
 
-class ProcessIndex(processInstanceStore: ProcessInstanceStore,
-                   cleanupInterval: FiniteDuration = 1 minute,
+class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
                    processIdleTimeout: Option[FiniteDuration],
                    configuredEncryption: Encryption,
                    interactionManager: InteractionManager,
@@ -131,7 +118,7 @@ class ProcessIndex(processInstanceStore: ProcessInstanceStore,
     val processActorProps =
       Util.recipePetriNetProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
         ProcessInstance.Settings(
-          evaluationStrategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadPool"),
+          evaluationStrategy = strategy,
           encryption = configuredEncryption,
           idleTTL = processIdleTimeout))
 
@@ -140,15 +127,21 @@ class ProcessIndex(processInstanceStore: ProcessInstanceStore,
     processActor
   }
 
-  def shouldDelete(meta: ActorMetadata): Boolean =
-    getCompiledRecipe(meta.recipeId).flatMap(_.retentionPeriod)
-      .exists { p => meta.createdDateTime + p.toMillis < System.currentTimeMillis() }
+  def shouldDelete(meta: ActorMetadata): Boolean = {
+    meta.processStatus != Deleted &&
+      getCompiledRecipe(meta.recipeId)
+        .flatMap(_.retentionPeriod)
+        .exists { p => meta.createdDateTime + p.toMillis < System.currentTimeMillis() }
+  }
+
+  def isDeleted(meta: ActorMetadata): Boolean =
+    meta.processStatus == Deleted
+
 
   def deleteProcess(processId: String): Unit = {
     persist(ActorDeleted(processId)) { _ =>
       val meta = index(processId)
-      processInstanceStore.remove(ProcessMetadata(meta.recipeId, meta.processId, meta.createdDateTime))
-      index -= processId
+      index.update(processId, index(processId).copy(processStatus = Deleted))
     }
   }
 
@@ -167,6 +160,8 @@ class ProcessIndex(processInstanceStore: ProcessInstanceStore,
       index.get(processId) match {
         case Some(meta) if shouldDelete(meta) =>
           deleteProcess(processId)
+        case Some(meta) if isDeleted(meta) =>
+          log.warning(s"Received Terminated message for already deleted process: ${meta.processId}")
         case Some(_) =>
           persist(ActorPassivated(processId)) { _ => }
         case None =>
@@ -181,27 +176,26 @@ class ProcessIndex(processInstanceStore: ProcessInstanceStore,
 
             getCompiledRecipe(recipeId) match {
               case Some(compiledRecipe) =>
-                val initialize = Initialize(marshal(compiledRecipe.initialMarking), ProcessState(processId, Map.empty))
+                val initialize = Initialize(ProcessInstanceProtocol.marshal(compiledRecipe.initialMarking), ProcessState(processId, Map.empty))
                 createProcessActor(processId, compiledRecipe).forward(initialize)
-                val actorMetadata = ActorMetadata(recipeId, processId, created)
+                val actorMetadata = ActorMetadata(recipeId, processId, created, Active)
                 index += processId -> actorMetadata
-                processInstanceStore.add(ProcessMetadata(recipeId, processId, created))
-              case None => sender() ! RecipeNotAvailable(recipeId)
+              case None => sender() ! NoRecipeFound(recipeId)
             }
-
           }
-        case _ => sender() ! AlreadyInitialized
+        case _ if isDeleted(index(processId)) => sender() ! ProcessDeleted(processId)
+        case _ => sender() ! ProcessAlreadyInitialized(processId)
       }
 
-    case HandleEvent(processId: String, event: RuntimeEvent) =>
+    case ProcessEvent(processId: String, eventToFire: RuntimeEvent) =>
       //Forwards the event message to the Actor if its in the Receive period for the compiledRecipe
       def forwardEventIfInReceivePeriod(actorRef: ActorRef, compiledRecipe: CompiledRecipe) = {
-        val cmd = createFireTransitionCmd(compiledRecipe, processId, event)
+        val cmd = createFireTransitionCmd(compiledRecipe, processId, eventToFire)
         compiledRecipe.eventReceivePeriod match {
           case Some(receivePeriod) =>
             index.get(processId).foreach { p =>
               if (System.currentTimeMillis() - p.createdDateTime > receivePeriod.toMillis) {
-                sender() ! ReceivePeriodExpired
+                sender() ! ReceivePeriodExpired(processId)
               }
               else
                 actorRef.forward(cmd)
@@ -216,29 +210,28 @@ class ProcessIndex(processInstanceStore: ProcessInstanceStore,
       //If not return a InvalidEvent message to the sender
       //Otherwise forwardEventIfInReceivePeriod
       def validateEventAvailableForRecipe(actorRef: ActorRef, compiledRecipe: CompiledRecipe) = {
-        compiledRecipe.sensoryEvents.find(_.name.equals(event.name)) match {
-          case None => sender() ! InvalidEvent(s"No event with name '${event.name}' found in recipe '${compiledRecipe.name}'")
-          case Some(sensoryEvent) => {
+        compiledRecipe.sensoryEvents.find(sensoryEvent => sensoryEvent.name == eventToFire.name) match {
+          case None => sender() ! InvalidEvent(processId, s"No event with name '${eventToFire.name}' found in recipe '${compiledRecipe.name}'")
+          case Some(sensoryEvent) =>
             //Check If the sensory event is valid for this recipe
-            val eventValidationErrors = event.validateEvent(sensoryEvent)
+            val eventValidationErrors = eventToFire.validateEvent(sensoryEvent)
             if (eventValidationErrors.nonEmpty)
-              sender() ! InvalidEvent(s"Invalid event: " + eventValidationErrors.mkString(","))
+              sender() ! InvalidEvent(processId, s"Invalid event: " + eventValidationErrors.mkString(","))
             else {
               forwardEventIfInReceivePeriod(actorRef, compiledRecipe)
             }
-          }
         }
       }
 
       //Handles the event, assumes the process is created
       def handleEventWithActor(actorRef: ActorRef) = {
-        val recipeId = index.get(processId) match {
+        index.get(processId) match {
           case Some(actorMetadata) =>
             val recipeId = actorMetadata.recipeId
             getCompiledRecipe(recipeId).foreach { compiledRecipe: CompiledRecipe =>
               validateEventAvailableForRecipe(actorRef, compiledRecipe)
             }
-          case None => sender() ! Uninitialized(processId)
+          case None => sender() ! ProcessUninitialized(processId)
         }
       }
 
@@ -246,33 +239,36 @@ class ProcessIndex(processInstanceStore: ProcessInstanceStore,
       //If not check if it is available and start
       //If not return a Uninitialized message
       context.child(processId) match {
-        case Some(actorRef) => handleEventWithActor(actorRef)
-        case None if index.contains(processId) =>
+        case None if !index.contains(processId) => sender() ! ProcessUninitialized(processId)
+        case None if isDeleted(index(processId)) => sender() ! ProcessDeleted(processId)
+        case None =>
           persist(ActorActivated(processId)) { _ =>
             handleEventWithActor(createProcessActor(processId))
           }
-        case None => sender() ! Uninitialized(processId)
+        case Some(actorRef) => handleEventWithActor(actorRef)
       }
 
     case GetProcessState(processId) =>
       context.child(processId) match {
-        case Some(actorRef) => actorRef.forward(ProcessInstanceProtocol.GetState)
+        case None if !index.contains(processId) => sender() ! ProcessUninitialized(processId)
+        case None if isDeleted(index(processId)) => sender() ! ProcessDeleted(processId)
         case None if index.contains(processId) =>
           persist(ActorActivated(processId)) {
             _ =>
               createProcessActor(processId).forward(ProcessInstanceProtocol.GetState)
           }
-        case None => sender() ! Uninitialized(processId)
+        case Some(actorRef) => actorRef.forward(ProcessInstanceProtocol.GetState)
       }
 
     case GetCompiledRecipe(processId) =>
       index.get(processId) match {
+        case Some(processMetadata) if isDeleted(processMetadata) => sender() ! ProcessDeleted(processId)
         case Some(processMetadata) =>
           getCompiledRecipe(processMetadata.recipeId) match {
             case Some(compiledRecipe) => sender() ! RecipeFound(compiledRecipe)
-            case None => sender() ! Uninitialized(processId)
+            case None => sender() ! ProcessUninitialized(processId)
           }
-        case None => sender() ! Uninitialized(processId)
+        case None => sender() ! ProcessUninitialized(processId)
       }
     case cmd =>
       log.error(s"Unrecognized command $cmd")
@@ -283,7 +279,7 @@ class ProcessIndex(processInstanceStore: ProcessInstanceStore,
 
   override def receiveRecover: Receive = {
     case ActorCreated(recipeId, processId, createdTime) =>
-      index += processId -> ActorMetadata(recipeId, processId, createdTime)
+      index += processId -> ActorMetadata(recipeId, processId, createdTime, Active)
       actorsToBeCreated += processId
     case ActorPassivated(processId) =>
       actorsToBeCreated -= processId
@@ -291,10 +287,9 @@ class ProcessIndex(processInstanceStore: ProcessInstanceStore,
       actorsToBeCreated += processId
     case ActorDeleted(processId) =>
       actorsToBeCreated -= processId
-      index -= processId
+      index.update(processId, index(processId).copy(processStatus = Deleted))
     case RecoveryCompleted =>
       actorsToBeCreated.foreach(id => createProcessActor(id))
-      index.values.foreach(p => processInstanceStore.add(ProcessMetadata(p.recipeId, p.processId, p.createdDateTime)))
   }
 
   override def persistenceId: String = self.path.name

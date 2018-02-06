@@ -1,6 +1,5 @@
 package com.ing.baker.recipe.javadsl;
 
-import com.ing.baker.recipe.annotations.ProvidesIngredient;
 import com.ing.baker.recipe.javadsl.events.SensoryEventWithIngredient;
 import com.ing.baker.recipe.javadsl.events.SensoryEventWithoutIngredient;
 import com.ing.baker.recipe.javadsl.interactions.FiresTwoEventInteraction;
@@ -149,14 +148,22 @@ public class RecipeTest {
     @Test
     public void shouldUpdateFailureStrategy() {
         Recipe recipe = new Recipe("retryWithIncrementalBackoffFailureStrategyRecipe")
-                .withDefaultFailureStrategy(InteractionFailureStrategy.RetryWithIncrementalBackoff(Duration.ofMillis(100), Duration.ofHours(24)));
+                .withDefaultFailureStrategy(
+                       new InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder()
+                                .withInitialDelay(Duration.ofMillis(100))
+                                .withDeadline(Duration.ofHours(24))
+                                .build());
         assertEquals(
                 com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.class,
                 recipe.defaultFailureStrategy().getClass());
 
         Recipe recipe2 = new Recipe("retryWithIncrementalBackoffFailureStrategyRecipe2")
                 .withDefaultFailureStrategy(
-                        InteractionFailureStrategy.RetryWithIncrementalBackoff(Duration.ofMillis(100), Duration.ofHours(24)));
+                        new InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder()
+                                .withInitialDelay(Duration.ofMillis(100))
+                                .withDeadline(Duration.ofHours(24))
+                                .build()
+                );
         assertEquals(
                 com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.class,
                 recipe2.defaultFailureStrategy().getClass());

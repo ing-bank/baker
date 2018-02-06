@@ -8,6 +8,7 @@ import akka.testkit.{TestKit, TestProbe}
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
 import com.ing.baker.recipe.scaladsl.{Recipe, _}
 import org.mockito.Matchers._
@@ -617,10 +618,10 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val recipe = Recipe("FireExhaustedEvent")
         .withSensoryEvent(initialEvent)
-        .withInteractions(interactionOne.withIncrementalBackoffOnFailure(
+        .withInteractions(interactionOne.withFailureStrategy(InteractionFailureStrategy.RetryWithIncrementalBackoff(
           initialDelay = 10 milliseconds,
           maximumRetries = 1,
-          fireExhaustedEvent = true))
+          fireRetryExhaustedEvent = Some(com.ing.baker.recipe.common.defaultEventExhaustedName))))
 
       when(testInteractionOneMock.apply(anyString(), anyString())).thenThrow(new BakerException())
 
@@ -640,10 +641,10 @@ class BakerExecutionSpec extends TestRecipeHelper {
     "not fire the exhausted retry event if the interaction passes" in {
       val recipe = Recipe("NotFireExhaustedEvent")
         .withSensoryEvent(initialEvent)
-        .withInteractions(interactionOne.withIncrementalBackoffOnFailure(
+        .withInteractions(interactionOne.withFailureStrategy(InteractionFailureStrategy.RetryWithIncrementalBackoff(
           initialDelay = 10 milliseconds,
           maximumRetries = 1,
-          fireExhaustedEvent = true))
+          fireRetryExhaustedEvent = Some(com.ing.baker.recipe.common.defaultEventExhaustedName))))
 
       val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
 
@@ -655,6 +656,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       Thread.sleep(50)
 
+      //Since the defaultEventExhaustedName is set the retryExhaustedEventName of interactionOne will be picked.
       baker.events(processId).map(_.name) should not contain interactionOne.retryExhaustedEventName
     }
 
@@ -993,20 +995,20 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       baker.bake(recipeId, processId)
 
-      baker.allProcessMetadata.map(_.processId) should contain(processId)
-
+      //Should not fail
       baker.getIngredients(processId)
+
+      baker.events(processId)
 
       Thread.sleep(retentionPeriod.toMillis + 200)
 
-      baker.allProcessMetadata.map(_.processId) should not contain processId
-
-      intercept[NoSuchProcessException] {
+      //Should fail
+      intercept[ProcessDeletedException] {
         baker.getIngredients(processId)
       }
 
-      intercept[NoSuchProcessException] {
-        baker.events(processId) shouldBe empty
+      intercept[ProcessDeletedException] {
+        baker.events(processId)
       }
     }
 
