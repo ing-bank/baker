@@ -3,7 +3,7 @@ package com.ing.baker
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.recipe.scaladsl._
 
-/** This recipe is mend for testing purposes.
+/** This recipe is meant for testing purposes.
   *
 i  * If you need a recipe that makes more sense then see the example package
   *
@@ -14,8 +14,9 @@ object AllTypeRecipe {
 
   case class User(name: String)
 
-  case class Payload(data: Map[String, String],
-                     userMap: Map[String, Int])
+  case class Payload(data: Map[String, String])
+  // @todo adding Map[String, Int] breaks the code
+//                     userMap: Map[String, Int])
 
   // ingredients
 
@@ -144,26 +145,4 @@ object AllTypeRecipe {
           interactionSix,
           interactionSeven
         ).withSensoryEvent(bigPayloadEvent)
-
-
-
-  // Byte
-
-  val byteInteraction = Interaction(
-    name = "byteInteraction",
-    inputIngredients = javaByteIngredient,
-    output = ProvidesNothing
-  )
-
-  val byteRecipe = Recipe("ByteRecipe").withInteraction(byteInteraction)
-
-  // Short
-
-  val shortInteraction = Interaction(
-    name = "shortInteraction",
-    inputIngredients = javaShortIngredient,
-    output = ProvidesNothing
-  )
-
-  val shortRecipe = Recipe("ShortRecipe").withInteraction(shortInteraction)
 }

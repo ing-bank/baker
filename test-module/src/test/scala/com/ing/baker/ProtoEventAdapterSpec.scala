@@ -21,7 +21,16 @@ class ProtoEventAdapterSpec extends TestKit(ActorSystem("BakerProtobufSerializer
     override val objectSerializer: ObjectSerializer = new ObjectSerializer(system)
   }
 
-  test("should serialize RecipeAdded") {
+  test("should serialize openAccountRecipe") {
+
+    val recipe = Examples.open_account.openAccountRecipe
+    val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+
+    val domainObject = RecipeAdded("recipeId", compiledRecipe)
+    domainObject shouldBe eventAdapter.toDomain(eventAdapter.toProto(domainObject))
+  }
+
+  test("should serialize AllTypeRecipe") {
 
     val recipe = AllTypeRecipe.recipe
     val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
@@ -30,24 +39,7 @@ class ProtoEventAdapterSpec extends TestKit(ActorSystem("BakerProtobufSerializer
     domainObject shouldBe eventAdapter.toDomain(eventAdapter.toProto(domainObject))
   }
 
-
-/*
-
-
-
-
-
- */
-
-//  test("should serialize RecipeAdded") {
-//
-//    val recipe = Examples.open_account.openAccountRecipe
-//    val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
-//
-//    val domainObject = RecipeAdded("recipeId", compiledRecipe)
-//    domainObject shouldBe eventAdapter.toDomain(eventAdapter.toProto(domainObject))
-//  }
-//
+//  @todo Should these tests work or dont they make sense anymore?
 //  test("should serialize Place") {
 //    val domainObject = Place("somePlace", IngredientPlace)
 //    domainObject shouldBe eventAdapter.toDomain(eventAdapter.toProto(domainObject))

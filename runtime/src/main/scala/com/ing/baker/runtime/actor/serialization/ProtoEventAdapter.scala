@@ -91,7 +91,7 @@ trait ProtoEventAdapter {
       case types.PrimitiveType(clazz) if clazz == java.lang.Short.TYPE =>
         createPrimitive(PrimitiveType.SHORT)
       case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Character] =>
-        createPrimitive(PrimitiveType.CHARACTER)
+        createPrimitive(PrimitiveType.CHARACTER_PRIMITIVE)
       case types.PrimitiveType(clazz) if clazz == java.lang.Character.TYPE =>
         createPrimitive(PrimitiveType.CHARACTER)
       case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Integer] =>
@@ -381,7 +381,8 @@ trait ProtoEventAdapter {
           case OneofType.Primitive(PrimitiveType.BYTE_PRIMITIVE) => types.PrimitiveType(classOf[java.lang.Byte])
           case OneofType.Primitive(PrimitiveType.SHORT) => types.PrimitiveType(classOf[Short])
           case OneofType.Primitive(PrimitiveType.SHORT_PRIMITIVE) => types.PrimitiveType(classOf[java.lang.Short])
-          case OneofType.Primitive(PrimitiveType.CHARACTER) => types.PrimitiveType(classOf[Character])
+          case OneofType.Primitive(PrimitiveType.CHARACTER_PRIMITIVE) => types.PrimitiveType(classOf[java.lang.Character])
+          case OneofType.Primitive(PrimitiveType.CHARACTER) => types.PrimitiveType(classOf[Char])
           case OneofType.Primitive(PrimitiveType.INTEGER) => types.PrimitiveType(classOf[Integer])
           case OneofType.Primitive(PrimitiveType.INT) => types.PrimitiveType(classOf[Int])
           case OneofType.Primitive(PrimitiveType.LONG) => types.PrimitiveType(classOf[Long])
