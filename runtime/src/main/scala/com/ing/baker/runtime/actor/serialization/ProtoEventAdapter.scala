@@ -264,6 +264,7 @@ trait ProtoEventAdapter {
             maxTimeBetweenRetries = strategy.maxTimeBetweenRetries.map(_.toMillis),
             retryExhaustedEvent = strategy.retryExhaustedEvent.map(toProtoType[protobuf.EventDescriptor])
           )
+
           protobuf.InteractionFailureStrategy(protobuf.InteractionFailureStrategy.OneofType.RetryWithIncrementalBackoff(retry))
       }
 
@@ -281,8 +282,10 @@ trait ProtoEventAdapter {
         case types.PrimitiveValue(value: Float) => protobuf.Value(protobuf.Value.OneofValue.FloatValue(value))
         case types.PrimitiveValue(value: Double) => protobuf.Value(protobuf.Value.OneofValue.DoubleValue(value))
         case types.PrimitiveValue(value: String) => protobuf.Value(protobuf.Value.OneofValue.StringValue(value))
-        case types.PrimitiveValue(value: BigDecimal) => protobuf.Value(protobuf.Value.OneofValue.BigDecimalValue(value.toString()))
-        case types.PrimitiveValue(value: BigInt) => protobuf.Value(protobuf.Value.OneofValue.BigIntValue(value.toString()))
+        case types.PrimitiveValue(value: BigDecimal) => protobuf.Value(protobuf.Value.OneofValue.BigDecimalScalaValue(value.toString()))
+        case types.PrimitiveValue(value: java.math.BigDecimal) => protobuf.Value(protobuf.Value.OneofValue.BigDecimalJavaValue(BigDecimal(value).toString()))
+        case types.PrimitiveValue(value: BigInt) => protobuf.Value(protobuf.Value.OneofValue.BigIntScalaValue(value.toString()))
+        case types.PrimitiveValue(value: java.math.BigInteger) => protobuf.Value(protobuf.Value.OneofValue.BigIntJavaValue(BigInt(value).toString()))
         case types.PrimitiveValue(value: Array[Byte]) => protobuf.Value(protobuf.Value.OneofValue.ByteArrayValue(ByteString.copyFrom(value)))
         case types.PrimitiveValue(value: org.joda.time.DateTime) => protobuf.Value(protobuf.Value.OneofValue.JodaDatetimeValue(value.getMillis))
         case types.PrimitiveValue(value: org.joda.time.LocalDate) => protobuf.Value(protobuf.Value.OneofValue.JodaLocaldateValue(value.toDate.getTime))
@@ -428,8 +431,10 @@ trait ProtoEventAdapter {
           case OneofValue.FloatValue(float) => types.PrimitiveValue(float)
           case OneofValue.DoubleValue(double) => types.PrimitiveValue(double)
           case OneofValue.StringValue(string) => types.PrimitiveValue(string)
-          case OneofValue.BigDecimalValue(bigdecimal) => types.PrimitiveValue(BigDecimal(bigdecimal))
-          case OneofValue.BigIntValue(bigint) => types.PrimitiveValue(BigInt(bigint))
+          case OneofValue.BigDecimalScalaValue(bigdecimal) => types.PrimitiveValue(BigDecimal(bigdecimal))
+          case OneofValue.BigDecimalJavaValue(bigdecimal) => types.PrimitiveValue(BigDecimal(bigdecimal).bigDecimal)
+          case OneofValue.BigIntScalaValue(bigint) => types.PrimitiveValue(BigInt(bigint))
+          case OneofValue.BigIntJavaValue(bigint) => types.PrimitiveValue(BigInt(bigint).bigInteger)
           case OneofValue.ByteArrayValue(byteArray) => types.PrimitiveValue(byteArray.toByteArray)
           case OneofValue.JodaDatetimeValue(millis) => types.PrimitiveValue(new org.joda.time.DateTime(millis, DateTimeZone.UTC))
           case OneofValue.JodaLocaldateValue(millis) => types.PrimitiveValue(new org.joda.time.DateTime(millis, DateTimeZone.UTC).toLocalDate)

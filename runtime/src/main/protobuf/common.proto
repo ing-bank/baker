@@ -84,12 +84,14 @@ message Value {
         float FloatValue = 8;
         double DoubleValue = 9;
         string StringValue = 10;
-        string BigDecimalValue = 11;
-        string BigIntValue = 12;
-        bytes ByteArrayValue = 13;
-        int64 JodaDatetimeValue = 14;
-        int64 JodaLocaldateValue = 15;
-        int64 JodaLocaldatetimeValue = 16;
+        string BigDecimalScalaValue = 12;
+        string BigDecimalJavaValue = 13;
+        string BigIntScalaValue = 14;
+        string BigIntJavaValue = 15;
+        bytes ByteArrayValue = 16;
+        int64 JodaDatetimeValue = 17;
+        int64 JodaLocaldateValue = 18;
+        int64 JodaLocaldatetimeValue = 19;
 
         Record RecordValue = 50;
         List ListValue = 51;
