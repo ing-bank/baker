@@ -79,15 +79,15 @@ trait ProtoEventAdapter {
         protobuf.IngredientDescriptor(Some(name), Some(`type`))
 
       case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Boolean] =>
-        createPrimitive(PrimitiveType.BOOLEAN)
+        createPrimitive(PrimitiveType.BOOLEAN_PRIMITIVE)
       case types.PrimitiveType(clazz) if clazz == java.lang.Boolean.TYPE =>
         createPrimitive(PrimitiveType.BOOLEAN)
       case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Byte] =>
-        createPrimitive(PrimitiveType.BYTE)
+        createPrimitive(PrimitiveType.BYTE_PRIMITIVE)
       case types.PrimitiveType(clazz) if clazz == java.lang.Byte.TYPE =>
         createPrimitive(PrimitiveType.BYTE)
       case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Short] =>
-        createPrimitive(PrimitiveType.SHORT)
+        createPrimitive(PrimitiveType.SHORT_PRIMITIVE)
       case types.PrimitiveType(clazz) if clazz == java.lang.Short.TYPE =>
         createPrimitive(PrimitiveType.SHORT)
       case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Character] =>
@@ -99,15 +99,15 @@ trait ProtoEventAdapter {
       case types.PrimitiveType(clazz) if clazz == java.lang.Integer.TYPE =>
         createPrimitive(PrimitiveType.INT)
       case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Long] =>
-        createPrimitive(PrimitiveType.LONG)
+        createPrimitive(PrimitiveType.LONG_PRIMITIVE)
       case types.PrimitiveType(clazz) if clazz == java.lang.Long.TYPE =>
         createPrimitive(PrimitiveType.LONG)
       case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Float] =>
-        createPrimitive(PrimitiveType.FLOAT)
+        createPrimitive(PrimitiveType.FLOAT_PRIMITIVE)
       case types.PrimitiveType(clazz) if clazz == java.lang.Float.TYPE =>
         createPrimitive(PrimitiveType.FLOAT)
       case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Double] =>
-        createPrimitive(PrimitiveType.DOUBLE)
+        createPrimitive(PrimitiveType.DOUBLE_PRIMITIVE)
       case types.PrimitiveType(clazz) if clazz == java.lang.Double.TYPE =>
         createPrimitive(PrimitiveType.DOUBLE)
       case types.PrimitiveType(clazz) if clazz == classOf[java.lang.String] =>
@@ -376,14 +376,20 @@ trait ProtoEventAdapter {
 
         msg.`oneofType` match {
           case OneofType.Primitive(PrimitiveType.BOOLEAN) => types.PrimitiveType(classOf[Boolean])
+          case OneofType.Primitive(PrimitiveType.BOOLEAN_PRIMITIVE) => types.PrimitiveType(classOf[java.lang.Boolean])
           case OneofType.Primitive(PrimitiveType.BYTE) => types.PrimitiveType(classOf[Byte])
+          case OneofType.Primitive(PrimitiveType.BYTE_PRIMITIVE) => types.PrimitiveType(classOf[java.lang.Byte])
           case OneofType.Primitive(PrimitiveType.SHORT) => types.PrimitiveType(classOf[Short])
+          case OneofType.Primitive(PrimitiveType.SHORT_PRIMITIVE) => types.PrimitiveType(classOf[java.lang.Short])
           case OneofType.Primitive(PrimitiveType.CHARACTER) => types.PrimitiveType(classOf[Character])
           case OneofType.Primitive(PrimitiveType.INTEGER) => types.PrimitiveType(classOf[Integer])
           case OneofType.Primitive(PrimitiveType.INT) => types.PrimitiveType(classOf[Int])
           case OneofType.Primitive(PrimitiveType.LONG) => types.PrimitiveType(classOf[Long])
+          case OneofType.Primitive(PrimitiveType.LONG_PRIMITIVE) => types.PrimitiveType(classOf[java.lang.Long])
           case OneofType.Primitive(PrimitiveType.FLOAT) => types.PrimitiveType(classOf[Float])
+          case OneofType.Primitive(PrimitiveType.FLOAT_PRIMITIVE) => types.PrimitiveType(classOf[java.lang.Float])
           case OneofType.Primitive(PrimitiveType.DOUBLE) => types.PrimitiveType(classOf[Double])
+          case OneofType.Primitive(PrimitiveType.DOUBLE_PRIMITIVE) => types.PrimitiveType(classOf[java.lang.Double])
           case OneofType.Primitive(PrimitiveType.STRING) => types.PrimitiveType(classOf[String])
           case OneofType.Primitive(PrimitiveType.BIG_DECIMAL_SCALA) => types.PrimitiveType(classOf[BigDecimal])
           case OneofType.Primitive(PrimitiveType.BIG_DECIMAL_JAVA) => types.PrimitiveType(classOf[java.math.BigDecimal])

@@ -176,6 +176,10 @@ class ConvertersSpec extends WordSpecLike with Matchers {
       readJavaType[List[String]] shouldBe ListType(PrimitiveType(classOf[String]))
     }
 
+    "correctly parse array of bytes" in {
+      readJavaType[Array[Byte]] shouldBe PrimitiveType(classOf[Array[Byte]])
+    }
+
     "correctly parse enum types" in {
       readJavaType[EnumExample] shouldBe EnumType(options = Set("A", "B", "C"))
     }
