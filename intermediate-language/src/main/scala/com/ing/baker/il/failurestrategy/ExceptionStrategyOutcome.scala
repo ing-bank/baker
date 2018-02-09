@@ -1,6 +1,6 @@
 package com.ing.baker.il.failurestrategy
 
-import com.ing.baker.il.EventType
+import com.ing.baker.il.EventDescriptor
 
 object ExceptionStrategyOutcome {
 
@@ -16,7 +16,7 @@ object ExceptionStrategyOutcome {
     require(delay > 0, "Delay must be greater then zero")
   }
 
-  case class Continue(eventType: EventType) extends ExceptionStrategyOutcome {}
+  case class Continue(eventType: EventDescriptor) extends ExceptionStrategyOutcome {}
 }
 
 sealed trait ExceptionStrategyOutcome

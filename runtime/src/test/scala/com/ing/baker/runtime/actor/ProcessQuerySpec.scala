@@ -12,7 +12,7 @@ import akka.util.Timeout
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.dsl.colored._
 import com.ing.baker.petrinet.runtime.EventSourcing.{InitializedEvent, TransitionFiredEvent}
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Matchers._

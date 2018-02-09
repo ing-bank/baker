@@ -3,7 +3,7 @@ package com.ing.baker.recipe.common
 trait Event {
   val name: String
   val providedIngredients: Seq[Ingredient]
-  val maxFiringLimit: Option[Integer] = Option.empty
+  val maxFiringLimit: Option[Int] = Option.empty
 
   override def equals(obj: scala.Any): Boolean = obj match {
     case other: Event => this.name == other.name && this.providedIngredients == other.providedIngredients

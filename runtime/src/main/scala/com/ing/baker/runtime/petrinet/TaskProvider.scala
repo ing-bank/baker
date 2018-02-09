@@ -3,12 +3,12 @@ package com.ing.baker.runtime.petrinet
 import java.lang.reflect.InvocationTargetException
 
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
-import com.ing.baker.il.processIdName
+import com.ing.baker.il.{IngredientDescriptor, processIdName}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.{TransitionTask, TransitionTaskProvider}
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
-import com.ing.baker.types.{PrimitiveValue, RecordField, Value}
+import com.ing.baker.types.{PrimitiveValue, Value}
 import fs2.Task
 import org.slf4j.{LoggerFactory, MDC}
 
@@ -17,8 +17,6 @@ import scala.util.Try
 class TaskProvider(recipeName: String, interactionManager: InteractionManager) extends TransitionTaskProvider[ProcessState, Place, Transition] {
 
   val log = LoggerFactory.getLogger(classOf[TaskProvider])
-
-  def toMarking[P[_]](mset: MultiSet[P[_]]): Marking[P] = mset.map { case (p, n) ⇒ p -> Map(() -> n) }.toMarking
 
   override def apply[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _]], t: Transition[Input, Output]): TransitionTask[Place, Input, Output, ProcessState] = {
     t match {
@@ -38,7 +36,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
   // function that (optionally) transforms the output event using the event output transformers
   def transformEvent[I](interaction: InteractionTransition[I])(runtimeEvent: RuntimeEvent): RuntimeEvent = {
     interaction.eventOutputTransformers
-      .find { case (eventType, _) => runtimeEvent.isInstanceOfEventType(eventType) } match {
+      .find { case (eventName, _) => runtimeEvent.name.equals(eventName) } match {
       case Some((_, eventOutputTransformer)) =>
         RuntimeEvent(
           eventOutputTransformer.newEventName,
@@ -129,7 +127,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
     // map the values to the input places, throw an error if a value is not found
     val interactionInput: Seq[Value] =
       interaction.requiredIngredients.map {
-        case RecordField(name, _) => argumentNamesToValues.getOrElse(name, throwMissingInputException).asInstanceOf[Value]
+        case IngredientDescriptor(name, _) => argumentNamesToValues.getOrElse(name, throwMissingInputException).asInstanceOf[Value]
       }
 
     interactionInput

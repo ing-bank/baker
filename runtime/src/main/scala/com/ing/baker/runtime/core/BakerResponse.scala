@@ -7,8 +7,8 @@ import akka.NotUsed
 import akka.stream.javadsl.RunnableGraph
 import akka.stream.scaladsl.{Broadcast, GraphDSL, Sink, Source}
 import akka.stream.{ClosedShape, Materializer}
-import com.ing.baker.runtime.actor.processindex.ProcessIndexProtocol
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol
+import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.core.InteractionResponse._
 
 import scala.concurrent.duration.{FiniteDuration, SECONDS}

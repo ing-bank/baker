@@ -176,29 +176,33 @@ class ConvertersSpec extends WordSpecLike with Matchers {
       readJavaType[List[String]] shouldBe ListType(PrimitiveType(classOf[String]))
     }
 
+    "correctly parse array of bytes" in {
+      readJavaType[Array[Byte]] shouldBe PrimitiveType(classOf[Array[Byte]])
+    }
+
     "correctly parse enum types" in {
       readJavaType[EnumExample] shouldBe EnumType(options = Set("A", "B", "C"))
     }
 
     "correctly parse basic POJO types" in {
       val simplePOJOFields = Seq(
-        new RecordField("integer", PrimitiveType(classOf[Integer])),
-        new RecordField("string", PrimitiveType(classOf[String])),
-        new RecordField("boolean", PrimitiveType(classOf[Boolean])))
+        RecordField("integer", PrimitiveType(classOf[Integer])),
+        RecordField("string", PrimitiveType(classOf[String])),
+        RecordField("boolean", PrimitiveType(classOf[Boolean])))
 
       readJavaType[SimplePOJOExample] shouldBe RecordType(simplePOJOFields)
     }
 
     "correctly parse POJO types in POJO types" in {
       val simplePOJOExampleSeq = Seq(
-        new RecordField("integer", PrimitiveType(classOf[Integer])),
-        new RecordField("string", PrimitiveType(classOf[String])),
-        new RecordField("boolean", PrimitiveType(classOf[Boolean])))
+        RecordField("integer", PrimitiveType(classOf[Integer])),
+        RecordField("string", PrimitiveType(classOf[String])),
+        RecordField("boolean", PrimitiveType(classOf[Boolean])))
 
       val complexPOJOExampleSeq = Seq(
-        new RecordField("simplePOJOExample", RecordType(simplePOJOExampleSeq)),
-        new RecordField("string", PrimitiveType(classOf[String])),
-        new RecordField("boolean", PrimitiveType(classOf[Boolean])))
+        RecordField("simplePOJOExample", RecordType(simplePOJOExampleSeq)),
+        RecordField("string", PrimitiveType(classOf[String])),
+        RecordField("boolean", PrimitiveType(classOf[Boolean])))
 
       readJavaType[ComplexPOJOExample] shouldBe RecordType(complexPOJOExampleSeq)
     }

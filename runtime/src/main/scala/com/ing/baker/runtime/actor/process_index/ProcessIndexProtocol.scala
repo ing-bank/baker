@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor.processindex
+package com.ing.baker.runtime.actor.process_index
 
 import com.ing.baker.runtime.actor.InternalBakerMessage
 import com.ing.baker.runtime.core.RuntimeEvent

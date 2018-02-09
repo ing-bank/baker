@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.core
 
-import com.ing.baker.il.EventType
+import com.ing.baker.il.EventDescriptor
 import com.ing.baker.types.{Converters, NullValue, Value}
 
 import scala.collection.JavaConverters._
@@ -40,7 +40,7 @@ case class RuntimeEvent(name: String,
     * @param eventType
     * @return
     */
-  def isInstanceOfEventType(eventType: EventType): Boolean = validateEvent(eventType).isEmpty
+  def isInstanceOfEventType(eventType: EventDescriptor): Boolean = validateEvent(eventType).isEmpty
 
   /**
     *
@@ -50,13 +50,13 @@ case class RuntimeEvent(name: String,
     * @param eventType The event type to validate against.
     * @return
     */
-  def validateEvent(eventType: EventType): Seq[String] = {
+  def validateEvent(eventType: EventDescriptor): Seq[String] = {
 
     if (eventType.name != name)
       Seq(s"Provided event with name '$name' does not match expected name '${eventType.name}'")
     else
       // we check all the required ingredient types, additional ones are ignored
-      eventType.ingredientTypes.flatMap { ingredient =>
+      eventType.ingredients.flatMap { ingredient =>
         providedIngredientsMap.get(ingredient.name) match {
           case None        =>
             Seq(s"no value was provided for ingredient '${ingredient.name}'")

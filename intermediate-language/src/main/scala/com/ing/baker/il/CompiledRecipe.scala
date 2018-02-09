@@ -1,6 +1,6 @@
 package com.ing.baker.il
 
-import com.ing.baker.il.petrinet.{InteractionTransition, Place, RecipePetriNet}
+import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, RecipePetriNet}
 import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.types.RecordField
 
@@ -13,10 +13,13 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 case class CompiledRecipe(name: String,
                           petriNet: RecipePetriNet,
                           initialMarking: Marking[Place],
-                          sensoryEvents: Set[EventType],
                           validationErrors: Seq[String] = Seq.empty,
                           eventReceivePeriod: Option[FiniteDuration],
                           retentionPeriod: Option[FiniteDuration]) {
+
+  def sensoryEvents: Set[EventDescriptor] = petriNet.transitions.collect {
+    case EventTransition(eventDescriptor, true, _) => eventDescriptor
+  }.toSet
 
   def getValidationErrors: java.util.List[String] = validationErrors.toList.asJava
 
@@ -74,15 +77,15 @@ case class CompiledRecipe(name: String,
     case t: InteractionTransition[_] => t
   }
 
-  val interactionEvents: Set[EventType] = interactionTransitions flatMap(it => it.eventsToFire)
+  val interactionEvents: Set[EventDescriptor] = interactionTransitions flatMap(it => it.eventsToFire)
 
-  val allEvents: Set[EventType] = sensoryEvents ++ interactionEvents
+  val allEvents: Set[EventDescriptor] = sensoryEvents ++ interactionEvents
 
-  def getAllEvents: java.util.Set[EventType] = allEvents.asJava
+  def getAllEvents: java.util.Set[EventDescriptor] = allEvents.asJava
 
-  val allIngredients: Set[RecordField] = allEvents.flatMap {
-    events => events.ingredientTypes
+  val allIngredients: Set[IngredientDescriptor] = allEvents.flatMap {
+    events => events.ingredients
   }
 
-  def getAllIngredients: java.util.Set[RecordField] = allIngredients.asJava
+  def getAllIngredients: java.util.Set[IngredientDescriptor] = allIngredients.asJava
 }

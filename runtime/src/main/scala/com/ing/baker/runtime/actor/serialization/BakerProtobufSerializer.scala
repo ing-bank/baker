@@ -1,78 +1,75 @@
 package com.ing.baker.runtime.actor.serialization
 
 import akka.actor.ExtendedActorSystem
-import akka.serialization.{Serializer, SerializerWithStringManifest}
-import com.ing.baker.types.Value
-import com.ing.baker.runtime.actor.messages
-import com.ing.baker.runtime.core
+import akka.serialization.SerializerWithStringManifest
+import com.ing.baker.il
+import com.ing.baker.runtime.actor.process_index.ProcessIndex
+import com.ing.baker.runtime.actor.protobuf
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
+import com.ing.baker.runtime.{actor, core}
+import com.trueaccord.scalapb.{GeneratedMessage, GeneratedMessageCompanion, Message}
+import org.slf4j.LoggerFactory
 
-class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
+object BakerProtobufSerializer {
+  case class Entry[A <: GeneratedMessage with Message[A]](manifest: String, domainClass: Class[_], pbt: GeneratedMessageCompanion[A])
 
-  lazy val objectSerializer = new AkkaObjectSerializer(system) {
-    // We always use the Kryo serializer for now
-     override def getSerializerFor(obj: AnyRef): Serializer = serialization.serializerByIdentity(8675309)
-  }
+  private val log = LoggerFactory.getLogger(classOf[BakerProtobufSerializer])
+}
+
+class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest with ProtoEventAdapter {
+  import BakerProtobufSerializer._
+
+  lazy val objectSerializer = new ObjectSerializer(system)
+
+  val manifestInfo = Seq(
+    Entry("core.RuntimeEvent", classOf[core.RuntimeEvent], protobuf.RuntimeEvent),
+    Entry("core.ProcessState", classOf[core.ProcessState], protobuf.ProcessState),
+    Entry("il.CompiledRecipe", classOf[il.CompiledRecipe], protobuf.CompiledRecipe),
+
+    Entry("ProcessIndex.ActorCreated", classOf[ProcessIndex.ActorCreated], actor.process_index.protobuf.ActorCreated),
+    Entry("ProcessIndex.ActorPassivated", classOf[ProcessIndex.ActorPassivated], actor.process_index.protobuf.ActorPassivated),
+    Entry("ProcessIndex.ActorActivated", classOf[ProcessIndex.ActorActivated], actor.process_index.protobuf.ActorActivated),
+    Entry("ProcessIndex.ActorDeleted", classOf[ProcessIndex.ActorDeleted], actor.process_index.protobuf.ActorDeleted),
+
+    Entry("RecipeManager.RecipeAdded", classOf[RecipeManager.RecipeAdded], actor.recipe_manager.protobuf.RecipeAdded)
+  )
 
   // Hardcoded serializerId for this serializer. This should not conflict with other serializers.
   // Values from 0 to 40 are reserved for Akka internal usage.
   override def identifier: Int = 101
 
   override def manifest(o: AnyRef): String = {
-    o match {
-      case _: core.RuntimeEvent => "RuntimeEvent"
-      case _: core.ProcessState => "ProcessState"
-    }
-  }
 
-  def writeIngredients(ingredients: Seq[(String, Value)]): Seq[messages.Ingredient] = {
-    ingredients.map { case (name, value) =>
-      val serializedObject = objectSerializer.serializeObject(value)
-      val objectMessage = transformToProto(serializedObject)
-      messages.Ingredient(Some(name), Some(objectMessage))
-    }
-  }
-
-  def readIngredients(ingredients: Seq[messages.Ingredient]): Seq[(String, Value)] = {
-    ingredients.map {
-      case messages.Ingredient(Some(name), Some(data)) =>
-        val deserializedData = transformFromProto(data)
-        val deserializedObject = objectSerializer.deserializeObject(deserializedData).asInstanceOf[Value]
-        name -> deserializedObject
-      case _ => throw new IllegalArgumentException("Missing fields in Protobuf data when deserializing ingredients")
-    }
+    manifestInfo
+      .find(_.domainClass.isInstance(o))
+      .map(_.manifest)
+      .getOrElse(throw new IllegalStateException(s"Unsupported object: $o"))
   }
 
   override def toBinary(o: AnyRef): Array[Byte] = {
-    // translate domain model to protobuf
-    o match {
-      case e: core.RuntimeEvent =>
-        val ingredients = writeIngredients(e.providedIngredients)
-        val eventMessage = messages.RuntimeEvent(Some(e.name), ingredients)
-        messages.RuntimeEvent.toByteArray(eventMessage)
-
-      case e: core.ProcessState =>
-        val ingredients = writeIngredients(e.ingredients.toSeq)
-        val processsStateMesage = messages.ProcessState(Some(e.processId), ingredients)
-        messages.ProcessState.toByteArray(processsStateMesage)
+    try {
+      toProto(o).toByteArray
+    } catch {
+      case e: Throwable =>
+        log.error(s"Failed to serialize object $o", e)
+        throw e;
     }
   }
 
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = {
+    try {
+      val pbt = manifestInfo
+        .find(_.manifest == manifest)
+        .map(_.pbt)
+        .getOrElse(throw new IllegalStateException(s"Unknown manifest: $manifest"))
 
-    // translate from protobuf to domain model
-    manifest match {
-      case "RuntimeEvent" =>
-        val eventMessage = messages.RuntimeEvent.parseFrom(bytes)
-        eventMessage match {
-          case messages.RuntimeEvent(Some(name), ingredients) => core.RuntimeEvent(name, readIngredients(ingredients))
-          case _ => throw new IllegalStateException(s"Failed to deserialize RuntimeEvent message (missing 'name' field)")
-        }
-      case "ProcessState" =>
-        val eventMessage = messages.ProcessState.parseFrom(bytes)
-        eventMessage match {
-          case messages.ProcessState(Some(id), ingredients) => core.ProcessState(id, readIngredients(ingredients).toMap)
-          case _ => throw new IllegalStateException(s"Failed to deserialize ProcessState message (missing 'id' field)")
-        }
+      val protobuf = pbt.parseFrom(bytes).asInstanceOf[GeneratedMessage]
+
+      toDomain(protobuf)
+    } catch {
+      case e: Throwable =>
+        log.error(s"Failed to deserialize bytes with manifest $manifest", e)
+        throw e;
     }
   }
 }

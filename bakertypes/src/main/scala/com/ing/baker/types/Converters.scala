@@ -57,6 +57,9 @@ object Converters {
       case clazz: ParameterizedType if classOf[scala.Option[_]].isAssignableFrom(getRawClass(clazz)) || classOf[java.util.Optional[_]].isAssignableFrom(getRawClass(clazz)) =>
         val entryType = readJavaType(clazz.getActualTypeArguments()(0))
         OptionType(entryType)
+      case t: ParameterizedType if classOf[scala.Array[_]].isAssignableFrom(getRawClass(t)) && classOf[Byte].isAssignableFrom(getRawClass(t.getActualTypeArguments()(0))) =>
+        PrimitiveType(classOf[Array[Byte]])
+
       case clazz: ParameterizedType if getRawClass(clazz.getRawType).isAssignableFrom(classOf[List[_]]) || getRawClass(clazz.getRawType).isAssignableFrom(classOf[java.util.List[_]]) =>
         val entryType = readJavaType(clazz.getActualTypeArguments()(0))
         ListType(entryType)
@@ -90,6 +93,7 @@ object Converters {
   def toValue(obj: Any): Value = {
 
     obj match {
+      case value: Value                     => value
       case value if isEmpty(value)          => NullValue
       case value if isPrimitiveValue(value) => PrimitiveValue(value)
       case list: List[_]                    => ListValue(list.map(toValue))

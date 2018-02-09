@@ -1,6 +1,6 @@
 package com.ing.baker.il.failurestrategy
 
-import com.ing.baker.il.EventType
+import com.ing.baker.il.EventDescriptor
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome.{BlockTransition, Continue, RetryWithDelay}
 
 import scala.concurrent.duration.Duration
@@ -9,7 +9,7 @@ case class RetryWithIncrementalBackoff(initialTimeout: Duration,
                                        backoffFactor: Double,
                                        maximumRetries: Int,
                                        maxTimeBetweenRetries: Option[Duration],
-                                       retryExhaustedEvent: Option[EventType])
+                                       retryExhaustedEvent: Option[EventDescriptor])
   extends InteractionFailureStrategy {
   require(backoffFactor >= 1.0, "backoff factor must be greater or equal to 1.0")
   require(maximumRetries >= 1, "maximum retries must be greater or equal to 1")

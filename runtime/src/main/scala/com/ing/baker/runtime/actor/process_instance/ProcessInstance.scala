@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor.processinstance
+package com.ing.baker.runtime.actor.process_instance
 
 import akka.actor._
 import akka.event.{DiagnosticLoggingAdapter, Logging}
@@ -9,10 +9,10 @@ import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{Continue, RetryWithDelay}
 import com.ing.baker.petrinet.runtime._
 import com.ing.baker.runtime.actor.InternalBakerMessage
-import com.ing.baker.runtime.actor.processinstance.ProcessInstance._
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceLogger._
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.actor.serialization.ObjectSerializer
+import com.ing.baker.runtime.actor.process_instance.ProcessInstance._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceLogger._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.serialization.{Encryption, ObjectSerializer}
 import fs2.Strategy
 
 import scala.concurrent.duration._
@@ -24,7 +24,7 @@ object ProcessInstance {
   case class Settings(
                        evaluationStrategy: Strategy,
                        idleTTL: Option[FiniteDuration],
-                       serializer: ObjectSerializer)
+                       encryption: Encryption)
 
   private case class IdleStop(seq: Long) extends InternalBakerMessage
 
@@ -50,7 +50,7 @@ class ProcessInstance[P[_], T[_, _], S, E](
                                              settings: Settings,
                                              runtime: PetriNetRuntime[P, T, S, E],
                                              override implicit val placeIdentifier: Identifiable[P[_]],
-                                             override implicit val transitionIdentifier: Identifiable[T[_, _]]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.serializer, runtime.eventSourceFn) {
+                                             override implicit val transitionIdentifier: Identifiable[T[_, _]]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSourceFn) {
 
 
   val log: DiagnosticLoggingAdapter = Logging.getLogger(this)

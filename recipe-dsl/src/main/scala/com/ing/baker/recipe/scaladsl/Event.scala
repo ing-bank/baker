@@ -13,8 +13,8 @@ object Event {
 
 case class Event (override val name: String,
                   override val providedIngredients: Seq[common.Ingredient],
-                  override val maxFiringLimit: Option[Integer]) extends common.Event {
-  def withMaxFiringLimit(firingLimit: Integer): Event = {
+                  override val maxFiringLimit: Option[Int]) extends common.Event {
+  def withMaxFiringLimit(firingLimit: Int): Event = {
     Event(this.name, this.providedIngredients, Some(firingLimit))
   }
 }

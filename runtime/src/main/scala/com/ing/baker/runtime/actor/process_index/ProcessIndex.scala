@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor.processindex
+package com.ing.baker.runtime.actor.process_index
 
 import akka.actor.{ActorLogging, ActorRef, Props, Terminated}
 import akka.pattern.ask
@@ -7,12 +7,12 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.{Place, Transition}
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
 import com.ing.baker.runtime.actor._
-import com.ing.baker.runtime.actor.processindex.ProcessIndex._
-import com.ing.baker.runtime.actor.processindex.ProcessIndexProtocol._
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol.{FireTransition, Initialize, Stop}
-import com.ing.baker.runtime.actor.processinstance.{ProcessInstance, ProcessInstanceProtocol}
-import com.ing.baker.runtime.actor.recipemanager.RecipeManagerProtocol.{AllRecipes, GetAllRecipes, NoRecipeFound, RecipeFound}
-import com.ing.baker.runtime.actor.serialization.{AkkaObjectSerializer, Encryption}
+import com.ing.baker.runtime.actor.process_index.ProcessIndex._
+import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol}
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
+import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.petrinet.RecipeRuntime
@@ -119,7 +119,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
       Util.recipePetriNetProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
         ProcessInstance.Settings(
           evaluationStrategy = strategy,
-          serializer = new AkkaObjectSerializer(context.system, configuredEncryption),
+          encryption = configuredEncryption,
           idleTTL = processIdleTimeout))
 
     val processActor = context.actorOf(processActorProps, name = processId)

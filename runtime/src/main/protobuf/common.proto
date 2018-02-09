@@ -2,13 +2,263 @@ syntax = "proto2";
 
 import "scalapb/scalapb.proto";
 
-option java_package = "com.ing.baker.runtime.actor.messages";
+option java_package = "com.ing.baker.runtime.actor.protobuf";
 option (scalapb.options) = {
     flat_package: true
 };
 
+// wrapper object for 'any' data
 message SerializedData {
     optional int32 serializer_id = 1;
     optional string manifest = 2;
     optional bytes data = 3;
 }
+
+// Baker type system messages
+enum PrimitiveType {
+    BOOLEAN = 1;
+    BOOLEAN_PRIMITIVE = 2;
+    BYTE = 3;
+    BYTE_PRIMITIVE = 4;
+    SHORT = 5;
+    SHORT_PRIMITIVE = 6;
+    CHARACTER = 7;
+    CHARACTER_PRIMITIVE = 8;
+    INTEGER = 9;
+    INT = 10;
+    LONG = 11;
+    LONG_PRIMITIVE = 12;
+    FLOAT = 13;
+    FLOAT_PRIMITIVE = 14;
+    DOUBLE = 15;
+    DOUBLE_PRIMITIVE = 16;
+    STRING = 17;
+    BIG_DECIMAL_SCALA = 18;
+    BIG_DECIMAL_JAVA = 19;
+    BIG_INT_SCALA = 20;
+    BIG_INT_JAVA = 21;
+    BYTE_ARRAY = 22;
+    JODA_DATETIME = 23;
+    JODA_LOCAL_DATE = 24;
+    JODA_LOCAL_DATETIME = 25;
+}
+
+message OptionalType {
+    optional Type entryType = 1;
+}
+
+message ListType {
+    optional Type entryType = 1;
+}
+
+message RecordField {
+    optional string name = 1;
+    optional Type type = 2;
+}
+
+message RecordType {
+    repeated RecordField fields = 1;
+}
+
+message MapType {
+    optional Type valueType = 1;
+}
+
+message EnumType {
+    repeated string options = 1;
+}
+
+message Type {
+    oneof oneof_type {
+        PrimitiveType primitive = 1;
+        OptionalType optional = 2;
+        ListType list = 3;
+        RecordType record = 4;
+        MapType map = 5;
+        EnumType enum = 6;
+    }
+}
+
+message Value {
+    oneof oneof_value {
+        bool NullValue = 1;
+        bool BooleanValue = 2;
+        int32 ByteValue = 3;
+        int32 ShortValue = 4;
+        int32 CharValue = 5;
+        int32 IntValue = 6;
+        int64 LongValue = 7;
+        float FloatValue = 8;
+        double DoubleValue = 9;
+        string StringValue = 10;
+        string BigDecimalScalaValue = 12;
+        string BigDecimalJavaValue = 13;
+        string BigIntScalaValue = 14;
+        string BigIntJavaValue = 15;
+        bytes ByteArrayValue = 16;
+        string JodaDatetimeValue = 17;
+        string JodaLocaldateValue = 18;
+        string JodaLocaldatetimeValue = 19;
+
+        Record RecordValue = 50;
+        List ListValue = 51;
+    }
+}
+
+message Record {
+    map<string, Value> fields = 1;
+}
+
+message List {
+    repeated Value entries = 1;
+}
+
+
+// END -- Baker type system messages
+
+
+//  DATA (Runtime messages)
+message Ingredient {
+    optional string name = 1;
+    optional SerializedData data = 2;
+}
+
+message RuntimeEvent {
+    optional string name = 1;
+    repeated Ingredient providedIngredients = 2;
+}
+
+message ProcessState {
+    optional string processId = 1;
+    repeated Ingredient ingredients = 2;
+}
+// END DATA
+
+// DESCRIPTORS (Intermediate Language messages)
+message IngredientDescriptor {
+    optional string name = 1;
+    optional Type type = 2;
+}
+
+message EventDescriptor {
+    optional string name = 1;
+    repeated IngredientDescriptor ingredients = 2;
+}
+
+message CompiledRecipe {
+    optional string name = 1;
+    optional PetriNet petrinet = 2;
+    repeated ProducedToken initialMarking = 3;
+    repeated string validationErrors = 4;
+    optional int64 eventReceivePeriod = 5;
+    optional int64 retentionPeriod = 6;
+}
+// END DESCRIPTORS
+
+
+// PETRINET
+message Edge {
+    optional int32 from = 1;
+    optional int32 to = 2;
+    optional int64 weight = 3;
+    optional string eventFilter = 4;
+}
+
+message Node {
+    oneof oneof_node {
+        Place place = 1;
+        EventTransition eventTransition = 11;
+        InteractionTransition interactionTransition = 12;
+        IntermediateTransition intermediateTransition = 13;
+        MultiFacilitatorTransition multiFacilitatorTransition = 14;
+        MissingEventTransition missingEventTransition = 15;
+    }
+}
+
+message PetriNet {
+    repeated Node nodes = 1;
+    repeated Edge edges = 2;
+}
+
+message ProducedToken {
+    optional int64 place_id = 1;
+    optional int64 token_id = 2;
+    optional int32 count = 3;
+    optional SerializedData token_data = 4;
+}
+
+enum PlaceType {
+    IngredientPlace = 1;
+    InteractionEventOutputPlace = 2;
+    FiringLimiterPlace = 3;
+    EventPreconditionPlace = 4;
+    EventOrPreconditionPlace = 5;
+    IntermediatePlace = 6;
+    EmptyEventIngredientPlace = 7;
+    MultiTransitionPlace = 8;
+}
+
+message Place {
+    optional string label = 1;
+    optional PlaceType placeType = 2;
+    optional int32 firingLimiterPlaceMaxLimit = 3;
+}
+
+message BlockInteraction {}
+message FireEventAfterFailure {
+    optional EventDescriptor event = 1;
+}
+message RetryWithIncrementalBackoff {
+    optional int64 initialTimeout = 1;
+    optional double backoffFactor = 2;
+    optional int32 maximumRetries = 3;
+    optional int64 maxTimeBetweenRetries = 4;
+    optional EventDescriptor retryExhaustedEvent = 5;
+}
+
+message InteractionFailureStrategy {
+    oneof oneof_type {
+        BlockInteraction blockInteraction = 1;
+        FireEventAfterFailure fireEventAfterFailure = 2;
+        RetryWithIncrementalBackoff retryWithIncrementalBackoff = 3;
+    }
+}
+
+message EventOutputTransformer {
+    optional string newEventName = 1;
+    map<string, string> ingredientRenames = 2;
+}
+
+message EventTransition {
+    optional EventDescriptor eventDescriptor = 1;
+    optional bool isSensoryEvent = 2;
+    optional int32 maxFiringLimit = 3;
+}
+
+message IntermediateTransition {
+    optional string label = 1;
+}
+
+message MissingEventTransition {
+    optional string label = 1;
+}
+
+message MultiFacilitatorTransition {
+    optional string label = 1;
+}
+
+message InteractionTransition {
+    repeated EventDescriptor eventsToFire = 1;
+    repeated EventDescriptor originalEvents = 2;
+    optional EventDescriptor providedIngredientEvent = 3;
+    repeated IngredientDescriptor requiredIngredients = 4;
+    optional string interactionName = 5;
+    optional string originalInteractionName = 6;
+    optional bool isSieve = 7;
+    map<string, Value> predefinedParameters = 8;
+    optional int32 maximumInteractionCount = 9;
+    optional InteractionFailureStrategy failureStrategy = 10;
+    map<string, EventOutputTransformer> eventOutputTransformers = 11;
+}
+
+// END PETRINET

@@ -4,7 +4,7 @@ package compiler
 import com.ing.baker.il.RecipeValidations.postCompileValidations
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
-import com.ing.baker.il.{CompiledRecipe, EventType, ValidationSettings}
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.recipe.common._
 
@@ -34,7 +34,7 @@ object RecipeCompiler {
 
     interaction.requiredEvents.toSeq.map { eventName =>
       // a new `Place` generated for each AND events
-      val eventPreconditionPlace = createPlace(label = s"${eventName}-${interaction.name}", placeType = EventPreconditionPlace)
+      val eventPreconditionPlace = createPlace(label = s"$eventName-${interaction.name}", placeType = EventPreconditionPlace)
 
       buildEventPreconditionArcs(eventName,
         eventPreconditionPlace,
@@ -84,15 +84,14 @@ object RecipeCompiler {
 
   // the (possible) event output arcs / places
   private def interactionEventOutputArc(interaction: InteractionTransition[_],
-                                        events: Seq[EventType],
-                                        findInternalEventByEvent: EventType => Option[Transition[_, _]]): Seq[Arc] = {
+                                        events: Seq[EventDescriptor],
+                                        findInternalEventByEvent: EventDescriptor => Option[Transition[_, _]]): Seq[Arc] = {
     val resultPlace = createPlace(label = interaction.label, placeType = InteractionEventOutputPlace)
     if (interaction.eventsToFire.nonEmpty) {
       val eventArcs = events.map { event =>
         val internalEventTransition = findInternalEventByEvent(event).get
-        val filter = EventNameFilter(event.name)
 
-        arc(resultPlace, internalEventTransition, 1, filter)
+        arc(resultPlace, internalEventTransition, 1, Some(event.name))
       }
       arc(interaction, resultPlace, 1) +: eventArcs
     }
@@ -137,14 +136,14 @@ object RecipeCompiler {
   }
 
   private def buildInteractionOutputArcs(t: InteractionTransition[_],
-                                         findInternalEventByEvent: EventType => Option[Transition[_, _]]): Seq[Arc] = {
+                                         findInternalEventByEvent: EventDescriptor => Option[Transition[_, _]]): Seq[Arc] = {
     interactionEventOutputArc(t, t.eventsToFire, findInternalEventByEvent)
   }
 
   private def buildInteractionArcs(
                                     multipleOutputFacilitatorTransitions: Seq[Transition[_, _]],
                                     placeNameWithDuplicateTransitions: Map[String, Seq[InteractionTransition[_]]],
-                                    findInternalEventByEvent: EventType => Option[Transition[_, _]])(
+                                    findInternalEventByEvent: EventDescriptor => Option[Transition[_, _]])(
                                     t: InteractionTransition[_]): Seq[Arc] = {
 
     buildInteractionInputArcs(
@@ -204,7 +203,7 @@ object RecipeCompiler {
     // connecting a transition to a ingredient place.
     val internalEventArcs: Seq[Arc] = allInteractionTransitions.flatMap { t =>
       t.eventsToFire.flatMap { event =>
-        event.ingredientTypes.map(ingredient =>
+        event.ingredients.map(ingredient =>
           arc(interactionEventTransitions.getByLabel(event.name), createPlace(ingredient.name, IngredientPlace), 1))
       }
     }
@@ -231,11 +230,11 @@ object RecipeCompiler {
         allInteractionTransitions.findTransitionByName)
     }.unzipFlatten
 
-    val (sensoryEventWithoutIngredients, sensoryEventWithIngredients) = sensoryEventTransitions.partition(_.event.ingredientTypes.isEmpty)
+    val (sensoryEventWithoutIngredients, sensoryEventWithIngredients) = sensoryEventTransitions.partition(_.event.ingredients.isEmpty)
 
     // It connects a sensory event to an ingredient places
     val sensoryEventArcs: Seq[Arc] = sensoryEventWithIngredients
-      .flatMap(et => et.event.ingredientTypes.map(ingredient => arc(et, createPlace(ingredient.name, IngredientPlace), 1)))
+      .flatMap(et => et.event.ingredients.map(ingredient => arc(et, createPlace(ingredient.name, IngredientPlace), 1)))
 
     val eventThatArePreconditions: Seq[String] =
       actionDescriptors.flatMap {
@@ -280,14 +279,13 @@ object RecipeCompiler {
     val petriNet: ScalaGraphPetriNet[Place[_], Transition[_, _]] = new ScalaGraphPetriNet(Graph(arcs: _*))
 
     val initialMarking: Marking[Place] = petriNet.places.collect {
-      case p@Place(_, FiringLimiterPlace(n)) => p -> Map(() -> n)
+      case p@Place(_, FiringLimiterPlace(n)) => p -> Map((null, n))
     }.toMarking
 
     val compiledRecipe = CompiledRecipe(
       name = recipe.name,
       petriNet = petriNet,
       initialMarking = initialMarking,
-      sensoryEvents = recipe.sensoryEvents.map(eventToCompiledEvent),
       validationErrors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors,
       eventReceivePeriod = recipe.eventReceivePeriod,
       retentionPeriod = recipe.retentionPeriod

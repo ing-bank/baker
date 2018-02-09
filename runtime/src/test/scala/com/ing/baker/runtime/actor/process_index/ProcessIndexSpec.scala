@@ -1,21 +1,20 @@
-package com.ing.baker.runtime.actor
+package com.ing.baker.runtime.actor.process_index
 
 import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import com.ing.baker.il.petrinet.{EventTransition, RecipePetriNet, Transition}
-import com.ing.baker.il.{CompiledRecipe, EventType}
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor, IngredientDescriptor}
 import com.ing.baker.petrinet.api.{Marking, ScalaGraphPetriNet}
-import com.ing.baker.runtime.actor.processindex.ProcessIndex
-import com.ing.baker.runtime.actor.processindex.ProcessIndexProtocol._
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.actor.recipemanager.RecipeManagerProtocol.{AllRecipes, GetAllRecipes}
+import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol.{AllRecipes, GetAllRecipes}
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
-import com.ing.baker.types.{PrimitiveType, RecordField}
+import com.ing.baker.types.PrimitiveType
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Mockito
 import org.mockito.Mockito.when
@@ -63,7 +62,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
     override def receive: Receive = {
       case GetAllRecipes => {
         sender ! AllRecipes(Map[String, CompiledRecipe](recipeId ->
-          CompiledRecipe("name", ScalaGraphPetriNet(Graph.empty), Marking.empty, Set.empty, Seq.empty, Option.empty, Option.empty)))
+          CompiledRecipe("name", ScalaGraphPetriNet(Graph.empty), Marking.empty, Seq.empty, Option.empty, Option.empty)))
       }
     }
   }))
@@ -122,7 +121,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
       recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", ScalaGraphPetriNet(Graph.empty), Marking.empty, Set.empty, Seq.empty, Option.empty, Some(recipeRetentionPeriod)))))
+        CompiledRecipe("name", ScalaGraphPetriNet(Graph.empty), Marking.empty, Seq.empty, Option.empty, Some(recipeRetentionPeriod)))))
 
       val initializeMsg = Initialize(Map.empty, ProcessState(processId, Map.empty))
       processProbe.expectMsg(initializeMsg)
@@ -143,14 +142,14 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val initializeMsg = Initialize(Map.empty, ProcessState(processId, Map.empty))
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
-      val eventType = EventType("Event", Seq.empty)
+      val eventType = EventDescriptor("Event", Seq.empty)
       val transitions: Set[Transition[_,_]] = Set(EventTransition(eventType, true, None))
       when(petrinetMock.transitions).thenReturn(transitions)
 
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
       recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", petrinetMock, Marking.empty, Set(eventType), Seq.empty, Option.empty, Option.empty))))
+        CompiledRecipe("name", petrinetMock, Marking.empty, Seq.empty, Option.empty, Option.empty))))
 
       petriNetActorProbe.expectMsg(initializeMsg)
 
@@ -172,7 +171,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val processId = UUID.randomUUID().toString
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
-      val eventType = EventType("Event", Seq.empty)
+      val eventType = EventDescriptor("Event", Seq.empty)
       val transitions: Set[Transition[_, _]] = Set(EventTransition(eventType, true, None))
       when(petrinetMock.transitions).thenReturn(transitions)
 
@@ -199,7 +198,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
       recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", ScalaGraphPetriNet(Graph.empty), Marking.empty, Set.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty))))
+        CompiledRecipe("name", ScalaGraphPetriNet(Graph.empty), Marking.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty))))
 
       petriNetActorProbe.expectMsg(initializeMsg)
 
@@ -224,14 +223,14 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val initializeMsg = Initialize(Map.empty, ProcessState(processId, Map.empty))
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
-      val eventType = EventType("Event", Seq(RecordField("ingredientName", PrimitiveType(classOf[String]))))
+      val eventType = EventDescriptor("Event", Seq(IngredientDescriptor("ingredientName", PrimitiveType(classOf[String]))))
       val transitions: Set[Transition[_,_]] = Set(EventTransition(eventType, true, None))
       when(petrinetMock.transitions).thenReturn(transitions)
 
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
       recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", petrinetMock, Marking.empty, Set(eventType), Seq.empty, Some(receivePeriodTimeout), Option.empty))))
+        CompiledRecipe("name", petrinetMock, Marking.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty))))
 
       petriNetActorProbe.expectMsg(initializeMsg)
 
@@ -256,14 +255,14 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val initializeMsg = Initialize(Map.empty, ProcessState(processId, Map.empty))
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
-      val eventType = EventType("Event", Seq.empty)
+      val eventType = EventDescriptor("Event", Seq.empty)
       val transitions: Set[Transition[_,_]] = Set(EventTransition(eventType, true, None))
       when(petrinetMock.transitions).thenReturn(transitions)
 
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
       recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", petrinetMock, Marking.empty, Set(eventType), Seq.empty, Some(receivePeriodTimeout), Option.empty))))
+        CompiledRecipe("name", petrinetMock, Marking.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty))))
 
       petriNetActorProbe.expectMsg(initializeMsg)
 

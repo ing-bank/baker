@@ -1,10 +1,11 @@
 package com.ing.baker.runtime.core
 
+import java.util.concurrent.TimeUnit
 import java.util.{Optional, UUID}
 
 import akka.actor.ActorSystem
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
-import akka.testkit.{TestKit, TestProbe}
+import akka.testkit.{TestDuration, TestKit, TestProbe}
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
@@ -1000,7 +1001,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       baker.events(processId)
 
-      Thread.sleep(retentionPeriod.toMillis + 200)
+      Thread.sleep(FiniteDuration(retentionPeriod.toMillis + 1000, TimeUnit.MILLISECONDS).dilated.toMillis)
 
       //Should fail
       intercept[ProcessDeletedException] {

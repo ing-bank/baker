@@ -26,7 +26,7 @@ class SerializerSpec extends TestRecipeHelper {
 
   "BAAS" when {
     "converting to the common serialize recipe" in {
-      val scalaDSLRecipe: scaladsl.Recipe = getComplexRecipe("commonSerializeRecipe");
+      val scalaDSLRecipe: scaladsl.Recipe = getComplexRecipe("commonSerializeRecipe")
       val commonSerializeRecipe: commonserialize.Recipe = new Recipe(scalaDSLRecipe)
 
       commonSerializeRecipe shouldBe scalaDSLRecipe
@@ -34,28 +34,28 @@ class SerializerSpec extends TestRecipeHelper {
 
     "Serialize and deserialize a common recipe" in {
       withKryo { kryo =>
-        val orignalRecipe: Recipe = new Recipe(getComplexRecipe("name"))
+        val originalRecipe: Recipe = new Recipe(getComplexRecipe("name"))
 
-        val serializedRecipe: Array[Byte] = kryo.toBytesWithClass(orignalRecipe)
+        val serializedRecipe: Array[Byte] = kryo.toBytesWithClass(originalRecipe)
         val deserializedRecipe: Recipe = kryo.fromBytes(serializedRecipe).asInstanceOf[Recipe]
 
-        deserializedRecipe shouldBe orignalRecipe
+        deserializedRecipe shouldBe originalRecipe
       }
     }
 
-    "Serialize and deserialze a recipe" in {
+    "Serialize and deserialize a recipe" in {
       withKryo { kryo =>
         resetMocks
-        setupMockResponse
+        setupMockResponse()
 
-        val orignalRecipe: Recipe = new Recipe(getComplexRecipe("name"))
+        val originalRecipe: Recipe = new Recipe(getComplexRecipe("name"))
 
-        val serializedRecipe: Array[Byte] = kryo.toBytesWithClass(orignalRecipe)
+        val serializedRecipe: Array[Byte] = kryo.toBytesWithClass(originalRecipe)
         val deserializedRecipe: Recipe = kryo.fromBytes(serializedRecipe).asInstanceOf[Recipe]
 
+        val compiledRecipeOriginal: CompiledRecipe = RecipeCompiler.compileRecipe(originalRecipe)
+        val compiledRecipeDeserialized: CompiledRecipe = RecipeCompiler.compileRecipe(deserializedRecipe)
 
-        val compiledRecipeOriginal: CompiledRecipe = RecipeCompiler.compileRecipe(orignalRecipe);
-        val compiledRecipeDeserialized: CompiledRecipe = RecipeCompiler.compileRecipe(deserializedRecipe);
         compiledRecipeDeserialized.getRecipeVisualization shouldBe compiledRecipeOriginal.getRecipeVisualization
 
         val (baker, recipeId) = setupBakerWithRecipe(deserializedRecipe, mockImplementations)

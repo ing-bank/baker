@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor.recipemanager
+package com.ing.baker.runtime.actor.recipe_manager
 
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.actor.InternalBakerMessage

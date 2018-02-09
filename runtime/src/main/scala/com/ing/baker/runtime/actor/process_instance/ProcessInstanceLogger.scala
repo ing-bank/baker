@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor.processinstance
+package com.ing.baker.runtime.actor.process_instance
 
 import akka.event.Logging.LogLevel
 import akka.event.{DiagnosticLoggingAdapter, Logging}

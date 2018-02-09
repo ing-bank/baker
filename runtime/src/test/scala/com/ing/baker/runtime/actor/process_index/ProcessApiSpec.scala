@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor
+package com.ing.baker.runtime.actor.process_index
 
 import akka.NotUsed
 import akka.actor.ActorSystem
@@ -9,9 +9,8 @@ import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.{TestDuration, TestKit, TestProbe}
 import akka.util.Timeout
 import com.ing.baker.petrinet.runtime.ExceptionStrategy
-import com.ing.baker.runtime.actor.processindex.{ProcessApi, ProcessIndexProtocol}
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol
-import com.ing.baker.runtime.actor.processinstance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Matchers._
 import org.scalatest.WordSpecLike

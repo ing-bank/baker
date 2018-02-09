@@ -12,17 +12,17 @@ import org.slf4j._
   *
   * @tparam I The class/interface of the interaction
   */
-case class InteractionTransition[I](eventsToFire: Seq[EventType],
-                                    originalEvents: Seq[EventType],
-                                    providedIngredientEvent: Option[EventType],
+case class InteractionTransition[I](eventsToFire: Seq[EventDescriptor],
+                                    originalEvents: Seq[EventDescriptor],
+                                    providedIngredientEvent: Option[EventDescriptor],
                                     requiredIngredients: Seq[IngredientDescriptor],
                                     interactionName: String,
                                     originalInteractionName: String,
-                                    actionType: ActionType = ActionType.InteractionAction,
+                                    actionType: ActionType = ActionType.InteractionAction, // TODO This can be removed later.
                                     predefinedParameters: Map[String, Value],
                                     maximumInteractionCount: Option[Int],
                                     failureStrategy: InteractionFailureStrategy,
-                                    eventOutputTransformers: Map[EventType, EventOutputTransformer] = Map.empty)
+                                    eventOutputTransformers: Map[String, EventOutputTransformer] = Map.empty)
 
   extends Transition[Unit, AnyRef] {
 

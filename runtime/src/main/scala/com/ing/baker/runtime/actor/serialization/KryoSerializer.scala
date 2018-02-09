@@ -13,7 +13,6 @@ class KryoSerializer(system: ExtendedActorSystem) extends AkkaSerializer(system)
   override def kryoInstantiator: KryoInstantiator = {
     super.kryoInstantiator.withRegistrar(new ExtraKryoSerializersRegistrar)
   }
-
 }
 
 // these extra serializers are taken from the example here: https://github.com/magro/kryo-serializers
