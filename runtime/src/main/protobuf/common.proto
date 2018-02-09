@@ -96,9 +96,9 @@ message Value {
         string BigIntScalaValue = 14;
         string BigIntJavaValue = 15;
         bytes ByteArrayValue = 16;
-        int64 JodaDatetimeValue = 17;
-        int64 JodaLocaldateValue = 18;
-        int64 JodaLocaldatetimeValue = 19;
+        string JodaDatetimeValue = 17;
+        string JodaLocaldateValue = 18;
+        string JodaLocaldatetimeValue = 19;
 
         Record RecordValue = 50;
         List ListValue = 51;

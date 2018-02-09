@@ -93,6 +93,7 @@ object Converters {
   def toValue(obj: Any): Value = {
 
     obj match {
+      case value: Value                     => value
       case value if isEmpty(value)          => NullValue
       case value if isPrimitiveValue(value) => PrimitiveValue(value)
       case list: List[_]                    => ListValue(list.map(toValue))

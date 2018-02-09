@@ -1,5 +1,7 @@
 package com.ing.baker.recipe
 
+import com.ing.baker.types.{Converters, Value}
+
 package object scaladsl {
   implicit def InteractionToInteractionDescriptor(interaction: Interaction): InteractionDescriptor = InteractionDescriptorFactory(interaction)
 
@@ -36,10 +38,11 @@ package object scaladsl {
     }
   }
 
-  implicit class IngredientOps(ingredients: Map[String, Any]) {
+  implicit class IngredientMapOps(ingredients: Map[String, Any]) {
 
     def get[T](ingredient: Ingredient[T]): Option[T] = ingredients.get(ingredient.name).map(_.asInstanceOf[T])
   }
+
 }
 
 

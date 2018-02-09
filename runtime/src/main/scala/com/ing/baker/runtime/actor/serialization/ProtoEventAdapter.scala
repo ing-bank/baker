@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 import com.google.protobuf.ByteString
 import com.ing.baker.il.ActionType.SieveAction
 import com.ing.baker.il.petrinet.{Node, RecipePetriNet}
-import com.ing.baker.il.{ActionType, CompiledRecipe, EventDescriptor}
+import com.ing.baker.il.{ActionType, CompiledRecipe}
 import com.ing.baker.petrinet.api.{IdentifiableOps, Marking, ScalaGraphPetriNet}
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization.tokenIdentifier
@@ -18,7 +18,8 @@ import com.ing.baker.types.Value
 import com.ing.baker.{il, types}
 import com.trueaccord.scalapb.GeneratedMessage
 import org.joda.time
-import org.joda.time.DateTimeZone
+import org.joda.time.{LocalDate, LocalDateTime}
+import org.joda.time.format.ISODateTimeFormat
 
 import scala.concurrent.duration.Duration
 import scalax.collection.edge.WLDiEdge
@@ -287,9 +288,9 @@ trait ProtoEventAdapter {
         case types.PrimitiveValue(value: BigInt) => protobuf.Value(protobuf.Value.OneofValue.BigIntScalaValue(value.toString()))
         case types.PrimitiveValue(value: java.math.BigInteger) => protobuf.Value(protobuf.Value.OneofValue.BigIntJavaValue(BigInt(value).toString()))
         case types.PrimitiveValue(value: Array[Byte]) => protobuf.Value(protobuf.Value.OneofValue.ByteArrayValue(ByteString.copyFrom(value)))
-        case types.PrimitiveValue(value: org.joda.time.DateTime) => protobuf.Value(protobuf.Value.OneofValue.JodaDatetimeValue(value.getMillis))
-        case types.PrimitiveValue(value: org.joda.time.LocalDate) => protobuf.Value(protobuf.Value.OneofValue.JodaLocaldateValue(value.toDate.getTime))
-        case types.PrimitiveValue(value: org.joda.time.LocalDateTime) => protobuf.Value(protobuf.Value.OneofValue.JodaLocaldatetimeValue(value.toDate.getTime))
+        case types.PrimitiveValue(value: org.joda.time.DateTime) => protobuf.Value(protobuf.Value.OneofValue.JodaDatetimeValue(ISODateTimeFormat.dateTime().print(value)))
+        case types.PrimitiveValue(value: org.joda.time.LocalDate) => protobuf.Value(protobuf.Value.OneofValue.JodaLocaldateValue(value.toString))
+        case types.PrimitiveValue(value: org.joda.time.LocalDateTime) => protobuf.Value(protobuf.Value.OneofValue.JodaLocaldatetimeValue(value.toString))
         case types.PrimitiveValue(value) => throw new IllegalStateException(s"Unknown primitive value: $value")
         case types.RecordValue(entries) => protobuf.Value(protobuf.Value.OneofValue.RecordValue(protobuf.Record(entries.mapValues(toProtoType[protobuf.Value]))))
         case types.ListValue(entries) => protobuf.Value(protobuf.Value.OneofValue.ListValue(protobuf.List(entries.map(toProtoType[protobuf.Value]))))
@@ -443,9 +444,9 @@ trait ProtoEventAdapter {
           case OneofValue.BigIntScalaValue(bigint) => types.PrimitiveValue(BigInt(bigint))
           case OneofValue.BigIntJavaValue(bigint) => types.PrimitiveValue(BigInt(bigint).bigInteger)
           case OneofValue.ByteArrayValue(byteArray) => types.PrimitiveValue(byteArray.toByteArray)
-          case OneofValue.JodaDatetimeValue(millis) => types.PrimitiveValue(new org.joda.time.DateTime(millis, DateTimeZone.UTC))
-          case OneofValue.JodaLocaldateValue(millis) => types.PrimitiveValue(new org.joda.time.DateTime(millis, DateTimeZone.UTC).toLocalDate)
-          case OneofValue.JodaLocaldatetimeValue(millis) => types.PrimitiveValue(new org.joda.time.DateTime(millis, DateTimeZone.UTC).toLocalDateTime)
+          case OneofValue.JodaDatetimeValue(date) => types.PrimitiveValue(ISODateTimeFormat.dateTime().parseDateTime(date))
+          case OneofValue.JodaLocaldateValue(date) => types.PrimitiveValue(LocalDate.parse(date))
+          case OneofValue.JodaLocaldatetimeValue(date) => types.PrimitiveValue(LocalDateTime.parse(date))
           case OneofValue.RecordValue(Record(fields)) => types.RecordValue(fields.mapValues(toDomainType[types.Value]))
           case OneofValue.ListValue(List(entries)) => types.ListValue(entries.map(toDomainType[types.Value]).toList)
           case OneofValue.Empty => throw new IllegalStateException("Empty value cannot be deserializialized")

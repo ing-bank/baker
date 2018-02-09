@@ -1,6 +1,7 @@
 package com.ing.baker.types
 
 import java.nio.charset.StandardCharsets
+import java.util
 
 import scala.reflect.runtime.universe
 import scala.util.Try
@@ -42,7 +43,7 @@ sealed trait Value extends Serializable {
   */
 case object NullValue extends Value {
 
-  override def toString(): String = "null"
+  override def toString: String = "null"
 }
 
 // should inherit AnyVal
@@ -52,9 +53,9 @@ case class PrimitiveValue(value: Any) extends Value {
 
   def isAssignableTo(clazz: Class[_]) =
     (supportedPrimitiveClasses.contains(clazz) && clazz.isInstance(value)) ||
-      (clazz.isPrimitive && javaPrimitiveMappings.get(value.getClass) == Some(clazz))
+      (clazz.isPrimitive && javaPrimitiveMappings.get(value.getClass).contains(clazz))
 
-  override def toString(): String = value match {
+  override def toString: String = value match {
     case str: String                         => "\"" + str + "\""
     case date: org.joda.time.ReadableInstant => "\"" + isoDateTimeFormatter.print(date) + "\""
     case n: java.math.BigDecimal             => "\"" + n.toString + "\""
@@ -67,14 +68,35 @@ case class PrimitiveValue(value: Any) extends Value {
 
     case other => other.toString
   }
+
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case null => false
+      case PrimitiveValue(bytes: Array[_]) if value.getClass.isArray =>
+        util.Arrays.equals(bytes.asInstanceOf[Array[Byte]], value.asInstanceOf[Array[Byte]])
+      case PrimitiveValue(otherValue) => otherValue.equals(value)
+      case _ => false
+    }
+  }
+
+  override def hashCode(): Int = {
+    // Picking here a prime number multiplier other than 31 (used by the standard hashCode implementations)
+    // This reduces the chance that this holds true: "test".hashCode() == PrimitiveValue("test").hashCode()
+    if (value.getClass.isArray) {
+      util.Arrays.hashCode(value.asInstanceOf[Array[Byte]]) * 101
+    } else {
+      value.hashCode() * 101
+    }
+  }
+
 }
 
 case class RecordValue(entries: Map[String, Value]) extends Value {
 
-  override def toString(): String = entries.map { case (name, value) => "\"" + name + "\" : " + value  }.mkString("{", ",", "}")
+  override def toString: String = entries.map { case (name, value) => "\"" + name + "\" : " + value  }.mkString("{", ",", "}")
 }
 
 case class ListValue(entries: List[Value]) extends Value {
 
-  override def toString(): String = entries.mkString("[", ",", "]")
+  override def toString: String = entries.mkString("[", ",", "]")
 }
