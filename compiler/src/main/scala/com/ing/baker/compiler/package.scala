@@ -96,8 +96,9 @@ package object compiler {
             (il.failurestrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, maxTimeBetweenRetries, exhaustedRetryEvent), exhaustedRetryEvent)
           case common.InteractionFailureStrategy.BlockInteraction() => (
             il.failurestrategy.BlockInteraction, None)
-          case common.InteractionFailureStrategy.FireEventAfterFailure() =>
-            val exhaustedRetryEvent: EventDescriptor = EventDescriptor(interactionDescriptor.name + exhaustedEventAppend, Seq.empty)
+          case common.InteractionFailureStrategy.FireEventAfterFailure(eventNameOption) =>
+            val eventName = eventNameOption.getOrElse(interactionDescriptor.name + exhaustedEventAppend)
+            val exhaustedRetryEvent: EventDescriptor = EventDescriptor(eventName, Seq.empty)
             (il.failurestrategy.FireEventAfterFailure(exhaustedRetryEvent), Some(exhaustedRetryEvent))
           case _ => (il.failurestrategy.BlockInteraction, None)
         }

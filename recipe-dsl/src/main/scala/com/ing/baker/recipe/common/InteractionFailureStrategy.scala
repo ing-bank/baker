@@ -9,7 +9,7 @@ object InteractionFailureStrategy {
 
   case class BlockInteraction() extends InteractionFailureStrategy
 
-  case class FireEventAfterFailure() extends InteractionFailureStrategy
+  case class FireEventAfterFailure(eventName: Option[String] = None) extends InteractionFailureStrategy
 
   case class RetryWithIncrementalBackoff private(initialDelay: Duration,
                                                  backoffFactor: Double = 2,

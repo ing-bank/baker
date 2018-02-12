@@ -45,8 +45,12 @@ object InteractionFailureStrategy {
     }
   }
 
-  def FireEvent(): common.InteractionFailureStrategy.FireEventAfterFailure =
-    common.InteractionFailureStrategy.FireEventAfterFailure()
+  def FireEvent(): common.InteractionFailureStrategy.FireEventAfterFailure = common.InteractionFailureStrategy.FireEventAfterFailure(None)
+
+  def FireEvent(eventClass: Class[_]): common.InteractionFailureStrategy.FireEventAfterFailure = FireEvent(eventClass.getSimpleName)
+
+  def FireEvent(eventName: String): common.InteractionFailureStrategy.FireEventAfterFailure =
+    common.InteractionFailureStrategy.FireEventAfterFailure(Some(eventName))
 
   def BlockInteraction(): BlockInteraction =
     common.InteractionFailureStrategy.BlockInteraction()
