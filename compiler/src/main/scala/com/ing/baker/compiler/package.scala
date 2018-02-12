@@ -89,9 +89,9 @@ package object compiler {
         interactionDescriptor.failureStrategy.getOrElse[common.InteractionFailureStrategy](defaultFailureStrategy) match {
           case common.InteractionFailureStrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, maxTimeBetweenRetries, fireRetryExhaustedEvent) =>
             val exhaustedRetryEvent: Option[EventDescriptor] = fireRetryExhaustedEvent match {
-              case Some(eventName) if eventName == common.defaultEventExhaustedName => Some(EventDescriptor(interactionDescriptor.name + exhaustedEventAppend, Seq.empty))
-              case Some(eventName) => Some(EventDescriptor(eventName, Seq.empty))
-              case None => None
+              case Some(None)            => Some(EventDescriptor(interactionDescriptor.name + exhaustedEventAppend, Seq.empty))
+              case Some(Some(eventName)) => Some(EventDescriptor(eventName, Seq.empty))
+              case None                  => None
             }
             (il.failurestrategy.RetryWithIncrementalBackoff(initialTimeout, backoffFactor, maximumRetries, maxTimeBetweenRetries, exhaustedRetryEvent), exhaustedRetryEvent)
           case common.InteractionFailureStrategy.BlockInteraction() => (

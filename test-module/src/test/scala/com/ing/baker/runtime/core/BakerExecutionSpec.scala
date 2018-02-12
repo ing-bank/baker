@@ -622,7 +622,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
         .withInteractions(interactionOne.withFailureStrategy(InteractionFailureStrategy.RetryWithIncrementalBackoff(
           initialDelay = 10 milliseconds,
           maximumRetries = 1,
-          fireRetryExhaustedEvent = Some(com.ing.baker.recipe.common.defaultEventExhaustedName))))
+          fireRetryExhaustedEvent = Some(None))))
 
       when(testInteractionOneMock.apply(anyString(), anyString())).thenThrow(new BakerException())
 
@@ -645,7 +645,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
         .withInteractions(interactionOne.withFailureStrategy(InteractionFailureStrategy.RetryWithIncrementalBackoff(
           initialDelay = 10 milliseconds,
           maximumRetries = 1,
-          fireRetryExhaustedEvent = Some(com.ing.baker.recipe.common.defaultEventExhaustedName))))
+          fireRetryExhaustedEvent = Some(None))))
 
       val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
 

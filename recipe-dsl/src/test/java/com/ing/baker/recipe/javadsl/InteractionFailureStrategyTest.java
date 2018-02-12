@@ -52,7 +52,7 @@ public class InteractionFailureStrategyTest {
 
         com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure eventName =
                 InteractionFailureStrategy.FireEvent("Foo");
-        
+
         assertEquals(eventName.eventName(), Some.apply("Foo"));
 
         com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure clazz =
