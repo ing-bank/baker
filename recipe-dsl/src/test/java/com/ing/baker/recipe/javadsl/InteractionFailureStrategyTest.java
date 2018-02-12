@@ -3,6 +3,8 @@ package com.ing.baker.recipe.javadsl;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import scala.None;
+import scala.Some;
 
 import java.time.Duration;
 
@@ -11,6 +13,8 @@ import static org.junit.Assert.assertEquals;
 
 
 public class InteractionFailureStrategyTest {
+
+    public static class ExampleEvent { }
 
     @Rule
     public final ExpectedException exception = ExpectedException.none();
@@ -41,5 +45,19 @@ public class InteractionFailureStrategyTest {
         new InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder()
                 .withInitialDelay(Duration.ofMillis(100))
                 .build();
+    }
+
+    @Test
+    public void shouldSetupFiresEventWithClass() {
+
+        com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure eventName =
+                InteractionFailureStrategy.FireEvent("Foo");
+        
+        assertEquals(eventName.eventName(), Some.apply("Foo"));
+
+        com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure clazz =
+                InteractionFailureStrategy.FireEvent(ExampleEvent.class);
+
+        assertEquals(clazz.eventName(), Some.apply("ExampleEvent"));
     }
 }
