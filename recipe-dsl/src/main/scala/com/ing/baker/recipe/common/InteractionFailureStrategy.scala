@@ -9,13 +9,13 @@ object InteractionFailureStrategy {
 
   case class BlockInteraction() extends InteractionFailureStrategy
 
-  case class FireEventAfterFailure() extends InteractionFailureStrategy
+  case class FireEventAfterFailure(eventName: Option[String] = None) extends InteractionFailureStrategy
 
   case class RetryWithIncrementalBackoff private(initialDelay: Duration,
                                                  backoffFactor: Double = 2,
                                                  maximumRetries: Int,
                                                  maxTimeBetweenRetries: Option[Duration] = None,
-                                                 fireRetryExhaustedEvent: Option[String] = None) extends InteractionFailureStrategy {
+                                                 fireRetryExhaustedEvent: Option[Option[String]] = None) extends InteractionFailureStrategy {
     require(backoffFactor >= 1.0, "backoff factor must be greater or equal to 1.0")
     require(maximumRetries >= 1, "maximum retries must be greater or equal to 1")
   }
@@ -37,7 +37,7 @@ object InteractionFailureStrategy {
                                 private val backoffFactor: Double = 2,
                                 private val until: Option[Until] = None,
                                 private val maxTimeBetweenRetries: Option[Duration] = None,
-                                private val fireRetryExhaustedEvent: Option[String] = None) {
+                                private val fireRetryExhaustedEvent: Option[Option[String]] = None) {
 
       def withInitialDelay(initialDelay: Duration) = this.copy(initialDelay = initialDelay)
 
@@ -47,11 +47,11 @@ object InteractionFailureStrategy {
 
       def withMaxTimeBetweenRetries(maxTimeBetweenRetries: Option[Duration]) = this.copy(maxTimeBetweenRetries = maxTimeBetweenRetries)
 
-      def withFireRetryExhaustedEvent(fireRetryExhaustedEvent: Option[String]) = this.copy(fireRetryExhaustedEvent = fireRetryExhaustedEvent)
+      def withFireRetryExhaustedEvent(fireRetryExhaustedEvent: Option[String]) = this.copy(fireRetryExhaustedEvent = Some(fireRetryExhaustedEvent))
 
-      def withDefaultFireRetryExhaustedEvent() = this.copy(fireRetryExhaustedEvent = Some(defaultEventExhaustedName))
+      def withFireRetryExhaustedEvent() = this.copy(fireRetryExhaustedEvent = Some(None))
 
-      def withFireRetryExhaustedEvent(fireRetryExhaustedEvent: Event) = this.copy(fireRetryExhaustedEvent = Some(fireRetryExhaustedEvent.name))
+      def withFireRetryExhaustedEvent(fireRetryExhaustedEvent: Event) = this.copy(fireRetryExhaustedEvent = Some(Some(fireRetryExhaustedEvent.name)))
 
       def build(): RetryWithIncrementalBackoff = {
         until match {
