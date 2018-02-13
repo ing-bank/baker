@@ -13,7 +13,7 @@ import scala.reflect.runtime.universe.TypeTag
 object Converters {
 
   private val mirror: universe.Mirror = universe.runtimeMirror(classOf[Value].getClassLoader)
-
+  
   private def getRawClass(t: JType): Class[_] = t match {
     case c: Class[_] => c
     case t: ParameterizedType => getRawClass(t.getRawType)
@@ -63,6 +63,11 @@ object Converters {
       case clazz: ParameterizedType if getRawClass(clazz.getRawType).isAssignableFrom(classOf[List[_]]) || getRawClass(clazz.getRawType).isAssignableFrom(classOf[java.util.List[_]]) =>
         val entryType = readJavaType(clazz.getActualTypeArguments()(0))
         ListType(entryType)
+
+      case clazz: ParameterizedType if getRawClass(clazz.getRawType).isAssignableFrom(classOf[Set[_]]) || getRawClass(clazz.getRawType).isAssignableFrom(classOf[java.util.Set[_]]) =>
+        val entryType = readJavaType(clazz.getActualTypeArguments()(0))
+        ListType(entryType)
+
       case clazz: ParameterizedType if getRawClass(clazz.getRawType).isAssignableFrom(classOf[Map[_,_]]) || getRawClass(clazz.getRawType).isAssignableFrom(classOf[java.util.Map[_,_]]) =>
         val keyType = clazz.getActualTypeArguments()(0)
 
@@ -98,6 +103,8 @@ object Converters {
       case value if isPrimitiveValue(value) => PrimitiveValue(value)
       case list: List[_]                    => ListValue(list.map(toValue))
       case list: java.util.List[_]          => ListValue(list.asScala.toList.map(toValue))
+      case set: Set[_]                      => ListValue(set.toList.map(toValue))
+      case set: java.util.Set[_]            => ListValue(set.asScala.toList.map(toValue))
       case map: java.util.Map[_, _]         =>
         val entries: Map[String, Value] = map.entrySet().iterator().asScala.map {
           e => e.getKey.asInstanceOf[String] -> e.getValue.toValue
@@ -175,14 +182,27 @@ object Converters {
         val listType = generic.getActualTypeArguments()(0)
         entries.map(e => toJava(e, listType))
 
-      case (ListValue(entries), generic: ParameterizedType) if classOf[java.util.List[_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
+      case (ListValue(entries), generic: ParameterizedType) if classOf[Set[_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
         val listType = generic.getActualTypeArguments()(0)
+        entries.map(e => toJava(e, listType)).toSet
+
+      case (ListValue(entries), generic: ParameterizedType) if classOf[java.util.List[_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
+        val entryType = generic.getActualTypeArguments()(0)
         val list = new util.ArrayList[Any]()
         entries.foreach { e =>
-          val value = toJava(e, listType)
+          val value = toJava(e, entryType)
           list.add(value)
         }
         list
+
+      case (ListValue(entries), generic: ParameterizedType) if classOf[java.util.Set[_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
+        val entryType = generic.getActualTypeArguments()(0)
+        val set = new util.HashSet[Any]()
+        entries.foreach { e =>
+          val value = toJava(e, entryType)
+          set.add(value)
+        }
+        set
 
       case (RecordValue(entries), generic: ParameterizedType) if classOf[java.util.Map[_,_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
         val keyType = generic.getActualTypeArguments()(0)
