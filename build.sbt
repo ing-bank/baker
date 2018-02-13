@@ -4,7 +4,7 @@ import sbt.Keys._
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
   scalaVersion := "2.12.4",
-  crossScalaVersions := Seq("2.11.12", "2.12.4"),
+  crossScalaVersions := Seq("2.12.4", "2.11.12"),
   scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", s"-target:jvm-$jvmV"),
   javacOptions := Seq("-source", jvmV, "-target", jvmV),
   fork in test := true,
@@ -117,8 +117,8 @@ lazy val recipeDsl = project.in(file("recipe-dsl"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "baker-recipe-dsl",
-    // we have to exclude the sources because of a compiler bug
-//    sources in (Compile, packageDoc) := Seq.empty,
+    // we have to exclude the sources because of a compiler bug: https://issues.scala-lang.org/browse/SI-10134
+    sources in (Compile, doc) := Seq.empty,
     libraryDependencies ++=
       compileDeps(
         javaxInject,
