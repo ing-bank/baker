@@ -3,7 +3,8 @@ import sbt.Keys._
 
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
-  scalaVersion := scalaV,
+  scalaVersion := "2.11.12",
+  crossScalaVersions := Seq("2.11.12", "2.12.4"),
   scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", s"-target:jvm-$jvmV"),
   javacOptions := Seq("-source", jvmV, "-target", jvmV),
   fork in test := true,
@@ -58,7 +59,7 @@ lazy val bakertypes = project.in(file("bakertypes"))
       slf4jApi,
       objenisis,
       jodaTime,
-      scalaReflect
+      scalaReflect(scalaVersion.value)
     ) ++ testDeps(scalaTest, scalaCheck, logback)
   )
 
@@ -116,12 +117,13 @@ lazy val recipeDsl = project.in(file("recipe-dsl"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "baker-recipe-dsl",
-//    publishArtifact in (Compile, packageDoc) := false,
+    // we have to exclude the sources because of a compiler bug
+//    sources in (Compile, packageDoc) := Seq.empty,
     libraryDependencies ++=
       compileDeps(
         javaxInject,
         paranamer,
-        scalaReflect,
+        scalaReflect(scalaVersion.value),
         jodaTime
       ) ++
         testDeps(

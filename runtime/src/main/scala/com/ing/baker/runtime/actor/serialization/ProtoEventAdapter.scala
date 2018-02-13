@@ -362,11 +362,13 @@ trait ProtoEventAdapter {
         val params = protoEdges.map {
 
           case protobuf.Edge(Some(from), Some(to), Some(weight), eventAllowed) =>
-          val fromNode = nodes.apply(from.toInt)
-          val toNode = nodes.apply(to.toInt)
-          val edge = il.petrinet.Edge[Any](eventAllowed)
+            val fromNode = nodes.apply(from.toInt)
+            val toNode = nodes.apply(to.toInt)
+            val edge = il.petrinet.Edge[Any](eventAllowed)
 
-          WLDiEdge[Any, Any](fromNode, toNode)(weight, edge)
+            WLDiEdge[Any, Any](fromNode, toNode)(weight, edge)
+          case other =>
+            throw new IllegalArgumentException(s"missing data in: $other")
         }
 
         scalax.collection.immutable.Graph(params: _*)
