@@ -42,7 +42,9 @@ class ConvertersSpec extends WordSpecLike with Matchers {
 
   val recordPerson = RecordValue(Map("name" -> PrimitiveValue("john"), "age" -> PrimitiveValue(42)))
 
-  val listValue = ListValue(List(PrimitiveValue(1), PrimitiveValue(2), PrimitiveValue(3)))
+  val listValue123 = ListValue(List(PrimitiveValue(1), PrimitiveValue(2), PrimitiveValue(3)))
+
+  val listValueABC = ListValue(List(PrimitiveValue("a"), PrimitiveValue("b"), PrimitiveValue("c")))
 
   "The converters utility" should {
 
@@ -80,12 +82,42 @@ class ConvertersSpec extends WordSpecLike with Matchers {
 
     "be able to parse scala.collection.immutable.List objects" in {
 
-      toValue(List(1, 2, 3)) shouldBe listValue
+      toValue(List(1, 2, 3)) shouldBe listValue123
     }
 
     "be able to create scala.collection.immutable.List objects" in {
 
-      toJava[List[Int]](listValue) shouldBe List(1, 2, 3)
+      toJava[List[Int]](listValue123) shouldBe List(1, 2, 3)
+    }
+
+    "be able to parse scala.collection.immutable.Set objects" in {
+
+      toValue(Set(1, 2, 3)) shouldBe listValue123
+    }
+
+    "be able to create scala.collection.immutable.Set objects" in {
+
+      toJava[Set[Int]](listValue123) shouldBe Set(1, 2, 3)
+    }
+
+    "be able to parse java.util.Set objects" in {
+
+      val javaSet = new util.HashSet[String]()
+      javaSet.add("a")
+      javaSet.add("b")
+      javaSet.add("c")
+
+      toValue(javaSet) shouldBe listValueABC
+    }
+
+    "be able to create java.util.Set objects" in {
+
+      val javaSet = new util.HashSet[String]()
+      javaSet.add("a")
+      javaSet.add("b")
+      javaSet.add("c")
+
+      toJava[java.util.Set[String]](listValueABC) shouldBe javaSet
     }
 
     "be able to parse java.util.List objects" in {
@@ -95,7 +127,7 @@ class ConvertersSpec extends WordSpecLike with Matchers {
       javaList.add(2)
       javaList.add(3)
 
-      toValue(javaList) shouldBe listValue
+      toValue(javaList) shouldBe listValue123
     }
 
     "be able to create java.util.List objects" in {
@@ -105,7 +137,7 @@ class ConvertersSpec extends WordSpecLike with Matchers {
       javaList.add(2)
       javaList.add(3)
 
-      toJava[java.util.List[Int]](listValue) shouldBe javaList
+      toJava[java.util.List[Int]](listValue123) shouldBe javaList
     }
 
     "be able to parse case class objects" in {
@@ -174,6 +206,12 @@ class ConvertersSpec extends WordSpecLike with Matchers {
 
     "correctly parse list types" in {
       readJavaType[List[String]] shouldBe ListType(PrimitiveType(classOf[String]))
+    }
+
+    "correctly parse set types" in {
+
+      readJavaType[Set[String]] shouldBe ListType(PrimitiveType(classOf[String]))
+      readJavaType[java.util.Set[String]] shouldBe ListType(PrimitiveType(classOf[String]))
     }
 
     "correctly parse array of bytes" in {
