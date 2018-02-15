@@ -4,6 +4,8 @@ import java.util
 import java.util.Optional
 
 import com.ing.baker.types.Converters._
+import com.ing.baker.types.ConvertersTestData.TestEnum
+import com.ing.baker.types.ConvertersTestData.TestEnum.{ValueA, ValueB, ValueC}
 import org.scalatest.{Matchers, WordSpecLike}
 
 import scala.collection.JavaConverters._
@@ -45,6 +47,8 @@ class ConvertersSpec extends WordSpecLike with Matchers {
   val listValue123 = ListValue(List(PrimitiveValue(1), PrimitiveValue(2), PrimitiveValue(3)))
 
   val listValueABC = ListValue(List(PrimitiveValue("a"), PrimitiveValue("b"), PrimitiveValue("c")))
+
+  val listValueForEnumABC = ListValue(List(PrimitiveValue(ValueA.name()), PrimitiveValue(ValueB.name()), PrimitiveValue(ValueC.name())))
 
   "The converters utility" should {
 
@@ -118,6 +122,48 @@ class ConvertersSpec extends WordSpecLike with Matchers {
       javaSet.add("c")
 
       toJava[java.util.Set[String]](listValueABC) shouldBe javaSet
+    }
+
+    "be able to parse java.util.Set with enums" in {
+
+      val javaSet: util.Set[TestEnum] = new util.HashSet[TestEnum]()
+      javaSet.add(ValueA)
+      javaSet.add(ValueB)
+      javaSet.add(ValueC)
+
+      val actualListValue = toValue(javaSet).asInstanceOf[ListValue] // we know java.util.Set is represented as a ListValue
+
+      // Here we need to sor the elements because the List representation sometimes has a different order than the original Set entries
+      actualListValue.entries.map(_.toString).sorted shouldBe listValueForEnumABC.entries.map(_.toString).sorted
+    }
+
+    "be able to create java.util.Set enums" in {
+
+      val expectedJavaSet: util.Set[TestEnum] = new util.HashSet[TestEnum]()
+      expectedJavaSet.add(ValueA)
+      expectedJavaSet.add(ValueB)
+      expectedJavaSet.add(ValueC)
+
+      val actualSet: util.Set[TestEnum] = toJava[util.Set[TestEnum]](listValueForEnumABC)
+
+      actualSet shouldBe expectedJavaSet
+    }
+
+    "be able to parse java.util.EnumSet objects" in {
+
+      val javaEnumSet = util.EnumSet.of(ValueA, ValueB, ValueC)
+
+      toValue(javaEnumSet) shouldBe listValueForEnumABC
+    }
+
+    // This test is ignored because Baker does not support java.util.EnumSet
+    "be able to create java.util.EnumSet objects" ignore {
+
+      val expectedJavaEnumSet: util.EnumSet[TestEnum] = util.EnumSet.of(ValueA, ValueB, ValueC)
+
+      val actualSet: util.EnumSet[TestEnum] = toJava[util.EnumSet[TestEnum]](listValueForEnumABC)
+
+      actualSet shouldBe expectedJavaEnumSet
     }
 
     "be able to parse java.util.List objects" in {
