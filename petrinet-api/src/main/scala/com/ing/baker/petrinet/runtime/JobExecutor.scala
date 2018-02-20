@@ -5,6 +5,7 @@ import java.io.{PrintWriter, StringWriter}
 import com.ing.baker.petrinet.api._
 import fs2.{Strategy, Task}
 import com.ing.baker.petrinet.runtime.EventSourcing._
+import org.slf4j.LoggerFactory
 
 /**
  * Class responsible for 'executing' a transition 'Job'
@@ -12,6 +13,8 @@ import com.ing.baker.petrinet.runtime.EventSourcing._
 class JobExecutor[S, P[_], T[_, _]](
     taskProvider: TransitionTaskProvider[S, P, T],
     exceptionHandlerFn: T[_, _] ⇒ TransitionExceptionHandler[P]) {
+
+  val log = LoggerFactory.getLogger("com.ing.baker.petrinet.runtime.JobExecutor")
 
   /**
    * Executes a job returning a Task[TransitionEvent]
@@ -23,6 +26,12 @@ class JobExecutor[S, P[_], T[_, _]](
 
     def transitionFunction[Input, Output](t: T[Input, Output]) =
       cachedTransitionTasks(t).asInstanceOf[TransitionTask[P, Input, Output, S]]
+
+    def exceptionStackTrace(e: Throwable): String = {
+      val sw = new StringWriter()
+      e.printStackTrace(new PrintWriter(sw))
+      sw.toString
+    }
 
     def executeTransitionAsync[Input, Output](t: T[Input, Output]): TransitionTask[P, Input, Output, S] = {
       (consume, state, input) ⇒
@@ -45,18 +54,16 @@ class JobExecutor[S, P[_], T[_, _]](
         case (produced, out) ⇒
           TransitionFiredEvent(job.id, transition, startTime, System.currentTimeMillis(), job.consume, produced, out)
       }.handle {
+        // In case an exception was thrown by the transition, we compute the failure strategy and return a TransitionFailedEvent
         case e: Throwable ⇒
-
-          // TODO how to deal with exceptions in this code block?
           val failureCount = job.failureCount + 1
-
           val failureStrategy = exceptionHandlerFn(transition).apply(e, failureCount, topology.outMarking(transition))
-
-          val sw = new StringWriter()
-          e.printStackTrace(new PrintWriter(sw))
-          val stackTraceString = sw.toString
-
-          TransitionFailedEvent(job.id, transition, startTime, System.currentTimeMillis(), job.consume, job.input, stackTraceString, failureStrategy)
+          TransitionFailedEvent(job.id, transition, startTime, System.currentTimeMillis(), job.consume, job.input, exceptionStackTrace(e), failureStrategy)
+      }.handle {
+        // If an exception was thrown while computing the failure strategy we block the interaction from firing
+        case e: Throwable =>
+          log.error(s"Exception while handling transition failure", e)
+          TransitionFailedEvent(job.id, transition, startTime, System.currentTimeMillis(), job.consume, job.input, exceptionStackTrace(e), ExceptionStrategy.BlockTransition)
       }
     }
   }

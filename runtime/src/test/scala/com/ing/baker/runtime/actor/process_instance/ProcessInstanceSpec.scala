@@ -294,6 +294,29 @@ class ProcessInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSug
       verify(mockFunction).apply(any[Set[Int]])
     }
 
+    "Block a transition if the exception strategy function throws an exception" in new TestSequenceNet {
+
+      val faultyExceptionHandler: TransitionExceptionHandler[Place] = {
+        case (_, _, _) ⇒ throw new IllegalStateException("Boom!")
+      }
+
+      override def sequence =
+        Seq(
+          transition(exceptionHandler = faultyExceptionHandler)(_ ⇒ throw new IllegalArgumentException("Failed!"))
+        )
+
+      val actorName = UUID.randomUUID().toString
+      val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime, actorName)
+
+      actor ! Initialize(marshal[Place](initialMarking), Set.empty)
+
+      expectMsgClass(classOf[Initialized])
+
+      actor ! FireTransition(1, ())
+
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, BlockTransition) ⇒ }
+    }
+
     "Not re-fire a failed transition with 'Blocked' strategy after being restored from persistent storage" in new TestSequenceNet {
 
       // setup a failing mock function
