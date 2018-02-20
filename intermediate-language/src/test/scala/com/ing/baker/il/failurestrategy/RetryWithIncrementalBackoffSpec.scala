@@ -28,6 +28,11 @@ class RetryWithIncrementalBackoffSpec extends WordSpecLike with Matchers {
       retry(5) shouldBe RetryWithDelay(10)
       retry(6) shouldBe RetryWithDelay(10)
     }
-  }
 
+    "Not fail if retry gets to big" in {
+      val retry = RetryWithIncrementalBackoff(Duration(10, MILLISECONDS), 2.0, 100, Some(Duration(10, MILLISECONDS)), None)
+      retry(42) shouldBe RetryWithDelay(10)
+      retry(101) shouldBe BlockTransition
+    }
+  }
 }

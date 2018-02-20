@@ -1,9 +1,16 @@
 package com.ing.baker.il.failurestrategy
 
+import java.util.concurrent.TimeUnit
+
 import com.ing.baker.il.EventDescriptor
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome.{BlockTransition, Continue, RetryWithDelay}
+import com.ing.baker.il.failurestrategy.RetryWithIncrementalBackoff._
 
 import scala.concurrent.duration.Duration
+
+object RetryWithIncrementalBackoff {
+  val oneWeekInMillis: Long = Duration.apply(7 , TimeUnit.DAYS).toMillis
+}
 
 case class RetryWithIncrementalBackoff(initialTimeout: Duration,
                                        backoffFactor: Double,
@@ -15,10 +22,12 @@ case class RetryWithIncrementalBackoff(initialTimeout: Duration,
   require(maximumRetries >= 1, "maximum retries must be greater or equal to 1")
 
   def determineTimeToNextRetry(n: Int): Long = {
-    val nextRetry = initialTimeout * Math.pow(backoffFactor, n - 1)
+    val nextRetry: Long = initialTimeout.toMillis * Math.pow(backoffFactor, n - 1).toLong
+    val positiveNextRetry: Long = if (nextRetry > oneWeekInMillis || nextRetry <= 0) oneWeekInMillis else nextRetry
+
     maxTimeBetweenRetries match {
-      case Some(duration) => if (nextRetry > duration) duration.toMillis else nextRetry.toMillis
-      case None => nextRetry.toMillis
+      case Some(duration) => if (positiveNextRetry > duration.toMillis) duration.toMillis else positiveNextRetry
+      case None => positiveNextRetry
     }
   }
 
