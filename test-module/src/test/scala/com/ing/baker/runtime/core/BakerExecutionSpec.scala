@@ -584,7 +584,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       //100ms should be enough since it waits 20ms and then 40 ms
       Thread.sleep(200)
       //Since it can be called up to 3 times it should have been called 3 times in the 100ms
-      verify(testInteractionOneMock, times(3)).apply(processId.toString, initialIngredientValue)
+      verify(testInteractionOneMock, times(4)).apply(processId.toString, initialIngredientValue)
     }
 
     "not execute the failing interaction again each time after some other unrelated event is fired" in {
