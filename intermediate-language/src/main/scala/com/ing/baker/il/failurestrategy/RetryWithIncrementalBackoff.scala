@@ -23,7 +23,7 @@ case class RetryWithIncrementalBackoff(initialTimeout: Duration,
   }
 
   def apply(n: Int): ExceptionStrategyOutcome = {
-    if (n < maximumRetries) RetryWithDelay(determineTimeToNextRetry(n))
+    if (n <= maximumRetries) RetryWithDelay(determineTimeToNextRetry(n))
     else if (retryExhaustedEvent.isDefined) Continue(retryExhaustedEvent.get)
     else BlockTransition
   }

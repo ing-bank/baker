@@ -14,11 +14,11 @@ class RetryWithIncrementalBackoffSpec extends WordSpecLike with Matchers {
       retry(2) shouldBe RetryWithDelay(2)
       retry(3) shouldBe RetryWithDelay(4)
       retry(4) shouldBe RetryWithDelay(8)
+      retry(5) shouldBe RetryWithDelay(16)
     }
 
     "return BlockTransition when retry max times fired is met" in {
       val retry = RetryWithIncrementalBackoff(Duration(1, MILLISECONDS), 2.0, 5, None, None)
-      retry(5) shouldBe BlockTransition
       retry(6) shouldBe BlockTransition
     }
 
