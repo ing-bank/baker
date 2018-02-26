@@ -122,20 +122,6 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
-  def processEvent(processId: String, event: Any, timeout: java.time.Duration): SensoryEventStatus =
-    baker.processEvent(processId, event, None, timeout.toScala)
-
-  /**
-    * This fires the given event in the recipe for the process with the given processId
-    * This waits with returning until all steps that can be executed are executed by Baker
-    *
-    * @param processId The process identifier
-    * @param event     The event to fire
-    * @return
-    */
-  @throws[NoSuchProcessException]("When no process exists for the given id")
-  @throws[ProcessDeletedException]("When no process is deleted")
-  @throws[TimeoutException]("When the process does not respond within the given deadline")
   def processEvent(processId: UUID, event: Any): SensoryEventStatus =
     processEvent(processId.toString, event)
 
@@ -150,8 +136,8 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
-  def processEvent(processId: UUID, event: Any, correlationId: String, timeout: java.time.Duration): SensoryEventStatus =
-    baker.processEvent(processId.toString, event, Some(correlationId), timeout.toScala)
+  def processEvent(processId: String, event: Any, timeout: java.time.Duration): SensoryEventStatus =
+    baker.processEvent(processId, event, None, timeout.toScala)
 
   /**
     * This fires the given event in the recipe for the process with the given processId
@@ -166,6 +152,68 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
   @throws[TimeoutException]("When the process does not respond within the given deadline")
   def processEvent(processId: UUID, event: Any, timeout: java.time.Duration): SensoryEventStatus =
     processEvent(processId.toString, event, timeout)
+
+  /**
+    * This fires the given event in the recipe for the process with the given processId
+    * This waits with returning until all steps that can be executed are executed by Baker
+    *
+    * @param processId      The process identifier
+    * @param event          The event to fire
+    * @param correlationId  An identifier for the event
+    * @return
+    */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[ProcessDeletedException]("When no process is deleted")
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
+  def processEvent(processId: String, event: Any, correlationId: String): SensoryEventStatus =
+    baker.processEvent(processId, event, Some(correlationId))
+
+  /**
+    * This fires the given event in the recipe for the process with the given processId
+    * This waits with returning until all steps that can be executed are executed by Baker
+    *
+    * @param processId      The process identifier
+    * @param event          The event to fire
+    * @param correlationId  An identifier for the event
+    * @return
+    */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[ProcessDeletedException]("When no process is deleted")
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
+  def processEvent(processId: UUID, event: Any, correlationId: String): SensoryEventStatus =
+    baker.processEvent(processId.toString, event, Some(correlationId))
+
+  /**
+    * This fires the given event in the recipe for the process with the given processId
+    * This waits with returning until all steps that can be executed are executed by Baker
+    *
+    * @param processId      The process identifier
+    * @param event          The event to fire
+    * @param correlationId  An identifier for the event
+    * @param timeout        How long to wait for a response from the process
+    * @return
+    */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[ProcessDeletedException]("When no process is deleted")
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
+  def processEvent(processId: String, event: Any, correlationId: String, timeout: java.time.Duration): SensoryEventStatus =
+    baker.processEvent(processId, event, Some(correlationId), timeout.toScala)
+
+  /**
+    * This fires the given event in the recipe for the process with the given processId
+    * This waits with returning until all steps that can be executed are executed by Baker
+    *
+    * @param processId      The process identifier
+    * @param event          The event to fire
+    * @param correlationId  An identifier for the event
+    * @param timeout        How long to wait for a response from the process
+    * @return
+    */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[ProcessDeletedException]("When no process is deleted")
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
+  def processEvent(processId: UUID, event: Any, correlationId: String, timeout: java.time.Duration): SensoryEventStatus =
+    baker.processEvent(processId.toString, event, Some(correlationId), timeout.toScala)
 
   /**
     * This fires the given event in the recipe for the process with the given processId
@@ -188,6 +236,18 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param event     The event to fire
     * @return
     */
+  def processEventAsync(processId: UUID, event: Any): BakerResponse =
+    processEventAsync(processId.toString, event)
+
+  /**
+    * This fires the given event in the recipe for the process with the given processId
+    * This returns a BakerResponse.
+    *
+    * @param processId The process identifier
+    * @param event     The event to fire
+    * @param timeout   How long to wait for a response from the process
+    * @return
+    */
   def processEventAsync(processId: String, event: Any, timeout: java.time.Duration): BakerResponse = {
     implicit val executionContext = actorSystem.dispatcher
     baker.processEventAsync(processId, event, None, timeout.toScala)
@@ -199,23 +259,72 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     *
     * @param processId The process identifier
     * @param event     The event to fire
-    * @return
-    */
-  def processEventAsync(processId: UUID, event: Any): BakerResponse =
-    processEventAsync(processId.toString, event)
-
-  /**
-    * This fires the given event in the recipe for the process with the given processId
-    * This returns a BakerResponse.
-    *
-    * @param processId The process identifier
-    * @param event     The event to fire
+    * @param timeout   How long to wait for a response from the process
     * @return
     */
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[NoSuchProcessException]("When no process exists for the given id")
   def processEventAsync(processId: UUID, event: Any, timeout: java.time.Duration): BakerResponse =
     processEventAsync(processId.toString, event, timeout)
+
+  /**
+    * This fires the given event in the recipe for the process with the given processId
+    * This returns a BakerResponse.
+    *
+    * @param processId      The process identifier
+    * @param event          The event to fire
+    * @param correlationId  An identifier for the event
+    * @return
+    */
+  @throws[ProcessDeletedException]("When no process is deleted")
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  def processEventAsync(processId: String, event: Any, correlationId: String): BakerResponse =
+    baker.processEventAsync(processId, event, Some(correlationId))
+
+  /**
+    * This fires the given event in the recipe for the process with the given processId
+    * This returns a BakerResponse.
+    *
+    * @param processId      The process identifier
+    * @param event          The event to fire
+    * @param correlationId  An identifier for the event
+    * @return
+    */
+  @throws[ProcessDeletedException]("When no process is deleted")
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  def processEventAsync(processId: UUID, event: Any, correlationId: String): BakerResponse =
+    baker.processEventAsync(processId.toString, event, Some(correlationId))
+
+  /**
+    * This fires the given event in the recipe for the process with the given processId
+    * This returns a BakerResponse.
+    *
+    * @param processId      The process identifier
+    * @param event          The event to fire
+    * @param correlationId  An identifier for the event
+    * @param timeout        How long to wait for a response from the process
+    * @return
+    */
+  @throws[ProcessDeletedException]("When no process is deleted")
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  def processEventAsync(processId: String, event: Any, correlationId: String, timeout: java.time.Duration): BakerResponse =
+    baker.processEventAsync(processId, event, Some(correlationId), timeout.toScala)
+
+  /**
+    * This fires the given event in the recipe for the process with the given processId
+    * This returns a BakerResponse.
+    *
+    * @param processId      The process identifier
+    * @param event          The event to fire
+    * @param correlationId  An identifier for the event
+    * @param timeout        How long to wait for a response from the process
+    * @return
+    */
+  @throws[ProcessDeletedException]("When no process is deleted")
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  def processEventAsync(processId: UUID, event: Any, correlationId: String, timeout: java.time.Duration): BakerResponse =
+    baker.processEventAsync(processId.toString, event, Some(correlationId), timeout.toScala)
+
 
   /**
     * Returns all the ingredients that are accumulated for a given process.
