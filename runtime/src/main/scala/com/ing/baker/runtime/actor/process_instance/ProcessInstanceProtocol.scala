@@ -90,9 +90,9 @@ object ProcessInstanceProtocol {
   case object AlreadyInitialized extends Response
 
   /**
-    *
+    * Indicates that the received FireTransition command with a specific correlation id was already received.
     */
-  case object AlreadyReceived extends Response
+  case class AlreadyReceived(correlationId: String) extends Response
 
   /**
    * A response indicating that the instance has been initialized in a certain state.

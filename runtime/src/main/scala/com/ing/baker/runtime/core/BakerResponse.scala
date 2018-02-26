@@ -15,12 +15,15 @@ import scala.concurrent.duration.{FiniteDuration, SECONDS}
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 object InteractionResponse {
+
   sealed trait InteractionResponse
+
   case object Success extends InteractionResponse
   case object Failed extends InteractionResponse
   case object NotEnabled extends InteractionResponse
   case object PeriodExpired extends InteractionResponse
   case object ProcessDeleted extends InteractionResponse
+  case object AlreadyReceived extends InteractionResponse
 }
 
 object BakerResponse {
@@ -32,6 +35,7 @@ object BakerResponse {
     case ProcessInstanceProtocol.Uninitialized(processId) => Future.failed(new NoSuchProcessException(s"No such process: $processId"))
     case _: ProcessInstanceProtocol.TransitionFired => Future.successful(InteractionResponse.Success)
     case _: ProcessInstanceProtocol.TransitionNotEnabled => Future.successful(InteractionResponse.NotEnabled)
+    case _: ProcessInstanceProtocol.AlreadyReceived => Future.successful(InteractionResponse.AlreadyReceived)
     case ProcessIndexProtocol.ProcessUninitialized(processId) => Future.failed(new NoSuchProcessException(s"No such process: $processId"))
     case ProcessIndexProtocol.ReceivePeriodExpired(_) => Future.successful(InteractionResponse.PeriodExpired)
     case ProcessIndexProtocol.ProcessDeleted(_) => Future.successful(InteractionResponse.ProcessDeleted)
@@ -110,7 +114,8 @@ class BakerResponse(processId: String, source: Source[Any, NotUsed])(implicit ma
       case InteractionResponse.Success => SensoryEventStatus.Received
       case InteractionResponse.NotEnabled => SensoryEventStatus.FiringLimitMet
       case InteractionResponse.PeriodExpired => SensoryEventStatus.ReceivePeriodExpired
-      case InteractionResponse.ProcessDeleted => SensoryEventStatus.ReceivePeriodExpired
+      case InteractionResponse.AlreadyReceived => SensoryEventStatus.AlreadyReceived
+      case InteractionResponse.ProcessDeleted => SensoryEventStatus.ProcessDeleted
       case _ => throw new BakerException("Unknown exception while handeling sensory event")
     }
   }
@@ -135,6 +140,7 @@ class BakerResponse(processId: String, source: Source[Any, NotUsed])(implicit ma
       case InteractionResponse.Failed => SensoryEventStatus.Completed
       case InteractionResponse.NotEnabled => SensoryEventStatus.FiringLimitMet
       case InteractionResponse.PeriodExpired => SensoryEventStatus.ReceivePeriodExpired
+      case InteractionResponse.AlreadyReceived => SensoryEventStatus.AlreadyReceived
       case InteractionResponse.ProcessDeleted => SensoryEventStatus.ProcessDeleted
       case _ => throw new BakerException("Unknown exception while handling sensory event")
     }

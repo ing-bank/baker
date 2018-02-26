@@ -26,7 +26,7 @@ class QueuePushingActor(queue: SourceQueueWithComplete[Any], waitForRetries: Boo
 
   override def receive: Receive = {
     //Messages from the ProcessIndex
-    case msg@ (_:ProcessDeleted | _:ProcessUninitialized | _:ReceivePeriodExpired | _:InvalidEvent) ⇒
+    case msg@ (_:ProcessDeleted | _: ProcessUninitialized | _: ReceivePeriodExpired | _: InvalidEvent) ⇒
       queue.offer(msg)
       queue.complete()
       stopActor()
@@ -47,7 +47,7 @@ class QueuePushingActor(queue: SourceQueueWithComplete[Any], waitForRetries: Boo
       queue.offer(msg)
       stopActorIfDone
 
-    case msg@ (_:TransitionNotEnabled | _:Uninitialized) ⇒
+    case msg@ (_: TransitionNotEnabled | _: Uninitialized | _: AlreadyReceived) ⇒
       queue.offer(msg)
       queue.complete()
       stopActor()

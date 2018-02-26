@@ -190,20 +190,28 @@ class ProcessInstance[P[_], T[_, _], S, E](
               })
       }
 
-    case FireTransition(transitionId, input, _) ⇒
+    case FireTransition(transitionId, input, correlationIdOption) ⇒
 
       val transition = topology.transitions.getById(transitionId, "transition in petrinet").asInstanceOf[T[Any, Any]]
 
-      runtime.jobPicker.createJob[S, Any, Any](transition, input).run(instance).value match {
-        case (updatedInstance, Right(job)) ⇒
-          executeJob(job, sender())
-          context become running(updatedInstance, scheduledRetries)
-        case (_, Left(reason)) ⇒
+      def received(id: String) = instance.receivedCorrelationIds.contains(id) || instance.jobs.values.exists(_.correlationId == Some(id))
 
-          log.fireTransitionRejected(processId, transition.toString, reason)
+      correlationIdOption match {
+        case Some(correlationId) if received(correlationId) =>
+            sender() ! AlreadyReceived(correlationId)
+        case _ =>
+          runtime.jobPicker.createJob[S, Any, Any](transition, input).run(instance).value match {
+            case (updatedInstance, Right(job)) ⇒
+              executeJob(job, sender())
+              context become running(updatedInstance, scheduledRetries)
+            case (_, Left(reason)) ⇒
 
-          sender() ! TransitionNotEnabled(transitionId, reason)
+              log.fireTransitionRejected(processId, transition.toString, reason)
+
+              sender() ! TransitionNotEnabled(transitionId, reason)
+          }
       }
+
     case Initialize(_, _) ⇒
       sender() ! AlreadyInitialized
   }
