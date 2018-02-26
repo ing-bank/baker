@@ -200,7 +200,7 @@ class ProcessInstance[P[_], T[_, _], S, E](
         case Some(correlationId) if received(correlationId) =>
             sender() ! AlreadyReceived(correlationId)
         case _ =>
-          runtime.jobPicker.createJob[S, Any, Any](transition, input).run(instance).value match {
+          runtime.jobPicker.createJob[S, Any, Any](transition, input, correlationIdOption).run(instance).value match {
             case (updatedInstance, Right(job)) ⇒
               executeJob(job, sender())
               context become running(updatedInstance, scheduledRetries)

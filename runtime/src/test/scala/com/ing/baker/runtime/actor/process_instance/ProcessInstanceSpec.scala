@@ -131,6 +131,29 @@ class ProcessInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSug
       expectMsgClass(classOf[TransitionFailed])
     }
 
+    "Respond with a AlreadyReceived message if the given corellation id was received earlier" in new TestSequenceNet {
+
+      val testCorrelationId = "abc"
+
+      override val sequence = Seq(
+        transition()(_ ⇒ Added(1))
+      )
+
+      val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
+
+      // initialize the petri net with 2 tokens in the first place
+      actor ! Initialize(marshal[Place](Marking(place(1) -> 2)), Set.empty)
+      expectMsgClass(classOf[Initialized])
+
+      actor ! FireTransition(transitionId = 1, input = null, correlationId = Some(testCorrelationId))
+
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
+
+      actor ! FireTransition(transitionId = 1, input = null, correlationId = Some(testCorrelationId))
+
+      expectMsg(AlreadyReceived(testCorrelationId))
+    }
+
     "Respond with a TransitionNotEnabled message if a transition is not enabled because of a previous failure" in new TestSequenceNet {
 
       override val sequence = Seq(
