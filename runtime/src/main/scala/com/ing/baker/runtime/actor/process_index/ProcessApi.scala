@@ -39,10 +39,10 @@ class QueuePushingActor(queue: SourceQueueWithComplete[Any], waitForRetries: Boo
 
       stopActorIfDone
 
-    case msg @ TransitionFailed(_, _, _, _, _, RetryWithDelay(_)) if waitForRetries ⇒
+    case msg @ TransitionFailed(_, _, _, _, _, _, RetryWithDelay(_)) if waitForRetries ⇒
       queue.offer(msg)
 
-    case msg @ TransitionFailed(jobId, _, _, _, _, _) ⇒
+    case msg @ TransitionFailed(jobId, _,  _, _, _, _, _) ⇒
       runningJobs = runningJobs - jobId
       queue.offer(msg)
       stopActorIfDone

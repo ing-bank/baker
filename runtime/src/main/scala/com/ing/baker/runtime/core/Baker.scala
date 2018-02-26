@@ -268,12 +268,11 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       ProcessQuery
         .eventsForInstance[Place, Transition, ProcessState, RuntimeEvent](compiledRecipe.name, processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal, RecipeRuntime.eventSourceFn)
         .collect {
-          case (_, TransitionFiredEvent(_, _, _, _, _, _, runtimeEvent: RuntimeEvent))
+          case (_, TransitionFiredEvent(_, _, _, _, _, _, _, runtimeEvent: RuntimeEvent))
             if runtimeEvent != null && compiledRecipe.allEvents.exists(e => e.name equals runtimeEvent.name) => runtimeEvent
         }
     }
 
-    // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
     val futureResult = processIndexActor.ask(GetCompiledRecipe(processId))(defaultInquireTimeout)
     Await.result(futureResult, defaultInquireTimeout) match {
       case RecipeFound(compiledRecipe) => getEventsForRecipe(compiledRecipe)
@@ -347,7 +346,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[NoSuchProcessException]("If the process is not found")
   def getVisualState(processId: String, timeout: FiniteDuration = defaultInquireTimeout): String = {
-    // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
     val futureResult = processIndexActor.ask(GetCompiledRecipe(processId))(timeout)
     Await.result(futureResult, timeout) match {
       case RecipeFound(compiledRecipe) =>

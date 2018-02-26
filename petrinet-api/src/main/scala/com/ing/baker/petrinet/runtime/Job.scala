@@ -8,6 +8,7 @@ import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
  */
 case class Job[P[_], T[_, _], S, E](
     id: Long,
+    correlationId: Option[String],
     processState: S,
     transition: T[_, E],
     consume: Marking[P],
