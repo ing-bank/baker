@@ -52,6 +52,7 @@ object BakerResponse {
       sequenced.map(seq => seq.headOption match {
         case Some(NotEnabled) => NotEnabled
         case Some(PeriodExpired) => PeriodExpired
+        case Some(AlreadyReceived) => AlreadyReceived
         case _ => if (seq.contains(Failed)) Failed else Success
       })
     }

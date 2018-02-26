@@ -227,8 +227,8 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def processEvent(processId: String, event: Any, timeout: FiniteDuration = defaultProcessEventTimeout): SensoryEventStatus = {
-    processEventAsync(processId, event).confirmCompleted()
+  def processEvent(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): SensoryEventStatus = {
+    processEventAsync(processId, event, correlationId, timeout).confirmCompleted()
   }
 
   /**
@@ -237,14 +237,14 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * This call is fire and forget: If  nothing is done
     * with the response object there is NO guarantee that the event is received by the process instance.
     */
-  def processEventAsync(processId: String, event: Any, timeout: FiniteDuration = defaultProcessEventTimeout): BakerResponse = {
+  def processEventAsync(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): BakerResponse = {
 
     val runtimeEvent: RuntimeEvent = event match {
       case runtimeEvent: RuntimeEvent => runtimeEvent
       case _ => Baker.eventExtractor.extractEvent(event)
     }
 
-    val source = petriNetApi.askAndCollectAll(ProcessEvent(processId, runtimeEvent), waitForRetries = true)(timeout)
+    val source = petriNetApi.askAndCollectAll(ProcessEvent(processId, runtimeEvent, correlationId), waitForRetries = true)(timeout)
     new BakerResponse(processId, source)
   }
 
@@ -291,7 +291,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   private def getProcessState(processId: String, timeout: FiniteDuration = defaultInquireTimeout): ProcessState =
-  Await.result(getProcessStateAsync(processId), timeout)
+    Await.result(getProcessStateAsync(processId), timeout)
 
   /**
     * returns a future with the process state.
@@ -324,7 +324,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def getIngredients(processId: String, timeout: FiniteDuration = defaultInquireTimeout): Map[String, Value] =
-  getProcessState(processId).ingredients
+    getProcessState(processId).ingredients
 
   /**
     * Returns a future of all the provided ingredients for a given process id.

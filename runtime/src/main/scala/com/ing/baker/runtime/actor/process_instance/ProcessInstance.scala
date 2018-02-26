@@ -194,10 +194,10 @@ class ProcessInstance[P[_], T[_, _], S, E](
 
       val transition = topology.transitions.getById(transitionId, "transition in petrinet").asInstanceOf[T[Any, Any]]
 
-      def received(id: String) = instance.receivedCorrelationIds.contains(id) || instance.jobs.values.exists(_.correlationId == Some(id))
+      def alreadyReceived(id: String) = instance.receivedCorrelationIds.contains(id) || instance.jobs.values.exists(_.correlationId == Some(id))
 
       correlationIdOption match {
-        case Some(correlationId) if received(correlationId) =>
+        case Some(correlationId) if alreadyReceived(correlationId) =>
             sender() ! AlreadyReceived(correlationId)
         case _ =>
           runtime.jobPicker.createJob[S, Any, Any](transition, input, correlationIdOption).run(instance).value match {

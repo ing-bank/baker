@@ -123,7 +123,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
   def processEvent(processId: String, event: Any, timeout: java.time.Duration): SensoryEventStatus =
-    baker.processEvent(processId, event, timeout.toScala)
+    baker.processEvent(processId, event, None, timeout.toScala)
 
   /**
     * This fires the given event in the recipe for the process with the given processId
@@ -138,6 +138,20 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
   @throws[TimeoutException]("When the process does not respond within the given deadline")
   def processEvent(processId: UUID, event: Any): SensoryEventStatus =
     processEvent(processId.toString, event)
+
+  /**
+    * This fires the given event in the recipe for the process with the given processId
+    * This waits with returning until all steps that can be executed are executed by Baker
+    *
+    * @param processId The process identifier
+    * @param event     The event to fire
+    * @return
+    */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[ProcessDeletedException]("When no process is deleted")
+  @throws[TimeoutException]("When the process does not respond within the given deadline")
+  def processEvent(processId: UUID, event: Any, correlationId: String, timeout: java.time.Duration): SensoryEventStatus =
+    baker.processEvent(processId.toString, event, Some(correlationId), timeout.toScala)
 
   /**
     * This fires the given event in the recipe for the process with the given processId
@@ -176,7 +190,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     */
   def processEventAsync(processId: String, event: Any, timeout: java.time.Duration): BakerResponse = {
     implicit val executionContext = actorSystem.dispatcher
-    baker.processEventAsync(processId, event, timeout.toScala)
+    baker.processEventAsync(processId, event, None, timeout.toScala)
   }
 
   /**

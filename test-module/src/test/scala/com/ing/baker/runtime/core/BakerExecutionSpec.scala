@@ -146,6 +146,30 @@ class BakerExecutionSpec extends TestRecipeHelper {
       verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
     }
 
+
+    "not allow a sensory event be fired twice with the same correlation id" in {
+      val recipe =
+        Recipe("correlationIdSensoryEventRecipe")
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent)
+
+      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
+
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
+
+      val processId = UUID.randomUUID().toString
+      baker.bake(recipeId, processId)
+
+      val executedFirst = baker.processEvent(processId, InitialEvent(initialIngredientValue), Some("abc"))
+      executedFirst shouldBe SensoryEventStatus.Completed
+      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+
+      val executedSecond = baker.processEvent(processId, InitialEvent(initialIngredientValue), Some("abc"))
+      executedSecond shouldBe SensoryEventStatus.AlreadyReceived
+      verifyNoMoreInteractions(testInteractionOneMock)
+    }
+
+
     "only allow a sensory event be fired twice if the max firing limit is set two" in {
       val recipe =
         Recipe("maxFiringLimitOfTwoOnSensoryEventRecipe")
