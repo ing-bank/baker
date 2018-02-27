@@ -26,8 +26,14 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
 
   def this() = this(ActorSystem("BakerActorSystem"))
 
-//  private val baker: Baker = new Baker()(actorSystem)
-
+  /**
+    * Adds a recipe to baker and returns a recipeId for the recipe.
+    *
+    * This function is idempotent, if the same (equal) recipe was added earlier this will return the same recipeId.
+    *
+    * @param compiledRecipe The compiled recipe.
+    * @return A recipe identifier.
+    */
   def addRecipe(compiledRecipe: CompiledRecipe): String = baker.addRecipe(compiledRecipe)
 
   /**
