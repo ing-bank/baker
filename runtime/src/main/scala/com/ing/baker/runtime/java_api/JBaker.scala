@@ -11,7 +11,7 @@ import com.ing.baker.types.Value
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
-class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRef]) {
+class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRef]) {
 
   private implicit class DurationConversions(timeout: java.time.Duration) {
     def toScala: FiniteDuration =
@@ -20,11 +20,13 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
 
   addImplementations(implementations)
 
+  def this(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRef]) = this(new Baker()(actorSystem), implementations)
+
   def this(actorSystem: ActorSystem) = this(actorSystem, Collections.emptyList[AnyRef])
 
   def this() = this(ActorSystem("BakerActorSystem"))
 
-  private val baker: Baker = new Baker()(actorSystem)
+//  private val baker: Baker = new Baker()(actorSystem)
 
   def addRecipe(compiledRecipe: CompiledRecipe): String = baker.addRecipe(compiledRecipe)
 
@@ -109,7 +111,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
   def processEvent(processId: String, event: Any): SensoryEventStatus =
-    baker.processEvent(processId, event)
+    baker.processEvent(processId, event, None)
 
   /**
     * This fires the given event in the recipe for the process with the given processId
@@ -181,7 +183,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
   def processEvent(processId: UUID, event: Any, correlationId: String): SensoryEventStatus =
-    baker.processEvent(processId.toString, event, Some(correlationId))
+    processEvent(processId.toString, event, correlationId)
 
   /**
     * This fires the given event in the recipe for the process with the given processId
@@ -213,7 +215,7 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
   def processEvent(processId: UUID, event: Any, correlationId: String, timeout: java.time.Duration): SensoryEventStatus =
-    baker.processEvent(processId.toString, event, Some(correlationId), timeout.toScala)
+    processEvent(processId.toString, event, correlationId, timeout)
 
   /**
     * This fires the given event in the recipe for the process with the given processId
@@ -223,10 +225,8 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param event     The event to fire
     * @return
     */
-  def processEventAsync(processId: String, event: Any): BakerResponse = {
-    implicit val executionContext = actorSystem.dispatcher
+  def processEventAsync(processId: String, event: Any): BakerResponse =
     baker.processEventAsync(processId, event)
-  }
 
   /**
     * This fires the given event in the recipe for the process with the given processId
@@ -248,10 +248,8 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     * @param timeout   How long to wait for a response from the process
     * @return
     */
-  def processEventAsync(processId: String, event: Any, timeout: java.time.Duration): BakerResponse = {
-    implicit val executionContext = actorSystem.dispatcher
+  def processEventAsync(processId: String, event: Any, timeout: java.time.Duration): BakerResponse =
     baker.processEventAsync(processId, event, None, timeout.toScala)
-  }
 
   /**
     * This fires the given event in the recipe for the process with the given processId
