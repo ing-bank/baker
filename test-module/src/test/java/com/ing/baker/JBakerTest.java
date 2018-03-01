@@ -16,6 +16,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import scala.Option;
+import scala.collection.immutable.List;
+import scala.collection.immutable.List$;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.util.Collections;
@@ -110,6 +112,8 @@ public class JBakerTest {
         FiniteDuration testTimeoutScala = new FiniteDuration(testTimeout.toMillis(), TimeUnit.MILLISECONDS);
         EventListener testListener = (processId, event) -> { };
 
+        when(mockBaker.eventNames(any(String.class), any(FiniteDuration.class))).thenReturn(List$.MODULE$.empty());
+
         // -- bake
 
         jBaker.bake(testRecipeId, processStringId);
@@ -133,6 +137,20 @@ public class JBakerTest {
 
         jBaker.getEvents(processUUID);
         verify(mockBaker).events(eq(processUUID.toString()), any(FiniteDuration.class));
+
+        // -- get event names
+
+        jBaker.getEventNames(processStringId);
+        verify(mockBaker).eventNames(eq(processStringId), any(FiniteDuration.class));
+
+        jBaker.getEventNames(processUUID);
+        verify(mockBaker).eventNames(eq(processUUID.toString()), any(FiniteDuration.class));
+
+        jBaker.getEventNames(processStringId, testTimeout);
+        verify(mockBaker).eventNames(eq(processStringId), eq(testTimeoutScala));
+
+        jBaker.getEventNames(processUUID, testTimeout);
+        verify(mockBaker).eventNames(eq(processUUID.toString()), eq(testTimeoutScala));
 
         // -- get recipe
 
