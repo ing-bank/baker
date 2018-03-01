@@ -65,7 +65,7 @@ trait ProtoEventAdapter {
 
       case e: core.ProcessState =>
         val ingredients = writeIngredients(e.ingredients.toSeq)
-        protobuf.ProcessState(Some(e.processId), ingredients)
+        protobuf.ProcessState(Some(e.processId), ingredients, e.eventNames)
 
       case il.EventDescriptor(name, ingredients) =>
 
@@ -312,8 +312,8 @@ trait ProtoEventAdapter {
       case protobuf.RuntimeEvent(Some(name), ingredients) =>
         core.RuntimeEvent(name, readIngredients(ingredients))
 
-      case protobuf.ProcessState(Some(id), ingredients) =>
-        core.ProcessState(id, readIngredients(ingredients).toMap)
+      case protobuf.ProcessState(Some(id), ingredients, events) =>
+        core.ProcessState(id, readIngredients(ingredients).toMap, events.toList)
 
       case protobuf.PetriNet(protoNodes, protoEdges) =>
 

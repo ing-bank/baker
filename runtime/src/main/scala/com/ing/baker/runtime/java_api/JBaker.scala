@@ -412,6 +412,106 @@ class JBaker(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRe
     baker.getVisualState(processId, timeout.toScala)
 
   /**
+    * Returns the state of a process instance. This includes the ingredients and names of the events.
+    *
+    * @param processId The process identifier
+    * @return The state of the process instance
+    */
+  @throws[TimeoutException]("When the process does not respond within the default deadline")
+  @throws[ProcessDeletedException]("If the process is already deleted")
+  @throws[NoSuchProcessException]("If the process is not found")
+  def getProcessState(processId: String): ProcessState =
+    baker.getProcessState(processId)
+
+  /**
+    * Returns the state of a process instance. This includes the ingredients and names of the events.
+    *
+    * @param processId The process identifier
+    * @param timeout   The maximum time to wait
+    * @return The state of the process instance
+    */
+  @throws[TimeoutException]("When the process does not respond within the default deadline")
+  @throws[ProcessDeletedException]("If the process is already deleted")
+  @throws[NoSuchProcessException]("If the process is not found")
+  def getProcessState(processId: String, timeout: java.time.Duration): ProcessState =
+    baker.getProcessState(processId, timeout.toScala)
+
+  /**
+    * Returns the state of a process instance. This includes the ingredients and names of the events.
+    *
+    * @param processId The process identifier
+    * @return The state of the process instance
+    */
+  @throws[TimeoutException]("When the process does not respond within the default deadline")
+  @throws[ProcessDeletedException]("If the process is already deleted")
+  @throws[NoSuchProcessException]("If the process is not found")
+  def getProcessState(processId: UUID): ProcessState =
+  baker.getProcessState(processId.toString)
+
+  /**
+    * Returns the state of a process instance. This includes the ingredients and names of the events.
+    *
+    * @param processId The process identifier
+    * @param timeout   The maximum time to wait
+    * @return The state of the process instance
+    */
+  @throws[TimeoutException]("When the process does not respond within the default deadline")
+  @throws[ProcessDeletedException]("If the process is already deleted")
+  @throws[NoSuchProcessException]("If the process is not found")
+  def getProcessState(processId: UUID, timeout: java.time.Duration): ProcessState =
+  baker.getProcessState(processId.toString, timeout.toScala)
+
+  /**
+    * Returns the event names of a process instance
+    *
+    * @param processId The process identifier
+    * @return The state of the process instance
+    */
+  @throws[TimeoutException]("When the process does not respond within the default deadline")
+  @throws[ProcessDeletedException]("If the process is already deleted")
+  @throws[NoSuchProcessException]("If the process is not found")
+  def getEventNames(processId: String): java.util.List[String] =
+    baker.getProcessState(processId).eventNames.asJava
+
+  /**
+    * Returns the event names of a process instance
+    *
+    * @param processId The process identifier
+    * @param timeout   The maximum time to wait
+    * @return The state of the process instance
+    */
+  @throws[TimeoutException]("When the process does not respond within the default deadline")
+  @throws[ProcessDeletedException]("If the process is already deleted")
+  @throws[NoSuchProcessException]("If the process is not found")
+  def getEventNames(processId: String, timeout: java.time.Duration): java.util.List[String] =
+    baker.getProcessState(processId, timeout.toScala).eventNames.asJava
+
+  /**
+    * Returns the event names of a process instance
+    *
+    * @param processId The process identifier
+    * @return The state of the process instance
+    */
+  @throws[TimeoutException]("When the process does not respond within the default deadline")
+  @throws[ProcessDeletedException]("If the process is already deleted")
+  @throws[NoSuchProcessException]("If the process is not found")
+  def getEventNames(processId: UUID): java.util.List[String] =
+  baker.getProcessState(processId.toString).eventNames.asJava
+
+  /**
+    * Returns the event names of a process instance
+    *
+    * @param processId The process identifier
+    * @param timeout   The maximum time to wait
+    * @return The state of the process instance
+    */
+  @throws[TimeoutException]("When the process does not respond within the default deadline")
+  @throws[ProcessDeletedException]("If the process is already deleted")
+  @throws[NoSuchProcessException]("If the process is not found")
+  def getEventNames(processId: UUID, timeout: java.time.Duration): java.util.List[String] =
+  baker.getProcessState(processId.toString, timeout.toScala).eventNames.asJava
+
+  /**
     * Returns the visual state of the recipe in dot format
     *
     * @param processId The process identifier

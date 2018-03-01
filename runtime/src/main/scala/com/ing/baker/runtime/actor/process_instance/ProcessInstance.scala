@@ -12,7 +12,7 @@ import com.ing.baker.runtime.actor.InternalBakerMessage
 import com.ing.baker.runtime.actor.process_instance.ProcessInstance._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceLogger._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.actor.serialization.{Encryption, ObjectSerializer}
+import com.ing.baker.runtime.actor.serialization.Encryption
 import fs2.Strategy
 
 import scala.concurrent.duration._
@@ -44,13 +44,12 @@ object ProcessInstance {
 /**
   * This actor is responsible for maintaining the state of a single petri net instance.
   */
-class ProcessInstance[P[_], T[_, _], S, E](
-                                             processType: String,
-                                             processTopology: PetriNet[P[_], T[_, _]],
-                                             settings: Settings,
-                                             runtime: PetriNetRuntime[P, T, S, E],
-                                             override implicit val placeIdentifier: Identifiable[P[_]],
-                                             override implicit val transitionIdentifier: Identifiable[T[_, _]]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSourceFn) {
+class ProcessInstance[P[_], T[_, _], S, E](processType: String,
+                                            processTopology: PetriNet[P[_], T[_, _]],
+                                            settings: Settings,
+                                            runtime: PetriNetRuntime[P, T, S, E],
+                                            override implicit val placeIdentifier: Identifiable[P[_]],
+                                            override implicit val transitionIdentifier: Identifiable[T[_, _]]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSourceFn) {
 
 
   val log: DiagnosticLoggingAdapter = Logging.getLogger(this)

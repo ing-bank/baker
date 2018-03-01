@@ -257,6 +257,12 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   }
 
   /**
+    * Synchronously returns all event names that occurred for a process.
+    */
+  def eventNames(processId: String, timeout: FiniteDuration = defaultInquireTimeout): List[String] =
+    getProcessState(processId, timeout).eventNames
+
+  /**
     * Returns a Source of baker events for a process.
     *
     * @param processId The process identifier.
@@ -291,7 +297,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  private def getProcessState(processId: String, timeout: FiniteDuration = defaultInquireTimeout): ProcessState =
+  def getProcessState(processId: String, timeout: FiniteDuration = defaultInquireTimeout): ProcessState =
   Await.result(getProcessStateAsync(processId), timeout)
 
   /**

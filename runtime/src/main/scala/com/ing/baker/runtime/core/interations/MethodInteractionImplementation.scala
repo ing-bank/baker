@@ -76,7 +76,7 @@ object MethodInteractionImplementation {
 
     // when the interaction does not fire an event, Void or Unit is a valid output type
     if (interaction.eventsToFire.isEmpty && output == null)
-      RuntimeEvent(interaction.interactionName, Seq.empty)
+      null
 
     // if the interaction directly produces an ingredient
     else if (interaction.providedIngredientEvent.isDefined) {

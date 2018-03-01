@@ -721,6 +721,29 @@ class BakerExecutionSpec extends TestRecipeHelper {
       )
     }
 
+    "be able to return all occurred event names" in {
+
+      val (baker, recipeId) = setupBakerWithRecipe("CheckEventNamesRecipe")
+
+      val processId = UUID.randomUUID().toString
+      baker.bake(recipeId, processId)
+
+      //Handle two event
+      baker.processEvent(processId, InitialEvent(initialIngredientValue))
+      baker.processEvent(processId, SecondEvent())
+
+      //Check if both the new event and the events occurred in the past are in the eventsList
+      baker.eventNames(processId) should contain only(
+        "InitialEvent",
+        "EventFromInteractionTwo",
+        "SecondEvent",
+        "InteractionOneSuccessful",
+        "SieveInteractionSuccessful",
+        "InteractionThreeSuccessful",
+        "InteractionFourSuccessful"
+      )
+    }
+
     //Only works if persistence actors are used (think cassandra)
     "recover the state of a process from a persistence store" in {
       val system1 = ActorSystem("persistenceTest1", levelDbConfig("persistenceTest1", 3002))

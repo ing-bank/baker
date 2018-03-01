@@ -11,7 +11,7 @@ object RecipeRuntime {
   def eventSourceFn: Transition[_, _] => (ProcessState => RuntimeEvent => ProcessState) =
     _ => state => {
       case null => state
-      case RuntimeEvent(_, providedIngredients) => state.copy(ingredients = state.ingredients ++ providedIngredients)
+      case RuntimeEvent(name, providedIngredients) => state.copy(ingredients = state.ingredients ++ providedIngredients, eventNames = state.eventNames :+ name)
     }
 }
 
