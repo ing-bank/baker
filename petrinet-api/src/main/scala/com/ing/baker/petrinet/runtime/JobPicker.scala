@@ -10,7 +10,7 @@ class JobPicker[P[_], T[_, _]](tokenGame: TokenGame[P, T]) {
   /**
    * Fires a specific transition with input, computes the marking it should consume
    */
-  def createJob[S, I, E](transition: T[I, E], input: I): State[Instance[P, T, S], Either[String, Job[P, T, S, E]]] =
+  def createJob[S, I, E](transition: T[I, E], input: I, correlationId: Option[String] = None): State[Instance[P, T, S], Either[String, Job[P, T, S, E]]] =
     State { instance ⇒
       instance.isBlockedReason(transition) match {
         case Some(reason) ⇒
@@ -20,7 +20,7 @@ class JobPicker[P[_], T[_, _]](tokenGame: TokenGame[P, T]) {
             case None ⇒
               (instance, Left(s"Not enough consumable tokens"))
             case Some(params) ⇒
-              val job = Job[P, T, S, E](instance.nextJobId(), instance.state, transition, params.head, input)
+              val job = Job[P, T, S, E](instance.nextJobId(), correlationId, instance.state, transition, params.head, input)
               val updatedInstance = instance.copy[P, T, S](jobs = instance.jobs + (job.id -> job))
               (updatedInstance, Right(job))
           }
@@ -42,7 +42,7 @@ class JobPicker[P[_], T[_, _]](tokenGame: TokenGame[P, T]) {
       case (t, markings) ⇒ !instance.isBlockedReason(t).isDefined && isAutoFireable(instance, t)
     }.map {
       case (t, markings) ⇒
-        val job = Job[P, T, S, Any](instance.nextJobId(), instance.state, t.asInstanceOf[T[Any, Any]], markings.head, null)
+        val job = Job[P, T, S, Any](instance.nextJobId(), None, instance.state, t.asInstanceOf[T[Any, Any]], markings.head, null)
         (instance.copy[P, T, S](jobs = instance.jobs + (job.id -> job)), Some(job))
     }.getOrElse((instance, None))
   }

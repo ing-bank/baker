@@ -147,7 +147,7 @@ class ProcessInstanceSerialization[P[_], T[_, _], S](serializer: ObjectSerialize
 
       val transition = instance.process.transitions.getById(transitionId, "transition in petrinet")
 
-      TransitionFailedEvent[P, T, Any](jobId, transition, timeStarted, timeFailed, consumed, input, failureReason, failureStrategy)
+      TransitionFailedEvent[P, T, Any](jobId, transition, e.correlationId, timeStarted, timeFailed, consumed, input, failureReason, failureStrategy)
   }
 
   private def serializeTransitionFailed(e: TransitionFailedEvent[P, T, Any]): protobuf.TransitionFailed = {
@@ -200,6 +200,6 @@ class ProcessInstanceSerialization[P[_], T[_, _], S](serializer: ObjectSerialize
     val timeStarted = e.timeStarted.getOrElse(missingFieldException("time_started"))
     val timeCompleted = e.timeCompleted.getOrElse(missingFieldException("time_completed"))
 
-    TransitionFiredEvent[P, T, Any](jobId, transition, timeStarted, timeCompleted, consumed, produced, output)
+    TransitionFiredEvent[P, T, Any](jobId, transition, e.correlationId, timeStarted, timeCompleted, consumed, produced, output)
   }
 }

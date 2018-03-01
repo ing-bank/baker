@@ -17,10 +17,3 @@ addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "1.1")
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.0.0")
 
 libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.25"
-
-//
-//addSbtPlugin("com.fortysevendeg" % "sbt-catalysts-extras" % "0.1.3")
-//
-//addSbtPlugin("com.fortysevendeg" % "sbt-microsites" % "0.4.0")
-//
-//addSbtPlugin("com.geirsson" % "sbt-scalafmt" % "0.4.8")
