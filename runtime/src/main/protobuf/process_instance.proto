@@ -22,7 +22,7 @@ message Initialized {
 
 message TransitionFired {
     optional int64 job_id = 1;
-    optional int64 correlation_id = 2;
+    optional string correlation_id = 9;
     optional int64 transition_id = 3;
     optional int64 time_started = 4;
     optional int64 time_completed = 5;
@@ -44,7 +44,7 @@ message FailureStrategy {
 
 message TransitionFailed {
     optional int64 job_id = 1;
-    optional int64 correlation_id = 2;
+    optional string correlation_id = 10;
     optional int64 transition_id = 3;
     optional int64 time_started = 4;
     optional int64 time_failed = 5;

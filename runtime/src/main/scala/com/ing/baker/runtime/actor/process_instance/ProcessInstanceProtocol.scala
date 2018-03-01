@@ -70,7 +70,7 @@ object ProcessInstanceProtocol {
   case class FireTransition(
     transitionId: Long,
     input: Any,
-    correlationId: Option[Long] = None) extends Command
+    correlationId: Option[String] = None) extends Command
 
   /**
    * A common trait for all responses coming from a petri net instance.
@@ -88,6 +88,11 @@ object ProcessInstanceProtocol {
    * Returned in case a second Initialize is send after a first is processed
    */
   case object AlreadyInitialized extends Response
+
+  /**
+    * Indicates that the received FireTransition command with a specific correlation id was already received.
+    */
+  case class AlreadyReceived(correlationId: String) extends Response
 
   /**
    * A response indicating that the instance has been initialized in a certain state.
@@ -111,6 +116,7 @@ object ProcessInstanceProtocol {
   case class TransitionFired(
     jobId: Long,
     override val transitionId: Long,
+    correlationId: Option[String],
     consumed: MarkingData,
     produced: MarkingData,
     result: InstanceState,
@@ -122,6 +128,7 @@ object ProcessInstanceProtocol {
   case class TransitionFailed(
     jobId: Long,
     override val transitionId: Long,
+    correlationId: Option[String],
     consume: MarkingData,
     input: Any,
     reason: String,

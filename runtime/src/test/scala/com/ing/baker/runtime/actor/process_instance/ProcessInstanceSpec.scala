@@ -131,6 +131,29 @@ class ProcessInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSug
       expectMsgClass(classOf[TransitionFailed])
     }
 
+    "Respond with a AlreadyReceived message if the given corellation id was received earlier" in new TestSequenceNet {
+
+      val testCorrelationId = "abc"
+
+      override val sequence = Seq(
+        transition()(_ ⇒ Added(1))
+      )
+
+      val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
+
+      // initialize the petri net with 2 tokens in the first place
+      actor ! Initialize(marshal[Place](Marking(place(1) -> 2)), Set.empty)
+      expectMsgClass(classOf[Initialized])
+
+      actor ! FireTransition(transitionId = 1, input = null, correlationId = Some(testCorrelationId))
+
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
+
+      actor ! FireTransition(transitionId = 1, input = null, correlationId = Some(testCorrelationId))
+
+      expectMsg(AlreadyReceived(testCorrelationId))
+    }
+
     "Respond with a TransitionNotEnabled message if a transition is not enabled because of a previous failure" in new TestSequenceNet {
 
       override val sequence = Seq(
@@ -145,7 +168,7 @@ class ProcessInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSug
 
       actor ! FireTransition(1, ())
 
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, _) ⇒ }
 
       actor ! FireTransition(1, ())
 
@@ -197,9 +220,9 @@ class ProcessInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSug
       val delay2: Long = dilatedMillis(40)
 
       // expect 3 failure messages
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, RetryWithDelay(delay1)) ⇒ }
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, RetryWithDelay(delay2)) ⇒ }
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, Fatal) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, RetryWithDelay(delay1)) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, RetryWithDelay(delay2)) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, Fatal) ⇒ }
 
       // attempt to fire t1 explicitly
       actor ! FireTransition(1, ())
@@ -226,10 +249,10 @@ class ProcessInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSug
       actor ! FireTransition(1, ())
 
       // expect the next marking: p2 -> 1
-      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
 
       // since t2 fires automatically we also expect the next marking: p3 -> 1
-      expectMsgPF() { case TransitionFired(_, 2, _, _, _, _) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 2, _, _, _, _, _) ⇒ }
 
       // validate the final state
       val expectedFinalState = InstanceState(3, marshal[Place](Marking(place(3) -> 1)), Set(1, 2), Map.empty)
@@ -271,8 +294,8 @@ class ProcessInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSug
 
       actor ! FireTransition(1, ())
 
-      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _) ⇒ }
-      expectMsgPF() { case TransitionFailed(_, 2, _, _, _, RetryWithDelay(Delay)) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 2, _, _, _, _, RetryWithDelay(Delay)) ⇒ }
 
       // verify that the mock function was called
       verify(mockFunction).apply(any[Set[Int]])
@@ -314,7 +337,7 @@ class ProcessInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSug
 
       actor ! FireTransition(1, ())
 
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, BlockTransition) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, BlockTransition) ⇒ }
     }
 
     "Not re-fire a failed transition with 'Blocked' strategy after being restored from persistent storage" in new TestSequenceNet {
@@ -336,8 +359,8 @@ class ProcessInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSug
       expectMsgClass(classOf[Initialized])
 
       // expect the next marking: p2 -> 1
-      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _) ⇒ }
-      expectMsgPF() { case TransitionFailed(_, 2, _, _, _, BlockTransition) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 2, _, _, _, _, BlockTransition) ⇒ }
 
       verify(mockT2).apply(any[Set[Int]])
 
@@ -385,7 +408,7 @@ class ProcessInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSug
 
       actor ! Initialize(marshal[Place](initialMarking), Set.empty)
       expectMsgClass(classOf[Initialized])
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, RetryWithDelay(InitialDelay)) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, RetryWithDelay(InitialDelay)) ⇒ }
 
       whenReady(mockPromise.future) { _ ⇒
 
@@ -454,7 +477,7 @@ class ProcessInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSug
       // fire the first transition manually
       actor ! FireTransition(1, ())
 
-      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
 
       import org.scalatest.concurrent.Timeouts._
 
@@ -462,8 +485,8 @@ class ProcessInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSug
 
         // expect that the two subsequent transitions are fired automatically and in parallel (in any order)
         expectMsgInAnyOrderPF(
-          { case TransitionFired(_, 2, _, _, _, _) ⇒ },
-          { case TransitionFired(_, 3, _, _, _, _) ⇒ }
+          { case TransitionFired(_, 2, _, _, _, _, _) ⇒ },
+          { case TransitionFired(_, 3, _, _, _, _, _) ⇒ }
         )
       }
     }

@@ -52,18 +52,18 @@ class JobExecutor[S, P[_], T[_, _]](
 
       executeTransitionAsync(transition)(job.consume, job.processState, job.input).map {
         case (produced, out) ⇒
-          TransitionFiredEvent(job.id, transition, startTime, System.currentTimeMillis(), job.consume, produced, out)
+          TransitionFiredEvent(job.id, transition, job.correlationId, startTime, System.currentTimeMillis(), job.consume, produced, out)
       }.handle {
         // In case an exception was thrown by the transition, we compute the failure strategy and return a TransitionFailedEvent
         case e: Throwable ⇒
           val failureCount = job.failureCount + 1
           val failureStrategy = exceptionHandlerFn(transition).apply(e, failureCount, topology.outMarking(transition))
-          TransitionFailedEvent(job.id, transition, startTime, System.currentTimeMillis(), job.consume, job.input, exceptionStackTrace(e), failureStrategy)
+          TransitionFailedEvent(job.id, transition, job.correlationId, startTime, System.currentTimeMillis(), job.consume, job.input, exceptionStackTrace(e), failureStrategy)
       }.handle {
         // If an exception was thrown while computing the failure strategy we block the interaction from firing
         case e: Throwable =>
           log.error(s"Exception while handling transition failure", e)
-          TransitionFailedEvent(job.id, transition, startTime, System.currentTimeMillis(), job.consume, job.input, exceptionStackTrace(e), ExceptionStrategy.BlockTransition)
+          TransitionFailedEvent(job.id, transition, job.correlationId, startTime, System.currentTimeMillis(), job.consume, job.input, exceptionStackTrace(e), ExceptionStrategy.BlockTransition)
       }
     }
   }

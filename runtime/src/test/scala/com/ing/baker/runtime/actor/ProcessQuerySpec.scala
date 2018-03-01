@@ -57,8 +57,8 @@ class ProcessQuerySpec extends AkkaTestBase with BeforeAndAfterEach {
 
       instance ! Initialize(marshal(Marking(p1 -> 1)), ())
       expectMsg(Initialized(marshal[Place](Marking(p1 -> 1)), ()))
-      expectMsgPF(timeOut) { case TransitionFired(_, 1, _, _, _, _) ⇒ }
-      expectMsgPF(timeOut) { case TransitionFired(_, 2, _, _, _, _) ⇒ }
+      expectMsgPF(timeOut) { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
+      expectMsgPF(timeOut) { case TransitionFired(_, 2, _, _, _, _, _) ⇒ }
 
       ProcessQuery.eventsForInstance[Place, Transition, Unit, Unit](
         "test",
@@ -72,12 +72,12 @@ class ProcessQuerySpec extends AkkaTestBase with BeforeAndAfterEach {
         .request(3)
         .expectNext(InitializedEvent(marking = Marking(p1 -> 1), state = ()))
         .expectNextChainingPF {
-          case TransitionFiredEvent(_, transition, _, _, consumed, produced, _) ⇒
+          case TransitionFiredEvent(_, transition, _, _, _, consumed, produced, _) ⇒
             transition shouldBe t1
             consumed shouldBe Marking(p1 -> 1)
             produced shouldBe Marking(p2 -> 1)
         }.expectNextChainingPF {
-          case TransitionFiredEvent(_, transition, _, _, consumed, produced, _) ⇒
+          case TransitionFiredEvent(_, transition, _, _, _, consumed, produced, _) ⇒
             transition shouldBe t2
             consumed shouldBe Marking(p2 -> 1)
             produced shouldBe Marking(p3 -> 1)

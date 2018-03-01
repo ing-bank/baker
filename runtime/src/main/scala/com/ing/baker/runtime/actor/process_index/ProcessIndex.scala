@@ -65,10 +65,11 @@ object ProcessIndex {
       throw new IllegalArgumentException(s"No such event known in recipe: $runtimeEvent")
     }
 
-  def createFireTransitionCmd(recipe: CompiledRecipe, processId: String, runtimeEvent: RuntimeEvent): FireTransition = {
+  def createFireTransitionCmd(recipe: CompiledRecipe, processId: String, runtimeEvent: RuntimeEvent, correlationId: Option[String]): FireTransition = {
     require(runtimeEvent != null, "Event can not be null")
     val t: Transition[_, _] = transitionForRuntimeEvent(runtimeEvent, recipe)
-    FireTransition(t.id, runtimeEvent)
+
+    FireTransition(t.id, runtimeEvent, correlationId)
   }
 
   private val strategy: Strategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadPool")
@@ -187,10 +188,10 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
         case _ => sender() ! ProcessAlreadyInitialized(processId)
       }
 
-    case ProcessEvent(processId: String, eventToFire: RuntimeEvent) =>
+    case ProcessEvent(processId: String, eventToFire: RuntimeEvent, correlationId) =>
       //Forwards the event message to the Actor if its in the Receive period for the compiledRecipe
       def forwardEventIfInReceivePeriod(actorRef: ActorRef, compiledRecipe: CompiledRecipe) = {
-        val cmd = createFireTransitionCmd(compiledRecipe, processId, eventToFire)
+        val cmd = createFireTransitionCmd(compiledRecipe, processId, eventToFire, correlationId)
         compiledRecipe.eventReceivePeriod match {
           case Some(receivePeriod) =>
             index.get(processId).foreach { p =>

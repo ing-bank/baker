@@ -65,7 +65,7 @@ object ScalaPBSerializerSpec {
 
   val transitionFiredGen: Gen[TransitionFired] = for {
     jobId <- Gen.option(longGen)
-    correlationId <- Gen.option(longGen)
+    correlationId <- Gen.option(Gen.identifier)
     transitionId <- Gen.option(longGen)
     timeStarted <- Gen.option(longGen)
     timeCompleted <- Gen.option(longGen)
@@ -76,7 +76,7 @@ object ScalaPBSerializerSpec {
 
   val transitionFailedGen: Gen[TransitionFailed] = for {
     jobId <- Gen.option(longGen)
-    correlationId <- Gen.option(longGen)
+    correlationId <- Gen.option(Gen.identifier)
     transitionId <- Gen.option(longGen)
     timeStarted <- Gen.option(longGen)
     timeCompleted <- Gen.option(longGen)

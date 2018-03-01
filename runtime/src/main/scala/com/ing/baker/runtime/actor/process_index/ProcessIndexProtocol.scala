@@ -10,7 +10,7 @@ object ProcessIndexProtocol {
 
   case class CreateProcess(recipeId: String, override val processId: String) extends ProcessIndexMessage
 
-  case class ProcessEvent(override val processId: String, event: RuntimeEvent) extends ProcessIndexMessage
+  case class ProcessEvent(override val processId: String, event: RuntimeEvent, correlationId: Option[String]) extends ProcessIndexMessage
 
   case class GetProcessState(override val processId: String) extends ProcessIndexMessage
 

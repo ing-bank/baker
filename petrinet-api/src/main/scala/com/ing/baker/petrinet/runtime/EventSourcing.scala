@@ -19,6 +19,7 @@ object EventSourcing {
   case class TransitionFiredEvent[P[_], T[_, _], E](
     override val jobId: Long,
     override val transition: T[_, _],
+    correlationId: Option[String],
     timeStarted: Long,
     timeCompleted: Long,
     consumed: Marking[P],
@@ -31,6 +32,7 @@ object EventSourcing {
   case class TransitionFailedEvent[P[_], T[_, _], I](
     override val jobId: Long,
     override val transition: T[_, _],
+    correlationId: Option[String],
     timeStarted: Long,
     timeFailed: Long,
     consume: Marking[P],
@@ -47,7 +49,7 @@ object EventSourcing {
 
   def apply[P[_], T[_, _], S, E](sourceFn: T[_, _] ⇒ EventSource[S, E]): Instance[P, T, S] ⇒ Event ⇒ Instance[P, T, S] = instance ⇒ {
     case InitializedEvent(initialMarking, initialState) ⇒
-      Instance[P, T, S](instance.process, 1, initialMarking.asInstanceOf[Marking[P]], initialState.asInstanceOf[S], Map.empty)
+      Instance[P, T, S](instance.process, 1, initialMarking.asInstanceOf[Marking[P]], initialState.asInstanceOf[S], Map.empty, Set.empty)
     case e: TransitionFiredEvent[_, _, _] ⇒
 
       val transition = e.transition.asInstanceOf[T[Any, E]]
@@ -56,13 +58,14 @@ object EventSourcing {
       instance.copy[P, T, S](
         sequenceNr = instance.sequenceNr + 1,
         marking = (instance.marking |-| e.consumed.asInstanceOf[Marking[P]]) |+| e.produced.asInstanceOf[Marking[P]],
+        receivedCorrelationIds = instance.receivedCorrelationIds ++ e.correlationId,
         state = newState,
         jobs = instance.jobs - e.jobId
       )
     case e: TransitionFailedEvent[_, _, _] ⇒
       val transition = e.transition.asInstanceOf[T[Any, E]]
       val job = instance.jobs.getOrElse(e.jobId, {
-        Job[P, T, S, E](e.jobId, instance.state, transition, e.consume.asInstanceOf[Marking[P]], e.input, None)
+        Job[P, T, S, E](e.jobId, e.correlationId, instance.state, transition, e.consume.asInstanceOf[Marking[P]], e.input, None)
       })
       val failureCount = job.failureCount + 1
       val updatedJob = job.copy(failure = Some(ExceptionState(e.timeFailed, failureCount, e.failureReason, e.exceptionStrategy)))
