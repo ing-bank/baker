@@ -131,6 +131,7 @@ message RuntimeEvent {
 message ProcessState {
     optional string processId = 1;
     repeated Ingredient ingredients = 2;
+    repeated string eventNames = 3;
 }
 // END DATA
 
