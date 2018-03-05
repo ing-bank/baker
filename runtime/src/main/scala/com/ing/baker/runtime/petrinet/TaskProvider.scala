@@ -49,55 +49,63 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
 
     (_, processState, _) => {
 
-    def failureHandler[T]: PartialFunction[Throwable, Task[T]] = {
-      case e: InvocationTargetException => Task.fail(e.getCause)
-      case e: Throwable => Task.fail(e)
+      def failureHandler[T]: PartialFunction[Throwable, Task[T]] = {
+        case e: InvocationTargetException => Task.fail(e.getCause)
+        case e: Throwable => Task.fail(e)
+      }
+
+      Try {
+        // returns a delayed task that will get executed by the baker petrinet runtime
+        Task
+          .delay {
+
+            // add MDC values for logging
+            MDC.put("processId", processState.processId.toString)
+            MDC.put("recipeName", recipeName)
+
+            // obtain the interaction implementation
+            val implementation = interactionManager.get(interaction).getOrElse {
+              throw new FatalInteractionException("No implementation available for interaction")
+            }
+
+            // create the interaction input
+            val input = createInput(interaction, processState)
+
+            // execute the interaction
+            implementation.execute(interaction, input) match {
+              case None =>
+                MDC.remove("processId")
+                MDC.remove("recipeName")
+
+                val fixedEvent = RuntimeEvent.create(interaction.interactionName, Seq.empty)
+                val outputMarking = createProducedMarking(interaction, outAdjacent)(fixedEvent)
+                (outputMarking, null.asInstanceOf[Output])
+
+              case Some(event) =>
+                // check if no null ingredients are provided
+                val nullIngredients = event.providedIngredients.collect {
+                  case (name, null) => s"null value provided for ingredient $name"
+                }
+
+                if (nullIngredients.nonEmpty)
+                  throw new FatalInteractionException(nullIngredients.mkString(","))
+
+                // transforms the event
+                val transformedEvent = transformEvent(interaction)(event)
+
+                // creates the transition output marking (in the petri net)
+                val outputMarking = createProducedMarking(interaction, outAdjacent)(transformedEvent)
+
+                // remove MDC values
+                MDC.remove("processId")
+                MDC.remove("recipeName")
+
+                (outputMarking, transformedEvent.asInstanceOf[Output])
+            }
+          }
+          .handleWith(failureHandler)
+      }.recover(failureHandler).get
     }
-
-    Try {
-      // returns a delayed task that will get executed by the baker petrinet runtime
-
-      Task
-        .delay {
-
-          // add MDC values for logging
-          MDC.put("processId", processState.processId.toString)
-          MDC.put("recipeName", recipeName)
-
-          // obtain the interaction implementation
-          val implementation = interactionManager.get(interaction).getOrElse {
-            throw new FatalInteractionException("No implementation available for interaction")
-          }
-
-          // create the interaction input
-          val input = createInput(interaction, processState)
-
-          // execute the interaction
-          val event = implementation.execute(interaction, input)
-
-          // check if no null ingredients are provided
-          val nullIngredients = event.providedIngredients.collect {
-            case (name, null) => s"null value provided for ingredient $name"
-          }
-
-          if (nullIngredients.nonEmpty)
-            throw new FatalInteractionException(nullIngredients.mkString(","))
-
-          // transforms the event
-          val transformedEvent = transformEvent(interaction)(event)
-
-          // creates the transition output marking (in the petri net)
-          val outputMarking = createProducedMarking(interaction, outAdjacent)(transformedEvent)
-
-          // remove MDC values
-          MDC.remove("processId")
-          MDC.remove("recipeName")
-
-          (outputMarking, transformedEvent.asInstanceOf[Output])
-        }
-        .handleWith(failureHandler)
-    }.recover(failureHandler).get
-  }
 
   /**
     * Convert place names which are the same as argument names to actual parameter values.

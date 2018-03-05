@@ -72,16 +72,16 @@ object MethodInteractionImplementation {
       i => i.name -> i
     }.toMap
 
-  def createRuntimeEvent[I](interaction: InteractionTransition[I], output: Any): RuntimeEvent = {
+  def createRuntimeEvent[I](interaction: InteractionTransition[I], output: Any): Option[RuntimeEvent] = {
 
     // when the interaction does not fire an event, Void or Unit is a valid output type
     if (interaction.eventsToFire.isEmpty && output == null)
-      null
+      None
 
     // if the interaction directly produces an ingredient
     else if (interaction.providedIngredientEvent.isDefined) {
       val eventToComplyTo = interaction.providedIngredientEvent.get
-      eventForProvidedIngredient(interaction.interactionName, eventToComplyTo.name, output, eventToComplyTo.ingredients.head)
+      Some(eventForProvidedIngredient(interaction.interactionName, eventToComplyTo.name, output, eventToComplyTo.ingredients.head))
     }
     else {
       val runtimeEvent = eventExtractor.extractEvent(output)
@@ -106,7 +106,7 @@ object MethodInteractionImplementation {
             throw new FatalInteractionException(s"Event '${runtimeEvent.name}' does not match the expected type: ${errors.mkString}")
       }
 
-      runtimeEvent
+      Some(runtimeEvent)
     }
   }
 
@@ -149,7 +149,7 @@ case class MethodInteractionImplementation(override val name: String,
     }
   }.toSeq
 
-  override def execute(interaction: InteractionTransition[_], input: Seq[Value]): RuntimeEvent =  {
+  override def execute(interaction: InteractionTransition[_], input: Seq[Value]): Option[RuntimeEvent] =  {
 
     val invocationId = UUID.randomUUID().toString
 
@@ -161,9 +161,7 @@ case class MethodInteractionImplementation(override val name: String,
     val output = method.invoke(implementation, inputArgs.asInstanceOf[Seq[AnyRef]]: _*)
     log.trace(s"[$invocationId] result: $output")
 
-    val event = createRuntimeEvent(interaction, output)
-
-    event
+    createRuntimeEvent(interaction, output)
   }
 
 }
