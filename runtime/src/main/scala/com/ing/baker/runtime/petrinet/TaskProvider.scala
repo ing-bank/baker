@@ -73,12 +73,10 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
           val input = createInput(interaction, processState)
 
           // execute the interaction
-          val event: RuntimeEvent = implementation.execute(interaction, input);
+          val optionalEvent: Option[RuntimeEvent] = implementation.execute(interaction, input);
 
-          //If the returned event
-          //TODO change the implemention.execute to Option[RuntimeEvent]
-          //This way we can removed null checks and use exits
-          if(event == null) {
+          //If the returned event is not defined
+          if(optionalEvent.isEmpty) {
             MDC.remove("processId")
             MDC.remove("recipeName")
 
@@ -87,6 +85,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
             (outputMarking, null.asInstanceOf[Output])
           }
           else {
+            val event = optionalEvent.get
             // check if no null ingredients are provided
             val nullIngredients = event.providedIngredients.collect {
               case (name, null) => s"null value provided for ingredient $name"

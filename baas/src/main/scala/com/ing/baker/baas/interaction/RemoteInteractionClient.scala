@@ -34,7 +34,7 @@ case class RemoteInteractionClient(override val name: String,
     * @param input
     * @return
     */
-  override def execute(interaction: InteractionTransition[_], input: Seq[Value]): RuntimeEvent = {
+  override def execute(interaction: InteractionTransition[_], input: Seq[Value]): Option[RuntimeEvent] = {
 
     log.info(s"Calling remote execution of interaction: $name on $uri")
 
@@ -45,6 +45,6 @@ case class RemoteInteractionClient(override val name: String,
         method = akka.http.scaladsl.model.HttpMethods.POST,
         entity = ByteString.fromArray(defaultKryoPool.toBytesWithClass(request)))
 
-    doRequestAndParseResponse[RuntimeEvent](httpRequest)
+    Option(doRequestAndParseResponse[RuntimeEvent](httpRequest))
   }
 }
