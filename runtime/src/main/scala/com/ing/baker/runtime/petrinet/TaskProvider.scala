@@ -73,27 +73,40 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
           val input = createInput(interaction, processState)
 
           // execute the interaction
-          val event = implementation.execute(interaction, input)
+          val event: RuntimeEvent = implementation.execute(interaction, input);
 
-          // check if no null ingredients are provided
-          val nullIngredients = event.providedIngredients.collect {
-            case (name, null) => s"null value provided for ingredient $name"
+          //If the returned event
+          //TODO change the implemention.execute to Option[RuntimeEvent]
+          //This way we can removed null checks and use exits
+          if(event == null) {
+            MDC.remove("processId")
+            MDC.remove("recipeName")
+
+            val fixedEvent = RuntimeEvent.create(interaction.interactionName, Seq.empty)
+            val outputMarking = createProducedMarking(interaction, outAdjacent)(fixedEvent)
+            (outputMarking, null.asInstanceOf[Output])
           }
+          else {
+            // check if no null ingredients are provided
+            val nullIngredients = event.providedIngredients.collect {
+              case (name, null) => s"null value provided for ingredient $name"
+            }
 
-          if (nullIngredients.nonEmpty)
-            throw new FatalInteractionException(nullIngredients.mkString(","))
+            if (nullIngredients.nonEmpty)
+              throw new FatalInteractionException(nullIngredients.mkString(","))
 
-          // transforms the event
-          val transformedEvent = transformEvent(interaction)(event)
+            // transforms the event
+            val transformedEvent = transformEvent(interaction)(event)
 
-          // creates the transition output marking (in the petri net)
-          val outputMarking = createProducedMarking(interaction, outAdjacent)(transformedEvent)
+            // creates the transition output marking (in the petri net)
+            val outputMarking = createProducedMarking(interaction, outAdjacent)(transformedEvent)
 
-          // remove MDC values
-          MDC.remove("processId")
-          MDC.remove("recipeName")
+            // remove MDC values
+            MDC.remove("processId")
+            MDC.remove("recipeName")
 
-          (outputMarking, transformedEvent.asInstanceOf[Output])
+            (outputMarking, transformedEvent.asInstanceOf[Output])
+          }
         }
         .handleWith(failureHandler)
     }.recover(failureHandler).get
