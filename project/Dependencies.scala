@@ -56,6 +56,8 @@ object Dependencies {
 
   val kryo =                      "com.esotericsoftware"       % "kryo"                                % "4.0.0"
 
+  val protobufJava =              "com.google.protobuf"        % "protobuf-java"                       % "3.5.1"
+
   val kryoSerializers =           "de.javakaffee"              %  "kryo-serializers"                   % "0.41"
   val objenisis =                 "org.objenesis"              %  "objenesis"                          % "2.5.1"
 

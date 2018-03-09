@@ -98,6 +98,7 @@ lazy val recipeRuntime = project.in(file("runtime"))
         objenisis,
         scalapbRuntime,
         kryoSerializers,
+        protobufJava,
         jodaTime,
         jodaConvert,
         slf4jApi
