@@ -21,6 +21,8 @@ import scala.concurrent.duration._
 
 object ClusterBakerActorProvider {
 
+  case class GetShardIndex(entityId: String) extends InternalBakerMessage
+
   /**
     * This function calculates the names of the ActorIndex actors
     * gets the least significant bits of the UUID, and returns the MOD 10
@@ -33,14 +35,15 @@ object ClusterBakerActorProvider {
   // extracts the actor id -> message from the incoming message
   // Entity id is the first character of the UUID
   def entityIdExtractor(nrOfShards: Int): ExtractEntityId = {
-    case msg:ProcessIndexMessage         => (entityId(msg.processId, nrOfShards), msg)
-    case (entityId: String, GetIndex)    => (entityId, GetIndex)
+    case msg:ProcessIndexMessage => (entityId(msg.processId, nrOfShards), msg)
+    case GetShardIndex(entityId) => (entityId, GetIndex)
     case msg => throw new IllegalArgumentException(s"Message not recognized: $msg")
   }
 
   // extracts the shard id from the incoming message
   def shardIdExtractor(nrOfShards: Int): ExtractShardId = {
     case msg:ProcessIndexMessage => Math.abs(sha256HashCode(msg.processId) % nrOfShards).toString
+    case GetShardIndex(entityId) => entityId.split(s"index-").last
     case ShardRegion.StartEntity(entityId) => entityId.split(s"index-").last
     case msg => throw new IllegalArgumentException(s"Message not recognized: $msg")
   }
@@ -88,7 +91,7 @@ class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption
 
     val futures: Seq[Future[Set[ProcessIndex.ActorMetadata]]] = (0 to nrOfShards).map { shard =>
       val timeoutFuture = akka.pattern.after(timeout, using = system.scheduler)(Future.successful(Set.empty[ActorMetadata]))
-      val future = actor.ask((s"index-$shard", GetIndex)).mapTo[Index].map(_.entries)
+      val future = actor.ask(GetShardIndex(s"index-$shard")).mapTo[Index].map(_.entries)
       Future.firstCompletedOf(Seq(future, timeoutFuture))
     }
 

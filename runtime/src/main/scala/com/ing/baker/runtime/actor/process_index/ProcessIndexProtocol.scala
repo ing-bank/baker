@@ -9,9 +9,9 @@ object ProcessIndexProtocol {
     val processId: String
   }
 
-  case object GetIndex
+  case object GetIndex extends InternalBakerMessage
 
-  case class Index(entries: Set[ActorMetadata])
+  case class Index(entries: Set[ActorMetadata]) extends InternalBakerMessage
 
   case class CreateProcess(recipeId: String, override val processId: String) extends ProcessIndexMessage
 

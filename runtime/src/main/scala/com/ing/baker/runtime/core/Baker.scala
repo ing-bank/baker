@@ -17,6 +17,7 @@ import com.ing.baker.petrinet.runtime.EventSourcing.{TransitionFailedEvent, Tran
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.process_index.ProcessApi
+import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEvent
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
@@ -287,6 +288,14 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       case _ => throw new BakerException("Unknown response received")
     }
   }
+
+  /**
+    * Returns an index of all processes.
+    *
+    * @return
+    */
+  def getIndex(): Future[Set[ActorMetadata]] =
+    bakerActorProvider.getIndex(processIndexActor)(actorSystem, defaultInquireTimeout)
 
   /**
     * Returns the process state.
