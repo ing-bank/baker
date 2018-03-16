@@ -157,7 +157,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
   override def receiveCommand: Receive = {
 
     case GetIndex =>
-      sender() ! Index(index.values.toSet)
+      sender() ! Index(index.values.filter(_.processStatus == Active).toSet)
 
     case CheckForProcessesToBeDeleted =>
       val toBeDeleted = index.values.filter(shouldDelete)

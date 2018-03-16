@@ -290,12 +290,14 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   }
 
   /**
-    * Returns an index of all processes.
+    * Returns an index of all processes. Does not include deleted processes.
     *
     * @return
     */
-  def getIndex(): Future[Set[ActorMetadata]] =
-    bakerActorProvider.getIndex(processIndexActor)(actorSystem, defaultInquireTimeout)
+  def getIndex(timeout: FiniteDuration = defaultInquireTimeout): Future[Set[ProcessMetadata]] =
+    bakerActorProvider
+      .getIndex(processIndexActor)(actorSystem, timeout)
+      .map(set => set.map(p => ProcessMetadata(p.recipeId, p.processId, p.createdDateTime)))
 
   /**
     * Returns the process state.
