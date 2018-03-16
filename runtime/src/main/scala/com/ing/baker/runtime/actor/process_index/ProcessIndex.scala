@@ -73,6 +73,8 @@ object ProcessIndex {
   }
 
   private val strategy: Strategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadPool")
+
+  private val updateCacheTimeout: FiniteDuration = 5 seconds
 }
 
 class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
@@ -82,6 +84,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
                    recipeManager: ActorRef) extends PersistentActor with ActorLogging {
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
+
   private val recipeCache: mutable.Map[String, CompiledRecipe] = mutable.Map[String, CompiledRecipe]()
 
   import context.dispatcher
@@ -90,9 +93,15 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
   def updateCache() = {
     // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
-    val futureResult = recipeManager.ask(GetAllRecipes)(5 second).mapTo[AllRecipes]
-    val allRecipes = Await.result(futureResult, 5 second)
-    recipeCache ++= allRecipes.compiledRecipes
+    val futureResult = recipeManager.ask(GetAllRecipes)(updateCacheTimeout).mapTo[AllRecipes]
+
+    try {
+      val allRecipes = Await.result(futureResult, updateCacheTimeout)
+      recipeCache ++= allRecipes.compiledRecipes
+    } catch {
+      case exception: Throwable =>
+        log.warning("Updating process cache failed", exception)
+    }
   }
 
   def getCompiledRecipe(recipeId: String): Option[CompiledRecipe] =
@@ -138,7 +147,6 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
   def isDeleted(meta: ActorMetadata): Boolean =
     meta.processStatus == Deleted
 
-
   def deleteProcess(processId: String): Unit = {
     persist(ActorDeleted(processId)) { _ =>
       val meta = index(processId)
@@ -147,6 +155,10 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
   }
 
   override def receiveCommand: Receive = {
+
+    case GetIndex =>
+      sender() ! Index(index.values.toSet)
+
     case CheckForProcessesToBeDeleted =>
       val toBeDeleted = index.values.filter(shouldDelete)
       if (toBeDeleted.nonEmpty)

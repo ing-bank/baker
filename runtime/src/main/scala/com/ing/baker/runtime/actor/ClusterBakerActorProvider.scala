@@ -4,8 +4,10 @@ import akka.actor.{ActorRef, ActorSystem, PoisonPill}
 import akka.cluster.sharding.ShardRegion._
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
+import akka.util.Timeout
 import com.ing.baker.il.sha256HashCode
 import com.ing.baker.runtime.actor.ClusterBakerActorProvider._
+import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_index._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
@@ -14,6 +16,7 @@ import com.ing.baker.runtime.core.interations.InteractionManager
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 object ClusterBakerActorProvider {
@@ -30,7 +33,8 @@ object ClusterBakerActorProvider {
   // extracts the actor id -> message from the incoming message
   // Entity id is the first character of the UUID
   def entityIdExtractor(nrOfShards: Int): ExtractEntityId = {
-    case msg:ProcessIndexMessage => (entityId(msg.processId, nrOfShards), msg)
+    case msg:ProcessIndexMessage         => (entityId(msg.processId, nrOfShards), msg)
+    case (entityId: String, GetIndex)    => (entityId, GetIndex)
     case msg => throw new IllegalArgumentException(s"Message not recognized: $msg")
   }
 
@@ -74,5 +78,20 @@ class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption
       settings = ClusterSingletonProxySettings(actorSystem))
 
     actorSystem.actorOf(props = singletonProxyProps, name = "RecipeManagerProxy")
+  }
+
+  def getIndex(actor: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration) = {
+
+    import akka.pattern.ask
+    import system.dispatcher
+    implicit val akkaTimeout: Timeout = timeout
+
+    val futures: Seq[Future[Set[ProcessIndex.ActorMetadata]]] = (0 to nrOfShards).map { shard =>
+      val timeoutFuture = akka.pattern.after(timeout, using = system.scheduler)(Future.successful(Set.empty[ActorMetadata]))
+      val future = actor.ask((s"index-$shard", GetIndex)).mapTo[Index].map(_.entries)
+      Future.firstCompletedOf(Seq(future, timeoutFuture))
+    }
+
+    Future.sequence(futures).map(_.reduce((a, b) => a ++ b))
   }
 }

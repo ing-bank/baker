@@ -1,12 +1,17 @@
 package com.ing.baker.runtime.actor.process_index
 
 import com.ing.baker.runtime.actor.InternalBakerMessage
+import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.core.RuntimeEvent
 
 object ProcessIndexProtocol {
   sealed trait ProcessIndexMessage extends InternalBakerMessage {
     val processId: String
   }
+
+  case object GetIndex
+
+  case class Index(entries: Set[ActorMetadata])
 
   case class CreateProcess(recipeId: String, override val processId: String) extends ProcessIndexMessage
 
