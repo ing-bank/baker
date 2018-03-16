@@ -290,14 +290,22 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   }
 
   /**
-    * Returns an index of all processes. Does not include deleted processes.
+    * Returns an index of all processes.
     *
-    * @return
+    * Can potentially return a partial index when baker runs in cluster mode
+    * and not all shards can be reached within the given timeout.
+    *
+    * Does not include deleted processes.
+    *
+    * @return An index of all processes
     */
-  def getIndex(timeout: FiniteDuration = defaultInquireTimeout): Future[Set[ProcessMetadata]] =
-    bakerActorProvider
+  def getIndex(timeout: FiniteDuration = defaultInquireTimeout): Set[ProcessMetadata] = {
+    val futureIndex = bakerActorProvider
       .getIndex(processIndexActor)(actorSystem, timeout)
       .map(set => set.map(p => ProcessMetadata(p.recipeId, p.processId, p.createdDateTime)))
+
+    Await.result(futureIndex, timeout)
+  }
 
   /**
     * Returns the process state.

@@ -787,9 +787,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
         processIds.foreach(id => baker.bake(recipeId, id))
 
-        val index = Await.result(baker.getIndex(), 5 seconds)
-
-        index.map(_.processId) shouldBe processIds
+        baker.getIndex().map(_.processId) shouldBe processIds
       }
       finally {
         TestKit.shutdownActorSystem(indexTestSystem)
@@ -806,9 +804,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       processIds.foreach(id => baker.bake(recipeId, id))
 
-      val index = Await.result(baker.getIndex(), 5 seconds)
-
-      index.map(_.processId) shouldBe processIds
+      baker.getIndex().map(_.processId) shouldBe processIds
     }
 
     //Only works if persistence actors are used (think cassandra)
