@@ -14,5 +14,5 @@ trait BakerActorProvider extends {
 
   def createRecipeManagerActor()(implicit actorSystem: ActorSystem) : ActorRef
 
-  def getIndex(actorRef: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Future[Set[ActorMetadata]]
+  def getIndex(actorRef: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Set[ActorMetadata]
 }

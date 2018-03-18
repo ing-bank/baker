@@ -16,7 +16,7 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
 import com.ing.baker.runtime.core._
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 object Util {
 
@@ -70,5 +70,21 @@ object Util {
     import system.dispatcher
 
     persistenceInitActor.ask(Ping)(Timeout(journalInitializeTimeout)).map(_ => ())
+  }
+
+
+  val sequenceTimeoutExtra = 2 seconds
+
+  def collectFuturesWithin[T](futures: Seq[Future[T]], timeout: FiniteDuration, using: akka.actor.Scheduler)(implicit ec: ExecutionContext): Seq[T] = {
+
+    val timeoutFutures: Seq[Future[Option[T]]] = futures.map { f =>
+      val timeoutFuture = akka.pattern.after(timeout, using)(Future.successful(None))
+      Future.firstCompletedOf(Seq(f.map(result => Some(result)), timeoutFuture))
+    }
+
+    val combined = Future.sequence(timeoutFutures).map(list => list.collect { case Some(result) => result } )
+
+    // we know all futures will timeout after 'timeout', to be sure we wait some extra
+    Await.result(combined, timeout + sequenceTimeoutExtra)
   }
 }

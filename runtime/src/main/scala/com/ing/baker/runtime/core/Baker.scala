@@ -17,7 +17,6 @@ import com.ing.baker.petrinet.runtime.EventSourcing.{TransitionFailedEvent, Tran
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.process_index.ProcessApi
-import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEvent
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
@@ -300,11 +299,9 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @return An index of all processes
     */
   def getIndex(timeout: FiniteDuration = defaultInquireTimeout): Set[ProcessMetadata] = {
-    val futureIndex = bakerActorProvider
+    bakerActorProvider
       .getIndex(processIndexActor)(actorSystem, timeout)
-      .map(set => set.map(p => ProcessMetadata(p.recipeId, p.processId, p.createdDateTime)))
-
-    Await.result(futureIndex, timeout)
+      .map(p => ProcessMetadata(p.recipeId, p.processId, p.createdDateTime))
   }
 
   /**

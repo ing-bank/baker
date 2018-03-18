@@ -11,7 +11,7 @@ import com.ing.baker.runtime.core.interations.InteractionManager
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 
-import scala.concurrent.Future
+import scala.concurrent.Await
 import scala.concurrent.duration._
 
 class LocalBakerActorProvider(config: Config) extends BakerActorProvider {
@@ -30,13 +30,15 @@ class LocalBakerActorProvider(config: Config) extends BakerActorProvider {
     actorSystem.actorOf(RecipeManager.props())
   }
 
-  override def getIndex(actorRef: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Future[Set[ActorMetadata]] = {
+  override def getIndex(actorRef: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Set[ActorMetadata] = {
 
     import akka.pattern.ask
     import system.dispatcher
     implicit val akkaTimeout: akka.util.Timeout = timeout
 
-    actorRef.ask(GetIndex).mapTo[Index].map(_.entries)
+    val future = actorRef.ask(GetIndex).mapTo[Index].map(_.entries)
+
+    Await.result(future, timeout)
   }
 }
 
