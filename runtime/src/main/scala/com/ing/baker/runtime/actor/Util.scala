@@ -1,6 +1,8 @@
 package com.ing.baker.runtime.actor
 
 import java.util.UUID
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.{ActorLogging, ActorSystem, PoisonPill, Props}
 import akka.cluster.Cluster
@@ -15,8 +17,10 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstance
 import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
 import com.ing.baker.runtime.core._
 
+import scala.collection.mutable
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.util.{Failure, Success}
 
 object Util {
 
@@ -75,14 +79,22 @@ object Util {
 
   val sequenceTimeoutExtra = 2 seconds
 
-  def collectFuturesWithin[T](futures: Seq[Future[T]], timeout: FiniteDuration, using: akka.actor.Scheduler)(implicit ec: ExecutionContext): Seq[T] = {
+  /**
+    * Returns a future that returns a default value after a specified timeout.
 
-    val timeoutFutures: Seq[Future[Option[T]]] = futures.map { f =>
-      val timeoutFuture = akka.pattern.after(timeout, using)(Future.successful(None))
-      Future.firstCompletedOf(Seq(f.map(result => Some(result)), timeoutFuture))
+    */
+  def futureWithTimeout[T](future: Future[T], timeout: FiniteDuration, default: T, scheduler: akka.actor.Scheduler)(implicit ec: ExecutionContext): Future[T] = {
+    val timeoutFuture = akka.pattern.after(timeout, scheduler)(Future.successful(default))
+    Future.firstCompletedOf(Seq(future, timeoutFuture))
+  }
+
+  def collectFuturesWithin[T, M[X] <: scala.TraversableOnce[X]](futures: M[Future[T]], timeout: FiniteDuration, scheduler: akka.actor.Scheduler)(implicit ec: ExecutionContext): Seq[T] = {
+
+    val futuresWithTimeout = futures.map { f =>
+      futureWithTimeout(f.map(result => Some(result)), timeout, None, scheduler)
     }
 
-    val combined = Future.sequence(timeoutFutures).map(list => list.collect { case Some(result) => result } )
+    val combined = Future.sequence(futuresWithTimeout).map(list => list.toList.collect { case Some(result) => result } )
 
     // we know all futures will timeout after 'timeout', to be sure we wait some extra
     Await.result(combined, timeout + sequenceTimeoutExtra)

@@ -15,8 +15,8 @@ class UtilSpec extends AkkaTestBase {
 
       val nrOfResults = 10
 
-      val f1 = (1 to nrOfResults).map(_ => Future { Thread.sleep(500); true } ).toList
-      val f2 = (1 to nrOfResults).map(_ => Future { Thread.sleep(2500); false } ).toList
+      val f1 = (1 to nrOfResults).map(_ => Future { Thread.sleep(500); true } )
+      val f2 = (1 to nrOfResults).map(_ => Future { Thread.sleep(10000); false } )
 
       val futures = f1 ++ f2
 
