@@ -21,6 +21,7 @@ import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
+import scala.collection.JavaConverters._
 
 object Util {
 
@@ -76,8 +77,7 @@ object Util {
     persistenceInitActor.ask(Ping)(Timeout(journalInitializeTimeout)).map(_ => ())
   }
 
-
-  val sequenceTimeoutExtra = 2 seconds
+  val sequenceTimeoutExtra = 5 seconds
 
   /**
     * Returns a future that returns a default value after a specified timeout.
@@ -90,13 +90,29 @@ object Util {
 
   def collectFuturesWithin[T, M[X] <: scala.TraversableOnce[X]](futures: M[Future[T]], timeout: FiniteDuration, scheduler: akka.actor.Scheduler)(implicit ec: ExecutionContext): Seq[T] = {
 
-    val futuresWithTimeout = futures.map { f =>
-      futureWithTimeout(f.map(result => Some(result)), timeout, None, scheduler)
+    val size = futures.size
+    val queue = new LinkedBlockingQueue[T](size)
+    val counter = new AtomicInteger(0)
+    val promise = Promise[List[T]]()
+
+    def createResult() = queue.iterator().asScala.foldLeft(List.empty[T]) {
+      case (list, e) => e :: list
     }
 
-    val combined = Future.sequence(futuresWithTimeout).map(list => list.toList.collect { case Some(result) => result } )
+    futures.foreach { f =>
+      f.onComplete {
+        case Success(result) =>
+          queue.put(result)
+          if (counter.incrementAndGet() == size)
+            promise.success(createResult())
+        case Failure(_) =>
+          if (counter.incrementAndGet() == size)
+            promise.success(createResult())
+      }
+    }
 
-    // we know all futures will timeout after 'timeout', to be sure we wait some extra
-    Await.result(combined, timeout + sequenceTimeoutExtra)
+    scheduler.scheduleOnce(timeout){ promise.success(createResult()) }
+
+    Await.result(promise.future, timeout + sequenceTimeoutExtra)
   }
 }
