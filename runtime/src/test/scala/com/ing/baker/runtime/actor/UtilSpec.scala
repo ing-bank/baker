@@ -13,16 +13,14 @@ class UtilSpec extends AkkaTestBase("UtilSpec") {
 
     "collect future results within specified timeout" in {
 
-      val nrOfResults = 10
+      val fastFutures = (1 to 5).map(_ => Future { Thread.sleep(100); true } )
+      val slowFuture = Future { Thread.sleep(5000); false }
 
-      val f1 = (1 to nrOfResults).map(_ => Future { Thread.sleep(500); true } )
-      val f2 = (1 to nrOfResults).map(_ => Future { Thread.sleep(20000); false } )
-
-      val futures = f1 ++ f2
+      val futures = fastFutures :+ slowFuture
 
       val collected = Util.collectFuturesWithin(futures, 1 second, system.scheduler)
 
-      val expectedResult = List.fill(nrOfResults)(true)
+      val expectedResult = List.fill(5)(true)
 
       collected shouldBe expectedResult
     }
