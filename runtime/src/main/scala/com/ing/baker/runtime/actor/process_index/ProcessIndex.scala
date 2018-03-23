@@ -5,7 +5,7 @@ import akka.pattern.ask
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.{Place, Transition}
-import com.ing.baker.petrinet.runtime.PetriNetRuntime
+import com.ing.baker.petrinet.runtime.{PetriNetRuntime, namedCachedThreadPool}
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
@@ -15,11 +15,10 @@ import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
-import com.ing.baker.runtime.petrinet.RecipeRuntime
-import fs2.Strategy
+import com.ing.baker.runtime.petrinet._
 
 import scala.collection.mutable
-import scala.concurrent.Await
+import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
 
 
@@ -72,7 +71,7 @@ object ProcessIndex {
     FireTransition(t.id, runtimeEvent, correlationId)
   }
 
-  private val strategy: Strategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadPool")
+  private val bakerExecutionContext: ExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
 
   private val updateCacheTimeout: FiniteDuration = 5 seconds
 }
@@ -84,7 +83,6 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
                    recipeManager: ActorRef) extends PersistentActor with ActorLogging {
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
-
   private val recipeCache: mutable.Map[String, CompiledRecipe] = mutable.Map[String, CompiledRecipe]()
 
   import context.dispatcher
@@ -128,7 +126,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
     val processActorProps =
       Util.recipePetriNetProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
         ProcessInstance.Settings(
-          evaluationStrategy = strategy,
+          executionContext = bakerExecutionContext,
           encryption = configuredEncryption,
           idleTTL = processIdleTimeout))
 
@@ -146,6 +144,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
   def isDeleted(meta: ActorMetadata): Boolean =
     meta.processStatus == Deleted
+
 
   def deleteProcess(processId: String): Unit = {
     persist(ActorDeleted(processId)) { _ =>

@@ -2,7 +2,6 @@ package com.ing.baker.runtime.actor.process_instance
 
 import akka.actor._
 import akka.event.{DiagnosticLoggingAdapter, Logging}
-import akka.pattern.pipe
 import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
@@ -13,16 +12,17 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstance._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceLogger._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
-import fs2.Strategy
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.language.existentials
 import scala.util.Try
+import akka.pattern.pipe
 
 object ProcessInstance {
 
   case class Settings(
-                       evaluationStrategy: Strategy,
+                       executionContext: ExecutionContext,
                        idleTTL: Option[FiniteDuration],
                        encryption: Encryption)
 
@@ -60,7 +60,7 @@ class ProcessInstance[P[_], T[_, _], S, E](processType: String,
 
   import context.dispatcher
 
-  val executor = runtime.jobExecutor.apply(topology)(settings.evaluationStrategy)
+  val executor = runtime.jobExecutor.apply(topology)(settings.executionContext)
 
   override def receiveCommand = uninitialized
 
@@ -235,7 +235,7 @@ class ProcessInstance[P[_], T[_, _], S, E](processType: String,
     log.firingTransition(processId, job.id, job.transition.toString, System.currentTimeMillis())
 
     // context.self can be potentially throw NullPointerException in non graceful shutdown situations
-    Try(context.self).foreach(executor(job).unsafeRunAsyncFuture().pipeTo(_)(originalSender))
+    Try(context.self).foreach(executor(job).unsafeToFuture().pipeTo(_)(originalSender))
   }
 
   def scheduleFailedJobsForRetry(instance: Instance[P, T, S]): Map[Long, Cancellable] = {

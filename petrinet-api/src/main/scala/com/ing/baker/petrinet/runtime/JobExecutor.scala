@@ -2,10 +2,13 @@ package com.ing.baker.petrinet.runtime
 
 import java.io.{PrintWriter, StringWriter}
 
+import cats.effect.IO
+import cats.syntax.apply._
 import com.ing.baker.petrinet.api._
-import fs2.{Strategy, Task}
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import org.slf4j.LoggerFactory
+
+import scala.concurrent.ExecutionContext
 
 /**
  * Class responsible for 'executing' a transition 'Job'
@@ -19,7 +22,7 @@ class JobExecutor[S, P[_], T[_, _]](
   /**
    * Executes a job returning a Task[TransitionEvent]
    */
-  def apply(topology: PetriNet[P[_], T[_, _]])(implicit strategy: Strategy): Job[P, T, S, _] ⇒ Task[TransitionEvent[T]] = {
+  def apply(topology: PetriNet[P[_], T[_, _]])(implicit ec: ExecutionContext): Job[P, T, S, _] ⇒ IO[TransitionEvent[T]] = {
 
     val cachedTransitionTasks: Map[T[_, _], _] =
       topology.transitions.map(t ⇒ t -> taskProvider.apply[Any, Any](topology, t.asInstanceOf[T[Any, Any]])).toMap
@@ -36,12 +39,12 @@ class JobExecutor[S, P[_], T[_, _]](
     def executeTransitionAsync[Input, Output](t: T[Input, Output]): TransitionTask[P, Input, Output, S] = {
       (consume, state, input) ⇒
 
-        val handleFailure: PartialFunction[Throwable, Task[(Marking[P], Output)]] = {
-          case e: Throwable ⇒ Task.fail(e)
+        val handleFailure: PartialFunction[Throwable, IO[(Marking[P], Output)]] = {
+          case e: Throwable ⇒ IO.raiseError(e)
         }
 
         try {
-          transitionFunction(t)(consume, state, input).handleWith { handleFailure }.async
+          IO.shift(ec) *> transitionFunction(t)(consume, state, input).handleWith { handleFailure }
         } catch { handleFailure }
     }
 
