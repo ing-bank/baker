@@ -1,7 +1,7 @@
 package com.ing.baker.petrinet.dsl.colored
 
+import cats.effect.IO
 import com.ing.baker.petrinet.api._
-import fs2.Task
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
 import com.ing.baker.petrinet.runtime._
 
@@ -32,10 +32,10 @@ trait StateTransitionNet[S, E] {
 
   def stateTransition(id: Long = Math.abs(Random.nextLong), label: Option[String] = None, automated: Boolean = false,
     exceptionStrategy: TransitionExceptionHandler[Place] = (_, _, _) ⇒ BlockTransition)(fn: S ⇒ E): Transition[Unit, E] =
-    StateTransition(id, label.getOrElse(s"t$id"), automated, exceptionStrategy, (s: S) ⇒ Task.now(fn(s)))
+    StateTransition(id, label.getOrElse(s"t$id"), automated, exceptionStrategy, (s: S) ⇒ IO.pure(fn(s)))
 
   def constantTransition[I, O](id: Long, label: Option[String] = None, automated: Boolean = false, constant: O): StateTransition[I, O] =
-    StateTransition[I, O](id, label.getOrElse(s"t$id"), automated, (_, _, _) ⇒ BlockTransition, _ ⇒ Task.now(constant))
+    StateTransition[I, O](id, label.getOrElse(s"t$id"), automated, (_, _, _) ⇒ BlockTransition, _ ⇒ IO.pure(constant))
 
   def nullTransition[O](id: Long, label: Option[String] = None, automated: Boolean = false): Transition[Unit, O] =
     constantTransition[Unit, O](id, label, automated, ().asInstanceOf[O])

@@ -1,11 +1,13 @@
 package com.ing.baker.runtime.actor.process_index
 
+import java.util.concurrent.Executors
+
 import akka.actor.{ActorLogging, ActorRef, Props, Terminated}
 import akka.pattern.ask
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.{Place, Transition}
-import com.ing.baker.petrinet.runtime.PetriNetRuntime
+import com.ing.baker.petrinet.runtime.{PetriNetRuntime, namedCachedThreadPool}
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
@@ -16,11 +18,10 @@ import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.petrinet.RecipeRuntime
-import fs2.Strategy
 
 import scala.collection.mutable
-import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext}
 
 
 object ProcessIndex {
@@ -72,7 +73,7 @@ object ProcessIndex {
     FireTransition(t.id, runtimeEvent, correlationId)
   }
 
-  private val strategy: Strategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadPool")
+  private val bakerExecutionContext: ExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
 }
 
 class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
@@ -119,7 +120,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
     val processActorProps =
       Util.recipePetriNetProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
         ProcessInstance.Settings(
-          evaluationStrategy = strategy,
+          executionContext = bakerExecutionContext,
           encryption = configuredEncryption,
           idleTTL = processIdleTimeout))
 
