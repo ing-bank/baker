@@ -5,7 +5,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import org.scalatest.Matchers._
 
-class UtilSpec extends AkkaTestBase {
+class UtilSpec extends AkkaTestBase("UtilSpec") {
 
   implicit def ec: ExecutionContext = system.dispatcher
 

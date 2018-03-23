@@ -14,10 +14,12 @@ import fs2.Strategy
 import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
 
 
-abstract class AkkaTestBase extends TestKit(ActorSystem("testSystem"))
+abstract class AkkaTestBase(actorSystemName: String = "testActorSystem") extends TestKit(ActorSystem(actorSystemName))
     with WordSpecLike
     with ImplicitSender
     with BeforeAndAfterAll {
+
+  val threadPool = Strategy.fromCachedDaemonPool(s"Baker-$actorSystemName.CachedThreadPool")
 
   def coloredProps[S, E](
     topology: ColoredPetriNet,
@@ -52,7 +54,7 @@ abstract class AkkaTestBase extends TestKit(ActorSystem("testSystem"))
   }
 
   val instanceSettings = Settings(
-    evaluationStrategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadPool"),
+    evaluationStrategy = threadPool,
     idleTTL = None,
     encryption = NoEncryption
   )

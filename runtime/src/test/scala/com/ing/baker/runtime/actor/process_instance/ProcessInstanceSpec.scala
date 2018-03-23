@@ -36,7 +36,7 @@ trait TestSequenceNet extends SequenceNet[Set[Int], Event] {
   }
 }
 
-class ProcessInstanceSpec extends AkkaTestBase with ScalaFutures with MockitoSugar {
+class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with ScalaFutures with MockitoSugar {
 
   def dilatedMillis(millis: Long)(implicit system: ActorSystem): Long = FiniteDuration(millis, TimeUnit.MILLISECONDS).dilated.toMillis
 
