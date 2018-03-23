@@ -77,7 +77,7 @@ object Util {
     persistenceInitActor.ask(Ping)(Timeout(journalInitializeTimeout)).map(_ => ())
   }
 
-  val sequenceTimeoutExtra = 5 seconds
+  private val sequenceTimeoutExtra = 10 seconds
 
   /**
     * Returns a future that returns a default value after a specified timeout.
@@ -116,7 +116,7 @@ object Util {
       }
     }
 
-    scheduler.scheduleOnce(timeout){
+    scheduler.scheduleOnce(timeout) {
       completePromise()
     }
 
