@@ -99,19 +99,26 @@ object Util {
       case (list, e) => e :: list
     }
 
+    def completePromise() = {
+      if (!promise.isCompleted)
+        promise.success(createResult())
+    }
+
     futures.foreach { f =>
       f.onComplete {
         case Success(result) =>
           queue.put(result)
           if (counter.incrementAndGet() == size)
-            promise.success(createResult())
+            completePromise()
         case Failure(_) =>
           if (counter.incrementAndGet() == size)
-            promise.success(createResult())
+            completePromise()
       }
     }
 
-    scheduler.scheduleOnce(timeout){ promise.success(createResult()) }
+    scheduler.scheduleOnce(timeout){
+      completePromise()
+    }
 
     Await.result(promise.future, timeout + sequenceTimeoutExtra)
   }
