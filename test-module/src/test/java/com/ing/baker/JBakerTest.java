@@ -160,6 +160,14 @@ public class JBakerTest {
         jBaker.getCompiledRecipe(testRecipeId);
         verify(mockBaker).getRecipe(eq(testRecipeId), any(FiniteDuration.class));
 
+        // -- get index
+
+        jBaker.getIndex();
+        verify(mockBaker).getIndex(any(FiniteDuration.class));
+
+        jBaker.getIndex(testTimeout);
+        verify(mockBaker).getIndex(eq(testTimeoutScala));
+
         // -- register listener
 
         jBaker.registerEventListener(testListener);

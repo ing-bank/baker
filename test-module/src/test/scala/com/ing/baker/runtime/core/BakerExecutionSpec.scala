@@ -768,6 +768,45 @@ class BakerExecutionSpec extends TestRecipeHelper {
       )
     }
 
+    "be able to return an index of all processes in cluster mode" in {
+
+      val journalId = java.util.UUID.randomUUID().toString
+
+      val indexTestSystem = ActorSystem("indexTest", levelDbConfig(
+        actorSystemName = "indexTest",
+        port = 3005,
+        journalPath = s"target/journal-$journalId",
+        snapshotsPath = s"target/snapshots-$journalId"))
+
+      val nrOfProcesses = 200
+
+      try {
+        val (baker, recipeId) = setupBakerWithRecipe("IndexTestCluster")(indexTestSystem)
+
+        val processIds = (0 to nrOfProcesses).map(_ => java.util.UUID.randomUUID().toString).toSet
+
+        processIds.foreach(id => baker.bake(recipeId, id))
+
+        baker.getIndex().map(_.processId) shouldBe processIds
+      }
+      finally {
+        TestKit.shutdownActorSystem(indexTestSystem)
+      }
+    }
+
+    "be able to return an index of all processes in local/inmemory mode" in {
+
+      val nrOfProcesses = 200
+
+      val (baker, recipeId) = setupBakerWithRecipe("IndexTestLocal")
+
+      val processIds = (0 to nrOfProcesses).map(_ => java.util.UUID.randomUUID().toString).toSet
+
+      processIds.foreach(id => baker.bake(recipeId, id))
+
+      baker.getIndex().map(_.processId) shouldBe processIds
+    }
+
     //Only works if persistence actors are used (think cassandra)
     "recover the state of a process from a persistence store" in {
       val system1 = ActorSystem("persistenceTest1", levelDbConfig("persistenceTest1", 3002))

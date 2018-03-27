@@ -9,6 +9,7 @@ import com.ing.baker.runtime.core._
 import com.ing.baker.types.Value
 
 import scala.collection.JavaConverters._
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRef]) {
@@ -475,6 +476,34 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     */
   @throws[TimeoutException]("When the Baker does not respond within the default deadline")
   def getAllRecipes(): java.util.Map[String, CompiledRecipe] = baker.getAllRecipes().asJava
+
+
+  /**
+    * Returns an index of all processes.
+    *
+    * Can potentially return a partial index when baker runs in cluster mode
+    * and not all shards can be reached within the given timeout.
+    *
+    * Does not include deleted processes.
+    *
+    * @param timeout
+    * @return An index of all processes
+    */
+  def getIndex(timeout: java.time.Duration): java.util.Set[ProcessMetadata] =
+    baker.getIndex(timeout.toScala).asJava
+
+  /**
+    * Returns an index of all processes.
+    *
+    * Can potentially return a partial index when baker runs in cluster mode
+    * and not all shards can be reached within the configured default inquire timeout (baker.process-inquire-timeout)
+    *
+    * Does not include deleted processes.
+    *
+    * @return An index of all processes
+    */
+  def getIndex(): java.util.Set[ProcessMetadata] =
+    baker.getIndex().asJava
 
   /**
     * Return alls compiled recipes added to this Baker

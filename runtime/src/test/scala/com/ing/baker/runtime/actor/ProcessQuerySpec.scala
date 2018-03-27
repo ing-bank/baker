@@ -21,7 +21,7 @@ import scala.collection.immutable._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class ProcessQuerySpec extends AkkaTestBase with BeforeAndAfterEach {
+class ProcessQuerySpec extends AkkaTestBase("ProcessQuerySpec") with BeforeAndAfterEach {
 
   implicit val akkaTimout = Timeout(2 seconds)
   val timeOut: Duration = akkaTimout.duration

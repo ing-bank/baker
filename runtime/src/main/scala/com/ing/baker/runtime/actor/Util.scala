@@ -1,6 +1,8 @@
 package com.ing.baker.runtime.actor
 
 import java.util.UUID
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.{ActorLogging, ActorSystem, PoisonPill, Props}
 import akka.cluster.Cluster
@@ -15,8 +17,11 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstance
 import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
 import com.ing.baker.runtime.core._
 
+import scala.collection.mutable
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.util.{Failure, Success}
+import scala.collection.JavaConverters._
 
 object Util {
 
@@ -70,5 +75,51 @@ object Util {
     import system.dispatcher
 
     persistenceInitActor.ask(Ping)(Timeout(journalInitializeTimeout)).map(_ => ())
+  }
+
+  private val sequenceTimeoutExtra = 10 seconds
+
+  /**
+    * Returns a future that returns a default value after a specified timeout.
+
+    */
+  def futureWithTimeout[T](future: Future[T], timeout: FiniteDuration, default: T, scheduler: akka.actor.Scheduler)(implicit ec: ExecutionContext): Future[T] = {
+    val timeoutFuture = akka.pattern.after(timeout, scheduler)(Future.successful(default))
+    Future.firstCompletedOf(Seq(future, timeoutFuture))
+  }
+
+  def collectFuturesWithin[T, M[X] <: scala.TraversableOnce[X]](futures: M[Future[T]], timeout: FiniteDuration, scheduler: akka.actor.Scheduler)(implicit ec: ExecutionContext): Seq[T] = {
+
+    val size = futures.size
+    val queue = new LinkedBlockingQueue[T](size)
+    val counter = new AtomicInteger(0)
+    val promise = Promise[List[T]]()
+
+    def createResult() = queue.iterator().asScala.foldLeft(List.empty[T]) {
+      case (list, e) => e :: list
+    }
+
+    def completePromise() = {
+      if (!promise.isCompleted)
+        promise.success(createResult())
+    }
+
+    futures.foreach { f =>
+      f.onComplete {
+        case Success(result) =>
+          queue.put(result)
+          if (counter.incrementAndGet() == size)
+            completePromise()
+        case Failure(_) =>
+          if (counter.incrementAndGet() == size)
+            completePromise()
+      }
+    }
+
+    scheduler.scheduleOnce(timeout) {
+      completePromise()
+    }
+
+    Await.result(promise.future, timeout + sequenceTimeoutExtra)
   }
 }

@@ -1,7 +1,5 @@
 package com.ing.baker.runtime.actor.process_index
 
-import java.util.concurrent.Executors
-
 import akka.actor.{ActorLogging, ActorRef, Props, Terminated}
 import akka.pattern.ask
 import akka.persistence.{PersistentActor, RecoveryCompleted}
@@ -17,11 +15,11 @@ import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
-import com.ing.baker.runtime.petrinet.RecipeRuntime
+import com.ing.baker.runtime.petrinet._
 
 import scala.collection.mutable
-import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.duration._
 
 
 object ProcessIndex {
@@ -74,6 +72,8 @@ object ProcessIndex {
   }
 
   private val bakerExecutionContext: ExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
+
+  private val updateCacheTimeout: FiniteDuration = 5 seconds
 }
 
 class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
@@ -91,9 +91,15 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
   def updateCache() = {
     // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
-    val futureResult = recipeManager.ask(GetAllRecipes)(5 second).mapTo[AllRecipes]
-    val allRecipes = Await.result(futureResult, 5 second)
-    recipeCache ++= allRecipes.compiledRecipes
+    val futureResult = recipeManager.ask(GetAllRecipes)(updateCacheTimeout).mapTo[AllRecipes]
+
+    try {
+      val allRecipes = Await.result(futureResult, updateCacheTimeout)
+      recipeCache ++= allRecipes.compiledRecipes
+    } catch {
+      case exception: Throwable =>
+        log.warning("Updating process cache failed", exception)
+    }
   }
 
   def getCompiledRecipe(recipeId: String): Option[CompiledRecipe] =
@@ -148,6 +154,10 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
   }
 
   override def receiveCommand: Receive = {
+
+    case GetIndex =>
+      sender() ! Index(index.values.filter(_.processStatus == Active).toSet)
+
     case CheckForProcessesToBeDeleted =>
       val toBeDeleted = index.values.filter(shouldDelete)
       if (toBeDeleted.nonEmpty)
