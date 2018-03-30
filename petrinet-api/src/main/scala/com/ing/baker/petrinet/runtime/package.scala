@@ -42,7 +42,7 @@ package object runtime {
         case Left(throwable) => pf.lift(throwable).map(IO.pure(_)).getOrElse(IO.raiseError(throwable))
       }
 
-    def handleWith[Y >: T](pf: PartialFunction[Throwable, IO[Y]]) =
+    def handleWith[Y >: T](pf: PartialFunction[Throwable, IO[Y]]): IO[Y] =
       io.attempt.flatMap {
         case Right(result)   => IO.pure(result)
         case Left(throwable) => pf.lift(throwable).getOrElse(IO.raiseError(throwable))

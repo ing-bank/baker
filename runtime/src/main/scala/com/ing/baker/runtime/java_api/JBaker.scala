@@ -9,7 +9,6 @@ import com.ing.baker.runtime.core._
 import com.ing.baker.types.Value
 
 import scala.collection.JavaConverters._
-import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRef]) {

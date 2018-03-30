@@ -1,5 +1,6 @@
 package com.ing.baker.petrinet.runtime
 
+import com.ing.baker.petrinet.api.PetriNet
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
 
 /**
@@ -14,13 +15,13 @@ trait PetriNetRuntime[P[_], T[_, _], S, E] {
 
   val tokenGame: TokenGame[P, T] = new TokenGame[P, T] {}
 
-  val eventSourceFn: T[_, _] ⇒ (S ⇒ E ⇒ S) = t ⇒ (s ⇒ e ⇒ s)
+  val eventSource: T[_, _] ⇒ (S ⇒ E ⇒ S) = _ ⇒ (s ⇒ _ ⇒ s)
 
-  val exceptionHandlerFn: T[_, _] ⇒ TransitionExceptionHandler[P] = t ⇒ ((_, _, _) ⇒ BlockTransition)
+  val exceptionHandler: T[_, _] ⇒ TransitionExceptionHandler[P] = _ ⇒ (_, _, _) ⇒ BlockTransition
 
   val taskProvider: TransitionTaskProvider[S, P, T]
 
-  lazy val jobExecutor: JobExecutor[S, P, T] = new JobExecutor[S, P, T](taskProvider, exceptionHandlerFn)
+  def jobExecutor(topology: PetriNet[P[_], T[_, _]]) = JobExecutor[S, P, T](taskProvider, exceptionHandler)(topology)
 
   lazy val jobPicker = new JobPicker[P, T](tokenGame)
 }

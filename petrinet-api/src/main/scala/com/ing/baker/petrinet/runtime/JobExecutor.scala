@@ -3,26 +3,20 @@ package com.ing.baker.petrinet.runtime
 import java.io.{PrintWriter, StringWriter}
 
 import cats.effect.IO
-import cats.syntax.apply._
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.ExecutionContext
-
-/**
- * Class responsible for 'executing' a transition 'Job'
- */
-class JobExecutor[S, P[_], T[_, _]](
-    taskProvider: TransitionTaskProvider[S, P, T],
-    exceptionHandlerFn: T[_, _] ⇒ TransitionExceptionHandler[P]) {
+object JobExecutor {
 
   val log = LoggerFactory.getLogger("com.ing.baker.petrinet.runtime.JobExecutor")
 
   /**
-   * Executes a job returning a Task[TransitionEvent]
+   * Returns an Job -> IO[TransitionEvent]
    */
-  def apply(topology: PetriNet[P[_], T[_, _]])(implicit ec: ExecutionContext): Job[P, T, S, _] ⇒ IO[TransitionEvent[T]] = {
+  def apply[S, P[_], T[_, _]](taskProvider: TransitionTaskProvider[S, P, T],
+            exceptionHandlerFn: T[_, _] ⇒ TransitionExceptionHandler[P])
+           (topology: PetriNet[P[_], T[_, _]]): Job[P, T, S, _] ⇒ IO[TransitionEvent[T]] = {
 
     val cachedTransitionTasks: Map[T[_, _], _] =
       topology.transitions.map(t ⇒ t -> taskProvider.apply[Any, Any](topology, t.asInstanceOf[T[Any, Any]])).toMap
@@ -36,24 +30,20 @@ class JobExecutor[S, P[_], T[_, _]](
       sw.toString
     }
 
-    def executeTransitionAsync[Input, Output](t: T[Input, Output]): TransitionTask[P, Input, Output, S] = {
-      (consume, state, input) ⇒
-
-        val handleFailure: PartialFunction[Throwable, IO[(Marking[P], Output)]] = {
-          case e: Throwable ⇒ IO.raiseError(e)
-        }
-
-        try {
-          IO.shift(ec) *> transitionFunction(t)(consume, state, input).handleWith { handleFailure }
-        } catch { handleFailure }
-    }
-
     job ⇒ {
 
       val startTime = System.currentTimeMillis()
       val transition = job.transition.asInstanceOf[T[Any, Any]]
 
-      executeTransitionAsync(transition)(job.consume, job.processState, job.input).map {
+      val jobIO =
+        try {
+          // calling the transition function could potentially throw an exception
+          transitionFunction(transition)(job.consume, job.processState, job.input)
+        } catch {
+          case e: Throwable ⇒ IO.raiseError(e)
+        }
+
+      jobIO.map {
         case (produced, out) ⇒
           TransitionFiredEvent(job.id, transition, job.correlationId, startTime, System.currentTimeMillis(), job.consume, produced, out)
       }.handle {

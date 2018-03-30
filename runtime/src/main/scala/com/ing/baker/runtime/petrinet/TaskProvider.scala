@@ -8,20 +8,18 @@ import com.ing.baker.il.{IngredientDescriptor, processIdName}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime._
 import com.ing.baker.runtime.core.interations.InteractionManager
-import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.core.{BakerExtension, ProcessState, RuntimeEvent}
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.{LoggerFactory, MDC}
 
-import scala.util.Try
-
-class TaskProvider(recipeName: String, interactionManager: InteractionManager) extends TransitionTaskProvider[ProcessState, Place, Transition] {
+class TaskProvider(recipeName: String, interactionManager: InteractionManager, extensions: BakerExtension) extends TransitionTaskProvider[ProcessState, Place, Transition] {
 
   val log = LoggerFactory.getLogger(classOf[TaskProvider])
 
   override def apply[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _]], t: Transition[Input, Output]): TransitionTask[Place, Input, Output, ProcessState] = {
     t match {
       case interaction: InteractionTransition[_] =>
-        interactionTransitionTask[AnyRef, Input, Output](interaction.asInstanceOf[InteractionTransition[AnyRef]], interactionManager, petriNet.outMarking(interaction))
+        interactionTransitionTask[AnyRef, Input, Output](interaction.asInstanceOf[InteractionTransition[AnyRef]], interactionManager, extensions, petriNet.outMarking(interaction))
       case t: EventTransition  => eventTransitionTask(petriNet, t)
       case t                   => passThroughTransitionTask(petriNet, t)
     }
@@ -45,65 +43,67 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
     }
   }
 
-  def interactionTransitionTask[I, Input, Output](interaction: InteractionTransition[I], interactionManager: InteractionManager, outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, Input, Output, ProcessState] =
+  def interactionTransitionTask[I, Input, Output](interaction: InteractionTransition[I],
+                                                  interactionManager: InteractionManager,
+                                                  extensions: BakerExtension,
+                                                  outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, Input, Output, ProcessState] =
 
     (_, processState, _) => {
 
-      def failureHandler[T]: PartialFunction[Throwable, IO[T]] = {
-        case e: InvocationTargetException => IO.raiseError(e.getCause)
-        case e: Throwable => IO.raiseError(e)
-      }
+      // returns a delayed task that will get executed by the baker petrinet runtime
+      IO {
 
-      Try {
-        // returns a delayed task that will get executed by the baker petrinet runtime
-        IO {
+        // add MDC values for logging
+        MDC.put("processId", processState.processId)
+        MDC.put("recipeName", recipeName)
 
-            // add MDC values for logging
-            MDC.put("processId", processState.processId.toString)
-            MDC.put("recipeName", recipeName)
+        // obtain the interaction implementation
+        val implementation = interactionManager.get(interaction).getOrElse {
+          throw new FatalInteractionException("No implementation available for interaction")
+        }
 
-            // obtain the interaction implementation
-            val implementation = interactionManager.get(interaction).getOrElse {
-              throw new FatalInteractionException("No implementation available for interaction")
+        // create the interaction input
+        val input = createInput(interaction, processState)
+
+        // call pre-hook on extensions
+        extensions.onInteractionCalled(processState.processId, interaction.interactionName, Seq.empty)
+
+        // execute the interaction
+        val (outputEvent, output) = implementation.execute(interaction, input) match {
+          case None =>
+            (RuntimeEvent.create(interaction.interactionName, Seq.empty), null.asInstanceOf[Output])
+
+          case Some(event) =>
+            // check if no null ingredients are provided
+            val nullIngredients = event.providedIngredients.collect {
+              case (name, null) => s"null value provided for ingredient $name"
             }
 
-            // create the interaction input
-            val input = createInput(interaction, processState)
+            if (nullIngredients.nonEmpty)
+              throw new FatalInteractionException(nullIngredients.mkString(","))
 
-            // execute the interaction
-            implementation.execute(interaction, input) match {
-              case None =>
-                MDC.remove("processId")
-                MDC.remove("recipeName")
+            // transforms the event
+            val transformedEvent = transformEvent(interaction)(event)
 
-                val fixedEvent = RuntimeEvent.create(interaction.interactionName, Seq.empty)
-                val outputMarking = createProducedMarking(interaction, outAdjacent)(fixedEvent)
-                (outputMarking, null.asInstanceOf[Output])
-
-              case Some(event) =>
-                // check if no null ingredients are provided
-                val nullIngredients = event.providedIngredients.collect {
-                  case (name, null) => s"null value provided for ingredient $name"
-                }
-
-                if (nullIngredients.nonEmpty)
-                  throw new FatalInteractionException(nullIngredients.mkString(","))
-
-                // transforms the event
-                val transformedEvent = transformEvent(interaction)(event)
-
-                // creates the transition output marking (in the petri net)
-                val outputMarking = createProducedMarking(interaction, outAdjacent)(transformedEvent)
-
-                // remove MDC values
-                MDC.remove("processId")
-                MDC.remove("recipeName")
-
-                (outputMarking, transformedEvent.asInstanceOf[Output])
-            }
+            (transformedEvent, transformedEvent.asInstanceOf[Output])
           }
-          .handleWith(failureHandler)
-      }.recover(failureHandler).get
+
+        // call the post-hook on extensions
+        extensions.onInteractionFinished(processState.processId, outputEvent)
+
+        // create the output marking for the petri net
+        val outputMarking = createProducedMarking(interaction, outAdjacent)(outputEvent)
+
+        // remove the MDC values
+        MDC.remove("processId")
+        MDC.remove("recipeName")
+
+        (outputMarking, output)
+
+      }.handleWith {
+        case e: InvocationTargetException => IO.raiseError(e.getCause)
+        case e: Throwable                 => IO.raiseError(e)
+      }
     }
 
   /**

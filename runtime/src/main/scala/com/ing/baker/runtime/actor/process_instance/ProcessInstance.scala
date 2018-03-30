@@ -18,6 +18,8 @@ import scala.concurrent.duration._
 import scala.language.existentials
 import scala.util.Try
 import akka.pattern.pipe
+import cats.effect.IO
+import cats.syntax.apply._
 
 object ProcessInstance {
 
@@ -49,7 +51,7 @@ class ProcessInstance[P[_], T[_, _], S, E](processType: String,
                                             settings: Settings,
                                             runtime: PetriNetRuntime[P, T, S, E],
                                             override implicit val placeIdentifier: Identifiable[P[_]],
-                                            override implicit val transitionIdentifier: Identifiable[T[_, _]]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSourceFn) {
+                                            override implicit val transitionIdentifier: Identifiable[T[_, _]]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSource) {
 
 
   val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
@@ -60,7 +62,7 @@ class ProcessInstance[P[_], T[_, _], S, E](processType: String,
 
   import context.dispatcher
 
-  val executor = runtime.jobExecutor.apply(topology)(settings.executionContext)
+  val executor = runtime.jobExecutor(topology)
 
   override def receiveCommand = uninitialized
 
@@ -235,7 +237,14 @@ class ProcessInstance[P[_], T[_, _], S, E](processType: String,
     log.firingTransition(processId, job.id, job.transition.toString, System.currentTimeMillis())
 
     // context.self can be potentially throw NullPointerException in non graceful shutdown situations
-    Try(context.self).foreach(executor(job).unsafeToFuture().pipeTo(_)(originalSender))
+    Try(context.self).foreach { self =>
+
+      // executes the IO task on the ExecutionContext
+      val future = IO.shift(settings.executionContext) *> executor(job)
+
+      // translate to future and pipes the result of the future back to the actor
+      future.unsafeToFuture().pipeTo(self)(originalSender)
+    }
   }
 
   def scheduleFailedJobsForRetry(instance: Instance[P, T, S]): Map[Long, Cancellable] = {

@@ -3,7 +3,7 @@ package com.ing.baker.runtime.core
 import java.util.concurrent.TimeoutException
 
 import akka.NotUsed
-import akka.actor.{Actor, ActorRef, ActorSystem, Address, AddressFromURIString, Props}
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
@@ -28,9 +28,11 @@ import com.ing.baker.runtime.core.interations.{InteractionImplementation, Intera
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.RecipeRuntime
 import com.ing.baker.types.Value
+import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, Future}
@@ -61,6 +63,24 @@ object Baker {
     actions.filterNot(interactionManager.hasCompatibleImplementation)
       .map(s => s"No implementation provided for interaction: ${s.originalInteractionName}")
   }
+
+  def extensionProxy(extensions: Seq[BakerExtension]): BakerExtension = new BakerExtension {
+
+    override def onInteractionFailed(processId: String, interactionName: String, exception: Exception): Unit =
+      extensions.foreach(_.onInteractionFailed(processId, interactionName, exception))
+
+    override def onEventReceived(processId: String, event: RuntimeEvent): Unit =
+      extensions.foreach(_.onEventReceived(processId, event))
+
+    override def onInteractionCalled(processId: String, interactionName: String, ingredients: Seq[(String, Value)]): Unit =
+      extensions.foreach(_.onInteractionCalled(processId, interactionName, ingredients))
+
+    override def onBake(recipeId: String, processId: String): Unit =
+      extensions.foreach(_.onBake(recipeId, processId))
+
+    override def onInteractionFinished(processId: String, event: RuntimeEvent): Unit =
+      extensions.foreach(_.onInteractionFinished(processId, event))
+  }
 }
 
 /**
@@ -75,32 +95,29 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   private val defaultProcessEventTimeout = config.as[FiniteDuration]("baker.process-event-timeout")
   private val defaultInquireTimeout = config.as[FiniteDuration]("baker.process-inquire-timeout")
   private val defaultShutdownTimeout = config.as[FiniteDuration]("baker.shutdown-timeout")
-  private val journalInitializeTimeout = config.as[FiniteDuration]("baker.journal-initialize-timeout")
   private val readJournalIdentifier = config.as[String]("baker.actor.read-journal-plugin")
   private val log = LoggerFactory.getLogger(classOf[Baker])
 
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
+  private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   private val readJournal = PersistenceQuery(actorSystem)
     .readJournalFor[CurrentEventsByPersistenceIdQuery with PersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
 
-  private def initializeCluster() = {
+  private val bakerExtension = {
 
-    val seedNodes: List[Address] = config.as[Option[List[String]]]("baker.cluster.seed-nodes") match {
-      case Some(_seedNodes) if _seedNodes.nonEmpty =>
-        _seedNodes map AddressFromURIString.parse
-      case None =>
-        throw new BakerException("Baker cluster configuration without baker.cluster.seed-nodes")
+    def createExtensionInstance(clazz: Class[_]): Try[BakerExtension] =
+      Try { clazz.getConstructor(classOf[Config]) } match {
+        case Success(constructor) => Try { constructor.newInstance(config).asInstanceOf[BakerExtension] }
+        case Failure(_)           => Try { clazz.newInstance().asInstanceOf[BakerExtension] }
+      }
+
+    val extensions: Seq[BakerExtension] = config.getAs[List[String]]("baker.extensions").getOrElse(List.empty).map { className =>
+      Try { Class.forName(className) } flatMap (createExtensionInstance)
+    }.collect {
+      case Success(extension) => extension
     }
 
-    /**
-      * Join cluster after waiting for the persistenceInit actor, otherwise terminate here.
-      */
-    Await.result(Util.persistenceInit(journalInitializeTimeout), journalInitializeTimeout)
-
-    // join the cluster
-    log.info("PersistenceInit actor started successfully, joining cluster seed nodes {}", seedNodes)
-    Cluster.get(actorSystem).joinSeedNodes(seedNodes)
+    extensionProxy(extensions)
   }
 
   private val configuredEncryption: Encryption = {
@@ -114,11 +131,8 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
   private val bakerActorProvider =
     config.as[Option[String]]("baker.actor.provider") match {
-      case None | Some("local") =>
-        new LocalBakerActorProvider(config)
-      case Some("cluster-sharded") =>
-        initializeCluster()
-        new ClusterBakerActorProvider(config, configuredEncryption)
+      case None | Some("local")    => new LocalBakerActorProvider(config, configuredEncryption)
+      case Some("cluster-sharded") => new ClusterBakerActorProvider(config, configuredEncryption)
       case Some(other) =>
         throw new IllegalArgumentException(s"Unsupported actor provider: $other")
     }
@@ -126,7 +140,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   val recipeManager: ActorRef = bakerActorProvider.createRecipeManagerActor()
 
   val processIndexActor: ActorRef =
-    bakerActorProvider.createProcessIndexActor(interactionManager, recipeManager)
+    bakerActorProvider.createProcessIndexActor(interactionManager, bakerExtension, recipeManager)
 
   private val petriNetApi = new ProcessApi(processIndexActor)
 
