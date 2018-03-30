@@ -49,7 +49,7 @@ object ProcessInstanceProtocol {
 
   object Initialize {
 
-    def apply[P[_]](marking: Marking[P])(implicit placeIdentifier: Identifiable[P[_]]): Initialize = Initialize(marshal[P](marking), ())
+    def apply[P[_]](marking: Marking[P])(implicit placeIdentifier: Identifiable[P[_]]): Initialize = Initialize(marshal[P](marking), null)
   }
 
   /**

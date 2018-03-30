@@ -64,7 +64,7 @@ class ProcessInstanceSerialization[P[_], T[_, _], S](serializer: ObjectSerialize
   private def missingFieldException(field: String) = throw new IllegalStateException(s"Missing field in serialized data: $field")
 
   def serializeObject(obj: Any): Option[SerializedData] = {
-    (obj != null && !obj.isInstanceOf[Unit]).option {
+    (obj != null).option {
       serializer.serializeObject(obj.asInstanceOf[AnyRef])
     }
   }
@@ -118,7 +118,7 @@ class ProcessInstanceSerialization[P[_], T[_, _], S](serializer: ObjectSerialize
   private def deserializeInitialized(e: protobuf.Initialized)(instance: Instance[P, T, S]): InitializedEvent[P] = {
     val initialMarking = deserializeProducedMarking(instance, e.initialMarking)
     // TODO not really safe to return null here, throw exception ?
-    val initialState = e.initialState.map(deserializeObject).getOrElse(())
+    val initialState = e.initialState.map(deserializeObject).orNull
     InitializedEvent(initialMarking, initialState)
   }
 
@@ -135,7 +135,7 @@ class ProcessInstanceSerialization[P[_], T[_, _], S](serializer: ObjectSerialize
       val transitionId = e.transitionId.getOrElse(missingFieldException("transition_id"))
       val timeStarted = e.timeStarted.getOrElse(missingFieldException("time_started"))
       val timeFailed = e.timeFailed.getOrElse(missingFieldException("time_failed"))
-      val input = e.inputData.map(deserializeObject).getOrElse(())
+      val input = e.inputData.map(deserializeObject).orNull
       val failureReason = e.failureReason.getOrElse("")
       val consumed = deserializeConsumedMarking(instance, e.consumed)
       val failureStrategy = e.failureStrategy.getOrElse(missingFieldException("time_failed")) match {
