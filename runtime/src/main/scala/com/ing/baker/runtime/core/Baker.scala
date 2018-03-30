@@ -112,7 +112,11 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       }
 
     val extensions: Seq[BakerExtension] = config.getAs[List[String]]("baker.extensions").getOrElse(List.empty).map { className =>
-      Try { Class.forName(className) } flatMap (createExtensionInstance)
+      Try { Class.forName(className) }.flatMap (createExtensionInstance).recoverWith {
+        case exception =>
+          log.error(s"Failed to load extension: $className", exception)
+          Failure(exception)
+      }
     }.collect {
       case Success(extension) => extension
     }
@@ -216,6 +220,10 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @return
     */
   def bakeAsync(recipeId: String, processId: String, timeout: FiniteDuration = defaultBakeTimeout): Future[ProcessState] = {
+
+    // TODO might want to only call this after a successful bake
+    bakerExtension.onBake(recipeId, processId)
+
     implicit val askTimeout = Timeout(timeout)
 
     val msg = CreateProcess(recipeId, processId)

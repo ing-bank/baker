@@ -1,10 +1,12 @@
 package com.ing.baker.runtime.core
 
+import akka.actor.ActorSystem
 import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.core.implementations.{InteractionOneFieldName, InteractionOneInterfaceImplementation, InteractionOneWrongApply}
+import com.typesafe.config.ConfigFactory
 
 import scala.language.postfixOps
 
@@ -19,6 +21,30 @@ class BakerSetupSpec extends TestRecipeHelper {
   "The Baker execution engine during setup" should {
 
     "bootstrap correctly without throwing an error if provided a correct recipe and correct implementations" when {
+
+
+      "correcly load extensions when specified in the configuration" in {
+
+        val config =
+          s"""
+             |
+             |include "baker.conf"
+             |
+             |baker.extensions = ["com.ing.runtime.core.TestExtension"]
+         """.stripMargin
+
+        val actorSystem = ActorSystem(
+          "extensionTest",
+          ConfigFactory.parseString(config))
+
+        val simpleRecipe = Recipe("SimpleRecipe")
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent)
+
+        val baker = new Baker()(actorSystem)
+
+        baker.addInteractionImplementations(mockImplementations)
+      }
 
       "providing implementations in a sequence" in {
 
