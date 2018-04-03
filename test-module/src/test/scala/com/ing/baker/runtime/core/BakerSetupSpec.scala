@@ -6,9 +6,13 @@ import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.core.implementations.{InteractionOneFieldName, InteractionOneInterfaceImplementation, InteractionOneWrongApply}
+import com.ing.baker.types.Value
 import com.typesafe.config.ConfigFactory
+import org.mockito.Matchers.anyString
+import org.mockito.Mockito.when
 
 import scala.language.postfixOps
+
 
 class BakerSetupSpec extends TestRecipeHelper {
 
@@ -30,20 +34,29 @@ class BakerSetupSpec extends TestRecipeHelper {
              |
              |include "baker.conf"
              |
-             |baker.extensions = ["com.ing.runtime.core.TestExtension"]
+             |baker.extensions = ["com.ing.baker.runtime.core.TestExtension"]
          """.stripMargin
 
         val actorSystem = ActorSystem(
           "extensionTest",
           ConfigFactory.parseString(config))
 
-        val simpleRecipe = Recipe("SimpleRecipe")
+        val simpleRecipe = RecipeCompiler.compileRecipe(Recipe("SimpleRecipe")
           .withInteraction(interactionOne)
-          .withSensoryEvent(initialEvent)
+          .withSensoryEvent(initialEvent))
 
         val baker = new Baker()(actorSystem)
 
         baker.addInteractionImplementations(mockImplementations)
+
+        when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn("foobar")
+
+        val recipeId = baker.addRecipe(simpleRecipe)
+        val processId = java.util.UUID.randomUUID().toString
+
+        baker.bake(recipeId, processId)
+        baker.processEvent(processId, initialEvent.instance("initialIngredient"))
+
       }
 
       "providing implementations in a sequence" in {

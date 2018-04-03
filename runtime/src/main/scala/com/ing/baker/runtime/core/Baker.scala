@@ -66,8 +66,8 @@ object Baker {
 
   def extensionProxy(extensions: Seq[BakerExtension]): BakerExtension = new BakerExtension {
 
-    override def onInteractionFailed(processId: String, interactionName: String, exception: Exception): Unit =
-      extensions.foreach(_.onInteractionFailed(processId, interactionName, exception))
+    override def onInteractionFailed(processId: String, interactionName: String, throwable: Throwable): Unit =
+      extensions.foreach(_.onInteractionFailed(processId, interactionName, throwable))
 
     override def onEventReceived(processId: String, event: RuntimeEvent): Unit =
       extensions.foreach(_.onEventReceived(processId, event))
@@ -78,8 +78,8 @@ object Baker {
     override def onBake(recipeId: String, processId: String): Unit =
       extensions.foreach(_.onBake(recipeId, processId))
 
-    override def onInteractionFinished(processId: String, event: RuntimeEvent): Unit =
-      extensions.foreach(_.onInteractionFinished(processId, event))
+    override def onInteractionFinished(processId: String, interactionName: String, event: RuntimeEvent): Unit =
+      extensions.foreach(_.onInteractionFinished(processId, interactionName, event))
   }
 }
 
@@ -265,6 +265,8 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       case runtimeEvent: RuntimeEvent => runtimeEvent
       case _ => Baker.eventExtractor.extractEvent(event)
     }
+
+    bakerExtension.onEventReceived(processId, runtimeEvent)
 
     val source = petriNetApi.askAndCollectAll(ProcessEvent(processId, runtimeEvent, correlationId), waitForRetries = true)(timeout)
     new BakerResponse(processId, source)

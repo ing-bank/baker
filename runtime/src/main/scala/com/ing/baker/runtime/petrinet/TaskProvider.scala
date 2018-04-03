@@ -12,6 +12,8 @@ import com.ing.baker.runtime.core.{BakerExtension, ProcessState, RuntimeEvent}
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.{LoggerFactory, MDC}
 
+import scala.util.{Failure, Success, Try}
+
 class TaskProvider(recipeName: String, interactionManager: InteractionManager, extensions: BakerExtension) extends TransitionTaskProvider[ProcessState, Place, Transition] {
 
   val log = LoggerFactory.getLogger(classOf[TaskProvider])
@@ -19,17 +21,17 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
   override def apply[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _]], t: Transition[Input, Output]): TransitionTask[Place, Input, Output, ProcessState] = {
     t match {
       case interaction: InteractionTransition[_] =>
-        interactionTransitionTask[AnyRef, Input, Output](interaction.asInstanceOf[InteractionTransition[AnyRef]], interactionManager, extensions, petriNet.outMarking(interaction))
+        interactionTransitionTask[AnyRef, Input, Output](interaction.asInstanceOf[InteractionTransition[AnyRef]], petriNet.outMarking(interaction))
       case t: EventTransition  => eventTransitionTask(petriNet, t)
       case t                   => passThroughTransitionTask(petriNet, t)
     }
   }
 
   def passThroughTransitionTask[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _]], t: Transition[Input, Output]): TransitionTask[Place, Input, Output, ProcessState] =
-    (consume, processState, input) => IO.pure((toMarking[Place](petriNet.outMarking(t)), null.asInstanceOf[Output]))
+    (_, _, _) => IO.pure((toMarking[Place](petriNet.outMarking(t)), null.asInstanceOf[Output]))
 
   def eventTransitionTask[RuntimeEvent, Input, Output](petriNet: PetriNet[Place[_], Transition[_, _]], eventTransition: EventTransition): TransitionTask[Place, Input, Output, ProcessState] =
-    (consume, processState, input) => IO.pure((toMarking[Place](petriNet.outMarking(eventTransition)), input.asInstanceOf[Output]))
+    (_, _, input) => IO.pure((toMarking[Place](petriNet.outMarking(eventTransition)), input.asInstanceOf[Output]))
 
   // function that (optionally) transforms the output event using the event output transformers
   def transformEvent[I](interaction: InteractionTransition[I])(runtimeEvent: RuntimeEvent): RuntimeEvent = {
@@ -44,8 +46,6 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
   }
 
   def interactionTransitionTask[I, Input, Output](interaction: InteractionTransition[I],
-                                                  interactionManager: InteractionManager,
-                                                  extensions: BakerExtension,
                                                   outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, Input, Output, ProcessState] =
 
     (_, processState, _) => {
@@ -68,37 +68,50 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
         // call pre-hook on extensions
         extensions.onInteractionCalled(processState.processId, interaction.interactionName, Seq.empty)
 
-        // execute the interaction
-        val (outputEvent, output) = implementation.execute(interaction, input) match {
-          case None =>
-            (RuntimeEvent.create(interaction.interactionName, Seq.empty), null.asInstanceOf[Output])
+        Try {
+          implementation.execute(interaction, input)
+        } match {
+          case Failure(e) =>
+            extensions.onInteractionFailed(processState.processId, interaction.interactionName, e)
 
-          case Some(event) =>
-            // check if no null ingredients are provided
-            val nullIngredients = event.providedIngredients.collect {
-              case (name, null) => s"null value provided for ingredient $name"
+            // remove the MDC values
+            MDC.remove("processId")
+            MDC.remove("recipeName")
+
+            throw e;
+          case Success(interactionOutput) =>
+
+            val (outputEvent, output) = interactionOutput match {
+              case None =>
+                (RuntimeEvent.create(interaction.interactionName, Seq.empty), null.asInstanceOf[Output])
+
+              case Some(event) =>
+                // check if no null ingredients are provided
+                val nullIngredients = event.providedIngredients.collect {
+                  case (name, null) => s"null value provided for ingredient: $name"
+                }
+
+                if (nullIngredients.nonEmpty)
+                  throw new FatalInteractionException(nullIngredients.mkString(","))
+
+                // transforms the event
+                val transformedEvent = transformEvent(interaction)(event)
+
+                (transformedEvent, transformedEvent.asInstanceOf[Output])
             }
 
-            if (nullIngredients.nonEmpty)
-              throw new FatalInteractionException(nullIngredients.mkString(","))
+            // call the post-hook on extensions
+            extensions.onInteractionFinished(processState.processId, interaction.interactionName, outputEvent)
 
-            // transforms the event
-            val transformedEvent = transformEvent(interaction)(event)
+            // create the output marking for the petri net
+            val outputMarking = createProducedMarking(interaction, outAdjacent)(outputEvent)
 
-            (transformedEvent, transformedEvent.asInstanceOf[Output])
-          }
+            // remove the MDC values
+            MDC.remove("processId")
+            MDC.remove("recipeName")
 
-        // call the post-hook on extensions
-        extensions.onInteractionFinished(processState.processId, outputEvent)
-
-        // create the output marking for the petri net
-        val outputMarking = createProducedMarking(interaction, outAdjacent)(outputEvent)
-
-        // remove the MDC values
-        MDC.remove("processId")
-        MDC.remove("recipeName")
-
-        (outputMarking, output)
+            (outputMarking, output)
+        }
 
       }.handleWith {
         case e: InvocationTargetException => IO.raiseError(e.getCause)

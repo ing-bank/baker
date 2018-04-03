@@ -21,8 +21,16 @@ trait BakerExtension {
     */
   def onInteractionCalled(processId: String, interactionName: String, ingredients: Seq[(String, Value)])
 
-  def onInteractionFailed(processId: String, interactionName: String, exception: Exception)
+  /**
+    * Called just after an interaction was executed on the same thread.
+    *
+    *
+    *
+    * @param processId
+    * @param interactionName
+    * @param event
+    */
+  def onInteractionFinished(processId: String, interactionName: String, event: RuntimeEvent)
 
-  def onInteractionFinished(processId: String, event: RuntimeEvent)
-
+  def onInteractionFailed(processId: String, interactionName: String, throwable: Throwable)
 }
