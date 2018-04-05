@@ -4,32 +4,54 @@ import java.util.concurrent.TimeoutException
 
 import akka.NotUsed
 import akka.actor.{Actor, ActorRef, ActorSystem, Props, ReceiveTimeout}
-import akka.pattern._
-import akka.stream.scaladsl.{Sink, Source, SourceQueueWithComplete}
+import akka.stream.scaladsl.{Source, SourceQueueWithComplete}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.Timeout
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.core.events
+import com.ing.baker.runtime.core.events.RejectReason
 
-import scala.collection.immutable.Seq
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Await, Future}
 
 /**
  * An actor that pushes all received messages on a SourceQueueWithComplete.
  */
-class QueuePushingActor(queue: SourceQueueWithComplete[Any], waitForRetries: Boolean)(implicit timeout: FiniteDuration) extends Actor {
+class QueuePushingActor(cmd: ProcessEvent, queue: SourceQueueWithComplete[Any], waitForRetries: Boolean)(implicit timeout: FiniteDuration, system: ActorSystem) extends Actor {
   var runningJobs = Set.empty[Long]
 
   context.setReceiveTimeout(timeout)
 
+  def completeWith(msg: Any) = {
+    queue.offer(msg)
+    queue.complete()
+    stopActor()
+  }
+
+  def rejectedWith(msg: Any, rejectReason: RejectReason) = {
+    system.eventStream.publish(events.EventRejected(System.currentTimeMillis(), cmd.processId, cmd.correlationId, cmd.event, rejectReason))
+    completeWith(msg)
+  }
+
   override def receive: Receive = {
-    //Messages from the ProcessIndex
-    case msg@ (_:ProcessDeleted | _: ProcessUninitialized | _: ReceivePeriodExpired | _: InvalidEvent) ⇒
-      queue.offer(msg)
-      queue.complete()
-      stopActor()
+    case msg: ReceivePeriodExpired ⇒
+      rejectedWith(msg, events.ReceivePeriodExpired)
+
+    case msg: InvalidEvent =>
+      rejectedWith(msg, events.InvalidEvent)
+
+    case msg: ProcessDeleted =>
+      rejectedWith(msg, events.ProcessDeleted)
+
+    case msg: TransitionNotEnabled =>
+      rejectedWith(msg, events.FiringLimitMet)
+
+    case msg: AlreadyReceived ⇒
+      rejectedWith(msg, events.AlreadReceived)
+
+    case msg @ (_: ProcessUninitialized | _: Uninitialized) =>
+      rejectedWith(msg, events.NoSuchProcess)
 
     //Messages from the ProcessInstances
     case e: TransitionFired ⇒
@@ -46,11 +68,6 @@ class QueuePushingActor(queue: SourceQueueWithComplete[Any], waitForRetries: Boo
       runningJobs = runningJobs - jobId
       queue.offer(msg)
       stopActorIfDone
-
-    case msg@ (_: TransitionNotEnabled | _: Uninitialized | _: AlreadyReceived) ⇒
-      queue.offer(msg)
-      queue.complete()
-      stopActor()
 
     //Akka default cases
     case ReceiveTimeout ⇒
@@ -72,37 +89,17 @@ class QueuePushingActor(queue: SourceQueueWithComplete[Any], waitForRetries: Boo
 }
 
 /**
- * Contains some methods to interact with a petri net instance actor.
+ * Contains some methods to interact with a process instance actor.
  */
 class ProcessApi(actor: ActorRef)(implicit actorSystem: ActorSystem, materializer: Materializer) {
 
   /**
-   * Fires a transition and confirms (waits) for the result of that transition firing.
-   */
-  def askAndConfirmFirst(msg: Any)(implicit timeout: Timeout): Future[Any] = actor.ask(msg).mapTo[Any]
-
-  /**
-   * Synchronously collects all messages in response to a message sent to a PetriNet instance.
-   */
-  def askAndCollectAllSync(msg: Any, waitForRetries: Boolean = false)(implicit timeout: Timeout): Seq[Any] = {
-    val futureResult = askAndCollectAll(msg, waitForRetries).runWith(Sink.seq)
-    Await.result(futureResult, timeout.duration)
-  }
-
-  /**
-   * Sends a FireTransition command to the actor and returns a Source of TransitionResponse messages
-   */
-  def fireTransition(transitionId: Long, input: Any)(implicit timeout: Timeout): Source[Any, NotUsed] =
-    askAndCollectAll(FireTransition(transitionId, input))
-
-  /**
    * Returns a Source of all the messages from a petri net actor in response to a message.
-   *
    */
-  def askAndCollectAll(msg: Any, waitForRetries: Boolean = false)(implicit timeout: Timeout): Source[Any, NotUsed] =
+  def askAndCollectAll(cmd: ProcessEvent, waitForRetries: Boolean = false)(implicit timeout: Timeout): Source[Any, NotUsed] =
     Source.queue[Any](100, OverflowStrategy.fail).mapMaterializedValue { queue ⇒
-      val sender = actorSystem.actorOf(Props(new QueuePushingActor(queue, waitForRetries)(timeout.duration)))
-      actor.tell(msg, sender)
+      val sender = actorSystem.actorOf(Props(new QueuePushingActor(cmd, queue, waitForRetries)(timeout.duration, actorSystem)))
+      actor.tell(cmd, sender)
       NotUsed.getInstance()
     }
 }

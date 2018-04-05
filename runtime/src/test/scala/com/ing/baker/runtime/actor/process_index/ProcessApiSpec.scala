@@ -9,8 +9,10 @@ import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.{TestDuration, TestKit, TestProbe}
 import akka.util.Timeout
 import com.ing.baker.petrinet.runtime.ExceptionStrategy
+import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol.ProcessEvent
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.core.RuntimeEvent
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Matchers._
 import org.scalatest.WordSpecLike
@@ -43,13 +45,13 @@ class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec", ProcessApiSpe
 
       val api = new ProcessApi(processProbe.ref)
 
-      val fireCmd = FireTransition(1, ())
+      val processEventCmd = ProcessEvent("", RuntimeEvent("", Seq.empty), None)
 
-      val source: Source[Any, NotUsed] = api.askAndCollectAll(fireCmd)
+      val source: Source[Any, NotUsed] = api.askAndCollectAll(processEventCmd)
 
       val runSource: TestSubscriber.Probe[Long] = source.map(_.asInstanceOf[TransitionResponse].transitionId).runWith(TestSink.probe)
 
-      processProbe.expectMsg(fireCmd)
+      processProbe.expectMsg(processEventCmd)
 
       processProbe.reply(TransitionFired(1, 1, None, Map.empty, Map.empty, null, Set(2, 3)))
       processProbe.reply(TransitionFired(2, 2, None, Map.empty, Map.empty, null, Set.empty))
@@ -65,13 +67,13 @@ class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec", ProcessApiSpe
 
       val api = new ProcessApi(processProbe.ref)
 
-      val fireCmd = FireTransition(1, ())
+      val processEventCmd = ProcessEvent("", RuntimeEvent("", Seq.empty), None)
 
-      val source: Source[Any, NotUsed] = api.askAndCollectAll(fireCmd)
+      val source: Source[Any, NotUsed] = api.askAndCollectAll(processEventCmd)
 
       val runSource = source.map(_.asInstanceOf[TransitionResponse].transitionId).runWith(TestSink.probe)
 
-      processProbe.expectMsg(fireCmd)
+      processProbe.expectMsg(processEventCmd)
 
       processProbe.reply(TransitionFired(1, 1, None, Map.empty, Map.empty, null, Set(2, 3)))
       processProbe.reply(TransitionFailed(2, 2, None, Map.empty, null, "", ExceptionStrategy.BlockTransition))
@@ -93,12 +95,12 @@ class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec", ProcessApiSpe
       def check(msg: Any) = {
         val processProbe = TestProbe()
         val api = new ProcessApi(processProbe.ref)
-        val fireTransitionCmd = FireTransition(1, ())
+        val processEventCmd = ProcessEvent("", RuntimeEvent("", Seq.empty), None)
 
-        val source: Source[Any, NotUsed] = api.askAndCollectAll(fireTransitionCmd)
+        val source: Source[Any, NotUsed] = api.askAndCollectAll(processEventCmd)
         val runSource: TestSubscriber.Probe[Any] = source.runWith(TestSink.probe)
 
-        processProbe.expectMsg(fireTransitionCmd)
+        processProbe.expectMsg(processEventCmd)
         processProbe.reply(msg)
 
         runSource.request(1).expectNext(msg)
