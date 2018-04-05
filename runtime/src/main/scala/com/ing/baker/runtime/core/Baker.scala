@@ -24,7 +24,7 @@ import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.core.Baker._
-import com.ing.baker.runtime.core.events.{BakerEvent, BakerEventBus, EventReceived, ProcessCreated}
+import com.ing.baker.runtime.core.events.{BakerEvent, EventReceived}
 import com.ing.baker.runtime.core.interations.{InteractionImplementation, InteractionManager, MethodInteractionImplementation}
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.RecipeRuntime
@@ -87,8 +87,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   private val readJournal = PersistenceQuery(actorSystem)
     .readJournalFor[CurrentEventsByPersistenceIdQuery with PersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
 
-  private val eventBus = new BakerEventBus()
-
 //  private val bakerExtension = {
 //
 //    def createExtensionInstance(clazz: Class[_]): Try[BakerExtension] =
@@ -130,7 +128,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   val recipeManager: ActorRef = bakerActorProvider.createRecipeManagerActor()
 
   val processIndexActor: ActorRef =
-    bakerActorProvider.createProcessIndexActor(interactionManager, eventBus, recipeManager)
+    bakerActorProvider.createProcessIndexActor(interactionManager, recipeManager)
 
   private val petriNetApi = new ProcessApi(processIndexActor)
 
@@ -214,9 +212,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
     val eventualState: Future[ProcessState] = initializeFuture.map {
       case msg: Initialized =>
-
-        // TODO this should only be done when we have an ACK from the process instance actor that it was initialized
-        eventBus.publish(ProcessCreated(System.currentTimeMillis(), recipeId, "", processId))
         msg.state.asInstanceOf[ProcessState]
       case ProcessAlreadyInitialized(_) =>
         throw new IllegalArgumentException(s"Process with id '$processId' already exists.")
@@ -426,7 +421,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     doRegisterEventListener(listener, _ => true)
 
   def registerEventListener(actor: ActorRef): Boolean =
-    eventBus.subscribe(actor, classOf[BakerEvent])
+    actorSystem.eventStream.subscribe(actor, classOf[BakerEvent])
 
   def addInteractionImplementation(implementation: AnyRef) =
     MethodInteractionImplementation.anyRefToInteractionImplementations(implementation).foreach(interactionManager.add)

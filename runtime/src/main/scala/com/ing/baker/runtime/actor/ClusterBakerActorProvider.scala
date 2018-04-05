@@ -84,10 +84,10 @@ class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption
     Cluster.get(actorSystem).joinSeedNodes(seedNodes)
   }
 
-  override def createProcessIndexActor(interactionManager: InteractionManager, eventBus: BakerEventBus, recipeManager: ActorRef)(implicit actorSystem: ActorSystem): ActorRef = {
+  override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(implicit actorSystem: ActorSystem): ActorRef = {
     ClusterSharding(actorSystem).start(
       typeName = "ProcessIndexActor",
-      entityProps = ProcessIndex.props(retentionCheckInterval, actorIdleTimeout, configuredEncryption, interactionManager, eventBus, recipeManager),
+      entityProps = ProcessIndex.props(retentionCheckInterval, actorIdleTimeout, configuredEncryption, interactionManager, recipeManager),
       settings = ClusterShardingSettings.create(actorSystem),
       extractEntityId = ClusterBakerActorProvider.entityIdExtractor(nrOfShards),
       extractShardId = ClusterBakerActorProvider.shardIdExtractor(nrOfShards)

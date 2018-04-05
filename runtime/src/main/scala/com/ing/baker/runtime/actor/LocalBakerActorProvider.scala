@@ -6,7 +6,6 @@ import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol.{GetIndex, Index}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
 import com.ing.baker.runtime.actor.serialization.Encryption
-import com.ing.baker.runtime.core.events.BakerEventBus
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
@@ -19,10 +18,10 @@ class LocalBakerActorProvider(config: Config, configuredEncryption: Encryption) 
   private val retentionCheckInterval = config.as[Option[FiniteDuration]]("baker.actor.retention-check-interval").getOrElse(1 minute)
   val actorIdleTimeout: Option[FiniteDuration] = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout")
 
-  override def createProcessIndexActor(interactionManager: InteractionManager, eventBus: BakerEventBus, recipeManager: ActorRef)(
+  override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(
     implicit actorSystem: ActorSystem): ActorRef = {
     actorSystem.actorOf(
-      ProcessIndex.props(retentionCheckInterval, actorIdleTimeout, configuredEncryption, interactionManager, eventBus, recipeManager))
+      ProcessIndex.props(retentionCheckInterval, actorIdleTimeout, configuredEncryption, interactionManager, recipeManager))
   }
 
   override def createRecipeManagerActor()(implicit actorSystem: ActorSystem): ActorRef = {

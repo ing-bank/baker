@@ -293,7 +293,6 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       Option.empty,
       Encryption.NoEncryption,
       new InteractionManager(),
-      new BakerEventBus(),
       recipeManager) {
       override def createProcessActor(id: String, compiledRecipe: CompiledRecipe) = petriNetActorRef
     })

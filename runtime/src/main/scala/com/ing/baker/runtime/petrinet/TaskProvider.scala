@@ -2,6 +2,7 @@ package com.ing.baker.runtime.petrinet
 
 import java.lang.reflect.InvocationTargetException
 
+import akka.event.EventStream
 import cats.effect.IO
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
 import com.ing.baker.il.{IngredientDescriptor, processIdName}
@@ -15,7 +16,7 @@ import org.slf4j.{LoggerFactory, MDC}
 
 import scala.util.{Failure, Success, Try}
 
-class TaskProvider(recipeName: String, interactionManager: InteractionManager, eventBus: BakerEventBus) extends TransitionTaskProvider[ProcessState, Place, Transition] {
+class TaskProvider(recipeName: String, interactionManager: InteractionManager, eventStream: EventStream) extends TransitionTaskProvider[ProcessState, Place, Transition] {
 
   val log = LoggerFactory.getLogger(classOf[TaskProvider])
 
@@ -67,14 +68,14 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
         val input = createInput(interaction, processState)
 
         // publish the fact that we started the interaction
-        eventBus.publish(InteractionStarted(System.currentTimeMillis(), processState.processId, interaction.interactionName))
+        eventStream.publish(InteractionStarted(System.currentTimeMillis(), processState.processId, interaction.interactionName))
 
         Try {
           implementation.execute(interaction, input)
         } match {
           case Failure(e) =>
 
-            eventBus.publish(InteractionFailed(System.currentTimeMillis(), processState.processId, interaction.interactionName, e))
+            eventStream.publish(InteractionFailed(System.currentTimeMillis(), processState.processId, interaction.interactionName, e))
 
             // remove the MDC values
             MDC.remove("processId")
@@ -103,7 +104,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
             }
 
             // publish the fact that the interaction completed
-            eventBus.publish(InteractionCompleted(System.currentTimeMillis(), processState.processId, interaction.interactionName, outputEvent))
+            eventStream.publish(InteractionCompleted(System.currentTimeMillis(), processState.processId, interaction.interactionName, outputEvent))
 
             // create the output marking for the petri net
             val outputMarking = createProducedMarking(interaction, outAdjacent)(outputEvent)

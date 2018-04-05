@@ -13,7 +13,7 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
-import com.ing.baker.runtime.core.events.{BakerEventBus, ProcessCreated}
+import com.ing.baker.runtime.core.events.ProcessCreated
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.petrinet._
@@ -29,9 +29,8 @@ object ProcessIndex {
             processIdleTimeout: Option[FiniteDuration],
             configuredEncryption: Encryption,
             interactionManager: InteractionManager,
-            eventBus: BakerEventBus,
             recipeManager: ActorRef) =
-    Props(new ProcessIndex(cleanupInterval, processIdleTimeout, configuredEncryption, interactionManager, eventBus, recipeManager))
+    Props(new ProcessIndex(cleanupInterval, processIdleTimeout, configuredEncryption, interactionManager, recipeManager))
 
   sealed trait ProcessStatus
 
@@ -82,7 +81,6 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
                    processIdleTimeout: Option[FiniteDuration],
                    configuredEncryption: Encryption,
                    interactionManager: InteractionManager,
-                   eventBus: BakerEventBus,
                    recipeManager: ActorRef) extends PersistentActor with ActorLogging {
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
@@ -124,7 +122,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
   def createProcessActor(processId: String, compiledRecipe: CompiledRecipe): ActorRef = {
     val petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] =
-      new RecipeRuntime(compiledRecipe.name, interactionManager, eventBus)
+      new RecipeRuntime(compiledRecipe.name, interactionManager, context.system.eventStream)
 
     val processActorProps =
       Util.recipePetriNetProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
@@ -134,6 +132,8 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
           idleTTL = processIdleTimeout))
 
     val processActor = context.actorOf(processActorProps, name = processId)
+
+
     context.watch(processActor)
     processActor
   }
@@ -192,12 +192,14 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
             getCompiledRecipe(recipeId) match {
               case Some(compiledRecipe) =>
 
-
                 val processState = ProcessState(processId, Map.empty, List.empty)
                 val initializeCmd = Initialize(ProcessInstanceProtocol.marshal(compiledRecipe.initialMarking), processState)
+
                 createProcessActor(processId, compiledRecipe).forward(initializeCmd)
                 val actorMetadata = ActorMetadata(recipeId, processId, created, Active)
                 index += processId -> actorMetadata
+                context.system.eventStream.publish(ProcessCreated(System.currentTimeMillis(), "", compiledRecipe.name, processId))
+
               case None => sender() ! NoRecipeFound(recipeId)
             }
           }

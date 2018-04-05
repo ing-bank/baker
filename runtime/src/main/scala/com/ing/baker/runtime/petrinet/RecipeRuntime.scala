@@ -1,5 +1,6 @@
 package com.ing.baker.runtime.petrinet
 
+import akka.event.EventStream
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
@@ -19,7 +20,7 @@ object RecipeRuntime {
     }
 }
 
-class RecipeRuntime(recipeName: String, interactionManager: InteractionManager, eventBus: BakerEventBus) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
+class RecipeRuntime(recipeName: String, interactionManager: InteractionManager, eventStream: EventStream) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
 
   override val tokenGame = new RecipeTokenGame()
 
@@ -45,7 +46,7 @@ class RecipeRuntime(recipeName: String, interactionManager: InteractionManager, 
     }
   }
 
-  override val taskProvider = new TaskProvider(recipeName, interactionManager, eventBus)
+  override val taskProvider = new TaskProvider(recipeName, interactionManager, eventStream)
 
   override lazy val jobPicker = new JobPicker[Place, Transition](tokenGame) {
     override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition[_, _]): Boolean = t match {

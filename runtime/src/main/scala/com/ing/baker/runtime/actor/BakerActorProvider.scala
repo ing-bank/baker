@@ -9,7 +9,7 @@ import scala.concurrent.duration.FiniteDuration
 
 trait BakerActorProvider extends {
 
-  def createProcessIndexActor(interactionManager: InteractionManager, eventBus: BakerEventBus, recipeManager: ActorRef)(implicit actorSystem: ActorSystem) : ActorRef
+  def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(implicit actorSystem: ActorSystem) : ActorRef
 
   def createRecipeManagerActor()(implicit actorSystem: ActorSystem) : ActorRef
 
