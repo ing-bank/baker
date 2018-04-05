@@ -4,8 +4,9 @@ import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.petrinet.runtime._
+import com.ing.baker.runtime.core.events.BakerEventBus
 import com.ing.baker.runtime.core.interations.InteractionManager
-import com.ing.baker.runtime.core.{BakerExtension, ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 
 object RecipeRuntime {
   def eventSourceFn: Transition[_, _] => (ProcessState => RuntimeEvent => ProcessState) =
@@ -18,7 +19,7 @@ object RecipeRuntime {
     }
 }
 
-class RecipeRuntime(recipeName: String, interactionManager: InteractionManager, extensions: BakerExtension) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
+class RecipeRuntime(recipeName: String, interactionManager: InteractionManager, eventBus: BakerEventBus) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
 
   override val tokenGame = new RecipeTokenGame()
 
@@ -44,7 +45,7 @@ class RecipeRuntime(recipeName: String, interactionManager: InteractionManager, 
     }
   }
 
-  override val taskProvider = new TaskProvider(recipeName, interactionManager, extensions)
+  override val taskProvider = new TaskProvider(recipeName, interactionManager, eventBus)
 
   override lazy val jobPicker = new JobPicker[Place, Transition](tokenGame) {
     override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition[_, _]): Boolean = t match {

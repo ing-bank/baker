@@ -2,15 +2,14 @@ package com.ing.baker.runtime.actor
 
 import akka.actor.{ActorRef, ActorSystem}
 import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
-import com.ing.baker.runtime.core.BakerExtension
+import com.ing.baker.runtime.core.events.BakerEventBus
 import com.ing.baker.runtime.core.interations.InteractionManager
 
 import scala.concurrent.duration.FiniteDuration
 
-
 trait BakerActorProvider extends {
 
-  def createProcessIndexActor(interactionManager: InteractionManager, extension: BakerExtension, recipeManager: ActorRef)(implicit actorSystem: ActorSystem) : ActorRef
+  def createProcessIndexActor(interactionManager: InteractionManager, eventBus: BakerEventBus, recipeManager: ActorRef)(implicit actorSystem: ActorSystem) : ActorRef
 
   def createRecipeManagerActor()(implicit actorSystem: ActorSystem) : ActorRef
 

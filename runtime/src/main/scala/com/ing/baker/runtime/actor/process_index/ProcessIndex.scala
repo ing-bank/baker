@@ -13,14 +13,14 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
+import com.ing.baker.runtime.core.events.{BakerEventBus, ProcessCreated}
 import com.ing.baker.runtime.core.interations.InteractionManager
-import com.ing.baker.runtime.core.{BakerExtension, ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.petrinet._
-import com.ing.baker.types.Value
 
 import scala.collection.mutable
-import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext}
 
 
 object ProcessIndex {
@@ -29,9 +29,9 @@ object ProcessIndex {
             processIdleTimeout: Option[FiniteDuration],
             configuredEncryption: Encryption,
             interactionManager: InteractionManager,
-            bakerExtension: BakerExtension,
+            eventBus: BakerEventBus,
             recipeManager: ActorRef) =
-    Props(new ProcessIndex(cleanupInterval, processIdleTimeout, configuredEncryption, interactionManager, bakerExtension, recipeManager))
+    Props(new ProcessIndex(cleanupInterval, processIdleTimeout, configuredEncryption, interactionManager, eventBus, recipeManager))
 
   sealed trait ProcessStatus
 
@@ -82,7 +82,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
                    processIdleTimeout: Option[FiniteDuration],
                    configuredEncryption: Encryption,
                    interactionManager: InteractionManager,
-                   bakerExtension: BakerExtension,
+                   eventBus: BakerEventBus,
                    recipeManager: ActorRef) extends PersistentActor with ActorLogging {
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
@@ -124,7 +124,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
   def createProcessActor(processId: String, compiledRecipe: CompiledRecipe): ActorRef = {
     val petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] =
-      new RecipeRuntime(compiledRecipe.name, interactionManager, bakerExtension)
+      new RecipeRuntime(compiledRecipe.name, interactionManager, eventBus)
 
     val processActorProps =
       Util.recipePetriNetProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
@@ -152,7 +152,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
   def deleteProcess(processId: String): Unit = {
     persist(ActorDeleted(processId)) { _ =>
       val meta = index(processId)
-      index.update(processId, index(processId).copy(processStatus = Deleted))
+      index.update(processId, meta.copy(processStatus = Deleted))
     }
   }
 
@@ -191,8 +191,11 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
             getCompiledRecipe(recipeId) match {
               case Some(compiledRecipe) =>
-                val initialize = Initialize(ProcessInstanceProtocol.marshal(compiledRecipe.initialMarking), ProcessState(processId, Map.empty, List.empty))
-                createProcessActor(processId, compiledRecipe).forward(initialize)
+
+
+                val processState = ProcessState(processId, Map.empty, List.empty)
+                val initializeCmd = Initialize(ProcessInstanceProtocol.marshal(compiledRecipe.initialMarking), processState)
+                createProcessActor(processId, compiledRecipe).forward(initializeCmd)
                 val actorMetadata = ActorMetadata(recipeId, processId, created, Active)
                 index += processId -> actorMetadata
               case None => sender() ! NoRecipeFound(recipeId)

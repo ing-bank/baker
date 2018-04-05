@@ -7,14 +7,15 @@ import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place,
 import com.ing.baker.il.{IngredientDescriptor, processIdName}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime._
+import com.ing.baker.runtime.core.events.{BakerEventBus, InteractionCompleted, InteractionFailed, InteractionStarted}
 import com.ing.baker.runtime.core.interations.InteractionManager
-import com.ing.baker.runtime.core.{BakerExtension, ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.{LoggerFactory, MDC}
 
 import scala.util.{Failure, Success, Try}
 
-class TaskProvider(recipeName: String, interactionManager: InteractionManager, extensions: BakerExtension) extends TransitionTaskProvider[ProcessState, Place, Transition] {
+class TaskProvider(recipeName: String, interactionManager: InteractionManager, eventBus: BakerEventBus) extends TransitionTaskProvider[ProcessState, Place, Transition] {
 
   val log = LoggerFactory.getLogger(classOf[TaskProvider])
 
@@ -65,14 +66,15 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
         // create the interaction input
         val input = createInput(interaction, processState)
 
-        // call pre-hook on extensions
-        extensions.onInteractionCalled(processState.processId, interaction.interactionName, Seq.empty)
+        // publish the fact that we started the interaction
+        eventBus.publish(InteractionStarted(System.currentTimeMillis(), processState.processId, interaction.interactionName))
 
         Try {
           implementation.execute(interaction, input)
         } match {
           case Failure(e) =>
-            extensions.onInteractionFailed(processState.processId, interaction.interactionName, e)
+
+            eventBus.publish(InteractionFailed(System.currentTimeMillis(), processState.processId, interaction.interactionName, e))
 
             // remove the MDC values
             MDC.remove("processId")
@@ -100,8 +102,8 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
                 (transformedEvent, transformedEvent.asInstanceOf[Output])
             }
 
-            // call the post-hook on extensions
-            extensions.onInteractionFinished(processState.processId, interaction.interactionName, outputEvent)
+            // publish the fact that the interaction completed
+            eventBus.publish(InteractionCompleted(System.currentTimeMillis(), processState.processId, interaction.interactionName, outputEvent))
 
             // create the output marking for the petri net
             val outputMarking = createProducedMarking(interaction, outAdjacent)(outputEvent)

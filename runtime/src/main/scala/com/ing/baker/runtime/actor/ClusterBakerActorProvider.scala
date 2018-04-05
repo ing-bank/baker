@@ -13,8 +13,8 @@ import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_index._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
 import com.ing.baker.runtime.actor.serialization.Encryption
-import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
-import com.ing.baker.runtime.core.{BakerException, BakerExtension}
+import com.ing.baker.runtime.core.BakerException
+import com.ing.baker.runtime.core.events.BakerEventBus
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
@@ -84,10 +84,10 @@ class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption
     Cluster.get(actorSystem).joinSeedNodes(seedNodes)
   }
 
-  override def createProcessIndexActor(interactionManager: InteractionManager, bakerExtension: BakerExtension, recipeManager: ActorRef)(implicit actorSystem: ActorSystem): ActorRef = {
+  override def createProcessIndexActor(interactionManager: InteractionManager, eventBus: BakerEventBus, recipeManager: ActorRef)(implicit actorSystem: ActorSystem): ActorRef = {
     ClusterSharding(actorSystem).start(
       typeName = "ProcessIndexActor",
-      entityProps = ProcessIndex.props(retentionCheckInterval, actorIdleTimeout, configuredEncryption, interactionManager, bakerExtension, recipeManager),
+      entityProps = ProcessIndex.props(retentionCheckInterval, actorIdleTimeout, configuredEncryption, interactionManager, eventBus, recipeManager),
       settings = ClusterShardingSettings.create(actorSystem),
       extractEntityId = ClusterBakerActorProvider.entityIdExtractor(nrOfShards),
       extractShardId = ClusterBakerActorProvider.shardIdExtractor(nrOfShards)

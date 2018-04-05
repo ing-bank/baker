@@ -24,15 +24,14 @@ import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.core.Baker._
+import com.ing.baker.runtime.core.events.{BakerEvent, BakerEventBus, EventReceived, ProcessCreated}
 import com.ing.baker.runtime.core.interations.{InteractionImplementation, InteractionManager, MethodInteractionImplementation}
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.RecipeRuntime
 import com.ing.baker.types.Value
-import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
-import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, Future}
@@ -63,24 +62,6 @@ object Baker {
     actions.filterNot(interactionManager.hasCompatibleImplementation)
       .map(s => s"No implementation provided for interaction: ${s.originalInteractionName}")
   }
-
-  def extensionProxy(extensions: Seq[BakerExtension]): BakerExtension = new BakerExtension {
-
-    override def onInteractionFailed(processId: String, interactionName: String, throwable: Throwable): Unit =
-      extensions.foreach(_.onInteractionFailed(processId, interactionName, throwable))
-
-    override def onEventReceived(processId: String, event: RuntimeEvent): Unit =
-      extensions.foreach(_.onEventReceived(processId, event))
-
-    override def onInteractionCalled(processId: String, interactionName: String, ingredients: Seq[(String, Value)]): Unit =
-      extensions.foreach(_.onInteractionCalled(processId, interactionName, ingredients))
-
-    override def onBake(recipeId: String, processId: String): Unit =
-      extensions.foreach(_.onBake(recipeId, processId))
-
-    override def onInteractionFinished(processId: String, interactionName: String, event: RuntimeEvent): Unit =
-      extensions.foreach(_.onInteractionFinished(processId, interactionName, event))
-  }
 }
 
 /**
@@ -100,29 +81,33 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
   private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
+  if (!config.as[Option[Boolean]]("baker.config-file-included").getOrElse(false))
+    throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
+
   private val readJournal = PersistenceQuery(actorSystem)
     .readJournalFor[CurrentEventsByPersistenceIdQuery with PersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
 
-  private val bakerExtension = {
+  private val eventBus = new BakerEventBus()
 
-    def createExtensionInstance(clazz: Class[_]): Try[BakerExtension] =
-      Try { clazz.getConstructor(classOf[Config]) } match {
-        case Success(constructor) => Try { constructor.newInstance(config).asInstanceOf[BakerExtension] }
-        case Failure(_)           => Try { clazz.newInstance().asInstanceOf[BakerExtension] }
-      }
-
-    val extensions: Seq[BakerExtension] = config.getAs[List[String]]("baker.extensions").getOrElse(List.empty).map { className =>
-      Try { Class.forName(className) }.flatMap (createExtensionInstance).recoverWith {
-        case exception =>
-          log.error(s"Failed to load extension: $className", exception)
-          Failure(exception)
-      }
-    }.collect {
-      case Success(extension) => extension
-    }
-
-    extensionProxy(extensions)
-  }
+//  private val bakerExtension = {
+//
+//    def createExtensionInstance(clazz: Class[_]): Try[BakerExtension] =
+//      Try { clazz.getConstructor(classOf[Config]) } match {
+//        case Success(constructor) => Try { constructor.newInstance(config).asInstanceOf[BakerExtension] }
+//        case Failure(_)           => Try { clazz.newInstance().asInstanceOf[BakerExtension] }
+//      }
+//
+//    val extensions: Seq[BakerExtension] = config.getAs[List[String]]("baker.extensions").getOrElse(List.empty).map { className =>
+//      Try { Class.forName(className) }.flatMap (createExtensionInstance).recoverWith {
+//        case exception =>
+//          log.error(s"Failed to load extension: $className", exception)
+//          Failure(exception)
+//      }
+//    }.collect {
+//      case Success(extension) => extension
+//    }
+//
+//  }
 
   private val configuredEncryption: Encryption = {
     val encryptionEnabled = config.getAs[Boolean]("baker.encryption.enabled").getOrElse(false)
@@ -141,10 +126,11 @@ class Baker()(implicit val actorSystem: ActorSystem) {
         throw new IllegalArgumentException(s"Unsupported actor provider: $other")
     }
 
+
   val recipeManager: ActorRef = bakerActorProvider.createRecipeManagerActor()
 
   val processIndexActor: ActorRef =
-    bakerActorProvider.createProcessIndexActor(interactionManager, bakerExtension, recipeManager)
+    bakerActorProvider.createProcessIndexActor(interactionManager, eventBus, recipeManager)
 
   private val petriNetApi = new ProcessApi(processIndexActor)
 
@@ -221,16 +207,17 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     */
   def bakeAsync(recipeId: String, processId: String, timeout: FiniteDuration = defaultBakeTimeout): Future[ProcessState] = {
 
-    // TODO might want to only call this after a successful bake
-    bakerExtension.onBake(recipeId, processId)
-
     implicit val askTimeout = Timeout(timeout)
 
     val msg = CreateProcess(recipeId, processId)
     val initializeFuture = processIndexActor ? msg
 
     val eventualState: Future[ProcessState] = initializeFuture.map {
-      case msg: Initialized => msg.state.asInstanceOf[ProcessState]
+      case msg: Initialized =>
+
+        // TODO this should only be done when we have an ACK from the process instance actor that it was initialized
+        eventBus.publish(ProcessCreated(System.currentTimeMillis(), recipeId, "", processId))
+        msg.state.asInstanceOf[ProcessState]
       case ProcessAlreadyInitialized(_) =>
         throw new IllegalArgumentException(s"Process with id '$processId' already exists.")
       case NoRecipeFound(_) => throw new IllegalArgumentException(s"Recipe with id '$recipeId' does ont exist.")
@@ -266,7 +253,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       case _ => Baker.eventExtractor.extractEvent(event)
     }
 
-    bakerExtension.onEventReceived(processId, runtimeEvent)
+    eventBus.publish(EventReceived(System.currentTimeMillis(), processId, correlationId, runtimeEvent))
 
     val source = petriNetApi.askAndCollectAll(ProcessEvent(processId, runtimeEvent, correlationId), waitForRetries = true)(timeout)
     new BakerResponse(processId, source)
@@ -434,9 +421,12 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
+//  @deprecated("Use event bus instead", "1.4.0")
   def registerEventListener(listener: EventListener): Boolean =
     doRegisterEventListener(listener, _ => true)
 
+  def registerEventListener(actor: ActorRef): Boolean =
+    eventBus.subscribe(actor, classOf[BakerEvent])
 
   def addInteractionImplementation(implementation: AnyRef) =
     MethodInteractionImplementation.anyRefToInteractionImplementations(implementation).foreach(interactionManager.add)
@@ -446,9 +436,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
   def addInteractionImplementation(interactionImplementation: InteractionImplementation) =
     interactionManager.add(interactionImplementation)
-
-  if (!config.as[Option[Boolean]]("baker.config-file-included").getOrElse(false))
-    throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
 
   /**
     * Attempts to gracefully shutdown the baker system.

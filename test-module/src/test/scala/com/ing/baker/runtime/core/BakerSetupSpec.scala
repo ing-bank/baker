@@ -29,23 +29,11 @@ class BakerSetupSpec extends TestRecipeHelper {
 
       "correcly load extensions when specified in the configuration" in {
 
-        val config =
-          s"""
-             |
-             |include "baker.conf"
-             |
-             |baker.extensions = ["com.ing.baker.runtime.core.TestExtension"]
-         """.stripMargin
-
-        val actorSystem = ActorSystem(
-          "extensionTest",
-          ConfigFactory.parseString(config))
-
         val simpleRecipe = RecipeCompiler.compileRecipe(Recipe("SimpleRecipe")
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent))
 
-        val baker = new Baker()(actorSystem)
+        val baker = new Baker()
 
         baker.addInteractionImplementations(mockImplementations)
 
