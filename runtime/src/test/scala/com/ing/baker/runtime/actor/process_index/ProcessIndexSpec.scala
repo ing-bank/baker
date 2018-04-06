@@ -12,9 +12,8 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol.{AllRecipes, GetAllRecipes}
 import com.ing.baker.runtime.actor.serialization.Encryption
-import com.ing.baker.runtime.core.events.BakerEventBus
 import com.ing.baker.runtime.core.interations.InteractionManager
-import com.ing.baker.runtime.core.{Baker, ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.types.PrimitiveType
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Mockito

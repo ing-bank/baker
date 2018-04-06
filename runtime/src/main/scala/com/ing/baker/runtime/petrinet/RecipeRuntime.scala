@@ -5,7 +5,6 @@ import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.petrinet.runtime._
-import com.ing.baker.runtime.core.events.BakerEventBus
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 

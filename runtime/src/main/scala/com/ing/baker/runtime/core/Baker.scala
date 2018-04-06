@@ -248,8 +248,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       case _ => Baker.eventExtractor.extractEvent(event)
     }
 
-    eventBus.publish(EventReceived(System.currentTimeMillis(), processId, correlationId, runtimeEvent))
-
     val source = petriNetApi.askAndCollectAll(ProcessEvent(processId, runtimeEvent, correlationId), waitForRetries = true)(timeout)
     new BakerResponse(processId, source)
   }

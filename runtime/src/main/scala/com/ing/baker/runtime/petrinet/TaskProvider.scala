@@ -8,7 +8,7 @@ import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place,
 import com.ing.baker.il.{IngredientDescriptor, processIdName}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime._
-import com.ing.baker.runtime.core.events.{BakerEventBus, InteractionCompleted, InteractionFailed, InteractionStarted}
+import com.ing.baker.runtime.core.events.{InteractionCompleted, InteractionFailed, InteractionStarted}
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.types.{PrimitiveValue, Value}
