@@ -20,7 +20,7 @@ import org.scalatest.WordSpecLike
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-object ProcessApiSpec {
+object ProcessEventActorSpec {
   val config: Config = ConfigFactory.parseString(
     """
       |akka.persistence.journal.plugin = "inmemory-journal"
@@ -29,13 +29,13 @@ object ProcessApiSpec {
     """.stripMargin)
 }
 
-class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec", ProcessApiSpec.config)) with WordSpecLike {
+class ProcessEventActorSpec extends TestKit(ActorSystem("ProcessApiSpec", ProcessEventActorSpec.config)) with WordSpecLike {
 
   implicit val materializer = ActorMaterializer()
   implicit val ec: ExecutionContext = system.dispatcher
 
   // Using dilated timeout to take into account the akka.test.timefactor config
-  implicit val akkaTimeout = Timeout(2.seconds.dilated)
+  implicit val timeout = 2.seconds.dilated
 
   "The ProcessApi" should {
 
@@ -43,11 +43,9 @@ class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec", ProcessApiSpe
 
       val processProbe = TestProbe()
 
-      val api = new ProcessApi(processProbe.ref)
-
       val processEventCmd = ProcessEvent("", RuntimeEvent("", Seq.empty), None)
 
-      val source: Source[Any, NotUsed] = api.askAndCollectAll(processEventCmd)
+      val source: Source[Any, NotUsed] = ProcessEventActor.processEvent(processProbe.ref, processEventCmd)
 
       val runSource: TestSubscriber.Probe[Long] = source.map(_.asInstanceOf[TransitionResponse].transitionId).runWith(TestSink.probe)
 
@@ -65,11 +63,9 @@ class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec", ProcessApiSpe
 
       val processProbe = TestProbe()
 
-      val api = new ProcessApi(processProbe.ref)
-
       val processEventCmd = ProcessEvent("", RuntimeEvent("", Seq.empty), None)
 
-      val source: Source[Any, NotUsed] = api.askAndCollectAll(processEventCmd)
+      val source: Source[Any, NotUsed] = ProcessEventActor.processEvent(processProbe.ref, processEventCmd)
 
       val runSource = source.map(_.asInstanceOf[TransitionResponse].transitionId).runWith(TestSink.probe)
 
@@ -94,10 +90,9 @@ class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec", ProcessApiSpe
 
       def check(msg: Any) = {
         val processProbe = TestProbe()
-        val api = new ProcessApi(processProbe.ref)
         val processEventCmd = ProcessEvent("", RuntimeEvent("", Seq.empty), None)
 
-        val source: Source[Any, NotUsed] = api.askAndCollectAll(processEventCmd)
+        val source: Source[Any, NotUsed] = ProcessEventActor.processEvent(processProbe.ref, processEventCmd)
         val runSource: TestSubscriber.Probe[Any] = source.runWith(TestSink.probe)
 
         processProbe.expectMsg(processEventCmd)

@@ -11,4 +11,4 @@ case object ReceivePeriodExpired extends RejectReason
 case object FiringLimitMet extends RejectReason
 case object InvalidEvent extends RejectReason
 
-case class EventRejected(timeStamp: Long, processId: String, correlationId: Option[String], event: RuntimeEvent, reason: RejectReason)
+case class EventRejected(timeStamp: Long, processId: String, correlationId: Option[String], event: RuntimeEvent, reason: RejectReason) extends BakerEvent

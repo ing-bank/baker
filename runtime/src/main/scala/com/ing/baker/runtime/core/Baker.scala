@@ -16,7 +16,7 @@ import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.runtime.EventSourcing.{TransitionFailedEvent, TransitionFiredEvent}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue
 import com.ing.baker.runtime.actor._
-import com.ing.baker.runtime.actor.process_index.ProcessApi
+import com.ing.baker.runtime.actor.process_index.ProcessEventActor
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEvent
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
@@ -24,7 +24,7 @@ import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.core.Baker._
-import com.ing.baker.runtime.core.events.{BakerEvent, EventReceived}
+import com.ing.baker.runtime.core.events.BakerEvent
 import com.ing.baker.runtime.core.interations.{InteractionImplementation, InteractionManager, MethodInteractionImplementation}
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.RecipeRuntime
@@ -129,8 +129,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
   val processIndexActor: ActorRef =
     bakerActorProvider.createProcessIndexActor(interactionManager, recipeManager)
-
-  private val petriNetApi = new ProcessApi(processIndexActor)
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -248,7 +246,11 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       case _ => Baker.eventExtractor.extractEvent(event)
     }
 
-    val source = petriNetApi.askAndCollectAll(ProcessEvent(processId, runtimeEvent, correlationId), waitForRetries = true)(timeout)
+    implicit val implicitTimeout = timeout
+
+    val source = ProcessEventActor.processEvent(
+      processIndexActor, ProcessEvent(processId, runtimeEvent, correlationId), waitForRetries = true)
+
     new BakerResponse(processId, source)
   }
 

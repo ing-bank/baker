@@ -4,21 +4,38 @@ import java.util.concurrent.TimeoutException
 
 import akka.NotUsed
 import akka.actor.{Actor, ActorRef, ActorSystem, Props, ReceiveTimeout}
-import akka.stream.scaladsl.{Source, SourceQueueWithComplete}
 import akka.stream.{Materializer, OverflowStrategy}
+import akka.stream.scaladsl.{Source, SourceQueueWithComplete}
 import akka.util.Timeout
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{AlreadyReceived, TransitionFailed, TransitionFired, TransitionNotEnabled, Uninitialized}
 import com.ing.baker.runtime.core.events
 import com.ing.baker.runtime.core.events.RejectReason
 
 import scala.concurrent.duration.FiniteDuration
 
+object ProcessEventActor {
+
+  /**
+    * Returns a Source of all the messages from a process instance in response to a message.
+    */
+  def processEvent(receiver: ActorRef, cmd: ProcessEvent, waitForRetries: Boolean = false)
+                  (implicit timeout: FiniteDuration, actorSystem: ActorSystem, materializer: Materializer): Source[Any, NotUsed] = {
+
+    implicit val akkaTimeout: Timeout = timeout
+    Source.queue[Any](100, OverflowStrategy.fail).mapMaterializedValue { queue ⇒
+      val sender = actorSystem.actorOf(Props(new ProcessEventActor(cmd, queue, waitForRetries)(timeout, actorSystem)))
+      receiver.tell(cmd, sender)
+      NotUsed.getInstance()
+    }
+  }
+}
+
 /**
- * An actor that pushes all received messages on a SourceQueueWithComplete.
- */
-class QueuePushingActor(cmd: ProcessEvent, queue: SourceQueueWithComplete[Any], waitForRetries: Boolean)(implicit timeout: FiniteDuration, system: ActorSystem) extends Actor {
+  * An actor that pushes all received messages on a SourceQueueWithComplete.
+  */
+class ProcessEventActor(cmd: ProcessEvent, queue: SourceQueueWithComplete[Any], waitForRetries: Boolean)(implicit timeout: FiniteDuration, system: ActorSystem) extends Actor {
   var runningJobs = Set.empty[Long]
 
   context.setReceiveTimeout(timeout)
@@ -59,7 +76,7 @@ class QueuePushingActor(cmd: ProcessEvent, queue: SourceQueueWithComplete[Any], 
 
       runningJobs = runningJobs ++ e.newJobsIds - e.jobId
 
-      stopActorIfDone
+      stopActorIfDone()
 
     case msg @ TransitionFailed(_, _, _, _, _, _, RetryWithDelay(_)) if waitForRetries ⇒
       queue.offer(msg)
@@ -67,7 +84,7 @@ class QueuePushingActor(cmd: ProcessEvent, queue: SourceQueueWithComplete[Any], 
     case msg @ TransitionFailed(jobId, _,  _, _, _, _, _) ⇒
       runningJobs = runningJobs - jobId
       queue.offer(msg)
-      stopActorIfDone
+      stopActorIfDone()
 
     //Akka default cases
     case ReceiveTimeout ⇒
@@ -81,25 +98,9 @@ class QueuePushingActor(cmd: ProcessEvent, queue: SourceQueueWithComplete[Any], 
 
   def stopActor() = context.stop(self)
 
-  def stopActorIfDone: Unit =
+  def stopActorIfDone(): Unit =
     if (runningJobs.isEmpty) {
       queue.complete()
       stopActor()
-    }
-}
-
-/**
- * Contains some methods to interact with a process instance actor.
- */
-class ProcessApi(actor: ActorRef)(implicit actorSystem: ActorSystem, materializer: Materializer) {
-
-  /**
-   * Returns a Source of all the messages from a petri net actor in response to a message.
-   */
-  def askAndCollectAll(cmd: ProcessEvent, waitForRetries: Boolean = false)(implicit timeout: Timeout): Source[Any, NotUsed] =
-    Source.queue[Any](100, OverflowStrategy.fail).mapMaterializedValue { queue ⇒
-      val sender = actorSystem.actorOf(Props(new QueuePushingActor(cmd, queue, waitForRetries)(timeout.duration, actorSystem)))
-      actor.tell(cmd, sender)
-      NotUsed.getInstance()
     }
 }
