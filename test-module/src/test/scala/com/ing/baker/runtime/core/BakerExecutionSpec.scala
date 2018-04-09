@@ -305,8 +305,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
     "notify a registered event listener" in {
 
-      val listener = defaultActorSystem.actorOf(Props(new Actor() {
-        override def receive = {
+      val listener: PartialFunction[BakerEvent, Unit] =  {
           case e @ ProcessCreated(time, recipeId, recipeName, processId) =>
             println(e)
           case e @ EventReceived(time, processId, correlationId, event) =>
@@ -320,7 +319,6 @@ class BakerExecutionSpec extends TestRecipeHelper {
           case e @ InteractionFailed(time, duration, processId, interactionName, throwable) =>
             println(e)
         }
-      }))
 
       val recipe =
         Recipe("EventListenerRecipe")
