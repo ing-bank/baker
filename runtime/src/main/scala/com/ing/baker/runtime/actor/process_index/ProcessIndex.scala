@@ -198,7 +198,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
                 createProcessActor(processId, compiledRecipe).forward(initializeCmd)
                 val actorMetadata = ActorMetadata(recipeId, processId, created, Active)
                 index += processId -> actorMetadata
-                context.system.eventStream.publish(ProcessCreated(System.currentTimeMillis(), "", compiledRecipe.name, processId))
+                context.system.eventStream.publish(ProcessCreated(System.currentTimeMillis(), recipeId, compiledRecipe.name, processId))
 
               case None => sender() ! NoRecipeFound(recipeId)
             }
