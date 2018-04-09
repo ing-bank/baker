@@ -420,8 +420,14 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   def registerEventListener(listener: EventListener): Boolean =
     doRegisterEventListener(listener, _ => true)
 
-  def registerEventListener(actor: ActorRef): Boolean =
-    actorSystem.eventStream.subscribe(actor, classOf[BakerEvent])
+  /**
+    * This registers an actor to
+    *
+    * @param actorRef
+    * @return
+    */
+  def registerEventListener(actorRef: ActorRef): Boolean =
+    actorSystem.eventStream.subscribe(actorRef, classOf[BakerEvent])
 
   def addInteractionImplementation(implementation: AnyRef) =
     MethodInteractionImplementation.anyRefToInteractionImplementations(implementation).foreach(interactionManager.add)

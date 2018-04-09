@@ -55,6 +55,8 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
       // returns a delayed task that will get executed by the baker petrinet runtime
       IO {
 
+
+
         // add MDC values for logging
         MDC.put("processId", processState.processId)
         MDC.put("recipeName", recipeName)
@@ -67,15 +69,19 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
         // create the interaction input
         val input = createInput(interaction, processState)
 
+        val timeStarted = System.currentTimeMillis()
+
         // publish the fact that we started the interaction
-        eventStream.publish(InteractionStarted(System.currentTimeMillis(), processState.processId, interaction.interactionName))
+        eventStream.publish(InteractionStarted(timeStarted, processState.processId, interaction.interactionName))
 
         Try {
           implementation.execute(interaction, input)
         } match {
           case Failure(e) =>
 
-            eventStream.publish(InteractionFailed(System.currentTimeMillis(), processState.processId, interaction.interactionName, e))
+            val timeFailed = System.currentTimeMillis()
+
+            eventStream.publish(InteractionFailed(timeFailed, timeFailed - timeStarted, processState.processId, interaction.interactionName, e))
 
             // remove the MDC values
             MDC.remove("processId")
@@ -103,8 +109,10 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
                 (transformedEvent, transformedEvent.asInstanceOf[Output])
             }
 
+            val timeCompleted = System.currentTimeMillis()
+
             // publish the fact that the interaction completed
-            eventStream.publish(InteractionCompleted(System.currentTimeMillis(), processState.processId, interaction.interactionName, outputEvent))
+            eventStream.publish(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, processState.processId, interaction.interactionName, outputEvent))
 
             // create the output marking for the petri net
             val outputMarking = createProducedMarking(interaction, outAdjacent)(outputEvent)

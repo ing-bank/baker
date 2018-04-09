@@ -13,7 +13,7 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
-import com.ing.baker.runtime.core.events.ProcessCreated
+import com.ing.baker.runtime.core.events.{EventReceived, ProcessCreated}
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.petrinet._
@@ -133,7 +133,6 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
     val processActor = context.actorOf(processActorProps, name = processId)
 
-
     context.watch(processActor)
     processActor
   }
@@ -210,7 +209,13 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
     case ProcessEvent(processId: String, eventToFire: RuntimeEvent, correlationId) =>
       //Forwards the event message to the Actor if its in the Receive period for the compiledRecipe
       def forwardEventIfInReceivePeriod(actorRef: ActorRef, compiledRecipe: CompiledRecipe) = {
-        val cmd = createFireTransitionCmd(compiledRecipe, processId, eventToFire, correlationId)
+
+        def forwardEvent() = {
+          val cmd = createFireTransitionCmd(compiledRecipe, processId, eventToFire, correlationId)
+          context.system.eventStream.publish(EventReceived(System.currentTimeMillis(), processId, correlationId, eventToFire))
+          actorRef.forward(cmd)
+        }
+
         compiledRecipe.eventReceivePeriod match {
           case Some(receivePeriod) =>
             index.get(processId).foreach { p =>
@@ -218,11 +223,11 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
                 sender() ! ReceivePeriodExpired(processId)
               }
               else
-                actorRef.forward(cmd)
+                forwardEvent()
             }
 
           case None =>
-            actorRef.forward(cmd)
+            forwardEvent()
         }
       }
 
