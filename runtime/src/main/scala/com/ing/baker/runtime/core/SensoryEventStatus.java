@@ -1,41 +1,31 @@
 package com.ing.baker.runtime.core;
 
 /**
- *  Describes how baker processed an event.
+ * A status object indicating how baker reacted to an event it received.
  */
 public enum SensoryEventStatus {
-    
     /**
-     * The event was received.
+     * The event was received and accepted.
      */
     Received,
-
     /**
-     * The event was received and all subsequent interactions processed.
+     * The event was received and all resulting actions were executed.
      */
     Completed,
-
     /**
-     *  The event was not accepted because the firing limit
-     *  of that event was met.
+     * The firing limit, the number of times this event may fire, was met.
      */
     FiringLimitMet,
-
     /**
-     * The event was not accepted because the receive period
-     * in which events can be received for the recipe was passed.
+     * The receive period in which events may be accepted was expired for this process instance.
      */
     ReceivePeriodExpired,
-
     /**
-     * The event was not accepted because it was already
-     * received before.
+     * An event with the same correlation id was already received.
      */
     AlreadyReceived,
-
     /**
-     * The event was not accepted because the process
-     * was deleted.
+     * The process instance was deleted.
      */
     ProcessDeleted
 }
