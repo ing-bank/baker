@@ -14,15 +14,15 @@ object JobExecutor {
   /**
    * Returns an Job -> IO[TransitionEvent]
    */
-  def apply[S, P[_], T[_, _]](taskProvider: TransitionTaskProvider[S, P, T],
-            exceptionHandlerFn: T[_, _] ⇒ TransitionExceptionHandler[P])
-           (topology: PetriNet[P[_], T[_, _]]): Job[P, T, S, _] ⇒ IO[TransitionEvent[T]] = {
+  def apply[S, P[_], T[_], E](taskProvider: TransitionTaskProvider[S, P, T],
+            exceptionHandlerFn: T[_] ⇒ TransitionExceptionHandler[P])
+           (topology: PetriNet[P[_], T[_]]): Job[P, T, S, E] ⇒ IO[TransitionEvent[T]] = {
 
-    val cachedTransitionTasks: Map[T[_, _], _] =
-      topology.transitions.map(t ⇒ t -> taskProvider.apply[Any, Any](topology, t.asInstanceOf[T[Any, Any]])).toMap
+    val cachedTransitionTasks: Map[T[_], _] =
+      topology.transitions.map(t ⇒ t -> taskProvider.apply[Any, Any](topology, t.asInstanceOf[T[Any]])).toMap
 
-    def transitionFunction[Input, Output](t: T[Input, Output]) =
-      cachedTransitionTasks(t).asInstanceOf[TransitionTask[P, Input, Output, S]]
+    def transitionFunction[Input](t: T[Input]) =
+      cachedTransitionTasks(t).asInstanceOf[TransitionTask[P, Input, E, S]]
 
     def exceptionStackTrace(e: Throwable): String = {
       val sw = new StringWriter()
@@ -33,7 +33,7 @@ object JobExecutor {
     job ⇒ {
 
       val startTime = System.currentTimeMillis()
-      val transition = job.transition.asInstanceOf[T[Any, Any]]
+      val transition = job.transition.asInstanceOf[T[Any]]
 
       val jobIO =
         try {

@@ -16,7 +16,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import scala.Option;
-import scala.collection.immutable.List;
 import scala.collection.immutable.List$;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -54,7 +53,7 @@ public class JBakerTest {
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
         String requestId = UUID.randomUUID().toString();
 
-        jBaker.register(new TestSubscriber());
+//        jBaker.register(new TestSubscriber());
         jBaker.bake(recipeId, requestId);
         jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
     }

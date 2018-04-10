@@ -20,7 +20,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
 
   val log = LoggerFactory.getLogger(classOf[TaskProvider])
 
-  override def apply[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _]], t: Transition[Input, Output]): TransitionTask[Place, Input, Output, ProcessState] = {
+  override def apply[Input, Output](petriNet: PetriNet[Place[_], Transition[_]], t: Transition[Input]): TransitionTask[Place, Input, Output, ProcessState] = {
     t match {
       case interaction: InteractionTransition[_] =>
         interactionTransitionTask[AnyRef, Input, Output](interaction.asInstanceOf[InteractionTransition[AnyRef]], petriNet.outMarking(interaction))
@@ -29,10 +29,10 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
     }
   }
 
-  def passThroughTransitionTask[Input, Output](petriNet: PetriNet[Place[_], Transition[_, _]], t: Transition[Input, Output]): TransitionTask[Place, Input, Output, ProcessState] =
+  def passThroughTransitionTask[Input, Output](petriNet: PetriNet[Place[_], Transition[_]], t: Transition[Input]): TransitionTask[Place, Input, Output, ProcessState] =
     (_, _, _) => IO.pure((toMarking[Place](petriNet.outMarking(t)), null.asInstanceOf[Output]))
 
-  def eventTransitionTask[RuntimeEvent, Input, Output](petriNet: PetriNet[Place[_], Transition[_, _]], eventTransition: EventTransition): TransitionTask[Place, Input, Output, ProcessState] =
+  def eventTransitionTask[RuntimeEvent, Input, Output](petriNet: PetriNet[Place[_], Transition[_]], eventTransition: EventTransition): TransitionTask[Place, Input, Output, ProcessState] =
     (_, _, input) => IO.pure((toMarking[Place](petriNet.outMarking(eventTransition)), input.asInstanceOf[Output]))
 
   // function that (optionally) transforms the output event using the event output transformers
@@ -60,7 +60,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
         MDC.put("recipeName", recipeName)
 
         // obtain the interaction implementation
-        val implementation = interactionManager.get(interaction).getOrElse {
+        val implementation = interactionManager.getImplementation(interaction).getOrElse {
           throw new FatalInteractionException("No implementation available for interaction")
         }
 

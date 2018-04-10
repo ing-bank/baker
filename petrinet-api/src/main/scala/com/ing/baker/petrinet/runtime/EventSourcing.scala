@@ -8,17 +8,17 @@ object EventSourcing {
 
   sealed trait Event
 
-  sealed trait TransitionEvent[T[_, _]] extends Event {
+  sealed trait TransitionEvent[T[_]] extends Event {
     val jobId: Long
-    val transition: T[_, _]
+    val transition: T[_]
   }
 
   /**
    * An event describing the fact that a transition has fired in the petri net process.
    */
-  case class TransitionFiredEvent[P[_], T[_, _], E](
+  case class TransitionFiredEvent[P[_], T[_], E](
     override val jobId: Long,
-    override val transition: T[_, _],
+    override val transition: T[_],
     correlationId: Option[String],
     timeStarted: Long,
     timeCompleted: Long,
@@ -29,9 +29,9 @@ object EventSourcing {
   /**
    * An event describing the fact that a transition failed to fire.
    */
-  case class TransitionFailedEvent[P[_], T[_, _], I](
+  case class TransitionFailedEvent[P[_], T[_], I](
     override val jobId: Long,
-    override val transition: T[_, _],
+    override val transition: T[_],
     correlationId: Option[String],
     timeStarted: Long,
     timeFailed: Long,
@@ -47,15 +47,15 @@ object EventSourcing {
     marking: Marking[P],
     state: Any) extends Event
 
-  def apply[P[_], T[_, _], S, E](sourceFn: T[_, _] ⇒ EventSource[S, E]): Instance[P, T, S] ⇒ Event ⇒ Instance[P, T, S] = instance ⇒ {
+  def apply[P[_], T[_], S, E](sourceFn: T[_] ⇒ EventSource[S, E]): Instance[P, T, S, E] ⇒ Event ⇒ Instance[P, T, S, E] = instance ⇒ {
     case InitializedEvent(initialMarking, initialState) ⇒
-      Instance[P, T, S](instance.process, 1, initialMarking.asInstanceOf[Marking[P]], initialState.asInstanceOf[S], Map.empty, Set.empty)
+      Instance[P, T, S, E](instance.process, 1, initialMarking.asInstanceOf[Marking[P]], initialState.asInstanceOf[S], Map.empty, Set.empty)
     case e: TransitionFiredEvent[_, _, _] ⇒
 
-      val transition = e.transition.asInstanceOf[T[Any, E]]
+      val transition = e.transition.asInstanceOf[T[Any]]
       val newState = sourceFn(transition)(instance.state)(e.output.asInstanceOf[E])
 
-      instance.copy[P, T, S](
+      instance.copy[P, T, S, E](
         sequenceNr = instance.sequenceNr + 1,
         marking = (instance.marking |-| e.consumed.asInstanceOf[Marking[P]]) |+| e.produced.asInstanceOf[Marking[P]],
         receivedCorrelationIds = instance.receivedCorrelationIds ++ e.correlationId,
@@ -63,12 +63,12 @@ object EventSourcing {
         jobs = instance.jobs - e.jobId
       )
     case e: TransitionFailedEvent[_, _, _] ⇒
-      val transition = e.transition.asInstanceOf[T[Any, E]]
+      val transition = e.transition.asInstanceOf[T[Any]]
       val job = instance.jobs.getOrElse(e.jobId, {
         Job[P, T, S, E](e.jobId, e.correlationId, instance.state, transition, e.consume.asInstanceOf[Marking[P]], e.input, None)
       })
       val failureCount = job.failureCount + 1
-      val updatedJob = job.copy(failure = Some(ExceptionState(e.timeFailed, failureCount, e.failureReason, e.exceptionStrategy)))
-      instance.copy[P, T, S](jobs = instance.jobs + (job.id -> updatedJob))
+      val updatedJob: Job[P, T, S, E] = job.copy(failure = Some(ExceptionState(e.timeFailed, failureCount, e.failureReason, e.exceptionStrategy)))
+      instance.copy[P, T, S, E](jobs = instance.jobs + (job.id -> updatedJob))
   }
 }

@@ -7,18 +7,18 @@ import scalax.collection.immutable.Graph
 
 package object petrinet {
 
-  type RecipePetriNet = PetriNet[Place[_], Transition[_, _]]
+  type RecipePetriNet = PetriNet[Place[_], Transition[_]]
 
-  def arc(t: Transition[_, _], p: Place[_], weight: Long): Arc = WLDiEdge[Node, Edge[Any]](Right(t), Left(p))(weight, Edge[Any](None))
+  def arc(t: Transition[_], p: Place[_], weight: Long): Arc = WLDiEdge[Node, Edge[Any]](Right(t), Left(p))(weight, Edge[Any](None))
 
-  def arc[C](p: Place[C], t: Transition[_, _], weight: Long, eventFilter: Option[String] = None): Arc = {
+  def arc[C](p: Place[C], t: Transition[_], weight: Long, eventFilter: Option[String] = None): Arc = {
     WLDiEdge[Node, Edge[C]](Left(p), Right(t))(weight, Edge[C](eventFilter))
   }
 
   /**
     * Type alias for the node type of the scalax.collection.Graph backing the petri net.
     */
-  type Node = Either[Place[_], Transition[_, _]]
+  type Node = Either[Place[_], Transition[_]]
 
   /**
     * Type alias for the edge type of the scalax.collection.Graph backing the petri net.
@@ -31,7 +31,7 @@ package object petrinet {
 
   implicit def placeLabel[C](p: Place[C]): Label = Label(p.label)
 
-  implicit def transitionLabeler(t: Transition[_, _]): Label = Label(t.label)
+  implicit def transitionLabeler(t: Transition[_]): Label = Label(t.label)
 
   implicit class LabeledOps[T : Labeled](seq: Iterable[T]) {
     def findByLabel(label: String): Option[T] = seq.find(e ⇒ implicitly[Labeled[T]].apply(e).value == label)
@@ -40,7 +40,7 @@ package object petrinet {
 
   implicit def placeIdentifier(p: Place[_]): Id = Id(p.id)
 
-  implicit def transitionIdentifier(t: Transition[_, _]): Id = Id(t.id)
+  implicit def transitionIdentifier(t: Transition[_]): Id = Id(t.id)
 
   def createPetriNet(params: Arc*): RecipePetriNet = {
     val petriNet = new ScalaGraphPetriNet(Graph(params: _*))

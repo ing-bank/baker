@@ -50,8 +50,8 @@ object Baker {
   /**
     * Translates a petri net TransitionFiredEvent to an optional RuntimeEvent
     */
-  def toRuntimeEvent[P[_], T[_, _], E](event: TransitionFiredEvent[P, T, E]): Option[RuntimeEvent] = {
-    val t = event.transition.asInstanceOf[Transition[_, _]]
+  def toRuntimeEvent[P[_], T[_], E](event: TransitionFiredEvent[P, T, E]): Option[RuntimeEvent] = {
+    val t = event.transition.asInstanceOf[Transition[_]]
     if ((t.isSensoryEvent || t.isInteraction) && event.output.isInstanceOf[RuntimeEvent])
       Some(event.output.asInstanceOf[RuntimeEvent])
     else
@@ -59,7 +59,7 @@ object Baker {
   }
 
   private def checkIfValidImplementationsProvided(interactionManager: InteractionManager, actions: Set[InteractionTransition[_]]): Set[String] = {
-    actions.filterNot(interactionManager.hasCompatibleImplementation)
+    actions.filterNot(interactionManager.getImplementation(_).isDefined)
       .map(s => s"No implementation provided for interaction: ${s.originalInteractionName}")
   }
 }
@@ -438,13 +438,13 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
 
   def addInteractionImplementation(implementation: AnyRef) =
-    MethodInteractionImplementation.anyRefToInteractionImplementations(implementation).foreach(interactionManager.add)
+    MethodInteractionImplementation.anyRefToInteractionImplementations(implementation).foreach(interactionManager.addImplementation)
 
   def addInteractionImplementations(implementations: Seq[AnyRef]) =
     implementations.foreach(addInteractionImplementation)
 
   def addInteractionImplementation(interactionImplementation: InteractionImplementation) =
-    interactionManager.add(interactionImplementation)
+    interactionManager.addImplementation(interactionImplementation)
 
   /**
     * Attempts to gracefully shutdown the baker system.

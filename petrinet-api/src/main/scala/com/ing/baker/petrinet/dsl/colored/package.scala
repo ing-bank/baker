@@ -10,7 +10,7 @@ package object colored {
   /**
    * Type alias for the node type of the scalax.collection.Graph backing the petri net.
    */
-  type Node = Either[Place[_], Transition[_, _]]
+  type Node = Either[Place[_], Transition[_]]
 
   /**
    * Type alias for the edge type of the scalax.collection.Graph backing the petri net.
@@ -20,23 +20,23 @@ package object colored {
   /**
    * Type alias for a colored petri net.
    */
-  type ColoredPetriNet = PetriNet[Place[_], Transition[_, _]]
+  type ColoredPetriNet = PetriNet[Place[_], Transition[_]]
 
   implicit def placeIdentifier(p: Place[_]): Id = Id(p.id)
 
-  implicit def transitionIdentifier(t: Transition[_, _]): Id = Id(t.id)
+  implicit def transitionIdentifier(t: Transition[_]): Id = Id(t.id)
 
-  implicit class TransitionDSL[Input, Output, State](t: Transition[Input, Output]) {
+  implicit class TransitionDSL[Input, Output, State](t: Transition[Input]) {
     def ~>(p: Place[_], weight: Long = 1): Arc = arc(t, p, weight)
   }
 
   implicit class PlaceDSL[C](p: Place[C]) {
-    def ~>(t: Transition[_, _], weight: Long = 1): Arc = arc(p, t, weight)
+    def ~>(t: Transition[_], weight: Long = 1): Arc = arc(p, t, weight)
   }
 
-  def arc(t: Transition[_, _], p: Place[_], weight: Long): Arc = WLDiEdge[Node, String](Right(t), Left(p))(weight, "")
+  def arc(t: Transition[_], p: Place[_], weight: Long): Arc = WLDiEdge[Node, String](Right(t), Left(p))(weight, "")
 
-  def arc[C](p: Place[C], t: Transition[_, _], weight: Long): Arc = WLDiEdge[Node, String](Left(p), Right(t))(weight, "")
+  def arc[C](p: Place[C], t: Transition[_], weight: Long): Arc = WLDiEdge[Node, String](Left(p), Right(t))(weight, "")
 
   def createPetriNet[S](params: Arc*): ColoredPetriNet = {
     val petriNet = new ScalaGraphPetriNet(Graph(params: _*))

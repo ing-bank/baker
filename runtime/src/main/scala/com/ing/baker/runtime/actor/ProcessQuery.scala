@@ -13,22 +13,22 @@ import com.ing.baker.runtime.actor.serialization.{Encryption, ObjectSerializer}
 
 object ProcessQuery {
 
-  def eventsForInstance[P[_], T[_, _], S, E](processTypeName: String,
+  def eventsForInstance[P[_], T[_], S, E](processTypeName: String,
     processId: String,
-    topology: PetriNet[P[_], T[_, _]],
+    topology: PetriNet[P[_], T[_]],
     encryption: Encryption = NoEncryption,
     readJournal: CurrentEventsByPersistenceIdQuery,
-    eventSourceFn: T[_, _] ⇒ (S ⇒ E ⇒ S))(implicit actorSystem: ActorSystem,
+    eventSourceFn: T[_] ⇒ (S ⇒ E ⇒ S))(implicit actorSystem: ActorSystem,
       placeIdentifier: Identifiable[P[_]],
-      transitionIdentifier: Identifiable[T[_, _]]): Source[(Instance[P, T, S], Event), NotUsed] = {
+      transitionIdentifier: Identifiable[T[_]]): Source[(Instance[P, T, S, E], Event), NotUsed] = {
 
-    val serializer = new ProcessInstanceSerialization[P, T, S](new ObjectSerializer(actorSystem, encryption))
+    val serializer = new ProcessInstanceSerialization[P, T, S, E](new ObjectSerializer(actorSystem, encryption))
 
     val persistentId = ProcessInstance.processId2PersistenceId(processTypeName, processId)
     val src = readJournal.currentEventsByPersistenceId(persistentId, 0, Long.MaxValue)
     val eventSource = EventSourcing.apply[P, T, S, E](eventSourceFn)
 
-    src.scan[(Instance[P, T, S], Event)]((Instance.uninitialized[P, T, S](topology), null.asInstanceOf[Event])) {
+    src.scan[(Instance[P, T, S, E], Event)]((Instance.uninitialized[P, T, S, E](topology), null.asInstanceOf[Event])) {
       case ((instance, prev), e) ⇒
         val serializedEvent = e.event.asInstanceOf[AnyRef]
         val deserializedEvent = serializer.deserializeEvent(serializedEvent)(instance)
