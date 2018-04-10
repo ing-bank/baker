@@ -55,8 +55,6 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
       // returns a delayed task that will get executed by the baker petrinet runtime
       IO {
 
-
-
         // add MDC values for logging
         MDC.put("processId", processState.processId)
         MDC.put("recipeName", recipeName)

@@ -43,6 +43,23 @@ public class JBakerTest {
     public final ExpectedException exception = ExpectedException.none();
 
     @Test
+    public void shouldRegisterSubscribedMethods() throws BakerException, TimeoutException {
+
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(setupSimpleRecipe());
+
+        JBaker jBaker = new JBaker();
+        jBaker.addImplementations(implementationsList);
+        String recipeId = jBaker.addRecipe(compiledRecipe);
+
+        assertEquals(compiledRecipe.getValidationErrors().size(), 0);
+        String requestId = UUID.randomUUID().toString();
+
+        jBaker.register(new TestSubscriber());
+        jBaker.bake(recipeId, requestId);
+        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
+    }
+
+    @Test
     public void shouldSetupJBakerWithDefaultActorFramework() throws BakerException, TimeoutException {
 
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(setupSimpleRecipe());

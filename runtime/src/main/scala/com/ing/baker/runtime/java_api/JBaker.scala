@@ -1,17 +1,23 @@
 package com.ing.baker.runtime.java_api
 
+import java.lang.reflect.Method
 import java.util.concurrent.{TimeUnit, TimeoutException}
 import java.util.{Collections, UUID}
 
 import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core._
+import com.ing.baker.runtime.core.events.{BakerEvent, Subscribe}
 import com.ing.baker.types.Value
+import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
+import scala.util.{Failure, Success, Try}
 
 class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRef]) {
+
+  private final val log = LoggerFactory.getLogger(classOf[JBaker])
 
   private implicit class DurationConversions(timeout: java.time.Duration) {
     def toScala: FiniteDuration =
@@ -552,6 +558,54 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @param listener The listener to subscribe to events.
     */
   def registerEventListener(listener: EventListener): Unit = baker.registerEventListener(listener)
+
+
+  /**
+    * Registers a listener
+    *
+    * @param listener
+    * @return
+    */
+  def register(listener: AnyRef) = {
+
+    val subsribeMethods = listener.getClass.getMethods.toList.filter { m =>
+
+      if (m.getAnnotationsByType(classOf[Subscribe]).nonEmpty) {
+        if (m.getParameterTypes.size != 1) {
+          log.warn("@Subscribe method should have exactly 1 parameter")
+          false
+        }
+        else {
+          val parameterClass = m.getParameterTypes()(0)
+
+          if (!classOf[BakerEvent].isAssignableFrom(parameterClass)) {
+            log.warn(s"$parameterClass does not extend from BakerEvent")
+            false
+          }
+          else
+            true
+        }
+      }
+      else
+        false
+    }
+
+    val mappedMethods = subsribeMethods.foldLeft(Map.empty[Class[_], List[Method]]) {
+      case (map, method) =>
+        val parameterClass = method.getParameterTypes()(0)
+        val previous = map.getOrElse(parameterClass, List.empty)
+        map + (parameterClass -> (previous :+ method))
+    }
+
+    val listenerFunction: PartialFunction[BakerEvent, Unit] = {
+      case e: BakerEvent if mappedMethods.contains(e.getClass) =>
+        mappedMethods(e.getClass()).foreach { m =>
+          m.invoke(listener, e)
+        }
+    }
+
+    baker.registerEventListener(listenerFunction)
+  }
 
   /**
     * Returns the visual state of the recipe in dot format

@@ -430,7 +430,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
     val listenerActor = actorSystem.actorOf(Props(new Actor() {
       override def receive = {
-        case e: BakerEvent => pf(e)
+        case e: BakerEvent => pf.lift(e)
       }
     }))
     actorSystem.eventStream.subscribe(listenerActor, classOf[BakerEvent])
