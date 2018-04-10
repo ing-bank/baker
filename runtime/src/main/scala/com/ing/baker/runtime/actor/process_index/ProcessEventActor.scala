@@ -53,22 +53,22 @@ class ProcessEventActor(cmd: ProcessEvent, queue: SourceQueueWithComplete[Any], 
 
   override def receive: Receive = {
     case msg: ReceivePeriodExpired ⇒
-      rejectedWith(msg, events.ReceivePeriodExpired)
+      rejectedWith(msg, RejectReason.ReceivePeriodExpired)
 
     case msg: InvalidEvent =>
-      rejectedWith(msg, events.InvalidEvent)
+      rejectedWith(msg, RejectReason.InvalidEvent)
 
     case msg: ProcessDeleted =>
-      rejectedWith(msg, events.ProcessDeleted)
+      rejectedWith(msg, RejectReason.ProcessDeleted)
 
     case msg: TransitionNotEnabled =>
-      rejectedWith(msg, events.FiringLimitMet)
+      rejectedWith(msg, RejectReason.FiringLimitMet)
 
     case msg: AlreadyReceived ⇒
-      rejectedWith(msg, events.AlreadReceived)
+      rejectedWith(msg, RejectReason.AlreadReceived)
 
     case msg @ (_: ProcessUninitialized | _: Uninitialized) =>
-      rejectedWith(msg, events.NoSuchProcess)
+      rejectedWith(msg, RejectReason.NoSuchProcess)
 
     //Messages from the ProcessInstances
     case e: TransitionFired ⇒
