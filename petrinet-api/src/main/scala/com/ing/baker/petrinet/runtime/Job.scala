@@ -6,11 +6,11 @@ import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
 /**
  * A Job encapsulates all the parameters that make a firing transition in a petri net.
  */
-case class Job[P[_], T[_, _], S, E](
+case class Job[P[_], T[_], S, E](
     id: Long,
     correlationId: Option[String],
     processState: S,
-    transition: T[_, E],
+    transition: T[_],
     consume: Marking[P],
     input: Any,
     failure: Option[ExceptionState] = None) {

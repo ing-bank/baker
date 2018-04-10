@@ -6,27 +6,27 @@ import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.{EventSourcing, Instance}
 import com.ing.baker.runtime.actor.serialization.{Encryption, ObjectSerializer}
 
-abstract class ProcessInstanceRecovery[P[_], T[_,_], S, E](
-     val topology: PetriNet[P[_], T[_,_]],
+abstract class ProcessInstanceRecovery[P[_], T[_], S, E](
+     val topology: PetriNet[P[_], T[_]],
      encryption: Encryption,
-     eventSourceFn: T[_,_] => (S => E => S)) extends PersistentActor {
+     eventSourceFn: T[_] => (S => E => S)) extends PersistentActor {
 
   implicit val system = context.system
   implicit val placeIdentifier: Identifiable[P[_]]
-  implicit val transitionIdentifier: Identifiable[T[_,_]]
+  implicit val transitionIdentifier: Identifiable[T[_]]
 
   val eventSource = EventSourcing.apply[P, T, S, E](eventSourceFn)
 
-  val serializer = new ProcessInstanceSerialization[P, T, S](new ObjectSerializer(system, encryption))
+  val serializer = new ProcessInstanceSerialization[P, T, S, E](new ObjectSerializer(system, encryption))
 
-  def onRecoveryCompleted(state: Instance[P, T, S])
+  def onRecoveryCompleted(state: Instance[P, T, S, E])
 
-  def persistEvent[O, E <: Event](instance: Instance[P, T, S], e: E)(fn: E => O): Unit = {
+  def persistEvent[O](instance: Instance[P, T, S, E], e: Event)(fn: Event => O): Unit = {
     val serializedEvent = serializer.serializeEvent(e)(instance)
     persist(serializedEvent) { persisted => fn(e) }
   }
 
-  private var recoveringState: Instance[P, T, S] = Instance.uninitialized[P, T, S](topology)
+  private var recoveringState: Instance[P, T, S, E] = Instance.uninitialized[P, T, S, E](topology)
 
   private def applyToRecoveringState(e: AnyRef) = {
     val deserializedEvent = serializer.deserializeEvent(e)(recoveringState)

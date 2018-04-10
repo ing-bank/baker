@@ -29,7 +29,7 @@ package object il {
     def isEmptyEventIngredient: Boolean = place.placeType == EmptyEventIngredientPlace
   }
 
-  implicit class TransitionAdditions(transition: Transition[_, _]) {
+  implicit class TransitionAdditions(transition: Transition[_]) {
 
     def isInteraction: Boolean = PartialFunction.cond(transition) {
       case t: InteractionTransition[_] => t.actionType == InteractionAction

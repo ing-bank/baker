@@ -11,7 +11,7 @@ import scalax.collection.io.dot.implicits._
 
 object RecipeVisualizer {
 
-  type RecipePetriNetGraph = BiPartiteGraph[Place[_], Transition[_, _], WLDiEdge]
+  type RecipePetriNetGraph = BiPartiteGraph[Place[_], Transition[_], WLDiEdge]
 
   private val ingredientAttributes: List[DotAttr] = List(
     DotAttr("shape", "circle"),
@@ -104,7 +104,7 @@ object RecipeVisualizer {
     DotAttr("pad", 0.2D)
   )
 
-  private def nodeLabelFn: Either[Place[_], Transition[_, _]] ⇒ String = {
+  private def nodeLabelFn: Either[Place[_], Transition[_]] ⇒ String = {
     case Left(place) if place.isEmptyEventIngredient ⇒ s"empty:${place.label}"
     case Left(place) ⇒ place.label
     case Right(transition) if transition.isMultiFacilitatorTransition ⇒ s"multi:${transition.label}"
@@ -205,5 +205,5 @@ object RecipeVisualizer {
     generateDot(compiledRecipe.petriNet.innerGraph, filter, eventNames, ingredientNames)
 
   def visualisePetrinetOfCompiledRecipe(petriNet: RecipePetriNet): String =
-    GraphDot.generateDot(petriNet.innerGraph, PetriNetDot.petriNetTheme[Place[_], Transition[_, _]])
+    GraphDot.generateDot(petriNet.innerGraph, PetriNetDot.petriNetTheme[Place[_], Transition[_]])
 }

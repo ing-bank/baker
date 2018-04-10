@@ -24,7 +24,7 @@ package object runtime {
    * @tparam Output The output emitted by the transition.
    * @tparam State  The state the transition closes over.
    */
-  type TransitionTask[P[_], Input, Output, State] = (Marking[P], State, Input) ⇒ IO[(Marking[P], Output)]
+  type TransitionTask[P[_], Input, E, State] = (Marking[P], State, Input) ⇒ IO[(Marking[P], E)]
 
   /**
    * An event sourcing function associated with a transition

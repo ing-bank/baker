@@ -7,5 +7,5 @@ case class StateTransition[S, E](override val id: Long,
     override val label: String,
     override val isAutomated: Boolean,
     override val exceptionStrategy: TransitionExceptionHandler[Place],
-    produceEvent: S ⇒ IO[E]) extends Transition[Unit, E] {
+    produceEvent: S ⇒ IO[E]) extends Transition[Unit] {
 }

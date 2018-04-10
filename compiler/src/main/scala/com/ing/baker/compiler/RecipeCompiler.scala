@@ -27,8 +27,8 @@ object RecipeCompiler {
 
   private def buildEventAndPreconditionArcs(
                                              interaction: InteractionDescriptor,
-                                             preconditionTransition: String => Option[Transition[_, _]],
-                                             interactionTransition: String => Option[Transition[_, _]]): (Seq[Arc], Seq[String]) = {
+                                             preconditionTransition: String => Option[Transition[_]],
+                                             interactionTransition: String => Option[Transition[_]]): (Seq[Arc], Seq[String]) = {
 
     //Find the event in available events
 
@@ -45,8 +45,8 @@ object RecipeCompiler {
 
   private def buildEventORPreconditionArcs(
                                             interaction: InteractionDescriptor,
-                                            preconditionTransition: String => Option[Transition[_, _]],
-                                            interactionTransition: String => Option[Transition[_, _]]): (Seq[Arc], Seq[String]) = {
+                                            preconditionTransition: String => Option[Transition[_]],
+                                            interactionTransition: String => Option[Transition[_]]): (Seq[Arc], Seq[String]) = {
 
     interaction.requiredOneOfEvents.toSeq.zipWithIndex.map { case (orGroup: Set[String], index: Int) =>
       // only one `Place` for all the OR events
@@ -64,8 +64,8 @@ object RecipeCompiler {
   private def buildEventPreconditionArcs(
                                           eventName: String,
                                           preconditionPlace: Place[_],
-                                          preconditionTransition: String => Option[Transition[_, _]],
-                                          interactionTransition: Transition[_, _]): (Seq[Arc], Seq[String]) = {
+                                          preconditionTransition: String => Option[Transition[_]],
+                                          interactionTransition: Transition[_]): (Seq[Arc], Seq[String]) = {
 
     val eventTransition = preconditionTransition(eventName)
 
@@ -85,7 +85,7 @@ object RecipeCompiler {
   // the (possible) event output arcs / places
   private def interactionEventOutputArc(interaction: InteractionTransition[_],
                                         events: Seq[EventDescriptor],
-                                        findInternalEventByEvent: EventDescriptor => Option[Transition[_, _]]): Seq[Arc] = {
+                                        findInternalEventByEvent: EventDescriptor => Option[Transition[_]]): Seq[Arc] = {
     val resultPlace = createPlace(label = interaction.label, placeType = InteractionEventOutputPlace)
     if (interaction.eventsToFire.nonEmpty) {
       val eventArcs = events.map { event =>
@@ -108,7 +108,7 @@ object RecipeCompiler {
     */
   private def buildInteractionInputArcs(
                                          t: InteractionTransition[_],
-                                         multipleConsumerFacilitatorTransitions: Seq[Transition[_, _]],
+                                         multipleConsumerFacilitatorTransitions: Seq[Transition[_]],
                                          ingredientsWithMultipleConsumers: Map[String, Seq[InteractionTransition[_]]]): Seq[Arc] = {
 
     val (fieldNamesWithPrefixMulti, fieldNamesWithoutPrefix) =
@@ -136,14 +136,14 @@ object RecipeCompiler {
   }
 
   private def buildInteractionOutputArcs(t: InteractionTransition[_],
-                                         findInternalEventByEvent: EventDescriptor => Option[Transition[_, _]]): Seq[Arc] = {
+                                         findInternalEventByEvent: EventDescriptor => Option[Transition[_]]): Seq[Arc] = {
     interactionEventOutputArc(t, t.eventsToFire, findInternalEventByEvent)
   }
 
   private def buildInteractionArcs(
-                                    multipleOutputFacilitatorTransitions: Seq[Transition[_, _]],
+                                    multipleOutputFacilitatorTransitions: Seq[Transition[_]],
                                     placeNameWithDuplicateTransitions: Map[String, Seq[InteractionTransition[_]]],
-                                    findInternalEventByEvent: EventDescriptor => Option[Transition[_, _]])(
+                                    findInternalEventByEvent: EventDescriptor => Option[Transition[_]])(
                                     t: InteractionTransition[_]): Seq[Arc] = {
 
     buildInteractionInputArcs(
@@ -252,7 +252,7 @@ object RecipeCompiler {
       getIngredientsWithMultipleConsumers(allInteractionTransitions)
 
     // Add one new transition for each duplicate input (the newly added one in the image above)
-    val multipleConsumerFacilitatorTransitions: Seq[Transition[_, _]] =
+    val multipleConsumerFacilitatorTransitions: Seq[Transition[_]] =
       ingredientsWithMultipleConsumers.keys
         .map(name => MultiFacilitatorTransition(label = name))
         .toSeq
@@ -276,7 +276,7 @@ object RecipeCompiler {
       ++ internalEventArcs
       ++ multipleOutputFacilitatorArcs)
 
-    val petriNet: ScalaGraphPetriNet[Place[_], Transition[_, _]] = new ScalaGraphPetriNet(Graph(arcs: _*))
+    val petriNet: ScalaGraphPetriNet[Place[_], Transition[_]] = new ScalaGraphPetriNet(Graph(arcs: _*))
 
     val initialMarking: Marking[Place] = petriNet.places.collect {
       case p@Place(_, FiringLimiterPlace(n)) => p -> Map((null, n))
@@ -297,7 +297,7 @@ object RecipeCompiler {
   def compileRecipe(recipe: Recipe): CompiledRecipe = compileRecipe(recipe, ValidationSettings.defaultValidationSettings)
 
   private def getMultiTransition(internalRepresentationName: String,
-                                 transitions: Seq[Transition[_, _]]): Transition[_, _] = {
+                                 transitions: Seq[Transition[_]]): Transition[_] = {
     transitions
       .find(t => t.label.equals(internalRepresentationName))
       .getOrElse(throw new NoSuchElementException(s"No multi transition found with name $internalRepresentationName"))

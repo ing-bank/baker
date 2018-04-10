@@ -49,8 +49,8 @@ object Baker {
   /**
     * Translates a petri net TransitionFiredEvent to an optional RuntimeEvent
     */
-  def toRuntimeEvent[P[_], T[_, _], E](event: TransitionFiredEvent[P, T, E]): Option[RuntimeEvent] = {
-    val t = event.transition.asInstanceOf[Transition[_, _]]
+  def toRuntimeEvent[P[_], T[_], E](event: TransitionFiredEvent[P, T, E]): Option[RuntimeEvent] = {
+    val t = event.transition.asInstanceOf[Transition[_]]
     if ((t.isSensoryEvent || t.isInteraction) && event.output.isInstanceOf[RuntimeEvent])
       Some(event.output.asInstanceOf[RuntimeEvent])
     else

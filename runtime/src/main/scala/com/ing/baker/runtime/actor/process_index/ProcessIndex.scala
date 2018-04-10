@@ -59,14 +59,14 @@ object ProcessIndex {
   case class ActorCreated(recipeId: String, processId: String, createdDateTime: Long) extends InternalBakerEvent
 
 
-  def transitionForRuntimeEvent(runtimeEvent: RuntimeEvent, compiledRecipe: CompiledRecipe): Transition[_, _] =
+  def transitionForRuntimeEvent(runtimeEvent: RuntimeEvent, compiledRecipe: CompiledRecipe): Transition[_] =
     compiledRecipe.petriNet.transitions.findByLabel(runtimeEvent.name).getOrElse {
       throw new IllegalArgumentException(s"No such event known in recipe: $runtimeEvent")
     }
 
   def createFireTransitionCmd(recipe: CompiledRecipe, processId: String, runtimeEvent: RuntimeEvent, correlationId: Option[String]): FireTransition = {
     require(runtimeEvent != null, "Event can not be null")
-    val t: Transition[_, _] = transitionForRuntimeEvent(runtimeEvent, recipe)
+    val t: Transition[_] = transitionForRuntimeEvent(runtimeEvent, recipe)
 
     FireTransition(t.id, runtimeEvent, correlationId)
   }

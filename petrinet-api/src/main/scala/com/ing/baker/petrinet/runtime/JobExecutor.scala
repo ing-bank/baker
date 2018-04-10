@@ -13,22 +13,22 @@ import scala.concurrent.ExecutionContext
 /**
  * Class responsible for 'executing' a transition 'Job'
  */
-class JobExecutor[S, P[_], T[_, _]](
+class JobExecutor[S, P[_], T[_], E](
     taskProvider: TransitionTaskProvider[S, P, T],
-    exceptionHandlerFn: T[_, _] ⇒ TransitionExceptionHandler[P]) {
+    exceptionHandlerFn: T[_] ⇒ TransitionExceptionHandler[P]) {
 
   val log = LoggerFactory.getLogger("com.ing.baker.petrinet.runtime.JobExecutor")
 
   /**
    * Executes a job returning a Task[TransitionEvent]
    */
-  def apply(topology: PetriNet[P[_], T[_, _]])(implicit ec: ExecutionContext): Job[P, T, S, _] ⇒ IO[TransitionEvent[T]] = {
+  def apply(topology: PetriNet[P[_], T[_]])(implicit ec: ExecutionContext): Job[P, T, S, E] ⇒ IO[TransitionEvent[T]] = {
 
-    val cachedTransitionTasks: Map[T[_, _], _] =
-      topology.transitions.map(t ⇒ t -> taskProvider.apply[Any, Any](topology, t.asInstanceOf[T[Any, Any]])).toMap
+    val cachedTransitionTasks: Map[T[_], _] =
+      topology.transitions.map(t ⇒ t -> taskProvider.apply[Any, Any](topology, t.asInstanceOf[T[Any]])).toMap
 
-    def transitionFunction[Input, Output](t: T[Input, Output]) =
-      cachedTransitionTasks(t).asInstanceOf[TransitionTask[P, Input, Output, S]]
+    def transitionFunction[Input](t: T[Input]) =
+      cachedTransitionTasks(t).asInstanceOf[TransitionTask[P, Input, E, S]]
 
     def exceptionStackTrace(e: Throwable): String = {
       val sw = new StringWriter()
@@ -36,10 +36,10 @@ class JobExecutor[S, P[_], T[_, _]](
       sw.toString
     }
 
-    def executeTransitionAsync[Input, Output](t: T[Input, Output]): TransitionTask[P, Input, Output, S] = {
+    def executeTransitionAsync[Input](t: T[Input]): TransitionTask[P, Input, E, S] = {
       (consume, state, input) ⇒
 
-        val handleFailure: PartialFunction[Throwable, IO[(Marking[P], Output)]] = {
+        val handleFailure: PartialFunction[Throwable, IO[(Marking[P], E)]] = {
           case e: Throwable ⇒ IO.raiseError(e)
         }
 
@@ -51,7 +51,7 @@ class JobExecutor[S, P[_], T[_, _]](
     job ⇒ {
 
       val startTime = System.currentTimeMillis()
-      val transition = job.transition.asInstanceOf[T[Any, Any]]
+      val transition = job.transition.asInstanceOf[T[Any]]
 
       executeTransitionAsync(transition)(job.consume, job.processState, job.input).map {
         case (produced, out) ⇒

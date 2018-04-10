@@ -8,7 +8,7 @@ import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 
 object RecipeRuntime {
-  def eventSourceFn: Transition[_, _] => (ProcessState => RuntimeEvent => ProcessState) =
+  def eventSourceFn: Transition[_] => (ProcessState => RuntimeEvent => ProcessState) =
     _ => state => {
       case null => state
       case RuntimeEvent(name, providedIngredients) => state.copy(ingredients = state.ingredients ++ providedIngredients, eventNames = state.eventNames :+ name)
@@ -19,9 +19,9 @@ class RecipeRuntime(recipeName: String, interactionManager: InteractionManager) 
 
   override val tokenGame = new RecipeTokenGame()
 
-  override val eventSourceFn: Transition[_, _] => (ProcessState => RuntimeEvent => ProcessState) = RecipeRuntime.eventSourceFn
+  override val eventSourceFn: Transition[_] => (ProcessState => RuntimeEvent => ProcessState) = RecipeRuntime.eventSourceFn
 
-  override val exceptionHandlerFn: Transition[_, _] => TransitionExceptionHandler[Place] = {
+  override val exceptionHandlerFn: Transition[_] => TransitionExceptionHandler[Place] = {
     case interaction: InteractionTransition[_] =>
       {
         case (_: Error, _, _) => BlockTransition
@@ -42,7 +42,7 @@ class RecipeRuntime(recipeName: String, interactionManager: InteractionManager) 
   override val taskProvider = new TaskProvider(recipeName, interactionManager)
 
   override lazy val jobPicker = new JobPicker[Place, Transition](tokenGame) {
-    override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition[_, _]): Boolean = t match {
+    override def isAutoFireable[S, E](instance: Instance[Place, Transition, S, E], t: Transition[_]): Boolean = t match {
       case EventTransition(_, true, _) => false
       case _ => true
     }

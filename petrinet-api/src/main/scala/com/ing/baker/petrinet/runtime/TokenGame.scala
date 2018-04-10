@@ -8,12 +8,12 @@ import com.ing.baker.petrinet.api._
  * @tparam P Place
  * @tparam T Transition
  */
-trait TokenGame[P[_], T[_, _]] {
+trait TokenGame[P[_], T[_]] {
 
-  def enabledParameters(petriNet: PetriNet[P[_], T[_, _]])(m: Marking[P]): Map[T[_, _], Iterable[Marking[P]]] =
+  def enabledParameters(petriNet: PetriNet[P[_], T[_]])(m: Marking[P]): Map[T[_], Iterable[Marking[P]]] =
     enabledTransitions(petriNet)(m).view.map(t ⇒ t -> consumableMarkings(petriNet)(m, t)).toMap
 
-  def consumableMarkings(petriNet: PetriNet[P[_], T[_, _]])(marking: Marking[P], t: T[_, _]): Iterable[Marking[P]] = {
+  def consumableMarkings(petriNet: PetriNet[P[_], T[_]])(marking: Marking[P], t: T[_]): Iterable[Marking[P]] = {
     // TODO this is not the most efficient, should break early when consumable tokens < edge weight
     val consumable = petriNet.inMarking(t).map {
       case (place, count) ⇒ (place, count, consumableTokens(petriNet)(marking, place, t))
@@ -32,7 +32,7 @@ trait TokenGame[P[_], T[_, _]] {
     }
   }
 
-  def consumableTokens(petriNet: PetriNet[P[_], T[_, _]])(marking: Marking[P], p: P[_], t: T[_, _]): MultiSet[_] =
+  def consumableTokens(petriNet: PetriNet[P[_], T[_]])(marking: Marking[P], p: P[_], t: T[_]): MultiSet[_] =
     marking.getOrElse(p.asInstanceOf[P[Any]], MultiSet.empty)
 
   /**
@@ -42,7 +42,7 @@ trait TokenGame[P[_], T[_, _]] {
    * @param t The transition.
    * @return
    */
-  def isEnabled(petriNet: PetriNet[P[_], T[_, _]])(marking: Marking[P], t: T[_, _]): Boolean = consumableMarkings(petriNet)(marking, t).nonEmpty
+  def isEnabled(petriNet: PetriNet[P[_], T[_]])(marking: Marking[P], t: T[_]): Boolean = consumableMarkings(petriNet)(marking, t).nonEmpty
 
   /**
    * Returns all enabled transitions for a marking.
@@ -50,6 +50,6 @@ trait TokenGame[P[_], T[_, _]] {
    * @param marking marking
    * @return
    */
-  def enabledTransitions(petriNet: PetriNet[P[_], T[_, _]])(marking: Marking[P]): Iterable[T[_, _]] =
+  def enabledTransitions(petriNet: PetriNet[P[_], T[_]])(marking: Marking[P]): Iterable[T[_]] =
     petriNet.transitions.filter(t ⇒ consumableMarkings(petriNet)(marking, t).nonEmpty)
 }
