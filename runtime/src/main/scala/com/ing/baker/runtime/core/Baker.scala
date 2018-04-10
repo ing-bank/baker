@@ -58,7 +58,7 @@ object Baker {
   }
 
   private def checkIfValidImplementationsProvided(interactionManager: InteractionManager, actions: Set[InteractionTransition[_]]): Set[String] = {
-    actions.filterNot(interactionManager.hasImplementation)
+    actions.filterNot(interactionManager.getImplementation(_).isDefined)
       .map(s => s"No implementation provided for interaction: ${s.originalInteractionName}")
   }
 }
