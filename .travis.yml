@@ -1,7 +1,7 @@
 language: scala
 
 scala:
-  - 2.11.8
+  - 2.12.4
 
 cache:
   directories:
@@ -18,8 +18,6 @@ after_success:
   - bash <(curl -s https://codecov.io/bash)
 
 notifications:
-  slack:
-    secure: ziHp6t7aEPbRcj8DQTmHw00nXSzbx7ZWWSqyi4dI5LUrB27OyYVFg8O5InLkHtmaqofwv6sJxihfkRXXKpjNEosFCwfjpd536PMTpKcduy4NlJ+WOpe/deZiVhlv0dOegoVDDtoqnm1EXZZe9t825t59AgKnF6ZFd8wjpiHLWma7wtI/C2wh9hmxKAzyqpD3UqFGwmvgfGcZ20oQtmrgl53QXHviEWkhVUnceGaX0HAPTHEyK7PWrK9DMSbg8pD3YYNqhBohr16VfkMVctUmorshlBdmVtpZwv64J0g18sZYSoKx8n0AfOye6umBEiNc3zibKaHh342JJ0hicxpIgHRl7tOdOeHHo4k7keTJ0zurph7ekvYVYUffdzxBYw/HH1TY2tMkHgnytARy5sfdhS6miYnS+vuIiWOvXLZKovoAKJhotl9J+KmZIlHLl3dFswnHFCgDK64R+bS3+q22Z7Wsu2qo/HFUM5IjufOGvsAZHw2gv9na0oAwN3jKtpeW0dKptZBLinxMBnMAcJIfa1G9mOEqwjW4XkHa+YeXi61Z7eALmX8wH2Eo0nebgBxrw+TI1HfY1DjP2GpK6m/k0NdTQ7tyx/aYuVgcRct43klRuOLFDEbzJ0kPleJeJQaevQa0C4biWnOiG2QXgFt4Q5Hx5oVHI3Uaq7l18ZMKDN8=
   email:
     on_success: change
     on_failure: always
