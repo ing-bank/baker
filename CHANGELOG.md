@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.4.0 (NOT YET RELEASED)
+
+- Fix #99, re-added the feature to get an index of all process instances in Baker
+- Fix #50, update protobuf to 3.5.1 to fix a security related issue (CVE-2015-5237)
+- Added a list of event names to the process state that can be retreived from memory
+- Optionally add a correlation id to events to achieve idempotent event delivery
+- Update akka to 2.5.11
+- Internal: Switched from fs2 to cats effect since we only need the IO monad.
+
+## 1.3.3
+
+- Fix #68, catch and handle exceptions thrown by exception strategy handlers
+- Bugfix in the RetryWithIncrementalBackoff (integer overflow)
+
+## 1.3.2
+
+- Fix #91, allow java.util.Set as Ingredient types
+
+## 1.3.1
+
+- Bugfix in protobuf serialization
+
+## 1.3.0
+
+- Use protobuf for all persisted messages, including compiled recipes
+- Enable cross builds for scala 2.11 and 2.12
+- Introduced a specific ProcessDeletedException for when process instances where removed after specified retetion period
+
+## 1.2.1
+
+- Bugfix, do not allow null values for ingredients from interactions
+- Bugfix, accidental recursion (self-call) in JBaker.getVisualRecipe
+
 ## 1.2.0
 - Baker now has it's own type system that does not depend on java classes. This means that:
   - The baker runtime does not have any knowledge/dependency of java classes of ingredients
