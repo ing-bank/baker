@@ -12,7 +12,7 @@ object JobExecutor {
   val log = LoggerFactory.getLogger("com.ing.baker.petrinet.runtime.JobExecutor")
 
   /**
-   * Returns an Job -> IO[TransitionEvent]
+   * Returns a Job -> IO[TransitionEvent]
    */
   def apply[S, P[_], T[_], E](taskProvider: TransitionTaskProvider[S, P, T],
             exceptionHandlerFn: T[_] ⇒ TransitionExceptionHandler[P])
@@ -43,6 +43,7 @@ object JobExecutor {
           case e: Throwable ⇒ IO.raiseError(e)
         }
 
+      // translates the job output to an EventSourcing.Event
       jobIO.map {
         case (produced, out) ⇒
           TransitionFiredEvent(job.id, transition, job.correlationId, startTime, System.currentTimeMillis(), job.consume, produced, out)

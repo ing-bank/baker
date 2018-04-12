@@ -568,9 +568,10 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     */
   def register(listener: AnyRef) = {
 
-    val subsribeMethods = listener.getClass.getMethods.toList.filter { m =>
+    val subsribeMethods = listener.getClass.getMethods.toList
+      .filter(_.getAnnotationsByType(classOf[Subscribe]).nonEmpty)
+      .filter { m =>
 
-      if (m.getAnnotationsByType(classOf[Subscribe]).nonEmpty) {
         if (m.getParameterTypes.size != 1) {
           log.warn("@Subscribe method should have exactly 1 parameter")
           false
@@ -586,9 +587,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
             true
         }
       }
-      else
-        false
-    }
+
 
     val mappedMethods = subsribeMethods.foldLeft(Map.empty[Class[_], List[Method]]) {
       case (map, method) =>

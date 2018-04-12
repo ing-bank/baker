@@ -53,7 +53,7 @@ public class JBakerTest {
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
         String requestId = UUID.randomUUID().toString();
 
-//        jBaker.register(new TestSubscriber());
+        jBaker.register(new TestSubscriber());
         jBaker.bake(recipeId, requestId);
         jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
     }

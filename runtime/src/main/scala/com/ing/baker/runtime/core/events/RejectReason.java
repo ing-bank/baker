@@ -1,10 +1,9 @@
 package com.ing.baker.runtime.core.events;
 
 public enum RejectReason {
-    
     NoSuchProcess,
     ProcessDeleted,
-    AlreadReceived,
+    AlreadyReceived,
     ReceivePeriodExpired,
     FiringLimitMet,
     InvalidEvent

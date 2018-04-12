@@ -65,7 +65,7 @@ class ProcessEventActor(cmd: ProcessEvent, queue: SourceQueueWithComplete[Any], 
       rejectedWith(msg, RejectReason.FiringLimitMet)
 
     case msg: AlreadyReceived ⇒
-      rejectedWith(msg, RejectReason.AlreadReceived)
+      rejectedWith(msg, RejectReason.AlreadyReceived)
 
     case msg @ (_: ProcessUninitialized | _: Uninitialized) =>
       rejectedWith(msg, RejectReason.NoSuchProcess)

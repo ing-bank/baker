@@ -87,26 +87,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   private val readJournal = PersistenceQuery(actorSystem)
     .readJournalFor[CurrentEventsByPersistenceIdQuery with PersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
 
-//  private val bakerExtension = {
-//
-//    def createExtensionInstance(clazz: Class[_]): Try[BakerExtension] =
-//      Try { clazz.getConstructor(classOf[Config]) } match {
-//        case Success(constructor) => Try { constructor.newInstance(config).asInstanceOf[BakerExtension] }
-//        case Failure(_)           => Try { clazz.newInstance().asInstanceOf[BakerExtension] }
-//      }
-//
-//    val extensions: Seq[BakerExtension] = config.getAs[List[String]]("baker.extensions").getOrElse(List.empty).map { className =>
-//      Try { Class.forName(className) }.flatMap (createExtensionInstance).recoverWith {
-//        case exception =>
-//          log.error(s"Failed to load extension: $className", exception)
-//          Failure(exception)
-//      }
-//    }.collect {
-//      case Success(extension) => extension
-//    }
-//
-//  }
-
   private val configuredEncryption: Encryption = {
     val encryptionEnabled = config.getAs[Boolean]("baker.encryption.enabled").getOrElse(false)
     if (encryptionEnabled) {
@@ -123,7 +103,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       case Some(other) =>
         throw new IllegalArgumentException(s"Unsupported actor provider: $other")
     }
-
 
   val recipeManager: ActorRef = bakerActorProvider.createRecipeManagerActor()
 
