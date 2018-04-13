@@ -3,7 +3,7 @@ package com.ing.baker.runtime.core
 import java.util.concurrent.TimeUnit
 import java.util.{Optional, UUID}
 
-import akka.actor.{Actor, ActorSystem, Props}
+import akka.actor.ActorSystem
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.testkit.{TestDuration, TestKit, TestProbe}
 import com.ing.baker.TestRecipeHelper._
@@ -12,7 +12,6 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
 import com.ing.baker.recipe.scaladsl.{Recipe, _}
-import com.ing.baker.runtime.core.events._
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
@@ -301,37 +300,6 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       verify(listenerMock).processEvent(processId.toString, RuntimeEvent.create("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)))
       verify(listenerMock).processEvent(processId.toString, RuntimeEvent.create("InteractionOneSuccessful", Seq("interactionOneOriginalIngredient" -> interactionOneIngredientValue)))
-    }
-
-    "notify a registered event listener" in {
-
-      val listener: PartialFunction[BakerEvent, Unit] =  {
-          case e @ ProcessCreated(time, recipeId, recipeName, processId) =>
-            println(e)
-          case e @ EventReceived(time, processId, correlationId, event) =>
-            println(e)
-          case e @ EventRejected(time, processId, correlationId, event, reason) =>
-            println(e)
-          case e @ InteractionStarted(time, processId, interactionName) =>
-            println(e)
-          case e @ InteractionCompleted(time, duration, processId, interactionName, outputEvent) =>
-            println(e)
-          case e @ InteractionFailed(time, duration, processId, interactionName, throwable) =>
-            println(e)
-        }
-
-      val recipe =
-        Recipe("EventListenerRecipe")
-          .withInteraction(interactionOne)
-          .withSensoryEvent(initialEvent)
-
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
-
-      baker.registerEventListenerPF(listener)
-
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
     }
 
     "execute an interaction when its ingredient is provided and the interaction is renamed" in {

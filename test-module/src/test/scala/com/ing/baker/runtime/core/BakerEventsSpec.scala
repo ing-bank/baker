@@ -101,7 +101,7 @@ class BakerEventsSpec extends TestRecipeHelper {
 
   "Baker" should {
 
-    "notify ProcessCreated/EventReceived/InteractionStarted/InteractionCompleted events" in {
+    "notify ProcessCreated/EventReceived/InteractionStarted/InteractionCompleted events with correct timestamps" in {
       val recipeName = "EventReceivedEventRecipe"
       val processId = UUID.randomUUID().toString
       val (baker, recipeId) = setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
@@ -113,25 +113,27 @@ class BakerEventsSpec extends TestRecipeHelper {
       baker.bake(recipeId, processId)
       baker.processEvent(processId, InitialEvent(initialIngredientValue), Some("someId"))
 
-      listenerProbe.expectMsgPF(eventReceiveTimeout) {
-        case ProcessCreated(_, `recipeId`, `recipeName`, `processId`) =>
+      val processCreatedTime = listenerProbe.expectMsgPF(eventReceiveTimeout) {
+        case msg@ProcessCreated(_, `recipeId`, `recipeName`, `processId`) => msg.timeStamp
       }
 
-      listenerProbe.expectMsgPF(eventReceiveTimeout) {
-        case msg@EventReceived(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`))))) => msg
+      val initialEventReceivedTime = listenerProbe.expectMsgPF(eventReceiveTimeout) {
+        case msg@EventReceived(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`))))) => msg.timeStamp
       }
+
+      processCreatedTime < initialEventReceivedTime shouldBe true
 
       expectMsgInAnyOrderPF(listenerProbe,
-        { case msg@InteractionStarted(_, `processId`, "SieveInteraction") => msg },
-        { case msg@InteractionStarted(_, `processId`, "InteractionOne") => msg },
-        { case msg@InteractionStarted(_, `processId`, "InteractionTwo") => msg },
-        { case msg@InteractionStarted(_, `processId`, "InteractionThree") => msg },
-        { case msg@InteractionStarted(_, `processId`, "ProvidesNothingInteraction") => msg},
-        { case msg@InteractionCompleted(_, _, `processId`, "InteractionOne", RuntimeEvent("InteractionOneSuccessful", Seq(Tuple2("interactionOneIngredient",PrimitiveValue("interactionOneIngredient"))))) => msg },
-        { case msg@InteractionCompleted(_, _, `processId`, "InteractionTwo", RuntimeEvent("EventFromInteractionTwo", Seq(Tuple2("interactionTwoIngredient", PrimitiveValue("interactionTwoIngredient"))))) => msg },
-        { case msg@InteractionCompleted(_, _, `processId`, "InteractionThree", RuntimeEvent("InteractionThreeSuccessful", Seq(Tuple2("interactionThreeIngredient", PrimitiveValue("interactionThreeIngredient"))))) => msg },
-        { case msg@InteractionCompleted(_, _, `processId`, "ProvidesNothingInteraction", RuntimeEvent("ProvidesNothingInteraction", Seq())) => msg },
-        { case msg@InteractionCompleted(_, _, `processId`, "SieveInteraction", RuntimeEvent("SieveInteractionSuccessful", Seq(Tuple2("sievedIngredient", PrimitiveValue("sievedIngredient"))))) => msg }
+        { case msg@InteractionStarted(t, `processId`, "SieveInteraction") if t > initialEventReceivedTime => msg },
+        { case msg@InteractionStarted(t, `processId`, "InteractionOne") if t > initialEventReceivedTime => msg },
+        { case msg@InteractionStarted(t, `processId`, "InteractionTwo") if t > initialEventReceivedTime => msg },
+        { case msg@InteractionStarted(t, `processId`, "InteractionThree") if t > initialEventReceivedTime => msg },
+        { case msg@InteractionStarted(t, `processId`, "ProvidesNothingInteraction") if t > initialEventReceivedTime => msg},
+        { case msg@InteractionCompleted(t, _, `processId`, "InteractionOne", RuntimeEvent("InteractionOneSuccessful", Seq(Tuple2("interactionOneIngredient",PrimitiveValue("interactionOneIngredient"))))) => msg },
+        { case msg@InteractionCompleted(t, _, `processId`, "InteractionTwo", RuntimeEvent("EventFromInteractionTwo", Seq(Tuple2("interactionTwoIngredient", PrimitiveValue("interactionTwoIngredient"))))) => msg },
+        { case msg@InteractionCompleted(t, _, `processId`, "InteractionThree", RuntimeEvent("InteractionThreeSuccessful", Seq(Tuple2("interactionThreeIngredient", PrimitiveValue("interactionThreeIngredient"))))) => msg },
+        { case msg@InteractionCompleted(t, _, `processId`, "ProvidesNothingInteraction", RuntimeEvent("ProvidesNothingInteraction", Seq())) => msg },
+        { case msg@InteractionCompleted(t, _, `processId`, "SieveInteraction", RuntimeEvent("SieveInteractionSuccessful", Seq(Tuple2("sievedIngredient", PrimitiveValue("sievedIngredient"))))) => msg }
       )
 
       listenerProbe.expectNoMessage(eventReceiveTimeout)
@@ -152,7 +154,7 @@ class BakerEventsSpec extends TestRecipeHelper {
       baker.processEventAsync(processId, ThirdEvent(), Some("someId"))
 
       listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-        case EventRejected(_, `processId`, Some("someId"), RuntimeEvent("ThirdEvent", Seq()), InvalidEvent) =>
+        case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("ThirdEvent", Seq()), InvalidEvent) => msg
       }
 
       listenerProbe.expectNoMessage(eventReceiveTimeout)
@@ -172,7 +174,7 @@ class BakerEventsSpec extends TestRecipeHelper {
       baker.processEvent(processId, InitialEvent(initialIngredientValue), Some("someId")) // Same correlationId cannot be used twice
 
       listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-        case EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), AlreadyReceived) =>
+        case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), AlreadyReceived) => msg
       }
 
       listenerProbe.expectNoMessage(eventReceiveTimeout)
@@ -192,7 +194,7 @@ class BakerEventsSpec extends TestRecipeHelper {
       baker.processEvent(processId, InitialEvent(initialIngredientValue)) // Firing limit is set to 1 in the recipe
 
       listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-        case EventRejected(_, `processId`, None, RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), FiringLimitMet) =>
+        case msg@EventRejected(_, `processId`, None, RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), FiringLimitMet) => msg
       }
 
       listenerProbe.expectNoMessage(eventReceiveTimeout)
@@ -214,7 +216,7 @@ class BakerEventsSpec extends TestRecipeHelper {
       baker.processEvent(processId, InitialEvent(initialIngredientValue), Some("someId"))
 
       listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-        case EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), ReceivePeriodExpired) =>
+        case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), ReceivePeriodExpired) => msg
       }
 
       listenerProbe.expectNoMessage(eventReceiveTimeout)
@@ -235,7 +237,7 @@ class BakerEventsSpec extends TestRecipeHelper {
       baker.processEventAsync(processId, InitialEvent(initialIngredientValue), Some("someId"))
 
       listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-        case EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), NoSuchProcess) =>
+        case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), NoSuchProcess) => msg
       }
 
       listenerProbe.expectNoMessage(eventReceiveTimeout)
