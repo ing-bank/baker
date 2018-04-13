@@ -9,7 +9,7 @@ import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.scaladsl.Recipe
-import com.ing.baker.runtime.core.events.RejectReason.{AlreadyReceived, FiringLimitMet, InvalidEvent}
+import com.ing.baker.runtime.core.events.RejectReason._
 import com.ing.baker.runtime.core.events._
 import com.ing.baker.types.PrimitiveValue
 import org.hamcrest
@@ -189,6 +189,28 @@ class BakerEventsSpec extends TestRecipeHelper {
 
       listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
         case EventRejected(_, `processId`, None, RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), FiringLimitMet) =>
+      }
+
+      listenerProbe.expectNoMessage(eventReceiveTimeout)
+    }
+
+    "notify EventRejected event with ReceivePeriodExpired reason" in {
+      val recipeName = "ReceivePeriodExpiredRecipe"
+      val processId = UUID.randomUUID().toString
+      val (baker, recipeId) = setupBakerWithRecipe(getRecipe(recipeName).withEventReceivePeriod(eventReceiveTimeout), mockImplementations)
+
+      val listenerProbe = TestProbe()
+
+      baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
+
+      baker.bake(recipeId, processId)
+
+      Thread.sleep(eventReceiveTimeout.toMillis)
+
+      baker.processEvent(processId, InitialEvent(initialIngredientValue), Some("someId"))
+
+      listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
+        case EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), ReceivePeriodExpired) =>
       }
 
       listenerProbe.expectNoMessage(eventReceiveTimeout)
