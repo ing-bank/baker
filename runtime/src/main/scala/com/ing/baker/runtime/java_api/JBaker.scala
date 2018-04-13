@@ -568,28 +568,25 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     */
   def register(listener: AnyRef) = {
 
-    val subsribeMethods = listener.getClass.getMethods.toList
+    val subscribeMethods = listener.getClass.getMethods.toList
       .filter(_.getAnnotationsByType(classOf[Subscribe]).nonEmpty)
       .filter { m =>
 
-        if (m.getParameterTypes.size != 1) {
+        if (m.getParameterTypes.length != 1) {
           log.warn("@Subscribe method should have exactly 1 parameter")
           false
-        }
-        else {
+        } else {
           val parameterClass = m.getParameterTypes()(0)
 
           if (!classOf[BakerEvent].isAssignableFrom(parameterClass)) {
             log.warn(s"$parameterClass does not extend from BakerEvent")
             false
-          }
-          else
+          } else
             true
         }
       }
 
-
-    val mappedMethods = subsribeMethods.foldLeft(Map.empty[Class[_], List[Method]]) {
+    val mappedMethods = subscribeMethods.foldLeft(Map.empty[Class[_], List[Method]]) {
       case (map, method) =>
         val parameterClass = method.getParameterTypes()(0)
         val previous = map.getOrElse(parameterClass, List.empty)
@@ -598,12 +595,12 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
 
     val listenerFunction: PartialFunction[BakerEvent, Unit] = {
       case e: BakerEvent if mappedMethods.contains(e.getClass) =>
-        mappedMethods(e.getClass()).foreach { m =>
+        mappedMethods(e.getClass).foreach { m =>
           m.invoke(listener, e)
         }
     }
 
-    baker.registerEventListener(listenerFunction)
+    baker.registerEventListenerPF(listenerFunction)
   }
 
   /**

@@ -327,7 +327,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
 
-      baker.registerEventListener(listener)
+      baker.registerEventListenerPF(listener)
 
       val processId = UUID.randomUUID().toString
       baker.bake(recipeId, processId)
