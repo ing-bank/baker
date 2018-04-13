@@ -9,7 +9,7 @@ import com.ing.baker.TestRecipeHelper._
 import com.ing.baker._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.scaladsl.Recipe
-import com.ing.baker.runtime.core.events.RejectReason.{AlreadyReceived, InvalidEvent}
+import com.ing.baker.runtime.core.events.RejectReason.{AlreadyReceived, FiringLimitMet, InvalidEvent}
 import com.ing.baker.runtime.core.events._
 import com.ing.baker.types.PrimitiveValue
 import org.hamcrest
@@ -86,7 +86,6 @@ class BakerEventsSpec extends TestRecipeHelper {
   val eventReceiveTimeout = 1 seconds
 
   before {
-
     resetMocks
     setupMockResponse()
 
@@ -155,6 +154,26 @@ class BakerEventsSpec extends TestRecipeHelper {
       listenerProbe.expectNoMessage(eventReceiveTimeout)
     }
 
+    "notify EventRejected event with AlreadyReceived reason" in {
+      val recipeName = "AlreadyReceivedRecipe"
+      val processId = UUID.randomUUID().toString
+      val (baker, recipeId) = setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
+
+      val listenerProbe = TestProbe()
+
+      baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
+
+      baker.bake(recipeId, processId)
+      baker.processEvent(processId, InitialEvent(initialIngredientValue), Some("someId"))
+      baker.processEvent(processId, InitialEvent(initialIngredientValue), Some("someId")) // Same correlationId cannot be used twice
+
+      listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
+        case EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), AlreadyReceived) =>
+      }
+
+      listenerProbe.expectNoMessage(eventReceiveTimeout)
+    }
+
     "notify EventRejected event with FiringLimitMet reason" in {
       val recipeName = "FiringLimitMetRecipe"
       val processId = UUID.randomUUID().toString
@@ -165,11 +184,11 @@ class BakerEventsSpec extends TestRecipeHelper {
       baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
 
       baker.bake(recipeId, processId)
-      baker.processEvent(processId, InitialEvent(initialIngredientValue), Some("someId"))
-      baker.processEvent(processId, InitialEvent(initialIngredientValue), Some("someId")) // Firing limit is set to 1 in the recipe
+      baker.processEvent(processId, InitialEvent(initialIngredientValue))
+      baker.processEvent(processId, InitialEvent(initialIngredientValue)) // Firing limit is set to 1 in the recipe
 
       listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-        case EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), AlreadyReceived) =>
+        case EventRejected(_, `processId`, None, RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), FiringLimitMet) =>
       }
 
       listenerProbe.expectNoMessage(eventReceiveTimeout)
