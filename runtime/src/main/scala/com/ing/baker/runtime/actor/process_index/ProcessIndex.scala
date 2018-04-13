@@ -212,7 +212,6 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
         def forwardEvent() = {
           val cmd = createFireTransitionCmd(compiledRecipe, processId, eventToFire, correlationId)
-          context.system.eventStream.publish(EventReceived(System.currentTimeMillis(), processId, correlationId, eventToFire))
           actorRef.forward(cmd)
         }
 

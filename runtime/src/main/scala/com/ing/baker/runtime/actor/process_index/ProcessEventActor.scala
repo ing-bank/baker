@@ -37,6 +37,7 @@ object ProcessEventActor {
   */
 class ProcessEventActor(cmd: ProcessEvent, queue: SourceQueueWithComplete[Any], waitForRetries: Boolean)(implicit timeout: FiniteDuration, system: ActorSystem) extends Actor {
   var runningJobs = Set.empty[Long]
+  var firstReceived = false
 
   context.setReceiveTimeout(timeout)
 
@@ -73,6 +74,11 @@ class ProcessEventActor(cmd: ProcessEvent, queue: SourceQueueWithComplete[Any], 
     //Messages from the ProcessInstances
     case e: TransitionFired ⇒
       queue.offer(e)
+
+      if (!firstReceived)
+        system.eventStream.publish(events.EventReceived(System.currentTimeMillis(), cmd.processId, cmd.correlationId, cmd.event))
+
+      firstReceived = true
 
       runningJobs = runningJobs ++ e.newJobsIds - e.jobId
 
