@@ -23,6 +23,8 @@ import scala.language.postfixOps
 
 object BakerEventsSpec {
 
+  val log = LoggerFactory.getLogger(classOf[BakerEventsSpec])
+
   def matchPF[T](pf: PartialFunction[T, Any]) = Matchers.argThat(new hamcrest.BaseMatcher[T] {
     override def matches(o: scala.Any): Boolean = pf.isDefinedAt(o.asInstanceOf[T])
 
@@ -31,10 +33,12 @@ object BakerEventsSpec {
     }
   })
 
-  def listenerFunction(probe: ActorRef): PartialFunction[BakerEvent, Unit] = {
-    case e: BakerEvent =>
-      println(s"Listener consumed event $e")
-      probe ! e
+  def listenerFunction(probe: ActorRef, logEvents: Boolean = false): PartialFunction[BakerEvent, Unit] = {
+    case event: BakerEvent =>
+      if (logEvents) {
+        log.info("Listener consumed event {}", event)
+      }
+      probe ! event
   }
 
   def expectMsgInAnyOrderPF[Out](testProbe: TestProbe, pfs: PartialFunction[Any, Out]*): Unit = {
@@ -211,6 +215,27 @@ class BakerEventsSpec extends TestRecipeHelper {
 
       listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
         case EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), ReceivePeriodExpired) =>
+      }
+
+      listenerProbe.expectNoMessage(eventReceiveTimeout)
+    }
+
+    "notify EventRejected event with NoSuchProcess reason" in {
+      val recipeName = "NoSuchProcessRecipe"
+      val processId = UUID.randomUUID().toString
+      val (baker, _) = setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
+
+      val listenerProbe = TestProbe()
+
+      baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
+
+      // Skipped baking the process here, so the process with processId does not exist
+
+      // use a different processId and use async function because the sync version throws NoSuchProcessException
+      baker.processEventAsync(processId, InitialEvent(initialIngredientValue), Some("someId"))
+
+      listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
+        case EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), NoSuchProcess) =>
       }
 
       listenerProbe.expectNoMessage(eventReceiveTimeout)
