@@ -1,5 +1,6 @@
 package com.ing.baker;
 
+import akka.actor.ActorSystem;
 import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.JavaCompiledRecipeTest;
 import com.ing.baker.compiler.RecipeCompiler;
@@ -9,9 +10,12 @@ import com.ing.baker.recipe.javadsl.Recipe;
 import com.ing.baker.runtime.core.Baker;
 import com.ing.baker.runtime.core.BakerException;
 import com.ing.baker.runtime.core.EventListener;
+import com.ing.baker.runtime.core.events.ProcessCreated;
 import com.ing.baker.runtime.java_api.JBaker;
+import com.ing.baker.runtime.java_api.JEventSubscriber;
 import com.ing.baker.types.Converters;
-import com.typesafe.config.ConfigFactory;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -31,40 +35,33 @@ import static org.mockito.Mockito.*;
 
 public class JBakerTest {
 
-    java.util.List<Object> implementationsList = ImmutableList.of(
+    private java.util.List<Object> implementationsList = ImmutableList.of(
             new JavaCompiledRecipeTest.InteractionOneImpl(),
             new JavaCompiledRecipeTest.InteractionTwo(),
             new JavaCompiledRecipeTest.InteractionThreeImpl(),
             new JavaCompiledRecipeTest.SieveImpl());
 
+    private static ActorSystem actorSystem = null;
 
     @Rule
     public final ExpectedException exception = ExpectedException.none();
 
-    @Test
-    public void shouldRegisterSubscribedMethods() throws BakerException, TimeoutException {
+    @BeforeClass
+    public static void init() {
+        actorSystem = ActorSystem.apply("JBakerTest");
+    }
 
-        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(setupSimpleRecipe());
-
-        JBaker jBaker = new JBaker();
-        jBaker.addImplementations(implementationsList);
-        String recipeId = jBaker.addRecipe(compiledRecipe);
-
-        assertEquals(compiledRecipe.getValidationErrors().size(), 0);
-        String requestId = UUID.randomUUID().toString();
-
-        jBaker.register(new TestSubscriber());
-        jBaker.bake(recipeId, requestId);
-        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
+    @AfterClass
+    public static void tearDown() {
+        if (actorSystem != null) actorSystem.terminate();
     }
 
     @Test
     public void shouldSetupJBakerWithDefaultActorFramework() throws BakerException, TimeoutException {
 
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(setupSimpleRecipe());
-        String recipeName = compiledRecipe.name();
 
-        JBaker jBaker = new JBaker();
+        JBaker jBaker = new JBaker(actorSystem);
         jBaker.addImplementations(implementationsList);
         String recipeId = jBaker.addRecipe(compiledRecipe);
 
@@ -76,19 +73,16 @@ public class JBakerTest {
         assertEquals(1, jBaker.getIngredients(requestId).size());
 
         Object requestIdstringOne = jBaker.getIngredients(requestId).get("RequestIDStringOne");
-        assertEquals(Converters.toValue(requestId.toString()), requestIdstringOne);
+        assertEquals(Converters.toValue(requestId), requestIdstringOne);
     }
 
     @Test
     public void shouldSetupJBakerWithGivenActorFramework() throws BakerException, TimeoutException {
-        com.typesafe.config.Config config = ConfigFactory.load();
-
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(setupSimpleRecipe());
-        String recipeName = compiledRecipe.name();
 
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
 
-        JBaker jBaker = new JBaker();
+        JBaker jBaker = new JBaker(actorSystem);
         jBaker.addImplementations(implementationsList);
         String recipeId =  jBaker.addRecipe(compiledRecipe);
 
@@ -99,7 +93,7 @@ public class JBakerTest {
         assertEquals(1, jBaker.getIngredients(requestId).size());
 
         Object requestIdstringOne = jBaker.getIngredients(requestId).get("RequestIDStringOne");
-        assertEquals(Converters.toValue(requestId.toString()), requestIdstringOne);
+        assertEquals(Converters.toValue(requestId), requestIdstringOne);
     }
 
     @Test
@@ -107,7 +101,7 @@ public class JBakerTest {
 
         exception.expect(BakerException.class);
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(setupComplexRecipe());
-        JBaker jBaker = new JBaker();
+        JBaker jBaker = new JBaker(actorSystem);
 
         jBaker.addRecipe(compiledRecipe);
     }
@@ -129,6 +123,16 @@ public class JBakerTest {
         EventListener testListener = (processId, event) -> { };
 
         when(mockBaker.eventNames(any(String.class), any(FiniteDuration.class))).thenReturn(List$.MODULE$.empty());
+
+        // -- register
+
+        jBaker.registerBakerEventListener(new Object() {
+            @SuppressWarnings("unused")
+            void onEvent(ProcessCreated e) {
+                // intentionally left empty
+            }
+        });
+        verify(mockBaker).registerEventListenerPF(any(JEventSubscriber.class));
 
         // -- bake
 
@@ -228,7 +232,7 @@ public class JBakerTest {
     @Test
     public void shouldExecuteCompleteFlow() throws BakerException, TimeoutException {
 
-        JBaker jBaker = new JBaker();
+        JBaker jBaker = new JBaker(actorSystem);
 
         jBaker.addImplementations(implementationsList);
 
@@ -249,10 +253,12 @@ public class JBakerTest {
         exception.expect(BakerException.class);
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
 
-        JBaker jBaker = new JBaker();
+        JBaker jBaker = new JBaker(actorSystem);
 
         jBaker.addImplementations(implementationsList);
 
         jBaker.addRecipe(compiledRecipe);
     }
+
 }
+
