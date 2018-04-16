@@ -16,6 +16,9 @@ class JEventSubscriber(listener: AnyRef) extends PartialFunction[BakerEvent, Uni
   val subscribeMethods: immutable.Seq[Method] = unmock(listener.getClass).getMethods.toList
     .filter(_.getAnnotationsByType(classOf[Subscribe]).nonEmpty)
 
+  // validate one or more @Subscribe methods exist
+  if (subscribeMethods.isEmpty) throw new IllegalArgumentException("BakerEventListener should have at least one @Subscribe annotated method")
+
   // validate the subscribeMethods extend from BakerEvent and also there's exactly one parameter
   subscribeMethods.foreach { m =>
     val clazz = m.getParameterTypes()(0)

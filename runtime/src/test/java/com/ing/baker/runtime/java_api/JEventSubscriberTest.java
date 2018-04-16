@@ -71,6 +71,19 @@ public class JEventSubscriberTest {
         }
     }
 
+    @Test
+    public void failForListenerClassesWithoutAnyAnnotatedFunctions() {
+        NotAnnotatedBakerEventListener listenerMock = mock(NotAnnotatedBakerEventListener.class);
+        try {
+            new JEventSubscriber(listenerMock); // fail during construction
+            Assert.fail();
+        } catch(IllegalArgumentException e) {
+            if (!e.getMessage().equals("BakerEventListener should have at least one @Subscribe annotated method")) Assert.fail();
+        } catch (Exception e) {
+            Assert.fail();
+        }
+    }
+
     public interface NotBakerEventBakerEventListener {
         @Subscribe
         void onSomeEventHappened(Object someEvent);
@@ -79,6 +92,11 @@ public class JEventSubscriberTest {
     public interface MoreThanOneArgumentBakerEventListener {
         @Subscribe
         void onEvent(ProcessCreated event1, EventReceived event2);
+    }
+
+    public interface NotAnnotatedBakerEventListener {
+        // no @Subscribe annotations are defined here
+        void onEvent(ProcessCreated event);
     }
 
 }

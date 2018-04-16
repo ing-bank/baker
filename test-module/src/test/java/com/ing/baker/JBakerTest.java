@@ -11,6 +11,7 @@ import com.ing.baker.runtime.core.Baker;
 import com.ing.baker.runtime.core.BakerException;
 import com.ing.baker.runtime.core.EventListener;
 import com.ing.baker.runtime.core.events.ProcessCreated;
+import com.ing.baker.runtime.core.events.Subscribe;
 import com.ing.baker.runtime.java_api.JBaker;
 import com.ing.baker.runtime.java_api.JEventSubscriber;
 import com.ing.baker.types.Converters;
@@ -84,7 +85,7 @@ public class JBakerTest {
 
         JBaker jBaker = new JBaker(actorSystem);
         jBaker.addImplementations(implementationsList);
-        String recipeId =  jBaker.addRecipe(compiledRecipe);
+        String recipeId = jBaker.addRecipe(compiledRecipe);
 
         String requestId = UUID.randomUUID().toString();
         jBaker.bake(recipeId, requestId);
@@ -120,18 +121,14 @@ public class JBakerTest {
         String testCorrelationId = "testCorrelationId";
         java.time.Duration testTimeout = java.time.Duration.ofSeconds(1);
         FiniteDuration testTimeoutScala = new FiniteDuration(testTimeout.toMillis(), TimeUnit.MILLISECONDS);
-        EventListener testListener = (processId, event) -> { };
+        EventListener testListener = (processId, event) -> {
+        };
 
         when(mockBaker.eventNames(any(String.class), any(FiniteDuration.class))).thenReturn(List$.MODULE$.empty());
 
         // -- register
 
-        jBaker.registerBakerEventListener(new Object() {
-            @SuppressWarnings("unused")
-            void onEvent(ProcessCreated e) {
-                // intentionally left empty
-            }
-        });
+        jBaker.registerBakerEventListener(new EmptySubscriber());
         verify(mockBaker).registerEventListenerPF(any(JEventSubscriber.class));
 
         // -- bake
@@ -260,5 +257,12 @@ public class JBakerTest {
         jBaker.addRecipe(compiledRecipe);
     }
 
-}
+    final static class EmptySubscriber {
+        @SuppressWarnings("unused")
+        @Subscribe
+        public void onEvent(ProcessCreated e) {
+            // intentionally left empty
+        }
+    }
 
+}
