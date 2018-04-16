@@ -82,6 +82,8 @@ lazy val recipeRuntime = project.in(file("runtime"))
   .settings(scalaPBSettings)
   .settings(
     moduleName := "baker-runtime",
+    // we have to exclude the sources because of a compiler bug: https://issues.scala-lang.org/browse/SI-10134
+    sources in (Compile, doc) := Seq.empty,
     libraryDependencies ++=
       compileDeps(
         akkaActor,
