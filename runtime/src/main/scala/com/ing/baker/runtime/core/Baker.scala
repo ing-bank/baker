@@ -409,7 +409,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
     val listenerActor = actorSystem.actorOf(Props(new Actor() {
       override def receive = {
-        case event: BakerEvent => Try { pf.applyOrElse(event, null) }.failed.foreach { e =>
+        case event: BakerEvent => Try { pf.applyOrElse[BakerEvent, Unit](event, _ => ()) }.failed.foreach { e =>
           log.warn(s"Listener function threw exception for event: $event", e)
         }
       }
