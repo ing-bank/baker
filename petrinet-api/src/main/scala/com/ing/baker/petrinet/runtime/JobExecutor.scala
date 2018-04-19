@@ -22,7 +22,7 @@ object JobExecutor {
       topology.transitions.map(t ⇒ t -> taskProvider.apply[Any](topology, t.asInstanceOf[T[Any]])).toMap
 
     def transitionFunction[Input](t: T[Input]) =
-      cachedTransitionTasks(t).asInstanceOf[TransitionTask[P, Input, E, S]]
+      cachedTransitionTasks(t).asInstanceOf[TransitionTask[P, Input, S, E]]
 
     def exceptionStackTrace(e: Throwable): String = {
       val sw = new StringWriter()

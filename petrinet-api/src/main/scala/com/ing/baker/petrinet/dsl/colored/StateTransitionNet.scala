@@ -12,7 +12,7 @@ trait StateTransitionNet[S, E] {
   def eventSourceFunction: S ⇒ E ⇒ S
 
   def eventTaskProvider: TransitionTaskProvider[Place, Transition, S, E] = new TransitionTaskProvider[Place, Transition, S, E] {
-    override def apply[Input](petriNet: PetriNet[Place[_], Transition[_]], t: Transition[Input]): TransitionTask[Place, Input, E, S] =
+    override def apply[Input](petriNet: PetriNet[Place[_], Transition[_]], t: Transition[Input]): TransitionTask[Place, Input, S, E] =
       (_, state, _) ⇒ {
         val eventTask = t.asInstanceOf[StateTransition[S, E]].produceEvent(state)
         val produceMarking: Marking[Place] = toMarking[Place](petriNet.outMarking(t))

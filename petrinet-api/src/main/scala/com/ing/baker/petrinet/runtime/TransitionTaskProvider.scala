@@ -18,5 +18,5 @@ trait TransitionTaskProvider[P[_], T[_], State, E] {
    * @param t       The transition.
    * @return
    */
-  def apply[Input](petriNet: PetriNet[P[_], T[_]], t: T[Input]): TransitionTask[P, Input, E, State]
+  def apply[Input](petriNet: PetriNet[P[_], T[_]], t: T[Input]): TransitionTask[P, Input, State, E]
 }
