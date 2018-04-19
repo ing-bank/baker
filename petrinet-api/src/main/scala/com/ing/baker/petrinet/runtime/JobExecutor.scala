@@ -14,12 +14,12 @@ object JobExecutor {
   /**
    * Returns a Job -> IO[TransitionEvent]
    */
-  def apply[S, P[_], T[_], E](taskProvider: TransitionTaskProvider[S, P, T],
+  def apply[S, P[_], T[_], E](taskProvider: TransitionTaskProvider[P, T, S, E],
             exceptionHandlerFn: T[_] ⇒ TransitionExceptionHandler[P])
            (topology: PetriNet[P[_], T[_]]): Job[P, T, S, E] ⇒ IO[TransitionEvent[T]] = {
 
     val cachedTransitionTasks: Map[T[_], _] =
-      topology.transitions.map(t ⇒ t -> taskProvider.apply[Any, Any](topology, t.asInstanceOf[T[Any]])).toMap
+      topology.transitions.map(t ⇒ t -> taskProvider.apply[Any](topology, t.asInstanceOf[T[Any]])).toMap
 
     def transitionFunction[Input](t: T[Input]) =
       cachedTransitionTasks(t).asInstanceOf[TransitionTask[P, Input, E, S]]

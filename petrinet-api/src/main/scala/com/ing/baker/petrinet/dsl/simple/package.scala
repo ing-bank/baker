@@ -43,8 +43,8 @@ package object simple {
   def |~>[Out: MarkingLike](out: Out): TransitionAdjacency = TransitionAdjacency(Map.empty, implicitly[MarkingLike[Out]].apply(out))
 
   val runtime = new PetriNetRuntime[Place, Transition, Unit, Unit] {
-    override val taskProvider: TransitionTaskProvider[Unit, Place, Transition] = new TransitionTaskProvider[Unit, Place, Transition] {
-      override def apply[Input, E](petriNet: PetriNet[Place[_], Transition[_]], t: Transition[Input]): TransitionTask[Place, Input, E, Unit] =
+    override val taskProvider: TransitionTaskProvider[Place, Transition, Unit, Unit] = new TransitionTaskProvider[Place, Transition, Unit, Unit] {
+      override def apply[Input](petriNet: PetriNet[Place[_], Transition[_]], t: Transition[Input]): TransitionTask[Place, Input, Unit, Unit] =
         (marking, state, input) ⇒ ???
     }
   }

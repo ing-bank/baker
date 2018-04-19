@@ -16,14 +16,14 @@ import org.slf4j.{LoggerFactory, MDC}
 
 import scala.util.{Failure, Success, Try}
 
-class TaskProvider(recipeName: String, interactionManager: InteractionManager, eventStream: EventStream) extends TransitionTaskProvider[ProcessState, Place, Transition] {
+class TaskProvider(recipeName: String, interactionManager: InteractionManager, eventStream: EventStream) extends TransitionTaskProvider[Place, Transition, ProcessState, RuntimeEvent] {
 
   val log = LoggerFactory.getLogger(classOf[TaskProvider])
 
-  override def apply[Input, Output](petriNet: PetriNet[Place[_], Transition[_]], t: Transition[Input]): TransitionTask[Place, Input, Output, ProcessState] = {
+  override def apply[Input](petriNet: PetriNet[Place[_], Transition[_]], t: Transition[Input]): TransitionTask[Place, Input, RuntimeEvent, ProcessState] = {
     t match {
       case interaction: InteractionTransition[_] =>
-        interactionTransitionTask[AnyRef, Input, Output](interaction.asInstanceOf[InteractionTransition[AnyRef]], petriNet.outMarking(interaction))
+        interactionTransitionTask[AnyRef, Input](interaction.asInstanceOf[InteractionTransition[AnyRef]], petriNet.outMarking(interaction))
       case t: EventTransition  => eventTransitionTask(petriNet, t)
       case t                   => passThroughTransitionTask(petriNet, t)
     }
@@ -47,8 +47,8 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
     }
   }
 
-  def interactionTransitionTask[I, Input, Output](interaction: InteractionTransition[I],
-                                                  outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, Input, Output, ProcessState] =
+  def interactionTransitionTask[I, Input](interaction: InteractionTransition[I],
+                                                  outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, Input, RuntimeEvent, ProcessState] =
 
     (_, processState, _) => {
 
@@ -90,7 +90,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
 
             val (outputEvent, output) = interactionOutput match {
               case None =>
-                (RuntimeEvent.create(interaction.interactionName, Seq.empty), null.asInstanceOf[Output])
+                (RuntimeEvent.create(interaction.interactionName, Seq.empty), null.asInstanceOf[RuntimeEvent])
 
               case Some(event) =>
                 // check if no null ingredients are provided
@@ -104,7 +104,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
                 // transforms the event
                 val transformedEvent = transformEvent(interaction)(event)
 
-                (transformedEvent, transformedEvent.asInstanceOf[Output])
+                (transformedEvent, transformedEvent)
             }
 
             val timeCompleted = System.currentTimeMillis()

@@ -19,7 +19,7 @@ trait PetriNetRuntime[P[_], T[_], S, E] {
 
   val exceptionHandler: T[_] ⇒ TransitionExceptionHandler[P] = _ ⇒ (_, _, _) ⇒ BlockTransition
 
-  val taskProvider: TransitionTaskProvider[S, P, T]
+  val taskProvider: TransitionTaskProvider[P, T, S, E]
 
   def jobExecutor(topology: PetriNet[P[_], T[_]]) = JobExecutor[S, P, T, E](taskProvider, exceptionHandler)(topology)
 
