@@ -65,10 +65,10 @@ object EventSourcing {
     case e: TransitionFailedEvent[_, _, _] ⇒
       val transition = e.transition.asInstanceOf[T[Any]]
       val job = instance.jobs.getOrElse(e.jobId, {
-        Job[P, T, S, E](e.jobId, e.correlationId, instance.state, transition, e.consume.asInstanceOf[Marking[P]], e.input, None)
+        Job[P, T, S](e.jobId, e.correlationId, instance.state, transition, e.consume.asInstanceOf[Marking[P]], e.input, None)
       })
       val failureCount = job.failureCount + 1
-      val updatedJob: Job[P, T, S, E] = job.copy(failure = Some(ExceptionState(e.timeFailed, failureCount, e.failureReason, e.exceptionStrategy)))
+      val updatedJob: Job[P, T, S] = job.copy(failure = Some(ExceptionState(e.timeFailed, failureCount, e.failureReason, e.exceptionStrategy)))
       instance.copy[P, T, S, E](jobs = instance.jobs + (job.id -> updatedJob))
   }
 }

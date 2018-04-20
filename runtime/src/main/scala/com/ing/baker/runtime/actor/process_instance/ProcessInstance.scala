@@ -47,11 +47,11 @@ object ProcessInstance {
   * This actor is responsible for maintaining the state of a single petri net instance.
   */
 class ProcessInstance[P[_], T[_], S, E](processType: String,
-                                            processTopology: PetriNet[P[_], T[_]],
-                                            settings: Settings,
-                                            runtime: PetriNetRuntime[P, T, S, E],
-                                            override implicit val placeIdentifier: Identifiable[P[_]],
-                                            override implicit val transitionIdentifier: Identifiable[T[_]]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSource) {
+                                        processTopology: PetriNet[P[_], T[_]],
+                                        settings: Settings,
+                                        runtime: PetriNetRuntime[P, T, S, E],
+                                        override implicit val placeIdentifier: Identifiable[P[_]],
+                                        override implicit val transitionIdentifier: Identifiable[T[_]]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSource) {
 
 
   val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
@@ -193,6 +193,12 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
 
     case FireTransition(transitionId, input, correlationIdOption) ⇒
 
+      /**
+        * TODO
+        *
+        * This should only return once the initial transition is completed & persisted
+        * That way we are sure the correlation id is persisted.
+        */
       val transition = topology.transitions.getById(transitionId, "transition in petrinet").asInstanceOf[T[Any]]
 
       def alreadyReceived(id: String) = instance.receivedCorrelationIds.contains(id) || instance.jobs.values.exists(_.correlationId == Some(id))
@@ -217,7 +223,7 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
       sender() ! AlreadyInitialized
   }
 
-  def step(instance: Instance[P, T, S, E]): (Instance[P, T, S, E], Set[Job[P, T, S, E]]) = {
+  def step(instance: Instance[P, T, S, E]): (Instance[P, T, S, E], Set[Job[P, T, S]]) = {
 
     runtime.jobPicker.allEnabledJobs.run(instance).value match {
       case (updatedInstance, jobs) ⇒
@@ -232,7 +238,7 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
     }
   }
 
-  def executeJob(job: Job[P, T, S, E], originalSender: ActorRef): Unit = {
+  def executeJob(job: Job[P, T, S], originalSender: ActorRef): Unit = {
 
     log.firingTransition(processId, job.id, job.transition.toString, System.currentTimeMillis())
 

@@ -5,6 +5,7 @@ import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.petrinet.runtime._
+import com.ing.baker.runtime.core.events.InteractionFailed
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 
@@ -23,7 +24,7 @@ class RecipeRuntime(recipeName: String, interactionManager: InteractionManager, 
 
   override val tokenGame = new RecipeTokenGame()
 
-  override val eventSource: Transition[_] => (ProcessState => RuntimeEvent => ProcessState) = RecipeRuntime.eventSourceFn
+  override val eventSource = RecipeRuntime.eventSourceFn
 
   override val exceptionHandler: Transition[_] => TransitionExceptionHandler[Place] = {
     case interaction: InteractionTransition[_] =>

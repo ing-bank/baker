@@ -48,7 +48,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
   }
 
   def interactionTransitionTask[I, Input](interaction: InteractionTransition[I],
-                                                  outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, Input, ProcessState, RuntimeEvent] =
+                                          outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, Input, ProcessState, RuntimeEvent] =
 
     (_, processState, _) => {
 
