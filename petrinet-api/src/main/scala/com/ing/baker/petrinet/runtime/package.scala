@@ -12,10 +12,7 @@ import scala.util.control.NonFatal
 
 package object runtime {
 
-  /**
-   * An exception handler function associated with a transition.
-   */
-  type TransitionExceptionHandler[P[_]] = (Throwable, Int, MultiSet[P[_]]) ⇒ ExceptionStrategy
+
 
   /**
    * An (asynchronous) function associated with a transition

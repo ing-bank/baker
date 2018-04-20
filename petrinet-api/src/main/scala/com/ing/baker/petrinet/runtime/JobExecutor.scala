@@ -15,7 +15,7 @@ object JobExecutor {
    * Returns a Job -> IO[TransitionEvent]
    */
   def apply[S, P[_], T[_], E](taskProvider: TransitionTaskProvider[P, T, S, E],
-            exceptionHandlerFn: T[_] ⇒ TransitionExceptionHandler[P])
+            exceptionHandlerFn: ExceptionHandler[P, T, S])
            (topology: PetriNet[P[_], T[_]]): Job[P, T, S] ⇒ IO[TransitionEvent[T]] = {
 
     val cachedTransitionTasks: Map[T[_], _] =
@@ -51,7 +51,7 @@ object JobExecutor {
         // In case an exception was thrown by the transition, we compute the failure strategy and return a TransitionFailedEvent
         case e: Throwable ⇒
           val failureCount = job.failureCount + 1
-          val failureStrategy = exceptionHandlerFn(transition).apply(e, failureCount, topology.outMarking(transition))
+          val failureStrategy = exceptionHandlerFn.handleException(job)(e, failureCount, topology.outMarking(transition))
           TransitionFailedEvent(job.id, transition, job.correlationId, startTime, System.currentTimeMillis(), job.consume, job.input, exceptionStackTrace(e), failureStrategy)
       }.handle {
         // If an exception was thrown while computing the failure strategy we block the interaction from firing

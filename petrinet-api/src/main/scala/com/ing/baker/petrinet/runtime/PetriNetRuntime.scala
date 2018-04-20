@@ -1,6 +1,6 @@
 package com.ing.baker.petrinet.runtime
 
-import com.ing.baker.petrinet.api.PetriNet
+import com.ing.baker.petrinet.api.{MultiSet, PetriNet}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
 
 /**
@@ -17,7 +17,9 @@ trait PetriNetRuntime[P[_], T[_], S, E] {
 
   val eventSource: T[_] ⇒ (S ⇒ E ⇒ S) = _ ⇒ (s ⇒ _ ⇒ s)
 
-  val exceptionHandler: T[_] ⇒ TransitionExceptionHandler[P] = _ ⇒ (_, _, _) ⇒ BlockTransition
+  val exceptionHandler: ExceptionHandler[P, T, S] = new ExceptionHandler[P, T, S] {
+    override def handleException(job: Job[P, T, S])(throwable: Throwable, failureCount: Int, outMarking: MultiSet[P[_]]) = BlockTransition
+  }
 
   val taskProvider: TransitionTaskProvider[P, T, S, E]
 

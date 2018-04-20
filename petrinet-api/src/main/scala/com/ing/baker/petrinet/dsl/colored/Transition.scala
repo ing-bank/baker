@@ -1,7 +1,6 @@
 package com.ing.baker.petrinet.dsl.colored
 
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
-import com.ing.baker.petrinet.runtime.TransitionExceptionHandler
 
 /**
  * A transition in a Colored Petri Net
