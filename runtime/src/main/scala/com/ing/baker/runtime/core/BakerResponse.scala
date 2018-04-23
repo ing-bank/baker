@@ -117,7 +117,7 @@ class BakerResponse(processId: String, source: Source[Any, NotUsed])(implicit ma
       case InteractionResponse.PeriodExpired => SensoryEventStatus.ReceivePeriodExpired
       case InteractionResponse.AlreadyReceived => SensoryEventStatus.AlreadyReceived
       case InteractionResponse.ProcessDeleted => SensoryEventStatus.ProcessDeleted
-      case _ => throw new BakerException("Unknown exception while handeling sensory event")
+      case _ => throw new BakerException("Unknown exception while handling sensory event")
     }
   }
 

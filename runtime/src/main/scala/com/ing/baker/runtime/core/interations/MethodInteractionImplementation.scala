@@ -113,7 +113,7 @@ object MethodInteractionImplementation {
   def eventForProvidedIngredient[I](interactionName: String, runtimeEventName: String, providedIngredient: Any, ingredientToComplyTo: IngredientDescriptor): RuntimeEvent = {
 
     if (providedIngredient == null) {
-      val msg: String = s"null value provided for ingredient '${ingredientToComplyTo.name}' for interaction '${interactionName}'"
+      val msg: String = s"null value provided for ingredient '${ingredientToComplyTo.name}' for interaction '$interactionName'"
       log.error(msg)
       throw new FatalInteractionException(msg)
     }
@@ -127,7 +127,7 @@ object MethodInteractionImplementation {
         s"""
            |Ingredient: ${ingredientToComplyTo.name} provided by an interaction but does not comply to the expected type
            |Expected  : ${ingredientToComplyTo.`type`}
-           |Provided  : $providedIngredient
+           |Provided  : ${providedIngredient.getClass}
          """.stripMargin)
     }
   }

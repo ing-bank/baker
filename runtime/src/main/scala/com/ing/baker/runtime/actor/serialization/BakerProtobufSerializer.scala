@@ -43,7 +43,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     manifestInfo
       .find(_.domainClass.isInstance(o))
       .map(_.manifest)
-      .getOrElse(throw new IllegalStateException(s"Unsupported object: $o"))
+      .getOrElse(throw new IllegalStateException(s"Unsupported object of type: ${o.getClass}"))
   }
 
   override def toBinary(o: AnyRef): Array[Byte] = {

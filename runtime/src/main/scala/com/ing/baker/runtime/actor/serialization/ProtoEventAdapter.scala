@@ -204,10 +204,10 @@ trait ProtoEventAdapter {
 
               protobuf.Node(protobuf.Node.OneofNode.InteractionTransition(pt))
 
-            case t => throw new IllegalStateException(s"Unkown transition type: $t")
+            case t => throw new IllegalStateException(s"Unknown transition type: $t")
           }
 
-          case n => throw new IllegalStateException(s"Unkown node type: $n")
+          case n => throw new IllegalStateException(s"Unknown node type: $n")
         }
 
         val protoEdges = petriNet.innerGraph.edges.toList.map{ e =>
@@ -291,12 +291,12 @@ trait ProtoEventAdapter {
         case types.PrimitiveValue(value: org.joda.time.DateTime) => protobuf.Value(protobuf.Value.OneofValue.JodaDatetimeValue(ISODateTimeFormat.dateTime().print(value)))
         case types.PrimitiveValue(value: org.joda.time.LocalDate) => protobuf.Value(protobuf.Value.OneofValue.JodaLocaldateValue(value.toString))
         case types.PrimitiveValue(value: org.joda.time.LocalDateTime) => protobuf.Value(protobuf.Value.OneofValue.JodaLocaldatetimeValue(value.toString))
-        case types.PrimitiveValue(value) => throw new IllegalStateException(s"Unknown primitive value: $value")
+        case types.PrimitiveValue(value) => throw new IllegalStateException(s"Unknown primitive value of type: ${value.getClass}")
         case types.RecordValue(entries) => protobuf.Value(protobuf.Value.OneofValue.RecordValue(protobuf.Record(entries.mapValues(toProtoType[protobuf.Value]))))
         case types.ListValue(entries) => protobuf.Value(protobuf.Value.OneofValue.ListValue(protobuf.List(entries.map(toProtoType[protobuf.Value]))))
       }
 
-      case o => throw new IllegalStateException(s"Cannot serialize object $o")
+      case o => throw new IllegalStateException(s"Cannot serialize object of type ${o.getClass}")
     }
   }
 
@@ -423,7 +423,7 @@ trait ProtoEventAdapter {
 
           case OneofType.Enum(EnumType(options)) => types.EnumType(options.toSet)
 
-          case _ => throw new IllegalStateException(s"Proto message with missing fields: $msg")
+          case unknownMessage => throw new IllegalStateException(s"Proto message with unknown type: ${unknownMessage.getClass}")
         }
 
       case msg: protobuf.Value =>
@@ -451,7 +451,7 @@ trait ProtoEventAdapter {
           case OneofValue.JodaLocaldatetimeValue(date) => types.PrimitiveValue(LocalDateTime.parse(date))
           case OneofValue.RecordValue(Record(fields)) => types.RecordValue(fields.mapValues(toDomainType[types.Value]))
           case OneofValue.ListValue(List(entries)) => types.ListValue(entries.map(toDomainType[types.Value]).toList)
-          case OneofValue.Empty => throw new IllegalStateException("Empty value cannot be deserializialized")
+          case OneofValue.Empty => throw new IllegalStateException("Empty value cannot be deserialized")
         }
 
       case fs: protobuf.InteractionFailureStrategy => fs.oneofType match {
@@ -514,7 +514,7 @@ trait ProtoEventAdapter {
       case protobuf.EventOutputTransformer(newEventName, ingredientRenames) =>
         il.EventOutputTransformer(newEventName.getOrMissing("newEventName"), ingredientRenames)
 
-      case _ => throw new IllegalStateException(s"Unknown protobuf message: $serializedMessage")
+      case unknownMessage => throw new IllegalStateException(s"Unknown protobuf message of type ${unknownMessage.getClass}")
 
     }
   }
@@ -539,7 +539,7 @@ trait ProtoEventAdapter {
     case protobuf.PlaceType.IntermediatePlace => il.petrinet.Place.IntermediatePlace
     case protobuf.PlaceType.EmptyEventIngredientPlace => il.petrinet.Place.EmptyEventIngredientPlace
     case protobuf.PlaceType.MultiTransitionPlace => il.petrinet.Place.MultiTransitionPlace
-    case _ => throw new IllegalStateException(s"Unknown protobuf message: $protoPlaceType")
+    case unknownPlaceType => throw new IllegalStateException(s"Unknown protobuf message of type: ${unknownPlaceType.getClass}")
   }
 
 }

@@ -49,7 +49,7 @@ case object NullValue extends Value {
 // should inherit AnyVal
 case class PrimitiveValue(value: Any) extends Value {
   if (!isPrimitiveValue(value))
-    throw new IllegalArgumentException(s"value is not supported: $value")
+    throw new IllegalArgumentException(s"value of type ${value.getClass} is not supported as a primitive value")
 
   def isAssignableTo(clazz: Class[_]) =
     (supportedPrimitiveClasses.contains(clazz) && clazz.isInstance(value)) ||

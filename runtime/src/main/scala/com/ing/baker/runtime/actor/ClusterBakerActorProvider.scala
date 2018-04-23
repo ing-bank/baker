@@ -37,7 +37,7 @@ object ClusterBakerActorProvider {
   def entityIdExtractor(nrOfShards: Int): ExtractEntityId = {
     case msg:ProcessIndexMessage => (entityId(msg.processId, nrOfShards), msg)
     case GetShardIndex(entityId) => (entityId, GetIndex)
-    case msg => throw new IllegalArgumentException(s"Message not recognized: $msg")
+    case msg => throw new IllegalArgumentException(s"Message of type ${msg.getClass} not recognized")
   }
 
   // extracts the shard id from the incoming message
@@ -45,7 +45,7 @@ object ClusterBakerActorProvider {
     case msg:ProcessIndexMessage => Math.abs(sha256HashCode(msg.processId) % nrOfShards).toString
     case GetShardIndex(entityId) => entityId.split(s"index-").last
     case ShardRegion.StartEntity(entityId) => entityId.split(s"index-").last
-    case msg => throw new IllegalArgumentException(s"Message not recognized: $msg")
+    case msg => throw new IllegalArgumentException(s"Message of type ${msg.getClass} not recognized")
   }
 
   val recipeManagerName = "RecipeManager"
