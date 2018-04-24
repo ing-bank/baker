@@ -147,6 +147,7 @@ lazy val recipeCompiler = project.in(file("compiler"))
 
 lazy val baas = project.in(file("baas"))
   .settings(defaultModuleSettings)
+  .settings(noPublishSettings)
   .settings(
     moduleName := "baker-baas",
     libraryDependencies ++=
