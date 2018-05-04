@@ -46,7 +46,7 @@ object RecipeVisualizer {
     DotAttr("style", "rounded, filled"),
     DotAttr("fillcolor", "\"#60A6DA\""),
     DotAttr("color", "\"#525199\""),
-    DotAttr("penwidth", "12.0")
+    DotAttr("penwidth", "8.0")
   )
 
   private val eventFiredAttributes: List[DotAttr] = List(
