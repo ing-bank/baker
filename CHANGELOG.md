@@ -2,8 +2,10 @@
 
 ## 1.4.0 (NOT YET RELEASED)
 
-- Fix #99, re-added the feature to get an index of all process instances in Baker
-- Fix #50, update protobuf to 3.5.1 to fix a security related issue (CVE-2015-5237)
+- Fixed [#99](https://github.com/ing-bank/baker/issues/99): re-added the feature to get an index of all process instances in Baker
+- Fixed [#50](https://github.com/ing-bank/baker/issues/50): update protobuf to 3.5.1 to fix a security related issue (CVE-2015-5237)
+- Fixed [#112](https://github.com/ing-bank/baker/issues/112): specified timeout in processEvent calls ignored
+- Fixed [#103](https://github.com/ing-bank/baker/issues/103): NullPointer exception when providing implementations directly to `JBaker`
 - Added a list of event names to the process state that can be retreived from memory
 - Optionally add a correlation id to events to achieve idempotent event delivery
 - Update akka to 2.5.11
@@ -11,12 +13,12 @@
 
 ## 1.3.3
 
-- Fix #68, catch and handle exceptions thrown by exception strategy handlers
+- Fixed [#68](https://github.com/ing-bank/baker/issues/68): catch and handle exceptions thrown by exception strategy handlers
 - Bugfix in the RetryWithIncrementalBackoff (integer overflow)
 
 ## 1.3.2
 
-- Fix #91, allow java.util.Set as Ingredient types
+- Fixed [#91](https://github.com/ing-bank/baker/issues/91): allow java.util.Set as Ingredient types
 
 ## 1.3.1
 
@@ -51,10 +53,10 @@
   Now its just a configuration with a boolean on the RetryWithIncrementalBackoff retry strategy
 
 ## 1.1.17
-- Fix #72: do not join to akka cluster when there are persistence problems. `akka.cluster.seed-nodes` configuration should be renamed to `baker.cluster.seed-nodes` to support this "late cluster join" feature.
+- Fixed [#72](https://github.com/ing-bank/baker/issues/72): do not join to akka cluster when there are persistence problems. `akka.cluster.seed-nodes` configuration should be renamed to `baker.cluster.seed-nodes` to support this "late cluster join" feature.
 
 ## 1.1.16
-- Fix #55: Improved readability of duration of scheduled retry log entries 
+- Fixed [#55](https://github.com/ing-bank/baker/issues/55): Improved readability of duration of scheduled retry log entries 
 - DSL syntactic sugar: Variable name is inferred as 'name' for the Ingredients, Events and Recipes, if not defined explicitly.
   Example:
   ```scala
@@ -64,28 +66,28 @@
 - Scala/Java dsl alignment: JBaker.processEventAsync now supports a timeout parameter
 
 ## 1.1.15
-- Fix #62: internal IdleStop message for the ProcessInstance actor is now configured to be serialized by Kryo
-- Fix #59: disabled the usage of Akka Distributed Data until the growing memory issue in the shared process metadata feature is solved.
-- Fix #57: configured the default actor idle-timeout as 5 minutes (baker.actor.idle-timeout config can be overridden in the application.conf)
-- Fix #56: fixed one unhandled message warning for ProcessInstanceEvent
+- Fixed [#62](https://github.com/ing-bank/baker/issues/62): internal IdleStop message for the ProcessInstance actor is now configured to be serialized by Kryo
+- Fixed [#59](https://github.com/ing-bank/baker/issues/59): disabled the usage of Akka Distributed Data until the growing memory issue in the shared process metadata feature is solved.
+- Fixed [#57](https://github.com/ing-bank/baker/issues/57): configured the default actor idle-timeout as 5 minutes (baker.actor.idle-timeout config can be overridden in the application.conf)
+- Fixed [#56](https://github.com/ing-bank/baker/issues/56): fixed one unhandled message warning for ProcessInstanceEvent
 - deprecated the methods that return the generated SVG
 - cleaned up unnecessary Passivate pattern from ProcessInstance
 - removed unnecessary debug logging of Akka Distributed Data updates
 - log when scheduling a retry on actor startup
 
 ## 1.1.14
-- Fix #53: EventListeners are now notified of retry-exhausted events.
-- Fix #49: improved error message when receiving invalid sensory event
+- Fixed [#53](https://github.com/ing-bank/baker/issues/53): EventListeners are now notified of retry-exhausted events.
+- Fixed [#49](https://github.com/ing-bank/baker/issues/49): improved error message when receiving invalid sensory event
 - Added a method to CompiledRecipe to obtain an SVG String: ```getVisualRecipeAsSVG```
 - Updated to akka 2.5.6
 
 ## 1.1.13
-- Fix #47: added writeVisualrecipeToSVGFile to write away the CompiledRecipe to a file.
-- Fix #46: it's now allowed to require an event on the name only, however it's still possible to require on event class in the JavaDSL.
-- Fix #45: validate that ingredients are not of primitive type after compilation.
+- Fixed [#47](https://github.com/ing-bank/baker/issues/47): added writeVisualrecipeToSVGFile to write away the CompiledRecipe to a file.
+- Fixed [#46](https://github.com/ing-bank/baker/issues/46): it's now allowed to require an event on the name only, however it's still possible to require on event class in the JavaDSL.
+- Fixed [#45](https://github.com/ing-bank/baker/issues/45): validate that ingredients are not of primitive type after compilation.
 
 ## 1.1.12
-- Fix #43: interaction is not compiled into petrinet when requires a renamed optional ingredient provided through a renamed event
+- Fixed [#43](https://github.com/ing-bank/baker/issues/43): interaction is not compiled into petrinet when requires a renamed optional ingredient provided through a renamed event
 
 ## 1.1.11
 - bugfix: predefining a higher order type other then option/optional crashed the recipe validations when compiling a recipe
