@@ -1,6 +1,6 @@
 package com.ing.baker.il
 
-import com.ing.baker.il.petrinet.{Node, Place, RecipePetriNet, Transition}
+import com.ing.baker.il.petrinet.{InteractionTransition, Node, Place, RecipePetriNet, Transition}
 import com.ing.baker.petrinet.api._
 import dot._
 
@@ -67,7 +67,15 @@ object RecipeVisualizer {
   private val interactionAttributes: List[DotAttr] = List(
     DotAttr("shape", "rect"),
     DotAttr("margin", 0.5D),
+    DotAttr("style", "rounded, filled"),
     DotAttr("color", "\"#525199\""),
+    DotAttr("penwidth", 2)
+  )
+
+  private val firedInteractionAttributes: List[DotAttr] = List(
+    DotAttr("shape", "rect"),
+    DotAttr("margin", 0.5D),
+    DotAttr("color", "\"#3b823a\""),
     DotAttr("style", "rounded, filled"),
     DotAttr("penwidth", 2)
   )
@@ -128,12 +136,13 @@ object RecipeVisualizer {
         case Left(_) if node.incomingTransitions.isEmpty => missingIngredientAttributes
         case Left(place) if ingredientNames contains place.label ⇒ providedIngredientAttributes
         case Left(_) ⇒ ingredientAttributes
+        case Right(t: InteractionTransition[_]) if eventNames.intersect(t.eventsToFire.map(_.name).toSet).nonEmpty => firedInteractionAttributes
+        case Right(transition) if eventNames.contains(transition.label) ⇒ eventFiredAttributes
         case Right(transition) if transition.isMultiFacilitatorTransition => choiceAttributes
         case Right(transition) if transition.isInteraction ⇒ interactionAttributes
         case Right(transition) if transition.isSieve ⇒ sieveAttributes
         case Right(transition) if transition.isEventMissing ⇒ eventMissingAttributes
         case Right(transition) if transition.isSensoryEvent => sensoryEventAttributes
-        case Right(transition) if eventNames.contains(transition.label) ⇒ eventFiredAttributes
         case Right(_) ⇒ eventAttributes
       }
 
