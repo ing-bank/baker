@@ -249,43 +249,66 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   }
 
   /**
-    * Synchronously returns all events that occurred for a process.
-    */
-  def events(processId: String, timeout: FiniteDuration = defaultInquireTimeout): Seq[RuntimeEvent] = {
-    val futureEventSeq = eventsAsync(processId).runWith(Sink.seq)
-    Await.result(futureEventSeq, timeout)
-  }
-
-  /**
     * Synchronously returns all event names that occurred for a process.
     */
   def eventNames(processId: String, timeout: FiniteDuration = defaultInquireTimeout): List[String] =
     getProcessState(processId, timeout).eventNames
 
+  private def getEventsForRecipe(processId: String, compiledRecipe: CompiledRecipe): Source[(RuntimeEvent, Long), NotUsed] = {
+    ProcessQuery
+      .eventsForInstance[Place, Transition, ProcessState, RuntimeEvent](compiledRecipe.name, processId, compiledRecipe.petriNet, configuredEncryption, readJournal, RecipeRuntime.eventSourceFn)
+      .collect {
+        case (_, TransitionFiredEvent(_, _, _, _, time, _, _, runtimeEvent: RuntimeEvent))
+          if runtimeEvent != null && compiledRecipe.allEvents.exists(e => e.name equals runtimeEvent.name) => (runtimeEvent, time)
+      }
+  }
+
   /**
-    * Returns a Source of baker events for a process.
+    * Returns a stream of all events with their timestamps for a process.
     *
     * @param processId The process identifier.
     * @return The source of events.
     */
-  def eventsAsync(processId: String): Source[RuntimeEvent, NotUsed] = {
-
-    def getEventsForRecipe(compiledRecipe: CompiledRecipe): Source[RuntimeEvent, NotUsed] = {
-      ProcessQuery
-        .eventsForInstance[Place, Transition, ProcessState, RuntimeEvent](compiledRecipe.name, processId.toString, compiledRecipe.petriNet, configuredEncryption, readJournal, RecipeRuntime.eventSourceFn)
-        .collect {
-          case (_, TransitionFiredEvent(_, _, _, _, _, _, _, runtimeEvent: RuntimeEvent))
-            if runtimeEvent != null && compiledRecipe.allEvents.exists(e => e.name equals runtimeEvent.name) => runtimeEvent
-        }
-    }
+  def eventsWithTimestampAsync(processId: String): Source[(RuntimeEvent, Long), NotUsed] = {
 
     val futureResult = processIndexActor.ask(GetCompiledRecipe(processId))(defaultInquireTimeout)
+
     Await.result(futureResult, defaultInquireTimeout) match {
-      case RecipeFound(compiledRecipe) => getEventsForRecipe(compiledRecipe)
+      case RecipeFound(compiledRecipe) => getEventsForRecipe(processId, compiledRecipe)
       case ProcessDeleted(_) => throw new ProcessDeletedException(s"Process $processId is deleted")
       case ProcessUninitialized(_) => throw new NoSuchProcessException(s"No process found for $processId")
       case _ => throw new BakerException("Unknown response received")
     }
+  }
+
+  /**
+    * Returns a stream of all events for a process.
+    *
+    * @param processId The process identifier.
+    * @return A sequence of events with their timestamps.
+    */
+  def eventsAsync(processId: String): Source[RuntimeEvent, NotUsed] =
+    eventsWithTimestampAsync(processId).map { case (event, _) => event }
+
+  /**
+    * Synchronously returns a sequence of all events for a process.
+    *
+    * @param processId The process identifier.
+    * @param timeout How long to wait to retrieve the events.
+    */
+  def events(processId: String, timeout: FiniteDuration = defaultInquireTimeout): Seq[RuntimeEvent] =
+    eventsWithTimestamp(processId, timeout).map { case (event, _) => event }
+
+  /**
+    * Synchronously returns a sequence of all events with their timestamps for a process.
+    *
+    * @param processId The process identifier.
+    * @param timeout How long to wait to retrieve the events.
+    * @return A sequence of events with their timestamps.
+    */
+  def eventsWithTimestamp(processId: String, timeout: FiniteDuration = defaultInquireTimeout): Seq[(RuntimeEvent, Long)] = {
+    val futureEventSeq = eventsWithTimestampAsync(processId).runWith(Sink.seq)
+    Await.result(futureEventSeq, timeout)
   }
 
   /**
