@@ -209,7 +209,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def processEvent(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): SensoryEventStatus = {
-    processEventAsync(processId, event, correlationId, timeout).confirmCompleted()
+    processEventAsync(processId, event, correlationId, timeout).confirmCompleted(timeout)
   }
 
   /**
