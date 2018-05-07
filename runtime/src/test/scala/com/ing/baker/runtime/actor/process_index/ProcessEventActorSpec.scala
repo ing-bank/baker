@@ -9,8 +9,10 @@ import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.{TestDuration, TestKit, TestProbe}
 import akka.util.Timeout
 import com.ing.baker.petrinet.runtime.ExceptionStrategy
+import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol.ProcessEvent
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.core.RuntimeEvent
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.Matchers._
 import org.scalatest.WordSpecLike
@@ -18,7 +20,7 @@ import org.scalatest.WordSpecLike
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-object ProcessApiSpec {
+object ProcessEventActorSpec {
   val config: Config = ConfigFactory.parseString(
     """
       |akka.persistence.journal.plugin = "inmemory-journal"
@@ -27,13 +29,13 @@ object ProcessApiSpec {
     """.stripMargin)
 }
 
-class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec", ProcessApiSpec.config)) with WordSpecLike {
+class ProcessEventActorSpec extends TestKit(ActorSystem("ProcessApiSpec", ProcessEventActorSpec.config)) with WordSpecLike {
 
   implicit val materializer = ActorMaterializer()
   implicit val ec: ExecutionContext = system.dispatcher
 
   // Using dilated timeout to take into account the akka.test.timefactor config
-  implicit val akkaTimeout = Timeout(2.seconds.dilated)
+  implicit val timeout = 2.seconds.dilated
 
   "The ProcessApi" should {
 
@@ -41,15 +43,13 @@ class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec", ProcessApiSpe
 
       val processProbe = TestProbe()
 
-      val api = new ProcessApi(processProbe.ref)
+      val processEventCmd = ProcessEvent("", RuntimeEvent("", Seq.empty), None)
 
-      val fireCmd = FireTransition(1, ())
-
-      val source: Source[Any, NotUsed] = api.askAndCollectAll(fireCmd)
+      val source: Source[Any, NotUsed] = ProcessEventActor.processEvent(processProbe.ref, processEventCmd)
 
       val runSource: TestSubscriber.Probe[Long] = source.map(_.asInstanceOf[TransitionResponse].transitionId).runWith(TestSink.probe)
 
-      processProbe.expectMsg(fireCmd)
+      processProbe.expectMsg(processEventCmd)
 
       processProbe.reply(TransitionFired(1, 1, None, Map.empty, Map.empty, null, Set(2, 3)))
       processProbe.reply(TransitionFired(2, 2, None, Map.empty, Map.empty, null, Set.empty))
@@ -63,15 +63,13 @@ class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec", ProcessApiSpe
 
       val processProbe = TestProbe()
 
-      val api = new ProcessApi(processProbe.ref)
+      val processEventCmd = ProcessEvent("", RuntimeEvent("", Seq.empty), None)
 
-      val fireCmd = FireTransition(1, ())
-
-      val source: Source[Any, NotUsed] = api.askAndCollectAll(fireCmd)
+      val source: Source[Any, NotUsed] = ProcessEventActor.processEvent(processProbe.ref, processEventCmd)
 
       val runSource = source.map(_.asInstanceOf[TransitionResponse].transitionId).runWith(TestSink.probe)
 
-      processProbe.expectMsg(fireCmd)
+      processProbe.expectMsg(processEventCmd)
 
       processProbe.reply(TransitionFired(1, 1, None, Map.empty, Map.empty, null, Set(2, 3)))
       processProbe.reply(TransitionFailed(2, 2, None, Map.empty, null, "", ExceptionStrategy.BlockTransition))
@@ -92,13 +90,12 @@ class ProcessApiSpec extends TestKit(ActorSystem("ProcessApiSpec", ProcessApiSpe
 
       def check(msg: Any) = {
         val processProbe = TestProbe()
-        val api = new ProcessApi(processProbe.ref)
-        val fireTransitionCmd = FireTransition(1, ())
+        val processEventCmd = ProcessEvent("", RuntimeEvent("", Seq.empty), None)
 
-        val source: Source[Any, NotUsed] = api.askAndCollectAll(fireTransitionCmd)
+        val source: Source[Any, NotUsed] = ProcessEventActor.processEvent(processProbe.ref, processEventCmd)
         val runSource: TestSubscriber.Probe[Any] = source.runWith(TestSink.probe)
 
-        processProbe.expectMsg(fireTransitionCmd)
+        processProbe.expectMsg(processEventCmd)
         processProbe.reply(msg)
 
         runSource.request(1).expectNext(msg)

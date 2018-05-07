@@ -1,6 +1,7 @@
 package com.ing.baker.petrinet.dsl
 
 import com.ing.baker.petrinet.api._
+import com.ing.baker.petrinet.runtime.ExceptionStrategy
 
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
@@ -11,6 +12,11 @@ package object colored {
    * Type alias for the node type of the scalax.collection.Graph backing the petri net.
    */
   type Node = Either[Place[_], Transition[_]]
+
+  /**
+    * An exception handler function associated with a transition.
+    */
+  type TransitionExceptionHandler[P[_]] = (Throwable, Int, MultiSet[P[_]]) ⇒ ExceptionStrategy
 
   /**
    * Type alias for the edge type of the scalax.collection.Graph backing the petri net.

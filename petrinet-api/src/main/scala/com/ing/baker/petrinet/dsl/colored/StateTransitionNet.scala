@@ -11,19 +11,23 @@ trait StateTransitionNet[S, E] {
 
   def eventSourceFunction: S ⇒ E ⇒ S
 
-  def eventTaskProvider: TransitionTaskProvider[S, Place, Transition] = new TransitionTaskProvider[S, Place, Transition] {
-    override def apply[Input, Output](petriNet: PetriNet[Place[_], Transition[_]], t: Transition[Input]): TransitionTask[Place, Input, Output, S] =
+  def eventTaskProvider: TransitionTaskProvider[Place, Transition, S, E] = new TransitionTaskProvider[Place, Transition, S, E] {
+    override def apply[Input](petriNet: PetriNet[Place[_], Transition[_]], t: Transition[Input]): TransitionTask[Place, Input, S, E] =
       (_, state, _) ⇒ {
-        val eventTask = t.asInstanceOf[StateTransition[S, Output]].produceEvent(state)
+        val eventTask = t.asInstanceOf[StateTransition[S, E]].produceEvent(state)
         val produceMarking: Marking[Place] = toMarking[Place](petriNet.outMarking(t))
         eventTask.map(e ⇒ (produceMarking, e))
       }
   }
 
   val runtime: PetriNetRuntime[Place, Transition, S, E] = new PetriNetRuntime[Place, Transition, S, E] {
-    override val eventSourceFn: (Transition[_]) ⇒ (S) ⇒ (E) ⇒ S = _ ⇒ eventSourceFunction
-    override val taskProvider: TransitionTaskProvider[S, Place, Transition] = eventTaskProvider
-    override val exceptionHandlerFn: (Transition[_]) => TransitionExceptionHandler[Place] = (t: Transition[_]) ⇒ t.exceptionStrategy
+    override val eventSource: (Transition[_]) ⇒ (S) ⇒ (E) ⇒ S = _ ⇒ eventSourceFunction
+    override val taskProvider: TransitionTaskProvider[Place, Transition, S, E] = eventTaskProvider
+    override val exceptionHandler: ExceptionHandler[Place, Transition, S] = new ExceptionHandler[Place, Transition, S] {
+      override def handleException(job: Job[Place, Transition, S])
+                                  (throwable: Throwable, failureCount: Int, outMarking: MultiSet[Place[_]]) =
+        job.transition.exceptionStrategy(throwable, failureCount, outMarking)
+    }
     override lazy val jobPicker = new JobPicker[Place, Transition](tokenGame) {
       override def isAutoFireable[S, E](instance: Instance[Place, Transition, S, E], t: Transition[_]): Boolean =
         t.isAutomated && instance.isBlockedReason(t).isEmpty

@@ -18,6 +18,8 @@ import scala.concurrent.duration._
 import scala.language.existentials
 import scala.util.Try
 import akka.pattern.pipe
+import cats.effect.IO
+import cats.syntax.apply._
 
 object ProcessInstance {
 
@@ -45,11 +47,11 @@ object ProcessInstance {
   * This actor is responsible for maintaining the state of a single petri net instance.
   */
 class ProcessInstance[P[_], T[_], S, E](processType: String,
-                                            processTopology: PetriNet[P[_], T[_]],
-                                            settings: Settings,
-                                            runtime: PetriNetRuntime[P, T, S, E],
-                                            override implicit val placeIdentifier: Identifiable[P[_]],
-                                            override implicit val transitionIdentifier: Identifiable[T[_]]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSourceFn) {
+                                        processTopology: PetriNet[P[_], T[_]],
+                                        settings: Settings,
+                                        runtime: PetriNetRuntime[P, T, S, E],
+                                        override implicit val placeIdentifier: Identifiable[P[_]],
+                                        override implicit val transitionIdentifier: Identifiable[T[_]]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSource) {
 
 
   val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
@@ -60,7 +62,7 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
 
   import context.dispatcher
 
-  val executor = runtime.jobExecutor.apply(processTopology)(settings.executionContext)
+  val executor = runtime.jobExecutor(topology)
 
   override def receiveCommand = uninitialized
 
@@ -191,6 +193,12 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
 
     case FireTransition(transitionId, input, correlationIdOption) ⇒
 
+      /**
+        * TODO
+        *
+        * This should only return once the initial transition is completed & persisted
+        * That way we are sure the correlation id is persisted.
+        */
       val transition = topology.transitions.getById(transitionId, "transition in petrinet").asInstanceOf[T[Any]]
 
       def alreadyReceived(id: String) = instance.receivedCorrelationIds.contains(id) || instance.jobs.values.exists(_.correlationId == Some(id))
@@ -215,7 +223,7 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
       sender() ! AlreadyInitialized
   }
 
-  def step(instance: Instance[P, T, S, E]): (Instance[P, T, S, E], Set[Job[P, T, S, E]]) = {
+  def step(instance: Instance[P, T, S, E]): (Instance[P, T, S, E], Set[Job[P, T, S]]) = {
 
     runtime.jobPicker.allEnabledJobs.run(instance).value match {
       case (updatedInstance, jobs) ⇒
@@ -230,12 +238,19 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
     }
   }
 
-  def executeJob(job: Job[P, T, S, E], originalSender: ActorRef): Unit = {
+  def executeJob(job: Job[P, T, S], originalSender: ActorRef): Unit = {
 
     log.firingTransition(processId, job.id, job.transition.toString, System.currentTimeMillis())
 
     // context.self can be potentially throw NullPointerException in non graceful shutdown situations
-    Try(context.self).foreach(executor(job).unsafeToFuture().pipeTo(_)(originalSender))
+    Try(context.self).foreach { self =>
+
+      // executes the IO task on the ExecutionContext
+      val future = IO.shift(settings.executionContext) *> executor(job)
+
+      // translate to future and pipes the result of the future back to the actor
+      future.unsafeToFuture().pipeTo(self)(originalSender)
+    }
   }
 
   def scheduleFailedJobsForRetry(instance: Instance[P, T, S, E]): Map[Long, Cancellable] = {

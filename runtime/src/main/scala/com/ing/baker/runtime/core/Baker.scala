@@ -3,7 +3,7 @@ package com.ing.baker.runtime.core
 import java.util.concurrent.TimeoutException
 
 import akka.NotUsed
-import akka.actor.{Actor, ActorRef, ActorSystem, Address, AddressFromURIString, Props}
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
@@ -16,7 +16,7 @@ import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.runtime.EventSourcing.{TransitionFailedEvent, TransitionFiredEvent}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue
 import com.ing.baker.runtime.actor._
-import com.ing.baker.runtime.actor.process_index.ProcessApi
+import com.ing.baker.runtime.actor.process_index.ProcessEventActor
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEvent
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
@@ -24,6 +24,7 @@ import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.core.Baker._
+import com.ing.baker.runtime.core.events.BakerEvent
 import com.ing.baker.runtime.core.interations.{InteractionImplementation, InteractionManager, MethodInteractionImplementation}
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.RecipeRuntime
@@ -75,33 +76,16 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   private val defaultProcessEventTimeout = config.as[FiniteDuration]("baker.process-event-timeout")
   private val defaultInquireTimeout = config.as[FiniteDuration]("baker.process-inquire-timeout")
   private val defaultShutdownTimeout = config.as[FiniteDuration]("baker.shutdown-timeout")
-  private val journalInitializeTimeout = config.as[FiniteDuration]("baker.journal-initialize-timeout")
   private val readJournalIdentifier = config.as[String]("baker.actor.read-journal-plugin")
   private val log = LoggerFactory.getLogger(classOf[Baker])
 
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
+  private implicit val materializer: ActorMaterializer = ActorMaterializer()
+
+  if (!config.as[Option[Boolean]]("baker.config-file-included").getOrElse(false))
+    throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
 
   private val readJournal = PersistenceQuery(actorSystem)
     .readJournalFor[CurrentEventsByPersistenceIdQuery with PersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
-
-  private def initializeCluster() = {
-
-    val seedNodes: List[Address] = config.as[Option[List[String]]]("baker.cluster.seed-nodes") match {
-      case Some(_seedNodes) if _seedNodes.nonEmpty =>
-        _seedNodes map AddressFromURIString.parse
-      case None =>
-        throw new BakerException("Baker cluster configuration without baker.cluster.seed-nodes")
-    }
-
-    /**
-      * Join cluster after waiting for the persistenceInit actor, otherwise terminate here.
-      */
-    Await.result(Util.persistenceInit(journalInitializeTimeout), journalInitializeTimeout)
-
-    // join the cluster
-    log.info("PersistenceInit actor started successfully, joining cluster seed nodes {}", seedNodes)
-    Cluster.get(actorSystem).joinSeedNodes(seedNodes)
-  }
 
   private val configuredEncryption: Encryption = {
     val encryptionEnabled = config.getAs[Boolean]("baker.encryption.enabled").getOrElse(false)
@@ -114,11 +98,8 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
   private val bakerActorProvider =
     config.as[Option[String]]("baker.actor.provider") match {
-      case None | Some("local") =>
-        new LocalBakerActorProvider(config)
-      case Some("cluster-sharded") =>
-        initializeCluster()
-        new ClusterBakerActorProvider(config, configuredEncryption)
+      case None | Some("local")    => new LocalBakerActorProvider(config, configuredEncryption)
+      case Some("cluster-sharded") => new ClusterBakerActorProvider(config, configuredEncryption)
       case Some(other) =>
         throw new IllegalArgumentException(s"Unsupported actor provider: $other")
     }
@@ -127,8 +108,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
   val processIndexActor: ActorRef =
     bakerActorProvider.createProcessIndexActor(interactionManager, recipeManager)
-
-  private val petriNetApi = new ProcessApi(processIndexActor)
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -202,13 +181,15 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @return
     */
   def bakeAsync(recipeId: String, processId: String, timeout: FiniteDuration = defaultBakeTimeout): Future[ProcessState] = {
+
     implicit val askTimeout = Timeout(timeout)
 
     val msg = CreateProcess(recipeId, processId)
     val initializeFuture = processIndexActor ? msg
 
     val eventualState: Future[ProcessState] = initializeFuture.map {
-      case msg: Initialized => msg.state.asInstanceOf[ProcessState]
+      case msg: Initialized =>
+        msg.state.asInstanceOf[ProcessState]
       case ProcessAlreadyInitialized(_) =>
         throw new IllegalArgumentException(s"Process with id '$processId' already exists.")
       case NoRecipeFound(_) => throw new IllegalArgumentException(s"Recipe with id '$recipeId' does not exist.")
@@ -244,7 +225,11 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       case _ => Baker.eventExtractor.extractEvent(event)
     }
 
-    val source = petriNetApi.askAndCollectAll(ProcessEvent(processId, runtimeEvent, correlationId), waitForRetries = true)(timeout)
+    implicit val implicitTimeout = timeout
+
+    val source = ProcessEventActor.processEvent(
+      processIndexActor, ProcessEvent(processId, runtimeEvent, correlationId), waitForRetries = true)
+
     new BakerResponse(processId, source)
   }
 
@@ -433,9 +418,27 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
+//  @deprecated("Use event bus instead", "1.4.0")
   def registerEventListener(listener: EventListener): Boolean =
     doRegisterEventListener(listener, _ => true)
 
+  /**
+    * This registers a listener function.
+    *
+    * @param pf A partial function that receives the events.
+    * @return
+    */
+  def registerEventListenerPF(pf: PartialFunction[BakerEvent, Unit]): Boolean = {
+
+    val listenerActor = actorSystem.actorOf(Props(new Actor() {
+      override def receive = {
+        case event: BakerEvent => Try { pf.applyOrElse[BakerEvent, Unit](event, _ => ()) }.failed.foreach { e =>
+          log.warn(s"Listener function threw exception for event: $event", e)
+        }
+      }
+    }))
+    actorSystem.eventStream.subscribe(listenerActor, classOf[BakerEvent])
+  }
 
   def addInteractionImplementation(implementation: AnyRef) =
     MethodInteractionImplementation.anyRefToInteractionImplementations(implementation).foreach(interactionManager.addImplementation)
@@ -445,9 +448,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
   def addInteractionImplementation(interactionImplementation: InteractionImplementation) =
     interactionManager.addImplementation(interactionImplementation)
-
-  if (!config.as[Option[Boolean]]("baker.config-file-included").getOrElse(false))
-    throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
 
   /**
     * Attempts to gracefully shutdown the baker system.

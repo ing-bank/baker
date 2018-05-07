@@ -4,9 +4,7 @@ import akka.actor.{ActorRef, ActorSystem}
 import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.core.interations.InteractionManager
 
-import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
-
 
 trait BakerActorProvider extends {
 

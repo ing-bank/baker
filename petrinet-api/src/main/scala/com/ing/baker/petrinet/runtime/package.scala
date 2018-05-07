@@ -12,10 +12,7 @@ import scala.util.control.NonFatal
 
 package object runtime {
 
-  /**
-   * An exception handler function associated with a transition.
-   */
-  type TransitionExceptionHandler[P[_]] = (Throwable, Int, MultiSet[P[_]]) ⇒ ExceptionStrategy
+
 
   /**
    * An (asynchronous) function associated with a transition
@@ -24,7 +21,7 @@ package object runtime {
    * @tparam Output The output emitted by the transition.
    * @tparam State  The state the transition closes over.
    */
-  type TransitionTask[P[_], Input, E, State] = (Marking[P], State, Input) ⇒ IO[(Marking[P], E)]
+  type TransitionTask[P[_], Input, State, E] = (Marking[P], State, Input) ⇒ IO[(Marking[P], E)]
 
   /**
    * An event sourcing function associated with a transition
@@ -42,7 +39,7 @@ package object runtime {
         case Left(throwable) => pf.lift(throwable).map(IO.pure(_)).getOrElse(IO.raiseError(throwable))
       }
 
-    def handleWith[Y >: T](pf: PartialFunction[Throwable, IO[Y]]) =
+    def handleWith[Y >: T](pf: PartialFunction[Throwable, IO[Y]]): IO[Y] =
       io.attempt.flatMap {
         case Right(result)   => IO.pure(result)
         case Left(throwable) => pf.lift(throwable).getOrElse(IO.raiseError(throwable))

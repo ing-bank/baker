@@ -2,36 +2,38 @@ package com.ing.baker.runtime.petrinet
 
 import java.lang.reflect.InvocationTargetException
 
+import akka.event.EventStream
 import cats.effect.IO
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
 import com.ing.baker.il.{IngredientDescriptor, processIdName}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime._
+import com.ing.baker.runtime.core.events.{InteractionCompleted, InteractionFailed, InteractionStarted}
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.{LoggerFactory, MDC}
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
-class TaskProvider(recipeName: String, interactionManager: InteractionManager) extends TransitionTaskProvider[ProcessState, Place, Transition] {
+class TaskProvider(recipeName: String, interactionManager: InteractionManager, eventStream: EventStream) extends TransitionTaskProvider[Place, Transition, ProcessState, RuntimeEvent] {
 
   val log = LoggerFactory.getLogger(classOf[TaskProvider])
 
-  override def apply[Input, Output](petriNet: PetriNet[Place[_], Transition[_]], t: Transition[Input]): TransitionTask[Place, Input, Output, ProcessState] = {
+  override def apply[Input](petriNet: PetriNet[Place[_], Transition[_]], t: Transition[Input]): TransitionTask[Place, Input, ProcessState, RuntimeEvent] = {
     t match {
       case interaction: InteractionTransition[_] =>
-        interactionTransitionTask[AnyRef, Input, Output](interaction.asInstanceOf[InteractionTransition[AnyRef]], interactionManager, petriNet.outMarking(interaction))
+        interactionTransitionTask[AnyRef, Input](interaction.asInstanceOf[InteractionTransition[AnyRef]], petriNet.outMarking(interaction))
       case t: EventTransition  => eventTransitionTask(petriNet, t)
       case t                   => passThroughTransitionTask(petriNet, t)
     }
   }
 
-  def passThroughTransitionTask[Input, Output](petriNet: PetriNet[Place[_], Transition[_]], t: Transition[Input]): TransitionTask[Place, Input, Output, ProcessState] =
-    (consume, processState, input) => IO.pure((toMarking[Place](petriNet.outMarking(t)), null.asInstanceOf[Output]))
+  def passThroughTransitionTask[Input](petriNet: PetriNet[Place[_], Transition[_]], t: Transition[Input]): TransitionTask[Place, Input, ProcessState, RuntimeEvent] =
+    (_, _, _) => IO.pure((toMarking[Place](petriNet.outMarking(t)), null.asInstanceOf[RuntimeEvent]))
 
-  def eventTransitionTask[RuntimeEvent, Input, Output](petriNet: PetriNet[Place[_], Transition[_]], eventTransition: EventTransition): TransitionTask[Place, Input, Output, ProcessState] =
-    (consume, processState, input) => IO.pure((toMarking[Place](petriNet.outMarking(eventTransition)), input.asInstanceOf[Output]))
+  def eventTransitionTask[Input](petriNet: PetriNet[Place[_], Transition[_]], eventTransition: EventTransition): TransitionTask[Place, Input, ProcessState, RuntimeEvent] =
+    (_, _, input) => IO.pure((toMarking[Place](petriNet.outMarking(eventTransition)), input.asInstanceOf[RuntimeEvent]))
 
   // function that (optionally) transforms the output event using the event output transformers
   def transformEvent[I](interaction: InteractionTransition[I])(runtimeEvent: RuntimeEvent): RuntimeEvent = {
@@ -45,45 +47,55 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
     }
   }
 
-  def interactionTransitionTask[I, Input, Output](interaction: InteractionTransition[I], interactionManager: InteractionManager, outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, Input, Output, ProcessState] =
+  def interactionTransitionTask[I, Input](interaction: InteractionTransition[I],
+                                          outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, Input, ProcessState, RuntimeEvent] =
 
     (_, processState, _) => {
 
-      def failureHandler[T]: PartialFunction[Throwable, IO[T]] = {
-        case e: InvocationTargetException => IO.raiseError(e.getCause)
-        case e: Throwable => IO.raiseError(e)
-      }
+      // returns a delayed task that will get executed by the baker petrinet runtime
+      IO {
 
-      Try {
-        // returns a delayed task that will get executed by the baker petrinet runtime
-        IO {
+        // add MDC values for logging
+        MDC.put("processId", processState.processId)
+        MDC.put("recipeName", recipeName)
 
-            // add MDC values for logging
-            MDC.put("processId", processState.processId.toString)
-            MDC.put("recipeName", recipeName)
+        // obtain the interaction implementation
+        val implementation = interactionManager.getImplementation(interaction).getOrElse {
+          throw new FatalInteractionException("No implementation available for interaction")
+        }
 
-            // obtain the interaction implementation
-            val implementation = interactionManager.getImplementation(interaction).getOrElse {
-              throw new FatalInteractionException("No implementation available for interaction")
-            }
+        // create the interaction input
+        val input = createInput(interaction, processState)
 
-            // create the interaction input
-            val input = createInput(interaction, processState)
+        val timeStarted = System.currentTimeMillis()
 
-            // execute the interaction
-            implementation.execute(interaction, input) match {
+        // publish the fact that we started the interaction
+        eventStream.publish(InteractionStarted(timeStarted, processState.processId, interaction.interactionName))
+
+        Try {
+          implementation.execute(interaction, input)
+        } match {
+          case Failure(e) =>
+
+            val timeFailed = System.currentTimeMillis()
+
+            eventStream.publish(InteractionFailed(timeFailed, timeFailed - timeStarted, processState.processId, interaction.interactionName, e))
+
+            // remove the MDC values
+            MDC.remove("processId")
+            MDC.remove("recipeName")
+
+            throw e;
+          case Success(interactionOutput) =>
+
+            val (outputEvent, output) = interactionOutput match {
               case None =>
-                MDC.remove("processId")
-                MDC.remove("recipeName")
-
-                val fixedEvent = RuntimeEvent.create(interaction.interactionName, Seq.empty)
-                val outputMarking = createProducedMarking(interaction, outAdjacent)(fixedEvent)
-                (outputMarking, null.asInstanceOf[Output])
+                (RuntimeEvent.create(interaction.interactionName, Seq.empty), null.asInstanceOf[RuntimeEvent])
 
               case Some(event) =>
                 // check if no null ingredients are provided
                 val nullIngredients = event.providedIngredients.collect {
-                  case (name, null) => s"null value provided for ingredient $name"
+                  case (name, null) => s"null value provided for ingredient: $name"
                 }
 
                 if (nullIngredients.nonEmpty)
@@ -92,18 +104,28 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager) e
                 // transforms the event
                 val transformedEvent = transformEvent(interaction)(event)
 
-                // creates the transition output marking (in the petri net)
-                val outputMarking = createProducedMarking(interaction, outAdjacent)(transformedEvent)
-
-                // remove MDC values
-                MDC.remove("processId")
-                MDC.remove("recipeName")
-
-                (outputMarking, transformedEvent.asInstanceOf[Output])
+                (transformedEvent, transformedEvent)
             }
-          }
-          .handleWith(failureHandler)
-      }.recover(failureHandler).get
+
+            val timeCompleted = System.currentTimeMillis()
+
+            // publish the fact that the interaction completed
+            eventStream.publish(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, processState.processId, interaction.interactionName, outputEvent))
+
+            // create the output marking for the petri net
+            val outputMarking = createProducedMarking(interaction, outAdjacent)(outputEvent)
+
+            // remove the MDC values
+            MDC.remove("processId")
+            MDC.remove("recipeName")
+
+            (outputMarking, output)
+        }
+
+      }.handleWith {
+        case e: InvocationTargetException => IO.raiseError(e.getCause)
+        case e: Throwable                 => IO.raiseError(e)
+      }
     }
 
   /**

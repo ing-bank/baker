@@ -13,13 +13,14 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
+import com.ing.baker.runtime.core.events.{EventReceived, ProcessCreated}
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.petrinet._
 
 import scala.collection.mutable
-import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext}
 
 
 object ProcessIndex {
@@ -121,7 +122,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
   def createProcessActor(processId: String, compiledRecipe: CompiledRecipe): ActorRef = {
     val petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] =
-      new RecipeRuntime(compiledRecipe.name, interactionManager)
+      new RecipeRuntime(compiledRecipe.name, interactionManager, context.system.eventStream)
 
     val processActorProps =
       Util.recipePetriNetProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
@@ -131,6 +132,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
           idleTTL = processIdleTimeout))
 
     val processActor = context.actorOf(processActorProps, name = processId)
+
     context.watch(processActor)
     processActor
   }
@@ -149,7 +151,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
   def deleteProcess(processId: String): Unit = {
     persist(ActorDeleted(processId)) { _ =>
       val meta = index(processId)
-      index.update(processId, index(processId).copy(processStatus = Deleted))
+      index.update(processId, meta.copy(processStatus = Deleted))
     }
   }
 
@@ -188,10 +190,15 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
             getCompiledRecipe(recipeId) match {
               case Some(compiledRecipe) =>
-                val initialize = Initialize(ProcessInstanceProtocol.marshal(compiledRecipe.initialMarking), ProcessState(processId, Map.empty, List.empty))
-                createProcessActor(processId, compiledRecipe).forward(initialize)
+
+                val processState = ProcessState(processId, Map.empty, List.empty)
+                val initializeCmd = Initialize(ProcessInstanceProtocol.marshal(compiledRecipe.initialMarking), processState)
+
+                createProcessActor(processId, compiledRecipe).forward(initializeCmd)
                 val actorMetadata = ActorMetadata(recipeId, processId, created, Active)
                 index += processId -> actorMetadata
+                context.system.eventStream.publish(ProcessCreated(System.currentTimeMillis(), recipeId, compiledRecipe.name, processId))
+
               case None => sender() ! NoRecipeFound(recipeId)
             }
           }
@@ -202,7 +209,12 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
     case ProcessEvent(processId: String, eventToFire: RuntimeEvent, correlationId) =>
       //Forwards the event message to the Actor if its in the Receive period for the compiledRecipe
       def forwardEventIfInReceivePeriod(actorRef: ActorRef, compiledRecipe: CompiledRecipe) = {
-        val cmd = createFireTransitionCmd(compiledRecipe, processId, eventToFire, correlationId)
+
+        def forwardEvent() = {
+          val cmd = createFireTransitionCmd(compiledRecipe, processId, eventToFire, correlationId)
+          actorRef.forward(cmd)
+        }
+
         compiledRecipe.eventReceivePeriod match {
           case Some(receivePeriod) =>
             index.get(processId).foreach { p =>
@@ -210,11 +222,11 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
                 sender() ! ReceivePeriodExpired(processId)
               }
               else
-                actorRef.forward(cmd)
+                forwardEvent()
             }
 
           case None =>
-            actorRef.forward(cmd)
+            forwardEvent()
         }
       }
 

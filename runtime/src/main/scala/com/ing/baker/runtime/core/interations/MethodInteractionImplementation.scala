@@ -5,6 +5,7 @@ import java.util.UUID
 
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
+import com.ing.baker.runtime.core._
 import com.ing.baker.runtime.core.Baker.eventExtractor
 import com.ing.baker.runtime.core.interations.MethodInteractionImplementation._
 import com.ing.baker.runtime.core.{BakerException, RuntimeEvent}
@@ -36,23 +37,17 @@ object MethodInteractionImplementation {
 
   def getApplyMethod(clazz: Class[_]): Method = {
 
-    clazz.getMethods.count(_.getName == "apply") match {
+    val unmockedClass = unmock(clazz)
+
+    unmockedClass.getMethods.count(_.getName == "apply") match {
       case 0          => throw new BakerException("Method does not have a apply function")
       case n if n > 1 => throw new BakerException("Method has multiple apply functions")
       case _ => ()
     }
 
-    val method = clazz.getMethods.find(_.getName == "apply").get
+    val method = unmockedClass.getMethods.find(_.getName == "apply").get
 
-    val className = method.getDeclaringClass.getName
-
-    if (className.contains("$$EnhancerByMockitoWithCGLIB$$")) {
-      val originalName: String = className.split("\\$\\$EnhancerByMockitoWithCGLIB\\$\\$")(0)
-      val orginalClass = clazz.getClassLoader.loadClass(originalName)
-      getApplyMethod(orginalClass)
-    }
-    else
-      method
+    method
   }
 
   def anyRefToInteractionImplementations(impl: AnyRef): Seq[InteractionImplementation] = {

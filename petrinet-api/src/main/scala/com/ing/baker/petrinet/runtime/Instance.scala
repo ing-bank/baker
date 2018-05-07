@@ -16,7 +16,7 @@ case class Instance[P[_], T[_], S, E](
     sequenceNr: Long,
     marking: Marking[P],
     state: S,
-    jobs: Map[Long, Job[P, T, S, E]],
+    jobs: Map[Long, Job[P, T, S]],
     receivedCorrelationIds: Set[String]) {
 
   /**
@@ -29,7 +29,7 @@ case class Instance[P[_], T[_], S, E](
    */
   lazy val availableMarking: Marking[P] = marking |-| reservedMarking
 
-  def activeJobs: Iterable[Job[P, T, S, _]] = jobs.values.filter(_.isActive)
+  def activeJobs: Iterable[Job[P, T, S]] = jobs.values.filter(_.isActive)
 
   def isBlockedReason(transition: T[_]): Option[String] = jobs.values.map {
     case Job(_, _, _, `transition`, _, _, Some(ExceptionState(_, _, reason, _))) ⇒

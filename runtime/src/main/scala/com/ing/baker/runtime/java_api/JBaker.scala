@@ -7,12 +7,14 @@ import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core._
 import com.ing.baker.types.Value
+import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
-import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRef]) {
+
+  private final val log = LoggerFactory.getLogger(classOf[JBaker])
 
   private implicit class DurationConversions(timeout: java.time.Duration) {
     def toScala: FiniteDuration =
@@ -166,9 +168,9 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * This fires the given event in the recipe for the process with the given processId
     * This waits with returning until all steps that can be executed are executed by Baker
     *
-    * @param processId      The process identifier
-    * @param event          The event to fire
-    * @param correlationId  An identifier for the event
+    * @param processId     The process identifier
+    * @param event         The event to fire
+    * @param correlationId An identifier for the event
     * @return
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
@@ -181,9 +183,9 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * This fires the given event in the recipe for the process with the given processId
     * This waits with returning until all steps that can be executed are executed by Baker
     *
-    * @param processId      The process identifier
-    * @param event          The event to fire
-    * @param correlationId  An identifier for the event
+    * @param processId     The process identifier
+    * @param event         The event to fire
+    * @param correlationId An identifier for the event
     * @return
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
@@ -196,10 +198,10 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * This fires the given event in the recipe for the process with the given processId
     * This waits with returning until all steps that can be executed are executed by Baker
     *
-    * @param processId      The process identifier
-    * @param event          The event to fire
-    * @param correlationId  An identifier for the event
-    * @param timeout        How long to wait for a response from the process
+    * @param processId     The process identifier
+    * @param event         The event to fire
+    * @param correlationId An identifier for the event
+    * @param timeout       How long to wait for a response from the process
     * @return
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
@@ -212,10 +214,10 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * This fires the given event in the recipe for the process with the given processId
     * This waits with returning until all steps that can be executed are executed by Baker
     *
-    * @param processId      The process identifier
-    * @param event          The event to fire
-    * @param correlationId  An identifier for the event
-    * @param timeout        How long to wait for a response from the process
+    * @param processId     The process identifier
+    * @param event         The event to fire
+    * @param correlationId An identifier for the event
+    * @param timeout       How long to wait for a response from the process
     * @return
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
@@ -276,9 +278,9 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * This fires the given event in the recipe for the process with the given processId
     * This returns a BakerResponse.
     *
-    * @param processId      The process identifier
-    * @param event          The event to fire
-    * @param correlationId  An identifier for the event
+    * @param processId     The process identifier
+    * @param event         The event to fire
+    * @param correlationId An identifier for the event
     * @return
     */
   @throws[ProcessDeletedException]("When no process is deleted")
@@ -290,9 +292,9 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * This fires the given event in the recipe for the process with the given processId
     * This returns a BakerResponse.
     *
-    * @param processId      The process identifier
-    * @param event          The event to fire
-    * @param correlationId  An identifier for the event
+    * @param processId     The process identifier
+    * @param event         The event to fire
+    * @param correlationId An identifier for the event
     * @return
     */
   @throws[ProcessDeletedException]("When no process is deleted")
@@ -304,10 +306,10 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * This fires the given event in the recipe for the process with the given processId
     * This returns a BakerResponse.
     *
-    * @param processId      The process identifier
-    * @param event          The event to fire
-    * @param correlationId  An identifier for the event
-    * @param timeout        How long to wait for a response from the process
+    * @param processId     The process identifier
+    * @param event         The event to fire
+    * @param correlationId An identifier for the event
+    * @param timeout       How long to wait for a response from the process
     * @return
     */
   @throws[ProcessDeletedException]("When no process is deleted")
@@ -319,10 +321,10 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * This fires the given event in the recipe for the process with the given processId
     * This returns a BakerResponse.
     *
-    * @param processId      The process identifier
-    * @param event          The event to fire
-    * @param correlationId  An identifier for the event
-    * @param timeout        How long to wait for a response from the process
+    * @param processId     The process identifier
+    * @param event         The event to fire
+    * @param correlationId An identifier for the event
+    * @param timeout       How long to wait for a response from the process
     * @return
     */
   @throws[ProcessDeletedException]("When no process is deleted")
@@ -553,6 +555,17 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @param listener The listener to subscribe to events.
     */
   def registerEventListener(listener: EventListener): Unit = baker.registerEventListener(listener)
+
+
+  /**
+    * Registers a listener
+    *
+    * @param listener
+    * @return
+    */
+  def registerBakerEventListener(listener: AnyRef) = {
+    baker.registerEventListenerPF(new JEventSubscriber(listener))
+  }
 
   /**
     * Returns the visual state of the recipe in dot format

@@ -9,7 +9,6 @@ import akka.util.Timeout
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.dsl.colored._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Fatal, RetryWithDelay}
-import com.ing.baker.petrinet.runtime.TransitionExceptionHandler
 import com.ing.baker.runtime.actor.AkkaTestBase
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import org.mockito.Matchers._

@@ -7,7 +7,6 @@ import akka.pattern.ask
 import com.ing.baker.TestRecipeHelper
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.core.BakerExecutionSpec
 import com.typesafe.config.{Config, ConfigFactory}
 import org.slf4j.LoggerFactory
 
@@ -26,7 +25,7 @@ class RecipeManagerSpec  extends TestRecipeHelper {
 
   override def actorSystemName = "RecipeManagerSpec"
 
-  val log = LoggerFactory.getLogger(classOf[BakerExecutionSpec])
+  val log = LoggerFactory.getLogger(classOf[RecipeManagerSpec])
 
   "The RecipeManagerSpec" should {
     "Add a recipe to the list when a AddRecipe message is received" in {
