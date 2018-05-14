@@ -29,7 +29,7 @@ trait StateTransitionNet[S, E] {
         job.transition.exceptionStrategy(throwable, failureCount, outMarking)
     }
     override lazy val jobPicker = new JobPicker[Place, Transition](tokenGame) {
-      override def isAutoFireable[S, E](instance: Instance[Place, Transition, S, E], t: Transition[_]): Boolean =
+      override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition[_]): Boolean =
         t.isAutomated && instance.isBlockedReason(t).isEmpty
     }
   }

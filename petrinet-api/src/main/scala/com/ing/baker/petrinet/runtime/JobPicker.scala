@@ -10,7 +10,7 @@ class JobPicker[P[_], T[_]](tokenGame: TokenGame[P, T]) {
   /**
    * Fires a specific transition with input, computes the marking it should consume
    */
-  def createJob[S, I, E](transition: T[I], input: I, correlationId: Option[String] = None): State[Instance[P, T, S, E], Either[String, Job[P, T, S]]] =
+  def createJob[S, I](transition: T[I], input: I, correlationId: Option[String] = None): State[Instance[P, T, S], Either[String, Job[P, T, S]]] =
     State { instance ⇒
       instance.isBlockedReason(transition) match {
         case Some(reason) ⇒
@@ -21,7 +21,7 @@ class JobPicker[P[_], T[_]](tokenGame: TokenGame[P, T]) {
               (instance, Left(s"Not enough consumable tokens"))
             case Some(params) ⇒
               val job = Job[P, T, S](instance.nextJobId(), correlationId, instance.state, transition, params.head, input)
-              val updatedInstance = instance.copy[P, T, S, E](jobs = instance.jobs + (job.id -> job))
+              val updatedInstance = instance.copy[P, T, S](jobs = instance.jobs + (job.id -> job))
               (updatedInstance, Right(job))
           }
       }
@@ -32,27 +32,27 @@ class JobPicker[P[_], T[_]](tokenGame: TokenGame[P, T]) {
    *
    * By default, cold transitions (without in adjacent places) are not picked.
    */
-  def isAutoFireable[S, E](instance: Instance[P, T, S, E], t: T[_]) = !instance.process.incomingPlaces(t).isEmpty
+  def isAutoFireable[S](instance: Instance[P, T, S], t: T[_]) = !instance.process.incomingPlaces(t).isEmpty
 
   /**
    * Finds the (optional) first transition that is enabled & automatically fireable
    */
-  def firstEnabledJob[S, E]: State[Instance[P, T, S, E], Option[Job[P, T, S]]] = State { instance ⇒
+  def firstEnabledJob[S]: State[Instance[P, T, S], Option[Job[P, T, S]]] = State { instance ⇒
     tokenGame.enabledParameters(instance.process)(instance.availableMarking).find {
       case (t, markings) ⇒ !instance.isBlockedReason(t).isDefined && isAutoFireable(instance, t)
     }.map {
       case (t, markings) ⇒
         val job = Job[P, T, S](instance.nextJobId(), None, instance.state, t.asInstanceOf[T[Any]], markings.head, null)
-        (instance.copy[P, T, S, E](jobs = instance.jobs + (job.id -> job)), Some(job))
+        (instance.copy[P, T, S](jobs = instance.jobs + (job.id -> job)), Some(job))
     }.getOrElse((instance, None))
   }
 
   /**
    * Finds all automated enabled transitions.
    */
-  def allEnabledJobs[S, E]: State[Instance[P, T, S, E], Set[Job[P, T, S]]] =
-    firstEnabledJob[S, E].flatMap {
+  def allEnabledJobs[S]: State[Instance[P, T, S], Set[Job[P, T, S]]] =
+    firstEnabledJob[S].flatMap {
       case None      ⇒ State.pure(Set.empty)
-      case Some(job) ⇒ allEnabledJobs[S, E].map(_ + job)
+      case Some(job) ⇒ allEnabledJobs[S].map(_ + job)
     }
 }

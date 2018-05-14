@@ -20,7 +20,7 @@ object ProcessQuery {
     readJournal: CurrentEventsByPersistenceIdQuery,
     eventSourceFn: T[_] ⇒ (S ⇒ E ⇒ S))(implicit actorSystem: ActorSystem,
       placeIdentifier: Identifiable[P[_]],
-      transitionIdentifier: Identifiable[T[_]]): Source[(Instance[P, T, S, E], Event), NotUsed] = {
+      transitionIdentifier: Identifiable[T[_]]): Source[(Instance[P, T, S], Event), NotUsed] = {
 
     val serializer = new ProcessInstanceSerialization[P, T, S, E](new ObjectSerializer(actorSystem, encryption))
 
@@ -28,7 +28,7 @@ object ProcessQuery {
     val src = readJournal.currentEventsByPersistenceId(persistentId, 0, Long.MaxValue)
     val eventSource = EventSourcing.apply[P, T, S, E](eventSourceFn)
 
-    src.scan[(Instance[P, T, S, E], Event)]((Instance.uninitialized[P, T, S, E](topology), null.asInstanceOf[Event])) {
+    src.scan[(Instance[P, T, S], Event)]((Instance.uninitialized[P, T, S](topology), null.asInstanceOf[Event])) {
       case ((instance, prev), e) ⇒
         val serializedEvent = e.event.asInstanceOf[AnyRef]
         val deserializedEvent = serializer.deserializeEvent(serializedEvent)(instance)

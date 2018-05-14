@@ -45,7 +45,7 @@ class ProcessInstanceSerialization[P[_], T[_], S, E](serializer: ObjectSerialize
     * De-serializes a persistence.protobuf.Event to a EvenSourcing.Event. An Instance is required to 'wire' or 'reference'
     * the message back into context.
     */
-  def deserializeEvent(event: AnyRef): Instance[P, T, S, E] ⇒ EventSourcing.Event = event match {
+  def deserializeEvent(event: AnyRef): Instance[P, T, S] ⇒ EventSourcing.Event = event match {
     case e: protobuf.Initialized ⇒ deserializeInitialized(e)
     case e: protobuf.TransitionFired ⇒ deserializeTransitionFired(e)
     case e: protobuf.TransitionFailed ⇒ deserializeTransitionFailed(e)
@@ -54,7 +54,7 @@ class ProcessInstanceSerialization[P[_], T[_], S, E](serializer: ObjectSerialize
   /**
     * Serializes an EventSourcing.Event to a persistence.protobuf.Event.
     */
-  def serializeEvent(e: EventSourcing.Event): Instance[P, T, S, E] ⇒ AnyRef =
+  def serializeEvent(e: EventSourcing.Event): Instance[P, T, S] ⇒ AnyRef =
     _ ⇒ e match {
       case e: InitializedEvent[_] ⇒ serializeInitialized(e.asInstanceOf[InitializedEvent[P]])
       case e: TransitionFiredEvent[_, _, _] ⇒ serializeTransitionFired(e.asInstanceOf[TransitionFiredEvent[P, T, Any]])
@@ -71,7 +71,7 @@ class ProcessInstanceSerialization[P[_], T[_], S, E](serializer: ObjectSerialize
 
   private def deserializeObject(obj: SerializedData): AnyRef = serializer.deserializeObject(obj)
 
-  private def deserializeProducedMarking(instance: Instance[P, T, S, E], produced: Seq[ProducedToken]): Marking[P] = {
+  private def deserializeProducedMarking(instance: Instance[P, T, S], produced: Seq[ProducedToken]): Marking[P] = {
     produced.foldLeft(Marking.empty[P]) {
       case (accumulated, ProducedToken(Some(placeId), Some(_), Some(count), data)) ⇒
         val place = instance.process.places.getById(placeId, "place in petrinet").asInstanceOf[P[Any]]
@@ -105,7 +105,7 @@ class ProcessInstanceSerialization[P[_], T[_], S, E](serializer: ObjectSerialize
       }
     }
 
-  private def deserializeConsumedMarking(instance: Instance[P, T, S, E], persisted: Seq[protobuf.ConsumedToken]): Marking[P] = {
+  private def deserializeConsumedMarking(instance: Instance[P, T, S], persisted: Seq[protobuf.ConsumedToken]): Marking[P] = {
     persisted.foldLeft(Marking.empty[P]) {
       case (accumulated, protobuf.ConsumedToken(Some(placeId), Some(tokenId), Some(count))) ⇒
         val place = instance.marking.keySet.getById(placeId, "place in marking").asInstanceOf[P[Any]]
@@ -115,7 +115,7 @@ class ProcessInstanceSerialization[P[_], T[_], S, E](serializer: ObjectSerialize
     }
   }
 
-  private def deserializeInitialized(e: protobuf.Initialized)(instance: Instance[P, T, S, E]): InitializedEvent[P] = {
+  private def deserializeInitialized(e: protobuf.Initialized)(instance: Instance[P, T, S]): InitializedEvent[P] = {
     val initialMarking = deserializeProducedMarking(instance, e.initialMarking)
     // TODO not really safe to return null here, throw exception ?
     val initialState = e.initialState.map(deserializeObject).orNull
@@ -128,7 +128,7 @@ class ProcessInstanceSerialization[P[_], T[_], S, E](serializer: ObjectSerialize
     protobuf.Initialized(initialMarking, initialState)
   }
 
-  private def deserializeTransitionFailed(e: protobuf.TransitionFailed): Instance[P, T, S, E] ⇒ TransitionFailedEvent[P, T, Any] = {
+  private def deserializeTransitionFailed(e: protobuf.TransitionFailed): Instance[P, T, S] ⇒ TransitionFailedEvent[P, T, Any] = {
     instance ⇒
 
       val jobId = e.jobId.getOrElse(missingFieldException("job_id"))
@@ -187,7 +187,7 @@ class ProcessInstanceSerialization[P[_], T[_], S, E](serializer: ObjectSerialize
     )
   }
 
-  private def deserializeTransitionFired(e: protobuf.TransitionFired): Instance[P, T, S, E] ⇒ TransitionFiredEvent[P, T, Any] = instance ⇒ {
+  private def deserializeTransitionFired(e: protobuf.TransitionFired): Instance[P, T, S] ⇒ TransitionFiredEvent[P, T, Any] = instance ⇒ {
 
     val consumed: Marking[P] = deserializeConsumedMarking(instance, e.consumed)
     val produced: Marking[P] = deserializeProducedMarking(instance, e.produced)
