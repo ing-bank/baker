@@ -187,7 +187,7 @@ lazy val testModule = project.in(file("test-module"))
         levelDB,
         levelDBJni,
         scalaCheck,
-        metrics,
+//        metrics,
         akkaCassandra,
         akkaCassandraLauncher
       )

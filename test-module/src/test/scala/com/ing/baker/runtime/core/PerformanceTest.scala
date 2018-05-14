@@ -8,7 +8,8 @@ import akka.persistence.cassandra.testkit.CassandraLauncher
 import com.ing.baker.TestRecipeHelper
 import com.typesafe.config.ConfigFactory
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.Duration
 
 class PerformanceTest extends TestRecipeHelper {
 
@@ -26,13 +27,13 @@ class PerformanceTest extends TestRecipeHelper {
 
   reporter.start(1, TimeUnit.SECONDS)
 
-  CassandraLauncher.start(
-    new java.io.File("target/cassandra"),
-    CassandraLauncher.DefaultTestConfigResource,
-    clean = true,
-    port = 9042,
-    CassandraLauncher.classpathForResources("logback.xml")
-  )
+//  CassandraLauncher.start(
+//    new java.io.File("target/cassandra"),
+//    CassandraLauncher.DefaultTestConfigResource,
+//    clean = true,
+//    port = 9042,
+//    CassandraLauncher.classpathForResources("logback-test.xml")
+//  )
 
   Thread.sleep(10 * 1000)
 
@@ -45,23 +46,47 @@ class PerformanceTest extends TestRecipeHelper {
        |akka.persistence.snapshot-store.plugin = "cassandra-snapshot-store"
        |baker.actor.read-journal-plugin = "cassandra-query-journal"
        |
+       |cassandra-journal.log-queries = off
+       |cassandra-journal.keyspace-autocreate = off
+       |cassandra-journal.tables-autocreate = off
+       |
+       |cassandra-snapshot-store.log-queries = off
+       |cassandra-snapshot-store.keyspace-autocreate = off
+       |cassandra-snapshot-store.tables-autocreate = off
+       |
+       |akka.loggers = ["akka.event.slf4j.Slf4jLogger"]
+       |akka.loglevel = "DEBUG"
+       |
+       |
      """.stripMargin
 
-  val akkaCassandraSystem = ActorSystem("PerformanceTestActorSystem", ConfigFactory.parseString(cassandraConfig))
+  val akkaCassandraSystem = ActorSystem("A", ConfigFactory.parseString(cassandraConfig))
 
   "Baker" should {
 
     "should bake really fast" in {
 
-      val (baker, recipeId) = setupBakerWithRecipe("BakePerformanceTestRecipe")(akkaCassandraSystem)
+      val (baker, recipeId) = setupBakerWithRecipe("R")(akkaCassandraSystem)
 
-      val nrOfBakes = 1000 //* 1000
+      val nrOfBakes = 5 * 1000
       val nrOfThreads = 8
 
       val executionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(nrOfThreads))
 
-      val bakeTimer = metrics.timer(MetricRegistry.name(classOf[PerformanceTest], "bake"))
+      // warmup
 
+      println("Warming up baker with 10 bakes")
+      (1 to 10).foreach { _ =>
+        baker.bake(recipeId, UUID.randomUUID().toString)
+      }
+
+      val bakeTimer = metrics.timer(MetricRegistry.name("PerformanceTest", "bake"))
+
+      println("Starting stress testing")
+
+
+
+      // stress testing
       (1 to nrOfBakes).foreach { _ =>
 
         executionContext.execute { () =>
@@ -74,6 +99,7 @@ class PerformanceTest extends TestRecipeHelper {
             time.stop()
           }
         }
+
       }
 
       Thread.sleep(1000 * 60)
