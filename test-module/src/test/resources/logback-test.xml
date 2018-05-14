@@ -6,7 +6,11 @@
         </encoder>
     </appender>
 
-    <logger name="com.ing.baker.runtime.actor.process_instance.ProcessInstance" level="OFF" />
+    <!--<logger name="com.ing.baker.runtime.actor.process_instance.ProcessInstance" level="OFF" />-->
+
+    <!--<logger level = "DEBUG" name="com.datastax.driver.core.RequestHandler" />-->
+    <!--<logger level = "TRACE" name="com.datastax.driver.core.Connection" />-->
+    <!--<logger level = "TRACE" name="com.datastax.driver.core.QueryLogger.NORMAL" />-->
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>

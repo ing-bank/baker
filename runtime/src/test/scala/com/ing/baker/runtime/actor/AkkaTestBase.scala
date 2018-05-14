@@ -26,10 +26,11 @@ abstract class AkkaTestBase(actorSystemName: String = "testActorSystem") extends
     settings: Settings): Props =
 
     Props(new ProcessInstance[Place, Transition, S, E](
-      "test",
+      processType = "test",
       topology,
       settings,
       runtime,
+      replayHistory = true,
       colored.placeIdentifier,
       colored.transitionIdentifier)
     )

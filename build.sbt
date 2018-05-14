@@ -186,7 +186,10 @@ lazy val testModule = project.in(file("test-module"))
         junitInterface,
         levelDB,
         levelDBJni,
-        scalaCheck
+        scalaCheck,
+//        metrics,
+        akkaCassandra,
+        akkaCassandraLauncher
       )
   )
   .dependsOn(recipeDsl, recipeCompiler, intermediateLanguage, recipeRuntime, baas)

@@ -25,12 +25,21 @@ import scala.collection.JavaConverters._
 
 object Util {
 
-  def recipePetriNetProps(recipeName: String, petriNet: RecipePetriNet, petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent], settings: Settings): Props =
+  def recipePetriNetProps(recipeName: String,
+                          petriNet: RecipePetriNet,
+                          petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent],
+                          settings: Settings,
+                          // Default behaviour of an akka persistent actor is replaying history.
+                          // This should be set to false only when we know this is a new actor without history
+                          replayHistory: Boolean = true
+                         ): Props =
+
     Props(new ProcessInstance[Place, Transition, ProcessState, RuntimeEvent](
       recipeName,
       petriNet,
       settings,
       petriNetRuntime,
+      replayHistory,
       petrinet.placeIdentifier,
       petrinet.transitionIdentifier)
     )

@@ -69,6 +69,11 @@ object Dependencies {
   val slf4jApi =                  "org.slf4j"                  %  "slf4j-api"                          % "1.7.25"
   val scalaCheck =                "org.scalacheck"             %% "scalacheck"                         % "1.13.4"
 
+  val metrics = "io.dropwizard.metrics" % "metrics-core" % "4.0.0"
+
+  val akkaCassandra = "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.84"
+  val akkaCassandraLauncher  = "com.typesafe.akka" %% "akka-persistence-cassandra-launcher" % "0.84"
+
   def scopeDeps(scope: String, modules: Seq[ModuleID]) =  modules.map(m => m % scope)
   def compileDeps(modules: ModuleID*) = modules.toSeq
   def testDeps(modules: ModuleID*) = scopeDeps("test", modules)
