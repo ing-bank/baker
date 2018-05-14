@@ -30,6 +30,7 @@ abstract class AkkaTestBase(actorSystemName: String = "testActorSystem") extends
       topology,
       settings,
       runtime,
+      true,
       colored.placeIdentifier,
       colored.transitionIdentifier)
     )

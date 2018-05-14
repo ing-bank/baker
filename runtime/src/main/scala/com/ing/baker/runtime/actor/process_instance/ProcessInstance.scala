@@ -2,7 +2,7 @@ package com.ing.baker.runtime.actor.process_instance
 
 import akka.actor._
 import akka.event.{DiagnosticLoggingAdapter, Logging}
-import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
+import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess, Recovery}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{Continue, RetryWithDelay}
@@ -50,6 +50,7 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
                                         processTopology: PetriNet[P[_], T[_]],
                                         settings: Settings,
                                         runtime: PetriNetRuntime[P, T, S, E],
+                                        replayHistory: Boolean = true,
                                         override implicit val placeIdentifier: Identifiable[P[_]],
                                         override implicit val transitionIdentifier: Identifiable[T[_]]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSource) {
 
@@ -267,6 +268,13 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
         }
       case (acc, _) ⇒ acc
     }
+  }
+
+  override def recovery = {
+    if (replayHistory)
+      Recovery()
+    else
+      Recovery.none
   }
 
   override def onRecoveryCompleted(instance: Instance[P, T, S, E]) = {

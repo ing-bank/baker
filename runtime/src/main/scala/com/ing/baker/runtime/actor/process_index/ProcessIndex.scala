@@ -120,12 +120,12 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
     createProcessActor(processId, compiledRecipe)
   }
 
-  def createProcessActor(processId: String, compiledRecipe: CompiledRecipe): ActorRef = {
+  def createProcessActor(processId: String, compiledRecipe: CompiledRecipe, replay: Boolean = true): ActorRef = {
     val petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] =
       new RecipeRuntime(compiledRecipe.name, interactionManager, context.system.eventStream)
 
     val processActorProps =
-      Util.recipePetriNetProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
+      Util.recipePetriNetProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime, replay,
         ProcessInstance.Settings(
           executionContext = bakerExecutionContext,
           encryption = configuredEncryption,
@@ -194,7 +194,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
                 val processState = ProcessState(processId, Map.empty, List.empty)
                 val initializeCmd = Initialize(ProcessInstanceProtocol.marshal(compiledRecipe.initialMarking), processState)
 
-                createProcessActor(processId, compiledRecipe).forward(initializeCmd)
+                createProcessActor(processId, compiledRecipe, replay = false).forward(initializeCmd)
                 val actorMetadata = ActorMetadata(recipeId, processId, created, Active)
                 index += processId -> actorMetadata
                 context.system.eventStream.publish(ProcessCreated(System.currentTimeMillis(), recipeId, compiledRecipe.name, processId))

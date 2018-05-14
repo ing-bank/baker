@@ -293,7 +293,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       Encryption.NoEncryption,
       new InteractionManager(),
       recipeManager) {
-      override def createProcessActor(id: String, compiledRecipe: CompiledRecipe) = petriNetActorRef
+      override def createProcessActor(id: String, compiledRecipe: CompiledRecipe, replay: Boolean) = petriNetActorRef
     })
 
     system.actorOf(props, s"actorIndex-${UUID.randomUUID().toString}")

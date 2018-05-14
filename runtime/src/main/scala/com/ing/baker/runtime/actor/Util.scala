@@ -25,12 +25,18 @@ import scala.collection.JavaConverters._
 
 object Util {
 
-  def recipePetriNetProps(recipeName: String, petriNet: RecipePetriNet, petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent], settings: Settings): Props =
+  def recipePetriNetProps(recipeName: String,
+                          petriNet: RecipePetriNet,
+                          petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent],
+                          replay: Boolean,
+                          settings: Settings): Props =
+
     Props(new ProcessInstance[Place, Transition, ProcessState, RuntimeEvent](
       recipeName,
       petriNet,
       settings,
       petriNetRuntime,
+      replay,
       petrinet.placeIdentifier,
       petrinet.transitionIdentifier)
     )
