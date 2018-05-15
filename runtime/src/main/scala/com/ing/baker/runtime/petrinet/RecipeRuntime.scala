@@ -54,7 +54,7 @@ class RecipeRuntime(recipeName: String, interactionManager: InteractionManager, 
   override val taskProvider = new TaskProvider(recipeName, interactionManager, eventStream)
 
   override lazy val jobPicker = new JobPicker[Place, Transition](tokenGame) {
-    override def isAutoFireable[S, E](instance: Instance[Place, Transition, S, E], t: Transition[_]): Boolean = t match {
+    override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition[_]): Boolean = t match {
       case EventTransition(_, true, _) => false
       case _ => true
     }
