@@ -9,31 +9,14 @@ import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.PersistentActor
 import akka.util.Timeout
-import com.ing.baker.il.petrinet
-import com.ing.baker.il.petrinet._
-import com.ing.baker.petrinet.runtime.PetriNetRuntime
 import com.ing.baker.runtime.actor.GracefulShutdownActor.Leave
-import com.ing.baker.runtime.actor.process_instance.ProcessInstance
-import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
-import com.ing.baker.runtime.core._
 
-import scala.collection.mutable
+import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
-import scala.collection.JavaConverters._
 
 object Util {
-
-  def recipePetriNetProps(recipeName: String, petriNet: RecipePetriNet, petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent], settings: Settings): Props =
-    Props(new ProcessInstance[Place, Transition, ProcessState, RuntimeEvent](
-      recipeName,
-      petriNet,
-      settings,
-      petriNetRuntime,
-      petrinet.placeIdentifier,
-      petrinet.transitionIdentifier)
-    )
 
   def handOverShardsAndLeaveCluster(typeNames: Seq[String])(implicit timeout: Timeout, actorSystem: ActorSystem): Unit = {
 

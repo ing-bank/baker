@@ -3,17 +3,18 @@ package com.ing.baker.runtime.actor.process_index
 import akka.actor.{ActorLogging, ActorRef, Props, Terminated}
 import akka.pattern.ask
 import akka.persistence.{PersistentActor, RecoveryCompleted}
-import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.il.petrinet.{Place, Transition}
+import com.ing.baker.il.petrinet.{Place, RecipePetriNet, Transition}
+import com.ing.baker.il.{CompiledRecipe, petrinet}
 import com.ing.baker.petrinet.runtime.{PetriNetRuntime, namedCachedThreadPool}
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
-import com.ing.baker.runtime.core.events.{EventReceived, ProcessCreated}
+import com.ing.baker.runtime.core.events.ProcessCreated
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.petrinet._
@@ -59,6 +60,15 @@ object ProcessIndex {
   // when an actor is created
   case class ActorCreated(recipeId: String, processId: String, createdDateTime: Long) extends InternalBakerEvent
 
+  def processInstanceProps(recipeName: String, petriNet: RecipePetriNet, petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent], settings: Settings): Props =
+    Props(new ProcessInstance[Place, Transition, ProcessState, RuntimeEvent](
+      recipeName,
+      petriNet,
+      settings,
+      petriNetRuntime,
+      petrinet.placeIdentifier,
+      petrinet.transitionIdentifier)
+    )
 
   def transitionForRuntimeEvent(runtimeEvent: RuntimeEvent, compiledRecipe: CompiledRecipe): Transition[_] =
     compiledRecipe.petriNet.transitions.findByLabel(runtimeEvent.name).getOrElse {
@@ -125,7 +135,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
       new RecipeRuntime(compiledRecipe.name, interactionManager, context.system.eventStream)
 
     val processActorProps =
-      Util.recipePetriNetProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
+      processInstanceProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
         ProcessInstance.Settings(
           executionContext = bakerExecutionContext,
           encryption = configuredEncryption,
