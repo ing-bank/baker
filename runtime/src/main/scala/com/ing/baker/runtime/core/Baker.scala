@@ -24,7 +24,7 @@ import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.core.Baker._
-import com.ing.baker.runtime.core.events.BakerEvent
+import com.ing.baker.runtime.core.events.{BakerEvent, RecipeAdded}
 import com.ing.baker.runtime.core.interations.{InteractionImplementation, InteractionManager, MethodInteractionImplementation}
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.RecipeRuntime
@@ -156,10 +156,18 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def getAllRecipes(timeout: FiniteDuration = defaultInquireTimeout): Map[String, CompiledRecipe] = {
-    val futureResult = recipeManager.ask(GetAllRecipes)(timeout).mapTo[AllRecipes]
-    Await.result(futureResult, timeout).compiledRecipes
-  }
+  def getAllRecipes(timeout: FiniteDuration = defaultInquireTimeout): Map[String, CompiledRecipe] =
+    Await.result(getAllRecipesAsync(timeout), timeout)
+
+  /**
+    * Returns a future of all recipes added to this baker instance.
+    *
+    * @return All recipes in the form of map of recipeId -> CompiledRecipe
+    */
+  def getAllRecipesAsync(timeout: FiniteDuration = defaultInquireTimeout): Future[Map[String, CompiledRecipe]] =
+    recipeManager.ask(GetAllRecipes)(timeout)
+      .mapTo[AllRecipes]
+      .map(_.compiledRecipes)
 
   /**
     * Creates a process instance for the given recipeId with the given processId as identifier
@@ -211,21 +219,22 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   }
 
   /**
-    * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
+    * Notifies Baker that an event has happened.
     *
-    * This call is fire and forget: If  nothing is done
-    * with the response object there is NO guarantee that the event is received by the process instance.
+    * If nothing is done with the BakerResponse there is NO guarantee that the event is received by the process instance.
     */
   def processEventAsync(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): BakerResponse = {
 
+    // transforms the given object into a RuntimeEvent instance
     val runtimeEvent: RuntimeEvent = event match {
       case runtimeEvent: RuntimeEvent => runtimeEvent
-      case _ => Baker.eventExtractor.extractEvent(event)
+      case _                          => Baker.eventExtractor.extractEvent(event)
     }
 
     implicit val implicitTimeout = timeout
 
-    val source = ProcessEventActor.processEvent(
+    // sends the ProcessEvent command to the actor and retrieves a Source (stream) of responses.
+    val source: Source[Any, NotUsed] = ProcessEventActor.processEvent(
       processIndexActor, ProcessEvent(processId, runtimeEvent, correlationId), waitForRetries = true)
 
     new BakerResponse(processId, source)
@@ -435,6 +444,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
         }
       }
     }))
+
     actorSystem.eventStream.subscribe(listenerActor, classOf[BakerEvent])
   }
 

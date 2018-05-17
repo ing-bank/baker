@@ -13,7 +13,7 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
-import com.ing.baker.runtime.core.events.{EventReceived, ProcessCreated}
+import com.ing.baker.runtime.core.events.ProcessCreated
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.petrinet._
