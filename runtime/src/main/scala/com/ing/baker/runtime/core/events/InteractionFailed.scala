@@ -1,5 +1,7 @@
 package com.ing.baker.runtime.core.events
 
+import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
+
 /**
   * Event describing the fact that an interaction was executed successfully
   *
@@ -15,4 +17,6 @@ case class InteractionFailed(timeStamp: Long,
                              recipeName: String,
                              processId: String,
                              interactionName: String,
-                             throwable: Throwable) extends BakerEvent
+                             failureCount: Int,
+                             throwable: Throwable,
+                             exceptionStrategyOutcome: ExceptionStrategyOutcome) extends BakerEvent

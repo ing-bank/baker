@@ -77,10 +77,6 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
         } match {
           case Failure(e) =>
 
-            val timeFailed = System.currentTimeMillis()
-
-            eventStream.publish(InteractionFailed(timeFailed, timeFailed - timeStarted, recipeName, processState.processId, interaction.interactionName, e))
-
             // remove the MDC values
             MDC.remove("processId")
             MDC.remove("recipeName")
