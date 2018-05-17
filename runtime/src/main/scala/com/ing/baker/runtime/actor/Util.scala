@@ -95,17 +95,9 @@ object Util {
     val counter = new AtomicInteger(0)
     val promise = Promise[List[T]]()
 
-    def createResult() = queue.iterator().asScala.foldLeft(List.empty[T]) {
-      case (list, e) => e :: list
-    }
+    def completePromise() = promise.trySuccess(queue.iterator().asScala.toList)
 
-    def completePromise() = {
-      if (!promise.isCompleted)
-        promise.success(createResult())
-    }
-
-    futures.foreach { f =>
-      f.onComplete {
+    futures.foreach { _.onComplete {
         case Success(result) =>
           queue.put(result)
           if (counter.incrementAndGet() == size)

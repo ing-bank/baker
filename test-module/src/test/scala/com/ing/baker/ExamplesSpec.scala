@@ -65,7 +65,7 @@ class ExamplesSpec extends TestRecipeHelper  {
         Seq(validateOrderImpl, manufactureGoodsImpl, sendInvoiceImpl, shipGoodsImpl)
 
       val baker = new Baker()
-      baker.addInteractionImplementations(implementations)
+      baker.addImplementation(implementations)
 
       val recipeId = baker.addRecipe(compiledRecipe)
 

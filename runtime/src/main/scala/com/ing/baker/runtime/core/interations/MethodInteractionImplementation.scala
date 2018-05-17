@@ -42,14 +42,16 @@ object MethodInteractionImplementation {
     unmockedClass.getMethods.count(_.getName == "apply") match {
       case 0          => throw new BakerException("Method does not have a apply function")
       case n if n > 1 => throw new BakerException("Method has multiple apply functions")
-      case _ => ()
+      case _          => unmockedClass.getMethods.find(_.getName == "apply").get
     }
-
-    val method = unmockedClass.getMethods.find(_.getName == "apply").get
-
-    method
   }
 
+  /**
+    * This transforms the 'apply' method of the given object into an InteractionImplementation
+    *
+    * @param impl The interaction implementation object
+    * @return An InteractionImplementation instance.
+    */
   def anyRefToInteractionImplementations(impl: AnyRef): Seq[InteractionImplementation] = {
 
     val applyMethod: Method = getApplyMethod(impl.getClass)
@@ -158,5 +160,4 @@ case class MethodInteractionImplementation(override val name: String,
 
     createRuntimeEvent(interaction, output)
   }
-
 }
