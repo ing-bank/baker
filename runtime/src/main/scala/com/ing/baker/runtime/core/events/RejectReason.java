@@ -2,11 +2,11 @@ package com.ing.baker.runtime.core.events;
 
 public enum RejectReason {
     /**
-     * The process for which the event was delivered does not exist
+     * The process for which the event was received does not exist
      */
     NoSuchProcess,
     /**
-     * The process for which the event was delivered was deleted
+     * The process for which the event was received was deleted
      */
     ProcessDeleted,
     /**
@@ -18,7 +18,7 @@ public enum RejectReason {
      */
     ReceivePeriodExpired,
     /**
-     * The limit
+     * The limit (number of times) that this event may be processed was met
      */
     FiringLimitMet,
     /**
