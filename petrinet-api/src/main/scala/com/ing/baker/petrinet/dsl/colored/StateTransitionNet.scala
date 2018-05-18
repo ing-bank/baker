@@ -25,7 +25,7 @@ trait StateTransitionNet[S, E] {
     override val taskProvider: TransitionTaskProvider[Place, Transition, S, E] = eventTaskProvider
     override val exceptionHandler: ExceptionHandler[Place, Transition, S] = new ExceptionHandler[Place, Transition, S] {
       override def handleException(job: Job[Place, Transition, S])
-                                  (throwable: Throwable, failureCount: Int, outMarking: MultiSet[Place[_]]) =
+                                  (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place[_]]) =
         job.transition.exceptionStrategy(throwable, failureCount, outMarking)
     }
     override lazy val jobPicker = new JobPicker[Place, Transition](tokenGame) {

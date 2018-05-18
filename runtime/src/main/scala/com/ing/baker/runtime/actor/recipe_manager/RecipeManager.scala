@@ -39,6 +39,8 @@ class RecipeManager extends PersistentActor with ActorLogging {
 
         persist(RecipeAdded(recipeId, compiledRecipe)){ _ =>
           addRecipe(recipeId, compiledRecipe)
+          context.system.eventStream.publish(
+            com.ing.baker.runtime.core.events.RecipeAdded(compiledRecipe.name, recipeId, System.currentTimeMillis()))
           sender() ! AddRecipeResponse(recipeId)
         }
       }

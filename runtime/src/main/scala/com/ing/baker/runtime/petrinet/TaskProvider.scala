@@ -70,16 +70,12 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
         val timeStarted = System.currentTimeMillis()
 
         // publish the fact that we started the interaction
-        eventStream.publish(InteractionStarted(timeStarted, processState.processId, interaction.interactionName))
+        eventStream.publish(InteractionStarted(timeStarted, recipeName, processState.processId, interaction.interactionName))
 
         Try {
           implementation.execute(interaction, input)
         } match {
           case Failure(e) =>
-
-            val timeFailed = System.currentTimeMillis()
-
-            eventStream.publish(InteractionFailed(timeFailed, timeFailed - timeStarted, processState.processId, interaction.interactionName, e))
 
             // remove the MDC values
             MDC.remove("processId")
@@ -110,7 +106,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
             val timeCompleted = System.currentTimeMillis()
 
             // publish the fact that the interaction completed
-            eventStream.publish(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, processState.processId, interaction.interactionName, outputEvent))
+            eventStream.publish(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, recipeName, processState.processId, interaction.interactionName, outputEvent))
 
             // create the output marking for the petri net
             val outputMarking = createProducedMarking(interaction, outAdjacent)(outputEvent)
