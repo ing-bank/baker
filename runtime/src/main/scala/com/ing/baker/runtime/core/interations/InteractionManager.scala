@@ -3,6 +3,7 @@ package com.ing.baker.runtime.core.interations
 import java.util.concurrent.ConcurrentHashMap
 
 import com.ing.baker.il.petrinet.InteractionTransition
+import scala.compat.java8.FunctionConverters._
 
 /**
   * The InteractionManager is responsible for all implementation of interactions.
@@ -12,8 +13,7 @@ import com.ing.baker.il.petrinet.InteractionTransition
   */
 class InteractionManager(private var interactionImplementations: Seq[InteractionImplementation] = Seq.empty) {
 
-
-  private val cache: ConcurrentHashMap[InteractionTransition[_], InteractionImplementation] =
+  private val implementationCache: ConcurrentHashMap[InteractionTransition[_], InteractionImplementation] =
     new ConcurrentHashMap[InteractionTransition[_], InteractionImplementation]
 
   private def isCompatibleImplementation(interaction: InteractionTransition[_], implementation: InteractionImplementation): Boolean = {
@@ -24,11 +24,8 @@ class InteractionManager(private var interactionImplementations: Seq[Interaction
       }
   }
 
-  private val absentMethod = new java.util.function.Function[InteractionTransition[_], InteractionImplementation]() {
-    override def apply(interaction: InteractionTransition[_]): InteractionImplementation = {
+  private def computeAbsentMethod(interaction: InteractionTransition[_]): InteractionImplementation =
       interactionImplementations.find(implementation => isCompatibleImplementation(interaction, implementation)).orNull
-    }
-  }
 
   /**
     * Add an implementation to the InteractionManager
@@ -49,5 +46,5 @@ class InteractionManager(private var interactionImplementations: Seq[Interaction
     * @return An option containing the implementation if available
     */
   def getImplementation(interaction: InteractionTransition[_]): Option[InteractionImplementation] =
-    Option(cache.computeIfAbsent(interaction, absentMethod))
+    Option(implementationCache.computeIfAbsent(interaction, (computeAbsentMethod _).asJava))
 }
