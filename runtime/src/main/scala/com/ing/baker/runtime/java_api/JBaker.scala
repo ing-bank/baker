@@ -44,7 +44,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     *
     * @param implementation The implementation that should be added.
     */
-  def addImplementation(implementation: AnyRef): Unit = baker.addInteractionImplementation(implementation)
+  def addImplementation(implementation: AnyRef): Unit = baker.addImplementation(implementation)
 
   /**
     * Adds all the provided interaction implementations to baker.

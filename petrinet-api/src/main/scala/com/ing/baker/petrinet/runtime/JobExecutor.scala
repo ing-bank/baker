@@ -51,7 +51,7 @@ object JobExecutor {
         // In case an exception was thrown by the transition, we compute the failure strategy and return a TransitionFailedEvent
         case e: Throwable ⇒
           val failureCount = job.failureCount + 1
-          val failureStrategy = exceptionHandlerFn.handleException(job)(e, failureCount, topology.outMarking(transition))
+          val failureStrategy = exceptionHandlerFn.handleException(job)(e, failureCount, startTime, topology.outMarking(transition))
           TransitionFailedEvent(job.id, transition, job.correlationId, startTime, System.currentTimeMillis(), job.consume, job.input, exceptionStackTrace(e), failureStrategy)
       }.handle {
         // If an exception was thrown while computing the failure strategy we block the interaction from firing

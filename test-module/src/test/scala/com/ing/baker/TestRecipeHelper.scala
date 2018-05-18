@@ -498,7 +498,7 @@ trait TestRecipeHelper
                                     (implicit actorSystem: ActorSystem): (Baker, String) = {
 
     val baker = new Baker()(actorSystem)
-    baker.addInteractionImplementations(implementations)
+    baker.addImplementation(implementations)
     val recipeId = baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
     (baker, recipeId)
   }
@@ -506,7 +506,7 @@ trait TestRecipeHelper
   protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Baker = {
     setupMockResponse()
     val baker = new Baker()(actorSystem)
-    baker.addInteractionImplementations(mockImplementations)
+    baker.addImplementation(mockImplementations)
     baker
   }
 

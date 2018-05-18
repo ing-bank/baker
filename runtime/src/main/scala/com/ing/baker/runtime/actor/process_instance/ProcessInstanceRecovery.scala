@@ -19,14 +19,14 @@ abstract class ProcessInstanceRecovery[P[_], T[_], S, E](
 
   val serializer = new ProcessInstanceSerialization[P, T, S, E](new ObjectSerializer(system, encryption))
 
-  def onRecoveryCompleted(state: Instance[P, T, S, E])
+  def onRecoveryCompleted(state: Instance[P, T, S])
 
-  def persistEvent[O](instance: Instance[P, T, S, E], e: Event)(fn: Event => O): Unit = {
+  def persistEvent[O](instance: Instance[P, T, S], e: Event)(fn: Event => O): Unit = {
     val serializedEvent = serializer.serializeEvent(e)(instance)
     persist(serializedEvent) { persisted => fn(e) }
   }
 
-  private var recoveringState: Instance[P, T, S, E] = Instance.uninitialized[P, T, S, E](topology)
+  private var recoveringState: Instance[P, T, S] = Instance.uninitialized[P, T, S](topology)
 
   private def applyToRecoveringState(e: AnyRef) = {
     val deserializedEvent = serializer.deserializeEvent(e)(recoveringState)

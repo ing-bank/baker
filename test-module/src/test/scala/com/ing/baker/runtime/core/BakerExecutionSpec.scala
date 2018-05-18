@@ -246,7 +246,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
 
       val baker = new Baker()
 
-      baker.addInteractionImplementations(mockImplementations)
+      baker.addImplementation(mockImplementations)
 
       val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
       val recipeId = baker.addRecipe(compiledRecipe)
@@ -830,7 +830,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       val system2 = ActorSystem("persistenceTest2", levelDbConfig("persistenceTest2", 3003))
       try {
         val baker2 = new Baker()(system2)
-        baker2.addInteractionImplementations(mockImplementations)
+        baker2.addImplementation(mockImplementations)
         baker2.getIngredients(processId) shouldBe finalState
         baker2.getRecipe(recipeId) shouldBe compiledRecipe
         baker2.addRecipe(compiledRecipe) shouldBe recipeId

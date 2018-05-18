@@ -95,7 +95,7 @@ object APIRoutes extends Directives with BaasMarshalling {
             println(s"Adding interaction called: ${request.name}")
 
             //Register it to BAAS
-            baker.addInteractionImplementation(interactionImplementation)
+            baker.addImplementation(interactionImplementation)
 
             //return response
             complete(s"Interaction: ${interactionImplementation.name} added")

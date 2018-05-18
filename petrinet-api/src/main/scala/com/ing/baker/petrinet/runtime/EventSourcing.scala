@@ -47,15 +47,15 @@ object EventSourcing {
     marking: Marking[P],
     state: Any) extends Event
 
-  def apply[P[_], T[_], S, E](sourceFn: T[_] ⇒ EventSource[S, E]): Instance[P, T, S, E] ⇒ Event ⇒ Instance[P, T, S, E] = instance ⇒ {
+  def apply[P[_], T[_], S, E](sourceFn: T[_] ⇒ EventSource[S, E]): Instance[P, T, S] ⇒ Event ⇒ Instance[P, T, S] = instance ⇒ {
     case InitializedEvent(initialMarking, initialState) ⇒
-      Instance[P, T, S, E](instance.process, 1, initialMarking.asInstanceOf[Marking[P]], initialState.asInstanceOf[S], Map.empty, Set.empty)
+      Instance[P, T, S](instance.process, 1, initialMarking.asInstanceOf[Marking[P]], initialState.asInstanceOf[S], Map.empty, Set.empty)
     case e: TransitionFiredEvent[_, _, _] ⇒
 
       val transition = e.transition.asInstanceOf[T[Any]]
       val newState = sourceFn(transition)(instance.state)(e.output.asInstanceOf[E])
 
-      instance.copy[P, T, S, E](
+      instance.copy[P, T, S](
         sequenceNr = instance.sequenceNr + 1,
         marking = (instance.marking |-| e.consumed.asInstanceOf[Marking[P]]) |+| e.produced.asInstanceOf[Marking[P]],
         receivedCorrelationIds = instance.receivedCorrelationIds ++ e.correlationId,
@@ -69,6 +69,6 @@ object EventSourcing {
       })
       val failureCount = job.failureCount + 1
       val updatedJob: Job[P, T, S] = job.copy(failure = Some(ExceptionState(e.timeFailed, failureCount, e.failureReason, e.exceptionStrategy)))
-      instance.copy[P, T, S, E](jobs = instance.jobs + (job.id -> updatedJob))
+      instance.copy[P, T, S](jobs = instance.jobs + (job.id -> updatedJob))
   }
 }

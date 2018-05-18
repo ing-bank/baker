@@ -35,7 +35,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
         val baker = new Baker()
 
-        baker.addInteractionImplementations(mockImplementations)
+        baker.addImplementation(mockImplementations)
 
         when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn("foobar")
 
@@ -51,14 +51,14 @@ class BakerSetupSpec extends TestRecipeHelper {
 
         val baker = new Baker()
 
-        baker.addInteractionImplementations(mockImplementations)
+        baker.addImplementation(mockImplementations)
       }
 
       "providing an implementation with the class simplename same as the interaction" in {
 
         val baker = new Baker()
 
-        baker.addInteractionImplementation(new implementations.InteractionOne())
+        baker.addImplementation(new implementations.InteractionOne())
       }
 
       "providing an implementation for a renamed interaction" in {
@@ -69,7 +69,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
         val baker = new Baker()
 
-        baker.addInteractionImplementation(new implementations.InteractionOne())
+        baker.addImplementation(new implementations.InteractionOne())
 
         baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
       }
@@ -82,7 +82,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
         val baker = new Baker()
 
-        baker.addInteractionImplementation(new InteractionOneFieldName())
+        baker.addImplementation(new InteractionOneFieldName())
 
         baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
       }
@@ -95,7 +95,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
         val baker = new Baker()
 
-        baker.addInteractionImplementation(new InteractionOneInterfaceImplementation())
+        baker.addImplementation(new InteractionOneInterfaceImplementation())
 
         baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
       }
@@ -107,7 +107,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
         val baker = new Baker()
 
-        baker.addInteractionImplementation(mock[ComplexIngredientInteraction])
+        baker.addImplementation(mock[ComplexIngredientInteraction])
 
         baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
       }
@@ -122,7 +122,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
         val baker = new Baker()
 
-        baker.addInteractionImplementations(mockImplementations)
+        baker.addImplementation(mockImplementations)
 
         intercept[RecipeValidationException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
@@ -151,7 +151,7 @@ class BakerSetupSpec extends TestRecipeHelper {
 
         val baker = new Baker()
 
-        baker.addInteractionImplementation(new InteractionOneWrongApply())
+        baker.addImplementation(new InteractionOneWrongApply())
 
         intercept[BakerException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
