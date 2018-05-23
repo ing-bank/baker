@@ -22,13 +22,24 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   )
 )
 
+
+val dependencyOverrideSettings = Seq(
+  // note that this does NOT add the dependencies, just forces the version
+  dependencyOverrides ++= Seq(
+    catsCore,
+    akkaActor,
+    akkaStream,
+    "com.github.jnr" % "jnr-constants" % "0.9.9"
+  )
+)
+
 lazy val noPublishSettings = Seq(
   publish := {},
   publishLocal := {},
   publishArtifact := false
 )
 
-lazy val defaultModuleSettings = commonSettings ++ Revolver.settings ++ SonatypePublish.settings
+lazy val defaultModuleSettings = commonSettings ++ dependencyOverrideSettings ++ Revolver.settings ++ SonatypePublish.settings
 
 lazy val scalaPBSettings = Seq(PB.targets in Compile := Seq(scalapb.gen() -> (sourceManaged in Compile).value))
 
@@ -39,10 +50,11 @@ lazy val petrinetApi = project.in(file("petrinet-api"))
     libraryDependencies ++= compileDeps(
       scalaGraph,
       catsCore,
+      catsEffect,
       scalapbRuntime,
       slf4jApi,
-      kryo,
-      catsEffect) ++ testDeps(
+      kryo
+      ) ++ testDeps(
       scalaCheck,
       scalaTest,
       mockito,
