@@ -33,6 +33,7 @@ object SonatypePublish {
     publishTo := version((v: String) => Some(if (isSnapshot(v)) ossSnapshots else ossStaging)).value,
     publishArtifact in Test := false,
     pomIncludeRepository := (_ => false),
+    releaseCrossBuild := true,
     releaseProcess := Seq[ReleaseStep](
       checkSnapshotDependencies,
       inquireVersions,
@@ -41,10 +42,10 @@ object SonatypePublish {
       setReleaseVersion,
       commitReleaseVersion,
       tagRelease,
-      ReleaseStep(action = Command.process("publishSigned", _), enableCrossBuild = true),
+      releaseStepCommandAndRemaining("+publishSigned"),
       setNextVersion,
       commitNextVersion,
-      ReleaseStep(action = Command.process("sonatypeReleaseAll", _), enableCrossBuild = true),
+      releaseStepCommand("sonatypeReleaseAll"),
       pushChanges
     )
   )

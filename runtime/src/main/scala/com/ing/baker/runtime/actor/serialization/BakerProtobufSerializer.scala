@@ -7,7 +7,7 @@ import com.ing.baker.runtime.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.actor.protobuf
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
 import com.ing.baker.runtime.{actor, core}
-import com.trueaccord.scalapb.{GeneratedMessage, GeneratedMessageCompanion, Message}
+import scalapb.{GeneratedMessage, GeneratedMessageCompanion, Message}
 import org.slf4j.LoggerFactory
 
 object BakerProtobufSerializer {
