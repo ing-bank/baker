@@ -23,8 +23,8 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
 )
 
 lazy val noPublishSettings = Seq(
-  publish := (),
-  publishLocal := (),
+  publish := {},
+  publishLocal := {},
   publishArtifact := false
 )
 

@@ -5,7 +5,7 @@ object Dependencies {
 
   val akkaVersion = "2.5.11"
   val jvmV = "1.8"
-  val scalapbVersion = com.trueaccord.scalapb.compiler.Version.scalapbVersion
+  val scalapbVersion = scalapb.compiler.Version.scalapbVersion
 
   val typeSafeConfig =            "com.typesafe"               %  "config"                             % "1.3.1"
 
