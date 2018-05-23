@@ -75,17 +75,16 @@ Applying Baker will only be successful if you make sure that:
 To get started with SBT, simply add the following to your build.sbt file:
 
 ```
-libraryDependencies += "com.ing.baker" %% "baker-recipe-dsl" % "1.3.2"
-libraryDependencies += "com.ing.baker" %% "baker-runtime" % "1.3.2"
-libraryDependencies += "com.ing.baker" %% "baker-compiler" % "1.3.2"
+libraryDependencies += "com.ing.baker" %% "baker-recipe-dsl" % "1.3.3"
+libraryDependencies += "com.ing.baker" %% "baker-runtime" % "1.3.3"
+libraryDependencies += "com.ing.baker" %% "baker-compiler" % "1.3.3"
 ```
 
 As of 1.3.x we cross compile to both scala 2.11 and 2.12. Earlier releases are only available for 2.11.
 
 # How to contribute?
 
-Execute the following commands in your terminal to get started with the development of BAKER.
-
+Execute the following commands in your terminal to get started with the development of Baker.
 
 ```
 $ git clone https://github.com/ing-bank/baker.git
@@ -114,7 +113,7 @@ A -> { B C }
 }
 ```
 
-To create a PNG, run:
+To create a SVG, run:
 
 ```
 dot -v -Tsvg -O graph.dot
@@ -130,16 +129,6 @@ You are all set to visualize your recipes now!
 
 You can also use custom fonts, for more info see <http://www.graphviz.org/doc/fontfaq.txt>.
 
-# Naming conventions
-Each interaction can be:
-
-1. Synchronous - wait on a response;
-2. Or asynchronous - get an acknowledgement only, while the outcome is received later;
-
-Model the result of a synchronous interaction with two events: **Successful** and **Failed**. For example the ValidateOrder interaction could fire OrderValidationSuccessful or OrderValidationFailed events.
-
-Model the acknowledgment from an asynchronous operation with an **Accepted** event. The actual result (received at a later stage) of the interaction is modelled as above.
-
 # References
-1. DOT Graph Description Language (https://en.wikipedia.org/wiki/DOT_(graph_description_language)) - explain more about the format Baker uses to produce a graphical representation of the recipe;
+1. DOT Graph Description Language (https://en.wikipedia.org/wiki/DOT_(graph_description_language)) - explains more about the format Baker uses to produce a graphical representation of the recipe;
 2. Order fulfillment (https://en.wikipedia.org/wiki/Order_fulfillment) - gives an idea about the theory behind order fulfillment strategies. As you are in the business of producing and selling products to people, you are in the business of fulfillment;
