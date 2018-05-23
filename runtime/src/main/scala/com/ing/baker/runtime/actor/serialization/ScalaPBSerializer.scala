@@ -60,7 +60,7 @@ class ScalaPBSerializer(system: ExtendedActorSystem) extends SerializerWithStrin
 
   override def toBinary(o: AnyRef): Array[Byte] = {
     o match {
-      case msg: com.trueaccord.scalapb.GeneratedMessage =>
+      case msg: scalapb.GeneratedMessage =>
         val stream: ByteArrayOutputStream = new ByteArrayOutputStream()
         msg.writeTo(stream)
         stream.toByteArray

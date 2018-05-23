@@ -24,9 +24,11 @@ class ScalaPBSerializerSpec extends TestKit(ActorSystem("ScalaPBSerializerSpec")
     transitionFailedGen)
 
   test("baker can serialize/deserialize generated protobuf messages") {
-    val prop = Prop.forAll(messageToSerialize) { (message) =>
-      val bytes = serializer.toBinary(message)
-      val deserializedMessage = serializer.fromBinary(bytes, serializer.manifest(message))
+    val prop = Prop.forAll(messageToSerialize) { message =>
+
+      val anyRefMsg = message.asInstanceOf[AnyRef]
+      val bytes = serializer.toBinary(anyRefMsg)
+      val deserializedMessage = serializer.fromBinary(bytes, serializer.manifest(anyRefMsg))
       message.equals(deserializedMessage)
     }
 
