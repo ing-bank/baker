@@ -4,7 +4,7 @@ import java.io.ByteArrayOutputStream
 
 import akka.actor.ExtendedActorSystem
 import akka.serialization.SerializerWithStringManifest
-import com.trueaccord.scalapb.{GeneratedMessageCompanion, Message}
+import scalapb.{GeneratedMessageCompanion, Message}
 import com.typesafe.config.Config
 
 import scala.collection.JavaConverters._

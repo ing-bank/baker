@@ -16,7 +16,8 @@ import com.ing.baker.runtime.actor.{process_index, protobuf, recipe_manager}
 import com.ing.baker.runtime.core
 import com.ing.baker.types.Value
 import com.ing.baker.{il, types}
-import com.trueaccord.scalapb.GeneratedMessage
+import scalapb.GeneratedMessage
+
 import org.joda.time
 import org.joda.time.{LocalDate, LocalDateTime}
 import org.joda.time.format.ISODateTimeFormat
@@ -54,7 +55,7 @@ trait ProtoEventAdapter {
 
   def toProtoType[T <: GeneratedMessage](obj: AnyRef): T = toProto(obj).asInstanceOf[T]
 
-  def toProto(obj: AnyRef): com.trueaccord.scalapb.GeneratedMessage = {
+  def toProto(obj: AnyRef): scalapb.GeneratedMessage = {
 
     def createPrimitive(p: PrimitiveType) = protobuf.Type(Type.OneofType.Primitive(p))
 

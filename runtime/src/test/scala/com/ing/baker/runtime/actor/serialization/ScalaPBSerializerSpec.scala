@@ -6,7 +6,7 @@ import akka.testkit.TestKit
 import com.google.protobuf.ByteString
 import com.ing.baker.runtime.actor.process_instance.protobuf.{ConsumedToken, Initialized, TransitionFailed, TransitionFired}
 import com.ing.baker.runtime.actor.protobuf.{ProducedToken, SerializedData}
-import com.trueaccord.scalapb.GeneratedMessage
+import scalapb.GeneratedMessage
 import org.scalacheck.{Gen, Prop, Test}
 import org.scalatest.prop.Checkers
 import org.scalatest.{FunSuiteLike, Matchers}
