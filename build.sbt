@@ -5,11 +5,10 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
   scalaVersion := "2.12.4",
   crossScalaVersions := Seq("2.11.12", "2.12.4"),
-  scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", s"-target:jvm-$jvmV"),
-  javacOptions := Seq("-source", jvmV, "-target", jvmV),
   fork in test := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
-  scalacOptions ++= Seq(
+  javacOptions := Seq("-source", jvmV, "-target", jvmV),
+  scalacOptions := Seq(
     "-unchecked",
     "-deprecation",
     "-feature",
@@ -18,6 +17,8 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     "-language:existentials",
     "-language:implicitConversions",
     "-language:postfixOps",
+    "-encoding", "utf8",
+    s"-target:jvm-$jvmV",
     "-Xfatal-warnings"
   )
 )
