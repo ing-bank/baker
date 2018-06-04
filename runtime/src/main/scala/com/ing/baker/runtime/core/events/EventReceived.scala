@@ -11,6 +11,7 @@ import com.ing.baker.runtime.core.RuntimeEvent
   * @param event The event
   */
 case class EventReceived(timeStamp: Long,
+                         recipeName: String,
                          processId: String,
                          correlationId: Option[String],
                          event: RuntimeEvent) extends BakerEvent

@@ -4,14 +4,16 @@ import java.util.concurrent.TimeoutException
 
 import akka.NotUsed
 import akka.actor.{Actor, ActorRef, ActorSystem, Props, ReceiveTimeout}
-import akka.stream.{Materializer, OverflowStrategy}
 import akka.stream.scaladsl.{Source, SourceQueueWithComplete}
+import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.Timeout
+import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.il.petrinet.Transition
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{AlreadyReceived, TransitionFailed, TransitionFired, TransitionNotEnabled, Uninitialized}
-import com.ing.baker.runtime.core.events
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.core.events.RejectReason
+import com.ing.baker.runtime.core.{RuntimeEvent, events}
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -20,22 +22,35 @@ object ProcessEventActor {
   /**
     * Returns a Source of all the messages from a process instance in response to a message.
     */
-  def processEvent(receiver: ActorRef, cmd: ProcessEvent, waitForRetries: Boolean = false)
+  def processEvent(receiver: ActorRef, recipe: CompiledRecipe, cmd: ProcessEvent, waitForRetries: Boolean = false)
                   (implicit timeout: FiniteDuration, actorSystem: ActorSystem, materializer: Materializer): Source[Any, NotUsed] = {
 
     implicit val akkaTimeout: Timeout = timeout
     Source.queue[Any](100, OverflowStrategy.fail).mapMaterializedValue { queue ⇒
-      val sender = actorSystem.actorOf(Props(new ProcessEventActor(cmd, queue, waitForRetries)(timeout, actorSystem)))
-      receiver.tell(cmd, sender)
+      val sender = actorSystem.actorOf(Props(new ProcessEventActor(recipe, cmd, queue, waitForRetries)(timeout, actorSystem)))
+      val fireTransitionCmd = createFireTransitionCmd(recipe, cmd.processId, cmd.event, cmd.correlationId)
+      receiver.tell(fireTransitionCmd, sender)
       NotUsed.getInstance()
     }
+  }
+
+  def transitionForRuntimeEvent(runtimeEvent: RuntimeEvent, compiledRecipe: CompiledRecipe): Transition[_] =
+    compiledRecipe.petriNet.transitions.findByLabel(runtimeEvent.name).getOrElse {
+      throw new IllegalArgumentException(s"No such event known in recipe: ${runtimeEvent.name}")
+    }
+
+  def createFireTransitionCmd(recipe: CompiledRecipe, processId: String, runtimeEvent: RuntimeEvent, correlationId: Option[String]): FireTransition = {
+    require(runtimeEvent != null, "Event can not be null")
+    val t: Transition[_] = transitionForRuntimeEvent(runtimeEvent, recipe)
+
+    FireTransition(t.id, runtimeEvent, correlationId)
   }
 }
 
 /**
   * An actor that pushes all received messages on a SourceQueueWithComplete.
   */
-class ProcessEventActor(cmd: ProcessEvent, queue: SourceQueueWithComplete[Any], waitForRetries: Boolean)(implicit timeout: FiniteDuration, system: ActorSystem) extends Actor {
+class ProcessEventActor(recipe: CompiledRecipe, cmd: ProcessEvent, queue: SourceQueueWithComplete[Any], waitForRetries: Boolean)(implicit timeout: FiniteDuration, system: ActorSystem) extends Actor {
   var runningJobs = Set.empty[Long]
   var firstReceived = false
 
@@ -53,14 +68,6 @@ class ProcessEventActor(cmd: ProcessEvent, queue: SourceQueueWithComplete[Any], 
   }
 
   override def receive: Receive = {
-    case msg: ReceivePeriodExpired ⇒
-      rejectedWith(msg, RejectReason.ReceivePeriodExpired)
-
-    case msg: InvalidEvent =>
-      rejectedWith(msg, RejectReason.InvalidEvent)
-
-    case msg: ProcessDeleted =>
-      rejectedWith(msg, RejectReason.ProcessDeleted)
 
     case msg: TransitionNotEnabled =>
       rejectedWith(msg, RejectReason.FiringLimitMet)
@@ -68,15 +75,12 @@ class ProcessEventActor(cmd: ProcessEvent, queue: SourceQueueWithComplete[Any], 
     case msg: AlreadyReceived ⇒
       rejectedWith(msg, RejectReason.AlreadyReceived)
 
-    case msg @ (_: ProcessUninitialized | _: Uninitialized) =>
-      rejectedWith(msg, RejectReason.NoSuchProcess)
-
     //Messages from the ProcessInstances
     case e: TransitionFired ⇒
       queue.offer(e)
 
       if (!firstReceived)
-        system.eventStream.publish(events.EventReceived(System.currentTimeMillis(), cmd.processId, cmd.correlationId, cmd.event))
+        system.eventStream.publish(events.EventReceived(System.currentTimeMillis(), recipe.name, cmd.processId, cmd.correlationId, cmd.event))
 
       firstReceived = true
 

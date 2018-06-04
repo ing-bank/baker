@@ -234,8 +234,13 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     implicit val implicitTimeout = timeout
 
     // sends the ProcessEvent command to the actor and retrieves a Source (stream) of responses.
-    val source: Source[Any, NotUsed] = ProcessEventActor.processEvent(
-      processIndexActor, ProcessEvent(processId, runtimeEvent, correlationId), waitForRetries = true)
+
+    val response = processIndexActor
+      .ask(ProcessEvent(processId, runtimeEvent, correlationId, true, timeout))(Timeout(timeout))
+      .mapTo[ProcessEventResponse]
+      .map(_.sourceRef)
+
+    val source = Await.result(response, timeout)
 
     new BakerResponse(processId, source)
   }

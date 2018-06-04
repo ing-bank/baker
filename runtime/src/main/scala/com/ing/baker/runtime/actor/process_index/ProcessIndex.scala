@@ -2,7 +2,10 @@ package com.ing.baker.runtime.actor.process_index
 
 import akka.actor.{ActorLogging, ActorRef, Props, Terminated}
 import akka.pattern.ask
+import akka.pattern.pipe
 import akka.persistence.{PersistentActor, RecoveryCompleted}
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{Source, StreamRefs}
 import com.ing.baker.il.petrinet.{Place, RecipePetriNet, Transition}
 import com.ing.baker.il.{CompiledRecipe, petrinet}
 import com.ing.baker.petrinet.runtime.{PetriNetRuntime, namedCachedThreadPool}
@@ -14,14 +17,14 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
-import com.ing.baker.runtime.core.events.ProcessCreated
+import com.ing.baker.runtime.core.events.{ProcessCreated, RejectReason}
 import com.ing.baker.runtime.core.interations.InteractionManager
-import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, events}
 import com.ing.baker.runtime.petrinet._
 
 import scala.collection.mutable
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 
 object ProcessIndex {
@@ -70,18 +73,6 @@ object ProcessIndex {
       petrinet.transitionIdentifier)
     )
 
-  def transitionForRuntimeEvent(runtimeEvent: RuntimeEvent, compiledRecipe: CompiledRecipe): Transition[_] =
-    compiledRecipe.petriNet.transitions.findByLabel(runtimeEvent.name).getOrElse {
-      throw new IllegalArgumentException(s"No such event known in recipe: ${runtimeEvent.name}")
-    }
-
-  def createFireTransitionCmd(recipe: CompiledRecipe, processId: String, runtimeEvent: RuntimeEvent, correlationId: Option[String]): FireTransition = {
-    require(runtimeEvent != null, "Event can not be null")
-    val t: Transition[_] = transitionForRuntimeEvent(runtimeEvent, recipe)
-
-    FireTransition(t.id, runtimeEvent, correlationId)
-  }
-
   private val bakerExecutionContext: ExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
 
   private val updateCacheTimeout: FiniteDuration = 5 seconds
@@ -95,6 +86,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
   private val recipeCache: mutable.Map[String, CompiledRecipe] = mutable.Map[String, CompiledRecipe]()
+  private implicit val materializer = ActorMaterializer()
 
   import context.dispatcher
 
@@ -216,20 +208,31 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
         case _ => sender() ! ProcessAlreadyInitialized(processId)
       }
 
-    case ProcessEvent(processId: String, eventToFire: RuntimeEvent, correlationId) =>
+    case cmd @ ProcessEvent(processId: String, eventToFire: RuntimeEvent, correlationId, waitForRetries, processEventTimout) =>
+
+      def rejectWith(msg: Any, rejectReason: RejectReason): Unit = {
+        context.system.eventStream.publish(events.EventRejected(System.currentTimeMillis(), cmd.processId, cmd.correlationId, cmd.event, rejectReason))
+        Source.single(msg).runWith(StreamRefs.sourceRef()).map(ProcessEventResponse(processId, _)).pipeTo(sender())
+      }
+
       //Forwards the event message to the Actor if its in the Receive period for the compiledRecipe
-      def forwardEventIfInReceivePeriod(actorRef: ActorRef, compiledRecipe: CompiledRecipe) = {
+      def forwardEventIfInReceivePeriod(actorRef: ActorRef, recipe: CompiledRecipe) = {
 
         def forwardEvent() = {
-          val cmd = createFireTransitionCmd(compiledRecipe, processId, eventToFire, correlationId)
-          actorRef.forward(cmd)
+
+          val source = ProcessEventActor.processEvent(actorRef, recipe, cmd, waitForRetries)(processEventTimout, context.system, materializer)
+
+          val sourceRef: Future[ProcessEventResponse] = source.runWith(StreamRefs.sourceRef()).map(ProcessEventResponse(processId, _))
+
+          sourceRef.pipeTo(sender())
         }
 
-        compiledRecipe.eventReceivePeriod match {
+        recipe.eventReceivePeriod match {
           case Some(receivePeriod) =>
             index.get(processId).foreach { p =>
               if (System.currentTimeMillis() - p.createdDateTime > receivePeriod.toMillis) {
-                sender() ! ReceivePeriodExpired(processId)
+
+                rejectWith(ReceivePeriodExpired(processId), RejectReason.ReceivePeriodExpired)
               }
               else
                 forwardEvent()
@@ -243,16 +246,17 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
       //Validates if the event is correct for the given
       //If not return a InvalidEvent message to the sender
       //Otherwise forwardEventIfInReceivePeriod
-      def validateEventAvailableForRecipe(actorRef: ActorRef, compiledRecipe: CompiledRecipe) = {
-        compiledRecipe.sensoryEvents.find(sensoryEvent => sensoryEvent.name == eventToFire.name) match {
-          case None => sender() ! InvalidEvent(processId, s"No event with name '${eventToFire.name}' found in recipe '${compiledRecipe.name}'")
+      def validateEventAvailableForRecipe(actorRef: ActorRef, recipe: CompiledRecipe) = {
+        recipe.sensoryEvents.find(sensoryEvent => sensoryEvent.name == eventToFire.name) match {
+          case None =>
+            rejectWith(InvalidEvent(processId, s"No event with name '${eventToFire.name}' found in recipe '${recipe.name}'"), RejectReason.InvalidEvent)
           case Some(sensoryEvent) =>
             //Check If the sensory event is valid for this recipe
             val eventValidationErrors = eventToFire.validateEvent(sensoryEvent)
             if (eventValidationErrors.nonEmpty)
-              sender() ! InvalidEvent(processId, s"Invalid event: " + eventValidationErrors.mkString(","))
+              rejectWith(InvalidEvent(processId, s"Invalid event: " + eventValidationErrors.mkString(",")), RejectReason.InvalidEvent)
             else {
-              forwardEventIfInReceivePeriod(actorRef, compiledRecipe)
+              forwardEventIfInReceivePeriod(actorRef, recipe)
             }
         }
       }
@@ -265,7 +269,8 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
             getCompiledRecipe(recipeId).foreach { compiledRecipe: CompiledRecipe =>
               validateEventAvailableForRecipe(actorRef, compiledRecipe)
             }
-          case None => sender() ! ProcessUninitialized(processId)
+          case None =>
+            rejectWith(ProcessUninitialized(processId), RejectReason.NoSuchProcess)
         }
       }
 
@@ -273,8 +278,8 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
       //If not check if it is available and start
       //If not return a Uninitialized message
       context.child(processId) match {
-        case None if !index.contains(processId) => sender() ! ProcessUninitialized(processId)
-        case None if isDeleted(index(processId)) => sender() ! ProcessDeleted(processId)
+        case None if !index.contains(processId) => rejectWith(ProcessUninitialized(processId), RejectReason.NoSuchProcess)
+        case None if isDeleted(index(processId)) => rejectWith(ProcessUninitialized(processId), RejectReason.ProcessDeleted)
         case None =>
           persist(ActorActivated(processId)) { _ =>
             handleEventWithActor(createProcessActor(processId))

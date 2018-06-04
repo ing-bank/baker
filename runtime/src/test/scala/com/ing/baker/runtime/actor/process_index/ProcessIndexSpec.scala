@@ -155,7 +155,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val runtimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! ProcessEvent(processId, runtimeEvent, None)
+      actorIndex ! ProcessEvent(processId, runtimeEvent, None, true, 1 seconds)
 
       petriNetActorProbe.expectMsgAllClassOf(classOf[FireTransition])
     }
@@ -177,7 +177,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val RuntimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds)
 
       expectMsg(ProcessUninitialized(processId))
     }
@@ -204,7 +204,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val RuntimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds)
 
       expectMsg(InvalidEvent(processId ,s"No event with name 'Event' found in recipe 'name'"))
     }
@@ -236,7 +236,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val RuntimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds)
 
       expectMsg(InvalidEvent(processId ,s"Invalid event: no value was provided for ingredient 'ingredientName'"))
     }
@@ -268,13 +268,13 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val RuntimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds)
 
       petriNetActorProbe.expectMsgAllClassOf(classOf[FireTransition])
 
       Thread.sleep(receivePeriodTimeout.toMillis * 2)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds)
 
       petriNetActorProbe.expectNoMessage(noMsgExpectTimeout)
 
