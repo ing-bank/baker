@@ -75,6 +75,9 @@ class ProcessEventActor(cmd: ProcessEvent, recipe: CompiledRecipe, queue: Source
     case msg: AlreadyReceived ⇒
       rejectedWith(msg, RejectReason.AlreadyReceived)
 
+    case msg: Uninitialized ⇒
+      rejectedWith(msg, RejectReason.NoSuchProcess)
+
     //Messages from the ProcessInstances
     case e: TransitionFired ⇒
       queue.offer(e)

@@ -1,6 +1,8 @@
 import Dependencies._
 import sbt.Keys._
 
+def testScope(project: ProjectReference) = project % "test->test;test->compile"
+
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
   scalaVersion := "2.12.4",
@@ -22,7 +24,6 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     "-Xfatal-warnings"
   )
 )
-
 
 val dependencyOverrideSettings = Seq(
   // note that this does NOT add the dependencies, just forces the version
@@ -128,7 +129,7 @@ lazy val recipeRuntime = project.in(file("runtime"))
         logback)
         ++ providedDeps(findbugs)
   )
-  .dependsOn(intermediateLanguage, petrinetApi)
+  .dependsOn(intermediateLanguage, petrinetApi, testScope(recipeDsl), testScope(recipeCompiler))
 
 lazy val recipeDsl = project.in(file("recipe-dsl"))
   .settings(defaultModuleSettings)
@@ -202,7 +203,7 @@ lazy val testModule = project.in(file("test-module"))
         scalaCheck
       )
   )
-  .dependsOn(recipeDsl, recipeCompiler, intermediateLanguage, recipeRuntime, baas)
+  .dependsOn(testScope(recipeDsl), recipeCompiler, intermediateLanguage, recipeRuntime, baas)
 
 lazy val baker = project
   .in(file("."))

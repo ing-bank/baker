@@ -1,7 +1,6 @@
-package com.ing.baker
+package com.ing.baker.recipe.scaladsl
 
-import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
-import com.ing.baker.recipe.scaladsl._
+import com.ing.baker.recipe.common.FiresOneOfEvents
 
 object Examples {
 
@@ -130,6 +129,5 @@ object Examples {
         termsAndConditionsAccepted,
         individualInformationSubmitted)
   }
-
 }
 
