@@ -72,5 +72,6 @@ object Dependencies {
   def scopeDeps(scope: String, modules: Seq[ModuleID]) =  modules.map(m => m % scope)
   def compileDeps(modules: ModuleID*) = modules.toSeq
   def testDeps(modules: ModuleID*) = scopeDeps("test", modules)
+
   def providedDeps(modules: ModuleID*) = scopeDeps("provided", modules)
 }

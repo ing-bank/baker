@@ -18,17 +18,17 @@ object SonatypePublish {
     homepage := Some(url("https://github.com/ing-bank/baker")),
     pomExtra := (
       <scm>
-          <url>https://github.com/ing-bank/baker</url>
-          <connection>scm:git:https://github.com/ing-bank/baker.git</connection>
-          <developerConnection>scm:git:git@github.com:ing-bank/baker.git</developerConnection>
-        </scm>
-  <developers>
-          <developer>
-            <id>Apollo</id>
-            <name>Squad Apollo</name>
-          </developer>
-        </developers>
-  ),
+        <url>https://github.com/ing-bank/baker</url>
+        <connection>scm:git:https://github.com/ing-bank/baker.git</connection>
+        <developerConnection>scm:git:git@github.com:ing-bank/baker.git</developerConnection>
+      </scm>
+      <developers>
+        <developer>
+          <id>Apollo</id>
+          <name>Squad Apollo</name>
+        </developer>
+      </developers>
+    ),
     publishMavenStyle := true,
     publishTo := version((v: String) => Some(if (isSnapshot(v)) ossSnapshots else ossStaging)).value,
     publishArtifact in Test := false,

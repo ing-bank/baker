@@ -69,8 +69,6 @@ object BakerResponse {
     val sinkHead = Sink.head[Any]
     val sinkLast = Sink.seq[Any]
 
-    Sink.queue()
-
     val graph = RunnableGraph.fromGraph(GraphDSL.create(sinkHead, sinkLast)((_, _)) {
       implicit b =>
         (head, last) => {

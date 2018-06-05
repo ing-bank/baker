@@ -1,13 +1,18 @@
 package com.ing.baker.runtime.actor.process_index
 
+import akka.stream.SourceRef
 import com.ing.baker.runtime.actor.InternalBakerMessage
 import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.core.RuntimeEvent
+
+import scala.concurrent.duration.FiniteDuration
 
 object ProcessIndexProtocol {
   sealed trait ProcessIndexMessage extends InternalBakerMessage {
     val processId: String
   }
+
+  // -- COMMANDS
 
   case object GetIndex extends InternalBakerMessage
 
@@ -15,11 +20,16 @@ object ProcessIndexProtocol {
 
   case class CreateProcess(recipeId: String, override val processId: String) extends ProcessIndexMessage
 
-  case class ProcessEvent(override val processId: String, event: RuntimeEvent, correlationId: Option[String]) extends ProcessIndexMessage
+  case class ProcessEvent(override val processId: String, event: RuntimeEvent, correlationId: Option[String], waitForRetries: Boolean, timeout: FiniteDuration) extends ProcessIndexMessage
+
+  case class ProcessEventResponse(override val processId: String, sourceRef: SourceRef[Any]) extends ProcessIndexMessage
 
   case class GetProcessState(override val processId: String) extends ProcessIndexMessage
 
   case class GetCompiledRecipe(override val processId: String) extends ProcessIndexMessage
+
+
+  // --- RESPONSES
 
   /**
     * Indicates that a process can no longer receive events because the configured period has expired.
