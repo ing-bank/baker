@@ -203,7 +203,7 @@ lazy val testModule = project.in(file("test-module"))
         scalaCheck
       )
   )
-  .dependsOn(testScope(recipeDsl), recipeCompiler, intermediateLanguage, recipeRuntime, baas)
+  .dependsOn(testScope(recipeDsl), recipeCompiler, intermediateLanguage, testScope(recipeRuntime), baas)
 
 lazy val baker = project
   .in(file("."))
