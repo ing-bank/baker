@@ -1,11 +1,10 @@
 package com.ing.baker.runtime.actor.process_index
 
 import akka.actor.{ActorLogging, ActorRef, Props, Terminated}
-import akka.pattern.ask
-import akka.pattern.pipe
+import akka.pattern.{ask, pipe}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Source, StreamRefs}
+import akka.stream.{Materializer, StreamRefAttributes}
 import com.ing.baker.il.petrinet.{Place, RecipePetriNet, Transition}
 import com.ing.baker.il.{CompiledRecipe, petrinet}
 import com.ing.baker.petrinet.runtime.{PetriNetRuntime, namedCachedThreadPool}
@@ -24,7 +23,7 @@ import com.ing.baker.runtime.petrinet._
 
 import scala.collection.mutable
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext}
 
 
 object ProcessIndex {
@@ -33,7 +32,7 @@ object ProcessIndex {
             processIdleTimeout: Option[FiniteDuration],
             configuredEncryption: Encryption,
             interactionManager: InteractionManager,
-            recipeManager: ActorRef) =
+            recipeManager: ActorRef)(implicit materializer: Materializer) =
     Props(new ProcessIndex(cleanupInterval, processIdleTimeout, configuredEncryption, interactionManager, recipeManager))
 
   sealed trait ProcessStatus
@@ -82,11 +81,10 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
                    processIdleTimeout: Option[FiniteDuration],
                    configuredEncryption: Encryption,
                    interactionManager: InteractionManager,
-                   recipeManager: ActorRef) extends PersistentActor with ActorLogging {
+                   recipeManager: ActorRef)(implicit materializer: Materializer) extends PersistentActor with ActorLogging {
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
   private val recipeCache: mutable.Map[String, CompiledRecipe] = mutable.Map[String, CompiledRecipe]()
-  private implicit val materializer = ActorMaterializer()
 
   import context.dispatcher
 
@@ -218,13 +216,12 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
       //Forwards the event message to the Actor if its in the Receive period for the compiledRecipe
       def forwardEventIfInReceivePeriod(actorRef: ActorRef, recipe: CompiledRecipe) = {
 
-        def forwardEvent() = {
+        def forwardEvent(): Unit = {
 
           val source = ProcessEventActor.processEvent(actorRef, recipe, cmd, waitForRetries)(processEventTimout, context.system, materializer)
+          val sourceRef = source.runWith(StreamRefs.sourceRef().addAttributes(StreamRefAttributes.subscriptionTimeout(processEventTimout)))
 
-          val sourceRef: Future[ProcessEventResponse] = source.runWith(StreamRefs.sourceRef()).map(ProcessEventResponse(processId, _))
-
-          sourceRef.pipeTo(sender())
+          sourceRef.map(ProcessEventResponse(processId, _)).pipeTo(sender())
         }
 
         recipe.eventReceivePeriod match {

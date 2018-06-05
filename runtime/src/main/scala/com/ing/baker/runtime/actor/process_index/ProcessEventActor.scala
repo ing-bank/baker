@@ -27,7 +27,7 @@ object ProcessEventActor {
 
     implicit val akkaTimeout: Timeout = timeout
     Source.queue[Any](100, OverflowStrategy.fail).mapMaterializedValue { queue ⇒
-      val sender = actorSystem.actorOf(Props(new ProcessEventActor(recipe, cmd, queue, waitForRetries)(timeout, actorSystem)))
+      val sender = actorSystem.actorOf(Props(new ProcessEventActor(cmd, recipe, queue, waitForRetries)(timeout, actorSystem)))
       val fireTransitionCmd = createFireTransitionCmd(recipe, cmd.processId, cmd.event, cmd.correlationId)
       receiver.tell(fireTransitionCmd, sender)
       NotUsed.getInstance()
@@ -50,7 +50,7 @@ object ProcessEventActor {
 /**
   * An actor that pushes all received messages on a SourceQueueWithComplete.
   */
-class ProcessEventActor(recipe: CompiledRecipe, cmd: ProcessEvent, queue: SourceQueueWithComplete[Any], waitForRetries: Boolean)(implicit timeout: FiniteDuration, system: ActorSystem) extends Actor {
+class ProcessEventActor(cmd: ProcessEvent, recipe: CompiledRecipe, queue: SourceQueueWithComplete[Any], waitForRetries: Boolean)(implicit timeout: FiniteDuration, system: ActorSystem) extends Actor {
   var runningJobs = Set.empty[Long]
   var firstReceived = false
 

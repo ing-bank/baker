@@ -116,7 +116,7 @@ class BakerEventsSpec extends TestRecipeHelper {
       // TODO check the order of the timestamps later
       expectMsgInAnyOrderPF(listenerProbe,
         { case msg@ProcessCreated(_, `recipeId`, `recipeName`, `processId`) => msg },
-        { case msg@EventReceived(_, `processId`, _, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`))))) => msg },
+        { case msg@EventReceived(_, _, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`))))) => msg },
         { case msg@InteractionStarted(_, _, `processId`, "SieveInteraction") => msg },
         { case msg@InteractionStarted(_, _, `processId`, "InteractionOne") => msg },
         { case msg@InteractionStarted(_, _, `processId`, "InteractionTwo") => msg },
