@@ -65,7 +65,7 @@ package object javadsl {
 
           outputEventClasses.foreach {
             eventClass =>
-              if (method.getReturnType.isAssignableFrom(eventClass))
+              if (!method.getReturnType.isAssignableFrom(eventClass))
                 throw new common.RecipeValidationException(s"Interaction $name provides event '${eventClass.getName}' that is incompatible with it's return type")
           }
           
