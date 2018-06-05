@@ -53,7 +53,7 @@ package object javadsl {
 
       override val output: common.InteractionOutput = {
         if (method.isAnnotationPresent(classOf[annotations.ProvidesIngredient]) && method.isAnnotationPresent(classOf[annotations.FiresEvent]))
-          throw new common.RecipeValidationException(s"Interaction $name has both ProvidesIngredient and FiresEvent annotation, only one if possible")
+          throw new common.RecipeValidationException(s"Interaction $name has both ProvidesIngredient and FiresEvent annotation, only one may be specified")
         //ProvidesIngredient
         else if (method.isAnnotationPresent(classOf[annotations.ProvidesIngredient])) {
           val interactionOutputName: String = method.getAnnotation(classOf[annotations.ProvidesIngredient]).value()
@@ -62,6 +62,13 @@ package object javadsl {
         //ProvidesEvent
         else if (method.isAnnotationPresent(classOf[annotations.FiresEvent])) {
           val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[annotations.FiresEvent]).oneOf()
+
+          outputEventClasses.foreach {
+            eventClass =>
+              if (method.getReturnType.isAssignableFrom(eventClass))
+                throw new common.RecipeValidationException(s"Interaction $name provides event '${eventClass.getName}' that is incompatible with it's return type")
+          }
+          
           val events: Seq[common.Event] = outputEventClasses.map(eventClassToCommonEvent(_, None))
           common.FiresOneOfEvents(events: _*)
         }
