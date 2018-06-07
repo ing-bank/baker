@@ -1,15 +1,16 @@
 import Dependencies._
 import sbt.Keys._
 
+def testScope(project: ProjectReference) = project % "test->test;test->compile"
+
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
   scalaVersion := "2.12.4",
   crossScalaVersions := Seq("2.11.12", "2.12.4"),
-  scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", s"-target:jvm-$jvmV"),
-  javacOptions := Seq("-source", jvmV, "-target", jvmV),
   fork in test := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
-  scalacOptions ++= Seq(
+  javacOptions := Seq("-source", jvmV, "-target", jvmV),
+  scalacOptions := Seq(
     "-unchecked",
     "-deprecation",
     "-feature",
@@ -18,16 +19,29 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     "-language:existentials",
     "-language:implicitConversions",
     "-language:postfixOps",
+    "-encoding", "utf8",
+    s"-target:jvm-$jvmV",
     "-Xfatal-warnings"
   )
 )
 
+val dependencyOverrideSettings = Seq(
+  // note that this does NOT add the dependencies, just forces the version
+  dependencyOverrides ++= Seq(
+    catsCore,
+    akkaActor,
+    akkaStream,
+    "com.github.jnr" % "jnr-constants" % "0.9.9"
+  )
+)
+
 lazy val noPublishSettings = Seq(
-  publish := (),
-  publishLocal := (),
+  publish := {},
+  publishLocal := {},
   publishArtifact := false
 )
 
+<<<<<<< HEAD
 val artifactoryPublishSettings = Seq(
   publishTo <<= version { v: String =>
 
@@ -42,7 +56,7 @@ val artifactoryPublishSettings = Seq(
   isSnapshot := true,
   publishMavenStyle := true)
 
-lazy val defaultModuleSettings = commonSettings ++ Revolver.settings ++ artifactoryPublishSettings //SonatypePublish.settings
+lazy val defaultModuleSettings = commonSettings ++ dependencyOverrideSettings ++ Revolver.settings ++ InteractionProvidedEvent // SonatypePublish.settings
 
 lazy val scalaPBSettings = Seq(PB.targets in Compile := Seq(scalapb.gen() -> (sourceManaged in Compile).value))
 
@@ -53,10 +67,11 @@ lazy val petrinetApi = project.in(file("petrinet-api"))
     libraryDependencies ++= compileDeps(
       scalaGraph,
       catsCore,
+      catsEffect,
       scalapbRuntime,
       slf4jApi,
-      kryo,
-      catsEffect) ++ testDeps(
+      kryo
+      ) ++ testDeps(
       scalaCheck,
       scalaTest,
       mockito,
@@ -129,7 +144,7 @@ lazy val recipeRuntime = project.in(file("runtime"))
         logback)
         ++ providedDeps(findbugs)
   )
-  .dependsOn(intermediateLanguage, petrinetApi)
+  .dependsOn(intermediateLanguage, petrinetApi, testScope(recipeDsl), testScope(recipeCompiler))
 
 lazy val recipeDsl = project.in(file("recipe-dsl"))
   .settings(defaultModuleSettings)
@@ -203,7 +218,7 @@ lazy val testModule = project.in(file("test-module"))
         scalaCheck
       )
   )
-  .dependsOn(recipeDsl, recipeCompiler, intermediateLanguage, recipeRuntime, baas)
+  .dependsOn(testScope(recipeDsl), recipeCompiler, intermediateLanguage, testScope(recipeRuntime), baas)
 
 lazy val baker = project
   .in(file("."))

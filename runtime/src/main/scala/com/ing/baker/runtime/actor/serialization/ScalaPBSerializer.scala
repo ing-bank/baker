@@ -4,7 +4,7 @@ import java.io.ByteArrayOutputStream
 
 import akka.actor.ExtendedActorSystem
 import akka.serialization.SerializerWithStringManifest
-import com.trueaccord.scalapb.{GeneratedMessageCompanion, Message}
+import scalapb.{GeneratedMessageCompanion, Message}
 import com.typesafe.config.Config
 
 import scala.collection.JavaConverters._
@@ -60,7 +60,7 @@ class ScalaPBSerializer(system: ExtendedActorSystem) extends SerializerWithStrin
 
   override def toBinary(o: AnyRef): Array[Byte] = {
     o match {
-      case msg: com.trueaccord.scalapb.GeneratedMessage =>
+      case msg: scalapb.GeneratedMessage =>
         val stream: ByteArrayOutputStream = new ByteArrayOutputStream()
         msg.writeTo(stream)
         stream.toByteArray

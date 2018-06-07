@@ -8,13 +8,11 @@ import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place,
 import com.ing.baker.il.{IngredientDescriptor, processIdName}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime._
-import com.ing.baker.runtime.core.events.{InteractionCompleted, InteractionFailed, InteractionStarted}
+import com.ing.baker.runtime.core.events.{InteractionCompleted, InteractionStarted}
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.{LoggerFactory, MDC}
-
-import scala.util.{Failure, Success, Try}
 
 class TaskProvider(recipeName: String, interactionManager: InteractionManager, eventStream: EventStream) extends TransitionTaskProvider[Place, Transition, ProcessState, RuntimeEvent] {
 
@@ -59,63 +57,56 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
         MDC.put("processId", processState.processId)
         MDC.put("recipeName", recipeName)
 
-        // obtain the interaction implementation
-        val implementation = interactionManager.getImplementation(interaction).getOrElse {
-          throw new FatalInteractionException("No implementation available for interaction")
-        }
+        try {
 
-        // create the interaction input
-        val input = createInput(interaction, processState)
+          // obtain the interaction implementation
+          val implementation = interactionManager.getImplementation(interaction).getOrElse {
+            throw new FatalInteractionException("No implementation available for interaction")
+          }
 
-        val timeStarted = System.currentTimeMillis()
+          // create the interaction input
+          val input = createInput(interaction, processState)
 
-        // publish the fact that we started the interaction
-        eventStream.publish(InteractionStarted(timeStarted, recipeName, processState.processId, interaction.interactionName))
+          val timeStarted = System.currentTimeMillis()
 
-        Try {
-          implementation.execute(interaction, input)
-        } match {
-          case Failure(e) =>
+          // publish the fact that we started the interaction
+          eventStream.publish(InteractionStarted(timeStarted, recipeName, processState.processId, interaction.interactionName))
 
-            // remove the MDC values
-            MDC.remove("processId")
-            MDC.remove("recipeName")
+          val interactionOutput = implementation.execute(interaction, input)
 
-            throw e;
-          case Success(interactionOutput) =>
+          val (outputEvent, output) = interactionOutput match {
+            case None =>
+              (RuntimeEvent.create(interaction.interactionName, Seq.empty), null.asInstanceOf[RuntimeEvent])
 
-            val (outputEvent, output) = interactionOutput match {
-              case None =>
-                (RuntimeEvent.create(interaction.interactionName, Seq.empty), null.asInstanceOf[RuntimeEvent])
+            case Some(event) =>
+              // check if no null ingredients are provided
+              val nullIngredients = event.providedIngredients.collect {
+                case (name, null) => s"null value provided for ingredient: $name"
+              }
 
-              case Some(event) =>
-                // check if no null ingredients are provided
-                val nullIngredients = event.providedIngredients.collect {
-                  case (name, null) => s"null value provided for ingredient: $name"
-                }
+              if (nullIngredients.nonEmpty)
+                throw new FatalInteractionException(nullIngredients.mkString(","))
 
-                if (nullIngredients.nonEmpty)
-                  throw new FatalInteractionException(nullIngredients.mkString(","))
+              // transforms the event
+              val transformedEvent = transformEvent(interaction)(event)
 
-                // transforms the event
-                val transformedEvent = transformEvent(interaction)(event)
+              (transformedEvent, transformedEvent)
+          }
 
-                (transformedEvent, transformedEvent)
-            }
+          val timeCompleted = System.currentTimeMillis()
 
-            val timeCompleted = System.currentTimeMillis()
+          // publish the fact that the interaction completed
+          eventStream.publish(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, recipeName, processState.processId, interaction.interactionName, outputEvent))
 
-            // publish the fact that the interaction completed
-            eventStream.publish(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, recipeName, processState.processId, interaction.interactionName, outputEvent))
+          // create the output marking for the petri net
+          val outputMarking = createProducedMarking(interaction, outAdjacent)(outputEvent)
 
-            // create the output marking for the petri net
-            val outputMarking = createProducedMarking(interaction, outAdjacent)(outputEvent)
+          (outputMarking, output)
 
-            // remove the MDC values
-            MDC.remove("processId")
-            MDC.remove("recipeName")
-
-            (outputMarking, output)
+        } finally {
+          // remove the MDC values
+          MDC.remove("processId")
+          MDC.remove("recipeName")
         }
 
       }.handleWith {

@@ -4,6 +4,8 @@
 
 - Fixed [#99](https://github.com/ing-bank/baker/issues/99): re-added the feature to get an index of all process instances in Baker
 - Fixed [#50](https://github.com/ing-bank/baker/issues/50): update protobuf to 3.5.1 to fix a security related issue (CVE-2015-5237)
+- Fixed [#110](https://github.com/ing-bank/baker/issues/110): display sensory events with a different style in the visual recipe
+- Fixed [#111](https://github.com/ing-bank/baker/issues/111): also mark executed interactions with green color in the visual process state
 - Fixed [#112](https://github.com/ing-bank/baker/issues/112): specified timeout in processEvent calls ignored
 - Fixed [#103](https://github.com/ing-bank/baker/issues/103): NullPointer exception when providing implementations directly to `JBaker`
 - Added a list of event names to the process state that can be retreived from memory

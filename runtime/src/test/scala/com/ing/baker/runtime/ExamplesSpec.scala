@@ -1,7 +1,8 @@
-package com.ing.baker
+package com.ing.baker.runtime
 
 import java.util.UUID
 
+import com.ing.baker.TestRecipeHelper
 import akka.testkit.{TestDuration, TestKit}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl._

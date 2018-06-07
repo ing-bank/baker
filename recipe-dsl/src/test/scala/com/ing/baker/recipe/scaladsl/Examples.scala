@@ -1,7 +1,6 @@
-package com.ing.baker
+package com.ing.baker.recipe.scaladsl
 
 import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
-import com.ing.baker.recipe.scaladsl._
 
 object Examples {
 
@@ -131,5 +130,56 @@ object Examples {
         individualInformationSubmitted)
   }
 
+  object onboarding {
+
+    //Ingredients
+    val customerName = Ingredient[String]("customerName")
+    val customerId = Ingredient[String]("customerId")
+    val accountId = Ingredient[Integer]("accountId")
+    val accountName = Ingredient[Integer]("accountName")
+
+    //Events
+    val agreementsAcceptedEvent = Event("agreementsAccepted")
+    val manualApprovedEvent = Event("manualApproved")
+    val automaticApprovedEvent = Event("automaticApproved")
+    val NameProvidedEvent = Event("nameProvided", customerName)
+    val accountOpenedEvent = Event("accountOpened", accountId, accountName)
+    val accountOpenedFailedEvent = Event("accountOpenedFailed")
+
+    //Recipe
+    //Interactions
+    val createCustomer = Interaction(
+      name = "CreateCustomer",
+      inputIngredients = customerName,
+      output = ProvidesIngredient(customerId)
+    )
+
+    val openAccount = Interaction(
+      name = "OpenAccount",
+      inputIngredients =Seq(customerId),
+      output = FiresOneOfEvents(accountOpenedEvent, accountOpenedFailedEvent))
+
+    val onboardingRecipe: Recipe =
+      Recipe("newCustomerRecipe")
+        .withInteractions(
+          createCustomer
+            .withRequiredEvent(
+              agreementsAcceptedEvent)
+            .withRequiredOneOfEvents(
+              automaticApprovedEvent,
+              manualApprovedEvent),
+          openAccount
+            .withEventOutputTransformer(
+              accountOpenedEvent,
+              "newAccountOpenedEvent",
+              Map.empty)
+        )
+        .withSensoryEvents(
+          agreementsAcceptedEvent,
+          NameProvidedEvent,
+          manualApprovedEvent,
+          automaticApprovedEvent
+        )
+  }
 }
 

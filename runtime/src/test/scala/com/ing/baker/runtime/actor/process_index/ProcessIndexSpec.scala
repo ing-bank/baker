@@ -3,6 +3,8 @@ package com.ing.baker.runtime.actor.process_index
 import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.stream.testkit.scaladsl.TestSink
+import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import com.ing.baker.il.petrinet.{EventTransition, RecipePetriNet, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, IngredientDescriptor}
@@ -72,6 +74,17 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       case _ => ()
     }
   }))
+
+  implicit val materializer: Materializer = ActorMaterializer()
+
+  def expectProcessEventReply(reply: Any): Unit = {
+
+    expectMsgType[ProcessEventResponse]
+      .sourceRef
+      .runWith(TestSink.probe)
+      .requestNext(reply)
+      .expectComplete()
+  }
 
   "ProcessIndex" should {
 
@@ -155,9 +168,11 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val runtimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! ProcessEvent(processId, runtimeEvent, None)
+      actorIndex ! ProcessEvent(processId, runtimeEvent, None, true, 1 seconds)
 
       petriNetActorProbe.expectMsgAllClassOf(classOf[FireTransition])
+
+      expectMsgType[ProcessEventResponse]
     }
 
     "reply with a Unititalized message when attempting to fire an event to a not existing process" in {
@@ -177,9 +192,9 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val RuntimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds)
 
-      expectMsg(ProcessUninitialized(processId))
+      expectProcessEventReply(ProcessUninitialized(processId))
     }
 
     "reply with a InvalidEvent message when attempting to fire an event that is now know in the compiledRecipe" in {
@@ -204,9 +219,9 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val RuntimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds)
 
-      expectMsg(InvalidEvent(processId ,s"No event with name 'Event' found in recipe 'name'"))
+      expectProcessEventReply(InvalidEvent(processId ,s"No event with name 'Event' found in recipe 'name'"))
     }
 
     "reply with a InvalidEvent message when attempting to fire an event that does not comply to the recipe" in {
@@ -236,9 +251,9 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val RuntimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds)
 
-      expectMsg(InvalidEvent(processId ,s"Invalid event: no value was provided for ingredient 'ingredientName'"))
+      expectProcessEventReply(InvalidEvent(processId ,s"Invalid event: no value was provided for ingredient 'ingredientName'"))
     }
 
     "reply with a EventReceivePeriodExpired message when attempting to fire an event after expiration period" in {
@@ -268,17 +283,19 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val RuntimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds)
 
       petriNetActorProbe.expectMsgAllClassOf(classOf[FireTransition])
 
+      expectMsgType[ProcessEventResponse]
+
       Thread.sleep(receivePeriodTimeout.toMillis * 2)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds)
 
       petriNetActorProbe.expectNoMessage(noMsgExpectTimeout)
 
-      expectMsg(ReceivePeriodExpired(processId))
+      expectProcessEventReply(ReceivePeriodExpired(processId))
     }
   }
 

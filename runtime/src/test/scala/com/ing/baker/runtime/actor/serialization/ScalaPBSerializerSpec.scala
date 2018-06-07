@@ -6,7 +6,7 @@ import akka.testkit.TestKit
 import com.google.protobuf.ByteString
 import com.ing.baker.runtime.actor.process_instance.protobuf.{ConsumedToken, Initialized, TransitionFailed, TransitionFired}
 import com.ing.baker.runtime.actor.protobuf.{ProducedToken, SerializedData}
-import com.trueaccord.scalapb.GeneratedMessage
+import scalapb.GeneratedMessage
 import org.scalacheck.{Gen, Prop, Test}
 import org.scalatest.prop.Checkers
 import org.scalatest.{FunSuiteLike, Matchers}
@@ -24,9 +24,11 @@ class ScalaPBSerializerSpec extends TestKit(ActorSystem("ScalaPBSerializerSpec")
     transitionFailedGen)
 
   test("baker can serialize/deserialize generated protobuf messages") {
-    val prop = Prop.forAll(messageToSerialize) { (message) =>
-      val bytes = serializer.toBinary(message)
-      val deserializedMessage = serializer.fromBinary(bytes, serializer.manifest(message))
+    val prop = Prop.forAll(messageToSerialize) { message =>
+
+      val anyRefMsg = message.asInstanceOf[AnyRef]
+      val bytes = serializer.toBinary(anyRefMsg)
+      val deserializedMessage = serializer.fromBinary(bytes, serializer.manifest(anyRefMsg))
       message.equals(deserializedMessage)
     }
 

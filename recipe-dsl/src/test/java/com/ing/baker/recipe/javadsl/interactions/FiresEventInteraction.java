@@ -8,6 +8,6 @@ import com.ing.baker.recipe.javadsl.events.InteractionProvidedEvent;
 
 public interface FiresEventInteraction extends Interaction {
     @FiresEvent(oneOf = InteractionProvidedEvent.class)
-    String apply(@RequiresIngredient("initialIngredient") String initialIngredient);
+    InteractionProvidedEvent apply(@RequiresIngredient("initialIngredient") String initialIngredient);
 }
 

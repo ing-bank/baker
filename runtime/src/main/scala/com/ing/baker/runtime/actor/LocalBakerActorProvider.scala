@@ -1,6 +1,7 @@
 package com.ing.baker.runtime.actor
 
 import akka.actor.{ActorRef, ActorSystem}
+import akka.stream.Materializer
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol.{GetIndex, Index}
@@ -19,12 +20,12 @@ class LocalBakerActorProvider(config: Config, configuredEncryption: Encryption) 
   val actorIdleTimeout: Option[FiniteDuration] = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout")
 
   override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(
-    implicit actorSystem: ActorSystem): ActorRef = {
+    implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {
     actorSystem.actorOf(
       ProcessIndex.props(retentionCheckInterval, actorIdleTimeout, configuredEncryption, interactionManager, recipeManager))
   }
 
-  override def createRecipeManagerActor()(implicit actorSystem: ActorSystem): ActorRef = {
+  override def createRecipeManagerActor()(implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {
     actorSystem.actorOf(RecipeManager.props())
   }
 

@@ -5,7 +5,7 @@ object Dependencies {
 
   val akkaVersion = "2.5.11"
   val jvmV = "1.8"
-  val scalapbVersion = com.trueaccord.scalapb.compiler.Version.scalapbVersion
+  val scalapbVersion = scalapb.compiler.Version.scalapbVersion
 
   val typeSafeConfig =            "com.typesafe"               %  "config"                             % "1.3.1"
 
@@ -50,7 +50,7 @@ object Dependencies {
   val guava =                     "com.google.guava"           %  "guava"                              % "19.0"
   val findbugs =                  "com.google.code.findbugs"   %  "jsr305"                             % "1.3.9"
 
-  val scalapbRuntime =            "com.trueaccord.scalapb"     %% "scalapb-runtime"                    % scalapbVersion % "protobuf"
+  val scalapbRuntime =            "com.thesamet.scalapb"       %% "scalapb-runtime"                    % scalapbVersion % "protobuf"
   val chill =                    ("com.twitter"                %% "chill-akka"                         % "0.9.2")
     .exclude("com.typesafe.akka", "akka-actor")
 
@@ -72,5 +72,6 @@ object Dependencies {
   def scopeDeps(scope: String, modules: Seq[ModuleID]) =  modules.map(m => m % scope)
   def compileDeps(modules: ModuleID*) = modules.toSeq
   def testDeps(modules: ModuleID*) = scopeDeps("test", modules)
+
   def providedDeps(modules: ModuleID*) = scopeDeps("provided", modules)
 }

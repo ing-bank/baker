@@ -7,7 +7,7 @@ import akka.stream.scaladsl.Source
 import akka.stream.testkit.TestSubscriber
 import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.{TestDuration, TestKit, TestProbe}
-import akka.util.Timeout
+import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.petrinet.runtime.ExceptionStrategy
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol.ProcessEvent
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
@@ -39,17 +39,22 @@ class ProcessEventActorSpec extends TestKit(ActorSystem("ProcessApiSpec", Proces
 
   "The ProcessApi" should {
 
+    import com.ing.baker.recipe.scaladsl._
+    import Examples.webshop
+
+    val webShopRecipe = RecipeCompiler.compileRecipe(webshop.webShopRecipe)
+
     "return a source of FireTransition responses resulting from a TransitionFired command" in {
 
       val processProbe = TestProbe()
 
-      val processEventCmd = ProcessEvent("", RuntimeEvent("", Seq.empty), None)
+      val processEventCmd = ProcessEvent("", RuntimeEvent(webshop.orderPlaced.name, Seq.empty), None, true, 1 second)
 
-      val source: Source[Any, NotUsed] = ProcessEventActor.processEvent(processProbe.ref, processEventCmd)
+      val source: Source[Any, NotUsed] = ProcessEventActor.processEvent(processProbe.ref, webShopRecipe, processEventCmd)
 
       val runSource: TestSubscriber.Probe[Long] = source.map(_.asInstanceOf[TransitionResponse].transitionId).runWith(TestSink.probe)
 
-      processProbe.expectMsg(processEventCmd)
+      processProbe.expectMsgPF() { case FireTransition(_, _, _) => }
 
       processProbe.reply(TransitionFired(1, 1, None, Map.empty, Map.empty, null, Set(2, 3)))
       processProbe.reply(TransitionFired(2, 2, None, Map.empty, Map.empty, null, Set.empty))
@@ -63,13 +68,13 @@ class ProcessEventActorSpec extends TestKit(ActorSystem("ProcessApiSpec", Proces
 
       val processProbe = TestProbe()
 
-      val processEventCmd = ProcessEvent("", RuntimeEvent("", Seq.empty), None)
+      val processEventCmd = ProcessEvent("", RuntimeEvent(webshop.orderPlaced.name, Seq.empty), None, true, 1 second)
 
-      val source: Source[Any, NotUsed] = ProcessEventActor.processEvent(processProbe.ref, processEventCmd)
+      val source: Source[Any, NotUsed] = ProcessEventActor.processEvent(processProbe.ref, webShopRecipe, processEventCmd)
 
       val runSource = source.map(_.asInstanceOf[TransitionResponse].transitionId).runWith(TestSink.probe)
 
-      processProbe.expectMsg(processEventCmd)
+      processProbe.expectMsgType[FireTransition]
 
       processProbe.reply(TransitionFired(1, 1, None, Map.empty, Map.empty, null, Set(2, 3)))
       processProbe.reply(TransitionFailed(2, 2, None, Map.empty, null, "", ExceptionStrategy.BlockTransition))
@@ -80,22 +85,18 @@ class ProcessEventActorSpec extends TestKit(ActorSystem("ProcessApiSpec", Proces
     }
 
     "return the msg when the petrinet instance responds with the error scenario response messages" in {
+
       check(ProcessInstanceProtocol.Uninitialized("someId"))
       check(ProcessInstanceProtocol.TransitionNotEnabled(123, "some reason"))
 
-      check(ProcessIndexProtocol.ProcessUninitialized("someProcessId"))
-      check(ProcessIndexProtocol.ReceivePeriodExpired("someProcessId"))
-      check(ProcessIndexProtocol.ProcessDeleted("someProcessId"))
-      check(ProcessIndexProtocol.InvalidEvent("someProcessId", "some message"))
-
       def check(msg: Any) = {
         val processProbe = TestProbe()
-        val processEventCmd = ProcessEvent("", RuntimeEvent("", Seq.empty), None)
+        val processEventCmd = ProcessEvent("", RuntimeEvent(webshop.orderPlaced.name, Seq.empty), None, true, 1 second)
 
-        val source: Source[Any, NotUsed] = ProcessEventActor.processEvent(processProbe.ref, processEventCmd)
+        val source: Source[Any, NotUsed] = ProcessEventActor.processEvent(processProbe.ref, webShopRecipe, processEventCmd)
         val runSource: TestSubscriber.Probe[Any] = source.runWith(TestSink.probe)
 
-        processProbe.expectMsg(processEventCmd)
+        processProbe.expectMsgType[FireTransition]
         processProbe.reply(msg)
 
         runSource.request(1).expectNext(msg)

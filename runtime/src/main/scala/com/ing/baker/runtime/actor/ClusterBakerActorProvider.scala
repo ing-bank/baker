@@ -5,6 +5,7 @@ import akka.cluster.Cluster
 import akka.cluster.sharding.ShardRegion._
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
+import akka.stream.Materializer
 import akka.util.Timeout
 import com.ing.baker.il.sha256HashCode
 import com.ing.baker.runtime.actor.ClusterBakerActorProvider._
@@ -83,7 +84,7 @@ class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption
     Cluster.get(actorSystem).joinSeedNodes(seedNodes)
   }
 
-  override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(implicit actorSystem: ActorSystem): ActorRef = {
+  override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {
     ClusterSharding(actorSystem).start(
       typeName = "ProcessIndexActor",
       entityProps = ProcessIndex.props(retentionCheckInterval, actorIdleTimeout, configuredEncryption, interactionManager, recipeManager),
@@ -93,7 +94,7 @@ class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption
     )
   }
 
-  override def createRecipeManagerActor()(implicit actorSystem: ActorSystem): ActorRef = {
+  override def createRecipeManagerActor()(implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {
 
     initializeCluster()
 

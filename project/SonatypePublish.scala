@@ -17,22 +17,18 @@ object SonatypePublish {
     licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT")),
     homepage := Some(url("https://github.com/ing-bank/baker")),
     pomExtra := (
-      <scm>
-          <url>https://github.com/ing-bank/baker</url>
-          <connection>scm:git:https://github.com/ing-bank/baker.git</connection>
-          <developerConnection>scm:git:git@github.com:ing-bank/baker.git</developerConnection>
-        </scm>
-  <developers>
-          <developer>
-            <id>Apollo</id>
-            <name>Squad Apollo</name>
-          </developer>
-        </developers>
-  ),
+      <developers>
+        <developer>
+          <id>Apollo</id>
+          <name>Squad Apollo</name>
+        </developer>
+      </developers>
+    ),
     publishMavenStyle := true,
     publishTo := version((v: String) => Some(if (isSnapshot(v)) ossSnapshots else ossStaging)).value,
     publishArtifact in Test := false,
     pomIncludeRepository := (_ => false),
+    releaseCrossBuild := true,
     releaseProcess := Seq[ReleaseStep](
       checkSnapshotDependencies,
       inquireVersions,
@@ -41,10 +37,10 @@ object SonatypePublish {
       setReleaseVersion,
       commitReleaseVersion,
       tagRelease,
-      ReleaseStep(action = Command.process("publishSigned", _), enableCrossBuild = true),
+      releaseStepCommandAndRemaining("+publishSigned"),
       setNextVersion,
       commitNextVersion,
-      ReleaseStep(action = Command.process("sonatypeReleaseAll", _), enableCrossBuild = true),
+      releaseStepCommand("sonatypeReleaseAll"),
       pushChanges
     )
   )
