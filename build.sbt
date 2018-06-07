@@ -41,22 +41,19 @@ lazy val noPublishSettings = Seq(
   publishArtifact := false
 )
 
-<<<<<<< HEAD
 val artifactoryPublishSettings = Seq(
-  publishTo <<= version { v: String =>
-
+  publishTo := {
     val repository =
-      if (v.trim.endsWith("SNAPSHOT"))
+      if (isSnapshot.value)
         "snapshots_sbt_apollo_public;build.timestamp=" + new java.util.Date().getTime
       else
         "releases_sbt_apollo_public"
 
     Some("Artifactory Realm" at "https://artifactory.ing.net/artifactory/" + repository)
   },
-  isSnapshot := true,
   publishMavenStyle := true)
 
-lazy val defaultModuleSettings = commonSettings ++ dependencyOverrideSettings ++ Revolver.settings ++ InteractionProvidedEvent // SonatypePublish.settings
+lazy val defaultModuleSettings = commonSettings ++ dependencyOverrideSettings ++ Revolver.settings ++ artifactoryPublishSettings // SonatypePublish.settings
 
 lazy val scalaPBSettings = Seq(PB.targets in Compile := Seq(scalapb.gen() -> (sourceManaged in Compile).value))
 
