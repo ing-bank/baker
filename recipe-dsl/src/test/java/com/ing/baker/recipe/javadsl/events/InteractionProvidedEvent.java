@@ -1,3 +1,3 @@
 package com.ing.baker.recipe.javadsl.events;
 
-public class InteractionProvidedEvent {}
+public class InteractionProvidedEvent implements InteractionEventExample {}
