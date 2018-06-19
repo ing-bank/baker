@@ -1,0 +1,454 @@
+{
+    "docs": [
+        {
+            "location": "/", 
+            "text": "Introduction\n\n\nIn this development documention everything should be found that is needed for developers to get started with Baker.\n\n\nThis is also a good start point for anyone that just want to know more about Baker.", 
+            "title": "Home"
+        }, 
+        {
+            "location": "/#introduction", 
+            "text": "In this development documention everything should be found that is needed for developers to get started with Baker.  This is also a good start point for anyone that just want to know more about Baker.", 
+            "title": "Introduction"
+        }, 
+        {
+            "location": "/documentation/concepts/", 
+            "text": "Concepts\n\n\nBaker introduces interactions, ingredients, and events as a model of abstracting. With these three components we can create recipes.\n\n\nThink about these in the context of a Bakery with a baker using ingeredients to bake a pizza\n\n\nIngredient\n\n\nIngredients are like the name implies the  ingredients that the Baker needs to execute the steps in the Recipe.\n\n\nIn our case Ingredients are the data that is needed and created by interactions.\n\n\nFor example to make a money transfer you need to know the IBANs of the two account numbers and the amount of money to be transferred\n\n\nInteraction\n\n\nAn interaction can be seen as any action the baker needs fulfil to take to finish his recipe.\n\n\nBaker is made for complex orchestrations so a interaction is any interaction with an outside system.\n\n\nAn interaction can be a call to internal or external system (can be an API, EMS service, etc.).\n\n\nThe goal of this call is to do work for us for example register a customer, send a present, or transfer money;", 
+            "title": "Concepts"
+        }, 
+        {
+            "location": "/documentation/concepts/#concepts", 
+            "text": "Baker introduces interactions, ingredients, and events as a model of abstracting. With these three components we can create recipes.  Think about these in the context of a Bakery with a baker using ingeredients to bake a pizza", 
+            "title": "Concepts"
+        }, 
+        {
+            "location": "/documentation/concepts/#ingredient", 
+            "text": "Ingredients are like the name implies the  ingredients that the Baker needs to execute the steps in the Recipe.  In our case Ingredients are the data that is needed and created by interactions.  For example to make a money transfer you need to know the IBANs of the two account numbers and the amount of money to be transferred", 
+            "title": "Ingredient"
+        }, 
+        {
+            "location": "/documentation/concepts/#interaction", 
+            "text": "An interaction can be seen as any action the baker needs fulfil to take to finish his recipe.  Baker is made for complex orchestrations so a interaction is any interaction with an outside system.  An interaction can be a call to internal or external system (can be an API, EMS service, etc.).  The goal of this call is to do work for us for example register a customer, send a present, or transfer money;", 
+            "title": "Interaction"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/", 
+            "text": "Declare, verify and execute microservices-based process flows with Baker\n\n\nScale By the Bay 2017, San Francisco\n\n\nNikola Kasev | ING Bank\n\n\n\n\n\n\n\n\n\n\nGlobal Financial Institution in Over 40 Countries\n\n\nSoftware Company\n with a Banking License\n\n\nMicroservices Architecture\n\n\n\n\nOur Challenge\n\n\nInteract with 12 Different Systems\n\n\nA Flow of 27 Steps\n\n\nFrom 2 minutes to 6 hours\n\n\n\n\n\n\nAfraid to Change the Application Code\n\n\n\n\n\n\nFunctionality Breaks Unexpectedly\n\n\n\n\n\n\nSlow Time to Market\n\n\n\n\nHow to Turn This Around?\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nSimplify\n\n\nDomain Specific Language for Orchestration Flows\n\n\nDeclarative\n\n\nEasy to Change\n\n\n\n\n\n\nRecipes\n\n\nInteractions\n\n\nIngredients\n\n\nEvents\n\n\n\n\n\n\nCommunicate\n\n\nVisualize your code\n\n\nNon-IT understand as well\n\n\nReason About Comfortably\n\n\n\n\n\n\n\n\n\n\n\n\nLet's Cook Some Cr\u00eapes!\n\n\n\n\nGood to Know\n\n\n\n\nShort-lived vs. long-running flows\n\n\n\n\nState is taken care of:\n\n\n\n\nCassandra for persistent storage\n\n\nIngredients encrypted by default\n\n\nState recovered automatically\n\n\n\n\n\n\nWhen failure occurs:\n\n\n\n\nBaker retries technical failures with exponential backoff\n\n\nWorks well with \nidempotent\n services\n\n\nDeal with functional failure in your recipe\n\n\n\n\n\n\nBaker Capability Matrix:\n\n\n\n\nInvestigate not one, not two, but \nall business processes\n in your company\n\n\nWhere do you see re-use?\n\n\nMap using MoSCoW\n^4\n to give importance (M = 10, S = 5, C = 2, W = 1)\n\n\n\n\n\n\n\n\n\n\n\n\nChecking Account\n\n\nSavings Account\n\n\nCustomer Onboarding\n\n\n\n\n\n\n\n\n\n\nVerify Identity\n\n\nVerify Identity\n\n\nVerify Identity\n\n\n\n\n\n\nRegister Individual\n\n\nRegister Individual\n\n\nRegister Individual\n\n\n\n\n\n\nOpen \nChecking\n Account\n\n\nOpen \nSavings\n Account\n\n\nn/a\n\n\n\n\n\n\nIssue Debit Card\n\n\nn/a\n\n\nn/a\n\n\n\n\n\n\nSend Message\n\n\nSend Message\n\n\nSend Message\n\n\n\n\n\n\nRegister Ownerhip\n\n\nRegister Ownership\n\n\nn/a\n\n\n\n\n\n\n\n\n\n\n\n\nhttps://github.com/ing-bank/baker\n\n\n\n\nWhy Petri net?\n^3\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nDesign-time\n\n\n\n\nval registerIndividual = Interaction(\n  name = \nRegisterIndividual\n,\n  inputIngredients = Seq(name, address),\n  output = FiresOneOfEvents(registerIndividualSuccessful, registerIndividualFailed)\n)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nval recipe = Recipe(\nOpenAccountRecipe\n)\n  .withInteractions(\n    assignAccount,\n    getAccount,\n    registerIndividual)\n\n\n\n\n\n\n\n\n\n\nval recipe = Recipe(\nOpenAccountRecipe\n)\n  .withInteractions(\n    assignAccount,\n    getAccount.withRequiredEvent(termsAndConditionsAccepted),\n    registerIndividual)\n  .withSensoryEvents(\n    termsAndConditionsAccepted,\n    individualInformationSubmitted)\n\n\n\n\n\n\n\n\n\n\nRun-time\n\n\n\n\n//for each process instance, bake the recipe\nbaker.bake(processId);\n//notify Baker when events occur\nbaker.processEvent(processId, individualInformationSubmitted.instance(name, address));\nbaker.processEvent(processId, termsAndConditionsAccepted.instance());\n\n//retrieve ingredients stored in the accumulated state\nassert(baker.getIngredients(processId).get(\ncustomerId\n).equals(customerId));\nassert(baker.getIngredients(processId).get(\niban\n).equals(iban));\n\n//retrieve all events that have occurred\nbaker.events(processId)\n\n\n\n\n\n\n\n\n\n\nval groceriesDone = new Event(\"GroceriesDone\", Seq(milk, eggs, flour, butter, creme), Some(1))\n\n\nval mixFirstThree = Interaction(\n  name = \"MixFirstThree\",\n  inputIngredients = Seq(milk, eggs, flour),\n  output = FiresOneOfEvents(batterMixed)\n)\n\n\nval mixFirstThreeImpl = mixFirstThree implement {\n  (milk: String, eggs: String, flour: String) =\n\n    println(s\"mixing $milk, $eggs, and $flour\")\n    batterMixed.instance(\"batter\")\n}\n\n\n\n\nI love cooking food\n and for the rest of the talk I'll be using examples from there. It's very \nsimilar to our industry\n: long hours, hard work, and delivering experiences to our customers.\n\n\nHave you been woken up at 3 o'clock in the morning on a \nSaturday morning\n after a night of partying, having to go to the war room and resolve an application incident. I've been there. When I remember the cold of the \nairconditioners\n, it still \nmakes me shiver\n.\n\n\nIf we are building microservices or a monolith or any type of application in general we are \nserving business logic to our clients\n. So no matter what, we cannot escape the \narchitectural discussion\n. If we are not careful of how we architect our applications we end up serving a bad meal to our clients.", 
+            "title": "Declare, verify and execute microservices-based process flows with Baker"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#declare-verify-and-execute-microservices-based-process-flows-with-baker", 
+            "text": "", 
+            "title": "Declare, verify and execute microservices-based process flows with Baker"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#scale-by-the-bay-2017-san-francisco", 
+            "text": "", 
+            "title": "Scale By the Bay 2017, San Francisco"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#nikola-kasev-ing-bank", 
+            "text": "", 
+            "title": "Nikola Kasev | ING Bank"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#global-financial-institution-in-over-40-countries", 
+            "text": "", 
+            "title": "Global Financial Institution in Over 40 Countries"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#software-company-with-a-banking-license", 
+            "text": "", 
+            "title": "Software Company with a Banking License"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#microservices-architecture", 
+            "text": "", 
+            "title": "Microservices Architecture"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#our-challenge", 
+            "text": "", 
+            "title": "Our Challenge"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#interact-with-12-different-systems", 
+            "text": "", 
+            "title": "Interact with 12 Different Systems"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#a-flow-of-27-steps", 
+            "text": "", 
+            "title": "A Flow of 27 Steps"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#from-2-minutes-to-6-hours", 
+            "text": "", 
+            "title": "From 2 minutes to 6 hours"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#afraid-to-change-the-application-code", 
+            "text": "", 
+            "title": "Afraid to Change the Application Code"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#functionality-breaks-unexpectedly", 
+            "text": "", 
+            "title": "Functionality Breaks Unexpectedly"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#slow-time-to-market", 
+            "text": "", 
+            "title": "Slow Time to Market"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#how-to-turn-this-around", 
+            "text": "", 
+            "title": "How to Turn This Around?"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#simplify", 
+            "text": "", 
+            "title": "Simplify"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#domain-specific-language-for-orchestration-flows", 
+            "text": "", 
+            "title": "Domain Specific Language for Orchestration Flows"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#declarative", 
+            "text": "", 
+            "title": "Declarative"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#easy-to-change", 
+            "text": "", 
+            "title": "Easy to Change"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#recipes", 
+            "text": "", 
+            "title": "Recipes"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#interactions", 
+            "text": "", 
+            "title": "Interactions"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#ingredients", 
+            "text": "", 
+            "title": "Ingredients"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#events", 
+            "text": "", 
+            "title": "Events"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#communicate", 
+            "text": "", 
+            "title": "Communicate"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#visualize-your-code", 
+            "text": "", 
+            "title": "Visualize your code"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#non-it-understand-as-well", 
+            "text": "", 
+            "title": "Non-IT understand as well"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#reason-about-comfortably", 
+            "text": "", 
+            "title": "Reason About Comfortably"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#lets-cook-some-crepes", 
+            "text": "", 
+            "title": "Let's Cook Some Cr\u00eapes!"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#good-to-know", 
+            "text": "", 
+            "title": "Good to Know"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#short-lived-vs-long-running-flows", 
+            "text": "", 
+            "title": "Short-lived vs. long-running flows"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#state-is-taken-care-of", 
+            "text": "Cassandra for persistent storage  Ingredients encrypted by default  State recovered automatically", 
+            "title": "State is taken care of:"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#when-failure-occurs", 
+            "text": "Baker retries technical failures with exponential backoff  Works well with  idempotent  services  Deal with functional failure in your recipe    Baker Capability Matrix:   Investigate not one, not two, but  all business processes  in your company  Where do you see re-use?  Map using MoSCoW ^4  to give importance (M = 10, S = 5, C = 2, W = 1)       Checking Account  Savings Account  Customer Onboarding      Verify Identity  Verify Identity  Verify Identity    Register Individual  Register Individual  Register Individual    Open  Checking  Account  Open  Savings  Account  n/a    Issue Debit Card  n/a  n/a    Send Message  Send Message  Send Message    Register Ownerhip  Register Ownership  n/a", 
+            "title": "When failure occurs:"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#httpsgithubcoming-bankbaker", 
+            "text": "", 
+            "title": "https://github.com/ing-bank/baker"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#why-petri-net3", 
+            "text": "", 
+            "title": "Why Petri net?^3"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#design-time", 
+            "text": "val registerIndividual = Interaction(\n  name =  RegisterIndividual ,\n  inputIngredients = Seq(name, address),\n  output = FiresOneOfEvents(registerIndividualSuccessful, registerIndividualFailed)\n)         val recipe = Recipe( OpenAccountRecipe )\n  .withInteractions(\n    assignAccount,\n    getAccount,\n    registerIndividual)     val recipe = Recipe( OpenAccountRecipe )\n  .withInteractions(\n    assignAccount,\n    getAccount.withRequiredEvent(termsAndConditionsAccepted),\n    registerIndividual)\n  .withSensoryEvents(\n    termsAndConditionsAccepted,\n    individualInformationSubmitted)", 
+            "title": "Design-time"
+        }, 
+        {
+            "location": "/presentations/ScaleByTheBay-18-Nov-2017/#run-time", 
+            "text": "//for each process instance, bake the recipe\nbaker.bake(processId);\n//notify Baker when events occur\nbaker.processEvent(processId, individualInformationSubmitted.instance(name, address));\nbaker.processEvent(processId, termsAndConditionsAccepted.instance());\n\n//retrieve ingredients stored in the accumulated state\nassert(baker.getIngredients(processId).get( customerId ).equals(customerId));\nassert(baker.getIngredients(processId).get( iban ).equals(iban));\n\n//retrieve all events that have occurred\nbaker.events(processId)     val groceriesDone = new Event(\"GroceriesDone\", Seq(milk, eggs, flour, butter, creme), Some(1))  val mixFirstThree = Interaction(\n  name = \"MixFirstThree\",\n  inputIngredients = Seq(milk, eggs, flour),\n  output = FiresOneOfEvents(batterMixed)\n)  val mixFirstThreeImpl = mixFirstThree implement {\n  (milk: String, eggs: String, flour: String) = \n    println(s\"mixing $milk, $eggs, and $flour\")\n    batterMixed.instance(\"batter\")\n}   I love cooking food  and for the rest of the talk I'll be using examples from there. It's very  similar to our industry : long hours, hard work, and delivering experiences to our customers.  Have you been woken up at 3 o'clock in the morning on a  Saturday morning  after a night of partying, having to go to the war room and resolve an application incident. I've been there. When I remember the cold of the  airconditioners , it still  makes me shiver .  If we are building microservices or a monolith or any type of application in general we are  serving business logic to our clients . So no matter what, we cannot escape the  architectural discussion . If we are not careful of how we architect our applications we end up serving a bad meal to our clients.", 
+            "title": "Run-time"
+        }, 
+        {
+            "location": "/presentations/baker-pitch/", 
+            "text": "[fit] Orchestration Logic is Hard to Change\n\n\n\n\nBaker is a Java Library\n\n\nDeclare the Logic Like a Recipe\n\n\nVisualize the Logic\n\n\nDon't Worry About Retries and State\n\n\n\n\n\n\n\n\nRapid Time to Market\n\n\nLess Incidents\n\n\nBusiness and IT Speak the Same Language\n\n\n\n\nUnder the Hood\n\n\nDSL for Recipes\n\n\nActor Model with Petri nets\n\n\nEvent-Driven Architecture\n\n\n\n\n```java, [.highlight: 3,4,6]\nreturn new Recipe(\"DemoAtTwitterHQ\").\n        withInteractions(\n                of(AssignAccount.class),\n                of(GetAccount.class).\n                        withRequiredEvent(TermsAndConditionsAccepted.class),\n                of(RegisterIndividual.class)).\n        withSensoryEvents(\n                TermsAndConditionsAccepted.class,\n                IndividualInformationSubmitted.class);\n}\n\n\n\n---\n\n```java\n//notify Baker when events occur\nbaker.processEvent(processId, new SensoryEvents.IndividualInformationSubmitted(name, address));\nbaker.processEvent(processId, new SensoryEvents.TermsAndConditionsAccepted());", 
+            "title": "[fit] Orchestration Logic is Hard to Change"
+        }, 
+        {
+            "location": "/presentations/baker-pitch/#fit-orchestration-logic-is-hard-to-change", 
+            "text": "", 
+            "title": "[fit] Orchestration Logic is Hard to Change"
+        }, 
+        {
+            "location": "/presentations/baker-pitch/#baker-is-a-java-library", 
+            "text": "", 
+            "title": "Baker is a Java Library"
+        }, 
+        {
+            "location": "/presentations/baker-pitch/#declare-the-logic-like-a-recipe", 
+            "text": "", 
+            "title": "Declare the Logic Like a Recipe"
+        }, 
+        {
+            "location": "/presentations/baker-pitch/#visualize-the-logic", 
+            "text": "", 
+            "title": "Visualize the Logic"
+        }, 
+        {
+            "location": "/presentations/baker-pitch/#dont-worry-about-retries-and-state", 
+            "text": "", 
+            "title": "Don't Worry About Retries and State"
+        }, 
+        {
+            "location": "/presentations/baker-pitch/#rapid-time-to-market", 
+            "text": "", 
+            "title": "Rapid Time to Market"
+        }, 
+        {
+            "location": "/presentations/baker-pitch/#less-incidents", 
+            "text": "", 
+            "title": "Less Incidents"
+        }, 
+        {
+            "location": "/presentations/baker-pitch/#business-and-it-speak-the-same-language", 
+            "text": "", 
+            "title": "Business and IT Speak the Same Language"
+        }, 
+        {
+            "location": "/presentations/baker-pitch/#under-the-hood", 
+            "text": "", 
+            "title": "Under the Hood"
+        }, 
+        {
+            "location": "/presentations/baker-pitch/#dsl-for-recipes", 
+            "text": "", 
+            "title": "DSL for Recipes"
+        }, 
+        {
+            "location": "/presentations/baker-pitch/#actor-model-with-petri-nets", 
+            "text": "", 
+            "title": "Actor Model with Petri nets"
+        }, 
+        {
+            "location": "/presentations/baker-pitch/#event-driven-architecture", 
+            "text": "```java, [.highlight: 3,4,6]\nreturn new Recipe(\"DemoAtTwitterHQ\").\n        withInteractions(\n                of(AssignAccount.class),\n                of(GetAccount.class).\n                        withRequiredEvent(TermsAndConditionsAccepted.class),\n                of(RegisterIndividual.class)).\n        withSensoryEvents(\n                TermsAndConditionsAccepted.class,\n                IndividualInformationSubmitted.class);\n}  \n---\n\n```java\n//notify Baker when events occur\nbaker.processEvent(processId, new SensoryEvents.IndividualInformationSubmitted(name, address));\nbaker.processEvent(processId, new SensoryEvents.TermsAndConditionsAccepted());", 
+            "title": "Event-Driven Architecture"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/", 
+            "text": "Declare, verify and execute microservices-based process flows with Baker\n\n\nhttp://github.com/nikolakasev | ING\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nSymptoms of a Failing Restaurant\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nSymptoms of a Failing (Microservices) Architecture\n\n\n\n\n\n\nAfraid to change the application code\n\n\n\n\n\n\nFunctionality breaks unexpectedly\n\n\n\n\n\n\nSlow time to market\n\n\n\n\nHow to turn this around?\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nSimplify\n\n\nDomain Specific Language for orchestration flows\n\n\nDeclarative\n\n\nEasy to change\n\n\n\n\n\n\nReuse\n\n\nRecipes\n\n\nInteractions\n\n\nIngredients\n\n\nEvents\n\n\n\n\n\n\nCommunicate\n\n\nVisualize your code\n\n\nNon-IT understand as well\n\n\nReason About Comfortably\n\n\n\n\nDesign-time\n\n\n\n\n```[.highlight: 1,6,7]\npublic interface RegisterIndividual extends Interaction {\n    @FiresEvent(oneOf = {RegisterIndividualSuccessful.class,\n            RegisterIndividualFailed.class})\n    RegisterIndividualOutcome apply(\n            @ProcessId String processId,\n            @RequiresIngredient(\"name\") String name,\n            @RequiresIngredient(\"address\") String address\n    );\n}\n\n\n\n---\n\n```[.highlight: 2,3]\npublic interface RegisterIndividual extends Interaction {\n    @FiresEvent(oneOf = {RegisterIndividualSuccessful.class,\n            RegisterIndividualFailed.class})\n    RegisterIndividualOutcome apply(\n            @ProcessId String processId,\n            @RequiresIngredient(\nname\n) String name,\n            @RequiresIngredient(\naddress\n) String address\n    );\n}\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n```java, [.highlight: 3-6]\npublic Recipe get(){\n    return new Recipe(\"MuConf2017Demo\").\n            withInteractions(\n                    of(AssignAccount.class),\n                    of(GetAccount.class),\n                    of(RegisterIndividual.class));\n}\n\n\n\n---\n\n![fit](recipe-no-sensory.png)\n\n---\n\n```java, [.highlight: 5, 7-9]\nreturn new Recipe(\nMuConf2017Demo\n).\n        withInteractions(\n                of(AssignAccount.class),\n                of(GetAccount.class).\n                        withRequiredEvent(TermsAndConditionsAccepted.class),\n                of(RegisterIndividual.class)).\n        withSensoryEvents(\n                TermsAndConditionsAccepted.class,\n                IndividualInformationSubmitted.class);\n}\n\n\n\n\n\n\n\n\n\n\nRun-time\n\n\n\n\n```java, [.highlight: 2,4,5,8,9,13]\n//for each process instance, bake the recipe\nbaker.bake(processId);\n//notify Baker when events occur\nbaker.processEvent(processId, new SensoryEvents.IndividualInformationSubmitted(name, address));\nbaker.processEvent(processId, new SensoryEvents.TermsAndConditionsAccepted());\n\n\n//retrieve ingredients stored in the accumulated state\nassert(baker.getIngredients(processId).get(\"customerId\").equals(customerId));\nassert(baker.getIngredients(processId).get(\"iban\").equals(iban));\n\n\n//retrieve all events that have occurred\nSet\n occurredEvents = new HashSet\n(\n        baker.getEvents(processId).getEventNameList()\n);\n```\n\n\n\n\n\n\n\n\nUnder the Hood\n\n\n\n\nWhy Scala?\n\n\n\n\nBest fit for developing DSLs\n^1\n on the JVM\n\n\nCompile-time recipe validation\n\n\nType safety\n\n\n\n\n\n\nWhy Akka?\n\n\n\n\nEvent Sourcing\n^2\n (events can be replayed)\n\n\nPersistent actors (with Cassandra)\n\n\nDistributed actors across machines (with cluster sharding)\n\n\n\n\n\n\nWhy Petri net?\n^3\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nBest Practices\n\n\n\n\nShort-lived vs. long-running flows\n\n\n\n\nState is taken care of:\n\n\n\n\nCassandra for persistent storage\n\n\nIngredients encrypted by default\n\n\nState recovered automatically\n\n\n\n\n\n\nRun Baker inside of your API\n\n\n\"Smart endpoints and dumb pipes\"\n\n\n\n\nWhen failure occurs:\n\n\n\n\nBaker retries technical failures with exponential backoff\n\n\nWorks well with \nidempotent\n services\n\n\nDeal with functional failure in your recipe\n\n\n\n\n\n\nBaker Capability Matrix:\n\n\n\n\nInvestigate not one, not two, but \nall business processes\n in your company\n\n\nWhere do you see re-use?\n\n\nMap using MoSCoW\n^4\n to give importance (M = 10, S = 5, C = 2, W = 1)\n\n\n\n\n\n\n\n\n\n\n\n\nChecking Account\n\n\nSavings Account\n\n\nCustomer Onboarding\n\n\n\n\n\n\n\n\n\n\nVerify Identity\n\n\nVerify Identity\n\n\nVerify Identity\n\n\n\n\n\n\nRegister Individual\n\n\nRegister Individual\n\n\nRegister Individual\n\n\n\n\n\n\nOpen \nChecking\n Account\n\n\nOpen \nSavings\n Account\n\n\nn/a\n\n\n\n\n\n\nIssue Debit Card\n\n\nn/a\n\n\nn/a\n\n\n\n\n\n\nSend Message\n\n\nSend Message\n\n\nSend Message\n\n\n\n\n\n\nRegister Product Owner\n\n\nRegister Product Owner\n\n\nn/a\n\n\n\n\n\n\n\n\n\n\n\n\nhttps://github.com/ing-bank/baker\n\n\n\n\n\n\n\n\nSpeed of change matters to anyone building software. Many engineering teams have identified Microservices as an important component of this architectural approach to designing more flexible systems that can meet the needs of their fast changing businesses. Applying this approach however, is hard. And ideas and practices are still very much evolving. To help with that, we've launched muCon - a conference to learn about emerging technologies and approaches, share challenges and evolve practices and ideas.\n\n\n\n\nTheir applications are built on top of microservices. If there careful enough their application serve bad meals. \n\n\nIf we are building microservices or a monolith or any type of service in general we are serving business logic to our clients. So no matter what we can not escape the architectural discussion.\nIf we are not careful of how we architect our applications we end up serving bad meals.\n\n\n\n\nI love cooking food\n and for the rest of the talk I'll be using analogies from there. It's very \nsimilar to our industry\n: long hours, hard work, and delivering experiences to our customers.\n\n\nHave you been woken up at 3 o'clock in the morning on a \nSaturday morning\n after a night of partying, having to go to the war room and resolve an application incident. I've been there. When I remember the cold of the \nairconditioners\n, it still \nmakes me shiver\n.\n\n\nIf we are building microservices or a monolith or any type of application in general we are \nserving business logic to our clients\n. So no matter what, we cannot escape the \narchitectural discussion\n. If we are not careful of how we architect our applications we end up serving a bad meal to our clients.", 
+            "title": "Declare, verify and execute microservices-based process flows with Baker"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#declare-verify-and-execute-microservices-based-process-flows-with-baker", 
+            "text": "", 
+            "title": "Declare, verify and execute microservices-based process flows with Baker"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#httpgithubcomnikolakasev-ing", 
+            "text": "", 
+            "title": "http://github.com/nikolakasev | ING"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#symptoms-of-a-failing-restaurant", 
+            "text": "", 
+            "title": "Symptoms of a Failing Restaurant"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#symptoms-of-a-failing-microservices-architecture", 
+            "text": "", 
+            "title": "Symptoms of a Failing (Microservices) Architecture"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#afraid-to-change-the-application-code", 
+            "text": "", 
+            "title": "Afraid to change the application code"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#functionality-breaks-unexpectedly", 
+            "text": "", 
+            "title": "Functionality breaks unexpectedly"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#slow-time-to-market", 
+            "text": "", 
+            "title": "Slow time to market"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#how-to-turn-this-around", 
+            "text": "", 
+            "title": "How to turn this around?"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#simplify", 
+            "text": "", 
+            "title": "Simplify"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#domain-specific-language-for-orchestration-flows", 
+            "text": "", 
+            "title": "Domain Specific Language for orchestration flows"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#declarative", 
+            "text": "", 
+            "title": "Declarative"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#easy-to-change", 
+            "text": "", 
+            "title": "Easy to change"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#reuse", 
+            "text": "", 
+            "title": "Reuse"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#recipes", 
+            "text": "", 
+            "title": "Recipes"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#interactions", 
+            "text": "", 
+            "title": "Interactions"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#ingredients", 
+            "text": "", 
+            "title": "Ingredients"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#events", 
+            "text": "", 
+            "title": "Events"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#communicate", 
+            "text": "", 
+            "title": "Communicate"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#visualize-your-code", 
+            "text": "", 
+            "title": "Visualize your code"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#non-it-understand-as-well", 
+            "text": "", 
+            "title": "Non-IT understand as well"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#reason-about-comfortably", 
+            "text": "", 
+            "title": "Reason About Comfortably"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#design-time", 
+            "text": "```[.highlight: 1,6,7]\npublic interface RegisterIndividual extends Interaction {\n    @FiresEvent(oneOf = {RegisterIndividualSuccessful.class,\n            RegisterIndividualFailed.class})\n    RegisterIndividualOutcome apply(\n            @ProcessId String processId,\n            @RequiresIngredient(\"name\") String name,\n            @RequiresIngredient(\"address\") String address\n    );\n}  \n---\n\n```[.highlight: 2,3]\npublic interface RegisterIndividual extends Interaction {\n    @FiresEvent(oneOf = {RegisterIndividualSuccessful.class,\n            RegisterIndividualFailed.class})\n    RegisterIndividualOutcome apply(\n            @ProcessId String processId,\n            @RequiresIngredient( name ) String name,\n            @RequiresIngredient( address ) String address\n    );\n}         ```java, [.highlight: 3-6]\npublic Recipe get(){\n    return new Recipe(\"MuConf2017Demo\").\n            withInteractions(\n                    of(AssignAccount.class),\n                    of(GetAccount.class),\n                    of(RegisterIndividual.class));\n}  \n---\n\n![fit](recipe-no-sensory.png)\n\n---\n\n```java, [.highlight: 5, 7-9]\nreturn new Recipe( MuConf2017Demo ).\n        withInteractions(\n                of(AssignAccount.class),\n                of(GetAccount.class).\n                        withRequiredEvent(TermsAndConditionsAccepted.class),\n                of(RegisterIndividual.class)).\n        withSensoryEvents(\n                TermsAndConditionsAccepted.class,\n                IndividualInformationSubmitted.class);\n}", 
+            "title": "Design-time"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#run-time", 
+            "text": "```java, [.highlight: 2,4,5,8,9,13]\n//for each process instance, bake the recipe\nbaker.bake(processId);\n//notify Baker when events occur\nbaker.processEvent(processId, new SensoryEvents.IndividualInformationSubmitted(name, address));\nbaker.processEvent(processId, new SensoryEvents.TermsAndConditionsAccepted());  //retrieve ingredients stored in the accumulated state\nassert(baker.getIngredients(processId).get(\"customerId\").equals(customerId));\nassert(baker.getIngredients(processId).get(\"iban\").equals(iban));  //retrieve all events that have occurred\nSet  occurredEvents = new HashSet (\n        baker.getEvents(processId).getEventNameList()\n);\n```", 
+            "title": "Run-time"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#under-the-hood", 
+            "text": "", 
+            "title": "Under the Hood"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#why-scala", 
+            "text": "Best fit for developing DSLs ^1  on the JVM  Compile-time recipe validation  Type safety", 
+            "title": "Why Scala?"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#why-akka", 
+            "text": "Event Sourcing ^2  (events can be replayed)  Persistent actors (with Cassandra)  Distributed actors across machines (with cluster sharding)", 
+            "title": "Why Akka?"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#why-petri-net3", 
+            "text": "", 
+            "title": "Why Petri net?^3"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#best-practices", 
+            "text": "", 
+            "title": "Best Practices"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#short-lived-vs-long-running-flows", 
+            "text": "", 
+            "title": "Short-lived vs. long-running flows"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#state-is-taken-care-of", 
+            "text": "Cassandra for persistent storage  Ingredients encrypted by default  State recovered automatically", 
+            "title": "State is taken care of:"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#run-baker-inside-of-your-api", 
+            "text": "", 
+            "title": "Run Baker inside of your API"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#smart-endpoints-and-dumb-pipes", 
+            "text": "", 
+            "title": "\"Smart endpoints and dumb pipes\""
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#when-failure-occurs", 
+            "text": "Baker retries technical failures with exponential backoff  Works well with  idempotent  services  Deal with functional failure in your recipe    Baker Capability Matrix:   Investigate not one, not two, but  all business processes  in your company  Where do you see re-use?  Map using MoSCoW ^4  to give importance (M = 10, S = 5, C = 2, W = 1)       Checking Account  Savings Account  Customer Onboarding      Verify Identity  Verify Identity  Verify Identity    Register Individual  Register Individual  Register Individual    Open  Checking  Account  Open  Savings  Account  n/a    Issue Debit Card  n/a  n/a    Send Message  Send Message  Send Message    Register Product Owner  Register Product Owner  n/a", 
+            "title": "When failure occurs:"
+        }, 
+        {
+            "location": "/presentations/muCon-London-7-Nov-2017/#httpsgithubcoming-bankbaker", 
+            "text": "Speed of change matters to anyone building software. Many engineering teams have identified Microservices as an important component of this architectural approach to designing more flexible systems that can meet the needs of their fast changing businesses. Applying this approach however, is hard. And ideas and practices are still very much evolving. To help with that, we've launched muCon - a conference to learn about emerging technologies and approaches, share challenges and evolve practices and ideas.   Their applications are built on top of microservices. If there careful enough their application serve bad meals.   If we are building microservices or a monolith or any type of service in general we are serving business logic to our clients. So no matter what we can not escape the architectural discussion.\nIf we are not careful of how we architect our applications we end up serving bad meals.   I love cooking food  and for the rest of the talk I'll be using analogies from there. It's very  similar to our industry : long hours, hard work, and delivering experiences to our customers.  Have you been woken up at 3 o'clock in the morning on a  Saturday morning  after a night of partying, having to go to the war room and resolve an application incident. I've been there. When I remember the cold of the  airconditioners , it still  makes me shiver .  If we are building microservices or a monolith or any type of application in general we are  serving business logic to our clients . So no matter what, we cannot escape the  architectural discussion . If we are not careful of how we architect our applications we end up serving a bad meal to our clients.", 
+            "title": "https://github.com/ing-bank/baker"
+        }
+    ]
+}
