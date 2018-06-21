@@ -6,10 +6,10 @@ See the links on how to install the tools.
 
 For mac it is 2 commands:
 
----
+```
 brew install mkdocs
 pip install --user mkdocs-material
----
+```
 
 ## Howto
 
@@ -19,11 +19,11 @@ Now you can serve the documentation using:
 mkdocs serve
 ```
 
-This will run a server on port `8000`
+This will run an http server serving the site on port `8000`
 
-All .md files under docs are automatically added
+All `.md` files under docs are automatically added.
 
-To publish the site on the gh-pages branch you can run
+When you have made changes you can publish the site on the `gh-pages` branch
 
 ```
 mkdocs gh-deploy
