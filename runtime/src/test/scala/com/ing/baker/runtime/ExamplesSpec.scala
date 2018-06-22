@@ -2,7 +2,7 @@ package com.ing.baker.runtime
 
 import java.util.UUID
 
-import com.ing.baker.TestRecipeHelper
+import com.ing.baker.BakerRuntimeTestBase
 import akka.testkit.{TestDuration, TestKit}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl._
@@ -10,7 +10,7 @@ import com.ing.baker.runtime.core.{Baker, RuntimeEvent}
 
 import scala.concurrent.duration._
 
-class ExamplesSpec extends TestRecipeHelper  {
+class ExamplesSpec extends BakerRuntimeTestBase  {
   override def actorSystemName = "ExamplesSpec"
 
   "The WebShop recipe" should {

@@ -1,7 +1,5 @@
 package com.ing.baker.recipe
 
-import com.ing.baker.types.{Converters, Value}
-
 package object scaladsl {
   implicit def InteractionToInteractionDescriptor(interaction: Interaction): InteractionDescriptor = InteractionDescriptorFactory(interaction)
 

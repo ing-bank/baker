@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.core.implementations
 
-import com.ing.baker.TestRecipeHelper
+import com.ing.baker.TestRecipe
 
-class InteractionOneInterfaceImplementation() extends TestRecipeHelper.InteractionOne {
+class InteractionOneInterfaceImplementation() extends TestRecipe.InteractionOne {
   override def apply(processId: String, initialIngredient: String): String = ""
 }

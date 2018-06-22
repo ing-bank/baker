@@ -2,7 +2,7 @@ package com.ing.baker.compiler
 
 import java.util.Optional
 
-import com.ing.baker.TestRecipeHelper._
+import com.ing.baker.TestRecipe._
 import com.ing.baker._
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.common
@@ -14,7 +14,7 @@ import com.ing.baker.types.{NullValue, PrimitiveValue}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class RecipeCompilerSpec extends TestRecipeHelper {
+class RecipeCompilerSpec extends BakerRuntimeTestBase {
 
   override def actorSystemName = "RecipeCompilerSpec"
 
@@ -25,7 +25,7 @@ class RecipeCompilerSpec extends TestRecipeHelper {
   "The RecipeCompiler should" should {
 
     "not have validation errors for a valid recipe" in {
-      val recipe: Recipe = getComplexRecipe("ValidRecipe")
+      val recipe: Recipe = getRecipe("ValidRecipe")
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
       compiledRecipe.validationErrors shouldBe List.empty
     }

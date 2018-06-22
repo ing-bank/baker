@@ -4,7 +4,7 @@ import java.util.UUID
 
 import akka.actor.ActorRef
 import akka.pattern.ask
-import com.ing.baker.TestRecipeHelper
+import com.ing.baker.{TestRecipe, BakerRuntimeTestBase}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.typesafe.config.{Config, ConfigFactory}
@@ -21,7 +21,7 @@ object RecipeManagerSpec {
     """.stripMargin)
 }
 
-class RecipeManagerSpec  extends TestRecipeHelper {
+class RecipeManagerSpec  extends BakerRuntimeTestBase {
 
   override def actorSystemName = "RecipeManagerSpec"
 
@@ -29,7 +29,7 @@ class RecipeManagerSpec  extends TestRecipeHelper {
 
   "The RecipeManagerSpec" should {
     "Add a recipe to the list when a AddRecipe message is received" in {
-      val compiledRecipe = RecipeCompiler.compileRecipe(getComplexRecipe("AddRecipeRecipe"))
+      val compiledRecipe = RecipeCompiler.compileRecipe(TestRecipe.getRecipe("AddRecipeRecipe"))
       val recipeManager: ActorRef = defaultActorSystem.actorOf(RecipeManager.props(),  s"recipeManager-${UUID.randomUUID().toString}")
 
       val futureAddResult = recipeManager.ask(AddRecipe(compiledRecipe))(timeout)

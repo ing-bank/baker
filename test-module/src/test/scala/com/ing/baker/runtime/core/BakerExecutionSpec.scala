@@ -6,7 +6,7 @@ import java.util.{Optional, UUID}
 import akka.actor.ActorSystem
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.testkit.{TestDuration, TestKit, TestProbe}
-import com.ing.baker.TestRecipeHelper._
+import com.ing.baker.TestRecipe._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.common.InteractionFailureStrategy
@@ -26,7 +26,7 @@ import scala.util.Success
 
 case class SomeNotDefinedEvent(name: String)
 
-class BakerExecutionSpec extends TestRecipeHelper {
+class BakerExecutionSpec extends BakerRuntimeTestBase {
 
   override def actorSystemName = "BakerExecutionSpec"
 
@@ -814,7 +814,7 @@ class BakerExecutionSpec extends TestRecipeHelper {
       val processId = UUID.randomUUID().toString
 
       var recipeId: String = ""
-      val compiledRecipe = RecipeCompiler.compileRecipe(getComplexRecipe(recoveryRecipeName))
+      val compiledRecipe = RecipeCompiler.compileRecipe(getRecipe(recoveryRecipeName))
 
       try {
         val baker1 = setupBakerWithNoRecipe()(system1)
