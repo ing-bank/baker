@@ -17,13 +17,6 @@ import scala.concurrent.duration.DurationInt
 
 object AllTypeRecipe {
 
-  implicit class IngredientOps[T](ingredient: Ingredient[T]) {
-    def instance(e: T): (String, Value) = {
-      val value = Converters.toValue(e)
-      (ingredient.name, value)
-    }
-  }
-
   case class Payload(data: Map[String, String], userData: Map[String, java.lang.Integer])
 
   // ingredients
@@ -110,13 +103,13 @@ object AllTypeRecipe {
 
   val interactionTwo = Interaction(
     name = "interactionTwo",
-    inputIngredients = Ingredients(javaBooleanIngredient, javaByteIngredient),
+    inputIngredients = Seq(javaBooleanIngredient, javaByteIngredient),
     output = FiresOneOfEvents(byteArrayEvent, otherEvent)
   )
 
   val interactionThree = Interaction(
     name = "interactionThree",
-    inputIngredients = Ingredients(bigPayloadIngredient, javaByteIngredient),
+    inputIngredients = Seq(bigPayloadIngredient, javaByteIngredient),
     output = FiresOneOfEvents(emptyEvent, otherEvent, mapEvent)
   )
 
@@ -128,7 +121,7 @@ object AllTypeRecipe {
 
   val interactionFive = Interaction(
     name = "interactionFive",
-    inputIngredients = Seq(),
+    inputIngredients = Seq.empty,
     output = ProvidesIngredient(javaStringIngredient)
   )
 
@@ -194,40 +187,40 @@ object AllTypeRecipe {
         interactionSix,
         interactionSeven,
         allTypesInteraction.withPredefinedIngredients(
-          bigPayloadIngredient.instance(Payload(Map("stringKey" -> "stringValue"), Map("someOtherStringKey" -> java.lang.Integer.MAX_VALUE))),
-          javaBooleanIngredient.instance(java.lang.Boolean.TRUE),
-          javaByteIngredient.instance(java.lang.Byte.MAX_VALUE),
-          javaShortIngredient.instance(java.lang.Short.MAX_VALUE),
-          javaCharacterIngredient.instance(java.lang.Character.MAX_VALUE),
-          javaIntegerIngredient.instance(java.lang.Integer.MAX_VALUE),
-          javaLongIngredient.instance(java.lang.Long.MAX_VALUE),
-          javaFloatIngredient.instance(java.lang.Float.MAX_VALUE),
-          javaDoubleIngredient.instance(java.lang.Double.MAX_VALUE),
-          javaStringIngredient.instance("Some String"),
-          javaBigDecimalIngredient.instance(java.math.BigDecimal.valueOf(4.2)),
-          javaBigIntegerIngredient.instance(java.math.BigInteger.TEN),
-          byteArrayIngredient.instance("some byte array".getBytes),
-          jodaDateTimeIngredient.instance(DateTime.now()),
-          jodaLocalDateIngredient.instance(LocalDate.now()),
-          jodaLocalDateTimeIngredient.instance(LocalDateTime.now()),
-          booleanIngredient.instance(true),
-          byteIngredient.instance(Byte.MinValue),
-          shortIngredient.instance(Short.MinValue),
-          charIngredient.instance(Char.MinValue),
-          intIngredient.instance(Int.MinValue),
-          longIngredient.instance(Long.MinValue),
-          floatIngredient.instance(Float.MinValue),
-          doubleIngredient.instance(Double.MinValue),
-          stringIngredient.instance(""),
-          bigDecimalIngredient.instance(BigDecimal(1.2)),
-          bigIntIngredient.instance(BigInt(Int.MaxValue)),
-          optionalIngredient.instance(Some("some string")),
-          optionalIngredientForNone.instance(None),
-          primitiveOptionalIngredient.instance(Some(42)),
-          listIngredient.instance(List("str1", "str2")),
-          mapIngredient.instance(Map("key1" -> "value1")),
-          mapIngredientWithPrimitives.instance(Map("key1" -> 42)),
-          mapIngredientWithBoxedTypes.instance(Map("key1" -> Int.box(42)))
+          bigPayloadIngredient(Payload(Map("stringKey" -> "stringValue"), Map("someOtherStringKey" -> java.lang.Integer.MAX_VALUE))),
+          javaBooleanIngredient(java.lang.Boolean.TRUE),
+          javaByteIngredient(java.lang.Byte.MAX_VALUE),
+          javaShortIngredient(java.lang.Short.MAX_VALUE),
+          javaCharacterIngredient(java.lang.Character.MAX_VALUE),
+          javaIntegerIngredient(java.lang.Integer.MAX_VALUE),
+          javaLongIngredient(java.lang.Long.MAX_VALUE),
+          javaFloatIngredient(java.lang.Float.MAX_VALUE),
+          javaDoubleIngredient(java.lang.Double.MAX_VALUE),
+          javaStringIngredient("Some String"),
+          javaBigDecimalIngredient(java.math.BigDecimal.valueOf(4.2)),
+          javaBigIntegerIngredient(java.math.BigInteger.TEN),
+          byteArrayIngredient("some byte array".getBytes),
+          jodaDateTimeIngredient(DateTime.now()),
+          jodaLocalDateIngredient(LocalDate.now()),
+          jodaLocalDateTimeIngredient(LocalDateTime.now()),
+          booleanIngredient(true),
+          byteIngredient(Byte.MinValue),
+          shortIngredient(Short.MinValue),
+          charIngredient(Char.MinValue),
+          intIngredient(Int.MinValue),
+          longIngredient(Long.MinValue),
+          floatIngredient(Float.MinValue),
+          doubleIngredient(Double.MinValue),
+          stringIngredient(""),
+          bigDecimalIngredient(BigDecimal(1.2)),
+          bigIntIngredient(BigInt(Int.MaxValue)),
+          optionalIngredient(Some("some string")),
+          optionalIngredientForNone(None),
+          primitiveOptionalIngredient(Some(42)),
+          listIngredient(List("str1", "str2")),
+          mapIngredient(Map("key1" -> "value1")),
+          mapIngredientWithPrimitives(Map("key1" -> 42)),
+          mapIngredientWithBoxedTypes(Map("key1" -> Int.box(42)))
         )
       )
       .withSensoryEvents(bigPayloadEvent, mapEvent)

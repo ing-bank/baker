@@ -26,7 +26,8 @@ class ComplexObjectIngredient(value: String)
 case class CaseClassIngredient(a: Int, b: String)
 
 object TestRecipeHelper {
-  //Ingredients as used in the recipe
+  
+  //inputIngredients = Seq as used in the recipe
   val initialIngredientOld = Ingredient[String]("initialIngredientOld")
   val initialIngredient = Ingredient[String]("initialIngredient")
   val interactionOneOriginalIngredient = Ingredient[String]("interactionOneOriginalIngredient")
@@ -98,9 +99,10 @@ object TestRecipeHelper {
 
   //Interactions used in the recipe & implementations (we use traits instead of case classes since we use mocks for the real implementations
   val interactionOne =
-    Interaction("InteractionOne",
-      Ingredients(processId, initialIngredient),
-      ProvidesIngredient(interactionOneOriginalIngredient))
+    Interaction(
+      name = "InteractionOne",
+      inputIngredients = Seq(processId, initialIngredient),
+      output = ProvidesIngredient(interactionOneOriginalIngredient))
 
   trait InteractionOne {
     def name: String = "InteractionOne"
@@ -109,9 +111,10 @@ object TestRecipeHelper {
   }
 
   val interactionTwo =
-    Interaction("InteractionTwo",
-      Ingredients(initialIngredientOld),
-      FiresOneOfEvents(eventFromInteractionTwo))
+    Interaction(
+      name = "InteractionTwo",
+      inputIngredients = Seq(initialIngredientOld),
+      output = FiresOneOfEvents(eventFromInteractionTwo))
 
   trait InteractionTwo {
     val name: String = "InteractionTwo"
@@ -120,9 +123,10 @@ object TestRecipeHelper {
   }
 
   val interactionThree =
-    Interaction("InteractionThree",
-      Ingredients(interactionOneIngredient, interactionTwoIngredient),
-      ProvidesIngredient(interactionThreeIngredient))
+    Interaction(
+      name = "InteractionThree",
+      inputIngredients = Seq(interactionOneIngredient, interactionTwoIngredient),
+      output = ProvidesIngredient(interactionThreeIngredient))
 
   trait InteractionThree {
     val name: String = "InteractionThree"
@@ -131,9 +135,10 @@ object TestRecipeHelper {
   }
 
   val interactionFour =
-    Interaction("InteractionFour",
-      Ingredients(),
-      ProvidesIngredient(interactionFourIngredient))
+    Interaction(
+      name = "InteractionFour",
+      inputIngredients = Seq.empty,
+      output = ProvidesIngredient(interactionFourIngredient))
 
   trait InteractionFour {
     val name: String = "InteractionFour"
@@ -142,9 +147,10 @@ object TestRecipeHelper {
   }
 
   val interactionFive =
-    Interaction("InteractionFive",
-      Ingredients(processId, initialIngredient, initialIngredientExtendedName),
-      ProvidesIngredient(interactionFiveIngredient))
+    Interaction(
+      name = "InteractionFive",
+      inputIngredients = Ingredients(processId, initialIngredient, initialIngredientExtendedName),
+      output = ProvidesIngredient(interactionFiveIngredient))
 
   trait InteractionFive {
     val name: String = "InteractionFive"
@@ -153,9 +159,10 @@ object TestRecipeHelper {
   }
 
   val interactionSix =
-    Interaction("InteractionSix",
-      Ingredients(initialIngredientExtendedName),
-      ProvidesIngredient(interactionSixIngredient))
+    Interaction(
+      name = "InteractionSix",
+      inputIngredients = Seq(initialIngredientExtendedName),
+      output = ProvidesIngredient(interactionSixIngredient))
 
   trait InteractionSix {
     val name: String = "InteractionSix"
@@ -164,9 +171,10 @@ object TestRecipeHelper {
   }
 
   val interactionSeven =
-    Interaction("InteractionSeven",
-      Ingredients(initialIngredient),
-      FiresOneOfEvents(event1FromInteractionSeven, event2FromInteractionSeven))
+    Interaction(
+      name = "InteractionSeven",
+      inputIngredients = Seq(initialIngredient),
+      output = FiresOneOfEvents(event1FromInteractionSeven, event2FromInteractionSeven))
 
   trait InteractionSeven {
     val name: String = "InteractionSeven"
@@ -175,9 +183,10 @@ object TestRecipeHelper {
   }
 
   val interactionEight =
-    Interaction("InteractionEight",
-      Ingredients(interactionSevenIngredient1, interactionSevenIngredient2),
-      common.ProvidesNothing)
+    Interaction(
+      name = "InteractionEight",
+      inputIngredients = Seq(interactionSevenIngredient1, interactionSevenIngredient2),
+      output = common.ProvidesNothing)
 
   trait InteractionEight {
     val name: String = "InteractionEight"
@@ -186,9 +195,10 @@ object TestRecipeHelper {
   }
 
   val providesNothingInteraction =
-    Interaction("ProvidesNothingInteraction",
-      Ingredients(initialIngredient),
-      common.ProvidesNothing)
+    Interaction(
+      name = "ProvidesNothingInteraction",
+      inputIngredients = Seq(initialIngredient),
+      output = common.ProvidesNothing)
 
   trait ProvidesNothingInteraction {
     val name: String = "ProvidesNothingInteraction"
@@ -197,9 +207,10 @@ object TestRecipeHelper {
   }
 
   val sieveInteraction =
-    Interaction("SieveInteraction",
-      Ingredients(processId, initialIngredient),
-      ProvidesIngredient(sievedIngredient))
+    Interaction(
+      name = "SieveInteraction",
+      inputIngredients = Seq(processId, initialIngredient),
+      output = ProvidesIngredient(sievedIngredient))
 
   trait SieveInteraction {
     val name: String = "SieveInteraction"
@@ -208,9 +219,10 @@ object TestRecipeHelper {
   }
 
   val sieveInteractionWithoutDefaultConstructor =
-    Interaction("SieveInteractionWithoutDefaultConstructor",
-      Ingredients(processId, initialIngredient),
-      ProvidesIngredient(sievedIngredient))
+    Interaction(
+      name = "SieveInteractionWithoutDefaultConstructor",
+      inputIngredients = Seq(processId, initialIngredient),
+      output = ProvidesIngredient(sievedIngredient))
 
   trait SieveInteractionWithoutDefaultConstructor {
     val name: String = "SieveInteractionWithoutDefaultConstructor"
@@ -219,8 +231,9 @@ object TestRecipeHelper {
   }
 
   val complexIngredientInteraction =
-    Interaction("ComplexIngredientInteraction",
-      Ingredients(initialIngredient),
+    Interaction(
+      name = "ComplexIngredientInteraction",
+      inputIngredients = Seq(initialIngredient),
       ProvidesIngredient(complexObjectIngredient))
 
   trait ComplexIngredientInteraction {
@@ -230,9 +243,10 @@ object TestRecipeHelper {
   }
 
   val caseClassIngredientInteraction =
-    Interaction("CaseClassIngredientInteraction",
-      Ingredients(initialIngredient),
-      ProvidesIngredient(caseClassIngredient))
+    Interaction(
+      name = "CaseClassIngredientInteraction",
+      inputIngredients = Seq(initialIngredient),
+      output = ProvidesIngredient(caseClassIngredient))
 
   trait CaseClassIngredientInteraction {
     val name: String = "CaseClassIngredientInteraction"
@@ -241,9 +255,10 @@ object TestRecipeHelper {
   }
 
   val caseClassIngredientInteraction2 =
-    Interaction("CaseClassIngredientInteraction2",
-      Ingredients(caseClassIngredient),
-      FiresOneOfEvents(emptyEvent))
+    Interaction(
+      name = "CaseClassIngredientInteraction2",
+      inputIngredients = Seq(caseClassIngredient),
+      output = FiresOneOfEvents(emptyEvent))
 
   trait CaseClassIngredientInteraction2 {
     val name: String = "CaseClassIngredientInteraction2"
@@ -252,9 +267,10 @@ object TestRecipeHelper {
   }
 
   val NonMatchingReturnTypeInteraction =
-    Interaction("NonMatchingReturnTypeInteraction",
-      Ingredients(initialIngredient),
-      FiresOneOfEvents(eventFromInteractionTwo))
+    Interaction(
+      name="NonMatchingReturnTypeInteraction",
+      inputIngredients = Seq(initialIngredient),
+      output = FiresOneOfEvents(eventFromInteractionTwo))
 
   trait NonMatchingReturnTypeInteraction {
     val name: String = "NonMatchingReturnTypeInteraction"
@@ -263,7 +279,7 @@ object TestRecipeHelper {
   }
 
   val optionalIngredientInteraction =
-    Interaction("OptionalIngredientInteraction",
+    Interaction(name="OptionalIngredientInteraction",
       Seq(
         missingJavaOptional,
         missingJavaOptional2,

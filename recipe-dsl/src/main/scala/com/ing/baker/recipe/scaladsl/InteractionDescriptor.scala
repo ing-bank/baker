@@ -41,10 +41,10 @@ case class InteractionDescriptor private(override val interaction: Interaction,
     copy(requiredOneOfEvents = newRequired)
   }
 
-  def withPredefinedIngredients(values: (String, AnyRef)*): InteractionDescriptor =
+  def withPredefinedIngredients(values: (String, Any)*): InteractionDescriptor =
     withPredefinedIngredients(values.toMap)
 
-  def withPredefinedIngredients(data: Map[String, AnyRef]): InteractionDescriptor =
+  def withPredefinedIngredients(data: Map[String, Any]): InteractionDescriptor =
     copy(predefinedIngredients = predefinedIngredients ++ data.map{case (key, value) => key -> Converters.toValue(value)})
 
   def withMaximumInteractionCount(n: Int): InteractionDescriptor =
