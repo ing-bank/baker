@@ -5,7 +5,7 @@ import java.util.UUID
 import akka.actor.ActorRef
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.testkit.TestProbe
-import com.ing.baker.TestRecipeHelper._
+import com.ing.baker.TestRecipe._
 import com.ing.baker._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.scaladsl.Recipe
@@ -54,6 +54,7 @@ object BakerEventsSpec {
     }
   }
 
+  // TODO this is a copy of TestRecipe.getRecipe(..) with 1 difference, there is a limit on the initialEvent, why?
   protected def getRecipe(recipeName: String): Recipe =
     Recipe(recipeName)
       .withInteractions(
@@ -79,7 +80,7 @@ object BakerEventsSpec {
 
 }
 
-class BakerEventsSpec extends TestRecipeHelper {
+class BakerEventsSpec extends BakerRuntimeTestBase {
 
   import BakerEventsSpec._
 

@@ -1,20 +1,17 @@
 package com.ing.baker.runtime.core
 
-import akka.actor.ActorSystem
-import com.ing.baker.TestRecipeHelper._
+import com.ing.baker.TestRecipe._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.core.implementations.{InteractionOneFieldName, InteractionOneInterfaceImplementation, InteractionOneWrongApply}
-import com.ing.baker.types.Value
-import com.typesafe.config.ConfigFactory
 import org.mockito.Matchers.anyString
 import org.mockito.Mockito.when
 
 import scala.language.postfixOps
 
 
-class BakerSetupSpec extends TestRecipeHelper {
+class BakerSetupSpec extends BakerRuntimeTestBase {
 
   override def actorSystemName = "BakerSetupSpec"
 
