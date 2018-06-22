@@ -2,7 +2,6 @@ package com.ing.baker.baas.http
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
-import com.ing.baker.baas.KryoUtil
 import com.ing.baker.baas.interaction.RemoteInteractionClient
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.commonserialize
@@ -26,7 +25,7 @@ object APIRoutes extends Directives with BaasMarshalling {
 
             val sensoryEventStatus = confirm.getOrElse(defaultEventConfirm) match {
               case "received"  => baker.processEventAsync(requestId, event).confirmReceived()
-              case "completed" => baker.processEventAsync(requestId, event).confirmCompleted()
+              case "completed" => baker.processEventAsync(requestId, event).confirmCompleted().sensoryEventStatus
               case other      => throw new IllegalArgumentException(s"Unsupported confirm type: $other")
             }
 

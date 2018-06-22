@@ -1,13 +1,13 @@
 package com.ing.baker.compiler;
 
-import com.ing.baker.compiler.RecipeCompiler;
-import com.ing.baker.runtime.core.BakerException;
+import com.ing.baker.il.CompiledRecipe;
+import com.ing.baker.package$;
 import com.ing.baker.recipe.annotations.ProcessId;
 import com.ing.baker.recipe.annotations.ProvidesIngredient;
 import com.ing.baker.recipe.annotations.RequiresIngredient;
 import com.ing.baker.recipe.javadsl.Interaction;
 import com.ing.baker.recipe.javadsl.Recipe;
-import com.ing.baker.il.CompiledRecipe;
+import com.ing.baker.runtime.core.BakerException;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -26,40 +26,43 @@ public class JavaCompiledRecipeTest {
     public void shouldCompileSimpleRecipe() throws BakerException {
         Recipe recipe = setupSimpleRecipe();
 
-        CompiledRecipe compileRecipe = RecipeCompiler.compileRecipe(recipe);
-        assertEquals(compileRecipe.getValidationErrors(), new ArrayList<String>());
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
+        assertEquals(compiledRecipe.getValidationErrors(), new ArrayList<String>());
         assertEquals("EventOne", recipe.getEvents().get(0).name());
         assertEquals("InteractionOne", recipe.getInteractions().get(0).name());
+
+        package$.MODULE$.dumpToFile("SimpleRecipe.svg", compiledRecipe.getVisualRecipeAsSVG());
     }
 
     @Test
     public void shouldCompileComplexRecipe() throws BakerException {
         Recipe recipe = setupComplexRecipe();
-        CompiledRecipe compileRecipe = RecipeCompiler.compileRecipe(recipe);
-        assertEquals(compileRecipe.getValidationErrors(), new ArrayList<String>());
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
+        assertEquals(compiledRecipe.getValidationErrors(), new ArrayList<String>());
         assertEquals("EventOne", recipe.getEvents().get(0).name());
         assertEquals("EventTwo", recipe.getEvents().get(1).name());
 
         Assert.assertTrue(recipe.getInteractions().stream().anyMatch(a -> a.name().equals("InteractionOne")));
         Assert.assertTrue(recipe.getInteractions().stream().anyMatch(a -> a.name().equals("InteractionTwo")));
         Assert.assertTrue(recipe.getInteractions().stream().anyMatch(a -> a.name().equals("InteractionThree")));
-    }
 
+        package$.MODULE$.dumpToFile("ComplexRecipe.svg", compiledRecipe.getVisualRecipeAsSVG());
+    }
 
     @Test
     public void shouldCompileRecipeWithSieve() throws BakerException {
         Recipe recipe = setupComplexRecipe();
-        CompiledRecipe compileRecipe = RecipeCompiler.compileRecipe(recipe);
-        assertEquals(compileRecipe.getValidationErrors(), new ArrayList<String>());
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
+        assertEquals(compiledRecipe.getValidationErrors(), new ArrayList<String>());
         Assert.assertTrue(recipe.getSieves().stream().anyMatch(a -> a.name().equals("SieveImpl")));
     }
 
     @Test
     public void shouldShowVisualRecipe() throws BakerException {
         Recipe recipe = setupComplexRecipe();
-        CompiledRecipe compileRecipe = RecipeCompiler.compileRecipe(recipe);
-        assertEquals(compileRecipe.getValidationErrors().size(), 0);
-        String visualRecipe = compileRecipe.getRecipeVisualization();
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
+        assertEquals(compiledRecipe.getValidationErrors().size(), 0);
+        String visualRecipe = compiledRecipe.getRecipeVisualization();
         Assert.assertTrue("Should contain actionOne", visualRecipe.contains("actionOne"));
         Assert.assertTrue("Should contain actionTwo", visualRecipe.contains("actionTwo"));
         Assert.assertTrue("Should contain EventOne", visualRecipe.contains("EventOne"));

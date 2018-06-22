@@ -51,7 +51,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     *
     * @param implementations An iterable of implementations that should be added.
     */
-  def addImplementations(implementations: java.lang.Iterable[AnyRef]) = implementations.asScala.foreach(addImplementation)
+  def addImplementations(implementations: java.lang.Iterable[AnyRef]): Unit = implementations.asScala.foreach(addImplementation)
 
   /**
     * Attempts to gracefully shutdown the baker system.

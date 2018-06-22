@@ -146,7 +146,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       actor ! FireTransition(transitionId = 1, input = null, correlationId = Some(testCorrelationId))
 
-      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _, _) ⇒ }
 
       actor ! FireTransition(transitionId = 1, input = null, correlationId = Some(testCorrelationId))
 
@@ -248,10 +248,10 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       actor ! FireTransition(1, ())
 
       // expect the next marking: p2 -> 1
-      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _, _) ⇒ }
 
       // since t2 fires automatically we also expect the next marking: p3 -> 1
-      expectMsgPF() { case TransitionFired(_, 2, _, _, _, _, _) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 2, _, _, _, _, _, _) ⇒ }
 
       // validate the final state
       val expectedFinalState = InstanceState(3, marshal[Place](Marking(place(3) -> 1)), Set(1, 2), Map.empty)
@@ -293,7 +293,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       actor ! FireTransition(1, ())
 
-      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _, _) ⇒ }
       expectMsgPF() { case TransitionFailed(_, 2, _, _, _, _, RetryWithDelay(Delay)) ⇒ }
 
       // verify that the mock function was called
@@ -358,7 +358,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       expectMsgClass(classOf[Initialized])
 
       // expect the next marking: p2 -> 1
-      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _, _) ⇒ }
       expectMsgPF() { case TransitionFailed(_, 2, _, _, _, _, BlockTransition) ⇒ }
 
       verify(mockT2).apply(any[Set[Int]])
@@ -476,7 +476,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       // fire the first transition manually
       actor ! FireTransition(1, ())
 
-      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _, _) ⇒ }
 
       import org.scalatest.concurrent.Timeouts._
 
@@ -484,8 +484,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
         // expect that the two subsequent transitions are fired automatically and in parallel (in any order)
         expectMsgInAnyOrderPF(
-          { case TransitionFired(_, 2, _, _, _, _, _) ⇒ },
-          { case TransitionFired(_, 3, _, _, _, _, _) ⇒ }
+          { case TransitionFired(_, 2, _, _, _, _, _, _) ⇒ },
+          { case TransitionFired(_, 3, _, _, _, _, _, _) ⇒ }
         )
       }
     }

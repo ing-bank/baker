@@ -16,13 +16,10 @@ import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
-import org.scalatest.time.{Milliseconds, Span}
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.postfixOps
-import scala.util.Success
 
 case class SomeNotDefinedEvent(name: String)
 
@@ -83,11 +80,11 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val response = baker.processEventAsync(UUID.randomUUID().toString, event)
 
       intercept[NoSuchProcessException] {
-        Await.result(response.receivedFuture, timeout)
+        response.confirmReceived(timeout)
       }
 
       intercept[NoSuchProcessException] {
-        Await.result(response.completedFuture, timeout)
+        response.confirmCompleted(timeout)
       }
     }
 
@@ -923,45 +920,35 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val interaction2Delay = 2000
 
       when(testInteractionTwoMock.apply(anyString())).thenAnswer {
-        new Answer[EventFromInteractionTwo] {
-          override def answer(invocation: InvocationOnMock): EventFromInteractionTwo = {
-            Thread.sleep(interaction2Delay)
-            interactionTwoEventValue
-          }
+        (invocation: InvocationOnMock) => {
+          Thread.sleep(interaction2Delay)
+          interactionTwoEventValue
         }
       }
 
       val processId = UUID.randomUUID().toString
       baker.bake(recipeId, processId)
-      val response = baker.processEventAsync(processId, InitialEvent(initialIngredientValue))
+      val response: BakerResponse = baker.processEventAsync(processId, InitialEvent(initialIngredientValue))
 
-      import org.scalatest.concurrent.Timeouts._
-
-      failAfter(Span(500, Milliseconds)) {
-        Await.result(response.receivedFuture, 500 millis)
-        response.completedFuture.isCompleted shouldEqual false
-      }
-
-      Await.result(response.completedFuture, 3000 millis)
-
-      response.completedFuture.value should matchPattern { case Some(Success(_)) => }
+      response.confirmCompleted(3000 millis) should matchPattern { case _: CompletedResponse => }
     }
 
     "acknowledge the first and final event while rest processing failed" in {
       val (baker, recipeId) = setupBakerWithRecipe("AcknowledgeThefirst")
 
       when(testInteractionTwoMock.apply(anyString()))
-        .thenThrow(new RuntimeException("Unknown Exception."))
+        .thenThrow(new RuntimeException("Unknown Exception.")) // This interaction is not retried and blocks the process
 
       val processId = UUID.randomUUID().toString
       baker.bake(recipeId, processId)
       val response = baker.processEventAsync(processId, InitialEvent(initialIngredientValue))
-      Await.result(response.completedFuture, 3 seconds)
-      response.receivedFuture.value shouldBe Some(Success(InteractionResponse.Success))
-      response.completedFuture.value shouldBe Some(Success(InteractionResponse.Failed))
+
+      val completedResponse = response.confirmCompleted(3 seconds)
 
       response.confirmReceived() shouldBe SensoryEventStatus.Received
-      response.confirmCompleted() shouldBe SensoryEventStatus.Completed
+
+      // The process is completed because it is in a BLOCKED state
+      completedResponse should matchPattern { case CompletedResponse(SensoryEventStatus.Completed, _) => }
     }
 
     "bind multi transitions correctly even if ingredient name overlaps" in {

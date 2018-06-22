@@ -261,7 +261,7 @@ object RecipePropertiesSpec {
     if (compiledRecipe.validationErrors.nonEmpty) println(s"***VALIDATION ERRORS: ${compiledRecipe.validationErrors.mkString("\n")}")
   }
 
-  def dumpToFile(name: String, data: String): Unit = {
+  private def dumpToFile(name: String, data: String): Unit = {
     val fileName =
       if (recipeVisualizationOutputPath endsWith "/") s"$recipeVisualizationOutputPath$name.dot"
       else s"$recipeVisualizationOutputPath/$name.dot"

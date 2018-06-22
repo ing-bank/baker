@@ -212,7 +212,7 @@ trait BakerRuntimeTestBase
     milliseconds
   }
 
-  protected def resetMocks =
+  protected def resetMocks(): Unit =
     reset(testInteractionOneMock,
       testInteractionTwoMock,
       testInteractionThreeMock,
@@ -220,4 +220,5 @@ trait BakerRuntimeTestBase
       testInteractionFiveMock,
       testInteractionSixMock,
       testNonMatchingReturnTypeInteractionMock)
+
 }

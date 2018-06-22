@@ -35,7 +35,6 @@ case class CompiledRecipe(name: String,
     *
     * @return An SVG string.
     */
-  @deprecated(message = "SVG generation support will be removed in 1.2.0", since = "1.1.15")
   def getVisualRecipeAsSVG: String = {
     import guru.nidi.graphviz.engine.{Format, Graphviz}
     import guru.nidi.graphviz.parse.Parser
