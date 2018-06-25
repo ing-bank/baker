@@ -3,24 +3,18 @@ package com.ing.baker.compiler
 import java.util.Optional
 
 import com.ing.baker.TestRecipe._
-import com.ing.baker._
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
 import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, Recipe, processId}
 import com.ing.baker.types.{NullValue, PrimitiveValue}
+import org.scalatest.{Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class RecipeCompilerSpec extends BakerRuntimeTestBase {
-
-  override def actorSystemName = "RecipeCompilerSpec"
-
-  before {
-    resetMocks
-  }
+class RecipeCompilerSpec extends WordSpecLike with Matchers {
 
   "The RecipeCompiler should" should {
 
