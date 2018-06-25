@@ -13,6 +13,7 @@ import com.ing.baker.recipe.CaseClassIngredient
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
 import com.ing.baker.recipe.scaladsl.{Recipe, _}
+import com.ing.baker.types.PrimitiveValue
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
@@ -298,6 +299,27 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       verify(listenerMock).processEvent(processId.toString, RuntimeEvent.create("InitialEvent", Seq("initialIngredient" -> initialIngredientValue)))
       verify(listenerMock).processEvent(processId.toString, RuntimeEvent.create("InteractionOneSuccessful", Seq("interactionOneOriginalIngredient" -> interactionOneIngredientValue)))
+    }
+
+    "return a list of events that where caused by a sensory event" in {
+
+      val (baker, recipeId) = setupBakerWithRecipe("SensoryEventDeltaRecipe")
+
+      val processId = UUID.randomUUID().toString
+
+      baker.bake(recipeId, processId)
+
+      val completedResponse = baker.processEventAsync(processId, InitialEvent(initialIngredientValue)).confirmCompleted()
+
+      completedResponse.sensoryEventStatus shouldBe SensoryEventStatus.Completed
+
+      completedResponse.events should contain only (
+         RuntimeEvent("InitialEvent", Seq(initialIngredient("initialIngredient"))),
+         RuntimeEvent("SieveInteractionSuccessful", Seq(sievedIngredient("sievedIngredient"))),
+         RuntimeEvent("InteractionOneSuccessful", Seq(interactionOneIngredient("interactionOneIngredient"))),
+         RuntimeEvent("EventFromInteractionTwo", Seq(interactionTwoIngredient("interactionTwoIngredient"))),
+         RuntimeEvent("InteractionThreeSuccessful", Seq(interactionThreeIngredient("interactionThreeIngredient")))
+      )
     }
 
     "execute an interaction when its ingredient is provided and the interaction is renamed" in {
