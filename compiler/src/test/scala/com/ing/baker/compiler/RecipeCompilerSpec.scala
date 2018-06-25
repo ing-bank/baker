@@ -2,8 +2,8 @@ package com.ing.baker.compiler
 
 import java.util.Optional
 
-import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
+import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
 import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy, ProvidesIngredient, ProvidesNothing}

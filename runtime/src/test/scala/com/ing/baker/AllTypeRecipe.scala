@@ -3,7 +3,6 @@ package com.ing.baker
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.{UntilDeadline, UntilMaximumRetries}
 import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.recipe.scaladsl._
-import com.ing.baker.types.{Converters, Value}
 import org.joda.time.{DateTime, LocalDate, LocalDateTime}
 
 import scala.concurrent.duration.DurationInt

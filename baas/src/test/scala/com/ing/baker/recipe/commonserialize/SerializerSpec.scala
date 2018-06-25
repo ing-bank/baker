@@ -3,13 +3,12 @@ package com.ing.baker.recipe.commonserialize
 import java.util.UUID
 
 import com.ing.baker.BakerRuntimeTestBase
-import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.commonserialize.SerializerSpec.withKryo
-import com.ing.baker.recipe.scaladsl
-import com.ing.baker.recipe.commonserialize
-import com.ing.baker.runtime.core.{Baker, SensoryEventStatus}
+import com.ing.baker.recipe.{commonserialize, scaladsl}
+import com.ing.baker.runtime.core.SensoryEventStatus
 import com.twitter.chill.{KryoPool, ScalaKryoInstantiator}
 import org.mockito.Mockito.{verify, verifyZeroInteractions}
 

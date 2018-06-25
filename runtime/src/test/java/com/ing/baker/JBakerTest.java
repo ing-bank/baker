@@ -60,7 +60,7 @@ public class JBakerTest {
     @Test
     public void shouldSetupJBakerWithDefaultActorFramework() throws BakerException, TimeoutException {
 
-        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(setupSimpleRecipe());
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupSimpleRecipe());
 
         JBaker jBaker = new JBaker(actorSystem);
         jBaker.addImplementations(implementationsList);
@@ -79,7 +79,7 @@ public class JBakerTest {
 
     @Test
     public void shouldSetupJBakerWithGivenActorFramework() throws BakerException, TimeoutException {
-        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(setupSimpleRecipe());
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupSimpleRecipe());
 
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
 
@@ -101,7 +101,7 @@ public class JBakerTest {
     public void shouldFailWhenMissingImplementations() throws BakerException {
 
         exception.expect(BakerException.class);
-        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(setupComplexRecipe());
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
         JBaker jBaker = new JBaker(actorSystem);
 
         jBaker.addRecipe(compiledRecipe);
@@ -233,7 +233,7 @@ public class JBakerTest {
 
         jBaker.addImplementations(implementationsList);
 
-        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(setupComplexRecipe());
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
 
         String recipeId = jBaker.addRecipe(compiledRecipe);
 
@@ -245,7 +245,7 @@ public class JBakerTest {
 
     @Test
     public void shouldFailWhenSieveNotDefaultConstructor() throws BakerException {
-        Recipe recipe = setupComplexRecipe().withSieve(InteractionDescriptor.of(JavaCompiledRecipeTest.SieveImplWithoutDefaultConstruct.class));
+        Recipe recipe = JavaCompiledRecipeTest.setupComplexRecipe().withSieve(InteractionDescriptor.of(JavaCompiledRecipeTest.SieveImplWithoutDefaultConstruct.class));
 
         exception.expect(BakerException.class);
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
