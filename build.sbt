@@ -122,6 +122,8 @@ lazy val recipeRuntime = project.in(file("runtime"))
         akkaTestKit,
         akkaStreamTestKit,
         akkaInmemoryJournal,
+        levelDB,
+        levelDBJni,
         junitInterface,
         scalaTest,
         scalaCheck,

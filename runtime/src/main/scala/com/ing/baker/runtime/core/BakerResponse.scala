@@ -9,11 +9,15 @@ import akka.stream.scaladsl.{Broadcast, GraphDSL, Sink, Source}
 import akka.stream.{ClosedShape, Materializer}
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
+import com.ing.baker.runtime.java_api.EventList
 
 import scala.concurrent.duration.{FiniteDuration, SECONDS}
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-case class CompletedResponse(sensoryEventStatus: SensoryEventStatus, events: Seq[RuntimeEvent])
+case class CompletedResponse(sensoryEventStatus: SensoryEventStatus, events: Seq[RuntimeEvent]) {
+
+  def getEvents: EventList = new EventList(events)
+}
 
 object BakerResponse {
 
