@@ -25,7 +25,7 @@ class RecipeVisualizationSpec extends BakerRuntimeTestBase {
       val dot: String = RecipeVisualizer.visualiseCompiledRecipe(compiledRecipe)
       dot should include("interactionOneIngredient -> InteractionThree")
 
-      baker.dumpToFile("TestRecipe.svg", compiledRecipe.getVisualRecipeAsSVG)
+//      baker.dumpToFile("TestRecipe.svg", compiledRecipe.getVisualRecipeAsSVG)
     }
 
     "be able to visualize the created interactions with a filter" in {
