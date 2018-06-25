@@ -29,7 +29,7 @@ class RecipeCompilerSpec extends BakerRuntimeTestBase {
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
       compiledRecipe.validationErrors shouldBe List.empty
 
-      dumpToFile("TestRecipe.svg", compiledRecipe.getVisualRecipeAsSVG)
+      // dumpToFile("TestRecipe.svg", compiledRecipe.getVisualRecipeAsSVG)
     }
 
     "should add the exhausted retry event to the interaction event output list if defined" in {

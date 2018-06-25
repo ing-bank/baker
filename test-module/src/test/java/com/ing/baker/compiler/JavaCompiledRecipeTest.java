@@ -31,7 +31,7 @@ public class JavaCompiledRecipeTest {
         assertEquals("EventOne", recipe.getEvents().get(0).name());
         assertEquals("InteractionOne", recipe.getInteractions().get(0).name());
 
-        package$.MODULE$.dumpToFile("SimpleRecipe.svg", compiledRecipe.getVisualRecipeAsSVG());
+//        package$.MODULE$.dumpToFile("SimpleRecipe.svg", compiledRecipe.getVisualRecipeAsSVG());
     }
 
     @Test
@@ -46,7 +46,7 @@ public class JavaCompiledRecipeTest {
         Assert.assertTrue(recipe.getInteractions().stream().anyMatch(a -> a.name().equals("InteractionTwo")));
         Assert.assertTrue(recipe.getInteractions().stream().anyMatch(a -> a.name().equals("InteractionThree")));
 
-        package$.MODULE$.dumpToFile("ComplexRecipe.svg", compiledRecipe.getVisualRecipeAsSVG());
+//        package$.MODULE$.dumpToFile("ComplexRecipe.svg", compiledRecipe.getVisualRecipeAsSVG());
     }
 
     @Test
