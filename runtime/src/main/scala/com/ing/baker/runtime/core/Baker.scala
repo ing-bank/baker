@@ -39,15 +39,6 @@ import scala.util.{Failure, Success, Try}
 object Baker {
 
   val eventExtractor: EventExtractor = new CompositeEventExtractor()
-
-  // Translates a petri net TransitionFiredEvent to an optional RuntimeEvent
-  def toRuntimeEvent[P[_], T[_], E](event: TransitionFiredEvent[P, T, E]): Option[RuntimeEvent] = {
-    val t = event.transition.asInstanceOf[Transition[_]]
-    if ((t.isSensoryEvent || t.isInteraction) && event.output.isInstanceOf[RuntimeEvent])
-      Some(event.output.asInstanceOf[RuntimeEvent])
-    else
-      None
-  }
 }
 
 /**
@@ -389,7 +380,14 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   }
 
   private def doRegisterEventListener(listener: EventListener, processFilter: String => Boolean): Boolean = {
-    import Baker.toRuntimeEvent
+    // Translates a petri net TransitionFiredEvent to an optional RuntimeEvent
+    def toRuntimeEvent[P[_], T[_], E](event: TransitionFiredEvent[P, T, E]): Option[RuntimeEvent] = {
+      val t = event.transition.asInstanceOf[Transition[_]]
+      if ((t.isSensoryEvent || t.isInteraction) && event.output.isInstanceOf[RuntimeEvent])
+        Some(event.output.asInstanceOf[RuntimeEvent])
+      else
+        None
+    }
 
     val subscriber = actorSystem.actorOf(Props(new Actor() {
       override def receive: Receive = {
