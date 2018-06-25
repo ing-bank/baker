@@ -1,10 +1,10 @@
-package com.ing.baker
+package com.ing.baker.recipe
 
 import java.util.Optional
 
-import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy, ProvidesIngredient}
 import com.ing.baker.recipe.scaladsl._
+
 import scala.concurrent.duration._
 
 //By adding the javadsl Ingredient tag the object will be serialized by Kryo

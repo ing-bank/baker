@@ -2,7 +2,7 @@ package com.ing.baker.runtime.visualisation
 
 import com.ing.baker
 import com.ing.baker.BakerRuntimeTestBase
-import com.ing.baker.TestRecipe._
+import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualizer}
 import com.ing.baker.recipe.scaladsl.{Recipe, _}

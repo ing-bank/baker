@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.core
 
-import com.ing.baker.TestRecipe._
+import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.Recipe

@@ -4,9 +4,9 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
-import com.ing.baker.TestRecipe._
+import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.recipe.common
+import com.ing.baker.recipe.{CaseClassIngredient, common}
 import com.ing.baker.runtime.core.Baker
 import com.ing.baker.types.{Converters, Value}
 import com.typesafe.config.{Config, ConfigFactory}

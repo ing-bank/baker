@@ -3,7 +3,7 @@ package com.ing.baker.recipe.commonserialize
 import java.util.UUID
 
 import com.ing.baker.BakerRuntimeTestBase
-import com.ing.baker.TestRecipe._
+import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.commonserialize.SerializerSpec.withKryo
