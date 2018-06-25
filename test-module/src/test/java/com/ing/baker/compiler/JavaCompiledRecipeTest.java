@@ -1,7 +1,6 @@
 package com.ing.baker.compiler;
 
 import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.package$;
 import com.ing.baker.recipe.annotations.ProcessId;
 import com.ing.baker.recipe.annotations.ProvidesIngredient;
 import com.ing.baker.recipe.annotations.RequiresIngredient;

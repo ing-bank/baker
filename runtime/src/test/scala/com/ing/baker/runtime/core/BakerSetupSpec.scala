@@ -1,8 +1,8 @@
 package com.ing.baker.runtime.core
 
-import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.core.implementations.{InteractionOneFieldName, InteractionOneInterfaceImplementation, InteractionOneWrongApply}
 import org.mockito.Matchers.anyString
