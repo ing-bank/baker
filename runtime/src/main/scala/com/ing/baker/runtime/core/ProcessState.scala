@@ -11,7 +11,9 @@ import scala.collection.JavaConverters._
   * @param ingredients The accumulated ingredients
   * @param eventNames The names of the events occurred so far
   */
-case class ProcessState(processId: String, ingredients: Map[String, Value], eventNames: List[String]) extends Serializable {
+case class ProcessState(processId: String,
+                        ingredients: Map[String, Value],
+                        eventNames: List[String]) extends Serializable {
 
   /**
     * Returns the accumulated ingredients.
