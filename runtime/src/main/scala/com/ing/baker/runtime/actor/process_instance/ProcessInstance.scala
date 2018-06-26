@@ -135,7 +135,7 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
           .andThen(step)
           .andThen {
             case (updatedInstance, newJobs) ⇒
-              sender() ! TransitionFired(jobId, transitionId, correlationId, marshal[P](consumed.asInstanceOf[Marking[P]]), marshal[P](produced.asInstanceOf[Marking[P]]), fromExecutionInstance(updatedInstance), newJobs.map(_.id))
+              sender() ! TransitionFired(jobId, transitionId, correlationId, marshal[P](consumed.asInstanceOf[Marking[P]]), marshal[P](produced.asInstanceOf[Marking[P]]), fromExecutionInstance(updatedInstance), newJobs.map(_.id), output)
               context become running(updatedInstance, scheduledRetries - jobId)
               updatedInstance
           }
@@ -178,7 +178,7 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
             eventSource.apply(instance)
               .andThen(step)
               .andThen { case (updatedInstance, newJobs) ⇒
-                sender() ! TransitionFired(jobId, transitionId, correlationId, marshal[P](consumedMarking), marshal[P](producedMarking), fromExecutionInstance(updatedInstance), newJobs.map(_.id))
+                sender() ! TransitionFired(jobId, transitionId, correlationId, marshal[P](consumedMarking), marshal[P](producedMarking), fromExecutionInstance(updatedInstance), newJobs.map(_.id), out)
                 context become running(updatedInstance, scheduledRetries - jobId)
               })
 

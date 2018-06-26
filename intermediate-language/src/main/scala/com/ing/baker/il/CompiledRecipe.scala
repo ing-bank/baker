@@ -2,10 +2,9 @@ package com.ing.baker.il
 
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, RecipePetriNet}
 import com.ing.baker.petrinet.api.Marking
-import com.ing.baker.types.RecordField
 
 import scala.collection.JavaConverters._
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * A Compiled recipe.
@@ -35,7 +34,6 @@ case class CompiledRecipe(name: String,
     *
     * @return An SVG string.
     */
-  @deprecated(message = "SVG generation support will be removed in 1.2.0", since = "1.1.15")
   def getVisualRecipeAsSVG: String = {
     import guru.nidi.graphviz.engine.{Format, Graphviz}
     import guru.nidi.graphviz.parse.Parser

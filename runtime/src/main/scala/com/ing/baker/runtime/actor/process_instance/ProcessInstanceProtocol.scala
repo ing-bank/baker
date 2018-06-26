@@ -119,8 +119,9 @@ object ProcessInstanceProtocol {
     correlationId: Option[String],
     consumed: MarkingData,
     produced: MarkingData,
-    result: InstanceState,
-    newJobsIds: Set[Long]) extends TransitionResponse
+    state: InstanceState,
+    newJobsIds: Set[Long],
+    output: Any) extends TransitionResponse
 
   /**
    * Response indicating that a transition has failed.

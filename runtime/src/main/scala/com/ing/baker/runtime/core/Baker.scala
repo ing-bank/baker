@@ -8,8 +8,8 @@ import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
-import akka.stream.{ActorMaterializer, SourceRef}
 import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.{ActorMaterializer, SourceRef}
 import akka.util.Timeout
 import com.ing.baker.il._
 import com.ing.baker.il.petrinet._
@@ -380,7 +380,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   }
 
   private def doRegisterEventListener(listener: EventListener, processFilter: String => Boolean): Boolean = {
-
     // Translates a petri net TransitionFiredEvent to an optional RuntimeEvent
     def toRuntimeEvent[P[_], T[_], E](event: TransitionFiredEvent[P, T, E]): Option[RuntimeEvent] = {
       val t = event.transition.asInstanceOf[Transition[_]]

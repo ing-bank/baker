@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.core
 
 import java.time.Duration
-import java.util.concurrent.{TimeUnit, TimeoutException}
+import java.util.concurrent.TimeoutException
 
 import akka.NotUsed
 import akka.stream.javadsl.RunnableGraph
@@ -9,62 +9,51 @@ import akka.stream.scaladsl.{Broadcast, GraphDSL, Sink, Source}
 import akka.stream.{ClosedShape, Materializer}
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
-import com.ing.baker.runtime.core.InteractionResponse._
+import com.ing.baker.runtime.java_api.EventList
 
 import scala.concurrent.duration.{FiniteDuration, SECONDS}
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-object InteractionResponse {
-
-  sealed trait InteractionResponse
-
-  case object Success extends InteractionResponse
-  case object Failed extends InteractionResponse
-  case object NotEnabled extends InteractionResponse
-  case object PeriodExpired extends InteractionResponse
-  case object ProcessDeleted extends InteractionResponse
-  case object AlreadyReceived extends InteractionResponse
-}
-
 object BakerResponse {
 
-  private def firstMessage(processId: String, response: Future[Any])(implicit ec: ExecutionContext): Future[InteractionResponse] =
-    response.flatMap(translateFirstMessage)
+  private case class CompletedResponse(sensoryEventStatus: SensoryEventStatus, events: Seq[RuntimeEvent])
 
-  private def translateFirstMessage(msg: Any): Future[InteractionResponse] = msg match {
-    case ProcessInstanceProtocol.Uninitialized(processId) => Future.failed(new NoSuchProcessException(s"No such process: $processId"))
-    case _: ProcessInstanceProtocol.TransitionFired => Future.successful(InteractionResponse.Success)
-    case _: ProcessInstanceProtocol.TransitionNotEnabled => Future.successful(InteractionResponse.NotEnabled)
-    case _: ProcessInstanceProtocol.AlreadyReceived => Future.successful(InteractionResponse.AlreadyReceived)
-    case ProcessIndexProtocol.ProcessUninitialized(processId) => Future.failed(new NoSuchProcessException(s"No such process: $processId"))
-    case ProcessIndexProtocol.ReceivePeriodExpired(_) => Future.successful(InteractionResponse.PeriodExpired)
-    case ProcessIndexProtocol.ProcessDeleted(_) => Future.successful(InteractionResponse.ProcessDeleted)
-    case ProcessIndexProtocol.InvalidEvent(_, invalidEventMessage) => Future.failed(new IllegalArgumentException(invalidEventMessage))
-    case msg@_ => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
+  private def firstMessage(processId: String, response: Future[Any])(implicit ec: ExecutionContext): Future[SensoryEventStatus] =
+    response.map(translateFirstMessage)
+
+  private def translateFirstMessage(msg: Any): SensoryEventStatus = msg match {
+    case ProcessInstanceProtocol.Uninitialized(processId) => throw new NoSuchProcessException(s"No such process: $processId")
+    case _: ProcessInstanceProtocol.TransitionFired => SensoryEventStatus.Received
+    case _: ProcessInstanceProtocol.TransitionNotEnabled => SensoryEventStatus.FiringLimitMet
+    case _: ProcessInstanceProtocol.AlreadyReceived => SensoryEventStatus.AlreadyReceived
+    case ProcessIndexProtocol.ProcessUninitialized(processId) => throw new NoSuchProcessException(s"No such process: $processId")
+    case ProcessIndexProtocol.ReceivePeriodExpired(_) => SensoryEventStatus.ReceivePeriodExpired
+    case ProcessIndexProtocol.ProcessDeleted(_) => SensoryEventStatus.ProcessDeleted
+    case ProcessIndexProtocol.InvalidEvent(_, invalidEventMessage) => throw new IllegalArgumentException(invalidEventMessage)
+    case msg@_ => throw new BakerException(s"Unexpected actor response message: $msg")
   }
 
-  private def allMessages(processId: String, response: Future[Seq[Any]])(implicit ec: ExecutionContext): Future[InteractionResponse] =
-    response.flatMap { msgs =>
-      val futureResponses = msgs.headOption.map(translateFirstMessage)
-        .getOrElse(Future.failed(new NoSuchProcessException(s"No such process: $processId"))) +: msgs.drop(1).map(translateOtherMessage)
-      val sequenced = Future.sequence(futureResponses)
+  private def allMessages(processId: String, response: Future[Seq[Any]])(implicit ec: ExecutionContext): Future[CompletedResponse] =
+    response.map { msgs =>
 
-      sequenced.map(seq => seq.headOption match {
-        case Some(NotEnabled) => NotEnabled
-        case Some(PeriodExpired) => PeriodExpired
-        case Some(AlreadyReceived) => AlreadyReceived
-        case _ => if (seq.contains(Failed)) Failed else Success
-      })
+      val sensoryEventStatus = msgs.headOption.map(translateFirstMessage).map {
+        case SensoryEventStatus.Received => SensoryEventStatus.Completed // If the first message is success, then it means we have all the events completed
+        case other => other
+      }
+        .getOrElse(throw new NoSuchProcessException(s"No such process: $processId"))
+
+      val events: Seq[RuntimeEvent] = msgs.flatMap(translateOtherMessage)
+
+      CompletedResponse(sensoryEventStatus, events)
     }
 
-  private def translateOtherMessage(msg: Any): Future[InteractionResponse] = msg match {
-    case _: ProcessInstanceProtocol.TransitionFired => Future.successful(Success)
-    case _: ProcessInstanceProtocol.TransitionFailed => Future.successful(Failed)
-    case _: ProcessInstanceProtocol.TransitionNotEnabled => Future.successful(NotEnabled)
-    case msg @_ => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
+  private def translateOtherMessage(msg: Any): Option[RuntimeEvent] = msg match {
+    case fired: ProcessInstanceProtocol.TransitionFired => Option(fired.output.asInstanceOf[RuntimeEvent])
+    case _ => None
   }
 
-  private def createFlow(processId: String, source: Source[Any, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext): (Future[InteractionResponse], Future[InteractionResponse]) = {
+  private def createFlow(processId: String, source: Source[Any, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext):
+                                                              (Future[SensoryEventStatus], Future[CompletedResponse]) = {
 
     val sinkHead = Sink.head[Any]
     val sinkLast = Sink.seq[Any]
@@ -90,7 +79,7 @@ object BakerResponse {
 
 class BakerResponse(processId: String, source: Source[Any, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext) {
 
-  val (receivedFuture, completedFuture) = BakerResponse.createFlow(processId, source)
+  private val (receivedFuture, completedFuture) = BakerResponse.createFlow(processId, source)
 
   val defaultWaitTimeout: FiniteDuration = FiniteDuration.apply(10, SECONDS)
 
@@ -101,22 +90,12 @@ class BakerResponse(processId: String, source: Source[Any, NotUsed])(implicit ma
 
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def confirmReceived(duration: Duration): SensoryEventStatus = {
-    confirmReceived(FiniteDuration(duration.toNanos, TimeUnit.NANOSECONDS))
+    confirmReceived(duration.toScala)
   }
 
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def confirmReceived(implicit timeout: FiniteDuration): SensoryEventStatus = {
-
-    val result = Await.result(receivedFuture, timeout)
-
-    result match {
-      case InteractionResponse.Success => SensoryEventStatus.Received
-      case InteractionResponse.NotEnabled => SensoryEventStatus.FiringLimitMet
-      case InteractionResponse.PeriodExpired => SensoryEventStatus.ReceivePeriodExpired
-      case InteractionResponse.AlreadyReceived => SensoryEventStatus.AlreadyReceived
-      case InteractionResponse.ProcessDeleted => SensoryEventStatus.ProcessDeleted
-      case _ => throw new BakerException("Unknown exception while handling sensory event")
-    }
+    Await.result(receivedFuture, timeout)
   }
 
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
@@ -126,22 +105,79 @@ class BakerResponse(processId: String, source: Source[Any, NotUsed])(implicit ma
 
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def confirmCompleted(duration: Duration): SensoryEventStatus = {
-    confirmCompleted(FiniteDuration(duration.toNanos, TimeUnit.NANOSECONDS))
+    confirmCompleted(duration.toScala)
   }
 
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def confirmCompleted(implicit timeout: FiniteDuration): SensoryEventStatus = {
+    Await.result(completedFuture, timeout).sensoryEventStatus
+  }
 
-    val result = Await.result(completedFuture, timeout)
+  /**
+    * Waits for all events that where caused by the sensory event input.
+    *
+    * !!! Note that this will return an empty list if the sensory event was rejected
+    *
+    * Therefor you are encouraged to first confirm that the event was properly received before checking this list.
+    * {{{
+    * BakerResponse response = baker.processEvent(someEvent);
+    *
+    * switch (response.confirmReceived()) {
+    *   case Received:
+    *
+    *     EventList events = response.confirmAllEvents()
+    *     // ...
+    *     break;
+    *
+    *   case ReceivePeriodExpired:
+    *   case AlreadyReceived:
+    *   case ProcessDeleted:
+    *   case FiringLimitMet:
+    *   case AlreadyReceived:
+    *     // ...
+    *     break;
+    * }
+    * }}}
+    * @param timeout The duration to wait for completion
+    * @return
+    */
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
+  def confirmAllEvents(timeout: Duration): EventList = {
+    new EventList(confirmAllEvents(timeout.toScala))
+  }
 
-    result match {
-      case InteractionResponse.Success => SensoryEventStatus.Completed
-      case InteractionResponse.Failed => SensoryEventStatus.Completed
-      case InteractionResponse.NotEnabled => SensoryEventStatus.FiringLimitMet
-      case InteractionResponse.PeriodExpired => SensoryEventStatus.ReceivePeriodExpired
-      case InteractionResponse.AlreadyReceived => SensoryEventStatus.AlreadyReceived
-      case InteractionResponse.ProcessDeleted => SensoryEventStatus.ProcessDeleted
-      case _ => throw new BakerException("Unknown exception while handling sensory event")
-    }
+  /**
+    * Waits for all events that where caused by the sensory event input.
+    *
+    * !!! Note that this will return an empty list if the sensory event was rejected
+    *
+    * Therefor you are encouraged to first confirm that the event was properly received before checking this list.
+    *
+    * Example:
+    *
+    * {{{
+    * val response = baker.processEvent(someEvent);
+    *
+    * response.confirmReceived() match {
+    *   case Received =>
+    *
+    *     response.confirmAllEvents()
+    *
+    *   case ReceivePeriodExpired =>
+    *   case AlreadyReceived =>
+    *   case ProcessDeleted =>
+    *   case FiringLimitMet =>
+    *   case AlreadyReceived =>
+    * }
+    * }}}
+    *
+    * </pre>
+    *
+    * @param timeout The duration to wait for completion
+    * @return
+    */
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
+  def confirmAllEvents(implicit timeout: FiniteDuration): Seq[RuntimeEvent] = {
+    Await.result(completedFuture, timeout).events
   }
 }

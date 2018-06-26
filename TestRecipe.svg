@@ -1,0 +1,370 @@
+<svg width="3374pt" height="2467pt"
+ viewBox="0.00 0.00 3373.57 2466.81" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(14.4 2452.4055)">
+<title>%3</title>
+<polygon fill="#ffffff" stroke="transparent" points="-14.4,14.4 -14.4,-2452.4055 3359.168,-2452.4055 3359.168,14.4 -14.4,14.4"/>
+<!-- interactionTwoIngredient -->
+<g id="node1" class="node">
+<title>interactionTwoIngredient</title>
+<ellipse fill="#ff6200" stroke="#ff6200" cx="1906.246" cy="-1207.1462" rx="185.094" ry="185.094"/>
+<text text-anchor="middle" x="1906.246" y="-1203.5491" font-family="ING Me" font-size="22.00" fill="#ffffff">interactionTwoIngredient</text>
+</g>
+<!-- InteractionThree -->
+<g id="node2" class="node">
+<title>InteractionThree</title>
+<path fill="#525199" stroke="#525199" stroke-width="2" d="M2050.4081,-963.0102C2050.4081,-963.0102 1840.0839,-963.0102 1840.0839,-963.0102 1834.0839,-963.0102 1828.0839,-957.0102 1828.0839,-951.0102 1828.0839,-951.0102 1828.0839,-874.9984 1828.0839,-874.9984 1828.0839,-868.9984 1834.0839,-862.9984 1840.0839,-862.9984 1840.0839,-862.9984 2050.4081,-862.9984 2050.4081,-862.9984 2056.4081,-862.9984 2062.4081,-868.9984 2062.4081,-874.9984 2062.4081,-874.9984 2062.4081,-951.0102 2062.4081,-951.0102 2062.4081,-957.0102 2056.4081,-963.0102 2050.4081,-963.0102"/>
+<text text-anchor="middle" x="1945.246" y="-909.4073" font-family="ING Me" font-size="22.00" fill="#ffffff">InteractionThree</text>
+</g>
+<!-- interactionTwoIngredient&#45;&gt;InteractionThree -->
+<g id="edge1" class="edge">
+<title>interactionTwoIngredient&#45;&gt;InteractionThree</title>
+<path fill="none" stroke="#000000" d="M1930.6129,-1023.3687C1932.9773,-1005.5358 1935.2398,-988.4721 1937.2488,-973.3203"/>
+<polygon fill="#000000" stroke="#000000" points="1940.7524,-973.5235 1938.5972,-963.1502 1933.8131,-972.6033 1940.7524,-973.5235"/>
+</g>
+<!-- InteractionThreeSuccessful -->
+<g id="node3" class="node">
+<title>InteractionThreeSuccessful</title>
+<path fill="#767676" stroke="#767676" d="M1933.5625,-686.3942C1933.5625,-686.3942 1649.6175,-619.8579 1649.6175,-619.8579 1643.7757,-618.489 1643.7757,-615.7513 1649.6175,-614.3824 1649.6175,-614.3824 1933.5625,-547.8461 1933.5625,-547.8461 1939.4042,-546.4773 1951.0878,-546.4773 1956.9295,-547.8461 1956.9295,-547.8461 2240.8745,-614.3824 2240.8745,-614.3824 2246.7163,-615.7513 2246.7163,-618.489 2240.8745,-619.8579 2240.8745,-619.8579 1956.9295,-686.3942 1956.9295,-686.3942 1951.0878,-687.763 1939.4042,-687.763 1933.5625,-686.3942"/>
+<text text-anchor="middle" x="1945.246" y="-613.5231" font-family="ING Me" font-size="22.00" fill="#ffffff">InteractionThreeSuccessful</text>
+</g>
+<!-- InteractionThree&#45;&gt;InteractionThreeSuccessful -->
+<g id="edge2" class="edge">
+<title>InteractionThree&#45;&gt;InteractionThreeSuccessful</title>
+<path fill="none" stroke="#000000" d="M1945.246,-862.8116C1945.246,-818.1402 1945.246,-751.9468 1945.246,-699.5183"/>
+<polygon fill="#000000" stroke="#000000" points="1948.7461,-699.2266 1945.246,-689.2266 1941.7461,-699.2266 1948.7461,-699.2266"/>
+</g>
+<!-- interactionThreeIngredient -->
+<g id="node4" class="node">
+<title>interactionThreeIngredient</title>
+<ellipse fill="#ff6200" stroke="#ff6200" cx="1945.246" cy="-196.6209" rx="196.742" ry="196.742"/>
+<text text-anchor="middle" x="1945.246" y="-193.0239" font-family="ING Me" font-size="22.00" fill="#ffffff">interactionThreeIngredient</text>
+</g>
+<!-- InteractionThreeSuccessful&#45;&gt;interactionThreeIngredient -->
+<g id="edge3" class="edge">
+<title>InteractionThreeSuccessful&#45;&gt;interactionThreeIngredient</title>
+<path fill="none" stroke="#000000" d="M1945.246,-544.8338C1945.246,-505.4283 1945.246,-454.4468 1945.246,-403.7107"/>
+<polygon fill="#000000" stroke="#000000" points="1948.7461,-403.5702 1945.246,-393.5702 1941.7461,-403.5703 1948.7461,-403.5702"/>
+</g>
+<!-- InteractionFour -->
+<g id="node5" class="node">
+<title>InteractionFour</title>
+<path fill="#525199" stroke="#525199" stroke-width="2" d="M1485.0441,-1257.1521C1485.0441,-1257.1521 1287.4479,-1257.1521 1287.4479,-1257.1521 1281.4479,-1257.1521 1275.4479,-1251.1521 1275.4479,-1245.1521 1275.4479,-1245.1521 1275.4479,-1169.1403 1275.4479,-1169.1403 1275.4479,-1163.1403 1281.4479,-1157.1403 1287.4479,-1157.1403 1287.4479,-1157.1403 1485.0441,-1157.1403 1485.0441,-1157.1403 1491.0441,-1157.1403 1497.0441,-1163.1403 1497.0441,-1169.1403 1497.0441,-1169.1403 1497.0441,-1245.1521 1497.0441,-1245.1521 1497.0441,-1251.1521 1491.0441,-1257.1521 1485.0441,-1257.1521"/>
+<text text-anchor="middle" x="1386.246" y="-1203.5491" font-family="ING Me" font-size="22.00" fill="#ffffff">InteractionFour</text>
+</g>
+<!-- InteractionFourSuccessful -->
+<g id="node6" class="node">
+<title>InteractionFourSuccessful</title>
+<path fill="#767676" stroke="#767676" d="M1374.5881,-982.1711C1374.5881,-982.1711 1102.8199,-915.8493 1102.8199,-915.8493 1096.9909,-914.4268 1096.9909,-911.5818 1102.8199,-910.1593 1102.8199,-910.1593 1374.5881,-843.8375 1374.5881,-843.8375 1380.4171,-842.415 1392.0749,-842.415 1397.9039,-843.8375 1397.9039,-843.8375 1669.6721,-910.1593 1669.6721,-910.1593 1675.5011,-911.5818 1675.5011,-914.4268 1669.6721,-915.8493 1669.6721,-915.8493 1397.9039,-982.1711 1397.9039,-982.1711 1392.0749,-983.5936 1380.4171,-983.5936 1374.5881,-982.1711"/>
+<text text-anchor="middle" x="1386.246" y="-909.4073" font-family="ING Me" font-size="22.00" fill="#ffffff">InteractionFourSuccessful</text>
+</g>
+<!-- InteractionFour&#45;&gt;InteractionFourSuccessful -->
+<g id="edge4" class="edge">
+<title>InteractionFour&#45;&gt;InteractionFourSuccessful</title>
+<path fill="none" stroke="#000000" d="M1386.246,-1156.9156C1386.246,-1112.6132 1386.246,-1047.2064 1386.246,-995.2738"/>
+<polygon fill="#000000" stroke="#000000" points="1389.7461,-995.0771 1386.246,-985.0772 1382.7461,-995.0772 1389.7461,-995.0771"/>
+</g>
+<!-- interactionFourIngredient -->
+<g id="node7" class="node">
+<title>interactionFourIngredient</title>
+<ellipse fill="#ff6200" stroke="#ff6200" cx="1386.246" cy="-617.1202" rx="187.7566" ry="187.7566"/>
+<text text-anchor="middle" x="1386.246" y="-613.5231" font-family="ING Me" font-size="22.00" fill="#ffffff">interactionFourIngredient</text>
+</g>
+<!-- InteractionFourSuccessful&#45;&gt;interactionFourIngredient -->
+<g id="edge5" class="edge">
+<title>InteractionFourSuccessful&#45;&gt;interactionFourIngredient</title>
+<path fill="none" stroke="#000000" d="M1386.246,-840.6229C1386.246,-832.4809 1386.246,-823.9216 1386.246,-815.0928"/>
+<polygon fill="#000000" stroke="#000000" points="1389.7461,-815.0182 1386.246,-805.0182 1382.7461,-815.0183 1389.7461,-815.0182"/>
+</g>
+<!-- InteractionOneSuccessful -->
+<g id="node8" class="node">
+<title>InteractionOneSuccessful</title>
+<path fill="#767676" stroke="#767676" d="M2417.5936,-1570.4326C2417.5936,-1570.4326 2148.2424,-1504.1552 2148.2424,-1504.1552 2142.4162,-1502.7216 2142.4162,-1499.8544 2148.2424,-1498.4208 2148.2424,-1498.4208 2417.5936,-1432.1435 2417.5936,-1432.1435 2423.4198,-1430.7098 2435.0722,-1430.7098 2440.8984,-1432.1435 2440.8984,-1432.1435 2710.2496,-1498.4208 2710.2496,-1498.4208 2716.0758,-1499.8544 2716.0758,-1502.7216 2710.2496,-1504.1552 2710.2496,-1504.1552 2440.8984,-1570.4326 2440.8984,-1570.4326 2435.0722,-1571.8662 2423.4198,-1571.8662 2417.5936,-1570.4326"/>
+<text text-anchor="middle" x="2429.246" y="-1497.691" font-family="ING Me" font-size="22.00" fill="#ffffff">InteractionOneSuccessful</text>
+</g>
+<!-- interactionOneIngredient -->
+<g id="node9" class="node">
+<title>interactionOneIngredient</title>
+<ellipse fill="#ff6200" stroke="#ff6200" cx="2338.246" cy="-1207.1462" rx="186.272" ry="186.272"/>
+<text text-anchor="middle" x="2338.246" y="-1203.5491" font-family="ING Me" font-size="22.00" fill="#ffffff">interactionOneIngredient</text>
+</g>
+<!-- InteractionOneSuccessful&#45;&gt;interactionOneIngredient -->
+<g id="edge6" class="edge">
+<title>InteractionOneSuccessful&#45;&gt;interactionOneIngredient</title>
+<path fill="none" stroke="#000000" d="M2408.4828,-1434.1746C2404.6896,-1421.9136 2400.5667,-1408.5872 2396.2831,-1394.7412"/>
+<polygon fill="#000000" stroke="#000000" points="2399.5932,-1393.5979 2393.2939,-1385.0791 2392.9059,-1395.6668 2399.5932,-1393.5979"/>
+</g>
+<!-- interactionOneIngredient&#45;&gt;InteractionThree -->
+<g id="edge7" class="edge">
+<title>interactionOneIngredient&#45;&gt;InteractionThree</title>
+<path fill="none" stroke="#000000" d="M2192.5828,-1091.1802C2162.2975,-1067.6479 2130.4151,-1043.2925 2100.246,-1021.0102 2076.7639,-1003.6668 2050.8738,-985.3275 2027.0886,-968.7812"/>
+<polygon fill="#000000" stroke="#000000" points="2028.9815,-965.8346 2018.7706,-963.0079 2024.9901,-971.5852 2028.9815,-965.8346"/>
+</g>
+<!-- interactionSixIngredient -->
+<g id="node10" class="node">
+<title>interactionSixIngredient</title>
+<ellipse fill="#ff6200" stroke="#ff6200" cx="279.246" cy="-1207.1462" rx="176.9179" ry="176.9179"/>
+<text text-anchor="middle" x="279.246" y="-1203.5491" font-family="ING Me" font-size="22.00" fill="#ffffff">interactionSixIngredient</text>
+</g>
+<!-- multi:initialIngredient -->
+<g id="node11" class="node">
+<title>multi:initialIngredient</title>
+<ellipse fill="#d0d93c" stroke="#000000" cx="2337.246" cy="-1756.0998" rx="10.8" ry="10.8"/>
+</g>
+<!-- SieveInteraction -->
+<g id="node12" class="node">
+<title>SieveInteraction</title>
+<path fill="#525199" stroke="#525199" stroke-width="2" d="M2682.0242,-1709.3027C2682.0242,-1709.3027 2476.4678,-1709.3027 2476.4678,-1709.3027 2470.4678,-1709.3027 2464.4678,-1703.3027 2464.4678,-1697.3027 2464.4678,-1697.3027 2464.4678,-1621.291 2464.4678,-1621.291 2464.4678,-1615.291 2470.4678,-1609.291 2476.4678,-1609.291 2476.4678,-1609.291 2682.0242,-1609.291 2682.0242,-1609.291 2688.0242,-1609.291 2694.0242,-1615.291 2694.0242,-1621.291 2694.0242,-1621.291 2694.0242,-1697.3027 2694.0242,-1697.3027 2694.0242,-1703.3027 2688.0242,-1709.3027 2682.0242,-1709.3027"/>
+<text text-anchor="middle" x="2579.246" y="-1655.6998" font-family="ING Me" font-size="22.00" fill="#ffffff">SieveInteraction</text>
+</g>
+<!-- multi:initialIngredient&#45;&gt;SieveInteraction -->
+<g id="edge8" class="edge">
+<title>multi:initialIngredient&#45;&gt;SieveInteraction</title>
+<path fill="none" stroke="#000000" d="M2347.4492,-1752.1324C2366.7173,-1744.6308 2409.9763,-1727.7446 2455.0289,-1709.7764"/>
+<polygon fill="#000000" stroke="#000000" points="2456.3703,-1713.0095 2464.3587,-1706.05 2453.7738,-1706.5089 2456.3703,-1713.0095"/>
+</g>
+<!-- ProvidesNothingInteraction -->
+<g id="node15" class="node">
+<title>ProvidesNothingInteraction</title>
+<path fill="#525199" stroke="#525199" stroke-width="2" d="M3038.87,-1709.3027C3038.87,-1709.3027 2723.622,-1709.3027 2723.622,-1709.3027 2717.622,-1709.3027 2711.622,-1703.3027 2711.622,-1697.3027 2711.622,-1697.3027 2711.622,-1621.291 2711.622,-1621.291 2711.622,-1615.291 2717.622,-1609.291 2723.622,-1609.291 2723.622,-1609.291 3038.87,-1609.291 3038.87,-1609.291 3044.87,-1609.291 3050.87,-1615.291 3050.87,-1621.291 3050.87,-1621.291 3050.87,-1697.3027 3050.87,-1697.3027 3050.87,-1703.3027 3044.87,-1709.3027 3038.87,-1709.3027"/>
+<text text-anchor="middle" x="2881.246" y="-1655.6998" font-family="ING Me" font-size="22.00" fill="#ffffff">ProvidesNothingInteraction</text>
+</g>
+<!-- multi:initialIngredient&#45;&gt;ProvidesNothingInteraction -->
+<g id="edge9" class="edge">
+<title>multi:initialIngredient&#45;&gt;ProvidesNothingInteraction</title>
+<path fill="none" stroke="#000000" d="M2348.1195,-1755.2958C2391.5499,-1751.9645 2556.8515,-1738.1383 2701.3905,-1709.6044"/>
+<polygon fill="#000000" stroke="#000000" points="2702.2021,-1713.0115 2711.3191,-1707.6142 2700.8262,-1706.148 2702.2021,-1713.0115"/>
+</g>
+<!-- InteractionTwo -->
+<g id="node16" class="node">
+<title>InteractionTwo</title>
+<path fill="#525199" stroke="#525199" stroke-width="2" d="M2014.0401,-1709.3027C2014.0401,-1709.3027 1820.4519,-1709.3027 1820.4519,-1709.3027 1814.4519,-1709.3027 1808.4519,-1703.3027 1808.4519,-1697.3027 1808.4519,-1697.3027 1808.4519,-1621.291 1808.4519,-1621.291 1808.4519,-1615.291 1814.4519,-1609.291 1820.4519,-1609.291 1820.4519,-1609.291 2014.0401,-1609.291 2014.0401,-1609.291 2020.0401,-1609.291 2026.0401,-1615.291 2026.0401,-1621.291 2026.0401,-1621.291 2026.0401,-1697.3027 2026.0401,-1697.3027 2026.0401,-1703.3027 2020.0401,-1709.3027 2014.0401,-1709.3027"/>
+<text text-anchor="middle" x="1917.246" y="-1655.6998" font-family="ING Me" font-size="22.00" fill="#ffffff">InteractionTwo</text>
+</g>
+<!-- multi:initialIngredient&#45;&gt;InteractionTwo -->
+<g id="edge10" class="edge">
+<title>multi:initialIngredient&#45;&gt;InteractionTwo</title>
+<path fill="none" stroke="#000000" d="M2326.4419,-1753.6096C2286.2249,-1744.3403 2142.0721,-1711.1155 2036.2025,-1686.7143"/>
+<polygon fill="#000000" stroke="#000000" points="2036.9341,-1683.2912 2026.4034,-1684.4558 2035.3619,-1690.1124 2036.9341,-1683.2912"/>
+</g>
+<!-- InteractionOne -->
+<g id="node18" class="node">
+<title>InteractionOne</title>
+<path fill="#525199" stroke="#525199" stroke-width="2" d="M2435.0803,-1709.3027C2435.0803,-1709.3027 2239.4117,-1709.3027 2239.4117,-1709.3027 2233.4117,-1709.3027 2227.4117,-1703.3027 2227.4117,-1697.3027 2227.4117,-1697.3027 2227.4117,-1621.291 2227.4117,-1621.291 2227.4117,-1615.291 2233.4117,-1609.291 2239.4117,-1609.291 2239.4117,-1609.291 2435.0803,-1609.291 2435.0803,-1609.291 2441.0803,-1609.291 2447.0803,-1615.291 2447.0803,-1621.291 2447.0803,-1621.291 2447.0803,-1697.3027 2447.0803,-1697.3027 2447.0803,-1703.3027 2441.0803,-1709.3027 2435.0803,-1709.3027"/>
+<text text-anchor="middle" x="2337.246" y="-1655.6998" font-family="ING Me" font-size="22.00" fill="#ffffff">InteractionOne</text>
+</g>
+<!-- multi:initialIngredient&#45;&gt;InteractionOne -->
+<g id="edge11" class="edge">
+<title>multi:initialIngredient&#45;&gt;InteractionOne</title>
+<path fill="none" stroke="#000000" d="M2337.246,-1744.9953C2337.246,-1738.3607 2337.246,-1729.3539 2337.246,-1719.6645"/>
+<polygon fill="#000000" stroke="#000000" points="2340.7461,-1719.3907 2337.246,-1709.3908 2333.7461,-1719.3908 2340.7461,-1719.3907"/>
+</g>
+<!-- InteractionFive -->
+<g id="node19" class="node">
+<title>InteractionFive</title>
+<path fill="#525199" stroke="#525199" stroke-width="2" d="M962.3743,-1709.3027C962.3743,-1709.3027 770.1177,-1709.3027 770.1177,-1709.3027 764.1177,-1709.3027 758.1177,-1703.3027 758.1177,-1697.3027 758.1177,-1697.3027 758.1177,-1621.291 758.1177,-1621.291 758.1177,-1615.291 764.1177,-1609.291 770.1177,-1609.291 770.1177,-1609.291 962.3743,-1609.291 962.3743,-1609.291 968.3743,-1609.291 974.3743,-1615.291 974.3743,-1621.291 974.3743,-1621.291 974.3743,-1697.3027 974.3743,-1697.3027 974.3743,-1703.3027 968.3743,-1709.3027 962.3743,-1709.3027"/>
+<text text-anchor="middle" x="866.246" y="-1655.6998" font-family="ING Me" font-size="22.00" fill="#ffffff">InteractionFive</text>
+</g>
+<!-- multi:initialIngredient&#45;&gt;InteractionFive -->
+<g id="edge12" class="edge">
+<title>multi:initialIngredient&#45;&gt;InteractionFive</title>
+<path fill="none" stroke="#000000" d="M2326.2513,-1755.3763C2216.3429,-1748.1435 1312.5868,-1688.6695 984.5954,-1667.0851"/>
+<polygon fill="#000000" stroke="#000000" points="984.7965,-1663.5909 974.5882,-1666.4266 984.3367,-1670.5758 984.7965,-1663.5909"/>
+</g>
+<!-- SieveInteractionSuccessful -->
+<g id="node13" class="node">
+<title>SieveInteractionSuccessful</title>
+<path fill="#767676" stroke="#767676" d="M3030.5721,-1570.5212C3030.5721,-1570.5212 2751.3759,-1504.0666 2751.3759,-1504.0666 2745.5389,-1502.6773 2745.5389,-1499.8987 2751.3759,-1498.5094 2751.3759,-1498.5094 3030.5721,-1432.0549 3030.5721,-1432.0549 3036.4091,-1430.6655 3048.0829,-1430.6655 3053.9199,-1432.0549 3053.9199,-1432.0549 3333.1161,-1498.5094 3333.1161,-1498.5094 3338.9531,-1499.8987 3338.9531,-1502.6773 3333.1161,-1504.0666 3333.1161,-1504.0666 3053.9199,-1570.5212 3053.9199,-1570.5212 3048.0829,-1571.9105 3036.4091,-1571.9105 3030.5721,-1570.5212"/>
+<text text-anchor="middle" x="3042.246" y="-1497.691" font-family="ING Me" font-size="22.00" fill="#ffffff">SieveInteractionSuccessful</text>
+</g>
+<!-- SieveInteraction&#45;&gt;SieveInteractionSuccessful -->
+<g id="edge13" class="edge">
+<title>SieveInteraction&#45;&gt;SieveInteractionSuccessful</title>
+<path fill="none" stroke="#000000" d="M2694.0399,-1612.2985C2696.7977,-1611.2765 2699.5362,-1610.2734 2702.246,-1609.2939 2765.9658,-1586.2614 2837.3152,-1563.1906 2898.1372,-1544.3204"/>
+<polygon fill="#000000" stroke="#000000" points="2899.2872,-1547.6283 2907.8056,-1541.3285 2897.2179,-1540.9412 2899.2872,-1547.6283"/>
+</g>
+<!-- sievedIngredient -->
+<g id="node14" class="node">
+<title>sievedIngredient</title>
+<ellipse fill="#ff6200" stroke="#ff6200" cx="3042.246" cy="-1207.1462" rx="125.9929" ry="125.9929"/>
+<text text-anchor="middle" x="3042.246" y="-1203.5491" font-family="ING Me" font-size="22.00" fill="#ffffff">sievedIngredient</text>
+</g>
+<!-- SieveInteractionSuccessful&#45;&gt;sievedIngredient -->
+<g id="edge14" class="edge">
+<title>SieveInteractionSuccessful&#45;&gt;sievedIngredient</title>
+<path fill="none" stroke="#000000" d="M3042.246,-1428.9561C3042.246,-1402.9756 3042.246,-1372.757 3042.246,-1343.1408"/>
+<polygon fill="#000000" stroke="#000000" points="3045.7461,-1343.1271 3042.246,-1333.1271 3038.7461,-1343.1272 3045.7461,-1343.1271"/>
+</g>
+<!-- EventFromInteractionTwo -->
+<g id="node17" class="node">
+<title>EventFromInteractionTwo</title>
+<path fill="#767676" stroke="#767676" d="M1813.5923,-1570.438C1813.5923,-1570.438 1543.6597,-1504.1499 1543.6597,-1504.1499 1537.8328,-1502.7189 1537.8328,-1499.8571 1543.6597,-1498.4262 1543.6597,-1498.4262 1813.5923,-1432.1381 1813.5923,-1432.1381 1819.4191,-1430.7072 1831.0729,-1430.7072 1836.8997,-1432.1381 1836.8997,-1432.1381 2106.8323,-1498.4262 2106.8323,-1498.4262 2112.6592,-1499.8571 2112.6592,-1502.7189 2106.8323,-1504.1499 2106.8323,-1504.1499 1836.8997,-1570.438 1836.8997,-1570.438 1831.0729,-1571.8689 1819.4191,-1571.8689 1813.5923,-1570.438"/>
+<text text-anchor="middle" x="1825.246" y="-1497.691" font-family="ING Me" font-size="22.00" fill="#ffffff">EventFromInteractionTwo</text>
+</g>
+<!-- InteractionTwo&#45;&gt;EventFromInteractionTwo -->
+<g id="edge15" class="edge">
+<title>InteractionTwo&#45;&gt;EventFromInteractionTwo</title>
+<path fill="none" stroke="#000000" d="M1887.8837,-1608.8674C1881.2824,-1597.5298 1874.1528,-1585.2848 1867.1508,-1573.2589"/>
+<polygon fill="#000000" stroke="#000000" points="1870.1405,-1571.4378 1862.0841,-1564.557 1864.0912,-1574.96 1870.1405,-1571.4378"/>
+</g>
+<!-- EventFromInteractionTwo&#45;&gt;interactionTwoIngredient -->
+<g id="edge16" class="edge">
+<title>EventFromInteractionTwo&#45;&gt;interactionTwoIngredient</title>
+<path fill="none" stroke="#000000" d="M1843.829,-1433.8059C1847.1177,-1421.8636 1850.6822,-1408.9194 1854.3846,-1395.4746"/>
+<polygon fill="#000000" stroke="#000000" points="1857.8223,-1396.1739 1857.1029,-1385.6035 1851.0735,-1394.3154 1857.8223,-1396.1739"/>
+</g>
+<!-- EventFromInteractionTwo&#45;&gt;InteractionFour -->
+<g id="edge17" class="edge">
+<title>EventFromInteractionTwo&#45;&gt;InteractionFour</title>
+<path fill="none" stroke="#000000" d="M1746.5082,-1448.5316C1668.4223,-1396.2119 1549.228,-1316.3485 1469.5766,-1262.9799"/>
+<polygon fill="#000000" stroke="#000000" points="1471.287,-1259.9129 1461.0311,-1257.2542 1467.3905,-1265.7282 1471.287,-1259.9129"/>
+</g>
+<!-- InteractionOne&#45;&gt;InteractionOneSuccessful -->
+<g id="edge18" class="edge">
+<title>InteractionOne&#45;&gt;InteractionOneSuccessful</title>
+<path fill="none" stroke="#000000" d="M2366.6083,-1608.8674C2373.2096,-1597.5298 2380.3392,-1585.2848 2387.3412,-1573.2589"/>
+<polygon fill="#000000" stroke="#000000" points="2390.4008,-1574.96 2392.4079,-1564.557 2384.3515,-1571.4378 2390.4008,-1574.96"/>
+</g>
+<!-- InteractionFiveSuccessful -->
+<g id="node20" class="node">
+<title>InteractionFiveSuccessful</title>
+<path fill="#767676" stroke="#767676" d="M854.6003,-1570.4054C854.6003,-1570.4054 588.1477,-1504.1824 588.1477,-1504.1824 582.3248,-1502.7352 582.3248,-1499.8408 588.1477,-1498.3936 588.1477,-1498.3936 854.6003,-1432.1706 854.6003,-1432.1706 860.4231,-1430.7234 872.0689,-1430.7234 877.8917,-1432.1706 877.8917,-1432.1706 1144.3443,-1498.3936 1144.3443,-1498.3936 1150.1672,-1499.8408 1150.1672,-1502.7352 1144.3443,-1504.1824 1144.3443,-1504.1824 877.8917,-1570.4054 877.8917,-1570.4054 872.0689,-1571.8526 860.4231,-1571.8526 854.6003,-1570.4054"/>
+<text text-anchor="middle" x="866.246" y="-1497.691" font-family="ING Me" font-size="22.00" fill="#ffffff">InteractionFiveSuccessful</text>
+</g>
+<!-- InteractionFive&#45;&gt;InteractionFiveSuccessful -->
+<g id="edge19" class="edge">
+<title>InteractionFive&#45;&gt;InteractionFiveSuccessful</title>
+<path fill="none" stroke="#000000" d="M866.246,-1608.8674C866.246,-1600.753 866.246,-1592.1738 866.246,-1583.5427"/>
+<polygon fill="#000000" stroke="#000000" points="869.7461,-1583.4116 866.246,-1573.4116 862.7461,-1583.4116 869.7461,-1583.4116"/>
+</g>
+<!-- interactionFiveIngredient -->
+<g id="node21" class="node">
+<title>interactionFiveIngredient</title>
+<ellipse fill="#ff6200" stroke="#ff6200" cx="866.246" cy="-1207.1462" rx="184.4453" ry="184.4453"/>
+<text text-anchor="middle" x="866.246" y="-1203.5491" font-family="ING Me" font-size="22.00" fill="#ffffff">interactionFiveIngredient</text>
+</g>
+<!-- InteractionFiveSuccessful&#45;&gt;interactionFiveIngredient -->
+<g id="edge20" class="edge">
+<title>InteractionFiveSuccessful&#45;&gt;interactionFiveIngredient</title>
+<path fill="none" stroke="#000000" d="M866.246,-1428.9561C866.246,-1420.3367 866.246,-1411.2508 866.246,-1401.8752"/>
+<polygon fill="#000000" stroke="#000000" points="869.7461,-1401.5962 866.246,-1391.5963 862.7461,-1401.5963 869.7461,-1401.5962"/>
+</g>
+<!-- InitialEventExtendedName -->
+<g id="node22" class="node">
+<title>InitialEventExtendedName</title>
+<path fill="#d5d5d5" stroke="#767676" stroke-width="2" d="M707.5684,-2435.2483C707.5684,-2435.2483 426.5795,-2368.7627 426.5795,-2368.7627 420.7407,-2367.3811 420.7407,-2364.6181 426.5795,-2363.2365 426.5795,-2363.2365 707.5684,-2296.7509 707.5684,-2296.7509 713.4072,-2295.3694 725.0848,-2295.3694 730.9236,-2296.7509 730.9236,-2296.7509 1011.9125,-2363.2365 1011.9125,-2363.2365 1017.7513,-2364.6181 1017.7513,-2367.3811 1011.9125,-2368.7627 1011.9125,-2368.7627 730.9236,-2435.2483 730.9236,-2435.2483 725.0848,-2436.6299 713.4072,-2436.6299 707.5684,-2435.2483"/>
+<text text-anchor="middle" x="719.246" y="-2362.4026" font-family="ING Me" font-size="22.00" fill="#000000">InitialEventExtendedName</text>
+</g>
+<!-- initialIngredientExtendedName -->
+<g id="node23" class="node">
+<title>initialIngredientExtendedName</title>
+<ellipse fill="#ff6200" stroke="#ff6200" cx="719.246" cy="-2030.4468" rx="227.5939" ry="227.5939"/>
+<text text-anchor="middle" x="719.246" y="-2026.8497" font-family="ING Me" font-size="22.00" fill="#ffffff">initialIngredientExtendedName</text>
+</g>
+<!-- InitialEventExtendedName&#45;&gt;initialIngredientExtendedName -->
+<g id="edge21" class="edge">
+<title>InitialEventExtendedName&#45;&gt;initialIngredientExtendedName</title>
+<path fill="none" stroke="#000000" d="M719.246,-2293.6028C719.246,-2285.5538 719.246,-2277.0663 719.246,-2268.2654"/>
+<polygon fill="#000000" stroke="#000000" points="722.7461,-2268.2024 719.246,-2258.2024 715.7461,-2268.2025 722.7461,-2268.2024"/>
+</g>
+<!-- multi:initialIngredientExtendedName -->
+<g id="node24" class="node">
+<title>multi:initialIngredientExtendedName</title>
+<ellipse fill="#d0d93c" stroke="#000000" cx="719.246" cy="-1756.0998" rx="10.8" ry="10.8"/>
+</g>
+<!-- initialIngredientExtendedName&#45;&gt;multi:initialIngredientExtendedName -->
+<g id="edge22" class="edge">
+<title>initialIngredientExtendedName&#45;&gt;multi:initialIngredientExtendedName</title>
+<path fill="none" stroke="#000000" d="M719.246,-1802.639C719.246,-1792.94 719.246,-1784.3351 719.246,-1777.2446"/>
+<polygon fill="#000000" stroke="#000000" points="722.7461,-1777.1142 719.246,-1767.1142 715.7461,-1777.1143 722.7461,-1777.1142"/>
+</g>
+<!-- multi:initialIngredientExtendedName&#45;&gt;InteractionFive -->
+<g id="edge24" class="edge">
+<title>multi:initialIngredientExtendedName&#45;&gt;InteractionFive</title>
+<path fill="none" stroke="#000000" d="M728.4415,-1750.0443C739.7557,-1742.5937 760.1473,-1729.1653 781.8351,-1714.8834"/>
+<polygon fill="#000000" stroke="#000000" points="783.7676,-1717.8016 790.1944,-1709.3786 779.9177,-1711.9553 783.7676,-1717.8016"/>
+</g>
+<!-- InteractionSix -->
+<g id="node25" class="node">
+<title>InteractionSix</title>
+<path fill="#525199" stroke="#525199" stroke-width="2" d="M517.248,-1709.3027C517.248,-1709.3027 335.244,-1709.3027 335.244,-1709.3027 329.244,-1709.3027 323.244,-1703.3027 323.244,-1697.3027 323.244,-1697.3027 323.244,-1621.291 323.244,-1621.291 323.244,-1615.291 329.244,-1609.291 335.244,-1609.291 335.244,-1609.291 517.248,-1609.291 517.248,-1609.291 523.248,-1609.291 529.248,-1615.291 529.248,-1621.291 529.248,-1621.291 529.248,-1697.3027 529.248,-1697.3027 529.248,-1703.3027 523.248,-1709.3027 517.248,-1709.3027"/>
+<text text-anchor="middle" x="426.246" y="-1655.6998" font-family="ING Me" font-size="22.00" fill="#ffffff">InteractionSix</text>
+</g>
+<!-- multi:initialIngredientExtendedName&#45;&gt;InteractionSix -->
+<g id="edge23" class="edge">
+<title>multi:initialIngredientExtendedName&#45;&gt;InteractionSix</title>
+<path fill="none" stroke="#000000" d="M708.818,-1752.6545C681.5148,-1743.6339 605.4546,-1718.5048 539.1182,-1696.5882"/>
+<polygon fill="#000000" stroke="#000000" points="540.0016,-1693.194 529.4084,-1693.3802 537.8056,-1699.8407 540.0016,-1693.194"/>
+</g>
+<!-- InteractionSixSuccessful -->
+<g id="node26" class="node">
+<title>InteractionSixSuccessful</title>
+<path fill="#767676" stroke="#767676" d="M267.6255,-1570.3058C267.6255,-1570.3058 11.3743,-1504.2821 11.3743,-1504.2821 5.564,-1502.785 5.564,-1499.791 11.3743,-1498.294 11.3743,-1498.294 267.6255,-1432.2703 267.6255,-1432.2703 273.4358,-1430.7733 285.0562,-1430.7733 290.8665,-1432.2703 290.8665,-1432.2703 547.1177,-1498.294 547.1177,-1498.294 552.928,-1499.791 552.928,-1502.785 547.1177,-1504.2821 547.1177,-1504.2821 290.8665,-1570.3058 290.8665,-1570.3058 285.0562,-1571.8028 273.4358,-1571.8028 267.6255,-1570.3058"/>
+<text text-anchor="middle" x="279.246" y="-1497.691" font-family="ING Me" font-size="22.00" fill="#ffffff">InteractionSixSuccessful</text>
+</g>
+<!-- InteractionSix&#45;&gt;InteractionSixSuccessful -->
+<g id="edge25" class="edge">
+<title>InteractionSix&#45;&gt;InteractionSixSuccessful</title>
+<path fill="none" stroke="#000000" d="M379.3301,-1608.8674C366.9943,-1595.6077 353.5038,-1581.107 340.5351,-1567.167"/>
+<polygon fill="#000000" stroke="#000000" points="342.7686,-1564.4293 333.3946,-1559.4918 337.6435,-1569.1973 342.7686,-1564.4293"/>
+</g>
+<!-- InteractionSixSuccessful&#45;&gt;interactionSixIngredient -->
+<g id="edge26" class="edge">
+<title>InteractionSixSuccessful&#45;&gt;interactionSixIngredient</title>
+<path fill="none" stroke="#000000" d="M279.246,-1428.9561C279.246,-1417.9924 279.246,-1406.2741 279.246,-1394.1648"/>
+<polygon fill="#000000" stroke="#000000" points="282.7461,-1393.9089 279.246,-1383.909 275.7461,-1393.909 282.7461,-1393.9089"/>
+</g>
+<!-- initialIngredient -->
+<g id="node27" class="node">
+<title>initialIngredient</title>
+<ellipse fill="#ff6200" stroke="#ff6200" cx="2337.246" cy="-2030.4468" rx="120.1363" ry="120.1363"/>
+<text text-anchor="middle" x="2337.246" y="-2026.8497" font-family="ING Me" font-size="22.00" fill="#ffffff">initialIngredient</text>
+</g>
+<!-- initialIngredient&#45;&gt;multi:initialIngredient -->
+<g id="edge27" class="edge">
+<title>initialIngredient&#45;&gt;multi:initialIngredient</title>
+<path fill="none" stroke="#000000" d="M2337.246,-1910.1142C2337.246,-1859.5283 2337.246,-1805.8403 2337.246,-1777.1306"/>
+<polygon fill="#000000" stroke="#000000" points="2340.7461,-1777.0836 2337.246,-1767.0836 2333.7461,-1777.0837 2340.7461,-1777.0836"/>
+</g>
+<!-- NotUsedSensoryEvent -->
+<g id="node28" class="node">
+<title>NotUsedSensoryEvent</title>
+<path fill="#d5d5d5" stroke="#767676" stroke-width="2" d="M2757.675,-2434.8315C2757.675,-2434.8315 2518.777,-2369.1795 2518.777,-2369.1795 2512.9915,-2367.5895 2512.9915,-2364.4097 2518.777,-2362.8198 2518.777,-2362.8198 2757.675,-2297.1677 2757.675,-2297.1677 2763.4605,-2295.5778 2775.0315,-2295.5778 2780.817,-2297.1677 2780.817,-2297.1677 3019.715,-2362.8198 3019.715,-2362.8198 3025.5005,-2364.4097 3025.5005,-2367.5895 3019.715,-2369.1795 3019.715,-2369.1795 2780.817,-2434.8315 2780.817,-2434.8315 2775.0315,-2436.4215 2763.4605,-2436.4215 2757.675,-2434.8315"/>
+<text text-anchor="middle" x="2769.246" y="-2362.4026" font-family="ING Me" font-size="22.00" fill="#000000">NotUsedSensoryEvent</text>
+</g>
+<!-- empty:NotUsedSensoryEvent -->
+<g id="node29" class="node">
+<title>empty:NotUsedSensoryEvent</title>
+<ellipse fill="#d0d93c" stroke="#000000" cx="2769.246" cy="-2030.4468" rx="3.6" ry="3.6"/>
+</g>
+<!-- NotUsedSensoryEvent&#45;&gt;empty:NotUsedSensoryEvent -->
+<g id="edge28" class="edge">
+<title>NotUsedSensoryEvent&#45;&gt;empty:NotUsedSensoryEvent</title>
+<path fill="none" stroke="#000000" d="M2769.246,-2293.6028C2769.246,-2212.2389 2769.246,-2086.0612 2769.246,-2044.3526"/>
+<polygon fill="#000000" stroke="#000000" points="2772.7461,-2044.2634 2769.246,-2034.2635 2765.7461,-2044.2635 2772.7461,-2044.2634"/>
+</g>
+<!-- InitialEvent -->
+<g id="node30" class="node">
+<title>InitialEvent</title>
+<path fill="#d5d5d5" stroke="#767676" stroke-width="2" d="M2326.3969,-2432.8833C2326.3969,-2432.8833 2195.7469,-2371.1277 2195.7469,-2371.1277 2190.3223,-2368.5637 2190.3223,-2363.4355 2195.7469,-2360.8715 2195.7469,-2360.8715 2326.3969,-2299.116 2326.3969,-2299.116 2331.8215,-2296.5519 2342.6705,-2296.5519 2348.0951,-2299.116 2348.0951,-2299.116 2478.7451,-2360.8715 2478.7451,-2360.8715 2484.1697,-2363.4355 2484.1697,-2368.5637 2478.7451,-2371.1277 2478.7451,-2371.1277 2348.0951,-2432.8833 2348.0951,-2432.8833 2342.6705,-2435.4473 2331.8215,-2435.4473 2326.3969,-2432.8833"/>
+<text text-anchor="middle" x="2337.246" y="-2362.4026" font-family="ING Me" font-size="22.00" fill="#000000">InitialEvent</text>
+</g>
+<!-- InitialEvent&#45;&gt;initialIngredient -->
+<g id="edge29" class="edge">
+<title>InitialEvent&#45;&gt;initialIngredient</title>
+<path fill="none" stroke="#000000" d="M2337.246,-2293.6028C2337.246,-2254.8241 2337.246,-2205.8658 2337.246,-2160.7245"/>
+<polygon fill="#000000" stroke="#000000" points="2340.7461,-2160.5538 2337.246,-2150.5539 2333.7461,-2160.5539 2340.7461,-2160.5538"/>
+</g>
+<!-- SecondEvent -->
+<g id="node31" class="node">
+<title>SecondEvent</title>
+<path fill="#d5d5d5" stroke="#767676" stroke-width="2" d="M1333.2001,-1568.6107C1333.2001,-1568.6107 1185.6557,-1505.9771 1185.6557,-1505.9771 1180.1328,-1503.6326 1180.1328,-1498.9435 1185.6557,-1496.5989 1185.6557,-1496.5989 1333.2001,-1433.9653 1333.2001,-1433.9653 1338.723,-1431.6208 1349.769,-1431.6208 1355.2919,-1433.9653 1355.2919,-1433.9653 1502.8363,-1496.5989 1502.8363,-1496.5989 1508.3592,-1498.9435 1508.3592,-1503.6326 1502.8363,-1505.9771 1502.8363,-1505.9771 1355.2919,-1568.6107 1355.2919,-1568.6107 1349.769,-1570.9553 1338.723,-1570.9553 1333.2001,-1568.6107"/>
+<text text-anchor="middle" x="1344.246" y="-1497.691" font-family="ING Me" font-size="22.00" fill="#000000">SecondEvent</text>
+</g>
+<!-- SecondEvent&#45;&gt;InteractionFour -->
+<g id="edge30" class="edge">
+<title>SecondEvent&#45;&gt;InteractionFour</title>
+<path fill="none" stroke="#000000" d="M1353.9872,-1433.0666C1361.1363,-1382.999 1370.7569,-1315.6219 1377.6274,-1267.5057"/>
+<polygon fill="#000000" stroke="#000000" points="1381.101,-1267.9381 1379.0498,-1257.5437 1374.1713,-1266.9486 1381.101,-1267.9381"/>
+</g>
+</g>
+</svg>
