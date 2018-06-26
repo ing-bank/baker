@@ -113,11 +113,22 @@ A -> { B C }
 }
 ```
 
-To create a SVG, run:
+Assuming you have the graphviz `dot` command you can create an SVG by running:
 
 ```
 dot -v -Tsvg -O graph.dot
 ```
+
+Alternatively you can use [graphviz-java](https://github.com/nidi3/graphviz-java) to generate the SVG in your code:
+
+```scala
+import guru.nidi.graphviz.engine.{Format, Graphviz}
+import guru.nidi.graphviz.parse.Parser
+
+val g = Parser.read(getRecipeVisualization)
+Graphviz.fromGraph(g).render(Format.SVG).toString
+```
+
 
 Preview the results:
 

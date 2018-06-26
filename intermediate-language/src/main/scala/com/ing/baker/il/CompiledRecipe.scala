@@ -30,19 +30,6 @@ case class CompiledRecipe(name: String,
     RecipeVisualizer.visualiseCompiledRecipe(this)
 
   /**
-    * Returns a SVG string representation of the recipe.
-    *
-    * @return An SVG string.
-    */
-  def getVisualRecipeAsSVG: String = {
-    import guru.nidi.graphviz.engine.{Format, Graphviz}
-    import guru.nidi.graphviz.parse.Parser
-
-    val g = Parser.read(getRecipeVisualization)
-    Graphviz.fromGraph(g).render(Format.SVG).toString
-  }
-
-  /**
     * Visualise the compiled recipe in DOT format
     * @param filterFunc
     * @return

@@ -84,7 +84,6 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
     libraryDependencies ++= compileDeps(
       slf4jApi,
       scalaGraphDot,
-      graphvizJava,
       objenisis,
       jodaTime
     ) ++ testDeps(scalaTest, scalaCheck, logback)
