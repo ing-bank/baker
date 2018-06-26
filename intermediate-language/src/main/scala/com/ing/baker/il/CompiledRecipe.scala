@@ -2,10 +2,9 @@ package com.ing.baker.il
 
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, RecipePetriNet}
 import com.ing.baker.petrinet.api.Marking
-import com.ing.baker.types.RecordField
 
 import scala.collection.JavaConverters._
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * A Compiled recipe.

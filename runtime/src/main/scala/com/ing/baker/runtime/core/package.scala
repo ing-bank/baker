@@ -1,6 +1,14 @@
 package com.ing.baker.runtime
 
+import java.util.concurrent.TimeUnit
+
+import scala.concurrent.duration.FiniteDuration
+
 package object core {
+
+  implicit class JavaDurationConversions(duration: java.time.Duration) {
+    def toScala: FiniteDuration = FiniteDuration(duration.toMillis, TimeUnit.MILLISECONDS)
+  }
 
   /**
     * Mockito breaks reflection when mocking classes, for example:
@@ -24,5 +32,4 @@ package object core {
     } else
       clazz
   }
-
 }

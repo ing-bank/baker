@@ -7,27 +7,19 @@ import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core._
 import com.ing.baker.types.Value
-import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
 class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRef]) {
 
-  private final val log = LoggerFactory.getLogger(classOf[JBaker])
-
-  private implicit class DurationConversions(timeout: java.time.Duration) {
-    def toScala: FiniteDuration =
-      FiniteDuration(timeout.toMillis, TimeUnit.MILLISECONDS)
-  }
-
-  addImplementations(implementations)
-
   def this(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRef]) = this(new Baker()(actorSystem), implementations)
 
   def this(actorSystem: ActorSystem) = this(actorSystem, Collections.emptyList[AnyRef])
 
   def this() = this(ActorSystem("BakerActorSystem"))
+
+  addImplementations(implementations)
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.

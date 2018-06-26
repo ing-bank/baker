@@ -154,9 +154,13 @@ case class MethodInteractionImplementation(override val name: String,
       case (value, targetType) => value.as(targetType)
     }
 
-    log.trace(s"[$invocationId] invoking '$name' with parameters ${inputArgs.toString}")
+    if (log.isTraceEnabled)
+      log.trace(s"[$invocationId] invoking '$name' with parameters ${inputArgs.toString}")
+
     val output = method.invoke(implementation, inputArgs.asInstanceOf[Seq[AnyRef]]: _*)
-    log.trace(s"[$invocationId] result: $output")
+
+    if (log.isTraceEnabled)
+      log.trace(s"[$invocationId] result: $output")
 
     createRuntimeEvent(interaction, output)
   }

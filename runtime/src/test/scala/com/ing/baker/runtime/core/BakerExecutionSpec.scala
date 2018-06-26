@@ -309,11 +309,12 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       baker.bake(recipeId, processId)
 
-      val completedResponse = baker.processEventAsync(processId, InitialEvent(initialIngredientValue)).confirmCompleted()
+      val response = baker.processEventAsync(processId, InitialEvent(initialIngredientValue))
 
-      completedResponse.sensoryEventStatus shouldBe SensoryEventStatus.Completed
+      response.confirmReceived() shouldBe SensoryEventStatus.Received
+      response.confirmCompleted() shouldBe SensoryEventStatus.Completed
 
-      completedResponse.events should contain only (
+      response.confirmAllEvents(timeout) should contain only (
          RuntimeEvent("InitialEvent", Seq(initialIngredient("initialIngredient"))),
          RuntimeEvent("SieveInteractionSuccessful", Seq(sievedIngredient("sievedIngredient"))),
          RuntimeEvent("InteractionOneSuccessful", Seq(interactionOneIngredient("interactionOneIngredient"))),
@@ -953,7 +954,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       baker.bake(recipeId, processId)
       val response: BakerResponse = baker.processEventAsync(processId, InitialEvent(initialIngredientValue))
 
-      response.confirmCompleted(3000 millis) should matchPattern { case _: CompletedResponse => }
+      response.confirmCompleted(3000 millis) shouldBe SensoryEventStatus.Completed
     }
 
     "acknowledge the first and final event while rest processing failed" in {
@@ -966,12 +967,10 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       baker.bake(recipeId, processId)
       val response = baker.processEventAsync(processId, InitialEvent(initialIngredientValue))
 
-      val completedResponse = response.confirmCompleted(3 seconds)
-
       response.confirmReceived() shouldBe SensoryEventStatus.Received
 
       // The process is completed because it is in a BLOCKED state
-      completedResponse should matchPattern { case CompletedResponse(SensoryEventStatus.Completed, _) => }
+      response.confirmCompleted(3 seconds) shouldBe SensoryEventStatus.Completed
     }
 
     "bind multi transitions correctly even if ingredient name overlaps" in {

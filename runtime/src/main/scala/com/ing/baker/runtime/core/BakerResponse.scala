@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.core
 
 import java.time.Duration
-import java.util.concurrent.{TimeUnit, TimeoutException}
+import java.util.concurrent.TimeoutException
 
 import akka.NotUsed
 import akka.stream.javadsl.RunnableGraph
@@ -14,12 +14,9 @@ import com.ing.baker.runtime.java_api.EventList
 import scala.concurrent.duration.{FiniteDuration, SECONDS}
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-case class CompletedResponse(sensoryEventStatus: SensoryEventStatus, events: Seq[RuntimeEvent]) {
-
-  def getEvents: EventList = new EventList(events)
-}
-
 object BakerResponse {
+
+  private case class CompletedResponse(sensoryEventStatus: SensoryEventStatus, events: Seq[RuntimeEvent])
 
   private def firstMessage(processId: String, response: Future[Any])(implicit ec: ExecutionContext): Future[SensoryEventStatus] =
     response.map(translateFirstMessage)
@@ -93,7 +90,7 @@ class BakerResponse(processId: String, source: Source[Any, NotUsed])(implicit ma
 
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def confirmReceived(duration: Duration): SensoryEventStatus = {
-    confirmReceived(FiniteDuration(duration.toNanos, TimeUnit.NANOSECONDS))
+    confirmReceived(duration.toScala)
   }
 
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
@@ -102,18 +99,85 @@ class BakerResponse(processId: String, source: Source[Any, NotUsed])(implicit ma
   }
 
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def confirmCompleted(): CompletedResponse = {
+  def confirmCompleted(): SensoryEventStatus = {
     confirmCompleted(defaultWaitTimeout)
   }
 
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def confirmCompleted(duration: Duration): CompletedResponse = {
-    confirmCompleted(FiniteDuration(duration.toNanos, TimeUnit.NANOSECONDS))
+  def confirmCompleted(duration: Duration): SensoryEventStatus = {
+    confirmCompleted(duration.toScala)
   }
 
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def confirmCompleted(implicit timeout: FiniteDuration): CompletedResponse = {
-    Await.result(completedFuture, timeout)
+  def confirmCompleted(implicit timeout: FiniteDuration): SensoryEventStatus = {
+    Await.result(completedFuture, timeout).sensoryEventStatus
   }
 
+  /**
+    * Waits for all events that where caused by the sensory event input.
+    *
+    * !!! Note that this will return an empty list if the sensory event was rejected
+    *
+    * Therefor you are encouraged to first confirm that the event was properly received before checking this list.
+    * {{{
+    * BakerResponse response = baker.processEvent(someEvent);
+    *
+    * switch (response.confirmReceived()) {
+    *   case Received:
+    *
+    *     EventList events = response.confirmAllEvents()
+    *     // ...
+    *     break;
+    *
+    *   case ReceivePeriodExpired:
+    *   case AlreadyReceived:
+    *   case ProcessDeleted:
+    *   case FiringLimitMet:
+    *   case AlreadyReceived:
+    *     // ...
+    *     break;
+    * }
+    * }}}
+    * @param timeout The duration to wait for completion
+    * @return
+    */
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
+  def confirmAllEvents(timeout: Duration): EventList = {
+    new EventList(confirmAllEvents(timeout.toScala))
+  }
+
+  /**
+    * Waits for all events that where caused by the sensory event input.
+    *
+    * !!! Note that this will return an empty list if the sensory event was rejected
+    *
+    * Therefor you are encouraged to first confirm that the event was properly received before checking this list.
+    *
+    * Example:
+    *
+    * {{{
+    * val response = baker.processEvent(someEvent);
+    *
+    * response.confirmReceived() match {
+    *   case Received =>
+    *
+    *     response.confirmAllEvents()
+    *
+    *   case ReceivePeriodExpired =>
+    *   case AlreadyReceived =>
+    *   case ProcessDeleted =>
+    *   case FiringLimitMet =>
+    *   case AlreadyReceived =>
+    * }
+    * }}}
+    *
+    * </pre>
+    *
+    * @param timeout The duration to wait for completion
+    * @return
+    */
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
+  def confirmAllEvents(implicit timeout: FiniteDuration): Seq[RuntimeEvent] = {
+    Await.result(completedFuture, timeout).events
+  }
 }
