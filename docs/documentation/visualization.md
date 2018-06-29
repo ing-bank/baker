@@ -4,11 +4,16 @@
 
 Baker can turn a recipe into a DOT representation.
 
-``` scala
+``` scala tab="Scala"
 val recipe = RecipeCompiler.compileRecipe(Examples.webshop.webShopRecipe)
 
 println(recipe.getRecipeVisualization)
+```
 
+``` java tab="Java"
+final CompiledRecipe recipe = RecipeCompiler.compileRecipe(Examples.webshop.webShopRecipe);
+
+System.out.println(recipe.getRecipeVisualization);
 ```
 
 This should output something like this:

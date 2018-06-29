@@ -1,3 +1,6 @@
 site_name: Baker
 theme:
   name: 'material'
+markdown_extensions:
+  - codehilite
+  - pymdownx.superfences
