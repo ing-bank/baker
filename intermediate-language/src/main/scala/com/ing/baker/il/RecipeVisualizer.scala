@@ -2,62 +2,65 @@ package com.ing.baker.il
 
 import com.ing.baker.il.petrinet.{InteractionTransition, Node, Place, RecipePetriNet, Transition}
 import com.ing.baker.petrinet.api._
+import com.typesafe.config.{Config, ConfigFactory}
 import dot._
 
+import scala.collection.JavaConverters._
 import scala.language.higherKinds
 import scalax.collection.Graph
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.io.dot.{DotAttr, _}
 import scalax.collection.io.dot.implicits._
 
-object RecipeVisualizer {
+class RecipeStyle(config: Config) {
 
-  type RecipePetriNetGraph = Graph[Either[Place[_], Transition[_]], WLDiEdge]
+  def readAttributes(key: String): List[DotAttr] =
+    config.getConfig(key)
+      .entrySet().asScala
+      .map(e => e.getKey -> e.getValue.unwrapped())
+      .toMap.-("shape") // shape is not allowed to be overriden
+      .map {
+        case (key, s: String) => Some(DotAttr(key, s))
+        case (key, n: java.lang.Integer) => Some(DotAttr(key, n.intValue()))
+        case (key, n: java.lang.Long) => Some(DotAttr(key, n.longValue()))
+        case (key, n: java.lang.Float) => Some(DotAttr(key, n.floatValue()))
+        case (key, n: java.lang.Double) => Some(DotAttr(key, n.doubleValue()))
+        case other => None
+      }.toList.flatten
 
-  private val ingredientAttributes: List[DotAttr] = List(
-    DotAttr("shape", "circle"),
-    DotAttr("color", "\"#FF6200\""),
-    DotAttr("style", "filled")
-  )
+  val ingredientAttributes: List[DotAttr] =
+    DotAttr("shape", "circle") +: readAttributes("ingredient")
 
-  private val providedIngredientAttributes: List[DotAttr] = List(
+  val providedIngredientAttributes: List[DotAttr] = List(
     DotAttr("shape", "circle"),
     DotAttr("color", "\"#3b823a\""),
     DotAttr("style", "filled")
   )
 
-  private val missingIngredientAttributes: List[DotAttr] = List(
+  val missingIngredientAttributes: List[DotAttr] = List(
     DotAttr("shape", "circle"),
     DotAttr("style", "filled"),
     DotAttr("color", "\"#EE0000\""),
     DotAttr("penwidth", "5.0")
   )
 
-  private val eventAttributes: List[DotAttr] = List(
-    DotAttr("shape", "diamond"),
-    DotAttr("margin", 0.3D),
-    DotAttr("style", "rounded, filled"),
-    DotAttr("color", "\"#767676\"")
-  )
+  val eventAttributes: List[DotAttr] =
+    DotAttr("shape", "diamond") +: readAttributes("event")
 
-  private val sensoryEventAttributes: List[DotAttr] = List(
-    DotAttr("shape", "diamond"),
-    DotAttr("margin", 0.3D),
-    DotAttr("style", "rounded, filled"),
-    DotAttr("fillcolor", "\"#D5D5D5\""),
-    DotAttr("color", "\"#767676\""),
-    DotAttr("fontcolor", "black"),
-    DotAttr("penwidth", 2)
-  )
+  val sensoryEventAttributes: List[DotAttr] =
+    DotAttr("shape", "diamond") +: readAttributes("sensory-event")
 
-  private val eventFiredAttributes: List[DotAttr] = List(
+  val interactionAttributes: List[DotAttr] =
+    DotAttr("shape", "rect") +: readAttributes("interaction")
+
+  val eventFiredAttributes: List[DotAttr] = List(
     DotAttr("shape", "diamond"),
     DotAttr("margin", 0.3D),
     DotAttr("style", "rounded, filled"),
     DotAttr("color", "\"#3b823a\"")
   )
 
-  private val eventMissingAttributes: List[DotAttr] = List(
+  val eventMissingAttributes: List[DotAttr] = List(
     DotAttr("shape", "diamond"),
     DotAttr("margin", 0.3D),
     DotAttr("style", "rounded, filled"),
@@ -65,15 +68,7 @@ object RecipeVisualizer {
     DotAttr("penwidth", "5.0")
   )
 
-  private val interactionAttributes: List[DotAttr] = List(
-    DotAttr("shape", "rect"),
-    DotAttr("margin", 0.5D),
-    DotAttr("style", "rounded, filled"),
-    DotAttr("color", "\"#525199\""),
-    DotAttr("penwidth", 2)
-  )
-
-  private val firedInteractionAttributes: List[DotAttr] = List(
+  val firedInteractionAttributes: List[DotAttr] = List(
     DotAttr("shape", "rect"),
     DotAttr("margin", 0.5D),
     DotAttr("color", "\"#3b823a\""),
@@ -81,21 +76,21 @@ object RecipeVisualizer {
     DotAttr("penwidth", 2)
   )
 
-  private val choiceAttributes: List[DotAttr] = List(
+  val choiceAttributes: List[DotAttr] = List(
     DotAttr("shape", "point"),
     DotAttr("fillcolor", "\"#D0D93C\""),
     DotAttr("width", 0.3),
     DotAttr("height", 0.3)
   )
 
-  private val emptyEventAttributes: List[DotAttr] = List(
+  val emptyEventAttributes: List[DotAttr] = List(
     DotAttr("shape", "point"),
     DotAttr("fillcolor", "\"#D0D93C\""),
     DotAttr("width", 0.1),
     DotAttr("height", 0.1)
   )
 
-  private val preconditionORAttributes: List[DotAttr] = List(
+  val preconditionORAttributes: List[DotAttr] = List(
     DotAttr("shape", "circle"),
     DotAttr("fillcolor", "\"#D0D93C\""),
     DotAttr("fontcolor", "black"),
@@ -103,7 +98,7 @@ object RecipeVisualizer {
     DotAttr("style", "filled")
   )
 
-  private val sieveAttributes: List[DotAttr] = List(
+  val sieveAttributes: List[DotAttr] = List(
     DotAttr("shape", "rect"),
     DotAttr("margin", 0.5D),
     DotAttr("color", "\"#7594d6\""),
@@ -111,15 +106,20 @@ object RecipeVisualizer {
     DotAttr("penwidth", 2)
   )
 
-  private val attrStmts = List(
+  val commonNodeAttributes = List(
     DotAttrStmt(
       Elem.node,
-      List(DotAttr("fontname", "ING Me"), DotAttr("fontsize", 22), DotAttr("fontcolor", "white")))
-  )
+      readAttributes("common")
+    ))
 
-  private val rootAttrs = List(
+  val rootAttrs = List(
     DotAttr("pad", 0.2D)
   )
+}
+
+object RecipeVisualizer {
+
+  type RecipePetriNetGraph = Graph[Either[Place[_], Transition[_]], WLDiEdge]
 
   private def nodeLabelFn: Either[Place[_], Transition[_]] ⇒ String = {
     case Left(place) if place.isEmptyEventIngredient ⇒ s"empty:${place.label}"
@@ -128,33 +128,33 @@ object RecipeVisualizer {
     case Right(transition) => transition.label
   }
 
-  private def nodeDotAttrFn: (RecipePetriNetGraph#NodeT, Set[String], Set[String]) => List[DotAttr] =
+  private def nodeDotAttrFn(style: RecipeStyle): (RecipePetriNetGraph#NodeT, Set[String], Set[String]) => List[DotAttr] =
     (node: RecipePetriNetGraph#NodeT, eventNames: Set[String], ingredientNames: Set[String]) ⇒
       node.value match {
-        case Left(place) if place.isInteractionEventOutput => choiceAttributes
-        case Left(place) if place.isOrEventPrecondition => preconditionORAttributes
-        case Left(place) if place.isEmptyEventIngredient ⇒ emptyEventAttributes
-        case Left(_) if node.incomingTransitions.isEmpty => missingIngredientAttributes
-        case Left(place) if ingredientNames contains place.label ⇒ providedIngredientAttributes
-        case Left(_) ⇒ ingredientAttributes
-        case Right(t: InteractionTransition[_]) if eventNames.intersect(t.eventsToFire.map(_.name).toSet).nonEmpty => firedInteractionAttributes
-        case Right(transition) if eventNames.contains(transition.label) ⇒ eventFiredAttributes
-        case Right(transition) if transition.isMultiFacilitatorTransition => choiceAttributes
-        case Right(transition) if transition.isInteraction ⇒ interactionAttributes
-        case Right(transition) if transition.isSieve ⇒ sieveAttributes
-        case Right(transition) if transition.isEventMissing ⇒ eventMissingAttributes
-        case Right(transition) if transition.isSensoryEvent => sensoryEventAttributes
-        case Right(_) ⇒ eventAttributes
+        case Left(place) if place.isInteractionEventOutput => style.choiceAttributes
+        case Left(place) if place.isOrEventPrecondition => style.preconditionORAttributes
+        case Left(place) if place.isEmptyEventIngredient ⇒ style.emptyEventAttributes
+        case Left(_) if node.incomingTransitions.isEmpty => style.missingIngredientAttributes
+        case Left(place) if ingredientNames contains place.label ⇒ style.providedIngredientAttributes
+        case Left(_) ⇒ style.ingredientAttributes
+        case Right(t: InteractionTransition[_]) if eventNames.intersect(t.eventsToFire.map(_.name).toSet).nonEmpty => style.firedInteractionAttributes
+        case Right(transition) if eventNames.contains(transition.label) ⇒ style.eventFiredAttributes
+        case Right(transition) if transition.isMultiFacilitatorTransition => style.choiceAttributes
+        case Right(transition) if transition.isInteraction ⇒ style.interactionAttributes
+        case Right(transition) if transition.isSieve ⇒ style.sieveAttributes
+        case Right(transition) if transition.isEventMissing ⇒ style.eventMissingAttributes
+        case Right(transition) if transition.isSensoryEvent => style.sensoryEventAttributes
+        case Right(_) ⇒ style.eventAttributes
       }
 
-  private def generateDot(graph: RecipePetriNetGraph, filter: String => Boolean, eventNames: Set[String], ingredientNames: Set[String]): String = {
+  private def generateDot(graph: RecipePetriNetGraph, style: RecipeStyle, filter: String => Boolean, eventNames: Set[String], ingredientNames: Set[String]): String = {
     val myRoot = DotRootGraph(directed = graph.isDirected,
       id = None,
-      attrStmts = attrStmts,
-      attrList = rootAttrs)
+      attrStmts = style.commonNodeAttributes,
+      attrList = style.rootAttrs)
 
     def myNodeTransformer(innerNode: RecipePetriNetGraph#NodeT): Option[(DotGraph, DotNodeStmt)] = {
-      Some((myRoot, DotNodeStmt(nodeLabelFn(innerNode.value), nodeDotAttrFn(innerNode, eventNames, ingredientNames))))
+      Some((myRoot, DotNodeStmt(nodeLabelFn(innerNode.value), nodeDotAttrFn(style)(innerNode, eventNames, ingredientNames))))
     }
 
     def myEdgeTransformer(innerEdge: RecipePetriNetGraph#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
@@ -220,8 +220,21 @@ object RecipeVisualizer {
   def visualiseCompiledRecipe(compiledRecipe: CompiledRecipe,
                               filter: String => Boolean = _ => true,
                               eventNames: Set[String] = Set.empty,
-                              ingredientNames: Set[String] = Set.empty): String =
-    generateDot(compiledRecipe.petriNet.innerGraph, filter, eventNames, ingredientNames)
+                              ingredientNames: Set[String] = Set.empty): String = {
+
+    val config = ConfigFactory.load().getConfig("baker.visualization")
+    val configuredStyle = config.getString("style")
+
+    val pickedStyle = if (!config.hasPath(s"styles.$configuredStyle")) {
+      System.err.println(s"no configuration for recipe style '$configuredStyle' found, falling back to default")
+      "default"
+    } else
+      configuredStyle
+
+    val recipeStyle = new RecipeStyle(config.getConfig(s"styles.$pickedStyle"))
+
+    generateDot(compiledRecipe.petriNet.innerGraph, recipeStyle, filter, eventNames, ingredientNames)
+  }
 
   def visualisePetrinetOfCompiledRecipe(petriNet: RecipePetriNet): String =
     GraphDot.generateDot(petriNet.innerGraph, PetriNetDot.petriNetTheme[Place[_], Transition[_]])

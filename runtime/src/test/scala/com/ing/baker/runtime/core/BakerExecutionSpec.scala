@@ -48,6 +48,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val (baker, recipeId) = setupBakerWithRecipe("FirstTimeBaking")
 
       val id = UUID.randomUUID().toString
+
       baker.bake(recipeId, id)
     }
 
