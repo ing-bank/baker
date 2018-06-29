@@ -4,3 +4,6 @@ theme:
 markdown_extensions:
   - codehilite
   - pymdownx.superfences
+
+repo_name: 'ing-bank/baker'
+repo_url: 'https://github.com/ing-bank/baker'
