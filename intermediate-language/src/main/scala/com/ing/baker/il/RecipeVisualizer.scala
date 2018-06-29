@@ -1,9 +1,11 @@
 package com.ing.baker.il
 
+import com.ing.baker.il.RecipeVisualizer.log
 import com.ing.baker.il.petrinet.{InteractionTransition, Node, Place, RecipePetriNet, Transition}
 import com.ing.baker.petrinet.api._
 import com.typesafe.config.{Config, ConfigFactory}
 import dot._
+import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
 import scala.language.higherKinds
@@ -14,28 +16,53 @@ import scalax.collection.io.dot.implicits._
 
 class RecipeStyle(config: Config) {
 
-  def readAttributes(key: String): List[DotAttr] =
-    config.getConfig(key)
-      .entrySet().asScala
-      .map(e => e.getKey -> e.getValue.unwrapped())
-      .toMap.-("shape") // shape is not allowed to be overriden
+  val visualizationConfig = config.getConfig("baker.visualization")
+  val configuredStyle = visualizationConfig.getString("style")
+
+  val pickedStyle = if (!visualizationConfig.hasPath(s"styles.$configuredStyle")) {
+    log.warn(s"no configuration for recipe style '$configuredStyle' found, falling back to 'default' style")
+    "default"
+  } else
+    configuredStyle
+
+  val styleConfig = visualizationConfig.getConfig(s"styles.$pickedStyle")
+
+  def readAttributes(keys: String*): List[DotAttr] = {
+    val values = keys.foldLeft[Map[String, AnyRef]](Map.empty) {
+      case (acc, key) =>
+        val map = styleConfig.getConfig(key)
+          .entrySet().asScala
+          .map(e => e.getKey -> e.getValue.unwrapped())
+        acc ++ map
+    }
+
+    values
+      .-("shape") // shape is not allowed to be overriden
       .map {
         case (key, s: String) => Some(DotAttr(key, s))
         case (key, n: java.lang.Integer) => Some(DotAttr(key, n.intValue()))
         case (key, n: java.lang.Long) => Some(DotAttr(key, n.longValue()))
         case (key, n: java.lang.Float) => Some(DotAttr(key, n.floatValue()))
         case (key, n: java.lang.Double) => Some(DotAttr(key, n.doubleValue()))
-        case other => None
+        case (key, other) =>
+          RecipeVisualizer.log.warn(s"unusable configuration: $key = $other");
+          None
       }.toList.flatten
+  }
+
+  val rootAttributes = readAttributes("root")
+
+  val commonNodeAttributes = List(
+    DotAttrStmt(
+      Elem.node,
+      readAttributes("common")
+    ))
 
   val ingredientAttributes: List[DotAttr] =
     DotAttr("shape", "circle") +: readAttributes("ingredient")
 
-  val providedIngredientAttributes: List[DotAttr] = List(
-    DotAttr("shape", "circle"),
-    DotAttr("color", "\"#3b823a\""),
-    DotAttr("style", "filled")
-  )
+  val providedIngredientAttributes: List[DotAttr] =
+    DotAttr("shape", "circle") +: readAttributes("ingredient", "fired")
 
   val missingIngredientAttributes: List[DotAttr] = List(
     DotAttr("shape", "circle"),
@@ -53,12 +80,11 @@ class RecipeStyle(config: Config) {
   val interactionAttributes: List[DotAttr] =
     DotAttr("shape", "rect") +: readAttributes("interaction")
 
-  val eventFiredAttributes: List[DotAttr] = List(
-    DotAttr("shape", "diamond"),
-    DotAttr("margin", 0.3D),
-    DotAttr("style", "rounded, filled"),
-    DotAttr("color", "\"#3b823a\"")
-  )
+  val eventFiredAttributes: List[DotAttr] =
+    DotAttr("shape", "diamond") +: readAttributes("event", "fired")
+
+  val firedInteractionAttributes: List[DotAttr] =
+    DotAttr("shape", "rect") +: readAttributes("interaction", "fired")
 
   val eventMissingAttributes: List[DotAttr] = List(
     DotAttr("shape", "diamond"),
@@ -66,14 +92,6 @@ class RecipeStyle(config: Config) {
     DotAttr("style", "rounded, filled"),
     DotAttr("color", "\"#EE0000\""),
     DotAttr("penwidth", "5.0")
-  )
-
-  val firedInteractionAttributes: List[DotAttr] = List(
-    DotAttr("shape", "rect"),
-    DotAttr("margin", 0.5D),
-    DotAttr("color", "\"#3b823a\""),
-    DotAttr("style", "rounded, filled"),
-    DotAttr("penwidth", 2)
   )
 
   val choiceAttributes: List[DotAttr] = List(
@@ -98,6 +116,7 @@ class RecipeStyle(config: Config) {
     DotAttr("style", "filled")
   )
 
+  // this will be removed soon
   val sieveAttributes: List[DotAttr] = List(
     DotAttr("shape", "rect"),
     DotAttr("margin", 0.5D),
@@ -105,19 +124,11 @@ class RecipeStyle(config: Config) {
     DotAttr("style", "rounded, filled"),
     DotAttr("penwidth", 2)
   )
-
-  val commonNodeAttributes = List(
-    DotAttrStmt(
-      Elem.node,
-      readAttributes("common")
-    ))
-
-  val rootAttrs = List(
-    DotAttr("pad", 0.2D)
-  )
 }
 
 object RecipeVisualizer {
+
+  val log = LoggerFactory.getLogger("com.ing.baker.il.RecipeVisualizer")
 
   type RecipePetriNetGraph = Graph[Either[Place[_], Transition[_]], WLDiEdge]
 
@@ -151,7 +162,7 @@ object RecipeVisualizer {
     val myRoot = DotRootGraph(directed = graph.isDirected,
       id = None,
       attrStmts = style.commonNodeAttributes,
-      attrList = style.rootAttrs)
+      attrList = style.rootAttributes)
 
     def myNodeTransformer(innerNode: RecipePetriNetGraph#NodeT): Option[(DotGraph, DotNodeStmt)] = {
       Some((myRoot, DotNodeStmt(nodeLabelFn(innerNode.value), nodeDotAttrFn(style)(innerNode, eventNames, ingredientNames))))
@@ -217,25 +228,16 @@ object RecipeVisualizer {
       cNodeTransformer = Some(myNodeTransformer))
   }
 
-  def visualiseCompiledRecipe(compiledRecipe: CompiledRecipe,
-                              filter: String => Boolean = _ => true,
-                              eventNames: Set[String] = Set.empty,
-                              ingredientNames: Set[String] = Set.empty): String = {
+  def visualizeRecipe(recipe: CompiledRecipe,
+                      config: Config = ConfigFactory.load(),
+                      filter: String => Boolean = _ => true,
+                      eventNames: Set[String] = Set.empty,
+                      ingredientNames: Set[String] = Set.empty): String =
 
-    val config = ConfigFactory.load().getConfig("baker.visualization")
-    val configuredStyle = config.getString("style")
+    generateDot(recipe.petriNet.innerGraph, new RecipeStyle(config), filter, eventNames, ingredientNames)
 
-    val pickedStyle = if (!config.hasPath(s"styles.$configuredStyle")) {
-      System.err.println(s"no configuration for recipe style '$configuredStyle' found, falling back to default")
-      "default"
-    } else
-      configuredStyle
 
-    val recipeStyle = new RecipeStyle(config.getConfig(s"styles.$pickedStyle"))
-
-    generateDot(compiledRecipe.petriNet.innerGraph, recipeStyle, filter, eventNames, ingredientNames)
-  }
-
-  def visualisePetrinetOfCompiledRecipe(petriNet: RecipePetriNet): String =
+  def visualizePetrinet(petriNet: RecipePetriNet): String =
     GraphDot.generateDot(petriNet.innerGraph, PetriNetDot.petriNetTheme[Place[_], Transition[_]])
+
 }

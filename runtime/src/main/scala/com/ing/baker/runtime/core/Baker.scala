@@ -370,8 +370,9 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     val futureResult = processIndexActor.ask(GetCompiledRecipe(processId))(timeout)
     Await.result(futureResult, timeout) match {
       case RecipeFound(compiledRecipe) =>
-        RecipeVisualizer.visualiseCompiledRecipe(
+        RecipeVisualizer.visualizeRecipe(
           compiledRecipe,
+          config,
           eventNames = events(processId).map(_.name).toSet,
           ingredientNames = getIngredients(processId).keySet)
       case ProcessDeleted(_) => throw new ProcessDeletedException(s"Process $processId is deleted")
