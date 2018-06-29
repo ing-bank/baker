@@ -2,7 +2,7 @@ package com.ing.baker.il.petrinet
 
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
-import com.ing.baker.il.{ActionType, EventOutputTransformer, _}
+import com.ing.baker.il.{EventOutputTransformer, _}
 import com.ing.baker.types.Value
 import org.slf4j._
 
@@ -18,7 +18,6 @@ case class InteractionTransition[I](eventsToFire: Seq[EventDescriptor],
                                     requiredIngredients: Seq[IngredientDescriptor],
                                     interactionName: String,
                                     originalInteractionName: String,
-                                    actionType: ActionType = ActionType.InteractionAction, // TODO This can be removed later.
                                     predefinedParameters: Map[String, Value],
                                     maximumInteractionCount: Option[Int],
                                     failureStrategy: InteractionFailureStrategy,

@@ -7,8 +7,6 @@ import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{InteractionDescriptor, ProvidesNothing}
 import com.ing.baker.types._
 
-import scala.concurrent.duration.Duration
-
 package object compiler {
 
   def ingredientToCompiledIngredient(ingredient: common.Ingredient): IngredientDescriptor = IngredientDescriptor(ingredient.name, ingredient.ingredientType)
@@ -18,14 +16,10 @@ package object compiler {
   implicit class InteractionOps(interaction: InteractionDescriptor) {
 
     def toInteractionTransition(defaultFailureStrategy: common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition[_] =
-      interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.InteractionAction, allIngredientNames)
-
-    def toSieveTransition(defaultFailureStrategy: common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition[_] =
-      interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.SieveAction, allIngredientNames)
+      interactionTransitionOf(interaction, defaultFailureStrategy, allIngredientNames)
 
     def interactionTransitionOf(interactionDescriptor: InteractionDescriptor,
                                 defaultFailureStrategy: common.InteractionFailureStrategy,
-                                actionType: ActionType,
                                 allIngredientNames: Set[String]): InteractionTransition[Any] = {
 
       //This transforms the event using the eventOutputTransformer to the new event
@@ -114,8 +108,8 @@ package object compiler {
         predefinedParameters = predefinedIngredientsWithOptionalsEmpty,
         maximumInteractionCount = interactionDescriptor.maximumInteractionCount,
         failureStrategy = failureStrategy,
-        eventOutputTransformers = interactionDescriptor.eventOutputTransformers.map { case (event, transformer) => event.name -> transformEventOutputTransformer(transformer) },
-        actionType = actionType)
+        eventOutputTransformers = interactionDescriptor.eventOutputTransformers.map {
+          case (event, transformer) => event.name -> transformEventOutputTransformer(transformer) })
     }
   }
 
@@ -135,5 +129,4 @@ package object compiler {
     def findEventTransitionsByEventName: String ⇒ Option[EventTransition] =
       eventName => eventTransitions.find(_.event.name == eventName)
   }
-
 }

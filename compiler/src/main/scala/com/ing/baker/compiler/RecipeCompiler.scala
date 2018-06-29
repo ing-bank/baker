@@ -8,7 +8,6 @@ import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.recipe.common._
 
-import scala.collection.mutable
 import scala.language.postfixOps
 import scalax.collection.immutable.Graph
 
@@ -185,7 +184,7 @@ object RecipeCompiler {
     // It should be provided at runtime from outside the active petri net (marking)
     val interactionTransitions = recipe.interactions.map(_.toInteractionTransition(recipe.defaultFailureStrategy, allIngredientNames))
 
-    val sieveTransitions = recipe.sieves.map(_.toSieveTransition(recipe.defaultFailureStrategy, allIngredientNames))
+    val sieveTransitions = recipe.sieves.map(_.toInteractionTransition(recipe.defaultFailureStrategy, allIngredientNames))
 
     val allInteractionTransitions: Seq[InteractionTransition[_]] = sieveTransitions ++ interactionTransitions
 

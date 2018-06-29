@@ -2,7 +2,6 @@ package com.ing.baker
 
 import java.security.MessageDigest
 
-import com.ing.baker.il.ActionType.{InteractionAction, SieveAction}
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, MissingEventTransition, MultiFacilitatorTransition, Place, Transition}
 
@@ -32,14 +31,10 @@ package object il {
   implicit class TransitionAdditions(transition: Transition[_]) {
 
     def isInteraction: Boolean = PartialFunction.cond(transition) {
-      case t: InteractionTransition[_] => t.actionType == InteractionAction
+      case _: InteractionTransition[_] => true
     }
 
     def isMultiFacilitatorTransition: Boolean = transition.isInstanceOf[MultiFacilitatorTransition]
-
-    def isSieve: Boolean = PartialFunction.cond(transition) {
-      case t: InteractionTransition[_] => t.actionType == SieveAction
-    }
 
     def isEventMissing: Boolean = transition.isInstanceOf[MissingEventTransition[_]]
 
