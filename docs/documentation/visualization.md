@@ -43,7 +43,7 @@ baker.visualization {
 
 ```
 
-Please see the `default` theme in the [reference.conf](https://raw.githubusercontent.com/ing-bank/baker/master/recipe-dsl/src/main/resources/reference.conf)
+Please see the `default` theme in the [reference.conf](https://raw.githubusercontent.com/ing-bank/baker/master/intermediate-language/src/main/resources/reference.conf)
 as an example.
 
 For an overview on what is possible to configure check out the [graphviz](https://www.graphviz.org/) documentation.
