@@ -65,6 +65,25 @@
       <defs>
         
         
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448"
+    viewBox="0 0 416 448" id="__github">
+  <path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19-18.125
+        8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19 18.125-8.5
+        18.125 8.5 10.75 19 3.125 20.5zM320 304q0 10-3.125 20.5t-10.75
+        19-18.125 8.5-18.125-8.5-10.75-19-3.125-20.5 3.125-20.5 10.75-19
+        18.125-8.5 18.125 8.5 10.75 19 3.125 20.5zM360
+        304q0-30-17.25-51t-46.75-21q-10.25 0-48.75 5.25-17.75 2.75-39.25
+        2.75t-39.25-2.75q-38-5.25-48.75-5.25-29.5 0-46.75 21t-17.25 51q0 22 8
+        38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0
+        37.25-1.75t35-7.375 30.5-15 20.25-25.75 8-38.375zM416 260q0 51.75-15.25
+        82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5-41.75
+        1.125q-19.5 0-35.5-0.75t-36.875-3.125-38.125-7.5-34.25-12.875-30.25-20.25-21.5-28.75q-15.5-30.75-15.5-82.75
+        0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25
+        30.875q36.75-8.75 77.25-8.75 37 0 70 8 26.25-20.5
+        46.75-30.25t47.25-9.75q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34
+        99.5z" />
+</svg>
+        
       </defs>
     </svg>
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -134,6 +153,30 @@
         
       </div>
       
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+
+  <a href="https://github.com/ing-bank/baker/" title="Go to repository" class="md-source" data-md-source="github">
+    
+      <div class="md-source__icon">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <use xlink:href="#__github" width="24" height="24"></use>
+        </svg>
+      </div>
+    
+    <div class="md-source__repository">
+      ing-bank/baker
+    </div>
+  </a>
+
+          </div>
+        </div>
+      
     </div>
   </nav>
 </header>
@@ -159,6 +202,28 @@
     </span>
     Baker
   </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+
+  <a href="https://github.com/ing-bank/baker/" title="Go to repository" class="md-source" data-md-source="github">
+    
+      <div class="md-source__icon">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <use xlink:href="#__github" width="24" height="24"></use>
+        </svg>
+      </div>
+    
+    <div class="md-source__repository">
+      ing-bank/baker
+    </div>
+  </a>
+
+    </div>
   
   <ul class="md-nav__list" data-md-scrollfix>
     
@@ -199,8 +264,32 @@
 
 
   <li class="md-nav__item">
+    <a href="../../documentation/compiler/" title="Recipe compiler" class="md-nav__link">
+      Recipe compiler
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../documentation/concepts/" title="Concepts" class="md-nav__link">
       Concepts
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../documentation/visualization/" title="Visualization" class="md-nav__link">
+      Visualization
     </a>
   </li>
 
@@ -899,6 +988,8 @@
             <article class="md-content__inner md-typeset">
               
                 
+                  <a href="https://github.com/ing-bank/baker/edit/master/docs/presentations/ScaleByTheBay-18-Nov-2017.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
                 
                 <h1 id="declare-verify-and-execute-microservices-based-process-flows-with-baker">Declare, verify and execute microservices-based process flows with Baker</h1>
 <h2 id="scale-by-the-bay-2017-san-francisco">Scale By the Bay 2017, San Francisco</h2>
@@ -1041,12 +1132,12 @@
 <hr />
 <h2 id="design-time">Design-time</h2>
 <hr />
-<pre><code class="scala">val registerIndividual = Interaction(
-  name = &quot;RegisterIndividual&quot;,
-  inputIngredients = Seq(name, address),
-  output = FiresOneOfEvents(registerIndividualSuccessful, registerIndividualFailed)
-)
-</code></pre>
+<div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">registerIndividual</span> <span class="k">=</span> <span class="nc">Interaction</span><span class="o">(</span>
+  <span class="n">name</span> <span class="k">=</span> <span class="s">&quot;RegisterIndividual&quot;</span><span class="o">,</span>
+  <span class="n">inputIngredients</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span><span class="n">name</span><span class="o">,</span> <span class="n">address</span><span class="o">),</span>
+  <span class="n">output</span> <span class="k">=</span> <span class="nc">FiresOneOfEvents</span><span class="o">(</span><span class="n">registerIndividualSuccessful</span><span class="o">,</span> <span class="n">registerIndividualFailed</span><span class="o">)</span>
+<span class="o">)</span>
+</pre></div>
 
 <hr />
 <p><img alt="" src="../individual.png" /></p>
@@ -1055,44 +1146,44 @@
 <hr />
 <p><img alt="" src="../assign.png" /></p>
 <hr />
-<pre><code class="scala">val recipe = Recipe(&quot;OpenAccountRecipe&quot;)
-  .withInteractions(
-    assignAccount,
-    getAccount,
-    registerIndividual)
-</code></pre>
+<div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">recipe</span> <span class="k">=</span> <span class="nc">Recipe</span><span class="o">(</span><span class="s">&quot;OpenAccountRecipe&quot;</span><span class="o">)</span>
+  <span class="o">.</span><span class="n">withInteractions</span><span class="o">(</span>
+    <span class="n">assignAccount</span><span class="o">,</span>
+    <span class="n">getAccount</span><span class="o">,</span>
+    <span class="n">registerIndividual</span><span class="o">)</span>
+</pre></div>
 
 <hr />
 <p><img alt="fit" src="../recipe-no-sensory.png" /></p>
 <hr />
-<pre><code class="scala">val recipe = Recipe(&quot;OpenAccountRecipe&quot;)
-  .withInteractions(
-    assignAccount,
-    getAccount.withRequiredEvent(termsAndConditionsAccepted),
-    registerIndividual)
-  .withSensoryEvents(
-    termsAndConditionsAccepted,
-    individualInformationSubmitted)
-</code></pre>
+<div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">recipe</span> <span class="k">=</span> <span class="nc">Recipe</span><span class="o">(</span><span class="s">&quot;OpenAccountRecipe&quot;</span><span class="o">)</span>
+  <span class="o">.</span><span class="n">withInteractions</span><span class="o">(</span>
+    <span class="n">assignAccount</span><span class="o">,</span>
+    <span class="n">getAccount</span><span class="o">.</span><span class="n">withRequiredEvent</span><span class="o">(</span><span class="n">termsAndConditionsAccepted</span><span class="o">),</span>
+    <span class="n">registerIndividual</span><span class="o">)</span>
+  <span class="o">.</span><span class="n">withSensoryEvents</span><span class="o">(</span>
+    <span class="n">termsAndConditionsAccepted</span><span class="o">,</span>
+    <span class="n">individualInformationSubmitted</span><span class="o">)</span>
+</pre></div>
 
 <hr />
 <p><img alt="fit" src="../recipe.png" /></p>
 <hr />
 <h2 id="run-time">Run-time</h2>
 <hr />
-<pre><code class="scala">//for each process instance, bake the recipe
-baker.bake(processId);
-//notify Baker when events occur
-baker.processEvent(processId, individualInformationSubmitted.instance(name, address));
-baker.processEvent(processId, termsAndConditionsAccepted.instance());
+<div class="codehilite"><pre><span></span><span class="c1">//for each process instance, bake the recipe</span>
+<span class="n">baker</span><span class="o">.</span><span class="n">bake</span><span class="o">(</span><span class="n">processId</span><span class="o">);</span>
+<span class="c1">//notify Baker when events occur</span>
+<span class="n">baker</span><span class="o">.</span><span class="n">processEvent</span><span class="o">(</span><span class="n">processId</span><span class="o">,</span> <span class="n">individualInformationSubmitted</span><span class="o">.</span><span class="n">instance</span><span class="o">(</span><span class="n">name</span><span class="o">,</span> <span class="n">address</span><span class="o">));</span>
+<span class="n">baker</span><span class="o">.</span><span class="n">processEvent</span><span class="o">(</span><span class="n">processId</span><span class="o">,</span> <span class="n">termsAndConditionsAccepted</span><span class="o">.</span><span class="n">instance</span><span class="o">());</span>
 
-//retrieve ingredients stored in the accumulated state
-assert(baker.getIngredients(processId).get(&quot;customerId&quot;).equals(customerId));
-assert(baker.getIngredients(processId).get(&quot;iban&quot;).equals(iban));
+<span class="c1">//retrieve ingredients stored in the accumulated state</span>
+<span class="n">assert</span><span class="o">(</span><span class="n">baker</span><span class="o">.</span><span class="n">getIngredients</span><span class="o">(</span><span class="n">processId</span><span class="o">).</span><span class="n">get</span><span class="o">(</span><span class="s">&quot;customerId&quot;</span><span class="o">).</span><span class="n">equals</span><span class="o">(</span><span class="n">customerId</span><span class="o">));</span>
+<span class="n">assert</span><span class="o">(</span><span class="n">baker</span><span class="o">.</span><span class="n">getIngredients</span><span class="o">(</span><span class="n">processId</span><span class="o">).</span><span class="n">get</span><span class="o">(</span><span class="s">&quot;iban&quot;</span><span class="o">).</span><span class="n">equals</span><span class="o">(</span><span class="n">iban</span><span class="o">));</span>
 
-//retrieve all events that have occurred
-baker.events(processId)
-</code></pre>
+<span class="c1">//retrieve all events that have occurred</span>
+<span class="n">baker</span><span class="o">.</span><span class="n">events</span><span class="o">(</span><span class="n">processId</span><span class="o">)</span>
+</pre></div>
 
 <hr />
 <p><img alt="fit" src="../end-state.png" /></p>
@@ -1132,7 +1223,7 @@ baker.events(processId)
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../../documentation/concepts/" title="Concepts" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../../documentation/visualization/" title="Visualization" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -1141,7 +1232,7 @@ baker.events(processId)
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Concepts
+                Visualization
               </span>
             </div>
           </a>

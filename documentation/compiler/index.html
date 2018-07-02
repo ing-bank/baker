@@ -31,21 +31,21 @@
       
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
-      <link rel="shortcut icon" href="/assets/images/favicon.png">
+      <link rel="shortcut icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-0.17.4, mkdocs-material-2.9.1">
     
     
       
-        <title>Baker</title>
+        <title>Recipe compiler - Baker</title>
       
     
     
-      <link rel="stylesheet" href="/assets/stylesheets/application.ba0fd1a6.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/application.ba0fd1a6.css">
       
       
     
     
-      <script src="/assets/javascripts/modernizr.1aa3b519.js"></script>
+      <script src="../../assets/javascripts/modernizr.1aa3b519.js"></script>
     
     
       <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
@@ -54,7 +54,7 @@
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
       
     
-    <link rel="stylesheet" href="/assets/fonts/material-icons.css">
+    <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
     
     
   </head>
@@ -90,12 +90,16 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
+      <a href="#recipe-compiler" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
     
       <header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="/" title="Baker" class="md-header-nav__button md-logo">
+        <a href="../.." title="Baker" class="md-header-nav__button md-logo">
           
             <i class="md-icon"></i>
           
@@ -112,7 +116,7 @@
                 Baker
               </span>
               <span class="md-header-nav__topic">
-                
+                Recipe compiler
               </span>
             
           
@@ -229,7 +233,7 @@
 
 
   <li class="md-nav__item">
-    <a href="/" title="Home" class="md-nav__link">
+    <a href="../.." title="Home" class="md-nav__link">
       Home
     </a>
   </li>
@@ -239,10 +243,12 @@
       
       
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
     
     <label class="md-nav__link" for="nav-2">
       Documentation
@@ -258,11 +264,90 @@
           
           
 
+  
 
-  <li class="md-nav__item">
-    <a href="/documentation/compiler/" title="Compiler" class="md-nav__link">
-      Compiler
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Recipe compiler
+      </label>
+    
+    <a href="./" title="Recipe compiler" class="md-nav__link md-nav__link--active">
+      Recipe compiler
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" title="Introduction" class="md-nav__link">
+    Introduction
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#translation-rules" title="Translation rules" class="md-nav__link">
+    Translation rules
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ingredient-used-by-multiple-interactions" title="Ingredient used by multiple interactions" class="md-nav__link">
+    Ingredient used by multiple interactions
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interaction-with-precondition-and" title="Interaction with precondition (AND)" class="md-nav__link">
+    Interaction with precondition (AND)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interaction-with-precodition-or" title="Interaction with precodition (OR)" class="md-nav__link">
+    Interaction with precodition (OR)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sensory-event-with-firing-limit" title="Sensory event with firing limit" class="md-nav__link">
+    Sensory event with firing limit
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
         
@@ -272,7 +357,7 @@
 
 
   <li class="md-nav__item">
-    <a href="/documentation/concepts/" title="Concepts" class="md-nav__link">
+    <a href="../concepts/" title="Concepts" class="md-nav__link">
       Concepts
     </a>
   </li>
@@ -284,7 +369,7 @@
 
 
   <li class="md-nav__item">
-    <a href="/documentation/visualization/" title="Visualization" class="md-nav__link">
+    <a href="../visualization/" title="Visualization" class="md-nav__link">
       Visualization
     </a>
   </li>
@@ -320,7 +405,7 @@
 
 
   <li class="md-nav__item">
-    <a href="/presentations/ScaleByTheBay-18-Nov-2017/" title="ScaleByTheBay 18 Nov 2017" class="md-nav__link">
+    <a href="../../presentations/ScaleByTheBay-18-Nov-2017/" title="ScaleByTheBay 18 Nov 2017" class="md-nav__link">
       ScaleByTheBay 18 Nov 2017
     </a>
   </li>
@@ -332,7 +417,7 @@
 
 
   <li class="md-nav__item">
-    <a href="/presentations/baker-pitch/" title="Baker pitch" class="md-nav__link">
+    <a href="../../presentations/baker-pitch/" title="Baker pitch" class="md-nav__link">
       Baker pitch
     </a>
   </li>
@@ -344,7 +429,7 @@
 
 
   <li class="md-nav__item">
-    <a href="/presentations/muCon-London-7-Nov-2017/" title="muCon London 7 Nov 2017" class="md-nav__link">
+    <a href="../../presentations/muCon-London-7-Nov-2017/" title="muCon London 7 Nov 2017" class="md-nav__link">
       muCon London 7 Nov 2017
     </a>
   </li>
@@ -362,12 +447,115 @@
               </div>
             
             
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" title="Introduction" class="md-nav__link">
+    Introduction
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#translation-rules" title="Translation rules" class="md-nav__link">
+    Translation rules
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ingredient-used-by-multiple-interactions" title="Ingredient used by multiple interactions" class="md-nav__link">
+    Ingredient used by multiple interactions
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interaction-with-precondition-and" title="Interaction with precondition (AND)" class="md-nav__link">
+    Interaction with precondition (AND)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interaction-with-precodition-or" title="Interaction with precodition (OR)" class="md-nav__link">
+    Interaction with precodition (OR)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sensory-event-with-firing-limit" title="Sensory event with firing limit" class="md-nav__link">
+    Sensory event with firing limit
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
           
           <div class="md-content">
             <article class="md-content__inner md-typeset">
               
-  <h1>404 - Not found</h1>
-
+                
+                  <a href="https://github.com/ing-bank/baker/edit/master/docs/documentation/compiler.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                <h1 id="recipe-compiler">Recipe compiler</h1>
+<p>This documentation is for developers of Bakers and others who might be interested about the internal mechanics.</p>
+<h2 id="introduction">Introduction</h2>
+<p>A recipe can be represented (and <a href="../visualization">visualization</a>) as a graph.</p>
+<p>It can be seen as a higher level representation of a petri net (which is also a graph)</p>
+<p>The recipe compiler takes a recipe and creates a petri net.</p>
+<p>Generally the petri net is graph more complicated with extra layers of wiring nodes.</p>
+<h2 id="translation-rules">Translation rules</h2>
+<p>The compiler has some rules about translating recipe parts to <code>transitions</code> and <code>places</code> in the petri net.</p>
+<h3 id="ingredient-used-by-multiple-interactions">Ingredient used by multiple interactions</h3>
+<p>Often an ingredient will be used by multiple interactions in a recipe.</p>
+<p>Because tokens can only be consumed by 1 transition we have to add a layer to duplicate the token for all transitions.</p>
+<p><img alt="" src="../RecipeCompiler-draw.io-MultipleInteractions.svg" /></p>
+<h3 id="interaction-with-precondition-and">Interaction with precondition (AND)</h3>
+<p>By default event preconditions use an AND combinator. In the petri net this means that each event transition has
+to produce a token in a place for that interaction.</p>
+<p><img alt="" src="../RecipeCompiler-draw.io-ANDPrecondition.svg" /></p>
+<h3 id="interaction-with-precodition-or">Interaction with precodition (OR)</h3>
+<p>Events that are grouped in an OR combinator for an interaction output a token to the same place.</p>
+<p>Therefor when one of them fires the condition for the transition to fire is met.</p>
+<p><img alt="" src="../RecipeCompiler-draw.io-ORPrecondition.svg" /></p>
+<h3 id="sensory-event-with-firing-limit">Sensory event with firing limit</h3>
+<p>When specifying a sensory event with a firing limit of <code>n</code> we generate a in-adjacent place with <code>n</code> tokens in the
+initial marking.</p>
+<p><img alt="" src="../RecipeCompiler-draw.io-FiringLimit.svg" /></p>
+                
+                  
+                
+              
               
                 
 
@@ -380,6 +568,41 @@
       
         
 <footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../.." title="Home" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Home
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../concepts/" title="Concepts" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Concepts
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -400,9 +623,9 @@
       
     </div>
     
-      <script src="/assets/javascripts/application.a59e2a89.js"></script>
+      <script src="../../assets/javascripts/application.a59e2a89.js"></script>
       
-      <script>app.initialize({version:"0.17.4",url:{base:""}})</script>
+      <script>app.initialize({version:"0.17.4",url:{base:"../.."}})</script>
       
     
     
