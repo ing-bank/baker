@@ -1,3 +1,9 @@
 site_name: Baker
 theme:
   name: 'material'
+markdown_extensions:
+  - codehilite
+  - pymdownx.superfences
+
+repo_name: 'ing-bank/baker'
+repo_url: 'https://github.com/ing-bank/baker'
