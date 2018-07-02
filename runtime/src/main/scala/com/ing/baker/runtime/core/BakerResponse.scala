@@ -171,8 +171,6 @@ class BakerResponse(processId: String, source: Source[Any, NotUsed])(implicit ma
     * }
     * }}}
     *
-    * </pre>
-    *
     * @param timeout The duration to wait for completion
     * @return
     */

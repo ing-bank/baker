@@ -1,8 +1,8 @@
 # Visualization
 
-## Generate a .DOT representation
+## Generate a .dot representation
 
-Baker can turn a recipe into a DOT representation.
+Baker can turn a recipe into a .dot representation. `.dot` is a notation for representing graphs.
 
 ``` scala tab="Scala"
 val recipe = RecipeCompiler.compileRecipe(Examples.webshop.webShopRecipe)
