@@ -287,7 +287,13 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
       actorsToBeCreated += processId
     case ActorDeleted(processId) =>
       actorsToBeCreated -= processId
-      index.update(processId, index(processId).copy(processStatus = Deleted))
+      index.get(processId) match {
+        case Some(processMeta) =>
+          index.update(processId, processMeta.copy(processStatus = Deleted))
+        case None =>
+          log.error(s"ActorDeleted persisted for non existing processId: $processId")
+      }
+
     case RecoveryCompleted =>
       actorsToBeCreated.foreach(id => createProcessActor(id))
   }
