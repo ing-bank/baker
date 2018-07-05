@@ -9,6 +9,9 @@ trait InteractionDescriptor {
 
   val interaction: Interaction
 
+  /**
+    * The name of the interaction
+    */
   val name: String
 
   /**
@@ -35,7 +38,6 @@ trait InteractionDescriptor {
     * This is used to overwrite the name used for the output ingredient
     */
   val overriddenOutputIngredientName: Option[String]
-
 
   /**
     * This is used to overwrite the name used for the output event and for the ingredients created by the event
