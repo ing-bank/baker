@@ -22,27 +22,23 @@ class RecipeManager extends PersistentActor with ActorLogging {
 
   val compiledRecipes: mutable.Map[String, CompiledRecipe] = mutable.Map[String, CompiledRecipe]()
 
-  private def hasCompiledRecipe(compiledRecipe: CompiledRecipe): Option[String] =
-    compiledRecipes.find(_._2 == compiledRecipe).map(_._1)
-
   private def addRecipe(recipeId: String, compiledRecipe: CompiledRecipe) =
     compiledRecipes += (recipeId -> compiledRecipe)
 
-
   override def receiveCommand: Receive = {
     case AddRecipe(compiledRecipe) => {
-      val foundRecipe = hasCompiledRecipe(compiledRecipe)
-      if(foundRecipe.isEmpty) {
-
-        persist(RecipeAdded(compiledRecipe.recipeId, compiledRecipe)){ _ =>
-          addRecipe(compiledRecipe.recipeId, compiledRecipe)
-          context.system.eventStream.publish(
-            com.ing.baker.runtime.core.events.RecipeAdded(compiledRecipe.name, compiledRecipe.recipeId, System.currentTimeMillis(), compiledRecipe))
+      compiledRecipes.get(compiledRecipe.recipeId) match {
+        case None =>
+          persist(RecipeAdded(compiledRecipe.recipeId, compiledRecipe)){ _ =>
+            addRecipe(compiledRecipe.recipeId, compiledRecipe)
+            context.system.eventStream.publish(
+              com.ing.baker.runtime.core.events.RecipeAdded(compiledRecipe.name, compiledRecipe.recipeId, System.currentTimeMillis(), compiledRecipe))
+            sender() ! RecipeSuccessfullyAdded
+          }
+        case Some(previousRecipe) if compiledRecipe == previousRecipe =>
           sender() ! RecipeSuccessfullyAdded
-        }
-      }
-      else{
-        sender() ! RecipeSuccessfullyAdded
+        case _ =>
+          sender() ! RecipeIdAlreadyExists
       }
     }
     case GetRecipe(recipeId: String) => {
