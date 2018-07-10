@@ -29,6 +29,9 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @param compiledRecipe The compiled recipe.
     * @return A recipe identifier.
     */
+
+  @throws[TimeoutException]("When the request does not receive a reply within configured 'baker.add-recipe-timeout' timeout")
+  @throws[IllegalArgumentException]("When trying to add a (different) recipe with an id that was already added before")
   def addRecipe(compiledRecipe: CompiledRecipe): Unit = baker.addRecipe(compiledRecipe)
 
   /**

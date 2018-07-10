@@ -97,7 +97,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @return A recipeId
     */
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  @throws[IllegalArgumentException]("When trying to add an incompatible recipe with an id that was already added before")
+  @throws[IllegalArgumentException]("When trying to add a (different) recipe with an id that was already added before")
   def addRecipe(compiledRecipe: CompiledRecipe, timeout: FiniteDuration = defaultAddRecipeTimeout): Unit = {
 
     // check if every interaction has an implementation
