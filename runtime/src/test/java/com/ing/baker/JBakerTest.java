@@ -98,7 +98,7 @@ public class JBakerTest {
     }
 
     @Test
-    public void shouldFailWhenMissingImplementations() throws BakerException {
+    public void shouldFailWhenMissingImplementations() throws BakerException, TimeoutException {
 
         exception.expect(BakerException.class);
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
@@ -244,7 +244,7 @@ public class JBakerTest {
     }
 
     @Test
-    public void shouldFailWhenSieveNotDefaultConstructor() throws BakerException {
+    public void shouldFailWhenSieveNotDefaultConstructor() throws BakerException, TimeoutException {
         Recipe recipe = JavaCompiledRecipeTest.setupComplexRecipe().withSieve(InteractionDescriptor.of(JavaCompiledRecipeTest.SieveImplWithoutDefaultConstruct.class));
 
         exception.expect(BakerException.class);
