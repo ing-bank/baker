@@ -155,7 +155,7 @@ trait ProtoEventAdapter {
       case types.EnumType(options) =>
         protobuf.Type(Type.OneofType.Enum(EnumType(options.toSeq)))
 
-      case il.CompiledRecipe(name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod) =>
+      case il.CompiledRecipe(recipeId, name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod) =>
 
         val eventReceiveMillis = eventReceivePeriod.map(_.toMillis)
         val retentionMillis = retentionPeriod.map(_.toMillis)
@@ -478,7 +478,7 @@ trait ProtoEventAdapter {
       case protobuf.IngredientDescriptor(Some(name), Some(ingredientType)) =>
         il.IngredientDescriptor(name, toDomain(ingredientType).asInstanceOf[types.Type])
 
-      case protobuf.CompiledRecipe(Some(name), Some(graphMsg), producedTokens, validationErrors, eventReceiveMillis, retentionMillis) =>
+      case protobuf.CompiledRecipe(Some(name), Some(graphMsg), producedTokens, validationErrors, eventReceiveMillis, retentionMillis, optionalRecipeId) =>
 
         val eventReceivePeriod = eventReceiveMillis.map(Duration(_, TimeUnit.MILLISECONDS))
         val retentionPeriod = retentionMillis.map(Duration(_, TimeUnit.MILLISECONDS))
@@ -493,7 +493,7 @@ trait ProtoEventAdapter {
           case _ ⇒ throw new IllegalStateException("Missing data in persisted ProducedToken")
         }
 
-        CompiledRecipe(name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
+        CompiledRecipe(optionalRecipeId.getOrElse(name), name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
 
       case recipe_manager.protobuf.RecipeAdded(Some(recipeId), (Some(compiledRecipeMsg))) =>
 

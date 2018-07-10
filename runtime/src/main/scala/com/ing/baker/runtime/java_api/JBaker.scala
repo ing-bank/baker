@@ -29,7 +29,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @param compiledRecipe The compiled recipe.
     * @return A recipe identifier.
     */
-  def addRecipe(compiledRecipe: CompiledRecipe): String = baker.addRecipe(compiledRecipe)
+  def addRecipe(compiledRecipe: CompiledRecipe): Unit = baker.addRecipe(compiledRecipe)
 
   /**
     * Adds a single interaction implementation to baker.

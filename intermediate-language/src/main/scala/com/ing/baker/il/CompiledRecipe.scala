@@ -9,7 +9,8 @@ import scala.concurrent.duration.FiniteDuration
 /**
   * A Compiled recipe.
   */
-case class CompiledRecipe(name: String,
+case class CompiledRecipe(recipeId: String,
+                          name: String,
                           petriNet: RecipePetriNet,
                           initialMarking: Marking[Place],
                           validationErrors: Seq[String] = Seq.empty,
@@ -21,6 +22,8 @@ case class CompiledRecipe(name: String,
   }.toSet
 
   def getValidationErrors: java.util.List[String] = validationErrors.toList.asJava
+
+  def getRecipeId(): String = recipeId
 
   /**
     * Visualise the compiled recipe in DOT format

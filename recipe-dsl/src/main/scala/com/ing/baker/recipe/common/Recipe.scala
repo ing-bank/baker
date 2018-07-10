@@ -8,6 +8,15 @@ import scala.concurrent.duration.FiniteDuration
 trait Recipe {
 
   /**
+    * The identifier of the recipe.
+    *
+    * MUST be unique for different recipes.
+    *
+    * You should change the id when you make changes to the recipe.
+    */
+  val recipeId: String
+
+  /**
     * The name of the recipe.
     */
   val name: String

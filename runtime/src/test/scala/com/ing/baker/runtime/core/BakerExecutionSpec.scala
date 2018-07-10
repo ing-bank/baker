@@ -249,10 +249,10 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       baker.addImplementation(mockImplementations)
 
       val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      val recipeId = baker.addRecipe(compiledRecipe)
+      baker.addRecipe(compiledRecipe)
 
       val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId).toString
+      baker.bake(compiledRecipe.recipeId, processId).toString
 
       baker.processEvent(processId, InitialEvent(initialIngredientValue))
 
@@ -835,13 +835,12 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val recoveryRecipeName = "RecoveryRecipe"
       val processId = UUID.randomUUID().toString
 
-      var recipeId: String = ""
       val compiledRecipe = RecipeCompiler.compileRecipe(getRecipe(recoveryRecipeName))
 
       try {
         val baker1 = setupBakerWithNoRecipe()(system1)
-        recipeId = baker1.addRecipe(compiledRecipe)
-        baker1.bake(recipeId, processId)
+        baker1.addRecipe(compiledRecipe)
+        baker1.bake(compiledRecipe.recipeId, processId)
         baker1.processEvent(processId, InitialEvent(initialIngredientValue))
         baker1.processEvent(processId, SecondEvent())
         baker1.getIngredients(processId) shouldBe finalState
@@ -854,8 +853,8 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         val baker2 = new Baker()(system2)
         baker2.addImplementation(mockImplementations)
         baker2.getIngredients(processId) shouldBe finalState
-        baker2.getRecipe(recipeId) shouldBe compiledRecipe
-        baker2.addRecipe(compiledRecipe) shouldBe recipeId
+        baker2.getRecipe(compiledRecipe.recipeId) shouldBe compiledRecipe
+        baker2.addRecipe(compiledRecipe)
       } finally {
         TestKit.shutdownActorSystem(system2)
       }

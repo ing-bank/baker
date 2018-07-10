@@ -153,6 +153,7 @@ message CompiledRecipe {
     repeated string validationErrors = 4;
     optional int64 eventReceivePeriod = 5;
     optional int64 retentionPeriod = 6;
+    optional string recipeId = 7;
 }
 // END DESCRIPTORS
 

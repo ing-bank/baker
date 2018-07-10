@@ -85,7 +85,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
   val recipeManager: ActorRef = bakerActorProvider.createRecipeManagerActor()
 
-  val processIndexActor: ActorRef =
+  private val processIndexActor: ActorRef =
     bakerActorProvider.createProcessIndexActor(interactionManager, recipeManager)
 
   /**
@@ -97,7 +97,8 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @return A recipeId
     */
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def addRecipe(compiledRecipe: CompiledRecipe, timeout: FiniteDuration = defaultAddRecipeTimeout): String = {
+  @throws[IllegalArgumentException]("When trying to add an incompatible recipe with an id that was already added before")
+  def addRecipe(compiledRecipe: CompiledRecipe, timeout: FiniteDuration = defaultAddRecipeTimeout): Unit = {
 
     // check if every interaction has an implementation
     val implementationErrors = compiledRecipe.interactionTransitions.filterNot(interactionManager.getImplementation(_).isDefined)
@@ -111,8 +112,9 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
     val futureResult = recipeManager.ask(AddRecipe(compiledRecipe))(timeout)
     Await.result(futureResult, timeout) match {
-      case AddRecipeResponse(recipeId) => recipeId
-      case _ => throw new BakerException(s"Unexpected error happened when adding recipe")
+      case RecipeSuccessfullyAdded => ()
+      case RecipeIdAlreadyExists => throw new IllegalArgumentException(s"A different (older) recipe with id '${compiledRecipe.recipeId}' already exists")
+      case other => throw new BakerException(s"Unexpected response from recipe manager: $other")
     }
   }
 

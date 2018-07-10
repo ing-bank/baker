@@ -10,14 +10,15 @@ object Recipe {
   def apply() : Recipe = macro CommonMacros.recipeImpl
 
   def apply(name: String): Recipe = {
-    Recipe(name, Seq.empty, Seq.empty, Set.empty, new common.InteractionFailureStrategy.BlockInteraction, None, None)
+    Recipe(name, name, Seq.empty, Seq.empty, Set.empty, new common.InteractionFailureStrategy.BlockInteraction, None, None)
   }
 }
 
 /**
   * A Recipe combines a set of interactions & events.
   */
-case class Recipe private(override val name: String,
+case class Recipe private(override val recipeId: String,
+                          override val name: String,
                           override val interactions: Seq[InteractionDescriptor],
                           override val sieves: Seq[InteractionDescriptor],
                           override val sensoryEvents: Set[common.Event],
