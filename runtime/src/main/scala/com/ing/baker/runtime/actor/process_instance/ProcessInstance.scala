@@ -201,7 +201,8 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
         */
       val transition = topology.transitions.getById(transitionId, "transition in petrinet").asInstanceOf[T[Any]]
 
-      def alreadyReceived(id: String) = instance.receivedCorrelationIds.contains(id) || instance.jobs.values.exists(_.correlationId == Some(id))
+      def alreadyReceived(id: String) =
+        instance.receivedCorrelationIds.contains(id) || instance.jobs.values.exists(_.correlationId == Some(id))
 
       correlationIdOption match {
         case Some(correlationId) if alreadyReceived(correlationId) =>

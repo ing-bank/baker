@@ -27,7 +27,7 @@ case class CompiledRecipe(name: String,
     * @return
     */
   def getRecipeVisualization: String =
-    RecipeVisualizer.visualiseCompiledRecipe(this)
+    RecipeVisualizer.visualizeRecipe(this)
 
   /**
     * Visualise the compiled recipe in DOT format
@@ -35,7 +35,7 @@ case class CompiledRecipe(name: String,
     * @return
     */
   def getFilteredRecipeVisualization(filterFunc: String => Boolean): String =
-    RecipeVisualizer.visualiseCompiledRecipe(this, filterFunc)
+    RecipeVisualizer.visualizeRecipe(this, filter = filterFunc)
 
 
   def getFilteredRecipeVisualization(filter: String): String =
@@ -56,7 +56,7 @@ case class CompiledRecipe(name: String,
     * @return
     */
   def getPetriNetVisualization: String =
-    RecipeVisualizer.visualisePetrinetOfCompiledRecipe(petriNet)
+    RecipeVisualizer.visualizePetrinet(petriNet)
 
   val interactionTransitions: Set[InteractionTransition[_]] = petriNet.transitions.collect {
     case t: InteractionTransition[_] => t

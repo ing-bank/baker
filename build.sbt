@@ -64,7 +64,6 @@ lazy val petrinetApi = project.in(file("petrinet-api"))
     )
   )
 
-
 lazy val bakertypes = project.in(file("bakertypes"))
   .settings(defaultModuleSettings)
   .settings(
@@ -85,7 +84,8 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
       slf4jApi,
       scalaGraphDot,
       objenisis,
-      jodaTime
+      jodaTime,
+      typeSafeConfig
     ) ++ testDeps(scalaTest, scalaCheck, logback)
   ).dependsOn(petrinetApi, bakertypes)
 

@@ -15,7 +15,7 @@ class RecipeVisualizationSpec extends WordSpecLike with Matchers {
     "be able to visualize a a created compile recipe" in {
       val recipe: Recipe = getRecipe("VisualizationRecipe")
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      val dot: String = RecipeVisualizer.visualiseCompiledRecipe(compiledRecipe)
+      val dot: String = RecipeVisualizer.visualizeRecipe(compiledRecipe)
       dot should include("interactionOneIngredient -> InteractionThree")
 
 //      baker.dumpToFile("TestRecipe.svg", compiledRecipe.getVisualRecipeAsSVG)
@@ -24,7 +24,7 @@ class RecipeVisualizationSpec extends WordSpecLike with Matchers {
     "be able to visualize the created interactions with a filter" in {
       val recipe: Recipe = getRecipe("filteredVisualRecipe")
       val compileRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      val dot: String = RecipeVisualizer.visualiseCompiledRecipe(compileRecipe, filter = e => !e.contains("interactionFour"))
+      val dot: String = RecipeVisualizer.visualizeRecipe(compileRecipe, filter = e => !e.contains("interactionFour"))
       dot shouldNot contain("interactionFour")
     }
 
@@ -33,7 +33,7 @@ class RecipeVisualizationSpec extends WordSpecLike with Matchers {
         .withInteraction(interactionOne.withRequiredEvent(secondEvent))
         .withSensoryEvent(initialEvent)
       val compileRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      val dot: String = RecipeVisualizer.visualiseCompiledRecipe(compileRecipe)
+      val dot: String = RecipeVisualizer.visualizeRecipe(compileRecipe)
       dot should include("#EE0000")
     }
 
@@ -42,7 +42,7 @@ class RecipeVisualizationSpec extends WordSpecLike with Matchers {
         .withInteraction(interactionOne)
         .withSensoryEvent(secondEvent)
       val compileRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      val dot: String = RecipeVisualizer.visualiseCompiledRecipe(compileRecipe)
+      val dot: String = RecipeVisualizer.visualizeRecipe(compileRecipe)
       dot should include("#EE0000")
     }
   }
