@@ -83,7 +83,7 @@ class ProcessEventActor(cmd: ProcessEvent, recipe: CompiledRecipe, queue: Source
       queue.offer(e)
 
       if (!firstReceived)
-        system.eventStream.publish(events.EventReceived(System.currentTimeMillis(), recipe.name, cmd.processId, cmd.correlationId, cmd.event))
+        system.eventStream.publish(events.EventReceived(System.currentTimeMillis(), recipe.name, recipe.recipeId, cmd.processId, cmd.correlationId, cmd.event))
 
       firstReceived = true
 
