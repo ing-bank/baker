@@ -9,6 +9,7 @@ import org.mockito.Matchers.anyString
 import org.mockito.Mockito.when
 
 import scala.language.postfixOps
+import com.ing.baker.runtime.ScalaDSLRuntime._
 
 
 class BakerSetupSpec extends BakerRuntimeTestBase {
@@ -32,7 +33,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         val baker = new Baker()
 
-        baker.addImplementation(mockImplementations)
+        baker.addImplementations(mockImplementations)
 
         when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn("foobar")
 
@@ -48,7 +49,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         val baker = new Baker()
 
-        baker.addImplementation(mockImplementations)
+        baker.addImplementations(mockImplementations)
       }
 
       "providing an implementation with the class simplename same as the interaction" in {
@@ -119,7 +120,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         val baker = new Baker()
 
-        baker.addImplementation(mockImplementations)
+        baker.addImplementations(mockImplementations)
 
         intercept[RecipeValidationException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
