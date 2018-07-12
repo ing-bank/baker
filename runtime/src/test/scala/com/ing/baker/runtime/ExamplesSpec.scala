@@ -7,6 +7,7 @@ import akka.testkit.{TestDuration, TestKit}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.runtime.core.{Baker, RuntimeEvent}
+import ScalaDSLRuntime._
 
 import scala.concurrent.duration._
 
@@ -28,7 +29,7 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
       compiledRecipe.validationErrors shouldBe empty
     }
 
-    "run a happy flow" ignore {
+    "run a happy flow" in {
 
       // compiles the recipe
       val compiledRecipe = RecipeCompiler.compileRecipe(webShopRecipe)
@@ -66,7 +67,8 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
         Seq(validateOrderImpl, manufactureGoodsImpl, sendInvoiceImpl, shipGoodsImpl)
 
       val baker = new Baker()
-      baker.addImplementation(implementations)
+
+      implementations.foreach(baker.addImplementation)
 
       val recipeId = baker.addRecipe(compiledRecipe)
 
@@ -82,11 +84,11 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
       baker.processEvent(processId, paymentMade.instance())
       baker.processEvent(processId, customerInfoReceived.instance(testCustomerInfoData))
 
-      val expectedIngredients = Map(
-        "order" -> testOrder,
-        "goods" -> testGoods,
-        "customerInfo" -> testCustomerInfoData,
-        "trackingId" -> testTrackingId)
+      val expectedIngredients = IngredientMap(
+        order -> testOrder,
+        goods -> testGoods,
+        customerInfo -> testCustomerInfoData,
+        trackingId -> testTrackingId)
 
       val actualIngredients = baker.getIngredients(processId)
 
@@ -94,13 +96,13 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
       actualIngredients shouldBe expectedIngredients
 
       val expectedEvents = List(
-        RuntimeEvent.create("OrderPlaced", Seq("order" -> testOrder)),
-        RuntimeEvent.create("Valid", Seq.empty),
-        RuntimeEvent.create("PaymentMade", Seq.empty),
-        RuntimeEvent.create("GoodsManufactured", Seq("goods" -> testGoods)),
-        RuntimeEvent.create("CustomerInfoReceived", Seq("customerInfo" -> testCustomerInfoData)),
-        RuntimeEvent.create("GoodsShipped", Seq("trackingId" -> testTrackingId)),
-        RuntimeEvent.create("InvoiceWasSent", Seq.empty))
+        orderPlaced.instance(testOrder),
+        valid.instance(),
+        paymentMade.instance(),
+        goodsManufactured.instance(testGoods),
+        customerInfoReceived.instance(testCustomerInfoData),
+        goodsShipped.instance(testTrackingId),
+        invoiceWasSent.instance())
 
       TestKit.awaitCond(baker.events(processId) equals expectedEvents, 2.seconds.dilated)
     }

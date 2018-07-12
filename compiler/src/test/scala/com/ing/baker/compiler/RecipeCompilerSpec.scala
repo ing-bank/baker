@@ -7,7 +7,7 @@ import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
 import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy, ProvidesIngredient, ProvidesNothing}
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, Recipe, processId}
+import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe, processId}
 import com.ing.baker.types.{NullValue, PrimitiveValue}
 import org.scalatest.{Matchers, WordSpecLike}
 
@@ -53,9 +53,10 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
 
     "give an error if the processId is required and is not of the String type" in {
       val wrongProcessIdInteraction =
-        Interaction("wrongProcessIdInteraction",
-          Ingredients(new Ingredient[Int](common.ProcessIdName), initialIngredient),
-          ProvidesIngredient(interactionOneOriginalIngredient))
+        Interaction(
+          name = "wrongProcessIdInteraction",
+          inputIngredients = Seq(new Ingredient[Int](common.ProcessIdName), initialIngredient),
+          output = ProvidesIngredient(interactionOneOriginalIngredient))
 
       val recipe = Recipe("NonProvidedIngredient")
         .withSensoryEvent(initialEvent)
@@ -86,9 +87,10 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
       val initialEventIntOptional = Event("initialEventIntOptional", initialIngredientOptionalString, None)
       val initialEventIntOption = Event("initialEventIntOption", initialIngredientOptionString, None)
       val interactionOptional =
-        Interaction("InteractionWithOptional",
-          Ingredients(processId, initialIngredientOptionalInt, initialIngredientOptionInt),
-          ProvidesNothing)
+        Interaction(
+          name = "InteractionWithOptional",
+          inputIngredients = Seq(processId, initialIngredientOptionalInt, initialIngredientOptionInt),
+          output = ProvidesNothing)
 
       val recipe = Recipe("WrongTypedOptionalIngredient")
         .withInteractions(
@@ -111,9 +113,10 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
       val initialIngredientInt = Ingredient[Optional[List[Int]]]("initialIngredient")
       val initialEventInt = Event("InitialEvent", initialIngredientInt, None)
       val interactionOptional =
-        Interaction("InteractionWithOptional",
-          Ingredients(processId, initialIngredientInt),
-          ProvidesNothing)
+        Interaction(
+          name = "InteractionWithOptional",
+          inputIngredients = Seq(processId, initialIngredientInt),
+          output = ProvidesNothing)
 
       val recipe = Recipe("CorrectTypedOptionalIngredient")
         .withInteractions(

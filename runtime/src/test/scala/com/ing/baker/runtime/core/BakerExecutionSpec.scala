@@ -246,7 +246,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       val baker = new Baker()
 
-      baker.addImplementation(mockImplementations)
+      baker.addImplementations(mockImplementations)
 
       val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
       val recipeId = baker.addRecipe(compiledRecipe)
@@ -852,7 +852,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val system2 = ActorSystem("persistenceTest2", levelDbConfig("persistenceTest2", 3003))
       try {
         val baker2 = new Baker()(system2)
-        baker2.addImplementation(mockImplementations)
+        baker2.addImplementations(mockImplementations)
         baker2.getIngredients(processId) shouldBe finalState
         baker2.getRecipe(recipeId) shouldBe compiledRecipe
         baker2.addRecipe(compiledRecipe) shouldBe recipeId

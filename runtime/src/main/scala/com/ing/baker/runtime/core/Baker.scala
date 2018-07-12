@@ -457,7 +457,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     *
     * @param implementations The implementation object
     */
-  def addImplementation(implementations: Seq[AnyRef]): Unit =
+  def addImplementations(implementations: Seq[AnyRef]): Unit =
     implementations.foreach(addImplementation)
 
   /**
