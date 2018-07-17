@@ -75,7 +75,7 @@ object APIRoutes extends Directives with BaasMarshalling {
             try {
               println(s"Adding recipe called: ${compiledRecipe.name}")
               val recipeId = baker.addRecipe(compiledRecipe)
-              complete(recipeId)
+              complete(compiledRecipe.recipeId)
             } catch {
               case e: Exception => {
                 println(s"Exception when adding recipe: ${e.getMessage}")

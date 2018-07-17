@@ -64,11 +64,11 @@ public class JBakerTest {
 
         JBaker jBaker = new JBaker(actorSystem);
         jBaker.addImplementations(implementationsList);
-        String recipeId = jBaker.addRecipe(compiledRecipe);
+        jBaker.addRecipe(compiledRecipe);
 
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
         String requestId = UUID.randomUUID().toString();
-        jBaker.bake(recipeId, requestId);
+        jBaker.bake(compiledRecipe.getRecipeId(), requestId);
         jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
 
         assertEquals(1, jBaker.getIngredients(requestId).size());
@@ -85,10 +85,10 @@ public class JBakerTest {
 
         JBaker jBaker = new JBaker(actorSystem);
         jBaker.addImplementations(implementationsList);
-        String recipeId = jBaker.addRecipe(compiledRecipe);
+        jBaker.addRecipe(compiledRecipe);
 
         String requestId = UUID.randomUUID().toString();
-        jBaker.bake(recipeId, requestId);
+        jBaker.bake(compiledRecipe.getRecipeId(), requestId);
         jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
 
         assertEquals(1, jBaker.getIngredients(requestId).size());
@@ -98,7 +98,7 @@ public class JBakerTest {
     }
 
     @Test
-    public void shouldFailWhenMissingImplementations() throws BakerException {
+    public void shouldFailWhenMissingImplementations() throws BakerException, TimeoutException {
 
         exception.expect(BakerException.class);
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
@@ -235,16 +235,16 @@ public class JBakerTest {
 
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
 
-        String recipeId = jBaker.addRecipe(compiledRecipe);
+        jBaker.addRecipe(compiledRecipe);
 
         String requestId = UUID.randomUUID().toString();
-        jBaker.bake(recipeId, requestId);
+        jBaker.bake(compiledRecipe.getRecipeId(), requestId);
         jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
         jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventTwo());
     }
 
     @Test
-    public void shouldFailWhenSieveNotDefaultConstructor() throws BakerException {
+    public void shouldFailWhenSieveNotDefaultConstructor() throws BakerException, TimeoutException {
         Recipe recipe = JavaCompiledRecipeTest.setupComplexRecipe().withSieve(InteractionDescriptor.of(JavaCompiledRecipeTest.SieveImplWithoutDefaultConstruct.class));
 
         exception.expect(BakerException.class);

@@ -34,12 +34,13 @@ class RecipeManagerSpec  extends BakerRuntimeTestBase {
       val recipeManager: ActorRef = defaultActorSystem.actorOf(RecipeManager.props(),  s"recipeManager-${UUID.randomUUID().toString}")
 
       val futureAddResult = recipeManager.ask(AddRecipe(compiledRecipe))(timeout)
-      val recipeId: String = Await.result(futureAddResult, timeout) match {
-        case AddRecipeResponse(x) => x
+
+      Await.result(futureAddResult, timeout) match {
+        case RecipeSuccessfullyAdded =>
         case _ => fail("Adding recipe failed")
       }
 
-      val futureGetResult = recipeManager.ask(GetRecipe(recipeId))(timeout)
+      val futureGetResult = recipeManager.ask(GetRecipe(compiledRecipe.recipeId))(timeout)
       Await.result(futureGetResult, timeout) match {
         case RecipeFound(recipe) => recipe
         case NoRecipeFound(_) => fail("Recipe not found")

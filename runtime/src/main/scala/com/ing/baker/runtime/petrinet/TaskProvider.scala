@@ -5,7 +5,7 @@ import java.lang.reflect.InvocationTargetException
 import akka.event.EventStream
 import cats.effect.IO
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
-import com.ing.baker.il.{IngredientDescriptor, processIdName}
+import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor, processIdName}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime._
 import com.ing.baker.runtime.core.events.{InteractionCompleted, InteractionStarted}
@@ -14,7 +14,7 @@ import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.{LoggerFactory, MDC}
 
-class TaskProvider(recipeName: String, interactionManager: InteractionManager, eventStream: EventStream) extends TransitionTaskProvider[Place, Transition, ProcessState, RuntimeEvent] {
+class TaskProvider(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream) extends TransitionTaskProvider[Place, Transition, ProcessState, RuntimeEvent] {
 
   val log = LoggerFactory.getLogger(classOf[TaskProvider])
 
@@ -55,7 +55,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
 
         // add MDC values for logging
         MDC.put("processId", processState.processId)
-        MDC.put("recipeName", recipeName)
+        MDC.put("recipeName", recipe.name)
 
         try {
 
@@ -70,7 +70,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
           val timeStarted = System.currentTimeMillis()
 
           // publish the fact that we started the interaction
-          eventStream.publish(InteractionStarted(timeStarted, recipeName, processState.processId, interaction.interactionName))
+          eventStream.publish(InteractionStarted(timeStarted, recipe.name, recipe.recipeId, processState.processId, interaction.interactionName))
 
           val interactionOutput = implementation.execute(interaction, input)
 
@@ -96,7 +96,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
           val timeCompleted = System.currentTimeMillis()
 
           // publish the fact that the interaction completed
-          eventStream.publish(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, recipeName, processState.processId, interaction.interactionName, outputEvent))
+          eventStream.publish(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, recipe.name, recipe.recipeId, processState.processId, interaction.interactionName, outputEvent))
 
           // create the output marking for the petri net
           val outputMarking = createProducedMarking(interaction, outAdjacent)(outputEvent)

@@ -283,6 +283,7 @@ object RecipeCompiler {
     }.toMarking
 
     val compiledRecipe = CompiledRecipe(
+      recipeId = recipe.recipeId,
       name = recipe.name,
       petriNet = petriNet,
       initialMarking = initialMarking,

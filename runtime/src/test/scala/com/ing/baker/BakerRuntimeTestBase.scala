@@ -182,7 +182,7 @@ trait BakerRuntimeTestBase
     val baker = new Baker()(actorSystem)
     baker.addImplementations(implementations)
     val recipeId = baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
-    (baker, recipeId)
+    (baker, recipe.recipeId)
   }
 
   protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Baker = {

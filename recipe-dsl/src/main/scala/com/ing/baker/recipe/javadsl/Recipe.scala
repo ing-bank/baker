@@ -8,6 +8,7 @@ import scala.concurrent.duration
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 case class Recipe(
+    override val recipeId: String,
     override val name: String,
     override val interactions: Seq[common.InteractionDescriptor],
     override val sieves: Seq[common.InteractionDescriptor],
@@ -16,7 +17,7 @@ case class Recipe(
     override val eventReceivePeriod: Option[FiniteDuration],
     override val retentionPeriod: Option[FiniteDuration]) extends common.Recipe {
 
-  def this(name: String) = this(name, Seq.empty, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction(), None, None)
+  def this(name: String) = this(name, name, Seq.empty, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction(), None, None)
 
   def getInteractions: java.util.List[common.InteractionDescriptor] = interactions.asJava
 
@@ -34,6 +35,14 @@ case class Recipe(
   def withRecipe(recipe: common.Recipe) = {
     copy(interactions = interactions ++ recipe.interactions, sieves = sieves ++ recipe.sieves)
   }
+
+  /**
+    * Sets the id for the recipe.
+    *
+    * @param recipeId The id for the recipe.
+    * @return
+    */
+  def withRecipeId(recipeId: String) = copy(recipeId = recipeId)
 
   /**
     * Adds the interaction to the recipe.
@@ -55,7 +64,7 @@ case class Recipe(
   @SafeVarargs
   @varargs
   def withInteractions(newInteractions: common.InteractionDescriptor*): Recipe =
-  copy(interactions = interactions ++ newInteractions)
+    copy(interactions = interactions ++ newInteractions)
 
   /**
     * Adds a sieve function to the recipe.

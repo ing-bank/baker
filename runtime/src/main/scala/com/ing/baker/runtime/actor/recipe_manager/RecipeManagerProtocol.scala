@@ -7,7 +7,11 @@ object RecipeManagerProtocol {
   //Add a recipe
   case class AddRecipe(compiledRecipe: CompiledRecipe) extends InternalBakerMessage
 
-  case class AddRecipeResponse(recipeId: String) extends InternalBakerMessage
+//  case class AddRecipeResponse(recipeId: String) extends InternalBakerMessage
+
+  case object RecipeSuccessfullyAdded extends InternalBakerMessage
+
+  case object RecipeIdAlreadyExists extends InternalBakerMessage
 
   //Get a specific recipe
   case class GetRecipe(recipeId: String) extends InternalBakerMessage
