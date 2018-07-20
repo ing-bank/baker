@@ -49,7 +49,7 @@ object ProcessInstance {
 class ProcessInstance[P[_], T, S, E](processType: String,
                                         processTopology: PetriNet[P[_], T],
                                         settings: Settings,
-                                        runtime: PetriNetRuntime[P, T, S, E],
+                                        runtime: PetriNetRuntime[P, T, S, E])(
                                         override implicit val placeIdentifier: Identifiable[P[_]],
                                         override implicit val transitionIdentifier: Identifiable[T]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSource) {
 

@@ -22,8 +22,4 @@ package object petrinet {
     * Type alias for the edge type of the scalax.collection.Graph backing the petri net.
     */
   type Arc = WLDiEdge[Node]
-
-  implicit def placeIdentifier(p: Place[_]): Id = Id(p.id)
-
-  implicit def transitionIdentifier(t: Transition): Id = Id(t.id)
 }

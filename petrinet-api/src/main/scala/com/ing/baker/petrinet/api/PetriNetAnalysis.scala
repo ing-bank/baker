@@ -21,7 +21,7 @@ object PetriNetAnalysis {
       val graph = transitions.foldLeft(petriNet.innerGraph) {
         case (acc, t) ⇒ acc.-(Right(t))
       }
-      new ScalaGraphPetriNet(graph)
+      new PetriNet(graph)
     }
   }
 

@@ -1,6 +1,11 @@
 package com.ing.baker.petrinet.dsl.colored
 
+import com.ing.baker.petrinet.api.{Id, Identifiable}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
+
+object Transition {
+  implicit val identifiable: Identifiable[Transition] = p => Id(p.id)
+}
 
 /**
  * A transition in a Colored Petri Net
