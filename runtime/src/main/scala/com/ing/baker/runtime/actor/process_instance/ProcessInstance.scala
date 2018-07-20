@@ -81,7 +81,7 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
           .andThen {
             case (updatedInstance, _) ⇒
               context become running(updatedInstance, Map.empty)
-              sender() ! Initialized(marshal(initialMarking), state)
+              sender() ! Initialized(initialMarking, state)
           }
       }
 

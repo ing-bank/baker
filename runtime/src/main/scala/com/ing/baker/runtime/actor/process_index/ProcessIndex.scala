@@ -190,7 +190,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
               case Some(compiledRecipe) =>
 
                 val processState = ProcessState(processId, Map.empty, List.empty)
-                val initializeCmd = Initialize(ProcessInstanceProtocol.marshal(compiledRecipe.initialMarking), processState)
+                val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
 
                 createProcessActor(processId, compiledRecipe).forward(initializeCmd)
                 val actorMetadata = ActorMetadata(recipeId, processId, created, Active)

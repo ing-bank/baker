@@ -59,8 +59,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
 
-      actor ! Initialize(marshal[Place](initialMarking), initialState)
-      expectMsg(Initialized(marshal[Place](initialMarking), initialState))
+      actor ! Initialize(initialMarking, initialState)
+      expectMsg(Initialized(initialMarking, initialState))
     }
 
     "Respond with an AlreadyInitialized response after processing an Initialize command for the second time" in new TestSequenceNet {
@@ -74,9 +74,9 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
 
-      actor ! Initialize(marshal[Place](initialMarking), initialState)
-      actor ! Initialize(marshal[Place](initialMarking), initialState)
-      expectMsg(Initialized(marshal[Place](initialMarking), initialState))
+      actor ! Initialize(initialMarking, initialState)
+      actor ! Initialize(initialMarking, initialState)
+      expectMsg(Initialized(initialMarking, initialState))
       expectMsg(AlreadyInitialized)
     }
 
@@ -104,13 +104,12 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
       val initialState = Set(1, 2, 3)
-      val initialMarkingData = marshal[Place](initialMarking)
 
-      actor ! Initialize(initialMarkingData, initialState)
+      actor ! Initialize(initialMarking, initialState)
       expectMsgClass(classOf[Initialized])
 
       actor ! GetState
-      expectMsgPF() { case InstanceState(1, `initialMarkingData`, `initialState`, _) ⇒ }
+      expectMsgPF() { case InstanceState(1, initialMarkingData, `initialState`, _) if marshal(initialMarking) == initialMarkingData ⇒ }
     }
 
     "Respond with a TransitionFailed message if a transition failed to fire" in new TestSequenceNet {
@@ -122,7 +121,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
 
-      actor ! Initialize(marshal[Place](initialMarking), Set.empty)
+      actor ! Initialize(initialMarking, Set.empty)
       expectMsgClass(classOf[Initialized])
 
       actor ! FireTransition(1, ())
@@ -141,7 +140,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
 
       // initialize the petri net with 2 tokens in the first place
-      actor ! Initialize(marshal[Place](Marking(place(1) -> 2)), Set.empty)
+      actor ! Initialize(Marking(place(1) -> 2), Set.empty)
       expectMsgClass(classOf[Initialized])
 
       actor ! FireTransition(transitionId = 1, input = null, correlationId = Some(testCorrelationId))
@@ -162,7 +161,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
 
-      actor ! Initialize(marshal[Place](initialMarking), Set.empty)
+      actor ! Initialize(initialMarking, Set.empty)
       expectMsgClass(classOf[Initialized])
 
       actor ! FireTransition(1, ())
@@ -184,7 +183,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
 
-      actor ! Initialize(marshal[Place](initialMarking), Set.empty)
+      actor ! Initialize(initialMarking, Set.empty)
       expectMsgClass(classOf[Initialized])
 
       // attempt to fire the second transition
@@ -210,7 +209,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
 
-      actor ! Initialize(marshal[Place](initialMarking), Set.empty)
+      actor ! Initialize(initialMarking, Set.empty)
       expectMsgClass(classOf[Initialized])
 
       actor ! FireTransition(1, ())
@@ -241,7 +240,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime, actorName)
 
-      actor ! Initialize(marshal[Place](initialMarking), Set.empty)
+      actor ! Initialize(initialMarking, Set.empty)
       expectMsgClass(classOf[Initialized])
 
       // fire the first transition (t1) manually
@@ -288,7 +287,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       val actorName = UUID.randomUUID().toString
       val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime, actorName)
 
-      actor ! Initialize(marshal[Place](initialMarking), Set.empty)
+      actor ! Initialize(initialMarking, Set.empty)
       expectMsgClass(classOf[Initialized])
 
       actor ! FireTransition(1, ())
@@ -330,7 +329,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       val actorName = UUID.randomUUID().toString
       val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime, actorName)
 
-      actor ! Initialize(marshal[Place](initialMarking), Set.empty)
+      actor ! Initialize(initialMarking, Set.empty)
 
       expectMsgClass(classOf[Initialized])
 
@@ -354,7 +353,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime, processId)
 
-      actor ! Initialize(marshal[Place](initialMarking), Set.empty)
+      actor ! Initialize(initialMarking, Set.empty)
       expectMsgClass(classOf[Initialized])
 
       // expect the next marking: p2 -> 1
@@ -405,7 +404,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime, actorName)
 
-      actor ! Initialize(marshal[Place](initialMarking), Set.empty)
+      actor ! Initialize(initialMarking, Set.empty)
       expectMsgClass(classOf[Initialized])
       expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, RetryWithDelay(InitialDelay)) ⇒ }
 
@@ -441,7 +440,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       implicit val timeout = Timeout(dilatedMillis(2000), MILLISECONDS)
 
-      petriNetActor ! Initialize(marshal[Place](initialMarking), ())
+      petriNetActor ! Initialize(initialMarking, ())
       expectMsgClass(classOf[Initialized])
 
       expectMsgClass(classOf[Terminated])
@@ -470,7 +469,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val actor = createPetriNetActor[Unit, Unit](petriNet, runtime)
 
-      actor ! Initialize(marshal[Place](initialMarking), ())
+      actor ! Initialize(initialMarking, ())
       expectMsgClass(classOf[Initialized])
 
       // fire the first transition manually

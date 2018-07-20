@@ -50,6 +50,8 @@ object ProcessInstanceProtocol {
   object Initialize {
 
     def apply[P[_]](marking: Marking[P])(implicit placeIdentifier: Identifiable[P[_]]): Initialize = Initialize(marshal[P](marking), null)
+
+    def apply[P[_]](marking: Marking[P], state: Any)(implicit placeIdentifier: Identifiable[P[_]]): Initialize = Initialize(marshal[P](marking), state)
   }
 
   /**
@@ -93,6 +95,13 @@ object ProcessInstanceProtocol {
     * Indicates that the received FireTransition command with a specific correlation id was already received.
     */
   case class AlreadyReceived(correlationId: String) extends Response
+
+  object Initialized {
+
+    def apply[P[_]](marking: Marking[P])(implicit placeIdentifier: Identifiable[P[_]]): Initialized = Initialized(marshal[P](marking), null)
+
+    def apply[P[_]](marking: Marking[P], state: Any)(implicit placeIdentifier: Identifiable[P[_]]): Initialized = Initialized(marshal[P](marking), state)
+  }
 
   /**
    * A response indicating that the instance has been initialized in a certain state.
