@@ -6,7 +6,7 @@ import com.google.protobuf.ByteString
 import com.ing.baker.il.ActionType.SieveAction
 import com.ing.baker.il.petrinet.{Node, RecipePetriNet}
 import com.ing.baker.il.{ActionType, CompiledRecipe}
-import com.ing.baker.petrinet.api.{IdentifiableOps, Marking, ScalaGraphPetriNet}
+import com.ing.baker.petrinet.api.{IdentifiableOps, Marking, PetriNet}
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization.tokenIdentifier
 import com.ing.baker.runtime.actor.protobuf._
@@ -484,7 +484,7 @@ trait ProtoEventAdapter {
         val retentionPeriod = retentionMillis.map(Duration(_, TimeUnit.MILLISECONDS))
 
         val graph = toDomain(graphMsg).asInstanceOf[scalax.collection.immutable.Graph[Node, WLDiEdge]]
-        val petriNet: RecipePetriNet = ScalaGraphPetriNet(graph)
+        val petriNet: RecipePetriNet = PetriNet(graph)
         val initialMarking = producedTokens.foldLeft(Marking.empty[il.petrinet.Place]) {
           case (accumulated, protobuf.ProducedToken(Some(placeId), Some(_), Some(count), _)) ⇒ // Option[SerializedData] is always None, and we don't use it here.
             val place = petriNet.places.getById(placeId, "place in petrinet").asInstanceOf[il.petrinet.Place[Any]]

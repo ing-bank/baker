@@ -4,8 +4,6 @@ import scalax.collection.Graph
 import scalax.collection.GraphPredef._
 import scalax.collection.edge.WLDiEdge
 
-import scala.PartialFunction._
-
 package object api extends MultiSetOps with MarkingOps {
 
   case class Id(value: Long) extends AnyVal
@@ -58,51 +56,32 @@ package object api extends MultiSetOps with MarkingOps {
 
   type BiPartiteGraph[P, T, E[X] <: EdgeLikeIn[X]] = Graph[Either[P, T], E]
 
-  /**
-    * TODO; can we remove this wrapper? It seems only needed because we need to mix in other traits with PetriNet
-    * which cannot be done with Graph.apply
-    */
-  case class ScalaGraphPetriNet[P, T](val innerGraph: BiPartiteGraph[P, T, WLDiEdge]) extends PetriNet[P, T]  {
-
-    override def inMarking(t: T): MultiSet[P] = innerGraph.inMarking(t)
-    override def outMarking(t: T): MultiSet[P] = innerGraph.outMarking(t)
-    override def outgoingPlaces(t: T): Set[P] = innerGraph.outgoingPlaces(t)
-    override def outgoingTransitions(p: P): Set[T] = innerGraph.outgoingTransitions(p)
-    override def incomingPlaces(t: T): Set[P] = innerGraph.incomingPlaces(t)
-    override def incomingTransitions(p: P): Set[T] = innerGraph.incomingTransitions(p)
-
-    override lazy val places = innerGraph.places().toSet
-    override lazy val transitions = innerGraph.transitions().toSet
-
-    override def nodes: scala.collection.Set[Either[P, T]] = innerGraph.nodes.map(_.value)
-  }
-
   implicit def placeToNode[P, T](p: P): Either[P, T] = Left(p)
   implicit def transitionToNode[P, T](t: T): Either[P, T] = Right(t)
 
-  implicit class PetriNetGraphNodeTAdditions[A, B](val node: BiPartiteGraph[A, B, WLDiEdge]#NodeT) {
+  implicit class PetriNetGraphNodeOps[P, T](val node: BiPartiteGraph[P, T, WLDiEdge]#NodeT) {
 
-    def asPlace: A = node.value match {
+    def asPlace: P = node.value match {
       case Left(p) ⇒ p
       case _       ⇒ throw new IllegalStateException(s"node $node is not a place!")
     }
 
-    def asTransition: B = node.value match {
+    def asTransition: T = node.value match {
       case Right(t) ⇒ t
       case _        ⇒ throw new IllegalStateException(s"node $node is not a transition!")
     }
 
-    def incomingPlaces = node.incoming.map(_.source.asPlace)
-    def incomingTransitions = node.incoming.map(_.source.asTransition)
+    def incomingPlaces: Set[P] = node.incoming.map(_.source.asPlace)
+    def incomingTransitions: Set[T] = node.incoming.map(_.source.asTransition)
 
-    def outgoingPlaces = node.outgoing.map(_.target.asPlace)
-    def outgoingTransitions = node.outgoing.map(_.target.asTransition)
+    def outgoingPlaces: Set[P] = node.outgoing.map(_.target.asPlace)
+    def outgoingTransitions: Set[T] = node.outgoing.map(_.target.asTransition)
 
-    def isPlace = cond(node.value) { case Left(n) ⇒ true }
-    def isTransition = cond(node.value) { case Right(n) ⇒ true }
+    def isPlace: Boolean = node.value.isLeft
+    def isTransition: Boolean = node.value.isRight
   }
 
-  implicit class PetriNetGraphAdditions[P, T](val graph: BiPartiteGraph[P, T, WLDiEdge]) {
+  implicit class PetriNetGraphOps[P, T](val graph: BiPartiteGraph[P, T, WLDiEdge]) {
 
     def inMarking(t: T): MultiSet[P] = graph.get(t).incoming.map(e ⇒ e.source.asPlace -> e.weight.toInt).toMap
     def outMarking(t: T): MultiSet[P] = graph.get(t).outgoing.map(e ⇒ e.target.asPlace -> e.weight.toInt).toMap
@@ -121,9 +100,9 @@ package object api extends MultiSetOps with MarkingOps {
 
     def outgoingTransitions(p: P): Set[T] = graph.get(p).outgoingTransitions
 
-    def places() = graph.nodes.collect { case n if n.isPlace ⇒ n.asPlace }
+    def places(): Set[P] = graph.nodes.collect { case n if n.isPlace ⇒ n.asPlace }.toSet
 
-    def transitions() = graph.nodes.collect { case n if n.isTransition ⇒ n.asTransition }
+    def transitions(): Set[T] = graph.nodes.collect { case n if n.isTransition ⇒ n.asTransition }.toSet
   }
 }
 

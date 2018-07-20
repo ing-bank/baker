@@ -280,7 +280,7 @@ object RecipeCompiler {
       ++ internalEventArcs
       ++ multipleOutputFacilitatorArcs)
 
-    val petriNet: ScalaGraphPetriNet[Place[_], Transition[_]] = new ScalaGraphPetriNet(Graph(arcs: _*))
+    val petriNet: PetriNet[Place[_], Transition[_]] = PetriNet(Graph(arcs: _*))
 
     val initialMarking: Marking[Place] = petriNet.places.collect {
       case p@Place(_, FiringLimiterPlace(n)) => p -> Map((null, n))

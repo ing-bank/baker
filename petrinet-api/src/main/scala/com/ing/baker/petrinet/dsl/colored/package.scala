@@ -45,7 +45,7 @@ package object colored {
   def arc[C](p: Place[C], t: Transition[_], weight: Long): Arc = WLDiEdge[Node, String](Left(p), Right(t))(weight, "")
 
   def createPetriNet[S](params: Arc*): ColoredPetriNet = {
-    val petriNet = new ScalaGraphPetriNet(Graph(params: _*))
+    val petriNet = new PetriNet(Graph(params: _*))
 
     requireUniqueElements(petriNet.places.toSeq.map(_.id), "Place identifier")
     requireUniqueElements(petriNet.transitions.toSeq.map(_.id), "Transition identifier")

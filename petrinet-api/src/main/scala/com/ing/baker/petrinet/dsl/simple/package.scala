@@ -76,6 +76,6 @@ package object simple {
           a.out.map { case (p, weight) ⇒ WLDiEdge[Node, String](Right(t + 1), Left(p))(weight, "") }.toSeq
     }
 
-    new ScalaGraphPetriNet(Graph(params: _*))
+    new PetriNet(Graph(params: _*))
   }
 }
