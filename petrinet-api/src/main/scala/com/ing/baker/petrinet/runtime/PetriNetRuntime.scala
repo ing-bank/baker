@@ -11,11 +11,11 @@ import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
  * @tparam S The state type
  * @tparam E The event type
  */
-trait PetriNetRuntime[P[_], T[_], S, E] {
+trait PetriNetRuntime[P[_], T, S, E] {
 
   val tokenGame: TokenGame[P, T] = new TokenGame[P, T] {}
 
-  val eventSource: T[_] ⇒ (S ⇒ E ⇒ S) = _ ⇒ (s ⇒ _ ⇒ s)
+  val eventSource: T ⇒ (S ⇒ E ⇒ S) = _ ⇒ (s ⇒ _ ⇒ s)
 
   val exceptionHandler: ExceptionHandler[P, T, S] = new ExceptionHandler[P, T, S] {
     override def handleException(job: Job[P, T, S])(throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[P[_]]) = BlockTransition
@@ -23,7 +23,7 @@ trait PetriNetRuntime[P[_], T[_], S, E] {
 
   val taskProvider: TransitionTaskProvider[P, T, S, E]
 
-  def jobExecutor(topology: PetriNet[P[_], T[_]]) = JobExecutor[S, P, T, E](taskProvider, exceptionHandler)(topology)
+  def jobExecutor(topology: PetriNet[P[_], T]) = JobExecutor[S, P, T, E](taskProvider, exceptionHandler)(topology)
 
   lazy val jobPicker = new JobPicker[P, T](tokenGame)
 }

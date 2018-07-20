@@ -382,8 +382,8 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
   private def doRegisterEventListener(listener: EventListener, processFilter: String => Boolean): Boolean = {
     // Translates a petri net TransitionFiredEvent to an optional RuntimeEvent
-    def toRuntimeEvent[P[_], T[_], E](event: TransitionFiredEvent[P, T, E]): Option[RuntimeEvent] = {
-      val t = event.transition.asInstanceOf[Transition[_]]
+    def toRuntimeEvent[P[_], T, E](event: TransitionFiredEvent[P, T, E]): Option[RuntimeEvent] = {
+      val t = event.transition.asInstanceOf[Transition]
       if ((t.isSensoryEvent || t.isInteraction) && event.output.isInstanceOf[RuntimeEvent])
         Some(event.output.asInstanceOf[RuntimeEvent])
       else

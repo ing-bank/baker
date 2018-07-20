@@ -69,7 +69,7 @@ object MethodInteractionImplementation {
       i => i.name -> i
     }.toMap
 
-  def createRuntimeEvent[I](interaction: InteractionTransition[I], output: Any): Option[RuntimeEvent] = {
+  def createRuntimeEvent(interaction: InteractionTransition, output: Any): Option[RuntimeEvent] = {
 
     // when the interaction does not fire an event, Void or Unit is a valid output type
     if (interaction.eventsToFire.isEmpty && output == null)
@@ -146,7 +146,7 @@ case class MethodInteractionImplementation(override val name: String,
     }
   }.toSeq
 
-  override def execute(interaction: InteractionTransition[_], input: Seq[Value]): Option[RuntimeEvent] =  {
+  override def execute(interaction: InteractionTransition, input: Seq[Value]): Option[RuntimeEvent] =  {
 
     val invocationId = UUID.randomUUID().toString
 

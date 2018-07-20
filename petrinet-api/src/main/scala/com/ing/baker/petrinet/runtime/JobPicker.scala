@@ -5,12 +5,12 @@ import cats.data.State
 /**
  * Given a token game picks the next job(s) to be executed
  */
-class JobPicker[P[_], T[_]](tokenGame: TokenGame[P, T]) {
+class JobPicker[P[_], T](tokenGame: TokenGame[P, T]) {
 
   /**
    * Fires a specific transition with input, computes the marking it should consume
    */
-  def createJob[S, I](transition: T[I], input: I, correlationId: Option[String] = None): State[Instance[P, T, S], Either[String, Job[P, T, S]]] =
+  def createJob[S, I](transition: T, input: I, correlationId: Option[String] = None): State[Instance[P, T, S], Either[String, Job[P, T, S]]] =
     State { instance ⇒
       instance.isBlockedReason(transition) match {
         case Some(reason) ⇒
@@ -32,7 +32,7 @@ class JobPicker[P[_], T[_]](tokenGame: TokenGame[P, T]) {
    *
    * By default, cold transitions (without in adjacent places) are not picked.
    */
-  def isAutoFireable[S](instance: Instance[P, T, S], t: T[_]) = !instance.process.incomingPlaces(t).isEmpty
+  def isAutoFireable[S](instance: Instance[P, T, S], t: T) = !instance.process.incomingPlaces(t).isEmpty
 
   /**
    * Finds the (optional) first transition that is enabled & automatically fireable
@@ -42,7 +42,7 @@ class JobPicker[P[_], T[_]](tokenGame: TokenGame[P, T]) {
       case (t, markings) ⇒ !instance.isBlockedReason(t).isDefined && isAutoFireable(instance, t)
     }.map {
       case (t, markings) ⇒
-        val job = Job[P, T, S](instance.nextJobId(), None, instance.state, t.asInstanceOf[T[Any]], markings.head, null)
+        val job = Job[P, T, S](instance.nextJobId(), None, instance.state, t, markings.head, null)
         (instance.copy[P, T, S](jobs = instance.jobs + (job.id -> job)), Some(job))
     }.getOrElse((instance, None))
   }

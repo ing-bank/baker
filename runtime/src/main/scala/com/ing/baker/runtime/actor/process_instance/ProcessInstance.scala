@@ -46,12 +46,12 @@ object ProcessInstance {
 /**
   * This actor is responsible for maintaining the state of a single petri net instance.
   */
-class ProcessInstance[P[_], T[_], S, E](processType: String,
-                                        processTopology: PetriNet[P[_], T[_]],
+class ProcessInstance[P[_], T, S, E](processType: String,
+                                        processTopology: PetriNet[P[_], T],
                                         settings: Settings,
                                         runtime: PetriNetRuntime[P, T, S, E],
                                         override implicit val placeIdentifier: Identifiable[P[_]],
-                                        override implicit val transitionIdentifier: Identifiable[T[_]]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSource) {
+                                        override implicit val transitionIdentifier: Identifiable[T]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSource) {
 
 
   val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
@@ -124,7 +124,7 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
 
     case event@TransitionFiredEvent(jobId, t, correlationId, timeStarted, timeCompleted, consumed, produced, output) ⇒
 
-      val transition = t.asInstanceOf[T[_]]
+      val transition = t.asInstanceOf[T]
       val transitionId = transitionIdentifier(transition).value
 
       system.eventStream.publish(ProcessInstanceEvent(processType, processId, event))
@@ -143,7 +143,7 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
 
     case event@TransitionFailedEvent(jobId, t, correlationId, timeStarted, timeFailed, consume, input, reason, strategy) ⇒
 
-      val transition = t.asInstanceOf[T[_]]
+      val transition = t.asInstanceOf[T]
       val transitionId = transitionIdentifier(transition).value
 
       system.eventStream.publish(ProcessInstanceEvent(processType, processId, event))
@@ -199,7 +199,7 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
         * This should only return once the initial transition is completed & persisted
         * That way we are sure the correlation id is persisted.
         */
-      val transition = topology.transitions.getById(transitionId, "transition in petrinet").asInstanceOf[T[Any]]
+      val transition = topology.transitions.getById(transitionId, "transition in petrinet")
 
       def alreadyReceived(id: String) =
         instance.receivedCorrelationIds.contains(id) || instance.jobs.values.exists(_.correlationId == Some(id))

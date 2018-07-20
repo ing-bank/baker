@@ -5,9 +5,8 @@ import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
 /**
  * A transition in a Colored Petri Net
  *
- * @tparam Input  The input type of the transition, the type of value that is required as input
  */
-trait Transition[Input] {
+trait Transition {
   val id: Long
   def label: String
   def isAutomated: Boolean

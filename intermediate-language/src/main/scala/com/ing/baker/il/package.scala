@@ -14,19 +14,19 @@ package object il {
   val exhaustedEventAppend = "RetryExhausted"
 
   // TODO remove this implicit class
-  implicit class TransitionAdditions(transition: Transition[_]) {
+  implicit class TransitionAdditions(transition: Transition) {
 
     def isInteraction: Boolean = PartialFunction.cond(transition) {
-      case t: InteractionTransition[_] => t.actionType == InteractionAction
+      case t: InteractionTransition => t.actionType == InteractionAction
     }
 
     def isMultiFacilitatorTransition: Boolean = transition.isInstanceOf[MultiFacilitatorTransition]
 
     def isSieve: Boolean = PartialFunction.cond(transition) {
-      case t: InteractionTransition[_] => t.actionType == SieveAction
+      case t: InteractionTransition => t.actionType == SieveAction
     }
 
-    def isEventMissing: Boolean = transition.isInstanceOf[MissingEventTransition[_]]
+    def isEventMissing: Boolean = transition.isInstanceOf[MissingEventTransition]
 
     def isSensoryEvent: Boolean =
       transition match {

@@ -34,14 +34,14 @@ object ProcessEventActor {
     }
   }
 
-  def transitionForRuntimeEvent(runtimeEvent: RuntimeEvent, compiledRecipe: CompiledRecipe): Transition[_] =
+  def transitionForRuntimeEvent(runtimeEvent: RuntimeEvent, compiledRecipe: CompiledRecipe): Transition =
     compiledRecipe.petriNet.transitions.find(_.label == runtimeEvent.name).getOrElse {
       throw new IllegalArgumentException(s"No such event known in recipe: ${runtimeEvent.name}")
     }
 
   def createFireTransitionCmd(recipe: CompiledRecipe, processId: String, runtimeEvent: RuntimeEvent, correlationId: Option[String]): FireTransition = {
     require(runtimeEvent != null, "Event can not be null")
-    val t: Transition[_] = transitionForRuntimeEvent(runtimeEvent, recipe)
+    val t: Transition = transitionForRuntimeEvent(runtimeEvent, recipe)
 
     FireTransition(t.id, runtimeEvent, correlationId)
   }

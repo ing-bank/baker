@@ -11,7 +11,7 @@ import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 
 object RecipeRuntime {
-  def eventSourceFn: Transition[_] => (ProcessState => RuntimeEvent => ProcessState) =
+  def eventSourceFn: Transition => (ProcessState => RuntimeEvent => ProcessState) =
     _ => state => {
       case null => state
       case RuntimeEvent(name, providedIngredients) =>
@@ -35,7 +35,7 @@ class RecipeRuntime(recipeName: String, interactionManager: InteractionManager, 
         BlockTransition
       else
         job.transition match {
-          case interaction: InteractionTransition[_] =>
+          case interaction: InteractionTransition =>
 
             // compute the interaction failure strategy outcome
             val failureStrategyOutcome = interaction.failureStrategy.apply(failureCount)
@@ -63,7 +63,7 @@ class RecipeRuntime(recipeName: String, interactionManager: InteractionManager, 
   override val taskProvider = new TaskProvider(recipeName, interactionManager, eventStream)
 
   override lazy val jobPicker = new JobPicker[Place, Transition](tokenGame) {
-    override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition[_]): Boolean = t match {
+    override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition): Boolean = t match {
       case EventTransition(_, true, _) => false
       case _ => true
     }

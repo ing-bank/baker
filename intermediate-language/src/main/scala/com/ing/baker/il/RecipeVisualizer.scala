@@ -130,9 +130,9 @@ object RecipeVisualizer {
 
   val log = LoggerFactory.getLogger("com.ing.baker.il.RecipeVisualizer")
 
-  type RecipePetriNetGraph = Graph[Either[Place[_], Transition[_]], WLDiEdge]
+  type RecipePetriNetGraph = Graph[Either[Place[_], Transition], WLDiEdge]
 
-  private def nodeLabelFn: Either[Place[_], Transition[_]] ⇒ String = {
+  private def nodeLabelFn: Either[Place[_], Transition] ⇒ String = {
     case Left(place) if place.isEmptyEventIngredient ⇒ s"empty:${place.label}"
     case Left(place) ⇒ place.label
     case Right(transition) if transition.isMultiFacilitatorTransition ⇒ s"multi:${transition.label}"
@@ -148,7 +148,7 @@ object RecipeVisualizer {
         case Left(_) if node.incomingTransitions.isEmpty => style.missingIngredientAttributes
         case Left(place) if ingredientNames contains place.label ⇒ style.providedIngredientAttributes
         case Left(_) ⇒ style.ingredientAttributes
-        case Right(t: InteractionTransition[_]) if eventNames.intersect(t.eventsToFire.map(_.name).toSet).nonEmpty => style.firedInteractionAttributes
+        case Right(t: InteractionTransition) if eventNames.intersect(t.eventsToFire.map(_.name).toSet).nonEmpty => style.firedInteractionAttributes
         case Right(transition) if eventNames.contains(transition.label) ⇒ style.eventFiredAttributes
         case Right(transition) if transition.isMultiFacilitatorTransition => style.choiceAttributes
         case Right(transition) if transition.isInteraction ⇒ style.interactionAttributes
@@ -238,6 +238,6 @@ object RecipeVisualizer {
 
 
   def visualizePetrinet(petriNet: RecipePetriNet): String =
-    GraphDot.generateDot(petriNet.innerGraph, PetriNetDot.petriNetTheme[Place[_], Transition[_]])
+    GraphDot.generateDot(petriNet.innerGraph, PetriNetDot.petriNetTheme[Place[_], Transition])
 
 }

@@ -24,5 +24,5 @@ trait InteractionImplementation {
     * @param input
     * @return
     */
-  def execute(interaction: InteractionTransition[_], input: Seq[Value]): Option[RuntimeEvent]
+  def execute(interaction: InteractionTransition, input: Seq[Value]): Option[RuntimeEvent]
 }

@@ -8,17 +8,17 @@ object EventSourcing {
 
   sealed trait Event
 
-  sealed trait TransitionEvent[T[_]] extends Event {
+  sealed trait TransitionEvent[T] extends Event {
     val jobId: Long
-    val transition: T[_]
+    val transition: T
   }
 
   /**
    * An event describing the fact that a transition has fired in the petri net process.
    */
-  case class TransitionFiredEvent[P[_], T[_], E](
+  case class TransitionFiredEvent[P[_], T, E](
     override val jobId: Long,
-    override val transition: T[_],
+    override val transition: T,
     correlationId: Option[String],
     timeStarted: Long,
     timeCompleted: Long,
@@ -29,9 +29,9 @@ object EventSourcing {
   /**
    * An event describing the fact that a transition failed to fire.
    */
-  case class TransitionFailedEvent[P[_], T[_], I](
+  case class TransitionFailedEvent[P[_], T, I](
     override val jobId: Long,
-    override val transition: T[_],
+    override val transition: T,
     correlationId: Option[String],
     timeStarted: Long,
     timeFailed: Long,
@@ -47,12 +47,12 @@ object EventSourcing {
     marking: Marking[P],
     state: Any) extends Event
 
-  def apply[P[_], T[_], S, E](sourceFn: T[_] ⇒ EventSource[S, E]): Instance[P, T, S] ⇒ Event ⇒ Instance[P, T, S] = instance ⇒ {
+  def apply[P[_], T, S, E](sourceFn: T ⇒ EventSource[S, E]): Instance[P, T, S] ⇒ Event ⇒ Instance[P, T, S] = instance ⇒ {
     case InitializedEvent(initialMarking, initialState) ⇒
       Instance[P, T, S](instance.process, 1, initialMarking.asInstanceOf[Marking[P]], initialState.asInstanceOf[S], Map.empty, Set.empty)
     case e: TransitionFiredEvent[_, _, _] ⇒
 
-      val transition = e.transition.asInstanceOf[T[Any]]
+      val transition = e.transition.asInstanceOf[T]
       val newState = sourceFn(transition)(instance.state)(e.output.asInstanceOf[E])
 
       instance.copy[P, T, S](
@@ -63,7 +63,7 @@ object EventSourcing {
         jobs = instance.jobs - e.jobId
       )
     case e: TransitionFailedEvent[_, _, _] ⇒
-      val transition = e.transition.asInstanceOf[T[Any]]
+      val transition = e.transition.asInstanceOf[T]
       val job = instance.jobs.getOrElse(e.jobId, {
         Job[P, T, S](e.jobId, e.correlationId, instance.state, transition, e.consume.asInstanceOf[Marking[P]], e.input, None)
       })

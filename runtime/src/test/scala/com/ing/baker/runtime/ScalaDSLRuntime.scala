@@ -21,7 +21,7 @@ object ScalaDSLRuntime {
 
     override val inputTypes: Seq[Type] = i.inputIngredients.map(_.ingredientType)
 
-    override def execute(interaction: InteractionTransition[_], input: Seq[Value]): Option[RuntimeEvent] = Some(fn(input))
+    override def execute(interaction: InteractionTransition, input: Seq[Value]): Option[RuntimeEvent] = Some(fn(input))
   }
 
   // TODO use shapeless to abstract over function arity and add type safety
