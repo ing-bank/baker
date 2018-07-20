@@ -57,13 +57,6 @@ object ProcessInstanceProtocol {
    */
   case class Initialize(marking: MarkingData, state: Any) extends Command
 
-  object FireTransition {
-
-    def apply[T, I](transition: T, input: I)(implicit transitionIdentifier: Identifiable[T]): FireTransition = FireTransition(transitionIdentifier(transition).value, input, None)
-
-//    def apply[T](t: T)(implicit transitionIdentifier: Identifiable[T]): FireTransition = FireTransition(transitionIdentifier(t).value, (), None)
-  }
-
   /**
    * Command to fire a specific transition with input.
    */
