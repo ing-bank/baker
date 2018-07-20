@@ -1,12 +1,10 @@
 package com.ing.baker.petrinet
 
-import com.esotericsoftware.kryo.io.{Input, Output}
-import com.esotericsoftware.kryo.{Kryo, KryoSerializable}
-
-import scala.PartialFunction._
 import scalax.collection.Graph
 import scalax.collection.GraphPredef._
 import scalax.collection.edge.WLDiEdge
+
+import scala.PartialFunction._
 
 package object api extends MultiSetOps with MarkingOps {
 

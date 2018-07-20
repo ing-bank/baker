@@ -1,9 +1,7 @@
 package com.ing.baker.il
 
 import com.ing.baker.petrinet.api._
-
 import scalax.collection.edge.WLDiEdge
-import scalax.collection.immutable.Graph
 
 package object petrinet {
 
@@ -41,14 +39,4 @@ package object petrinet {
   implicit def placeIdentifier(p: Place[_]): Id = Id(p.id)
 
   implicit def transitionIdentifier(t: Transition[_]): Id = Id(t.id)
-
-  def createPetriNet(params: Arc*): RecipePetriNet = {
-    val petriNet = new ScalaGraphPetriNet(Graph(params: _*))
-
-    requireUniqueElements(petriNet.places.toSeq.map(_.id), "Place identifier")
-    requireUniqueElements(petriNet.transitions.toSeq.map(_.id), "Transition identifier")
-
-    petriNet
-  }
-
 }
