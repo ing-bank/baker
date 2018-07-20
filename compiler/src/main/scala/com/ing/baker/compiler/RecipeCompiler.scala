@@ -7,10 +7,9 @@ import com.ing.baker.il.petrinet._
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.recipe.common._
-
-import scala.collection.mutable
-import scala.language.postfixOps
 import scalax.collection.immutable.Graph
+
+import scala.language.postfixOps
 
 object RecipeCompiler {
 
@@ -203,8 +202,10 @@ object RecipeCompiler {
     // connecting a transition to a ingredient place.
     val internalEventArcs: Seq[Arc] = allInteractionTransitions.flatMap { t =>
       t.eventsToFire.flatMap { event =>
-        event.ingredients.map(ingredient =>
-          arc(interactionEventTransitions.getByLabel(event.name), createPlace(ingredient.name, IngredientPlace), 1))
+        event.ingredients.map { ingredient =>
+          val from = interactionEventTransitions.find(_.label == event.name).get
+          arc(from, createPlace(ingredient.name, IngredientPlace), 1)
+        }
       }
     }
 

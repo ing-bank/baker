@@ -7,8 +7,6 @@ import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{InteractionDescriptor, ProvidesNothing}
 import com.ing.baker.types._
 
-import scala.concurrent.duration.Duration
-
 package object compiler {
 
   def ingredientToCompiledIngredient(ingredient: common.Ingredient): IngredientDescriptor = IngredientDescriptor(ingredient.name, ingredient.ingredientType)
@@ -121,11 +119,9 @@ package object compiler {
 
   implicit class TransitionOps(transitions: Seq[Transition[_]]) {
 
-    def findTransitionsByClass: Class[_] ⇒ Option[Transition[_]] =
-      clazz => transitions.findByLabel(clazz.getSimpleName)
+    def findTransitionsByClass: Class[_] ⇒ Option[Transition[_]] = clazz => transitions.find(_.label == clazz.getSimpleName)
 
-    def findTransitionByName: String ⇒ Option[Transition[_]] =
-      interactionName ⇒ transitions.findByLabel(interactionName)
+    def findTransitionByName: String ⇒ Option[Transition[_]] = interactionName ⇒ transitions.find(_.label == interactionName)
   }
 
   implicit class EventTransitionOps(eventTransitions: Seq[EventTransition]) {

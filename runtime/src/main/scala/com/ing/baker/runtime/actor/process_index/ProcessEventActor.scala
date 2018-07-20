@@ -35,7 +35,7 @@ object ProcessEventActor {
   }
 
   def transitionForRuntimeEvent(runtimeEvent: RuntimeEvent, compiledRecipe: CompiledRecipe): Transition[_] =
-    compiledRecipe.petriNet.transitions.findByLabel(runtimeEvent.name).getOrElse {
+    compiledRecipe.petriNet.transitions.find(_.label == runtimeEvent.name).getOrElse {
       throw new IllegalArgumentException(s"No such event known in recipe: ${runtimeEvent.name}")
     }
 
