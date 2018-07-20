@@ -13,22 +13,7 @@ package object il {
   val SuccessEventAppend = "Successful"
   val exhaustedEventAppend = "RetryExhausted"
 
-  implicit class PlaceAdditions(place: Place[_]) {
-    def isIngredient: Boolean = place.placeType == IngredientPlace
-
-    def isInteractionEventOutput: Boolean = place.placeType == InteractionEventOutputPlace
-
-    def isFiringLimiter: Boolean = place.placeType.isInstanceOf[FiringLimiterPlace]
-
-    def isEventPrecondition: Boolean = place.placeType == EventPreconditionPlace
-
-    def isOrEventPrecondition: Boolean = place.placeType == EventOrPreconditionPlace
-
-    def isIntermediate: Boolean = place.placeType == IntermediatePlace
-
-    def isEmptyEventIngredient: Boolean = place.placeType == EmptyEventIngredientPlace
-  }
-
+  // TODO remove this implicit class
   implicit class TransitionAdditions(transition: Transition[_]) {
 
     def isInteraction: Boolean = PartialFunction.cond(transition) {

@@ -116,20 +116,4 @@ package object compiler {
         actionType = actionType)
     }
   }
-
-  implicit class TransitionOps(transitions: Seq[Transition[_]]) {
-
-    def findTransitionsByClass: Class[_] ⇒ Option[Transition[_]] = clazz => transitions.find(_.label == clazz.getSimpleName)
-
-    def findTransitionByName: String ⇒ Option[Transition[_]] = interactionName ⇒ transitions.find(_.label == interactionName)
-  }
-
-  implicit class EventTransitionOps(eventTransitions: Seq[EventTransition]) {
-    def findEventTransitionsByEvent: EventDescriptor ⇒ Option[EventTransition] =
-      event => eventTransitions.find(_.event == event)
-
-    def findEventTransitionsByEventName: String ⇒ Option[EventTransition] =
-      eventName => eventTransitions.find(_.event.name == eventName)
-  }
-
 }

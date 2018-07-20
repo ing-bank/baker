@@ -217,18 +217,21 @@ object RecipeCompiler {
       }
     )
 
+    def findEventTransitionByEventName (eventName: String) = allEventTransitions.find(_.event.name == eventName)
+    def findInteractionByLabel(label: String) = allInteractionTransitions.find(_.label == label)
+
     // This generates precondition arcs for Required Events (AND).
     val (eventPreconditionArcs, preconditionANDErrors) = actionDescriptors.map { t =>
       buildEventAndPreconditionArcs(t,
-        allEventTransitions.findEventTransitionsByEventName,
-        allInteractionTransitions.findTransitionByName)
+        findEventTransitionByEventName,
+        findInteractionByLabel)
     }.unzipFlatten
 
     // This generates precondition arcs for Required Events (OR).
     val (eventOrPreconditionArcs, preconditionORErrors) = actionDescriptors.map { t =>
       buildEventORPreconditionArcs(t,
-        allEventTransitions.findEventTransitionsByEventName,
-        allInteractionTransitions.findTransitionByName)
+        findEventTransitionByEventName,
+        findInteractionByLabel)
     }.unzipFlatten
 
     val (sensoryEventWithoutIngredients, sensoryEventWithIngredients) = sensoryEventTransitions.partition(_.event.ingredients.isEmpty)
@@ -266,7 +269,7 @@ object RecipeCompiler {
       allInteractionTransitions.flatMap(
         buildInteractionArcs(multipleConsumerFacilitatorTransitions,
           ingredientsWithMultipleConsumers,
-          interactionEventTransitions.findEventTransitionsByEvent))
+          e => interactionEventTransitions.find(_.event.name == e.name)))
 
     val arcs = (interactionArcs
       ++ eventPreconditionArcs
