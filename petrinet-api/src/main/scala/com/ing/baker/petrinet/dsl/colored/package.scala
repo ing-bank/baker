@@ -28,10 +28,6 @@ package object colored {
    */
   type ColoredPetriNet = PetriNet[Place[_], Transition[_]]
 
-  implicit def placeIdentifier(p: Place[_]): Id = Id(p.id)
-
-  implicit def transitionIdentifier(t: Transition[_]): Id = Id(t.id)
-
   implicit class TransitionDSL[Input, Output, State](t: Transition[Input]) {
     def ~>(p: Place[_], weight: Long = 1): Arc = arc(t, p, weight)
   }

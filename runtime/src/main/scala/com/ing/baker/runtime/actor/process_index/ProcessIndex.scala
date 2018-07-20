@@ -67,9 +67,7 @@ object ProcessIndex {
       recipeName,
       petriNet,
       settings,
-      petriNetRuntime,
-      petrinet.placeIdentifier,
-      petrinet.transitionIdentifier)
+      petriNetRuntime)
     )
 
   private val bakerExecutionContext: ExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
