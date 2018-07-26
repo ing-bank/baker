@@ -72,6 +72,8 @@ object ProcessIndex {
   }
 
   private val strategy: Strategy = Strategy.fromCachedDaemonPool("Baker.CachedThreadPool")
+
+  private val getRecipesTimeout: FiniteDuration = 5 seconds
 }
 
 class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
@@ -89,8 +91,8 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
   def updateCache() = {
     // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
-    val futureResult = recipeManager.ask(GetAllRecipes)(5 second).mapTo[AllRecipes]
-    val allRecipes = Await.result(futureResult, 5 second)
+    val futureResult = recipeManager.ask(GetAllRecipes)(getRecipesTimeout).mapTo[AllRecipes]
+    val allRecipes = Await.result(futureResult, getRecipesTimeout)
     recipeCache ++= allRecipes.compiledRecipes
   }
 
@@ -107,7 +109,9 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
     context.child(processId).getOrElse(createProcessActor(processId))
 
   def createProcessActor(processId: String): ActorRef = {
-    val compiledRecipe: CompiledRecipe = getCompiledRecipe(index(processId).recipeId).get
+    val recipeId = index(processId).recipeId
+    val compiledRecipe: CompiledRecipe =
+      getCompiledRecipe(recipeId).getOrElse(throw new IllegalStateException(s"No recipe with recipe id '$recipeId' exists"))
     createProcessActor(processId, compiledRecipe)
   }
 
@@ -171,18 +175,23 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
     case CreateProcess(recipeId, processId) =>
       context.child(processId) match {
         case None if !index.contains(processId) =>
-          val created = System.currentTimeMillis()
-          persist(ActorCreated(recipeId, processId, created)) { _ =>
 
-            getCompiledRecipe(recipeId) match {
-              case Some(compiledRecipe) =>
+          // first check if the recipe exists
+          getCompiledRecipe(recipeId) match {
+            case Some(compiledRecipe) =>
+
+              val createdTime = System.currentTimeMillis()
+
+              persist(ActorCreated(recipeId, processId, createdTime)) { _ =>
                 val initialize = Initialize(ProcessInstanceProtocol.marshal(compiledRecipe.initialMarking), ProcessState(processId, Map.empty))
                 createProcessActor(processId, compiledRecipe).forward(initialize)
-                val actorMetadata = ActorMetadata(recipeId, processId, created, Active)
+                val actorMetadata = ActorMetadata(recipeId, processId, createdTime, Active)
                 index += processId -> actorMetadata
-              case None => sender() ! NoRecipeFound(recipeId)
-            }
+              }
+
+            case None => sender() ! NoRecipeFound(recipeId)
           }
+          
         case _ if isDeleted(index(processId)) => sender() ! ProcessDeleted(processId)
         case _ => sender() ! ProcessAlreadyInitialized(processId)
       }
