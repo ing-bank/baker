@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.3.5
+
+- Fixed [#142](https://github.com/ing-bank/baker/issues/142): Exception in receiveRecover when having called bake for non existing process id
+
+## 1.3.4
+
+- Implemented workaround for [#133](https://github.com/ing-bank/baker/issues/133): Exception in receiveRecover of ProcessIndexActor
+
+## 1.3.3
+
+- Fixed [#68](https://github.com/ing-bank/baker/issues/68): catch and handle exceptions thrown by exception strategy handlers
+- Bugfix in the RetryWithIncrementalBackoff (integer overflow)
+
+## 1.3.2
+
+- Fixed [#91](https://github.com/ing-bank/baker/issues/91): allow java.util.Set as Ingredient types
+
+## 1.3.1
+
+- Bugfix in protobuf serialization
+
+## 1.3.0
+
+- Use protobuf for all persisted messages, including compiled recipes
+- Enable cross builds for scala 2.11 and 2.12
+- Introduced a specific ProcessDeletedException for when process instances where removed after specified retetion period
+
 ## 1.2.0
 - Baker now has it's own type system that does not depend on java classes. This means that:
   - The baker runtime does not have any knowledge/dependency of java classes of ingredients
