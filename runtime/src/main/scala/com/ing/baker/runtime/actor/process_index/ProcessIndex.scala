@@ -191,7 +191,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
             case None => sender() ! NoRecipeFound(recipeId)
           }
-          
+
         case _ if isDeleted(index(processId)) => sender() ! ProcessDeleted(processId)
         case _ => sender() ! ProcessAlreadyInitialized(processId)
       }
