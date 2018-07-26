@@ -15,16 +15,16 @@ package object compiler {
 
   implicit class InteractionOps(interaction: InteractionDescriptor) {
 
-    def toInteractionTransition(defaultFailureStrategy: common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition[_] =
+    def toInteractionTransition(defaultFailureStrategy: common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition =
       interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.InteractionAction, allIngredientNames)
 
-    def toSieveTransition(defaultFailureStrategy: common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition[_] =
+    def toSieveTransition(defaultFailureStrategy: common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition =
       interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.SieveAction, allIngredientNames)
 
     def interactionTransitionOf(interactionDescriptor: InteractionDescriptor,
                                 defaultFailureStrategy: common.InteractionFailureStrategy,
                                 actionType: ActionType,
-                                allIngredientNames: Set[String]): InteractionTransition[Any] = {
+                                allIngredientNames: Set[String]): InteractionTransition = {
 
       //This transforms the event using the eventOutputTransformer to the new event
       //If there is no eventOutputTransformer for the event the original event is returned
@@ -102,7 +102,7 @@ package object compiler {
         }
       }
 
-      InteractionTransition[Any](
+      InteractionTransition(
         eventsToFire = eventsToFire ++ exhaustedRetryEvent,
         originalEvents = originalEvents ++ exhaustedRetryEvent,
         providedIngredientEvent = providedIngredientEvent,

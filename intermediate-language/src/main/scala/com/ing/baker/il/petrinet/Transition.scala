@@ -4,10 +4,10 @@ import com.ing.baker.petrinet.api.{Id, Identifiable}
 
 object Transition {
 
-  implicit val identifiable: Identifiable[Transition[_]] = p => Id(p.id)
+  implicit val identifiable: Identifiable[Transition] = p => Id(p.id)
 }
 
-trait Transition[I] {
+trait Transition {
 
   def id: Long
   def label: String

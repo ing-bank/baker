@@ -11,7 +11,7 @@ package object simple {
   /**
    * Type alias for the node type of the scalax.collection.Graph backing the petri net.
    */
-  type Node = Either[Place[_], Transition[_]]
+  type Node = Either[Place[_], Transition]
 
   /**
    * Type alias for the edge type of the scalax.collection.Graph backing the petri net.
@@ -20,12 +20,12 @@ package object simple {
 
   type Place[C] = Int
 
-  type Transition[O] = Int
+  type Transition = Int
 
   type MarkingLike[T] = T ⇒ SimpleMarking
 
   implicit def placeIdentifier(p: Place[_]): Id = Id(p.toLong)
-  implicit def transitionIdentifier(t: Transition[_]): Id = Id(t.toLong)
+  implicit def transitionIdentifier(t: Transition): Id = Id(t.toLong)
 
   type SimpleMarking = MultiSet[Int]
 
@@ -44,7 +44,7 @@ package object simple {
 
   val runtime = new PetriNetRuntime[Place, Transition, Unit, Unit] {
     override val taskProvider: TransitionTaskProvider[Place, Transition, Unit, Unit] = new TransitionTaskProvider[Place, Transition, Unit, Unit] {
-      override def apply[Input](petriNet: PetriNet[Place[_], Transition[_]], t: Transition[Input]): TransitionTask[Place, Input, Unit, Unit] =
+      override def apply(petriNet: PetriNet[Place[_], Transition], t: Transition): TransitionTask[Place, Unit, Unit] =
         (marking, state, input) ⇒ ???
     }
   }
@@ -69,7 +69,7 @@ package object simple {
     }
   }
 
-  def createPetriNet(adjacencies: TransitionAdjacency*): PetriNet[Place[_], Transition[_]] = {
+  def createPetriNet(adjacencies: TransitionAdjacency*): PetriNet[Place[_], Transition] = {
     val params: Seq[Arc] = adjacencies.toSeq.zipWithIndex.flatMap {
       case (a, t) ⇒
         a.in.map { case (p, weight) ⇒ WLDiEdge[Node, String](Left(p), Right(t + 1))(weight, "") }.toSeq ++

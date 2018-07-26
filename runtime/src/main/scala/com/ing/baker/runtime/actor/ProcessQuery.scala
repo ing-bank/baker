@@ -13,14 +13,14 @@ import com.ing.baker.runtime.actor.serialization.{Encryption, ObjectSerializer}
 
 object ProcessQuery {
 
-  def eventsForInstance[P[_], T[_], S, E](processTypeName: String,
+  def eventsForInstance[P[_], T, S, E](processTypeName: String,
     processId: String,
-    topology: PetriNet[P[_], T[_]],
+    topology: PetriNet[P[_], T],
     encryption: Encryption = NoEncryption,
     readJournal: CurrentEventsByPersistenceIdQuery,
-    eventSourceFn: T[_] ⇒ (S ⇒ E ⇒ S))(implicit actorSystem: ActorSystem,
+    eventSourceFn: T ⇒ (S ⇒ E ⇒ S))(implicit actorSystem: ActorSystem,
       placeIdentifier: Identifiable[P[_]],
-      transitionIdentifier: Identifiable[T[_]]): Source[(Instance[P, T, S], Event), NotUsed] = {
+      transitionIdentifier: Identifiable[T]): Source[(Instance[P, T, S], Event), NotUsed] = {
 
     val serializer = new ProcessInstanceSerialization[P, T, S, E](new ObjectSerializer(actorSystem, encryption))
 

@@ -15,11 +15,11 @@ object ProcessInstanceProtocol {
    */
   type MarkingData = Map[Long, MultiSet[_]]
 
-  implicit def fromExecutionInstance[P[_], T[_], S](instance: com.ing.baker.petrinet.runtime.Instance[P, T, S])(implicit placeIdentifier: Identifiable[P[_]], transitionIdentifier: Identifiable[T[_]]): InstanceState =
+  implicit def fromExecutionInstance[P[_], T, S](instance: com.ing.baker.petrinet.runtime.Instance[P, T, S])(implicit placeIdentifier: Identifiable[P[_]], transitionIdentifier: Identifiable[T]): InstanceState =
     InstanceState(instance.sequenceNr, marshal[P](instance.marking), instance.state, instance.jobs.mapValues(fromExecutionJob(_)).map(identity))
 
-  implicit def fromExecutionJob[P[_], T[_], S, E](job: com.ing.baker.petrinet.runtime.Job[P, T, S])(implicit placeIdentifier: Identifiable[P[_]], transitionIdentifier: Identifiable[T[_]]): JobState =
-    JobState(job.id, transitionIdentifier(job.transition.asInstanceOf[T[_]]).value, marshal(job.consume), job.input, job.failure.map(fromExecutionExceptionState))
+  implicit def fromExecutionJob[P[_], T, S, E](job: com.ing.baker.petrinet.runtime.Job[P, T, S])(implicit placeIdentifier: Identifiable[P[_]], transitionIdentifier: Identifiable[T]): JobState =
+    JobState(job.id, transitionIdentifier(job.transition.asInstanceOf[T]).value, marshal(job.consume), job.input, job.failure.map(fromExecutionExceptionState))
 
   implicit def fromExecutionExceptionState(exceptionState: com.ing.baker.petrinet.runtime.ExceptionState): ExceptionState =
     ExceptionState(exceptionState.failureCount, exceptionState.failureReason, exceptionState.failureStrategy)
@@ -58,13 +58,6 @@ object ProcessInstanceProtocol {
    * Command to initialize a petri net instance.
    */
   case class Initialize(marking: MarkingData, state: Any) extends Command
-
-  object FireTransition {
-
-    def apply[T[_], I](t: T[I], input: I)(implicit transitionIdentifier: Identifiable[T[_]]): FireTransition = FireTransition(transitionIdentifier(t.asInstanceOf[T[_]]).value, input, None)
-
-    def apply[T[_]](t: T[Unit])(implicit transitionIdentifier: Identifiable[T[_]]): FireTransition = FireTransition(transitionIdentifier(t.asInstanceOf[T[_]]).value, (), None)
-  }
 
   /**
    * Command to fire a specific transition with input.

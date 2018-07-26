@@ -188,7 +188,7 @@ trait ProtoEventAdapter {
               val t = protobuf.MultiFacilitatorTransition(Option(label))
               protobuf.Node(protobuf.Node.OneofNode.MultiFacilitatorTransition(t))
 
-            case t: il.petrinet.InteractionTransition[_] =>
+            case t: il.petrinet.InteractionTransition =>
               val pt = protobuf.InteractionTransition(
                 eventsToFire = t.eventsToFire.map(toProtoType[protobuf.EventDescriptor]),
                 originalEvents = t.originalEvents.map(toProtoType[protobuf.EventDescriptor]),
