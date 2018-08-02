@@ -288,6 +288,7 @@ object RecipeCompiler {
 
     val compiledRecipe = CompiledRecipe(
       name = recipe.name,
+      recipeId = recipe.name, // TODO implement using hashcode
       petriNet = petriNet,
       initialMarking = initialMarking,
       validationErrors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors,

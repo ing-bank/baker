@@ -116,7 +116,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
   def createProcessActor(processId: String, compiledRecipe: CompiledRecipe): ActorRef = {
     val petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] =
-      new RecipeRuntime(compiledRecipe.name, interactionManager, context.system.eventStream)
+      new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream)
 
     val processActorProps =
       processInstanceProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,

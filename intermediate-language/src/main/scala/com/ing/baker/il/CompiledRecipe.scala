@@ -10,6 +10,7 @@ import scala.concurrent.duration.FiniteDuration
   * A Compiled recipe.
   */
 case class CompiledRecipe(name: String,
+                          recipeId: String,
                           petriNet: RecipePetriNet,
                           initialMarking: Marking[Place],
                           validationErrors: Seq[String] = Seq.empty,
