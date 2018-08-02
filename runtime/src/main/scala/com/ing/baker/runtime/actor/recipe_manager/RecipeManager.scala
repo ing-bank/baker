@@ -35,13 +35,11 @@ class RecipeManager extends PersistentActor with ActorLogging {
     case AddRecipe(compiledRecipe) => {
       val foundRecipe = hasCompiledRecipe(compiledRecipe)
       if(foundRecipe.isEmpty) {
-        val recipeId = UUID.randomUUID().toString
-
-        persist(RecipeAdded(recipeId, compiledRecipe)){ _ =>
-          addRecipe(recipeId, compiledRecipe)
+        persist(RecipeAdded(compiledRecipe.recipeId, compiledRecipe)){ _ =>
+          addRecipe(compiledRecipe.recipeId, compiledRecipe)
           context.system.eventStream.publish(
-            com.ing.baker.runtime.core.events.RecipeAdded(compiledRecipe.name, recipeId, System.currentTimeMillis(), compiledRecipe))
-          sender() ! AddRecipeResponse(recipeId)
+            com.ing.baker.runtime.core.events.RecipeAdded(compiledRecipe.name, compiledRecipe.recipeId, System.currentTimeMillis(), compiledRecipe))
+          sender() ! AddRecipeResponse(compiledRecipe.recipeId)
         }
       }
       else{
