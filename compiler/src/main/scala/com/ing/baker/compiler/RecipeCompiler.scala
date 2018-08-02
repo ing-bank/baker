@@ -47,16 +47,18 @@ object RecipeCompiler {
                                             preconditionTransition: String => Option[Transition],
                                             interactionTransition: String => Option[Transition]): (Seq[Arc], Seq[String]) = {
 
-    interaction.requiredOneOfEvents.toSeq.zipWithIndex.map { case (orGroup: Set[String], index: Int) =>
-      // only one `Place` for all the OR events
-      val eventPreconditionPlace = createPlace(label = s"${interaction.name}-or-$index" , placeType = EventOrPreconditionPlace)
+    interaction.requiredOneOfEvents.toSeq.zipWithIndex.map {
+      case (orGroup: Set[String], index: Int) =>
+        // only one `Place` for all the OR events
+        val eventPreconditionPlace = createPlace(label = s"${interaction.name}-or-$index",
+          placeType = EventOrPreconditionPlace)
 
-      orGroup.toSeq.map { eventName =>
-        buildEventPreconditionArcs(eventName,
-          eventPreconditionPlace,
-          preconditionTransition,
-          interactionTransition(interaction.name).get)
-      }.unzipFlatten
+        orGroup.toSeq.map { eventName =>
+          buildEventPreconditionArcs(eventName,
+            eventPreconditionPlace,
+            preconditionTransition,
+            interactionTransition(interaction.name).get)
+        }.unzipFlatten
     }.unzipFlatten
   }
 
@@ -218,6 +220,7 @@ object RecipeCompiler {
     )
 
     def findEventTransitionByEventName (eventName: String) = allEventTransitions.find(_.event.name == eventName)
+
     def findInteractionByLabel(label: String) = allInteractionTransitions.find(_.label == label)
 
     // This generates precondition arcs for Required Events (AND).
@@ -286,12 +289,13 @@ object RecipeCompiler {
       case p@Place(_, FiringLimiterPlace(n)) => p -> Map((null, n))
     }.toMarking
 
+    val errors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors
     val compiledRecipe = CompiledRecipe(
       name = recipe.name,
-      recipeId = recipe.name, // TODO implement using hashcode
+      recipeId = (recipe.name, Set(arcs), initialMarking, errors, recipe.eventReceivePeriod, recipe.retentionPeriod).hashCode().toString,
       petriNet = petriNet,
       initialMarking = initialMarking,
-      validationErrors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors,
+      validationErrors = errors,
       eventReceivePeriod = recipe.eventReceivePeriod,
       retentionPeriod = recipe.retentionPeriod
     )
