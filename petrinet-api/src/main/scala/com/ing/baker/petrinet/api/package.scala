@@ -91,18 +91,6 @@ package object api extends MultiSetOps with MarkingOps {
 
     def findTPEdge(from: T, to: P): Option[WLDiEdge[Either[P, T]]] =
       graph.get(Right(from)).outgoing.find(_.target.value == Left(to)).map(_.toOuter)
-
-    def incomingPlaces(t: T): Set[P] = graph.get(t).incomingPlaces
-
-    def incomingTransitions(p: P): Set[T] = graph.get(p).incomingTransitions
-
-    def outgoingPlaces(t: T): Set[P] = graph.get(t).outgoingPlaces
-
-    def outgoingTransitions(p: P): Set[T] = graph.get(p).outgoingTransitions
-
-    def places(): Set[P] = graph.nodes.collect { case n if n.isPlace ⇒ n.asPlace }.toSet
-
-    def transitions(): Set[T] = graph.nodes.collect { case n if n.isTransition ⇒ n.asTransition }.toSet
   }
 }
 

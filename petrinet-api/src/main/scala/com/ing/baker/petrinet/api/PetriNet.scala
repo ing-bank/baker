@@ -14,14 +14,14 @@ case class PetriNet[P, T](val innerGraph: BiPartiteGraph[P, T, WLDiEdge]) {
     *
     * @return The set of places
     */
-  lazy val places: Set[P] = innerGraph.places()
+  lazy val places: Set[P] = innerGraph.nodes.collect { case n if n.isPlace ⇒ n.asPlace }.toSet
 
   /**
     * The set of transitions of the petri net
     *
     * @return The set of transitions.
     */
-  lazy val transitions: Set[T] = innerGraph.transitions()
+  lazy val transitions: Set[T] = innerGraph.nodes.collect { case n if n.isTransition ⇒ n.asTransition }.toSet
 
   /**
     * The out-adjecent places of a transition.
@@ -29,7 +29,7 @@ case class PetriNet[P, T](val innerGraph: BiPartiteGraph[P, T, WLDiEdge]) {
     * @param t transition
     * @return
     */
-  def outgoingPlaces(t: T): Set[P] = innerGraph.outgoingPlaces(t)
+  def outgoingPlaces(t: T): Set[P] = innerGraph.get(t).outgoingPlaces
 
   /**
     * The out-adjacent transitions of a place.
@@ -37,7 +37,7 @@ case class PetriNet[P, T](val innerGraph: BiPartiteGraph[P, T, WLDiEdge]) {
     * @param p place
     * @return
     */
-  def outgoingTransitions(p: P): Set[T] = innerGraph.outgoingTransitions(p)
+  def outgoingTransitions(p: P): Set[T] = innerGraph.get(p).outgoingTransitions
 
   /**
     * The in-adjacent places of a transition.
@@ -45,7 +45,7 @@ case class PetriNet[P, T](val innerGraph: BiPartiteGraph[P, T, WLDiEdge]) {
     * @param t transition
     * @return
     */
-  def incomingPlaces(t: T): Set[P] = innerGraph.incomingPlaces(t)
+  def incomingPlaces(t: T): Set[P] = innerGraph.get(t).incomingPlaces
 
   /**
     * The in-adjacent transitions of a place.
@@ -53,7 +53,7 @@ case class PetriNet[P, T](val innerGraph: BiPartiteGraph[P, T, WLDiEdge]) {
     * @param p place
     * @return
     */
-  def incomingTransitions(p: P): Set[T] = innerGraph.incomingTransitions(p)
+  def incomingTransitions(p: P): Set[T] = innerGraph.get(p).incomingTransitions
 
   /**
     * The set of nodes (places + transitions) in the petri net.
