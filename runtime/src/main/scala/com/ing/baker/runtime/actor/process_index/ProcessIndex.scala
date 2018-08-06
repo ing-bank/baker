@@ -46,7 +46,10 @@ object ProcessIndex {
   //The process was deleted
   case object Deleted extends ProcessStatus
 
-  case class ActorMetadata(recipeId: String, processId: String, createdDateTime: Long, processStatus: ProcessStatus)
+  case class ActorMetadata(recipeId: String, processId: String, createdDateTime: Long, processStatus: ProcessStatus) {
+
+    def isDeleted: Boolean = processStatus == Deleted
+  }
 
   // --- Events
 
@@ -138,17 +141,6 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
         .exists { p => meta.createdDateTime + p.toMillis < System.currentTimeMillis() }
   }
 
-  def isDeleted(meta: ActorMetadata): Boolean =
-    meta.processStatus == Deleted
-
-
-  def deleteProcess(processId: String): Unit = {
-    persist(ActorDeleted(processId)) { _ =>
-      val meta = index(processId)
-      index.update(processId, meta.copy(processStatus = Deleted))
-    }
-  }
-
   override def receiveCommand: Receive = {
 
     case GetIndex =>
@@ -167,8 +159,10 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
       index.get(processId) match {
         case Some(meta) if shouldDelete(meta) =>
-          deleteProcess(processId)
-        case Some(meta) if isDeleted(meta) =>
+          persist(ActorDeleted(processId)) { _ =>
+            index.update(processId, meta.copy(processStatus = Deleted))
+          }
+        case Some(meta) if meta.isDeleted =>
           log.warning(s"Received Terminated message for already deleted process: ${meta.processId}")
         case Some(_) =>
           persist(ActorPassivated(processId)) { _ => }
@@ -198,7 +192,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
             case None => sender() ! NoRecipeFound(recipeId)
           }
 
-        case _ if isDeleted(index(processId)) => sender() ! ProcessDeleted(processId)
+        case _ if index(processId).isDeleted => sender() ! ProcessDeleted(processId)
         case _ => sender() ! ProcessAlreadyInitialized(processId)
       }
 
@@ -272,7 +266,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
       //If not return a Uninitialized message
       context.child(processId) match {
         case None if !index.contains(processId) => rejectWith(ProcessUninitialized(processId), RejectReason.NoSuchProcess)
-        case None if isDeleted(index(processId)) => rejectWith(ProcessUninitialized(processId), RejectReason.ProcessDeleted)
+        case None if index(processId).isDeleted => rejectWith(ProcessUninitialized(processId), RejectReason.ProcessDeleted)
         case None =>
           persist(ActorActivated(processId)) { _ =>
             handleEventWithActor(createProcessActor(processId))
@@ -283,7 +277,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
     case GetProcessState(processId) =>
       context.child(processId) match {
         case None if !index.contains(processId) => sender() ! ProcessUninitialized(processId)
-        case None if isDeleted(index(processId)) => sender() ! ProcessDeleted(processId)
+        case None if index(processId).isDeleted => sender() ! ProcessDeleted(processId)
         case None if index.contains(processId) =>
           persist(ActorActivated(processId)) {
             _ =>
@@ -294,7 +288,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
     case GetCompiledRecipe(processId) =>
       index.get(processId) match {
-        case Some(processMetadata) if isDeleted(processMetadata) => sender() ! ProcessDeleted(processId)
+        case Some(processMetadata) if processMetadata.isDeleted => sender() ! ProcessDeleted(processId)
         case Some(processMetadata) =>
           getCompiledRecipe(processMetadata.recipeId) match {
             case Some(compiledRecipe) => sender() ! RecipeFound(compiledRecipe)
