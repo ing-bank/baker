@@ -257,7 +257,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
               validateEventAvailableForRecipe(actorRef, compiledRecipe)
             }
           case None =>
-            rejectWith(ProcessUninitialized(processId), RejectReason.NoSuchProcess)
+            rejectWith(NoSuchProcess(processId), RejectReason.NoSuchProcess)
         }
       }
 
@@ -265,8 +265,8 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
       //If not check if it is available and start
       //If not return a Uninitialized message
       context.child(processId) match {
-        case None if !index.contains(processId) => rejectWith(ProcessUninitialized(processId), RejectReason.NoSuchProcess)
-        case None if index(processId).isDeleted => rejectWith(ProcessUninitialized(processId), RejectReason.ProcessDeleted)
+        case None if !index.contains(processId) => rejectWith(NoSuchProcess(processId), RejectReason.NoSuchProcess)
+        case None if index(processId).isDeleted => rejectWith(ProcessDeleted(processId), RejectReason.ProcessDeleted)
         case None =>
           persist(ActorActivated(processId)) { _ =>
             handleEventWithActor(createProcessActor(processId))
@@ -276,7 +276,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
     case GetProcessState(processId) =>
       context.child(processId) match {
-        case None if !index.contains(processId) => sender() ! ProcessUninitialized(processId)
+        case None if !index.contains(processId) => sender() ! NoSuchProcess(processId)
         case None if index(processId).isDeleted => sender() ! ProcessDeleted(processId)
         case None if index.contains(processId) =>
           persist(ActorActivated(processId)) {
@@ -292,9 +292,9 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
         case Some(processMetadata) =>
           getCompiledRecipe(processMetadata.recipeId) match {
             case Some(compiledRecipe) => sender() ! RecipeFound(compiledRecipe)
-            case None => sender() ! ProcessUninitialized(processId)
+            case None => sender() ! NoSuchProcess(processId)
           }
-        case None => sender() ! ProcessUninitialized(processId)
+        case None => sender() ! NoSuchProcess(processId)
       }
     case cmd =>
       log.error(s"Unrecognized command $cmd")

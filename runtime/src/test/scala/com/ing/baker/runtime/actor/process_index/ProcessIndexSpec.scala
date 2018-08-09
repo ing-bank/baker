@@ -194,7 +194,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds)
 
-      expectProcessEventReply(ProcessUninitialized(processId))
+      expectProcessEventReply(NoSuchProcess(processId))
     }
 
     "reply with a InvalidEvent message when attempting to fire an event that is now know in the compiledRecipe" in {
