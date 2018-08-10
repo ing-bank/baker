@@ -152,7 +152,6 @@ object RecipeVisualizer {
         case Right(transition) if eventNames.contains(transition.label) ⇒ style.eventFiredAttributes
         case Right(transition) if transition.isMultiFacilitatorTransition => style.choiceAttributes
         case Right(transition) if transition.isInteraction ⇒ style.interactionAttributes
-        case Right(transition) if transition.isSieve ⇒ style.sieveAttributes
         case Right(transition) if transition.isEventMissing ⇒ style.eventMissingAttributes
         case Right(transition) if transition.isSensoryEvent => style.sensoryEventAttributes
         case Right(_) ⇒ style.eventAttributes

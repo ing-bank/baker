@@ -16,14 +16,10 @@ package object compiler {
   implicit class InteractionOps(interaction: InteractionDescriptor) {
 
     def toInteractionTransition(defaultFailureStrategy: common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition =
-      interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.InteractionAction, allIngredientNames)
-
-    def toSieveTransition(defaultFailureStrategy: common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition =
-      interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.SieveAction, allIngredientNames)
+      interactionTransitionOf(interaction, defaultFailureStrategy, allIngredientNames)
 
     def interactionTransitionOf(interactionDescriptor: InteractionDescriptor,
                                 defaultFailureStrategy: common.InteractionFailureStrategy,
-                                actionType: ActionType,
                                 allIngredientNames: Set[String]): InteractionTransition = {
 
       //This transforms the event using the eventOutputTransformer to the new event
@@ -112,8 +108,8 @@ package object compiler {
         predefinedParameters = predefinedIngredientsWithOptionalsEmpty,
         maximumInteractionCount = interactionDescriptor.maximumInteractionCount,
         failureStrategy = failureStrategy,
-        eventOutputTransformers = interactionDescriptor.eventOutputTransformers.map { case (event, transformer) => event.name -> transformEventOutputTransformer(transformer) },
-        actionType = actionType)
+        eventOutputTransformers = interactionDescriptor.eventOutputTransformers.map {
+          case (event, transformer) => event.name -> transformEventOutputTransformer(transformer) })
     }
   }
 }

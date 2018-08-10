@@ -9,6 +9,9 @@ trait InteractionDescriptor {
 
   val interaction: Interaction
 
+  /**
+    * The name of the interaction
+    */
   val name: String
 
   /**
