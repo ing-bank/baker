@@ -1,11 +1,13 @@
 package com.ing.baker.recipe
 
-import java.lang.reflect.{Method, Type => JType}
+import java.lang.reflect.Method
 
 import com.ing.baker.recipe.javadsl.ReflectionHelpers._
 import com.ing.baker.types.{Converters, Type}
 
 package object javadsl {
+
+  private val interactionMethodName: String = "apply"
 
   def createIngredient(ingredientName: String, ingredientType: Type): common.Ingredient =
     new common.Ingredient(
@@ -13,9 +15,9 @@ package object javadsl {
       ingredientType = ingredientType
     )
 
-  def parseType(jType: JType, errorMessage: String) = {
+  def parseType(javaType: java.lang.reflect.Type, errorMessage: String): Type = {
     try {
-      Converters.readJavaType(jType)
+      Converters.readJavaType(javaType)
     } catch {
       case e: Exception => throw new IllegalArgumentException(errorMessage, e)
     }
@@ -31,25 +33,21 @@ package object javadsl {
       override val maxFiringLimit: Option[Int] = firingLimit
     }
 
-  def stringToCommonEvent(eventName: String, firingLimit: Option[Int]): common.Event =
-    new common.Event {
-      override val name: String = eventName
-      override val providedIngredients: Seq[common.Ingredient] = Seq.empty
-      override val maxFiringLimit: Option[Int] = firingLimit
-    }
-
   def interactionClassToCommonInteraction(interactionClass: Class[_ <: Interaction]): common.Interaction =
     new common.Interaction {
       override val name: String = interactionClass.getSimpleName
 
-      private val interactionMethodName: String = "apply"
       private val method: Method = interactionClass.getDeclaredMethods
         .find(_.getName == interactionMethodName)
         .getOrElse(throw new IllegalStateException(
           s"No method named '$interactionMethodName' defined on '${interactionClass.getName}'"))
 
       override val inputIngredients: Seq[common.Ingredient] =
-        method.getParameterNames.map(s => createIngredient(s, parseType(method.parameterTypeForName(s).get, s"Unsupported type for ingredient '$s' on interaction '${interactionClass.getName}'")))
+        method.getParameterNames.map(name =>
+          createIngredient(name,
+            parseType(
+              method.parameterTypeForName(name).get,
+              s"Unsupported type for ingredient '$name' on interaction '${interactionClass.getName}'")))
 
       override val output: common.InteractionOutput = {
         if (method.isAnnotationPresent(classOf[annotations.ProvidesIngredient]) && method.isAnnotationPresent(classOf[annotations.FiresEvent]))
