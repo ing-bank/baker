@@ -327,7 +327,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
     "execute an interaction when its ingredient is provided and the interaction is renamed" in {
       val recipe =
         Recipe("IngredientProvidedRecipeWithRename")
-          .withInteraction(interactionOne, "interactionOneRenamed")
+          .withInteraction(interactionOne.withName("interactionOneRenamed"))
           .withSensoryEvent(initialEvent)
 
       val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)

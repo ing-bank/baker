@@ -21,18 +21,6 @@ public class InteractionDescriptorTest {
     public final ExpectedException exception = ExpectedException.none();
 
     @Test
-    public void shouldCreateInteractionDescriptorOfProvidesIngredientInteraction() {
-        com.ing.baker.recipe.common.InteractionDescriptor id = of(ProvidesIngredientInteraction.class);
-        assertEquals(providesIngredientInteractionCheck(), id.interaction());
-    }
-
-    @Test
-    public void shouldCreateInteractionDescriptorOfRequiredProcessIdStringInteraction() {
-        com.ing.baker.recipe.common.InteractionDescriptor id = of(RequiresProcessIdStringInteraction.class);
-        assertEquals(requiresProcessIdStringInteractionCheck(), id.interaction());
-    }
-
-    @Test
     public void shouldNotAllowToCreateInteractionDescriptorWithProvidesIngredientAndFiresEvent() {
         exception.expect(RecipeValidationException.class);
         of(ProvidesIngredientAndFireseventInteraction.class);

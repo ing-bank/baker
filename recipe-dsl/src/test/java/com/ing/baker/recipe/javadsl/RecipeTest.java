@@ -27,7 +27,7 @@ public class RecipeTest {
         assertEquals(recipe.getEvents().size(), 0);
         assertEquals(recipe.getInteractions().size(), 1);
         assertEquals(recipe.getSieves().size(), 0);
-        assertEquals(recipe.getInteractions().get(0).interaction(), providesIngredientInteractionCheck());
+//        assertEquals(recipe.getInteractions().get(0), providesIngredientInteractionCheck());
     }
 
     @Test
@@ -40,9 +40,9 @@ public class RecipeTest {
         assertEquals(recipe.getEvents().size(), 0);
         assertEquals(recipe.getInteractions().size(), 3);
         assertEquals(recipe.getSieves().size(), 0);
-        assertEquals(recipe.getInteractions().get(0).interaction(), requiresProcessIdStringInteractionCheck());
-        assertEquals(recipe.getInteractions().get(1).interaction(), firesTwoEventInteractionCheck());
-        assertEquals(recipe.getInteractions().get(2).interaction(), providesIngredientInteractionCheck());
+//        assertEquals(recipe.getInteractions().get(0), requiresProcessIdStringInteractionCheck());
+//        assertEquals(recipe.getInteractions().get(1), firesTwoEventInteractionCheck());
+//        assertEquals(recipe.getInteractions().get(2), providesIngredientInteractionCheck());
     }
 
     @Test
@@ -52,7 +52,7 @@ public class RecipeTest {
         assertEquals(recipe.getEvents().size(), 0);
         assertEquals(recipe.getInteractions().size(), 0);
         assertEquals(recipe.getSieves().size(), 1);
-        assertEquals(recipe.getSieves().get(0).interaction(), providesIngredientInteractionCheck());
+//        assertEquals(recipe.getSieves().get(0), providesIngredientInteractionCheck());
     }
 
     @Test
@@ -65,9 +65,9 @@ public class RecipeTest {
         assertEquals(recipe.getEvents().size(), 0);
         assertEquals(recipe.getInteractions().size(), 0);
         assertEquals(recipe.getSieves().size(), 3);
-        assertEquals(recipe.getSieves().get(0).interaction(), requiresProcessIdStringInteractionCheck());
-        assertEquals(recipe.getSieves().get(1).interaction(), firesTwoEventInteractionCheck());
-        assertEquals(recipe.getSieves().get(2).interaction(), providesIngredientInteractionCheck());
+//        assertEquals(recipe.getSieves().get(0), requiresProcessIdStringInteractionCheck());
+//        assertEquals(recipe.getSieves().get(1), firesTwoEventInteractionCheck());
+//        assertEquals(recipe.getSieves().get(2), providesIngredientInteractionCheck());
     }
 
     @Test

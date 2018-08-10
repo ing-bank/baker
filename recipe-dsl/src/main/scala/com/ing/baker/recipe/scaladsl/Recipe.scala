@@ -18,21 +18,21 @@ object Recipe {
   * A Recipe combines a set of interactions & events.
   */
 case class Recipe private(override val name: String,
-                          override val interactions: Seq[InteractionDescriptor],
-                          override val sieves: Seq[InteractionDescriptor],
+                          override val interactions: Seq[Interaction],
+                          override val sieves: Seq[Interaction],
                           override val sensoryEvents: Set[common.Event],
                           override val defaultFailureStrategy: InteractionFailureStrategy,
                           override val eventReceivePeriod: Option[FiniteDuration],
                           override val retentionPeriod: Option[FiniteDuration])
   extends common.Recipe {
 
-  def withInteraction(newInteraction: InteractionDescriptor): Recipe = copy(interactions = interactions :+ newInteraction)
+  def withInteraction(newInteraction: Interaction): Recipe = copy(interactions = interactions :+ newInteraction)
 
-  def withInteractions(newInteractions: InteractionDescriptor*): Recipe = copy(interactions = interactions ++ newInteractions)
+  def withInteractions(newInteractions: Interaction*): Recipe = copy(interactions = interactions ++ newInteractions)
 
-  def withSieve(newSieve: InteractionDescriptor): Recipe = copy(sieves = sieves :+ newSieve)
+  def withSieve(newSieve: Interaction): Recipe = copy(sieves = sieves :+ newSieve)
 
-  def withSieves(newSieves: InteractionDescriptor*): Recipe = copy(sieves = sieves ++ newSieves)
+  def withSieves(newSieves: Interaction*): Recipe = copy(sieves = sieves ++ newSieves)
 
   def withSensoryEvent(newEvent: Event): Recipe = copy(sensoryEvents = sensoryEvents + newEvent)
 
