@@ -2,7 +2,9 @@ package com.ing.baker.petrinet.api
 
 object HMap {
 
-  def empty[K[_], V[_]] : HMap[K, V] = HMap[K, V](Map.empty)
+  private val emptyMapInstance = HMap[Any, Any](Map.empty)
+
+  def empty[K[_], V[_]] : HMap[K, V] = emptyMapInstance.asInstanceOf[HMap[K, V]]
 }
 
 /**

@@ -12,16 +12,13 @@ import scala.util.control.NonFatal
 
 package object runtime {
 
-
-
   /**
    * An (asynchronous) function associated with a transition
    *
-   * @tparam Input  The input delivered to the transition from outside the process.
    * @tparam Output The output emitted by the transition.
    * @tparam State  The state the transition closes over.
    */
-  type TransitionTask[P[_], Input, State, E] = (Marking[P], State, Input) ⇒ IO[(Marking[P], E)]
+  type TransitionTask[P[_], State, E] = (Marking[P], State, Any) ⇒ IO[(Marking[P], E)]
 
   /**
    * An event sourcing function associated with a transition

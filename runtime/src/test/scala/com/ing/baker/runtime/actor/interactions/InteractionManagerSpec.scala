@@ -17,7 +17,7 @@ class InteractionManagerSpec extends WordSpecLike with Matchers with MockitoSuga
         when(interactionImplementation.inputTypes).thenReturn(Seq(PrimitiveType(classOf[Int])))
 
         val interactionManager: InteractionManager = new InteractionManager(Seq(interactionImplementation))
-        val interactionTransition = mock[InteractionTransition[_]]
+        val interactionTransition = mock[InteractionTransition]
         when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", PrimitiveType(classOf[Int]))
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
@@ -35,7 +35,7 @@ class InteractionManagerSpec extends WordSpecLike with Matchers with MockitoSuga
         when(interactionImplementation2.inputTypes).thenReturn(Seq(PrimitiveType(classOf[Int])))
 
         val interactionManager: InteractionManager = new InteractionManager(Seq(interactionImplementation1, interactionImplementation2))
-        val interactionTransition = mock[InteractionTransition[_]]
+        val interactionTransition = mock[InteractionTransition]
         when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", PrimitiveType(classOf[Int]))
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
@@ -53,7 +53,7 @@ class InteractionManagerSpec extends WordSpecLike with Matchers with MockitoSuga
         when(interactionImplementation2.inputTypes).thenReturn(Seq(PrimitiveType(classOf[Int])))
 
         val interactionManager: InteractionManager = new InteractionManager(Seq(interactionImplementation1, interactionImplementation2))
-        val interactionTransition = mock[InteractionTransition[_]]
+        val interactionTransition = mock[InteractionTransition]
         when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", PrimitiveType(classOf[Int]))
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
@@ -69,7 +69,7 @@ class InteractionManagerSpec extends WordSpecLike with Matchers with MockitoSuga
         when(interactionImplementation.inputTypes).thenReturn(Seq(PrimitiveType(classOf[Int])))
 
         val interactionManager: InteractionManager = new InteractionManager(Seq(interactionImplementation))
-        val interactionTransition = mock[InteractionTransition[_]]
+        val interactionTransition = mock[InteractionTransition]
         when(interactionTransition.originalInteractionName).thenReturn("WrongInteractionName")
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", PrimitiveType(classOf[Int]))
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
@@ -83,7 +83,7 @@ class InteractionManagerSpec extends WordSpecLike with Matchers with MockitoSuga
         when(interactionImplementation.inputTypes).thenReturn(Seq(PrimitiveType(classOf[Int])))
 
         val interactionManager: InteractionManager = new InteractionManager(Seq(interactionImplementation))
-        val interactionTransition = mock[InteractionTransition[_]]
+        val interactionTransition = mock[InteractionTransition]
         when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", PrimitiveType(classOf[String]))
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
@@ -97,7 +97,7 @@ class InteractionManagerSpec extends WordSpecLike with Matchers with MockitoSuga
         when(interactionImplementation.inputTypes).thenReturn(Seq(PrimitiveType(classOf[Int]), PrimitiveType(classOf[String])))
 
         val interactionManager: InteractionManager = new InteractionManager(Seq(interactionImplementation))
-        val interactionTransition = mock[InteractionTransition[_]]
+        val interactionTransition = mock[InteractionTransition]
         when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", PrimitiveType(classOf[Int]))
         when(interactionTransition.requiredIngredients).thenReturn(Seq(ingredientDescriptor))
@@ -111,7 +111,7 @@ class InteractionManagerSpec extends WordSpecLike with Matchers with MockitoSuga
         when(interactionImplementation.inputTypes).thenReturn(Seq(PrimitiveType(classOf[Int])))
 
         val interactionManager: InteractionManager = new InteractionManager(Seq(interactionImplementation))
-        val interactionTransition = mock[InteractionTransition[_]]
+        val interactionTransition = mock[InteractionTransition]
         when(interactionTransition.originalInteractionName).thenReturn("InteractionName")
         val ingredientDescriptor: IngredientDescriptor = IngredientDescriptor("ingredientName", PrimitiveType(classOf[Int]))
         val ingredientDescriptor2: IngredientDescriptor = IngredientDescriptor("ingredientName2", PrimitiveType(classOf[String]))
@@ -123,7 +123,7 @@ class InteractionManagerSpec extends WordSpecLike with Matchers with MockitoSuga
       "empty interaction seq" in {
         val interactionManager: InteractionManager = new InteractionManager(Seq.empty)
 
-        val interactionTransition: InteractionTransition[_] = mock[InteractionTransition[_]]
+        val interactionTransition: InteractionTransition = mock[InteractionTransition]
         interactionManager.getImplementation(interactionTransition) should equal(None)
       }
     }

@@ -58,8 +58,8 @@ case class CompiledRecipe(name: String,
   def getPetriNetVisualization: String =
     RecipeVisualizer.visualizePetrinet(petriNet)
 
-  val interactionTransitions: Set[InteractionTransition[_]] = petriNet.transitions.collect {
-    case t: InteractionTransition[_] => t
+  val interactionTransitions: Set[InteractionTransition] = petriNet.transitions.collect {
+    case t: InteractionTransition => t
   }
 
   val interactionEvents: Set[EventDescriptor] = interactionTransitions flatMap(it => it.eventsToFire)

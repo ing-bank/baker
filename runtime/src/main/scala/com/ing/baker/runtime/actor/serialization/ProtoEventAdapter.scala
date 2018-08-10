@@ -3,9 +3,8 @@ package com.ing.baker.runtime.actor.serialization
 import java.util.concurrent.TimeUnit
 
 import com.google.protobuf.ByteString
-import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.{Node, RecipePetriNet}
-import com.ing.baker.petrinet.api.{IdentifiableOps, Marking, ScalaGraphPetriNet}
+import com.ing.baker.petrinet.api.{IdentifiableOps, Marking, PetriNet}
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization.tokenIdentifier
 import com.ing.baker.runtime.actor.protobuf._
@@ -15,13 +14,14 @@ import com.ing.baker.runtime.actor.{process_index, protobuf, recipe_manager}
 import com.ing.baker.runtime.core
 import com.ing.baker.types.Value
 import com.ing.baker.{il, types}
-import org.joda.time
-import org.joda.time.format.ISODateTimeFormat
-import org.joda.time.{LocalDate, LocalDateTime}
 import scalapb.GeneratedMessage
-import scalax.collection.edge.WLDiEdge
+
+import org.joda.time
+import org.joda.time.{LocalDate, LocalDateTime}
+import org.joda.time.format.ISODateTimeFormat
 
 import scala.concurrent.duration.Duration
+import scalax.collection.edge.WLDiEdge
 
 trait ProtoEventAdapter {
 
@@ -186,7 +186,7 @@ trait ProtoEventAdapter {
               val t = protobuf.MultiFacilitatorTransition(Option(label))
               protobuf.Node(protobuf.Node.OneofNode.MultiFacilitatorTransition(t))
 
-            case t: il.petrinet.InteractionTransition[_] =>
+            case t: il.petrinet.InteractionTransition =>
               val pt = protobuf.InteractionTransition(
                 eventsToFire = t.eventsToFire.map(toProtoType[protobuf.EventDescriptor]),
                 originalEvents = t.originalEvents.map(toProtoType[protobuf.EventDescriptor]),
@@ -480,7 +480,7 @@ trait ProtoEventAdapter {
         val retentionPeriod = retentionMillis.map(Duration(_, TimeUnit.MILLISECONDS))
 
         val graph = toDomain(graphMsg).asInstanceOf[scalax.collection.immutable.Graph[Node, WLDiEdge]]
-        val petriNet: RecipePetriNet = ScalaGraphPetriNet(graph)
+        val petriNet: RecipePetriNet = PetriNet(graph)
         val initialMarking = producedTokens.foldLeft(Marking.empty[il.petrinet.Place]) {
           case (accumulated, protobuf.ProducedToken(Some(placeId), Some(_), Some(count), _)) ⇒ // Option[SerializedData] is always None, and we don't use it here.
             val place = petriNet.places.getById(placeId, "place in petrinet").asInstanceOf[il.petrinet.Place[Any]]
@@ -489,11 +489,11 @@ trait ProtoEventAdapter {
           case _ ⇒ throw new IllegalStateException("Missing data in persisted ProducedToken")
         }
 
-        CompiledRecipe(name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
+        il.CompiledRecipe(name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
 
       case recipe_manager.protobuf.RecipeAdded(Some(recipeId), (Some(compiledRecipeMsg))) =>
 
-        val compiledRecipe = toDomain(compiledRecipeMsg).asInstanceOf[CompiledRecipe]
+        val compiledRecipe = toDomain(compiledRecipeMsg).asInstanceOf[il.CompiledRecipe]
         RecipeAdded(recipeId, compiledRecipe)
 
       case process_index.protobuf.ActorCreated(Some(recipeId), Some(processId), Some(dateCreated)) =>

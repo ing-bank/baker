@@ -103,7 +103,6 @@ lazy val recipeRuntime = project.in(file("runtime"))
         akkaPersistence,
         akkaPersistenceQuery,
         akkaClusterSharding,
-        akkaDistributedData,
         akkaInmemoryJournal,
         akkaSlf4j,
         akkaStream,

@@ -8,10 +8,18 @@
 - Fixed [#111](https://github.com/ing-bank/baker/issues/111): also mark executed interactions with green color in the visual process state
 - Fixed [#112](https://github.com/ing-bank/baker/issues/112): specified timeout in processEvent calls ignored
 - Fixed [#103](https://github.com/ing-bank/baker/issues/103): NullPointer exception when providing implementations directly to `JBaker`
-- Added a list of event names to the process state that can be retreived from memory
-- Optionally add a correlation id to events to achieve idempotent event delivery
+- New feature: Added a list of event names to the process state that can be retreived from memory
+- New feature: Added an optional correlation id to events to achieve idempotent event delivery
+- New feature: Allow listeners to subscribe to internal baker events.
 - Update akka to 2.5.11
-- Internal: Switched from fs2 to cats effect since we only need the IO monad.
+
+## 1.3.5
+
+- Fixed [#142](https://github.com/ing-bank/baker/issues/142): Exception in receiveRecover when having called bake for non existing process id
+
+## 1.3.4
+
+- Implemented workaround for [#133](https://github.com/ing-bank/baker/issues/133): Exception in receiveRecover of ProcessIndexActor
 
 ## 1.3.3
 

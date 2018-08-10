@@ -13,10 +13,10 @@ import scala.compat.java8.FunctionConverters._
   */
 class InteractionManager(private var interactionImplementations: Seq[InteractionImplementation] = Seq.empty) {
 
-  private val implementationCache: ConcurrentHashMap[InteractionTransition[_], InteractionImplementation] =
-    new ConcurrentHashMap[InteractionTransition[_], InteractionImplementation]
+  private val implementationCache: ConcurrentHashMap[InteractionTransition, InteractionImplementation] =
+    new ConcurrentHashMap[InteractionTransition, InteractionImplementation]
 
-  private def isCompatibleImplementation(interaction: InteractionTransition[_], implementation: InteractionImplementation): Boolean = {
+  private def isCompatibleImplementation(interaction: InteractionTransition, implementation: InteractionImplementation): Boolean = {
     interaction.originalInteractionName == implementation.name &&
       implementation.inputTypes.size == interaction.requiredIngredients.size &&
       implementation.inputTypes.zip(interaction.requiredIngredients.map(_.`type`)).forall {
@@ -24,7 +24,7 @@ class InteractionManager(private var interactionImplementations: Seq[Interaction
       }
   }
 
-  private def computeAbsentMethod(interaction: InteractionTransition[_]): InteractionImplementation =
+  private def computeAbsentMethod(interaction: InteractionTransition): InteractionImplementation =
       interactionImplementations.find(implementation => isCompatibleImplementation(interaction, implementation)).orNull
 
   /**
@@ -45,6 +45,6 @@ class InteractionManager(private var interactionImplementations: Seq[Interaction
     * @param interaction The interaction to check
     * @return An option containing the implementation if available
     */
-  def getImplementation(interaction: InteractionTransition[_]): Option[InteractionImplementation] =
+  def getImplementation(interaction: InteractionTransition): Option[InteractionImplementation] =
     Option(implementationCache.computeIfAbsent(interaction, (computeAbsentMethod _).asJava))
 }

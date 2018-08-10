@@ -49,7 +49,7 @@ object Examples {
 
     val shipGoods = Interaction(
       name = "ShipGoods",
-      inputIngredients = Ingredients(goods, customerInfo),
+      inputIngredients = Seq(goods, customerInfo),
       output = FiresOneOfEvents(goodsShipped)
     )
 

@@ -12,7 +12,7 @@ import org.slf4j._
   *
   * @tparam I The class/interface of the interaction
   */
-case class InteractionTransition[I](eventsToFire: Seq[EventDescriptor],
+case class InteractionTransition(eventsToFire: Seq[EventDescriptor],
                                     originalEvents: Seq[EventDescriptor],
                                     providedIngredientEvent: Option[EventDescriptor],
                                     requiredIngredients: Seq[IngredientDescriptor],
@@ -23,9 +23,9 @@ case class InteractionTransition[I](eventsToFire: Seq[EventDescriptor],
                                     failureStrategy: InteractionFailureStrategy,
                                     eventOutputTransformers: Map[String, EventOutputTransformer] = Map.empty)
 
-  extends Transition[Unit] {
+  extends Transition {
 
-  val log: Logger = LoggerFactory.getLogger(classOf[InteractionTransition[_]])
+  val log: Logger = LoggerFactory.getLogger(classOf[InteractionTransition])
 
   override val label: String = interactionName
 

@@ -46,7 +46,10 @@ object ProcessIndex {
   //The process was deleted
   case object Deleted extends ProcessStatus
 
-  case class ActorMetadata(recipeId: String, processId: String, createdDateTime: Long, processStatus: ProcessStatus)
+  case class ActorMetadata(recipeId: String, processId: String, createdDateTime: Long, processStatus: ProcessStatus) {
+
+    def isDeleted: Boolean = processStatus == Deleted
+  }
 
   // --- Events
 
@@ -67,9 +70,7 @@ object ProcessIndex {
       recipeName,
       petriNet,
       settings,
-      petriNetRuntime,
-      petrinet.placeIdentifier,
-      petrinet.transitionIdentifier)
+      petriNetRuntime)
     )
 
   private val bakerExecutionContext: ExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
@@ -93,14 +94,8 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
   def updateCache() = {
     // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
     val futureResult = recipeManager.ask(GetAllRecipes)(updateCacheTimeout).mapTo[AllRecipes]
-
-    try {
-      val allRecipes = Await.result(futureResult, updateCacheTimeout)
-      recipeCache ++= allRecipes.compiledRecipes
-    } catch {
-      case exception: Throwable =>
-        log.warning("Updating process cache failed", exception)
-    }
+    val allRecipes = Await.result(futureResult, updateCacheTimeout)
+    recipeCache ++= allRecipes.compiledRecipes
   }
 
   def getCompiledRecipe(recipeId: String): Option[CompiledRecipe] =
@@ -116,7 +111,9 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
     context.child(processId).getOrElse(createProcessActor(processId))
 
   def createProcessActor(processId: String): ActorRef = {
-    val compiledRecipe: CompiledRecipe = getCompiledRecipe(index(processId).recipeId).get
+    val recipeId = index(processId).recipeId
+    val compiledRecipe: CompiledRecipe =
+      getCompiledRecipe(recipeId).getOrElse(throw new IllegalStateException(s"No recipe with recipe id '$recipeId' exists"))
     createProcessActor(processId, compiledRecipe)
   }
 
@@ -144,17 +141,6 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
         .exists { p => meta.createdDateTime + p.toMillis < System.currentTimeMillis() }
   }
 
-  def isDeleted(meta: ActorMetadata): Boolean =
-    meta.processStatus == Deleted
-
-
-  def deleteProcess(processId: String): Unit = {
-    persist(ActorDeleted(processId)) { _ =>
-      val meta = index(processId)
-      index.update(processId, meta.copy(processStatus = Deleted))
-    }
-  }
-
   override def receiveCommand: Receive = {
 
     case GetIndex =>
@@ -173,8 +159,10 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
       index.get(processId) match {
         case Some(meta) if shouldDelete(meta) =>
-          deleteProcess(processId)
-        case Some(meta) if isDeleted(meta) =>
+          persist(ActorDeleted(processId)) { _ =>
+            index.update(processId, meta.copy(processStatus = Deleted))
+          }
+        case Some(meta) if meta.isDeleted =>
           log.warning(s"Received Terminated message for already deleted process: ${meta.processId}")
         case Some(_) =>
           persist(ActorPassivated(processId)) { _ => }
@@ -185,24 +173,26 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
     case CreateProcess(recipeId, processId) =>
       context.child(processId) match {
         case None if !index.contains(processId) =>
-          val created = System.currentTimeMillis()
-          persist(ActorCreated(recipeId, processId, created)) { _ =>
+          // first check if the recipe exists
+          getCompiledRecipe(recipeId) match {
+            case Some(compiledRecipe) =>
 
-            getCompiledRecipe(recipeId) match {
-              case Some(compiledRecipe) =>
+              val createdTime = System.currentTimeMillis()
 
+              persist(ActorCreated(recipeId, processId, createdTime)) { _ =>
                 val processState = ProcessState(processId, Map.empty, List.empty)
-                val initializeCmd = Initialize(ProcessInstanceProtocol.marshal(compiledRecipe.initialMarking), processState)
+                val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
 
                 createProcessActor(processId, compiledRecipe).forward(initializeCmd)
-                val actorMetadata = ActorMetadata(recipeId, processId, created, Active)
-                index += processId -> actorMetadata
+                val actorMetadata = ActorMetadata(recipeId, processId, createdTime, Active)
                 context.system.eventStream.publish(ProcessCreated(System.currentTimeMillis(), recipeId, compiledRecipe.name, processId))
+                index += processId -> actorMetadata
+              }
 
-              case None => sender() ! NoRecipeFound(recipeId)
-            }
+            case None => sender() ! NoRecipeFound(recipeId)
           }
-        case _ if isDeleted(index(processId)) => sender() ! ProcessDeleted(processId)
+
+        case _ if index(processId).isDeleted => sender() ! ProcessDeleted(processId)
         case _ => sender() ! ProcessAlreadyInitialized(processId)
       }
 
@@ -267,7 +257,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
               validateEventAvailableForRecipe(actorRef, compiledRecipe)
             }
           case None =>
-            rejectWith(ProcessUninitialized(processId), RejectReason.NoSuchProcess)
+            rejectWith(NoSuchProcess(processId), RejectReason.NoSuchProcess)
         }
       }
 
@@ -275,8 +265,8 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
       //If not check if it is available and start
       //If not return a Uninitialized message
       context.child(processId) match {
-        case None if !index.contains(processId) => rejectWith(ProcessUninitialized(processId), RejectReason.NoSuchProcess)
-        case None if isDeleted(index(processId)) => rejectWith(ProcessUninitialized(processId), RejectReason.ProcessDeleted)
+        case None if !index.contains(processId) => rejectWith(NoSuchProcess(processId), RejectReason.NoSuchProcess)
+        case None if index(processId).isDeleted => rejectWith(ProcessDeleted(processId), RejectReason.ProcessDeleted)
         case None =>
           persist(ActorActivated(processId)) { _ =>
             handleEventWithActor(createProcessActor(processId))
@@ -286,8 +276,8 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
     case GetProcessState(processId) =>
       context.child(processId) match {
-        case None if !index.contains(processId) => sender() ! ProcessUninitialized(processId)
-        case None if isDeleted(index(processId)) => sender() ! ProcessDeleted(processId)
+        case None if !index.contains(processId) => sender() ! NoSuchProcess(processId)
+        case None if index(processId).isDeleted => sender() ! ProcessDeleted(processId)
         case None if index.contains(processId) =>
           persist(ActorActivated(processId)) {
             _ =>
@@ -298,13 +288,13 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
     case GetCompiledRecipe(processId) =>
       index.get(processId) match {
-        case Some(processMetadata) if isDeleted(processMetadata) => sender() ! ProcessDeleted(processId)
+        case Some(processMetadata) if processMetadata.isDeleted => sender() ! ProcessDeleted(processId)
         case Some(processMetadata) =>
           getCompiledRecipe(processMetadata.recipeId) match {
             case Some(compiledRecipe) => sender() ! RecipeFound(compiledRecipe)
-            case None => sender() ! ProcessUninitialized(processId)
+            case None => sender() ! NoSuchProcess(processId)
           }
-        case None => sender() ! ProcessUninitialized(processId)
+        case None => sender() ! NoSuchProcess(processId)
       }
     case cmd =>
       log.error(s"Unrecognized command $cmd")

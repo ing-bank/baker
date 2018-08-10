@@ -18,23 +18,23 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
 
   val log = LoggerFactory.getLogger(classOf[TaskProvider])
 
-  override def apply[Input](petriNet: PetriNet[Place[_], Transition[_]], t: Transition[Input]): TransitionTask[Place, Input, ProcessState, RuntimeEvent] = {
+  override def apply(petriNet: PetriNet[Place[_], Transition], t: Transition): TransitionTask[Place, ProcessState, RuntimeEvent] = {
     t match {
-      case interaction: InteractionTransition[_] =>
-        interactionTransitionTask[AnyRef, Input](interaction.asInstanceOf[InteractionTransition[AnyRef]], petriNet.outMarking(interaction))
+      case interaction: InteractionTransition =>
+        interactionTransitionTask(interaction.asInstanceOf[InteractionTransition], petriNet.outMarking(interaction))
       case t: EventTransition  => eventTransitionTask(petriNet, t)
       case t                   => passThroughTransitionTask(petriNet, t)
     }
   }
 
-  def passThroughTransitionTask[Input](petriNet: PetriNet[Place[_], Transition[_]], t: Transition[Input]): TransitionTask[Place, Input, ProcessState, RuntimeEvent] =
+  def passThroughTransitionTask[Input](petriNet: PetriNet[Place[_], Transition], t: Transition): TransitionTask[Place, ProcessState, RuntimeEvent] =
     (_, _, _) => IO.pure((toMarking[Place](petriNet.outMarking(t)), null.asInstanceOf[RuntimeEvent]))
 
-  def eventTransitionTask[Input](petriNet: PetriNet[Place[_], Transition[_]], eventTransition: EventTransition): TransitionTask[Place, Input, ProcessState, RuntimeEvent] =
+  def eventTransitionTask[Input](petriNet: PetriNet[Place[_], Transition], eventTransition: EventTransition): TransitionTask[Place, ProcessState, RuntimeEvent] =
     (_, _, input) => IO.pure((toMarking[Place](petriNet.outMarking(eventTransition)), input.asInstanceOf[RuntimeEvent]))
 
   // function that (optionally) transforms the output event using the event output transformers
-  def transformEvent[I](interaction: InteractionTransition[I])(runtimeEvent: RuntimeEvent): RuntimeEvent = {
+  def transformEvent(interaction: InteractionTransition)(runtimeEvent: RuntimeEvent): RuntimeEvent = {
     interaction.eventOutputTransformers
       .find { case (eventName, _) => runtimeEvent.name.equals(eventName) } match {
       case Some((_, eventOutputTransformer)) =>
@@ -45,8 +45,8 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
     }
   }
 
-  def interactionTransitionTask[I, Input](interaction: InteractionTransition[I],
-                                          outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, Input, ProcessState, RuntimeEvent] =
+  def interactionTransitionTask(interaction: InteractionTransition,
+                                outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, ProcessState, RuntimeEvent] =
 
     (_, processState, _) => {
 
@@ -120,7 +120,7 @@ class TaskProvider(recipeName: String, interactionManager: InteractionManager, e
     *
     * @return Sequence of values in order of argument lists
     */
-  def createInput[A](interaction: InteractionTransition[A], state: ProcessState): Seq[Value] = {
+  def createInput(interaction: InteractionTransition, state: ProcessState): Seq[Value] = {
 
     // We do not support any other type then String types
     val processId: (String, Value) = processIdName -> PrimitiveValue(state.processId.toString)

@@ -136,7 +136,7 @@ object TestRecipe {
   val interactionFive =
     Interaction(
       name = "InteractionFive",
-      inputIngredients = Ingredients(processId, initialIngredient, initialIngredientExtendedName),
+      inputIngredients = Seq(processId, initialIngredient, initialIngredientExtendedName),
       output = ProvidesIngredient(interactionFiveIngredient))
 
   trait InteractionFive {

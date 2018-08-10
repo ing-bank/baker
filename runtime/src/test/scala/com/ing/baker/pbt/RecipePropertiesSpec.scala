@@ -54,7 +54,7 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
 //      dumpToFile(s"visualRecipe-${compiledRecipe.name}", compiledRecipe.getRecipeVisualization)
 //
 //      var alreadyFiredEvents: Set[RuntimeEvent] = Set.empty
-//      val petriNetInteractionMock: InteractionTransition[_] => ProcessState => RuntimeEvent = { interaction =>
+//      val petriNetInteractionMock: InteractionTransition => ProcessState => RuntimeEvent = { interaction =>
 //        _ =>
 //          val outputEvent = interaction.providesType match {
 //            case petrinet.FiresOneOfEvents(events, _) =>
