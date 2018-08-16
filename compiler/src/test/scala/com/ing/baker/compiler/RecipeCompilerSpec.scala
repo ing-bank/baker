@@ -43,6 +43,9 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
     }
 
     "generate the same id for same recipe" in {
+
+
+
       val recipeIds:Seq[String] = (1 to 20)
         .map(_ => getRecipe("ValidRecipe"))
         .map(RecipeCompiler.compileRecipe(_).recipeId)
@@ -50,7 +53,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
       val uniqueIdsSize = recipeIds
         .size
       uniqueIdsSize shouldBe 1
-      recipeIds.head.shouldBe("-390931734")
+      recipeIds.head.shouldBe("-1815490760")
     }
 
     "give a List of missing ingredients if an interaction has an ingredient that is not provided by any other event or interaction" in {
