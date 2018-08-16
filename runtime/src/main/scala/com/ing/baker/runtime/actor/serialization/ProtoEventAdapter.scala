@@ -3,9 +3,7 @@ package com.ing.baker.runtime.actor.serialization
 import java.util.concurrent.TimeUnit
 
 import com.google.protobuf.ByteString
-import com.ing.baker.il.ActionType.SieveAction
 import com.ing.baker.il.petrinet.{Node, RecipePetriNet}
-import com.ing.baker.il.{ActionType, CompiledRecipe}
 import com.ing.baker.petrinet.api.{IdentifiableOps, Marking, PetriNet}
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization.tokenIdentifier
@@ -196,7 +194,6 @@ trait ProtoEventAdapter {
                 requiredIngredients = t.requiredIngredients.map(toProtoType[protobuf.IngredientDescriptor]),
                 interactionName = Option(t.interactionName),
                 originalInteractionName = Option(t.originalInteractionName),
-                isSieve = Option(t.actionType.equals(SieveAction)),
                 predefinedParameters = t.predefinedParameters.mapValues(toProtoType[protobuf.Value]),
                 maximumInteractionCount = t.maximumInteractionCount,
                 failureStrategy = Option(toProtoType[protobuf.InteractionFailureStrategy](t.failureStrategy)),
@@ -349,7 +346,6 @@ trait ProtoEventAdapter {
                 requiredIngredients = t.requiredIngredients.map(toDomainType[il.IngredientDescriptor]),
                 interactionName = t.interactionName.getOrMissing("interactionName"),
                 originalInteractionName = t.originalInteractionName.getOrMissing("originalInteractionName"),
-                actionType = if (t.isSieve.getOrElse(false)) ActionType.SieveAction else ActionType.InteractionAction,
                 predefinedParameters = t.predefinedParameters.mapValues(toDomainType[Value]),
                 maximumInteractionCount = t.maximumInteractionCount,
                 failureStrategy = t.failureStrategy.map(toDomainType[il.failurestrategy.InteractionFailureStrategy]).getOrMissing("failureStrategy"),
@@ -493,11 +489,11 @@ trait ProtoEventAdapter {
           case _ ⇒ throw new IllegalStateException("Missing data in persisted ProducedToken")
         }
 
-        CompiledRecipe(name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
+        il.CompiledRecipe(name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
 
       case recipe_manager.protobuf.RecipeAdded(Some(recipeId), (Some(compiledRecipeMsg))) =>
 
-        val compiledRecipe = toDomain(compiledRecipeMsg).asInstanceOf[CompiledRecipe]
+        val compiledRecipe = toDomain(compiledRecipeMsg).asInstanceOf[il.CompiledRecipe]
         RecipeAdded(recipeId, compiledRecipe)
 
       case process_index.protobuf.ActorCreated(Some(recipeId), Some(processId), Some(dateCreated)) =>

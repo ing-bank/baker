@@ -30,8 +30,10 @@ case class Recipe private(override val name: String,
 
   def withInteractions(newInteractions: Interaction*): Recipe = copy(interactions = interactions ++ newInteractions)
 
+  @deprecated("sieves are deprecated, use interactions instead", "1.4.0")
   def withSieve(newSieve: Interaction): Recipe = copy(sieves = sieves :+ newSieve)
 
+  @deprecated("sieves are deprecated, use interactions instead", "1.4.0")
   def withSieves(newSieves: Interaction*): Recipe = copy(sieves = sieves ++ newSieves)
 
   def withSensoryEvent(newEvent: Event): Recipe = copy(sensoryEvents = sensoryEvents + newEvent)

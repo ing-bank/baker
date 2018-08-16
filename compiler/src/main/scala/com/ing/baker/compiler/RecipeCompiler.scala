@@ -184,7 +184,7 @@ object RecipeCompiler {
     // It should be provided at runtime from outside the active petri net (marking)
     val interactionTransitions = recipe.interactions.map(_.toInteractionTransition(recipe.defaultFailureStrategy, allIngredientNames))
 
-    val sieveTransitions = recipe.sieves.map(_.toSieveTransition(recipe.defaultFailureStrategy, allIngredientNames))
+    val sieveTransitions = recipe.sieves.map(_.toInteractionTransition(recipe.defaultFailureStrategy, allIngredientNames))
 
     val allInteractionTransitions: Seq[InteractionTransition] = sieveTransitions ++ interactionTransitions
 
