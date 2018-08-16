@@ -64,7 +64,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
     override def receive: Receive = {
       case GetAllRecipes => {
         sender ! AllRecipes(Map[String, CompiledRecipe](recipeId ->
-          CompiledRecipe("name", recipeId, PetriNet(Graph.empty), Marking.empty, Seq.empty, Option.empty, Option.empty)))
+          CompiledRecipe("name", recipeId, new PetriNet(Graph.empty), Marking.empty, Seq.empty, Option.empty, Option.empty)))
       }
     }
   }))
@@ -134,7 +134,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
       recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", recipeId, PetriNet(Graph.empty), Marking.empty, Seq.empty, Option.empty, Some(recipeRetentionPeriod)))))
+        CompiledRecipe("name", recipeId, new PetriNet(Graph.empty), Marking.empty, Seq.empty, Option.empty, Some(recipeRetentionPeriod)))))
 
       val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
       processProbe.expectMsg(initializeMsg)
@@ -213,7 +213,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
       recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", recipeId, PetriNet(Graph.empty), Marking.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty))))
+        CompiledRecipe("name", recipeId, new PetriNet(Graph.empty), Marking.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty))))
 
       petriNetActorProbe.expectMsg(initializeMsg)
 

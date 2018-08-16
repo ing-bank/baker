@@ -283,16 +283,19 @@ object RecipeCompiler {
       ++ internalEventArcs
       ++ multipleOutputFacilitatorArcs)
 
-    val petriNet: PetriNet[Place[_], Transition] = PetriNet(Graph(arcs: _*))
+    val petriNet: PetriNet[Place[_], Transition] = new PetriNet(Graph(arcs: _*))
 
     val initialMarking: Marking[Place] = petriNet.places.collect {
       case p@Place(_, FiringLimiterPlace(n)) => p -> Map((null, n))
     }.toMarking
 
     val errors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors
+
+    val recipeId = (recipe.name, petriNet, initialMarking, errors, recipe.eventReceivePeriod, recipe.retentionPeriod).hashCode().toString
+
     val compiledRecipe = CompiledRecipe(
       name = recipe.name,
-      recipeId = (recipe.name, Set(arcs), initialMarking, errors, recipe.eventReceivePeriod, recipe.retentionPeriod).hashCode().toString,
+      recipeId = recipeId,
       petriNet = petriNet,
       initialMarking = initialMarking,
       validationErrors = errors,

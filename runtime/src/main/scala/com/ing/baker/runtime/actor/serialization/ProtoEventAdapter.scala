@@ -484,7 +484,7 @@ trait ProtoEventAdapter {
         val retentionPeriod = retentionMillis.map(Duration(_, TimeUnit.MILLISECONDS))
 
         val graph = toDomain(graphMsg).asInstanceOf[scalax.collection.immutable.Graph[Node, WLDiEdge]]
-        val petriNet: RecipePetriNet = PetriNet(graph)
+        val petriNet: RecipePetriNet = new PetriNet(graph)
         val initialMarking = producedTokens.foldLeft(Marking.empty[il.petrinet.Place]) {
           case (accumulated, protobuf.ProducedToken(Some(placeId), Some(_), Some(count), _)) ⇒ // Option[SerializedData] is always None, and we don't use it here.
             val place = petriNet.places.getById(placeId, "place in petrinet").asInstanceOf[il.petrinet.Place[Any]]
