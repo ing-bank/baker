@@ -66,27 +66,58 @@ case class MapType(valueType: Type) extends Type
 
 case class RecordField(name: String, `type`: Type)
 
+case class SingletonType(value: Value)
+
 trait PrimitiveType extends Type
 
-// boolean
+/**
+  * Boolean (1 bit)
+  */
 case object Bool extends PrimitiveType
-// byte
+
+/**
+  * Signed 8 bit integer
+  */
 case object Int8 extends PrimitiveType
-// char, unsigned 16 bit integer
+
+/**
+  * Unsigned 16 bit integer
+  */
 case object UInt16 extends PrimitiveType
-// short or char
+
+/**
+  * Signed 16 bit integer
+  */
 case object Int16 extends PrimitiveType
-// int
+
+/**
+  * Signed 32 bit integer
+  */
 case object Int32 extends PrimitiveType
-// long
+
+/**
+  * Signed 64 bit integer
+  */
 case object Int64 extends PrimitiveType
-// BigInteger
+
+/**
+  * Integer of arbitrary precision
+  */
 case object IntBig extends PrimitiveType
-// float
+
+/**
+  * Signed 32 bit floating point
+  */
 case object Float32 extends PrimitiveType
-// double
+
+/**
+  * Signed 64 bit floating point
+  */
 case object Float64 extends PrimitiveType
-// BigNumber
+
+/**
+  * Floating point with arbitrary precision
+  */
 case object FloatBig extends PrimitiveType
 
 // byte array

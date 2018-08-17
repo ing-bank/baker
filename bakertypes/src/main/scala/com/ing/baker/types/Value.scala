@@ -12,13 +12,11 @@ sealed trait Value extends Serializable {
 
   def isInstanceOf(t: Type): Boolean = (t, this) match {
     case (_, NullValue)                  => true
-    case (CharArray, PrimitiveValue(_: String)) => true
-    case (Int32, PrimitiveValue(_: Int | _: java.lang.Integer)) => true
-    case (Int64, PrimitiveValue(_: Long | _: java.lang.Long)) => true
-    case (Float32, PrimitiveValue(_: Float | _: java.lang.Float)) => true
-    case (Float64, PrimitiveValue(_: Double | _: java.lang.Double)) => true
+    case (expected: PrimitiveType, PrimitiveValue(value)) => primitiveMappings.get(value.getClass) match {
+      case None => false
+      case Some(actual) => expected.isAssignableFrom(actual)
+    }
 
-//    case (PrimitiveType(clazz), v: PrimitiveValue)          => v.isAssignableTo(clazz)
     case (ListType(entryType), ListValue(entries))          => entries.forall(_.isInstanceOf(entryType))
     case (OptionType(entryType), v: Value)                  => v.isInstanceOf(entryType)
     case (EnumType(options), PrimitiveValue(value: String)) => options.contains(value)
@@ -63,7 +61,6 @@ case class PrimitiveValue(value: Any) extends Value {
 
   override def toString: String = value match {
     case str: String                         => "\"" + str + "\""
-    case date: org.joda.time.ReadableInstant => "\"" + isoDateTimeFormatter.print(date) + "\""
     case n: java.math.BigDecimal             => "\"" + n.toString + "\""
     case n: java.math.BigInteger             => "\"" + n.toString + "\""
     case n: BigDecimal                       => "\"" + n.toString + "\""

@@ -14,14 +14,26 @@ import scala.reflect.runtime.universe.TypeTag
 object Converters {
 
   private val mirror: universe.Mirror = universe.runtimeMirror(classOf[Value].getClassLoader)
-  
-  private def getRawClass(t: JType): Class[_] = t match {
+
+  /**
+    * Attempts to return the 'raw' or base class of a type. For example:
+    *
+    * String           -> String
+    * List[String]     -> List
+    * Map[String, Int] -> Map
+    */
+  def getRawClass(javaType: java.lang.reflect.Type): Class[_] = javaType match {
     case c: Class[_] => c
     case t: ParameterizedType => getRawClass(t.getRawType)
-    case t@_ => throw new IllegalArgumentException(s"Unsupported type: $t")
+    case t @ _ => throw new IllegalArgumentException(s"Unsupported type: $javaType")
   }
 
-  private def createJavaType(paramType: universe.Type): java.lang.reflect.Type = {
+  def isAssignableToBaseClass(javaType: java.lang.reflect.Type, expected: Class[_]) = javaType match {
+    case clazz: ParameterizedType if getRawClass(clazz.getRawType).isAssignableFrom(expected) => true
+    case _ => false
+  }
+
+  def createJavaType(paramType: universe.Type): java.lang.reflect.Type = {
     val typeConstructor = mirror.runtimeClass(paramType)
     val innerTypes = paramType.typeArgs.map(createJavaType).toArray
 
