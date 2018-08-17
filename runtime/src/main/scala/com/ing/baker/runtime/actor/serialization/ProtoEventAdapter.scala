@@ -14,14 +14,12 @@ import com.ing.baker.runtime.actor.{process_index, protobuf, recipe_manager}
 import com.ing.baker.runtime.core
 import com.ing.baker.types.Value
 import com.ing.baker.{il, types}
-import scalapb.GeneratedMessage
-
-import org.joda.time
-import org.joda.time.{LocalDate, LocalDateTime}
 import org.joda.time.format.ISODateTimeFormat
+import org.joda.time.{LocalDate, LocalDateTime}
+import scalapb.GeneratedMessage
+import scalax.collection.edge.WLDiEdge
 
 import scala.concurrent.duration.Duration
-import scalax.collection.edge.WLDiEdge
 
 trait ProtoEventAdapter {
 
@@ -78,56 +76,30 @@ trait ProtoEventAdapter {
 
         protobuf.IngredientDescriptor(Some(name), Some(`type`))
 
-      case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Boolean] =>
-        createPrimitive(PrimitiveType.BOOLEAN_PRIMITIVE)
-      case types.PrimitiveType(clazz) if clazz == java.lang.Boolean.TYPE =>
-        createPrimitive(PrimitiveType.BOOLEAN)
-      case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Byte] =>
-        createPrimitive(PrimitiveType.BYTE_PRIMITIVE)
-      case types.PrimitiveType(clazz) if clazz == java.lang.Byte.TYPE =>
-        createPrimitive(PrimitiveType.BYTE)
-      case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Short] =>
-        createPrimitive(PrimitiveType.SHORT_PRIMITIVE)
-      case types.PrimitiveType(clazz) if clazz == java.lang.Short.TYPE =>
-        createPrimitive(PrimitiveType.SHORT)
-      case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Character] =>
-        createPrimitive(PrimitiveType.CHARACTER_PRIMITIVE)
-      case types.PrimitiveType(clazz) if clazz == java.lang.Character.TYPE =>
-        createPrimitive(PrimitiveType.CHARACTER)
-      case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Integer] =>
-        createPrimitive(PrimitiveType.INTEGER)
-      case types.PrimitiveType(clazz) if clazz == java.lang.Integer.TYPE =>
+      case types.Bool =>
+        createPrimitive(PrimitiveType.BOOL)
+      case types.Int8 =>
+        createPrimitive(PrimitiveType.INT8)
+      case types.Int16 =>
+        createPrimitive(PrimitiveType.INT16)
+      case types.UInt16 =>
+        createPrimitive(PrimitiveType.UINT16)
+      case types.Int32 =>
         createPrimitive(PrimitiveType.INT)
-      case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Long] =>
-        createPrimitive(PrimitiveType.LONG_PRIMITIVE)
-      case types.PrimitiveType(clazz) if clazz == java.lang.Long.TYPE =>
-        createPrimitive(PrimitiveType.LONG)
-      case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Float] =>
-        createPrimitive(PrimitiveType.FLOAT_PRIMITIVE)
-      case types.PrimitiveType(clazz) if clazz == java.lang.Float.TYPE =>
-        createPrimitive(PrimitiveType.FLOAT)
-      case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Double] =>
-        createPrimitive(PrimitiveType.DOUBLE_PRIMITIVE)
-      case types.PrimitiveType(clazz) if clazz == java.lang.Double.TYPE =>
-        createPrimitive(PrimitiveType.DOUBLE)
-      case types.PrimitiveType(clazz) if clazz == classOf[java.lang.String] =>
-        createPrimitive(PrimitiveType.STRING)
-      case types.PrimitiveType(clazz) if clazz == classOf[BigDecimal] =>
-        createPrimitive(PrimitiveType.BIG_DECIMAL_SCALA)
-      case types.PrimitiveType(clazz) if clazz == classOf[java.math.BigDecimal] =>
-        createPrimitive(PrimitiveType.BIG_DECIMAL_JAVA)
-      case types.PrimitiveType(clazz) if clazz == classOf[BigInt] =>
-        createPrimitive(PrimitiveType.BIG_INT_SCALA)
-      case types.PrimitiveType(clazz) if clazz == classOf[java.math.BigInteger] =>
-        createPrimitive(PrimitiveType.BIG_INT_JAVA)
-      case types.PrimitiveType(clazz) if clazz == classOf[Array[Byte]] =>
+      case types.Int64 =>
+        createPrimitive(PrimitiveType.INT64)
+      case types.Float32 =>
+        createPrimitive(PrimitiveType.FLOAT32)
+      case types.Float64 =>
+        createPrimitive(PrimitiveType.FLOAT64)
+      case types.CharArray =>
+        createPrimitive(PrimitiveType.CHAR_ARRAY)
+      case types.FloatBig =>
+        createPrimitive(PrimitiveType.FLOAT_BIG)
+      case types.IntBig =>
+        createPrimitive(PrimitiveType.INT_BIG)
+      case types.ByteArray =>
         createPrimitive(PrimitiveType.BYTE_ARRAY)
-      case types.PrimitiveType(clazz) if clazz == classOf[org.joda.time.DateTime] =>
-        createPrimitive(PrimitiveType.JODA_DATETIME)
-      case types.PrimitiveType(clazz) if clazz == classOf[org.joda.time.LocalDate] =>
-        createPrimitive(PrimitiveType.JODA_LOCAL_DATE)
-      case types.PrimitiveType(clazz) if clazz == classOf[org.joda.time.LocalDateTime] =>
-        createPrimitive(PrimitiveType.JODA_LOCAL_DATETIME)
 
       case types.OptionType(entryType) =>
         val entryProto = toProtoType[protobuf.Type](entryType)
@@ -375,31 +347,36 @@ trait ProtoEventAdapter {
         import Type.OneofType
 
         msg.`oneofType` match {
-          case OneofType.Primitive(PrimitiveType.BOOLEAN) => types.PrimitiveType(classOf[Boolean])
-          case OneofType.Primitive(PrimitiveType.BOOLEAN_PRIMITIVE) => types.PrimitiveType(classOf[java.lang.Boolean])
-          case OneofType.Primitive(PrimitiveType.BYTE) => types.PrimitiveType(classOf[Byte])
-          case OneofType.Primitive(PrimitiveType.BYTE_PRIMITIVE) => types.PrimitiveType(classOf[java.lang.Byte])
-          case OneofType.Primitive(PrimitiveType.SHORT) => types.PrimitiveType(classOf[Short])
-          case OneofType.Primitive(PrimitiveType.SHORT_PRIMITIVE) => types.PrimitiveType(classOf[java.lang.Short])
-          case OneofType.Primitive(PrimitiveType.CHARACTER_PRIMITIVE) => types.PrimitiveType(classOf[java.lang.Character])
-          case OneofType.Primitive(PrimitiveType.CHARACTER) => types.PrimitiveType(classOf[Char])
-          case OneofType.Primitive(PrimitiveType.INTEGER) => types.PrimitiveType(classOf[Integer])
-          case OneofType.Primitive(PrimitiveType.INT) => types.PrimitiveType(classOf[Int])
-          case OneofType.Primitive(PrimitiveType.LONG) => types.PrimitiveType(classOf[Long])
-          case OneofType.Primitive(PrimitiveType.LONG_PRIMITIVE) => types.PrimitiveType(classOf[java.lang.Long])
-          case OneofType.Primitive(PrimitiveType.FLOAT) => types.PrimitiveType(classOf[Float])
-          case OneofType.Primitive(PrimitiveType.FLOAT_PRIMITIVE) => types.PrimitiveType(classOf[java.lang.Float])
-          case OneofType.Primitive(PrimitiveType.DOUBLE) => types.PrimitiveType(classOf[Double])
-          case OneofType.Primitive(PrimitiveType.DOUBLE_PRIMITIVE) => types.PrimitiveType(classOf[java.lang.Double])
-          case OneofType.Primitive(PrimitiveType.STRING) => types.PrimitiveType(classOf[String])
-          case OneofType.Primitive(PrimitiveType.BIG_DECIMAL_SCALA) => types.PrimitiveType(classOf[BigDecimal])
-          case OneofType.Primitive(PrimitiveType.BIG_DECIMAL_JAVA) => types.PrimitiveType(classOf[java.math.BigDecimal])
-          case OneofType.Primitive(PrimitiveType.BIG_INT_SCALA) => types.PrimitiveType(classOf[BigInt])
-          case OneofType.Primitive(PrimitiveType.BIG_INT_JAVA) => types.PrimitiveType(classOf[java.math.BigInteger])
-          case OneofType.Primitive(PrimitiveType.BYTE_ARRAY) => types.PrimitiveType(classOf[Array[Byte]])
-          case OneofType.Primitive(PrimitiveType.JODA_DATETIME) => types.PrimitiveType(classOf[time.DateTime])
-          case OneofType.Primitive(PrimitiveType.JODA_LOCAL_DATE) => types.PrimitiveType(classOf[time.LocalDate])
-          case OneofType.Primitive(PrimitiveType.JODA_LOCAL_DATETIME) => types.PrimitiveType(classOf[time.LocalDateTime])
+
+          case OneofType.Primitive(PrimitiveType.BOOL) => types.Bool
+          case OneofType.Primitive(PrimitiveType.INT8) => types.Int8
+          case OneofType.Primitive(PrimitiveType.INT16) => types.Int16
+          case OneofType.Primitive(PrimitiveType.UINT16) => types.UInt16
+          case OneofType.Primitive(PrimitiveType.INT32) => types.Int32
+          case OneofType.Primitive(PrimitiveType.INT) => types.Int32
+          case OneofType.Primitive(PrimitiveType.INT64) => types.Int64
+          case OneofType.Primitive(PrimitiveType.FLOAT32) => types.Float32
+          case OneofType.Primitive(PrimitiveType.FLOAT64) => types.Float64
+          case OneofType.Primitive(PrimitiveType.FLOAT_BIG) => types.FloatBig
+          case OneofType.Primitive(PrimitiveType.INT_BIG) => types.IntBig
+          case OneofType.Primitive(PrimitiveType.BYTE_ARRAY) => types.ByteArray
+          case OneofType.Primitive(PrimitiveType.CHAR_ARRAY) => types.CharArray
+
+
+          // deprecated fields
+          case OneofType.Primitive(PrimitiveType.BOOLEAN_PRIMITIVE) => types.Bool
+          case OneofType.Primitive(PrimitiveType.BYTE_PRIMITIVE) => types.Int8
+          case OneofType.Primitive(PrimitiveType.FLOAT_PRIMITIVE) => types.Float32
+          case OneofType.Primitive(PrimitiveType.DOUBLE_PRIMITIVE) => types.Float64
+          case OneofType.Primitive(PrimitiveType.SHORT_PRIMITIVE) => types.Int16
+          case OneofType.Primitive(PrimitiveType.LONG_PRIMITIVE) => types.Int64
+          case OneofType.Primitive(PrimitiveType.CHARACTER_PRIMITIVE) => types.UInt16
+          case OneofType.Primitive(PrimitiveType.BIG_DECIMAL_JAVA) => types.FloatBig
+          case OneofType.Primitive(PrimitiveType.BIG_INT_JAVA) => types.IntBig
+
+          case OneofType.Primitive(PrimitiveType.JODA_DATETIME) => types.Int64
+          case OneofType.Primitive(PrimitiveType.JODA_LOCAL_DATE) => types.Int64
+          case OneofType.Primitive(PrimitiveType.JODA_LOCAL_DATETIME) => types.Int64
 
           case OneofType.Optional(OptionalType(Some(value))) => types.OptionType(toDomainType[types.Type](value))
 

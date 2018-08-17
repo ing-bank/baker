@@ -11,10 +11,13 @@ sealed trait Type {
   def isAssignableFrom(other: Type): Boolean = {
 
     (this, other) match {
-      case (PrimitiveType(clazzA), PrimitiveType(clazzB)) =>
-        clazzB.equals(clazzA) ||
-        javaPrimitiveMappings.get(clazzB).equals(Some(clazzA)) ||
-          javaPrimitiveMappings.get(clazzA).equals(Some(clazzB))
+
+      case (a, b) if a == b => true
+
+      case (Int64, Int32) => true
+      case (Float64, Float32) => true
+      case (IntBig, Int32 | Int64) => true
+      case (FloatBig, Float32 | Float64) => true
 
       case (OptionType(entryTypeA), OptionType(entryTypeB)) =>
         entryTypeA.isAssignableFrom(entryTypeB)
@@ -51,8 +54,6 @@ sealed trait Type {
   def isRecord: Boolean = isInstanceOf[RecordType]
 }
 
-case class PrimitiveType(clazz: Class[_]) extends Type
-
 case class ListType(entryType: Type) extends Type
 
 case class OptionType(entryType: Type) extends Type
@@ -64,3 +65,33 @@ case class RecordType(fields: Seq[RecordField]) extends Type
 case class MapType(valueType: Type) extends Type
 
 case class RecordField(name: String, `type`: Type)
+
+trait PrimitiveType extends Type
+
+// boolean
+case object Bool extends PrimitiveType
+// byte
+case object Int8 extends PrimitiveType
+// char, unsigned 16 bit integer
+case object UInt16 extends PrimitiveType
+// short or char
+case object Int16 extends PrimitiveType
+// int
+case object Int32 extends PrimitiveType
+// long
+case object Int64 extends PrimitiveType
+// BigInteger
+case object IntBig extends PrimitiveType
+// float
+case object Float32 extends PrimitiveType
+// double
+case object Float64 extends PrimitiveType
+// BigNumber
+case object FloatBig extends PrimitiveType
+
+// byte array
+case object ByteArray extends PrimitiveType
+
+// string
+case object CharArray extends PrimitiveType
+

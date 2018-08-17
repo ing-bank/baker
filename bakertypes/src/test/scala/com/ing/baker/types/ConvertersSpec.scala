@@ -3,6 +3,7 @@ package com.ing.baker.types
 import java.util
 import java.util.Optional
 
+import com.ing.baker.types
 import com.ing.baker.types.Converters._
 import com.ing.baker.types.ConvertersTestData.TestEnum
 import com.ing.baker.types.ConvertersTestData.TestEnum.{ValueA, ValueB, ValueC}
@@ -241,27 +242,28 @@ class ConvertersSpec extends WordSpecLike with Matchers {
     }
 
     "correctly parse all the supported base types" in {
-      supportedPrimitiveClasses.foreach { t =>
-        readJavaType(t) shouldBe PrimitiveType(t)
+
+      primitiveMappings.foreach {
+        case (clazz, t) => readJavaType(clazz) shouldBe t
       }
     }
 
     "correctly parse option types" in {
-      readJavaType[Option[String]] shouldBe OptionType(PrimitiveType(classOf[String]))
+      readJavaType[Option[String]] shouldBe OptionType(types.CharArray)
     }
 
     "correctly parse list types" in {
-      readJavaType[List[String]] shouldBe ListType(PrimitiveType(classOf[String]))
+      readJavaType[List[String]] shouldBe ListType(types.CharArray)
     }
 
     "correctly parse set types" in {
 
-      readJavaType[Set[String]] shouldBe ListType(PrimitiveType(classOf[String]))
-      readJavaType[java.util.Set[String]] shouldBe ListType(PrimitiveType(classOf[String]))
+      readJavaType[Set[String]] shouldBe ListType(types.CharArray)
+      readJavaType[java.util.Set[String]] shouldBe ListType(types.CharArray)
     }
 
     "correctly parse array of bytes" in {
-      readJavaType[Array[Byte]] shouldBe PrimitiveType(classOf[Array[Byte]])
+      readJavaType[Array[Byte]] shouldBe types.ByteArray
     }
 
     "correctly parse enum types" in {
@@ -270,23 +272,23 @@ class ConvertersSpec extends WordSpecLike with Matchers {
 
     "correctly parse basic POJO types" in {
       val simplePOJOFields = Seq(
-        RecordField("integer", PrimitiveType(classOf[Integer])),
-        RecordField("string", PrimitiveType(classOf[String])),
-        RecordField("boolean", PrimitiveType(classOf[Boolean])))
+        RecordField("integer", types.Int32),
+        RecordField("string", types.CharArray),
+        RecordField("boolean", types.Bool))
 
       readJavaType[SimplePOJOExample] shouldBe RecordType(simplePOJOFields)
     }
 
     "correctly parse POJO types in POJO types" in {
       val simplePOJOExampleSeq = Seq(
-        RecordField("integer", PrimitiveType(classOf[Integer])),
-        RecordField("string", PrimitiveType(classOf[String])),
-        RecordField("boolean", PrimitiveType(classOf[Boolean])))
+        RecordField("integer", types.Int32),
+        RecordField("string", types.CharArray),
+        RecordField("boolean", types.Bool))
 
       val complexPOJOExampleSeq = Seq(
         RecordField("simplePOJOExample", RecordType(simplePOJOExampleSeq)),
-        RecordField("string", PrimitiveType(classOf[String])),
-        RecordField("boolean", PrimitiveType(classOf[Boolean])))
+        RecordField("string", types.CharArray),
+        RecordField("boolean", types.Bool))
 
       readJavaType[ComplexPOJOExample] shouldBe RecordType(complexPOJOExampleSeq)
     }

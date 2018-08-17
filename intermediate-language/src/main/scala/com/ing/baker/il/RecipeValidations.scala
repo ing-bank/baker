@@ -2,6 +2,7 @@ package com.ing.baker.il
 
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.petrinet.api.PetriNetAnalysis
+import com.ing.baker.types
 import com.ing.baker.types.PrimitiveType
 
 import scala.collection.mutable
@@ -17,7 +18,7 @@ object RecipeValidations {
 
     // check if the process id argument type is correct
     interactionTransition.requiredIngredients.filter(id => id.name.equals(processIdName)).map {
-      case IngredientDescriptor(_ , PrimitiveType(javaType)) if javaType == classOf[String] =>
+      case IngredientDescriptor(_ , types.CharArray)  =>
       case IngredientDescriptor(_ , incompatibleType) => validationErrors += s"Non supported process id type: ${incompatibleType} on interaction: '$interactionTransition'"
     }
 

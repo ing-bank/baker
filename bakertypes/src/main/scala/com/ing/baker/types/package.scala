@@ -21,6 +21,30 @@ package object types {
     classOf[java.lang.Float]     -> java.lang.Float.TYPE,
     classOf[java.lang.Double]    -> java.lang.Double.TYPE)
 
+  val primitiveMappings: Map[Class[_], Type] = Map(
+    classOf[java.lang.Boolean]    -> types.Bool,
+    java.lang.Boolean.TYPE        -> types.Bool,
+    classOf[java.lang.Byte]       -> types.Int8,
+    java.lang.Byte.TYPE           -> types.Int8,
+    classOf[java.lang.Short]      -> types.Int16,
+    java.lang.Short.TYPE          -> types.Int16,
+    classOf[java.lang.Character]  -> types.UInt16,
+    java.lang.Character.TYPE      -> types.UInt16,
+    classOf[java.lang.Integer]    -> types.Int32,
+    java.lang.Integer.TYPE        -> types.Int32,
+    classOf[java.lang.Long]       -> types.Int64,
+    java.lang.Long.TYPE           -> types.Int64,
+    classOf[java.lang.Float]      -> types.Float32,
+    java.lang.Float.TYPE          -> types.Float32,
+    classOf[java.lang.Double]     -> types.Float64,
+    java.lang.Double.TYPE         -> types.Float64,
+    classOf[java.math.BigInteger] -> types.IntBig,
+    classOf[BigInt]               -> types.IntBig,
+    classOf[java.math.BigDecimal] -> types.FloatBig,
+    classOf[BigDecimal]           -> types.FloatBig,
+    classOf[Array[Byte]]          -> types.ByteArray,
+    classOf[String]               -> types.CharArray)
+
   val supportedPrimitiveClasses: Set[Class[_]] = Set(
     classOf[java.lang.String],
     classOf[java.math.BigDecimal],
