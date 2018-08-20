@@ -1,0 +1,53 @@
+@!@!@STARTMSG 2262:0 @!@!@
+TLC2 Version 2.13 of 18 July 2018
+@!@!@ENDMSG 2262 @!@!@
+@!@!@STARTMSG 2187:0 @!@!@
+Running breadth-first search Model-Checking with seed -7931934370086944205 with 4 workers on 8 cores with 3641MB heap and 64MB offheap memory (Mac OS X 10.13.6 x86_64, Oracle Corporation 1.8.0_121 x86_64).
+@!@!@ENDMSG 2187 @!@!@
+@!@!@STARTMSG 2220:0 @!@!@
+Starting SANY...
+@!@!@ENDMSG 2220 @!@!@
+Parsing file /Users/bekiroguz/dev/workspace/baker/tla/SplitBrainResolver.toolbox/Model_1/MC.tla
+Parsing file /Users/bekiroguz/dev/workspace/baker/tla/SplitBrainResolver.toolbox/Model_1/SplitBrainResolver.tla
+Parsing file /Applications/TLA+ Toolbox.app/Contents/Eclipse/plugins/org.lamport.tlatools_1.0.0.201807180447/tla2sany/StandardModules/TLC.tla
+Parsing file /Applications/TLA+ Toolbox.app/Contents/Eclipse/plugins/org.lamport.tlatools_1.0.0.201807180447/tla2sany/StandardModules/Naturals.tla
+Parsing file /Applications/TLA+ Toolbox.app/Contents/Eclipse/plugins/org.lamport.tlatools_1.0.0.201807180447/tla2sany/StandardModules/FiniteSets.tla
+Parsing file /Applications/TLA+ Toolbox.app/Contents/Eclipse/plugins/org.lamport.tlatools_1.0.0.201807180447/tla2sany/StandardModules/Sequences.tla
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module SplitBrainResolver
+Semantic processing of module TLC
+Semantic processing of module MC
+@!@!@STARTMSG 2219:0 @!@!@
+SANY finished.
+@!@!@ENDMSG 2219 @!@!@
+@!@!@STARTMSG 2185:0 @!@!@
+Starting... (2018-08-20 17:49:16)
+@!@!@ENDMSG 2185 @!@!@
+<<"$!@$!@$!@$!@$!", 2>>
+@!@!@STARTMSG 2189:0 @!@!@
+Computing initial states...
+@!@!@ENDMSG 2189 @!@!@
+@!@!@STARTMSG 2190:0 @!@!@
+Finished computing initial states: 0 distinct states generated.
+@!@!@ENDMSG 2190 @!@!@
+@!@!@STARTMSG 2193:0 @!@!@
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 0.0
+  based on the actual fingerprints:  val = 0.0
+@!@!@ENDMSG 2193 @!@!@
+@!@!@STARTMSG 2200:0 @!@!@
+Progress(0) at 2018-08-20 17:49:17: 0 states generated (0 s/min), 0 distinct states found (0 ds/min), 0 states left on queue.
+@!@!@ENDMSG 2200 @!@!@
+@!@!@STARTMSG 2199:0 @!@!@
+0 states generated, 0 distinct states found, 0 states left on queue.
+@!@!@ENDMSG 2199 @!@!@
+@!@!@STARTMSG 2194:0 @!@!@
+The depth of the complete state graph search is 0.
+@!@!@ENDMSG 2194 @!@!@
+@!@!@STARTMSG 2186:0 @!@!@
+Finished in 504ms at (2018-08-20 17:49:17)
+@!@!@ENDMSG 2186 @!@!@

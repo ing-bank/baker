@@ -1,0 +1,103 @@
+@!@!@STARTMSG 2262:0 @!@!@
+TLC2 Version 2.13 of 18 July 2018
+@!@!@ENDMSG 2262 @!@!@
+@!@!@STARTMSG 2187:0 @!@!@
+Running breadth-first search Model-Checking with seed 8933184195719012984 with 4 workers on 8 cores with 1214MB heap and 2730MB offheap memory (Mac OS X 10.13.6 x86_64, Oracle Corporation 1.8.0_121 x86_64).
+@!@!@ENDMSG 2187 @!@!@
+@!@!@STARTMSG 2220:0 @!@!@
+Starting SANY...
+@!@!@ENDMSG 2220 @!@!@
+Parsing file /Users/bekiroguz/dev/workspace/baker/tla/SplitBrainResolver.toolbox/Model_1/MC.tla
+Parsing file /Users/bekiroguz/dev/workspace/baker/tla/SplitBrainResolver.toolbox/Model_1/SplitBrainResolver.tla
+Parsing file /Applications/TLA+ Toolbox.app/Contents/Eclipse/plugins/org.lamport.tlatools_1.0.0.201807180447/tla2sany/StandardModules/TLC.tla
+Parsing file /Applications/TLA+ Toolbox.app/Contents/Eclipse/plugins/org.lamport.tlatools_1.0.0.201807180447/tla2sany/StandardModules/Naturals.tla
+Parsing file /Applications/TLA+ Toolbox.app/Contents/Eclipse/plugins/org.lamport.tlatools_1.0.0.201807180447/tla2sany/StandardModules/FiniteSets.tla
+Parsing file /Applications/TLA+ Toolbox.app/Contents/Eclipse/plugins/org.lamport.tlatools_1.0.0.201807180447/tla2sany/StandardModules/Sequences.tla
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module SplitBrainResolver
+Semantic processing of module TLC
+Semantic processing of module MC
+@!@!@STARTMSG 2219:0 @!@!@
+SANY finished.
+@!@!@ENDMSG 2219 @!@!@
+@!@!@STARTMSG 2185:0 @!@!@
+Starting... (2018-08-20 17:49:00)
+@!@!@ENDMSG 2185 @!@!@
+<<"$!@$!@$!@$!@$!", 2>>
+@!@!@STARTMSG 2189:0 @!@!@
+Computing initial states...
+@!@!@ENDMSG 2189 @!@!@
+@!@!@STARTMSG 2190:0 @!@!@
+Finished computing initial states: 1 distinct state generated.
+@!@!@ENDMSG 2190 @!@!@
+@!@!@STARTMSG 1000:1 @!@!@
+TLC threw an unexpected exception.
+This was probably caused by an error in the spec or model.
+See the User Output or TLC Console for clues to what happened.
+The exception was a java.lang.RuntimeException
+: @!@!@STARTMSG 2154:0 @!@!@
+Attempted to apply the operator overridden by the Java method
+public static tlc2.value.IntValue tlc2.module.FiniteSets.Cardinality(tlc2.value.Value),
+but it produced the following error:
+@!@!@STARTMSG 2181:0 @!@!@
+Attemtped to compute cardinality of the value
+(B :> TRUE @@ C :> TRUE)
+@!@!@ENDMSG 2181 @!@!@
+@!@!@ENDMSG 2154 @!@!@
+@!@!@ENDMSG 1000 @!@!@
+@!@!@STARTMSG 2121:1 @!@!@
+The behavior up to this point is:
+@!@!@ENDMSG 2121 @!@!@
+@!@!@STARTMSG 2217:4 @!@!@
+1: <Initial predicate>
+/\ othersState = (B :> "up" @@ C :> "up")
+/\ myState = "up"
+
+@!@!@ENDMSG 2217 @!@!@
+@!@!@STARTMSG 2103:1 @!@!@
+The error occurred when TLC was evaluating the nested
+expressions at the following positions:
+0. Line 22, column 13 to line 23, column 39 in SplitBrainResolver
+1. Line 22, column 16 to line 22, column 62 in SplitBrainResolver
+2. Line 23, column 16 to line 23, column 39 in SplitBrainResolver
+3. Line 23, column 27 to line 23, column 39 in SplitBrainResolver
+4. Line 20, column 18 to line 20, column 59 in SplitBrainResolver
+5. Line 20, column 21 to line 20, column 37 in SplitBrainResolver
+6. Line 20, column 21 to line 20, column 26 in SplitBrainResolver
+7. Line 11, column 11 to line 11, column 71 in SplitBrainResolver
+8. Line 11, column 11 to line 11, column 67 in SplitBrainResolver
+
+
+@!@!@ENDMSG 2103 @!@!@
+@!@!@STARTMSG 2201:0 @!@!@
+The coverage statistics at 2018-08-20 17:49:04
+@!@!@ENDMSG 2201 @!@!@
+@!@!@STARTMSG 2221:0 @!@!@
+  line 22, col 16 to line 22, col 62 of module SplitBrainResolver: 0
+@!@!@ENDMSG 2221 @!@!@
+@!@!@STARTMSG 2221:0 @!@!@
+  line 23, col 16 to line 23, col 39 of module SplitBrainResolver: 0
+@!@!@ENDMSG 2221 @!@!@
+@!@!@STARTMSG 2221:0 @!@!@
+  line 25, col 25 to line 25, col 80 of module SplitBrainResolver: 0
+@!@!@ENDMSG 2221 @!@!@
+@!@!@STARTMSG 2221:0 @!@!@
+  line 26, col 25 to line 26, col 48 of module SplitBrainResolver: 0
+@!@!@ENDMSG 2221 @!@!@
+@!@!@STARTMSG 2202:0 @!@!@
+End of statistics.
+@!@!@ENDMSG 2202 @!@!@
+@!@!@STARTMSG 2200:0 @!@!@
+Progress(1) at 2018-08-20 17:49:04: 1 states generated (14 s/min), 1 distinct states found (14 ds/min), 0 states left on queue.
+@!@!@ENDMSG 2200 @!@!@
+@!@!@STARTMSG 2199:0 @!@!@
+1 states generated, 1 distinct states found, 0 states left on queue.
+@!@!@ENDMSG 2199 @!@!@
+@!@!@STARTMSG 2194:0 @!@!@
+The depth of the complete state graph search is 0.
+@!@!@ENDMSG 2194 @!@!@
+@!@!@STARTMSG 2186:0 @!@!@
+Finished in 4609ms at (2018-08-20 17:49:04)
+@!@!@ENDMSG 2186 @!@!@
