@@ -24,8 +24,8 @@ package object types {
   val primitiveMappings: Map[Class[_], Type] = Map(
     classOf[java.lang.Boolean]    -> types.Bool,
     java.lang.Boolean.TYPE        -> types.Bool,
-    classOf[java.lang.Byte]       -> types.Int8,
-    java.lang.Byte.TYPE           -> types.Int8,
+    classOf[java.lang.Byte]       -> types.Byte,
+    java.lang.Byte.TYPE           -> types.Byte,
     classOf[java.lang.Short]      -> types.Int16,
     java.lang.Short.TYPE          -> types.Int16,
     classOf[java.lang.Character]  -> types.UInt16,

@@ -18,7 +18,7 @@ message SerializedData {
 enum PrimitiveType {
 
     BOOL = 1;
-    INT8 = 3;
+    BYTE = 3;
     INT16 = 5;
     UINT16 = 7;
     INT32 = 9;

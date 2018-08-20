@@ -78,7 +78,7 @@ case object Bool extends PrimitiveType
 /**
   * Signed 8 bit integer
   */
-case object Int8 extends PrimitiveType
+case object Byte extends PrimitiveType
 
 /**
   * Unsigned 16 bit integer

@@ -78,8 +78,8 @@ trait ProtoEventAdapter {
 
       case types.Bool =>
         createPrimitive(PrimitiveType.BOOL)
-      case types.Int8 =>
-        createPrimitive(PrimitiveType.INT8)
+      case types.Byte =>
+        createPrimitive(PrimitiveType.BYTE)
       case types.Int16 =>
         createPrimitive(PrimitiveType.INT16)
       case types.UInt16 =>
@@ -349,11 +349,10 @@ trait ProtoEventAdapter {
         msg.`oneofType` match {
 
           case OneofType.Primitive(PrimitiveType.BOOL) => types.Bool
-          case OneofType.Primitive(PrimitiveType.INT8) => types.Int8
+          case OneofType.Primitive(PrimitiveType.BYTE) => types.Byte
           case OneofType.Primitive(PrimitiveType.INT16) => types.Int16
           case OneofType.Primitive(PrimitiveType.UINT16) => types.UInt16
           case OneofType.Primitive(PrimitiveType.INT32) => types.Int32
-          case OneofType.Primitive(PrimitiveType.INT) => types.Int32
           case OneofType.Primitive(PrimitiveType.INT64) => types.Int64
           case OneofType.Primitive(PrimitiveType.FLOAT32) => types.Float32
           case OneofType.Primitive(PrimitiveType.FLOAT64) => types.Float64
@@ -361,11 +360,12 @@ trait ProtoEventAdapter {
           case OneofType.Primitive(PrimitiveType.INT_BIG) => types.IntBig
           case OneofType.Primitive(PrimitiveType.BYTE_ARRAY) => types.ByteArray
           case OneofType.Primitive(PrimitiveType.CHAR_ARRAY) => types.CharArray
+          case OneofType.Primitive(PrimitiveType.INT) => types.Int32
 
 
           // deprecated fields
           case OneofType.Primitive(PrimitiveType.BOOLEAN_PRIMITIVE) => types.Bool
-          case OneofType.Primitive(PrimitiveType.BYTE_PRIMITIVE) => types.Int8
+          case OneofType.Primitive(PrimitiveType.BYTE_PRIMITIVE) => types.Byte
           case OneofType.Primitive(PrimitiveType.FLOAT_PRIMITIVE) => types.Float32
           case OneofType.Primitive(PrimitiveType.DOUBLE_PRIMITIVE) => types.Float64
           case OneofType.Primitive(PrimitiveType.SHORT_PRIMITIVE) => types.Int16
