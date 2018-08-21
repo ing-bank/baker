@@ -19,7 +19,7 @@
 <stringAttribute key="modelBehaviorNext" value="Next"/>
 <stringAttribute key="modelBehaviorSpec" value=""/>
 <intAttribute key="modelBehaviorSpecType" value="2"/>
-<stringAttribute key="modelBehaviorVars" value="othersState, nrOfUp, amIMember"/>
+<stringAttribute key="modelBehaviorVars" value="othersState, otherNodes, nrOfMembers, amIMember"/>
 <stringAttribute key="modelComments" value=""/>
 <booleanAttribute key="modelCorrectnessCheckDeadlock" value="true"/>
 <listAttribute key="modelCorrectnessInvariants">
@@ -30,9 +30,7 @@
 <listAttribute key="modelCorrectnessProperties"/>
 <stringAttribute key="modelExpressionEval" value=""/>
 <stringAttribute key="modelParameterActionConstraint" value=""/>
-<listAttribute key="modelParameterConstants">
-<listEntry value="otherNodes;;{B, C};1;0"/>
-</listAttribute>
+<listAttribute key="modelParameterConstants"/>
 <stringAttribute key="modelParameterContraint" value=""/>
 <listAttribute key="modelParameterDefinitions"/>
 <stringAttribute key="modelParameterModelValues" value="{}"/>

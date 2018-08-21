@@ -1,12 +1,13 @@
 -------------------------------- MODULE SplitBrainResolver --------------------------------
-EXTENDS Naturals, FiniteSets
-
-CONSTANT otherNodes \* other participating nodes in the cluster (except myself)
+EXTENDS Naturals, FiniteSets, TLC
 
 VARIABLE othersState, \* current known state of others (my knowledge)
          amIMember, \* TRUE/FALSE
-         nrOfUp
+         nrOfOtherMembers,
+         otherNodes
          
+PrintVal(id, exp)  ==  Print(<<id, exp>>, TRUE)
+
 Majority == ((Cardinality(otherNodes) + 1) \div 2) + 1 \* calculate the majority number of nodes of all participating cluster nodes (including myself)
 
 TotalUp(newState) == LET sum[S \in SUBSET otherNodes] == 
@@ -22,15 +23,21 @@ UpdateMyState(newState) == IF TotalUp(newState) < Majority THEN FALSE ELSE TRUE
 
 SetUp(n) == /\ othersState' = [othersState EXCEPT ![n] = "up"]
             /\ amIMember' = UpdateMyState(othersState')
-            /\ nrOfUp' = TotalUp(othersState')
+            /\ UNCHANGED<<nrOfOtherMembers, otherNodes>>
+            /\ PrintVal("NrOfUp SetUp", TotalUp(othersState'))
 
 SetUnreachable(n) == /\ othersState' = [othersState EXCEPT ![n] = "unreachable"]
                      /\ amIMember' = UpdateMyState(othersState')
-                     /\ nrOfUp' = TotalUp(othersState')
+                     /\ UNCHANGED<<nrOfOtherMembers, otherNodes>>
+                     /\ PrintVal("NrOfUp SetUnreachable", TotalUp(othersState'))
 
-Init == /\ othersState \in [otherNodes -> {"unreachable"}]
+Init == /\ nrOfOtherMembers \in 1..2 \* excluding myself. I am always a member.
+        /\ otherNodes = 1..nrOfOtherMembers \cup {} \* union with an empty set prints the set values like {1,2,3} instead of 1..3
+        /\ othersState \in [otherNodes -> {"unreachable"}]
         /\ amIMember = FALSE
-        /\ nrOfUp = 0
+        /\ PrintVal("nrOfOtherMembers Init", nrOfOtherMembers)
+        /\ PrintVal("NrOfUp members Init", TotalUp(othersState))
+        /\ PrintVal("otherNodes Init", otherNodes)
 
 Next == \E n \in otherNodes : SetUp(n) \/ SetUnreachable(n)
 
@@ -41,5 +48,5 @@ MyStateIsConsistent == amIMember = UpdateMyState(othersState)
 
 =============================================================================
 \* Modification History
-\* Last modified Tue Aug 21 14:45:44 CEST 2018 by bekiroguz
+\* Last modified Tue Aug 21 17:13:29 CEST 2018 by bekiroguz
 \* Created Wed Aug 15 12:26:52 CEST 2018 by bekiroguz
