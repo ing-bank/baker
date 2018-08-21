@@ -82,8 +82,8 @@ trait ProtoEventAdapter {
         createPrimitive(PrimitiveType.BYTE)
       case types.Int16 =>
         createPrimitive(PrimitiveType.INT16)
-      case types.UInt16 =>
-        createPrimitive(PrimitiveType.UINT16)
+      case types.Char =>
+        createPrimitive(PrimitiveType.CHAR)
       case types.Int32 =>
         createPrimitive(PrimitiveType.INT)
       case types.Int64 =>
@@ -351,7 +351,7 @@ trait ProtoEventAdapter {
           case OneofType.Primitive(PrimitiveType.BOOL) => types.Bool
           case OneofType.Primitive(PrimitiveType.BYTE) => types.Byte
           case OneofType.Primitive(PrimitiveType.INT16) => types.Int16
-          case OneofType.Primitive(PrimitiveType.UINT16) => types.UInt16
+          case OneofType.Primitive(PrimitiveType.CHAR) => types.Char
           case OneofType.Primitive(PrimitiveType.INT32) => types.Int32
           case OneofType.Primitive(PrimitiveType.INT64) => types.Int64
           case OneofType.Primitive(PrimitiveType.FLOAT32) => types.Float32
@@ -370,7 +370,7 @@ trait ProtoEventAdapter {
           case OneofType.Primitive(PrimitiveType.DOUBLE_PRIMITIVE) => types.Float64
           case OneofType.Primitive(PrimitiveType.SHORT_PRIMITIVE) => types.Int16
           case OneofType.Primitive(PrimitiveType.LONG_PRIMITIVE) => types.Int64
-          case OneofType.Primitive(PrimitiveType.CHARACTER_PRIMITIVE) => types.UInt16
+          case OneofType.Primitive(PrimitiveType.CHARACTER_PRIMITIVE) => types.Char
           case OneofType.Primitive(PrimitiveType.BIG_DECIMAL_JAVA) => types.FloatBig
           case OneofType.Primitive(PrimitiveType.BIG_INT_JAVA) => types.IntBig
 

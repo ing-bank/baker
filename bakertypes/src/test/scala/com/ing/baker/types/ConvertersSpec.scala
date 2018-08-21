@@ -31,7 +31,7 @@ class ConvertersSpec extends WordSpecLike with Matchers {
     42:Short,
     Short.box(42:Short),
     'C',
-    Char.box('C'),
+    scala.Char.box('C'),
     12.34d,
     Double.box(12.34d),
     12.34f,

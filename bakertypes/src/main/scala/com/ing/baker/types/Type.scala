@@ -81,9 +81,9 @@ case object Bool extends PrimitiveType
 case object Byte extends PrimitiveType
 
 /**
-  * Unsigned 16 bit integer
+  * Character (Unsigned 16 bit integer)
   */
-case object UInt16 extends PrimitiveType
+case object Char extends PrimitiveType
 
 /**
   * Signed 16 bit integer
@@ -120,9 +120,13 @@ case object Float64 extends PrimitiveType
   */
 case object FloatBig extends PrimitiveType
 
-// byte array
+/**
+  * Byte array
+  */
 case object ByteArray extends PrimitiveType
 
-// string
+/**
+  * Character array
+  */
 case object CharArray extends PrimitiveType
 

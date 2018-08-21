@@ -20,14 +20,14 @@ enum PrimitiveType {
     BOOL = 1;
     BYTE = 3;
     INT16 = 5;
-    UINT16 = 7;
+    CHAR = 7;
     INT32 = 9;
     INT64 = 11;
+    INT_BIG = 20;
     FLOAT32 = 13;
     FLOAT64 = 15;
-    CHAR_ARRAY = 17;
     FLOAT_BIG = 18;
-    INT_BIG = 20;
+    CHAR_ARRAY = 17;
     BYTE_ARRAY = 22;
 
     // depcrecated but do not remove!
