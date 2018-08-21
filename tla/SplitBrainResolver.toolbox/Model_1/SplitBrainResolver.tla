@@ -18,10 +18,6 @@ TotalUp(newState) == LET sum[S \in SUBSET otherNodes] ==
 TypeOK == /\ othersState \in [otherNodes -> {"up", "unreachable"}]
           /\ amIMember \in {TRUE, FALSE}
 
-\* TypeOK == nodeState \in [nodes -> {"joining", "up", "leaving", "exiting", "removed", "down", "unreachable"}]
-          
-\* ASSUME /\ selfNode \in nodes          
-          
 UpdateMyState(newState) == IF TotalUp(newState) < Majority THEN FALSE ELSE TRUE
 
 SetUp(n) == /\ othersState' = [othersState EXCEPT ![n] = "up"]
@@ -32,8 +28,8 @@ SetUnreachable(n) == /\ othersState' = [othersState EXCEPT ![n] = "unreachable"]
                      /\ amIMember' = UpdateMyState(othersState')
                      /\ nrOfUp' = TotalUp(othersState')
 
-Init == /\ othersState \in [otherNodes -> {"up"}]
-        /\ amIMember = TRUE
+Init == /\ othersState \in [otherNodes -> {"unreachable"}]
+        /\ amIMember = FALSE
         /\ nrOfUp = 0
 
 Next == \E n \in otherNodes : SetUp(n) \/ SetUnreachable(n)
@@ -45,5 +41,5 @@ MyStateIsConsistent == amIMember = UpdateMyState(othersState)
 
 =============================================================================
 \* Modification History
-\* Last modified Tue Aug 21 14:06:10 CEST 2018 by bekiroguz
+\* Last modified Tue Aug 21 14:45:44 CEST 2018 by bekiroguz
 \* Created Wed Aug 15 12:26:52 CEST 2018 by bekiroguz
