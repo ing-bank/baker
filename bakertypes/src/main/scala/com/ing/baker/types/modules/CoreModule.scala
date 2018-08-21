@@ -1,0 +1,239 @@
+package com.ing.baker.types.modules
+
+import java.lang.reflect
+import java.lang.reflect.{Modifier, ParameterizedType}
+import java.util
+import java.util.Optional
+
+import com.ing.baker.types.Converters.getRawClass
+import com.ing.baker.types
+import com.ing.baker.types._
+
+import scala.collection.JavaConverters._
+import org.objenesis.ObjenesisStd
+
+class CoreModule extends TypeModule {
+
+  private def isEmpty(obj: Any) = {
+    obj match {
+      case null => true
+      case None => true
+      case option: java.util.Optional[_] if !option.isPresent => true
+      case _ => false
+    }
+  }
+
+  override def isApplicable(javaType: reflect.Type): Boolean = true
+
+  override def readType(context: TypeConverter, javaType: java.lang.reflect.Type): Type = {
+
+    javaType match {
+      case clazz if clazz == classOf[Object] =>
+        throw new IllegalArgumentException(s"Unsupported type: $clazz")
+      case clazz: Class[_] if primitiveMappings.contains(clazz) =>
+        primitiveMappings(clazz)
+      case clazz: ParameterizedType if classOf[scala.Option[_]].isAssignableFrom(getRawClass(clazz)) || classOf[java.util.Optional[_]].isAssignableFrom(getRawClass(clazz)) =>
+        val entryType = context.readType(clazz.getActualTypeArguments()(0))
+        OptionType(entryType)
+      case t: ParameterizedType if classOf[scala.Array[_]].isAssignableFrom(getRawClass(t)) && classOf[Byte].isAssignableFrom(getRawClass(t.getActualTypeArguments()(0))) =>
+        types.ByteArray
+
+      case clazz: ParameterizedType if getRawClass(clazz.getRawType).isAssignableFrom(classOf[List[_]]) || getRawClass(clazz.getRawType).isAssignableFrom(classOf[java.util.List[_]]) =>
+        val entryType = context.readType(clazz.getActualTypeArguments()(0))
+        ListType(entryType)
+
+      case clazz: ParameterizedType if getRawClass(clazz.getRawType).isAssignableFrom(classOf[Set[_]]) || getRawClass(clazz.getRawType).isAssignableFrom(classOf[java.util.Set[_]]) =>
+        val entryType = context.readType(clazz.getActualTypeArguments()(0))
+        ListType(entryType)
+
+      case clazz: ParameterizedType if getRawClass(clazz.getRawType).isAssignableFrom(classOf[Map[_,_]]) || getRawClass(clazz.getRawType).isAssignableFrom(classOf[java.util.Map[_,_]]) =>
+        val keyType = clazz.getActualTypeArguments()(0)
+
+        if (keyType != classOf[String])
+          throw new IllegalArgumentException(s"Unsupported key type for map: $keyType")
+
+        val valueType = context.readType(clazz.getActualTypeArguments()(1))
+        MapType(valueType)
+
+      case enumClass: Class[_] if enumClass.isEnum =>
+        EnumType(enumClass.asInstanceOf[Class[Enum[_]]].getEnumConstants.map(_.name).toSet)
+      case pojoClass: Class[_] =>
+        val fields = pojoClass.getDeclaredFields.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
+        val ingredients = fields.map(f => RecordField(f.getName, context.readType(f.getGenericType)))
+        RecordType(ingredients)
+      case unsupportedType =>
+        throw new IllegalArgumentException(s"UnsupportedType: $unsupportedType")
+    }
+  }
+
+
+  /**
+    * Attempts to convert a java object to a value.
+    *
+    * @param obj The java object
+    * @return a Value
+    */
+  override def fromJava(context: TypeConverter, obj: Any): Value = {
+
+    obj match {
+      case value: Value                     => value
+      case value if isEmpty(value)          => NullValue
+      case value if isPrimitiveValue(value) => PrimitiveValue(value)
+      case list: List[_]                    => ListValue(list.map(context.fromJava))
+      case list: java.util.List[_]          => ListValue(list.asScala.toList.map(context.fromJava))
+      case set: Set[_]                      => ListValue(set.toList.map(context.fromJava))
+      case set: java.util.Set[_]            => ListValue(set.asScala.toList.map(context.fromJava))
+      case map: java.util.Map[_, _]         =>
+        val entries: Map[String, Value] = map.entrySet().iterator().asScala.map {
+          e => e.getKey.asInstanceOf[String] -> e.getValue.toValue
+        }.toMap
+        RecordValue(entries)
+      case map: Map[_, _] =>
+        val entries: Map[String, Value] = map.map {
+          case (name, value) => name.asInstanceOf[String] -> context.fromJava(value)
+        }
+        RecordValue(entries)
+
+      case Some(optionValue)                => context.fromJava(optionValue)
+      case option: java.util.Optional[_] if option.isPresent => context.fromJava(option.get)
+      case enum if enum.getClass.isEnum     => PrimitiveValue(enum.asInstanceOf[Enum[_]].name())
+      case pojo                             =>
+        val fields = pojo.getClass.getDeclaredFields.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
+        fields.foreach(_.setAccessible(true))
+
+        val entries: Map[String, Value] = fields
+          .map(f => f.getName -> context.fromJava(f.get(pojo))).toMap
+
+        RecordValue(entries)
+    }
+  }
+
+  /**
+    * Attempts to convert a value to a desired java type.
+    *
+    * @param value    The value
+    * @param javaType The desired java type.
+    *
+    * @return An instance of the java type.
+    */
+  @throws[IllegalArgumentException]("If failing to convert to the desired java type")
+  override def toJava(context: TypeConverter, value: Value, javaType: java.lang.reflect.Type): Any = {
+
+    (value, javaType) match {
+      case (_, clazz) if clazz == classOf[Object] =>
+        throw new IllegalArgumentException(s"Unsupported type: $clazz")
+
+      case (primitive: PrimitiveValue, clazz: Class[_]) if primitive.isAssignableTo(clazz) =>
+        primitive.value
+
+      case (PrimitiveValue(option: String), clazz: Class[_]) if clazz.isEnum =>
+        clazz.asInstanceOf[Class[Enum[_]]].getEnumConstants.find(_.name() == option) match {
+          case Some(enumValue) => enumValue
+          case None => throw new IllegalArgumentException(s"value '$option' is not an instance of enum: $clazz")
+        }
+
+      case (_, generic: ParameterizedType) if classOf[Option[_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
+        val optionType = generic.getActualTypeArguments()(0)
+        value match {
+          case NullValue =>
+            None
+          case _ =>
+            val optionValue = context.toJava(value, optionType)
+            Some(optionValue)
+        }
+
+      case (_, generic: ParameterizedType) if classOf[java.util.Optional[_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
+        val optionType = generic.getActualTypeArguments()(0)
+
+        value match {
+          case NullValue =>
+            Optional.empty()
+          case _ =>
+            val optionValue = context.toJava(value, optionType)
+            java.util.Optional.of(optionValue)
+        }
+
+      case (NullValue, _) =>
+        null
+
+      case (ListValue(entries), generic: ParameterizedType) if classOf[List[_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
+        val listType = generic.getActualTypeArguments()(0)
+        entries.map(e => context.toJava(e, listType))
+
+      case (ListValue(entries), generic: ParameterizedType) if classOf[Set[_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
+        val listType = generic.getActualTypeArguments()(0)
+        entries.map(e => context.toJava(e, listType)).toSet
+
+      case (ListValue(entries), generic: ParameterizedType) if classOf[java.util.List[_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
+        val entryType = generic.getActualTypeArguments()(0)
+        val list = new util.ArrayList[Any]()
+        entries.foreach { e =>
+          val value = context.toJava(e, entryType)
+          list.add(value)
+        }
+        list
+
+      case (ListValue(entries), generic: ParameterizedType) if classOf[java.util.Set[_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
+        val entryType = generic.getActualTypeArguments()(0)
+        val set = new util.HashSet[Any]()
+        entries.foreach { e =>
+          val value = context.toJava(e, entryType)
+          set.add(value)
+        }
+        set
+
+      case (RecordValue(entries), generic: ParameterizedType) if classOf[java.util.Map[_,_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
+        val keyType = generic.getActualTypeArguments()(0)
+
+        if (keyType != classOf[String])
+          throw new IllegalArgumentException(s"Unsuported key type: $keyType")
+
+        val valueType = generic.getActualTypeArguments()(1)
+
+        val javaMap: java.util.Map[String, Any] = new util.HashMap[String, Any]()
+
+        entries.foreach { case (name, value) => javaMap.put(name, context.toJava(value, valueType)) }
+
+        javaMap
+
+      case (RecordValue(entries), generic: ParameterizedType) if classOf[Map[_,_]].isAssignableFrom(getRawClass(generic.getRawType)) =>
+        val keyType = generic.getActualTypeArguments()(0)
+
+        if (keyType != classOf[String])
+          throw new IllegalArgumentException(s"Unsuported key type: $keyType")
+
+        val valueType = generic.getActualTypeArguments()(1)
+
+        entries.map { case (name, value) => name -> context.toJava(value, valueType) }
+
+      case (RecordValue(entries), pojoClass: Class[_]) =>
+
+        // ObjenesisStd is somehow bypassing the constructor
+        val objenesis = new ObjenesisStd // or ObjenesisSerializer
+
+        val classInstantiator = objenesis.getInstantiatorOf(pojoClass)
+
+        val pojoInstance = classInstantiator.newInstance()
+
+        val fields = pojoClass.getDeclaredFields.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
+
+        fields.foreach { f =>
+          entries.get(f.getName).foreach { entryValue =>
+
+            val fieldType = f.getGenericType()
+            try {
+              val value = context.toJava(entryValue, fieldType)
+              f.setAccessible(true)
+              f.set(pojoInstance, value)
+            } catch {
+              case e: Exception => throw new IllegalStateException(s"Failed to convert field '${f.getName}' to type: $fieldType", e)
+            }
+          }
+        }
+
+        pojoInstance
+    }
+  }
+
+
+}
