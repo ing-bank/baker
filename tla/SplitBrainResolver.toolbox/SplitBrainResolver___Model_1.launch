@@ -18,16 +18,20 @@
 <stringAttribute key="modelBehaviorInit" value="Init"/>
 <stringAttribute key="modelBehaviorNext" value="Next"/>
 <stringAttribute key="modelBehaviorSpec" value=""/>
-<intAttribute key="modelBehaviorSpecType" value="0"/>
-<stringAttribute key="modelBehaviorVars" value="othersState, myState"/>
+<intAttribute key="modelBehaviorSpecType" value="2"/>
+<stringAttribute key="modelBehaviorVars" value="othersState, nrOfUp, amIMember"/>
 <stringAttribute key="modelComments" value=""/>
 <booleanAttribute key="modelCorrectnessCheckDeadlock" value="true"/>
-<listAttribute key="modelCorrectnessInvariants"/>
+<listAttribute key="modelCorrectnessInvariants">
+<listEntry value="1TypeOK"/>
+<listEntry value="1MyStateIsConsistent"/>
+<listEntry value="0OneNodeIsAlwaysRunning"/>
+</listAttribute>
 <listAttribute key="modelCorrectnessProperties"/>
-<stringAttribute key="modelExpressionEval" value="Majority"/>
+<stringAttribute key="modelExpressionEval" value=""/>
 <stringAttribute key="modelParameterActionConstraint" value=""/>
 <listAttribute key="modelParameterConstants">
-<listEntry value="otherNodes;;{B, C};1;1"/>
+<listEntry value="otherNodes;;{B, C, D, E};1;0"/>
 </listAttribute>
 <stringAttribute key="modelParameterContraint" value=""/>
 <listAttribute key="modelParameterDefinitions"/>

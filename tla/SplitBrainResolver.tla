@@ -4,35 +4,46 @@ EXTENDS Naturals, FiniteSets
 CONSTANT otherNodes \* other participating nodes in the cluster (except myself)
 
 VARIABLE othersState, \* current known state of others (my knowledge)
-         myState \* I can be either 'up' or 'down'
-
+         amIMember, \* TRUE/FALSE
+         nrOfUp
+         
 Majority == ((Cardinality(otherNodes) + 1) \div 2) + 1 \* calculate the majority number of nodes of all participating cluster nodes (including myself)
 
-NrOfUp == Cardinality([n \in otherNodes |-> othersState[n] = "up"]) + 1 \* Count the number of "up" nodes (including myself)
+TotalUp(newState) == LET sum[S \in SUBSET otherNodes] == 
+                     IF S = {} THEN 0
+                     ELSE LET n == CHOOSE node \in S : TRUE
+                          IN (IF newState[n] = "up" THEN 1 ELSE 0) + sum[S \ {n}]
+                     IN sum[otherNodes] + 1
 
 TypeOK == /\ othersState \in [otherNodes -> {"up", "unreachable"}]
-          /\ myState \in {"up", "down"}
+          /\ amIMember \in {TRUE, FALSE}
 
 \* TypeOK == nodeState \in [nodes -> {"joining", "up", "leaving", "exiting", "removed", "down", "unreachable"}]
           
 \* ASSUME /\ selfNode \in nodes          
           
-UpdateMyState == IF NrOfUp < Majority THEN "down" ELSE "up"
+UpdateMyState(newState) == IF TotalUp(newState) < Majority THEN FALSE ELSE TRUE
 
 SetUp(n) == /\ othersState' = [othersState EXCEPT ![n] = "up"]
-            /\ myState' = UpdateMyState
+            /\ amIMember' = UpdateMyState(othersState')
+            /\ nrOfUp' = TotalUp(othersState')
 
 SetUnreachable(n) == /\ othersState' = [othersState EXCEPT ![n] = "unreachable"]
-                     /\ myState' = UpdateMyState
+                     /\ amIMember' = UpdateMyState(othersState')
+                     /\ nrOfUp' = TotalUp(othersState')
 
 Init == /\ othersState \in [otherNodes -> {"up"}]
-        /\ myState = "up"
+        /\ amIMember = TRUE
+        /\ nrOfUp = 0
 
 Next == \E n \in otherNodes : SetUp(n) \/ SetUnreachable(n)
+
+MyStateIsConsistent == amIMember = UpdateMyState(othersState)
         
-\* OneNodeIsAlwaysRunning == \E n \in nodes : nodeState[n] = "up"
+\*OneNodeIsAlwaysRunning == \/ \E n \in otherNodes : othersState[n] = "up"
+\*                          \/ myState = "up"
 
 =============================================================================
 \* Modification History
-\* Last modified Mon Aug 20 17:37:04 CEST 2018 by bekiroguz
+\* Last modified Tue Aug 21 14:06:10 CEST 2018 by bekiroguz
 \* Created Wed Aug 15 12:26:52 CEST 2018 by bekiroguz

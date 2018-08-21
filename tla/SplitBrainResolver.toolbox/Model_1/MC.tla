@@ -3,36 +3,30 @@ EXTENDS SplitBrainResolver, TLC
 
 \* MV CONSTANT declarations@modelParameterConstants
 CONSTANTS
-B, C
+B, C, D, E
 ----
 
 \* MV CONSTANT definitions otherNodes
-const_153478015650421000 == 
-{B, C}
+const_1534853422160341000 == 
+{B, C, D, E}
 ----
 
-\* SYMMETRY definition
-symm_153478015650422000 == 
-Permutations(const_153478015650421000)
+\* INIT definition @modelBehaviorInit:0
+init_1534853422160342000 ==
+Init
 ----
-
-\* Constant expression definition @modelExpressionEval
-const_expr_153478015650423000 == 
-Majority
+\* NEXT definition @modelBehaviorNext:0
+next_1534853422160343000 ==
+Next
 ----
-
-\* Constant expression ASSUME statement @modelExpressionEval
-ASSUME PrintT(<<"$!@$!@$!@$!@$!",const_expr_153478015650423000>>)
+\* INVARIANT definition @modelCorrectnessInvariants:0
+inv_1534853422160344000 ==
+TypeOK
 ----
-
-\* INIT definition @modelBehaviorNoSpec:0
-init_153478015650424000 ==
-FALSE/\othersState = 0
-----
-\* NEXT definition @modelBehaviorNoSpec:0
-next_153478015650425000 ==
-FALSE/\othersState' = othersState
+\* INVARIANT definition @modelCorrectnessInvariants:1
+inv_1534853422160345000 ==
+MyStateIsConsistent
 ----
 =============================================================================
 \* Modification History
-\* Created Mon Aug 20 17:49:16 CEST 2018 by bekiroguz
+\* Created Tue Aug 21 14:10:22 CEST 2018 by bekiroguz
