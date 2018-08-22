@@ -24,29 +24,26 @@ UpdateMyState(newState) == IF TotalUp(newState) < Majority THEN FALSE ELSE TRUE
 SetUp(n) == /\ othersState' = [othersState EXCEPT ![n] = "up"]
             /\ amIMember' = UpdateMyState(othersState')
             /\ UNCHANGED<<nrOfOtherMembers, otherNodes>>
-            /\ PrintVal("NrOfUp SetUp", TotalUp(othersState'))
 
 SetUnreachable(n) == /\ othersState' = [othersState EXCEPT ![n] = "unreachable"]
                      /\ amIMember' = UpdateMyState(othersState')
                      /\ UNCHANGED<<nrOfOtherMembers, otherNodes>>
-                     /\ PrintVal("NrOfUp SetUnreachable", TotalUp(othersState'))
 
-Init == /\ nrOfOtherMembers \in 1..2 \* excluding myself. I am always a member.
-        /\ otherNodes = 1..nrOfOtherMembers \cup {} \* union with an empty set prints the set values like {1,2,3} instead of 1..3
+Init == /\ nrOfOtherMembers \in 1..5 \* excluding myself. I am always a member.
+        \* READIBILITY IMPROVEMENTS: 
+        \* union with an empty set prints the set values like {1,2,3} instead of 1..3
+        \* union with "node" lets us see <<node, 1>> <<node, 2>> records for each node.
+        /\ otherNodes = {"node"} \times (1..nrOfOtherMembers \cup {})
         /\ othersState \in [otherNodes -> {"unreachable"}]
         /\ amIMember = FALSE
-        /\ PrintVal("nrOfOtherMembers Init", nrOfOtherMembers)
-        /\ PrintVal("NrOfUp members Init", TotalUp(othersState))
-        /\ PrintVal("otherNodes Init", otherNodes)
+        /\ PrintVal("nrOfOtherMembers", nrOfOtherMembers)
+        /\ PrintVal("otherNodes", otherNodes)
 
 Next == \E n \in otherNodes : SetUp(n) \/ SetUnreachable(n)
 
 MyStateIsConsistent == amIMember = UpdateMyState(othersState)
         
-\*OneNodeIsAlwaysRunning == \/ \E n \in otherNodes : othersState[n] = "up"
-\*                          \/ myState = "up"
-
 =============================================================================
 \* Modification History
-\* Last modified Tue Aug 21 17:22:22 CEST 2018 by bekiroguz
+\* Last modified Wed Aug 22 12:14:00 CEST 2018 by bekiroguz
 \* Created Wed Aug 15 12:26:52 CEST 2018 by bekiroguz
