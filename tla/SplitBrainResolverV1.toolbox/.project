@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>SplitBrainResolver</name>
+	<name>SplitBrainResolverV1</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -16,9 +16,9 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>SplitBrainResolver.tla</name>
+			<name>SplitBrainResolverV1.tla</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/SplitBrainResolver.tla</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/SplitBrainResolverV1.tla</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

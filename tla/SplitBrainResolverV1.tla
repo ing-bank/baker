@@ -1,4 +1,4 @@
--------------------------------- MODULE SplitBrainResolver --------------------------------
+-------------------------------- MODULE SplitBrainResolverV1 --------------------------------
 EXTENDS Naturals, FiniteSets, TLC
 
 VARIABLE othersState, \* current known state of others (my knowledge)
