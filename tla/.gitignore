@@ -1,0 +1,4 @@
+.settings
+*.out
+*.launch
+Model_1_Snapshot*
