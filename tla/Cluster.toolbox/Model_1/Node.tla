@@ -29,7 +29,9 @@ SetUnreachable(n) == /\ othersState' = [othersState EXCEPT ![n] = "unreachable"]
                      /\ amIMember' = UpdateMyState(othersState')
                      /\ UNCHANGED<<nrOfOtherMembers, otherNodes>>
 
-Init(n) == /\ nrOfOtherMembers = n \* excluding myself. I am always a member.
+Init(n) == 
+        /\ PrintVal("Im in init", n) 
+        /\ nrOfOtherMembers = n \* excluding myself. I am always a member.
         \* READIBILITY IMPROVEMENTS:
         \* union with an empty set prints the set values like {1,2,3} instead of 1..3
         \* union with "node" lets us see <<node, 1>> <<node, 2>> records for each node.
@@ -49,6 +51,6 @@ Invariants ==
 
 =============================================================================
 \* Modification History
+\* Last modified Thu Aug 23 17:12:36 CEST 2018 by bekiroguz
 \* Last modified Thu Aug 23 16:04:03 CEST 2018 by se76ni
-\* Last modified Wed Aug 22 12:14:00 CEST 2018 by bekiroguz
 \* Created Wed Aug 15 12:26:52 CEST 2018 by bekiroguz

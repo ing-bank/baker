@@ -1,56 +1,34 @@
 ------------------------------ MODULE Cluster ------------------------------
+EXTENDS Naturals, FiniteSets, TLC
 
+CONSTANT nodes \* Model variables like A, B, C
 
-VARIABLES
-  nrOfOtherMembers,
-  nodeA_amIMember,
-  nodeA_otherNodes,
-  nodeA_othersState,
-  nodeB_amIMember,
-  nodeB_otherNodes,
-  nodeB_othersState,
-  nodeC_amIMember,
-  nodeC_otherNodes,
-  nodeC_othersState
+VARIABLES clusterState, \* Map<Node -> NodeStateRecord>
+          nrOfOtherMembers,
+          nodeInstances
 
+PrintVal(id, exp) == Print(<<id, exp>>, TRUE)
 
-NodeA == INSTANCE Node WITH amIMember <- nodeA_amIMember, nrOfOtherMembers <- nrOfOtherMembers, otherNodes <- nodeA_otherNodes, othersState <- nodeA_othersState
-NodeB == INSTANCE Node WITH amIMember <- nodeB_amIMember, nrOfOtherMembers <- nrOfOtherMembers, otherNodes <- nodeB_otherNodes, othersState <- nodeB_othersState
-NodeC == INSTANCE Node WITH amIMember <- nodeC_amIMember, nrOfOtherMembers <- nrOfOtherMembers, otherNodes <- nodeC_otherNodes, othersState <- nodeC_othersState
-
+Node(n) == INSTANCE Node WITH amIMember <- clusterState[n].amIMember, nrOfOtherMembers <- nrOfOtherMembers, otherNodes <- clusterState[n].otherNodes, othersState <- clusterState[n].othersState
 
 Init ==
-  /\ nrOfOtherMembers = 2
-  /\ NodeA ! Init(nrOfOtherMembers)
-  /\ NodeB ! Init(nrOfOtherMembers)
-  /\ NodeC ! Init(nrOfOtherMembers)
+  /\ nrOfOtherMembers = Cardinality(nodes) - 1
+  /\ PrintVal("nrOfOtherMembers", nrOfOtherMembers)
+  /\ clusterState = [ n \in nodes |-> [amIMember |-> FALSE, nrOfOtherMembers |-> 0, otherNodes |-> {}, othersState |-> [otherNodes |-> {"unreachable"}]]]
+  /\ PrintVal("clusterState", clusterState)
+  /\ nodeInstances = [ n \in nodes |-> Node(n) ! Init(nrOfOtherMembers) ]
+  /\ PrintVal("nodeInstances", nodeInstances)
 
-NodeANext ==
-  /\ NodeA ! Next
-  /\ UNCHANGED <<nodeB_amIMember, nodeB_otherNodes, nodeB_othersState, nodeC_amIMember, nodeC_otherNodes, nodeC_othersState>>
+NodeNext(n) ==  
+  /\ Node(n) ! Next
+  /\ UNCHANGED <<clusterState, nrOfOtherMembers, nodeInstances>>
+  
+Next == \E n \in nodes : NodeNext(n)
 
-NodeBNext ==
-  /\ NodeB ! Next
-  /\ UNCHANGED <<nodeA_amIMember, nodeA_otherNodes, nodeA_othersState, nodeC_amIMember, nodeC_otherNodes, nodeC_othersState>>
-
-NodeCNext ==
-  /\ NodeC ! Next
-  /\ UNCHANGED <<nodeB_amIMember, nodeB_otherNodes, nodeB_othersState, nodeA_amIMember, nodeA_otherNodes, nodeA_othersState>>
-
-
-
-Next ==
-    \/ NodeANext
-    \/ NodeBNext
-    \/ NodeCNext
-
-Invariants ==
-    /\ NodeA ! Invariants
-    /\ NodeB ! Invariants
-    /\ NodeC ! Invariants
-
+Invariants == \E n \in nodes : Node(n) ! Invariants
 
 =============================================================================
 \* Modification History
+\* Last modified Thu Aug 23 17:10:30 CEST 2018 by bekiroguz
 \* Last modified Thu Aug 23 16:04:26 CEST 2018 by se76ni
 \* Created Thu Aug 23 10:58:32 CEST 2018 by se76ni
