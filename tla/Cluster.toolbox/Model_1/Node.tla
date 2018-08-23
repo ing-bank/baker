@@ -43,8 +43,12 @@ Next == \E n \in otherNodes : SetUp(n) \/ SetUnreachable(n)
 
 MyStateIsConsistent == amIMember = UpdateMyState(othersState)
 
+Invariants ==
+    /\ TypeOK
+    /\ MyStateIsConsistent
+
 =============================================================================
 \* Modification History
-\* Last modified Thu Aug 23 15:48:58 CEST 2018 by se76ni
+\* Last modified Thu Aug 23 16:04:03 CEST 2018 by se76ni
 \* Last modified Wed Aug 22 12:14:00 CEST 2018 by bekiroguz
 \* Created Wed Aug 15 12:26:52 CEST 2018 by bekiroguz

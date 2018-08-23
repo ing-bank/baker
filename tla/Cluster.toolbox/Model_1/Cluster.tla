@@ -44,10 +44,13 @@ Next ==
     \/ NodeBNext
     \/ NodeCNext
 
-
+Invariants ==
+    /\ NodeA ! Invariants
+    /\ NodeB ! Invariants
+    /\ NodeC ! Invariants
 
 
 =============================================================================
 \* Modification History
-\* Last modified Thu Aug 23 15:54:40 CEST 2018 by se76ni
+\* Last modified Thu Aug 23 16:04:26 CEST 2018 by se76ni
 \* Created Thu Aug 23 10:58:32 CEST 2018 by se76ni

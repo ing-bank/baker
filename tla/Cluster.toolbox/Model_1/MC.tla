@@ -2,13 +2,17 @@
 EXTENDS Cluster, TLC
 
 \* INIT definition @modelBehaviorInit:0
-init_15350324837079000 ==
+init_153503307418414000 ==
 Init
 ----
 \* NEXT definition @modelBehaviorNext:0
-next_153503248370710000 ==
+next_153503307418415000 ==
 Next
+----
+\* INVARIANT definition @modelCorrectnessInvariants:0
+inv_153503307418416000 ==
+Invariants
 ----
 =============================================================================
 \* Modification History
-\* Created Thu Aug 23 15:54:43 CEST 2018 by se76ni
+\* Created Thu Aug 23 16:04:34 CEST 2018 by se76ni
