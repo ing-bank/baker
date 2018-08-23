@@ -18,16 +18,13 @@ object Converters {
     * List[String]     -> List
     * Map[String, Int] -> Map
     */
-  def getRawClass(javaType: java.lang.reflect.Type): Class[_] = javaType match {
+  def getBaseClass(javaType: java.lang.reflect.Type): Class[_] = javaType match {
     case c: Class[_] => c
-    case t: ParameterizedType => getRawClass(t.getRawType)
+    case t: ParameterizedType => getBaseClass(t.getRawType)
     case t @ _ => throw new IllegalArgumentException(s"Unsupported type: $javaType")
   }
 
-  def isAssignableToBaseClass(javaType: java.lang.reflect.Type, expected: Class[_]) = javaType match {
-    case clazz: ParameterizedType if getRawClass(clazz.getRawType).isAssignableFrom(expected) => true
-    case _ => false
-  }
+  def isAssignableToBaseClass(javaType: java.lang.reflect.Type, base: Class[_]) = base.isAssignableFrom(getBaseClass(javaType))
 
   def createJavaType(paramType: universe.Type): java.lang.reflect.Type = {
     val typeConstructor = mirror.runtimeClass(paramType)
