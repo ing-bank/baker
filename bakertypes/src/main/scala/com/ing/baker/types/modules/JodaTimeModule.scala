@@ -9,11 +9,11 @@ class JodaTimeModule extends TypeModule {
 
   override def isApplicable(javaType: java.lang.reflect.Type): Boolean = ???
 
-  override def readType(context: TypeConverter, javaType: java.lang.reflect.Type): Type = ???
+  override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): Type = ???
 
-  override def toJava(context: TypeConverter, value: Value, javaType: java.lang.reflect.Type): Any = ???
+  override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): Any = ???
 
-  override def fromJava(context: TypeConverter, obj: Any): Value = ???
+  override def fromJava(context: TypeAdapter, obj: Any): Value = ???
 
 //  obj match {
 //

@@ -11,7 +11,7 @@ class EnumModule extends TypeModule {
     case _ => false
   }
 
-  override def readType(context: TypeConverter, javaType: java.lang.reflect.Type): Type = {
+  override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): Type = {
 
     javaType match {
 
@@ -23,14 +23,13 @@ class EnumModule extends TypeModule {
     }
   }
 
-
   /**
     * Attempts to convert a java object to a value.
     *
     * @param obj The java object
     * @return a Value
     */
-  override def fromJava(context: TypeConverter, obj: Any): Value = {
+  override def fromJava(context: TypeAdapter, obj: Any): Value = {
     obj match {
       case enum if enum.getClass.isEnum => PrimitiveValue(enum.asInstanceOf[Enum[_]].name())
     }
@@ -44,7 +43,7 @@ class EnumModule extends TypeModule {
     *
     * @return An instance of the java type.
     */
-  override def toJava(context: TypeConverter, value: Value, javaType: java.lang.reflect.Type): Any = {
+  override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): Any = {
 
     (value, javaType) match {
 

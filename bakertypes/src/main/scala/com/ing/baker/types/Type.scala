@@ -14,7 +14,9 @@ sealed trait Type {
 
       case (a, b) if a == b => true
 
+      case (Bool, Bool) => true
       case (Byte, Byte) => true
+      case (Char, Char) => true
       case (Int16, Int16) => true
       case (Int32, Int32 | Int16) => true
       case (Int64, Int64 | Int32 | Int16) => true

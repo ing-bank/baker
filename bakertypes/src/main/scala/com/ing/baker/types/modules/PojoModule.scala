@@ -9,7 +9,7 @@ class PojoModule extends TypeModule {
 
   override def isApplicable(javaType: java.lang.reflect.Type): Boolean = true
 
-  override def readType(context: TypeConverter, javaType: java.lang.reflect.Type): Type = {
+  override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): Type = {
 
     val pojoClass = getBaseClass(javaType)
     val fields = pojoClass.getDeclaredFields.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
@@ -17,7 +17,7 @@ class PojoModule extends TypeModule {
     RecordType(ingredients)
   }
 
-  override def toJava(context: TypeConverter, value: Value, javaType: java.lang.reflect.Type): Any = value match {
+  override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): Any = value match {
     case RecordValue(entries) =>
 
       val pojoClass = getBaseClass(javaType)
@@ -51,7 +51,7 @@ class PojoModule extends TypeModule {
       throw new IllegalArgumentException(s"Unsupported value: $value")
   }
 
-  override def fromJava(context: TypeConverter, pojo: Any): Value = {
+  override def fromJava(context: TypeAdapter, pojo: Any): Value = {
     val fields = pojo.getClass.getDeclaredFields.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
     fields.foreach(_.setAccessible(true))
 

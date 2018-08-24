@@ -38,7 +38,7 @@ object Converters {
     case Some(entry) => entry
   }.toMap[Class[_], TypeModule]
 
-  val defaultTypeConverter = new TypeConverter(defaultModules)
+  val defaultTypeConverter = new TypeAdapter(defaultModules)
 
   def readJavaType[T : TypeTag]: Type = readJavaType(createJavaType(mirror.typeOf[T]))
 

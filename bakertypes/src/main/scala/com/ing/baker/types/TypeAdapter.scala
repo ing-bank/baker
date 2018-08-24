@@ -7,7 +7,7 @@ import com.ing.baker.types.modules._
 
 import scala.reflect.runtime.universe
 
-class TypeConverter(private val modules: Map[Class[_], TypeModule]) {
+class TypeAdapter(private val modules: Map[Class[_], TypeModule]) {
 
   private val primitiveModule = new PrimitiveModule()
 
