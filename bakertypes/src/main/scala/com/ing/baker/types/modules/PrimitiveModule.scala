@@ -29,6 +29,7 @@ class PrimitiveModule extends TypeModule {
 
     (value, javaType) match {
       case (p @ PrimitiveValue(obj), clazz: Class[_]) if p.isAssignableTo(clazz) => obj
+      case (NullValue, clazz: Class[_]) if !clazz.isPrimitive => null
       case _ => throw new IllegalArgumentException(s"$value cannot be instantiated as: $javaType")
     }
   }

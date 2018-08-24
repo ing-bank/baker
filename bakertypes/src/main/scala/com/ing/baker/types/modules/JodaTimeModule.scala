@@ -14,6 +14,7 @@ class JodaTimeModule extends TypeModule {
 
   override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): Any =
     (value, javaType) match {
+      case (NullValue, _) => null
       case (PrimitiveValue(millis: Long), clazz: Class[_]) if classOf[DateTime].isAssignableFrom(clazz) =>
         new DateTime(millis)
       case (PrimitiveValue(millis: Long), clazz: Class[_]) if classOf[LocalDateTime].isAssignableFrom(clazz) =>

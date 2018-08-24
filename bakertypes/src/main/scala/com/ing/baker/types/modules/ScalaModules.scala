@@ -15,6 +15,7 @@ object ScalaModules {
     }
 
     override  def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type) = value match {
+      case NullValue => null
       case ListValue(entries) if isApplicable(javaType) =>
         val entryType = getTypeParameter(javaType, 0)
         entries.map(v => context.toJava(v, entryType))
@@ -33,6 +34,7 @@ object ScalaModules {
     }
 
     override  def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type) = value match {
+      case NullValue => null
       case ListValue(entries) if isApplicable(javaType) =>
         val entryType = getTypeParameter(javaType, 0)
         entries.map(v => context.toJava(v, entryType)).toSet
@@ -51,6 +53,7 @@ object ScalaModules {
     }
 
     override  def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type) = value match {
+      case NullValue => null
       case RecordValue(entries) if classOf[Map[_,_]].isAssignableFrom(getBaseClass(javaType)) =>
         val keyType = getTypeParameter(javaType, 0)
 

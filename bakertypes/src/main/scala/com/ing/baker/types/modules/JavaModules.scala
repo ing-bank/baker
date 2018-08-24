@@ -16,7 +16,8 @@ object JavaModules {
       ListType(entryType)
     }
 
-    override  def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type) = value match {
+    override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type) = value match {
+      case NullValue => null
       case ListValue(entries) if isApplicable(javaType) =>
         val entryType = getTypeParameter(javaType, 0)
         val list = new util.ArrayList[Any]()
@@ -40,6 +41,7 @@ object JavaModules {
     }
 
     override  def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type) = value match {
+      case NullValue => null
       case ListValue(entries) if isApplicable(javaType) =>
         val entryType = getTypeParameter(javaType, 0)
         val list = new util.HashSet[Any]()
@@ -62,7 +64,8 @@ object JavaModules {
       MapType(entryType)
     }
 
-    override  def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type) = value match {
+    override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type) = value match {
+      case NullValue => null
       case RecordValue(entries) if classOf[java.util.Map[_,_]].isAssignableFrom(getBaseClass(javaType)) =>
         val keyType = getTypeParameter(javaType, 0)
 
@@ -87,9 +90,7 @@ object JavaModules {
     }
   }
 
-  class OptionalModule extends TypeModule {
-    override def isApplicable(javaType: java.lang.reflect.Type): Boolean =
-      isAssignableToBaseClass(javaType, classOf[java.util.Optional[_]])
+  class OptionalModule extends ClassModule[java.util.Optional[_]] {
 
     override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): Type = javaType match {
       case clazz: ParameterizedType if isAssignableToBaseClass(javaType, classOf[java.util.Optional[_]]) =>

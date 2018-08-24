@@ -46,7 +46,7 @@ class EnumModule extends TypeModule {
   override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): Any = {
 
     (value, javaType) match {
-
+      case (NullValue, _) => null
       case (PrimitiveValue(option: String), clazz: Class[_]) if clazz.isEnum =>
         clazz.asInstanceOf[Class[Enum[_]]].getEnumConstants.find(_.name() == option) match {
           case Some(enumValue) => enumValue

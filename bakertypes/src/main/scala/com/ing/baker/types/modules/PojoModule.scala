@@ -18,6 +18,7 @@ class PojoModule extends TypeModule {
   }
 
   override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): Any = value match {
+    case NullValue => null
     case RecordValue(entries) =>
 
       val pojoClass = getBaseClass(javaType)
