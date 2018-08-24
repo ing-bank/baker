@@ -9,12 +9,7 @@ import scala.collection.JavaConverters._
 
 object JavaModules {
 
-  class ListModule extends TypeModule {
-
-    val baseClass = classOf[java.util.List[_]]
-
-    override def isApplicable(javaType: java.lang.reflect.Type): Boolean =
-      isAssignableToBaseClass(javaType, baseClass)
+  class ListModule extends ClassModule[java.util.List[_]] {
 
     override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type) = {
       val entryType = context.readType(getTypeParameter(javaType, 0))
@@ -37,12 +32,7 @@ object JavaModules {
     }
   }
 
-  class SetModule extends TypeModule {
-
-    val baseClass = classOf[java.util.Set[_]]
-
-    override def isApplicable(javaType: java.lang.reflect.Type): Boolean =
-      isAssignableToBaseClass(javaType, baseClass)
+  class SetModule extends ClassModule[java.util.Set[_]] {
 
     override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type) = {
       val entryType = context.readType(getTypeParameter(javaType, 0))
@@ -65,16 +55,11 @@ object JavaModules {
     }
   }
 
-  class MapModule extends TypeModule {
-
-    val baseClass = classOf[java.util.Map[_,_]]
-
-    override def isApplicable(javaType: java.lang.reflect.Type): Boolean =
-      isAssignableToBaseClass(javaType, baseClass)
+  class MapModule extends ClassModule[java.util.Map[_, _]] {
 
     override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type) = {
       val entryType = context.readType(getTypeParameter(javaType, 0))
-      ListType(entryType)
+      MapType(entryType)
     }
 
     override  def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type) = value match {

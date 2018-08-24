@@ -7,12 +7,7 @@ import com.ing.baker.types._
 
 object ScalaModules {
 
-  class ListModule extends TypeModule {
-
-    val baseClass = classOf[List[_]]
-
-    override def isApplicable(javaType: java.lang.reflect.Type): Boolean =
-      isAssignableToBaseClass(javaType, baseClass)
+  class ListModule extends ClassModule[List[_]] {
 
     override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type) = {
       val entryType = context.readType(getTypeParameter(javaType, 0))
@@ -30,12 +25,7 @@ object ScalaModules {
     }
   }
 
-  class SetModule extends TypeModule {
-
-    val baseClass = classOf[Set[_]]
-
-    override def isApplicable(javaType: java.lang.reflect.Type): Boolean =
-      isAssignableToBaseClass(javaType, baseClass)
+  class SetModule extends ClassModule[Set[_]] {
 
     override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type) = {
       val entryType = context.readType(getTypeParameter(javaType, 0))
@@ -53,12 +43,7 @@ object ScalaModules {
     }
   }
 
-  class MapModule extends TypeModule {
-
-    val baseClass = classOf[Map[_, _]]
-
-    override def isApplicable(javaType: java.lang.reflect.Type): Boolean =
-      isAssignableToBaseClass(javaType, baseClass)
+  class MapModule extends ClassModule[Map[_, _]] {
 
     override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type) = {
       val entryType = context.readType(getTypeParameter(javaType, 0))
@@ -84,9 +69,7 @@ object ScalaModules {
     }
   }
 
-  class OptionModule extends TypeModule {
-    override def isApplicable(javaType: reflect.Type): Boolean =
-      isAssignableToBaseClass(javaType, classOf[Option[_]])
+  class OptionModule extends ClassModule[Option[_]] {
 
     override def readType(context: TypeAdapter, javaType: reflect.Type): Type = javaType match {
       case clazz: ParameterizedType if classOf[scala.Option[_]].isAssignableFrom(getBaseClass(clazz)) =>

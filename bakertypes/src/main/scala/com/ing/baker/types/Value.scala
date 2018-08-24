@@ -30,6 +30,33 @@ sealed trait Value extends Serializable {
     case _ => false
   }
 
+  def validate(t: Type): Option[String] =  (t, this) match {
+
+    case (_, NullValue)                  => None
+    case (expected: PrimitiveType, PrimitiveValue(value)) => primitiveMappings.get(value.getClass) match {
+      case Some(actual) if expected.isAssignableFrom(actual) => None
+      case _ => Some(s"$value is not an instance of $expected")
+    }
+    case (ListType(entryType), ListValue(entries))          =>
+      entries.flatMap(_.validate(entryType)).headOption
+    case (OptionType(entryType), v: Value)                  =>
+      v.validate(entryType)
+    case (EnumType(options), PrimitiveValue(value: String)) =>
+      if (!options.contains(value))
+        Some(s"$value is not a valid option, expected one of: $options")
+      else
+        None
+    case (RecordType(entryTypes), RecordValue(entryValues)) => entryTypes.flatMap { f =>
+      entryValues.get(f.name) match {
+        case None        => Some(s"Missing field: ${f.name}")
+        case Some(value) => value.validate(f.`type`).map(reason => s"Invalid field: ${f.name}: $reason\n")
+      }
+    }.headOption
+    case (MapType(valueType), RecordValue(entries))         =>
+      entries.values.flatMap(_.validate(valueType)).headOption
+    case (otherType, otherValue) => Some(s"${otherValue.getClass} is not an instance of ${otherType.getClass}")
+  }
+
   def as(javaType: java.lang.reflect.Type): Any = Converters.toJava(this, javaType)
 
   def as[T](clazz: Class[T]): T = Converters.toJava(this, clazz).asInstanceOf[T]

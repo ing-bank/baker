@@ -51,7 +51,7 @@ class TypeAdapter(private val modules: Map[Class[_], TypeModule]) {
 
     getOptionalModule(javaType) match {
       case Some(module) => module.toJava(this, value, javaType)
-      case None if value.isNull => NullValue
+      case None if value.isNull => null
       case _ => throw new IllegalStateException(s"No applicable module found for: $javaType")
     }
 

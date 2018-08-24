@@ -28,8 +28,8 @@ class PrimitiveModule extends TypeModule {
   override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): Any = {
 
     (value, javaType) match {
-      case (p@PrimitiveValue(obj), clazz: Class[_]) if p.isAssignableTo(clazz) => obj
-      case _ => throw new IllegalArgumentException(s"Unsupported type: $javaType")
+      case (p @ PrimitiveValue(obj), clazz: Class[_]) if p.isAssignableTo(clazz) => obj
+      case _ => throw new IllegalArgumentException(s"$value cannot be instantiated as: $javaType")
     }
   }
 }

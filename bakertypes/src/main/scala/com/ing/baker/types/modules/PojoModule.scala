@@ -40,7 +40,7 @@ class PojoModule extends TypeModule {
             f.setAccessible(true)
             f.set(pojoInstance, value)
           } catch {
-            case e: Exception => throw new IllegalStateException(s"Failed to convert field '${f.getName}' to type: $fieldType", e)
+            case e: Exception => throw new IllegalStateException(s"Failed parse field '${f.getName}' as type: $fieldType", e)
           }
         }
       }
