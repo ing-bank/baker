@@ -14,10 +14,14 @@ sealed trait Type {
 
       case (a, b) if a == b => true
 
-      case (Int64, Int32) => true
-      case (Float64, Float32) => true
-      case (IntBig, Int32 | Int64) => true
-      case (FloatBig, Float32 | Float64) => true
+      case (Byte, Byte) => true
+      case (Int16, Int16) => true
+      case (Int32, Int32 | Int16) => true
+      case (Int64, Int64 | Int32 | Int16) => true
+      case (IntBig, IntBig | Int64 | Int32 | Int16) => true
+      case (Float32, Float32) => true
+      case (Float64, Float64 | Float32) => true
+      case (FloatBig, FloatBig | Float32 | Float64) => true
 
       case (OptionType(entryTypeA), OptionType(entryTypeB)) =>
         entryTypeA.isAssignableFrom(entryTypeB)

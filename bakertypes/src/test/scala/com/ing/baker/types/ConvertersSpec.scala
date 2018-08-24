@@ -67,12 +67,22 @@ class ConvertersSpec extends WordSpecLike with Matchers {
       }
     }
 
-    "be able to autobox scala Option objects" in {
+    "be able to autobox null values to scala Options" in {
+
+      toJava[Option[Int]](NullValue) shouldBe None
+    }
+
+    "be able to autobox null values to java Optionals" in {
+
+      toJava[Optional[Int]](NullValue) shouldBe Optional.empty
+    }
+
+    "be able to autobox primitive values to scala Options" in {
 
       toJava[Option[Int]](PrimitiveValue(42)) shouldBe Some(42)
     }
 
-    "be able to autobox java Optional objects" in {
+    "be able to autobox primitive values to java Optionals" in {
 
       toJava[Optional[Int]](PrimitiveValue(42)) shouldBe Optional.of(42)
     }

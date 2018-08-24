@@ -7,10 +7,6 @@ package object types {
 
   val isoDateTimeFormatter: DateTimeFormatter = ISODateTimeFormat.dateTime
 
-  implicit class AsValueAddition(obj: Any) {
-    def toValue: Value = Converters.toValue(obj)
-  }
-
   val javaPrimitiveMappings: Map[Class[_], Class[_]] = Map(
     classOf[java.lang.Boolean]   -> java.lang.Boolean.TYPE,
     classOf[java.lang.Byte]      -> java.lang.Byte.TYPE,
@@ -51,9 +47,9 @@ package object types {
     classOf[java.math.BigInteger],
     classOf[BigDecimal],
     classOf[BigInt],
-    classOf[org.joda.time.DateTime],
-    classOf[org.joda.time.LocalDate],
-    classOf[org.joda.time.LocalDateTime],
+//    classOf[org.joda.time.DateTime],
+//    classOf[org.joda.time.LocalDate],
+//    classOf[org.joda.time.LocalDateTime],
     classOf[Array[Byte]]
   ) ++ javaPrimitiveMappings.keys ++ javaPrimitiveMappings.values
 

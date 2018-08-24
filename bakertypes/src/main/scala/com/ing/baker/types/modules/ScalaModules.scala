@@ -1,14 +1,12 @@
 package com.ing.baker.types.modules
 
+import java.lang.reflect
 import java.lang.reflect.ParameterizedType
-import java.util
 
-import com.ing.baker.types.Converters.{getBaseClass, isAssignableToBaseClass}
-import com.ing.baker.types.{ListType, ListValue, RecordValue, TypeConverter, TypeModule, Value}
+import com.ing.baker.types.Converters._
+import com.ing.baker.types._
 
-import scala.collection.JavaConverters._
-
-object JavaCollections {
+object ScalaModules {
 
   def getTypeParameter(javaType: java.lang.reflect.Type, index: Int): java.lang.reflect.Type = {
     javaType.asInstanceOf[ParameterizedType].getActualTypeArguments()(index)
@@ -16,7 +14,7 @@ object JavaCollections {
 
   class ListModule extends TypeModule {
 
-    val baseClass = classOf[java.util.List[_]]
+    val baseClass = classOf[List[_]]
 
     override def isApplicable(javaType: java.lang.reflect.Type): Boolean =
       isAssignableToBaseClass(javaType, baseClass)
@@ -29,22 +27,17 @@ object JavaCollections {
     override  def toJava(context: TypeConverter, value: Value, javaType: java.lang.reflect.Type) = value match {
       case ListValue(entries) if isApplicable(javaType) =>
         val entryType = getTypeParameter(javaType, 0)
-        val list = new util.ArrayList[Any]()
-        entries.foreach { e =>
-          val value = context.toJava(e, entryType)
-          list.add(value)
-        }
-        list
+        entries.map(v => context.toJava(v, entryType))
     }
 
     def fromJava(context: TypeConverter, obj: Any): Value = obj match {
-      case list: java.util.List[_] => ListValue(list.asScala.toList.map(context.fromJava))
+      case list: List[_] => ListValue(list.toList.map(context.fromJava))
     }
   }
 
   class SetModule extends TypeModule {
 
-    val baseClass = classOf[java.util.Set[_]]
+    val baseClass = classOf[Set[_]]
 
     override def isApplicable(javaType: java.lang.reflect.Type): Boolean =
       isAssignableToBaseClass(javaType, baseClass)
@@ -57,22 +50,17 @@ object JavaCollections {
     override  def toJava(context: TypeConverter, value: Value, javaType: java.lang.reflect.Type) = value match {
       case ListValue(entries) if isApplicable(javaType) =>
         val entryType = getTypeParameter(javaType, 0)
-        val list = new util.HashSet[Any]()
-        entries.foreach { e =>
-          val value = context.toJava(e, entryType)
-          list.add(value)
-        }
-        list
+        entries.map(v => context.toJava(v, entryType)).toSet
     }
 
     def fromJava(context: TypeConverter, obj: Any): Value = obj match {
-      case set: java.util.Set[_] => ListValue(set.asScala.toList.map(context.fromJava))
+      case set: Set[_] => ListValue(set.toList.map(context.fromJava))
     }
   }
 
   class MapModule extends TypeModule {
 
-    val baseClass = classOf[java.util.Map[_,_]]
+    val baseClass = classOf[Map[_, _]]
 
     override def isApplicable(javaType: java.lang.reflect.Type): Boolean =
       isAssignableToBaseClass(javaType, baseClass)
@@ -83,7 +71,7 @@ object JavaCollections {
     }
 
     override  def toJava(context: TypeConverter, value: Value, javaType: java.lang.reflect.Type) = value match {
-      case RecordValue(entries) if classOf[java.util.Map[_,_]].isAssignableFrom(getBaseClass(javaType)) =>
+      case RecordValue(entries) if classOf[Map[_,_]].isAssignableFrom(getBaseClass(javaType)) =>
         val keyType = getTypeParameter(javaType, 0)
 
         if (keyType != classOf[String])
@@ -91,21 +79,45 @@ object JavaCollections {
 
         val valueType = getTypeParameter(javaType, 1)
 
-        val javaMap: java.util.Map[String, Any] = new util.HashMap[String, Any]()
-
-        entries.foreach { case (name, value) => javaMap.put(name, context.toJava(value, valueType)) }
-
-        javaMap
+        entries.mapValues { value => context.toJava(value, valueType) }
     }
 
     def fromJava(context: TypeConverter, obj: Any): Value = obj match {
-      case map: java.util.Map[_, _] =>
-        val entries: Map[String, Value] = map.entrySet().iterator().asScala.map {
-          e => e.getKey.asInstanceOf[String] -> context.fromJava(e.getValue)
-        }.toMap
+      case map: Map[_, _] =>
+        val entries: Map[String, Value] = map.map { case (key, obj) => key.asInstanceOf[String] -> context.fromJava(obj) }.toMap
         RecordValue(entries)
     }
   }
+
+  class OptionModule extends TypeModule {
+    override def isApplicable(javaType: reflect.Type): Boolean =
+      isAssignableToBaseClass(javaType, classOf[Option[_]])
+
+    override def readType(context: TypeConverter, javaType: reflect.Type): Type = javaType match {
+      case clazz: ParameterizedType if classOf[scala.Option[_]].isAssignableFrom(getBaseClass(clazz)) =>
+        val entryType = context.readType(clazz.getActualTypeArguments()(0))
+        OptionType(entryType)
+    }
+
+    override def toJava(context: TypeConverter, value: Value, javaType: reflect.Type): Any = (value, javaType) match {
+      case (_, generic: ParameterizedType) if classOf[Option[_]].isAssignableFrom(getBaseClass(generic.getRawType)) =>
+        val optionType = generic.getActualTypeArguments()(0)
+        value match {
+          case NullValue =>
+            None
+          case _ =>
+            val optionValue = context.toJava(value, optionType)
+            Some(optionValue)
+        }
+    }
+
+    override def fromJava(context: TypeConverter, obj: Any): Value = obj match {
+      case None      => NullValue
+      case Some(obj) => context.fromJava(obj)
+      case _ => throw new IllegalArgumentException(s"Unsupported object: $obj")
+    }
+  }
 }
+
 
 

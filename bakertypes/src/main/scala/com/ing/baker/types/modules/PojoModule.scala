@@ -7,7 +7,7 @@ import org.objenesis.ObjenesisStd
 
 class PojoModule extends TypeModule {
 
-  override def isApplicable(javaType: java.lang.reflect.Type): Boolean = ???
+  override def isApplicable(javaType: java.lang.reflect.Type): Boolean = true
 
   override def readType(context: TypeConverter, javaType: java.lang.reflect.Type): Type = {
 
