@@ -1,11 +1,47 @@
 package com.ing.baker
 
+import java.lang.reflect.ParameterizedType
+
+import scala.reflect.runtime.universe
+
 package object types {
 
-  import org.joda.time.format.DateTimeFormatter
-  import org.joda.time.format.ISODateTimeFormat
+  val mirror: universe.Mirror = universe.runtimeMirror(classOf[Value].getClassLoader)
 
-  val isoDateTimeFormatter: DateTimeFormatter = ISODateTimeFormat.dateTime
+  /**
+    * Attempts to return the 'raw' or base class of a type. For example:
+    *
+    * String           -> String
+    * List[String]     -> List
+    * Map[String, Int] -> Map
+    */
+  def getBaseClass(javaType: java.lang.reflect.Type): Class[_] = javaType match {
+    case c: Class[_] => c
+    case t: ParameterizedType => getBaseClass(t.getRawType)
+    case t @ _ => throw new IllegalArgumentException(s"Unsupported type: $javaType")
+  }
+
+  def getTypeParameter(javaType: java.lang.reflect.Type, index: Int): java.lang.reflect.Type = {
+    javaType.asInstanceOf[ParameterizedType].getActualTypeArguments()(index)
+  }
+
+  def isAssignableToBaseClass(javaType: java.lang.reflect.Type, base: Class[_]) = base.isAssignableFrom(getBaseClass(javaType))
+
+  def createJavaType(paramType: universe.Type): java.lang.reflect.Type = {
+    val typeConstructor = mirror.runtimeClass(paramType)
+    val innerTypes = paramType.typeArgs.map(createJavaType).toArray
+
+    if (innerTypes.isEmpty) {
+      typeConstructor
+    } else {
+      new java.lang.reflect.ParameterizedType {
+        override def getRawType: java.lang.reflect.Type = typeConstructor
+        override def getActualTypeArguments: Array[java.lang.reflect.Type] = innerTypes
+        override def getOwnerType: java.lang.reflect.Type = null
+        override def toString() = s"ParameterizedType: $typeConstructor[${getActualTypeArguments.mkString(",")}]"
+      }
+    }
+  }
 
   val javaPrimitiveMappings: Map[Class[_], Class[_]] = Map(
     classOf[java.lang.Boolean]   -> java.lang.Boolean.TYPE,

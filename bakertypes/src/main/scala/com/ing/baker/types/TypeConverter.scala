@@ -2,28 +2,14 @@ package com.ing.baker.types
 
 import java.lang.reflect.ParameterizedType
 
-import com.ing.baker.types.Converters.{createJavaType, mirror, readJavaType}
+import com.ing.baker.types.Converters.readJavaType
 import com.ing.baker.types.modules._
 
 import scala.reflect.runtime.universe
 
-class TypeConverter {
+class TypeConverter(private val modules: Map[Class[_], TypeModule]) {
 
   private val primitiveModule = new PrimitiveModule()
-
-  private val modules: Map[Class[_], TypeModule] = Map(
-
-    classOf[java.util.List[_]] -> new JavaModules.ListModule(),
-    classOf[java.util.Set[_]] -> new JavaModules.SetModule(),
-    classOf[java.util.Map[_,_]] -> new JavaModules.MapModule(),
-    classOf[java.util.Optional[_]] -> new JavaModules.OptionalModule(),
-    classOf[List[_]] -> new ScalaModules.ListModule(),
-    classOf[Set[_]] -> new ScalaModules.SetModule(),
-    classOf[Map[_,_]] -> new ScalaModules.MapModule(),
-    classOf[Option[_]] -> new ScalaModules.OptionModule(),
-    classOf[java.lang.Enum[_]] -> new EnumModule(),
-    classOf[AnyRef] -> new PojoModule()
-  )
 
   /**
     * @param javaType
@@ -33,7 +19,7 @@ class TypeConverter {
 
     val clazz: Class[_] = javaType match {
       case c: Class[_] => c
-      case genericType: ParameterizedType => Converters.getBaseClass(genericType)
+      case genericType: ParameterizedType => getBaseClass(genericType)
       case _ => throw new IllegalArgumentException(s"Incompatible type: $javaType")
     }
 
@@ -71,7 +57,7 @@ class TypeConverter {
 
   def toJava[T : universe.TypeTag](value: Value): T = toJava(value, createJavaType(universe.typeOf[T])).asInstanceOf[T]
 
-  def readType[T : universe.TypeTag]: Type = readJavaType(Converters.createJavaType(mirror.typeOf[T]))
+  def readType[T : universe.TypeTag]: Type = readJavaType(createJavaType(mirror.typeOf[T]))
 
   def fromJava(obj: Any): Value = {
 

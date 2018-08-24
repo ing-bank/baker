@@ -3,16 +3,11 @@ package com.ing.baker.types.modules
 import java.lang.reflect.ParameterizedType
 import java.util
 
-import com.ing.baker.types.Converters.{getBaseClass, isAssignableToBaseClass}
 import com.ing.baker.types._
 
 import scala.collection.JavaConverters._
 
 object JavaModules {
-
-  def getTypeParameter(javaType: java.lang.reflect.Type, index: Int): java.lang.reflect.Type = {
-    javaType.asInstanceOf[ParameterizedType].getActualTypeArguments()(index)
-  }
 
   class ListModule extends TypeModule {
 

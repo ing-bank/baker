@@ -3,8 +3,7 @@ package com.ing.baker.types.modules
 import java.lang.reflect.ParameterizedType
 
 import com.ing.baker.types
-import com.ing.baker.types.Converters.getBaseClass
-import com.ing.baker.types.{PrimitiveValue, Type, TypeConverter, TypeModule, Value, primitiveMappings}
+import com.ing.baker.types._
 
 class PrimitiveModule extends TypeModule {
 

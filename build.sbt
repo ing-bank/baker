@@ -70,6 +70,7 @@ lazy val bakertypes = project.in(file("bakertypes"))
     moduleName := "baker-types",
     libraryDependencies ++= compileDeps(
       slf4jApi,
+      ficusConfig,
       objenisis,
       jodaTime,
       scalaReflect(scalaVersion.value)
