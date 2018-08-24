@@ -15,7 +15,7 @@ import com.ing.baker.runtime.core
 import com.ing.baker.types.Value
 import com.ing.baker.{il, types}
 import org.joda.time.format.ISODateTimeFormat
-import org.joda.time.{LocalDate, LocalDateTime}
+import org.joda.time.{LocalDate, LocalDateTime, LocalTime}
 import scalapb.GeneratedMessage
 import scalax.collection.edge.WLDiEdge
 
@@ -258,9 +258,6 @@ trait ProtoEventAdapter {
         case types.PrimitiveValue(value: BigInt) => protobuf.Value(protobuf.Value.OneofValue.BigIntScalaValue(value.toString()))
         case types.PrimitiveValue(value: java.math.BigInteger) => protobuf.Value(protobuf.Value.OneofValue.BigIntJavaValue(BigInt(value).toString()))
         case types.PrimitiveValue(value: Array[Byte]) => protobuf.Value(protobuf.Value.OneofValue.ByteArrayValue(ByteString.copyFrom(value)))
-        case types.PrimitiveValue(value: org.joda.time.DateTime) => protobuf.Value(protobuf.Value.OneofValue.JodaDatetimeValue(ISODateTimeFormat.dateTime().print(value)))
-        case types.PrimitiveValue(value: org.joda.time.LocalDate) => protobuf.Value(protobuf.Value.OneofValue.JodaLocaldateValue(value.toString))
-        case types.PrimitiveValue(value: org.joda.time.LocalDateTime) => protobuf.Value(protobuf.Value.OneofValue.JodaLocaldatetimeValue(value.toString))
         case types.PrimitiveValue(value) => throw new IllegalStateException(s"Unknown primitive value of type: ${value.getClass}")
         case types.RecordValue(entries) => protobuf.Value(protobuf.Value.OneofValue.RecordValue(protobuf.Record(entries.mapValues(toProtoType[protobuf.Value]))))
         case types.ListValue(entries) => protobuf.Value(protobuf.Value.OneofValue.ListValue(protobuf.List(entries.map(toProtoType[protobuf.Value]))))
@@ -420,11 +417,20 @@ trait ProtoEventAdapter {
           case OneofValue.BigIntScalaValue(bigint) => types.PrimitiveValue(BigInt(bigint))
           case OneofValue.BigIntJavaValue(bigint) => types.PrimitiveValue(BigInt(bigint).bigInteger)
           case OneofValue.ByteArrayValue(byteArray) => types.PrimitiveValue(byteArray.toByteArray)
-          case OneofValue.JodaDatetimeValue(date) => types.PrimitiveValue(ISODateTimeFormat.dateTime().parseDateTime(date))
-          case OneofValue.JodaLocaldateValue(date) => types.PrimitiveValue(LocalDate.parse(date))
-          case OneofValue.JodaLocaldatetimeValue(date) => types.PrimitiveValue(LocalDateTime.parse(date))
           case OneofValue.RecordValue(Record(fields)) => types.RecordValue(fields.mapValues(toDomainType[types.Value]))
+
+          // deprecated fields
           case OneofValue.ListValue(List(entries)) => types.ListValue(entries.map(toDomainType[types.Value]).toList)
+          case OneofValue.JodaDatetimeValue(date) =>
+            val dateTime = ISODateTimeFormat.dateTime().parseDateTime(date)
+            types.PrimitiveValue(dateTime.getMillis)
+          case OneofValue.JodaLocaldateValue(date) =>
+            val localDate = LocalDate.parse(date)
+            types.PrimitiveValue(localDate.toDateTime(LocalTime.MIDNIGHT).getMillis)
+          case OneofValue.JodaLocaldatetimeValue(date) =>
+            val localDateTime = LocalDateTime.parse(date)
+            types.PrimitiveValue(localDateTime.toDateTime.getMillis)
+
           case OneofValue.Empty => throw new IllegalStateException("Empty value cannot be deserialized")
         }
 
