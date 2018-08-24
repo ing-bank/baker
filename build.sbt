@@ -74,7 +74,7 @@ lazy val bakertypes = project.in(file("bakertypes"))
       objenisis,
       jodaTime,
       scalaReflect(scalaVersion.value)
-    ) ++ testDeps(scalaTest, scalaCheck, logback)
+    ) ++ testDeps(scalaTest, scalaCheck, logback, scalaCheck)
   )
 
 lazy val intermediateLanguage = project.in(file("intermediate-language"))

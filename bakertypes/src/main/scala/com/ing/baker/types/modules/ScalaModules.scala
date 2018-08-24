@@ -26,7 +26,7 @@ object ScalaModules {
     }
 
     def fromJava(context: TypeAdapter, obj: Any): Value = obj match {
-      case list: List[_] => ListValue(list.toList.map(context.fromJava))
+      case list: List[_] => ListValue(list.map(context.fromJava))
     }
   }
 
