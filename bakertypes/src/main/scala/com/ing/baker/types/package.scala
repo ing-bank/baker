@@ -83,9 +83,6 @@ package object types {
     classOf[java.math.BigInteger],
     classOf[BigDecimal],
     classOf[BigInt],
-//    classOf[org.joda.time.DateTime],
-//    classOf[org.joda.time.LocalDate],
-//    classOf[org.joda.time.LocalDateTime],
     classOf[Array[Byte]]
   ) ++ javaPrimitiveMappings.keys ++ javaPrimitiveMappings.values
 
