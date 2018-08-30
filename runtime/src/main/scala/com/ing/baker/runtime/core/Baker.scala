@@ -409,22 +409,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   /**
     * Attempts to gracefully shutdown the baker system.
     */
-  def shutdown(timeout: FiniteDuration = defaultShutdownTimeout): Unit = {
-    Try {
-      Cluster.get(actorSystem)
-    } match {
-      case Success(cluster) if cluster.state.members.exists(_.uniqueAddress == cluster.selfUniqueAddress) =>
-        cluster.registerOnMemberRemoved {
-          actorSystem.terminate()
-        }
-        implicit val akkaTimeout = Timeout(timeout)
-        Util.handOverShardsAndLeaveCluster(Seq("ProcessIndexActor"))
-      case Success(_) =>
-        log.debug("ActorSystem not a member of cluster")
-        actorSystem.terminate()
-      case Failure(exception) =>
-        log.debug("Cluster not available for actor system", exception)
-        actorSystem.terminate()
-    }
-  }
+  def shutdown(timeout: FiniteDuration = defaultShutdownTimeout): Unit =
+    GracefulShutdown.gracefulShutdownActorSystem(actorSystem, timeout)
 }

@@ -3,20 +3,18 @@ package com.ing.baker.runtime.actor
 import java.util.UUID
 
 import akka.actor.{ActorLogging, ActorSystem, PoisonPill, Props}
-import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.PersistentActor
 import akka.util.Timeout
 import com.ing.baker.il.petrinet
-import com.ing.baker.il.petrinet._
+import com.ing.baker.il.petrinet.{Place, RecipePetriNet, Transition}
 import com.ing.baker.petrinet.runtime.PetriNetRuntime
-import com.ing.baker.runtime.actor.GracefulShutdownActor.Leave
 import com.ing.baker.runtime.actor.process_instance.ProcessInstance
 import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
-import com.ing.baker.runtime.core._
+import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
 
 object Util {
 
@@ -29,17 +27,6 @@ object Util {
       petrinet.placeIdentifier,
       petrinet.transitionIdentifier)
     )
-
-  def handOverShardsAndLeaveCluster(typeNames: Seq[String])(implicit timeout: Timeout, actorSystem: ActorSystem): Unit = {
-
-    // first hand over the shards
-    val actor = actorSystem.actorOf(GracefulShutdownActor.props(timeout.duration, typeNames))
-    Await.result(actor.ask(Leave), timeout.duration)
-
-    // then leave the cluster
-    val cluster = Cluster.get(actorSystem)
-    cluster.leave(cluster.selfAddress)
-  }
 
   case object Ping extends InternalBakerMessage
   case object Pong extends InternalBakerMessage
