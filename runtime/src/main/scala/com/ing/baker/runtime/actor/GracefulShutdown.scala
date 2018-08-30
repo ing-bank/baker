@@ -13,7 +13,7 @@ import scala.util.{Failure, Success, Try}
 
 object GracefulShutdown {
 
-  val log = LoggerFactory.getLogger("com.ing.baker.runtime.GracefulShutdown")
+  val log = LoggerFactory.getLogger("com.ing.baker.runtime.actor.GracefulShutdown")
 
   def gracefulShutdownActorSystem(actorSystem: ActorSystem, timeout: FiniteDuration) = {
 
