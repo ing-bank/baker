@@ -293,7 +293,7 @@ object RecipeCompiler {
 
     val errors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors
 
-    val recipeId = this.getMD5((recipe.name, petriNet, initialMarking, errors, recipe.eventReceivePeriod, recipe.retentionPeriod))
+    val recipeId = this.generateMD5((recipe.name, petriNet, initialMarking, errors, recipe.eventReceivePeriod, recipe.retentionPeriod))
 
     val compiledRecipe = CompiledRecipe(
       name = recipe.name,
@@ -308,7 +308,7 @@ object RecipeCompiler {
     postCompileValidations(compiledRecipe, validationSettings)
   }
 
-  private def getMD5(obj: Object): String = {
+  private def generateMD5(obj: Object): String = {
     import java.security.MessageDigest
     val md = MessageDigest.getInstance("MD5")
     val stream = new ByteArrayOutputStream()
