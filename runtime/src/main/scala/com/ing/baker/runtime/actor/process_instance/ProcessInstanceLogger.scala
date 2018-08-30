@@ -1,10 +1,9 @@
 package com.ing.baker.runtime.actor.process_instance
 
-import akka.event.Logging.LogLevel
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 
-import scala.collection.JavaConverters._
 import scala.concurrent.duration._
+import com.ing.baker.runtime.actor.Util.logging._
 
 object ProcessInstanceLogger {
 
@@ -25,6 +24,27 @@ object ProcessInstanceLogger {
 
   implicit class LoggingAdapterFns(log: DiagnosticLoggingAdapter) {
 
+    def processHistoryDeletionSuccessful(processId: String, toSequenceNr: Long) = {
+      val msg = s"Process history successfully deleted (up to event sequence $toSequenceNr), stopping the actor"
+
+      val mdc = Map(
+        "processId" -> processId
+      )
+
+      log.logWithMDC(Logging.DebugLevel, msg, mdc)
+    }
+
+
+    def processHistoryDeletionFailed(processId: String, toSequenceNr: Long, cause: Throwable) = {
+      val msg = s"Process events are requested to be deleted up to $toSequenceNr sequence number, but delete operation failed."
+
+      val mdc = Map(
+        "processId" -> processId
+      )
+
+      log.errorWithMDC(msg, mdc, cause)
+    }
+
     def transitionFired(processId: String, transitionId: String, jobId: Long, timeStarted: Long, timeCompleted: Long) = {
 
       val mdc = Map(
@@ -39,7 +59,7 @@ object ProcessInstanceLogger {
 
       val msg = s"Transition '$transitionId' successfully fired"
 
-      logWithMDC(Logging.DebugLevel, msg, mdc)
+      log.logWithMDC(Logging.DebugLevel, msg, mdc)
     }
 
     def transitionFailed(processId: String, transitionId: String, jobId: Long, timeStarted: Long, timeFailed: Long, failureReason: String) {
@@ -55,7 +75,7 @@ object ProcessInstanceLogger {
 
       val msg = s"Transition '$transitionId' failed with: $failureReason"
 
-      logWithMDC(Logging.ErrorLevel, msg, mdc)
+      log.logWithMDC(Logging.ErrorLevel, msg, mdc)
     }
 
     def firingTransition(processId: String, jobId: Long, transitionId: String, timeStarted: Long): Unit = {
@@ -68,14 +88,14 @@ object ProcessInstanceLogger {
       )
       val msg = s"Firing transition $transitionId"
 
-      logWithMDC(Logging.DebugLevel, msg, mdc)
+      log.logWithMDC(Logging.DebugLevel, msg, mdc)
     }
 
     def idleStop(processId: String, idleTTL: FiniteDuration)  {
       val mdc = Map("processId" -> processId)
       val msg = s"Instance was idle for $idleTTL, stopping the actor"
 
-      logWithMDC(Logging.DebugLevel, msg, mdc)
+      log.logWithMDC(Logging.DebugLevel, msg, mdc)
     }
 
     def fireTransitionRejected(processId: String, transitionId: String, rejectReason: String) {
@@ -87,9 +107,8 @@ object ProcessInstanceLogger {
 
       val msg = s"Not Firing Transition '$transitionId' because: $rejectReason"
 
-      logWithMDC(Logging.WarningLevel, msg, mdc)
+      log.logWithMDC(Logging.WarningLevel, msg, mdc)
     }
-
 
     def scheduleRetry(processId: String, transitionId: String, delay: Long) {
       val mdc = Map(
@@ -99,16 +118,7 @@ object ProcessInstanceLogger {
 
       val msg = s"Scheduling a retry of transition '$transitionId' in ${durationFormatter.print(new org.joda.time.Period(delay))}"
 
-      logWithMDC(Logging.InfoLevel, msg, mdc)
-    }
-
-    def logWithMDC(level: LogLevel, msg: String, mdc: Map[String, Any]) = {
-      try {
-        log.setMDC(mdc.asJava)
-        log.log(level, msg)
-      } finally {
-        log.clearMDC()
-      }
+      log.logWithMDC(Logging.InfoLevel, msg, mdc)
     }
   }
 }

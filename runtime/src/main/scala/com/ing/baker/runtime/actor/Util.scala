@@ -6,6 +6,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.{ActorLogging, ActorSystem, PoisonPill, Props}
 import akka.cluster.Cluster
+import akka.event.DiagnosticLoggingAdapter
+import akka.event.Logging.LogLevel
 import akka.pattern.ask
 import akka.persistence.PersistentActor
 import akka.util.Timeout
@@ -96,5 +98,30 @@ object Util {
     }
 
     Await.result(promise.future, timeout + sequenceTimeoutExtra)
+  }
+
+  object logging {
+
+    implicit class DiagnosticLoggingAdapterFns(log: DiagnosticLoggingAdapter) {
+
+      def errorWithMDC(msg: String, mdc: Map[String, Any], cause: Throwable) = {
+        try {
+          log.setMDC(mdc.asJava)
+          log.error(cause, msg)
+        } finally {
+          log.clearMDC()
+        }
+      }
+
+      def logWithMDC(level: LogLevel, msg: String, mdc: Map[String, Any]) = {
+        try {
+          log.setMDC(mdc.asJava)
+          log.log(level, msg)
+        } finally {
+          log.clearMDC()
+        }
+      }
+    }
+
   }
 }
