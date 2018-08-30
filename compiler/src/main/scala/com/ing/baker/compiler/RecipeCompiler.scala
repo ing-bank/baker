@@ -1,6 +1,8 @@
 package com.ing.baker
 package compiler
 
+import java.io.{ByteArrayOutputStream, ObjectOutputStream}
+
 import com.ing.baker.il.RecipeValidations.postCompileValidations
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
@@ -219,7 +221,7 @@ object RecipeCompiler {
       }
     )
 
-    def findEventTransitionByEventName (eventName: String) = allEventTransitions.find(_.event.name == eventName)
+    def findEventTransitionByEventName(eventName: String) = allEventTransitions.find(_.event.name == eventName)
 
     def findInteractionByLabel(label: String) = allInteractionTransitions.find(_.label == label)
 
@@ -291,7 +293,7 @@ object RecipeCompiler {
 
     val errors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors
 
-    val recipeId = (recipe.name, petriNet, initialMarking, errors, recipe.eventReceivePeriod, recipe.retentionPeriod).hashCode().toString
+    val recipeId = this.getMD5((recipe.name, petriNet, initialMarking, errors, recipe.eventReceivePeriod, recipe.retentionPeriod))
 
     val compiledRecipe = CompiledRecipe(
       name = recipe.name,
@@ -304,6 +306,24 @@ object RecipeCompiler {
     )
 
     postCompileValidations(compiledRecipe, validationSettings)
+  }
+
+  private def getMD5(obj: Object): String = {
+    import java.security.MessageDigest
+    val md = MessageDigest.getInstance("MD5")
+    val stream = new ByteArrayOutputStream()
+    val objectOutputStream = new ObjectOutputStream(stream)
+    try {
+      val hash = md.digest(stream.toByteArray)
+      hash.map(byte => Integer.toHexString(0xFF & byte))
+        .map(str => str.length() match {
+          case 1 => "0" + str
+          case _ => str
+        }).mkString
+    } finally {
+      objectOutputStream.close()
+      stream.close()
+    }
   }
 
   def compileRecipe(recipe: Recipe): CompiledRecipe = compileRecipe(recipe, ValidationSettings.defaultValidationSettings)
