@@ -5,29 +5,16 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.{ActorLogging, ActorSystem, PoisonPill, Props}
-import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.PersistentActor
 import akka.util.Timeout
-import com.ing.baker.runtime.actor.GracefulShutdownActor.Leave
 
 import scala.collection.JavaConverters._
-import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.concurrent._
+import scala.concurrent.duration.{FiniteDuration, _}
 import scala.util.{Failure, Success}
 
 object Util {
-
-  def handOverShardsAndLeaveCluster(typeNames: Seq[String])(implicit timeout: Timeout, actorSystem: ActorSystem): Unit = {
-
-    // first hand over the shards
-    val actor = actorSystem.actorOf(GracefulShutdownActor.props(timeout.duration, typeNames))
-    Await.result(actor.ask(Leave), timeout.duration)
-
-    // then leave the cluster
-    val cluster = Cluster.get(actorSystem)
-    cluster.leave(cluster.selfAddress)
-  }
 
   case object Ping extends InternalBakerMessage
   case object Pong extends InternalBakerMessage
@@ -53,9 +40,9 @@ object Util {
   // Executes the given function 'executeAfterInit' only after PersistenceInit actor initialises and returns response
   def persistenceInit(journalInitializeTimeout: FiniteDuration)(implicit system: ActorSystem): Future[Unit] = {
 
-    val persistenceInitActor = system.actorOf(Props(classOf[AwaitPersistenceInit]), s"persistenceInit-${UUID.randomUUID().toString}")
-
     import system.dispatcher
+
+    val persistenceInitActor = system.actorOf(Props(classOf[AwaitPersistenceInit]), s"persistenceInit-${UUID.randomUUID().toString}")
 
     persistenceInitActor.ask(Ping)(Timeout(journalInitializeTimeout)).map(_ => ())
   }
