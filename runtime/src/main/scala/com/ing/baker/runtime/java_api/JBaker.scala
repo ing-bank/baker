@@ -51,13 +51,13 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @param timeout The time to wait for the shard handover.
     */
   @throws[TimeoutException]("When the Baker does not shut down within the given deadline")
-  def shutdown(timeout: java.time.Duration): Unit = baker.shutdown(Duration(timeout.toMillis, TimeUnit.MILLISECONDS))
+  def gracefulShutdown(timeout: java.time.Duration): Unit = baker.gracefulShutdown(Duration(timeout.toMillis, TimeUnit.MILLISECONDS))
 
   /**
     * Attempts to gracefully shutdown the baker system.
     */
   @throws[TimeoutException]("When the Baker does not shut down within the given deadline")
-  def shutdown(): Unit = baker.shutdown()
+  def gracefulShutdown(): Unit = baker.gracefulShutdown()
 
   /**
     * This bakes (creates) a new process instance of the recipe.
