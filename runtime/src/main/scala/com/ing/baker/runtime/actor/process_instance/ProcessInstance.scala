@@ -96,10 +96,12 @@ class ProcessInstance[P[_], T, S, E](processType: String,
 
   def waitForDeleteConfirmation(instance: Instance[P, T, S]): Receive = {
     case DeleteMessagesSuccess(toSequenceNr) =>
-      log.debug(s"Process history successfully deleted (up to event sequence $toSequenceNr), stopping the actor")
+
+      log.processHistoryDeletionSuccessful(processId, toSequenceNr)
+
       context.stop(context.self)
     case DeleteMessagesFailure(cause, toSequenceNr) =>
-      log.error(cause, s"Process events are requested to be deleted up to $toSequenceNr sequence number, but delete operation failed.")
+      log.processHistoryDeletionFailed(processId, toSequenceNr, cause)
       context become running(instance, Map.empty)
   }
 

@@ -1,13 +1,15 @@
 package com.ing.baker.runtime.actor.process_index
 
-import akka.actor.{ActorLogging, ActorRef, Props, Terminated}
+import akka.actor.{ActorRef, Props, Terminated}
+import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.pattern.{ask, pipe}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.stream.scaladsl.{Source, StreamRefs}
 import akka.stream.{Materializer, StreamRefAttributes}
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.{Place, RecipePetriNet, Transition}
-import com.ing.baker.il.{CompiledRecipe, petrinet}
 import com.ing.baker.petrinet.runtime.{PetriNetRuntime, namedCachedThreadPool}
+import com.ing.baker.runtime.actor.Util.logging._
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
@@ -46,7 +48,10 @@ object ProcessIndex {
   //The process was deleted
   case object Deleted extends ProcessStatus
 
-  case class ActorMetadata(recipeId: String, processId: String, createdDateTime: Long, processStatus: ProcessStatus)
+  case class ActorMetadata(recipeId: String, processId: String, createdDateTime: Long, processStatus: ProcessStatus) {
+
+    def isDeleted: Boolean = processStatus == Deleted
+  }
 
   // --- Events
 
@@ -79,7 +84,9 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
                    processIdleTimeout: Option[FiniteDuration],
                    configuredEncryption: Encryption,
                    interactionManager: InteractionManager,
-                   recipeManager: ActorRef)(implicit materializer: Materializer) extends PersistentActor with ActorLogging {
+                   recipeManager: ActorRef)(implicit materializer: Materializer) extends PersistentActor {
+
+  val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
   private val recipeCache: mutable.Map[String, CompiledRecipe] = mutable.Map[String, CompiledRecipe]()
@@ -138,17 +145,6 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
         .exists { p => meta.createdDateTime + p.toMillis < System.currentTimeMillis() }
   }
 
-  def isDeleted(meta: ActorMetadata): Boolean =
-    meta.processStatus == Deleted
-
-
-  def deleteProcess(processId: String): Unit = {
-    persist(ActorDeleted(processId)) { _ =>
-      val meta = index(processId)
-      index.update(processId, meta.copy(processStatus = Deleted))
-    }
-  }
-
   override def receiveCommand: Receive = {
 
     case GetIndex =>
@@ -163,17 +159,20 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
     case Terminated(actorRef) =>
       val processId = actorRef.path.name
-      log.debug(s"Actor terminated: $actorRef")
+
+      log.logWithMDC(Logging.DebugLevel, s"Actor terminated: $actorRef", Map("processId" -> processId))
 
       index.get(processId) match {
         case Some(meta) if shouldDelete(meta) =>
-          deleteProcess(processId)
-        case Some(meta) if isDeleted(meta) =>
-          log.warning(s"Received Terminated message for already deleted process: ${meta.processId}")
+          persist(ActorDeleted(processId)) { _ =>
+            index.update(processId, meta.copy(processStatus = Deleted))
+          }
+        case Some(meta) if meta.isDeleted =>
+          log.logWithMDC(Logging.WarningLevel, s"Received Terminated message for already deleted process: ${meta.processId}", Map("processId" -> processId))
         case Some(_) =>
           persist(ActorPassivated(processId)) { _ => }
         case None =>
-          log.warning(s"Received Terminated message for non indexed actor: $actorRef")
+          log.logWithMDC(Logging.WarningLevel, s"Received Terminated message for non indexed actor: $actorRef", Map("processId" -> processId))
       }
 
     case CreateProcess(recipeId, processId) =>
@@ -198,7 +197,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
             case None => sender() ! NoRecipeFound(recipeId)
           }
 
-        case _ if isDeleted(index(processId)) => sender() ! ProcessDeleted(processId)
+        case _ if index(processId).isDeleted => sender() ! ProcessDeleted(processId)
         case _ => sender() ! ProcessAlreadyInitialized(processId)
       }
 
@@ -263,7 +262,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
               validateEventAvailableForRecipe(actorRef, compiledRecipe)
             }
           case None =>
-            rejectWith(ProcessUninitialized(processId), RejectReason.NoSuchProcess)
+            rejectWith(NoSuchProcess(processId), RejectReason.NoSuchProcess)
         }
       }
 
@@ -271,8 +270,8 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
       //If not check if it is available and start
       //If not return a Uninitialized message
       context.child(processId) match {
-        case None if !index.contains(processId) => rejectWith(ProcessUninitialized(processId), RejectReason.NoSuchProcess)
-        case None if isDeleted(index(processId)) => rejectWith(ProcessUninitialized(processId), RejectReason.ProcessDeleted)
+        case None if !index.contains(processId) => rejectWith(NoSuchProcess(processId), RejectReason.NoSuchProcess)
+        case None if index(processId).isDeleted => rejectWith(ProcessDeleted(processId), RejectReason.ProcessDeleted)
         case None =>
           persist(ActorActivated(processId)) { _ =>
             handleEventWithActor(createProcessActor(processId))
@@ -282,8 +281,8 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
     case GetProcessState(processId) =>
       context.child(processId) match {
-        case None if !index.contains(processId) => sender() ! ProcessUninitialized(processId)
-        case None if isDeleted(index(processId)) => sender() ! ProcessDeleted(processId)
+        case None if !index.contains(processId) => sender() ! NoSuchProcess(processId)
+        case None if index(processId).isDeleted => sender() ! ProcessDeleted(processId)
         case None if index.contains(processId) =>
           persist(ActorActivated(processId)) {
             _ =>
@@ -294,13 +293,13 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
     case GetCompiledRecipe(processId) =>
       index.get(processId) match {
-        case Some(processMetadata) if isDeleted(processMetadata) => sender() ! ProcessDeleted(processId)
+        case Some(processMetadata) if processMetadata.isDeleted => sender() ! ProcessDeleted(processId)
         case Some(processMetadata) =>
           getCompiledRecipe(processMetadata.recipeId) match {
             case Some(compiledRecipe) => sender() ! RecipeFound(compiledRecipe)
-            case None => sender() ! ProcessUninitialized(processId)
+            case None => sender() ! NoSuchProcess(processId)
           }
-        case None => sender() ! ProcessUninitialized(processId)
+        case None => sender() ! NoSuchProcess(processId)
       }
     case cmd =>
       log.error(s"Unrecognized command $cmd")

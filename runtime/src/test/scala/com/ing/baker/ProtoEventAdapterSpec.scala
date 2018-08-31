@@ -7,6 +7,7 @@ import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.RecipeAdded
 import com.ing.baker.runtime.actor.serialization.{ObjectSerializer, ProtoEventAdapter}
 import org.scalatest.{FunSuiteLike, Matchers}
 
+@deprecated("marked deprecated because of -XFatal-Warnings and deprecated sieves", "1.4.0")
 class ProtoEventAdapterSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec")) with FunSuiteLike with Matchers  {
 
   val eventAdapter = new ProtoEventAdapter {
@@ -22,5 +23,4 @@ class ProtoEventAdapterSpec extends TestKit(ActorSystem("BakerProtobufSerializer
 
     domainObject shouldBe newDomainObject
   }
-
 }
