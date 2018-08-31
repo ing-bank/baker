@@ -1,56 +1,71 @@
 -------------------------------- MODULE Node --------------------------------
 EXTENDS Naturals, FiniteSets, TLC
 
-VARIABLE othersState, \* current known state of others (my knowledge)
-         amIMember, \* TRUE/FALSE
-         nrOfOtherMembers,
-         otherNodes
+CONSTANT nodes
+
+VARIABLE self,
+         sbrDecision,
+         nodeState
 
 PrintVal(id, exp) == Print(<<id, exp>>, TRUE)
 
-Majority == ((Cardinality(otherNodes) + 1) \div 2) + 1 \* calculate the majority number of nodes of all participating cluster nodes (including myself)
+Majority == ((Cardinality(nodes) + 1) \div 2) \* calculate the majority number of nodes of all participating cluster nodes (including myself)
 
-TotalUp(newState) == LET sum[S \in SUBSET otherNodes] ==
-                     IF S = {} THEN 0
-                     ELSE LET n == CHOOSE node \in S : TRUE
-                          IN (IF newState[n] = "up" THEN 1 ELSE 0) + sum[S \ {n}]
-                     IN sum[otherNodes] + 1
+TotalUp(nodeStateNew) == LET sum[S \in SUBSET nodes] ==
+                                IF S = {} THEN 0
+                                ELSE LET n == CHOOSE node \in S : TRUE
+                                     IN (IF nodeStateNew[n] = "up" THEN 1 ELSE 0) + sum[S \ {n}]
+                         IN sum[nodes]
 
-TypeOK == /\ othersState \in [otherNodes -> {"up", "unreachable"}]
-          /\ amIMember \in {TRUE, FALSE}
+NTypeOK == /\ self \in nodes
+           /\ sbrDecision \in {"DownMyself", "DownUnreachables", "NoAction"}
+           /\ \E n \in nodes : nodeState[n] \in {"up", "unreachable", "down"}
 
-UpdateMyState(newState) == IF TotalUp(newState) < Majority THEN FALSE ELSE TRUE
+SbrDecision(newNodeStates) == IF TotalUp(newNodeStates) >= Majority THEN "DownUnreachables" ELSE "TerminateMyself"
 
-SetUp(n) == /\ othersState' = [othersState EXCEPT ![n] = "up"]
-            /\ amIMember' = UpdateMyState(othersState')
-            /\ UNCHANGED<<nrOfOtherMembers, otherNodes>>
+NodesWithState(state) == {} \* TODO return set of nodes in that given state
 
-SetUnreachable(n) == /\ othersState' = [othersState EXCEPT ![n] = "unreachable"]
-                     /\ amIMember' = UpdateMyState(othersState')
-                     /\ UNCHANGED<<nrOfOtherMembers, otherNodes>>
+SelfState == nodeState[self]
 
-Init(n) == 
-        /\ PrintVal("Im in init", n) 
-        /\ nrOfOtherMembers = n \* excluding myself. I am always a member.
-        \* READIBILITY IMPROVEMENTS:
-        \* union with an empty set prints the set values like {1,2,3} instead of 1..3
-        \* union with "node" lets us see <<node, 1>> <<node, 2>> records for each node.
-        /\ otherNodes = {"node"} \times (1..nrOfOtherMembers \cup {})
-        /\ othersState \in [otherNodes -> {"unreachable"}]
-        /\ amIMember = FALSE
-        /\ PrintVal("nrOfOtherMembers", nrOfOtherMembers)
-        /\ PrintVal("otherNodes", otherNodes)
+MarkMemberUp(n) == /\ self /= n
+                   /\ nodeState[n] = "unreachable"
+                   /\ nodeState' = [nodeState EXCEPT ![n] = "up"]
+                   /\ sbrDecision' = SbrDecision(nodeState')
+                   /\ UNCHANGED<<self>>
 
-Next == \E n \in otherNodes : SetUp(n) \/ SetUnreachable(n)
+MarkMemberUnreachable(n) == /\ self /= n
+                            /\ nodeState[n] = "up"
+                            /\ nodeState' = [nodeState EXCEPT ![n] = "unreachable"]
+                            /\ sbrDecision' = SbrDecision(nodeState')
+                            /\ UNCHANGED<<self>>
+                        
+ActOnSbrDecision == \/ /\ sbrDecision = "TerminateMyself"
+                       /\ sbrDecision' = "NoAction"
+                       /\ nodeState' = [nodeState EXCEPT ![self] = "down"]
+                       /\ UNCHANGED<<self>>
+                    \/ /\ sbrDecision = "DownUnreachables"
+                       /\ sbrDecision' = "NoAction"
+                       \* mark all unreachables to DOWN, remaining unchanged
+                       /\ nodeState' = [x \in NodesWithState("unreachable") |-> "down"] \cup 
+                                       [x \in nodes \ NodesWithState("unreachable") |-> nodeState[x]]
+                       /\ UNCHANGED<<self>>
+                        
+NInit(selfNode) == 
+        /\ PrintVal("MemberView init nodes", nodes)
+        /\ self = selfNode 
+        /\ PrintVal("MemberView init self", self)
+        /\ sbrDecision = "NoAction"
+        /\ PrintVal("MemberView init sbrDecision", sbrDecision)
+        /\ nodeState = [n \in nodes |-> "up"]
+        /\ PrintVal("MemberView init nodeState", nodeState)
 
-MyStateIsConsistent == amIMember = UpdateMyState(othersState)
-
-Invariants ==
-    /\ TypeOK
-    /\ MyStateIsConsistent
-
+NNext ==  \E n \in nodes : \/ MarkMemberUp(n) 
+                           \/ MarkMemberUnreachable(n) 
+                           \/ /\ self = n 
+                              /\ ActOnSbrDecision \* enabled only n = self
+                           
 =============================================================================
 \* Modification History
-\* Last modified Thu Aug 23 17:12:36 CEST 2018 by bekiroguz
+\* Last modified Fri Aug 31 17:25:13 CEST 2018 by bekiroguz
 \* Last modified Thu Aug 23 16:04:03 CEST 2018 by se76ni
 \* Created Wed Aug 15 12:26:52 CEST 2018 by bekiroguz

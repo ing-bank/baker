@@ -3,32 +3,30 @@ EXTENDS Naturals, FiniteSets, TLC
 
 CONSTANT nodes \* Model variables like A, B, C
 
-VARIABLES clusterState, \* Map<Node -> NodeStateRecord>
-          nrOfOtherMembers,
-          nodeInstances
+VARIABLES memberNodeState, \* perspectives of the individual Nodes as a Function[Node -> NodeState]
+          memberSelf,
+          memberSbrDecision
+          
 
 PrintVal(id, exp) == Print(<<id, exp>>, TRUE)
 
-Node(n) == INSTANCE Node WITH amIMember <- clusterState[n].amIMember, nrOfOtherMembers <- nrOfOtherMembers, otherNodes <- clusterState[n].otherNodes, othersState <- clusterState[n].othersState
+ClusterState == [n \in nodes |-> memberNodeState[n][n]] 
 
-Init ==
-  /\ nrOfOtherMembers = Cardinality(nodes) - 1
-  /\ PrintVal("nrOfOtherMembers", nrOfOtherMembers)
-  /\ clusterState = [ n \in nodes |-> [amIMember |-> FALSE, nrOfOtherMembers |-> 0, otherNodes |-> {}, othersState |-> [otherNodes |-> {"unreachable"}]]]
-  /\ PrintVal("clusterState", clusterState)
-  /\ nodeInstances = [ n \in nodes |-> Node(n) ! Init(nrOfOtherMembers) ]
-  /\ PrintVal("nodeInstances", nodeInstances)
+N(n) == INSTANCE Node WITH 
+                            nodeState <- memberNodeState[n],
+                            self <- memberSelf[n],
+                            sbrDecision <- memberSbrDecision[n]
+                            
+CInit == /\ \E n \in nodes : N(n)!NInit(n)
+         /\ PrintVal("ClusterView init ClusterState", ClusterState)
 
-NodeNext(n) ==  
-  /\ Node(n) ! Next
-  /\ UNCHANGED <<clusterState, nrOfOtherMembers, nodeInstances>>
-  
-Next == \E n \in nodes : NodeNext(n)
+CNext == \E n \in nodes : N(n)!NNext
 
-Invariants == \E n \in nodes : Node(n) ! Invariants
+\*CInvariants == /\ CTypeOK
+\*               /\ \A n \in nodes : N(n)!NInvariants
 
 =============================================================================
 \* Modification History
-\* Last modified Thu Aug 23 17:10:30 CEST 2018 by bekiroguz
+\* Last modified Fri Aug 31 17:29:49 CEST 2018 by bekiroguz
 \* Last modified Thu Aug 23 16:04:26 CEST 2018 by se76ni
 \* Created Thu Aug 23 10:58:32 CEST 2018 by se76ni
