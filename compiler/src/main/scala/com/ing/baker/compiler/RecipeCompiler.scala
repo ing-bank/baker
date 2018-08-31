@@ -310,16 +310,16 @@ object RecipeCompiler {
 
   private def generateMD5(obj: Object): String = {
     import java.security.MessageDigest
+    import java.math.BigInteger
+
     val md = MessageDigest.getInstance("MD5")
     val stream = new ByteArrayOutputStream()
     val objectOutputStream = new ObjectOutputStream(stream)
+
     try {
       val hash = md.digest(stream.toByteArray)
-      hash.map(byte => Integer.toHexString(0xFF & byte))
-        .map(str => str.length() match {
-          case 1 => "0" + str
-          case _ => str
-        }).mkString
+      val bi = new BigInteger(1, hash)
+      String.format("%0" + (hash.length << 1) + "x", bi)
     } finally {
       objectOutputStream.close()
       stream.close()
