@@ -22,7 +22,12 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     "-encoding", "utf8",
     s"-target:jvm-$jvmV",
     "-Xfatal-warnings"
-  )
+  ),
+  packageOptions in (Compile, packageBin) +=
+    Package.ManifestAttributes(
+      "Build-Time" -> new java.util.Date().toString,
+      "Build-Commit" -> git.gitHeadCommit.value.getOrElse("No Git Revision Found")
+    )
 )
 
 val dependencyOverrideSettings = Seq(
