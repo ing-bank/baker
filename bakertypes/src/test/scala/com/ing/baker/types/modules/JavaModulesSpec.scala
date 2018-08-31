@@ -1,4 +1,4 @@
-package com.ing.baker.types
+package com.ing.baker.types.modules
 
 import java.util
 import java.util.Optional
@@ -7,6 +7,7 @@ import com.ing.baker.types
 import com.ing.baker.types.Converters._
 import com.ing.baker.types.ConvertersTestData.TestEnum
 import com.ing.baker.types.ConvertersTestData.TestEnum.{ValueA, ValueB, ValueC}
+import com.ing.baker.types._
 import org.scalatest.{Matchers, WordSpecLike}
 
 import scala.collection.JavaConverters._
@@ -21,27 +22,7 @@ class PersonPojo(val name: String, val age: Int) {
   }
 }
 
-class ConvertersSpec extends WordSpecLike with Matchers {
-
-  val primitiveExamples = List(
-    42,
-    Int.box(42),
-    42l,
-    Long.box(42l),
-    42:Short,
-    Short.box(42:Short),
-    'C',
-    scala.Char.box('C'),
-    12.34d,
-    Double.box(12.34d),
-    12.34f,
-    Float.box(12.34f),
-    "foobar",
-    BigDecimal(1.123456789),
-    new java.math.BigDecimal(1.123456789),
-    BigInt(123456789),
-    BigInt(123456789).bigInteger,
-    Array[Byte](-1, 0, 1))
+class JavaModulesSpec extends WordSpecLike with Matchers {
 
   val recordPerson = RecordValue(Map("name" -> PrimitiveValue("john"), "age" -> PrimitiveValue(42)))
 
@@ -53,33 +34,9 @@ class ConvertersSpec extends WordSpecLike with Matchers {
 
   "The converters utility" should {
 
-    "be able to parse primitive types" in {
-
-      primitiveExamples.foreach { obj =>
-        toValue(obj) shouldBe PrimitiveValue(obj)
-      }
-    }
-
-    "be able to create primitive types" in {
-
-      primitiveExamples.foreach { obj =>
-        toJava(PrimitiveValue(obj), obj.getClass) shouldBe obj
-      }
-    }
-
-    "be able to autobox null values to scala Options" in {
-
-      toJava[Option[Int]](NullValue) shouldBe None
-    }
-
     "be able to autobox null values to java Optionals" in {
 
       toJava[Optional[Int]](NullValue) shouldBe Optional.empty
-    }
-
-    "be able to autobox primitive values to scala Options" in {
-
-      toJava[Option[Int]](PrimitiveValue(42)) shouldBe Some(42)
     }
 
     "be able to autobox primitive values to java Optionals" in {
@@ -87,32 +44,8 @@ class ConvertersSpec extends WordSpecLike with Matchers {
       toJava[Optional[Int]](PrimitiveValue(42)) shouldBe Optional.of(42)
     }
 
-    "be able to read scala.Option.None" in {
-      toValue(None) shouldBe NullValue
-    }
-
     "be able to read java Optional.empty()" in {
       toValue(Optional.empty()) shouldBe NullValue
-    }
-
-    "be able to parse scala.collection.immutable.List objects" in {
-
-      toValue(List(1, 2, 3)) shouldBe listValue123
-    }
-
-    "be able to create scala.collection.immutable.List objects" in {
-
-      toJava[List[Int]](listValue123) shouldBe List(1, 2, 3)
-    }
-
-    "be able to parse scala.collection.immutable.Set objects" in {
-
-      toValue(Set(1, 2, 3)) shouldBe listValue123
-    }
-
-    "be able to create scala.collection.immutable.Set objects" in {
-
-      toJava[Set[Int]](listValue123) shouldBe Set(1, 2, 3)
     }
 
     "be able to parse java.util.Set objects" in {
@@ -197,16 +130,6 @@ class ConvertersSpec extends WordSpecLike with Matchers {
       toJava[java.util.List[Int]](listValue123) shouldBe javaList
     }
 
-    "be able to parse case class objects" in {
-
-      toValue(PersonCaseClass("john", 42)) shouldBe recordPerson
-    }
-
-    "be able to create case class objects" in {
-
-      toJava[PersonCaseClass](recordPerson) shouldBe PersonCaseClass("john", 42)
-    }
-
     "be able to parse pojo objects" in {
 
       toValue(new PersonPojo("john", 42)) shouldBe recordPerson
@@ -231,16 +154,6 @@ class ConvertersSpec extends WordSpecLike with Matchers {
 
     val javaMap: util.Map[String, Int] = scalaMap.asJava
 
-    "be able to parse scala.collection.immutable.Map objects" in {
-
-      toValue(scalaMap) shouldBe valueMap
-    }
-
-    "be able to create scala.collection.immutable.Map objects" in {
-
-      toJava[Map[String, Int]](valueMap) shouldBe scalaMap
-    }
-
     "be able to parse java.util.Map objects" in {
 
       toValue(javaMap) shouldBe valueMap
@@ -251,30 +164,6 @@ class ConvertersSpec extends WordSpecLike with Matchers {
       toJava[java.util.Map[String, Int]](valueMap) shouldBe javaMap
     }
 
-    "correctly parse all the supported base types" in {
-
-      primitiveMappings.foreach {
-        case (clazz, t) => readJavaType(clazz) shouldBe t
-      }
-    }
-
-    "correctly parse option types" in {
-      readJavaType[Option[String]] shouldBe OptionType(types.CharArray)
-    }
-
-    "correctly parse list types" in {
-      readJavaType[List[String]] shouldBe ListType(types.CharArray)
-    }
-
-    "correctly parse set types" in {
-
-      readJavaType[Set[String]] shouldBe ListType(types.CharArray)
-      readJavaType[java.util.Set[String]] shouldBe ListType(types.CharArray)
-    }
-
-    "correctly parse array of bytes" in {
-      readJavaType[Array[Byte]] shouldBe types.ByteArray
-    }
 
     "correctly parse enum types" in {
       readJavaType[EnumExample] shouldBe EnumType(options = Set("A", "B", "C"))

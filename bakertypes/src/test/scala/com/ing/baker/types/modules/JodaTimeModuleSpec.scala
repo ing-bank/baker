@@ -3,23 +3,12 @@ package com.ing.baker.types.modules
 import com.ing.baker.types.{Converters, Int64}
 import org.joda.time.{DateTime, LocalDate, LocalDateTime}
 import org.scalacheck.Gen
-import org.scalacheck.Prop.forAll
 import org.scalacheck.Test.Parameters.defaultVerbose
 import org.scalatest.prop.Checkers
 import org.scalatest.{Matchers, WordSpecLike}
 
-import scala.reflect.runtime.universe.TypeTag
 
 class JodaTimeModuleSpec extends WordSpecLike with Matchers with Checkers {
-
-  def transitivityProperty[T : TypeTag](gen: Gen[T]) = forAll(gen) { original =>
-
-    // assertion of the result
-    val value = Converters.toValue(original)
-    val parsed = Converters.toJava[T](value)
-
-    parsed.equals(original)
-  }
 
   val minSuccessfulTests = 100
 

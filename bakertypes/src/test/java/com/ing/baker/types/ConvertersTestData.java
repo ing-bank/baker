@@ -2,7 +2,7 @@ package com.ing.baker.types;
 
 public class ConvertersTestData {
 
-    enum TestEnum {
+    public enum TestEnum {
         ValueA, ValueB, ValueC
     }
 }
