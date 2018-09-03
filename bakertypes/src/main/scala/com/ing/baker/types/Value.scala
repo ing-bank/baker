@@ -57,10 +57,29 @@ sealed trait Value extends Serializable {
     case (otherType, otherValue) => Some(s"${otherValue.getClass} is not an instance of ${otherType.getClass}")
   }
 
+  /**
+    * Attempts to adapt the value to the given java type.
+    *
+    * @param javaType The java type
+    * @return An instance of the java class.
+    */
   def as(javaType: java.lang.reflect.Type): Any = Converters.toJava(this, javaType)
 
+  /**
+    * Attempts to adapt the value to the given java class.
+    *
+    * @param clazz The java class
+    * @tparam T The java class type
+    * @return An instance of the java class.
+    */
   def as[T](clazz: Class[T]): T = Converters.toJava(this, clazz).asInstanceOf[T]
 
+  /**
+    * Attempts to adapt the value to the given java type.
+    *
+    * @tparam T The java type
+    * @return An instance of the java class.
+    */
   def as[T : universe.TypeTag]: T = Converters.toJava[T](this)
 
   def equalsObject(obj: Any): Boolean = Try { equals(Converters.toValue(obj)) }.getOrElse(false)

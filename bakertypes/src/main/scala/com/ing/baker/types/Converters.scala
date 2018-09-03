@@ -11,34 +11,36 @@ object Converters {
 
   private val log = LoggerFactory.getLogger("com.ing.baker.types")
 
-  val defaultConfig = ConfigFactory.load()
+  def loadDefaultModulesFromConfig(): Map[Class[_], TypeModule] = {
+    val defaultConfig = ConfigFactory.load()
 
-  val defaultModules: Map[Class[_], TypeModule] = defaultConfig.getConfig("baker.types").entrySet().asScala.map {
-    entry =>
+    defaultConfig.getConfig("baker.types").entrySet().asScala.map {
+      entry =>
 
-      def stripQuotes(str: String) = str.stripPrefix("\"").stripSuffix("\"")
+        def stripQuotes(str: String) = str.stripPrefix("\"").stripSuffix("\"")
 
-      try {
+        try {
 
-        val moduleClassName = stripQuotes(entry.getValue.unwrapped.asInstanceOf[String])
-        val className = stripQuotes(entry.getKey)
+          val moduleClassName = stripQuotes(entry.getValue.unwrapped.asInstanceOf[String])
+          val className = stripQuotes(entry.getKey)
 
-        val clazz = classOf[Value].getClassLoader().loadClass(className)
-        val moduleClass = classOf[Value].getClassLoader().loadClass(moduleClassName)
-        val module = moduleClass.newInstance().asInstanceOf[TypeModule]
+          val clazz = classOf[Value].getClassLoader().loadClass(className)
+          val moduleClass = classOf[Value].getClassLoader().loadClass(moduleClassName)
+          val module = moduleClass.newInstance().asInstanceOf[TypeModule]
 
-        Some(clazz -> module)
-      }
-      catch {
-        case e: Exception =>
-          log.error("Failed to load type module: ", e)
-          None
-      }
-  }.collect {
-    case Some(entry) => entry
-  }.toMap[Class[_], TypeModule]
+          Some(clazz -> module)
+        }
+        catch {
+          case e: Exception =>
+            log.error("Failed to load type module: ", e)
+            None
+        }
+    }.collect {
+      case Some(entry) => entry
+    }.toMap[Class[_], TypeModule]
+  }
 
-  val defaultTypeConverter = new TypeAdapter(defaultModules)
+  val defaultTypeConverter = new TypeAdapter(loadDefaultModulesFromConfig())
 
   def readJavaType[T : TypeTag]: Type = readJavaType(createJavaType(mirror.typeOf[T]))
 
