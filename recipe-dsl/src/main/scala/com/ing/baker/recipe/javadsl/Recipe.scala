@@ -20,6 +20,7 @@ case class Recipe(
 
   def getInteractions: java.util.List[common.InteractionDescriptor] = interactions.asJava
 
+  @deprecated("sieves are deprecated, use interactions instead", "1.4.0")
   def getSieves: java.util.List[common.InteractionDescriptor] = sieves.asJava
 
   def getEvents: java.util.List[common.Event] = sensoryEvents.toList.asJava
@@ -55,7 +56,7 @@ case class Recipe(
   @SafeVarargs
   @varargs
   def withInteractions(newInteractions: common.InteractionDescriptor*): Recipe =
-  copy(interactions = interactions ++ newInteractions)
+    copy(interactions = interactions ++ newInteractions)
 
   /**
     * Adds a sieve function to the recipe.
@@ -63,6 +64,7 @@ case class Recipe(
     * @param sieveDescriptor
     * @return
     */
+  @deprecated("sieves are deprecated, use interactions instead", "1.4.0")
   def withSieve(sieveDescriptor: common.InteractionDescriptor): Recipe =
     withSieves(Seq(sieveDescriptor.asInstanceOf[InteractionDescriptor]): _*)
 
@@ -74,6 +76,7 @@ case class Recipe(
     */
   @SafeVarargs
   @varargs
+  @deprecated("sieves are deprecated, use interactions instead", "1.4.0")
   def withSieves(newSieves: common.InteractionDescriptor*): Recipe = {
     copy(sieves = sieves ++ newSieves)
   }
@@ -106,7 +109,7 @@ case class Recipe(
   @SafeVarargs
   @varargs
   def withSensoryEvents(eventsToAdd: Class[_]*): Recipe =
-  copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent(_, Some(1))))
+    copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent(_, Some(1))))
 
   /**
     * Adds the sensory event to the recipe with firing limit set to unlimited
@@ -127,7 +130,7 @@ case class Recipe(
   @SafeVarargs
   @varargs
   def withSensoryEventsNoFiringLimit(eventsToAdd: Class[_]*): Recipe =
-  copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent(_, None)))
+    copy(sensoryEvents = sensoryEvents ++ eventsToAdd.map(eventClassToCommonEvent(_, None)))
 
   /**
     * This set the failure strategy as default for this recipe.

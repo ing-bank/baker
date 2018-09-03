@@ -8,7 +8,7 @@ import scala.collection.mutable
 
 object RecipeValidations {
 
-  def validateInteraction(compiledRecipe: CompiledRecipe)(interactionTransition: InteractionTransition[_]): Seq[String] = {
+  def validateInteraction(compiledRecipe: CompiledRecipe)(interactionTransition: InteractionTransition): Seq[String] = {
 
     val validationErrors: mutable.MutableList[String] = mutable.MutableList.empty[String]
 

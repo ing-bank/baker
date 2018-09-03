@@ -108,9 +108,10 @@ object BAASSpec {
   case class InitialEvent(initialIngredient: String)
 
   val interactionOne =
-    Interaction("InteractionOne",
-      Ingredients(processId, initialIngredient),
-      ProvidesIngredient(interactionOneIngredient))
+    Interaction(
+      name = "InteractionOne",
+      inputIngredients = Seq(processId, initialIngredient),
+      output = ProvidesIngredient(interactionOneIngredient))
 
   case class InteractionOne() {
     def name: String = "InteractionOne"

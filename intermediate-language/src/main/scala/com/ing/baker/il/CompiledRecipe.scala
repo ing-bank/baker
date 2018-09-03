@@ -2,10 +2,9 @@ package com.ing.baker.il
 
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, RecipePetriNet}
 import com.ing.baker.petrinet.api.Marking
-import com.ing.baker.types.RecordField
 
 import scala.collection.JavaConverters._
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * A Compiled recipe.
@@ -28,21 +27,7 @@ case class CompiledRecipe(name: String,
     * @return
     */
   def getRecipeVisualization: String =
-    RecipeVisualizer.visualiseCompiledRecipe(this)
-
-  /**
-    * Returns a SVG string representation of the recipe.
-    *
-    * @return An SVG string.
-    */
-  @deprecated(message = "SVG generation support will be removed in 1.2.0", since = "1.1.15")
-  def getVisualRecipeAsSVG: String = {
-    import guru.nidi.graphviz.engine.{Format, Graphviz}
-    import guru.nidi.graphviz.parse.Parser
-
-    val g = Parser.read(getRecipeVisualization)
-    Graphviz.fromGraph(g).render(Format.SVG).toString
-  }
+    RecipeVisualizer.visualizeRecipe(this)
 
   /**
     * Visualise the compiled recipe in DOT format
@@ -50,7 +35,7 @@ case class CompiledRecipe(name: String,
     * @return
     */
   def getFilteredRecipeVisualization(filterFunc: String => Boolean): String =
-    RecipeVisualizer.visualiseCompiledRecipe(this, filterFunc)
+    RecipeVisualizer.visualizeRecipe(this, filter = filterFunc)
 
 
   def getFilteredRecipeVisualization(filter: String): String =
@@ -71,10 +56,10 @@ case class CompiledRecipe(name: String,
     * @return
     */
   def getPetriNetVisualization: String =
-    RecipeVisualizer.visualisePetrinetOfCompiledRecipe(petriNet)
+    RecipeVisualizer.visualizePetrinet(petriNet)
 
-  val interactionTransitions: Set[InteractionTransition[_]] = petriNet.transitions.collect {
-    case t: InteractionTransition[_] => t
+  val interactionTransitions: Set[InteractionTransition] = petriNet.transitions.collect {
+    case t: InteractionTransition => t
   }
 
   val interactionEvents: Set[EventDescriptor] = interactionTransitions flatMap(it => it.eventsToFire)

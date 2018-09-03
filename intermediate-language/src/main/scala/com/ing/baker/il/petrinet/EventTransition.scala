@@ -8,8 +8,7 @@ import com.ing.baker.il.EventDescriptor
   */
 case class EventTransition(event: EventDescriptor,
                            isSensoryEvent: Boolean = true,
-                           maxFiringLimit: Option[Int] = None
-                          ) extends Transition[Unit] {
+                           maxFiringLimit: Option[Int] = None) extends Transition {
 
   override val label: String = event.name
   override val id: Long = il.sha256HashCode(s"EventTransition:$label")

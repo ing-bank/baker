@@ -46,12 +46,12 @@ object ProcessInstance {
 /**
   * This actor is responsible for maintaining the state of a single petri net instance.
   */
-class ProcessInstance[P[_], T[_], S, E](processType: String,
-                                        processTopology: PetriNet[P[_], T[_]],
+class ProcessInstance[P[_], T, S, E](processType: String,
+                                        processTopology: PetriNet[P[_], T],
                                         settings: Settings,
-                                        runtime: PetriNetRuntime[P, T, S, E],
+                                        runtime: PetriNetRuntime[P, T, S, E])(
                                         override implicit val placeIdentifier: Identifiable[P[_]],
-                                        override implicit val transitionIdentifier: Identifiable[T[_]]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSource) {
+                                        override implicit val transitionIdentifier: Identifiable[T]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSource) {
 
 
   val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
@@ -81,7 +81,7 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
           .andThen {
             case (updatedInstance, _) ⇒
               context become running(updatedInstance, Map.empty)
-              sender() ! Initialized(marshal(initialMarking), state)
+              sender() ! Initialized(initialMarking, state)
           }
       }
 
@@ -96,10 +96,12 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
 
   def waitForDeleteConfirmation(instance: Instance[P, T, S]): Receive = {
     case DeleteMessagesSuccess(toSequenceNr) =>
-      log.debug(s"Process history successfully deleted (up to event sequence $toSequenceNr), stopping the actor")
+
+      log.processHistoryDeletionSuccessful(processId, toSequenceNr)
+
       context.stop(context.self)
     case DeleteMessagesFailure(cause, toSequenceNr) =>
-      log.error(cause, s"Process events are requested to be deleted up to $toSequenceNr sequence number, but delete operation failed.")
+      log.processHistoryDeletionFailed(processId, toSequenceNr, cause)
       context become running(instance, Map.empty)
   }
 
@@ -124,7 +126,7 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
 
     case event@TransitionFiredEvent(jobId, t, correlationId, timeStarted, timeCompleted, consumed, produced, output) ⇒
 
-      val transition = t.asInstanceOf[T[_]]
+      val transition = t.asInstanceOf[T]
       val transitionId = transitionIdentifier(transition).value
 
       system.eventStream.publish(ProcessInstanceEvent(processType, processId, event))
@@ -135,7 +137,7 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
           .andThen(step)
           .andThen {
             case (updatedInstance, newJobs) ⇒
-              sender() ! TransitionFired(jobId, transitionId, correlationId, marshal[P](consumed.asInstanceOf[Marking[P]]), marshal[P](produced.asInstanceOf[Marking[P]]), fromExecutionInstance(updatedInstance), newJobs.map(_.id))
+              sender() ! TransitionFired(jobId, transitionId, correlationId, marshal[P](consumed.asInstanceOf[Marking[P]]), marshal[P](produced.asInstanceOf[Marking[P]]), fromExecutionInstance(updatedInstance), newJobs.map(_.id), output)
               context become running(updatedInstance, scheduledRetries - jobId)
               updatedInstance
           }
@@ -143,7 +145,7 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
 
     case event@TransitionFailedEvent(jobId, t, correlationId, timeStarted, timeFailed, consume, input, reason, strategy) ⇒
 
-      val transition = t.asInstanceOf[T[_]]
+      val transition = t.asInstanceOf[T]
       val transitionId = transitionIdentifier(transition).value
 
       system.eventStream.publish(ProcessInstanceEvent(processType, processId, event))
@@ -178,7 +180,7 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
             eventSource.apply(instance)
               .andThen(step)
               .andThen { case (updatedInstance, newJobs) ⇒
-                sender() ! TransitionFired(jobId, transitionId, correlationId, marshal[P](consumedMarking), marshal[P](producedMarking), fromExecutionInstance(updatedInstance), newJobs.map(_.id))
+                sender() ! TransitionFired(jobId, transitionId, correlationId, marshal[P](consumedMarking), marshal[P](producedMarking), fromExecutionInstance(updatedInstance), newJobs.map(_.id), out)
                 context become running(updatedInstance, scheduledRetries - jobId)
               })
 
@@ -199,9 +201,10 @@ class ProcessInstance[P[_], T[_], S, E](processType: String,
         * This should only return once the initial transition is completed & persisted
         * That way we are sure the correlation id is persisted.
         */
-      val transition = topology.transitions.getById(transitionId, "transition in petrinet").asInstanceOf[T[Any]]
+      val transition = topology.transitions.getById(transitionId, "transition in petrinet")
 
-      def alreadyReceived(id: String) = instance.receivedCorrelationIds.contains(id) || instance.jobs.values.exists(_.correlationId == Some(id))
+      def alreadyReceived(id: String) =
+        instance.receivedCorrelationIds.contains(id) || instance.jobs.values.exists(_.correlationId == Some(id))
 
       correlationIdOption match {
         case Some(correlationId) if alreadyReceived(correlationId) =>

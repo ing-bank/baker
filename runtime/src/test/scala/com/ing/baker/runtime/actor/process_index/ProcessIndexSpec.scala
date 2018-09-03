@@ -6,9 +6,9 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.stream.testkit.scaladsl.TestSink
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
-import com.ing.baker.il.petrinet.{EventTransition, RecipePetriNet, Transition}
+import com.ing.baker.il.petrinet.{EventTransition, Place, RecipePetriNet, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, IngredientDescriptor}
-import com.ing.baker.petrinet.api.{Marking, ScalaGraphPetriNet}
+import com.ing.baker.petrinet.api.{Marking, PetriNet}
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
@@ -64,7 +64,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
     override def receive: Receive = {
       case GetAllRecipes => {
         sender ! AllRecipes(Map[String, CompiledRecipe](recipeId ->
-          CompiledRecipe("name", ScalaGraphPetriNet(Graph.empty), Marking.empty, Seq.empty, Option.empty, Option.empty)))
+          CompiledRecipe("name", PetriNet(Graph.empty), Marking.empty, Seq.empty, Option.empty, Option.empty)))
       }
     }
   }))
@@ -90,7 +90,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
     "create the PetriNetInstance actor when Initialize message is received" in {
       val processId = UUID.randomUUID().toString
-      val initializeMsg = Initialize(Map.empty, ProcessState(processId, Map.empty, List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
 
       val petriNetActorProbe = TestProbe()
 
@@ -103,7 +103,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
     "not create the PetriNetInstance actor if already created" in {
       val processId = UUID.randomUUID().toString
-      val initializeMsg = Initialize(Map.empty, ProcessState(processId, Map.empty, List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
 
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
@@ -134,9 +134,9 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
       recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", ScalaGraphPetriNet(Graph.empty), Marking.empty, Seq.empty, Option.empty, Some(recipeRetentionPeriod)))))
+        CompiledRecipe("name", PetriNet(Graph.empty), Marking.empty, Seq.empty, Option.empty, Some(recipeRetentionPeriod)))))
 
-      val initializeMsg = Initialize(Map.empty, ProcessState(processId, Map.empty, List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
       processProbe.expectMsg(initializeMsg)
 
       processProbe.expectMsg(Stop(delete = true))
@@ -152,11 +152,11 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val processId = UUID.randomUUID().toString
 
-      val initializeMsg = Initialize(Map.empty, ProcessState(processId, Map.empty, List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
       val eventType = EventDescriptor("Event", Seq.empty)
-      val transitions: Set[Transition[_]] = Set(EventTransition(eventType, true, None))
+      val transitions: Set[Transition] = Set(EventTransition(eventType, true, None))
       when(petrinetMock.transitions).thenReturn(transitions)
 
       actorIndex ! CreateProcess(recipeId, processId)
@@ -187,14 +187,14 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
       val eventType = EventDescriptor("Event", Seq.empty)
-      val transitions: Set[Transition[_]] = Set(EventTransition(eventType, true, None))
+      val transitions: Set[Transition] = Set(EventTransition(eventType, true, None))
       when(petrinetMock.transitions).thenReturn(transitions)
 
       val RuntimeEvent = new RuntimeEvent("Event", Seq.empty)
 
       actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds)
 
-      expectProcessEventReply(ProcessUninitialized(processId))
+      expectProcessEventReply(NoSuchProcess(processId))
     }
 
     "reply with a InvalidEvent message when attempting to fire an event that is now know in the compiledRecipe" in {
@@ -208,12 +208,12 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val processId = UUID.randomUUID().toString
 
-      val initializeMsg = Initialize(Map.empty, ProcessState(processId, Map.empty, List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
 
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
       recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", ScalaGraphPetriNet(Graph.empty), Marking.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty))))
+        CompiledRecipe("name", PetriNet(Graph.empty), Marking.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty))))
 
       petriNetActorProbe.expectMsg(initializeMsg)
 
@@ -235,11 +235,11 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val processId = UUID.randomUUID().toString
 
-      val initializeMsg = Initialize(Map.empty, ProcessState(processId, Map.empty, List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
       val eventType = EventDescriptor("Event", Seq(IngredientDescriptor("ingredientName", PrimitiveType(classOf[String]))))
-      val transitions: Set[Transition[_]] = Set(EventTransition(eventType, true, None))
+      val transitions: Set[Transition] = Set(EventTransition(eventType, true, None))
       when(petrinetMock.transitions).thenReturn(transitions)
 
       actorIndex ! CreateProcess(recipeId, processId)
@@ -267,11 +267,11 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val processId = UUID.randomUUID().toString
 
-      val initializeMsg = Initialize(Map.empty, ProcessState(processId, Map.empty, List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
       val eventType = EventDescriptor("Event", Seq.empty)
-      val transitions: Set[Transition[_]] = Set(EventTransition(eventType, true, None))
+      val transitions: Set[Transition] = Set(EventTransition(eventType, true, None))
       when(petrinetMock.transitions).thenReturn(transitions)
 
       actorIndex ! CreateProcess(recipeId, processId)

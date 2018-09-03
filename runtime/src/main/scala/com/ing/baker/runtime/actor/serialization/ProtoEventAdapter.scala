@@ -3,10 +3,8 @@ package com.ing.baker.runtime.actor.serialization
 import java.util.concurrent.TimeUnit
 
 import com.google.protobuf.ByteString
-import com.ing.baker.il.ActionType.SieveAction
 import com.ing.baker.il.petrinet.{Node, RecipePetriNet}
-import com.ing.baker.il.{ActionType, CompiledRecipe}
-import com.ing.baker.petrinet.api.{IdentifiableOps, Marking, ScalaGraphPetriNet}
+import com.ing.baker.petrinet.api.{IdentifiableOps, Marking, PetriNet}
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization.tokenIdentifier
 import com.ing.baker.runtime.actor.protobuf._
@@ -188,7 +186,7 @@ trait ProtoEventAdapter {
               val t = protobuf.MultiFacilitatorTransition(Option(label))
               protobuf.Node(protobuf.Node.OneofNode.MultiFacilitatorTransition(t))
 
-            case t: il.petrinet.InteractionTransition[_] =>
+            case t: il.petrinet.InteractionTransition =>
               val pt = protobuf.InteractionTransition(
                 eventsToFire = t.eventsToFire.map(toProtoType[protobuf.EventDescriptor]),
                 originalEvents = t.originalEvents.map(toProtoType[protobuf.EventDescriptor]),
@@ -196,7 +194,6 @@ trait ProtoEventAdapter {
                 requiredIngredients = t.requiredIngredients.map(toProtoType[protobuf.IngredientDescriptor]),
                 interactionName = Option(t.interactionName),
                 originalInteractionName = Option(t.originalInteractionName),
-                isSieve = Option(t.actionType.equals(SieveAction)),
                 predefinedParameters = t.predefinedParameters.mapValues(toProtoType[protobuf.Value]),
                 maximumInteractionCount = t.maximumInteractionCount,
                 failureStrategy = Option(toProtoType[protobuf.InteractionFailureStrategy](t.failureStrategy)),
@@ -349,7 +346,6 @@ trait ProtoEventAdapter {
                 requiredIngredients = t.requiredIngredients.map(toDomainType[il.IngredientDescriptor]),
                 interactionName = t.interactionName.getOrMissing("interactionName"),
                 originalInteractionName = t.originalInteractionName.getOrMissing("originalInteractionName"),
-                actionType = if (t.isSieve.getOrElse(false)) ActionType.SieveAction else ActionType.InteractionAction,
                 predefinedParameters = t.predefinedParameters.mapValues(toDomainType[Value]),
                 maximumInteractionCount = t.maximumInteractionCount,
                 failureStrategy = t.failureStrategy.map(toDomainType[il.failurestrategy.InteractionFailureStrategy]).getOrMissing("failureStrategy"),
@@ -484,7 +480,7 @@ trait ProtoEventAdapter {
         val retentionPeriod = retentionMillis.map(Duration(_, TimeUnit.MILLISECONDS))
 
         val graph = toDomain(graphMsg).asInstanceOf[scalax.collection.immutable.Graph[Node, WLDiEdge]]
-        val petriNet: RecipePetriNet = ScalaGraphPetriNet(graph)
+        val petriNet: RecipePetriNet = PetriNet(graph)
         val initialMarking = producedTokens.foldLeft(Marking.empty[il.petrinet.Place]) {
           case (accumulated, protobuf.ProducedToken(Some(placeId), Some(_), Some(count), _)) ⇒ // Option[SerializedData] is always None, and we don't use it here.
             val place = petriNet.places.getById(placeId, "place in petrinet").asInstanceOf[il.petrinet.Place[Any]]
@@ -493,11 +489,11 @@ trait ProtoEventAdapter {
           case _ ⇒ throw new IllegalStateException("Missing data in persisted ProducedToken")
         }
 
-        CompiledRecipe(name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
+        il.CompiledRecipe(name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
 
       case recipe_manager.protobuf.RecipeAdded(Some(recipeId), (Some(compiledRecipeMsg))) =>
 
-        val compiledRecipe = toDomain(compiledRecipeMsg).asInstanceOf[CompiledRecipe]
+        val compiledRecipe = toDomain(compiledRecipeMsg).asInstanceOf[il.CompiledRecipe]
         RecipeAdded(recipeId, compiledRecipe)
 
       case process_index.protobuf.ActorCreated(Some(recipeId), Some(processId), Some(dateCreated)) =>

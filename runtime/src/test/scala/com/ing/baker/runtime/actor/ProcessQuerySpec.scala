@@ -55,10 +55,11 @@ class ProcessQuerySpec extends AkkaTestBase("ProcessQuerySpec") with BeforeAndAf
       val processId = UUID.randomUUID().toString
       val instance = createPetriNetActor[Unit, Unit](petriNet, runtime, processId)
 
-      instance ! Initialize(marshal(Marking(p1 -> 1)), ())
-      expectMsg(Initialized(marshal[Place](Marking(p1 -> 1)), ()))
-      expectMsgPF(timeOut) { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
-      expectMsgPF(timeOut) { case TransitionFired(_, 2, _, _, _, _, _) ⇒ }
+      instance ! Initialize(Marking(p1 -> 1), ())
+
+      expectMsg(Initialized(Marking(p1 -> 1), ()))
+      expectMsgPF(timeOut) { case TransitionFired(_, 1, _, _, _, _, _, _) ⇒ }
+      expectMsgPF(timeOut) { case TransitionFired(_, 2, _, _, _, _, _, _) ⇒ }
 
       ProcessQuery.eventsForInstance[Place, Transition, Unit, Unit](
         "test",
@@ -109,9 +110,9 @@ class ProcessQuerySpec extends AkkaTestBase("ProcessQuerySpec") with BeforeAndAf
       val processId3 = UUID.randomUUID().toString
       val instance3 = createPetriNetActor[Unit, Unit](petriNet, runtime, processId3)
 
-      instance1 ! Initialize(marshal(Marking(p1 -> 1)), ())
-      instance2 ! Initialize(marshal(Marking(p1 -> 1)), ())
-      instance3 ! Initialize(marshal(Marking(p1 -> 1)), ())
+      instance1 ! Initialize(Marking.empty[Place], ())
+      instance2 ! Initialize(Marking.empty[Place], ())
+      instance3 ! Initialize(Marking.empty[Place], ())
 
       // Setup is finished here, now continue with assertions
 
@@ -146,9 +147,9 @@ class ProcessQuerySpec extends AkkaTestBase("ProcessQuerySpec") with BeforeAndAf
       val processId3 = UUID.randomUUID().toString
       val instance3 = createPetriNetActor[Unit, Unit](petriNet, runtime, processId3)
 
-      instance1 ! Initialize(marshal(Marking(p1 -> 1)), ())
-      instance2 ! Initialize(marshal(Marking(p1 -> 1)), ())
-      instance3 ! Initialize(marshal(Marking(p1 -> 1)), ())
+      instance1 ! Initialize(Marking.empty[Place], ())
+      instance2 ! Initialize(Marking.empty[Place], ())
+      instance3 ! Initialize(Marking.empty[Place], ())
 
       // Setup is finished here, now continue with assertions
 

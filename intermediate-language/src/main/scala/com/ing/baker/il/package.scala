@@ -2,8 +2,6 @@ package com.ing.baker
 
 import java.security.MessageDigest
 
-import com.ing.baker.il.ActionType.{InteractionAction, SieveAction}
-import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, MissingEventTransition, MultiFacilitatorTransition, Place, Transition}
 
 
@@ -13,35 +11,15 @@ package object il {
   val SuccessEventAppend = "Successful"
   val exhaustedEventAppend = "RetryExhausted"
 
-  implicit class PlaceAdditions(place: Place[_]) {
-    def isIngredient: Boolean = place.placeType == IngredientPlace
-
-    def isInteractionEventOutput: Boolean = place.placeType == InteractionEventOutputPlace
-
-    def isFiringLimiter: Boolean = place.placeType.isInstanceOf[FiringLimiterPlace]
-
-    def isEventPrecondition: Boolean = place.placeType == EventPreconditionPlace
-
-    def isOrEventPrecondition: Boolean = place.placeType == EventOrPreconditionPlace
-
-    def isIntermediate: Boolean = place.placeType == IntermediatePlace
-
-    def isEmptyEventIngredient: Boolean = place.placeType == EmptyEventIngredientPlace
-  }
-
-  implicit class TransitionAdditions(transition: Transition[_]) {
+  implicit class TransitionAdditions(transition: Transition) {
 
     def isInteraction: Boolean = PartialFunction.cond(transition) {
-      case t: InteractionTransition[_] => t.actionType == InteractionAction
+      case _: InteractionTransition => true
     }
 
     def isMultiFacilitatorTransition: Boolean = transition.isInstanceOf[MultiFacilitatorTransition]
 
-    def isSieve: Boolean = PartialFunction.cond(transition) {
-      case t: InteractionTransition[_] => t.actionType == SieveAction
-    }
-
-    def isEventMissing: Boolean = transition.isInstanceOf[MissingEventTransition[_]]
+    def isEventMissing: Boolean = transition.isInstanceOf[MissingEventTransition]
 
     def isSensoryEvent: Boolean =
       transition match {

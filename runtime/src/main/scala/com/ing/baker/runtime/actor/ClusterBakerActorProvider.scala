@@ -20,7 +20,7 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, TimeoutException}
 import scala.concurrent.duration._
 
 object ClusterBakerActorProvider {
@@ -77,12 +77,17 @@ class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption
     /**
       * Join cluster after waiting for the persistenceInit actor, otherwise terminate here.
       */
-    Await.result(Util.persistenceInit(journalInitializeTimeout), journalInitializeTimeout)
+    try {
+      Await.result(Util.persistenceInit(journalInitializeTimeout), journalInitializeTimeout)
+    } catch {
+      case _: TimeoutException => throw new IllegalStateException(s"Timeout when trying to initialize the akka journal, waited $journalInitializeTimeout")
+    }
 
     // join the cluster
     log.info("PersistenceInit actor started successfully, joining cluster seed nodes {}", seedNodes)
     Cluster.get(actorSystem).joinSeedNodes(seedNodes)
   }
+
 
   override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {
     ClusterSharding(actorSystem).start(

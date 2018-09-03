@@ -255,7 +255,7 @@ message InteractionTransition {
     repeated IngredientDescriptor requiredIngredients = 4;
     optional string interactionName = 5;
     optional string originalInteractionName = 6;
-    optional bool isSieve = 7;
+    // optional bool isSieve = 7; // removed field, do not re-use this identifier!
     map<string, Value> predefinedParameters = 8;
     optional int32 maximumInteractionCount = 9;
     optional InteractionFailureStrategy failureStrategy = 10;

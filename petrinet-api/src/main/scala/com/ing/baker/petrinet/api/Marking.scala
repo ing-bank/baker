@@ -2,7 +2,12 @@ package com.ing.baker.petrinet.api
 
 object Marking {
 
-  def empty[P[_]]: Marking[P] = HMap[P, MultiSet](Map.empty)
+  /**
+    * Returns the empty marking.
+    *
+    * @return The empty marking.
+    */
+  def empty[P[_]]: Marking[P] = HMap.empty[P, MultiSet]
 
   def apply[P[_], A](m1: MarkedPlace[P, A]): Marking[P] = {
     HMap[P, MultiSet](Map[P[_], MultiSet[_]](m1))

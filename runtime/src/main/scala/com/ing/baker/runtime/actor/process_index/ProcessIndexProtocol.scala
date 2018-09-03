@@ -49,7 +49,7 @@ object ProcessIndexProtocol {
   /**
     * Returned if the process is unitialized
     */
-  case class ProcessUninitialized(override val processId: String) extends ProcessIndexMessage
+  case class NoSuchProcess(override val processId: String) extends ProcessIndexMessage
 
   /**
     * A response send in case when a process was already created in the past

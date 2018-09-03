@@ -1,7 +1,7 @@
 # BAKER
 
 [![Build Status](https://api.travis-ci.org/ing-bank/baker.png?branch=master)](https://travis-ci.org/ing-bank/baker)
-[![Maven Central](https://img.shields.io/maven-central/v/com.ing.baker/baker-runtime_2.12.svg)](https://maven-badges.herokuapp.com/maven-central/com.ing.baker/baker-runtime_2.12)
+[![Maven Central](https://img.shields.io/maven-metadata/v/http/central.maven.org/maven2/com/ing/baker/baker-runtime_2.12/maven-metadata.xml.svg)](https://maven-badges.herokuapp.com/maven-central/com.ing.baker/baker-runtime_2.12)
 [![codecov.io](http://codecov.io/github/ing-bank/baker/coverage.svg?branch=master)](https://codecov.io/gh/ing-bank/baker?branch=master)
 
 ![](baker.png)
@@ -17,7 +17,7 @@ An introductory presentation of Baker: [Baker talk @ Amsterdam.Scala meetup](htt
 
 A talk about Baker at the Scale By the Bay 2017 conference: [Declare, verify and execute microservices-based process flows](https://www.youtube.com/watch?v=0bWQwUmeXHU).
 
-An example web-shop recipe you can find at: [ExamplesSpec](https://github.com/ing-bank/baker/blob/master/test-module/src/test/scala/com/ing/baker/ExamplesSpec.scala) 
+An example web-shop recipe you can find at: [ExamplesSpec](runtime/src/test/scala/com/ing/baker/runtime/ExamplesSpec.scala) 
 
 WebShop Recipe:
 ```scala
@@ -113,11 +113,22 @@ A -> { B C }
 }
 ```
 
-To create a SVG, run:
+Assuming you have the graphviz `dot` command you can create an SVG by running:
 
 ```
 dot -v -Tsvg -O graph.dot
 ```
+
+Alternatively you can use [graphviz-java](https://github.com/nidi3/graphviz-java) to generate the SVG in your code:
+
+```scala
+import guru.nidi.graphviz.engine.{Format, Graphviz}
+import guru.nidi.graphviz.parse.Parser
+
+val g = Parser.read(getRecipeVisualization)
+Graphviz.fromGraph(g).render(Format.SVG).toString
+```
+
 
 Preview the results:
 

@@ -7,27 +7,19 @@ import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core._
 import com.ing.baker.types.Value
-import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
 class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRef]) {
 
-  private final val log = LoggerFactory.getLogger(classOf[JBaker])
-
-  private implicit class DurationConversions(timeout: java.time.Duration) {
-    def toScala: FiniteDuration =
-      FiniteDuration(timeout.toMillis, TimeUnit.MILLISECONDS)
-  }
-
-  addImplementations(implementations)
-
   def this(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRef]) = this(new Baker()(actorSystem), implementations)
 
   def this(actorSystem: ActorSystem) = this(actorSystem, Collections.emptyList[AnyRef])
 
   def this() = this(ActorSystem("BakerActorSystem"))
+
+  addImplementations(implementations)
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -51,7 +43,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     *
     * @param implementations An iterable of implementations that should be added.
     */
-  def addImplementations(implementations: java.lang.Iterable[AnyRef]) = implementations.asScala.foreach(addImplementation)
+  def addImplementations(implementations: java.lang.Iterable[AnyRef]): Unit = implementations.asScala.foreach(addImplementation)
 
   /**
     * Attempts to gracefully shutdown the baker system.
@@ -59,13 +51,13 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @param timeout The time to wait for the shard handover.
     */
   @throws[TimeoutException]("When the Baker does not shut down within the given deadline")
-  def shutdown(timeout: java.time.Duration): Unit = baker.shutdown(Duration(timeout.toMillis, TimeUnit.MILLISECONDS))
+  def gracefulShutdown(timeout: java.time.Duration): Unit = baker.gracefulShutdown(Duration(timeout.toMillis, TimeUnit.MILLISECONDS))
 
   /**
     * Attempts to gracefully shutdown the baker system.
     */
   @throws[TimeoutException]("When the Baker does not shut down within the given deadline")
-  def shutdown(): Unit = baker.shutdown()
+  def gracefulShutdown(): Unit = baker.gracefulShutdown()
 
   /**
     * This bakes (creates) a new process instance of the recipe.

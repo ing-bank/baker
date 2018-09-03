@@ -1,9 +1,11 @@
 package com.ing.baker.petrinet.dsl.colored
 
-import com.ing.baker.petrinet.api.{MarkedPlace, MultiSet}
+import com.ing.baker.petrinet.api.{Id, Identifiable, MarkedPlace, MultiSet}
 
 object Place {
   def apply[Color](id: Long): Place[Color] = Place(id, s"p$id")
+
+  implicit val identifiable: Identifiable[Place[_]] = p => Id(p.id)
 }
 
 /**

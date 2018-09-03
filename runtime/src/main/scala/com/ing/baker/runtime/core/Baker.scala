@@ -8,8 +8,8 @@ import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
-import akka.stream.{ActorMaterializer, SourceRef}
 import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.{ActorMaterializer, SourceRef}
 import akka.util.Timeout
 import com.ing.baker.il._
 import com.ing.baker.il.petrinet._
@@ -252,7 +252,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     Await.result(futureResult, defaultInquireTimeout) match {
       case RecipeFound(compiledRecipe) => getEventsForRecipe(processId, compiledRecipe)
       case ProcessDeleted(_)           => throw new ProcessDeletedException(s"Process $processId is deleted")
-      case ProcessUninitialized(_)     => throw new NoSuchProcessException(s"No process found for $processId")
+      case NoSuchProcess(_)            => throw new NoSuchProcessException(s"No process found for $processId")
       case _                           => throw new BakerException("Unknown response received")
     }
   }
@@ -329,7 +329,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       .flatMap {
         case instane: InstanceState   => Future.successful(instane.state.asInstanceOf[ProcessState])
         case Uninitialized(id)        => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
-        case ProcessUninitialized(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
+        case NoSuchProcess(id)        => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
         case ProcessDeleted(id)       => Future.failed(new ProcessDeletedException(s"Process $id is deleted"))
         case msg                      => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
       }
@@ -370,8 +370,9 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     val futureResult = processIndexActor.ask(GetCompiledRecipe(processId))(timeout)
     Await.result(futureResult, timeout) match {
       case RecipeFound(compiledRecipe) =>
-        RecipeVisualizer.visualiseCompiledRecipe(
+        RecipeVisualizer.visualizeRecipe(
           compiledRecipe,
+          config,
           eventNames = events(processId).map(_.name).toSet,
           ingredientNames = getIngredients(processId).keySet)
       case ProcessDeleted(_) => throw new ProcessDeletedException(s"Process $processId is deleted")
@@ -380,10 +381,9 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   }
 
   private def doRegisterEventListener(listener: EventListener, processFilter: String => Boolean): Boolean = {
-
     // Translates a petri net TransitionFiredEvent to an optional RuntimeEvent
-    def toRuntimeEvent[P[_], T[_], E](event: TransitionFiredEvent[P, T, E]): Option[RuntimeEvent] = {
-      val t = event.transition.asInstanceOf[Transition[_]]
+    def toRuntimeEvent[P[_], T, E](event: TransitionFiredEvent[P, T, E]): Option[RuntimeEvent] = {
+      val t = event.transition.asInstanceOf[Transition]
       if ((t.isSensoryEvent || t.isInteraction) && event.output.isInstanceOf[RuntimeEvent])
         Some(event.output.asInstanceOf[RuntimeEvent])
       else
@@ -457,7 +457,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     *
     * @param implementations The implementation object
     */
-  def addImplementation(implementations: Seq[AnyRef]): Unit =
+  def addImplementations(implementations: Seq[AnyRef]): Unit =
     implementations.foreach(addImplementation)
 
   /**
@@ -471,22 +471,6 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   /**
     * Attempts to gracefully shutdown the baker system.
     */
-  def shutdown(timeout: FiniteDuration = defaultShutdownTimeout): Unit = {
-    Try {
-      Cluster.get(actorSystem)
-    } match {
-      case Success(cluster) if cluster.state.members.exists(_.uniqueAddress == cluster.selfUniqueAddress) =>
-        cluster.registerOnMemberRemoved {
-          actorSystem.terminate()
-        }
-        implicit val akkaTimeout = Timeout(timeout)
-        Util.handOverShardsAndLeaveCluster(Seq("ProcessIndexActor"))
-      case Success(_) =>
-        log.debug("ActorSystem not a member of cluster")
-        actorSystem.terminate()
-      case Failure(exception) =>
-        log.debug("Cluster not available for actor system", exception)
-        actorSystem.terminate()
-    }
-  }
+  def gracefulShutdown(timeout: FiniteDuration = defaultShutdownTimeout): Unit =
+    GracefulShutdown.gracefulShutdownActorSystem(actorSystem, timeout)
 }

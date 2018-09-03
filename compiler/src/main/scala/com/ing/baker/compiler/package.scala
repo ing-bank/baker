@@ -7,8 +7,6 @@ import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.{InteractionDescriptor, ProvidesNothing}
 import com.ing.baker.types._
 
-import scala.concurrent.duration.Duration
-
 package object compiler {
 
   def ingredientToCompiledIngredient(ingredient: common.Ingredient): IngredientDescriptor = IngredientDescriptor(ingredient.name, ingredient.ingredientType)
@@ -17,16 +15,12 @@ package object compiler {
 
   implicit class InteractionOps(interaction: InteractionDescriptor) {
 
-    def toInteractionTransition(defaultFailureStrategy: common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition[_] =
-      interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.InteractionAction, allIngredientNames)
-
-    def toSieveTransition(defaultFailureStrategy: common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition[_] =
-      interactionTransitionOf(interaction, defaultFailureStrategy, ActionType.SieveAction, allIngredientNames)
+    def toInteractionTransition(defaultFailureStrategy: common.InteractionFailureStrategy, allIngredientNames: Set[String]): InteractionTransition =
+      interactionTransitionOf(interaction, defaultFailureStrategy, allIngredientNames)
 
     def interactionTransitionOf(interactionDescriptor: InteractionDescriptor,
                                 defaultFailureStrategy: common.InteractionFailureStrategy,
-                                actionType: ActionType,
-                                allIngredientNames: Set[String]): InteractionTransition[Any] = {
+                                allIngredientNames: Set[String]): InteractionTransition = {
 
       //This transforms the event using the eventOutputTransformer to the new event
       //If there is no eventOutputTransformer for the event the original event is returned
@@ -104,7 +98,7 @@ package object compiler {
         }
       }
 
-      InteractionTransition[Any](
+      InteractionTransition(
         eventsToFire = eventsToFire ++ exhaustedRetryEvent,
         originalEvents = originalEvents ++ exhaustedRetryEvent,
         providedIngredientEvent = providedIngredientEvent,
@@ -114,26 +108,8 @@ package object compiler {
         predefinedParameters = predefinedIngredientsWithOptionalsEmpty,
         maximumInteractionCount = interactionDescriptor.maximumInteractionCount,
         failureStrategy = failureStrategy,
-        eventOutputTransformers = interactionDescriptor.eventOutputTransformers.map { case (event, transformer) => event.name -> transformEventOutputTransformer(transformer) },
-        actionType = actionType)
+        eventOutputTransformers = interactionDescriptor.eventOutputTransformers.map {
+          case (event, transformer) => event.name -> transformEventOutputTransformer(transformer) })
     }
   }
-
-  implicit class TransitionOps(transitions: Seq[Transition[_]]) {
-
-    def findTransitionsByClass: Class[_] ⇒ Option[Transition[_]] =
-      clazz => transitions.findByLabel(clazz.getSimpleName)
-
-    def findTransitionByName: String ⇒ Option[Transition[_]] =
-      interactionName ⇒ transitions.findByLabel(interactionName)
-  }
-
-  implicit class EventTransitionOps(eventTransitions: Seq[EventTransition]) {
-    def findEventTransitionsByEvent: EventDescriptor ⇒ Option[EventTransition] =
-      event => eventTransitions.find(_.event == event)
-
-    def findEventTransitionsByEventName: String ⇒ Option[EventTransition] =
-      eventName => eventTransitions.find(_.event.name == eventName)
-  }
-
 }

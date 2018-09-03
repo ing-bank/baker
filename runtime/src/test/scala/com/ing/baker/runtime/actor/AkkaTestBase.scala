@@ -29,9 +29,7 @@ abstract class AkkaTestBase(actorSystemName: String = "testActorSystem") extends
       "test",
       topology,
       settings,
-      runtime,
-      colored.placeIdentifier,
-      colored.transitionIdentifier)
+      runtime)
     )
 
   override def afterAll() = {

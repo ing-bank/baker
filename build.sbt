@@ -22,7 +22,12 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     "-encoding", "utf8",
     s"-target:jvm-$jvmV",
     "-Xfatal-warnings"
-  )
+  ),
+  packageOptions in (Compile, packageBin) +=
+    Package.ManifestAttributes(
+      "Build-Time" -> new java.util.Date().toString,
+      "Build-Commit" -> git.gitHeadCommit.value.getOrElse("No Git Revision Found")
+    )
 )
 
 val dependencyOverrideSettings = Seq(
@@ -76,7 +81,6 @@ lazy val petrinetApi = project.in(file("petrinet-api"))
     )
   )
 
-
 lazy val bakertypes = project.in(file("bakertypes"))
   .settings(defaultModuleSettings)
   .settings(
@@ -96,9 +100,9 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
     libraryDependencies ++= compileDeps(
       slf4jApi,
       scalaGraphDot,
-      graphvizJava,
       objenisis,
-      jodaTime
+      jodaTime,
+      typeSafeConfig
     ) ++ testDeps(scalaTest, scalaCheck, logback)
   ).dependsOn(petrinetApi, bakertypes)
 
@@ -116,7 +120,6 @@ lazy val recipeRuntime = project.in(file("runtime"))
         akkaPersistence,
         akkaPersistenceQuery,
         akkaClusterSharding,
-        akkaDistributedData,
         akkaInmemoryJournal,
         akkaSlf4j,
         akkaStream,
@@ -134,6 +137,8 @@ lazy val recipeRuntime = project.in(file("runtime"))
         akkaTestKit,
         akkaStreamTestKit,
         akkaInmemoryJournal,
+        levelDB,
+        levelDBJni,
         junitInterface,
         scalaTest,
         scalaCheck,
@@ -172,7 +177,7 @@ lazy val recipeCompiler = project.in(file("compiler"))
     libraryDependencies ++=
       compileDeps(slf4jApi) ++ testDeps(scalaTest, scalaCheck, logback)
   )
-  .dependsOn(recipeDsl, intermediateLanguage, petrinetApi)
+  .dependsOn(recipeDsl, intermediateLanguage, petrinetApi, testScope(recipeDsl))
 
 lazy val baas = project.in(file("baas"))
   .settings(defaultModuleSettings)
@@ -195,30 +200,10 @@ lazy val baas = project.in(file("baas"))
         scalaCheck
       )
   )
-  .dependsOn(recipeDsl, recipeCompiler, intermediateLanguage, recipeRuntime)
-
-lazy val testModule = project.in(file("test-module"))
-  .settings(defaultModuleSettings)
-  .settings(noPublishSettings)
-  .settings(
-    moduleName := "test-module",
-    libraryDependencies ++=
-      testDeps(
-        akkaSlf4j,
-        akkaTestKit,
-        logback,
-        mockito,
-        scalaTest,
-        junitInterface,
-        levelDB,
-        levelDBJni,
-        scalaCheck
-      )
-  )
-  .dependsOn(testScope(recipeDsl), recipeCompiler, intermediateLanguage, testScope(recipeRuntime), baas)
+  .dependsOn(recipeDsl, recipeCompiler, intermediateLanguage, recipeRuntime, testScope(recipeRuntime))
 
 lazy val baker = project
   .in(file("."))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
-  .aggregate(bakertypes, petrinetApi, recipeRuntime, recipeCompiler, recipeDsl, intermediateLanguage, testModule)
+  .aggregate(bakertypes, petrinetApi, recipeRuntime, recipeCompiler, recipeDsl, intermediateLanguage)

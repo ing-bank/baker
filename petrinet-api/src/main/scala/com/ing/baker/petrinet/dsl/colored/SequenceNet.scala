@@ -4,6 +4,7 @@ import cats.effect.IO
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
 
+
 case class TransitionBehaviour[S, E](automated: Boolean, exceptionHandler: TransitionExceptionHandler[Place], fn: S ⇒ E) {
   def asTransition(id: Long) = StateTransition[S, E](id, s"t$id", automated, exceptionHandler, state ⇒ IO { (fn(state)) })
 }
@@ -12,8 +13,8 @@ trait SequenceNet[S, E] extends StateTransitionNet[S, E] {
 
   def sequence: Seq[TransitionBehaviour[S, E]]
 
-  lazy val places = (1 to (sequence.size + 1)).map(i ⇒ Place[Unit](id = i, label = s"p$i"))
-  lazy val initialMarking = Marking(place(1) -> 1)
+  lazy val places: Seq[Place[Unit]] = (1 to (sequence.size + 1)).map(i ⇒ Place[Unit](id = i, label = s"p$i"))
+  lazy val initialMarking: Marking[Place] = Marking(place(1) -> 1)
 
   def place(n: Int) = places(n - 1)
 

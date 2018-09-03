@@ -2,7 +2,7 @@ package com.ing.baker.runtime.actor.serialization
 
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
-import com.ing.baker.petrinet.api.{BiPartiteGraph, ScalaGraphPetriNet}
+import com.ing.baker.petrinet.api.{BiPartiteGraph, PetriNet}
 
 import scalax.collection.edge.WLDiEdge
 
@@ -24,9 +24,9 @@ case class SerializableGraph[P, T](nodes: List[Either[P, T]], edges: List[Serial
   }
 }
 
-class KryoGraphSerializer extends Serializer[ScalaGraphPetriNet[_,_]]{
+class KryoGraphSerializer extends Serializer[PetriNet[_,_]]{
 
-  override def write(kryo: Kryo, output: Output, petriNet: ScalaGraphPetriNet[_, _]) = {
+  override def write(kryo: Kryo, output: Output, petriNet: PetriNet[_, _]) = {
 
     val nodeList = petriNet.nodes.toList
 
@@ -43,10 +43,10 @@ class KryoGraphSerializer extends Serializer[ScalaGraphPetriNet[_,_]]{
     kryo.writeObject(output, serializableGraph)
   }
 
-  override def read(kryo: Kryo, input: Input, aClass: Class[ScalaGraphPetriNet[_, _]]): ScalaGraphPetriNet[_,_] = {
+  override def read(kryo: Kryo, input: Input, aClass: Class[PetriNet[_, _]]): PetriNet[_,_] = {
 
     val serializeableGraph = kryo.readObject(input, classOf[SerializableGraph[_, _]])
 
-    new ScalaGraphPetriNet(serializeableGraph.buildGraph)
+    new PetriNet(serializeableGraph.buildGraph)
   }
 }
