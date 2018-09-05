@@ -37,10 +37,11 @@ class BakerInquireSpec extends BakerRuntimeTestBase {
 
     "return all recipes if asked" in {
       val (baker, recipeId) = setupBakerWithRecipe("returnAllRecipes", false)
-      baker.addRecipe(RecipeCompiler.compileRecipe(getRecipe("returnAllRecipes2")))
+      val recipeId2 = baker.addRecipe(RecipeCompiler.compileRecipe(getRecipe("returnAllRecipes2")))
       val recipes: Map[String, CompiledRecipe] = baker.getAllRecipes()
       recipes.size shouldBe 2
       recipes(recipeId).name shouldBe "returnAllRecipes"
+      recipes(recipeId2).name shouldBe "returnAllRecipes2"
     }
 
     "return health of a recipe if asked" in {
