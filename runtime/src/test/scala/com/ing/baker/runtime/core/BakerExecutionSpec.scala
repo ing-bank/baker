@@ -945,9 +945,12 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val interaction2Delay = 2000
 
       when(testInteractionTwoMock.apply(anyString())).thenAnswer {
-        (invocation: InvocationOnMock) => {
-          Thread.sleep(interaction2Delay)
-          interactionTwoEventValue
+        //Do not remove next line, still needed in 2.11
+        new Answer[EventFromInteractionTwo] {
+          override def answer(invocation: InvocationOnMock): EventFromInteractionTwo = {
+            Thread.sleep(interaction2Delay)
+            interactionTwoEventValue
+          }
         }
       }
 
