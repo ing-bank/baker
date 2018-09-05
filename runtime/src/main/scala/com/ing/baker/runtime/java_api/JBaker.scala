@@ -488,8 +488,8 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @return A Set with a RecipeHealth per recipe
     */
   @throws[TimeoutException]("When the Baker does not respond within the given deadline")
-  def getHealthAllRecipes(timeout: java.time.Duration): java.util.Set[JRecipeHealth] =
-    baker.getHealthAllRecipes(timeout.toScala).map(JRecipeHealth.fromRecipeHealth).asJava
+  def getAllRecipeHealths(timeout: java.time.Duration): java.util.Set[JRecipeHealth] =
+    baker.getAllRecipeHealths(timeout.toScala).map(JRecipeHealth.fromRecipeHealth).asJava
 
   /**
     * Return the health of all recipes
@@ -498,8 +498,8 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @return A Set with a RecipeHealth per recipe
     */
   @throws[TimeoutException]("When the Baker does not respond within the given deadline")
-  def getHealthAllRecipes(): java.util.Set[JRecipeHealth] =
-     baker.getHealthAllRecipes().map(JRecipeHealth.fromRecipeHealth).asJava
+  def getAllRecipeHealths(): java.util.Set[JRecipeHealth] =
+     baker.getAllRecipeHealths().map(JRecipeHealth.fromRecipeHealth).asJava
 
   /**
     * Return the health of a specific recipe
@@ -508,8 +508,8 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @return A Set with a RecipeHealth per recipe
     */
   @throws[TimeoutException]("When the Baker does not respond within the given deadline")
-  def getHealthRecipe(recipeId: String, timeout: java.time.Duration): JRecipeHealth =
-    JRecipeHealth.fromRecipeHealth(baker.getHealthRecipe(recipeId, timeout.toScala))
+  def getRecipeHealth(recipeId: String, timeout: java.time.Duration): JRecipeHealth =
+    JRecipeHealth.fromRecipeHealth(baker.getRecipeHealth(recipeId, timeout.toScala))
 
   /**
     * Return the health of a specific recipe
@@ -518,8 +518,8 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @return A Set with a RecipeHealth per recipe
     */
   @throws[TimeoutException]("When the Baker does not respond within the given deadline")
-  def getHealthRecipe(recipeId: String): JRecipeHealth =
-    JRecipeHealth.fromRecipeHealth(baker.getHealthRecipe(recipeId))
+  def getRecipeHealth(recipeId: String): JRecipeHealth =
+    JRecipeHealth.fromRecipeHealth(baker.getRecipeHealth(recipeId))
 
   /**
     * Returns an index of all processes.

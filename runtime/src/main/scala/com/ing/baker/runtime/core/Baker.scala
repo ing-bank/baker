@@ -160,7 +160,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   /**
     * Returns the health of a specific recipe
     */
-  def getHealthRecipe(recipeId: String, timeout: FiniteDuration = defaultInquireTimeout): RecipeHealth = {
+  def getRecipeHealth(recipeId: String, timeout: FiniteDuration = defaultInquireTimeout): RecipeHealth = {
     val compiledRecipe: CompiledRecipe = getRecipe(recipeId, timeout)
     RecipeHealth(recipeId, compiledRecipe.name, getImplementationErrors(compiledRecipe))
   }
@@ -168,7 +168,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   /**
     * Returns the health of all recipes
     */
-  def getHealthAllRecipes(timeout: FiniteDuration = defaultInquireTimeout): Set[RecipeHealth] = {
+  def getAllRecipeHealths(timeout: FiniteDuration = defaultInquireTimeout): Set[RecipeHealth] = {
     val recipes: Map[String, CompiledRecipe] = getAllRecipes()
     recipes.map {
       case (recipeId, compiledRecipe) =>
