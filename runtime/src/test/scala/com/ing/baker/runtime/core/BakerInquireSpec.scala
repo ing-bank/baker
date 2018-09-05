@@ -46,9 +46,11 @@ class BakerInquireSpec extends BakerRuntimeTestBase {
     "return health of a recipe if asked" in {
       val (baker, recipeId) = setupBakerWithRecipe("returnHealthRecipe", false)
       val recipeHealth: RecipeHealth = baker.getRecipeHealth(recipeId)
-      recipeHealth.recipeName shouldBe "returnHealthRecipe"
-      recipeHealth.recipeId shouldBe recipeId
-      recipeHealth.errors shouldBe empty
+      recipeHealth should have(
+        'recipeName ("returnHealthRecipe"),
+        'recipeId (recipeId),
+        'errors (Set.empty)
+      )
     }
 
     "return health of all recipes if asked" in {
@@ -56,16 +58,20 @@ class BakerInquireSpec extends BakerRuntimeTestBase {
       val recipeId2 = baker.addRecipe(RecipeCompiler.compileRecipe(getRecipe("returnHealthAllRecipe2")))
       val recipeHealths: Set[RecipeHealth] = baker.getAllRecipeHealths()
       recipeHealths.size shouldBe 2
-      recipeHealths.filter(rh => rh.recipeId equals recipeId).map(rh => {
-        rh.recipeName shouldBe "returnHealthAllRecipe"
-        rh.recipeId shouldBe recipeId
-        rh.errors shouldBe empty
-      })
-      recipeHealths.filter(rh => rh.recipeId equals recipeId2).map(rh => {
-        rh.recipeName shouldBe "returnHealthAllRecipe2"
-        rh.recipeId shouldBe recipeId2
-        rh.errors shouldBe empty
-      })
+      recipeHealths.filter(rh => rh.recipeId == recipeId)
+        .map(_ should have(
+          'recipeName ("returnHealthAllRecipe"),
+          'recipeId (recipeId),
+          'errors (Set.empty)
+        )
+      )
+      recipeHealths.filter(rh => rh.recipeId == recipeId2)
+        .map(_ should have(
+          'recipeName ("returnHealthAllRecipe2"),
+          'recipeId (recipeId2),
+          'errors (Set.empty)
+        )
+      )
     }
   }
 }
