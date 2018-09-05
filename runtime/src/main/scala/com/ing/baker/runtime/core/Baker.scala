@@ -100,8 +100,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   def addRecipe(compiledRecipe: CompiledRecipe, timeout: FiniteDuration = defaultAddRecipeTimeout): String = {
 
     // check if every interaction has an implementation
-    val implementationErrors = compiledRecipe.interactionTransitions.filterNot(interactionManager.getImplementation(_).isDefined)
-      .map(s => s"No implementation provided for interaction: ${s.originalInteractionName}")
+    val implementationErrors = getImplementationErrors(compiledRecipe)
 
     if (implementationErrors.nonEmpty)
       throw new BakerException(implementationErrors.mkString(", "))
@@ -114,6 +113,11 @@ class Baker()(implicit val actorSystem: ActorSystem) {
       case AddRecipeResponse(recipeId) => recipeId
       case _ => throw new BakerException(s"Unexpected error happened when adding recipe")
     }
+  }
+
+  private def getImplementationErrors(compiledRecipe: CompiledRecipe): Set[String] = {
+    compiledRecipe.interactionTransitions.filterNot(interactionManager.getImplementation(_).isDefined)
+      .map(s => s"No implementation provided for interaction: ${s.originalInteractionName}")
   }
 
   /**
@@ -152,6 +156,25 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     recipeManager.ask(GetAllRecipes)(timeout)
       .mapTo[AllRecipes]
       .map(_.compiledRecipes)
+
+  /**
+    * Returns the health of a specific recipe
+    */
+  def getHealthRecipe(recipeId: String, timeout: FiniteDuration = defaultInquireTimeout): RecipeHealth = {
+    val compiledRecipe: CompiledRecipe = getRecipe(recipeId, timeout)
+    RecipeHealth(recipeId, compiledRecipe.name, getImplementationErrors(compiledRecipe))
+  }
+
+  /**
+    * Returns the health of all recipes
+    */
+  def getHealthAllRecipes(timeout: FiniteDuration = defaultInquireTimeout): Set[RecipeHealth] = {
+    val recipes: Map[String, CompiledRecipe] = getAllRecipes()
+    recipes.map {
+      case (recipeId, compiledRecipe) =>
+        RecipeHealth(recipeId, compiledRecipe.name, getImplementationErrors(compiledRecipe))
+    }.toSet
+  }
 
   /**
     * Creates a process instance for the given recipeId with the given processId as identifier
