@@ -1,4 +1,6 @@
-package com.ing.baker.runtime.core
+package com.ing.baker.runtime.java_api
+
+import com.ing.baker.runtime.core.RecipeHealth
 
 import scala.collection.JavaConverters._
 
