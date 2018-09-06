@@ -2,19 +2,14 @@
 EXTENDS ClusterV2, TLC
 
 \* CONSTANT definitions @modelParameterConstants:0NumNodes
-const_153607498138478000 == 
-5
-----
-
-\* CONSTANT definitions @modelParameterConstants:1defaultInitValue
-const_153607498138479000 == 
-1
+const_1536247290436139000 == 
+3
 ----
 
 \* SPECIFICATION definition @modelBehaviorSpec:0
-spec_153607498138480000 ==
+spec_1536247290436140000 ==
 Spec
 ----
 =============================================================================
 \* Modification History
-\* Created Tue Sep 04 17:29:41 CEST 2018 by bekiroguz
+\* Created Thu Sep 06 17:21:30 CEST 2018 by bekiroguz
