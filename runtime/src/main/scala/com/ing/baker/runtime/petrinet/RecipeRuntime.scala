@@ -23,7 +23,12 @@ object RecipeRuntime {
 
 class RecipeRuntime(recipeName: String, interactionManager: InteractionManager, eventStream: EventStream) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
 
-  override val tokenGame = new RecipeTokenGame()
+  override val tokenGame = new RecipeTokenGame() {
+    override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition): Boolean = t match {
+      case EventTransition(_, true, _) => false
+      case _ => true
+    }
+  }
 
   override val eventSource = RecipeRuntime.eventSourceFn
 
@@ -61,11 +66,4 @@ class RecipeRuntime(recipeName: String, interactionManager: InteractionManager, 
   }
 
   override val taskProvider = new TaskProvider(recipeName, interactionManager, eventStream)
-
-  override lazy val jobPicker = new JobPicker[Place, Transition](tokenGame) {
-    override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition): Boolean = t match {
-      case EventTransition(_, true, _) => false
-      case _ => true
-    }
-  }
 }
