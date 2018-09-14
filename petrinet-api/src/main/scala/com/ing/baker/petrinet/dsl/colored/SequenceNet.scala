@@ -5,7 +5,11 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
 
 
-case class TransitionBehaviour[S, E](automated: Boolean, exceptionHandler: TransitionExceptionHandler[Place], fn: S ⇒ E) {
+case class TransitionBehaviour[S, E](
+    automated: Boolean,
+    exceptionHandler: TransitionExceptionHandler[Place],
+    fn: S ⇒ E) {
+
   def asTransition(id: Long) = StateTransition[S, E](id, s"t$id", automated, exceptionHandler, state ⇒ IO { (fn(state)) })
 }
 

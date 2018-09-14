@@ -80,17 +80,5 @@ package object api extends MultiSetOps with MarkingOps {
     def isPlace: Boolean = node.value.isLeft
     def isTransition: Boolean = node.value.isRight
   }
-
-  implicit class PetriNetGraphOps[P, T](val graph: BiPartiteGraph[P, T, WLDiEdge]) {
-
-    def inMarking(t: T): MultiSet[P] = graph.get(t).incoming.map(e ⇒ e.source.asPlace -> e.weight.toInt).toMap
-    def outMarking(t: T): MultiSet[P] = graph.get(t).outgoing.map(e ⇒ e.target.asPlace -> e.weight.toInt).toMap
-
-    def findPTEdge(from: P, to: T): Option[WLDiEdge[Either[P, T]]] =
-      graph.get(Left(from)).outgoing.find(_.target.value == Right(to)).map(_.toOuter)
-
-    def findTPEdge(from: T, to: P): Option[WLDiEdge[Either[P, T]]] =
-      graph.get(Right(from)).outgoing.find(_.target.value == Left(to)).map(_.toOuter)
-  }
 }
 
