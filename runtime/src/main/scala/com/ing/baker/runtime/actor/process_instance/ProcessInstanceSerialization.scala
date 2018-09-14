@@ -64,9 +64,11 @@ class ProcessInstanceSerialization[P[_], T, S, E](serializer: ObjectSerializer)(
   private def missingFieldException(field: String) = throw new IllegalStateException(s"Missing field in serialized data: $field")
 
   def serializeObject(obj: Any): Option[SerializedData] = {
-    (obj != null).option {
-      serializer.serializeObject(obj.asInstanceOf[AnyRef])
-    }
+
+    if (obj == null)
+      None
+    else
+      Some(serializer.serializeObject(obj.asInstanceOf[AnyRef]))
   }
 
   private def deserializeObject(obj: SerializedData): AnyRef = serializer.deserializeObject(obj)
