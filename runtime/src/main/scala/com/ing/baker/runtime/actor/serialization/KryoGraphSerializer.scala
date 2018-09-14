@@ -2,7 +2,7 @@ package com.ing.baker.runtime.actor.serialization
 
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
-import com.ing.baker.petrinet.api.{BiPartiteGraph, PetriNet}
+import com.ing.baker.petrinet.api.{PetriNetGraph, PetriNet}
 
 import scalax.collection.edge.WLDiEdge
 
@@ -10,7 +10,7 @@ case class SerializableEdge(from: Int, to: Int, weight: Long, label: Any)
 
 case class SerializableGraph[P, T](nodes: List[Either[P, T]], edges: List[SerializableEdge]) {
 
-  def buildGraph: BiPartiteGraph[P, T, WLDiEdge] = {
+  def buildGraph: PetriNetGraph[P, T] = {
 
     val params = edges.map { e =>
 

@@ -30,19 +30,17 @@ package object api extends MultiSetOps with MarkingOps {
     */
   type MarkedPlace[P[_], T] = (P[T], MultiSet[T])
 
-  implicit def extractId[T](e: T)(implicit identifiable: Identifiable[T]): Long = identifiable(e).value
-
   implicit class IdentifiableOps[T : Identifiable](seq: Iterable[T]) {
     def findById(id: Long): Option[T] = seq.find(e ⇒ implicitly[Identifiable[T]].apply(e).value == id)
     def getById(id: Long, name: String = "element"): T = findById(id).getOrElse { throw new IllegalStateException(s"No $name found with id: $id") }
   }
 
-  type BiPartiteGraph[P, T, E[X] <: EdgeLikeIn[X]] = Graph[Either[P, T], E]
+  type PetriNetGraph[P, T] = Graph[Either[P, T], WLDiEdge]
 
   implicit def placeToNode[P, T](p: P): Either[P, T] = Left(p)
   implicit def transitionToNode[P, T](t: T): Either[P, T] = Right(t)
 
-  implicit class PetriNetGraphNodeOps[P, T](val node: BiPartiteGraph[P, T, WLDiEdge]#NodeT) {
+  implicit class PetriNetGraphNodeOps[P, T](val node: PetriNetGraph[P, T]#NodeT) {
 
     def asPlace: P = node.value match {
       case Left(p) ⇒ p

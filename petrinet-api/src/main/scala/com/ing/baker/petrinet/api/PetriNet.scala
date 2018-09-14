@@ -7,7 +7,7 @@ import scalax.collection.edge.WLDiEdge
   *
  * Backed by a graph object from scala-graph (https://github.com/scala-graph/scala-graph)
  */
-case class PetriNet[P, T](val innerGraph: BiPartiteGraph[P, T, WLDiEdge]) {
+case class PetriNet[P, T](val innerGraph: PetriNetGraph[P, T]) {
 
   /**
     * The set of places of the petri net
