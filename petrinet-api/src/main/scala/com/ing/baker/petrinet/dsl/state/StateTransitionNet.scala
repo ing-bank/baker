@@ -1,7 +1,8 @@
-package com.ing.baker.petrinet.dsl.colored
+package com.ing.baker.petrinet.dsl.state
 
 import cats.effect.IO
 import com.ing.baker.petrinet.api._
+import com.ing.baker.petrinet.dsl.colored.{Place, Transition, TransitionExceptionHandler}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
 import com.ing.baker.petrinet.runtime._
 
