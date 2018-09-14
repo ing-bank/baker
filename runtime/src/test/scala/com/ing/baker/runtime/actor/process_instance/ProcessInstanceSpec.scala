@@ -3,15 +3,18 @@ package com.ing.baker.runtime.actor.process_instance
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-import akka.actor.{ActorRef, ActorSystem, PoisonPill, Terminated}
+import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props, Terminated}
 import akka.testkit.TestDuration
 import akka.util.Timeout
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.dsl.colored._
 import com.ing.baker.petrinet.dsl.state.{SequenceNet, StateTransitionNet}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Fatal, RetryWithDelay}
+import com.ing.baker.petrinet.runtime.{PetriNetRuntime, namedCachedThreadPool}
 import com.ing.baker.runtime.actor.AkkaTestBase
+import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
@@ -23,6 +26,8 @@ import org.scalatest.time.{Milliseconds, Span}
 import scala.concurrent.Promise
 import scala.concurrent.duration._
 import scala.util.Success
+import ProcessInstanceSpec._
+
 
 sealed trait Event
 case class Added(n: Int) extends Event
@@ -33,6 +38,38 @@ trait TestSequenceNet extends SequenceNet[Set[Int], Event] {
   override val eventSourceFunction: Set[Int] ⇒ Event ⇒ Set[Int] = set ⇒ {
     case Added(c)   ⇒ set + c
     case Removed(c) ⇒ set - c
+  }
+}
+
+object ProcessInstanceSpec {
+
+  val testExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
+
+  val instanceSettings = Settings(
+    executionContext = testExecutionContext,
+    idleTTL = None,
+    encryption = NoEncryption
+  )
+
+  def processInstanceProps[S, E](
+                                  topology: ColoredPetriNet,
+                                  runtime: PetriNetRuntime[Place, Transition, S, E],
+                                  settings: Settings): Props =
+
+    Props(new ProcessInstance[Place, Transition, S, E](
+      "test",
+      topology,
+      settings,
+      runtime)
+    )
+
+  def createPetriNetActor(props: Props, name: String)(implicit system: ActorSystem): ActorRef = {
+    system.actorOf(props, name)
+  }
+
+  def createProcessInstance[S, E](petriNet: ColoredPetriNet, runtime: PetriNetRuntime[Place, Transition, S, E], processId: String = UUID.randomUUID().toString)(implicit system: ActorSystem): ActorRef = {
+
+    createPetriNetActor(processInstanceProps(petriNet, runtime, instanceSettings), processId)
   }
 }
 
@@ -58,7 +95,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val initialState = Set(1, 2, 3)
 
-      val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
 
       actor ! Initialize(initialMarking, initialState)
       expectMsg(Initialized(initialMarking, initialState))
@@ -73,7 +110,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val initialState = Set(1, 2, 3)
 
-      val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
 
       actor ! Initialize(initialMarking, initialState)
       actor ! Initialize(initialMarking, initialState)
@@ -88,7 +125,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition()(_ ⇒ Added(2))
       )
 
-      val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
 
       watch(actor)
       actor ! GetState
@@ -103,7 +140,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition()(_ ⇒ Added(2))
       )
 
-      val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
       val initialState = Set(1, 2, 3)
 
       actor ! Initialize(initialMarking, initialState)
@@ -120,7 +157,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition()(_ ⇒ throw new RuntimeException("t2 failed!"))
       )
 
-      val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
 
       actor ! Initialize(initialMarking, Set.empty)
       expectMsgClass(classOf[Initialized])
@@ -138,7 +175,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition()(_ ⇒ Added(1))
       )
 
-      val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
 
       // initialize the petri net with 2 tokens in the first place
       actor ! Initialize(Marking(place(1) -> 2), Set.empty)
@@ -160,7 +197,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition()(_ ⇒ Added(2))
       )
 
-      val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
 
       actor ! Initialize(initialMarking, Set.empty)
       expectMsgClass(classOf[Initialized])
@@ -182,7 +219,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition()(_ ⇒ Added(2))
       )
 
-      val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
 
       actor ! Initialize(initialMarking, Set.empty)
       expectMsgClass(classOf[Initialized])
@@ -208,7 +245,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val id = UUID.randomUUID()
 
-      val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime)
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
 
       actor ! Initialize(initialMarking, Set.empty)
       expectMsgClass(classOf[Initialized])
@@ -239,7 +276,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val actorName = UUID.randomUUID().toString
 
-      val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime, actorName)
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime, actorName)
 
       actor ! Initialize(initialMarking, Set.empty)
       expectMsgClass(classOf[Initialized])
@@ -262,7 +299,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       syncKillActorWithPoisonPill(actor)
 
       // create a new actor with the same persistent identifier
-      val newActor = createPetriNetActor[Set[Int], Event](petriNet, runtime, actorName)
+      val newActor = createProcessInstance[Set[Int], Event](petriNet, runtime, actorName)
 
       newActor ! GetState
 
@@ -286,7 +323,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       when(mockFunction.apply(any[Set[Int]])).thenThrow(new RuntimeException("t2 failed"))
 
       val actorName = UUID.randomUUID().toString
-      val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime, actorName)
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime, actorName)
 
       actor ! Initialize(initialMarking, Set.empty)
       expectMsgClass(classOf[Initialized])
@@ -308,7 +345,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       when(mockFunction.apply(any[Set[Int]])).thenReturn(Added(1))
 
       // create a new actor with the same persistent identifier
-      val newActor = createPetriNetActor[Set[Int], Event](petriNet, runtime, actorName)
+      val newActor = createProcessInstance[Set[Int], Event](petriNet, runtime, actorName)
 
       // TODO find a way to prevent this sleep, perhaps listen on the event bus?
       Thread.sleep(dilatedMillis(1000))
@@ -328,7 +365,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         )
 
       val actorName = UUID.randomUUID().toString
-      val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime, actorName)
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime, actorName)
 
       actor ! Initialize(initialMarking, Set.empty)
 
@@ -352,7 +389,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val processId = UUID.randomUUID().toString
 
-      val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime, processId)
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime, processId)
 
       actor ! Initialize(initialMarking, Set.empty)
       expectMsgClass(classOf[Initialized])
@@ -369,7 +406,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       reset(mockT2)
 
       // create a new actor with the same persistent identifier
-      val newActor = createPetriNetActor[Set[Int], Event](petriNet, runtime, processId)
+      val newActor = createProcessInstance[Set[Int], Event](petriNet, runtime, processId)
 
       newActor ! GetState
 
@@ -403,7 +440,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val actorName = UUID.randomUUID().toString
 
-      val actor = createPetriNetActor[Set[Int], Event](petriNet, runtime, actorName)
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime, actorName)
 
       actor ! Initialize(initialMarking, Set.empty)
       expectMsgClass(classOf[Initialized])
@@ -436,7 +473,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition(automated = false)(_ ⇒ Added(2))
       )
 
-      val petriNetActor = createPetriNetActor(coloredProps(petriNet, runtime, customSettings), UUID.randomUUID().toString)
+      val petriNetActor = createPetriNetActor(processInstanceProps(petriNet, runtime, customSettings), UUID.randomUUID().toString)
       watch(petriNetActor)
 
       implicit val timeout = Timeout(dilatedMillis(2000), MILLISECONDS)
@@ -468,7 +505,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       // creates a petri net actor with initial marking: p1 -> 1
       val initialMarking = Marking.empty[Place]
 
-      val actor = createPetriNetActor[Unit, Unit](petriNet, runtime)
+      val actor = createProcessInstance[Unit, Unit](petriNet, runtime)
 
       actor ! Initialize(initialMarking, ())
       expectMsgClass(classOf[Initialized])
