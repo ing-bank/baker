@@ -17,7 +17,7 @@ abstract class ProcessInstanceRecovery[P[_], T, S, E](
 
   val eventSource = EventSourcing.apply[P, T, S, E](eventSourceFn)
 
-  val serializer = new ProcessInstanceSerialization[P, T, S, E](new ObjectSerializer(system, encryption))
+  private val serializer = new ProcessInstanceSerialization[P, T, S, E](new ObjectSerializer(system, encryption))
 
   def onRecoveryCompleted(state: Instance[P, T, S])
 

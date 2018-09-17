@@ -3,7 +3,7 @@ package com.ing.baker.runtime.actor.serialization
 import com.ing.baker.runtime.actor.serialization.modules._
 import scalapb.GeneratedMessage
 
-trait ProtoEventAdapter extends ProtoEventAdapterContext {
+class ProtoEventAdapter(override val objectSerializer: ObjectSerializer) extends ProtoEventAdapterContext {
 
   private val registeredModules: Set[ProtoEventAdapterModule] = Set(
     new IntermediateLanguageModule,

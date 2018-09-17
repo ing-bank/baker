@@ -6,6 +6,7 @@ import com.ing.baker.il
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.actor.protobuf
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
+import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.{actor, core}
 import scalapb.{GeneratedMessage, GeneratedMessageCompanion, Message}
 import org.slf4j.LoggerFactory
@@ -16,10 +17,11 @@ object BakerProtobufSerializer {
   private val log = LoggerFactory.getLogger(classOf[BakerProtobufSerializer])
 }
 
-class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest with ProtoEventAdapter {
+class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
   import BakerProtobufSerializer._
 
-  lazy val objectSerializer = new ObjectSerializer(system)
+  // TODO remove this lazy modifier, but be aware removing lazy causes the tests to hang.
+  private lazy val protoEventAdapter = new ProtoEventAdapter(new ObjectSerializer(system, NoEncryption))
 
   val manifestInfo = Seq(
     Entry("core.RuntimeEvent", classOf[core.RuntimeEvent], protobuf.RuntimeEvent),
@@ -48,7 +50,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
 
   override def toBinary(o: AnyRef): Array[Byte] = {
     try {
-      toProto(o).toByteArray
+      protoEventAdapter.toProto(o).toByteArray
     } catch {
       case e: Throwable =>
         log.error(s"Failed to serialize object $o", e)
@@ -65,7 +67,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
 
       val protobuf = pbt.parseFrom(bytes).asInstanceOf[GeneratedMessage]
 
-      toDomain(protobuf)
+      protoEventAdapter.toDomain(protobuf)
     } catch {
       case e: Throwable =>
         log.error(s"Failed to deserialize bytes with manifest $manifest", e)

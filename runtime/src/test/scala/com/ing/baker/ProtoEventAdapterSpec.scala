@@ -8,11 +8,9 @@ import com.ing.baker.runtime.actor.serialization.{ObjectSerializer, ProtoEventAd
 import org.scalatest.{FunSuiteLike, Matchers}
 
 @deprecated("marked deprecated because of -XFatal-Warnings and deprecated sieves", "1.4.0")
-class ProtoEventAdapterSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec")) with FunSuiteLike with Matchers  {
+class ProtoEventAdapterSpec extends TestKit(ActorSystem("ProtoEventAdapterSpec")) with FunSuiteLike with Matchers  {
 
-  val eventAdapter = new ProtoEventAdapter {
-    override val objectSerializer: ObjectSerializer = new ObjectSerializer(system)
-  }
+  val eventAdapter = new ProtoEventAdapter(new ObjectSerializer(system))
 
   test("should serialize AllTypeRecipe") {
     val recipe = AllTypeRecipe.recipe

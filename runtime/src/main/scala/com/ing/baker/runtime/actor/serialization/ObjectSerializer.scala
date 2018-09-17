@@ -8,7 +8,7 @@ import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 
 class ObjectSerializer(system: ActorSystem, encryption: Encryption = NoEncryption) {
 
-  val serialization = SerializationExtension.get(system)
+  private val serialization = SerializationExtension.get(system)
 
   def getSerializerFor(obj: AnyRef): Serializer = serialization.findSerializerFor(obj)
 
