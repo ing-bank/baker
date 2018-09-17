@@ -5,7 +5,6 @@ import java.util.UUID
 import akka.actor.{ActorLogging, Props}
 import akka.persistence.PersistentActor
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.actor.InternalBakerEvent
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 
@@ -17,7 +16,7 @@ object RecipeManager {
 
   //Events
   //When a recipe is added
-  case class RecipeAdded(recipeId: String, compiledRecipe: CompiledRecipe) extends InternalBakerEvent
+  case class RecipeAdded(recipeId: String, compiledRecipe: CompiledRecipe)
 }
 
 class RecipeManager extends PersistentActor with ActorLogging {

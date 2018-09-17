@@ -5,7 +5,7 @@ import akka.serialization.SerializerWithStringManifest
 import com.ing.baker.il
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.actor.protobuf
-import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
+import com.ing.baker.runtime.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.{actor, core}
 import scalapb.{GeneratedMessage, GeneratedMessageCompanion, Message}
@@ -26,6 +26,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
   val manifestInfo = Seq(
     Entry("core.RuntimeEvent", classOf[core.RuntimeEvent], protobuf.RuntimeEvent),
     Entry("core.ProcessState", classOf[core.ProcessState], protobuf.ProcessState),
+
     Entry("il.CompiledRecipe", classOf[il.CompiledRecipe], protobuf.CompiledRecipe),
 
     Entry("ProcessIndex.ActorCreated", classOf[ProcessIndex.ActorCreated], actor.process_index.protobuf.ActorCreated),
@@ -33,7 +34,14 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     Entry("ProcessIndex.ActorActivated", classOf[ProcessIndex.ActorActivated], actor.process_index.protobuf.ActorActivated),
     Entry("ProcessIndex.ActorDeleted", classOf[ProcessIndex.ActorDeleted], actor.process_index.protobuf.ActorDeleted),
 
-    Entry("RecipeManager.RecipeAdded", classOf[RecipeManager.RecipeAdded], actor.recipe_manager.protobuf.RecipeAdded)
+    Entry("RecipeManager.RecipeAdded", classOf[RecipeManager.RecipeAdded], actor.recipe_manager.protobuf.RecipeAdded),
+    Entry("RecipeManagerProtocol.AddRecipe", classOf[RecipeManagerProtocol.AddRecipe], actor.recipe_manager.protobuf.AddRecipe),
+    Entry("RecipeManagerProtocol.AddRecipeResponse", classOf[RecipeManagerProtocol.AddRecipeResponse], actor.recipe_manager.protobuf.AddRecipeResponse),
+    Entry("RecipeManagerProtocol.GetRecipe", classOf[RecipeManagerProtocol.GetRecipe], actor.recipe_manager.protobuf.GetRecipe),
+    Entry("RecipeManagerProtocol.RecipeFound", classOf[RecipeManagerProtocol.RecipeFound], actor.recipe_manager.protobuf.RecipeFound),
+    Entry("RecipeManagerProtocol.NoRecipeFound", classOf[RecipeManagerProtocol.NoRecipeFound], actor.recipe_manager.protobuf.NoRecipeFound),
+    Entry("RecipeManagerProtocol.GetAllRecipes", RecipeManagerProtocol.GetAllRecipes.getClass, actor.recipe_manager.protobuf.GetAllRecipes),
+    Entry("RecipeManagerProtocol.AllRecipes", classOf[RecipeManagerProtocol.AllRecipes], actor.recipe_manager.protobuf.AllRecipes)
   )
 
   // Hardcoded serializerId for this serializer. This should not conflict with other serializers.
