@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor.serialization.adapters
+package com.ing.baker.runtime.actor.serialization.modules
 
 import com.google.protobuf.ByteString
 import com.ing.baker.runtime.actor.protobuf

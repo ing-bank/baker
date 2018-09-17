@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor.serialization.adapters
+package com.ing.baker.runtime.actor.serialization.modules
 
 trait ProtoEventAdapterModule {
   def toProto(ctx: ProtoEventAdapterContext): PartialFunction[AnyRef, scalapb.GeneratedMessage]

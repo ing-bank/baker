@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.actor.serialization
 
-import com.ing.baker.runtime.actor.serialization.adapters._
+import com.ing.baker.runtime.actor.serialization.modules._
 import scalapb.GeneratedMessage
 
 trait ProtoEventAdapter extends ProtoEventAdapterContext {

@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor.serialization.adapters
+package com.ing.baker.runtime.actor.serialization.modules
 
 import com.ing.baker.runtime.actor.serialization.ObjectSerializer
 import scalapb.GeneratedMessage
