@@ -1,15 +1,15 @@
 package com.ing.baker.runtime.actor.serialization
 
 import akka.actor.ExtendedActorSystem
-import akka.serialization.SerializerWithStringManifest
+import akka.serialization.{SerializationExtension, SerializerWithStringManifest}
 import com.ing.baker.il
 import com.ing.baker.runtime.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
 import com.ing.baker.runtime.actor.protobuf
 import com.ing.baker.runtime.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.{actor, core}
-import scalapb.{GeneratedMessage, GeneratedMessageCompanion, Message}
 import org.slf4j.LoggerFactory
+import scalapb.{GeneratedMessage, GeneratedMessageCompanion, Message}
 
 object BakerProtobufSerializer {
   case class Entry[A <: GeneratedMessage with Message[A]](manifest: String, domainClass: Class[_], pbt: GeneratedMessageCompanion[A])
@@ -20,8 +20,10 @@ object BakerProtobufSerializer {
 class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
   import BakerProtobufSerializer._
 
+  def getSerializationExtension() = SerializationExtension.get(system)
+
   // TODO remove this lazy modifier, but be aware removing lazy causes the tests to hang.
-  private lazy val protoEventAdapter = new ProtoEventAdapterImpl(new ObjectSerializer(system, NoEncryption))
+  private lazy val protoEventAdapter = new ProtoEventAdapterImpl(getSerializationExtension(), NoEncryption)
 
   val manifestInfo = Seq(
     Entry("core.RuntimeEvent", classOf[core.RuntimeEvent], protobuf.RuntimeEvent),

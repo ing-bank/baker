@@ -105,7 +105,7 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
             placeId = Option(place.id),
             tokenId = Option(tokenIdentifier(place)(value)),
             count = Option(count),
-            tokenData = Option(ctx.objectSerializer.serializeObject(value.asInstanceOf[AnyRef]))
+            tokenData = Option(ctx.toProtoUnkown(value.asInstanceOf[AnyRef]))
           )
         }
       }

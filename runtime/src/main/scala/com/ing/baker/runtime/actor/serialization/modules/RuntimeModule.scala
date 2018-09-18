@@ -18,8 +18,6 @@ class RuntimeModule extends ProtoEventAdapterModule {
   }
 
   override def toDomain(ctx: ProtoEventAdapter): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
-    case msg: SerializedData =>
-      ctx.objectSerializer.deserializeObject(msg)
 
     case protobuf.RuntimeEvent(Some(name), ingredients) =>
       core.RuntimeEvent(name, readIngredients(ingredients, ctx))
@@ -30,7 +28,7 @@ class RuntimeModule extends ProtoEventAdapterModule {
 
   private def writeIngredients(ingredients: Seq[(String, Value)], ctx: ProtoEventAdapter): Seq[protobuf.Ingredient] = {
     ingredients.map { case (name, value) =>
-      val serializedObject = ctx.objectSerializer.serializeObject(value)
+      val serializedObject = ctx.toProtoUnkown(value)
       protobuf.Ingredient(Some(name), Some(serializedObject))
     }
   }
@@ -38,7 +36,7 @@ class RuntimeModule extends ProtoEventAdapterModule {
   private def readIngredients(ingredients: Seq[protobuf.Ingredient], ctx: ProtoEventAdapter): Seq[(String, Value)] = {
     ingredients.map {
       case protobuf.Ingredient(Some(name), Some(data)) =>
-        val deserializedObject = ctx.objectSerializer.deserializeObject(data).asInstanceOf[Value]
+        val deserializedObject = ctx.toDomain[Value](data)
         name -> deserializedObject
       case _ => throw new IllegalArgumentException("Missing fields in Protobuf data when deserializing ingredients")
     }

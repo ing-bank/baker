@@ -1,9 +1,15 @@
 package com.ing.baker.runtime.actor.serialization
 
+import akka.actor.ActorSystem
+import akka.serialization.{Serialization, SerializationExtension, Serializer, SerializerWithStringManifest}
+import com.google.protobuf.ByteString
+import com.ing.baker.runtime.actor.protobuf.SerializedData
 import com.ing.baker.runtime.actor.serialization.modules._
 import scalapb.GeneratedMessage
 
-class ProtoEventAdapterImpl(override val objectSerializer: ObjectSerializer) extends ProtoEventAdapter {
+class ProtoEventAdapterImpl(private val serialization: Serialization, encryption: Encryption) extends ProtoEventAdapter {
+
+  def this(system: ActorSystem, encryption: Encryption) = this(SerializationExtension.get(system), encryption)
 
   val registeredModules: Set[ProtoEventAdapterModule] = Set(
     new IntermediateLanguageModule,
@@ -33,8 +39,42 @@ class ProtoEventAdapterImpl(override val objectSerializer: ObjectSerializer) ext
     toProtoPF.lift.apply(obj).getOrElse(
       throw new IllegalStateException(s"Cannot serialize object of type ${obj.getClass}"))
 
-  def toDomainObject(serializedMessage: GeneratedMessage): AnyRef =
-    toDomainPF.lift.apply(serializedMessage).getOrElse(
-      throw new IllegalStateException(s"Unknown protobuf message of type ${serializedMessage.getClass}"))
+  def toDomainObject(serializedMessage: GeneratedMessage): AnyRef = serializedMessage match {
 
+    case SerializedData(Some(serializerId), Some(manifest), Some(bytes)) ⇒
+
+      val serializer = serialization.serializerByIdentity.getOrElse(serializerId,
+        throw new IllegalStateException(s"No serializer found with id $serializerId")
+      )
+
+      val decryptedBytes = encryption.decrypt(bytes.toByteArray)
+
+      serializer match {
+        case s: SerializerWithStringManifest ⇒ s.fromBinary(decryptedBytes, manifest)
+        case _                               ⇒ serializer.fromBinary(decryptedBytes, Class.forName(manifest))
+      }
+
+    case _ =>
+      toDomainPF.lift.apply(serializedMessage).getOrElse(
+        throw new IllegalStateException(s"Unknown protobuf message of type ${serializedMessage.getClass}"))
+  }
+
+  def getSerializerFor(obj: AnyRef): Serializer = serialization.findSerializerFor(obj)
+
+  def toProtoUnkown(obj: AnyRef): SerializedData = {
+    val serializer: Serializer = getSerializerFor(obj)
+    val bytes = encryption.encrypt(serializer.toBinary(obj))
+
+    val manifest = serializer match {
+      case s: SerializerWithStringManifest ⇒ s.manifest(obj)
+      case _                               ⇒ if (obj != null) obj.getClass.getName else ""
+    }
+
+    // we should not have to copy the bytes
+    SerializedData(
+      serializerId = Some(serializer.identifier),
+      manifest = Some(manifest),
+      data = Some(ByteString.copyFrom(bytes))
+    )
+  }
 }
