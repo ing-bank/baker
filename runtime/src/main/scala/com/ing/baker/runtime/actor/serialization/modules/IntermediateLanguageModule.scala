@@ -19,16 +19,16 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
     def getOrMissing(field: String) = option.getOrElse(throw new IllegalStateException(s"missing field: $field"))
   }
 
-  override def toProto(ctx: ProtoEventAdapterContext): PartialFunction[AnyRef, scalapb.GeneratedMessage] = {
+  override def toProto(ctx: ProtoEventAdapter): PartialFunction[AnyRef, scalapb.GeneratedMessage] = {
     case il.EventDescriptor(name, ingredients) =>
 
-      val protoIngredients = ingredients.map(ctx.toProtoType[protobuf.IngredientDescriptor])
+      val protoIngredients = ingredients.map(ctx.toProto[protobuf.IngredientDescriptor])
 
       protobuf.EventDescriptor(Some(name), protoIngredients)
 
     case il.IngredientDescriptor(name, t) =>
 
-      val `type` = ctx.toProtoType[protobuf.Type](t)
+      val `type` = ctx.toProto[protobuf.Type](t)
 
       protobuf.IngredientDescriptor(Some(name), Some(`type`))
 
@@ -50,7 +50,7 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
         case Right(transition) => transition match {
 
           case il.petrinet.EventTransition(eventDescriptor, isSensoryEvent, maxFiringLimit) =>
-            val t = protobuf.EventTransition(Option(ctx.toProtoType[protobuf.EventDescriptor](eventDescriptor)), Option(isSensoryEvent), maxFiringLimit)
+            val t = protobuf.EventTransition(Option(ctx.toProto[protobuf.EventDescriptor](eventDescriptor)), Option(isSensoryEvent), maxFiringLimit)
             protobuf.Node(protobuf.Node.OneofNode.EventTransition(t))
 
           case il.petrinet.IntermediateTransition(label) =>
@@ -67,16 +67,16 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
 
           case t: il.petrinet.InteractionTransition =>
             val pt = protobuf.InteractionTransition(
-              eventsToFire = t.eventsToFire.map(ctx.toProtoType[protobuf.EventDescriptor]),
-              originalEvents = t.originalEvents.map(ctx.toProtoType[protobuf.EventDescriptor]),
-              providedIngredientEvent = t.providedIngredientEvent.map(ctx.toProtoType[protobuf.EventDescriptor]),
-              requiredIngredients = t.requiredIngredients.map(ctx.toProtoType[protobuf.IngredientDescriptor]),
+              eventsToFire = t.eventsToFire.map(ctx.toProto[protobuf.EventDescriptor]),
+              originalEvents = t.originalEvents.map(ctx.toProto[protobuf.EventDescriptor]),
+              providedIngredientEvent = t.providedIngredientEvent.map(ctx.toProto[protobuf.EventDescriptor]),
+              requiredIngredients = t.requiredIngredients.map(ctx.toProto[protobuf.IngredientDescriptor]),
               interactionName = Option(t.interactionName),
               originalInteractionName = Option(t.originalInteractionName),
-              predefinedParameters = t.predefinedParameters.mapValues(ctx.toProtoType[protobuf.Value]),
+              predefinedParameters = t.predefinedParameters.mapValues(ctx.toProto[protobuf.Value]),
               maximumInteractionCount = t.maximumInteractionCount,
-              failureStrategy = Option(ctx.toProtoType[protobuf.InteractionFailureStrategy](t.failureStrategy)),
-              eventOutputTransformers = t.eventOutputTransformers.mapValues(ctx.toProtoType[protobuf.EventOutputTransformer])
+              failureStrategy = Option(ctx.toProto[protobuf.InteractionFailureStrategy](t.failureStrategy)),
+              eventOutputTransformers = t.eventOutputTransformers.mapValues(ctx.toProto[protobuf.EventOutputTransformer])
             )
 
             protobuf.Node(protobuf.Node.OneofNode.InteractionTransition(pt))
@@ -116,7 +116,7 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
       case il.failurestrategy.BlockInteraction =>
         protobuf.InteractionFailureStrategy(protobuf.InteractionFailureStrategy.OneofType.BlockInteraction(protobuf.BlockInteraction()))
       case il.failurestrategy.FireEventAfterFailure(eventDescriptor) =>
-        val fireAfterFailure = protobuf.FireEventAfterFailure(Option(ctx.toProtoType[protobuf.EventDescriptor](eventDescriptor)))
+        val fireAfterFailure = protobuf.FireEventAfterFailure(Option(ctx.toProto[protobuf.EventDescriptor](eventDescriptor)))
         protobuf.InteractionFailureStrategy(protobuf.InteractionFailureStrategy.OneofType.FireEventAfterFailure(fireAfterFailure))
       case strategy: il.failurestrategy.RetryWithIncrementalBackoff =>
         val retry = protobuf.RetryWithIncrementalBackoff(
@@ -124,7 +124,7 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
           backoffFactor = Option(strategy.backoffFactor),
           maximumRetries = Option(strategy.maximumRetries),
           maxTimeBetweenRetries = strategy.maxTimeBetweenRetries.map(_.toMillis),
-          retryExhaustedEvent = strategy.retryExhaustedEvent.map(ctx.toProtoType[protobuf.EventDescriptor])
+          retryExhaustedEvent = strategy.retryExhaustedEvent.map(ctx.toProto[protobuf.EventDescriptor])
         )
 
         protobuf.InteractionFailureStrategy(protobuf.InteractionFailureStrategy.OneofType.RetryWithIncrementalBackoff(retry))
@@ -135,7 +135,7 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
 
   }
 
-  override def toDomain(ctx: ProtoEventAdapterContext): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
+  override def toDomain(ctx: ProtoEventAdapter): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
 
     case protobuf.PetriNet(protoNodes, protoEdges) =>
 
@@ -150,7 +150,7 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
             Left(p)
 
           case OneofNode.EventTransition(protobuf.EventTransition(Some(eventDescriptor), Some(isSensoryEvent), maxFiringLimit)) =>
-            Right(il.petrinet.EventTransition(ctx.toDomainType[il.EventDescriptor](eventDescriptor), isSensoryEvent, maxFiringLimit))
+            Right(il.petrinet.EventTransition(ctx.toDomain[il.EventDescriptor](eventDescriptor), isSensoryEvent, maxFiringLimit))
 
           case OneofNode.IntermediateTransition(protobuf.IntermediateTransition(Some(label))) =>
             Right(il.petrinet.IntermediateTransition(label))
@@ -164,16 +164,16 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
           case OneofNode.InteractionTransition(t: protobuf.InteractionTransition) =>
 
             Right(il.petrinet.InteractionTransition(
-              eventsToFire = t.eventsToFire.map(ctx.toDomainType[il.EventDescriptor]),
-              originalEvents = t.originalEvents.map(ctx.toDomainType[il.EventDescriptor]),
-              providedIngredientEvent = t.providedIngredientEvent.map(ctx.toDomainType[il.EventDescriptor]),
-              requiredIngredients = t.requiredIngredients.map(ctx.toDomainType[il.IngredientDescriptor]),
+              eventsToFire = t.eventsToFire.map(ctx.toDomain[il.EventDescriptor]),
+              originalEvents = t.originalEvents.map(ctx.toDomain[il.EventDescriptor]),
+              providedIngredientEvent = t.providedIngredientEvent.map(ctx.toDomain[il.EventDescriptor]),
+              requiredIngredients = t.requiredIngredients.map(ctx.toDomain[il.IngredientDescriptor]),
               interactionName = t.interactionName.getOrMissing("interactionName"),
               originalInteractionName = t.originalInteractionName.getOrMissing("originalInteractionName"),
-              predefinedParameters = t.predefinedParameters.mapValues(ctx.toDomainType[Value]),
+              predefinedParameters = t.predefinedParameters.mapValues(ctx.toDomain[Value]),
               maximumInteractionCount = t.maximumInteractionCount,
-              failureStrategy = t.failureStrategy.map(ctx.toDomainType[il.failurestrategy.InteractionFailureStrategy]).getOrMissing("failureStrategy"),
-              eventOutputTransformers = t.eventOutputTransformers.mapValues(ctx.toDomainType[il.EventOutputTransformer])
+              failureStrategy = t.failureStrategy.map(ctx.toDomain[il.failurestrategy.InteractionFailureStrategy]).getOrMissing("failureStrategy"),
+              eventOutputTransformers = t.eventOutputTransformers.mapValues(ctx.toDomain[il.EventOutputTransformer])
             ))
 
           case other => throw new IllegalStateException(s"Unknown node type: $other")
@@ -198,7 +198,7 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
       case protobuf.InteractionFailureStrategy.OneofType.BlockInteraction(_) =>
         il.failurestrategy.BlockInteraction
       case protobuf.InteractionFailureStrategy.OneofType.FireEventAfterFailure(protobuf.FireEventAfterFailure(Some(event))) =>
-        il.failurestrategy.FireEventAfterFailure(ctx.toDomainType[il.EventDescriptor](event))
+        il.failurestrategy.FireEventAfterFailure(ctx.toDomain[il.EventDescriptor](event))
       case protobuf.InteractionFailureStrategy.OneofType.RetryWithIncrementalBackoff(
       protobuf.RetryWithIncrementalBackoff(Some(initialTimeout), Some(backoff), Some(maximumRetries), maxBetween, exhaustedEvent)
       ) =>
@@ -207,22 +207,22 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
           backoffFactor = backoff,
           maximumRetries = maximumRetries,
           maxTimeBetweenRetries = maxBetween.map(Duration(_, TimeUnit.MILLISECONDS)),
-          retryExhaustedEvent = exhaustedEvent.map(ctx.toDomainType[il.EventDescriptor](_)))
+          retryExhaustedEvent = exhaustedEvent.map(ctx.toDomain[il.EventDescriptor](_)))
       case f => throw new IllegalStateException(s"Unknown failure strategy $f")
     }
 
     case protobuf.EventDescriptor(Some(name), protoIngredients) =>
-      il.EventDescriptor(name, protoIngredients.map(e => ctx.toDomainType[il.IngredientDescriptor](e)))
+      il.EventDescriptor(name, protoIngredients.map(e => ctx.toDomain[il.IngredientDescriptor](e)))
 
     case protobuf.IngredientDescriptor(Some(name), Some(ingredientType)) =>
-      il.IngredientDescriptor(name, ctx.toDomainType[types.Type](ingredientType))
+      il.IngredientDescriptor(name, ctx.toDomain[types.Type](ingredientType))
 
     case protobuf.CompiledRecipe(Some(name), Some(graphMsg), producedTokens, validationErrors, eventReceiveMillis, retentionMillis) =>
 
       val eventReceivePeriod = eventReceiveMillis.map(Duration(_, TimeUnit.MILLISECONDS))
       val retentionPeriod = retentionMillis.map(Duration(_, TimeUnit.MILLISECONDS))
 
-      val graph = ctx.toDomainType[scalax.collection.immutable.Graph[Node, WLDiEdge]](graphMsg)
+      val graph = ctx.toDomain[scalax.collection.immutable.Graph[Node, WLDiEdge]](graphMsg)
       val petriNet: RecipePetriNet = PetriNet(graph)
       val initialMarking = producedTokens.foldLeft(Marking.empty[il.petrinet.Place]) {
         case (accumulated, protobuf.ProducedToken(Some(placeId), Some(_), Some(count), _)) ⇒ // Option[SerializedData] is always None, and we don't use it here.

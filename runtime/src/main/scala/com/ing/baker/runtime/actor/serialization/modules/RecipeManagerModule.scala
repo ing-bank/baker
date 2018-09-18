@@ -6,13 +6,13 @@ import com.ing.baker.runtime.actor.{recipe_manager, protobuf => ilp}
 
 class RecipeManagerModule extends ProtoEventAdapterModule {
 
-  override def toProto(ctx: ProtoEventAdapterContext): PartialFunction[AnyRef, scalapb.GeneratedMessage] = {
+  override def toProto(ctx: ProtoEventAdapter): PartialFunction[AnyRef, scalapb.GeneratedMessage] = {
     case RecipeManager.RecipeAdded(recipeId, compiledRecipe) =>
-      val compiledRecipeProto = ctx.toProtoType[ilp.CompiledRecipe](compiledRecipe)
+      val compiledRecipeProto = ctx.toProto[ilp.CompiledRecipe](compiledRecipe)
       protobuf.RecipeAdded(Option(recipeId), Option(compiledRecipeProto))
 
     case RecipeManagerProtocol.AddRecipe(compiledRecipe) =>
-      val compiledRecipeProto = ctx.toProtoType[ilp.CompiledRecipe](compiledRecipe)
+      val compiledRecipeProto = ctx.toProto[ilp.CompiledRecipe](compiledRecipe)
       protobuf.AddRecipe(Option(compiledRecipeProto))
 
     case RecipeManagerProtocol.AddRecipeResponse(recipeId) =>
@@ -22,7 +22,7 @@ class RecipeManagerModule extends ProtoEventAdapterModule {
       protobuf.GetRecipe(Option(recipeId))
 
     case RecipeManagerProtocol.RecipeFound(compiledRecipe) =>
-      val compiledRecipeProto = ctx.toProtoType[ilp.CompiledRecipe](compiledRecipe)
+      val compiledRecipeProto = ctx.toProto[ilp.CompiledRecipe](compiledRecipe)
       protobuf.RecipeFound(Option(compiledRecipeProto))
 
     case RecipeManagerProtocol.NoRecipeFound(recipeId) =>
@@ -32,17 +32,17 @@ class RecipeManagerModule extends ProtoEventAdapterModule {
       protobuf.GetAllRecipes()
 
     case RecipeManagerProtocol.AllRecipes(compiledRecipeMap) =>
-      val compiledRecipeProtoMap = compiledRecipeMap mapValues(ctx.toProtoType[ilp.CompiledRecipe](_))
+      val compiledRecipeProtoMap = compiledRecipeMap mapValues(ctx.toProto[ilp.CompiledRecipe](_))
       protobuf.AllRecipes(compiledRecipeProtoMap)
   }
 
-  override def toDomain(ctx: ProtoEventAdapterContext): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
+  override def toDomain(ctx: ProtoEventAdapter): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
     case recipe_manager.protobuf.RecipeAdded(Some(recipeId), Some(compiledRecipeMsg)) =>
-      val compiledRecipe = ctx.toDomainType[il.CompiledRecipe](compiledRecipeMsg)
+      val compiledRecipe = ctx.toDomain[il.CompiledRecipe](compiledRecipeMsg)
       RecipeManager.RecipeAdded(recipeId, compiledRecipe)
 
     case recipe_manager.protobuf.AddRecipe(Some(compiledRecipeMsg)) =>
-      val compiledRecipe = ctx.toDomainType[il.CompiledRecipe](compiledRecipeMsg)
+      val compiledRecipe = ctx.toDomain[il.CompiledRecipe](compiledRecipeMsg)
       RecipeManagerProtocol.AddRecipe(compiledRecipe)
 
     case recipe_manager.protobuf.AddRecipeResponse(Some(recipeId)) =>
@@ -52,7 +52,7 @@ class RecipeManagerModule extends ProtoEventAdapterModule {
       RecipeManagerProtocol.GetRecipe(recipeId)
 
     case recipe_manager.protobuf.RecipeFound(Some(compiledRecipeMsg)) =>
-      val compiledRecipe = ctx.toDomainType[il.CompiledRecipe](compiledRecipeMsg)
+      val compiledRecipe = ctx.toDomain[il.CompiledRecipe](compiledRecipeMsg)
       RecipeManagerProtocol.RecipeFound(compiledRecipe)
 
     case protobuf.NoRecipeFound(Some(recipeId)) =>
@@ -62,7 +62,7 @@ class RecipeManagerModule extends ProtoEventAdapterModule {
       RecipeManagerProtocol.GetAllRecipes
 
     case protobuf.AllRecipes(compiledRecipesMsg) =>
-      val compiledRecipes = compiledRecipesMsg mapValues(ctx.toDomainType[il.CompiledRecipe](_))
+      val compiledRecipes = compiledRecipesMsg mapValues(ctx.toDomain[il.CompiledRecipe](_))
       RecipeManagerProtocol.AllRecipes(compiledRecipes)
   }
 }

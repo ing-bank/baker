@@ -7,7 +7,7 @@ import com.ing.baker.types.Value
 
 class RuntimeModule extends ProtoEventAdapterModule {
 
-  override def toProto(ctx: ProtoEventAdapterContext): PartialFunction[AnyRef, scalapb.GeneratedMessage] = {
+  override def toProto(ctx: ProtoEventAdapter): PartialFunction[AnyRef, scalapb.GeneratedMessage] = {
     case e: core.RuntimeEvent =>
       val ingredients = writeIngredients(e.providedIngredients, ctx)
       protobuf.RuntimeEvent(Some(e.name), ingredients)
@@ -17,7 +17,7 @@ class RuntimeModule extends ProtoEventAdapterModule {
       protobuf.ProcessState(Some(e.processId), ingredients, e.eventNames)
   }
 
-  override def toDomain(ctx: ProtoEventAdapterContext): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
+  override def toDomain(ctx: ProtoEventAdapter): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
     case msg: SerializedData =>
       ctx.objectSerializer.deserializeObject(msg)
 
@@ -28,14 +28,14 @@ class RuntimeModule extends ProtoEventAdapterModule {
       core.ProcessState(id, readIngredients(ingredients, ctx).toMap, events.toList)
   }
 
-  private def writeIngredients(ingredients: Seq[(String, Value)], ctx: ProtoEventAdapterContext): Seq[protobuf.Ingredient] = {
+  private def writeIngredients(ingredients: Seq[(String, Value)], ctx: ProtoEventAdapter): Seq[protobuf.Ingredient] = {
     ingredients.map { case (name, value) =>
       val serializedObject = ctx.objectSerializer.serializeObject(value)
       protobuf.Ingredient(Some(name), Some(serializedObject))
     }
   }
 
-  private def readIngredients(ingredients: Seq[protobuf.Ingredient], ctx: ProtoEventAdapterContext): Seq[(String, Value)] = {
+  private def readIngredients(ingredients: Seq[protobuf.Ingredient], ctx: ProtoEventAdapter): Seq[(String, Value)] = {
     ingredients.map {
       case protobuf.Ingredient(Some(name), Some(data)) =>
         val deserializedObject = ctx.objectSerializer.deserializeObject(data).asInstanceOf[Value]

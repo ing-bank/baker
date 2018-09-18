@@ -12,7 +12,7 @@ import scala.concurrent.duration.FiniteDuration
 
 class ProcessIndexModule extends ProtoEventAdapterModule {
 
-  override def toProto(ctx: ProtoEventAdapterContext): PartialFunction[AnyRef, scalapb.GeneratedMessage] = {
+  override def toProto(ctx: ProtoEventAdapter): PartialFunction[AnyRef, scalapb.GeneratedMessage] = {
     case ProcessIndex.ActorCreated(recipeId, processId, createdDateTime) =>
       protobuf.ActorCreated(Option(recipeId), Option(processId), Option(createdDateTime))
 
@@ -29,7 +29,7 @@ class ProcessIndexModule extends ProtoEventAdapterModule {
       protobuf.GetIndex()
 
     case ProcessIndexProtocol.Index(entries) =>
-      protobuf.Index(entries.map(e => ctx.toProtoType[protobuf.ActorMetaData](e)).toList)
+      protobuf.Index(entries.map(e => ctx.toProto[protobuf.ActorMetaData](e)).toList)
 
     case ProcessIndex.ActorMetadata(recipeId, processId, createdDateTime, processStatus) =>
       val isDeleted = processStatus == Deleted
@@ -39,7 +39,7 @@ class ProcessIndexModule extends ProtoEventAdapterModule {
       protobuf.CreateProcess(Some(recipeId), Some(processId))
 
     case ProcessIndexProtocol.ProcessEvent(processId, event, correlationId, waitForRetries, timeout) =>
-      protobuf.ProcessEvent(Some(processId), Some(ctx.toProtoType[RuntimeEvent](event)), correlationId, Some(waitForRetries), Some(timeout.toMillis))
+      protobuf.ProcessEvent(Some(processId), Some(ctx.toProto[RuntimeEvent](event)), correlationId, Some(waitForRetries), Some(timeout.toMillis))
 
     case ProcessIndexProtocol.ProcessEventResponse(processId, sourceRef) =>
       val serializedSourceRef = ctx.objectSerializer.serializeObject(sourceRef)
@@ -64,7 +64,7 @@ class ProcessIndexModule extends ProtoEventAdapterModule {
       protobuf.ProcessAlreadyExists(Some(processId))
   }
 
-  override def toDomain(ctx: ProtoEventAdapterContext): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
+  override def toDomain(ctx: ProtoEventAdapter): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
     case protobuf.ActorCreated(Some(recipeId), Some(processId), Some(dateCreated)) =>
       ProcessIndex.ActorCreated(recipeId, processId, dateCreated)
 
@@ -81,7 +81,7 @@ class ProcessIndexModule extends ProtoEventAdapterModule {
       ProcessIndexProtocol.GetIndex
 
     case protobuf.Index(entries) =>
-      ProcessIndexProtocol.Index(entries.map(e => ctx.toDomainType[ProcessIndex.ActorMetadata](e)))
+      ProcessIndexProtocol.Index(entries.map(e => ctx.toDomain[ProcessIndex.ActorMetadata](e)))
 
     case protobuf.ActorMetaData(Some(recipeId), Some(processId), Some(createdTimeMillis), Some(isDeleted)) =>
       val processStatus: ProcessStatus = if (isDeleted) Deleted else Active
@@ -91,7 +91,7 @@ class ProcessIndexModule extends ProtoEventAdapterModule {
       ProcessIndexProtocol.CreateProcess(recipeId, processId)
 
     case protobuf.ProcessEvent(Some(processId), Some(event), correlationId, Some(waitForRetries), Some(timeoutMillis)) =>
-      ProcessIndexProtocol.ProcessEvent(processId, ctx.toDomainType[core.RuntimeEvent](event), correlationId, waitForRetries, FiniteDuration(timeoutMillis, TimeUnit.MILLISECONDS))
+      ProcessIndexProtocol.ProcessEvent(processId, ctx.toDomain[core.RuntimeEvent](event), correlationId, waitForRetries, FiniteDuration(timeoutMillis, TimeUnit.MILLISECONDS))
 
     case protobuf.ProcessEventResponse(Some(processId), Some(sourceRef)) =>
       val deserializedSourceRef = ctx.objectSerializer.deserializeObject(sourceRef).asInstanceOf[SourceRef[Any]]

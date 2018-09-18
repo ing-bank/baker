@@ -1,7 +1,17 @@
 package com.ing.baker.runtime.actor.serialization.modules
 
+/**
+  * A module that can translate to/from protobuf for a particular domain.
+  */
 trait ProtoEventAdapterModule {
-  def toProto(ctx: ProtoEventAdapterContext): PartialFunction[AnyRef, scalapb.GeneratedMessage]
 
-  def toDomain(ctx: ProtoEventAdapterContext): PartialFunction[scalapb.GeneratedMessage, AnyRef]
+  /**
+    * Translates the given object to it's protobuf counter part.
+    */
+  def toProto(ctx: ProtoEventAdapter): PartialFunction[AnyRef, scalapb.GeneratedMessage]
+
+  /**
+    * Translates the given protobuf message to a domain object.
+    */
+  def toDomain(ctx: ProtoEventAdapter): PartialFunction[scalapb.GeneratedMessage, AnyRef]
 }

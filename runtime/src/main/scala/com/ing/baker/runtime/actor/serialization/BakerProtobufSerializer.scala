@@ -21,7 +21,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
   import BakerProtobufSerializer._
 
   // TODO remove this lazy modifier, but be aware removing lazy causes the tests to hang.
-  private lazy val protoEventAdapter = new ProtoEventAdapter(new ObjectSerializer(system, NoEncryption))
+  private lazy val protoEventAdapter = new ProtoEventAdapterImpl(new ObjectSerializer(system, NoEncryption))
 
   val manifestInfo = Seq(
     Entry("core.RuntimeEvent", classOf[core.RuntimeEvent], protobuf.RuntimeEvent),
@@ -71,7 +71,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
 
   override def toBinary(o: AnyRef): Array[Byte] = {
     try {
-      protoEventAdapter.toProto(o).toByteArray
+      protoEventAdapter.toProtoMessage(o).toByteArray
     } catch {
       case e: Throwable =>
         log.error(s"Failed to serialize object $o", e)
@@ -88,7 +88,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
 
       val protobuf = pbt.parseFrom(bytes).asInstanceOf[GeneratedMessage]
 
-      protoEventAdapter.toDomain(protobuf)
+      protoEventAdapter.toDomainObject(protobuf)
     } catch {
       case e: Throwable =>
         log.error(s"Failed to deserialize bytes with manifest $manifest", e)

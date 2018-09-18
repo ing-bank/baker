@@ -12,7 +12,7 @@ class TypesModule extends ProtoEventAdapterModule {
 
   private def createPrimitive(p: PrimitiveType) = protobuf.Type(Type.OneofType.Primitive(p))
 
-  override def toProto(ctx: ProtoEventAdapterContext): PartialFunction[AnyRef, scalapb.GeneratedMessage] = {
+  override def toProto(ctx: ProtoEventAdapter): PartialFunction[AnyRef, scalapb.GeneratedMessage] = {
     case types.PrimitiveType(clazz) if clazz == classOf[java.lang.Boolean] =>
       createPrimitive(PrimitiveType.BOOLEAN_PRIMITIVE)
     case types.PrimitiveType(clazz) if clazz == java.lang.Boolean.TYPE =>
@@ -65,24 +65,24 @@ class TypesModule extends ProtoEventAdapterModule {
       createPrimitive(PrimitiveType.JODA_LOCAL_DATETIME)
 
     case types.OptionType(entryType) =>
-      val entryProto = ctx.toProtoType[protobuf.Type](entryType)
+      val entryProto = ctx.toProto[protobuf.Type](entryType)
       protobuf.Type(Type.OneofType.Optional(OptionalType(Some(entryProto))))
 
     case types.ListType(entryType) =>
-      val entryProto = ctx.toProtoType[protobuf.Type](entryType)
+      val entryProto = ctx.toProto[protobuf.Type](entryType)
       protobuf.Type(Type.OneofType.List(ListType(Some(entryProto))))
 
     case types.RecordType(fields) =>
 
       val protoFields = fields.map { f =>
-        val protoType = ctx.toProtoType[protobuf.Type](f.`type`)
+        val protoType = ctx.toProto[protobuf.Type](f.`type`)
         protobuf.RecordField(Some(f.name), Some(protoType))
       }
 
       protobuf.Type(Type.OneofType.Record(RecordType(protoFields)))
 
     case types.MapType(valueType) =>
-      val valueProto = ctx.toProtoType[protobuf.Type](valueType)
+      val valueProto = ctx.toProto[protobuf.Type](valueType)
       protobuf.Type(Type.OneofType.Map(MapType(Some(valueProto))))
 
     case types.EnumType(options) =>
@@ -108,13 +108,13 @@ class TypesModule extends ProtoEventAdapterModule {
       case types.PrimitiveValue(value: org.joda.time.LocalDate) => protobuf.Value(protobuf.Value.OneofValue.JodaLocaldateValue(value.toString))
       case types.PrimitiveValue(value: org.joda.time.LocalDateTime) => protobuf.Value(protobuf.Value.OneofValue.JodaLocaldatetimeValue(value.toString))
       case types.PrimitiveValue(value) => throw new IllegalStateException(s"Unknown primitive value of type: ${value.getClass}")
-      case types.RecordValue(entries) => protobuf.Value(protobuf.Value.OneofValue.RecordValue(protobuf.Record(entries.mapValues(ctx.toProtoType[protobuf.Value]))))
-      case types.ListValue(entries) => protobuf.Value(protobuf.Value.OneofValue.ListValue(protobuf.List(entries.map(ctx.toProtoType[protobuf.Value]))))
+      case types.RecordValue(entries) => protobuf.Value(protobuf.Value.OneofValue.RecordValue(protobuf.Record(entries.mapValues(ctx.toProto[protobuf.Value]))))
+      case types.ListValue(entries) => protobuf.Value(protobuf.Value.OneofValue.ListValue(protobuf.List(entries.map(ctx.toProto[protobuf.Value]))))
     }
 
   }
 
-  override def toDomain(ctx: ProtoEventAdapterContext): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
+  override def toDomain(ctx: ProtoEventAdapter): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
 
     case msg: protobuf.Type =>
 
@@ -147,14 +147,14 @@ class TypesModule extends ProtoEventAdapterModule {
         case OneofType.Primitive(PrimitiveType.JODA_LOCAL_DATE) => types.PrimitiveType(classOf[time.LocalDate])
         case OneofType.Primitive(PrimitiveType.JODA_LOCAL_DATETIME) => types.PrimitiveType(classOf[time.LocalDateTime])
 
-        case OneofType.Optional(OptionalType(Some(value))) => types.OptionType(ctx.toDomainType[types.Type](value))
+        case OneofType.Optional(OptionalType(Some(value))) => types.OptionType(ctx.toDomain[types.Type](value))
 
-        case OneofType.List(ListType(Some(value))) => types.ListType(ctx.toDomainType[types.Type](value))
+        case OneofType.List(ListType(Some(value))) => types.ListType(ctx.toDomain[types.Type](value))
 
         case OneofType.Record(RecordType(fields)) =>
           val mapped = fields.map {
             case protobuf.RecordField(Some(name), Some(fieldType)) =>
-              val `type` = ctx.toDomainType[types.Type](fieldType)
+              val `type` = ctx.toDomain[types.Type](fieldType)
               types.RecordField(name, `type`)
 
             case _ => throw new IllegalStateException(s"Invalid value for record field (properties may not be None)")
@@ -162,7 +162,7 @@ class TypesModule extends ProtoEventAdapterModule {
 
           types.RecordType(mapped)
 
-        case OneofType.Map(MapType(Some(value))) => types.MapType(ctx.toDomainType[types.Type](value))
+        case OneofType.Map(MapType(Some(value))) => types.MapType(ctx.toDomain[types.Type](value))
 
         case OneofType.Enum(EnumType(options)) => types.EnumType(options.toSet)
 
@@ -192,8 +192,8 @@ class TypesModule extends ProtoEventAdapterModule {
         case OneofValue.JodaDatetimeValue(date) => types.PrimitiveValue(ISODateTimeFormat.dateTime().parseDateTime(date))
         case OneofValue.JodaLocaldateValue(date) => types.PrimitiveValue(LocalDate.parse(date))
         case OneofValue.JodaLocaldatetimeValue(date) => types.PrimitiveValue(LocalDateTime.parse(date))
-        case OneofValue.RecordValue(Record(fields)) => types.RecordValue(fields.mapValues(ctx.toDomainType[types.Value]))
-        case OneofValue.ListValue(List(entries)) => types.ListValue(entries.map(ctx.toDomainType[types.Value]).toList)
+        case OneofValue.RecordValue(Record(fields)) => types.RecordValue(fields.mapValues(ctx.toDomain[types.Value]))
+        case OneofValue.ListValue(List(entries)) => types.ListValue(entries.map(ctx.toDomain[types.Value]).toList)
         case OneofValue.Empty => throw new IllegalStateException("Empty value cannot be deserialized")
       }
   }
