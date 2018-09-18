@@ -18,5 +18,4 @@ trait ProtoEventAdapterContext {
   implicit class MsgOptionOps[T <: GeneratedMessage](option: Option[T]) {
     def mapToDomain[B]: Option[B] = option.map(e => toDomainType[B](e))
   }
-
 }
