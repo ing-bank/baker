@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.actor.process_index
 
 import akka.stream.SourceRef
-import com.ing.baker.runtime.actor.InternalBakerMessage
+import com.ing.baker.runtime.actor.{BakerProtoMessage, InternalBakerMessage}
 import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.core.RuntimeEvent
 
@@ -14,13 +14,13 @@ object ProcessIndexProtocol {
 
   // -- COMMANDS
 
-  case object GetIndex extends InternalBakerMessage
+  case object GetIndex extends BakerProtoMessage
 
-  case class Index(entries: Set[ActorMetadata]) extends InternalBakerMessage
+  case class Index(entries: Seq[ActorMetadata]) extends BakerProtoMessage
 
-  case class CreateProcess(recipeId: String, override val processId: String) extends ProcessIndexMessage
+  case class CreateProcess(recipeId: String, override val processId: String) extends BakerProtoMessage with ProcessIndexMessage
 
-  case class ProcessEvent(override val processId: String, event: RuntimeEvent, correlationId: Option[String], waitForRetries: Boolean, timeout: FiniteDuration) extends ProcessIndexMessage
+  case class ProcessEvent(override val processId: String, event: RuntimeEvent, correlationId: Option[String], waitForRetries: Boolean, timeout: FiniteDuration) extends ProcessIndexMessage with BakerProtoMessage
 
   case class ProcessEventResponse(override val processId: String, sourceRef: SourceRef[Any]) extends ProcessIndexMessage
 

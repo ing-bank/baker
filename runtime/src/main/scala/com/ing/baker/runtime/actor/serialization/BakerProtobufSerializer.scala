@@ -3,7 +3,7 @@ package com.ing.baker.runtime.actor.serialization
 import akka.actor.ExtendedActorSystem
 import akka.serialization.SerializerWithStringManifest
 import com.ing.baker.il
-import com.ing.baker.runtime.actor.process_index.ProcessIndex
+import com.ing.baker.runtime.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
 import com.ing.baker.runtime.actor.protobuf
 import com.ing.baker.runtime.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
@@ -33,6 +33,11 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     Entry("ProcessIndex.ActorPassivated", classOf[ProcessIndex.ActorPassivated], actor.process_index.protobuf.ActorPassivated),
     Entry("ProcessIndex.ActorActivated", classOf[ProcessIndex.ActorActivated], actor.process_index.protobuf.ActorActivated),
     Entry("ProcessIndex.ActorDeleted", classOf[ProcessIndex.ActorDeleted], actor.process_index.protobuf.ActorDeleted),
+    Entry("ProcessIndex.ActorMetadata", classOf[ProcessIndex.ActorMetadata], actor.process_index.protobuf.ActorMetaData),
+    Entry("ProcessIndexProtocol.GetIndex", ProcessIndexProtocol.GetIndex.getClass, actor.process_index.protobuf.GetIndex),
+    Entry("ProcessIndexProtocol.Index", classOf[ProcessIndexProtocol.Index], actor.process_index.protobuf.Index),
+    Entry("ProcessIndexProtocol.CreateProcess", classOf[ProcessIndexProtocol.CreateProcess], actor.process_index.protobuf.CreateProcess),
+    Entry("ProcessIndexProtocol.ProcessEvent", classOf[ProcessIndexProtocol.ProcessEvent], actor.process_index.protobuf.ProcessEvent),
 
     Entry("RecipeManager.RecipeAdded", classOf[RecipeManager.RecipeAdded], actor.recipe_manager.protobuf.RecipeAdded),
     Entry("RecipeManagerProtocol.AddRecipe", classOf[RecipeManagerProtocol.AddRecipe], actor.recipe_manager.protobuf.AddRecipe),

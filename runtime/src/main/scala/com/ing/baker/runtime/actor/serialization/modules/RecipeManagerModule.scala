@@ -34,7 +34,6 @@ class RecipeManagerModule extends ProtoEventAdapterModule {
     case RecipeManagerProtocol.AllRecipes(compiledRecipeMap) =>
       val compiledRecipeProtoMap = compiledRecipeMap mapValues(ctx.toProtoType[ilp.CompiledRecipe](_))
       protobuf.AllRecipes(compiledRecipeProtoMap)
-
   }
 
   override def toDomain(ctx: ProtoEventAdapterContext): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
@@ -65,7 +64,5 @@ class RecipeManagerModule extends ProtoEventAdapterModule {
     case protobuf.AllRecipes(compiledRecipesMsg) =>
       val compiledRecipes = compiledRecipesMsg mapValues(ctx.toDomainType[il.CompiledRecipe](_))
       RecipeManagerProtocol.AllRecipes(compiledRecipes)
-
   }
-
 }

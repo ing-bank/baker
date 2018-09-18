@@ -15,6 +15,10 @@ import scala.concurrent.duration.Duration
 
 class IntermediateLanguageModule extends ProtoEventAdapterModule {
 
+  implicit class OptionOps[T](option: Option[T]) {
+    def getOrMissing(field: String) = option.getOrElse(throw new IllegalStateException(s"missing field: $field"))
+  }
+
   override def toProto(ctx: ProtoEventAdapterContext): PartialFunction[AnyRef, scalapb.GeneratedMessage] = {
     case il.EventDescriptor(name, ingredients) =>
 
@@ -142,7 +146,7 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
         n.oneofNode match {
 
           case OneofNode.Place(protobuf.Place(Some(label), Some(placeType), limit)) =>
-            val p = il.petrinet.Place(label, toDomainPlaceType(placeType, limit, ctx))
+            val p = il.petrinet.Place(label, toDomainPlaceType(placeType, limit))
             Left(p)
 
           case OneofNode.EventTransition(protobuf.EventTransition(Some(eventDescriptor), Some(isSensoryEvent), maxFiringLimit)) =>
@@ -158,7 +162,6 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
             Right(il.petrinet.MultiFacilitatorTransition(label))
 
           case OneofNode.InteractionTransition(t: protobuf.InteractionTransition) =>
-            import ctx.OptionOps
 
             Right(il.petrinet.InteractionTransition(
               eventsToFire = t.eventsToFire.map(ctx.toDomainType[il.EventDescriptor]),
@@ -232,7 +235,6 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
       il.CompiledRecipe(name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
 
     case protobuf.EventOutputTransformer(newEventName, ingredientRenames) =>
-      import ctx.OptionOps
       il.EventOutputTransformer(newEventName.getOrMissing("newEventName"), ingredientRenames)
 
   }
@@ -248,12 +250,10 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
     case il.petrinet.Place.MultiTransitionPlace => Option(protobuf.PlaceType.MultiTransitionPlace) -> None
   }
 
-  private def toDomainPlaceType(protoPlaceType: protobuf.PlaceType, limit: Option[Int], ctx: ProtoEventAdapterContext) = protoPlaceType match {
+  private def toDomainPlaceType(protoPlaceType: protobuf.PlaceType, limit: Option[Int]) = protoPlaceType match {
     case protobuf.PlaceType.IngredientPlace => il.petrinet.Place.IngredientPlace
     case protobuf.PlaceType.InteractionEventOutputPlace => il.petrinet.Place.InteractionEventOutputPlace
-    case protobuf.PlaceType.FiringLimiterPlace =>
-      import ctx.OptionOps
-      il.petrinet.Place.FiringLimiterPlace(limit.getOrMissing("firing limit"))
+    case protobuf.PlaceType.FiringLimiterPlace => il.petrinet.Place.FiringLimiterPlace(limit.getOrMissing("firing limit"))
     case protobuf.PlaceType.EventPreconditionPlace => il.petrinet.Place.EventPreconditionPlace
     case protobuf.PlaceType.EventOrPreconditionPlace => il.petrinet.Place.EventOrPreconditionPlace
     case protobuf.PlaceType.IntermediatePlace => il.petrinet.Place.IntermediatePlace

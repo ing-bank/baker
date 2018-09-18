@@ -323,7 +323,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   def getIndex(timeout: FiniteDuration = defaultInquireTimeout): Set[ProcessMetadata] = {
     bakerActorProvider
       .getIndex(processIndexActor)(actorSystem, timeout)
-      .map(p => ProcessMetadata(p.recipeId, p.processId, p.createdDateTime))
+      .map(p => ProcessMetadata(p.recipeId, p.processId, p.createdDateTime)).toSet
   }
 
   /**
