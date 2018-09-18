@@ -202,7 +202,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
     val eventualState: Future[ProcessState] = initializeFuture.map {
       case msg: Initialized             => msg.state.asInstanceOf[ProcessState]
-      case ProcessAlreadyInitialized(_) => throw new IllegalArgumentException(s"Process with id '$processId' already exists.")
+      case ProcessAlreadyExists(_) => throw new IllegalArgumentException(s"Process with id '$processId' already exists.")
       case NoRecipeFound(_)             => throw new IllegalArgumentException(s"Recipe with id '$recipeId' does not exist.")
       case msg @ _                      => throw new BakerException(s"Unexpected message of type: ${msg.getClass}")
     }

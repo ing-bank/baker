@@ -8,7 +8,7 @@ import com.ing.baker.runtime.core.RuntimeEvent
 import scala.concurrent.duration.FiniteDuration
 
 object ProcessIndexProtocol {
-  sealed trait ProcessIndexMessage extends InternalBakerMessage {
+  sealed trait ProcessIndexMessage extends BakerProtoMessage {
     val processId: String
   }
 
@@ -18,9 +18,9 @@ object ProcessIndexProtocol {
 
   case class Index(entries: Seq[ActorMetadata]) extends BakerProtoMessage
 
-  case class CreateProcess(recipeId: String, override val processId: String) extends BakerProtoMessage with ProcessIndexMessage
+  case class CreateProcess(recipeId: String, override val processId: String) extends ProcessIndexMessage
 
-  case class ProcessEvent(override val processId: String, event: RuntimeEvent, correlationId: Option[String], waitForRetries: Boolean, timeout: FiniteDuration) extends ProcessIndexMessage with BakerProtoMessage
+  case class ProcessEvent(override val processId: String, event: RuntimeEvent, correlationId: Option[String], waitForRetries: Boolean, timeout: FiniteDuration) extends ProcessIndexMessage
 
   case class ProcessEventResponse(override val processId: String, sourceRef: SourceRef[Any]) extends ProcessIndexMessage
 
@@ -56,6 +56,6 @@ object ProcessIndexProtocol {
     *
     * @param processId The identifier of the processId
     */
-  case class ProcessAlreadyInitialized(override val processId: String) extends ProcessIndexMessage
+  case class ProcessAlreadyExists(override val processId: String) extends ProcessIndexMessage
 
 }

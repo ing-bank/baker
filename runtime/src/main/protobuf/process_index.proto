@@ -58,3 +58,37 @@ message ProcessEvent {
     optional bool waitForRetries = 4;
     optional int64 timeout = 5;
 }
+
+message ProcessEventResponse {
+    optional string processId = 1;
+    optional SerializedData sourceRef = 2;
+}
+
+message GetProcessState {
+    optional string processId = 1;
+}
+
+message GetCompiledRecipe {
+    optional string recipeId = 1;
+}
+
+message ReceivePeriodExpired {
+    optional string processId = 1;
+}
+
+message InvalidEvent {
+    optional string processId = 1;
+    optional string reason = 2;
+}
+
+message ProcessDeleted {
+    optional string processId = 1;
+}
+
+message NoSuchProcess {
+    optional string processId = 1;
+}
+
+message ProcessAlreadyExists {
+    optional string processId = 1;
+}

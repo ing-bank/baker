@@ -198,7 +198,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
           }
 
         case _ if index(processId).isDeleted => sender() ! ProcessDeleted(processId)
-        case _ => sender() ! ProcessAlreadyInitialized(processId)
+        case _ => sender() ! ProcessAlreadyExists(processId)
       }
 
     case cmd @ ProcessEvent(processId: String, eventToFire: RuntimeEvent, correlationId, waitForRetries, processEventTimout) =>

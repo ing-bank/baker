@@ -2,6 +2,7 @@ package com.ing.baker.runtime.actor.serialization.modules
 
 import java.util.concurrent.TimeUnit
 
+import akka.stream.SourceRef
 import com.ing.baker.runtime.actor.process_index.ProcessIndex.{Active, Deleted, ProcessStatus}
 import com.ing.baker.runtime.actor.process_index.{ProcessIndex, ProcessIndexProtocol, protobuf}
 import com.ing.baker.runtime.actor.protobuf.RuntimeEvent
@@ -39,6 +40,28 @@ class ProcessIndexModule extends ProtoEventAdapterModule {
 
     case ProcessIndexProtocol.ProcessEvent(processId, event, correlationId, waitForRetries, timeout) =>
       protobuf.ProcessEvent(Some(processId), Some(ctx.toProtoType[RuntimeEvent](event)), correlationId, Some(waitForRetries), Some(timeout.toMillis))
+
+    case ProcessIndexProtocol.ProcessEventResponse(processId, sourceRef) =>
+      val serializedSourceRef = ctx.objectSerializer.serializeObject(sourceRef)
+      protobuf.ProcessEventResponse(Some(processId), Some(serializedSourceRef))
+
+    case ProcessIndexProtocol.GetProcessState(processId) =>
+      protobuf.GetProcessState(Some(processId))
+
+    case ProcessIndexProtocol.GetCompiledRecipe(recipeId) =>
+      protobuf.GetCompiledRecipe(Some(recipeId))
+
+    case ProcessIndexProtocol.InvalidEvent(processId, reason) =>
+      protobuf.InvalidEvent(Some(processId), Some(reason))
+
+    case ProcessIndexProtocol.ProcessDeleted(processId) =>
+      protobuf.ProcessDeleted(Some(processId))
+
+    case ProcessIndexProtocol.NoSuchProcess(processId) =>
+      protobuf.NoSuchProcess(Some(processId))
+
+    case ProcessIndexProtocol.ProcessAlreadyExists(processId) =>
+      protobuf.ProcessAlreadyExists(Some(processId))
   }
 
   override def toDomain(ctx: ProtoEventAdapterContext): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
@@ -69,5 +92,27 @@ class ProcessIndexModule extends ProtoEventAdapterModule {
 
     case protobuf.ProcessEvent(Some(processId), Some(event), correlationId, Some(waitForRetries), Some(timeoutMillis)) =>
       ProcessIndexProtocol.ProcessEvent(processId, ctx.toDomainType[core.RuntimeEvent](event), correlationId, waitForRetries, FiniteDuration(timeoutMillis, TimeUnit.MILLISECONDS))
+
+    case protobuf.ProcessEventResponse(Some(processId), Some(sourceRef)) =>
+      val deserializedSourceRef = ctx.objectSerializer.deserializeObject(sourceRef).asInstanceOf[SourceRef[Any]]
+      ProcessIndexProtocol.ProcessEventResponse(processId, deserializedSourceRef)
+
+    case protobuf.GetProcessState(Some(processId)) =>
+      ProcessIndexProtocol.GetProcessState(processId)
+
+    case protobuf.GetCompiledRecipe(Some(recipeId)) =>
+      ProcessIndexProtocol.GetCompiledRecipe(recipeId)
+
+    case protobuf.InvalidEvent(Some(processId), Some(reason)) =>
+      ProcessIndexProtocol.InvalidEvent(processId, reason)
+
+    case protobuf.ProcessDeleted(Some(processId)) =>
+      ProcessIndexProtocol.ProcessDeleted(processId)
+
+    case protobuf.NoSuchProcess(Some(processId)) =>
+      ProcessIndexProtocol.NoSuchProcess(processId)
+
+    case protobuf.ProcessAlreadyExists(Some(processId)) =>
+      ProcessIndexProtocol.ProcessAlreadyExists(processId)
   }
 }

@@ -34,10 +34,18 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     Entry("ProcessIndex.ActorActivated", classOf[ProcessIndex.ActorActivated], actor.process_index.protobuf.ActorActivated),
     Entry("ProcessIndex.ActorDeleted", classOf[ProcessIndex.ActorDeleted], actor.process_index.protobuf.ActorDeleted),
     Entry("ProcessIndex.ActorMetadata", classOf[ProcessIndex.ActorMetadata], actor.process_index.protobuf.ActorMetaData),
+
     Entry("ProcessIndexProtocol.GetIndex", ProcessIndexProtocol.GetIndex.getClass, actor.process_index.protobuf.GetIndex),
     Entry("ProcessIndexProtocol.Index", classOf[ProcessIndexProtocol.Index], actor.process_index.protobuf.Index),
     Entry("ProcessIndexProtocol.CreateProcess", classOf[ProcessIndexProtocol.CreateProcess], actor.process_index.protobuf.CreateProcess),
     Entry("ProcessIndexProtocol.ProcessEvent", classOf[ProcessIndexProtocol.ProcessEvent], actor.process_index.protobuf.ProcessEvent),
+    Entry("ProcessIndexProtocol.GetProcessState", classOf[ProcessIndexProtocol.GetProcessState], actor.process_index.protobuf.GetProcessState),
+    Entry("ProcessIndexProtocol.GetCompiledRecipe", classOf[ProcessIndexProtocol.GetCompiledRecipe], actor.process_index.protobuf.GetCompiledRecipe),
+    Entry("ProcessIndexProtocol.ReceivePeriodExpired", classOf[ProcessIndexProtocol.ReceivePeriodExpired], actor.process_index.protobuf.ReceivePeriodExpired),
+    Entry("ProcessIndexProtocol.InvalidEvent", classOf[ProcessIndexProtocol.InvalidEvent], actor.process_index.protobuf.InvalidEvent),
+    Entry("ProcessIndexProtocol.ProcessDeleted", classOf[ProcessIndexProtocol.ProcessDeleted], actor.process_index.protobuf.ProcessDeleted),
+    Entry("ProcessIndexProtocol.NoSuchProcess", classOf[ProcessIndexProtocol.NoSuchProcess], actor.process_index.protobuf.NoSuchProcess),
+    Entry("ProcessIndexProtocol.ProcessAlreadyExists", classOf[ProcessIndexProtocol.ProcessAlreadyExists], actor.process_index.protobuf.ProcessAlreadyExists),
 
     Entry("RecipeManager.RecipeAdded", classOf[RecipeManager.RecipeAdded], actor.recipe_manager.protobuf.RecipeAdded),
     Entry("RecipeManagerProtocol.AddRecipe", classOf[RecipeManagerProtocol.AddRecipe], actor.recipe_manager.protobuf.AddRecipe),
