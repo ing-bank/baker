@@ -8,6 +8,8 @@ option (scalapb.options) = {
     flat_package: true
 };
 
+// Events
+
 message ConsumedToken {
     optional int64 place_id = 1;
     optional int64 token_id = 2;
@@ -52,4 +54,25 @@ message TransitionFailed {
     optional string failure_reason = 7;
     optional FailureStrategy failure_strategy = 8;
     repeated ConsumedToken consumed = 9;
+}
+
+// Protocol
+
+message GetState {
+
+}
+
+message Stop {
+    optional bool delete = 1;
+}
+
+message MarkingData {
+    optional int64 place_id  = 1;
+    optional SerializedData data = 2;
+    optional int32 count = 3;
+}
+
+message Initialize {
+    repeated MarkingData marking_data = 1;
+    optional SerializedData state = 2;
 }

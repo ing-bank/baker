@@ -1,11 +1,13 @@
 package com.ing.baker.runtime.actor.serialization
 
 import akka.actor.ActorSystem
-import akka.serialization.{Serialization, SerializationExtension, Serializer, SerializerWithStringManifest}
+import akka.serialization._
 import com.google.protobuf.ByteString
 import com.ing.baker.runtime.actor.protobuf.SerializedData
 import com.ing.baker.runtime.actor.serialization.modules._
 import scalapb.GeneratedMessage
+
+import scala.util.{Failure, Success, Try}
 
 class ProtoEventAdapterImpl(private val serialization: Serialization, encryption: Encryption) extends ProtoEventAdapter {
 
@@ -14,6 +16,7 @@ class ProtoEventAdapterImpl(private val serialization: Serialization, encryption
   val registeredModules: Set[ProtoEventAdapterModule] = Set(
     new IntermediateLanguageModule,
     new ProcessIndexModule,
+    new ProcessInstanceModule,
     new RecipeManagerModule,
     new RuntimeModule,
     new TypesModule
@@ -51,7 +54,9 @@ class ProtoEventAdapterImpl(private val serialization: Serialization, encryption
 
       serializer match {
         case s: SerializerWithStringManifest ⇒ s.fromBinary(decryptedBytes, manifest)
-        case _                               ⇒ serializer.fromBinary(decryptedBytes, Class.forName(manifest))
+        case _                               ⇒
+          val optionalClass = Try { Class.forName(manifest) }.toOption
+          serializer.fromBinary(decryptedBytes, optionalClass)
       }
 
     case _ =>

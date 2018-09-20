@@ -4,6 +4,7 @@ import akka.actor.ExtendedActorSystem
 import akka.serialization.{SerializationExtension, SerializerWithStringManifest}
 import com.ing.baker.il
 import com.ing.baker.runtime.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.actor.protobuf
 import com.ing.baker.runtime.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
@@ -48,6 +49,10 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     Entry("ProcessIndexProtocol.ProcessDeleted", classOf[ProcessIndexProtocol.ProcessDeleted], actor.process_index.protobuf.ProcessDeleted),
     Entry("ProcessIndexProtocol.NoSuchProcess", classOf[ProcessIndexProtocol.NoSuchProcess], actor.process_index.protobuf.NoSuchProcess),
     Entry("ProcessIndexProtocol.ProcessAlreadyExists", classOf[ProcessIndexProtocol.ProcessAlreadyExists], actor.process_index.protobuf.ProcessAlreadyExists),
+
+    Entry("ProcessInstanceProtocol.GetState", ProcessInstanceProtocol.GetState.getClass, actor.process_instance.protobuf.GetState),
+    Entry("ProcessInstanceProtocol.Stop", classOf[ProcessInstanceProtocol.Stop], actor.process_instance.protobuf.Stop),
+    Entry("ProcessInstanceProtocol.Initialize", classOf[ProcessInstanceProtocol.Initialize], actor.process_instance.protobuf.Initialize),
 
     Entry("RecipeManager.RecipeAdded", classOf[RecipeManager.RecipeAdded], actor.recipe_manager.protobuf.RecipeAdded),
     Entry("RecipeManagerProtocol.AddRecipe", classOf[RecipeManagerProtocol.AddRecipe], actor.recipe_manager.protobuf.AddRecipe),

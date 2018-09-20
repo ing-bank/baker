@@ -3,7 +3,7 @@ package com.ing.baker.runtime.actor.process_instance
 import com.ing.baker.petrinet.api.{HMap, Identifiable, Marking, MultiSet}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
-import com.ing.baker.runtime.actor.InternalBakerMessage
+import com.ing.baker.runtime.actor.{BakerProtoMessage, InternalBakerMessage}
 
 /**
  * Describes the messages to and from a PetriNetInstance actor.
@@ -40,12 +40,12 @@ object ProcessInstanceProtocol {
   /**
    * Command to request the current state of the petri net instance.
    */
-  case object GetState extends Command
+  case object GetState extends Command with BakerProtoMessage
 
   /**
     * Command to stop and optionally delete the process instance.
     */
-  case class Stop(delete: Boolean = false) extends Command
+  case class Stop(delete: Boolean = false) extends Command with BakerProtoMessage
 
   object Initialize {
 
@@ -57,7 +57,7 @@ object ProcessInstanceProtocol {
   /**
    * Command to initialize a petri net instance.
    */
-  case class Initialize(marking: MarkingData, state: Any) extends Command
+  case class Initialize(marking: MarkingData, state: Any) extends Command with BakerProtoMessage
 
   /**
    * Command to fire a specific transition with input.
