@@ -16,7 +16,6 @@ message ConsumedToken {
     optional int32 count = 3;
 }
 
-
 message Initialized {
     repeated ProducedToken initial_marking = 1;
     optional SerializedData initial_state = 2;
@@ -80,7 +79,7 @@ message Initialize {
 message ExceptionState {
     optional int32 failureCount = 1;
     optional string failureReason = 2;
-    optional FailureStrategy failureStrategy = 3;
+    optional FailureStrategyMessage failureStrategy = 3;
 }
 
 message JobState {
@@ -95,7 +94,7 @@ message InstanceState {
     optional int64 sequenceNr = 1;
     repeated MarkingData marking = 2;
     optional SerializedData state = 3;
-    repeated JobState jobState = 4;
+    repeated JobState jobs = 4;
 }
 
 message TransitionFiredMessage {
@@ -117,8 +116,8 @@ message FailureStrategyMessage {
         CONTINUE = 3;
     }
 
-    optional StrategyTypeMessage strategy_type = 1;
-    optional int64 retry_delay = 2;
-
-    optional
+    optional StrategyTypeMessage strategyType = 1;
+    optional int64 retryDelay = 2;
+    repeated MarkingData marking = 3;
+    optional SerializedData output = 4;
 }

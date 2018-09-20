@@ -13,15 +13,6 @@ object ProcessInstanceProtocol {
    */
   type MarkingData = Map[Long, MultiSet[_]]
 
-  implicit def fromExecutionInstance[P[_], T, S](instance: com.ing.baker.petrinet.runtime.Instance[P, T, S])(implicit placeIdentifier: Identifiable[P[_]], transitionIdentifier: Identifiable[T]): InstanceState =
-    InstanceState(instance.sequenceNr, marshal[P](instance.marking), instance.state, instance.jobs.mapValues(fromExecutionJob(_)).map(identity))
-
-  implicit def fromExecutionJob[P[_], T, S, E](job: com.ing.baker.petrinet.runtime.Job[P, T, S])(implicit placeIdentifier: Identifiable[P[_]], transitionIdentifier: Identifiable[T]): JobState =
-    JobState(job.id, transitionIdentifier(job.transition.asInstanceOf[T]).value, marshal(job.consume), job.input, job.failure.map(fromExecutionExceptionState))
-
-  implicit def fromExecutionExceptionState(exceptionState: com.ing.baker.petrinet.runtime.ExceptionState): ExceptionState =
-    ExceptionState(exceptionState.failureCount, exceptionState.failureReason, exceptionState.failureStrategy)
-
   def marshal[P[_]](marking: Marking[P])(implicit identifiable: Identifiable[P[_]]): MarkingData = marking.map {
     case (p, mset) ⇒ identifiable(p).value -> mset
   }.toMap
@@ -150,23 +141,21 @@ object ProcessInstanceProtocol {
     failureReason: String,
     failureStrategy: ExceptionStrategy)
 
-  def fromRuntimeExceptionStrategy[P[_]](strategy: com.ing.baker.petrinet.runtime.ExceptionStrategy): ExceptionStrategy = {
-    case com.ing.baker.petrinet.runtime.ExceptionStrategy.Fatal => Fatal
-    case com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition => BlockTransition
-    case com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue(marking, output) => Continue(marshal[P](marking), output)
-  }
-
   sealed trait ExceptionStrategy
 
-  case object Fatal extends ExceptionStrategy
+  object ExceptionStrategy {
 
-  case object BlockTransition extends ExceptionStrategy
+    case object Fatal extends ExceptionStrategy
 
-  case class RetryWithDelay(delay: Long) extends ExceptionStrategy {
-    require(delay > 0, "Delay must be greater then zero")
+    case object BlockTransition extends ExceptionStrategy
+
+    case class RetryWithDelay(delay: Long) extends ExceptionStrategy {
+      require(delay > 0, "Delay must be greater then zero")
+    }
+
+    case class Continue(marking: MarkingData, output: Any) extends ExceptionStrategy
   }
 
-  case class Continue(marking: MarkingData, output: Any) extends ExceptionStrategy
 
   /**
    * Response containing the state of the `Job`.
@@ -179,7 +168,7 @@ object ProcessInstanceProtocol {
       exceptionState: Option[ExceptionState]) {
 
     def isActive: Boolean = exceptionState match {
-      case Some(ExceptionState(_, _, RetryWithDelay(_))) ⇒ true
+      case Some(ExceptionState(_, _, ExceptionStrategy.RetryWithDelay(_))) ⇒ true
       case None                                          ⇒ true
       case _                                             ⇒ false
     }

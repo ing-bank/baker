@@ -140,7 +140,7 @@ class ProcessInstanceSerialization[P[_], T, S, E](serializer: ProtoEventAdapter)
       val consumed = deserializeConsumedMarking(instance, e.consumed)
       val failureStrategy = e.failureStrategy.getOrElse(missingFieldException("time_failed")) match {
         case FailureStrategy(Some(StrategyType.BLOCK_TRANSITION), _) ⇒ BlockTransition
-        case FailureStrategy(Some(StrategyType.BLOCK_ALL), _) ⇒ Fatal
+        case FailureStrategy(Some(StrategyType.FATAL), _) ⇒ Fatal
         case FailureStrategy(Some(StrategyType.RETRY), Some(delay)) ⇒ RetryWithDelay(delay)
         case other@_ ⇒ throw new IllegalStateException(s"Invalid failure strategy: $other")
       }
