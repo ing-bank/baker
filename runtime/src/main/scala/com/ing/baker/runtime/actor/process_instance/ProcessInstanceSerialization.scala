@@ -154,7 +154,7 @@ class ProcessInstanceSerialization[P[_], T, S, E](serializer: ProtoEventAdapter)
 
     val strategy = e.exceptionStrategy match {
       case BlockTransition ⇒ FailureStrategy(Some(StrategyType.BLOCK_TRANSITION))
-      case Fatal ⇒ FailureStrategy(Some(StrategyType.BLOCK_ALL))
+      case Fatal ⇒ FailureStrategy(Some(StrategyType.FATAL))
       case RetryWithDelay(delay) ⇒ FailureStrategy(Some(StrategyType.RETRY), Some(delay))
       case _ => throw new IllegalArgumentException("Unsupported exception strategy")
     }

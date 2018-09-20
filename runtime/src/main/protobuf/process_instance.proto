@@ -36,7 +36,7 @@ message TransitionFired {
 message FailureStrategy {
     enum StrategyType {
         BLOCK_TRANSITION = 0;
-        BLOCK_ALL = 1;
+        FATAL = 1;
         RETRY = 2;
     }
 
@@ -75,4 +75,50 @@ message MarkingData {
 message Initialize {
     repeated MarkingData marking_data = 1;
     optional SerializedData state = 2;
+}
+
+message ExceptionState {
+    optional int32 failureCount = 1;
+    optional string failureReason = 2;
+    optional FailureStrategy failureStrategy = 3;
+}
+
+message JobState {
+    optional int64 jobId = 1;
+    optional int64 transitionId = 2;
+    repeated MarkingData consumedMarking = 3;
+    optional SerializedData input = 4;
+    optional ExceptionState exceptionState = 5;
+}
+
+message InstanceState {
+    optional int64 sequenceNr = 1;
+    repeated MarkingData marking = 2;
+    optional SerializedData state = 3;
+    repeated JobState jobState = 4;
+}
+
+message TransitionFiredMessage {
+    optional int64 jobId = 1;
+    optional int64 transitionId = 2;
+    optional string correlationId = 3;
+    repeated MarkingData consumed = 4;
+    repeated MarkingData produced = 5;
+    optional InstanceState state = 6;
+    repeated int64 newJobsIds = 7;
+    optional SerializedData output = 8;
+}
+
+message FailureStrategyMessage {
+    enum StrategyTypeMessage {
+        BLOCK_TRANSITION = 0;
+        FATAL = 1;
+        RETRY = 2;
+        CONTINUE = 3;
+    }
+
+    optional StrategyTypeMessage strategy_type = 1;
+    optional int64 retry_delay = 2;
+
+    optional
 }

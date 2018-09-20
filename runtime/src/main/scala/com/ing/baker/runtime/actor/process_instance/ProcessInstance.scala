@@ -165,7 +165,7 @@ class ProcessInstance[P[_], T, S, E](processType: String,
                 val retry = system.scheduler.scheduleOnce(delay milliseconds) {
                   executeJob(updatedInstance.jobs(jobId), originalSender)
                 }
-                sender() ! TransitionFailed(jobId, transitionId, correlationId, marshal[P](consume.asInstanceOf[Marking[P]]), input, reason, strategy)
+                sender() ! TransitionFailed(jobId, transitionId, correlationId, marshal[P](consume.asInstanceOf[Marking[P]]), input, reason, fromRuntimeExceptionStrategy(strategy))
                 context become running(updatedInstance, scheduledRetries + (jobId -> retry))
               }
           )
@@ -188,7 +188,7 @@ class ProcessInstance[P[_], T, S, E](processType: String,
           persistEvent(instance, event)(
             eventSource.apply(instance)
               .andThen { updatedInstance ⇒
-                sender() ! TransitionFailed(jobId, transitionId, correlationId, marshal[P](consume.asInstanceOf[Marking[P]]), input, reason, strategy)
+                sender() ! TransitionFailed(jobId, transitionId, correlationId, marshal[P](consume.asInstanceOf[Marking[P]]), input, reason, fromRuntimeExceptionStrategy(strategy))
                 context become running(updatedInstance, scheduledRetries - jobId)
               })
       }

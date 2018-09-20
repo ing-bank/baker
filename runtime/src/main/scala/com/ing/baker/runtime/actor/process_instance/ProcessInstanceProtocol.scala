@@ -1,8 +1,6 @@
 package com.ing.baker.runtime.actor.process_instance
 
 import com.ing.baker.petrinet.api.{HMap, Identifiable, Marking, MultiSet}
-import com.ing.baker.petrinet.runtime.ExceptionStrategy
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
 import com.ing.baker.runtime.actor.{BakerProtoMessage, InternalBakerMessage}
 
 /**
@@ -123,7 +121,7 @@ object ProcessInstanceProtocol {
     produced: MarkingData,
     state: InstanceState,
     newJobsIds: Set[Long],
-    output: Any) extends TransitionResponse
+    output: Any) extends TransitionResponse with BakerProtoMessage
 
   /**
    * Response indicating that a transition has failed.
@@ -151,6 +149,24 @@ object ProcessInstanceProtocol {
     failureCount: Int,
     failureReason: String,
     failureStrategy: ExceptionStrategy)
+
+  def fromRuntimeExceptionStrategy[P[_]](strategy: com.ing.baker.petrinet.runtime.ExceptionStrategy): ExceptionStrategy = {
+    case com.ing.baker.petrinet.runtime.ExceptionStrategy.Fatal => Fatal
+    case com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition => BlockTransition
+    case com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue(marking, output) => Continue(marshal[P](marking), output)
+  }
+
+  sealed trait ExceptionStrategy
+
+  case object Fatal extends ExceptionStrategy
+
+  case object BlockTransition extends ExceptionStrategy
+
+  case class RetryWithDelay(delay: Long) extends ExceptionStrategy {
+    require(delay > 0, "Delay must be greater then zero")
+  }
+
+  case class Continue(marking: MarkingData, output: Any) extends ExceptionStrategy
 
   /**
    * Response containing the state of the `Job`.
