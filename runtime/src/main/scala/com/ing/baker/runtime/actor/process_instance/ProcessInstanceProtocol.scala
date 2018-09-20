@@ -24,17 +24,17 @@ object ProcessInstanceProtocol {
   /**
    * A common trait for all commands to a petri net instance.
    */
-  sealed trait Command extends InternalBakerMessage
+  sealed trait Command extends BakerProtoMessage
 
   /**
    * Command to request the current state of the petri net instance.
    */
-  case object GetState extends Command with BakerProtoMessage
+  case object GetState extends Command
 
   /**
     * Command to stop and optionally delete the process instance.
     */
-  case class Stop(delete: Boolean = false) extends Command with BakerProtoMessage
+  case class Stop(delete: Boolean = false) extends Command
 
   object Initialize {
 
@@ -46,7 +46,7 @@ object ProcessInstanceProtocol {
   /**
    * Command to initialize a petri net instance.
    */
-  case class Initialize(marking: MarkingData, state: Any) extends Command with BakerProtoMessage
+  case class Initialize(marking: MarkingData, state: Any) extends Command
 
   /**
    * Command to fire a specific transition with input.
@@ -59,19 +59,19 @@ object ProcessInstanceProtocol {
   /**
    * A common trait for all responses coming from a petri net instance.
    */
-  sealed trait Response extends InternalBakerMessage
+  sealed trait Response extends BakerProtoMessage
 
   /**
    * A response send in case any other command then 'Initialize' is sent to the actor in unitialized state.
    *
-   * @param id The identifier of the uninitialized actor.
+   * @param processId The identifier of the uninitialized actor.
    */
-  case class Uninitialized(id: String) extends Response
+  case class Uninitialized(processId: String) extends Response
 
   /**
    * Returned in case a second Initialize is send after a first is processed
    */
-  case object AlreadyInitialized extends Response
+  case class AlreadyInitialized(processId: String) extends Response
 
   /**
     * Indicates that the received FireTransition command with a specific correlation id was already received.
@@ -112,7 +112,7 @@ object ProcessInstanceProtocol {
     produced: MarkingData,
     state: InstanceState,
     newJobsIds: Set[Long],
-    output: Any) extends TransitionResponse with BakerProtoMessage
+    output: Any) extends TransitionResponse
 
   /**
    * Response indicating that a transition has failed.

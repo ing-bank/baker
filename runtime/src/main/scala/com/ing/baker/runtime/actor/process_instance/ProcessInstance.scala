@@ -234,7 +234,7 @@ class ProcessInstance[P[_], T, S, E](processType: String,
       }
 
     case Initialize(_, _) ⇒
-      sender() ! AlreadyInitialized
+      sender() ! AlreadyInitialized(processId)
   }
 
   def step(instance: Instance[P, T, S]): (Instance[P, T, S], Set[Job[P, T, S]]) = {

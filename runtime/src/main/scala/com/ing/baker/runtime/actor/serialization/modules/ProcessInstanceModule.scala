@@ -12,14 +12,32 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
       protobuf.GetState()
     case protocol.Stop(delete) =>
       protobuf.Stop(Some(delete))
+
     case protocol.Initialize(marking, state) =>
       protobuf.Initialize(
         markingDataToProto(marking, ctx),
         Some(ctx.toProtoUnkown(state.asInstanceOf[AnyRef])))
+    case protocol.Initialized(marking, state) =>
+        protobuf.InitializedMessage(markingDataToProto(marking, ctx), Some(ctx.toProtoUnkown(state.asInstanceOf[AnyRef])))
+    case protocol.AlreadyInitialized(processId) =>
+        protobuf.AlreadyInitialized(Some(processId))
+    case protocol.Uninitialized(processId) =>
+        protobuf.Uninitialized(Some(processId))
+
+    case protocol.FireTransition(transitionid, input, correlationId) =>
+      protobuf.FireTransition(Some(transitionid), Some(ctx.toProtoUnkown(input.asInstanceOf[AnyRef])), correlationId)
+    case protocol.AlreadyReceived(correlationId) =>
+      protobuf.AlreadyReceived(Some(correlationId))
+    case protocol.TransitionNotEnabled(transitionId, reason) =>
+      protobuf.TransitionNotEnabled(Some(transitionId), Some(reason))
     case protocol.TransitionFired(jobId, transitionId, correlationId, consumed, produced, state, newJobs, output) =>
       protobuf.TransitionFiredMessage(Some(jobId), Some(transitionId), correlationId,
         markingDataToProto(consumed, ctx), markingDataToProto(produced, ctx), Some(ctx.toProto[protobuf.InstanceState](state)),
         newJobs.toSeq, Some(ctx.toProtoUnkown(output.asInstanceOf[AnyRef])))
+    case protocol.TransitionFailed(jobId, transitionId, correlationId, consume, input, reason, strategy) =>
+      protobuf.TransitionFailedMessage(Some(jobId), Some(transitionId), correlationId, markingDataToProto(consume, ctx),
+        Some(ctx.toProtoUnkown(input.asInstanceOf[AnyRef])), Some(reason), Some(ctx.toProto[protobuf.FailureStrategyMessage](strategy)))
+
     case protocol.InstanceState(sequenceNr, marking, state, jobs) =>
       protobuf.InstanceState(Some(sequenceNr), markingDataToProto(marking, ctx),
         Some(ctx.toProtoUnkown(state.asInstanceOf[AnyRef])),
@@ -50,13 +68,30 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
       protocol.GetState
     case protobuf.Stop(Some(delete)) =>
       protocol.Stop(delete)
+
     case protobuf.Initialize(markingData, Some(state)) =>
       protocol.Initialize(
         protoToMarkingData(markingData, ctx),
         ctx.toDomain[Any](state))
+    case protobuf.InitializedMessage(marking, Some(state)) =>
+      protocol.Initialized(protoToMarkingData(marking, ctx), ctx.toDomain[Any](state))
+    case protobuf.Uninitialized(Some(processId)) =>
+      protocol.Uninitialized(processId)
+    case protobuf.AlreadyInitialized(Some(processId)) =>
+      protocol.AlreadyInitialized(processId)
+
+    case protobuf.FireTransition(Some(transitionId), Some(input), correlationId) =>
+      protocol.FireTransition(transitionId, ctx.toDomain[Any](input), correlationId)
+    case protobuf.AlreadyReceived(Some(correlationId)) =>
+      protocol.AlreadyReceived(correlationId)
+    case protobuf.TransitionNotEnabled(Some(transitionId), Some(reason)) =>
+      protocol.TransitionNotEnabled(transitionId, reason)
     case protobuf.TransitionFiredMessage(Some(jobId), Some(transitionId), correlationId, consumed, produced, Some(state), newJobsIds, Some(output)) =>
       protocol.TransitionFired(jobId, transitionId, correlationId, protoToMarkingData(consumed, ctx),
         protoToMarkingData(produced, ctx), ctx.toDomain[protocol.InstanceState](state), newJobsIds.toSet, ctx.toDomain[Any](output))
+    case protobuf.TransitionFailedMessage(Some(jobId), Some(transitionId), correlationId, consume, Some(input), Some(reason), Some(strategy)) =>
+      protocol.TransitionFailed(jobId, transitionId, correlationId, protoToMarkingData(consume, ctx), ctx.toDomain[Any](input), reason, ctx.toDomain[protocol.ExceptionStrategy](strategy))
+
     case protobuf.InstanceState(Some(sequenceNr), marking, Some(state), jobs) =>
       val jobMap: Map[Long, protocol.JobState] = jobs.map(ctx.toDomain[protocol.JobState]).map(j => j.id -> j).toMap
       protocol.InstanceState(sequenceNr, protoToMarkingData(marking, ctx), ctx.toDomain[Any](state), jobMap)

@@ -76,6 +76,19 @@ message Initialize {
     optional SerializedData state = 2;
 }
 
+message InitializedMessage {
+    repeated MarkingData marking = 1;
+    optional SerializedData state = 2;
+}
+
+message Uninitialized {
+    optional string processId = 1;
+}
+
+message AlreadyInitialized {
+    optional string processId = 1;
+}
+
 message ExceptionState {
     optional int32 failureCount = 1;
     optional string failureReason = 2;
@@ -97,6 +110,21 @@ message InstanceState {
     repeated JobState jobs = 4;
 }
 
+message FireTransition {
+    optional int64 transitionId = 1;
+    optional SerializedData input = 2;
+    optional string correlationId = 3;
+}
+
+message AlreadyReceived {
+    optional string correlationId = 1;
+}
+
+message TransitionNotEnabled {
+    optional int64 transitionId = 1;
+    optional string reason = 2;
+}
+
 message TransitionFiredMessage {
     optional int64 jobId = 1;
     optional int64 transitionId = 2;
@@ -106,6 +134,16 @@ message TransitionFiredMessage {
     optional InstanceState state = 6;
     repeated int64 newJobsIds = 7;
     optional SerializedData output = 8;
+}
+
+message TransitionFailedMessage {
+    optional int64 jobId = 1;
+    optional int64 transitionId = 2;
+    optional string correlationId = 3;
+    repeated MarkingData consume = 4;
+    optional SerializedData input = 5;
+    optional string reason = 6;
+    optional FailureStrategyMessage strategy = 7;
 }
 
 message FailureStrategyMessage {

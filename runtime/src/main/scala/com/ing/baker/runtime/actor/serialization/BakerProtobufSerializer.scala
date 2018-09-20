@@ -50,9 +50,19 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     Entry("ProcessIndexProtocol.NoSuchProcess", classOf[ProcessIndexProtocol.NoSuchProcess], actor.process_index.protobuf.NoSuchProcess),
     Entry("ProcessIndexProtocol.ProcessAlreadyExists", classOf[ProcessIndexProtocol.ProcessAlreadyExists], actor.process_index.protobuf.ProcessAlreadyExists),
 
-    Entry("ProcessInstanceProtocol.GetState", ProcessInstanceProtocol.GetState.getClass, actor.process_instance.protobuf.GetState),
     Entry("ProcessInstanceProtocol.Stop", classOf[ProcessInstanceProtocol.Stop], actor.process_instance.protobuf.Stop),
+    Entry("ProcessInstanceProtocol.GetState", ProcessInstanceProtocol.GetState.getClass, actor.process_instance.protobuf.GetState),
+    Entry("ProcessInstanceProtocol.InstanceState", classOf[ProcessInstanceProtocol.InstanceState], actor.process_instance.protobuf.InstanceState),
+
     Entry("ProcessInstanceProtocol.Initialize", classOf[ProcessInstanceProtocol.Initialize], actor.process_instance.protobuf.Initialize),
+    Entry("ProcessInstanceProtocol.Initialized", classOf[ProcessInstanceProtocol.Initialized], actor.process_instance.protobuf.InitializedMessage),
+    Entry("ProcessInstanceProtocol.Uninitialized", classOf[ProcessInstanceProtocol.Uninitialized], actor.process_instance.protobuf.Uninitialized),
+    Entry("ProcessInstanceProtocol.AlreadyInitialized", classOf[ProcessInstanceProtocol.AlreadyInitialized], actor.process_instance.protobuf.AlreadyInitialized),
+
+    Entry("ProcessInstanceProtocol.FireTransition", classOf[ProcessInstanceProtocol.FireTransition], actor.process_instance.protobuf.FireTransition),
+    Entry("ProcessInstanceProtocol.AlreadyReceived", classOf[ProcessInstanceProtocol.AlreadyReceived], actor.process_instance.protobuf.AlreadyReceived),
+    Entry("ProcessInstanceProtocol.TransitionNotEnabled", classOf[ProcessInstanceProtocol.TransitionNotEnabled], actor.process_instance.protobuf.TransitionNotEnabled),
+    Entry("ProcessInstanceProtocol.TransitionFailed", classOf[ProcessInstanceProtocol.TransitionFailed], actor.process_instance.protobuf.TransitionFailedMessage),
     Entry("ProcessInstanceProtocol.TransitionFired", classOf[ProcessInstanceProtocol.TransitionFired], actor.process_instance.protobuf.TransitionFiredMessage),
 
     Entry("RecipeManager.RecipeAdded", classOf[RecipeManager.RecipeAdded], actor.recipe_manager.protobuf.RecipeAdded),

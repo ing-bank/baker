@@ -78,7 +78,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       actor ! Initialize(initialMarking, initialState)
       actor ! Initialize(initialMarking, initialState)
       expectMsg(Initialized(initialMarking, initialState))
-      expectMsg(AlreadyInitialized)
+      expectMsgClass(classOf[AlreadyInitialized])
     }
 
     "Before being initialized respond with an Uninitialized message and terminate on receiving a GetState command" in new TestSequenceNet {
