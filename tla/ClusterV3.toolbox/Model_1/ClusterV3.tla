@@ -11,7 +11,7 @@ Nodes == 1..NumNodes \* Set of all nodes
 --algorithm ClusterV3 { 
   variables nodeState = [n \in Nodes |-> 
                                          [m \in Nodes |-> "up"]],
-            leader = 1, \* pick the first one as leader
+            leader = [n \in Nodes |-> 1], \* all nodes see the first one as leader
             sbrDecision = [n \in Nodes |-> "NoAction"];
             
 
@@ -31,7 +31,7 @@ Nodes == 1..NumNodes \* Set of all nodes
         IF(InMajority(state)) THEN "DownUnreachables" ELSE "DownMyself"
       ELSE
         IF(InMajority(state)) THEN "NoAction" ELSE "DownMyself" 
-      
+              
   }
   
   macro receiveMemberState(me, other, newState) {
@@ -41,15 +41,16 @@ Nodes == 1..NumNodes \* Set of all nodes
 
     nodeState[me] := [nodeState[me] EXCEPT ![other] = newState];
 
-    sbrDecision := [sbrDecision EXCEPT ![me] = SbrDecision(me = leader, nodeState[me])];
+    sbrDecision := [sbrDecision EXCEPT ![me] = SbrDecision(me = leader[me], nodeState[me])];
         
 \*    print <<me, "marked", other, "as", newState, "new nodeState", nodeState[me], "new sbrDecision", sbrDecision[me]>>;
   }
   
   macro actOnSbrDecision(me) {
-\*    print <<me, "before acting on the sbr decision", sbrDecision[me], "nodeState", nodeState[me]>>;
 
     if (sbrDecision[me] # "NoAction") {
+\*      print <<me, "before acting on the sbr decision", sbrDecision[me], "nodeState", nodeState[me]>>;
+  
       nodeState := [n \in Nodes |-> IF n # me 
                                       THEN nodeState[n] 
                                       ELSE [m \in Nodes |->
@@ -63,9 +64,16 @@ Nodes == 1..NumNodes \* Set of all nodes
     
       \* reset the sbr decision
       sbrDecision := [sbrDecision EXCEPT ![me] = "NoAction"];
-    }
+\*      
+\*      \* re-elect a new leader if the previous was DOWN
+\*      leader[me] := IF nodeState[leader[me]][leader[me]] = "down"
+\*                      THEN CHOOSE x \in Nodes \ {leader[me]} : TRUE
+\*                      ELSE leader[me]
+\*      
+  
+\*      print <<me, "after acting on the sbr decision", sbrDecision[me], "nodeState", nodeState[me]>>;
+    };
         
-\*    print <<me, "after acting on the sbr decision", sbrDecision[me], "nodeState", nodeState[me]>>;
   }
   
   process (P \in Nodes \X Nodes)
@@ -81,7 +89,7 @@ Nodes == 1..NumNodes \* Set of all nodes
                         or { 
                           if (nodeState[self[1]][self[2]] = "unreachable") 
                             receiveMemberState(self[1], self[2], "up"); 
-                          };
+                        };
                Act:     actOnSbrDecision(self[1]);
              }  
   }
@@ -116,7 +124,7 @@ ProcSet == (Nodes \X Nodes)
 Init == (* Global variables *)
         /\ nodeState = [n \in Nodes |->
                                         [m \in Nodes |-> "up"]]
-        /\ leader = 1
+        /\ leader = [n \in Nodes |-> 1]
         /\ sbrDecision = [n \in Nodes |-> "NoAction"]
         /\ pc = [self \in ProcSet |-> "Check"]
 
@@ -130,13 +138,13 @@ Receive(self) == /\ pc[self] = "Receive"
                  /\ \/ /\ IF nodeState[self[1]][self[2]] = "up"
                              THEN /\ (self[1]) # (self[2])
                                   /\ nodeState' = [nodeState EXCEPT ![(self[1])] = [nodeState[(self[1])] EXCEPT ![(self[2])] = "unreachable"]]
-                                  /\ sbrDecision' = [sbrDecision EXCEPT ![(self[1])] = SbrDecision((self[1]) = leader, nodeState'[(self[1])])]
+                                  /\ sbrDecision' = [sbrDecision EXCEPT ![(self[1])] = SbrDecision((self[1]) = leader[(self[1])], nodeState'[(self[1])])]
                              ELSE /\ TRUE
                                   /\ UNCHANGED << nodeState, sbrDecision >>
                     \/ /\ IF nodeState[self[1]][self[2]] = "unreachable"
                              THEN /\ (self[1]) # (self[2])
                                   /\ nodeState' = [nodeState EXCEPT ![(self[1])] = [nodeState[(self[1])] EXCEPT ![(self[2])] = "up"]]
-                                  /\ sbrDecision' = [sbrDecision EXCEPT ![(self[1])] = SbrDecision((self[1]) = leader, nodeState'[(self[1])])]
+                                  /\ sbrDecision' = [sbrDecision EXCEPT ![(self[1])] = SbrDecision((self[1]) = leader[(self[1])], nodeState'[(self[1])])]
                              ELSE /\ TRUE
                                   /\ UNCHANGED << nodeState, sbrDecision >>
                  /\ pc' = [pc EXCEPT ![self] = "Act"]
@@ -172,14 +180,30 @@ Termination == <>(\A self \in ProcSet: pc[self] = "Done")
 
 \* END TRANSLATION
 
-TypeOK == /\ leader \in Nodes
+(* Check the types OK in each state *)
+TypeOK == /\ \A n \in Nodes : leader[n] \in Nodes
           /\ \A n \in Nodes : sbrDecision[n] \in {"DownMyself", "DownUnreachables", "NoAction"}
           /\ \A n1 \in Nodes : \A n2 \in Nodes : nodeState[n1][n2] \in {"up", "down", "unreachable"}
           
-Liveliness == /\ Spec
-              /\ SF_vars(Next)
+\*(* At least one node must be UP and this node is the leader *)          
+\*Availability == \E n \in Nodes : nodeState[n][n] = "up" /\ leader[n] = n
+
+(* At least one node must be UP *)          
+Availability == \E n \in Nodes : nodeState[n][n] = "up"
+
+(* Leader is same in all the nodes *)
+ConsistentLeader == \A n1 \in Nodes : \A n2 \in Nodes: leader[n1] = leader[n2]
+
+(* One invariant combining all others *)
+Invariants == /\ TypeOK    
+              /\ Availability
+              /\ ConsistentLeader 
+
+          
+\*Liveliness == /\ Spec
+\*              /\ SF_vars(Next)
           
 =============================================================================
 \* Modification History
-\* Last modified Fri Sep 14 16:57:43 CEST 2018 by bekiroguz
+\* Last modified Tue Sep 18 16:21:17 CEST 2018 by bekiroguz
 \* Created Fri Sep 14 10:25:09 CEST 2018 by bekiroguz

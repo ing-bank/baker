@@ -4,3 +4,5 @@
 *SnapShot*
 *.project
 *.pmap
+*.aux
+*.tex

@@ -2,18 +2,18 @@
 EXTENDS ClusterV3, TLC
 
 \* CONSTANT definitions @modelParameterConstants:0NumNodes
-const_1536937427013193000 == 
-3
+const_153745175955611000 == 
+4
 ----
 
 \* SPECIFICATION definition @modelBehaviorSpec:0
-spec_1536937427013194000 ==
+spec_153745175955612000 ==
 Spec
 ----
-\* INVARIANT definition @modelCorrectnessInvariants:0
-inv_1536937427013195000 ==
-TypeOK
+\* PROPERTY definition @modelCorrectnessProperties:0
+prop_153745175955613000 ==
+Invariants
 ----
 =============================================================================
 \* Modification History
-\* Created Fri Sep 14 17:03:47 CEST 2018 by bekiroguz
+\* Created Thu Sep 20 15:55:59 CEST 2018 by bekiroguz
