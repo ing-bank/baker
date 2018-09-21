@@ -51,6 +51,9 @@ class ProcessIndexModule extends ProtoEventAdapterModule {
     case ProcessIndexProtocol.GetCompiledRecipe(recipeId) =>
       protobuf.GetCompiledRecipe(Some(recipeId))
 
+    case ProcessIndexProtocol.ReceivePeriodExpired(processId) =>
+      protobuf.ReceivePeriodExpired(Some(processId))
+
     case ProcessIndexProtocol.InvalidEvent(processId, reason) =>
       protobuf.InvalidEvent(Some(processId), Some(reason))
 
@@ -102,6 +105,9 @@ class ProcessIndexModule extends ProtoEventAdapterModule {
 
     case protobuf.GetCompiledRecipe(Some(recipeId)) =>
       ProcessIndexProtocol.GetCompiledRecipe(recipeId)
+
+    case protobuf.ReceivePeriodExpired(Some(processId)) =>
+      ProcessIndexProtocol.ReceivePeriodExpired(processId)
 
     case protobuf.InvalidEvent(Some(processId), Some(reason)) =>
       ProcessIndexProtocol.InvalidEvent(processId, reason)

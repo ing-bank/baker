@@ -7,13 +7,13 @@ import com.ing.baker.runtime.actor.protobuf.SerializedData
 import com.ing.baker.runtime.actor.serialization.modules._
 import scalapb.GeneratedMessage
 
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
-class ProtoEventAdapterImpl(private val serialization: Serialization, encryption: Encryption) extends ProtoEventAdapter {
+import ProtoEventAdapterImpl._
 
-  def this(system: ActorSystem, encryption: Encryption) = this(SerializationExtension.get(system), encryption)
+object ProtoEventAdapterImpl {
 
-  val registeredModules: Set[ProtoEventAdapterModule] = Set(
+  val defaultModules: Set[ProtoEventAdapterModule] = Set(
     new IntermediateLanguageModule,
     new ProcessIndexModule,
     new ProcessInstanceModule,
@@ -21,16 +21,21 @@ class ProtoEventAdapterImpl(private val serialization: Serialization, encryption
     new RuntimeModule,
     new TypesModule
   )
+}
+
+class ProtoEventAdapterImpl(private val serialization: Serialization, encryption: Encryption, modules: Set[ProtoEventAdapterModule] = defaultModules) extends ProtoEventAdapter {
+
+  def this(system: ActorSystem, encryption: Encryption) = this(SerializationExtension.get(system), encryption)
 
   // Combine all partial functions into one partial function
   val toProtoPF: PartialFunction[AnyRef, scalapb.GeneratedMessage] =
-    registeredModules
+    modules
       .map(_.toProto(this))
       .reduce(_ orElse _)
 
   // Combine all partial functions into one partial function
   val toDomainPF: PartialFunction[scalapb.GeneratedMessage, AnyRef] =
-    registeredModules
+    modules
       .map(_.toDomain(this))
       .reduce(_ orElse _)
 
