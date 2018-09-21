@@ -57,9 +57,12 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
 
   private def toProtoMarking(markingData: MarkingData, ctx: ProtoEventAdapter): Seq[protobuf.MarkingData] = {
     markingData.flatMap { case (placeId, multiSet) =>
-      multiSet.map { case (data, count) =>
-        protobuf.MarkingData(Some(placeId), Some(ctx.toProtoAny(data.asInstanceOf[AnyRef])), Some(count))
-      }
+      if (multiSet.isEmpty)
+        throw new IllegalArgumentException(s"Empty marking encoutered for place id: $placeId")
+
+        multiSet.map { case (data, count) =>
+          protobuf.MarkingData(Some(placeId), Some(ctx.toProtoAny(data.asInstanceOf[AnyRef])), Some(count))
+        }
     }.toSeq
   }
 

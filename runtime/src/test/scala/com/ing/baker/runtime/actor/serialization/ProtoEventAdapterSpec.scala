@@ -5,13 +5,17 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.petrinet.api.MultiSet
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{Initialize, MarkingData}
 import com.ing.baker.runtime.actor.serialization.Encryption._
 import com.ing.baker.runtime.actor.serialization.ProtoEventAdapterSpec._
 import com.ing.baker.runtime.core.RuntimeEvent
+import com.ing.baker.types.PrimitiveValue
 import com.ing.baker.{AllTypeRecipe, types}
 import javax.crypto.BadPaddingException
 import org.scalacheck.Gen
-import org.scalacheck.Prop.forAll
+import org.scalacheck.Prop.{BooleanOperators, forAll}
 import org.scalacheck.Test.Parameters.defaultVerbose
 import org.scalatest.prop.Checkers
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
@@ -25,7 +29,15 @@ object ProtoEventAdapterSpec {
     val serialized = adapter.toProtoMessage(originalObject)
     val deserializedObject = adapter.toDomainObject(serialized)
 
-    originalObject == deserializedObject
+    (originalObject == deserializedObject) :| s"$originalObject != $deserializedObject"
+  }
+
+  object GenUtil {
+
+    def tuple[K, V](keyGen: Gen[K], valueGen: Gen[V]): Gen[(K, V)] = for {
+      key <- keyGen
+      value <- valueGen
+    } yield key -> value
   }
 
   object IntermediateLanguage {
@@ -38,10 +50,7 @@ object ProtoEventAdapterSpec {
     val eventNameGen: Gen[String] = Gen.alphaStr
     val finiteDurationGen: Gen[FiniteDuration] = Gen.posNum[Long].map(millis => FiniteDuration(millis, TimeUnit.MILLISECONDS))
 
-    val ingredientsGen = for {
-      ingredientName <- ingredientNameGen
-      ingredientValue <- valuesGen
-    } yield ingredientName -> ingredientValue
+    val ingredientsGen = GenUtil.tuple(ingredientNameGen, valuesGen)
 
     val runtimeEventGen = for {
       eventName <- eventNameGen
@@ -64,10 +73,7 @@ object ProtoEventAdapterSpec {
     val addRecipeResponseGen: Gen[AddRecipeResponse] = recipeIdGen.map(AddRecipeResponse(_))
     val getAllRecipesGen: Gen[GetAllRecipes.type] = Gen.const(GetAllRecipes)
 
-    val recipeEntriesGen = for {
-      recipeId <- recipeIdGen
-      recipe <- recipeGen
-    } yield (recipeId -> recipe)
+    val recipeEntriesGen = GenUtil.tuple(recipeIdGen, recipeGen)
 
     val allRecipesGen: Gen[AllRecipes] = Gen.mapOfN(2, recipeEntriesGen).map(AllRecipes(_))
 
@@ -130,6 +136,36 @@ object ProtoEventAdapterSpec {
     val messagesGen: Gen[AnyRef] = Gen.oneOf(getIndexGen, indexGen, createProcessGen, processEventGen,
       getProcessStateGen, getCompiledRecipeGen, receivePeriodExpiredGen, invalidEventGen, processDeletedGen,
       noSuchProcessGen, processAlreadyExistsGen)
+  }
+
+  object ProcessInstance {
+
+    import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
+    import Types._
+
+    val transitionIdGen = Gen.posNum[Long]
+    val placeIdGen = Gen.posNum[Long]
+    val processStateGen = primitiveValuesGen
+    val transitionInputGen = IntermediateLanguage.runtimeEventGen
+    val correlationIdGen = Gen.uuid.map(_.toString)
+
+    val multiSetGen: Gen[MultiSet[_]] = Gen.mapOfN[Any, Int](5, GenUtil.tuple(processStateGen, Gen.posNum[Int]))
+    val markingDataGen: Gen[MarkingData] = Gen.mapOfN(1, GenUtil.tuple(placeIdGen, multiSetGen))
+
+    val getStateGen = Gen.const(GetState)
+    val stopGen = Gen.oneOf(true, false).map(Stop(_))
+    val initializeGen = for {
+      marking <- markingDataGen
+      state <- processStateGen
+    } yield Initialize(marking, state)
+
+    val fireTransitionGen = for {
+      transitionId <- transitionIdGen
+      input <- transitionInputGen
+      correlationId <- Gen.option(correlationIdGen)
+    } yield FireTransition(transitionId, input, correlationId)
+
+    val messagesGen: Gen[AnyRef] = Gen.oneOf(getStateGen, stopGen, initializeGen, fireTransitionGen)
   }
 
   object Types {
@@ -219,6 +255,54 @@ class ProtoEventAdapterSpec extends WordSpecLike with Checkers with Matchers wit
     "be able to translate all messages to/from protobuf" in {
 
       val property = transitivityProperty(ProcessIndex.messagesGen, testAdapter)
+
+      check(property, defaultVerbose.withMinSuccessfulTests(minSuccessfulTests))
+    }
+  }
+
+  "The ProcessInstance protobuf serialization module" should {
+
+    "be able to translate all messages to/from protobuf" in {
+
+      def initTransitivityProperty(gen: Gen[Initialize], adapter: ProtoEventAdapterImpl) = forAll(gen) { originalObject =>
+
+        val serialized = adapter.toProtoMessage(originalObject)
+        val deserializedObject = adapter.toDomainObject(serialized)
+
+        if (originalObject != deserializedObject) {
+
+          val initA = originalObject
+          val initB = deserializedObject.asInstanceOf[Initialize]
+
+          println("marking equal: " + (initA.marking == initB.marking))
+          println("state equal: " + (initA.state == initB.state))
+
+          initA.marking.foreach {
+            case (placeId, multiSet) =>
+              val multiSetB = initB.marking(placeId).asInstanceOf[MultiSet[Any]]
+              val multiSetA = multiSet.asInstanceOf[MultiSet[Any]]
+
+              if (multiSetA != multiSetB) {
+                println("not equal for " + placeId)
+                println(s"${multiSetA.getClass}")
+                println(s"${multiSetB.getClass}")
+                multiSetA.foreach { case (obj, count) =>
+                  if (!multiSetB.contains(obj)) println(s"$obj (class ${obj.asInstanceOf[PrimitiveValue].value.getClass}) is not found")
+                  else if (multiSetB(obj) != count) println(s"$obj (class ${obj.asInstanceOf[PrimitiveValue].value.getClass}) has different count (${multiSetB(obj)} != $count")
+                }
+                multiSetB.foreach { case (obj, count) =>
+                  if (!multiSetA.contains(obj)) println(s"$obj (class ${obj.asInstanceOf[PrimitiveValue].value.getClass}) is not found")
+                  else if (multiSetA(obj) != count) println(s"$obj (class ${obj.asInstanceOf[PrimitiveValue].value.getClass}) has different count (${multiSetA(obj)} != $count")
+                }
+              }
+          }
+        }
+
+        (originalObject == deserializedObject) :| s"$originalObject != $deserializedObject"
+      }
+
+//      val property = transitivityProperty(ProcessInstance.messagesGen, testAdapter)
+      val property = initTransitivityProperty(ProcessInstance.initializeGen, testAdapter)
 
       check(property, defaultVerbose.withMinSuccessfulTests(minSuccessfulTests))
     }
