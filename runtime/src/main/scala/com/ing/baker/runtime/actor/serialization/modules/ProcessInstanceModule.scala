@@ -15,50 +15,50 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
 
     case protocol.Initialize(marking, state) =>
       protobuf.Initialize(
-        markingDataToProto(marking, ctx),
-        Some(ctx.toProtoUnkown(state.asInstanceOf[AnyRef])))
+        toProtoMarking(marking, ctx),
+        Some(ctx.toProtoAny(state.asInstanceOf[AnyRef])))
     case protocol.Initialized(marking, state) =>
-        protobuf.InitializedMessage(markingDataToProto(marking, ctx), Some(ctx.toProtoUnkown(state.asInstanceOf[AnyRef])))
+        protobuf.InitializedMessage(toProtoMarking(marking, ctx), Some(ctx.toProtoAny(state.asInstanceOf[AnyRef])))
     case protocol.AlreadyInitialized(processId) =>
         protobuf.AlreadyInitialized(Some(processId))
     case protocol.Uninitialized(processId) =>
         protobuf.Uninitialized(Some(processId))
 
     case protocol.FireTransition(transitionid, input, correlationId) =>
-      protobuf.FireTransition(Some(transitionid), Some(ctx.toProtoUnkown(input.asInstanceOf[AnyRef])), correlationId)
+      protobuf.FireTransition(Some(transitionid), Some(ctx.toProtoAny(input.asInstanceOf[AnyRef])), correlationId)
     case protocol.AlreadyReceived(correlationId) =>
       protobuf.AlreadyReceived(Some(correlationId))
     case protocol.TransitionNotEnabled(transitionId, reason) =>
       protobuf.TransitionNotEnabled(Some(transitionId), Some(reason))
     case protocol.TransitionFired(jobId, transitionId, correlationId, consumed, produced, state, newJobs, output) =>
       protobuf.TransitionFiredMessage(Some(jobId), Some(transitionId), correlationId,
-        markingDataToProto(consumed, ctx), markingDataToProto(produced, ctx), Some(ctx.toProto[protobuf.InstanceState](state)),
-        newJobs.toSeq, Some(ctx.toProtoUnkown(output.asInstanceOf[AnyRef])))
+        toProtoMarking(consumed, ctx), toProtoMarking(produced, ctx), Some(ctx.toProto[protobuf.InstanceState](state)),
+        newJobs.toSeq, Some(ctx.toProtoAny(output.asInstanceOf[AnyRef])))
     case protocol.TransitionFailed(jobId, transitionId, correlationId, consume, input, reason, strategy) =>
-      protobuf.TransitionFailedMessage(Some(jobId), Some(transitionId), correlationId, markingDataToProto(consume, ctx),
-        Some(ctx.toProtoUnkown(input.asInstanceOf[AnyRef])), Some(reason), Some(ctx.toProto[protobuf.FailureStrategyMessage](strategy)))
+      protobuf.TransitionFailedMessage(Some(jobId), Some(transitionId), correlationId, toProtoMarking(consume, ctx),
+        Some(ctx.toProtoAny(input.asInstanceOf[AnyRef])), Some(reason), Some(ctx.toProto[protobuf.FailureStrategyMessage](strategy)))
 
     case protocol.InstanceState(sequenceNr, marking, state, jobs) =>
-      protobuf.InstanceState(Some(sequenceNr), markingDataToProto(marking, ctx),
-        Some(ctx.toProtoUnkown(state.asInstanceOf[AnyRef])),
+      protobuf.InstanceState(Some(sequenceNr), toProtoMarking(marking, ctx),
+        Some(ctx.toProtoAny(state.asInstanceOf[AnyRef])),
         jobs.values.map(job => ctx.toProto[protobuf.JobState](job)).toSeq)
     case protocol.JobState(jobId, transitionId, consumed, input, exceptionState) =>
-      protobuf.JobState(Some(jobId), Some(transitionId), markingDataToProto(consumed, ctx),
-        Some(ctx.toProtoUnkown(input.asInstanceOf[AnyRef])), exceptionState.map(ctx.toProto[protobuf.ExceptionState]))
+      protobuf.JobState(Some(jobId), Some(transitionId), toProtoMarking(consumed, ctx),
+        Some(ctx.toProtoAny(input.asInstanceOf[AnyRef])), exceptionState.map(ctx.toProto[protobuf.ExceptionState]))
     case protocol.ExceptionState(failureCount, failureReason, failureStrategy) =>
       protobuf.ExceptionState(Some(failureCount), Some(failureReason), Some(ctx.toProto[protobuf.FailureStrategyMessage](failureStrategy)))
     case exceptionStrategy: ExceptionStrategy => exceptionStrategy match {
       case ExceptionStrategy.Fatal => protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.FATAL), None)
       case ExceptionStrategy.BlockTransition => protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.BLOCK_TRANSITION), None)
-      case ExceptionStrategy.Continue(marking, output) => protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.CONTINUE), None, markingDataToProto(marking, ctx), Some(ctx.toProtoUnkown(output.asInstanceOf[AnyRef])))
+      case ExceptionStrategy.Continue(marking, output) => protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.CONTINUE), None, toProtoMarking(marking, ctx), Some(ctx.toProtoAny(output.asInstanceOf[AnyRef])))
       case ExceptionStrategy.RetryWithDelay(delay) => protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.RETRY), Some(delay))
     }
   }
 
-  private def markingDataToProto(markingData: MarkingData, ctx: ProtoEventAdapter): Seq[protobuf.MarkingData] = {
+  private def toProtoMarking(markingData: MarkingData, ctx: ProtoEventAdapter): Seq[protobuf.MarkingData] = {
     markingData.flatMap { case (placeId, multiSet) =>
       multiSet.map { case (data, count) =>
-        protobuf.MarkingData(Some(placeId), Some(ctx.toProtoUnkown(data.asInstanceOf[AnyRef])), Some(count))
+        protobuf.MarkingData(Some(placeId), Some(ctx.toProtoAny(data.asInstanceOf[AnyRef])), Some(count))
       }
     }.toSeq
   }
@@ -71,10 +71,10 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
 
     case protobuf.Initialize(markingData, Some(state)) =>
       protocol.Initialize(
-        protoToMarkingData(markingData, ctx),
+        toDomainMarking(markingData, ctx),
         ctx.toDomain[Any](state))
     case protobuf.InitializedMessage(marking, Some(state)) =>
-      protocol.Initialized(protoToMarkingData(marking, ctx), ctx.toDomain[Any](state))
+      protocol.Initialized(toDomainMarking(marking, ctx), ctx.toDomain[Any](state))
     case protobuf.Uninitialized(Some(processId)) =>
       protocol.Uninitialized(processId)
     case protobuf.AlreadyInitialized(Some(processId)) =>
@@ -87,16 +87,16 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
     case protobuf.TransitionNotEnabled(Some(transitionId), Some(reason)) =>
       protocol.TransitionNotEnabled(transitionId, reason)
     case protobuf.TransitionFiredMessage(Some(jobId), Some(transitionId), correlationId, consumed, produced, Some(state), newJobsIds, Some(output)) =>
-      protocol.TransitionFired(jobId, transitionId, correlationId, protoToMarkingData(consumed, ctx),
-        protoToMarkingData(produced, ctx), ctx.toDomain[protocol.InstanceState](state), newJobsIds.toSet, ctx.toDomain[Any](output))
+      protocol.TransitionFired(jobId, transitionId, correlationId, toDomainMarking(consumed, ctx),
+        toDomainMarking(produced, ctx), ctx.toDomain[protocol.InstanceState](state), newJobsIds.toSet, ctx.toDomain[Any](output))
     case protobuf.TransitionFailedMessage(Some(jobId), Some(transitionId), correlationId, consume, Some(input), Some(reason), Some(strategy)) =>
-      protocol.TransitionFailed(jobId, transitionId, correlationId, protoToMarkingData(consume, ctx), ctx.toDomain[Any](input), reason, ctx.toDomain[protocol.ExceptionStrategy](strategy))
+      protocol.TransitionFailed(jobId, transitionId, correlationId, toDomainMarking(consume, ctx), ctx.toDomain[Any](input), reason, ctx.toDomain[protocol.ExceptionStrategy](strategy))
 
     case protobuf.InstanceState(Some(sequenceNr), marking, Some(state), jobs) =>
       val jobMap: Map[Long, protocol.JobState] = jobs.map(ctx.toDomain[protocol.JobState]).map(j => j.id -> j).toMap
-      protocol.InstanceState(sequenceNr, protoToMarkingData(marking, ctx), ctx.toDomain[Any](state), jobMap)
+      protocol.InstanceState(sequenceNr, toDomainMarking(marking, ctx), ctx.toDomain[Any](state), jobMap)
     case protobuf.JobState(Some(jobId), Some(transitionId), consumed, Some(input), exceptionState) =>
-      protocol.JobState(jobId, transitionId, protoToMarkingData(consumed, ctx), ctx.toDomain[Any](input), exceptionState.map(ctx.toDomain[protocol.ExceptionState]))
+      protocol.JobState(jobId, transitionId, toDomainMarking(consumed, ctx), ctx.toDomain[Any](input), exceptionState.map(ctx.toDomain[protocol.ExceptionState]))
     case protobuf.ExceptionState(Some(failureCount), Some(failureReason), Some(strategy)) =>
       protocol.ExceptionState(failureCount, failureReason, ctx.toDomain[ExceptionStrategy](strategy))
     case protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.FATAL), _, _, _) =>
@@ -106,10 +106,10 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
     case protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.RETRY), Some(retryDelay), _, _) =>
       protocol.ExceptionStrategy.RetryWithDelay(retryDelay)
     case protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.CONTINUE), _, marking, Some(output)) =>
-      protocol.ExceptionStrategy.Continue(protoToMarkingData(marking, ctx), ctx.toDomain[Any](output))
+      protocol.ExceptionStrategy.Continue(toDomainMarking(marking, ctx), ctx.toDomain[Any](output))
   }
 
-  private def protoToMarkingData(markingData: Seq[protobuf.MarkingData], ctx: ProtoEventAdapter): protocol.MarkingData = {
+  private def toDomainMarking(markingData: Seq[protobuf.MarkingData], ctx: ProtoEventAdapter): protocol.MarkingData = {
     markingData.foldLeft[MarkingData](Map.empty) {
       case (acc, protobuf.MarkingData(Some(placeId), Some(data), Some(count))) =>
         val placeData: MultiSet[AnyRef] = acc.get(placeId).map(_.asInstanceOf[MultiSet[AnyRef]]).getOrElse(MultiSet.empty)

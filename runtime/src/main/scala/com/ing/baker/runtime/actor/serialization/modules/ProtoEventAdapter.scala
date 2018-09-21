@@ -7,7 +7,7 @@ import com.ing.baker.runtime.actor.protobuf.SerializedData
   */
 trait ProtoEventAdapter {
 
-  def toProtoUnkown(obj: AnyRef): SerializedData
+  def toProtoAny(obj: AnyRef): SerializedData
 
   def toProto[T <: scalapb.GeneratedMessage](obj: AnyRef): T
 

@@ -28,7 +28,7 @@ class RuntimeModule extends ProtoEventAdapterModule {
 
   private def writeIngredients(ingredients: Seq[(String, Value)], ctx: ProtoEventAdapter): Seq[protobuf.Ingredient] = {
     ingredients.map { case (name, value) =>
-      val serializedObject = ctx.toProtoUnkown(value)
+      val serializedObject = ctx.toProtoAny(value)
       protobuf.Ingredient(Some(name), Some(serializedObject))
     }
   }

@@ -66,7 +66,7 @@ class ProtoEventAdapterImpl(private val serialization: Serialization, encryption
 
   def getSerializerFor(obj: AnyRef): Serializer = serialization.findSerializerFor(obj)
 
-  def toProtoUnkown(obj: AnyRef): SerializedData = {
+  def toProtoAny(obj: AnyRef): SerializedData = {
     val serializer: Serializer = getSerializerFor(obj)
     val bytes = encryption.encrypt(serializer.toBinary(obj))
 

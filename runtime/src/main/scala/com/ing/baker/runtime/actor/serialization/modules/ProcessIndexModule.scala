@@ -42,7 +42,7 @@ class ProcessIndexModule extends ProtoEventAdapterModule {
       protobuf.ProcessEvent(Some(processId), Some(ctx.toProto[RuntimeEvent](event)), correlationId, Some(waitForRetries), Some(timeout.toMillis))
 
     case ProcessIndexProtocol.ProcessEventResponse(processId, sourceRef) =>
-      val serializedSourceRef = ctx.toProtoUnkown(sourceRef)
+      val serializedSourceRef = ctx.toProtoAny(sourceRef)
       protobuf.ProcessEventResponse(Some(processId), Some(serializedSourceRef))
 
     case ProcessIndexProtocol.GetProcessState(processId) =>

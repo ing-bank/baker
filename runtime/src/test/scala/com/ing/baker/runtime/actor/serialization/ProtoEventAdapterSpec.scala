@@ -18,7 +18,7 @@ class ProtoEventAdapterSpec extends FunSuite with Matchers with BeforeAndAfterAl
     val serializer1 = new ProtoEventAdapterImpl(actorSystem, new AESEncryption("0123456789123456"))
     val serializer2 = new ProtoEventAdapterImpl(actorSystem, new AESEncryption("0123456789123456"))
 
-    val serializedData = serializer1.toProtoUnkown(someEvent)
+    val serializedData = serializer1.toProtoAny(someEvent)
 
     serializer2.toDomain[AnyRef](serializedData) shouldBe someEvent
   }
@@ -28,7 +28,7 @@ class ProtoEventAdapterSpec extends FunSuite with Matchers with BeforeAndAfterAl
     val serializer1 = new ProtoEventAdapterImpl(actorSystem, new AESEncryption("0123456789123456"))
     val serializer2 = new ProtoEventAdapterImpl(actorSystem, new AESEncryption("0123456789123459"))
 
-    val serializedData = serializer1.toProtoUnkown(someEvent)
+    val serializedData = serializer1.toProtoAny(someEvent)
 
     // fails during decryption and throws this exception
     intercept[BadPaddingException] {
@@ -41,7 +41,7 @@ class ProtoEventAdapterSpec extends FunSuite with Matchers with BeforeAndAfterAl
     val serializer1 = new ProtoEventAdapterImpl(actorSystem, NoEncryption)
     val serializer2 = new ProtoEventAdapterImpl(actorSystem, NoEncryption)
 
-    val serializedData = serializer1.toProtoUnkown(someEvent)
+    val serializedData = serializer1.toProtoAny(someEvent)
 
     serializer2.toDomain[AnyRef](serializedData) shouldBe someEvent
   }

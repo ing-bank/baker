@@ -65,7 +65,7 @@ class ProcessInstanceSerialization[P[_], T, S, E](serializer: ProtoEventAdapter)
 
   def serializeObject(obj: Any): Option[SerializedData] = {
     (obj != null).option {
-      serializer.toProtoUnkown(obj.asInstanceOf[AnyRef])
+      serializer.toProtoAny(obj.asInstanceOf[AnyRef])
     }
   }
 
