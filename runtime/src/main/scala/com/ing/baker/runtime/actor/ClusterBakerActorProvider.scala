@@ -124,8 +124,8 @@ class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption
     implicit val akkaTimeout: Timeout = timeout
 
     val futures = (0 to nrOfShards).map { shard => actor.ask(GetShardIndex(s"index-$shard")).mapTo[Index].map(_.entries) }
-    val collected: Seq[Set[ActorMetadata]] = Util.collectFuturesWithin(futures, timeout, system.scheduler)
+    val collected: Seq[ActorMetadata] = Util.collectFuturesWithin(futures, timeout, system.scheduler).flatten
 
-    collected.reduce((a, b) => a ++ b)
+    collected
   }
 }

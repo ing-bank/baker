@@ -8,12 +8,13 @@ option (scalapb.options) = {
     flat_package: true
 };
 
+// Events
+
 message ConsumedToken {
     optional int64 place_id = 1;
     optional int64 token_id = 2;
     optional int32 count = 3;
 }
-
 
 message Initialized {
     repeated ProducedToken initial_marking = 1;
@@ -34,7 +35,7 @@ message TransitionFired {
 message FailureStrategy {
     enum StrategyType {
         BLOCK_TRANSITION = 0;
-        BLOCK_ALL = 1;
+        FATAL = 1;
         RETRY = 2;
     }
 
@@ -52,4 +53,109 @@ message TransitionFailed {
     optional string failure_reason = 7;
     optional FailureStrategy failure_strategy = 8;
     repeated ConsumedToken consumed = 9;
+}
+
+// Protocol
+
+message GetState {
+
+}
+
+message Stop {
+    optional bool delete = 1;
+}
+
+message MarkingData {
+    optional int64 place_id  = 1;
+    optional SerializedData data = 2;
+    optional int32 count = 3;
+}
+
+message Initialize {
+    repeated MarkingData marking_data = 1;
+    optional SerializedData state = 2;
+}
+
+message InitializedMessage {
+    repeated MarkingData marking = 1;
+    optional SerializedData state = 2;
+}
+
+message Uninitialized {
+    optional string processId = 1;
+}
+
+message AlreadyInitialized {
+    optional string processId = 1;
+}
+
+message ExceptionState {
+    optional int32 failureCount = 1;
+    optional string failureReason = 2;
+    optional FailureStrategyMessage failureStrategy = 3;
+}
+
+message JobState {
+    optional int64 jobId = 1;
+    optional int64 transitionId = 2;
+    repeated MarkingData consumedMarking = 3;
+    optional SerializedData input = 4;
+    optional ExceptionState exceptionState = 5;
+}
+
+message InstanceState {
+    optional int64 sequenceNr = 1;
+    repeated MarkingData marking = 2;
+    optional SerializedData state = 3;
+    repeated JobState jobs = 4;
+}
+
+message FireTransition {
+    optional int64 transitionId = 1;
+    optional SerializedData input = 2;
+    optional string correlationId = 3;
+}
+
+message AlreadyReceived {
+    optional string correlationId = 1;
+}
+
+message TransitionNotEnabled {
+    optional int64 transitionId = 1;
+    optional string reason = 2;
+}
+
+message TransitionFiredMessage {
+    optional int64 jobId = 1;
+    optional int64 transitionId = 2;
+    optional string correlationId = 3;
+    repeated MarkingData consumed = 4;
+    repeated MarkingData produced = 5;
+    optional InstanceState state = 6;
+    repeated int64 newJobsIds = 7;
+    optional SerializedData output = 8;
+}
+
+message TransitionFailedMessage {
+    optional int64 jobId = 1;
+    optional int64 transitionId = 2;
+    optional string correlationId = 3;
+    repeated MarkingData consume = 4;
+    optional SerializedData input = 5;
+    optional string reason = 6;
+    optional FailureStrategyMessage strategy = 7;
+}
+
+message FailureStrategyMessage {
+    enum StrategyTypeMessage {
+        BLOCK_TRANSITION = 0;
+        FATAL = 1;
+        RETRY = 2;
+        CONTINUE = 3;
+    }
+
+    optional StrategyTypeMessage strategyType = 1;
+    optional int64 retryDelay = 2;
+    repeated MarkingData marking = 3;
+    optional SerializedData output = 4;
 }

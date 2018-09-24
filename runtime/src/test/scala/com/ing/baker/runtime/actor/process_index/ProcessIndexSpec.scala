@@ -115,7 +115,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       actorIndex ! CreateProcess(recipeId, processId)
 
       petriNetActorProbe.expectNoMessage(noMsgExpectTimeout)
-      expectMsg(ProcessAlreadyInitialized(processId))
+      expectMsg(ProcessAlreadyExists(processId))
     }
 
 

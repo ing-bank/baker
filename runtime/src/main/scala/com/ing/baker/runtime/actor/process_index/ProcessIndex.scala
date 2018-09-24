@@ -56,16 +56,16 @@ object ProcessIndex {
   // --- Events
 
   // when an actor is requested again after passivation
-  case class ActorActivated(processId: String) extends InternalBakerEvent
+  case class ActorActivated(processId: String) extends BakerProtoMessage
 
   // when an actor is passivated
-  case class ActorPassivated(processId: String) extends InternalBakerEvent
+  case class ActorPassivated(processId: String) extends BakerProtoMessage
 
   // when an actor is deleted
-  case class ActorDeleted(processId: String) extends InternalBakerEvent
+  case class ActorDeleted(processId: String) extends BakerProtoMessage
 
   // when an actor is created
-  case class ActorCreated(recipeId: String, processId: String, createdDateTime: Long) extends InternalBakerEvent
+  case class ActorCreated(recipeId: String, processId: String, createdDateTime: Long) extends BakerProtoMessage
 
   def processInstanceProps(recipeName: String, petriNet: RecipePetriNet, petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent], settings: Settings): Props =
     Props(new ProcessInstance[Place, Transition, ProcessState, RuntimeEvent](
@@ -148,7 +148,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
   override def receiveCommand: Receive = {
 
     case GetIndex =>
-      sender() ! Index(index.values.filter(_.processStatus == Active).toSet)
+      sender() ! Index(index.values.filter(_.processStatus == Active).toSeq)
 
     case CheckForProcessesToBeDeleted =>
       val toBeDeleted = index.values.filter(shouldDelete)
@@ -198,7 +198,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
           }
 
         case _ if index(processId).isDeleted => sender() ! ProcessDeleted(processId)
-        case _ => sender() ! ProcessAlreadyInitialized(processId)
+        case _ => sender() ! ProcessAlreadyExists(processId)
       }
 
     case cmd @ ProcessEvent(processId: String, eventToFire: RuntimeEvent, correlationId, waitForRetries, processEventTimout) =>
