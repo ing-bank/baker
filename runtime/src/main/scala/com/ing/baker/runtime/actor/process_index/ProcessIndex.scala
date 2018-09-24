@@ -56,16 +56,16 @@ object ProcessIndex {
   // --- Events
 
   // when an actor is requested again after passivation
-  case class ActorActivated(processId: String)
+  case class ActorActivated(processId: String) extends BakerProtoMessage
 
   // when an actor is passivated
-  case class ActorPassivated(processId: String)
+  case class ActorPassivated(processId: String) extends BakerProtoMessage
 
   // when an actor is deleted
-  case class ActorDeleted(processId: String)
+  case class ActorDeleted(processId: String) extends BakerProtoMessage
 
   // when an actor is created
-  case class ActorCreated(recipeId: String, processId: String, createdDateTime: Long)
+  case class ActorCreated(recipeId: String, processId: String, createdDateTime: Long) extends BakerProtoMessage
 
   def processInstanceProps(recipeName: String, petriNet: RecipePetriNet, petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent], settings: Settings): Props =
     Props(new ProcessInstance[Place, Transition, ProcessState, RuntimeEvent](

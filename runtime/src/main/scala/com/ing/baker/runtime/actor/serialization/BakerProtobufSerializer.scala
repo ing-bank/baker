@@ -2,7 +2,7 @@ package com.ing.baker.runtime.actor.serialization
 
 import akka.actor.ExtendedActorSystem
 import akka.serialization.{SerializationExtension, SerializerWithStringManifest}
-import com.ing.baker.il
+import com.ing.baker.{il, types}
 import com.ing.baker.runtime.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.actor.protobuf
@@ -31,6 +31,9 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     Entry("core.ProcessState", classOf[core.ProcessState], protobuf.ProcessState),
 
     Entry("il.CompiledRecipe", classOf[il.CompiledRecipe], protobuf.CompiledRecipe),
+
+    Entry("baker.types.Type", classOf[com.ing.baker.types.Type], actor.protobuf.Type),
+    Entry("baker.types.Value", classOf[com.ing.baker.types.Value], actor.protobuf.Value),
 
     Entry("ProcessIndex.ActorCreated", classOf[ProcessIndex.ActorCreated], actor.process_index.protobuf.ActorCreated),
     Entry("ProcessIndex.ActorPassivated", classOf[ProcessIndex.ActorPassivated], actor.process_index.protobuf.ActorPassivated),

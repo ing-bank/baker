@@ -28,16 +28,19 @@ class RuntimeModule extends ProtoEventAdapterModule {
 
   private def writeIngredients(ingredients: Seq[(String, Value)], ctx: ProtoEventAdapter): Seq[protobuf.Ingredient] = {
     ingredients.map { case (name, value) =>
-      val serializedObject = ctx.toProtoAny(value)
-      protobuf.Ingredient(Some(name), Some(serializedObject))
+      val serializedValue = ctx.toProto[protobuf.Value](value)
+      protobuf.Ingredient(Some(name), None, Some(serializedValue))
     }
   }
 
   private def readIngredients(ingredients: Seq[protobuf.Ingredient], ctx: ProtoEventAdapter): Seq[(String, Value)] = {
     ingredients.map {
-      case protobuf.Ingredient(Some(name), Some(data)) =>
-        val deserializedObject = ctx.toDomain[Value](data)
-        name -> deserializedObject
+      case protobuf.Ingredient(Some(name), None, Some(value)) =>
+        val deserializedValue = ctx.toDomain[Value](value)
+        name -> deserializedValue
+      case protobuf.Ingredient(Some(name), Some(obj), None) =>
+        val deserializedValue = ctx.toDomain[Value](obj)
+        name -> deserializedValue
       case _ => throw new IllegalArgumentException("Missing fields in Protobuf data when deserializing ingredients")
     }
   }

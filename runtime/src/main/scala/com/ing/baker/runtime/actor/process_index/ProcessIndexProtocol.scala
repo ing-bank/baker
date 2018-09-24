@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.actor.process_index
 
 import akka.stream.SourceRef
-import com.ing.baker.runtime.actor.{BakerProtoMessage, InternalBakerMessage}
+import com.ing.baker.runtime.actor.BakerProtoMessage
 import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.core.RuntimeEvent
 
