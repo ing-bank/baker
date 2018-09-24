@@ -14,7 +14,7 @@ cluster sizes from 2 to 6 (test cluster size can be increased later)
 Refactored the V1 spec into the spec of a Node which could be reusable
 in the Cluster spec which describes the behaviour of a Cluster.
 The algorithm of the Node is actually should be the real Split Brain
-Resolver algoorithm, and we should be able to define some safety and
+Resolver algorithm, and we should be able to define some safety and
 liveliness properties of the Cluster formed by those Nodes.
 
 ### ClusterV2 spec
@@ -33,4 +33,6 @@ a refinement.
 
 ### ClusterV4 spec
 There is exactly N number of processes simulating N number of nodes
-forming Cluster. LeaderUp/Down messages also implemented.
+forming Cluster. LeaderUp/Down messages also implemented. But tests for
+more than 3 nodes still create too many states which makes simulations
+difficult to run locally.
