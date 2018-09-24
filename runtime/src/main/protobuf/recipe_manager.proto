@@ -8,8 +8,36 @@ option (scalapb.options) = {
     flat_package: true
 };
 
+// PERSISTED MESSAGES
 message RecipeAdded {
-
     optional string recipeId = 1;
     optional CompiledRecipe compiledRecipe = 2;
+}
+
+// PROTOCOL MESSAGES
+
+message AddRecipe {
+    optional CompiledRecipe compiledRecipe = 1;
+}
+
+message AddRecipeResponse {
+    optional string recipeId = 1;
+}
+
+message GetRecipe {
+    optional string recipeId = 1;
+}
+
+message RecipeFound {
+    optional CompiledRecipe compiledRecipe = 1;
+}
+
+message NoRecipeFound {
+    optional string recipeId = 1;
+}
+
+message GetAllRecipes {}
+
+message AllRecipes {
+    map<string, CompiledRecipe> compiledRecipes = 1;
 }

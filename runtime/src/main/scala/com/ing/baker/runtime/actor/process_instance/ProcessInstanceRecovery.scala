@@ -1,10 +1,11 @@
 package com.ing.baker.runtime.actor.process_instance
 
 import akka.persistence.{PersistentActor, RecoveryCompleted}
+import akka.serialization.SerializationExtension
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.{EventSourcing, Instance}
-import com.ing.baker.runtime.actor.serialization.{Encryption, ObjectSerializer}
+import com.ing.baker.runtime.actor.serialization.{Encryption, ProtoEventAdapterImpl}
 
 abstract class ProcessInstanceRecovery[P[_], T, S, E](
      val topology: PetriNet[P[_], T],
@@ -17,7 +18,8 @@ abstract class ProcessInstanceRecovery[P[_], T, S, E](
 
   val eventSource = EventSourcing.apply[P, T, S, E](eventSourceFn)
 
-  val serializer = new ProcessInstanceSerialization[P, T, S, E](new ObjectSerializer(system, encryption))
+  private val protoEventAdapter = new ProtoEventAdapterImpl(SerializationExtension.get(system), encryption)
+  private val serializer = new ProcessInstanceSerialization[P, T, S, E](protoEventAdapter)
 
   def onRecoveryCompleted(state: Instance[P, T, S])
 
