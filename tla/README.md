@@ -32,7 +32,7 @@ tested but due to huge state space being generated, the algorithm needs
 a refinement.
 
 ### ClusterV4 spec
-There is exactly N number of processes simulating N number of nodes
-forming Cluster. LeaderUp/Down messages also implemented. But tests for
-more than 3 nodes still create too many states which makes simulations
-difficult to run locally.
+There is N number of processes simulating N number of nodes
+forming Cluster (model variables). LeaderUp/Down messages also
+implemented. But tests for more than 3 nodes still create too many
+states which makes simulations difficult to run locally.
