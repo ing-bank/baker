@@ -35,6 +35,8 @@ object ProtoEventAdapterSpec {
       key <- keyGen
       value <- valueGen
     } yield key -> value
+
+    def mapOf[K, V](keyGen: Gen[K], valueGen: Gen[V]): Gen[Map[K, V]] = Gen.mapOf(GenUtil.tuple(keyGen, valueGen))
   }
 
   val recipeIdGen: Gen[String] = Gen.uuid.map(_.toString)
@@ -55,7 +57,7 @@ object ProtoEventAdapterSpec {
 
     val eventNameGen: Gen[String] = Gen.alphaStr
     val ingredientNameGen: Gen[String] = Gen.alphaStr
-    val ingredientsGen = GenUtil.tuple(ingredientNameGen, Types.valuesGen)
+    val ingredientsGen = GenUtil.tuple(ingredientNameGen, Types.anyValueGen)
 
     val runtimeEventGen = for {
       eventName <- eventNameGen
@@ -149,17 +151,18 @@ object ProtoEventAdapterSpec {
 
   object ProcessInstance {
 
-    import Types._
     import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 
     val transitionIdGen = Gen.posNum[Long]
     val placeIdGen = Gen.posNum[Long]
+    val jobIdGen = Gen.posNum[Long]
     val processStateGen = Runtime.processStateGen
+    val tokenDataGen = Gen.alphaStr
     val transitionInputGen = Runtime.runtimeEventGen
     val correlationIdGen = Gen.uuid.map(_.toString)
 
-    val multiSetGen: Gen[MultiSet[_]] = Gen.mapOfN[Any, Int](5, GenUtil.tuple(processStateGen, Gen.posNum[Int]))
-    val markingDataGen: Gen[MarkingData] = Gen.mapOfN(1, GenUtil.tuple(placeIdGen, multiSetGen))
+    val multiSetGen: Gen[MultiSet[_]] = Gen.nonEmptyMap[Any, Int](GenUtil.tuple(tokenDataGen, Gen.posNum[Int]))
+    val markingDataGen: Gen[MarkingData] = Gen.mapOf(GenUtil.tuple(placeIdGen, multiSetGen))
 
     val getStateGen = Gen.const(GetState)
     val stopGen = Gen.oneOf(true, false).map(Stop(_))
@@ -168,13 +171,81 @@ object ProtoEventAdapterSpec {
       state <- processStateGen
     } yield Initialize(marking, state)
 
+    val uninitializedGen = processIdGen.map(Uninitialized(_))
+    val alreadyInitializedGen = processIdGen.map(AlreadyInitialized(_))
+
+    val initializedGen = for {
+      marking <- markingDataGen
+      state <- processStateGen
+    } yield Initialized(marking, state)
+
     val fireTransitionGen = for {
       transitionId <- transitionIdGen
       input <- transitionInputGen
       correlationId <- Gen.option(correlationIdGen)
     } yield FireTransition(transitionId, input, correlationId)
 
-    val messagesGen: Gen[AnyRef] = Gen.oneOf(getStateGen, stopGen, initializeGen, fireTransitionGen)
+    val alreadyReceived = correlationIdGen.map(AlreadyReceived(_))
+
+    val failureStrategyGen: Gen[ExceptionStrategy] = Gen.oneOf(
+      Gen.const(ExceptionStrategy.BlockTransition),
+      Gen.const(ExceptionStrategy.Fatal),
+      Gen.posNum[Long].map(delay => ExceptionStrategy.RetryWithDelay(delay)),
+      for {
+        marking <- markingDataGen
+        output <- Runtime.runtimeEventGen
+      } yield ExceptionStrategy.Continue(marking, output)
+    )
+
+    val exceptionStateGen: Gen[ExceptionState] = for {
+      failureCount <- Gen.posNum[Int]
+      failureReason <- Gen.alphaStr
+      failureStrategy <- failureStrategyGen
+    } yield ExceptionState(failureCount, failureReason, failureStrategy)
+
+    val jobStateGen: Gen[JobState] = for {
+      jobId <- jobIdGen
+      transitionId <- transitionIdGen
+      consumed <- markingDataGen
+      input <- Runtime.runtimeEventGen
+      exceptionState <- Gen.option(exceptionStateGen)
+    } yield JobState(jobId, transitionId, consumed, input, exceptionState)
+
+    val instanceStateGen = for {
+      sequenceNr <- Gen.posNum[Int]
+      marking <- markingDataGen
+      state <- processStateGen
+      jobs <- Gen.mapOf(jobStateGen.map(job => job.id -> job))
+    } yield InstanceState(sequenceNr, marking, state, jobs)
+
+    val transitionFiredGen = for {
+      jobId <- jobIdGen
+      transitionId <- transitionIdGen
+      correlationId <- Gen.option(correlationIdGen)
+      consumed <- markingDataGen
+      produced <- markingDataGen
+      state <- instanceStateGen
+      newJobs <- Gen.listOf(jobIdGen).map(_.toSet)
+      output <- Runtime.runtimeEventGen
+    } yield TransitionFired(jobId, transitionId, correlationId, consumed, produced, state, newJobs, output)
+
+    val transitionFailedGen = for {
+      jobId <- jobIdGen
+      transitionId <- transitionIdGen
+      correlationId <- Gen.option(correlationIdGen)
+      consume <- markingDataGen
+      input <- Runtime.runtimeEventGen
+      reason <- Gen.alphaStr
+      strategy <- failureStrategyGen
+    } yield TransitionFailed(jobId, transitionId, correlationId, consume, input, reason, strategy)
+
+    val transitionNotEnabledGen = for {
+      transitionId <- transitionIdGen
+      reason <- Gen.alphaStr
+    } yield TransitionNotEnabled(transitionId, reason)
+
+    val messagesGen: Gen[AnyRef] = Gen.oneOf(getStateGen, stopGen, initializeGen, initializedGen, uninitializedGen,
+      alreadyInitializedGen, fireTransitionGen, transitionFiredGen, transitionFailedGen, transitionNotEnabledGen)
   }
 
   object Types {
@@ -199,7 +270,7 @@ object ProtoEventAdapterSpec {
     val mapTypeGen = primitiveTypeGen.map(MapType(_))
     val optionTypeGen = primitiveTypeGen.map(OptionType(_))
 
-    val typesGen = Gen.oneOf(primitiveTypeGen, recordTypeGen, listTypeGen, mapTypeGen, optionTypeGen)
+    val anyTypeGen = Gen.oneOf(primitiveTypeGen, recordTypeGen, listTypeGen, mapTypeGen, optionTypeGen)
 
     val intGen: Gen[Int] = Gen.chooseNum[Int](Integer.MIN_VALUE, Integer.MAX_VALUE)
     val langIntegerGen: Gen[java.lang.Integer] = intGen.map(Int.box(_))
@@ -234,9 +305,9 @@ object ProtoEventAdapterSpec {
 
     val recordValueGen: Gen[Value] = Gen.mapOf(recordValueEntries).map(RecordValue(_))
 
-    val valuesGen: Gen[Value] = Gen.oneOf(primitiveValuesGen, listValueGen, recordValueGen, nullValueGen)
+    val anyValueGen: Gen[Value] = Gen.oneOf(primitiveValuesGen, listValueGen, recordValueGen, nullValueGen)
 
-    val messagesGen: Gen[AnyRef] = Gen.oneOf(valuesGen, typesGen)
+    val messagesGen: Gen[AnyRef] = Gen.oneOf(anyValueGen, anyTypeGen)
   }
 }
 
@@ -248,6 +319,36 @@ class ProtoEventAdapterSpec extends WordSpecLike with Checkers with Matchers wit
   val testAdapter = new ProtoEventAdapterImpl(actorSystem, NoEncryption)
 
   val minSuccessfulTests = 100
+
+  "The Types protobuf serialization module" should {
+
+    "be able to translate all messages to/from protobuf" in {
+
+      val property = transitivityProperty(Types.messagesGen, testAdapter)
+
+      check(property, defaultVerbose.withMinSuccessfulTests(minSuccessfulTests))
+    }
+  }
+
+  "The Runtime protobuf serialization module" should {
+
+    "be able to translate all messages to/from protobuf" in {
+
+      val property = transitivityProperty(Runtime.messagesGen, testAdapter)
+
+      check(property, defaultVerbose.withMinSuccessfulTests(minSuccessfulTests))
+    }
+  }
+
+  "The IntermediateLanguage protobuf serialization module" should {
+
+    "be able to translate all messages to/from protobuf" in {
+
+      val property = transitivityProperty(IntermediateLanguage.recipeGen, testAdapter)
+
+      check(property, defaultVerbose.withMinSuccessfulTests(minSuccessfulTests))
+    }
+  }
 
   "The RecipeManager protobuf serialization module" should {
 
@@ -274,16 +375,6 @@ class ProtoEventAdapterSpec extends WordSpecLike with Checkers with Matchers wit
     "be able to translate all messages to/from protobuf" in {
 
       val property = transitivityProperty(ProcessInstance.messagesGen, testAdapter)
-
-      check(property, defaultVerbose.withMinSuccessfulTests(minSuccessfulTests))
-    }
-  }
-
-  "The Types protobuf serialization module" should {
-
-    "be able to translate all messages to/from protobuf" in {
-
-      val property = transitivityProperty(Types.messagesGen, testAdapter)
 
       check(property, defaultVerbose.withMinSuccessfulTests(minSuccessfulTests))
     }
