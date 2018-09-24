@@ -6,12 +6,9 @@ import akka.actor.ActorSystem
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.petrinet.api.MultiSet
-import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
-import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{Initialize, MarkingData}
 import com.ing.baker.runtime.actor.serialization.Encryption._
 import com.ing.baker.runtime.actor.serialization.ProtoEventAdapterSpec._
-import com.ing.baker.runtime.core.RuntimeEvent
-import com.ing.baker.types.PrimitiveValue
+
 import com.ing.baker.{AllTypeRecipe, types}
 import javax.crypto.BadPaddingException
 import org.scalacheck.Gen
@@ -40,25 +37,38 @@ object ProtoEventAdapterSpec {
     } yield key -> value
   }
 
+  val recipeIdGen: Gen[String] = Gen.uuid.map(_.toString)
+  val processIdGen: Gen[String] = Gen.uuid.map(_.toString)
+
   object IntermediateLanguage {
 
-    import Types._
-
-    val recipeIdGen: Gen[String] = Gen.uuid.map(_.toString)
-    val processIdGen: Gen[String] = Gen.uuid.map(_.toString)
-    val ingredientNameGen: Gen[String] = Gen.alphaStr
     val eventNameGen: Gen[String] = Gen.alphaStr
     val finiteDurationGen: Gen[FiniteDuration] = Gen.posNum[Long].map(millis => FiniteDuration(millis, TimeUnit.MILLISECONDS))
+    val allTypesRecipe = RecipeCompiler.compileRecipe(AllTypeRecipe.recipe)
 
-    val ingredientsGen = GenUtil.tuple(ingredientNameGen, valuesGen)
+    val recipeGen: Gen[CompiledRecipe] = Gen.const(allTypesRecipe)
+  }
+
+  object Runtime {
+
+    import com.ing.baker.runtime.core._
+
+    val eventNameGen: Gen[String] = Gen.alphaStr
+    val ingredientNameGen: Gen[String] = Gen.alphaStr
+    val ingredientsGen = GenUtil.tuple(ingredientNameGen, Types.valuesGen)
 
     val runtimeEventGen = for {
       eventName <- eventNameGen
       ingredients <- Gen.listOf(ingredientsGen)
     } yield RuntimeEvent(eventName, ingredients)
 
-    val allTypesRecipe = RecipeCompiler.compileRecipe(AllTypeRecipe.recipe)
-    val recipeGen: Gen[CompiledRecipe] = Gen.const(allTypesRecipe)
+    val processStateGen = for {
+      processId <- processIdGen
+      ingredients <- Gen.mapOf(ingredientsGen)
+      eventNames <- Gen.listOf(eventNameGen)
+    } yield ProcessState(processId, ingredients, eventNames)
+
+    val messagesGen: Gen[AnyRef] = Gen.oneOf(runtimeEventGen, processStateGen)
   }
 
   object RecipeManager {
@@ -84,7 +94,6 @@ object ProtoEventAdapterSpec {
 
   object ProcessIndex {
 
-    import IntermediateLanguage._
     import com.ing.baker.runtime.actor.process_index.ProcessIndex._
     import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 
@@ -108,7 +117,7 @@ object ProtoEventAdapterSpec {
 
     val processEventGen = for {
       processId <- processIdGen
-      event <- runtimeEventGen
+      event <- Runtime.runtimeEventGen
       correlationId <- Gen.option(processIdGen)
       waitForRetries <- Gen.oneOf(true, false)
       timeout <- Gen.posNum[Long].map(millis => FiniteDuration(millis, TimeUnit.MILLISECONDS))
@@ -140,13 +149,13 @@ object ProtoEventAdapterSpec {
 
   object ProcessInstance {
 
-    import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
     import Types._
+    import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 
     val transitionIdGen = Gen.posNum[Long]
     val placeIdGen = Gen.posNum[Long]
-    val processStateGen = primitiveValuesGen
-    val transitionInputGen = IntermediateLanguage.runtimeEventGen
+    val processStateGen = Runtime.processStateGen
+    val transitionInputGen = Runtime.runtimeEventGen
     val correlationIdGen = Gen.uuid.map(_.toString)
 
     val multiSetGen: Gen[MultiSet[_]] = Gen.mapOfN[Any, Int](5, GenUtil.tuple(processStateGen, Gen.posNum[Int]))
@@ -264,45 +273,7 @@ class ProtoEventAdapterSpec extends WordSpecLike with Checkers with Matchers wit
 
     "be able to translate all messages to/from protobuf" in {
 
-      def initTransitivityProperty(gen: Gen[Initialize], adapter: ProtoEventAdapterImpl) = forAll(gen) { originalObject =>
-
-        val serialized = adapter.toProtoMessage(originalObject)
-        val deserializedObject = adapter.toDomainObject(serialized)
-
-        if (originalObject != deserializedObject) {
-
-          val initA = originalObject
-          val initB = deserializedObject.asInstanceOf[Initialize]
-
-          println("marking equal: " + (initA.marking == initB.marking))
-          println("state equal: " + (initA.state == initB.state))
-
-          initA.marking.foreach {
-            case (placeId, multiSet) =>
-              val multiSetB = initB.marking(placeId).asInstanceOf[MultiSet[Any]]
-              val multiSetA = multiSet.asInstanceOf[MultiSet[Any]]
-
-              if (multiSetA != multiSetB) {
-                println("not equal for " + placeId)
-                println(s"${multiSetA.getClass}")
-                println(s"${multiSetB.getClass}")
-                multiSetA.foreach { case (obj, count) =>
-                  if (!multiSetB.contains(obj)) println(s"$obj (class ${obj.asInstanceOf[PrimitiveValue].value.getClass}) is not found")
-                  else if (multiSetB(obj) != count) println(s"$obj (class ${obj.asInstanceOf[PrimitiveValue].value.getClass}) has different count (${multiSetB(obj)} != $count")
-                }
-                multiSetB.foreach { case (obj, count) =>
-                  if (!multiSetA.contains(obj)) println(s"$obj (class ${obj.asInstanceOf[PrimitiveValue].value.getClass}) is not found")
-                  else if (multiSetA(obj) != count) println(s"$obj (class ${obj.asInstanceOf[PrimitiveValue].value.getClass}) has different count (${multiSetA(obj)} != $count")
-                }
-              }
-          }
-        }
-
-        (originalObject == deserializedObject) :| s"$originalObject != $deserializedObject"
-      }
-
-//      val property = transitivityProperty(ProcessInstance.messagesGen, testAdapter)
-      val property = initTransitivityProperty(ProcessInstance.initializeGen, testAdapter)
+      val property = transitivityProperty(ProcessInstance.messagesGen, testAdapter)
 
       check(property, defaultVerbose.withMinSuccessfulTests(minSuccessfulTests))
     }
