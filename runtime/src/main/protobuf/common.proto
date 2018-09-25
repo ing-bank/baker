@@ -123,7 +123,10 @@ message List {
 //  DATA (Runtime messages)
 message Ingredient {
     optional string name = 1;
+    // before baker type system the data could be anything
     optional SerializedData data = 2;
+    // now it is always of the 'Value' type
+    optional Value value = 3;
 }
 
 message RuntimeEvent {

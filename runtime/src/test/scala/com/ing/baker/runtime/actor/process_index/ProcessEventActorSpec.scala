@@ -8,7 +8,6 @@ import akka.stream.testkit.TestSubscriber
 import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.{TestDuration, TestKit, TestProbe}
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.petrinet.runtime.ExceptionStrategy
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol.ProcessEvent
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
@@ -77,7 +76,7 @@ class ProcessEventActorSpec extends TestKit(ActorSystem("ProcessApiSpec", Proces
       processProbe.expectMsgType[FireTransition]
 
       processProbe.reply(TransitionFired(1, 1, None, Map.empty, Map.empty, null, Set(2, 3), null))
-      processProbe.reply(TransitionFailed(2, 2, None, Map.empty, null, "", ExceptionStrategy.BlockTransition))
+      processProbe.reply(TransitionFailed(2, 2, None, Map.empty, null, "", ProcessInstanceProtocol.ExceptionStrategy.BlockTransition))
       processProbe.reply(TransitionFired(3, 3, None, Map.empty, Map.empty, null, Set.empty, null))
 
       runSource.request(3).expectNext(1, 2, 3)

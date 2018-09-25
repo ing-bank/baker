@@ -43,6 +43,19 @@ package object types {
     }
   }
 
+  val primitiveTypes: Set[Type] = Set(
+    types.Bool,
+    types.Byte,
+    types.Int16,
+    types.Char,
+    types.Int32,
+    types.Int64,
+    types.Float32,
+    types.Float64,
+    types.IntBig,
+    types.FloatBig,
+    types.CharArray)
+
   val javaPrimitiveMappings: Map[Class[_], Class[_]] = Map(
     classOf[java.lang.Boolean]   -> java.lang.Boolean.TYPE,
     classOf[java.lang.Byte]      -> java.lang.Byte.TYPE,

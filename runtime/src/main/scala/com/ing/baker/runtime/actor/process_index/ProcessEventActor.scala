@@ -9,8 +9,8 @@ import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.Timeout
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.Transition
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.RetryWithDelay
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.core.events.RejectReason
 import com.ing.baker.runtime.core.{RuntimeEvent, events}

@@ -129,8 +129,9 @@ case class PrimitiveValue(value: Any) extends Value {
   }
 
   override def hashCode(): Int = {
-    // Picking here a prime number multiplier other than 31 (used by the standard hashCode implementations)
+    // Picking here a prime number multiplier other than 31 (used by the standard hashCode implementations
     // This reduces the chance that this holds true: "test".hashCode() == PrimitiveValue("test").hashCode()
+
     if (value.getClass.isArray) {
       util.Arrays.hashCode(value.asInstanceOf[Array[Byte]]) * 101
     } else {

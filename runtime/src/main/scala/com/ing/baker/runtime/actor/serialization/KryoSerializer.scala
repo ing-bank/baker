@@ -22,7 +22,6 @@ class ExtraKryoSerializersRegistrar extends IKryoRegistrar {
     kryo.register(classOf[org.joda.time.DateTime], new JodaDateTimeSerializer())
     kryo.register(classOf[org.joda.time.LocalDate], new JodaLocalDateSerializer())
     kryo.register(classOf[org.joda.time.LocalDateTime], new JodaLocalDateTimeSerializer())
-    kryo.register(classOf[PetriNet[_, _]], new KryoGraphSerializer())
 
     // guava ImmutableList, ImmutableSet, ImmutableMap, ImmutableMultimap, ReverseList, UnmodifiableNavigableSet
     ImmutableListSerializer.registerSerializers(kryo)
