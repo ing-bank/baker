@@ -7,72 +7,57 @@ ASSUME Cardinality(Nodes) > 0
 
 (* 
 --algorithm ClusterV4 { 
-
+  
   define {
-    Min(S) == CHOOSE x \in S : \A y \in S : x <= y
-    
-    TotalUp(state) == LET sum[S \in SUBSET Nodes] ==
-                            IF S = {} THEN 0
-                            ELSE LET n == CHOOSE node \in S : TRUE
-                                 IN (IF state[n] = "up" THEN 1 ELSE 0) + sum[S \ {n}]
-                      IN sum[Nodes]
-                         
-    Majority == ((Cardinality(Nodes) + 1) \div 2) \* calculate the majority number of nodes of all participating cluster nodes (including myself)
+  
+    Majority(S) == ((Cardinality(S) + 1) \div 2) \* calculate the majority number of nodes of all participating cluster nodes (including myself)
 
-    InMajority(oneNodePerspectiveState) == IF TotalUp(oneNodePerspectiveState) >= Majority THEN TRUE ELSE FALSE
+    InMajority(members, unreachables) == IF Cardinality(members \ unreachables) >= Majority(members) THEN TRUE ELSE FALSE
+
+    InMinority(members, unreachables) == ~ InMajority(members, unreachables)
     
-    SbrDecision(amILeader, myState) ==
-      IF (amILeader) THEN
-        IF(InMajority(myState)) THEN "DownUnreachables" ELSE "DownMyself"
-      ELSE
-        IF(InMajority(myState)) THEN "NoAction" ELSE "DownMyself" 
-              
+    NodesToDown(members, unreachables) == 
+      IF Cardinality(members) = 0 
+      THEN Nodes \* Down all known nodes since I am not a member and I do not know any members
+      ELSE IF Cardinality(unreachables) * 2 = Cardinality(members) \* cannot decide minority or majority? equal size?
+           THEN unreachables \* Decide to down unreachables in this case (could also pick the group with oldest member)
+           ELSE IF Cardinality(unreachables) * 2 < Cardinality(members) \* am I in minority?
+                THEN unreachables
+                ELSE members \ unreachables \* down reachables      
   }
   
-  macro receiveMemberState(member, newState) {
-    state[member] := newState;
-    sbrDecision := SbrDecision(isLeader, state);
-  }
-  
-  macro actOnSbrDecision() {
-    if (sbrDecision # "NoAction") {
-      state := [member \in Nodes |->
-                 IF sbrDecision = "DownUnreachables" /\ state[member] = "unreachable"
-                 THEN "down"
-                 ELSE IF sbrDecision = "DownMyself" /\ member = self
-                      THEN "down"
-                      ELSE state[member]
-               ];
-               
-      \* reset the sbr decision
-      sbrDecision := "NoAction";
-    };
-        
-  }
-  
-  process (N \in Nodes)
-  variables isLeader = self = CHOOSE x \in Nodes: TRUE, \* choose one random node as leader in the beginning
-            sbrDecision = "NoAction",
-            state = [x \in Nodes |-> "up"];
+  fair process (N \in Nodes)
+  variables leader = self = CHOOSE x \in Nodes: TRUE, \* choose one random node as leader in the beginning
+            unreachables = {},
+            members = Nodes;
   {
-\*      Check: while(TRUE) {
-      Check: while(state[self] = "up") {
-               Receive: either {
-                          with (member \in Nodes \ {self}) { \* pick one node from Nodes except me
-                            if (state[member] = "up") receiveMemberState(member, "unreachable");
+\*      Check: while(\E m \in members : m = self) {
+      Check: while(TRUE) {
+               Receive: either with (n \in Nodes \ {self}) { \* receive unreachable member message
+                                 unreachables := unreachables \cup {n};
+                                 members := members \cup {n};
+                               }
+                            or with (m \in members \ {self}) { \* receive reachable member message
+                                 unreachables := unreachables \ {m};
+                               } 
+                            or with (n \in Nodes) { \* receive member up
+                                 members := members \cup {n};
+                               }
+                            or with (n \in Nodes) { \* receive member removed
+                                 members := members \ {n};
+                                 unreachables := unreachables \ {n};
+                               } 
+                            or with (newLeader \in Nodes) { \* receive leader changed message
+                                 leader := self = newLeader;
+                               };
+                 Sbr: if (leader /\ Cardinality(unreachables) # 0) {
+                        with (nodesToDown = NodesToDown(members, unreachables)) {
+                          if (Cardinality(nodesToDown) # 0) {
+                            members := members \ nodesToDown;
+                            unreachables := unreachables \ nodesToDown;
                           }
                         }
-                        or {
-                          with (member \in Nodes \ {self}) {
-                            if (state[member] = "unreachable") receiveMemberState(member, "up");
-                          } 
-                        }
-                        or {
-                          with (newLeader \in Nodes) { \* receive leader changed message
-                            isLeader := self = newLeader;
-                          }  
-                        };
-               Act:     actOnSbrDecision();
+                      }  
              }  
   }
 
@@ -82,112 +67,100 @@ ASSUME Cardinality(Nodes) > 0
 VARIABLE pc
 
 (* define statement *)
-Min(S) == CHOOSE x \in S : \A y \in S : x <= y
+Majority(S) == ((Cardinality(S) + 1) \div 2)
 
-TotalUp(state) == LET sum[S \in SUBSET Nodes] ==
-                        IF S = {} THEN 0
-                        ELSE LET n == CHOOSE node \in S : TRUE
-                             IN (IF state[n] = "up" THEN 1 ELSE 0) + sum[S \ {n}]
-                  IN sum[Nodes]
+InMajority(members, unreachables) == IF Cardinality(members \ unreachables) >= Majority(members) THEN TRUE ELSE FALSE
 
-Majority == ((Cardinality(Nodes) + 1) \div 2)
+InMinority(members, unreachables) == ~ InMajority(members, unreachables)
 
-InMajority(oneNodePerspectiveState) == IF TotalUp(oneNodePerspectiveState) >= Majority THEN TRUE ELSE FALSE
+NodesToDown(members, unreachables) ==
+  IF Cardinality(members) = 0
+  THEN Nodes
+  ELSE IF Cardinality(unreachables) * 2 = Cardinality(members)
+       THEN unreachables
+       ELSE IF Cardinality(unreachables) * 2 < Cardinality(members)
+            THEN unreachables
+            ELSE members \ unreachables
 
-SbrDecision(amILeader, myState) ==
-  IF (amILeader) THEN
-    IF(InMajority(myState)) THEN "DownUnreachables" ELSE "DownMyself"
-  ELSE
-    IF(InMajority(myState)) THEN "NoAction" ELSE "DownMyself"
+VARIABLES leader, unreachables, members
 
-VARIABLES isLeader, sbrDecision, state
-
-vars == << pc, isLeader, sbrDecision, state >>
+vars == << pc, leader, unreachables, members >>
 
 ProcSet == (Nodes)
 
 Init == (* Process N *)
-        /\ isLeader = [self \in Nodes |-> self = CHOOSE x \in Nodes: TRUE]
-        /\ sbrDecision = [self \in Nodes |-> "NoAction"]
-        /\ state = [self \in Nodes |-> [x \in Nodes |-> "up"]]
+        /\ leader = [self \in Nodes |-> self = CHOOSE x \in Nodes: TRUE]
+        /\ unreachables = [self \in Nodes |-> {}]
+        /\ members = [self \in Nodes |-> Nodes]
         /\ pc = [self \in ProcSet |-> "Check"]
 
 Check(self) == /\ pc[self] = "Check"
-               /\ IF state[self][self] = "up"
-                     THEN /\ pc' = [pc EXCEPT ![self] = "Receive"]
-                     ELSE /\ pc' = [pc EXCEPT ![self] = "Done"]
-               /\ UNCHANGED << isLeader, sbrDecision, state >>
+               /\ pc' = [pc EXCEPT ![self] = "Receive"]
+               /\ UNCHANGED << leader, unreachables, members >>
 
 Receive(self) == /\ pc[self] = "Receive"
-                 /\ \/ /\ \E member \in Nodes \ {self}:
-                            IF state[self][member] = "up"
-                               THEN /\ state' = [state EXCEPT ![self][member] = "unreachable"]
-                                    /\ sbrDecision' = [sbrDecision EXCEPT ![self] = SbrDecision(isLeader[self], state'[self])]
-                               ELSE /\ TRUE
-                                    /\ UNCHANGED << sbrDecision, state >>
-                       /\ UNCHANGED isLeader
-                    \/ /\ \E member \in Nodes \ {self}:
-                            IF state[self][member] = "unreachable"
-                               THEN /\ state' = [state EXCEPT ![self][member] = "up"]
-                                    /\ sbrDecision' = [sbrDecision EXCEPT ![self] = SbrDecision(isLeader[self], state'[self])]
-                               ELSE /\ TRUE
-                                    /\ UNCHANGED << sbrDecision, state >>
-                       /\ UNCHANGED isLeader
+                 /\ \/ /\ \E n \in Nodes \ {self}:
+                            /\ unreachables' = [unreachables EXCEPT ![self] = unreachables[self] \cup {n}]
+                            /\ members' = [members EXCEPT ![self] = members[self] \cup {n}]
+                       /\ UNCHANGED leader
+                    \/ /\ \E m \in members[self] \ {self}:
+                            unreachables' = [unreachables EXCEPT ![self] = unreachables[self] \ {m}]
+                       /\ UNCHANGED <<leader, members>>
+                    \/ /\ \E n \in Nodes:
+                            members' = [members EXCEPT ![self] = members[self] \cup {n}]
+                       /\ UNCHANGED <<leader, unreachables>>
+                    \/ /\ \E n \in Nodes:
+                            /\ members' = [members EXCEPT ![self] = members[self] \ {n}]
+                            /\ unreachables' = [unreachables EXCEPT ![self] = unreachables[self] \ {n}]
+                       /\ UNCHANGED leader
                     \/ /\ \E newLeader \in Nodes:
-                            isLeader' = [isLeader EXCEPT ![self] = self = newLeader]
-                       /\ UNCHANGED <<sbrDecision, state>>
-                 /\ pc' = [pc EXCEPT ![self] = "Act"]
+                            leader' = [leader EXCEPT ![self] = self = newLeader]
+                       /\ UNCHANGED <<unreachables, members>>
+                 /\ pc' = [pc EXCEPT ![self] = "Sbr"]
 
-Act(self) == /\ pc[self] = "Act"
-             /\ IF sbrDecision[self] # "NoAction"
-                   THEN /\ state' = [state EXCEPT ![self] = [member \in Nodes |->
-                                                              IF sbrDecision[self] = "DownUnreachables" /\ state[self][member] = "unreachable"
-                                                              THEN "down"
-                                                              ELSE IF sbrDecision[self] = "DownMyself" /\ member = self
-                                                                   THEN "down"
-                                                                   ELSE state[self][member]
-                                                            ]]
-                        /\ sbrDecision' = [sbrDecision EXCEPT ![self] = "NoAction"]
+Sbr(self) == /\ pc[self] = "Sbr"
+             /\ IF leader[self] /\ Cardinality(unreachables[self]) # 0
+                   THEN /\ LET nodesToDown == NodesToDown(members[self], unreachables[self]) IN
+                             IF Cardinality(nodesToDown) # 0
+                                THEN /\ members' = [members EXCEPT ![self] = members[self] \ nodesToDown]
+                                     /\ unreachables' = [unreachables EXCEPT ![self] = unreachables[self] \ nodesToDown]
+                                ELSE /\ TRUE
+                                     /\ UNCHANGED << unreachables, members >>
                    ELSE /\ TRUE
-                        /\ UNCHANGED << sbrDecision, state >>
+                        /\ UNCHANGED << unreachables, members >>
              /\ pc' = [pc EXCEPT ![self] = "Check"]
-             /\ UNCHANGED isLeader
+             /\ UNCHANGED leader
 
-N(self) == Check(self) \/ Receive(self) \/ Act(self)
+N(self) == Check(self) \/ Receive(self) \/ Sbr(self)
 
 Next == (\E self \in Nodes: N(self))
-           \/ (* Disjunct to prevent deadlock on termination *)
-              ((\A self \in ProcSet: pc[self] = "Done") /\ UNCHANGED vars)
 
-Spec == Init /\ [][Next]_vars
-
-Termination == <>(\A self \in ProcSet: pc[self] = "Done")
+Spec == /\ Init /\ [][Next]_vars
+        /\ \A self \in Nodes : WF_vars(N(self))
 
 \* END TRANSLATION
 
 
 (* Check the types OK in each state *)
-TypeOK == /\ \A n \in Nodes : isLeader[n] \in BOOLEAN
-          /\ \A n \in Nodes : sbrDecision[n] \in {"DownMyself", "DownUnreachables", "NoAction"}
-          /\ \A n1 \in Nodes : \A n2 \in Nodes : state[n1][n2] \in {"up", "down", "unreachable"}
+TypeOK == /\ \A node \in Nodes : leader[node] \in BOOLEAN
+          /\ \A node \in Nodes : \A member \in members[node] : member \in Nodes
+          /\ \A node \in Nodes : \A member \in unreachables[node] : member \in Nodes
           
-(* At least one node must be UP and this node is the leader *)          
-Availability == \E n \in Nodes : state[n][n] = "up" /\ isLeader[n] = TRUE
+(* There is only one leader *)
+ConsistentLeader == \E node \in Nodes : leader[node] = TRUE 
+                                     /\ \A other \in Nodes \ {node} : leader[other] = FALSE
 
-(* There is only one leader*)
-ConsistentLeader == \E n \in Nodes : isLeader[n] = TRUE 
-                                     /\ \A other \in Nodes \ {n} : isLeader[other] = FALSE
+(* There is no situation like members_A \intersect members_B is empty set. i.e. state_A={A,B} state_B={A,B} state_C={C}*)                     
+NoSplitBrain == ~ \E n1 \in Nodes : 
+                    \E n2 \in Nodes \ {n1} : 
+                      members[n1] \cap members[n2] = {}
 
 (* One invariant combining all others *)
 Invariants == /\ TypeOK    
-              /\ Availability
-              /\ ConsistentLeader 
-
-          
-\*Liveliness == /\ Spec
-\*              /\ SF_vars(Next)
+              /\ ConsistentLeader
+              /\ NoSplitBrain
           
 =============================================================================
 \* Modification History
-\* Last modified Mon Sep 24 16:01:36 CEST 2018 by bekiroguz
+\* Last modified Tue Sep 25 17:08:27 CEST 2018 by bekiroguz
 \* Created Fri Sep 21 14:45:57 CEST 2018 by bekiroguz

@@ -34,5 +34,6 @@ a refinement.
 ### ClusterV4 spec
 There is N number of processes simulating N number of nodes
 forming Cluster (model variables). LeaderUp/Down messages also
-implemented. But tests for more than 3 nodes still create too many
-states which makes simulations difficult to run locally.
+implemented. No SplitBrain situation detected with this version in a
+model with 3 nodes. But tests for more than 3 nodes still create too
+many states which makes simulations difficult to run locally.
