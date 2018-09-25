@@ -54,6 +54,7 @@ package object types {
     types.Float64,
     types.IntBig,
     types.FloatBig,
+    types.ByteArray,
     types.CharArray)
 
   val javaPrimitiveMappings: Map[Class[_], Class[_]] = Map(
