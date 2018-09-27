@@ -36,7 +36,7 @@ class ProcessEventActorSpec extends TestKit(ActorSystem("ProcessApiSpec", Proces
   // Using dilated timeout to take into account the akka.test.timefactor config
   implicit val timeout = 2.seconds.dilated
 
-  "The ProcessApi" should {
+  "The ProcessEventActor" should {
 
     import com.ing.baker.recipe.scaladsl._
     import Examples.webshop

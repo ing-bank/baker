@@ -1,18 +1,18 @@
 package com.ing.baker.runtime.actor
 
-import akka.actor.{ActorRef, ActorSystem, Address, AddressFromURIString, PoisonPill}
+import akka.actor.{Actor, ActorRef, ActorSystem, Address, AddressFromURIString, PoisonPill, Props}
 import akka.cluster.Cluster
 import akka.cluster.sharding.ShardRegion._
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
 import akka.stream.Materializer
-import akka.util.Timeout
 import com.ing.baker.il.sha256HashCode
 import com.ing.baker.runtime.actor.ClusterBakerActorProvider._
 import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_index._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol.RecipeManagerMessage
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.core.BakerException
 import com.ing.baker.runtime.core.interations.InteractionManager
@@ -20,12 +20,13 @@ import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.{Await, TimeoutException}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, TimeoutException}
 
 object ClusterBakerActorProvider {
 
   case class GetShardIndex(entityId: String) extends InternalBakerMessage
+  case class GetShardActiveProcesses(entityId: String) extends InternalBakerMessage
 
   /**
     * This function calculates the names of the ActorIndex actors
@@ -39,20 +40,47 @@ object ClusterBakerActorProvider {
   // extracts the actor id -> message from the incoming message
   // Entity id is the first character of the UUID
   def entityIdExtractor(nrOfShards: Int): ExtractEntityId = {
-    case msg:ProcessIndexMessage => (entityId(msg.processId, nrOfShards), msg)
-    case GetShardIndex(entityId) => (entityId, GetIndex)
+    case msg:ProcessInstanceMessage        => (entityId(msg.processId, nrOfShards), msg)
+    case GetShardIndex(entityId)           => (entityId, GetIndex)
+    case GetShardActiveProcesses(entityId) => (entityId, GetActiveProcesses)
     case msg => throw new IllegalArgumentException(s"Message of type ${msg.getClass} not recognized")
   }
 
   // extracts the shard id from the incoming message
   def shardIdExtractor(nrOfShards: Int): ExtractShardId = {
-    case msg:ProcessIndexMessage => Math.abs(sha256HashCode(msg.processId) % nrOfShards).toString
-    case GetShardIndex(entityId) => entityId.split(s"index-").last
+    case msg:ProcessInstanceMessage        => Math.abs(sha256HashCode(msg.processId) % nrOfShards).toString
+    case GetShardIndex(entityId)           => entityId.split(s"index-").last
+    case GetShardActiveProcesses(entityId) => entityId.split(s"index-").last
     case ShardRegion.StartEntity(entityId) => entityId.split(s"index-").last
     case msg => throw new IllegalArgumentException(s"Message of type ${msg.getClass} not recognized")
   }
 
   val recipeManagerName = "RecipeManager"
+}
+
+class ClusterRouterActor(processIndex: ActorRef, nrOfShards: Int, recipeManager: ActorRef) extends Actor {
+
+  val timeout = 2 seconds
+  import akka.pattern.ask
+  import context.dispatcher
+
+  override def receive: Receive = {
+    case ProcessIndexProtocol.GetIndex =>
+
+      val futures = (0 to nrOfShards).map { shard => processIndex.ask(GetShardIndex(s"index-$shard"))(timeout).mapTo[Index].map(_.entries) }
+      val collected: Seq[ActorMetadata] = Util.collectFuturesWithin(futures, timeout, context.system.scheduler).flatten
+
+      sender() ! Index(collected)
+
+    case ProcessIndexProtocol.GetActiveProcesses =>
+
+      val futures = (0 to nrOfShards).map { shard => processIndex.ask(GetShardActiveProcesses(s"index-$shard"))(timeout).mapTo[Index].map(_.entries) }
+      val collected: Seq[ActorMetadata] = Util.collectFuturesWithin(futures, timeout, context.system.scheduler).flatten
+
+      sender() ! Index(collected)
+    case msg: ProcessIndexMessage  => processIndex.forward(msg)
+    case msg: RecipeManagerMessage => recipeManager.forward(msg)
+  }
 }
 
 class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption) extends BakerActorProvider {
@@ -88,18 +116,7 @@ class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption
     Cluster.get(actorSystem).joinSeedNodes(seedNodes)
   }
 
-
-  override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {
-    ClusterSharding(actorSystem).start(
-      typeName = "ProcessIndexActor",
-      entityProps = ProcessIndex.props(retentionCheckInterval, actorIdleTimeout, configuredEncryption, interactionManager, recipeManager),
-      settings = ClusterShardingSettings.create(actorSystem),
-      extractEntityId = ClusterBakerActorProvider.entityIdExtractor(nrOfShards),
-      extractShardId = ClusterBakerActorProvider.shardIdExtractor(nrOfShards)
-    )
-  }
-
-  override def createRecipeManagerActor()(implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {
+  override def createBakerActor(interactionManager: InteractionManager)(implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {
 
     initializeCluster()
 
@@ -114,18 +131,18 @@ class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption
       singletonManagerPath = s"/user/$recipeManagerName",
       settings = ClusterSingletonProxySettings(actorSystem))
 
-    actorSystem.actorOf(props = singletonProxyProps, name = "RecipeManagerProxy")
-  }
+    val recipeManager = actorSystem.actorOf(props = singletonProxyProps, name = "RecipeManagerProxy")
 
-  def getIndex(actor: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration) = {
+    val processIndex = ClusterSharding(actorSystem).start(
+      typeName = "ProcessIndexActor",
+      entityProps = ProcessIndex.props(retentionCheckInterval, actorIdleTimeout, configuredEncryption, interactionManager, recipeManager),
+      settings = ClusterShardingSettings.create(actorSystem),
+      extractEntityId = ClusterBakerActorProvider.entityIdExtractor(nrOfShards),
+      extractShardId = ClusterBakerActorProvider.shardIdExtractor(nrOfShards)
+    )
 
-    import akka.pattern.ask
-    import system.dispatcher
-    implicit val akkaTimeout: Timeout = timeout
-
-    val futures = (0 to nrOfShards).map { shard => actor.ask(GetShardIndex(s"index-$shard")).mapTo[Index].map(_.entries) }
-    val collected: Seq[ActorMetadata] = Util.collectFuturesWithin(futures, timeout, system.scheduler).flatten
-
-    collected
+    actorSystem.actorOf(Props(
+      new ClusterRouterActor(processIndex, nrOfShards, recipeManager)
+    ))
   }
 }

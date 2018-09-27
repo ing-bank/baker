@@ -150,6 +150,8 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
     case GetIndex =>
       sender() ! Index(index.values.filter(_.processStatus == Active).toSeq)
 
+    case GetActiveProcesses =>
+
     case CheckForProcessesToBeDeleted =>
       val toBeDeleted = index.values.filter(shouldDelete)
       if (toBeDeleted.nonEmpty)
