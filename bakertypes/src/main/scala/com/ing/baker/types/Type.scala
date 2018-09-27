@@ -72,8 +72,6 @@ case class MapType(valueType: Type) extends Type
 
 case class RecordField(name: String, `type`: Type)
 
-case class SingletonType(value: Value)
-
 trait PrimitiveType extends Type
 
 /**
