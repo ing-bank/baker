@@ -181,5 +181,8 @@ object ProcessInstanceProtocol {
     sequenceNr: Long,
     marking: MarkingData,
     state: Any,
-    jobs: Map[Long, JobState]) extends Response
+    jobs: Map[Long, JobState]) extends Response {
+
+    def isActive: Boolean = jobs.values.exists(_.isActive)
+  }
 }

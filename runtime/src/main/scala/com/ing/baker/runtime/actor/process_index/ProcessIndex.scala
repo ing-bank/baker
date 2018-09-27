@@ -23,9 +23,9 @@ import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, events}
 import com.ing.baker.runtime.petrinet._
 
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 
 object ProcessIndex {
@@ -151,6 +151,20 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
       sender() ! Index(index.values.filter(_.processStatus == Active).toSeq)
 
     case GetActiveProcesses =>
+
+      val timeout = 5 seconds
+
+      val childStates = context.children.map { actorRef =>
+        val processId = actorRef.path.name
+        actorRef.ask(GetState).mapTo[InstanceState].map(p => processId -> p.isActive)
+      }
+
+      Future {
+        val entries = Util
+          .collectFuturesWithin(childStates, timeout, context.system.scheduler)
+          .collect { case (processId, true) => index.get(processId) }.flatten
+        Index(entries)
+      } pipeTo sender()
 
     case CheckForProcessesToBeDeleted =>
       val toBeDeleted = index.values.filter(shouldDelete)
