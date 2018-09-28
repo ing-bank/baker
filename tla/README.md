@@ -34,6 +34,8 @@ a refinement.
 ### ClusterV4 spec
 There is N number of processes simulating N number of nodes
 forming Cluster (model variables). LeaderUp/Down messages also
-implemented. No SplitBrain situation detected with this version in a
-model with 3 nodes. But tests for more than 3 nodes still create too
-many states which makes simulations difficult to run locally.
+implemented together with oldestNode election if it is not a member 
+anymore. ConsistentLeader and NoSplitBrain invariants fail quickly 
+because the leader and oldestNode variables are process local and they 
+see a different state with random state transitions. Maybe these 
+variables should be defined as global truths for simplicity. 

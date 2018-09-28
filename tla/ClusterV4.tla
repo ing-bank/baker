@@ -3,33 +3,36 @@ EXTENDS Naturals, Integers, Sequences, FiniteSets, TLC
 
 CONSTANT Nodes
 
-ASSUME Cardinality(Nodes) > 0
+ASSUME Cardinality(Nodes) > 1
 
 (* 
 --algorithm ClusterV4 { 
   
   define {
   
-    Majority(S) == ((Cardinality(S) + 1) \div 2) \* calculate the majority number of nodes of all participating cluster nodes (including myself)
-
-    InMajority(members, unreachables) == IF Cardinality(members \ unreachables) >= Majority(members) THEN TRUE ELSE FALSE
-
-    InMinority(members, unreachables) == ~ InMajority(members, unreachables)
+    \* Does set S contain given element x or not, returns a boolean result
+    Contains(S, x) == Cardinality(S \cap {x}) = 1
     
-    NodesToDown(members, unreachables) == 
+    \* Picks an arbitrary element from a given non-empty Set
+    ChooseOne(S) == CHOOSE x \in S : TRUE
+    
+    NodesToDown(members, unreachables, oldestNode) == 
       IF Cardinality(members) = 0 
       THEN Nodes \* Down all known nodes since I am not a member and I do not know any members
       ELSE IF Cardinality(unreachables) * 2 = Cardinality(members) \* cannot decide minority or majority? equal size?
-           THEN unreachables \* Decide to down unreachables in this case (could also pick the group with oldest member)
-           ELSE IF Cardinality(unreachables) * 2 < Cardinality(members) \* am I in minority?
+           THEN IF Contains(unreachables, oldestNode) \* Check if the oldest node is unreachable, and let the group with oldest member survives
+                THEN members \ unreachables \* down reachables
+                ELSE unreachables
+           ELSE IF Cardinality(unreachables) * 2 < Cardinality(members) \* am I in majority?
                 THEN unreachables
                 ELSE members \ unreachables \* down reachables      
   }
   
-  fair process (N \in Nodes)
-  variables leader = self = CHOOSE x \in Nodes: TRUE, \* choose one random node as leader in the beginning
+  process (N \in Nodes)
+  variables leader = ChooseOne(Nodes), \* choose one random node as leader in the beginning
             unreachables = {},
-            members = Nodes;
+            members = Nodes, \* start with a healthy cluster state
+            oldestNode = ChooseOne(Nodes); \* pick one node as oldest
   {
 \*      Check: while(\E m \in members : m = self) {
       Check: while(TRUE) {
@@ -37,22 +40,31 @@ ASSUME Cardinality(Nodes) > 0
                                  unreachables := unreachables \cup {n};
                                  members := members \cup {n};
                                }
-                            or with (m \in members \ {self}) { \* receive reachable member message
+                            or with (m \in unreachables \ {self}) { \* receive reachable member message
                                  unreachables := unreachables \ {m};
                                } 
-                            or with (n \in Nodes) { \* receive member up
+                            or with (n \in Nodes \ {members}) { \* receive member up
                                  members := members \cup {n};
                                }
-                            or with (n \in Nodes) { \* receive member removed
+                            or with (n \in members) { \* receive member removed
+                                 if (n = oldestNode) { \* choose another node as oldest node if oldest is not a member anymore. /TODO maybe this should be a global variable as well, like leader.
+                                   oldestNode := ChooseOne(Nodes \ {oldestNode});
+                                 };
                                  members := members \ {n};
                                  unreachables := unreachables \ {n};
                                } 
                             or with (newLeader \in Nodes) { \* receive leader changed message
-                                 leader := self = newLeader;
+                                 leader := newLeader;
                                };
-                 Sbr: if (leader /\ Cardinality(unreachables) # 0) {
-                        with (nodesToDown = NodesToDown(members, unreachables)) {
-                          if (Cardinality(nodesToDown) # 0) {
+                 Sbr: if (leader = self /\ Cardinality(unreachables) > 0) {
+                        with (nodesToDown = NodesToDown(members, unreachables, oldestNode)) {
+                          if (Cardinality(nodesToDown) > 0) {
+                            if(Contains(nodesToDown, self)) { \* choose a new leader if leader is going down /TODO make this a global variable instead of a local process variable.
+                              leader := ChooseOne(Nodes \ {self});
+                            };
+                            if (self = oldestNode) { \* choose another node as oldest node if it goes down. /TODO maybe this should be a global variable as well, like leader.
+                              oldestNode := ChooseOne(Nodes \ {oldestNode}); 
+                            };
                             members := members \ nodesToDown;
                             unreachables := unreachables \ nodesToDown;
                           }
@@ -67,93 +79,109 @@ ASSUME Cardinality(Nodes) > 0
 VARIABLE pc
 
 (* define statement *)
-Majority(S) == ((Cardinality(S) + 1) \div 2)
+Contains(S, x) == Cardinality(S \cap {x}) = 1
 
-InMajority(members, unreachables) == IF Cardinality(members \ unreachables) >= Majority(members) THEN TRUE ELSE FALSE
 
-InMinority(members, unreachables) == ~ InMajority(members, unreachables)
+ChooseOne(S) == CHOOSE x \in S : TRUE
 
-NodesToDown(members, unreachables) ==
+NodesToDown(members, unreachables, oldestNode) ==
   IF Cardinality(members) = 0
   THEN Nodes
   ELSE IF Cardinality(unreachables) * 2 = Cardinality(members)
-       THEN unreachables
+       THEN IF Contains(unreachables, oldestNode)
+            THEN members \ unreachables
+            ELSE unreachables
        ELSE IF Cardinality(unreachables) * 2 < Cardinality(members)
             THEN unreachables
             ELSE members \ unreachables
 
-VARIABLES leader, unreachables, members
+VARIABLES leader, unreachables, members, oldestNode
 
-vars == << pc, leader, unreachables, members >>
+vars == << pc, leader, unreachables, members, oldestNode >>
 
 ProcSet == (Nodes)
 
 Init == (* Process N *)
-        /\ leader = [self \in Nodes |-> self = CHOOSE x \in Nodes: TRUE]
+        /\ leader = [self \in Nodes |-> ChooseOne(Nodes)]
         /\ unreachables = [self \in Nodes |-> {}]
         /\ members = [self \in Nodes |-> Nodes]
+        /\ oldestNode = [self \in Nodes |-> ChooseOne(Nodes)]
         /\ pc = [self \in ProcSet |-> "Check"]
 
 Check(self) == /\ pc[self] = "Check"
                /\ pc' = [pc EXCEPT ![self] = "Receive"]
-               /\ UNCHANGED << leader, unreachables, members >>
+               /\ UNCHANGED << leader, unreachables, members, oldestNode >>
 
 Receive(self) == /\ pc[self] = "Receive"
                  /\ \/ /\ \E n \in Nodes \ {self}:
                             /\ unreachables' = [unreachables EXCEPT ![self] = unreachables[self] \cup {n}]
                             /\ members' = [members EXCEPT ![self] = members[self] \cup {n}]
-                       /\ UNCHANGED leader
-                    \/ /\ \E m \in members[self] \ {self}:
+                       /\ UNCHANGED <<leader, oldestNode>>
+                    \/ /\ \E m \in unreachables[self] \ {self}:
                             unreachables' = [unreachables EXCEPT ![self] = unreachables[self] \ {m}]
-                       /\ UNCHANGED <<leader, members>>
-                    \/ /\ \E n \in Nodes:
+                       /\ UNCHANGED <<leader, members, oldestNode>>
+                    \/ /\ \E n \in Nodes \ {members[self]}:
                             members' = [members EXCEPT ![self] = members[self] \cup {n}]
-                       /\ UNCHANGED <<leader, unreachables>>
-                    \/ /\ \E n \in Nodes:
+                       /\ UNCHANGED <<leader, unreachables, oldestNode>>
+                    \/ /\ \E n \in members[self]:
+                            /\ IF n = oldestNode[self]
+                                  THEN /\ oldestNode' = [oldestNode EXCEPT ![self] = ChooseOne(Nodes \ {oldestNode[self]})]
+                                  ELSE /\ TRUE
+                                       /\ UNCHANGED oldestNode
                             /\ members' = [members EXCEPT ![self] = members[self] \ {n}]
                             /\ unreachables' = [unreachables EXCEPT ![self] = unreachables[self] \ {n}]
                        /\ UNCHANGED leader
                     \/ /\ \E newLeader \in Nodes:
-                            leader' = [leader EXCEPT ![self] = self = newLeader]
-                       /\ UNCHANGED <<unreachables, members>>
+                            leader' = [leader EXCEPT ![self] = newLeader]
+                       /\ UNCHANGED <<unreachables, members, oldestNode>>
                  /\ pc' = [pc EXCEPT ![self] = "Sbr"]
 
 Sbr(self) == /\ pc[self] = "Sbr"
-             /\ IF leader[self] /\ Cardinality(unreachables[self]) # 0
-                   THEN /\ LET nodesToDown == NodesToDown(members[self], unreachables[self]) IN
-                             IF Cardinality(nodesToDown) # 0
-                                THEN /\ members' = [members EXCEPT ![self] = members[self] \ nodesToDown]
+             /\ IF leader[self] = self /\ Cardinality(unreachables[self]) > 0
+                   THEN /\ LET nodesToDown == NodesToDown(members[self], unreachables[self], oldestNode[self]) IN
+                             IF Cardinality(nodesToDown) > 0
+                                THEN /\ IF Contains(nodesToDown, self)
+                                           THEN /\ leader' = [leader EXCEPT ![self] = ChooseOne(Nodes \ {self})]
+                                           ELSE /\ TRUE
+                                                /\ UNCHANGED leader
+                                     /\ IF self = oldestNode[self]
+                                           THEN /\ oldestNode' = [oldestNode EXCEPT ![self] = ChooseOne(Nodes \ {oldestNode[self]})]
+                                           ELSE /\ TRUE
+                                                /\ UNCHANGED oldestNode
+                                     /\ members' = [members EXCEPT ![self] = members[self] \ nodesToDown]
                                      /\ unreachables' = [unreachables EXCEPT ![self] = unreachables[self] \ nodesToDown]
                                 ELSE /\ TRUE
-                                     /\ UNCHANGED << unreachables, members >>
+                                     /\ UNCHANGED << leader, unreachables, 
+                                                     members, oldestNode >>
                    ELSE /\ TRUE
-                        /\ UNCHANGED << unreachables, members >>
+                        /\ UNCHANGED << leader, unreachables, members, 
+                                        oldestNode >>
              /\ pc' = [pc EXCEPT ![self] = "Check"]
-             /\ UNCHANGED leader
 
 N(self) == Check(self) \/ Receive(self) \/ Sbr(self)
 
 Next == (\E self \in Nodes: N(self))
 
-Spec == /\ Init /\ [][Next]_vars
-        /\ \A self \in Nodes : WF_vars(N(self))
+Spec == Init /\ [][Next]_vars
 
 \* END TRANSLATION
 
 
 (* Check the types OK in each state *)
-TypeOK == /\ \A node \in Nodes : leader[node] \in BOOLEAN
+TypeOK == /\ \A node \in Nodes : leader[node] \in Nodes
+          /\ \A node \in Nodes : oldestNode[node] \in Nodes
           /\ \A node \in Nodes : \A member \in members[node] : member \in Nodes
           /\ \A node \in Nodes : \A member \in unreachables[node] : member \in Nodes
           
 (* There is only one leader *)
-ConsistentLeader == \E node \in Nodes : leader[node] = TRUE 
-                                     /\ \A other \in Nodes \ {node} : leader[other] = FALSE
+ConsistentLeader == \A n1 \in Nodes : 
+                      \A n2 \in Nodes \ {n1} : 
+                        leader[n1] = leader[n2]
 
 (* There is no situation like members_A \intersect members_B is empty set. i.e. state_A={A,B} state_B={A,B} state_C={C}*)                     
-NoSplitBrain == ~ \E n1 \in Nodes : 
-                    \E n2 \in Nodes \ {n1} : 
-                      members[n1] \cap members[n2] = {}
+NoSplitBrain == \A n1 \in Nodes : 
+                  \A n2 \in Nodes \ {n1} : 
+                    members[n1] \cap members[n2] # {}
 
 (* One invariant combining all others *)
 Invariants == /\ TypeOK    
@@ -162,5 +190,5 @@ Invariants == /\ TypeOK
           
 =============================================================================
 \* Modification History
-\* Last modified Tue Sep 25 17:08:27 CEST 2018 by bekiroguz
+\* Last modified Fri Sep 28 17:33:23 CEST 2018 by bekiroguz
 \* Created Fri Sep 21 14:45:57 CEST 2018 by bekiroguz

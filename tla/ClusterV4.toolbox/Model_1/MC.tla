@@ -7,18 +7,18 @@ A, B, C
 ----
 
 \* MV CONSTANT definitions Nodes
-const_1537888135475341000 == 
+const_1538148595115107000 == 
 {A, B, C}
 ----
 
 \* SPECIFICATION definition @modelBehaviorSpec:0
-spec_1537888135475342000 ==
+spec_1538148595115108000 ==
 Spec
 ----
-\* PROPERTY definition @modelCorrectnessProperties:0
-prop_1537888135475343000 ==
+\* INVARIANT definition @modelCorrectnessInvariants:0
+inv_1538148595115109000 ==
 Invariants
 ----
 =============================================================================
 \* Modification History
-\* Created Tue Sep 25 17:08:55 CEST 2018 by bekiroguz
+\* Created Fri Sep 28 17:29:55 CEST 2018 by bekiroguz
