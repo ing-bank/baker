@@ -39,3 +39,14 @@ anymore. ConsistentLeader and NoSplitBrain invariants fail quickly
 because the leader and oldestNode variables are process local and they 
 see a different state with random state transitions. Maybe these 
 variables should be defined as global truths for simplicity. 
+
+### ClusterV5 Spec
+Moved the variables out from the process scope so that we can also
+update the state of other nodes/processes when we receive some certain
+messages. i.e. Receiving MemberRemoved(node1) message means removing
+node1 from my state, but also assuming that node1 is already left the
+cluster  or terminated, so we also update its members set as an empty
+set. Fixed lots of unrealistic corner cases found by the TLA model
+checker in the algorithm so that it does not randomly generate states
+but knows about how the system behaves. This generates less number of
+states and we are able to improve the algorithm step by step.

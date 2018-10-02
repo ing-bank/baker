@@ -6,3 +6,5 @@
 *.pmap
 *.aux
 *.tex
+*.st
+*.fp
