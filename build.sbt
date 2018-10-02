@@ -75,10 +75,11 @@ lazy val bakertypes = project.in(file("bakertypes"))
     moduleName := "baker-types",
     libraryDependencies ++= compileDeps(
       slf4jApi,
+      ficusConfig,
       objenisis,
       jodaTime,
       scalaReflect(scalaVersion.value)
-    ) ++ testDeps(scalaTest, scalaCheck, logback)
+    ) ++ testDeps(scalaTest, scalaCheck, logback, scalaCheck)
   )
 
 lazy val intermediateLanguage = project.in(file("intermediate-language"))
@@ -134,7 +135,7 @@ lazy val recipeRuntime = project.in(file("runtime"))
         logback)
         ++ providedDeps(findbugs)
   )
-  .dependsOn(intermediateLanguage, petrinetApi, testScope(recipeDsl), testScope(recipeCompiler))
+  .dependsOn(intermediateLanguage, petrinetApi, testScope(recipeDsl), testScope(recipeCompiler), testScope(bakertypes))
 
 lazy val recipeDsl = project.in(file("recipe-dsl"))
   .settings(defaultModuleSettings)

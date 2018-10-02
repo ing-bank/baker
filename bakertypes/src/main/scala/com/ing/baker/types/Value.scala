@@ -11,12 +11,17 @@ sealed trait Value extends Serializable {
   def isNull: Boolean = this == NullValue
 
   def isInstanceOf(t: Type): Boolean = (t, this) match {
-    case (_, NullValue)                                     => true
-    case (PrimitiveType(clazz), v: PrimitiveValue)          => v.isAssignableTo(clazz)
-    case (ListType(entryType), ListValue(entries))          => entries.forall(_.isInstanceOf(entryType))
-    case (OptionType(entryType), v: Value)                  => v.isInstanceOf(entryType)
-    case (EnumType(options), PrimitiveValue(value: String)) => options.contains(value)
-    case (RecordType(entryTypes), RecordValue(entryValues)) => entryTypes.forall { f =>
+    case (_, NullValue)                                      => true
+    case (Date, PrimitiveValue(_: Long | _: java.lang.Long)) => true
+    case (expected: PrimitiveType, PrimitiveValue(value))    => primitiveMappings.get(value.getClass) match {
+      case None => false
+      case Some(actual) => expected.isAssignableFrom(actual)
+    }
+
+    case (ListType(entryType), ListValue(entries))           => entries.forall(_.isInstanceOf(entryType))
+    case (OptionType(entryType), v: Value)                   => v.isInstanceOf(entryType)
+    case (EnumType(options), PrimitiveValue(value: String))  => options.contains(value)
+    case (RecordType(entryTypes), RecordValue(entryValues))  => entryTypes.forall { f =>
       entryValues.get(f.name) match {
         case None        => false
         case Some(value) => value.isInstanceOf(f.`type`)
@@ -26,10 +31,59 @@ sealed trait Value extends Serializable {
     case _ => false
   }
 
+  def validate(t: Type): Option[String] =  (t, this) match {
+
+    case (_, NullValue)                  => None
+    case (Date, PrimitiveValue(_: Long | _: java.lang.Long)) => None
+    case (Date, PrimitiveValue(other))                       => Some(s"$other is not an instance of Date")
+
+    case (expected: PrimitiveType, PrimitiveValue(value)) => primitiveMappings.get(value.getClass) match {
+      case Some(actual) if expected.isAssignableFrom(actual) => None
+      case _ => Some(s"$value is not an instance of $expected")
+    }
+    case (ListType(entryType), ListValue(entries))          =>
+      entries.flatMap(_.validate(entryType)).headOption
+    case (OptionType(entryType), v: Value)                  =>
+      v.validate(entryType)
+    case (EnumType(options), PrimitiveValue(value: String)) =>
+      if (!options.contains(value))
+        Some(s"$value is not a valid option, expected one of: $options")
+      else
+        None
+    case (RecordType(entryTypes), RecordValue(entryValues)) => entryTypes.flatMap { f =>
+      entryValues.get(f.name) match {
+        case None        => Some(s"Missing field: ${f.name}")
+        case Some(value) => value.validate(f.`type`).map(reason => s"Invalid field: ${f.name}: $reason\n")
+      }
+    }.headOption
+    case (MapType(valueType), RecordValue(entries))         =>
+      entries.values.flatMap(_.validate(valueType)).headOption
+    case (otherType, otherValue) => Some(s"${otherValue.getClass.getSimpleName} is not an instance of ${otherType.getClass.getSimpleName}")
+  }
+
+  /**
+    * Attempts to adapt the value to the given java type.
+    *
+    * @param javaType The java type
+    * @return An instance of the java class.
+    */
   def as(javaType: java.lang.reflect.Type): Any = Converters.toJava(this, javaType)
 
+  /**
+    * Attempts to adapt the value to the given java class.
+    *
+    * @param clazz The java class
+    * @tparam T The java class type
+    * @return An instance of the java class.
+    */
   def as[T](clazz: Class[T]): T = Converters.toJava(this, clazz).asInstanceOf[T]
 
+  /**
+    * Attempts to adapt the value to the given java type.
+    *
+    * @tparam T The java type
+    * @return An instance of the java class.
+    */
   def as[T : universe.TypeTag]: T = Converters.toJava[T](this)
 
   def equalsObject(obj: Any): Boolean = Try { equals(Converters.toValue(obj)) }.getOrElse(false)
@@ -57,7 +111,6 @@ case class PrimitiveValue(value: Any) extends Value {
 
   override def toString: String = value match {
     case str: String                         => "\"" + str + "\""
-    case date: org.joda.time.ReadableInstant => "\"" + isoDateTimeFormatter.print(date) + "\""
     case n: java.math.BigDecimal             => "\"" + n.toString + "\""
     case n: java.math.BigInteger             => "\"" + n.toString + "\""
     case n: BigDecimal                       => "\"" + n.toString + "\""

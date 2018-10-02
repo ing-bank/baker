@@ -17,6 +17,7 @@ import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol.{AllReci
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
+import com.ing.baker.types
 import com.ing.baker.types.PrimitiveType
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Mockito
@@ -246,7 +247,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
-      val eventType = EventDescriptor("Event", Seq(IngredientDescriptor("ingredientName", PrimitiveType(classOf[String]))))
+      val eventType = EventDescriptor("Event", Seq(IngredientDescriptor("ingredientName", types.CharArray)))
       val transitions: Set[Transition] = Set(EventTransition(eventType, true, None))
       when(petrinetMock.transitions).thenReturn(transitions)
 
