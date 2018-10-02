@@ -444,13 +444,35 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   def getEvents(processId: UUID): EventList = getEvents(processId.toString)
 
   /**
+    * Returns the recipe information for the given RecipeId
+    *
+    * @param recipeId the recipeId
+    * @return The JRecipeInformation recipe
+    */
+  @throws[TimeoutException]("When the recipe is not found within the default deadline")
+  def getRecipe(recipeId: String): JRecipeInformation =
+    JRecipeInformation.fromRecipeInformation(baker.getRecipe(recipeId))
+
+  /**
+    * Returns the recipe information for the given recipeId
+    *
+    * @param recipeId the recipeId
+    * @param timeout  the maxium wait time
+    * @return The JRecipeInformation for the recipe
+    */
+  @throws[TimeoutException]("When the recipe is not found within the given deadline")
+  def getRecipe(recipeId: String, timeout: java.time.Duration): JRecipeInformation =
+    JRecipeInformation.fromRecipeInformation(baker.getRecipe(recipeId, timeout.toScala))
+
+  /**
     * Returns the compiled recipe for the given recipeId
     *
     * @param recipeId the recipeId
     * @return The compiled recipe
     */
   @throws[TimeoutException]("When the compiled recipe is not found within the default deadline")
-  def getCompiledRecipe(recipeId: String): CompiledRecipe = baker.getRecipe(recipeId)
+  def getCompiledRecipe(recipeId: String): CompiledRecipe =
+    baker.getCompiledRecipe(recipeId)
 
   /**
     * Returns the compiled recipe for the given recipeId
@@ -461,65 +483,26 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     */
   @throws[TimeoutException]("When the compiled recipe is not found within the given deadline")
   def getCompiledRecipe(recipeId: String, timeout: java.time.Duration): CompiledRecipe =
-    baker.getRecipe(recipeId, timeout.toScala)
+    baker.getCompiledRecipe(recipeId, timeout.toScala)
 
   /**
-    * Return alls compiled recipes added to this Baker
+    * Return alls recipes added to this Baker
     *
-    * @return A map with all recipes from recipeId -> CompiledRecipe
+    * @return A map with all recipes from recipeId -> JRecipeInformation
     */
   @throws[TimeoutException]("When the Baker does not respond within the default deadline")
-  def getAllRecipes(): java.util.Map[String, CompiledRecipe] = baker.getAllRecipes().asJava
+  def getAllRecipes(): java.util.Map[String, JRecipeInformation] =
+    baker.getAllRecipes().mapValues(JRecipeInformation.fromRecipeInformation).asJava
 
   /**
-    * Return alls compiled recipes added to this Baker
+    * Return alls recipes added to this Baker
     *
     * @param timeout
-    * @return A map with all recipes from recipeId -> CompiledRecipe
+    * @return A map with all recipes from recipeId -> JRecipeInformation
     */
   @throws[TimeoutException]("When the Baker does not respond within the given deadline")
-  def getAllRecipes(timeout: java.time.Duration): java.util.Map[String, CompiledRecipe] =
-    baker.getAllRecipes(timeout.toScala).asJava
-
-  /**
-    * Return the health of all recipes
-    *
-    * @param timeout
-    * @return A Set with a RecipeHealth per recipe
-    */
-  @throws[TimeoutException]("When the Baker does not respond within the given deadline")
-  def getAllRecipeHealths(timeout: java.time.Duration): java.util.Set[JRecipeHealth] =
-    baker.getAllRecipeHealths(timeout.toScala).map(JRecipeHealth.fromRecipeHealth).asJava
-
-  /**
-    * Return the health of all recipes
-    *
-    * @param timeout
-    * @return A Set with a RecipeHealth per recipe
-    */
-  @throws[TimeoutException]("When the Baker does not respond within the given deadline")
-  def getAllRecipeHealths(): java.util.Set[JRecipeHealth] =
-     baker.getAllRecipeHealths().map(JRecipeHealth.fromRecipeHealth).asJava
-
-  /**
-    * Return the health of a specific recipe
-    *
-    * @param timeout
-    * @return A Set with a RecipeHealth per recipe
-    */
-  @throws[TimeoutException]("When the Baker does not respond within the given deadline")
-  def getRecipeHealth(recipeId: String, timeout: java.time.Duration): JRecipeHealth =
-    JRecipeHealth.fromRecipeHealth(baker.getRecipeHealth(recipeId, timeout.toScala))
-
-  /**
-    * Return the health of a specific recipe
-    *
-    * @param timeout
-    * @return A Set with a RecipeHealth per recipe
-    */
-  @throws[TimeoutException]("When the Baker does not respond within the given deadline")
-  def getRecipeHealth(recipeId: String): JRecipeHealth =
-    JRecipeHealth.fromRecipeHealth(baker.getRecipeHealth(recipeId))
+  def getAllRecipes(timeout: java.time.Duration): java.util.Map[String, JRecipeInformation] =
+    baker.getAllRecipes(timeout.toScala).mapValues(JRecipeInformation.fromRecipeInformation).asJava
 
   /**
     * Returns an index of all processes.

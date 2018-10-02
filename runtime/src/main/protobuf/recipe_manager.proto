@@ -12,6 +12,7 @@ option (scalapb.options) = {
 message RecipeAdded {
     optional string recipeId = 1;
     optional CompiledRecipe compiledRecipe = 2;
+    optional int64 timeStamp = 3;
 }
 
 // PROTOCOL MESSAGES
@@ -30,6 +31,7 @@ message GetRecipe {
 
 message RecipeFound {
     optional CompiledRecipe compiledRecipe = 1;
+    optional int64 timestamp = 2;
 }
 
 message NoRecipeFound {
@@ -38,6 +40,12 @@ message NoRecipeFound {
 
 message GetAllRecipes {}
 
+message CompiledRecipeMap {
+  optional string key = 1;
+  optional CompiledRecipe compiledRecipe = 2;
+  optional int64 timestamp = 3;
+}
+
 message AllRecipes {
-    map<string, CompiledRecipe> compiledRecipes = 1;
+    repeated CompiledRecipeMap compiledRecipes = 1;
 }

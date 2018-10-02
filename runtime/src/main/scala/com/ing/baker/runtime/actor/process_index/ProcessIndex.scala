@@ -99,7 +99,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
     // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
     val futureResult = recipeManager.ask(GetAllRecipes)(updateCacheTimeout).mapTo[AllRecipes]
     val allRecipes = Await.result(futureResult, updateCacheTimeout)
-    recipeCache ++= allRecipes.compiledRecipes
+    recipeCache ++= allRecipes.recipes.map(ri => ri.recipeId -> ri.compiledRecipe)
   }
 
   def getCompiledRecipe(recipeId: String): Option[CompiledRecipe] =
@@ -296,7 +296,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
         case Some(processMetadata) if processMetadata.isDeleted => sender() ! ProcessDeleted(processId)
         case Some(processMetadata) =>
           getCompiledRecipe(processMetadata.recipeId) match {
-            case Some(compiledRecipe) => sender() ! RecipeFound(compiledRecipe)
+            case Some(compiledRecipe) => sender() ! RecipeFound(compiledRecipe, 0L)
             case None => sender() ! NoSuchProcess(processId)
           }
         case None => sender() ! NoSuchProcess(processId)

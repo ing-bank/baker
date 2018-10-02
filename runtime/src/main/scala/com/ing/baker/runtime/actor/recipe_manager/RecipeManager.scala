@@ -17,50 +17,52 @@ object RecipeManager {
 
   //Events
   //When a recipe is added
-  case class RecipeAdded(recipeId: String, compiledRecipe: CompiledRecipe) extends BakerProtoMessage
+  case class RecipeAdded(recipeId: String, compiledRecipe: CompiledRecipe, timeStamp: Long) extends BakerProtoMessage
+
 }
 
 class RecipeManager extends PersistentActor with ActorLogging {
 
-  val compiledRecipes: mutable.Map[String, CompiledRecipe] = mutable.Map[String, CompiledRecipe]()
+  val compiledRecipes: mutable.Map[String, (CompiledRecipe, Long)] = mutable.Map[String, (CompiledRecipe, Long)]()
 
   private def hasCompiledRecipe(compiledRecipe: CompiledRecipe): Option[String] =
-    compiledRecipes.find(_._2 == compiledRecipe).map(_._1)
+    compiledRecipes.find(_._2._1 == compiledRecipe).map(_._1)
 
-  private def addRecipe(recipeId: String, compiledRecipe: CompiledRecipe) =
-    compiledRecipes += (recipeId -> compiledRecipe)
+  private def addRecipe(recipeId: String, compiledRecipe: CompiledRecipe, timestamp: Long) =
+    compiledRecipes += (recipeId -> (compiledRecipe, timestamp))
 
 
   override def receiveCommand: Receive = {
     case AddRecipe(compiledRecipe) => {
       val foundRecipe = hasCompiledRecipe(compiledRecipe)
-      if(foundRecipe.isEmpty) {
+      if (foundRecipe.isEmpty) {
         val recipeId = UUID.randomUUID().toString
-
-        persist(RecipeAdded(recipeId, compiledRecipe)){ _ =>
-          addRecipe(recipeId, compiledRecipe)
+        val timestamp = System.currentTimeMillis()
+        persist(RecipeAdded(recipeId, compiledRecipe, timestamp)) { _ =>
+          addRecipe(recipeId, compiledRecipe, timestamp)
           context.system.eventStream.publish(
-            com.ing.baker.runtime.core.events.RecipeAdded(compiledRecipe.name, recipeId, System.currentTimeMillis(), compiledRecipe))
+            com.ing.baker.runtime.core.events.RecipeAdded(compiledRecipe.name, recipeId, timestamp, compiledRecipe))
           sender() ! AddRecipeResponse(recipeId)
         }
       }
-      else{
+      else {
         sender() ! AddRecipeResponse(foundRecipe.get)
       }
     }
-    case GetRecipe(recipeId: String) => {
+    case GetRecipe(recipeId: String) =>
       compiledRecipes.get(recipeId) match {
-        case Some(compiledRecipe) => sender() ! RecipeFound(compiledRecipe)
+        case Some((compiledRecipe, timestamp)) => sender() ! RecipeFound(compiledRecipe, timestamp)
         case None => sender() ! NoRecipeFound(recipeId)
       }
-    }
-    case GetAllRecipes => {
-      sender() ! AllRecipes(compiledRecipes.toMap)
-    }
+
+    case GetAllRecipes =>
+      sender() ! AllRecipes(compiledRecipes.map {
+        case (recipeId, (compiledRecipe, timestamp)) => RecipeInformation(recipeId, compiledRecipe, timestamp)
+      }.toSeq)
   }
 
   override def receiveRecover: Receive = {
-    case RecipeAdded(recipeId, compiledRecipe) => addRecipe(recipeId, compiledRecipe)
+    case RecipeAdded(recipeId, compiledRecipe, timeStamp) => addRecipe(recipeId, compiledRecipe, timeStamp)
   }
 
   override def persistenceId: String = self.path.name
