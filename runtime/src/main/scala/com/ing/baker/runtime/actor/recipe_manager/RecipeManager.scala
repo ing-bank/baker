@@ -26,7 +26,7 @@ class RecipeManager extends PersistentActor with ActorLogging {
   val compiledRecipes: mutable.Map[String, (CompiledRecipe, Long)] = mutable.Map[String, (CompiledRecipe, Long)]()
 
   private def hasCompiledRecipe(compiledRecipe: CompiledRecipe): Option[String] =
-    compiledRecipes.find(_._2._1 == compiledRecipe).map(_._1)
+    compiledRecipes.collectFirst { case (recipeId, (`compiledRecipe`, _)) =>  recipeId}
 
   private def addRecipe(recipeId: String, compiledRecipe: CompiledRecipe, timestamp: Long) =
     compiledRecipes += (recipeId -> (compiledRecipe, timestamp))

@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.actor.serialization.modules
 
 import com.ing.baker.il
-import com.ing.baker.runtime.actor.recipe_manager.protobuf.CompiledRecipeMap
 import com.ing.baker.runtime.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol, protobuf}
 import com.ing.baker.runtime.actor.{recipe_manager, protobuf => ilp}
 
@@ -33,10 +32,10 @@ class RecipeManagerModule extends ProtoEventAdapterModule {
       protobuf.GetAllRecipes()
 
     case RecipeManagerProtocol.RecipeInformation(recipeId, compiledRecipe, timestamp) =>
-      protobuf.CompiledRecipeMap(Some(recipeId), Some(ctx.toProto[ilp.CompiledRecipe](compiledRecipe)), Some(timestamp))
+      protobuf.RecipeEntry(Some(recipeId), Some(ctx.toProto[ilp.CompiledRecipe](compiledRecipe)), Some(timestamp))
 
     case RecipeManagerProtocol.AllRecipes(recipes: Seq[RecipeManagerProtocol.RecipeInformation]) =>
-      protobuf.AllRecipes(recipes.map(ctx.toProto[protobuf.CompiledRecipeMap]))
+      protobuf.AllRecipes(recipes.map(ctx.toProto[protobuf.RecipeEntry]))
   }
 
   override def toDomain(ctx: ProtoEventAdapter): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
@@ -66,11 +65,11 @@ class RecipeManagerModule extends ProtoEventAdapterModule {
     case protobuf.GetAllRecipes() =>
       RecipeManagerProtocol.GetAllRecipes
 
-    case protobuf.CompiledRecipeMap(Some(recipeId), Some(compiledRecipe), optionalTimestamp) =>
+    case protobuf.RecipeEntry(Some(recipeId), Some(compiledRecipe), optionalTimestamp) =>
       val timestamp = optionalTimestamp.getOrElse(0l)
       RecipeManagerProtocol.RecipeInformation(recipeId, ctx.toDomain[il.CompiledRecipe](compiledRecipe), timestamp)
 
-    case protobuf.AllRecipes(compiledRecipes: Seq[CompiledRecipeMap]) =>
+    case protobuf.AllRecipes(compiledRecipes: Seq[protobuf.RecipeEntry]) =>
       RecipeManagerProtocol.AllRecipes(compiledRecipes.map(ctx.toDomain[RecipeManagerProtocol.RecipeInformation]))
   }
 }

@@ -89,7 +89,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
   val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
-  private val recipeCache: mutable.Map[String, CompiledRecipe] = mutable.Map[String, CompiledRecipe]()
+  private val recipeCache: mutable.Map[String, (CompiledRecipe, Long)] = mutable.Map[String, (CompiledRecipe, Long)]()
 
   import context.dispatcher
 
@@ -99,17 +99,20 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
     // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
     val futureResult = recipeManager.ask(GetAllRecipes)(updateCacheTimeout).mapTo[AllRecipes]
     val allRecipes = Await.result(futureResult, updateCacheTimeout)
-    recipeCache ++= allRecipes.recipes.map(ri => ri.recipeId -> ri.compiledRecipe)
+    recipeCache ++= allRecipes.recipes.map(ri => ri.recipeId -> (ri.compiledRecipe, ri.timestamp))
   }
 
-  def getCompiledRecipe(recipeId: String): Option[CompiledRecipe] =
+  def getRecipeWithTimeStamp(recipeId: String): Option[(CompiledRecipe, Long)] =
     recipeCache.get(recipeId) match {
       case None => {
         updateCache()
         recipeCache.get(recipeId)
       }
-      case Some(compiledRecipe) => Some(compiledRecipe)
+      case other => other
     }
+
+  def getCompiledRecipe(recipeId: String): Option[CompiledRecipe] =
+    getRecipeWithTimeStamp(recipeId).map{_._1}
 
   def getOrCreateProcessActor(processId: String): ActorRef =
     context.child(processId).getOrElse(createProcessActor(processId))
@@ -295,8 +298,8 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
       index.get(processId) match {
         case Some(processMetadata) if processMetadata.isDeleted => sender() ! ProcessDeleted(processId)
         case Some(processMetadata) =>
-          getCompiledRecipe(processMetadata.recipeId) match {
-            case Some(compiledRecipe) => sender() ! RecipeFound(compiledRecipe, 0L)
+          getRecipeWithTimeStamp(processMetadata.recipeId) match {
+            case Some((compiledRecipe, timestamp)) => sender() ! RecipeFound(compiledRecipe, timestamp)
             case None => sender() ! NoSuchProcess(processId)
           }
         case None => sender() ! NoSuchProcess(processId)

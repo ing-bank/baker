@@ -450,8 +450,8 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @return The JRecipeInformation recipe
     */
   @throws[TimeoutException]("When the recipe is not found within the default deadline")
-  def getRecipe(recipeId: String): JRecipeInformation =
-    JRecipeInformation.fromRecipeInformation(baker.getRecipe(recipeId))
+  def getRecipe(recipeId: String): RecipeInformation =
+    baker.getRecipe(recipeId)
 
   /**
     * Returns the recipe information for the given recipeId
@@ -461,8 +461,8 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @return The JRecipeInformation for the recipe
     */
   @throws[TimeoutException]("When the recipe is not found within the given deadline")
-  def getRecipe(recipeId: String, timeout: java.time.Duration): JRecipeInformation =
-    JRecipeInformation.fromRecipeInformation(baker.getRecipe(recipeId, timeout.toScala))
+  def getRecipe(recipeId: String, timeout: java.time.Duration): RecipeInformation =
+    baker.getRecipe(recipeId, timeout.toScala)
 
   /**
     * Returns the compiled recipe for the given recipeId
@@ -491,8 +491,8 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @return A map with all recipes from recipeId -> JRecipeInformation
     */
   @throws[TimeoutException]("When the Baker does not respond within the default deadline")
-  def getAllRecipes(): java.util.Map[String, JRecipeInformation] =
-    baker.getAllRecipes().mapValues(JRecipeInformation.fromRecipeInformation).asJava
+  def getAllRecipes(): java.util.Map[String, RecipeInformation] =
+    baker.getAllRecipes().asJava
 
   /**
     * Return alls recipes added to this Baker
@@ -501,8 +501,8 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @return A map with all recipes from recipeId -> JRecipeInformation
     */
   @throws[TimeoutException]("When the Baker does not respond within the given deadline")
-  def getAllRecipes(timeout: java.time.Duration): java.util.Map[String, JRecipeInformation] =
-    baker.getAllRecipes(timeout.toScala).mapValues(JRecipeInformation.fromRecipeInformation).asJava
+  def getAllRecipes(timeout: java.time.Duration): java.util.Map[String, RecipeInformation] =
+    baker.getAllRecipes(timeout.toScala).asJava
 
   /**
     * Returns an index of all processes.

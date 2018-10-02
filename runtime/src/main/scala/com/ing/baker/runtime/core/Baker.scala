@@ -165,7 +165,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   def getAllRecipesAsync(timeout: FiniteDuration = defaultInquireTimeout): Future[Map[String, RecipeInformation]] =
     recipeManager.ask(GetAllRecipes)(timeout)
       .mapTo[AllRecipes]
-      .map(_.recipes.map { ri: RecipeManagerProtocol.RecipeInformation =>
+      .map(_.recipes.map { ri =>
         ri.recipeId -> core.RecipeInformation(ri.recipeId, ri.compiledRecipe, ri.timestamp, getImplementationErrors(ri.compiledRecipe))
       }.toMap)
 

@@ -40,12 +40,12 @@ message NoRecipeFound {
 
 message GetAllRecipes {}
 
-message CompiledRecipeMap {
+message RecipeEntry {
   optional string key = 1;
   optional CompiledRecipe compiledRecipe = 2;
   optional int64 timestamp = 3;
 }
 
 message AllRecipes {
-    repeated CompiledRecipeMap compiledRecipes = 1;
+    repeated RecipeEntry recipeEntries = 1;
 }
