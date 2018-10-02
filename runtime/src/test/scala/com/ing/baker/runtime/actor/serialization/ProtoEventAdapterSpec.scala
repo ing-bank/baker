@@ -41,6 +41,7 @@ object ProtoEventAdapterSpec {
 
   val recipeIdGen: Gen[String] = Gen.uuid.map(_.toString)
   val processIdGen: Gen[String] = Gen.uuid.map(_.toString)
+  val timestampGen: Gen[Long] = Gen.chooseNum[Long](0, Long.MaxValue)
 
   object IntermediateLanguage {
 
@@ -80,14 +81,26 @@ object ProtoEventAdapterSpec {
 
     val addRecipeGen: Gen[AddRecipe] = recipeGen.map(AddRecipe(_))
     val getRecipeGen: Gen[GetRecipe] = recipeIdGen.map(GetRecipe(_))
-    val recipeFoundGen: Gen[RecipeFound] = recipeGen.map(RecipeFound(_))
+    val recipeFoundGen: Gen[RecipeFound] = for {
+      compiledRecipe <- IntermediateLanguage.recipeGen
+      timestamp <- timestampGen
+    } yield RecipeFound(compiledRecipe, timestamp)
+
+
     val noRecipeFoundGen: Gen[NoRecipeFound] = recipeIdGen.map(NoRecipeFound(_))
     val addRecipeResponseGen: Gen[AddRecipeResponse] = recipeIdGen.map(AddRecipeResponse(_))
     val getAllRecipesGen: Gen[GetAllRecipes.type] = Gen.const(GetAllRecipes)
 
     val recipeEntriesGen = GenUtil.tuple(recipeIdGen, recipeGen)
 
-    val allRecipesGen: Gen[AllRecipes] = Gen.mapOfN(2, recipeEntriesGen).map(AllRecipes(_))
+    val recipeInformationGen: Gen[RecipeInformation] = for {
+      recipeId <- recipeIdGen
+      compiledRecipe <- recipeGen
+      timestamp <- timestampGen
+    } yield RecipeInformation(recipeId, compiledRecipe, timestamp)
+
+    val allRecipesGen: Gen[AllRecipes] = Gen.listOf(recipeInformationGen).map(AllRecipes(_))
+
 
     val messagesGen: Gen[AnyRef] = Gen.oneOf(
       addRecipeGen, getRecipeGen, recipeFoundGen, noRecipeFoundGen, addRecipeResponseGen, getAllRecipesGen, allRecipesGen
