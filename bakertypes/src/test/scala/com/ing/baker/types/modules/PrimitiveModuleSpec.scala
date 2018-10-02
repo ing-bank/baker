@@ -3,9 +3,11 @@ package com.ing.baker.types.modules
 import java.lang
 
 import com.ing.baker.types
+import com.ing.baker.types.Converters
 import com.ing.baker.types.Converters.readJavaType
 import com.ing.baker.types.modules.PrimitiveModuleSpec._
 import org.scalacheck.Gen
+import org.scalacheck.Prop.{BooleanOperators, forAll}
 import org.scalacheck.Test.Parameters.defaultVerbose
 import org.scalatest.prop.Checkers
 import org.scalatest.{Matchers, WordSpecLike}
@@ -60,25 +62,38 @@ class PrimitiveModuleSpec extends WordSpecLike with Matchers with Checkers {
 
       val minSuccessful = 100
 
-      def checkTransitivity[T : TypeTag](gen: Gen[T]) =
-        check(transitivityProperty[Int](intGen), defaultVerbose.withMinSuccessfulTests(minSuccessful))
+      def checkType[T : TypeTag](gen: Gen[T]) = {
 
-      checkTransitivity[Int](intGen)
-      checkTransitivity[lang.Integer](langIntegerGen)
-      checkTransitivity[Long](longGen)
-      checkTransitivity[lang.Long](langLongGen)
-      checkTransitivity[Short](shortGen)
-      checkTransitivity[lang.Short](langShortGen)
-      checkTransitivity[Float](floatGen)
-      checkTransitivity[lang.Float](langFloatGen)
-      checkTransitivity[Double](doubleGen)
-      checkTransitivity[lang.Double](langDoubleGen)
-      checkTransitivity[String](stringGen)
-      checkTransitivity[BigInt](bigIntGen)
-      checkTransitivity[java.math.BigInteger](javaBigIntGen)
-      checkTransitivity[BigDecimal](bigDecimalGen)
-      checkTransitivity[java.math.BigDecimal](javaBigDecimalGen)
-      checkTransitivity[Array[Byte]](byteArrayGen)
+        val parsedType = Converters.readJavaType[T]
+
+        val property = forAll(gen) { original =>
+
+          val value = Converters.toValue(original)
+          val parsed = Converters.toJava[T](value)
+
+          value.isInstanceOf(parsedType) :| s"$value is not an instance of $parsedType" &&
+          parsed.equals(original) :| s"$value != $parsed"
+        }
+
+        check(property, defaultVerbose.withMinSuccessfulTests(minSuccessful))
+      }
+
+      checkType[Int](intGen)
+      checkType[lang.Integer](langIntegerGen)
+      checkType[Long](longGen)
+      checkType[lang.Long](langLongGen)
+      checkType[Short](shortGen)
+      checkType[lang.Short](langShortGen)
+      checkType[Float](floatGen)
+      checkType[lang.Float](langFloatGen)
+      checkType[Double](doubleGen)
+      checkType[lang.Double](langDoubleGen)
+      checkType[String](stringGen)
+      checkType[BigInt](bigIntGen)
+      checkType[java.math.BigInteger](javaBigIntGen)
+      checkType[BigDecimal](bigDecimalGen)
+      checkType[java.math.BigDecimal](javaBigDecimalGen)
+      checkType[Array[Byte]](byteArrayGen)
     }
   }
 }

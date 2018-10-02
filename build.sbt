@@ -135,7 +135,7 @@ lazy val recipeRuntime = project.in(file("runtime"))
         logback)
         ++ providedDeps(findbugs)
   )
-  .dependsOn(intermediateLanguage, petrinetApi, testScope(recipeDsl), testScope(recipeCompiler))
+  .dependsOn(intermediateLanguage, petrinetApi, testScope(recipeDsl), testScope(recipeCompiler), testScope(bakertypes))
 
 lazy val recipeDsl = project.in(file("recipe-dsl"))
   .settings(defaultModuleSettings)

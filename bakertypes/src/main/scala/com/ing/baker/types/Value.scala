@@ -11,16 +11,17 @@ sealed trait Value extends Serializable {
   def isNull: Boolean = this == NullValue
 
   def isInstanceOf(t: Type): Boolean = (t, this) match {
-    case (_, NullValue)                  => true
-    case (expected: PrimitiveType, PrimitiveValue(value)) => primitiveMappings.get(value.getClass) match {
+    case (_, NullValue)                                      => true
+    case (Date, PrimitiveValue(_: Long | _: java.lang.Long)) => true
+    case (expected: PrimitiveType, PrimitiveValue(value))    => primitiveMappings.get(value.getClass) match {
       case None => false
       case Some(actual) => expected.isAssignableFrom(actual)
     }
 
-    case (ListType(entryType), ListValue(entries))          => entries.forall(_.isInstanceOf(entryType))
-    case (OptionType(entryType), v: Value)                  => v.isInstanceOf(entryType)
-    case (EnumType(options), PrimitiveValue(value: String)) => options.contains(value)
-    case (RecordType(entryTypes), RecordValue(entryValues)) => entryTypes.forall { f =>
+    case (ListType(entryType), ListValue(entries))           => entries.forall(_.isInstanceOf(entryType))
+    case (OptionType(entryType), v: Value)                   => v.isInstanceOf(entryType)
+    case (EnumType(options), PrimitiveValue(value: String))  => options.contains(value)
+    case (RecordType(entryTypes), RecordValue(entryValues))  => entryTypes.forall { f =>
       entryValues.get(f.name) match {
         case None        => false
         case Some(value) => value.isInstanceOf(f.`type`)
@@ -33,6 +34,9 @@ sealed trait Value extends Serializable {
   def validate(t: Type): Option[String] =  (t, this) match {
 
     case (_, NullValue)                  => None
+    case (Date, PrimitiveValue(_: Long | _: java.lang.Long)) => None
+    case (Date, PrimitiveValue(other))                       => Some(s"$other is not an instance of Date")
+
     case (expected: PrimitiveType, PrimitiveValue(value)) => primitiveMappings.get(value.getClass) match {
       case Some(actual) if expected.isAssignableFrom(actual) => None
       case _ => Some(s"$value is not an instance of $expected")
@@ -54,7 +58,7 @@ sealed trait Value extends Serializable {
     }.headOption
     case (MapType(valueType), RecordValue(entries))         =>
       entries.values.flatMap(_.validate(valueType)).headOption
-    case (otherType, otherValue) => Some(s"${otherValue.getClass} is not an instance of ${otherType.getClass}")
+    case (otherType, otherValue) => Some(s"${otherValue.getClass.getSimpleName} is not an instance of ${otherType.getClass.getSimpleName}")
   }
 
   /**

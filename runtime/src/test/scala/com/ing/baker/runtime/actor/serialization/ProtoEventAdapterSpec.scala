@@ -251,6 +251,7 @@ object ProtoEventAdapterSpec {
   object Types {
 
     import com.ing.baker.types._
+    import com.ing.baker.types.modules.PrimitiveModuleSpec._
 
     val fieldNameGen = Gen.alphaStr
 
@@ -269,23 +270,6 @@ object ProtoEventAdapterSpec {
     val optionTypeGen = primitiveTypeGen.map(OptionType(_))
 
     val anyTypeGen = Gen.oneOf(primitiveTypeGen, recordTypeGen, listTypeGen, mapTypeGen, optionTypeGen)
-
-    val intGen: Gen[Int] = Gen.chooseNum[Int](Integer.MIN_VALUE, Integer.MAX_VALUE)
-    val langIntegerGen: Gen[java.lang.Integer] = intGen.map(Int.box(_))
-    val longGen: Gen[Long] = Gen.chooseNum[Long](Long.MinValue, Long.MaxValue)
-    val langLongGen: Gen[java.lang.Long] = Gen.chooseNum[Long](Long.MinValue, Long.MaxValue).map(Long.box(_))
-    val shortGen: Gen[Short] = Gen.chooseNum[Short](Short.MinValue, Short.MaxValue)
-    val langShortGen: Gen[java.lang.Short] = shortGen.map(Short.box(_))
-    val floatGen: Gen[Float] = Gen.chooseNum(Float.MinValue, Float.MaxValue)
-    val langFloatGen: Gen[java.lang.Float] = floatGen.map(Float.box(_))
-    val doubleGen: Gen[Double] = Gen.chooseNum[Double](Double.MinValue, Double.MaxValue)
-    val langDoubleGen: Gen[java.lang.Double] = doubleGen.map(Double.box(_))
-    val stringGen: Gen[String] = Gen.alphaStr
-    val bigIntGen: Gen[BigInt] = longGen.map(BigInt(_))
-    val javaBigIntGen: Gen[java.math.BigInteger] = bigIntGen.map(_.bigInteger)
-    val bigDecimalGen: Gen[BigDecimal] = doubleGen.map(BigDecimal(_))
-    val javaBigDecimalGen: Gen[java.math.BigDecimal] = bigDecimalGen.map(_.bigDecimal)
-    val byteArrayGen: Gen[Array[Byte]] = Gen.listOf(intGen.map(_.toByte)).map(_.toArray)
 
     val primitiveJavaObjGen: Gen[Any] = Gen.oneOf(
       intGen, langIntegerGen, longGen, langLongGen, shortGen, langShortGen, floatGen, langFloatGen,
