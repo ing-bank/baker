@@ -25,7 +25,7 @@ class TypesModule extends ProtoEventAdapterModule {
     case types.FloatBig => createPrimitive(PrimitiveType.FLOAT_BIG)
     case types.IntBig => createPrimitive(PrimitiveType.INT_BIG)
     case types.ByteArray => createPrimitive(PrimitiveType.BYTE_ARRAY)
-    case types.Date => createPrimitive(PrimitiveType.JODA_DATETIME)
+    case types.Date => createPrimitive(PrimitiveType.DATE)
 
     case types.OptionType(entryType) =>
       val entryProto = ctx.toProto[protobuf.Type](entryType)
