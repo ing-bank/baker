@@ -1,5 +1,6 @@
 package com.ing.baker.types.modules
 
+import com.ing.baker.types
 import com.ing.baker.types.{Converters, Int64}
 import org.joda.time.{DateTime, LocalDate, LocalDateTime}
 import org.scalacheck.Gen
@@ -25,9 +26,9 @@ class JodaTimeModuleSpec extends WordSpecLike with Matchers with Checkers {
 
     "be able to parse the types of DateTime, LocalDateTime and LocalDate" in {
 
-      Converters.readJavaType[DateTime] shouldBe Int64
-      Converters.readJavaType[LocalDateTime] shouldBe Int64
-      Converters.readJavaType[LocalDate] shouldBe Int64
+      Converters.readJavaType[DateTime] shouldBe types.Date
+      Converters.readJavaType[LocalDateTime] shouldBe types.Date
+      Converters.readJavaType[LocalDate] shouldBe types.Date
     }
 
     "be able to read/write all DateTime instances" in {

@@ -10,7 +10,7 @@ class JodaTimeModule extends TypeModule {
     isAssignableToBaseClass(javaType, classOf[LocalDateTime]) ||
     isAssignableToBaseClass(javaType, classOf[LocalDate])
 
-  override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): Type = Int64
+  override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): Type = Date
 
   override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): Any =
     (value, javaType) match {

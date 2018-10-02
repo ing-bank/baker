@@ -17,6 +17,7 @@ sealed trait Type {
       case (Bool, Bool) => true
       case (Byte, Byte) => true
       case (Char, Char) => true
+      case (Date, Date) => true
       case (Int16, Int16) => true
       case (Int32, Int32 | Int16) => true
       case (Int64, Int64 | Int32 | Int16) => true
@@ -25,14 +26,15 @@ sealed trait Type {
       case (Float64, Float64 | Float32) => true
       case (FloatBig, FloatBig | Float32 | Float64) => true
 
-      case (OptionType(entryTypeA), OptionType(entryTypeB)) =>
-        entryTypeA.isAssignableFrom(entryTypeB)
+      case (OptionType(entryTypeA), OptionType(entryTypeB)) => entryTypeA.isAssignableFrom(entryTypeB)
 
-      case (OptionType(entryType), otherType) =>
-        entryType.isAssignableFrom(otherType)
+      case (OptionType(entryType), otherType) => entryType.isAssignableFrom(otherType)
 
-      case (ListType(entryTypeA), ListType(entryTypeB)) =>
-        entryTypeA.isAssignableFrom(entryTypeB)
+      case (ListType(entryTypeA), ListType(entryTypeB)) => entryTypeA.isAssignableFrom(entryTypeB)
+
+      case (EnumType(optionsA), EnumType(optionsB)) => optionsB.subsetOf(optionsA)
+
+      case (MapType(valueTypeA), MapType(valueTypeB)) => valueTypeA.isAssignableFrom(valueTypeB)
 
       case (RecordType(entriesA), RecordType(entriesB)) =>
         val entriesMap: Map[String, Type] = entriesB.map(f => f.name -> f.`type`).toMap
@@ -42,11 +44,6 @@ sealed trait Type {
             case Some(fieldType) => f.`type`.isAssignableFrom(fieldType)
           }
         }
-      case (EnumType(optionsA), EnumType(optionsB)) =>
-        optionsB.subsetOf(optionsA)
-
-      case (MapType(valueTypeA), MapType(valueTypeB)) =>
-        valueTypeA.isAssignableFrom(valueTypeB)
 
       case _ => false
     }
@@ -66,11 +63,11 @@ case class OptionType(entryType: Type) extends Type
 
 case class EnumType(options: Set[String]) extends Type
 
+case class RecordField(name: String, `type`: Type)
+
 case class RecordType(fields: Seq[RecordField]) extends Type
 
 case class MapType(valueType: Type) extends Type
-
-case class RecordField(name: String, `type`: Type)
 
 trait PrimitiveType extends Type
 
@@ -133,4 +130,13 @@ case object ByteArray extends PrimitiveType
   * Character array
   */
 case object CharArray extends PrimitiveType
+
+/**
+  * Date is technically equal to Int64
+  *
+  * The definition we use is:
+  *
+  * A UTC date in the ISO-8601 calendar system with millisecond precision
+  */
+case object Date extends PrimitiveType
 
