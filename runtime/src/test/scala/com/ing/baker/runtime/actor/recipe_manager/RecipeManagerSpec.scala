@@ -41,7 +41,7 @@ class RecipeManagerSpec  extends BakerRuntimeTestBase {
 
       val futureGetResult = recipeManager.ask(GetRecipe(recipeId))(timeout)
       Await.result(futureGetResult, timeout) match {
-        case RecipeFound(recipe) => recipe
+        case RecipeFound(recipe, _) => recipe
         case NoRecipeFound(_) => fail("Recipe not found")
         case _ => fail("Unknown response received")
       }
