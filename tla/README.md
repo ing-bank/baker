@@ -50,3 +50,16 @@ set. Fixed lots of unrealistic corner cases found by the TLA model
 checker in the algorithm so that it does not randomly generate states
 but knows about how the system behaves. This generates less number of
 states and we are able to improve the algorithm step by step.
+
+### ClusterV6 Spec
+Added the deadNodes:Set variable to keep track of the nodes going down,
+so they do not come up again. This is the assumption for this version
+of the algorithm. They start as a healthy cluster and do not come back
+after they are down.
+* A temporal property is also introduced: After a split brain state we
+are able to recover eventually and go to consistent state later.
+SplitBrainRecovery == SplitBrain ~> (~SplitBrain /\ ConsistentLeader)
+* Result: TLA Model Checker finds a Split Brain situation which does
+not eventually recover to a consistent state which should be
+investigated further to see whether an improvement in the algorithm is
+possible or not.
