@@ -304,7 +304,8 @@ object RecipeCompiler {
 
     val errors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors
 
-    val recipeId = (recipe.name, petriNet, initialMarking, errors, recipe.eventReceivePeriod, recipe.retentionPeriod).hashCode.toString
+    val recipeId = CompiledRecipe.computeRecipeId(
+      recipe.name, petriNet, initialMarking, errors, recipe.eventReceivePeriod, recipe.retentionPeriod)
 
     val compiledRecipe = CompiledRecipe(
       name = recipe.name,

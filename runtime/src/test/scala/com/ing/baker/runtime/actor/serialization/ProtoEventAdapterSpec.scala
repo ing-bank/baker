@@ -94,10 +94,9 @@ object ProtoEventAdapterSpec {
     val recipeEntriesGen = GenUtil.tuple(recipeIdGen, recipeGen)
 
     val recipeInformationGen: Gen[RecipeInformation] = for {
-      recipeId <- recipeIdGen
       compiledRecipe <- recipeGen
       timestamp <- timestampGen
-    } yield RecipeInformation(recipeId, compiledRecipe, timestamp)
+    } yield RecipeInformation(compiledRecipe, timestamp)
 
     val allRecipesGen: Gen[AllRecipes] = Gen.listOf(recipeInformationGen).map(AllRecipes(_))
 

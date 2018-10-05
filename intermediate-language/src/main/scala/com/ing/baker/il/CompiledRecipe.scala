@@ -6,6 +6,14 @@ import com.ing.baker.petrinet.api.Marking
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.FiniteDuration
 
+object CompiledRecipe {
+
+  def computeRecipeId(name: String, petriNet: RecipePetriNet, initialMarking: Marking[Place], errors: Seq[String],
+                      eventReceivePeriod: Option[FiniteDuration], retentionPeriod: Option[FiniteDuration]) =
+
+    (name, petriNet, initialMarking, errors, eventReceivePeriod, retentionPeriod).hashCode.toString
+}
+
 /**
   * A Compiled recipe.
   */

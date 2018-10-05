@@ -2,6 +2,7 @@ package com.ing.baker.runtime.actor.serialization.modules
 
 import java.util.concurrent.TimeUnit
 
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.{Node, RecipePetriNet}
 import com.ing.baker.petrinet.api.{IdentifiableOps, Marking, PetriNet}
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization.tokenIdentifier
@@ -217,7 +218,7 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
     case protobuf.IngredientDescriptor(Some(name), Some(ingredientType)) =>
       il.IngredientDescriptor(name, ctx.toDomain[types.Type](ingredientType))
 
-    case protobuf.CompiledRecipe(Some(name), Some(recipeId), Some(graphMsg), producedTokens, validationErrors, eventReceiveMillis, retentionMillis) =>
+    case protobuf.CompiledRecipe(Some(name), optionalRecipeId, Some(graphMsg), producedTokens, validationErrors, eventReceiveMillis, retentionMillis) =>
 
       val eventReceivePeriod = eventReceiveMillis.map(Duration(_, TimeUnit.MILLISECONDS))
       val retentionPeriod = retentionMillis.map(Duration(_, TimeUnit.MILLISECONDS))
@@ -231,6 +232,11 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
           accumulated.add(place, value, count)
         case _ ⇒ throw new IllegalStateException("Missing data in persisted ProducedToken")
       }
+
+      def computeRecipeId(): String = CompiledRecipe.computeRecipeId(
+        name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
+
+      val recipeId = optionalRecipeId.getOrElse(computeRecipeId())
 
       il.CompiledRecipe(name, recipeId, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
 

@@ -176,7 +176,7 @@ public class JBakerTest {
         verify(mockBaker).getAllRecipes(any(FiniteDuration.class));
 
         when(mockBaker.getRecipe(any(String.class), any(FiniteDuration.class)))
-                .thenReturn(new RecipeInformation(testRecipeId, null, 0l, new scala.collection.immutable.HashSet<String>()));
+                .thenReturn(new RecipeInformation(null, 0l, new scala.collection.immutable.HashSet<String>()));
         jBaker.getRecipe(testRecipeId);
         verify(mockBaker).getRecipe(eq(testRecipeId), any(FiniteDuration.class));
 
