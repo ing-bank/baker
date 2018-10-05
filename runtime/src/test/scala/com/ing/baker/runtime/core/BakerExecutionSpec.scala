@@ -10,7 +10,7 @@ import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.CaseClassIngredient
-import com.ing.baker.recipe.common.InteractionFailureStrategy
+import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy}
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
 import com.ing.baker.recipe.scaladsl.{Recipe, _}
 import com.ing.baker.types.PrimitiveValue
@@ -123,6 +123,44 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           "initialIngredient" -> initialIngredientValue,
           "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
     }
+
+    "Fire an event twice if two Interactions fire it both" in {
+
+      val recipe =
+        Recipe("IngredientProvidedRecipe")
+          .withInteractions(
+            interactionTwo
+              .withOverriddenIngredientName("initialIngredientOld", "initialIngredient"),
+            fireTwoEventsInteraction,
+            interactionOne
+              .withRequiredEvents(eventFromInteractionTwo))
+          .withSensoryEvents(initialEvent)
+
+      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
+
+//      val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+//      println("recipe visualisation:")
+//      println(baker.getCompiledRecipe(recipeId).getRecipeVisualization)
+//      println("petrinet visualisation:")
+//      println(baker.getCompiledRecipe(recipeId).getPetriNetVisualization)
+
+      when(testInteractionTwoMock.apply(anyString()))
+        .thenReturn(EventFromInteractionTwo("ingredient2"))
+      when(testFireTwoEventsInteractionMock.apply(anyString()))
+        .thenReturn(Event1FromInteractionSeven("ingredient3"))
+
+      val processId = UUID.randomUUID().toString
+
+      baker.bake(recipeId, processId)
+      baker.processEvent(processId, InitialEvent(initialIngredientValue))
+
+      verify(testInteractionTwoMock).apply(initialIngredientValue)
+      verify(testFireTwoEventsInteractionMock).apply(initialIngredientValue)
+      verify(testInteractionOneMock).apply(processId, initialIngredientValue)
+      baker.getProcessState(processId).eventNames should contain
+        ("InitialEvent", "Event1FromInteractionSeven", "EventFromInteractionTwo", "InteractionOneSuccessful")
+    }
+
 
     "only allow a sensory event be fired once if the max firing limit is set one" in {
       val recipe =
