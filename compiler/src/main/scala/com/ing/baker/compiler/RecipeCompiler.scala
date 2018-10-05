@@ -1,6 +1,8 @@
 package com.ing.baker
 package compiler
 
+import java.io.{ByteArrayOutputStream, ObjectOutputStream}
+
 import com.ing.baker.il.RecipeValidations.postCompileValidations
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
@@ -302,7 +304,7 @@ object RecipeCompiler {
 
     val errors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors
 
-    val recipeId = (recipe.name, petriNet, initialMarking, errors, recipe.eventReceivePeriod, recipe.retentionPeriod).hashCode().toString
+    val recipeId = (recipe.name, petriNet, initialMarking, errors, recipe.eventReceivePeriod, recipe.retentionPeriod).hashCode.toString
 
     val compiledRecipe = CompiledRecipe(
       name = recipe.name,
