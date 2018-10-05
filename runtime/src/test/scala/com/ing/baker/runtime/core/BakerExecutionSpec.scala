@@ -139,10 +139,10 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
 
 //      val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      println("recipe visualisation:")
-      println(baker.getCompiledRecipe(recipeId).getRecipeVisualization)
-      println("petrinet visualisation:")
-      println(baker.getCompiledRecipe(recipeId).getPetriNetVisualization)
+//      println("recipe visualisation:")
+//      println(baker.getCompiledRecipe(recipeId).getRecipeVisualization)
+//      println("petrinet visualisation:")
+//      println(baker.getCompiledRecipe(recipeId).getPetriNetVisualization)
 
       when(testInteractionTwoMock.apply(anyString()))
         .thenReturn(EventFromInteractionTwo("ingredient2"))
