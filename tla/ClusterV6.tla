@@ -157,13 +157,11 @@ ASSUME Cardinality(Nodes) > 1
     }
   }
   
-  
   fair process (N \in Nodes)            
   {
       Check: while(IsMember(self)) {
                Receive: either ReceiveUnreachable()
                             or ReceiveReachable() 
-\*                            or ReceiveMemberUp()
                             or ReceiveMemberRemoved()
                             or ReceiveLeaderChanged();
                Sbr: SbrDecision()  
@@ -320,7 +318,7 @@ ConsistentLeader == \A n1 \in Nodes :
                           THEN leader[n1] = leader[n2]
                           ELSE TRUE
 
-(* At any moment this split brain may happen which should be resolved at later steps. see SplitBrainRecovery temporal formula *)
+(* At any moment this split brain state may happen which should be resolved at later steps. see SplitBrainRecovery temporal formula *)
 SplitBrain == \E n1 \in Nodes : 
                 \E n2 \in Nodes \ {n1} :
                      \* empty members set means that node is not part of the cluster
@@ -328,10 +326,13 @@ SplitBrain == \E n1 \in Nodes :
                        THEN members[n1] \cap members[n2] = {} \* Intersection of two sets is empty set (they have commons members)
                        ELSE FALSE
 
+(* No splits detected in the cluster *)                       
+NoSplitBrain == ~SplitBrain
+                       
 (* Temporal formula which gives the guarantee of the eventual resolution of the SplitBrain situation *)
-SplitBrainRecovery == SplitBrain ~> (~SplitBrain /\ ConsistentLeader)
+SplitBrainRecovery == SplitBrain ~> (NoSplitBrain /\ ConsistentLeader)
           
 =============================================================================
 \* Modification History
-\* Last modified Tue Oct 02 17:01:41 CEST 2018 by bekiroguz
+\* Last modified Fri Oct 05 15:54:15 CEST 2018 by bekiroguz
 \* Created Fri Sep 21 14:45:57 CEST 2018 by bekiroguz

@@ -122,7 +122,7 @@ ASSUME Cardinality(Nodes) > 1
       with (newLeader \in Nodes \ ({leader[self]} \cup deadNodes), oldLeader = leader[self]) {
         debug[self] := <<"receive leader changed. newLeader=", newLeader>>;
       
-        \* If the leader is changed, then it must be either already unreachable or removed. Then we receive the new leader.
+        \* If the leader is changed, then the oldLeader must be either already unreachable or removed. Then we receive the new leader.
         if (Contains(unreachables[self], oldLeader) \/ ~Contains(members[self], oldLeader)) {
           \* assign the new leader 
           leader[self] := newLeader;        
@@ -157,13 +157,11 @@ ASSUME Cardinality(Nodes) > 1
     }
   }
   
-  
   fair process (N \in Nodes)            
   {
       Check: while(IsMember(self)) {
                Receive: either ReceiveUnreachable()
                             or ReceiveReachable() 
-\*                            or ReceiveMemberUp()
                             or ReceiveMemberRemoved()
                             or ReceiveLeaderChanged();
                Sbr: SbrDecision()  
@@ -327,11 +325,13 @@ SplitBrain == \E n1 \in Nodes :
                      IF Cardinality(members[n1]) > 0 /\ Cardinality(members[n2]) > 0 
                        THEN members[n1] \cap members[n2] = {} \* Intersection of two sets is empty set (they have commons members)
                        ELSE FALSE
-
+                       
+NoSplitBrain == ~SplitBrain
+                       
 (* Temporal formula which gives the guarantee of the eventual resolution of the SplitBrain situation *)
 SplitBrainRecovery == SplitBrain ~> (~SplitBrain /\ ConsistentLeader)
           
 =============================================================================
 \* Modification History
-\* Last modified Tue Oct 02 16:48:54 CEST 2018 by bekiroguz
+\* Last modified Fri Oct 05 15:45:03 CEST 2018 by bekiroguz
 \* Created Fri Sep 21 14:45:57 CEST 2018 by bekiroguz

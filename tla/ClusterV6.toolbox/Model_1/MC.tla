@@ -7,22 +7,22 @@ A, B, C
 ----
 
 \* MV CONSTANT definitions Nodes
-const_1538491739080336000 == 
+const_153874711598218000 == 
 {A, B, C}
 ----
 
 \* SPECIFICATION definition @modelBehaviorSpec:0
-spec_1538491739080337000 ==
+spec_153874711598219000 ==
 Spec
 ----
 \* INVARIANT definition @modelCorrectnessInvariants:0
-inv_1538491739080338000 ==
+inv_153874711598220000 ==
 TypeOK
 ----
-\* PROPERTY definition @modelCorrectnessProperties:0
-prop_1538491739080339000 ==
-SplitBrainRecovery
+\* INVARIANT definition @modelCorrectnessInvariants:1
+inv_153874711598221000 ==
+NoSplitBrain
 ----
 =============================================================================
 \* Modification History
-\* Created Tue Oct 02 16:48:59 CEST 2018 by bekiroguz
+\* Created Fri Oct 05 15:45:15 CEST 2018 by bekiroguz
