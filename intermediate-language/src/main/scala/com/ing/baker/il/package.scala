@@ -2,8 +2,6 @@ package com.ing.baker
 
 import java.security.MessageDigest
 
-import com.ing.baker.il.ActionType.{InteractionAction, SieveAction}
-import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, MissingEventTransition, MultiFacilitatorTransition, Place, Transition}
 
 
@@ -13,18 +11,13 @@ package object il {
   val SuccessEventAppend = "Successful"
   val exhaustedEventAppend = "RetryExhausted"
 
-  // TODO remove this implicit class
   implicit class TransitionAdditions(transition: Transition) {
 
     def isInteraction: Boolean = PartialFunction.cond(transition) {
-      case t: InteractionTransition => t.actionType == InteractionAction
+      case _: InteractionTransition => true
     }
 
     def isMultiFacilitatorTransition: Boolean = transition.isInstanceOf[MultiFacilitatorTransition]
-
-    def isSieve: Boolean = PartialFunction.cond(transition) {
-      case t: InteractionTransition => t.actionType == SieveAction
-    }
 
     def isEventMissing: Boolean = transition.isInstanceOf[MissingEventTransition]
 

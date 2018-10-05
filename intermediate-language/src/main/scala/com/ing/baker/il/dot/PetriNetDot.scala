@@ -10,8 +10,8 @@ import scalax.collection.io.dot.implicits._
 object PetriNetDot {
 
   def labelFn[P, T]: Either[P, T] ⇒ String = node ⇒ node match {
-    case Left(p)  ⇒ s"p$p"
-    case Right(t) ⇒ s"t$t"
+    case Left(p)  ⇒ s"$p"
+    case Right(t) ⇒ s"$t"
   }
 
   def petriNetTheme[P, T]: GraphTheme[Either[P, T], WLDiEdge] = new GraphTheme[Either[P, T], WLDiEdge] {

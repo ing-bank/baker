@@ -1,9 +1,7 @@
 package com.ing.baker.runtime.actor.process_instance
 
 import com.ing.baker.petrinet.api.{HMap, Identifiable, Marking, MultiSet}
-import com.ing.baker.petrinet.runtime.ExceptionStrategy
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
-import com.ing.baker.runtime.actor.InternalBakerMessage
+import com.ing.baker.runtime.actor.{BakerProtoMessage, InternalBakerMessage}
 
 /**
  * Describes the messages to and from a PetriNetInstance actor.
@@ -14,15 +12,6 @@ object ProcessInstanceProtocol {
    * Type alias for marking data.
    */
   type MarkingData = Map[Long, MultiSet[_]]
-
-  implicit def fromExecutionInstance[P[_], T, S](instance: com.ing.baker.petrinet.runtime.Instance[P, T, S])(implicit placeIdentifier: Identifiable[P[_]], transitionIdentifier: Identifiable[T]): InstanceState =
-    InstanceState(instance.sequenceNr, marshal[P](instance.marking), instance.state, instance.jobs.mapValues(fromExecutionJob(_)).map(identity))
-
-  implicit def fromExecutionJob[P[_], T, S, E](job: com.ing.baker.petrinet.runtime.Job[P, T, S])(implicit placeIdentifier: Identifiable[P[_]], transitionIdentifier: Identifiable[T]): JobState =
-    JobState(job.id, transitionIdentifier(job.transition.asInstanceOf[T]).value, marshal(job.consume), job.input, job.failure.map(fromExecutionExceptionState))
-
-  implicit def fromExecutionExceptionState(exceptionState: com.ing.baker.petrinet.runtime.ExceptionState): ExceptionState =
-    ExceptionState(exceptionState.failureCount, exceptionState.failureReason, exceptionState.failureStrategy)
 
   def marshal[P[_]](marking: Marking[P])(implicit identifiable: Identifiable[P[_]]): MarkingData = marking.map {
     case (p, mset) ⇒ identifiable(p).value -> mset
@@ -35,7 +24,7 @@ object ProcessInstanceProtocol {
   /**
    * A common trait for all commands to a petri net instance.
    */
-  sealed trait Command extends InternalBakerMessage
+  sealed trait Command extends BakerProtoMessage
 
   /**
    * Command to request the current state of the petri net instance.
@@ -70,19 +59,19 @@ object ProcessInstanceProtocol {
   /**
    * A common trait for all responses coming from a petri net instance.
    */
-  sealed trait Response extends InternalBakerMessage
+  sealed trait Response extends BakerProtoMessage
 
   /**
    * A response send in case any other command then 'Initialize' is sent to the actor in unitialized state.
    *
-   * @param id The identifier of the uninitialized actor.
+   * @param processId The identifier of the uninitialized actor.
    */
-  case class Uninitialized(id: String) extends Response
+  case class Uninitialized(processId: String) extends Response
 
   /**
    * Returned in case a second Initialize is send after a first is processed
    */
-  case object AlreadyInitialized extends Response
+  case class AlreadyInitialized(processId: String) extends Response
 
   /**
     * Indicates that the received FireTransition command with a specific correlation id was already received.
@@ -152,6 +141,22 @@ object ProcessInstanceProtocol {
     failureReason: String,
     failureStrategy: ExceptionStrategy)
 
+  sealed trait ExceptionStrategy
+
+  object ExceptionStrategy {
+
+    case object Fatal extends ExceptionStrategy
+
+    case object BlockTransition extends ExceptionStrategy
+
+    case class RetryWithDelay(delay: Long) extends ExceptionStrategy {
+      require(delay > 0, "Delay must be greater then zero")
+    }
+
+    case class Continue(marking: MarkingData, output: Any) extends ExceptionStrategy
+  }
+
+
   /**
    * Response containing the state of the `Job`.
    */
@@ -163,7 +168,7 @@ object ProcessInstanceProtocol {
       exceptionState: Option[ExceptionState]) {
 
     def isActive: Boolean = exceptionState match {
-      case Some(ExceptionState(_, _, RetryWithDelay(_))) ⇒ true
+      case Some(ExceptionState(_, _, ExceptionStrategy.RetryWithDelay(_))) ⇒ true
       case None                                          ⇒ true
       case _                                             ⇒ false
     }

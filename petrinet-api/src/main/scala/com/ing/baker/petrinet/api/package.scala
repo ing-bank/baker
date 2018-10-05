@@ -71,11 +71,13 @@ package object api extends MultiSetOps with MarkingOps {
       case _        ⇒ throw new IllegalStateException(s"node $node is not a transition!")
     }
 
-    def incomingPlaces: Set[P] = node.incoming.map(_.source.asPlace)
-    def incomingTransitions: Set[T] = node.incoming.map(_.source.asTransition)
+    def incomingNodes: Set[Either[P, T]] = node.incoming.map(_.source.value)
+    def incomingPlaces: Set[P] = incomingNodes.collect { case Left(place) => place }
+    def incomingTransitions: Set[T] = incomingNodes.collect { case Right(transition) => transition }
 
-    def outgoingPlaces: Set[P] = node.outgoing.map(_.target.asPlace)
-    def outgoingTransitions: Set[T] = node.outgoing.map(_.target.asTransition)
+    def outgoingNodes: Set[Either[P, T]] = node.outgoing.map(_.target.value)
+    def outgoingPlaces: Set[P] = outgoingNodes.collect { case Left(place) => place }
+    def outgoingTransitions: Set[T] = outgoingNodes.collect { case Right(transition) => transition }
 
     def isPlace: Boolean = node.value.isLeft
     def isTransition: Boolean = node.value.isRight
@@ -91,18 +93,6 @@ package object api extends MultiSetOps with MarkingOps {
 
     def findTPEdge(from: T, to: P): Option[WLDiEdge[Either[P, T]]] =
       graph.get(Right(from)).outgoing.find(_.target.value == Left(to)).map(_.toOuter)
-
-    def incomingPlaces(t: T): Set[P] = graph.get(t).incomingPlaces
-
-    def incomingTransitions(p: P): Set[T] = graph.get(p).incomingTransitions
-
-    def outgoingPlaces(t: T): Set[P] = graph.get(t).outgoingPlaces
-
-    def outgoingTransitions(p: P): Set[T] = graph.get(p).outgoingTransitions
-
-    def places(): Set[P] = graph.nodes.collect { case n if n.isPlace ⇒ n.asPlace }.toSet
-
-    def transitions(): Set[T] = graph.nodes.collect { case n if n.isTransition ⇒ n.asTransition }.toSet
   }
 }
 

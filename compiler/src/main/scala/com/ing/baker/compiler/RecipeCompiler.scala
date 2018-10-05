@@ -47,26 +47,23 @@ object RecipeCompiler {
                                             preconditionTransition: String => Option[Transition],
                                             interactionTransition: String => Option[Transition]): (Seq[Arc], Seq[String]) = {
 
-    interaction.requiredOneOfEvents.toSeq.zipWithIndex.map {
-      case (orGroup: Set[String], index: Int) =>
-        // only one `Place` for all the OR events
-        val eventPreconditionPlace = createPlace(label = s"${interaction.name}-or-$index",
-          placeType = EventOrPreconditionPlace)
+    interaction.requiredOneOfEvents.toSeq.zipWithIndex.map { case (orGroup: Set[String], index: Int) =>
+      // only one `Place` for all the OR events
+      val eventPreconditionPlace = createPlace(label = s"${interaction.name}-or-$index", placeType = EventOrPreconditionPlace)
 
-        orGroup.toSeq.map { eventName =>
-          buildEventPreconditionArcs(eventName,
-            eventPreconditionPlace,
-            preconditionTransition,
-            interactionTransition(interaction.name).get)
-        }.unzipFlatten
+      orGroup.toSeq.map { eventName =>
+        buildEventPreconditionArcs(eventName,
+          eventPreconditionPlace,
+          preconditionTransition,
+          interactionTransition(interaction.name).get)
+      }.unzipFlatten
     }.unzipFlatten
   }
 
-  private def buildEventPreconditionArcs(
-                                          eventName: String,
-                                          preconditionPlace: Place[_],
-                                          preconditionTransition: String => Option[Transition],
-                                          interactionTransition: Transition): (Seq[Arc], Seq[String]) = {
+  private def buildEventPreconditionArcs(eventName: String,
+                                         preconditionPlace: Place[_],
+                                         preconditionTransition: String => Option[Transition],
+                                         interactionTransition: Transition): (Seq[Arc], Seq[String]) = {
 
     val eventTransition = preconditionTransition(eventName)
 
@@ -89,10 +86,15 @@ object RecipeCompiler {
                                         findInternalEventByEvent: EventDescriptor => Option[Transition]): Seq[Arc] = {
     val resultPlace = createPlace(label = interaction.label, placeType = InteractionEventOutputPlace)
     if (interaction.eventsToFire.nonEmpty) {
-      val eventArcs = events.map { event =>
-        val internalEventTransition = findInternalEventByEvent(event).get
-
-        arc(resultPlace, internalEventTransition, 1, Some(event.name))
+      val eventArcs = events.flatMap { event =>
+        val eventCombinerPlace: Place[_] = createPlace(label = event.name, placeType = IntermediatePlace)
+        //Create a new intermediate transition
+        val interactionToEventTransition: IntermediateTransition = IntermediateTransition(s"${interaction.interactionName}:${event.name}")
+        //link the new transition to the event input place
+        val intermediateTransitionToEventCombinerPlace: Arc = arc(interactionToEventTransition, eventCombinerPlace, 1)
+        //link the interaction output place to the interactionTransition
+        val interactionOutputPlaceToInteramediateTransition: Arc = arc(resultPlace, interactionToEventTransition, 1, Some(event.name))
+        Seq(intermediateTransitionToEventCombinerPlace, interactionOutputPlaceToInteramediateTransition)
       }
       arc(interaction, resultPlace, 1) +: eventArcs
     }
@@ -186,12 +188,14 @@ object RecipeCompiler {
     // It should be provided at runtime from outside the active petri net (marking)
     val interactionTransitions = recipe.interactions.map(_.toInteractionTransition(recipe.defaultFailureStrategy, allIngredientNames))
 
-    val sieveTransitions = recipe.sieves.map(_.toSieveTransition(recipe.defaultFailureStrategy, allIngredientNames))
+    val sieveTransitions = recipe.sieves.map(_.toInteractionTransition(recipe.defaultFailureStrategy, allIngredientNames))
 
     val allInteractionTransitions: Seq[InteractionTransition] = sieveTransitions ++ interactionTransitions
 
     // events provided from outside
-    val sensoryEventTransitions: Seq[EventTransition] = recipe.sensoryEvents.map { event => EventTransition(eventToCompiledEvent(event), isSensoryEvent = true, event.maxFiringLimit) }.toSeq
+    val sensoryEventTransitions: Seq[EventTransition] = recipe.sensoryEvents.map {
+      event => EventTransition(eventToCompiledEvent(event), isSensoryEvent = true, event.maxFiringLimit)
+    }.toSeq
 
     // events provided by other transitions / actions
     val interactionEventTransitions: Seq[EventTransition] = allInteractionTransitions.flatMap { t =>
@@ -219,9 +223,15 @@ object RecipeCompiler {
       }
     )
 
-    def findEventTransitionByEventName (eventName: String) = allEventTransitions.find(_.event.name == eventName)
+    def findEventTransitionByEventName(eventName: String) = allEventTransitions.find(_.event.name == eventName)
 
     def findInteractionByLabel(label: String) = allInteractionTransitions.find(_.label == label)
+
+
+    //Create events combiner input places
+    val eventInputArcs: Seq[Arc] = interactionEventTransitions.flatMap(
+      (event: EventTransition) => Seq(arc(createPlace(event.label, IntermediatePlace), event, 1))
+    )
 
     // This generates precondition arcs for Required Events (AND).
     val (eventPreconditionArcs, preconditionANDErrors) = actionDescriptors.map { t =>
@@ -275,6 +285,7 @@ object RecipeCompiler {
           e => interactionEventTransitions.find(_.event.name == e.name)))
 
     val arcs = (interactionArcs
+      ++ eventInputArcs
       ++ eventPreconditionArcs
       ++ eventOrPreconditionArcs
       ++ eventLimiterArcs

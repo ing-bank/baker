@@ -1,23 +1,25 @@
 package com.ing.baker.runtime.actor.recipe_manager
 
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.actor.InternalBakerMessage
+import com.ing.baker.runtime.actor.BakerProtoMessage
 
 object RecipeManagerProtocol {
   //Add a recipe
-  case class AddRecipe(compiledRecipe: CompiledRecipe) extends InternalBakerMessage
+  case class AddRecipe(compiledRecipe: CompiledRecipe) extends BakerProtoMessage
 
-  case class AddRecipeResponse(recipeId: String) extends InternalBakerMessage
+  case class AddRecipeResponse(recipeId: String) extends BakerProtoMessage
 
   //Get a specific recipe
-  case class GetRecipe(recipeId: String) extends InternalBakerMessage
+  case class GetRecipe(recipeId: String) extends BakerProtoMessage
 
-  case class RecipeFound(compiledRecipe: CompiledRecipe) extends InternalBakerMessage
+  case class RecipeFound(compiledRecipe: CompiledRecipe, timestamp: Long) extends BakerProtoMessage
 
-  case class NoRecipeFound(recipeId: String) extends InternalBakerMessage
+  case class NoRecipeFound(recipeId: String) extends BakerProtoMessage
 
-  //Get alla recipe
-  case object GetAllRecipes extends InternalBakerMessage
+  //Get all recipes
+  case object GetAllRecipes extends BakerProtoMessage
 
-  case class AllRecipes(compiledRecipes: Map[String, CompiledRecipe]) extends InternalBakerMessage
+  case class RecipeInformation(recipeId: String, compiledRecipe: CompiledRecipe, timestamp: Long)
+
+  case class AllRecipes(recipes: Seq[RecipeInformation]) extends BakerProtoMessage
 }

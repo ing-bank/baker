@@ -26,7 +26,7 @@ object BakerResponse {
     case _: ProcessInstanceProtocol.TransitionFired => SensoryEventStatus.Received
     case _: ProcessInstanceProtocol.TransitionNotEnabled => SensoryEventStatus.FiringLimitMet
     case _: ProcessInstanceProtocol.AlreadyReceived => SensoryEventStatus.AlreadyReceived
-    case ProcessIndexProtocol.ProcessUninitialized(processId) => throw new NoSuchProcessException(s"No such process: $processId")
+    case ProcessIndexProtocol.NoSuchProcess(processId) => throw new NoSuchProcessException(s"No such process: $processId")
     case ProcessIndexProtocol.ReceivePeriodExpired(_) => SensoryEventStatus.ReceivePeriodExpired
     case ProcessIndexProtocol.ProcessDeleted(_) => SensoryEventStatus.ProcessDeleted
     case ProcessIndexProtocol.InvalidEvent(_, invalidEventMessage) => throw new IllegalArgumentException(invalidEventMessage)

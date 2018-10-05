@@ -1,22 +1,22 @@
 package com.ing.baker.runtime.actor.process_index
 
 import akka.stream.SourceRef
-import com.ing.baker.runtime.actor.InternalBakerMessage
+import com.ing.baker.runtime.actor.BakerProtoMessage
 import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.core.RuntimeEvent
 
 import scala.concurrent.duration.FiniteDuration
 
 object ProcessIndexProtocol {
-  sealed trait ProcessIndexMessage extends InternalBakerMessage {
+  sealed trait ProcessIndexMessage extends BakerProtoMessage {
     val processId: String
   }
 
   // -- COMMANDS
 
-  case object GetIndex extends InternalBakerMessage
+  case object GetIndex extends BakerProtoMessage
 
-  case class Index(entries: Set[ActorMetadata]) extends InternalBakerMessage
+  case class Index(entries: Seq[ActorMetadata]) extends BakerProtoMessage
 
   case class CreateProcess(recipeId: String, override val processId: String) extends ProcessIndexMessage
 
@@ -49,13 +49,13 @@ object ProcessIndexProtocol {
   /**
     * Returned if the process is unitialized
     */
-  case class ProcessUninitialized(override val processId: String) extends ProcessIndexMessage
+  case class NoSuchProcess(override val processId: String) extends ProcessIndexMessage
 
   /**
     * A response send in case when a process was already created in the past
     *
     * @param processId The identifier of the processId
     */
-  case class ProcessAlreadyInitialized(override val processId: String) extends ProcessIndexMessage
+  case class ProcessAlreadyExists(override val processId: String) extends ProcessIndexMessage
 
 }
