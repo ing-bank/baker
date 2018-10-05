@@ -135,25 +135,14 @@ object RecipeVisualizer {
   implicit class RecipePetriNetGraphFns(graph: RecipePetriNetGraph) {
 
     def compactNode(node: RecipePetriNetGraph#NodeT): RecipePetriNetGraph = {
-      //There is no input node so remove node
-      if (node.incomingTransitions.isEmpty) graph - node
-      //There is a input node so link incoming and outgoing together
-      else {
 
-        // Get the incoming edge (there is only one per definition of the result edge
-        val incomingEdges = node.incoming
-
-        // Get the outgoing edges and transitions
-        val outgoingEdges = node.outgoing
-
-        // Create new edges from incoming to outgoing transition
-        val newEdges = node.incomingNodes.flatMap { incomingNode =>
-          node.outgoingNodes.map(n => WLDiEdge[Node, String](incomingNode, n)(0, ""))
-        }
-
-        // Remove the incoming edge and node, combine outgoing edge and newly created edge, remove the outgoing edge and add the new one.
-        graph - node -- incomingEdges -- outgoingEdges ++ newEdges
+      // create direct edges from all incoming to outgoing nodes
+      val newEdges = node.incomingNodes.flatMap { incomingNode =>
+        node.outgoingNodes.map(n => WLDiEdge[Node, String](incomingNode, n)(0, ""))
       }
+
+      // remove the node, removes all it's incoming and outgoing edges and add the new direct edges
+      graph - node -- node.incoming -- node.outgoing ++ newEdges
     }
 
     def compactAllNodes(fn: RecipePetriNetGraph#NodeT => Boolean): RecipePetriNetGraph =
@@ -189,16 +178,17 @@ object RecipeVisualizer {
       }
 
   private def generateDot(graph: RecipePetriNetGraph, style: RecipeStyle, filter: String => Boolean, eventNames: Set[String], ingredientNames: Set[String]): String = {
+
     val myRoot = DotRootGraph(directed = graph.isDirected,
       id = None,
       attrStmts = style.commonNodeAttributes,
       attrList = style.rootAttributes)
 
-    def myNodeTransformer(innerNode: RecipePetriNetGraph#NodeT): Option[(DotGraph, DotNodeStmt)] = {
+    def recipeNodeTransformer(innerNode: RecipePetriNetGraph#NodeT): Option[(DotGraph, DotNodeStmt)] = {
       Some((myRoot, DotNodeStmt(nodeLabelFn(innerNode.value), nodeDotAttrFn(style)(innerNode, eventNames, ingredientNames))))
     }
 
-    def myEdgeTransformer(innerEdge: RecipePetriNetGraph#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
+    def recipeEdgeTransformer(innerEdge: RecipePetriNetGraph#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
 
       val source = innerEdge.edge.source
       val target = innerEdge.edge.target
@@ -212,25 +202,24 @@ object RecipeVisualizer {
       case _ => false
     }
 
-    // specifies which places to compact (remove)
+    // specifies which transitions to compact (remove)
     val transitionsToCompact = (node: RecipePetriNetGraph#NodeT) => node.value match {
       case Right(transition: Transition) => transition.isInstanceOf[IntermediateTransition]
       case _ => false
     }
 
+    // compacts all nodes that are not of interest to the recipe
     val compactedGraph = graph
       .compactAllNodes(placesToCompact)
       .compactAllNodes(transitionsToCompact)
 
-    val filteredGraph = compactedGraph.nodes.foldLeft(compactedGraph) {
-      case (graphAccumulator, node) =>
-        if (filter(node.toString)) graphAccumulator
-         else graphAccumulator - node
-    }
+    // filters out all the nodes that match the predicate function
+    val filteredGraph = compactedGraph -- compactedGraph.nodes.filter(n => !filter(n.toString))
 
+    // creates the .dot representation
     graph2DotExport(filteredGraph).toDot(dotRoot = myRoot,
-      edgeTransformer = myEdgeTransformer,
-      cNodeTransformer = Some(myNodeTransformer))
+      edgeTransformer = recipeEdgeTransformer,
+      cNodeTransformer = Some(recipeNodeTransformer))
   }
 
   def visualizeRecipe(recipe: CompiledRecipe,
