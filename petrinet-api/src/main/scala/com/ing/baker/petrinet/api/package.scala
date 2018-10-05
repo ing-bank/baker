@@ -32,12 +32,9 @@ package object api extends MultiSetOps with MarkingOps {
 
   implicit def extractId[T](e: T)(implicit identifiable: Identifiable[T]) = identifiable(e).value
 
-  implicit class IdentifiableOps[T: Identifiable](seq: Iterable[T]) {
+  implicit class IdentifiableOps[T : Identifiable](seq: Iterable[T]) {
     def findById(id: Long): Option[T] = seq.find(e ⇒ implicitly[Identifiable[T]].apply(e).value == id)
-
-    def getById(id: Long, name: String = "element"): T = findById(id).getOrElse {
-      throw new IllegalStateException(s"No $name found with id: $id")
-    }
+    def getById(id: Long, name: String = "element"): T = findById(id).getOrElse { throw new IllegalStateException(s"No $name found with id: $id") }
   }
 
   implicit class OptionOps(check: Boolean) {
@@ -60,46 +57,35 @@ package object api extends MultiSetOps with MarkingOps {
   type BiPartiteGraph[P, T, E[X] <: EdgeLikeIn[X]] = Graph[Either[P, T], E]
 
   implicit def placeToNode[P, T](p: P): Either[P, T] = Left(p)
-
   implicit def transitionToNode[P, T](t: T): Either[P, T] = Right(t)
 
   implicit class PetriNetGraphNodeOps[P, T](val node: BiPartiteGraph[P, T, WLDiEdge]#NodeT) {
 
     def asPlace: P = node.value match {
       case Left(p) ⇒ p
-      case _ ⇒ throw new IllegalStateException(s"node $node is not a place!")
+      case _       ⇒ throw new IllegalStateException(s"node $node is not a place!")
     }
 
     def asTransition: T = node.value match {
       case Right(t) ⇒ t
-      case _ ⇒ throw new IllegalStateException(s"node $node is not a transition!")
+      case _        ⇒ throw new IllegalStateException(s"node $node is not a transition!")
     }
 
-    def incomingPlaces: Set[P] = node.incoming
-      .filter(_.source.isPlace)
-      .map(_.source.asPlace)
+    def incomingNodes: Set[Either[P, T]] = node.incoming.map(_.source.value)
+    def incomingPlaces: Set[P] = incomingNodes.collect { case Left(place) => place }
+    def incomingTransitions: Set[T] = incomingNodes.collect { case Right(transition) => transition }
 
-    def incomingTransitions: Set[T] = node.incoming
-      .filter(_.source.isTransition)
-      .map(_.source.asTransition)
-
-    def outgoingPlaces: Set[P] = node.outgoing
-      .filter(_.target.isPlace)
-      .map(_.target.asPlace)
-
-    def outgoingTransitions: Set[T] = node.outgoing
-      .filter(_.target.isTransition)
-      .map(_.target.asTransition)
+    def outgoingNodes: Set[Either[P, T]] = node.outgoing.map(_.target.value)
+    def outgoingPlaces: Set[P] = outgoingNodes.collect { case Left(place) => place }
+    def outgoingTransitions: Set[T] = outgoingNodes.collect { case Right(transition) => transition }
 
     def isPlace: Boolean = node.value.isLeft
-
     def isTransition: Boolean = node.value.isRight
   }
 
   implicit class PetriNetGraphOps[P, T](val graph: BiPartiteGraph[P, T, WLDiEdge]) {
 
     def inMarking(t: T): MultiSet[P] = graph.get(t).incoming.map(e ⇒ e.source.asPlace -> e.weight.toInt).toMap
-
     def outMarking(t: T): MultiSet[P] = graph.get(t).outgoing.map(e ⇒ e.target.asPlace -> e.weight.toInt).toMap
 
     def findPTEdge(from: P, to: T): Option[WLDiEdge[Either[P, T]]] =
@@ -108,6 +94,5 @@ package object api extends MultiSetOps with MarkingOps {
     def findTPEdge(from: T, to: P): Option[WLDiEdge[Either[P, T]]] =
       graph.get(Right(from)).outgoing.find(_.target.value == Left(to)).map(_.toOuter)
   }
-
 }
 

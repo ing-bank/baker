@@ -1,14 +1,13 @@
-package com.ing.baker.runtime.visualisation
+package com.ing.baker.il
 
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.il.{CompiledRecipe, RecipeVisualizer}
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.scaladsl.{Recipe, _}
 import org.scalatest.{Matchers, WordSpecLike}
 
 import scala.language.postfixOps
 
-class RecipeVisualizationSpec extends WordSpecLike with Matchers {
+class RecipeVisualizerSpec extends WordSpecLike with Matchers {
 
   "The Recipe visualisation module" should {
 

@@ -87,7 +87,7 @@ object RecipeCompiler {
     val resultPlace = createPlace(label = interaction.label, placeType = InteractionEventOutputPlace)
     if (interaction.eventsToFire.nonEmpty) {
       val eventArcs = events.flatMap { event =>
-        val eventCombinerPlace: Place[_] = createPlace(label = s"IntermediatePlace:${event.name}", placeType = IntermediatePlace)
+        val eventCombinerPlace: Place[_] = createPlace(label = event.name, placeType = IntermediatePlace)
         //Create a new intermediate transition
         val interactionToEventTransition: IntermediateTransition = IntermediateTransition(s"${interaction.interactionName}:${event.name}")
         //link the new transition to the event input place
@@ -230,7 +230,7 @@ object RecipeCompiler {
 
     //Create events combiner input places
     val eventInputArcs: Seq[Arc] = interactionEventTransitions.flatMap(
-      (event: EventTransition) => Seq(arc(createPlace(s"IntermediatePlace:${event.label}", IntermediatePlace), event, 1))
+      (event: EventTransition) => Seq(arc(createPlace(event.label, IntermediatePlace), event, 1))
     )
 
     // This generates precondition arcs for Required Events (AND).

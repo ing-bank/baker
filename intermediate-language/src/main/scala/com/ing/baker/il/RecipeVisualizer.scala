@@ -132,6 +132,37 @@ object RecipeVisualizer {
 
   type RecipePetriNetGraph = Graph[Either[Place[_], Transition], WLDiEdge]
 
+  implicit class RecipePetriNetGraphFns(graph: RecipePetriNetGraph) {
+
+    def compactNode(node: RecipePetriNetGraph#NodeT): RecipePetriNetGraph = {
+      //There is no input node so remove node
+      if (node.incomingTransitions.isEmpty) graph - node
+      //There is a input node so link incoming and outgoing together
+      else {
+
+        // Get the incoming edge (there is only one per definition of the result edge
+        val incomingEdges = node.incoming
+
+        // Get the outgoing edges and transitions
+        val outgoingEdges = node.outgoing
+
+        // Create new edges from incoming to outgoing transition
+        val newEdges = node.incomingNodes.flatMap { incomingNode =>
+          node.outgoingNodes.map(n => WLDiEdge[Node, String](incomingNode, n)(0, ""))
+        }
+
+        // Remove the incoming edge and node, combine outgoing edge and newly created edge, remove the outgoing edge and add the new one.
+        graph - node -- incomingEdges -- outgoingEdges ++ newEdges
+      }
+    }
+
+    def compactAllNodes(fn: RecipePetriNetGraph#NodeT => Boolean): RecipePetriNetGraph =
+      graph.nodes.foldLeft(graph) {
+        case (acc, node) if fn(node) => acc.compactNode(node)
+        case (acc, _)                => acc
+      }
+  }
+
   private def nodeLabelFn: Either[Place[_], Transition] ⇒ String = {
     case Left(place) if place.isEmptyEventIngredient ⇒ s"empty:${place.label}"
     case Left(place) ⇒ place.label
@@ -175,69 +206,26 @@ object RecipeVisualizer {
       Some((myRoot, DotEdgeStmt(nodeLabelFn(source.value), nodeLabelFn(target.value), List.empty)))
     }
 
-    /**
-      * Removes a node from the graph & connecting all the adjacent nodes directly to each other.
-      */
-    def compactNode(graph: RecipePetriNetGraph,
-                    node: RecipePetriNetGraph#NodeT): RecipePetriNetGraph = {
-      //There is no input node so remove node
-      if (node.incomingTransitions.isEmpty) graph - node
-      //There is a input node so link incoming and outgoing together
-      else {
-
-        // The node coming into the transition
-        val incoming: Either[Place[_], Transition] =
-          if (node.incomingPlaces.isEmpty) Right(node.incomingTransitions.head)
-          else Left(node.incomingPlaces.head)
-
-        // Get the incoming edge (there is only one per definition of the result edge
-        val incomingEdge = node.incoming.head
-
-        // Get the outgoing edges and transitions
-        val outgoingEdges = node.outgoing
-
-        // Create new edges from incoming to outgoing transition
-        val newEdgesTransitions = node.outgoingTransitions.map(t =>
-          WLDiEdge[Node, String](incoming, Right(t))(0, ""))
-
-        val newEdgePlaces = node.outgoingPlaces.map(p =>
-          WLDiEdge[Node, String](incoming, Left(p))(0, ""))
-
-        // Remove the incoming edge and node, combine outgoing edge and newly created edge, remove the outgoing edge and add the new one.
-        (outgoingEdges zip (newEdgesTransitions ++ newEdgePlaces)).foldLeft(graph - node - incomingEdge) {
-          case (acc, (outgoingEdge, newEdge)) => acc - outgoingEdge + newEdge
-        }
-      }
+    // specifies which places to compact (remove)
+    val placesToCompact = (node: RecipePetriNetGraph#NodeT) => node.value match {
+      case Left(place: Place[_]) => !(place.isIngredient | place.isEmptyEventIngredient | place.isOrEventPrecondition)
+      case _ => false
     }
 
-    val formattedGraph = graph.nodes.foldLeft(graph) {
+    // specifies which places to compact (remove)
+    val transitionsToCompact = (node: RecipePetriNetGraph#NodeT) => node.value match {
+      case Right(transition: Transition) => transition.isInstanceOf[IntermediateTransition]
+      case _ => false
+    }
+
+    val compactedGraph = graph
+      .compactAllNodes(placesToCompact)
+      .compactAllNodes(transitionsToCompact)
+
+    val filteredGraph = compactedGraph.nodes.foldLeft(compactedGraph) {
       case (graphAccumulator, node) =>
-        node.value match {
-          case Left(place: Place[_]) if !(
-            place.isIngredient |
-              place.isEmptyEventIngredient |
-              place.isOrEventPrecondition) =>
-            compactNode(graphAccumulator, node)
-          case _ => graphAccumulator
-        }
-    }
-
-    val formattedGraph2 = formattedGraph.nodes.foldLeft(formattedGraph) {
-      case (graphAccumulator, node) =>
-        node.value match {
-          case Right(transition: Transition) if transition.isInstanceOf[IntermediateTransition] =>
-            compactNode(graphAccumulator, node)
-          case _ => graphAccumulator
-        }
-    }
-
-    val filteredGraph = formattedGraph2.nodes.foldLeft(formattedGraph2) {
-      case (graphAccumulator, edge) =>
-        if (filter(edge.toString)) {
-          graphAccumulator
-        } else {
-          graphAccumulator - edge
-        }
+        if (filter(node.toString)) graphAccumulator
+         else graphAccumulator - node
     }
 
     graph2DotExport(filteredGraph).toDot(dotRoot = myRoot,
