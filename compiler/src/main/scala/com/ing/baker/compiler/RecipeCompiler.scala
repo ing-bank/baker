@@ -24,10 +24,9 @@ object RecipeCompiler {
     */
   private def missingEventTransition[E](eventName: String): MissingEventTransition = MissingEventTransition(eventName)
 
-  private def buildEventAndPreconditionArcs(
-                                             interaction: InteractionDescriptor,
-                                             preconditionTransition: String => Option[Transition],
-                                             interactionTransition: String => Option[Transition]): (Seq[Arc], Seq[String]) = {
+  private def buildEventAndPreconditionArcs(interaction: InteractionDescriptor,
+                                            preconditionTransition: String => Option[Transition],
+                                            interactionTransition: String => Option[Transition]): (Seq[Arc], Seq[String]) = {
 
     //Find the event in available events
 
@@ -42,10 +41,9 @@ object RecipeCompiler {
     }.unzipFlatten
   }
 
-  private def buildEventORPreconditionArcs(
-                                            interaction: InteractionDescriptor,
-                                            preconditionTransition: String => Option[Transition],
-                                            interactionTransition: String => Option[Transition]): (Seq[Arc], Seq[String]) = {
+  private def buildEventORPreconditionArcs(interaction: InteractionDescriptor,
+                                           preconditionTransition: String => Option[Transition],
+                                           interactionTransition: String => Option[Transition]): (Seq[Arc], Seq[String]) = {
 
     interaction.requiredOneOfEvents.toSeq.zipWithIndex.map { case (orGroup: Set[String], index: Int) =>
       // only one `Place` for all the OR events
@@ -81,12 +79,10 @@ object RecipeCompiler {
   }
 
   // the (possible) event output arcs / places
-  private def interactionEventOutputArc(interaction: InteractionTransition,
-                                        events: Seq[EventDescriptor],
-                                        findInternalEventByEvent: EventDescriptor => Option[Transition]): Seq[Arc] = {
+  private def buildInteractionOutputArcs(interaction: InteractionTransition): Seq[Arc] = {
     val resultPlace = createPlace(label = interaction.label, placeType = InteractionEventOutputPlace)
     if (interaction.eventsToFire.nonEmpty) {
-      val eventArcs = events.flatMap { event =>
+      val eventArcs = interaction.eventsToFire.flatMap { event =>
         val eventCombinerPlace: Place[_] = createPlace(label = event.name, placeType = IntermediatePlace)
         //Create a new intermediate transition
         val interactionToEventTransition: IntermediateTransition = IntermediateTransition(s"${interaction.interactionName}:${event.name}")
@@ -101,18 +97,13 @@ object RecipeCompiler {
     else Seq.empty
   }
 
-  // the (possible) data output arcs / places
-  private def interactionIngredientOutputArc(t: InteractionTransition, ingredientName: String): Seq[Arc] =
-    Seq(arc(t, createPlace(ingredientName, IngredientPlace), 1))
-
   /**
     * Draws an arc from all required ingredients for an interaction
     * If the ingredient has multiple consumers create a multi transition place and create both arcs for it
     */
-  private def buildInteractionInputArcs(
-                                         t: InteractionTransition,
-                                         multipleConsumerFacilitatorTransitions: Seq[Transition],
-                                         ingredientsWithMultipleConsumers: Map[String, Seq[InteractionTransition]]): Seq[Arc] = {
+  private def buildInteractionInputArcs(t: InteractionTransition,
+                                        multipleConsumerFacilitatorTransitions: Seq[Transition],
+                                        ingredientsWithMultipleConsumers: Map[String, Seq[InteractionTransition]]): Seq[Arc] = {
 
     val (fieldNamesWithPrefixMulti, fieldNamesWithoutPrefix) =
       t.nonProvidedIngredients.map(_.name).partition(ingredientsWithMultipleConsumers.contains)
@@ -138,21 +129,13 @@ object RecipeCompiler {
     dataInputArcs ++ internalDataInputArcs ++ limitInteractionCountArc
   }
 
-  private def buildInteractionOutputArcs(t: InteractionTransition,
-                                         findInternalEventByEvent: EventDescriptor => Option[Transition]): Seq[Arc] = {
-    interactionEventOutputArc(t, t.eventsToFire, findInternalEventByEvent)
-  }
-
-  private def buildInteractionArcs(
-                                    multipleOutputFacilitatorTransitions: Seq[Transition],
-                                    placeNameWithDuplicateTransitions: Map[String, Seq[InteractionTransition]],
-                                    findInternalEventByEvent: EventDescriptor => Option[Transition])(
-                                    t: InteractionTransition): Seq[Arc] = {
-
+  private def buildInteractionArcs(multipleOutputFacilitatorTransitions: Seq[Transition],
+                                   placeNameWithDuplicateTransitions: Map[String, Seq[InteractionTransition]])
+                                  (t: InteractionTransition): Seq[Arc] = {
     buildInteractionInputArcs(
       t,
       multipleOutputFacilitatorTransitions,
-      placeNameWithDuplicateTransitions) ++ buildInteractionOutputArcs(t, findInternalEventByEvent)
+      placeNameWithDuplicateTransitions) ++ buildInteractionOutputArcs(t)
   }
 
   /**
@@ -281,8 +264,7 @@ object RecipeCompiler {
     val interactionArcs: Seq[Arc] =
       allInteractionTransitions.flatMap(
         buildInteractionArcs(multipleConsumerFacilitatorTransitions,
-          ingredientsWithMultipleConsumers,
-          e => interactionEventTransitions.find(_.event.name == e.name)))
+          ingredientsWithMultipleConsumers))
 
     val arcs = (interactionArcs
       ++ eventInputArcs
