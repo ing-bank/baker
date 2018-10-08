@@ -39,5 +39,8 @@ case class Instance[P[_], T, S](
     case _ ⇒ None
   }.find(_.isDefined).flatten
 
+  def hasReceivedCorrelationId(correlationId: String): Boolean =
+    receivedCorrelationIds.contains(correlationId) || jobs.values.exists(_.correlationId == Some(correlationId))
+
   def nextJobId(): Long = Random.nextLong()
 }

@@ -1,13 +1,15 @@
 package com.ing.baker.runtime.actor.process_index
 
-import akka.actor.{ActorLogging, ActorRef, Props, Terminated}
+import akka.actor.{ActorRef, Props, Terminated}
+import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.pattern.{ask, pipe}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.stream.scaladsl.{Source, StreamRefs}
 import akka.stream.{Materializer, StreamRefAttributes}
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.{Place, RecipePetriNet, Transition}
-import com.ing.baker.il.{CompiledRecipe, petrinet}
 import com.ing.baker.petrinet.runtime.{PetriNetRuntime, namedCachedThreadPool}
+import com.ing.baker.runtime.actor.Util.logging._
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
@@ -54,16 +56,16 @@ object ProcessIndex {
   // --- Events
 
   // when an actor is requested again after passivation
-  case class ActorActivated(processId: String) extends InternalBakerEvent
+  case class ActorActivated(processId: String) extends BakerProtoMessage
 
   // when an actor is passivated
-  case class ActorPassivated(processId: String) extends InternalBakerEvent
+  case class ActorPassivated(processId: String) extends BakerProtoMessage
 
   // when an actor is deleted
-  case class ActorDeleted(processId: String) extends InternalBakerEvent
+  case class ActorDeleted(processId: String) extends BakerProtoMessage
 
   // when an actor is created
-  case class ActorCreated(recipeId: String, processId: String, createdDateTime: Long) extends InternalBakerEvent
+  case class ActorCreated(recipeId: String, processId: String, createdDateTime: Long) extends BakerProtoMessage
 
   def processInstanceProps(recipeName: String, petriNet: RecipePetriNet, petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent], settings: Settings): Props =
     Props(new ProcessInstance[Place, Transition, ProcessState, RuntimeEvent](
@@ -82,7 +84,9 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
                    processIdleTimeout: Option[FiniteDuration],
                    configuredEncryption: Encryption,
                    interactionManager: InteractionManager,
-                   recipeManager: ActorRef)(implicit materializer: Materializer) extends PersistentActor with ActorLogging {
+                   recipeManager: ActorRef)(implicit materializer: Materializer) extends PersistentActor {
+
+  val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
   private val recipeCache: mutable.Map[String, CompiledRecipe] = mutable.Map[String, CompiledRecipe]()
@@ -144,7 +148,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
   override def receiveCommand: Receive = {
 
     case GetIndex =>
-      sender() ! Index(index.values.filter(_.processStatus == Active).toSet)
+      sender() ! Index(index.values.filter(_.processStatus == Active).toSeq)
 
     case CheckForProcessesToBeDeleted =>
       val toBeDeleted = index.values.filter(shouldDelete)
@@ -155,7 +159,8 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
     case Terminated(actorRef) =>
       val processId = actorRef.path.name
-      log.debug(s"Actor terminated: $actorRef")
+
+      log.logWithMDC(Logging.DebugLevel, s"Actor terminated: $actorRef", Map("processId" -> processId))
 
       index.get(processId) match {
         case Some(meta) if shouldDelete(meta) =>
@@ -163,11 +168,11 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
             index.update(processId, meta.copy(processStatus = Deleted))
           }
         case Some(meta) if meta.isDeleted =>
-          log.warning(s"Received Terminated message for already deleted process: ${meta.processId}")
+          log.logWithMDC(Logging.WarningLevel, s"Received Terminated message for already deleted process: ${meta.processId}", Map("processId" -> processId))
         case Some(_) =>
           persist(ActorPassivated(processId)) { _ => }
         case None =>
-          log.warning(s"Received Terminated message for non indexed actor: $actorRef")
+          log.logWithMDC(Logging.WarningLevel, s"Received Terminated message for non indexed actor: $actorRef", Map("processId" -> processId))
       }
 
     case CreateProcess(recipeId, processId) =>
@@ -193,7 +198,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
           }
 
         case _ if index(processId).isDeleted => sender() ! ProcessDeleted(processId)
-        case _ => sender() ! ProcessAlreadyInitialized(processId)
+        case _ => sender() ! ProcessAlreadyExists(processId)
       }
 
     case cmd @ ProcessEvent(processId: String, eventToFire: RuntimeEvent, correlationId, waitForRetries, processEventTimout) =>
