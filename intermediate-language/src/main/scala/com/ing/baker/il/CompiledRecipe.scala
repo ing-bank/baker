@@ -8,10 +8,17 @@ import scala.concurrent.duration.FiniteDuration
 
 object CompiledRecipe {
 
-  def computeRecipeId(name: String, petriNet: RecipePetriNet, initialMarking: Marking[Place], errors: Seq[String],
-                      eventReceivePeriod: Option[FiniteDuration], retentionPeriod: Option[FiniteDuration]) =
+  def apply(name: String, petriNet: RecipePetriNet, initialMarking: Marking[Place], validationErrors: Seq[String],
+                      eventReceivePeriod: Option[FiniteDuration], retentionPeriod: Option[FiniteDuration]) : CompiledRecipe = {
 
-    (name, petriNet, initialMarking, errors, eventReceivePeriod, retentionPeriod).hashCode.toString
+    // this calculates the hashcode of all the components making the recipe
+    val hashCode = (name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod).hashCode
+
+    // the recipe id is a hexadecimal format of the hashcode
+    val recipeId = String.format("%08x", Int.box(hashCode))
+
+    CompiledRecipe(name, recipeId, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
+  }
 }
 
 /**

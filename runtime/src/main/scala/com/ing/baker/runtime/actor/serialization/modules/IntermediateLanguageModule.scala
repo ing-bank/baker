@@ -233,12 +233,11 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
         case _ ⇒ throw new IllegalStateException("Missing data in persisted ProducedToken")
       }
 
-      def computeRecipeId(): String = CompiledRecipe.computeRecipeId(
-        name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
-
-      val recipeId = optionalRecipeId.getOrElse(computeRecipeId())
-
-      il.CompiledRecipe(name, recipeId, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
+      optionalRecipeId.map { recipeId =>
+        il.CompiledRecipe(name, recipeId, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
+      }.getOrElse {
+        il.CompiledRecipe(name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
+      }
 
     case protobuf.EventOutputTransformer(newEventName, ingredientRenames) =>
       il.EventOutputTransformer(newEventName.getOrMissing("newEventName"), ingredientRenames)
