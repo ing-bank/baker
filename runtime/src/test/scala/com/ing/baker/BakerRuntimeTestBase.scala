@@ -4,7 +4,7 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
-import com.ing.baker.recipe.TestRecipe._
+import com.ing.baker.recipe.TestRecipe.{fireTwoEventsInteraction, _}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.{CaseClassIngredient, common}
 import com.ing.baker.runtime.core.Baker
@@ -73,6 +73,7 @@ trait BakerRuntimeTestBase
   protected val testInteractionFourMock: InteractionFour = mock[InteractionFour]
   protected val testInteractionFiveMock: InteractionFive = mock[InteractionFive]
   protected val testInteractionSixMock: InteractionSix = mock[InteractionSix]
+  protected val testFireTwoEventsInteractionMock: fireTwoEventsInteraction = mock[fireTwoEventsInteraction]
   protected val testComplexIngredientInteractionMock: ComplexIngredientInteraction = mock[ComplexIngredientInteraction]
   protected val testCaseClassIngredientInteractionMock: CaseClassIngredientInteraction = mock[CaseClassIngredientInteraction]
   protected val testCaseClassIngredientInteraction2Mock: CaseClassIngredientInteraction2 = mock[CaseClassIngredientInteraction2]
@@ -89,6 +90,7 @@ trait BakerRuntimeTestBase
       testInteractionFourMock,
       testInteractionFiveMock,
       testInteractionSixMock,
+      testFireTwoEventsInteractionMock,
       testComplexIngredientInteractionMock,
       testCaseClassIngredientInteractionMock,
       testCaseClassIngredientInteraction2Mock,

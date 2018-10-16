@@ -41,6 +41,7 @@ object ProtoEventAdapterSpec {
 
   val recipeIdGen: Gen[String] = Gen.uuid.map(_.toString)
   val processIdGen: Gen[String] = Gen.uuid.map(_.toString)
+  val timestampGen: Gen[Long] = Gen.chooseNum[Long](0, Long.MaxValue)
 
   object IntermediateLanguage {
 
@@ -80,14 +81,26 @@ object ProtoEventAdapterSpec {
 
     val addRecipeGen: Gen[AddRecipe] = recipeGen.map(AddRecipe(_))
     val getRecipeGen: Gen[GetRecipe] = recipeIdGen.map(GetRecipe(_))
-    val recipeFoundGen: Gen[RecipeFound] = recipeGen.map(RecipeFound(_))
+    val recipeFoundGen: Gen[RecipeFound] = for {
+      compiledRecipe <- IntermediateLanguage.recipeGen
+      timestamp <- timestampGen
+    } yield RecipeFound(compiledRecipe, timestamp)
+
+
     val noRecipeFoundGen: Gen[NoRecipeFound] = recipeIdGen.map(NoRecipeFound(_))
     val addRecipeResponseGen: Gen[AddRecipeResponse] = recipeIdGen.map(AddRecipeResponse(_))
     val getAllRecipesGen: Gen[GetAllRecipes.type] = Gen.const(GetAllRecipes)
 
     val recipeEntriesGen = GenUtil.tuple(recipeIdGen, recipeGen)
 
-    val allRecipesGen: Gen[AllRecipes] = Gen.mapOfN(2, recipeEntriesGen).map(AllRecipes(_))
+    val recipeInformationGen: Gen[RecipeInformation] = for {
+      recipeId <- recipeIdGen
+      compiledRecipe <- recipeGen
+      timestamp <- timestampGen
+    } yield RecipeInformation(recipeId, compiledRecipe, timestamp)
+
+    val allRecipesGen: Gen[AllRecipes] = Gen.listOf(recipeInformationGen).map(AllRecipes(_))
+
 
     val messagesGen: Gen[AnyRef] = Gen.oneOf(
       addRecipeGen, getRecipeGen, recipeFoundGen, noRecipeFoundGen, addRecipeResponseGen, getAllRecipesGen, allRecipesGen
@@ -251,12 +264,11 @@ object ProtoEventAdapterSpec {
   object Types {
 
     import com.ing.baker.types._
+    import com.ing.baker.types.modules.PrimitiveModuleSpec._
 
     val fieldNameGen = Gen.alphaStr
 
-    val primitiveTypeGen: Gen[Type] = Gen.oneOf(
-      types.supportedPrimitiveClasses.toSeq.map(clazz => PrimitiveType(clazz))
-    )
+    val primitiveTypeGen: Gen[Type] = Gen.oneOf(types.primitiveTypes.toSeq)
 
     val fieldTypeGen = primitiveTypeGen
 
@@ -271,23 +283,6 @@ object ProtoEventAdapterSpec {
     val optionTypeGen = primitiveTypeGen.map(OptionType(_))
 
     val anyTypeGen = Gen.oneOf(primitiveTypeGen, recordTypeGen, listTypeGen, mapTypeGen, optionTypeGen)
-
-    val intGen: Gen[Int] = Gen.chooseNum[Int](Integer.MIN_VALUE, Integer.MAX_VALUE)
-    val langIntegerGen: Gen[java.lang.Integer] = intGen.map(Int.box(_))
-    val longGen: Gen[Long] = Gen.chooseNum[Long](Long.MinValue, Long.MaxValue)
-    val langLongGen: Gen[java.lang.Long] = Gen.chooseNum[Long](Long.MinValue, Long.MaxValue).map(Long.box(_))
-    val shortGen: Gen[Short] = Gen.chooseNum[Short](Short.MinValue, Short.MaxValue)
-    val langShortGen: Gen[java.lang.Short] = shortGen.map(Short.box(_))
-    val floatGen: Gen[Float] = Gen.chooseNum(Float.MinValue, Float.MaxValue)
-    val langFloatGen: Gen[java.lang.Float] = floatGen.map(Float.box(_))
-    val doubleGen: Gen[Double] = Gen.chooseNum[Double](Double.MinValue, Double.MaxValue)
-    val langDoubleGen: Gen[java.lang.Double] = doubleGen.map(Double.box(_))
-    val stringGen: Gen[String] = Gen.alphaStr
-    val bigIntGen: Gen[BigInt] = longGen.map(BigInt(_))
-    val javaBigIntGen: Gen[java.math.BigInteger] = bigIntGen.map(_.bigInteger)
-    val bigDecimalGen: Gen[BigDecimal] = doubleGen.map(BigDecimal(_))
-    val javaBigDecimalGen: Gen[java.math.BigDecimal] = bigDecimalGen.map(_.bigDecimal)
-    val byteArrayGen: Gen[Array[Byte]] = Gen.listOf(intGen.map(_.toByte)).map(_.toArray)
 
     val primitiveJavaObjGen: Gen[Any] = Gen.oneOf(
       intGen, langIntegerGen, longGen, langLongGen, shortGen, langShortGen, floatGen, langFloatGen,
