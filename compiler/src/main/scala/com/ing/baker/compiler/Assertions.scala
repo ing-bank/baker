@@ -27,7 +27,7 @@ object Assertions {
     assertValidNames[InteractionDescriptor](_.name, recipe.interactions, "Interaction")
     assertValidNames[InteractionDescriptor](_.name, recipe.sieves, "Sieve Interaction")
     assertValidNames[Event](_.name, recipe.sensoryEvents, "Event")
-    val allIngredients = recipe.sensoryEvents.flatMap(_.providedIngredients) ++ recipe.interactions.flatMap(_.interaction.inputIngredients) ++ recipe.sieves.flatMap(_.interaction.inputIngredients)
+    val allIngredients = recipe.sensoryEvents.flatMap(_.providedIngredients) ++ recipe.interactions.flatMap(_.inputIngredients) ++ recipe.sieves.flatMap(_.inputIngredients)
     assertValidNames[Ingredient](_.name, allIngredients, "Ingredient")
     assertNoDuplicateElementsExist[InteractionDescriptor](_.name, recipe.interactions.toSet ++ recipe.sieves.toSet)
     assertNoDuplicateElementsExist[Event](_.name, recipe.sensoryEvents)

@@ -1,28 +1,28 @@
 package com.ing.baker.recipe.javadsl
 
 import com.ing.baker.recipe.common
+import com.ing.baker.recipe.common.InteractionOutput
 import com.ing.baker.types.Converters
 
 import scala.annotation.varargs
 import scala.collection.JavaConverters._
 
 case class InteractionDescriptor private(
-                                          override val interaction: common.Interaction,
-                                          override val requiredEvents: Set[String],
-                                          override val requiredOneOfEvents: Set[Set[String]],
-                                          override val predefinedIngredients: Map[String, com.ing.baker.types.Value],
-                                          override val overriddenIngredientNames: Map[String, String],
-                                          override val overriddenOutputIngredientName: Option[String] = Option.empty[String],
-                                          override val maximumInteractionCount: Option[Int],
-                                          override val failureStrategy: Option[common.InteractionFailureStrategy] = None,
-                                          override val eventOutputTransformers: Map[common.Event, common.EventOutputTransformer] = Map.empty,
-                                          newName: String = null)
+                          override val originalName: String,
+                          override val inputIngredients: Seq[common.Ingredient],
+                          override val output: InteractionOutput,
+                          override val requiredEvents: Set[String],
+                          override val requiredOneOfEvents: Set[Set[String]],
+                          override val predefinedIngredients: Map[String, com.ing.baker.types.Value],
+                          override val overriddenIngredientNames: Map[String, String],
+                          override val overriddenOutputIngredientName: Option[String] = Option.empty[String],
+                          override val maximumInteractionCount: Option[Int],
+                          override val failureStrategy: Option[common.InteractionFailureStrategy] = None,
+                          override val eventOutputTransformers: Map[common.Event, common.EventOutputTransformer] = Map.empty,
+                          newName: Option[String] = None)
   extends common.InteractionDescriptor {
 
-  override val name: String = {
-    if (newName != null) newName
-    else interaction.name
-  }
+  override val name: String = newName.getOrElse(originalName)
 
   /**
     * This sets a requirement for this interaction that a specific event needs to have been fired before it can execute.
@@ -99,7 +99,7 @@ case class InteractionDescriptor private(
 
     copy(requiredOneOfEvents = newRequired)
   }
-//ipv assign, toevoegen in deze functie
+
   /**
     * This sets a requirement for this interaction that one of the given events needs to have been fired before it can execute.
     *
@@ -223,7 +223,8 @@ case class InteractionDescriptor private(
                                       newEventName: String,
                                       ingredientRenames: Map[String, String]): InteractionDescriptor = {
     val originalEvent: common.Event = eventClassToCommonEvent(eventClazz, None)
-    interaction.output match {
+
+    output match {
       case common.FiresOneOfEvents(events@_*) =>
         if (!events.contains(originalEvent))
           throw new common.RecipeValidationException(s"Event transformation given for Interaction $name but does not fire event $originalEvent")
@@ -249,19 +250,7 @@ case class InteractionDescriptor private(
 }
 
 object InteractionDescriptor {
-  def of[T <: Interaction](interactionClass: Class[T]): InteractionDescriptor = {
-    InteractionDescriptor(interactionClassToCommonInteraction(interactionClass), Set.empty, Set.empty, Map.empty, Map.empty, None, None)
-  }
+  def of[T <: Interaction](interactionClass: Class[T]): InteractionDescriptor = interactionClassToCommonInteraction(interactionClass, None)
 
-  def of[T <: Interaction](interactionClass: Class[T], name: String): InteractionDescriptor = {
-    InteractionDescriptor(
-      interactionClassToCommonInteraction(interactionClass),
-      Set.empty,
-      Set.empty,
-      Map.empty,
-      Map.empty,
-      None,
-      None,
-      newName = name)
-  }
+  def of[T <: Interaction](interactionClass: Class[T], name: String): InteractionDescriptor = interactionClassToCommonInteraction(interactionClass, Some(name))
 }
