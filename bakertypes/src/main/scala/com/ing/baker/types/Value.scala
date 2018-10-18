@@ -89,7 +89,7 @@ sealed trait Value extends Serializable {
     if (!this.isInstanceOf[ListValue])
       throw new IllegalArgumentException(s"value of type ${this.getClass} cannot be converted to a java.util.List object")
 
-    val genericType =  new java.lang.reflect.ParameterizedType {
+    val genericType = new java.lang.reflect.ParameterizedType {
       override def getRawType: java.lang.reflect.Type = classOf[java.util.List[_]]
       override def getActualTypeArguments: Array[java.lang.reflect.Type] = Array(clazz)
       override def getOwnerType: java.lang.reflect.Type = null
@@ -109,7 +109,7 @@ sealed trait Value extends Serializable {
     if (!this.isInstanceOf[ListValue])
       throw new IllegalArgumentException(s"value of type ${this.getClass} cannot be converted to a java.util.Set object")
 
-    val genericType =  new java.lang.reflect.ParameterizedType {
+    val genericType = new java.lang.reflect.ParameterizedType {
       override def getRawType: java.lang.reflect.Type = classOf[java.util.Set[_]]
       override def getActualTypeArguments: Array[java.lang.reflect.Type] = Array(clazz)
       override def getOwnerType: java.lang.reflect.Type = null
@@ -125,13 +125,13 @@ sealed trait Value extends Serializable {
     * @param valueClass The generic type parameter for the java.util.Map value
     * @tparam K The generic class type of the java.util.Map key
     * @tparam V The generic class type of the java.util.Map value
-    * @return An instance of the java.util.Set with the given generic type parameter.
+    * @return An instance of the java.util.Map with the given generic type parameter.
     */
   def asMap[K, V](keyClass: Class[K], valueClass: Class[V]): java.util.Map[K, V] = {
     if (!this.isInstanceOf[RecordValue])
       throw new IllegalArgumentException(s"value of type ${this.getClass} cannot be converted to a java.util.Map object")
 
-    val genericType =  new java.lang.reflect.ParameterizedType {
+    val genericType = new java.lang.reflect.ParameterizedType {
       override def getRawType: java.lang.reflect.Type = classOf[java.util.Map[_, _]]
       override def getActualTypeArguments: Array[java.lang.reflect.Type] = Array(keyClass, valueClass)
       override def getOwnerType: java.lang.reflect.Type = null
