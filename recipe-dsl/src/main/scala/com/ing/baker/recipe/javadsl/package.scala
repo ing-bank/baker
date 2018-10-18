@@ -33,7 +33,7 @@ package object javadsl {
       override val maxFiringLimit: Option[Int] = firingLimit
     }
 
-  def interactionClassToCommonInteraction(interactionClass: Class[_ <: Interaction], newName: Option[String]): InteractionDescriptor = {
+  def interactionClassToCommonInteraction(interactionClass: Class[_], newName: Option[String]): InteractionDescriptor = {
 
     val name: String = interactionClass.getSimpleName
 
@@ -70,8 +70,15 @@ package object javadsl {
         val events: Seq[common.Event] = outputEventClasses.map(eventClassToCommonEvent(_, None))
         common.FiresOneOfEvents(events: _*)
       }
+      else if (method.getReturnType().equals(classOf[Void]))
+        common.ProvidesNothing
       //ProvidesNothing
-      else common.ProvidesNothing
+      else {
+
+        //
+        common.ProvidesNothing
+      }
+
     }
 
     InteractionDescriptor(name, inputIngredients, output, Set.empty, Set.empty, Map.empty, Map.empty, None, None, None, Map.empty, newName)

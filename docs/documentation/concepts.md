@@ -1,22 +1,60 @@
 # Concepts
 
-Baker introduces interactions, ingredients, and events as a model of abstracting. With these three components we can create recipes.
+Baker introduces *interactions*, *ingredients*, and *events* as a model of abstracting.
 
-Think about these in the context of a Bakery with a baker using ingeredients to bake a pizza
+With these three components we can create recipes (process blue prints)
 
 ## Ingredient
 
-Ingredients are like the name implies the  ingredients that the Baker needs to execute the steps in the Recipe.
+Ingredients are *pure data*.
 
-In our case Ingredients are the data that is needed and created by interactions.
+This data is **immutable**, can not be changed after entering the process.
 
-For example to make a money transfer you need to know the IBANs of the two account numbers and the amount of money to be transferred
+There is **no hiërarchy** in this data. (`Animal -> Dog -> Labrador` is not possible to express)
+
+Examples:
+
+- an IBAN
+- an address
+- a track and trace code
+- a product number
+- a list of phone numbers
+
+An ingredient is defined by a *name* and *type*.
+
+The *name* points to the intended meaning of the data. ("customerData", "orderNumber", ...)
+
+The *type* sets limits on the form of data that is accepted. (a number, a list of strings, ...)
+
+This type is expressed by the [baker type system](type_system).
 
 ## Interaction
-An interaction can be seen as any action the baker needs fulfil to take to finish his recipe.
 
-Baker is made for complex orchestrations so a interaction is any interaction with an outside system.
+An interaction is analagous to a function.
 
-An interaction can be a call to internal or external system (can be an API, EMS service, etc.).
+It requires input (ingredients) and provides output (an event).
 
-The goal of this call is to do work for us for example register a customer, send a present, or transfer money;
+Within this contract it may do anything. For example:
+
+- call an external system
+- put a message on a bus
+- generate a document or image
+- extract or compose ingredients into others
+
+When finished, an interaction provides an event as its output.
+
+## Event
+
+Events indicate something of interest happened for our process.
+
+An event has a *name* and can (optionally) provide ingredients.
+
+We distinquish 2 types of events.
+
+1. Sensory events (external)
+
+    These events are provided from outside of the process
+
+2. Interaction output (internal)
+
+    These events are provided as a result of an interaction being executed.
