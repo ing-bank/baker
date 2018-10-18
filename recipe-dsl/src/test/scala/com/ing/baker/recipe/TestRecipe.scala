@@ -181,6 +181,18 @@ object TestRecipe {
     def apply(interactionSevenIngredient1: String, interactionSevenIngredient2: String): Unit
   }
 
+  val fireTwoEventsInteraction =
+    Interaction(
+      name = "fireTwoEventsInteraction",
+      inputIngredients = Seq(initialIngredient),
+      output = FiresOneOfEvents(eventFromInteractionTwo, event1FromInteractionSeven))
+
+  trait fireTwoEventsInteraction {
+    val name: String = "fireTwoEventsInteraction"
+
+    def apply(initialIngredient: String): Event1FromInteractionSeven
+  }
+
   val providesNothingInteraction =
     Interaction(
       name = "ProvidesNothingInteraction",

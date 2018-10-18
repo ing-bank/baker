@@ -62,7 +62,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
       "providing an implementation for a renamed interaction" in {
 
         val recipe = Recipe("simpleNameImplementationWithRename")
-          .withInteraction((interactionOne, "interactionOneRenamed"))
+          .withInteraction((interactionOne.withName("interactionOneRenamed")))
           .withSensoryEvent(initialEvent)
 
         val baker = new Baker()

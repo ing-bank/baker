@@ -16,28 +16,32 @@ message SerializedData {
 
 // Baker type system messages
 enum PrimitiveType {
-    BOOLEAN = 1;
-    BOOLEAN_PRIMITIVE = 2;
+
+    BOOL = 1;
     BYTE = 3;
-    BYTE_PRIMITIVE = 4;
-    SHORT = 5;
-    SHORT_PRIMITIVE = 6;
-    CHARACTER = 7;
-    CHARACTER_PRIMITIVE = 8;
-    INTEGER = 9;
-    INT = 10;
-    LONG = 11;
-    LONG_PRIMITIVE = 12;
-    FLOAT = 13;
-    FLOAT_PRIMITIVE = 14;
-    DOUBLE = 15;
-    DOUBLE_PRIMITIVE = 16;
-    STRING = 17;
-    BIG_DECIMAL_SCALA = 18;
-    BIG_DECIMAL_JAVA = 19;
-    BIG_INT_SCALA = 20;
-    BIG_INT_JAVA = 21;
+    INT16 = 5;
+    CHAR = 7;
+    INT32 = 9;
+    INT64 = 11;
+    INT_BIG = 20;
+    FLOAT32 = 13;
+    FLOAT64 = 15;
+    FLOAT_BIG = 18;
+    CHAR_ARRAY = 17;
     BYTE_ARRAY = 22;
+    DATE = 26;
+
+    // depcrecated but do not remove!
+    BIG_INT_JAVA = 21;
+    BIG_DECIMAL_JAVA = 19;
+    DOUBLE_PRIMITIVE = 16;
+    FLOAT_PRIMITIVE = 14;
+    LONG_PRIMITIVE = 12;
+    INT = 10;
+    CHARACTER_PRIMITIVE = 8;
+    SHORT_PRIMITIVE = 6;
+    BYTE_PRIMITIVE = 4;
+    BOOLEAN_PRIMITIVE = 2;
     JODA_DATETIME = 23;
     JODA_LOCAL_DATE = 24;
     JODA_LOCAL_DATETIME = 25;

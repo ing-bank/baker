@@ -62,9 +62,11 @@ case class RuntimeEvent(name: String,
             Seq(s"no value was provided for ingredient '${ingredient.name}'")
           // we can only check the class since the type parameters are available on objects
           case Some(NullValue) if !ingredient.`type`.isOption =>
-            Seq(s"NullValue is not allowed for non optional ingredient '${ingredient.name}'")
-          case Some(value) if !value.isInstanceOf(ingredient.`type`)  =>
-            Seq(s"value is not of the correct type for ingredient '${ingredient.name}'")
+            Seq(s"null is not allowed for non optional ingredient '${ingredient.name}'")
+          case Some(value) =>
+            value.validate(ingredient.`type`).map(
+              reason => s"ingredient '${ingredient.name}' has an incorrect type:\n$reason"
+            ).toSeq
           case _ =>
             Seq.empty
         }
