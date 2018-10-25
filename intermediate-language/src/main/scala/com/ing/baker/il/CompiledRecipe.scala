@@ -31,6 +31,7 @@ object CompiledRecipe {
         initMarkingId +
         validationErrors.mkString +
         eventReceivePeriod.toString + retentionPeriod
+      System.err.println(plainId)
       val sha256Digest: MessageDigest = MessageDigest.getInstance("SHA-256")
       val digest = sha256Digest.digest(plainId.getBytes("UTF-8"))
       import java.math.BigInteger
