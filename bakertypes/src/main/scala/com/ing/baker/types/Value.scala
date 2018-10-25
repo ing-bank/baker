@@ -79,6 +79,68 @@ sealed trait Value extends Serializable {
   def as[T](clazz: Class[T]): T = Converters.toJava(this, clazz).asInstanceOf[T]
 
   /**
+    * Attempts to convert this value to a java.util.List with the given generic class type parameter.
+    *
+    * @param clazz The generic type parameter for the java.util.List
+    * @tparam T The generic class type of the java.util.List
+    * @return An instance of the java.util.List with the given generic type parameter.
+    */
+  def asList[T](clazz: Class[T]): java.util.List[T] = {
+    if (!this.isInstanceOf[ListValue])
+      throw new IllegalArgumentException(s"value of type ${this.getClass} cannot be converted to a java.util.List object")
+
+    val genericType = new java.lang.reflect.ParameterizedType {
+      override def getRawType: java.lang.reflect.Type = classOf[java.util.List[_]]
+      override def getActualTypeArguments: Array[java.lang.reflect.Type] = Array(clazz)
+      override def getOwnerType: java.lang.reflect.Type = null
+      override def toString = s"java.util.List<${clazz.getName}>"
+    }
+    as(genericType).asInstanceOf[java.util.List[T]]
+  }
+
+  /**
+    * Attempts to convert this value to a java.util.Set with the given generic class type parameter.
+    *
+    * @param clazz The generic type parameter for the java.util.Set
+    * @tparam T The generic class type of the java.util.Set
+    * @return An instance of the java.util.Set with the given generic type parameter.
+    */
+  def asSet[T](clazz: Class[T]): java.util.Set[T] = {
+    if (!this.isInstanceOf[ListValue])
+      throw new IllegalArgumentException(s"value of type ${this.getClass} cannot be converted to a java.util.Set object")
+
+    val genericType = new java.lang.reflect.ParameterizedType {
+      override def getRawType: java.lang.reflect.Type = classOf[java.util.Set[_]]
+      override def getActualTypeArguments: Array[java.lang.reflect.Type] = Array(clazz)
+      override def getOwnerType: java.lang.reflect.Type = null
+      override def toString = s"java.util.Set<${clazz.getName}>"
+    }
+    as(genericType).asInstanceOf[java.util.Set[T]]
+  }
+
+  /**
+    * Attempts to convert this value to a java.util.Map with the given generic class type parameter.
+    *
+    * @param keyClass The generic type parameter for the java.util.Map key
+    * @param valueClass The generic type parameter for the java.util.Map value
+    * @tparam K The generic class type of the java.util.Map key
+    * @tparam V The generic class type of the java.util.Map value
+    * @return An instance of the java.util.Map with the given generic type parameter.
+    */
+  def asMap[K, V](keyClass: Class[K], valueClass: Class[V]): java.util.Map[K, V] = {
+    if (!this.isInstanceOf[RecordValue])
+      throw new IllegalArgumentException(s"value of type ${this.getClass} cannot be converted to a java.util.Map object")
+
+    val genericType = new java.lang.reflect.ParameterizedType {
+      override def getRawType: java.lang.reflect.Type = classOf[java.util.Map[_, _]]
+      override def getActualTypeArguments: Array[java.lang.reflect.Type] = Array(keyClass, valueClass)
+      override def getOwnerType: java.lang.reflect.Type = null
+      override def toString = s"java.util.Map<${keyClass.getName},${valueClass.getName}>"
+    }
+    as(genericType).asInstanceOf[java.util.Map[K, V]]
+  }
+
+  /**
     * Attempts to adapt the value to the given java type.
     *
     * @tparam T The java type
@@ -105,7 +167,7 @@ case class PrimitiveValue(value: Any) extends Value {
   if (!isPrimitiveValue(value))
     throw new IllegalArgumentException(s"value of type ${value.getClass} is not supported as a primitive value")
 
-  def isAssignableTo(clazz: Class[_]) =
+  def isAssignableTo(clazz: Class[_]): Boolean =
     (supportedPrimitiveClasses.contains(clazz) && clazz.isInstance(value)) ||
       (clazz.isPrimitive && javaPrimitiveMappings.get(value.getClass).contains(clazz))
 

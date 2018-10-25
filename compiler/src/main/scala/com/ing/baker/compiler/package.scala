@@ -47,14 +47,14 @@ package object compiler {
 
       //Replace ProcessId to ProcessIdName tag as know in compiledRecipe-
       //Replace ingredient tags with overridden tags
-      val inputFields: Seq[(String, Type)] = interactionDescriptor.interaction.inputIngredients
+      val inputFields: Seq[(String, Type)] = interactionDescriptor.inputIngredients
         .map { ingredient =>
           if (ingredient.name == common.ProcessIdName) il.processIdName -> ingredient.ingredientType
           else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.ingredientType
         }
 
       val (originalEvents, eventsToFire, providedIngredientEvent): (Seq[EventDescriptor], Seq[EventDescriptor], Option[EventDescriptor]) =
-        interactionDescriptor.interaction.output match {
+        interactionDescriptor.output match {
           case common.ProvidesIngredient(outputIngredient) =>
             val ingredientName: String =
               if (interactionDescriptor.overriddenOutputIngredientName.nonEmpty) interactionDescriptor.overriddenOutputIngredientName.get
@@ -104,7 +104,7 @@ package object compiler {
         providedIngredientEvent = providedIngredientEvent,
         requiredIngredients = inputFields.map { case (name, ingredientType) => IngredientDescriptor(name, ingredientType) },
         interactionName = interactionDescriptor.name,
-        originalInteractionName = interactionDescriptor.interaction.name,
+        originalInteractionName = interactionDescriptor.originalName,
         predefinedParameters = predefinedIngredientsWithOptionalsEmpty,
         maximumInteractionCount = interactionDescriptor.maximumInteractionCount,
         failureStrategy = failureStrategy,
