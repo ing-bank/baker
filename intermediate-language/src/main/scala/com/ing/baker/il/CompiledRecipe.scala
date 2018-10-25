@@ -1,5 +1,7 @@
 package com.ing.baker.il
 
+import java.security.MessageDigest
+
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, RecipePetriNet}
 import com.ing.baker.petrinet.api.Marking
 
@@ -9,14 +11,35 @@ import scala.concurrent.duration.FiniteDuration
 object CompiledRecipe {
 
   def apply(name: String, petriNet: RecipePetriNet, initialMarking: Marking[Place], validationErrors: Seq[String],
-                      eventReceivePeriod: Option[FiniteDuration], retentionPeriod: Option[FiniteDuration]) : CompiledRecipe = {
+            eventReceivePeriod: Option[FiniteDuration], retentionPeriod: Option[FiniteDuration]): CompiledRecipe = {
 
-    // this calculates the hashcode of all the components making the recipe
-    val hashCode = (name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod).hashCode
+    def calculateRecipeId(): String = {
+      val petriNetId: String = petriNet.places.toList.sortBy(_.id).mkString +
+        petriNet.transitions.toList.sortBy(_.id).mkString
+
+      val initMarkingId: String = initialMarking.data.toList.sortBy {
+        case (place, _) => place.id
+      }.map {
+        case (_, tokens) => tokens.toList.sortBy {
+          case (tokenData: String, _) => tokenData
+          case _ => throw new UnsupportedOperationException("only string keys are supported")
+        }
+      }.toString
+      val plainId = StringBuilder.newBuilder +
+        name +
+        petriNetId +
+        initMarkingId +
+        validationErrors.mkString +
+        eventReceivePeriod.toString + retentionPeriod
+      val sha256Digest: MessageDigest = MessageDigest.getInstance("SHA-256")
+      val digest = sha256Digest.digest(plainId.getBytes("UTF-8"))
+      import java.math.BigInteger
+      val bigInt = new BigInteger(1, digest)
+      bigInt.toString(16)
+    }
 
     // the recipe id is a hexadecimal format of the hashcode
-    val recipeId = String.format("%08x", Int.box(hashCode))
-
+    val recipeId = calculateRecipeId()
     CompiledRecipe(name, recipeId, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
   }
 }
@@ -40,6 +63,7 @@ case class CompiledRecipe(name: String,
 
   /**
     * Visualise the compiled recipe in DOT format
+    *
     * @return
     */
   def getRecipeVisualization: String =
@@ -47,6 +71,7 @@ case class CompiledRecipe(name: String,
 
   /**
     * Visualise the compiled recipe in DOT format
+    *
     * @param filterFunc
     * @return
     */
@@ -69,6 +94,7 @@ case class CompiledRecipe(name: String,
 
   /**
     * Visualises the underlying petri net in DOT format
+    *
     * @return
     */
   def getPetriNetVisualization: String =
@@ -78,7 +104,7 @@ case class CompiledRecipe(name: String,
     case t: InteractionTransition => t
   }
 
-  val interactionEvents: Set[EventDescriptor] = interactionTransitions flatMap(it => it.eventsToFire)
+  val interactionEvents: Set[EventDescriptor] = interactionTransitions flatMap (it => it.eventsToFire)
 
   val allEvents: Set[EventDescriptor] = sensoryEvents ++ interactionEvents
 
