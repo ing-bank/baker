@@ -47,7 +47,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
       (1 to 10)
         .map(_ => getRecipe("ValidRecipe"))
         .map(RecipeCompiler.compileRecipe(_).recipeId)
-        .foreach(_ shouldBe "1fc5d434d145c3fb2a0057fab3ae00ad9b1b6f55886b584e775db7d4a904636d")
+        .foreach(_ shouldBe "1fc5d434d145c3fb")
     }
 
     "give a List of missing ingredients if an interaction has an ingredient that is not provided by any other event or interaction" in {
