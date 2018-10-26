@@ -32,16 +32,51 @@ This type is expressed by the [baker type system](type_system).
 
 An interaction is analagous to a function.
 
-It requires input (ingredients) and provides output (an event).
+It requires *input* ([ingredients](#ingredient)) and provides *output* ([events](#event)).
 
 Within this contract it may do anything. For example:
 
-- call an external system
+- query an external system
 - put a message on a bus
 - generate a document or image
 - extract or compose ingredients into others
 
 When finished, an interaction provides an event as its output.
+
+### Failure
+
+We distinquish 2 types of failures.
+
+1. A *technical* failure is one that could be retried and succeed. For example:
+    * Time outs because of unreliable network, packet loss
+    * External system is temporarily down or unresponsive
+    * External system returned a malformed/unexpected response
+
+    These failures are unexpected and are are modeled by throwing an exception from the interaction.
+
+2. A *functional* failure is one that cannot be retried. For example:
+    * The customer is too young for the request.
+    * Not enough credit to perform the transfer.
+
+    These failures are expected possible outcomes of the interaction.
+
+    They are modelled by returning an event from the interaction.
+
+### Failure mitigation (Failure strategies)
+
+In case of technical failures, baker offers 2 mitigation strategies:
+
+1. Retry with incremental backoff
+
+    This retries the interaction after some time. Configurable options:
+
+    `initialTimeout=100 milliseconds`, `backoffFactor=2`, `maximumInterval=10 minutes`, `period=24 hours`
+
+2. Continue with an event.
+
+    This is analagous to a try/catch in java code. The exception is logged but the process continues with a specified event.
+
+When no failure strategy is defined for an interaction by default
 
 ## Event
 
