@@ -7,9 +7,9 @@ import com.ing.baker.runtime.actor.{recipe_manager, protobuf => ilp}
 class RecipeManagerModule extends ProtoEventAdapterModule {
 
   override def toProto(ctx: ProtoEventAdapter): PartialFunction[AnyRef, scalapb.GeneratedMessage] = {
-    case RecipeManager.RecipeAdded(recipeId, compiledRecipe, timeStamp) =>
+    case RecipeManager.RecipeAdded(compiledRecipe, timeStamp) =>
       val compiledRecipeProto = ctx.toProto[ilp.CompiledRecipe](compiledRecipe)
-      protobuf.RecipeAdded(Option(recipeId), Option(compiledRecipeProto), Option(timeStamp))
+      protobuf.RecipeAdded(None, Some(compiledRecipeProto), Some(timeStamp))
 
     case RecipeManagerProtocol.AddRecipe(compiledRecipe) =>
       val compiledRecipeProto = ctx.toProto[ilp.CompiledRecipe](compiledRecipe)
@@ -31,18 +31,23 @@ class RecipeManagerModule extends ProtoEventAdapterModule {
     case RecipeManagerProtocol.GetAllRecipes =>
       protobuf.GetAllRecipes()
 
-    case RecipeManagerProtocol.RecipeInformation(recipeId, compiledRecipe, timestamp) =>
-      protobuf.RecipeEntry(Some(recipeId), Some(ctx.toProto[ilp.CompiledRecipe](compiledRecipe)), Some(timestamp))
+    case RecipeManagerProtocol.RecipeInformation(compiledRecipe, timestamp) =>
+      protobuf.RecipeEntry(None, Some(ctx.toProto[ilp.CompiledRecipe](compiledRecipe)), Some(timestamp))
 
     case RecipeManagerProtocol.AllRecipes(recipes: Seq[RecipeManagerProtocol.RecipeInformation]) =>
       protobuf.AllRecipes(recipes.map(ctx.toProto[protobuf.RecipeEntry]))
   }
 
   override def toDomain(ctx: ProtoEventAdapter): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
-    case recipe_manager.protobuf.RecipeAdded(Some(recipeId), Some(compiledRecipeMsg), optionalTimestamp) =>
+    case recipe_manager.protobuf.RecipeAdded(optionalRecipeId, Some(compiledRecipeMsg), optionalTimestamp) =>
       val timestamp = optionalTimestamp.getOrElse(0l)
-      val compiledRecipe = ctx.toDomain[il.CompiledRecipe](compiledRecipeMsg)
-      RecipeManager.RecipeAdded(recipeId, compiledRecipe, timestamp)
+      val compiledRecipe =
+        ctx.toDomain[il.CompiledRecipe](compiledRecipeMsg)
+
+      // in case there was a recipe id persisted we update it with that one
+      val recipeWithCorrectRecipeId = compiledRecipe.copy(recipeId = optionalRecipeId.getOrElse(compiledRecipe.recipeId))
+
+      RecipeManager.RecipeAdded(recipeWithCorrectRecipeId, timestamp)
 
     case recipe_manager.protobuf.AddRecipe(Some(compiledRecipeMsg)) =>
       val compiledRecipe = ctx.toDomain[il.CompiledRecipe](compiledRecipeMsg)
@@ -65,9 +70,14 @@ class RecipeManagerModule extends ProtoEventAdapterModule {
     case protobuf.GetAllRecipes() =>
       RecipeManagerProtocol.GetAllRecipes
 
-    case protobuf.RecipeEntry(Some(recipeId), Some(compiledRecipe), optionalTimestamp) =>
+    case protobuf.RecipeEntry(optionalRecipeId, Some(protoRecipe), optionalTimestamp) =>
       val timestamp = optionalTimestamp.getOrElse(0l)
-      RecipeManagerProtocol.RecipeInformation(recipeId, ctx.toDomain[il.CompiledRecipe](compiledRecipe), timestamp)
+      val compiledRecipe = ctx.toDomain[il.CompiledRecipe](protoRecipe)
+
+      // in case a recipe id was persisted we prefer it over the computed one
+      val compiledRecipeWithUpdatedRecipeId = optionalRecipeId.map(id => compiledRecipe.copy(recipeId = id)).getOrElse(compiledRecipe)
+
+      RecipeManagerProtocol.RecipeInformation(compiledRecipeWithUpdatedRecipeId, timestamp)
 
     case protobuf.AllRecipes(compiledRecipes: Seq[protobuf.RecipeEntry]) =>
       RecipeManagerProtocol.AllRecipes(compiledRecipes.map(ctx.toDomain[RecipeManagerProtocol.RecipeInformation]))

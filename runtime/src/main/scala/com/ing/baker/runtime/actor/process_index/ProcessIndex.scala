@@ -99,7 +99,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
     // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
     val futureResult = recipeManager.ask(GetAllRecipes)(updateCacheTimeout).mapTo[AllRecipes]
     val allRecipes = Await.result(futureResult, updateCacheTimeout)
-    recipeCache ++= allRecipes.recipes.map(ri => ri.recipeId -> (ri.compiledRecipe, ri.timestamp))
+    recipeCache ++= allRecipes.recipes.map(ri => ri.compiledRecipe.recipeId -> (ri.compiledRecipe, ri.timestamp))
   }
 
   def getRecipeWithTimeStamp(recipeId: String): Option[(CompiledRecipe, Long)] =
@@ -126,7 +126,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
   def createProcessActor(processId: String, compiledRecipe: CompiledRecipe): ActorRef = {
     val petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] =
-      new RecipeRuntime(compiledRecipe.name, interactionManager, context.system.eventStream)
+      new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream)
 
     val processActorProps =
       processInstanceProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,

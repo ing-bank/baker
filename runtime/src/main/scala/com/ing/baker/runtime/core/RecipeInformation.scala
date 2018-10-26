@@ -4,9 +4,9 @@ import com.ing.baker.il.CompiledRecipe
 
 import scala.collection.JavaConverters._
 
-case class RecipeInformation(recipeId: String, compiledRecipe: CompiledRecipe, recipeCreatedTime: Long, errors: Set[String]) {
+case class RecipeInformation(compiledRecipe: CompiledRecipe, recipeCreatedTime: Long, errors: Set[String]) {
 
-  def getRecipeId(): String = recipeId
+  def getRecipeId(): String = compiledRecipe.recipeId
 
   def getCompiledRecipe(): CompiledRecipe = compiledRecipe
 

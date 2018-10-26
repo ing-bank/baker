@@ -1,6 +1,8 @@
 package com.ing.baker
 package compiler
 
+import java.io.{ByteArrayOutputStream, ObjectOutputStream}
+
 import com.ing.baker.il.RecipeValidations.postCompileValidations
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
@@ -287,17 +289,19 @@ object RecipeCompiler {
       ++ internalEventArcs
       ++ multipleOutputFacilitatorArcs)
 
-    val petriNet: PetriNet[Place[_], Transition] = PetriNet(Graph(arcs: _*))
+    val petriNet: PetriNet[Place[_], Transition] = new PetriNet(Graph(arcs: _*))
 
     val initialMarking: Marking[Place] = petriNet.places.collect {
       case p@Place(_, FiringLimiterPlace(n)) => p -> Map((null, n))
     }.toMarking
 
+    val errors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors
+
     val compiledRecipe = CompiledRecipe(
       name = recipe.name,
       petriNet = petriNet,
       initialMarking = initialMarking,
-      validationErrors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors,
+      validationErrors = errors,
       eventReceivePeriod = recipe.eventReceivePeriod,
       retentionPeriod = recipe.retentionPeriod
     )

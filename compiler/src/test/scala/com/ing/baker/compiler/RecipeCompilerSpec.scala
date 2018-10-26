@@ -42,6 +42,14 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
       compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
     }
 
+    "Generate the same id for same recipe" in {
+
+      (1 to 10)
+        .map(_ => getRecipe("ValidRecipe"))
+        .map(RecipeCompiler.compileRecipe(_).recipeId)
+        .foreach(_ shouldBe "1fc5d434d145c3fb")
+    }
+
     "give a List of missing ingredients if an interaction has an ingredient that is not provided by any other event or interaction" in {
       val recipe = Recipe("NonProvidedIngredient")
         .withSensoryEvent(secondEvent)

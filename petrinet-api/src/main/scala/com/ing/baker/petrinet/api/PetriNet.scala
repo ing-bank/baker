@@ -7,7 +7,7 @@ import scalax.collection.edge.WLDiEdge
   *
  * Backed by a graph object from scala-graph (https://github.com/scala-graph/scala-graph)
  */
-case class PetriNet[P, T](val innerGraph: BiPartiteGraph[P, T, WLDiEdge]) {
+class PetriNet[P, T](val innerGraph: BiPartiteGraph[P, T, WLDiEdge]) {
 
   /**
     * The set of places of the petri net
@@ -77,4 +77,22 @@ case class PetriNet[P, T](val innerGraph: BiPartiteGraph[P, T, WLDiEdge]) {
     * @return
     */
   def outMarking(t: T): MultiSet[P] = innerGraph.outMarking(t)
+
+
+  /**
+    * We override the hashCode function since the scalax.collections.Graph hashCode is non deterministic
+    */
+  override lazy val hashCode = {
+
+    innerGraph.edges.map(e => (e.source.value, e.target.value, e.weight, e.label)).toSet.hashCode
+  }
+
+  override def equals(obj: Any) = {
+
+    obj match {
+      case null => false
+      case pn: PetriNet[_, _] => pn.innerGraph.equals(innerGraph)
+      case _ => false
+    }
+  }
 }

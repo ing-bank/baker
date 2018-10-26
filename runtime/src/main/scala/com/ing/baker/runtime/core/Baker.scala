@@ -132,7 +132,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     // here we ask the RecipeManager actor to return us the recipe for the given id
     val futureResult = recipeManager.ask(GetRecipe(recipeId))(timeout)
     Await.result(futureResult, timeout) match {
-      case RecipeFound(compiledRecipe, timestamp) => core.RecipeInformation(recipeId, compiledRecipe, timestamp, getImplementationErrors(compiledRecipe))
+      case RecipeFound(compiledRecipe, timestamp) => core.RecipeInformation(compiledRecipe, timestamp, getImplementationErrors(compiledRecipe))
       case NoRecipeFound(_)            => throw new IllegalArgumentException(s"No recipe found for recipe with id: $recipeId")
     }
   }
@@ -166,7 +166,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     recipeManager.ask(GetAllRecipes)(timeout)
       .mapTo[AllRecipes]
       .map(_.recipes.map { ri =>
-        ri.recipeId -> core.RecipeInformation(ri.recipeId, ri.compiledRecipe, ri.timestamp, getImplementationErrors(ri.compiledRecipe))
+        ri.compiledRecipe.recipeId -> core.RecipeInformation(ri.compiledRecipe, ri.timestamp, getImplementationErrors(ri.compiledRecipe))
       }.toMap)
 
   /**
