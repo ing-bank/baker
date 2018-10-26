@@ -11,12 +11,12 @@ object JavaModules {
 
   class ListModule extends ClassModule[java.util.List[_]] {
 
-    override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type) = {
+    override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): ListType = {
       val entryType = context.readType(getTypeParameter(javaType, 0))
       ListType(entryType)
     }
 
-    override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type) = value match {
+    override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): util.List[Any] = value match {
       case NullValue => null
       case ListValue(entries) if isApplicable(javaType) =>
         val entryType = getTypeParameter(javaType, 0)
@@ -35,12 +35,12 @@ object JavaModules {
 
   class SetModule extends ClassModule[java.util.Set[_]] {
 
-    override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type) = {
+    override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): ListType = {
       val entryType = context.readType(getTypeParameter(javaType, 0))
       ListType(entryType)
     }
 
-    override  def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type) = value match {
+    override  def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): util.Set[Any] = value match {
       case NullValue => null
       case ListValue(entries) if isApplicable(javaType) =>
         val entryType = getTypeParameter(javaType, 0)
@@ -59,24 +59,24 @@ object JavaModules {
 
   class MapModule extends ClassModule[java.util.Map[_, _]] {
 
-    override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type) = {
+    override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): MapType = {
       val entryType = context.readType(getTypeParameter(javaType, 0))
       MapType(entryType)
     }
 
-    override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type) = value match {
+    override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): util.Map[String, Any] = value match {
       case NullValue => null
       case RecordValue(entries) if classOf[java.util.Map[_,_]].isAssignableFrom(getBaseClass(javaType)) =>
         val keyType = getTypeParameter(javaType, 0)
 
         if (keyType != classOf[String])
-          throw new IllegalArgumentException(s"Unsuported key type: $keyType")
+          throw new IllegalArgumentException(s"Unsupported key type: $keyType")
 
         val valueType = getTypeParameter(javaType, 1)
 
-        val javaMap: java.util.Map[String, Any] = new util.HashMap[String, Any]()
+        val javaMap = new util.HashMap[String, Any]()
 
-        entries.foreach { case (name, value) => javaMap.put(name, context.toJava(value, valueType)) }
+        entries.foreach { case (name, _value) => javaMap.put(name, context.toJava(_value, valueType)) }
 
         javaMap
     }
