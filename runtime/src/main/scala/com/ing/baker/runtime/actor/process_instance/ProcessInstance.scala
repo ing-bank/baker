@@ -90,8 +90,6 @@ class ProcessInstance[P[_], T, S, E](processType: String,
       val uninitialized = Instance.uninitialized[P, T, S](processTopology)
       val event = InitializedEvent(initialMarking, state)
 
-      system.eventStream.publish(ProcessInstanceEvent(processType, processId, event))
-
       persistEvent(uninitialized, event) {
         eventSource.apply(uninitialized)
           .andThen(step)
@@ -146,7 +144,6 @@ class ProcessInstance[P[_], T, S, E](processType: String,
       val transition = t.asInstanceOf[T]
       val transitionId = transitionIdentifier(transition).value
 
-      system.eventStream.publish(ProcessInstanceEvent(processType, processId, event))
       log.transitionFired(processId, transition.toString, jobId, timeStarted, timeCompleted)
 
       persistEvent(instance, event)(
@@ -165,7 +162,6 @@ class ProcessInstance[P[_], T, S, E](processType: String,
       val transition = t.asInstanceOf[T]
       val transitionId = transitionIdentifier(transition).value
 
-      system.eventStream.publish(ProcessInstanceEvent(processType, processId, event))
       log.transitionFailed(processId, transition.toString, jobId, timeStarted, timeFailed, reason)
 
       strategy match {
