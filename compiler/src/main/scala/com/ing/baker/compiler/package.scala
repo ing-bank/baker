@@ -53,13 +53,12 @@ package object compiler {
           else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.ingredientType
         }
 
-      val (originalEvents, eventsToFire, providedIngredientEvent): (Seq[EventDescriptor], Seq[EventDescriptor], Option[EventDescriptor]) =
-        interactionDescriptor.output match {
-          case common.FiresOneOfEvents(events@_*) =>
-            val originalCompiledEvents = events.map(transformEventToCompiledEvent)
-            val compiledEvents = events.map(transformEventType).map(transformEventToCompiledEvent)
-            (originalCompiledEvents, compiledEvents, None)
-        }
+      val (originalEvents, eventsToFire, providedIngredientEvent): (Seq[EventDescriptor], Seq[EventDescriptor], Option[EventDescriptor]) = {
+        val originalCompiledEvents = interactionDescriptor.output.map(transformEventToCompiledEvent)
+        val compiledEvents = interactionDescriptor.output.map(transformEventType).map(transformEventToCompiledEvent)
+        (originalCompiledEvents, compiledEvents, None)
+      }
+
 
       //For each ingredient that is not provided
       //And is of the type Optional or Option

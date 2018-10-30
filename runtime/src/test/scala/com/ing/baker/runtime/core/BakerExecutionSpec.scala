@@ -6,14 +6,13 @@ import java.util.{Optional, UUID}
 import akka.actor.ActorSystem
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.testkit.{TestDuration, TestKit, TestProbe}
-import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.CaseClassIngredient
-import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy}
+import com.ing.baker.recipe.TestRecipe._
+import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
 import com.ing.baker.recipe.scaladsl.{Recipe, _}
-import com.ing.baker.types.PrimitiveValue
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock

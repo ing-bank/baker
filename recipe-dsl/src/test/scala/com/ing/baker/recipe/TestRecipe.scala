@@ -2,7 +2,7 @@ package com.ing.baker.recipe
 
 import java.util.Optional
 
-import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy}
+import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.scaladsl._
 
 import scala.concurrent.duration._
@@ -93,7 +93,7 @@ object TestRecipe {
     Interaction(
       name = "InteractionOne",
       inputIngredients = Seq(processId, initialIngredient),
-      output = FiresOneOfEvents(interactionOneSuccessful))
+      output = Seq(interactionOneSuccessful))
 
   trait InteractionOne {
     def name: String = "InteractionOne"
@@ -105,7 +105,7 @@ object TestRecipe {
     Interaction(
       name = "InteractionTwo",
       inputIngredients = Seq(initialIngredientOld),
-      output = FiresOneOfEvents(eventFromInteractionTwo))
+      output = Seq(eventFromInteractionTwo))
 
   trait InteractionTwo {
     val name: String = "InteractionTwo"
@@ -119,7 +119,7 @@ object TestRecipe {
     Interaction(
       name = "InteractionThree",
       inputIngredients = Seq(interactionOneIngredient, interactionTwoIngredient),
-      output = FiresOneOfEvents(Event[InteractionThreeSuccessful]))
+      output = Seq(Event[InteractionThreeSuccessful]))
 
   trait InteractionThree {
     val name: String = "InteractionThree"
@@ -133,7 +133,7 @@ object TestRecipe {
     Interaction(
       name = "InteractionFour",
       inputIngredients = Seq.empty,
-      output = FiresOneOfEvents(Event[InteractionFourSuccessful]))
+      output = Seq(Event[InteractionFourSuccessful]))
 
   trait InteractionFour {
     val name: String = "InteractionFour"
@@ -147,7 +147,7 @@ object TestRecipe {
     Interaction(
       name = "InteractionFive",
       inputIngredients = Seq(processId, initialIngredient, initialIngredientExtendedName),
-      output = FiresOneOfEvents(Event[InteractionFiveSuccessful]))
+      output = Seq(Event[InteractionFiveSuccessful]))
 
   trait InteractionFive {
     val name: String = "InteractionFive"
@@ -161,7 +161,7 @@ object TestRecipe {
     Interaction(
       name = "InteractionSix",
       inputIngredients = Seq(initialIngredientExtendedName),
-      output = FiresOneOfEvents(Event[InteractionSixSuccessful]))
+      output = Seq(Event[InteractionSixSuccessful]))
 
   trait InteractionSix {
     val name: String = "InteractionSix"
@@ -173,7 +173,7 @@ object TestRecipe {
     Interaction(
       name = "InteractionSeven",
       inputIngredients = Seq(initialIngredient),
-      output = FiresOneOfEvents(event1FromInteractionSeven, event2FromInteractionSeven))
+      output = Seq(event1FromInteractionSeven, event2FromInteractionSeven))
 
   trait InteractionSeven {
     val name: String = "InteractionSeven"
@@ -185,7 +185,7 @@ object TestRecipe {
     Interaction(
       name = "InteractionEight",
       inputIngredients = Seq(interactionSevenIngredient1, interactionSevenIngredient2),
-      output = FiresOneOfEvents())
+      output = Seq.empty)
 
   trait InteractionEight {
     val name: String = "InteractionEight"
@@ -197,7 +197,7 @@ object TestRecipe {
     Interaction(
       name = "fireTwoEventsInteraction",
       inputIngredients = Seq(initialIngredient),
-      output = FiresOneOfEvents(eventFromInteractionTwo, event1FromInteractionSeven))
+      output = Seq(eventFromInteractionTwo, event1FromInteractionSeven))
 
   trait fireTwoEventsInteraction {
     val name: String = "fireTwoEventsInteraction"
@@ -209,7 +209,7 @@ object TestRecipe {
     Interaction(
       name = "ProvidesNothingInteraction",
       inputIngredients = Seq(initialIngredient),
-      output = FiresOneOfEvents())
+      output = Seq.empty)
 
   trait ProvidesNothingInteraction {
     val name: String = "ProvidesNothingInteraction"
@@ -223,7 +223,7 @@ object TestRecipe {
     Interaction(
       name = "SieveInteraction",
       inputIngredients = Seq(processId, initialIngredient),
-      output = FiresOneOfEvents(Event[SieveInteractionSuccessful]))
+      output = Seq(Event[SieveInteractionSuccessful]))
 
   trait SieveInteraction {
     val name: String = "SieveInteraction"
@@ -237,7 +237,7 @@ object TestRecipe {
     Interaction(
       name = "ComplexIngredientInteraction",
       inputIngredients = Seq(initialIngredient),
-      FiresOneOfEvents(Event[ComplexIngredientInteractionSuccessful]))
+      Seq(Event[ComplexIngredientInteractionSuccessful]))
 
   trait ComplexIngredientInteraction {
     val name: String = "ComplexIngredientInteraction"
@@ -251,7 +251,7 @@ object TestRecipe {
     Interaction(
       name = "CaseClassIngredientInteraction",
       inputIngredients = Seq(initialIngredient),
-      output = FiresOneOfEvents(Event[CaseClassIngredientInteractionSuccessful]))
+      output = Seq(Event[CaseClassIngredientInteractionSuccessful]))
 
   trait CaseClassIngredientInteraction {
     val name: String = "CaseClassIngredientInteraction"
@@ -263,7 +263,7 @@ object TestRecipe {
     Interaction(
       name = "CaseClassIngredientInteraction2",
       inputIngredients = Seq(caseClassIngredient),
-      output = FiresOneOfEvents(emptyEvent))
+      output = Seq(emptyEvent))
 
   trait CaseClassIngredientInteraction2 {
     val name: String = "CaseClassIngredientInteraction2"
@@ -275,7 +275,7 @@ object TestRecipe {
     Interaction(
       name="NonMatchingReturnTypeInteraction",
       inputIngredients = Seq(initialIngredient),
-      output = FiresOneOfEvents(eventFromInteractionTwo))
+      output = Seq(eventFromInteractionTwo))
 
   trait NonMatchingReturnTypeInteraction {
     val name: String = "NonMatchingReturnTypeInteraction"
@@ -284,14 +284,15 @@ object TestRecipe {
   }
 
   val optionalIngredientInteraction =
-    Interaction(name="OptionalIngredientInteraction",
-      Seq(
+    Interaction(
+      name = "OptionalIngredientInteraction",
+      inputIngredients = Seq(
         missingJavaOptional,
         missingJavaOptional2,
         missingScalaOptional,
         missingScalaOptional2,
         initialIngredient),
-      FiresOneOfEvents())
+      output = Seq.empty)
 
   trait OptionalIngredientInteraction {
     val name: String = "OptionalIngredientInteraction"

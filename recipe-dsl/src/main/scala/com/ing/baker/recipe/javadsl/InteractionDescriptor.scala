@@ -1,7 +1,6 @@
 package com.ing.baker.recipe.javadsl
 
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.InteractionOutput
 import com.ing.baker.types.Converters
 
 import scala.annotation.varargs
@@ -10,7 +9,7 @@ import scala.collection.JavaConverters._
 case class InteractionDescriptor private(
                           override val originalName: String,
                           override val inputIngredients: Seq[common.Ingredient],
-                          override val output: InteractionOutput,
+                          override val output: Seq[common.Event],
                           override val requiredEvents: Set[String],
                           override val requiredOneOfEvents: Set[Set[String]],
                           override val predefinedIngredients: Map[String, com.ing.baker.types.Value],
@@ -215,12 +214,8 @@ case class InteractionDescriptor private(
                                       ingredientRenames: Map[String, String]): InteractionDescriptor = {
     val originalEvent: common.Event = eventClassToCommonEvent(eventClazz, None)
 
-    output match {
-      case common.FiresOneOfEvents(events@_*) =>
-        if (!events.contains(originalEvent))
-          throw new common.RecipeValidationException(s"Event transformation given for Interaction $name but does not fire event $originalEvent")
-      case _ => throw new common.RecipeValidationException(s"Event transformation given for Interaction $name but does not fire any event")
-    }
+    if (!output.contains(originalEvent))
+      throw new common.RecipeValidationException(s"Event transformation given for Interaction $name but does not fire event $originalEvent")
 
     val eventOutputTransformer = EventOutputTransformer(newEventName, ingredientRenames)
     this.copy(eventOutputTransformers = eventOutputTransformers + (originalEvent -> eventOutputTransformer))

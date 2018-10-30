@@ -14,7 +14,7 @@ object JavadslTestHelper {
   val sensoryEventWithoutIngredientCheck: common.Event = new scaladsl.Event("SensoryEventWithoutIngredient", Seq.empty, Some(1))
 
   //Interactions
-  val requiresProcessIdStringInteractionCheck: scaladsl.Interaction = scaladsl.Interaction("RequiresProcessIdStringInteraction", Seq(ProcessIdStringCheck, initialIngredientCheck), common.FiresOneOfEvents())
-  val firesEventInteractionCheck: scaladsl.Interaction = scaladsl.Interaction("FiresEventInteraction", Seq(initialIngredientCheck), common.FiresOneOfEvents(interactionProvidedEventCheck))
-  val firesTwoEventInteractionCheck: scaladsl.Interaction = scaladsl.Interaction("FiresTwoEventInteraction", Seq(initialIngredientCheck), common.FiresOneOfEvents(interactionProvidedEventCheck, interactionProvidedEvent2Check))
+  val requiresProcessIdStringInteractionCheck: scaladsl.Interaction = scaladsl.Interaction("RequiresProcessIdStringInteraction", Seq(ProcessIdStringCheck, initialIngredientCheck), Seq.empty)
+  val firesEventInteractionCheck: scaladsl.Interaction = scaladsl.Interaction("FiresEventInteraction", Seq(initialIngredientCheck), Seq((interactionProvidedEventCheck)))
+  val firesTwoEventInteractionCheck: scaladsl.Interaction = scaladsl.Interaction("FiresTwoEventInteraction", Seq(initialIngredientCheck), Seq(interactionProvidedEventCheck, interactionProvidedEvent2Check))
 }

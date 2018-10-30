@@ -1,6 +1,5 @@
 package com.ing.baker.recipe.scaladsl
 
-import com.ing.baker.recipe.common.FiresOneOfEvents
 import org.scalatest.{Matchers, WordSpecLike}
 
 
@@ -12,7 +11,7 @@ class InteractionSpec extends WordSpecLike with Matchers {
         val createCustomer = Interaction(
           name = "CreateCustomer",
           inputIngredients = Seq(customerName),
-          output = FiresOneOfEvents()
+          output = Seq()
         )
         createCustomer.equals(createCustomer) shouldBe true
       }
@@ -23,12 +22,12 @@ class InteractionSpec extends WordSpecLike with Matchers {
         val CreateCustomer = Interaction(
           name = "CreateCustomer",
           inputIngredients = Seq(customerName),
-          output = FiresOneOfEvents()
+          output = Seq()
         )
         val CreateCustomer2 = Interaction(
           name = "CreateCustomer",
           inputIngredients = Seq(customerName),
-          output = FiresOneOfEvents()
+          output = Seq()
         )
         CreateCustomer.equals(CreateCustomer2) shouldBe true
       }
@@ -39,12 +38,12 @@ class InteractionSpec extends WordSpecLike with Matchers {
         val CreateCustomer = Interaction(
           name = "CreateCustomer",
           inputIngredients = Seq(customerName),
-          output = FiresOneOfEvents()
+          output = Seq()
         )
         val CreateCustomer2 = Interaction(
           name = "CreateCustomer2",
           inputIngredients = Seq(customerName),
-          output = FiresOneOfEvents()
+          output = Seq()
         )
         CreateCustomer.equals(CreateCustomer2) shouldBe false
       }
@@ -55,7 +54,7 @@ class InteractionSpec extends WordSpecLike with Matchers {
         val CreateCustomer = Interaction(
           name = "CreateCustomer",
           inputIngredients = Seq(customerName),
-          output = FiresOneOfEvents()
+          output = Seq()
         )
         val otherObject = ""
         CreateCustomer.equals(otherObject) shouldBe false

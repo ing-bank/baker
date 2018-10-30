@@ -9,7 +9,6 @@ import com.ing.baker.baas.http.BAASAPI
 import com.ing.baker.baas.interaction.http.RemoteInteractionLauncher
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.recipe.common.FiresOneOfEvents
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, processId}
 import com.ing.baker.recipe.{commonserialize, scaladsl}
 import com.ing.baker.runtime.core.interations.MethodInteractionImplementation
@@ -112,7 +111,7 @@ object BAASSpec {
     Interaction(
       name = "InteractionOne",
       inputIngredients = Seq(processId, initialIngredient),
-      output = FiresOneOfEvents(Event[InteractionOneEvent]))
+      output = Seq(Event[InteractionOneEvent]))
 
   case class InteractionOne() {
     def name: String = "InteractionOne"

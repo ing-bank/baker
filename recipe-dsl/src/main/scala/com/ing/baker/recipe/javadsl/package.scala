@@ -2,7 +2,6 @@ package com.ing.baker.recipe
 
 import java.lang.reflect.Method
 
-import com.ing.baker.recipe.common.FiresOneOfEvents
 import com.ing.baker.recipe.javadsl.ReflectionHelpers._
 import com.ing.baker.types.{Converters, Type}
 
@@ -50,7 +49,7 @@ package object javadsl {
             method.parameterTypeForName(name).get,
             s"Unsupported type for ingredient '$name' on interaction '${interactionClass.getName}'")))
 
-    val output: common.InteractionOutput = {
+    val output: Seq[common.Event] = {
 
       if (method.isAnnotationPresent(classOf[annotations.FiresEvent])) {
         val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[annotations.FiresEvent]).oneOf()
@@ -61,10 +60,9 @@ package object javadsl {
               throw new common.RecipeValidationException(s"Interaction $name provides event '${eventClass.getName}' that is incompatible with it's return type")
         }
 
-        val events: Seq[common.Event] = outputEventClasses.map(eventClassToCommonEvent(_, None))
-        common.FiresOneOfEvents(events: _*)
+        outputEventClasses.map(eventClassToCommonEvent(_, None))
       }
-      else FiresOneOfEvents()
+      else Seq.empty
     }
 
     InteractionDescriptor(name, inputIngredients, output, Set.empty, Set.empty, Map.empty, Map.empty, None, None, None, Map.empty, newName)
