@@ -4,7 +4,7 @@ import java.io.{File, PrintWriter}
 
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
-import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionOutput, ProvidesIngredient, ProvidesNothing}
+import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionOutput, ProvidesNothing}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 import com.ing.baker.recipe.{common, scaladsl}
 import org.scalacheck.Prop.forAll
@@ -128,12 +128,7 @@ object RecipePropertiesSpec {
   val interactionOutputGen: Gen[InteractionOutput] = for {
     nrOfEvents <- Gen.choose(0, maxNrOfOutputEventsPerInteraction)
     events <- Gen.listOfN(nrOfEvents, eventGen)
-    ingredient <- ingredientGen
-    output <- Gen.frequency(
-      //      1 -> Gen.const(ProvidesNothing),
-      5 -> Gen.const(ProvidesIngredient(ingredient)),
-      10 -> Gen.const(FiresOneOfEvents(events: _*)))
-  } yield output
+  } yield FiresOneOfEvents(events: _*)
 
   val recipeGen: Gen[Recipe] = for {
     name <- nameGen
@@ -198,7 +193,6 @@ object RecipePropertiesSpec {
     val (outputIngredients: Set[common.Ingredient], outputEvents: Set[common.Event]) = output match {
       case ProvidesNothing => (Set.empty, Set.empty)
       case FiresOneOfEvents(_events@_*) => (Set.empty, _events.toSet)
-      case ProvidesIngredient(ingredient) => (Set(ingredient), Set.empty)
     }
 
     val interactionDescriptor = Interaction(sample(nameGen), ingredients.toSeq, output)

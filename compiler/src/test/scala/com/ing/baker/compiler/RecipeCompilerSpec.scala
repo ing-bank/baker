@@ -6,7 +6,7 @@ import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
-import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy, ProvidesIngredient, ProvidesNothing}
+import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy, ProvidesNothing}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe, processId}
 import com.ing.baker.types.{NullValue, PrimitiveValue}
 import org.scalatest.{Matchers, WordSpecLike}
@@ -64,7 +64,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
         Interaction(
           name = "wrongProcessIdInteraction",
           inputIngredients = Seq(new Ingredient[Int](common.ProcessIdName), initialIngredient),
-          output = ProvidesIngredient(interactionOneOriginalIngredient))
+          output = ProvidesNothing)
 
       val recipe = Recipe("NonProvidedIngredient")
         .withSensoryEvent(initialEvent)
@@ -250,7 +250,8 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
       val eventWithOptionIngredient = Event("eventWithOptionIngredient", stringOptionIngredient)
 
       val interactionWithOptionIngredient = Interaction("interactionWithOptionIngredient", Seq(initialIngredient), FiresOneOfEvents(eventWithOptionIngredient))
-      val secondInteraction = Interaction("secondInteraction", Seq(renamedStringOptionIngredient), ProvidesIngredient(Ingredient[String]("someIngredient")))
+
+      val secondInteraction = Interaction("secondInteraction", Seq(renamedStringOptionIngredient), ProvidesNothing)
 
       val recipe = Recipe("interactionWithEventOutputTransformer")
         .withSensoryEvent(initialEvent)

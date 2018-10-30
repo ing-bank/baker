@@ -55,13 +55,6 @@ package object compiler {
 
       val (originalEvents, eventsToFire, providedIngredientEvent): (Seq[EventDescriptor], Seq[EventDescriptor], Option[EventDescriptor]) =
         interactionDescriptor.output match {
-          case common.ProvidesIngredient(outputIngredient) =>
-            val ingredientName: String =
-              if (interactionDescriptor.overriddenOutputIngredientName.nonEmpty) interactionDescriptor.overriddenOutputIngredientName.get
-              else outputIngredient.name
-            val event = EventDescriptor(interactionDescriptor.name + SuccessEventAppend, Seq(IngredientDescriptor(ingredientName, outputIngredient.ingredientType)))
-            val events = Seq(event)
-            (events, events, Some(event))
           case common.FiresOneOfEvents(events@_*) =>
             val originalCompiledEvents = events.map(transformEventToCompiledEvent)
             val compiledEvents = events.map(transformEventType).map(transformEventToCompiledEvent)

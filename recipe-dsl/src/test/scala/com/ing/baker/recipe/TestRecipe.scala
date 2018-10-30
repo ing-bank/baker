@@ -2,7 +2,7 @@ package com.ing.baker.recipe
 
 import java.util.Optional
 
-import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy, ProvidesIngredient}
+import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy}
 import com.ing.baker.recipe.scaladsl._
 
 import scala.concurrent.duration._
@@ -229,18 +229,6 @@ object TestRecipe {
     val name: String = "SieveInteraction"
 
     def apply(processId: String, initialIngredient: String): SieveInteractionSuccessful
-  }
-
-  val sieveInteractionWithoutDefaultConstructor =
-    Interaction(
-      name = "SieveInteractionWithoutDefaultConstructor",
-      inputIngredients = Seq(processId, initialIngredient),
-      output = ProvidesIngredient(sievedIngredient))
-
-  trait SieveInteractionWithoutDefaultConstructor {
-    val name: String = "SieveInteractionWithoutDefaultConstructor"
-
-    def apply(processId: String, initialIngredient: String): String
   }
 
   case class ComplexIngredientInteractionSuccessful(complexOjectIngredient: ComplexObjectIngredient)
