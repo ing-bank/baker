@@ -178,15 +178,6 @@ case class InteractionDescriptor private(
     this.copy(predefinedIngredients = predefinedIngredients ++ params.map{case (key, value) => key -> Converters.toValue(value)})
 
   /**
-    * This renames the ingredient that is created by this interaction
-    *
-    * @param toName the new ingredient name
-    * @return
-    */
-  def renameProvidedIngredient(toName: String): InteractionDescriptor =
-    this.copy(overriddenOutputIngredientName = Some(toName))
-
-  /**
     * This renames a input ingredient
     *
     * @param name the name of the input ingredient you want to rename

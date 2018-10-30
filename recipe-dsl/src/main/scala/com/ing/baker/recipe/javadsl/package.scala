@@ -50,15 +50,8 @@ package object javadsl {
             s"Unsupported type for ingredient '$name' on interaction '${interactionClass.getName}'")))
 
     val output: common.InteractionOutput = {
-      if (method.isAnnotationPresent(classOf[annotations.ProvidesIngredient]) && method.isAnnotationPresent(classOf[annotations.FiresEvent]))
-        throw new common.RecipeValidationException(s"Interaction $name has both ProvidesIngredient and FiresEvent annotation, only one may be specified")
-      //ProvidesIngredient
-      else if (method.isAnnotationPresent(classOf[annotations.ProvidesIngredient])) {
-        val interactionOutputName: String = method.getAnnotation(classOf[annotations.ProvidesIngredient]).value()
-        common.ProvidesIngredient(createIngredient(interactionOutputName, parseType(method.getGenericReturnType, s"Unsupported return type for interaction '${interactionClass.getSimpleName}'")))
-      }
-      //ProvidesEvent
-      else if (method.isAnnotationPresent(classOf[annotations.FiresEvent])) {
+
+      if (method.isAnnotationPresent(classOf[annotations.FiresEvent])) {
         val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[annotations.FiresEvent]).oneOf()
 
         outputEventClasses.foreach {
@@ -70,7 +63,6 @@ package object javadsl {
         val events: Seq[common.Event] = outputEventClasses.map(eventClassToCommonEvent(_, None))
         common.FiresOneOfEvents(events: _*)
       }
-      //ProvidesNothing
       else common.ProvidesNothing
     }
 
