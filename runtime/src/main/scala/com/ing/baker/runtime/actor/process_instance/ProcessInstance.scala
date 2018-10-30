@@ -23,10 +23,9 @@ import cats.syntax.apply._
 
 object ProcessInstance {
 
-  case class Settings(
-                       executionContext: ExecutionContext,
-                       idleTTL: Option[FiniteDuration],
-                       encryption: Encryption)
+  case class Settings(executionContext: ExecutionContext,
+                      idleTTL: Option[FiniteDuration],
+                      encryption: Encryption)
 
   private case class IdleStop(seq: Long) extends InternalBakerMessage
 
@@ -217,7 +216,7 @@ class ProcessInstance[P[_], T, S, E](processType: String,
         case Some(correlationId) if instance.hasReceivedCorrelationId(correlationId) =>
             sender() ! AlreadyReceived(correlationId)
         case _ =>
-          runtime.jobPicker.createJob[S, Any](transition, input, correlationIdOption).run(instance).value match {
+          runtime.tokenGame.createJob[S, Any](transition, input, correlationIdOption).run(instance).value match {
             case (updatedInstance, Right(job)) ⇒
               executeJob(job, sender())
               context become running(updatedInstance, scheduledRetries)
@@ -235,7 +234,7 @@ class ProcessInstance[P[_], T, S, E](processType: String,
 
   def step(instance: Instance[P, T, S]): (Instance[P, T, S], Set[Job[P, T, S]]) = {
 
-    runtime.jobPicker.allEnabledJobs.run(instance).value match {
+    runtime.tokenGame.allEnabledJobs.run(instance).value match {
       case (updatedInstance, jobs) ⇒
 
         if (jobs.isEmpty && updatedInstance.activeJobs.isEmpty)

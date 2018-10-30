@@ -1,11 +1,16 @@
-package com.ing.baker.petrinet.dsl.colored
+package com.ing.baker.petrinet.dsl.state
 
 import cats.effect.IO
 import com.ing.baker.petrinet.api._
+import com.ing.baker.petrinet.dsl.colored.{Place, TransitionExceptionHandler, arc, createPetriNet}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
 
 
-case class TransitionBehaviour[S, E](automated: Boolean, exceptionHandler: TransitionExceptionHandler[Place], fn: S ⇒ E) {
+case class TransitionBehaviour[S, E](
+    automated: Boolean,
+    exceptionHandler: TransitionExceptionHandler[Place],
+    fn: S ⇒ E) {
+
   def asTransition(id: Long) = StateTransition[S, E](id, s"t$id", automated, exceptionHandler, state ⇒ IO { (fn(state)) })
 }
 

@@ -30,36 +30,17 @@ package object api extends MultiSetOps with MarkingOps {
     */
   type MarkedPlace[P[_], T] = (P[T], MultiSet[T])
 
-  implicit def extractId[T](e: T)(implicit identifiable: Identifiable[T]) = identifiable(e).value
-
   implicit class IdentifiableOps[T : Identifiable](seq: Iterable[T]) {
     def findById(id: Long): Option[T] = seq.find(e ⇒ implicitly[Identifiable[T]].apply(e).value == id)
     def getById(id: Long, name: String = "element"): T = findById(id).getOrElse { throw new IllegalStateException(s"No $name found with id: $id") }
   }
 
-  implicit class OptionOps(check: Boolean) {
-    def option[A](provider: => A): Option[A] =
-      if (check)
-        Some(provider)
-      else
-        None
-  }
-
-  def requireUniqueElements[T](i: Iterable[T], name: String = "Element"): Unit = {
-    (Set.empty[T] /: i) { (set, e) ⇒
-      if (set.contains(e))
-        throw new IllegalArgumentException(s"$name '$e' is not unique!")
-      else
-        set + e
-    }
-  }
-
-  type BiPartiteGraph[P, T, E[X] <: EdgeLikeIn[X]] = Graph[Either[P, T], E]
+  type PetriNetGraph[P, T] = Graph[Either[P, T], WLDiEdge]
 
   implicit def placeToNode[P, T](p: P): Either[P, T] = Left(p)
   implicit def transitionToNode[P, T](t: T): Either[P, T] = Right(t)
 
-  implicit class PetriNetGraphNodeOps[P, T](val node: BiPartiteGraph[P, T, WLDiEdge]#NodeT) {
+  implicit class PetriNetGraphNodeOps[P, T](val node: PetriNetGraph[P, T]#NodeT) {
 
     def asPlace: P = node.value match {
       case Left(p) ⇒ p
@@ -81,18 +62,6 @@ package object api extends MultiSetOps with MarkingOps {
 
     def isPlace: Boolean = node.value.isLeft
     def isTransition: Boolean = node.value.isRight
-  }
-
-  implicit class PetriNetGraphOps[P, T](val graph: BiPartiteGraph[P, T, WLDiEdge]) {
-
-    def inMarking(t: T): MultiSet[P] = graph.get(t).incoming.map(e ⇒ e.source.asPlace -> e.weight.toInt).toMap
-    def outMarking(t: T): MultiSet[P] = graph.get(t).outgoing.map(e ⇒ e.target.asPlace -> e.weight.toInt).toMap
-
-    def findPTEdge(from: P, to: T): Option[WLDiEdge[Either[P, T]]] =
-      graph.get(Left(from)).outgoing.find(_.target.value == Right(to)).map(_.toOuter)
-
-    def findTPEdge(from: T, to: P): Option[WLDiEdge[Either[P, T]]] =
-      graph.get(Right(from)).outgoing.find(_.target.value == Left(to)).map(_.toOuter)
   }
 }
 
