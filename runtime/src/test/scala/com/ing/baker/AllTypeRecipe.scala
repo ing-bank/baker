@@ -1,7 +1,7 @@
 package com.ing.baker
 
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.{UntilDeadline, UntilMaximumRetries}
-import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy, ProvidesNothing}
+import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy}
 import com.ing.baker.recipe.scaladsl._
 import org.joda.time.{DateTime, LocalDate, LocalDateTime}
 
@@ -127,7 +127,7 @@ object AllTypeRecipe {
   val interactionSix = Interaction(
     name = "interactionSix",
     inputIngredients = jodaLocalDateIngredient,
-    output = ProvidesNothing
+    output = FiresOneOfEvents()
   )
 
   val interactionSeven = Interaction(

@@ -2,6 +2,7 @@ package com.ing.baker.recipe
 
 import java.lang.reflect.Method
 
+import com.ing.baker.recipe.common.FiresOneOfEvents
 import com.ing.baker.recipe.javadsl.ReflectionHelpers._
 import com.ing.baker.types.{Converters, Type}
 
@@ -63,7 +64,7 @@ package object javadsl {
         val events: Seq[common.Event] = outputEventClasses.map(eventClassToCommonEvent(_, None))
         common.FiresOneOfEvents(events: _*)
       }
-      else common.ProvidesNothing
+      else FiresOneOfEvents()
     }
 
     InteractionDescriptor(name, inputIngredients, output, Set.empty, Set.empty, Map.empty, Map.empty, None, None, None, Map.empty, newName)

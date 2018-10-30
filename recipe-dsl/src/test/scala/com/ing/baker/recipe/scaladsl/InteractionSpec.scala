@@ -1,6 +1,6 @@
 package com.ing.baker.recipe.scaladsl
 
-import com.ing.baker.recipe.common.ProvidesNothing
+import com.ing.baker.recipe.common.FiresOneOfEvents
 import org.scalatest.{Matchers, WordSpecLike}
 
 
@@ -12,7 +12,7 @@ class InteractionSpec extends WordSpecLike with Matchers {
         val createCustomer = Interaction(
           name = "CreateCustomer",
           inputIngredients = Seq(customerName),
-          output = ProvidesNothing
+          output = FiresOneOfEvents()
         )
         createCustomer.equals(createCustomer) shouldBe true
       }
@@ -23,12 +23,12 @@ class InteractionSpec extends WordSpecLike with Matchers {
         val CreateCustomer = Interaction(
           name = "CreateCustomer",
           inputIngredients = Seq(customerName),
-          output = ProvidesNothing
+          output = FiresOneOfEvents()
         )
         val CreateCustomer2 = Interaction(
           name = "CreateCustomer",
           inputIngredients = Seq(customerName),
-          output = ProvidesNothing
+          output = FiresOneOfEvents()
         )
         CreateCustomer.equals(CreateCustomer2) shouldBe true
       }
@@ -39,12 +39,12 @@ class InteractionSpec extends WordSpecLike with Matchers {
         val CreateCustomer = Interaction(
           name = "CreateCustomer",
           inputIngredients = Seq(customerName),
-          output = ProvidesNothing
+          output = FiresOneOfEvents()
         )
         val CreateCustomer2 = Interaction(
           name = "CreateCustomer2",
           inputIngredients = Seq(customerName),
-          output = ProvidesNothing
+          output = FiresOneOfEvents()
         )
         CreateCustomer.equals(CreateCustomer2) shouldBe false
       }
@@ -55,7 +55,7 @@ class InteractionSpec extends WordSpecLike with Matchers {
         val CreateCustomer = Interaction(
           name = "CreateCustomer",
           inputIngredients = Seq(customerName),
-          output = ProvidesNothing
+          output = FiresOneOfEvents()
         )
         val otherObject = ""
         CreateCustomer.equals(otherObject) shouldBe false

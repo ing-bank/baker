@@ -4,7 +4,7 @@ import java.io.{File, PrintWriter}
 
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
-import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionOutput, ProvidesNothing}
+import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionOutput}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 import com.ing.baker.recipe.{common, scaladsl}
 import org.scalacheck.Prop.forAll
@@ -191,8 +191,7 @@ object RecipePropertiesSpec {
 
     //return the interaction description and a list of all ingredients that the interaction provides
     val (outputIngredients: Set[common.Ingredient], outputEvents: Set[common.Event]) = output match {
-      case ProvidesNothing => (Set.empty, Set.empty)
-      case FiresOneOfEvents(_events@_*) => (Set.empty, _events.toSet)
+      case FiresOneOfEvents(_events @ _*) => (Set.empty[common.Ingredient], _events.toSet)
     }
 
     val interactionDescriptor = Interaction(sample(nameGen), ingredients.toSeq, output)

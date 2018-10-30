@@ -177,7 +177,6 @@ object RecipeCompiler {
               case None => e.providedIngredients.map(_.name)
             }
           }
-          case ProvidesNothing => Set.empty
         })
 
     val actionDescriptors: Seq[InteractionDescriptor] = recipe.interactions ++ recipe.sieves

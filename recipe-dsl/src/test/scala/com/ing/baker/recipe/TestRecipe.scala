@@ -185,7 +185,7 @@ object TestRecipe {
     Interaction(
       name = "InteractionEight",
       inputIngredients = Seq(interactionSevenIngredient1, interactionSevenIngredient2),
-      output = common.ProvidesNothing)
+      output = FiresOneOfEvents())
 
   trait InteractionEight {
     val name: String = "InteractionEight"
@@ -209,7 +209,7 @@ object TestRecipe {
     Interaction(
       name = "ProvidesNothingInteraction",
       inputIngredients = Seq(initialIngredient),
-      output = common.ProvidesNothing)
+      output = FiresOneOfEvents())
 
   trait ProvidesNothingInteraction {
     val name: String = "ProvidesNothingInteraction"
@@ -291,7 +291,7 @@ object TestRecipe {
         missingScalaOptional,
         missingScalaOptional2,
         initialIngredient),
-      common.ProvidesNothing)
+      FiresOneOfEvents())
 
   trait OptionalIngredientInteraction {
     val name: String = "OptionalIngredientInteraction"

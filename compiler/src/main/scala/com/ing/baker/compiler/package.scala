@@ -4,7 +4,7 @@ import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
 import com.ing.baker.il.petrinet._
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.{InteractionDescriptor, ProvidesNothing}
+import com.ing.baker.recipe.common.InteractionDescriptor
 import com.ing.baker.types._
 
 package object compiler {
@@ -59,7 +59,6 @@ package object compiler {
             val originalCompiledEvents = events.map(transformEventToCompiledEvent)
             val compiledEvents = events.map(transformEventType).map(transformEventToCompiledEvent)
             (originalCompiledEvents, compiledEvents, None)
-          case ProvidesNothing => (Seq.empty, Seq.empty, None)
         }
 
       //For each ingredient that is not provided

@@ -6,7 +6,7 @@ import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
-import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy, ProvidesNothing}
+import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe, processId}
 import com.ing.baker.types.{NullValue, PrimitiveValue}
 import org.scalatest.{Matchers, WordSpecLike}
@@ -64,7 +64,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
         Interaction(
           name = "wrongProcessIdInteraction",
           inputIngredients = Seq(new Ingredient[Int](common.processIdName), initialIngredient),
-          output = ProvidesNothing)
+          output = FiresOneOfEvents())
 
       val recipe = Recipe("NonProvidedIngredient")
         .withSensoryEvent(initialEvent)
@@ -98,7 +98,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
         Interaction(
           name = "InteractionWithOptional",
           inputIngredients = Seq(processId, initialIngredientOptionalInt, initialIngredientOptionInt),
-          output = ProvidesNothing)
+          output = FiresOneOfEvents())
 
       val recipe = Recipe("WrongTypedOptionalIngredient")
         .withInteractions(
@@ -124,7 +124,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
         Interaction(
           name = "InteractionWithOptional",
           inputIngredients = Seq(processId, initialIngredientInt),
-          output = ProvidesNothing)
+          output = FiresOneOfEvents())
 
       val recipe = Recipe("CorrectTypedOptionalIngredient")
         .withInteractions(
@@ -171,7 +171,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
 
     "fail compilation for an empty or null named interaction" in {
       List("", null) foreach { name =>
-        val invalidInteraction = Interaction(name, Seq.empty, ProvidesNothing)
+        val invalidInteraction = Interaction(name, Seq.empty, FiresOneOfEvents())
         val recipe = Recipe("InteractionNameTest").withInteractions(invalidInteraction).withSensoryEvent(initialEvent)
 
         intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Interaction with a null or empty name found"
@@ -251,7 +251,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
 
       val interactionWithOptionIngredient = Interaction("interactionWithOptionIngredient", Seq(initialIngredient), FiresOneOfEvents(eventWithOptionIngredient))
 
-      val secondInteraction = Interaction("secondInteraction", Seq(renamedStringOptionIngredient), ProvidesNothing)
+      val secondInteraction = Interaction("secondInteraction", Seq(renamedStringOptionIngredient), FiresOneOfEvents())
 
       val recipe = Recipe("interactionWithEventOutputTransformer")
         .withSensoryEvent(initialEvent)
@@ -317,7 +317,7 @@ class DepcratedCompilerSpec extends WordSpecLike with Matchers {
 
     "(deprecated) fail compilation for an empty or null named sieve interaction " in {
       List("", null) foreach { name =>
-        val invalidSieveInteraction = Interaction(name, Seq.empty, ProvidesNothing)
+        val invalidSieveInteraction = Interaction(name, Seq.empty, FiresOneOfEvents())
         val recipe = Recipe("SieveNameTest").withSieve(invalidSieveInteraction).withSensoryEvent(initialEvent)
 
         intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Sieve Interaction with a null or empty name found"
