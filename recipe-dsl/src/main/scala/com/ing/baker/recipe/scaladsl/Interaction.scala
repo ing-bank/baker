@@ -52,9 +52,9 @@ case class Interaction private(override val name: String,
                                    newIngredient: String): Interaction =
     copy(overriddenIngredientNames = overriddenIngredientNames + (oldIngredient -> newIngredient))
 
-  def withOverriddenOutputIngredientName(newIngredientOutputName: String): Interaction =
-    copy(overriddenOutputIngredientName = Some(newIngredientOutputName))
+  def withEventOutputTransformer(event: common.Event, ingredientRenames: Map[String, String]): Interaction =
+    copy(eventOutputTransformers = eventOutputTransformers + (event -> EventOutputTransformer(event.name, ingredientRenames)))
 
-  def withEventOutputTransformer(event: Event, newEventName: String, ingredientRenames: Map[String, String]): Interaction =
+  def withEventOutputTransformer(event: common.Event, newEventName: String, ingredientRenames: Map[String, String]): Interaction =
     copy(eventOutputTransformers = eventOutputTransformers + (event -> EventOutputTransformer(newEventName, ingredientRenames)))
 }

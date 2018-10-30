@@ -195,13 +195,13 @@ trait BakerRuntimeTestBase
   }
 
   protected def setupMockResponse(): Unit = {
-    when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
+    when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(InteractionOneSuccessful(interactionOneIngredientValue))
     when(testInteractionTwoMock.apply(anyString())).thenReturn(interactionTwoEventValue)
-    when(testInteractionThreeMock.apply(anyString(), anyString())).thenReturn(interactionThreeIngredientValue)
-    when(testInteractionFourMock.apply()).thenReturn(interactionFourIngredientValue)
-    when(testInteractionFiveMock.apply(anyString(), anyString(), anyString())).thenReturn(interactionFiveIngredientValue)
-    when(testInteractionSixMock.apply(anyString())).thenReturn(interactionSixIngredientValue)
-    when(testSieveInteractionMock.apply(anyString(), anyString())).thenReturn(sievedIngredientValue)
+    when(testInteractionThreeMock.apply(anyString(), anyString())).thenReturn(InteractionThreeSuccessful(interactionThreeIngredientValue))
+    when(testInteractionFourMock.apply()).thenReturn(InteractionFourSuccessful(interactionFourIngredientValue))
+    when(testInteractionFiveMock.apply(anyString(), anyString(), anyString())).thenReturn(InteractionFiveSuccessful(interactionFiveIngredientValue))
+    when(testInteractionSixMock.apply(anyString())).thenReturn(InteractionSixSuccessful(interactionSixIngredientValue))
+    when(testSieveInteractionMock.apply(anyString(), anyString())).thenReturn(SieveInteractionSuccessful(sievedIngredientValue))
   }
 
   protected def timeBlockInMilliseconds[T](block: => T): Long = {

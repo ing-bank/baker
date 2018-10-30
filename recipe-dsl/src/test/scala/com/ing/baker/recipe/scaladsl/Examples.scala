@@ -1,6 +1,6 @@
 package com.ing.baker.recipe.scaladsl
 
-import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
+import com.ing.baker.recipe.common.FiresOneOfEvents
 
 object Examples {
 
@@ -145,13 +145,14 @@ object Examples {
     val NameProvidedEvent = Event("nameProvided", customerName)
     val accountOpenedEvent = Event("accountOpened", accountId, accountName)
     val accountOpenedFailedEvent = Event("accountOpenedFailed")
+    val createCustomerSuccessful = Event("CreateCustomerSuccessful", customerId)
 
     //Recipe
     //Interactions
     val createCustomer = Interaction(
       name = "CreateCustomer",
       inputIngredients = customerName,
-      output = ProvidesIngredient(customerId)
+      output = FiresOneOfEvents(createCustomerSuccessful)
     )
 
     val openAccount = Interaction(

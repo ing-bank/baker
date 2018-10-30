@@ -59,7 +59,7 @@ object BakerEventsSpec {
     Recipe(recipeName)
       .withInteractions(
         interactionOne
-          .withOverriddenOutputIngredientName("interactionOneIngredient")
+          .withEventOutputTransformer(interactionOneSuccessful, Map("interactionOneOriginalIngredient" -> "interactionOneIngredient"))
           .withFailureStrategy(InteractionFailureStrategy.RetryWithIncrementalBackoff(initialDelay = 10 millisecond, maximumRetries = 3)),
         interactionTwo
           .withOverriddenIngredientName("initialIngredientOld", "initialIngredient"),
