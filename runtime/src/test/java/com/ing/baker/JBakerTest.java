@@ -10,6 +10,7 @@ import com.ing.baker.recipe.javadsl.Recipe;
 import com.ing.baker.runtime.core.Baker;
 import com.ing.baker.runtime.core.BakerException;
 import com.ing.baker.runtime.core.EventListener;
+import com.ing.baker.runtime.core.RecipeInformation;
 import com.ing.baker.runtime.core.events.ProcessCreated;
 import com.ing.baker.runtime.core.events.Subscribe;
 import com.ing.baker.runtime.java_api.JBaker;
@@ -29,8 +30,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.ing.baker.compiler.JavaCompiledRecipeTest.setupComplexRecipe;
-import static com.ing.baker.compiler.JavaCompiledRecipeTest.setupSimpleRecipe;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
@@ -171,10 +170,14 @@ public class JBakerTest {
 
         // -- get recipe
 
+        when(mockBaker.getAllRecipes(any(FiniteDuration.class)))
+                .thenReturn(new scala.collection.immutable.HashMap<String, RecipeInformation>());
         jBaker.getAllRecipes();
         verify(mockBaker).getAllRecipes(any(FiniteDuration.class));
 
-        jBaker.getCompiledRecipe(testRecipeId);
+        when(mockBaker.getRecipe(any(String.class), any(FiniteDuration.class)))
+                .thenReturn(new RecipeInformation(null, 0l, new scala.collection.immutable.HashSet<String>()));
+        jBaker.getRecipe(testRecipeId);
         verify(mockBaker).getRecipe(eq(testRecipeId), any(FiniteDuration.class));
 
         // -- get index
@@ -245,7 +248,8 @@ public class JBakerTest {
 
     @Test
     public void shouldFailWhenSieveNotDefaultConstructor() throws BakerException {
-        Recipe recipe = JavaCompiledRecipeTest.setupComplexRecipe().withSieve(InteractionDescriptor.of(JavaCompiledRecipeTest.SieveImplWithoutDefaultConstruct.class));
+        Recipe recipe = JavaCompiledRecipeTest.setupComplexRecipe()
+                .withSieve(InteractionDescriptor.of(JavaCompiledRecipeTest.SieveImplWithoutDefaultConstruct.class));
 
         exception.expect(BakerException.class);
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);

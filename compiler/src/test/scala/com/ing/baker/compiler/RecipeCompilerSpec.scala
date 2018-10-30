@@ -5,8 +5,8 @@ import java.util.Optional
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common
+import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
-import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe, processId}
 import com.ing.baker.types.{NullValue, PrimitiveValue}
 import org.scalatest.{Matchers, WordSpecLike}
@@ -42,6 +42,14 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
       compiledRecipe.allEvents.map(_.name) should contain(exhaustedEvent.name)
     }
 
+    "Generate the same id for same recipe" in {
+
+      (1 to 10)
+        .map(_ => getRecipe("ValidRecipe"))
+        .map(RecipeCompiler.compileRecipe(_).recipeId)
+        .foreach(_ shouldBe "1fc5d434d145c3fb")
+    }
+
     "give a List of missing ingredients if an interaction has an ingredient that is not provided by any other event or interaction" in {
       val recipe = Recipe("NonProvidedIngredient")
         .withSensoryEvent(secondEvent)
@@ -55,15 +63,15 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
       val wrongProcessIdInteraction =
         Interaction(
           name = "wrongProcessIdInteraction",
-          inputIngredients = Seq(new Ingredient[Int](common.ProcessIdName), initialIngredient),
-          output = ProvidesIngredient(interactionOneOriginalIngredient))
+          inputIngredients = Seq(new Ingredient[Int](common.processIdName), initialIngredient),
+          output = Seq.empty)
 
       val recipe = Recipe("NonProvidedIngredient")
         .withSensoryEvent(initialEvent)
         .withInteractions(wrongProcessIdInteraction)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("Non supported process id type: PrimitiveType(int) on interaction: 'wrongProcessIdInteraction'")
+      compiledRecipe.validationErrors should contain("Non supported process id type: Int32 on interaction: 'wrongProcessIdInteraction'")
     }
 
     "give a list of wrong ingredients if an ingredient is of the wrong type" in {
@@ -76,7 +84,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
         .withSensoryEvent(initialEventInt)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("Interaction 'InteractionOne' expects ingredient 'initialIngredient:PrimitiveType(class java.lang.String)', however incompatible type: 'PrimitiveType(int)' was provided")
+      compiledRecipe.validationErrors should contain("Interaction 'InteractionOne' expects ingredient 'initialIngredient:CharArray', however incompatible type: 'Int32' was provided")
     }
 
     "give a list of wrong ingredients if an Optional ingredient is of the wrong Optional type" in {
@@ -90,7 +98,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
         Interaction(
           name = "InteractionWithOptional",
           inputIngredients = Seq(processId, initialIngredientOptionalInt, initialIngredientOptionInt),
-          output = ProvidesNothing)
+          output = Seq.empty)
 
       val recipe = Recipe("WrongTypedOptionalIngredient")
         .withInteractions(
@@ -98,8 +106,8 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
         .withSensoryEvents(initialEventIntOptional, initialEventIntOption)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionalInt:OptionType(PrimitiveType(int))', however incompatible type: 'OptionType(PrimitiveType(class java.lang.String))' was provided")
-      compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionInt:OptionType(ListType(PrimitiveType(int)))', however incompatible type: 'OptionType(ListType(PrimitiveType(class java.lang.String)))' was provided")
+      compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionalInt:OptionType(Int32)', however incompatible type: 'OptionType(CharArray)' was provided")
+      compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionInt:OptionType(ListType(Int32))', however incompatible type: 'OptionType(ListType(CharArray))' was provided")
     }
 
     "give an validation error for an empty/non-logical recipe" in {
@@ -116,7 +124,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
         Interaction(
           name = "InteractionWithOptional",
           inputIngredients = Seq(processId, initialIngredientInt),
-          output = ProvidesNothing)
+          output = Seq.empty)
 
       val recipe = Recipe("CorrectTypedOptionalIngredient")
         .withInteractions(
@@ -136,7 +144,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
         .withSensoryEvent(initialEvent)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("Predefined argument 'initialIngredient' is not of type: PrimitiveType(class java.lang.String) on interaction: 'InteractionOne'")
+      compiledRecipe.validationErrors should contain("Predefined argument 'initialIngredient' is not of type: CharArray on interaction: 'InteractionOne'")
     }
 
     "give a list of wrong ingredients if an predefined ingredient is not needed by the interaction" in {
@@ -163,7 +171,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
 
     "fail compilation for an empty or null named interaction" in {
       List("", null) foreach { name =>
-        val invalidInteraction = Interaction(name, Seq.empty, ProvidesNothing)
+        val invalidInteraction = Interaction(name, Seq.empty, Seq())
         val recipe = Recipe("InteractionNameTest").withInteractions(invalidInteraction).withSensoryEvent(initialEvent)
 
         intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Interaction with a null or empty name found"
@@ -241,8 +249,9 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
 
       val eventWithOptionIngredient = Event("eventWithOptionIngredient", stringOptionIngredient)
 
-      val interactionWithOptionIngredient = Interaction("interactionWithOptionIngredient", Seq(initialIngredient), FiresOneOfEvents(eventWithOptionIngredient))
-      val secondInteraction = Interaction("secondInteraction", Seq(renamedStringOptionIngredient), ProvidesIngredient(Ingredient[String]("someIngredient")))
+      val interactionWithOptionIngredient = Interaction("interactionWithOptionIngredient", Seq(initialIngredient), Seq(eventWithOptionIngredient))
+
+      val secondInteraction = Interaction("secondInteraction", Seq(renamedStringOptionIngredient), Seq())
 
       val recipe = Recipe("interactionWithEventOutputTransformer")
         .withSensoryEvent(initialEvent)
@@ -308,7 +317,7 @@ class DepcratedCompilerSpec extends WordSpecLike with Matchers {
 
     "(deprecated) fail compilation for an empty or null named sieve interaction " in {
       List("", null) foreach { name =>
-        val invalidSieveInteraction = Interaction(name, Seq.empty, ProvidesNothing)
+        val invalidSieveInteraction = Interaction(name, Seq.empty, Seq())
         val recipe = Recipe("SieveNameTest").withSieve(invalidSieveInteraction).withSensoryEvent(initialEvent)
 
         intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Sieve Interaction with a null or empty name found"

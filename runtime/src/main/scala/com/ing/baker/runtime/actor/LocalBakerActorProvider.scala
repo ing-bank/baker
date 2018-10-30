@@ -29,7 +29,7 @@ class LocalBakerActorProvider(config: Config, configuredEncryption: Encryption) 
     actorSystem.actorOf(RecipeManager.props())
   }
 
-  override def getIndex(actorRef: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Set[ActorMetadata] = {
+  override def getIndex(actorRef: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[ActorMetadata] = {
 
     import akka.pattern.ask
     import system.dispatcher

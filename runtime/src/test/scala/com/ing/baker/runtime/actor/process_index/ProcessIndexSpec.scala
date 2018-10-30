@@ -12,20 +12,21 @@ import com.ing.baker.petrinet.api.{Marking, PetriNet}
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol.{AllRecipes, GetAllRecipes}
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol.{AllRecipes, GetAllRecipes, RecipeInformation}
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
-import com.ing.baker.types.PrimitiveType
+import com.ing.baker.types
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Mockito
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Matchers, WordSpecLike}
+import scalax.collection.immutable.Graph
 
 import scala.concurrent.duration._
-import scalax.collection.immutable.Graph
 
 object ProcessIndexSpec {
   val config: Config = ConfigFactory.parseString(
@@ -63,8 +64,8 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
   val recipeManager = system.actorOf(Props(new Actor() {
     override def receive: Receive = {
       case GetAllRecipes => {
-        sender ! AllRecipes(Map[String, CompiledRecipe](recipeId ->
-          CompiledRecipe("name", PetriNet(Graph.empty), Marking.empty, Seq.empty, Option.empty, Option.empty)))
+        sender ! AllRecipes(Seq[RecipeInformation](
+          RecipeInformation(CompiledRecipe("name", recipeId, new PetriNet(Graph.empty), Marking.empty, Seq.empty, Option.empty, Option.empty), 0L)))
       }
     }
   }))
@@ -115,7 +116,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       actorIndex ! CreateProcess(recipeId, processId)
 
       petriNetActorProbe.expectNoMessage(noMsgExpectTimeout)
-      expectMsg(ProcessAlreadyInitialized(processId))
+      expectMsg(ProcessAlreadyExists(processId))
     }
 
 
@@ -133,8 +134,10 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
-      recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", PetriNet(Graph.empty), Marking.empty, Seq.empty, Option.empty, Some(recipeRetentionPeriod)))))
+      recipeManagerProbe.reply(AllRecipes(Seq[RecipeInformation](
+        RecipeManagerProtocol.RecipeInformation(
+        CompiledRecipe("name", recipeId, new PetriNet(Graph.empty), Marking.empty, Seq.empty,
+          Option.empty, Some(recipeRetentionPeriod)), 0L))))
 
       val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
       processProbe.expectMsg(initializeMsg)
@@ -161,8 +164,9 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
-      recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", petrinetMock, Marking.empty, Seq.empty, Option.empty, Option.empty))))
+      recipeManagerProbe.reply(AllRecipes(Seq[RecipeInformation](
+        RecipeManagerProtocol.RecipeInformation(CompiledRecipe("name", recipeId, petrinetMock, Marking.empty,
+          Seq.empty, Option.empty, Option.empty), 0L))))
 
       petriNetActorProbe.expectMsg(initializeMsg)
 
@@ -212,8 +216,11 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
-      recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", PetriNet(Graph.empty), Marking.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty))))
+
+      recipeManagerProbe.reply(AllRecipes(Seq[RecipeInformation](
+        RecipeManagerProtocol.RecipeInformation(
+          CompiledRecipe("name", recipeId, new PetriNet(Graph.empty), Marking.empty, Seq.empty,
+            Some(receivePeriodTimeout), Option.empty), 0L))))
 
       petriNetActorProbe.expectMsg(initializeMsg)
 
@@ -238,14 +245,15 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
-      val eventType = EventDescriptor("Event", Seq(IngredientDescriptor("ingredientName", PrimitiveType(classOf[String]))))
+      val eventType = EventDescriptor("Event", Seq(IngredientDescriptor("ingredientName", types.CharArray)))
       val transitions: Set[Transition] = Set(EventTransition(eventType, true, None))
       when(petrinetMock.transitions).thenReturn(transitions)
 
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
-      recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", petrinetMock, Marking.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty))))
+      recipeManagerProbe.reply(AllRecipes(Seq[RecipeInformation](
+        RecipeManagerProtocol.RecipeInformation(
+          CompiledRecipe("name", recipeId, petrinetMock, Marking.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty), 0L))))
 
       petriNetActorProbe.expectMsg(initializeMsg)
 
@@ -276,8 +284,10 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
-      recipeManagerProbe.reply(AllRecipes(Map[String, CompiledRecipe](recipeId ->
-        CompiledRecipe("name", petrinetMock, Marking.empty, Seq.empty, Some(receivePeriodTimeout), Option.empty))))
+      recipeManagerProbe.reply(AllRecipes(Seq[RecipeInformation](
+        RecipeManagerProtocol.RecipeInformation(
+          CompiledRecipe("name", recipeId, petrinetMock, Marking.empty, Seq.empty,
+            Some(receivePeriodTimeout), Option.empty), 0L))))
 
       petriNetActorProbe.expectMsg(initializeMsg)
 

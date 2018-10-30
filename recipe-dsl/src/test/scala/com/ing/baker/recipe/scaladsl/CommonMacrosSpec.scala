@@ -1,6 +1,6 @@
 package com.ing.baker.recipe.scaladsl
 
-import com.ing.baker.types.PrimitiveType
+import com.ing.baker.types
 import org.scalatest.{Matchers, WordSpecLike}
 
 class CommonMacrosSpec extends WordSpecLike with Matchers {
@@ -9,13 +9,13 @@ class CommonMacrosSpec extends WordSpecLike with Matchers {
     "constructed using macro" should {
       "correctly derive the class and the name" in {
         val myIngredient = Ingredient[String]
-        myIngredient.ingredientType shouldBe PrimitiveType(classOf[String])
+        myIngredient.ingredientType shouldBe types.CharArray
         myIngredient.name shouldBe "myIngredient"
       }
 
       "do not derive the name if explicitly set" in {
         val myIngredient = Ingredient[String]("someIngredientName")
-        myIngredient.ingredientType shouldBe PrimitiveType(classOf[String])
+        myIngredient.ingredientType shouldBe types.CharArray
         myIngredient.name shouldBe "someIngredientName"
       }
     }

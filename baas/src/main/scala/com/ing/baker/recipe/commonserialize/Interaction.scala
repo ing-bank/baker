@@ -1,11 +1,10 @@
 package com.ing.baker.recipe.commonserialize
 
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.InteractionOutput
 
 case class Interaction(override val name: String,
                        override val inputIngredients: Seq[Ingredient],
-                       override val output: InteractionOutput)
+                       override val output: Seq[common.Event])
   extends common.Interaction {
 
   def this(interaction: common.Interaction) =

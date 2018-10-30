@@ -1,7 +1,5 @@
 package com.ing.baker.petrinet.api
 
-import scalax.collection.edge.WLDiEdge
-
 /**
  * Petri net class.
   *
@@ -97,4 +95,21 @@ case class PetriNet[P, T](val innerGraph: PetriNetGraph[P, T]) {
     */
   def findTPEdge(from: T, to: P): Option[Any] =
     innerGraph.get(Right(from)).outgoing.find(_.target.value == Left(to)).map(_.toOuter.label)
+
+  /**
+    * We override the hashCode function since the scalax.collections.Graph hashCode is non deterministic
+    */
+  override lazy val hashCode = {
+
+    innerGraph.edges.map(e => (e.source.value, e.target.value, e.weight, e.label)).toSet.hashCode
+  }
+
+  override def equals(obj: Any) = {
+
+    obj match {
+      case null => false
+      case pn: PetriNet[_, _] => pn.innerGraph.equals(innerGraph)
+      case _ => false
+    }
+  }
 }

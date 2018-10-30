@@ -7,22 +7,21 @@ import scala.annotation.varargs
 import scala.collection.JavaConverters._
 
 case class InteractionDescriptor private(
-                                          override val interaction: common.Interaction,
-                                          override val requiredEvents: Set[String],
-                                          override val requiredOneOfEvents: Set[Set[String]],
-                                          override val predefinedIngredients: Map[String, com.ing.baker.types.Value],
-                                          override val overriddenIngredientNames: Map[String, String],
-                                          override val overriddenOutputIngredientName: Option[String] = Option.empty[String],
-                                          override val maximumInteractionCount: Option[Int],
-                                          override val failureStrategy: Option[common.InteractionFailureStrategy] = None,
-                                          override val eventOutputTransformers: Map[common.Event, common.EventOutputTransformer] = Map.empty,
-                                          newName: String = null)
+                          override val originalName: String,
+                          override val inputIngredients: Seq[common.Ingredient],
+                          override val output: Seq[common.Event],
+                          override val requiredEvents: Set[String],
+                          override val requiredOneOfEvents: Set[Set[String]],
+                          override val predefinedIngredients: Map[String, com.ing.baker.types.Value],
+                          override val overriddenIngredientNames: Map[String, String],
+                          override val overriddenOutputIngredientName: Option[String] = Option.empty[String],
+                          override val maximumInteractionCount: Option[Int],
+                          override val failureStrategy: Option[common.InteractionFailureStrategy] = None,
+                          override val eventOutputTransformers: Map[common.Event, common.EventOutputTransformer] = Map.empty,
+                          newName: Option[String] = None)
   extends common.InteractionDescriptor {
 
-  override val name: String = {
-    if (newName != null) newName
-    else interaction.name
-  }
+  override val name: String = newName.getOrElse(originalName)
 
   /**
     * This sets a requirement for this interaction that a specific event needs to have been fired before it can execute.
@@ -99,7 +98,7 @@ case class InteractionDescriptor private(
 
     copy(requiredOneOfEvents = newRequired)
   }
-//ipv assign, toevoegen in deze functie
+
   /**
     * This sets a requirement for this interaction that one of the given events needs to have been fired before it can execute.
     *
@@ -178,15 +177,6 @@ case class InteractionDescriptor private(
     this.copy(predefinedIngredients = predefinedIngredients ++ params.map{case (key, value) => key -> Converters.toValue(value)})
 
   /**
-    * This renames the ingredient that is created by this interaction
-    *
-    * @param toName the new ingredient name
-    * @return
-    */
-  def renameProvidedIngredient(toName: String): InteractionDescriptor =
-    this.copy(overriddenOutputIngredientName = Some(toName))
-
-  /**
     * This renames a input ingredient
     *
     * @param name the name of the input ingredient you want to rename
@@ -223,12 +213,9 @@ case class InteractionDescriptor private(
                                       newEventName: String,
                                       ingredientRenames: Map[String, String]): InteractionDescriptor = {
     val originalEvent: common.Event = eventClassToCommonEvent(eventClazz, None)
-    interaction.output match {
-      case common.FiresOneOfEvents(events@_*) =>
-        if (!events.contains(originalEvent))
-          throw new common.RecipeValidationException(s"Event transformation given for Interaction $name but does not fire event $originalEvent")
-      case _ => throw new common.RecipeValidationException(s"Event transformation given for Interaction $name but does not fire any event")
-    }
+
+    if (!output.contains(originalEvent))
+      throw new common.RecipeValidationException(s"Event transformation given for Interaction $name but does not fire event $originalEvent")
 
     val eventOutputTransformer = EventOutputTransformer(newEventName, ingredientRenames)
     this.copy(eventOutputTransformers = eventOutputTransformers + (originalEvent -> eventOutputTransformer))
@@ -249,19 +236,7 @@ case class InteractionDescriptor private(
 }
 
 object InteractionDescriptor {
-  def of[T <: Interaction](interactionClass: Class[T]): InteractionDescriptor = {
-    InteractionDescriptor(interactionClassToCommonInteraction(interactionClass), Set.empty, Set.empty, Map.empty, Map.empty, None, None)
-  }
+  def of[T <: Interaction](interactionClass: Class[T]): InteractionDescriptor = interactionClassToCommonInteraction(interactionClass, None)
 
-  def of[T <: Interaction](interactionClass: Class[T], name: String): InteractionDescriptor = {
-    InteractionDescriptor(
-      interactionClassToCommonInteraction(interactionClass),
-      Set.empty,
-      Set.empty,
-      Map.empty,
-      Map.empty,
-      None,
-      None,
-      newName = name)
-  }
+  def of[T <: Interaction](interactionClass: Class[T], name: String): InteractionDescriptor = interactionClassToCommonInteraction(interactionClass, Some(name))
 }

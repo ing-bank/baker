@@ -8,8 +8,44 @@ option (scalapb.options) = {
     flat_package: true
 };
 
+// PERSISTED MESSAGES
 message RecipeAdded {
-
     optional string recipeId = 1;
     optional CompiledRecipe compiledRecipe = 2;
+    optional int64 timeStamp = 3;
+}
+
+// PROTOCOL MESSAGES
+
+message AddRecipe {
+    optional CompiledRecipe compiledRecipe = 1;
+}
+
+message AddRecipeResponse {
+    optional string recipeId = 1;
+}
+
+message GetRecipe {
+    optional string recipeId = 1;
+}
+
+message RecipeFound {
+    optional CompiledRecipe compiledRecipe = 1;
+    optional int64 timestamp = 2;
+}
+
+message NoRecipeFound {
+    optional string recipeId = 1;
+}
+
+message GetAllRecipes {}
+
+message RecipeEntry {
+  optional string recipeId = 1;
+  optional CompiledRecipe compiledRecipe = 2;
+  optional int64 timestamp = 3;
+}
+
+message AllRecipes {
+    repeated RecipeEntry recipeEntries = 1;
 }

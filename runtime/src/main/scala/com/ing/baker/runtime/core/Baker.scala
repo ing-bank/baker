@@ -4,7 +4,6 @@ import java.util.concurrent.TimeoutException
 
 import akka.NotUsed
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
-import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
@@ -12,17 +11,17 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, SourceRef}
 import akka.util.Timeout
 import com.ing.baker.il._
+import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
-import com.ing.baker.petrinet.runtime.EventSourcing.{TransitionFailedEvent, TransitionFiredEvent}
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue
+import com.ing.baker.petrinet.runtime.EventSourcing.TransitionFiredEvent
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEvent
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
-import com.ing.baker.runtime.core.events.BakerEvent
+import com.ing.baker.runtime.core
+import com.ing.baker.runtime.core.events.{BakerEvent, EventReceived, InteractionCompleted, InteractionFailed}
 import com.ing.baker.runtime.core.interations.{InteractionImplementation, InteractionManager, MethodInteractionImplementation}
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.RecipeRuntime
@@ -34,7 +33,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 object Baker {
 
@@ -121,21 +120,30 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   }
 
   /**
-    * Returns the recipe for the given RecipeId
+    * Returns the recipe information for the given RecipeId
     *
     * @param recipeId
     * @return
     */
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def getRecipe(recipeId: String, timeout: FiniteDuration = defaultInquireTimeout): CompiledRecipe = {
-
+  def getRecipe(recipeId: String, timeout: FiniteDuration = defaultInquireTimeout): RecipeInformation = {
     // here we ask the RecipeManager actor to return us the recipe for the given id
     val futureResult = recipeManager.ask(GetRecipe(recipeId))(timeout)
-
     Await.result(futureResult, timeout) match {
-      case RecipeFound(compiledRecipe) => compiledRecipe
+      case RecipeFound(compiledRecipe, timestamp) => core.RecipeInformation(compiledRecipe, timestamp, getImplementationErrors(compiledRecipe))
       case NoRecipeFound(_)            => throw new IllegalArgumentException(s"No recipe found for recipe with id: $recipeId")
     }
+  }
+
+  /**
+    * Returns the compiled recipe for the given RecipeId
+    *
+    * @param recipeId
+    * @return
+    */
+  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
+  def getCompiledRecipe(recipeId: String, timeout: FiniteDuration = defaultInquireTimeout): CompiledRecipe = {
+    this.getRecipe(recipeId, timeout).compiledRecipe
   }
 
   /**
@@ -144,7 +152,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
-  def getAllRecipes(timeout: FiniteDuration = defaultInquireTimeout): Map[String, CompiledRecipe] =
+  def getAllRecipes(timeout: FiniteDuration = defaultInquireTimeout): Map[String, RecipeInformation] =
     Await.result(getAllRecipesAsync(timeout), timeout)
 
   /**
@@ -152,29 +160,12 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     *
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
-  def getAllRecipesAsync(timeout: FiniteDuration = defaultInquireTimeout): Future[Map[String, CompiledRecipe]] =
+  def getAllRecipesAsync(timeout: FiniteDuration = defaultInquireTimeout): Future[Map[String, RecipeInformation]] =
     recipeManager.ask(GetAllRecipes)(timeout)
       .mapTo[AllRecipes]
-      .map(_.compiledRecipes)
-
-  /**
-    * Returns the health of a specific recipe
-    */
-  def getRecipeHealth(recipeId: String, timeout: FiniteDuration = defaultInquireTimeout): RecipeHealth = {
-    val compiledRecipe: CompiledRecipe = getRecipe(recipeId, timeout)
-    RecipeHealth(recipeId, compiledRecipe.name, getImplementationErrors(compiledRecipe))
-  }
-
-  /**
-    * Returns the health of all recipes
-    */
-  def getAllRecipeHealths(timeout: FiniteDuration = defaultInquireTimeout): Set[RecipeHealth] = {
-    val recipes: Map[String, CompiledRecipe] = getAllRecipes()
-    recipes.map {
-      case (recipeId, compiledRecipe) =>
-        RecipeHealth(recipeId, compiledRecipe.name, getImplementationErrors(compiledRecipe))
-    }.toSet
-  }
+      .map(_.recipes.map { ri =>
+        ri.compiledRecipe.recipeId -> core.RecipeInformation(ri.compiledRecipe, ri.timestamp, getImplementationErrors(ri.compiledRecipe))
+      }.toMap)
 
   /**
     * Creates a process instance for the given recipeId with the given processId as identifier
@@ -202,7 +193,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
     val eventualState: Future[ProcessState] = initializeFuture.map {
       case msg: Initialized             => msg.state.asInstanceOf[ProcessState]
-      case ProcessAlreadyInitialized(_) => throw new IllegalArgumentException(s"Process with id '$processId' already exists.")
+      case ProcessAlreadyExists(_) => throw new IllegalArgumentException(s"Process with id '$processId' already exists.")
       case NoRecipeFound(_)             => throw new IllegalArgumentException(s"Recipe with id '$recipeId' does not exist.")
       case msg @ _                      => throw new BakerException(s"Unexpected message of type: ${msg.getClass}")
     }
@@ -273,7 +264,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     val futureResult = processIndexActor.ask(GetCompiledRecipe(processId))(defaultInquireTimeout)
 
     Await.result(futureResult, defaultInquireTimeout) match {
-      case RecipeFound(compiledRecipe) => getEventsForRecipe(processId, compiledRecipe)
+      case RecipeFound(compiledRecipe, _) => getEventsForRecipe(processId, compiledRecipe)
       case ProcessDeleted(_)           => throw new ProcessDeletedException(s"Process $processId is deleted")
       case NoSuchProcess(_)            => throw new NoSuchProcessException(s"No process found for $processId")
       case _                           => throw new BakerException("Unknown response received")
@@ -323,7 +314,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   def getIndex(timeout: FiniteDuration = defaultInquireTimeout): Set[ProcessMetadata] = {
     bakerActorProvider
       .getIndex(processIndexActor)(actorSystem, timeout)
-      .map(p => ProcessMetadata(p.recipeId, p.processId, p.createdDateTime))
+      .map(p => ProcessMetadata(p.recipeId, p.processId, p.createdDateTime)).toSet
   }
 
   /**
@@ -392,7 +383,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   def getVisualState(processId: String, timeout: FiniteDuration = defaultInquireTimeout): String = {
     val futureResult = processIndexActor.ask(GetCompiledRecipe(processId))(timeout)
     Await.result(futureResult, timeout) match {
-      case RecipeFound(compiledRecipe) =>
+      case RecipeFound(compiledRecipe, _) =>
         RecipeVisualizer.visualizeRecipe(
           compiledRecipe,
           config,
@@ -404,29 +395,16 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   }
 
   private def doRegisterEventListener(listener: EventListener, processFilter: String => Boolean): Boolean = {
-    // Translates a petri net TransitionFiredEvent to an optional RuntimeEvent
-    def toRuntimeEvent[P[_], T, E](event: TransitionFiredEvent[P, T, E]): Option[RuntimeEvent] = {
-      val t = event.transition.asInstanceOf[Transition]
-      if ((t.isSensoryEvent || t.isInteraction) && event.output.isInstanceOf[RuntimeEvent])
-        Some(event.output.asInstanceOf[RuntimeEvent])
-      else
-        None
-    }
 
-    val subscriber = actorSystem.actorOf(Props(new Actor() {
-      override def receive: Receive = {
-        case ProcessInstanceEvent(processType, processId, event: TransitionFiredEvent[_, _, _]) if processFilter(processType) =>
-          toRuntimeEvent(event).foreach(e => listener.processEvent(processId, e))
-        case ProcessInstanceEvent(processType, processId, event: TransitionFailedEvent[_, _, _]) if processFilter(processType) =>
-          event.exceptionStrategy match {
-            case Continue(_, event: RuntimeEvent) =>
-              listener.processEvent(processId, event)
-            case _ =>
-          }
-        case _: ProcessInstanceEvent => // purposely ignored in order to not have unnecessary unhandled messages logged
-      }
-    }))
-    actorSystem.eventStream.subscribe(subscriber.actorRef, classOf[ProcessInstanceEvent])
+    registerEventListenerPF {
+
+      case EventReceived(_, recipeName, _, processId, _, event) if processFilter(recipeName) =>
+        listener.processEvent(processId, event)
+      case InteractionCompleted(_, _, recipeName, _, processId, _, event) if processFilter(recipeName) =>
+        listener.processEvent(processId, event)
+      case InteractionFailed(_, _, recipeName, _, processId, _, _, _, ExceptionStrategyOutcome.Continue(eventName)) if processFilter(recipeName) =>
+        listener.processEvent(processId, RuntimeEvent(eventName, Seq.empty))
+    }
   }
 
   /**
@@ -455,7 +433,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   def registerEventListenerPF(pf: PartialFunction[BakerEvent, Unit]): Boolean = {
 
     val listenerActor = actorSystem.actorOf(Props(new Actor() {
-      override def receive = {
+      override def receive: Receive = {
         case event: BakerEvent => Try { pf.applyOrElse[BakerEvent, Unit](event, _ => ()) }.failed.foreach { e =>
           log.warn(s"Listener function threw exception for event: $event", e)
         }

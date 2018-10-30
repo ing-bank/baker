@@ -13,8 +13,8 @@ object Place {
   case object InteractionEventOutputPlace extends PlaceType
   case class  FiringLimiterPlace(maxLimit: Int) extends PlaceType
   case object EventPreconditionPlace extends PlaceType
-  case object EventOrPreconditionPlace extends PlaceType {override def labelPrepend: String = "EventOrPreconditionPlace:"}
-  case object IntermediatePlace extends PlaceType
+  case object EventOrPreconditionPlace extends PlaceType { override def labelPrepend: String = "EventOrPreconditionPlace:" }
+  case object IntermediatePlace extends PlaceType  { override def labelPrepend: String = "IntermediatePlace:" }
   case object EmptyEventIngredientPlace extends PlaceType
   case object MultiTransitionPlace extends PlaceType
 
