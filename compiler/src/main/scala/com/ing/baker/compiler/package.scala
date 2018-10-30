@@ -49,7 +49,7 @@ package object compiler {
       //Replace ingredient tags with overridden tags
       val inputFields: Seq[(String, Type)] = interactionDescriptor.inputIngredients
         .map { ingredient =>
-          if (ingredient.name == common.ProcessIdName) il.processIdName -> ingredient.ingredientType
+          if (ingredient.name == common.processIdName) il.processIdName -> ingredient.ingredientType
           else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.ingredientType
         }
 

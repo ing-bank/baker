@@ -63,7 +63,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
       val wrongProcessIdInteraction =
         Interaction(
           name = "wrongProcessIdInteraction",
-          inputIngredients = Seq(new Ingredient[Int](common.ProcessIdName), initialIngredient),
+          inputIngredients = Seq(new Ingredient[Int](common.processIdName), initialIngredient),
           output = ProvidesNothing)
 
       val recipe = Recipe("NonProvidedIngredient")
