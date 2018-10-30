@@ -6,7 +6,7 @@ package object scaladsl {
 
   implicit def StringToRecipe(name: String): Recipe = Recipe(name)
 
-  val processId: Ingredient[_] = new Ingredient[String](common.ProcessIdName)
+  val processId: Ingredient[_] = new Ingredient[String](common.processIdName)
 }
 
 

@@ -1,7 +1,5 @@
 package com.ing.baker.recipe.scaladsl
 
-import com.ing.baker.recipe.common.{FiresOneOfEvents, ProvidesIngredient}
-
 object Examples {
 
   object webshop {
@@ -35,22 +33,22 @@ object Examples {
     val validateOrder = Interaction(
       name = "ValidateOrder",
       inputIngredients = order,
-      output = FiresOneOfEvents(valid, sorry))
+      output = Seq(valid, sorry))
 
     val manufactureGoods = Interaction(
       name = "ManufactureGoods",
       inputIngredients = order,
-      output = FiresOneOfEvents(goodsManufactured))
+      output = Seq(goodsManufactured))
 
     val sendInvoice = Interaction(
       name = "SendInvoice",
       inputIngredients = customerInfo,
-      output = FiresOneOfEvents(invoiceWasSent))
+      output = Seq(invoiceWasSent))
 
     val shipGoods = Interaction(
       name = "ShipGoods",
       inputIngredients = Seq(goods, customerInfo),
-      output = FiresOneOfEvents(goodsShipped)
+      output = Seq(goodsShipped)
     )
 
     // recipe
@@ -103,19 +101,19 @@ object Examples {
     val getAccount = Interaction(
       name = "GetAccount",
       inputIngredients = Seq.empty,
-      output = FiresOneOfEvents(getAccountSuccessful, getAccountFailed)
+      output = Seq(getAccountSuccessful, getAccountFailed)
     )
 
     val assignAccount = Interaction(
       name = "AssignAccount",
       inputIngredients = Seq(customerId, iban),
-      output = FiresOneOfEvents(assignAccountSuccessful, assignAccountFailed)
+      output = Seq(assignAccountSuccessful, assignAccountFailed)
     )
 
     val registerIndividual = Interaction(
       name = "RegisterIndividual",
       inputIngredients = Seq(name, address),
-      output = FiresOneOfEvents(registerIndividualSuccessful, registerIndividualFailed)
+      output = Seq(registerIndividualSuccessful, registerIndividualFailed)
     )
 
     // recipe
@@ -145,19 +143,20 @@ object Examples {
     val NameProvidedEvent = Event("nameProvided", customerName)
     val accountOpenedEvent = Event("accountOpened", accountId, accountName)
     val accountOpenedFailedEvent = Event("accountOpenedFailed")
+    val createCustomerSuccessful = Event("CreateCustomerSuccessful", customerId)
 
     //Recipe
     //Interactions
     val createCustomer = Interaction(
       name = "CreateCustomer",
       inputIngredients = customerName,
-      output = ProvidesIngredient(customerId)
+      output = Seq(createCustomerSuccessful)
     )
 
     val openAccount = Interaction(
       name = "OpenAccount",
       inputIngredients =Seq(customerId),
-      output = FiresOneOfEvents(accountOpenedEvent, accountOpenedFailedEvent))
+      output = Seq(accountOpenedEvent, accountOpenedFailedEvent))
 
     val onboardingRecipe: Recipe =
       Recipe("newCustomerRecipe")

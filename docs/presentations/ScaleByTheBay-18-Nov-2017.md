@@ -181,7 +181,7 @@ Baker Capability Matrix:
 val registerIndividual = Interaction(
   name = "RegisterIndividual",
   inputIngredients = Seq(name, address),
-  output = FiresOneOfEvents(registerIndividualSuccessful, registerIndividualFailed)
+  output = Seq(registerIndividualSuccessful, registerIndividualFailed)
 )
 ```
 
@@ -260,7 +260,7 @@ val groceriesDone = new Event("GroceriesDone", Seq(milk, eggs, flour, butter, cr
 val mixFirstThree = Interaction(
   name = "MixFirstThree",
   inputIngredients = Seq(milk, eggs, flour),
-  output = FiresOneOfEvents(batterMixed)
+  output = Seq(batterMixed)
 )
 
 val mixFirstThreeImpl = mixFirstThree implement {

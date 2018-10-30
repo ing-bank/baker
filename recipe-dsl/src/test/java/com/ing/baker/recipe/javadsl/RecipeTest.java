@@ -3,7 +3,7 @@ package com.ing.baker.recipe.javadsl;
 import com.ing.baker.recipe.javadsl.events.SensoryEventWithIngredient;
 import com.ing.baker.recipe.javadsl.events.SensoryEventWithoutIngredient;
 import com.ing.baker.recipe.javadsl.interactions.FiresTwoEventInteraction;
-import com.ing.baker.recipe.javadsl.interactions.ProvidesIngredientInteraction;
+import com.ing.baker.recipe.javadsl.interactions.SimpleInteraction;
 import com.ing.baker.recipe.javadsl.interactions.RequiresProcessIdStringInteraction;
 import org.junit.Rule;
 import org.junit.Test;
@@ -23,7 +23,7 @@ public class RecipeTest {
     @Test
     public void shouldSetupRecipeWithOneInteractionDescriptor() {
         Recipe recipe = new Recipe("OneInteractionRecipe")
-                .withInteraction(of(ProvidesIngredientInteraction.class));
+                .withInteraction(of(SimpleInteraction.class));
         assertEquals(recipe.getEvents().size(), 0);
         assertEquals(recipe.getInteractions().size(), 1);
         assertEquals(recipe.getSieves().size(), 0);
@@ -35,7 +35,7 @@ public class RecipeTest {
                 .withInteractions(
                         of(RequiresProcessIdStringInteraction.class),
                         of(FiresTwoEventInteraction.class),
-                        of(ProvidesIngredientInteraction.class));
+                        of(SimpleInteraction.class));
         assertEquals(recipe.getEvents().size(), 0);
         assertEquals(recipe.getInteractions().size(), 3);
         assertEquals(recipe.getSieves().size(), 0);
@@ -44,7 +44,7 @@ public class RecipeTest {
     @Test
     public void shouldSetupRecipeWithOneSieveDescriptor() {
         Recipe recipe = new Recipe("OneSieveRecipe")
-                .withSieve(of(ProvidesIngredientInteraction.class));
+                .withSieve(of(SimpleInteraction.class));
         assertEquals(recipe.getEvents().size(), 0);
         assertEquals(recipe.getInteractions().size(), 0);
         assertEquals(recipe.getSieves().size(), 1);
@@ -56,7 +56,7 @@ public class RecipeTest {
                 .withSieves(
                         of(RequiresProcessIdStringInteraction.class),
                         of(FiresTwoEventInteraction.class),
-                        of(ProvidesIngredientInteraction.class));
+                        of(SimpleInteraction.class));
         assertEquals(recipe.getEvents().size(), 0);
         assertEquals(recipe.getInteractions().size(), 0);
         assertEquals(recipe.getSieves().size(), 3);
@@ -120,7 +120,7 @@ public class RecipeTest {
     public void shouldBeAbleToAddARecipeToARecipe() {
         Recipe subRecipe = new Recipe("OneSensoryEventRecipe")
                 .withSensoryEvent(SensoryEventWithIngredient.class)
-                .withInteraction(of(ProvidesIngredientInteraction.class));
+                .withInteraction(of(SimpleInteraction.class));
         Recipe recipe = new Recipe("OneInteractionRecipe")
                 .withInteraction(of(FiresTwoEventInteraction.class))
                 .withSensoryEvent(SensoryEventWithoutIngredient.class)

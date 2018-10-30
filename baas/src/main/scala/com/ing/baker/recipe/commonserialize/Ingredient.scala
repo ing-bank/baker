@@ -1,10 +1,10 @@
 package com.ing.baker.recipe.commonserialize
 
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.IngredientType
+import com.ing.baker.types.Type
 
 case class Ingredient(override val name: String,
-                      override val ingredientType: IngredientType) extends common.Ingredient(name, ingredientType) {
+                      override val ingredientType: Type) extends common.Ingredient(name, ingredientType) {
 
   def this(ingredient: common.Ingredient) = this(ingredient.name, ingredient.ingredientType)
 

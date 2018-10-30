@@ -33,7 +33,7 @@ trait InteractionDescriptor {
   /**
     * The interaction output.
     */
-  val output: InteractionOutput
+  val output: Seq[Event]
 
   /**
     * A set of names of the events AND preconditions (events)

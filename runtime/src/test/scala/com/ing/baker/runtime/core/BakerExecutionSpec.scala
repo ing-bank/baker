@@ -6,14 +6,13 @@ import java.util.{Optional, UUID}
 import akka.actor.ActorSystem
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.testkit.{TestDuration, TestKit, TestProbe}
-import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.CaseClassIngredient
-import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy}
+import com.ing.baker.recipe.TestRecipe._
+import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
 import com.ing.baker.recipe.scaladsl.{Recipe, _}
-import com.ing.baker.types.PrimitiveValue
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
@@ -110,7 +109,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
 
-      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(InteractionOneSuccessful(interactionOneIngredientValue))
 
       val processId = UUID.randomUUID().toString
 
@@ -170,7 +169,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
 
-      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(InteractionOneSuccessful(interactionOneIngredientValue))
 
       val processId = UUID.randomUUID().toString
       baker.bake(recipeId, processId)
@@ -193,7 +192,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
 
-      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(InteractionOneSuccessful(interactionOneIngredientValue))
 
       val processId = UUID.randomUUID().toString
       baker.bake(recipeId, processId)
@@ -216,7 +215,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
 
-      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(InteractionOneSuccessful(interactionOneIngredientValue))
 
       val processId = UUID.randomUUID().toString
       baker.bake(recipeId, processId)
@@ -258,7 +257,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         // Bake a new recipe, fire initial event. 2nd time baking with the same processId fails, so comment this part out after creating the process
         baker.bake(recipeId, processId)
 
-        when(testCaseClassIngredientInteractionMock.apply(anyString())).thenReturn(caseClassIngredientValue)
+        when(testCaseClassIngredientInteractionMock.apply(anyString())).thenReturn(CaseClassIngredientInteractionSuccessful(caseClassIngredientValue))
         when(testCaseClassIngredientInteraction2Mock.apply(any[CaseClassIngredient]())).thenReturn(EmptyEvent())
 
         verify(testCaseClassIngredientInteractionMock).apply(initialIngredientValue)
@@ -321,7 +320,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       val listenerMock = mock[EventListener]
 
-      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(InteractionOneSuccessful(interactionOneIngredientValue))
 
       val recipe =
         Recipe("EventListenerRecipe")
@@ -370,7 +369,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
 
-      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(interactionOneIngredientValue)
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(InteractionOneSuccessful(interactionOneIngredientValue))
 
       val processId = UUID.randomUUID().toString
       baker.bake(recipeId, processId)
@@ -493,10 +492,10 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val (baker, recipeId) = setupBakerWithRecipe("ParallelExecutionRecipe")
 
       // Two answers that take 0.5 seconds each!
-      when(testInteractionOneMock.apply(anyString(), anyString())).thenAnswer(new Answer[String] {
-        override def answer(invocationOnMock: InvocationOnMock): String = {
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenAnswer(new Answer[InteractionOneSuccessful] {
+        override def answer(invocationOnMock: InvocationOnMock): InteractionOneSuccessful = {
           Thread.sleep(500)
-          interactionOneIngredientValue
+          InteractionOneSuccessful(interactionOneIngredientValue)
         }
       })
 
@@ -521,7 +520,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val tookLessThanASecond = executingTimeInMilliseconds < 1000
       assert(
         tookLessThanASecond,
-        s"If it takes less than one second to execute we can be sure the two actions have executed in parallel. " +
+        s"If it takes less than 1 second to execute we can be sure the two actions have executed in parallel. " +
           s"The execution took: $executingTimeInMilliseconds milliseconds and have executed sequentially...")
       // Note: this is not related to startup time.
       // Same behaviour occurs if we have actions that take 10 seconds and test if it is less than 20 seconds.
@@ -538,8 +537,8 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       val processId = UUID.randomUUID().toString
 
-      when(testInteractionOneMock.apply(processId.toString, firstData)).thenReturn(firstResponse)
-      when(testInteractionOneMock.apply(processId.toString, secondData)).thenReturn(secondResponse)
+      when(testInteractionOneMock.apply(processId.toString, firstData)).thenReturn(InteractionOneSuccessful(firstResponse))
+      when(testInteractionOneMock.apply(processId.toString, secondData)).thenReturn(InteractionOneSuccessful(secondResponse))
 
       baker.bake(recipeId, processId)
 
@@ -573,12 +572,12 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val recipe = Recipe("FiringLimitTestRecipe")
         .withInteractions(
           interactionOne
-            .withOverriddenOutputIngredientName("interactionOneIngredient")
+            .withEventOutputTransformer(interactionOneSuccessful, Map("interactionOneOriginalIngredient" -> "interactionOneIngredient"))
             .withMaximumInteractionCount(1))
         .withSensoryEvent(initialEvent)
 
       when(testInteractionOneMock.apply(anyString(), anyString()))
-        .thenReturn(interactionOneIngredientValue)
+        .thenReturn(InteractionOneSuccessful(interactionOneIngredientValue))
 
       val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
 
@@ -616,7 +615,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val firstProcessId = UUID.randomUUID().toString
       val secondProcessId = UUID.randomUUID().toString
       when(testInteractionOneMock.apply(firstProcessId.toString, initialIngredientValue))
-        .thenReturn(interactionOneIngredientValue)
+        .thenReturn(InteractionOneSuccessful(interactionOneIngredientValue))
       when(testInteractionOneMock.apply(secondProcessId.toString, initialIngredientValue))
         .thenThrow(new RuntimeException(errorMessage))
       baker.bake(recipeId, firstProcessId)

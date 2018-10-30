@@ -1,8 +1,6 @@
 package com.ing.baker
 package compiler
 
-import java.io.{ByteArrayOutputStream, ObjectOutputStream}
-
 import com.ing.baker.il.RecipeValidations.postCompileValidations
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
@@ -171,17 +169,14 @@ object RecipeCompiler {
     //All ingredient names provided by sensory events or by interactions
     val allIngredientNames: Set[String] =
       recipe.sensoryEvents.flatMap(e => e.providedIngredients.map(i => i.name)) ++
-        (recipe.interactions ++ recipe.sieves).flatMap(i => i.output match {
-          case pi: ProvidesIngredient => Set(i.overriddenOutputIngredientName.getOrElse(pi.ingredient.name))
-          case fi: FiresOneOfEvents => fi.events.flatMap { e =>
+        (recipe.interactions ++ recipe.sieves).flatMap(i => i.output.flatMap { e =>
             // check if the event was renamed (check if there is a transformer for this event)
             i.eventOutputTransformers.get(e) match {
               case Some(transformer) => e.providedIngredients.map(ingredient => transformer.ingredientRenames.getOrElse(ingredient.name, ingredient.name))
               case None => e.providedIngredients.map(_.name)
             }
           }
-          case ProvidesNothing => Set.empty
-        })
+        )
 
     val actionDescriptors: Seq[InteractionDescriptor] = recipe.interactions ++ recipe.sieves
 
