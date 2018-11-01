@@ -9,12 +9,13 @@ import akka.util.Timeout
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.dsl._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{Fatal, RetryWithDelay}
-import com.ing.baker.petrinet.runtime.{PetriNetRuntime, namedCachedThreadPool}
+import com.ing.baker.petrinet.runtime.PetriNetRuntime
 import com.ing.baker.runtime.actor.AkkaTestBase
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
+import com.ing.baker.runtime.core.namedCachedThreadPool
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock

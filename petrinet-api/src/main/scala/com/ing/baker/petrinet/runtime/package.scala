@@ -42,31 +42,4 @@ package object runtime {
         case Left(throwable) => pf.lift(throwable).getOrElse(IO.raiseError(throwable))
       }
   }
-
-  def namedCachedThreadPool(threadNamePrefix: String): ExecutionContext =
-    ExecutionContext.fromExecutorService(Executors.newCachedThreadPool(daemonThreadFactory(threadNamePrefix)))
-
-  /** A `ThreadFactory` which creates daemon threads, using the given name. */
-  def daemonThreadFactory(threadName: String, exitJvmOnFatalError: Boolean = true): ThreadFactory = new ThreadFactory {
-    val defaultThreadFactory = Executors.defaultThreadFactory()
-    val idx = new AtomicInteger(0)
-    def newThread(r: Runnable) = {
-      val t = defaultThreadFactory.newThread(r)
-      t.setDaemon(true)
-      t.setName(s"$threadName-${idx.incrementAndGet()}")
-      t.setUncaughtExceptionHandler(new UncaughtExceptionHandler {
-        def uncaughtException(t: Thread, e: Throwable): Unit = {
-          System.err.println(s"------------ UNHANDLED EXCEPTION ---------- (${t.getName})")
-          e.printStackTrace(System.err)
-          if (exitJvmOnFatalError) {
-            e match {
-              case NonFatal(_) => ()
-              case fatal => System.exit(-1)
-            }
-          }
-        }
-      })
-      t
-    }
-  }
 }
