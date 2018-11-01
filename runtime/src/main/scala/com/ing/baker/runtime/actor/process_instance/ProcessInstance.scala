@@ -46,11 +46,11 @@ object ProcessInstance {
   * This actor is responsible for maintaining the state of a single petri net instance.
   */
 class ProcessInstance[P, T, S, E](processType: String,
-                                     processTopology: PetriNet[P, T],
-                                     settings: Settings,
-                                     runtime: PetriNetRuntime[P, T, S, E])(
-                                     override implicit val placeIdentifier: Identifiable[P],
-                                     override implicit val transitionIdentifier: Identifiable[T]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSource) {
+                                  processTopology: PetriNet[P, T],
+                                  settings: Settings,
+                                  runtime: PetriNetRuntime[P, T, S, E])(
+                                  override implicit val placeIdentifier: Identifiable[P],
+                                  override implicit val transitionIdentifier: Identifiable[T]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSource) {
 
   import context.dispatcher
 

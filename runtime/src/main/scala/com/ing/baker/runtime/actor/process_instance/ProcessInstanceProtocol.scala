@@ -38,9 +38,9 @@ object ProcessInstanceProtocol {
 
   object Initialize {
 
-    def apply[P](marking: Marking[P])(implicit placeIdentifier: Identifiable[P]): Initialize = Initialize(marshal[P](marking), null)
+    def apply[P : Identifiable](marking: Marking[P]): Initialize = Initialize(marshal[P](marking), null)
 
-    def apply[P](marking: Marking[P], state: Any)(implicit placeIdentifier: Identifiable[P]): Initialize = Initialize(marshal[P](marking), state)
+    def apply[P : Identifiable](marking: Marking[P], state: Any): Initialize = Initialize(marshal[P](marking), state)
   }
 
   /**
@@ -80,9 +80,9 @@ object ProcessInstanceProtocol {
 
   object Initialized {
 
-    def apply[P](marking: Marking[P])(implicit placeIdentifier: Identifiable[P]): Initialized = Initialized(marshal[P](marking), null)
+    def apply[P : Identifiable](marking: Marking[P]): Initialized = Initialized(marshal[P](marking), null)
 
-    def apply[P](marking: Marking[P], state: Any)(implicit placeIdentifier: Identifiable[P]): Initialized = Initialized(marshal[P](marking), state)
+    def apply[P : Identifiable](marking: Marking[P], state: Any): Initialized = Initialized(marshal[P](marking), state)
   }
 
   /**
