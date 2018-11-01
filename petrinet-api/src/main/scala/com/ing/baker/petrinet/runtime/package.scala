@@ -1,14 +1,7 @@
 package com.ing.baker.petrinet
 
-import java.lang.Thread.UncaughtExceptionHandler
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.{Executors, ThreadFactory}
-
 import cats.effect.IO
-import com.ing.baker.petrinet.api.{Marking, MultiSet}
-
-import scala.concurrent.ExecutionContext
-import scala.util.control.NonFatal
+import com.ing.baker.petrinet.api.Marking
 
 package object runtime {
 
