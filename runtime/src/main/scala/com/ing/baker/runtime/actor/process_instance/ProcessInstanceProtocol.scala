@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.actor.process_instance
 
-import com.ing.baker.petrinet.api.{HMap, Identifiable, Marking, MultiSet}
-import com.ing.baker.runtime.actor.{BakerProtoMessage, InternalBakerMessage}
+import com.ing.baker.petrinet.api.{Identifiable, Marking, MultiSet}
+import com.ing.baker.runtime.actor.BakerProtoMessage
 
 /**
  * Describes the messages to and from a PetriNetInstance actor.
@@ -13,13 +13,13 @@ object ProcessInstanceProtocol {
    */
   type MarkingData = Map[Long, MultiSet[_]]
 
-  def marshal[P[_]](marking: Marking[P])(implicit identifiable: Identifiable[P[_]]): MarkingData = marking.map {
+  def marshal[P](marking: Marking[P])(implicit identifiable: Identifiable[P]): MarkingData = marking.map {
     case (p, mset) ⇒ identifiable(p).value -> mset
   }.toMap
 
-  def unmarshal[P[_]](data: MarkingData, placeById: Long ⇒ P[_]): Marking[P] = HMap[P, MultiSet](data.map {
-    case (id, mset) ⇒ placeById(id) -> mset
-  }.toMap)
+  def unmarshal[P](data: MarkingData, placeById: Long ⇒ P): Marking[P] = data.map {
+    case (id, mset) ⇒ placeById(id) -> mset.asInstanceOf[MultiSet[Any]]
+  }
 
   /**
    * A common trait for all commands to a petri net instance.
@@ -38,9 +38,9 @@ object ProcessInstanceProtocol {
 
   object Initialize {
 
-    def apply[P[_]](marking: Marking[P])(implicit placeIdentifier: Identifiable[P[_]]): Initialize = Initialize(marshal[P](marking), null)
+    def apply[P](marking: Marking[P])(implicit placeIdentifier: Identifiable[P]): Initialize = Initialize(marshal[P](marking), null)
 
-    def apply[P[_]](marking: Marking[P], state: Any)(implicit placeIdentifier: Identifiable[P[_]]): Initialize = Initialize(marshal[P](marking), state)
+    def apply[P](marking: Marking[P], state: Any)(implicit placeIdentifier: Identifiable[P]): Initialize = Initialize(marshal[P](marking), state)
   }
 
   /**
@@ -80,9 +80,9 @@ object ProcessInstanceProtocol {
 
   object Initialized {
 
-    def apply[P[_]](marking: Marking[P])(implicit placeIdentifier: Identifiable[P[_]]): Initialized = Initialized(marshal[P](marking), null)
+    def apply[P](marking: Marking[P])(implicit placeIdentifier: Identifiable[P]): Initialized = Initialized(marshal[P](marking), null)
 
-    def apply[P[_]](marking: Marking[P], state: Any)(implicit placeIdentifier: Identifiable[P[_]]): Initialized = Initialized(marshal[P](marking), state)
+    def apply[P](marking: Marking[P], state: Any)(implicit placeIdentifier: Identifiable[P]): Initialized = Initialized(marshal[P](marking), state)
   }
 
   /**

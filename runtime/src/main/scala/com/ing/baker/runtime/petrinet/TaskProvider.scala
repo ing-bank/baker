@@ -18,7 +18,7 @@ class TaskProvider(recipe: CompiledRecipe, interactionManager: InteractionManage
 
   val log = LoggerFactory.getLogger(classOf[TaskProvider])
 
-  override def apply(petriNet: PetriNet[Place[_], Transition], t: Transition): TransitionTask[Place, ProcessState, RuntimeEvent] = {
+  override def apply(petriNet: PetriNet[Place, Transition], t: Transition): TransitionTask[Place, ProcessState, RuntimeEvent] = {
     t match {
       case interaction: InteractionTransition =>
         interactionTransitionTask(interaction.asInstanceOf[InteractionTransition], petriNet.outMarking(interaction))
@@ -27,10 +27,10 @@ class TaskProvider(recipe: CompiledRecipe, interactionManager: InteractionManage
     }
   }
 
-  def passThroughTransitionTask[Input](petriNet: PetriNet[Place[_], Transition], t: Transition): TransitionTask[Place, ProcessState, RuntimeEvent] =
+  def passThroughTransitionTask[Input](petriNet: PetriNet[Place, Transition], t: Transition): TransitionTask[Place, ProcessState, RuntimeEvent] =
     (_, _, _) => IO.pure((toMarking[Place](petriNet.outMarking(t)), null.asInstanceOf[RuntimeEvent]))
 
-  def eventTransitionTask[Input](petriNet: PetriNet[Place[_], Transition], eventTransition: EventTransition): TransitionTask[Place, ProcessState, RuntimeEvent] =
+  def eventTransitionTask[Input](petriNet: PetriNet[Place, Transition], eventTransition: EventTransition): TransitionTask[Place, ProcessState, RuntimeEvent] =
     (_, _, input) => IO.pure((toMarking[Place](petriNet.outMarking(eventTransition)), input.asInstanceOf[RuntimeEvent]))
 
   // function that (optionally) transforms the output event using the event output transformers
@@ -46,7 +46,7 @@ class TaskProvider(recipe: CompiledRecipe, interactionManager: InteractionManage
   }
 
   def interactionTransitionTask(interaction: InteractionTransition,
-                                outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, ProcessState, RuntimeEvent] =
+                                outAdjacent: MultiSet[Place]): TransitionTask[Place, ProcessState, RuntimeEvent] =
 
     (_, processState, _) => {
 

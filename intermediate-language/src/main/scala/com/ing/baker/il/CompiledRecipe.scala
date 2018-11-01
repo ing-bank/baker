@@ -28,7 +28,7 @@ object CompiledRecipe {
       val petriNetId: String = petriNet.places.toList.sortBy(_.id).mkString +
         petriNet.transitions.toList.sortBy(_.id).mkString
 
-      val initMarkingId: String = initialMarking.data.toList.sortBy {
+      val initMarkingId: String = initialMarking.toList.sortBy {
         case (place, _) => place.id
       }.map {
         case (_, tokens) => tokens.toList.sortBy {

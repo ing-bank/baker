@@ -2,9 +2,8 @@ package com.ing.baker.runtime.actor.serialization.modules
 
 import java.util.concurrent.TimeUnit
 
-import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.{Node, RecipePetriNet}
-import com.ing.baker.petrinet.api.{IdentifiableOps, Marking, PetriNet}
+import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization.tokenIdentifier
 import com.ing.baker.runtime.actor.protobuf
 import com.ing.baker.runtime.actor.protobuf._
@@ -88,9 +87,9 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
         case n => throw new IllegalStateException(s"Unknown node type: $n")
       }
 
-      val protoEdges = petriNet.innerGraph.edges.toList.map{ e =>
+      val protoEdges = petriNet.innerGraph.edges.toList.map { e =>
 
-        val edge = e.label.asInstanceOf[il.petrinet.Edge[_]]
+        val edge = e.label.asInstanceOf[il.petrinet.Edge]
         val from = nodeList.indexOf(e.source.value)
         val to = nodeList.indexOf(e.target.value)
 
@@ -100,7 +99,7 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
       val graph: Option[protobuf.PetriNet] = Some(protobuf.PetriNet(protoNodes, protoEdges))
 
       // from InitialMarking to Seq[ProducedToken]
-      val producedTokens: Seq[ProducedToken] = initialMarking.data.toSeq.flatMap {
+      val producedTokens: Seq[ProducedToken] = initialMarking.toSeq.flatMap {
         case (place, tokens) ⇒ tokens.toSeq.map {
           case (value, count) ⇒ ProducedToken(
             placeId = Option(place.id),
@@ -186,7 +185,7 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
         case protobuf.Edge(Some(from), Some(to), Some(weight), eventAllowed) =>
           val fromNode = nodes.apply(from.toInt)
           val toNode = nodes.apply(to.toInt)
-          val edge = il.petrinet.Edge[Any](eventAllowed)
+          val edge = il.petrinet.Edge(eventAllowed)
 
           WLDiEdge[Any, Any](fromNode, toNode)(weight, edge)
         case other =>
@@ -224,10 +223,10 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
       val retentionPeriod = retentionMillis.map(Duration(_, TimeUnit.MILLISECONDS))
 
       val graph = ctx.toDomain[scalax.collection.immutable.Graph[Node, WLDiEdge]](graphMsg)
-      val petriNet: RecipePetriNet = new PetriNet(graph)
+      val petriNet: RecipePetriNet = new com.ing.baker.petrinet.api.PetriNet(graph)
       val initialMarking = producedTokens.foldLeft(Marking.empty[il.petrinet.Place]) {
         case (accumulated, protobuf.ProducedToken(Some(placeId), Some(_), Some(count), _)) ⇒ // Option[SerializedData] is always None, and we don't use it here.
-          val place = petriNet.places.getById(placeId, "place in petrinet").asInstanceOf[il.petrinet.Place[Any]]
+          val place = petriNet.places.getById(placeId, "place in petrinet")
           val value = null // Values are not serialized (not interested in) in the serialized recipe
           accumulated.add(place, value, count)
         case _ ⇒ throw new IllegalStateException("Missing data in persisted ProducedToken")

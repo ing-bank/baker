@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
  * @tparam S The state type
  * @tparam E The event type
  */
-trait PetriNetRuntime[P[_], T, S, E] {
+trait PetriNetRuntime[P, T, S, E] {
 
   val log = LoggerFactory.getLogger("com.ing.baker.petrinet.runtime.PetriNetRuntime")
 
@@ -25,7 +25,7 @@ trait PetriNetRuntime[P[_], T, S, E] {
   val eventSource: T ⇒ (S ⇒ E ⇒ S) = _ ⇒ (s ⇒ _ ⇒ s)
 
   val exceptionHandler: ExceptionHandler[P, T, S] = new ExceptionHandler[P, T, S] {
-    override def handleException(job: Job[P, T, S])(throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[P[_]]) = BlockTransition
+    override def handleException(job: Job[P, T, S])(throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[P]) = BlockTransition
   }
 
   val taskProvider: TransitionTaskProvider[P, T, S, E]
@@ -33,7 +33,7 @@ trait PetriNetRuntime[P[_], T, S, E] {
   /**
     * Returns a Job -> IO[TransitionEvent]
     */
-  def jobExecutor(topology: PetriNet[P[_], T]): Job[P, T, S] ⇒ IO[TransitionEvent[T]] = {
+  def jobExecutor(topology: PetriNet[P, T]): Job[P, T, S] ⇒ IO[TransitionEvent[T]] = {
 
     val cachedTransitionTasks: Map[T, _] =
       topology.transitions.map(t ⇒ t -> taskProvider.apply(topology, t)).toMap

@@ -14,13 +14,13 @@ import com.ing.baker.runtime.actor.serialization.{Encryption, ProtoEventAdapterI
 
 object ProcessQuery {
 
-  def eventsForInstance[P[_], T, S, E](processTypeName: String,
+  def eventsForInstance[P, T, S, E](processTypeName: String,
     processId: String,
-    topology: PetriNet[P[_], T],
+    topology: PetriNet[P, T],
     encryption: Encryption = NoEncryption,
     readJournal: CurrentEventsByPersistenceIdQuery,
     eventSourceFn: T ⇒ (S ⇒ E ⇒ S))(implicit actorSystem: ActorSystem,
-      placeIdentifier: Identifiable[P[_]],
+      placeIdentifier: Identifiable[P],
       transitionIdentifier: Identifiable[T]): Source[(Instance[P, T, S], Event), NotUsed] = {
 
     val protoEventAdapter = new ProtoEventAdapterImpl(SerializationExtension.get(actorSystem), encryption)

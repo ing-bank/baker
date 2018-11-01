@@ -9,7 +9,7 @@ import com.ing.baker.petrinet.api.PetriNet
  * @tparam P The place type of the net.
  * @tparam T The transition type of the net.
  */
-trait TransitionTaskProvider[P[_], T, State, E] {
+trait TransitionTaskProvider[P, T, State, E] {
 
   /**
    * Given a transition returns an TransitionTask
@@ -17,5 +17,5 @@ trait TransitionTaskProvider[P[_], T, State, E] {
    * @param t       The transition.
    * @return
    */
-  def apply(petriNet: PetriNet[P[_], T], t: T): TransitionTask[P, State, E]
+  def apply(petriNet: PetriNet[P, T], t: T): TransitionTask[P, State, E]
 }

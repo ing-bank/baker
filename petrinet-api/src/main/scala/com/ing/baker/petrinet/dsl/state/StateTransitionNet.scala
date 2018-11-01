@@ -13,7 +13,7 @@ trait StateTransitionNet[S, E] {
   def eventSourceFunction: S ⇒ E ⇒ S
 
   def eventTaskProvider: TransitionTaskProvider[Place, Transition, S, E] = new TransitionTaskProvider[Place, Transition, S, E] {
-    override def apply(petriNet: PetriNet[Place[_], Transition], t: Transition): TransitionTask[Place, S, E] =
+    override def apply(petriNet: PetriNet[Place, Transition], t: Transition): TransitionTask[Place, S, E] =
       (_, state, _) ⇒ {
         val eventTask = t.asInstanceOf[StateTransition[S, E]].produceEvent(state)
         val produceMarking: Marking[Place] = toMarking[Place](petriNet.outMarking(t))
@@ -26,7 +26,7 @@ trait StateTransitionNet[S, E] {
     override val taskProvider: TransitionTaskProvider[Place, Transition, S, E] = eventTaskProvider
     override val exceptionHandler: ExceptionHandler[Place, Transition, S] = new ExceptionHandler[Place, Transition, S] {
       override def handleException(job: Job[Place, Transition, S])
-                                  (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place[_]]) =
+                                  (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]) =
         job.transition.exceptionStrategy(throwable, failureCount, outMarking)
     }
     override val tokenGame = new TokenGame[Place, Transition] {

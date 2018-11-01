@@ -9,12 +9,12 @@ import com.ing.baker.petrinet.api._
  * @tparam P Place
  * @tparam T Transition
  */
-trait TokenGame[P[_], T] {
+trait TokenGame[P, T] {
 
-  def enabledParameters(petriNet: PetriNet[P[_], T])(m: Marking[P]): Map[T, Iterable[Marking[P]]] =
+  def enabledParameters(petriNet: PetriNet[P, T])(m: Marking[P]): Map[T, Iterable[Marking[P]]] =
     enabledTransitions(petriNet)(m).view.map(t ⇒ t -> consumableMarkings(petriNet)(m, t)).toMap
 
-  def consumableMarkings(petriNet: PetriNet[P[_], T])(marking: Marking[P], t: T): Iterable[Marking[P]] = {
+  def consumableMarkings(petriNet: PetriNet[P, T])(marking: Marking[P], t: T): Iterable[Marking[P]] = {
     // TODO this is not the most efficient, should break early when consumable tokens < edge weight
     val consumable = petriNet.inMarking(t).map {
       case (place, count) ⇒ (place, count, consumableTokens(petriNet)(marking, place, t))
@@ -25,7 +25,7 @@ trait TokenGame[P[_], T] {
       Seq.empty
     else {
       val consume = consumable.map {
-        case (place, count, tokens) ⇒ place -> MultiSet.copyOff(tokens.allElements.take(count))
+        case (place, count, tokens) ⇒ place -> MultiSet.copyOff[Any](tokens.allElements.take(count))
       }.toMarking
 
       // TODO lazily compute all permutations instead of only providing the first result
@@ -33,8 +33,7 @@ trait TokenGame[P[_], T] {
     }
   }
 
-  def consumableTokens(petriNet: PetriNet[P[_], T])(marking: Marking[P], p: P[_], t: T): MultiSet[_] =
-    marking.getOrElse(p.asInstanceOf[P[Any]], MultiSet.empty)
+  def consumableTokens(petriNet: PetriNet[P, T])(marking: Marking[P], p: P, t: T): MultiSet[Any] = marking.getOrElse(p, MultiSet.empty)
 
   /**
    * Checks whether a transition is 'enabled' in a marking.
@@ -43,7 +42,7 @@ trait TokenGame[P[_], T] {
    * @param t The transition.
    * @return
    */
-  def isEnabled(petriNet: PetriNet[P[_], T])(marking: Marking[P], t: T): Boolean = consumableMarkings(petriNet)(marking, t).nonEmpty
+  def isEnabled(petriNet: PetriNet[P, T])(marking: Marking[P], t: T): Boolean = consumableMarkings(petriNet)(marking, t).nonEmpty
 
   /**
    * Returns all enabled transitions for a marking.
@@ -51,7 +50,7 @@ trait TokenGame[P[_], T] {
    * @param marking marking
    * @return
    */
-  def enabledTransitions(petriNet: PetriNet[P[_], T])(marking: Marking[P]): Iterable[T] =
+  def enabledTransitions(petriNet: PetriNet[P, T])(marking: Marking[P]): Iterable[T] =
     petriNet.transitions.filter(t ⇒ consumableMarkings(petriNet)(marking, t).nonEmpty)
 
   /**

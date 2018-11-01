@@ -1,9 +1,8 @@
 package com.ing.baker.il
 
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.petrinet.api.PetriNetAnalysis
+import com.ing.baker.petrinet.api._
 import com.ing.baker.types
-import com.ing.baker.types.PrimitiveType
 
 import scala.collection.mutable
 
@@ -63,8 +62,8 @@ object RecipeValidations {
   }
 
   def validateNoCycles(compiledRecipe: CompiledRecipe): Seq[String] = {
-    val cycle = compiledRecipe.petriNet.innerGraph.findCycle
-    cycle map (c => s"The petrinet topology contains a cycle: $c") toSeq
+    val cycle: Option[compiledRecipe.petriNet.innerGraph.Cycle] = compiledRecipe.petriNet.innerGraph.findCycle
+    cycle.map(c => s"The petrinet topology contains a cycle: $c").toList
   }
 
   def validateAllInteractionsExecutable(compiledRecipe: CompiledRecipe): Seq[String] = {

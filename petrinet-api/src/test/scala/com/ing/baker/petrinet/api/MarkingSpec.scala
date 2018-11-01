@@ -8,10 +8,10 @@ class MarkingSpec extends WordSpec {
 
   case class Person(name: String, age: Int)
 
-  val p1 = Place[Int](id = 1)
-  val p2 = Place[String](id = 2)
-  val p3 = Place[Double](id = 3)
-  val p4 = Place[Person](id = 4)
+  val p1 = Place(id = 1)
+  val p2 = Place(id = 2)
+  val p3 = Place(id = 3)
+  val p4 = Place(id = 4)
 
   "A Colored Marking" should {
 
@@ -24,11 +24,11 @@ class MarkingSpec extends WordSpec {
 
     "have correct produce semantics" in {
 
-      val m1 = Marking(p1(1, 2), p2("foo", "bar"))
+      val m1: Marking[Place] = Marking(p1(1, 2), p2("foo", "bar"))
 
       m1 |+| Marking.empty shouldBe m1
 
-      val m2 = Marking(p1(3), p2("baz"), p3(1d))
+      val m2: Marking[Place] = Marking(p1(3), p2("baz"), p3(1d))
 
       m1 |+| m2 shouldBe Marking(p1(3, 1, 2), p2("baz", "foo", "bar"), p3(1d))
     }
@@ -39,7 +39,7 @@ class MarkingSpec extends WordSpec {
 
       m1 |-| Marking.empty shouldBe m1
 
-      val m2 = Marking(p1(2), p4(Person("Joe", 42)))
+      val m2: Marking[Place] = Marking(p1(2), p4(Person("Joe", 42)))
 
       m1 |-| m2 shouldBe Marking(p1(1, 3), p2("foo", "bar"))
     }

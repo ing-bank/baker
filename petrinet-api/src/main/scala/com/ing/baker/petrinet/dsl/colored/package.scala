@@ -11,12 +11,12 @@ package object colored {
   /**
    * Type alias for the node type of the scalax.collection.Graph backing the petri net.
    */
-  type Node = Either[Place[_], Transition]
+  type Node = Either[Place, Transition]
 
   /**
     * An exception handler function associated with a transition.
     */
-  type TransitionExceptionHandler[P[_]] = (Throwable, Int, MultiSet[P[_]]) ⇒ ExceptionStrategy
+  type TransitionExceptionHandler[P] = (Throwable, Int, MultiSet[P]) ⇒ ExceptionStrategy
 
   /**
    * Type alias for the edge type of the scalax.collection.Graph backing the petri net.
@@ -26,19 +26,19 @@ package object colored {
   /**
    * Type alias for a colored petri net.
    */
-  type ColoredPetriNet = PetriNet[Place[_], Transition]
+  type ColoredPetriNet = PetriNet[Place, Transition]
 
   implicit class TransitionDSL[Input, Output, State](t: Transition) {
-    def ~>(p: Place[_], weight: Long = 1): Arc = arc(t, p, weight)
+    def ~>(p: Place, weight: Long = 1): Arc = arc(t, p, weight)
   }
 
-  implicit class PlaceDSL[C](p: Place[C]) {
+  implicit class PlaceDSL(p: Place) {
     def ~>(t: Transition, weight: Long = 1): Arc = arc(p, t, weight)
   }
 
-  def arc(t: Transition, p: Place[_], weight: Long): Arc = WLDiEdge[Node, String](Right(t), Left(p))(weight, "")
+  def arc(t: Transition, p: Place, weight: Long): Arc = WLDiEdge[Node, String](Right(t), Left(p))(weight, "")
 
-  def arc[C](p: Place[C], t: Transition, weight: Long): Arc = WLDiEdge[Node, String](Left(p), Right(t))(weight, "")
+  def arc(p: Place, t: Transition, weight: Long): Arc = WLDiEdge[Node, String](Left(p), Right(t))(weight, "")
 
   def requireUniqueElements[T](i: Iterable[T], name: String = "Element"): Unit = {
     (Set.empty[T] /: i) { (set, e) ⇒

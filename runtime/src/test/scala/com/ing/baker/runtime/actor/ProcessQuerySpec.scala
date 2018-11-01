@@ -47,19 +47,19 @@ class ProcessQuerySpec extends AkkaTestBase("ProcessQuerySpec") with BeforeAndAf
 
       val readJournal = PersistenceQuery(system).readJournalFor[ReadJournal with CurrentEventsByPersistenceIdQuery]("inmemory-read-journal")
 
-      val p1 = Place[Unit](id = 1)
-      val p2 = Place[Unit](id = 2)
-      val p3 = Place[Unit](id = 3)
-      val t1 = nullTransition[Unit](id = 1, automated = true)
-      val t2 = nullTransition[Unit](id = 2, automated = true)
+      val p1 = Place(id = 1)
+      val p2 = Place(id = 2)
+      val p3 = Place(id = 3)
+      val t1 = nullTransition(id = 1, automated = true)
+      val t2 = nullTransition(id = 2, automated = true)
 
       val petriNet = createPetriNet(p1 ~> t1, t1 ~> p2, p2 ~> t2, t2 ~> p3)
       val processId = UUID.randomUUID().toString
       val instance = createProcessInstance[Unit, Unit](petriNet, runtime, processId)
 
-      instance ! Initialize(Marking(p1 -> 1), ())
+      instance ! Initialize(p1.markWithN(1), ())
 
-      expectMsg(Initialized(Marking(p1 -> 1), ()))
+      expectMsg(Initialized(p1.markWithN(1), ()))
       expectMsgPF(timeOut) { case TransitionFired(_, 1, _, _, _, _, _, _) ⇒ }
       expectMsgPF(timeOut) { case TransitionFired(_, 2, _, _, _, _, _, _) ⇒ }
 
@@ -73,17 +73,17 @@ class ProcessQuerySpec extends AkkaTestBase("ProcessQuerySpec") with BeforeAndAf
         .map(_._2) // Get the event from the tuple
         .runWith(TestSink.probe)
         .request(3)
-        .expectNext(InitializedEvent(marking = Marking(p1 -> 1), state = ()))
+        .expectNext(InitializedEvent(marking = p1.markWithN(1), state = ()))
         .expectNextChainingPF {
           case TransitionFiredEvent(_, transition, _, _, _, consumed, produced, _) ⇒
             transition shouldBe t1
-            consumed shouldBe Marking(p1 -> 1)
-            produced shouldBe Marking(p2 -> 1)
+            consumed shouldBe p1.markWithN(1)
+            produced shouldBe p2.markWithN(1)
         }.expectNextChainingPF {
           case TransitionFiredEvent(_, transition, _, _, _, consumed, produced, _) ⇒
             transition shouldBe t2
-            consumed shouldBe Marking(p2 -> 1)
-            produced shouldBe Marking(p3 -> 1)
+            consumed shouldBe p2.markWithN(1)
+            produced shouldBe p3.markWithN(1)
         }
 
     }
@@ -96,11 +96,11 @@ class ProcessQuerySpec extends AkkaTestBase("ProcessQuerySpec") with BeforeAndAf
 
       // Setup petriNet and instances
 
-      val p1 = Place[Unit](id = 1)
-      val p2 = Place[Unit](id = 2)
-      val p3 = Place[Unit](id = 3)
-      val t1 = nullTransition[Unit](id = 1, automated = true)
-      val t2 = nullTransition[Unit](id = 2, automated = true)
+      val p1 = Place(id = 1)
+      val p2 = Place(id = 2)
+      val p3 = Place(id = 3)
+      val t1 = nullTransition(id = 1, automated = true)
+      val t2 = nullTransition(id = 2, automated = true)
       val petriNet = createPetriNet(p1 ~> t1, t1 ~> p2, p2 ~> t2, t2 ~> p3)
 
       val processId1 = UUID.randomUUID().toString
@@ -133,11 +133,11 @@ class ProcessQuerySpec extends AkkaTestBase("ProcessQuerySpec") with BeforeAndAf
 
       // Setup petriNet and instances
 
-      val p1 = Place[Unit](id = 1)
-      val p2 = Place[Unit](id = 2)
-      val p3 = Place[Unit](id = 3)
-      val t1 = nullTransition[Unit](id = 1, automated = true)
-      val t2 = nullTransition[Unit](id = 2, automated = true)
+      val p1 = Place(id = 1)
+      val p2 = Place(id = 2)
+      val p3 = Place(id = 3)
+      val t1 = nullTransition(id = 1, automated = true)
+      val t2 = nullTransition(id = 2, automated = true)
       val petriNet = createPetriNet(p1 ~> t1, t1 ~> p2, p2 ~> t2, t2 ~> p3)
 
       val processId1 = UUID.randomUUID().toString

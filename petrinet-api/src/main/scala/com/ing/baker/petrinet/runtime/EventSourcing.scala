@@ -1,6 +1,6 @@
 package com.ing.baker.petrinet.runtime
 
-import com.ing.baker.petrinet.api.Marking
+import com.ing.baker.petrinet.api._
 
 import scala.collection.Map
 
@@ -16,7 +16,7 @@ object EventSourcing {
   /**
    * An event describing the fact that a transition has fired in the petri net process.
    */
-  case class TransitionFiredEvent[P[_], T, E](
+  case class TransitionFiredEvent[P, T, E](
     override val jobId: Long,
     override val transition: T,
     correlationId: Option[String],
@@ -29,7 +29,7 @@ object EventSourcing {
   /**
    * An event describing the fact that a transition failed to fire.
    */
-  case class TransitionFailedEvent[P[_], T, I](
+  case class TransitionFailedEvent[P, T, I](
     override val jobId: Long,
     override val transition: T,
     correlationId: Option[String],
@@ -43,11 +43,11 @@ object EventSourcing {
   /**
    * An event describing the fact that an instance was initialized.
    */
-  case class InitializedEvent[P[_]](
+  case class InitializedEvent[P](
     marking: Marking[P],
     state: Any) extends Event
 
-  def apply[P[_], T, S, E](sourceFn: T ⇒ EventSource[S, E]): Instance[P, T, S] ⇒ Event ⇒ Instance[P, T, S] = instance ⇒ {
+  def apply[P, T, S, E](sourceFn: T ⇒ EventSource[S, E]): Instance[P, T, S] ⇒ Event ⇒ Instance[P, T, S] = instance ⇒ {
     case InitializedEvent(initialMarking, initialState) ⇒
       Instance[P, T, S](instance.process, 1, initialMarking.asInstanceOf[Marking[P]], initialState.asInstanceOf[S], Map.empty, Set.empty)
     case e: TransitionFiredEvent[_, _, _] ⇒

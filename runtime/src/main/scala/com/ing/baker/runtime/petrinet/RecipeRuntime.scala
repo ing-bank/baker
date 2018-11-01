@@ -35,7 +35,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
 
   override val exceptionHandler: ExceptionHandler[Place, Transition, ProcessState] = new ExceptionHandler[Place, Transition, ProcessState] {
     override def handleException(job: Job[Place, Transition, ProcessState])
-                                (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place[_]]) =
+                                (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]) =
 
       if (throwable.isInstanceOf[Error])
         BlockTransition

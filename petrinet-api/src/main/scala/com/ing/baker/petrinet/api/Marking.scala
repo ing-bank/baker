@@ -7,25 +7,25 @@ object Marking {
     *
     * @return The empty marking.
     */
-  def empty[P[_]]: Marking[P] = HMap.empty[P, MultiSet]
+  def empty[P]: Marking[P] = Map.empty[P, MultiSet[Any]]
 
-  def apply[P[_], A](m1: MarkedPlace[P, A]): Marking[P] = {
-    HMap[P, MultiSet](Map[P[_], MultiSet[_]](m1))
+  def apply[P](m1: MarkedPlace[P]): Marking[P] = {
+    Map[P, MultiSet[Any]](m1)
   }
 
-  def apply[P[_], A, B](m1: MarkedPlace[P, A], m2: MarkedPlace[P, B]): Marking[P] = {
-    HMap[P, MultiSet](Map[P[_], MultiSet[_]](m1, m2))
+  def apply[P](m1: MarkedPlace[P], m2: MarkedPlace[P]): Marking[P] = {
+    Map[P, MultiSet[Any]](m1, m2)
   }
 
-  def apply[P[_], A, B, C](m1: MarkedPlace[P, A], m2: MarkedPlace[P, B], m3: MarkedPlace[P, C]): Marking[P] = {
-    HMap[P, MultiSet](Map[P[_], MultiSet[_]](m1, m2, m3))
+  def apply[P](m1: MarkedPlace[P], m2: MarkedPlace[P], m3: MarkedPlace[P]): Marking[P] = {
+    Map[P, MultiSet[Any]](m1, m2, m3)
   }
 
-  def apply[P[_], A, B, C, D](m1: MarkedPlace[P, A], m2: MarkedPlace[P, B], m3: MarkedPlace[P, C], m4: MarkedPlace[P, D]): Marking[P] = {
-    HMap[P, MultiSet](Map[P[_], MultiSet[_]](m1, m2, m3, m4))
+  def apply[P](m1: MarkedPlace[P], m2: MarkedPlace[P], m3: MarkedPlace[P], m4: MarkedPlace[P]): Marking[P] = {
+    Map[P, MultiSet[Any]](m1, m2, m3, m4)
   }
 
-  def apply[P[_], A, B, C, D, E](m1: MarkedPlace[P, A], m2: MarkedPlace[P, B], m3: MarkedPlace[P, C], m4: MarkedPlace[P, D], m5: MarkedPlace[P, E]): Marking[P] = {
-    HMap[P, MultiSet](Map[P[_], MultiSet[_]](m1, m2, m3, m4, m5))
+  def apply[P](m1: MarkedPlace[P], m2: MarkedPlace[P], m3: MarkedPlace[P], m4: MarkedPlace[P], m5: MarkedPlace[P]): Marking[P] = {
+    Map[P, MultiSet[Any]](m1, m2, m3, m4, m5)
   }
 }
