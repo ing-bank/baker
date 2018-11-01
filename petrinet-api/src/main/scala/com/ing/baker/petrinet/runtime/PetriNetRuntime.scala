@@ -16,19 +16,28 @@ import org.slf4j.LoggerFactory
  * @tparam S The state type
  * @tparam E The event type
  */
-trait PetriNetRuntime[P, T, S, E] {
+trait PetriNetRuntime[P, T, S, E] extends TokenGame[P, T] {
 
   val log = LoggerFactory.getLogger("com.ing.baker.petrinet.runtime.PetriNetRuntime")
 
-  val tokenGame: TokenGame[P, T] = new TokenGame[P, T] {}
-
+  /**
+    * The event source function for the state associated with a process instance.
+    *
+    * By default the identity function is used.
+    */
   val eventSource: T ⇒ (S ⇒ E ⇒ S) = _ ⇒ (s ⇒ _ ⇒ s)
 
-  val exceptionHandler: ExceptionHandler[P, T, S] = new ExceptionHandler[P, T, S] {
-    override def handleException(job: Job[P, T, S])(throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[P]) = BlockTransition
-  }
+  /**
+    * This function is called when a transition throws an exception.
+    *
+    * By default the transition is blocked
+    */
+  def handleException(job: Job[P, T, S])(throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[P]): ExceptionStrategy = BlockTransition
 
-  val taskProvider: TransitionTaskProvider[P, T, S, E]
+  /**
+    * Returns the task that should be executed for a transition.
+    */
+  def taskProvider(petriNet: PetriNet[P, T], t: T): TransitionTask[P, S, E]
 
   /**
     * Returns a Job -> IO[TransitionEvent]
@@ -36,7 +45,7 @@ trait PetriNetRuntime[P, T, S, E] {
   def jobExecutor(topology: PetriNet[P, T]): Job[P, T, S] ⇒ IO[TransitionEvent[T]] = {
 
     val cachedTransitionTasks: Map[T, _] =
-      topology.transitions.map(t ⇒ t -> taskProvider.apply(topology, t)).toMap
+      topology.transitions.map(t ⇒ t -> taskProvider(topology, t)).toMap
 
     def transitionFunction(t: T) =
       cachedTransitionTasks(t).asInstanceOf[TransitionTask[P, S, E]]
@@ -68,7 +77,7 @@ trait PetriNetRuntime[P, T, S, E] {
         // In case an exception was thrown by the transition, we compute the failure strategy and return a TransitionFailedEvent
         case e: Throwable ⇒
           val failureCount = job.failureCount + 1
-          val failureStrategy = exceptionHandler.handleException(job)(e, failureCount, startTime, topology.outMarking(transition))
+          val failureStrategy = handleException(job)(e, failureCount, startTime, topology.outMarking(transition))
           TransitionFailedEvent(job.id, transition, job.correlationId, startTime, System.currentTimeMillis(), job.consume, job.input, exceptionStackTrace(e), failureStrategy)
       }.handle {
         // If an exception was thrown while computing the failure strategy we block the interaction from firing

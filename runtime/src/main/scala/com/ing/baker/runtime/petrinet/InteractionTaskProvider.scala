@@ -14,11 +14,11 @@ import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.{LoggerFactory, MDC}
 
-class TaskProvider(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream) extends TransitionTaskProvider[Place, Transition, ProcessState, RuntimeEvent] {
+class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream) {
 
-  val log = LoggerFactory.getLogger(classOf[TaskProvider])
+  val log = LoggerFactory.getLogger(classOf[InteractionTaskProvider])
 
-  override def apply(petriNet: PetriNet[Place, Transition], t: Transition): TransitionTask[Place, ProcessState, RuntimeEvent] = {
+  def apply(petriNet: PetriNet[Place, Transition], t: Transition): TransitionTask[Place, ProcessState, RuntimeEvent] = {
     t match {
       case interaction: InteractionTransition =>
         interactionTransitionTask(interaction.asInstanceOf[InteractionTransition], petriNet.outMarking(interaction))

@@ -11,27 +11,19 @@ trait StateTransitionNet[S, E] {
 
   def eventSourceFunction: S ⇒ E ⇒ S
 
-  def eventTaskProvider: TransitionTaskProvider[Place, Transition, S, E] = new TransitionTaskProvider[Place, Transition, S, E] {
-    override def apply(petriNet: PetriNet[Place, Transition], t: Transition): TransitionTask[Place, S, E] =
+  val runtime: PetriNetRuntime[Place, Transition, S, E] = new PetriNetRuntime[Place, Transition, S, E] {
+    override val eventSource: (Transition) ⇒ (S) ⇒ (E) ⇒ S = _ ⇒ eventSourceFunction
+    override def taskProvider(petriNet: PetriNet[Place, Transition], t: Transition): TransitionTask[Place, S, E] =
       (_, state, _) ⇒ {
         val eventTask = t.asInstanceOf[StateTransition[S, E]].produceEvent(state)
         val produceMarking: Marking[Place] = petriNet.outMarking(t).toMarking
         eventTask.map(e ⇒ (produceMarking, e))
       }
-  }
-
-  val runtime: PetriNetRuntime[Place, Transition, S, E] = new PetriNetRuntime[Place, Transition, S, E] {
-    override val eventSource: (Transition) ⇒ (S) ⇒ (E) ⇒ S = _ ⇒ eventSourceFunction
-    override val taskProvider: TransitionTaskProvider[Place, Transition, S, E] = eventTaskProvider
-    override val exceptionHandler: ExceptionHandler[Place, Transition, S] = new ExceptionHandler[Place, Transition, S] {
-      override def handleException(job: Job[Place, Transition, S])
-                                  (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]) =
-        job.transition.exceptionStrategy(throwable, failureCount, outMarking)
-    }
-    override val tokenGame = new TokenGame[Place, Transition] {
-      override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition): Boolean =
-        t.isAutomated && instance.isBlockedReason(t).isEmpty
-    }
+    override def handleException(job: Job[Place, Transition, S])
+                                (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]) =
+      job.transition.exceptionStrategy(throwable, failureCount, outMarking)
+    override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition): Boolean =
+      t.isAutomated && instance.isBlockedReason(t).isEmpty
   }
 
   def stateTransition(id: Long = Math.abs(Random.nextLong), label: Option[String] = None, automated: Boolean = false,

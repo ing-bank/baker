@@ -216,7 +216,7 @@ class ProcessInstance[P, T, S, E](processType: String,
         case Some(correlationId) if instance.hasReceivedCorrelationId(correlationId) =>
             sender() ! AlreadyReceived(correlationId)
         case _ =>
-          runtime.tokenGame.createJob[S, Any](transition, input, correlationIdOption).run(instance).value match {
+          runtime.createJob[S, Any](transition, input, correlationIdOption).run(instance).value match {
             case (updatedInstance, Right(job)) ⇒
               executeJob(job, sender())
               context become running(updatedInstance, scheduledRetries)
@@ -234,7 +234,7 @@ class ProcessInstance[P, T, S, E](processType: String,
 
   def step(instance: Instance[P, T, S]): (Instance[P, T, S], Set[Job[P, T, S]]) = {
 
-    runtime.tokenGame.allEnabledJobs.run(instance).value match {
+    runtime.allEnabledJobs.run(instance).value match {
       case (updatedInstance, jobs) ⇒
 
         if (jobs.isEmpty && updatedInstance.activeJobs.isEmpty)

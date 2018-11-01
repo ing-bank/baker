@@ -3,8 +3,8 @@ package com.ing.baker.runtime.petrinet
 import akka.event.EventStream
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
-import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, Transition}
-import com.ing.baker.petrinet.api.MultiSet
+import com.ing.baker.il.petrinet._
+import com.ing.baker.petrinet.api.{Marking, MultiSet, PetriNet}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.petrinet.runtime._
 import com.ing.baker.runtime.core.events.InteractionFailed
@@ -24,47 +24,58 @@ object RecipeRuntime {
 
 class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
 
-  override val tokenGame = new RecipeTokenGame() {
-    override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition): Boolean = t match {
-      case EventTransition(_, true, _) => false
-      case _ => true
+  /**
+    * All transitions except sensory event interactions are auto-fireable by the runtime
+    */
+  override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition): Boolean = t match {
+    case EventTransition(_, true, _) => false
+    case _ => true
+  }
+
+  override def consumableTokens(petriNet: PetriNet[Place, Transition])(marking: Marking[Place], p: Place, t: Transition): MultiSet[Any] = {
+    val edge = petriNet.findPTEdge(p, t).map(_.asInstanceOf[Edge]).get
+
+    marking.get(p) match {
+      case None         ⇒ MultiSet.empty
+      case Some(tokens) ⇒ tokens.filter { case (e, count) ⇒ edge.isAllowed(e) }
     }
   }
 
   override val eventSource = RecipeRuntime.eventSourceFn
 
-  override val exceptionHandler: ExceptionHandler[Place, Transition, ProcessState] = new ExceptionHandler[Place, Transition, ProcessState] {
-    override def handleException(job: Job[Place, Transition, ProcessState])
-                                (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]) =
+  override def handleException(job: Job[Place, Transition, ProcessState])
+                              (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]): ExceptionStrategy = {
 
-      if (throwable.isInstanceOf[Error])
-        BlockTransition
-      else
-        job.transition match {
-          case interaction: InteractionTransition =>
+    if (throwable.isInstanceOf[Error])
+      BlockTransition
+    else
+      job.transition match {
+        case interaction: InteractionTransition =>
 
-            // compute the interaction failure strategy outcome
-            val failureStrategyOutcome = interaction.failureStrategy.apply(failureCount)
+          // compute the interaction failure strategy outcome
+          val failureStrategyOutcome = interaction.failureStrategy.apply(failureCount)
 
-            val currentTime = System.currentTimeMillis()
+          val currentTime = System.currentTimeMillis()
 
-            eventStream.publish(
-              InteractionFailed(currentTime, currentTime - startTime, recipe.name, recipe.recipeId,
-                job.processState.processId, job.transition.label, failureCount, throwable, failureStrategyOutcome))
+          eventStream.publish(
+            InteractionFailed(currentTime, currentTime - startTime, recipe.name, recipe.recipeId,
+              job.processState.processId, job.transition.label, failureCount, throwable, failureStrategyOutcome))
 
-            // translates the recipe failure strategy to a petri net failure strategy
-            failureStrategyOutcome match {
-              case ExceptionStrategyOutcome.BlockTransition => BlockTransition
-              case ExceptionStrategyOutcome.RetryWithDelay(delay) => RetryWithDelay(delay)
-              case ExceptionStrategyOutcome.Continue(eventName) => {
-                val runtimeEvent = new RuntimeEvent(eventName, Seq.empty)
-                Continue(createProducedMarking(interaction, outMarking)(runtimeEvent), runtimeEvent)
-              }
+          // translates the recipe failure strategy to a petri net failure strategy
+          failureStrategyOutcome match {
+            case ExceptionStrategyOutcome.BlockTransition => BlockTransition
+            case ExceptionStrategyOutcome.RetryWithDelay(delay) => RetryWithDelay(delay)
+            case ExceptionStrategyOutcome.Continue(eventName) => {
+              val runtimeEvent = new RuntimeEvent(eventName, Seq.empty)
+              Continue(createProducedMarking(interaction, outMarking)(runtimeEvent), runtimeEvent)
             }
+          }
 
-          case _ => BlockTransition
-        }
+        case _ => BlockTransition
+      }
   }
 
-  override val taskProvider = new TaskProvider(recipe, interactionManager, eventStream)
+  val interactionTaskProvider = new InteractionTaskProvider(recipe, interactionManager, eventStream)
+
+  override def taskProvider(petriNet: PetriNet[Place, Transition], t: Transition): TransitionTask[Place, ProcessState, RuntimeEvent] = interactionTaskProvider.apply(petriNet, t)
 }
