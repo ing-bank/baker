@@ -1,6 +1,6 @@
-package com.ing.baker.petrinet.dsl.colored
+package com.ing.baker.petrinet.dsl
 
-import com.ing.baker.petrinet.api.{Id, Identifiable, MarkedPlace, Marking, MultiSet}
+import com.ing.baker.petrinet.api._
 
 object Place {
   def apply(id: Long): Place = Place(id, s"p$id")
@@ -15,5 +15,5 @@ case class Place(id: Long, label: String) {
 
   def apply(tokens: Any*): MarkedPlace[Place] = (this, MultiSet.copyOff(tokens))
 
-  def markWithN(n: Int): Marking[Place] = Marking(this -> Map[Any, Int](Tuple2(null, n)))
+  def markWithN(n: Int): Marking[Place] =  Map[Place, MultiSet[Any]](this -> Map[Any, Int](Tuple2(null, n)))
 }

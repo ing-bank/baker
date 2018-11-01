@@ -1,4 +1,4 @@
-package com.ing.baker.petrinet.dsl.colored
+package com.ing.baker.petrinet.dsl
 
 import com.ing.baker.petrinet.api.{Id, Identifiable}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition

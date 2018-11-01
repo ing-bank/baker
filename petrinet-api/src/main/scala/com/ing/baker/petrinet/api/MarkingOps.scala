@@ -53,9 +53,7 @@ trait MarkingOps {
     * @tparam P Place type parameter
     * @return Marking (state of the petrinet) with 'null' token values
     */
-  def toMarking[P](mset: MultiSet[P]): Marking[P] = mset.map { case (p, n) ⇒ p -> Map[Any, Int](Tuple2(null, n)) }.toMarking
-
-  implicit class MultiSetToMarking[P](m: MultiSet[P]) {
-    def toMarking: Marking[P] = m.map { case (p, n) ⇒ p -> Map[Any, Int](Tuple2(null, n)) }.toMarking
+  implicit class MultiSetToMarking[P](mset: MultiSet[P]) {
+    def toMarking: Marking[P] = mset.map { case (p, n) ⇒ p -> Map[Any, Int](Tuple2(null, n)) }.toMarking
   }
 }

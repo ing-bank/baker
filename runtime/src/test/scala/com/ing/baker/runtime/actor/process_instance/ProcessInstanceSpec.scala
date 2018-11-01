@@ -7,8 +7,7 @@ import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props, Terminated}
 import akka.testkit.TestDuration
 import akka.util.Timeout
 import com.ing.baker.petrinet.api._
-import com.ing.baker.petrinet.dsl.colored._
-import com.ing.baker.petrinet.dsl.state.{SequenceNet, StateTransitionNet}
+import com.ing.baker.petrinet.dsl._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{Fatal, RetryWithDelay}
 import com.ing.baker.petrinet.runtime.{PetriNetRuntime, namedCachedThreadPool}
 import com.ing.baker.runtime.actor.AkkaTestBase
@@ -28,6 +27,7 @@ import scala.concurrent.Promise
 import scala.concurrent.duration._
 import scala.util.Success
 import ProcessInstanceSpec._
+import com.ing.baker.petrinet.dsl.TransitionExceptionHandler
 
 
 sealed trait Event
@@ -53,7 +53,7 @@ object ProcessInstanceSpec {
   )
 
   def processInstanceProps[S, E](
-                                  topology: ColoredPetriNet,
+                                  topology: PetriNet[Place, Transition],
                                   runtime: PetriNetRuntime[Place, Transition, S, E],
                                   settings: Settings): Props =
 
@@ -68,7 +68,7 @@ object ProcessInstanceSpec {
     system.actorOf(props, name)
   }
 
-  def createProcessInstance[S, E](petriNet: ColoredPetriNet, runtime: PetriNetRuntime[Place, Transition, S, E], processId: String = UUID.randomUUID().toString)(implicit system: ActorSystem): ActorRef = {
+  def createProcessInstance[S, E](petriNet: PetriNet[Place, Transition], runtime: PetriNetRuntime[Place, Transition, S, E], processId: String = UUID.randomUUID().toString)(implicit system: ActorSystem): ActorRef = {
 
     createPetriNetActor(processInstanceProps(petriNet, runtime, instanceSettings), processId)
   }

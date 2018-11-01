@@ -10,8 +10,7 @@ import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.TestProbe
 import akka.util.Timeout
 import com.ing.baker.petrinet.api._
-import com.ing.baker.petrinet.dsl.colored._
-import com.ing.baker.petrinet.dsl.state.StateTransitionNet
+import com.ing.baker.petrinet.dsl._
 import com.ing.baker.petrinet.runtime.EventSourcing.{InitializedEvent, TransitionFiredEvent}
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption

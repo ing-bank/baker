@@ -28,10 +28,10 @@ class TaskProvider(recipe: CompiledRecipe, interactionManager: InteractionManage
   }
 
   def passThroughTransitionTask[Input](petriNet: PetriNet[Place, Transition], t: Transition): TransitionTask[Place, ProcessState, RuntimeEvent] =
-    (_, _, _) => IO.pure((toMarking[Place](petriNet.outMarking(t)), null.asInstanceOf[RuntimeEvent]))
+    (_, _, _) => IO.pure(petriNet.outMarking(t).toMarking, null.asInstanceOf[RuntimeEvent])
 
   def eventTransitionTask[Input](petriNet: PetriNet[Place, Transition], eventTransition: EventTransition): TransitionTask[Place, ProcessState, RuntimeEvent] =
-    (_, _, input) => IO.pure((toMarking[Place](petriNet.outMarking(eventTransition)), input.asInstanceOf[RuntimeEvent]))
+    (_, _, input) => IO.pure(petriNet.outMarking(eventTransition).toMarking, input.asInstanceOf[RuntimeEvent])
 
   // function that (optionally) transforms the output event using the event output transformers
   def transformEvent(interaction: InteractionTransition)(runtimeEvent: RuntimeEvent): RuntimeEvent = {

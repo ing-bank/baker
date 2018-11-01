@@ -1,8 +1,7 @@
-package com.ing.baker.petrinet.dsl.state
+package com.ing.baker.petrinet.dsl
 
 import cats.effect.IO
 import com.ing.baker.petrinet.api._
-import com.ing.baker.petrinet.dsl.colored.{Place, Transition, TransitionExceptionHandler}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
 import com.ing.baker.petrinet.runtime._
 
@@ -16,7 +15,7 @@ trait StateTransitionNet[S, E] {
     override def apply(petriNet: PetriNet[Place, Transition], t: Transition): TransitionTask[Place, S, E] =
       (_, state, _) ⇒ {
         val eventTask = t.asInstanceOf[StateTransition[S, E]].produceEvent(state)
-        val produceMarking: Marking[Place] = toMarking[Place](petriNet.outMarking(t))
+        val produceMarking: Marking[Place] = petriNet.outMarking(t).toMarking
         eventTask.map(e ⇒ (produceMarking, e))
       }
   }

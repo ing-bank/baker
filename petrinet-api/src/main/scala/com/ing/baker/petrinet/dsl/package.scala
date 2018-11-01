@@ -1,17 +1,11 @@
-package com.ing.baker.petrinet.dsl
+package com.ing.baker.petrinet
 
-import com.ing.baker.petrinet.api._
+import com.ing.baker.petrinet.api.{MultiSet, PetriNet}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy
-
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
 
-package object colored {
-
-  /**
-   * Type alias for the node type of the scalax.collection.Graph backing the petri net.
-   */
-  type Node = Either[Place, Transition]
+package object dsl {
 
   /**
     * An exception handler function associated with a transition.
@@ -19,14 +13,14 @@ package object colored {
   type TransitionExceptionHandler[P] = (Throwable, Int, MultiSet[P]) ⇒ ExceptionStrategy
 
   /**
-   * Type alias for the edge type of the scalax.collection.Graph backing the petri net.
-   */
-  type Arc = WLDiEdge[Node]
+    * Type alias for the node type of the scalax.collection.Graph backing the petri net.
+    */
+  type Node = Either[Place, Transition]
 
   /**
-   * Type alias for a colored petri net.
-   */
-  type ColoredPetriNet = PetriNet[Place, Transition]
+    * Type alias for the edge type of the scalax.collection.Graph backing the petri net.
+    */
+  type Arc = WLDiEdge[Node]
 
   implicit class TransitionDSL[Input, Output, State](t: Transition) {
     def ~>(p: Place, weight: Long = 1): Arc = arc(t, p, weight)
@@ -49,7 +43,7 @@ package object colored {
     }
   }
 
-  def createPetriNet[S](params: Arc*): ColoredPetriNet = {
+  def createPetriNet[S](params: Arc*): PetriNet[Place, Transition] = {
     val petriNet = new PetriNet(Graph(params: _*))
 
     requireUniqueElements(petriNet.places.toSeq.map(_.id), "Place identifier")
