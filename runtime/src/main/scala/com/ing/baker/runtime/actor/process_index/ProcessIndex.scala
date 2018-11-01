@@ -8,7 +8,7 @@ import akka.stream.scaladsl.{Source, StreamRefs}
 import akka.stream.{Materializer, StreamRefAttributes}
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.{Place, RecipePetriNet, Transition}
-import com.ing.baker.petrinet.runtime.{PetriNetRuntime, namedCachedThreadPool}
+import com.ing.baker.petrinet.runtime.PetriNetRuntime
 import com.ing.baker.runtime.actor.Util.logging._
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.process_index.ProcessIndex._
@@ -20,7 +20,7 @@ import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.core.events.{ProcessCreated, RejectReason}
 import com.ing.baker.runtime.core.interations.InteractionManager
-import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, events}
+import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, events, namedCachedThreadPool}
 import com.ing.baker.runtime.petrinet._
 
 import scala.collection.mutable

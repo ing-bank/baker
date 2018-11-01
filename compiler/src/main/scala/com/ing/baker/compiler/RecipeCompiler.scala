@@ -59,7 +59,7 @@ object RecipeCompiler {
   }
 
   private def buildEventPreconditionArcs(eventName: String,
-                                         preconditionPlace: Place[_],
+                                         preconditionPlace: Place,
                                          preconditionTransition: String => Option[Transition],
                                          interactionTransition: Transition): (Seq[Arc], Seq[String]) = {
 
@@ -92,7 +92,7 @@ object RecipeCompiler {
         val eventTransitionCount = eventTransitions.count(e => e.event.name == event.name)
         if(eventTransitionCount > 1) {
           //Create a new intermediate event place
-          val eventCombinerPlace: Place[_] = createPlace(label = event.name, placeType = IntermediatePlace)
+          val eventCombinerPlace: Place = createPlace(label = event.name, placeType = IntermediatePlace)
           //Create a new intermediate event transition
           val interactionToEventTransition: IntermediateTransition = IntermediateTransition(s"${interaction.interactionName}:${event.name}")
           //link the interaction output place to the intermediate transition
@@ -284,10 +284,10 @@ object RecipeCompiler {
       ++ internalEventArcs
       ++ multipleOutputFacilitatorArcs)
 
-    val petriNet: PetriNet[Place[_], Transition] = new PetriNet(Graph(arcs: _*))
+    val petriNet: PetriNet[Place, Transition] = new PetriNet(Graph(arcs: _*))
 
     val initialMarking: Marking[Place] = petriNet.places.collect {
-      case p@Place(_, FiringLimiterPlace(n)) => p -> Map((null, n))
+      case p @ Place(_, FiringLimiterPlace(n)) => p -> Map[Any, Int]((null, n))
     }.toMarking
 
     val errors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors
@@ -336,5 +336,5 @@ object RecipeCompiler {
     ingredientsWithMultipleConsumers
   }
 
-  private def createPlace(label: String, placeType: PlaceType): Place[Any] = Place(label = s"${placeType.labelPrepend}$label", placeType)
+  private def createPlace(label: String, placeType: PlaceType): Place = Place(label = s"${placeType.labelPrepend}$label", placeType)
 }

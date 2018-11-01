@@ -7,15 +7,15 @@ import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props, Terminated}
 import akka.testkit.TestDuration
 import akka.util.Timeout
 import com.ing.baker.petrinet.api._
-import com.ing.baker.petrinet.dsl.colored._
-import com.ing.baker.petrinet.dsl.state.{SequenceNet, StateTransitionNet}
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Fatal, RetryWithDelay}
-import com.ing.baker.petrinet.runtime.{PetriNetRuntime, namedCachedThreadPool}
+import com.ing.baker.petrinet.dsl._
+import com.ing.baker.petrinet.runtime.ExceptionStrategy.{Fatal, RetryWithDelay}
+import com.ing.baker.petrinet.runtime.PetriNetRuntime
 import com.ing.baker.runtime.actor.AkkaTestBase
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
+import com.ing.baker.runtime.core.namedCachedThreadPool
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
@@ -28,6 +28,7 @@ import scala.concurrent.Promise
 import scala.concurrent.duration._
 import scala.util.Success
 import ProcessInstanceSpec._
+import com.ing.baker.petrinet.dsl.TransitionExceptionHandler
 
 
 sealed trait Event
@@ -53,7 +54,7 @@ object ProcessInstanceSpec {
   )
 
   def processInstanceProps[S, E](
-                                  topology: ColoredPetriNet,
+                                  topology: PetriNet[Place, Transition],
                                   runtime: PetriNetRuntime[Place, Transition, S, E],
                                   settings: Settings): Props =
 
@@ -68,7 +69,7 @@ object ProcessInstanceSpec {
     system.actorOf(props, name)
   }
 
-  def createProcessInstance[S, E](petriNet: ColoredPetriNet, runtime: PetriNetRuntime[Place, Transition, S, E], processId: String = UUID.randomUUID().toString)(implicit system: ActorSystem): ActorRef = {
+  def createProcessInstance[S, E](petriNet: PetriNet[Place, Transition], runtime: PetriNetRuntime[Place, Transition, S, E], processId: String = UUID.randomUUID().toString)(implicit system: ActorSystem): ActorRef = {
 
     createPetriNetActor(processInstanceProps(petriNet, runtime, instanceSettings), processId)
   }
@@ -179,7 +180,9 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
 
       // initialize the petri net with 2 tokens in the first place
-      actor ! Initialize(Marking(place(1) -> 2), Set.empty)
+      val marking: Marking[Place] = place(1).markWithN(2)
+
+      actor ! Initialize(marking, Set.empty)
       expectMsgClass(classOf[Initialized])
 
       actor ! FireTransition(transitionId = 1, input = null, correlationId = Some(testCorrelationId))
@@ -292,7 +295,8 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       expectMsgPF() { case TransitionFired(_, 2, _, _, _, _, _, _) ⇒ }
 
       // validate the final state
-      val expectedFinalState = InstanceState(3, marshal[Place](Marking(place(3) -> 1)), Set(1, 2), Map.empty)
+      val endMarking: Marking[Place] = place(3).markWithN(1)
+      val expectedFinalState = InstanceState(3, marshal[Place](endMarking), Set(1, 2), Map.empty)
       actor ! GetState
       expectMsg(expectedFinalState)
 
@@ -489,10 +493,10 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       override val eventSourceFunction: Unit ⇒ Unit ⇒ Unit = s ⇒ e ⇒ s
 
-      val p1 = Place[Unit](id = 1)
-      val p2 = Place[Unit](id = 2)
+      val p1 = Place(id = 1)
+      val p2 = Place(id = 2)
 
-      val t1 = nullTransition[Unit](id = 1, automated = false)
+      val t1 = nullTransition(id = 1, automated = false)
       val t2 = stateTransition(id = 2, automated = true)(_ ⇒ Thread.sleep(dilatedMillis(500)))
       val t3 = stateTransition(id = 3, automated = true)(_ ⇒ Thread.sleep(dilatedMillis(500)))
 

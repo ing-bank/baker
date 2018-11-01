@@ -18,10 +18,10 @@ object Place {
   case object EmptyEventIngredientPlace extends PlaceType
   case object MultiTransitionPlace extends PlaceType
 
-  implicit val identifiable: Identifiable[Place[_]] = p => Id(p.id)
+  implicit val identifiable: Identifiable[Place] = p => Id(p.id)
 }
 
-case class Place[C](label: String, placeType: PlaceType) {
+case class Place(label: String, placeType: PlaceType) {
 
   val id: Long = il.sha256HashCode(s"$placeType:$label")
 

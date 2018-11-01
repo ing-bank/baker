@@ -14,11 +14,11 @@ import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.{LoggerFactory, MDC}
 
-class TaskProvider(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream) extends TransitionTaskProvider[Place, Transition, ProcessState, RuntimeEvent] {
+class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream) {
 
-  val log = LoggerFactory.getLogger(classOf[TaskProvider])
+  val log = LoggerFactory.getLogger(classOf[InteractionTaskProvider])
 
-  override def apply(petriNet: PetriNet[Place[_], Transition], t: Transition): TransitionTask[Place, ProcessState, RuntimeEvent] = {
+  def apply(petriNet: PetriNet[Place, Transition], t: Transition): TransitionTask[Place, ProcessState, RuntimeEvent] = {
     t match {
       case interaction: InteractionTransition =>
         interactionTransitionTask(interaction.asInstanceOf[InteractionTransition], petriNet.outMarking(interaction))
@@ -27,11 +27,11 @@ class TaskProvider(recipe: CompiledRecipe, interactionManager: InteractionManage
     }
   }
 
-  def passThroughTransitionTask[Input](petriNet: PetriNet[Place[_], Transition], t: Transition): TransitionTask[Place, ProcessState, RuntimeEvent] =
-    (_, _, _) => IO.pure((toMarking[Place](petriNet.outMarking(t)), null.asInstanceOf[RuntimeEvent]))
+  def passThroughTransitionTask[Input](petriNet: PetriNet[Place, Transition], t: Transition): TransitionTask[Place, ProcessState, RuntimeEvent] =
+    (_, _, _) => IO.pure(petriNet.outMarking(t).toMarking, null.asInstanceOf[RuntimeEvent])
 
-  def eventTransitionTask[Input](petriNet: PetriNet[Place[_], Transition], eventTransition: EventTransition): TransitionTask[Place, ProcessState, RuntimeEvent] =
-    (_, _, input) => IO.pure((toMarking[Place](petriNet.outMarking(eventTransition)), input.asInstanceOf[RuntimeEvent]))
+  def eventTransitionTask[Input](petriNet: PetriNet[Place, Transition], eventTransition: EventTransition): TransitionTask[Place, ProcessState, RuntimeEvent] =
+    (_, _, input) => IO.pure(petriNet.outMarking(eventTransition).toMarking, input.asInstanceOf[RuntimeEvent])
 
   // function that (optionally) transforms the output event using the event output transformers
   def transformEvent(interaction: InteractionTransition)(runtimeEvent: RuntimeEvent): RuntimeEvent = {
@@ -46,7 +46,7 @@ class TaskProvider(recipe: CompiledRecipe, interactionManager: InteractionManage
   }
 
   def interactionTransitionTask(interaction: InteractionTransition,
-                                outAdjacent: MultiSet[Place[_]]): TransitionTask[Place, ProcessState, RuntimeEvent] =
+                                outAdjacent: MultiSet[Place]): TransitionTask[Place, ProcessState, RuntimeEvent] =
 
     (_, processState, _) => {
 

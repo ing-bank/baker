@@ -8,7 +8,7 @@ package object petrinet {
   /**
     * Creates the produced marking (tokens) given the output (event) of the interaction.
     */
-  def createProducedMarking(interaction: InteractionTransition, outAdjacent: MultiSet[Place[_]]): RuntimeEvent => Marking[Place] = { output =>
+  def createProducedMarking(interaction: InteractionTransition, outAdjacent: MultiSet[Place]): RuntimeEvent => Marking[Place] = { output =>
     outAdjacent.keys.map { place =>
       val value: Any = {
         interaction.eventsToFire.find(_.name == output.name).map(_.name).getOrElse {

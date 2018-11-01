@@ -1,7 +1,6 @@
-package com.ing.baker.petrinet.dsl.state
+package com.ing.baker.petrinet.dsl
 
 import cats.effect.IO
-import com.ing.baker.petrinet.dsl.colored.{Place, Transition, TransitionExceptionHandler}
 
 case class StateTransition[S, E](
     override val id: Long,
