@@ -23,10 +23,9 @@ import cats.syntax.apply._
 
 object ProcessInstance {
 
-  case class Settings(
-                       executionContext: ExecutionContext,
-                       idleTTL: Option[FiniteDuration],
-                       encryption: Encryption)
+  case class Settings(executionContext: ExecutionContext,
+                      idleTTL: Option[FiniteDuration],
+                      encryption: Encryption)
 
   private case class IdleStop(seq: Long) extends InternalBakerMessage
 
@@ -90,8 +89,6 @@ class ProcessInstance[P[_], T, S, E](processType: String,
       val uninitialized = Instance.uninitialized[P, T, S](processTopology)
       val event = InitializedEvent(initialMarking, state)
 
-      system.eventStream.publish(ProcessInstanceEvent(processType, processId, event))
-
       persistEvent(uninitialized, event) {
         eventSource.apply(uninitialized)
           .andThen(step)
@@ -146,7 +143,6 @@ class ProcessInstance[P[_], T, S, E](processType: String,
       val transition = t.asInstanceOf[T]
       val transitionId = transitionIdentifier(transition).value
 
-      system.eventStream.publish(ProcessInstanceEvent(processType, processId, event))
       log.transitionFired(processId, transition.toString, jobId, timeStarted, timeCompleted)
 
       persistEvent(instance, event)(
@@ -165,7 +161,6 @@ class ProcessInstance[P[_], T, S, E](processType: String,
       val transition = t.asInstanceOf[T]
       val transitionId = transitionIdentifier(transition).value
 
-      system.eventStream.publish(ProcessInstanceEvent(processType, processId, event))
       log.transitionFailed(processId, transition.toString, jobId, timeStarted, timeFailed, reason)
 
       strategy match {
@@ -221,7 +216,7 @@ class ProcessInstance[P[_], T, S, E](processType: String,
         case Some(correlationId) if instance.hasReceivedCorrelationId(correlationId) =>
             sender() ! AlreadyReceived(correlationId)
         case _ =>
-          runtime.jobPicker.createJob[S, Any](transition, input, correlationIdOption).run(instance).value match {
+          runtime.tokenGame.createJob[S, Any](transition, input, correlationIdOption).run(instance).value match {
             case (updatedInstance, Right(job)) ⇒
               executeJob(job, sender())
               context become running(updatedInstance, scheduledRetries)
@@ -239,7 +234,7 @@ class ProcessInstance[P[_], T, S, E](processType: String,
 
   def step(instance: Instance[P, T, S]): (Instance[P, T, S], Set[Job[P, T, S]]) = {
 
-    runtime.jobPicker.allEnabledJobs.run(instance).value match {
+    runtime.tokenGame.allEnabledJobs.run(instance).value match {
       case (updatedInstance, jobs) ⇒
 
         if (jobs.isEmpty && updatedInstance.activeJobs.isEmpty)

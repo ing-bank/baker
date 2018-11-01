@@ -155,6 +155,7 @@ message EventDescriptor {
 
 message CompiledRecipe {
     optional string name = 1;
+    optional string recipeId = 7;
     optional PetriNet petrinet = 2;
     repeated ProducedToken initialMarking = 3;
     repeated string validationErrors = 4;

@@ -2,6 +2,7 @@ package com.ing.baker.runtime.actor.serialization.modules
 
 import java.util.concurrent.TimeUnit
 
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.{Node, RecipePetriNet}
 import com.ing.baker.petrinet.api.{IdentifiableOps, Marking, PetriNet}
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization.tokenIdentifier
@@ -32,7 +33,7 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
 
       protobuf.IngredientDescriptor(Some(name), Some(`type`))
 
-    case il.CompiledRecipe(name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod) =>
+    case il.CompiledRecipe(name, recipeId, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod) =>
 
       val eventReceiveMillis = eventReceivePeriod.map(_.toMillis)
       val retentionMillis = retentionPeriod.map(_.toMillis)
@@ -110,7 +111,7 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
         }
       }
 
-      protobuf.CompiledRecipe(Option(name), graph, producedTokens, validationErrors, eventReceiveMillis, retentionMillis)
+      protobuf.CompiledRecipe(Option(name), Some(recipeId), graph, producedTokens, validationErrors, eventReceiveMillis, retentionMillis)
 
     case s: il.failurestrategy.InteractionFailureStrategy => s match {
       case il.failurestrategy.BlockInteraction =>
@@ -217,13 +218,13 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
     case protobuf.IngredientDescriptor(Some(name), Some(ingredientType)) =>
       il.IngredientDescriptor(name, ctx.toDomain[types.Type](ingredientType))
 
-    case protobuf.CompiledRecipe(Some(name), Some(graphMsg), producedTokens, validationErrors, eventReceiveMillis, retentionMillis) =>
+    case protobuf.CompiledRecipe(Some(name), optionalRecipeId, Some(graphMsg), producedTokens, validationErrors, eventReceiveMillis, retentionMillis) =>
 
       val eventReceivePeriod = eventReceiveMillis.map(Duration(_, TimeUnit.MILLISECONDS))
       val retentionPeriod = retentionMillis.map(Duration(_, TimeUnit.MILLISECONDS))
 
       val graph = ctx.toDomain[scalax.collection.immutable.Graph[Node, WLDiEdge]](graphMsg)
-      val petriNet: RecipePetriNet = PetriNet(graph)
+      val petriNet: RecipePetriNet = new PetriNet(graph)
       val initialMarking = producedTokens.foldLeft(Marking.empty[il.petrinet.Place]) {
         case (accumulated, protobuf.ProducedToken(Some(placeId), Some(_), Some(count), _)) ⇒ // Option[SerializedData] is always None, and we don't use it here.
           val place = petriNet.places.getById(placeId, "place in petrinet").asInstanceOf[il.petrinet.Place[Any]]
@@ -232,7 +233,11 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
         case _ ⇒ throw new IllegalStateException("Missing data in persisted ProducedToken")
       }
 
-      il.CompiledRecipe(name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
+      optionalRecipeId.map { recipeId =>
+        il.CompiledRecipe(name, recipeId, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
+      }.getOrElse {
+        il.CompiledRecipe(name, petriNet, initialMarking, validationErrors, eventReceivePeriod, retentionPeriod)
+      }
 
     case protobuf.EventOutputTransformer(newEventName, ingredientRenames) =>
       il.EventOutputTransformer(newEventName.getOrMissing("newEventName"), ingredientRenames)

@@ -19,7 +19,7 @@ object RecipeManagerProtocol {
   //Get all recipes
   case object GetAllRecipes extends BakerProtoMessage
 
-  case class RecipeInformation(recipeId: String, compiledRecipe: CompiledRecipe, timestamp: Long)
+  case class RecipeInformation(compiledRecipe: CompiledRecipe, timestamp: Long)
 
   case class AllRecipes(recipes: Seq[RecipeInformation]) extends BakerProtoMessage
 }

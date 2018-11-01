@@ -4,7 +4,7 @@ import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
 import com.ing.baker.il.petrinet._
 import com.ing.baker.recipe.common
-import com.ing.baker.recipe.common.{InteractionDescriptor, ProvidesNothing}
+import com.ing.baker.recipe.common.InteractionDescriptor
 import com.ing.baker.types._
 
 package object compiler {
@@ -49,25 +49,16 @@ package object compiler {
       //Replace ingredient tags with overridden tags
       val inputFields: Seq[(String, Type)] = interactionDescriptor.inputIngredients
         .map { ingredient =>
-          if (ingredient.name == common.ProcessIdName) il.processIdName -> ingredient.ingredientType
+          if (ingredient.name == common.processIdName) il.processIdName -> ingredient.ingredientType
           else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.ingredientType
         }
 
-      val (originalEvents, eventsToFire, providedIngredientEvent): (Seq[EventDescriptor], Seq[EventDescriptor], Option[EventDescriptor]) =
-        interactionDescriptor.output match {
-          case common.ProvidesIngredient(outputIngredient) =>
-            val ingredientName: String =
-              if (interactionDescriptor.overriddenOutputIngredientName.nonEmpty) interactionDescriptor.overriddenOutputIngredientName.get
-              else outputIngredient.name
-            val event = EventDescriptor(interactionDescriptor.name + SuccessEventAppend, Seq(IngredientDescriptor(ingredientName, outputIngredient.ingredientType)))
-            val events = Seq(event)
-            (events, events, Some(event))
-          case common.FiresOneOfEvents(events@_*) =>
-            val originalCompiledEvents = events.map(transformEventToCompiledEvent)
-            val compiledEvents = events.map(transformEventType).map(transformEventToCompiledEvent)
-            (originalCompiledEvents, compiledEvents, None)
-          case ProvidesNothing => (Seq.empty, Seq.empty, None)
-        }
+      val (originalEvents, eventsToFire, providedIngredientEvent): (Seq[EventDescriptor], Seq[EventDescriptor], Option[EventDescriptor]) = {
+        val originalCompiledEvents = interactionDescriptor.output.map(transformEventToCompiledEvent)
+        val compiledEvents = interactionDescriptor.output.map(transformEventType).map(transformEventToCompiledEvent)
+        (originalCompiledEvents, compiledEvents, None)
+      }
+
 
       //For each ingredient that is not provided
       //And is of the type Optional or Option

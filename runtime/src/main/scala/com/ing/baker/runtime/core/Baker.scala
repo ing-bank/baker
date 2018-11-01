@@ -11,19 +11,17 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, SourceRef}
 import akka.util.Timeout
 import com.ing.baker.il._
+import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
-import com.ing.baker.petrinet.runtime.EventSourcing.{TransitionFailedEvent, TransitionFiredEvent}
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue
+import com.ing.baker.petrinet.runtime.EventSourcing.TransitionFiredEvent
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEvent
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
-import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.core
-import com.ing.baker.runtime.core.events.BakerEvent
+import com.ing.baker.runtime.core.events.{BakerEvent, EventReceived, InteractionCompleted, InteractionFailed}
 import com.ing.baker.runtime.core.interations.{InteractionImplementation, InteractionManager, MethodInteractionImplementation}
 import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.RecipeRuntime
@@ -132,7 +130,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     // here we ask the RecipeManager actor to return us the recipe for the given id
     val futureResult = recipeManager.ask(GetRecipe(recipeId))(timeout)
     Await.result(futureResult, timeout) match {
-      case RecipeFound(compiledRecipe, timestamp) => core.RecipeInformation(recipeId, compiledRecipe, timestamp, getImplementationErrors(compiledRecipe))
+      case RecipeFound(compiledRecipe, timestamp) => core.RecipeInformation(compiledRecipe, timestamp, getImplementationErrors(compiledRecipe))
       case NoRecipeFound(_)            => throw new IllegalArgumentException(s"No recipe found for recipe with id: $recipeId")
     }
   }
@@ -166,7 +164,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     recipeManager.ask(GetAllRecipes)(timeout)
       .mapTo[AllRecipes]
       .map(_.recipes.map { ri =>
-        ri.recipeId -> core.RecipeInformation(ri.recipeId, ri.compiledRecipe, ri.timestamp, getImplementationErrors(ri.compiledRecipe))
+        ri.compiledRecipe.recipeId -> core.RecipeInformation(ri.compiledRecipe, ri.timestamp, getImplementationErrors(ri.compiledRecipe))
       }.toMap)
 
   /**
@@ -397,29 +395,16 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   }
 
   private def doRegisterEventListener(listener: EventListener, processFilter: String => Boolean): Boolean = {
-    // Translates a petri net TransitionFiredEvent to an optional RuntimeEvent
-    def toRuntimeEvent[P[_], T, E](event: TransitionFiredEvent[P, T, E]): Option[RuntimeEvent] = {
-      val t = event.transition.asInstanceOf[Transition]
-      if ((t.isSensoryEvent || t.isInteraction) && event.output.isInstanceOf[RuntimeEvent])
-        Some(event.output.asInstanceOf[RuntimeEvent])
-      else
-        None
-    }
 
-    val subscriber = actorSystem.actorOf(Props(new Actor() {
-      override def receive: Receive = {
-        case ProcessInstanceEvent(processType, processId, event: TransitionFiredEvent[_, _, _]) if processFilter(processType) =>
-          toRuntimeEvent(event).foreach(e => listener.processEvent(processId, e))
-        case ProcessInstanceEvent(processType, processId, event: TransitionFailedEvent[_, _, _]) if processFilter(processType) =>
-          event.exceptionStrategy match {
-            case Continue(_, event: RuntimeEvent) =>
-              listener.processEvent(processId, event)
-            case _ =>
-          }
-        case _: ProcessInstanceEvent => // purposely ignored in order to not have unnecessary unhandled messages logged
-      }
-    }))
-    actorSystem.eventStream.subscribe(subscriber.actorRef, classOf[ProcessInstanceEvent])
+    registerEventListenerPF {
+
+      case EventReceived(_, recipeName, _, processId, _, event) if processFilter(recipeName) =>
+        listener.processEvent(processId, event)
+      case InteractionCompleted(_, _, recipeName, _, processId, _, event) if processFilter(recipeName) =>
+        listener.processEvent(processId, event)
+      case InteractionFailed(_, _, recipeName, _, processId, _, _, _, ExceptionStrategyOutcome.Continue(eventName)) if processFilter(recipeName) =>
+        listener.processEvent(processId, RuntimeEvent(eventName, Seq.empty))
+    }
   }
 
   /**
@@ -448,7 +433,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   def registerEventListenerPF(pf: PartialFunction[BakerEvent, Unit]): Boolean = {
 
     val listenerActor = actorSystem.actorOf(Props(new Actor() {
-      override def receive = {
+      override def receive: Receive = {
         case event: BakerEvent => Try { pf.applyOrElse[BakerEvent, Unit](event, _ => ()) }.failed.foreach { e =>
           log.warn(s"Listener function threw exception for event: $event", e)
         }

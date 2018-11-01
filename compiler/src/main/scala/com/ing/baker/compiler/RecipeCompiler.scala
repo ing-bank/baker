@@ -169,17 +169,14 @@ object RecipeCompiler {
     //All ingredient names provided by sensory events or by interactions
     val allIngredientNames: Set[String] =
       recipe.sensoryEvents.flatMap(e => e.providedIngredients.map(i => i.name)) ++
-        (recipe.interactions ++ recipe.sieves).flatMap(i => i.output match {
-          case pi: ProvidesIngredient => Set(i.overriddenOutputIngredientName.getOrElse(pi.ingredient.name))
-          case fi: FiresOneOfEvents => fi.events.flatMap { e =>
+        (recipe.interactions ++ recipe.sieves).flatMap(i => i.output.flatMap { e =>
             // check if the event was renamed (check if there is a transformer for this event)
             i.eventOutputTransformers.get(e) match {
               case Some(transformer) => e.providedIngredients.map(ingredient => transformer.ingredientRenames.getOrElse(ingredient.name, ingredient.name))
               case None => e.providedIngredients.map(_.name)
             }
           }
-          case ProvidesNothing => Set.empty
-        })
+        )
 
     val actionDescriptors: Seq[InteractionDescriptor] = recipe.interactions ++ recipe.sieves
 
@@ -287,17 +284,19 @@ object RecipeCompiler {
       ++ internalEventArcs
       ++ multipleOutputFacilitatorArcs)
 
-    val petriNet: PetriNet[Place[_], Transition] = PetriNet(Graph(arcs: _*))
+    val petriNet: PetriNet[Place[_], Transition] = new PetriNet(Graph(arcs: _*))
 
     val initialMarking: Marking[Place] = petriNet.places.collect {
       case p@Place(_, FiringLimiterPlace(n)) => p -> Map((null, n))
     }.toMarking
 
+    val errors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors
+
     val compiledRecipe = CompiledRecipe(
       name = recipe.name,
       petriNet = petriNet,
       initialMarking = initialMarking,
-      validationErrors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors,
+      validationErrors = errors,
       eventReceivePeriod = recipe.eventReceivePeriod,
       retentionPeriod = recipe.retentionPeriod
     )

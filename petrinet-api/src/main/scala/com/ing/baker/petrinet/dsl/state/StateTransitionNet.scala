@@ -1,7 +1,8 @@
-package com.ing.baker.petrinet.dsl.colored
+package com.ing.baker.petrinet.dsl.state
 
 import cats.effect.IO
 import com.ing.baker.petrinet.api._
+import com.ing.baker.petrinet.dsl.colored.{Place, Transition, TransitionExceptionHandler}
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
 import com.ing.baker.petrinet.runtime._
 
@@ -28,7 +29,7 @@ trait StateTransitionNet[S, E] {
                                   (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place[_]]) =
         job.transition.exceptionStrategy(throwable, failureCount, outMarking)
     }
-    override lazy val jobPicker = new JobPicker[Place, Transition](tokenGame) {
+    override val tokenGame = new TokenGame[Place, Transition] {
       override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition): Boolean =
         t.isAutomated && instance.isBlockedReason(t).isEmpty
     }

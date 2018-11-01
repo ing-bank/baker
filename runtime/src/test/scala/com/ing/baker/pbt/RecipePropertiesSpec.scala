@@ -4,7 +4,6 @@ import java.io.{File, PrintWriter}
 
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.{CompiledRecipe, ValidationSettings}
-import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionOutput, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 import com.ing.baker.recipe.{common, scaladsl}
 import org.scalacheck.Prop.forAll
@@ -125,15 +124,10 @@ object RecipePropertiesSpec {
     providedIngredients <- Gen.listOfN(nrOfIngredients, ingredientGen)
   } yield Event(name, providedIngredients, None)
 
-  val interactionOutputGen: Gen[InteractionOutput] = for {
+  val interactionOutputGen: Gen[Seq[Event]] = for {
     nrOfEvents <- Gen.choose(0, maxNrOfOutputEventsPerInteraction)
     events <- Gen.listOfN(nrOfEvents, eventGen)
-    ingredient <- ingredientGen
-    output <- Gen.frequency(
-      //      1 -> Gen.const(ProvidesNothing),
-      5 -> Gen.const(ProvidesIngredient(ingredient)),
-      10 -> Gen.const(FiresOneOfEvents(events: _*)))
-  } yield output
+  } yield events
 
   val recipeGen: Gen[Recipe] = for {
     name <- nameGen
@@ -167,14 +161,14 @@ object RecipePropertiesSpec {
 
         val remainingIngredients = ingredients.diff(ingredientsToRemove)
 
-        val (interactionDescriptor, outputIngredients, outputEvents) = getInteractionDescriptor(consumedIngredients, andPreconditionEvents, orPreconditionEvents)
+        val (interactionDescriptor, outputEvents) = getInteractionDescriptor(consumedIngredients, andPreconditionEvents, orPreconditionEvents)
 
         if (remainingIngredients.isEmpty)
         //those are the last ingredients because the diff is an empty list, so nothing left to weave
           acc + interactionDescriptor
         else
           interaction(
-            remainingIngredients ++ outputIngredients ++ getIngredientsFrom(outputEvents),
+            remainingIngredients ++ getIngredientsFrom(outputEvents),
             events ++ outputEvents,
             acc + interactionDescriptor)
     }
@@ -190,22 +184,15 @@ object RecipePropertiesSpec {
     * @param ingredients input ingredients set
     * @return Tuple3(interactionDescriptor, outputIngredients, outputEvents)
     */
-  def getInteractionDescriptor(ingredients: Set[common.Ingredient], andPreconditionEvents: Set[common.Event], orPreconditionEvents: Set[common.Event]): (scaladsl.Interaction, Set[common.Ingredient], Set[common.Event]) = {
+  def getInteractionDescriptor(ingredients: Set[common.Ingredient], andPreconditionEvents: Set[common.Event], orPreconditionEvents: Set[common.Event]): (scaladsl.Interaction, Set[common.Event]) = {
     //each interaction fires a single event
-    val output = sample(interactionOutputGen)
+    val events = sample(interactionOutputGen)
 
-    //return the interaction description and a list of all ingredients that the interaction provides
-    val (outputIngredients: Set[common.Ingredient], outputEvents: Set[common.Event]) = output match {
-      case ProvidesNothing => (Set.empty, Set.empty)
-      case FiresOneOfEvents(_events@_*) => (Set.empty, _events.toSet)
-      case ProvidesIngredient(ingredient) => (Set(ingredient), Set.empty)
-    }
-
-    val interactionDescriptor = Interaction(sample(nameGen), ingredients.toSeq, output)
+    val interactionDescriptor = Interaction(sample(nameGen), ingredients.toSeq, events)
       .withRequiredEvents(andPreconditionEvents.toList: _*)
       .withRequiredOneOfEvents(orPreconditionEvents.toList: _*)
 
-    (interactionDescriptor, outputIngredients, outputEvents)
+    (interactionDescriptor, events.toSet)
   }
 
   /**

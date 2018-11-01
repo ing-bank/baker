@@ -1,6 +1,5 @@
 package com.ing.baker.recipe.scaladsl
 
-import com.ing.baker.recipe.common.ProvidesIngredient
 import com.ing.baker.recipe.scaladsl.InteractionDescriptorSpec._
 import org.scalatest.{Matchers, WordSpecLike}
 
@@ -10,7 +9,7 @@ object InteractionDescriptorSpec {
   val createCustomer = Interaction(
     name = "CreateCustomer",
     inputIngredients = Seq(customerName),
-    output = ProvidesIngredient(customerId)
+    output = Seq()
   )
   val agreementsAcceptedEvent = Event("agreementsAccepted")
   val anOtherEvent = Event("anOtherEvent")

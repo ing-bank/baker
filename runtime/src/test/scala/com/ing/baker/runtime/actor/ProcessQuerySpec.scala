@@ -11,9 +11,11 @@ import akka.testkit.TestProbe
 import akka.util.Timeout
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.dsl.colored._
+import com.ing.baker.petrinet.dsl.state.StateTransitionNet
 import com.ing.baker.petrinet.runtime.EventSourcing.{InitializedEvent, TransitionFiredEvent}
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSpec._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Matchers._
 
@@ -53,7 +55,7 @@ class ProcessQuerySpec extends AkkaTestBase("ProcessQuerySpec") with BeforeAndAf
 
       val petriNet = createPetriNet(p1 ~> t1, t1 ~> p2, p2 ~> t2, t2 ~> p3)
       val processId = UUID.randomUUID().toString
-      val instance = createPetriNetActor[Unit, Unit](petriNet, runtime, processId)
+      val instance = createProcessInstance[Unit, Unit](petriNet, runtime, processId)
 
       instance ! Initialize(Marking(p1 -> 1), ())
 
@@ -102,13 +104,13 @@ class ProcessQuerySpec extends AkkaTestBase("ProcessQuerySpec") with BeforeAndAf
       val petriNet = createPetriNet(p1 ~> t1, t1 ~> p2, p2 ~> t2, t2 ~> p3)
 
       val processId1 = UUID.randomUUID().toString
-      val instance1 = createPetriNetActor[Unit, Unit](petriNet, runtime, processId1)
+      val instance1 = createProcessInstance[Unit, Unit](petriNet, runtime, processId1)
 
       val processId2 = UUID.randomUUID().toString
-      val instance2 = createPetriNetActor[Unit, Unit](petriNet, runtime, processId2)
+      val instance2 = createProcessInstance[Unit, Unit](petriNet, runtime, processId2)
 
       val processId3 = UUID.randomUUID().toString
-      val instance3 = createPetriNetActor[Unit, Unit](petriNet, runtime, processId3)
+      val instance3 = createProcessInstance[Unit, Unit](petriNet, runtime, processId3)
 
       instance1 ! Initialize(Marking.empty[Place], ())
       instance2 ! Initialize(Marking.empty[Place], ())
@@ -139,13 +141,13 @@ class ProcessQuerySpec extends AkkaTestBase("ProcessQuerySpec") with BeforeAndAf
       val petriNet = createPetriNet(p1 ~> t1, t1 ~> p2, p2 ~> t2, t2 ~> p3)
 
       val processId1 = UUID.randomUUID().toString
-      val instance1 = createPetriNetActor[Unit, Unit](petriNet, runtime, processId1)
+      val instance1 = createProcessInstance[Unit, Unit](petriNet, runtime, processId1)
 
       val processId2 = UUID.randomUUID().toString
-      val instance2 = createPetriNetActor[Unit, Unit](petriNet, runtime, processId2)
+      val instance2 = createProcessInstance[Unit, Unit](petriNet, runtime, processId2)
 
       val processId3 = UUID.randomUUID().toString
-      val instance3 = createPetriNetActor[Unit, Unit](petriNet, runtime, processId3)
+      val instance3 = createProcessInstance[Unit, Unit](petriNet, runtime, processId3)
 
       instance1 ! Initialize(Marking.empty[Place], ())
       instance2 ! Initialize(Marking.empty[Place], ())

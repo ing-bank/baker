@@ -1,10 +1,10 @@
-package com.ing.baker.petrinet.dsl.colored
+package com.ing.baker.petrinet.api
 
-import com.ing.baker.petrinet.api.Marking
+import com.ing.baker.petrinet.dsl.colored.Place
 import org.scalatest.Matchers._
 import org.scalatest.WordSpec
 
-class ColoredMarkingSpec extends WordSpec {
+class MarkingSpec extends WordSpec {
 
   case class Person(name: String, age: Int)
 
