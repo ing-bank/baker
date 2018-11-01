@@ -13,7 +13,5 @@ object Place {
  */
 case class Place(id: Long, label: String) {
 
-  def apply(tokens: Any*): MarkedPlace[Place] = (this, MultiSet.copyOff(tokens))
-
   def markWithN(n: Int): Marking[Place] =  Map[Place, MultiSet[Any]](this -> Map[Any, Int](Tuple2(null, n)))
 }

@@ -6,6 +6,8 @@ import org.scalatest.WordSpec
 
 class MarkingSpec extends WordSpec {
 
+  type MarkedPlace[P] = (P, MultiSet[Any])
+
   case class Person(name: String, age: Int)
 
   val p1 = Place(id = 1)

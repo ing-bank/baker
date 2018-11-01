@@ -23,13 +23,6 @@ package object api extends MultiSetOps with MarkingOps {
     */
   type Marking[P] = Map[P, MultiSet[Any]]
 
-  /**
-    * Type alias for a single marked place, meaning a place containing tokens.
-    *
-    * @tparam T the type of tokens the place can hold.
-    */
-  type MarkedPlace[P] = (P, MultiSet[Any])
-
   implicit class IdentifiableOps[T : Identifiable](seq: Iterable[T]) {
     def findById(id: Long): Option[T] = seq.find(e ⇒ implicitly[Identifiable[T]].apply(e).value == id)
     def getById(id: Long, name: String = "element"): T = findById(id).getOrElse { throw new IllegalStateException(s"No $name found with id: $id") }
