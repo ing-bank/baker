@@ -11,5 +11,5 @@ class DummyLocalSerializer(system: ExtendedActorSystem) extends SerializerWithSt
 
   override def toBinary(o: AnyRef): Array[Byte] = throw new IllegalStateException(s"The DummyLocalSerializer should never used, toBinary called for: ${o.getClass.getName}")
 
-  override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = throw new IllegalStateException(s"This DummyLocalSerializer should never be called, fromBinary called for: $manifest")
+  override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = throw new IllegalStateException(s"The DummyLocalSerializer should never be called, fromBinary called for: $manifest")
 }

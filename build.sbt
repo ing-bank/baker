@@ -116,6 +116,8 @@ lazy val recipeRuntime = project.in(file("runtime"))
         objenisis,
         scalapbRuntime,
         protobufJava,
+        kryo,
+        kryoSerializers,
         slf4jApi
       ) ++ testDeps(
         akkaTestKit,
