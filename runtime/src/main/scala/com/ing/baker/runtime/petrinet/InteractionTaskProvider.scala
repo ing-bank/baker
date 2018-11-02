@@ -20,10 +20,9 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
 
   def apply(petriNet: PetriNet[Place, Transition], t: Transition)(marking: Marking[Place], state: ProcessState, input: Any): IO[(Marking[Place], RuntimeEvent)] = {
     t match {
-      case interaction: InteractionTransition =>
-        interactionTransitionTask(interaction.asInstanceOf[InteractionTransition], petriNet.outMarking(interaction), state)
-      case t: EventTransition  => IO.pure(petriNet.outMarking(t).toMarking, input.asInstanceOf[RuntimeEvent])
-      case t                   => IO.pure(petriNet.outMarking(t).toMarking, null.asInstanceOf[RuntimeEvent])
+      case interaction: InteractionTransition => interactionTransitionTask(interaction, petriNet.outMarking(t), state)
+      case t: EventTransition                 => IO.pure(petriNet.outMarking(t).toMarking, input.asInstanceOf[RuntimeEvent])
+      case t                                  => IO.pure(petriNet.outMarking(t).toMarking, null.asInstanceOf[RuntimeEvent])
     }
   }
 
@@ -92,7 +91,7 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
           eventStream.publish(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, recipe.name, recipe.recipeId, processState.processId, interaction.interactionName, outputEvent))
 
           // create the output marking for the petri net
-          val outputMarking = createProducedMarking(interaction, outAdjacent)(outputEvent)
+          val outputMarking: Marking[Place] = RecipeRuntime.createProducedMarking(interaction, outAdjacent)(outputEvent)
 
           (outputMarking, output)
 

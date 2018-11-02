@@ -9,8 +9,6 @@ import org.slf4j._
 
 /**
   * A transition that represents an Interaction
-  *
-  * @tparam I The class/interface of the interaction
   */
 case class InteractionTransition(eventsToFire: Seq[EventDescriptor],
                                     originalEvents: Seq[EventDescriptor],
