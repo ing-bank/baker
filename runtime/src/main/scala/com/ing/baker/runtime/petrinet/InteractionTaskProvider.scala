@@ -18,20 +18,14 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
 
   val log = LoggerFactory.getLogger(classOf[InteractionTaskProvider])
 
-  def apply(petriNet: PetriNet[Place, Transition], t: Transition): TransitionTask[Place, ProcessState, RuntimeEvent] = {
+  def apply(petriNet: PetriNet[Place, Transition], t: Transition)(marking: Marking[Place], state: ProcessState, input: Any): IO[(Marking[Place], RuntimeEvent)] = {
     t match {
       case interaction: InteractionTransition =>
-        interactionTransitionTask(interaction.asInstanceOf[InteractionTransition], petriNet.outMarking(interaction))
-      case t: EventTransition  => eventTransitionTask(petriNet, t)
-      case t                   => passThroughTransitionTask(petriNet, t)
+        interactionTransitionTask(interaction.asInstanceOf[InteractionTransition], petriNet.outMarking(interaction), state)
+      case t: EventTransition  => IO.pure(petriNet.outMarking(t).toMarking, input.asInstanceOf[RuntimeEvent])
+      case t                   => IO.pure(petriNet.outMarking(t).toMarking, null.asInstanceOf[RuntimeEvent])
     }
   }
-
-  def passThroughTransitionTask[Input](petriNet: PetriNet[Place, Transition], t: Transition): TransitionTask[Place, ProcessState, RuntimeEvent] =
-    (_, _, _) => IO.pure(petriNet.outMarking(t).toMarking, null.asInstanceOf[RuntimeEvent])
-
-  def eventTransitionTask[Input](petriNet: PetriNet[Place, Transition], eventTransition: EventTransition): TransitionTask[Place, ProcessState, RuntimeEvent] =
-    (_, _, input) => IO.pure(petriNet.outMarking(eventTransition).toMarking, input.asInstanceOf[RuntimeEvent])
 
   // function that (optionally) transforms the output event using the event output transformers
   def transformEvent(interaction: InteractionTransition)(runtimeEvent: RuntimeEvent): RuntimeEvent = {
@@ -46,9 +40,8 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
   }
 
   def interactionTransitionTask(interaction: InteractionTransition,
-                                outAdjacent: MultiSet[Place]): TransitionTask[Place, ProcessState, RuntimeEvent] =
-
-    (_, processState, _) => {
+                                outAdjacent: MultiSet[Place],
+                                processState: ProcessState): IO[(Marking[Place], RuntimeEvent)] = {
 
       // returns a delayed task that will get executed by the baker petrinet runtime
       IO {
@@ -109,7 +102,7 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
           MDC.remove("recipeName")
         }
 
-      }.handleWith {
+      }.handleExceptionWith {
         case e: InvocationTargetException => IO.raiseError(e.getCause)
         case e: Throwable                 => IO.raiseError(e)
       }

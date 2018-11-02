@@ -1,6 +1,7 @@
 package com.ing.baker.runtime.petrinet
 
 import akka.event.EventStream
+import cats.effect.IO
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
@@ -77,5 +78,6 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
 
   val interactionTaskProvider = new InteractionTaskProvider(recipe, interactionManager, eventStream)
 
-  override def taskProvider(petriNet: PetriNet[Place, Transition], t: Transition): TransitionTask[Place, ProcessState, RuntimeEvent] = interactionTaskProvider.apply(petriNet, t)
+  override def transitionTask(petriNet: PetriNet[Place, Transition], t: Transition)(marking: Marking[Place], state: ProcessState, input: Any): IO[(Marking[Place], RuntimeEvent)] =
+    interactionTaskProvider.apply(petriNet, t)(marking, state, input)
 }

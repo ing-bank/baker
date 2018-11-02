@@ -13,6 +13,13 @@ case class TransitionBehaviour[S, E](
   def asTransition(id: Long) = StateTransition[S, E](id, s"t$id", automated, exceptionHandler, state ⇒ IO { (fn(state)) })
 }
 
+/**
+  * Wrapper for a simple sequence petri net:
+  *
+  * p1 -> t1 -> p2 -> t2 -> ... -> tn -> pn+1
+  *
+  * The net starts with a place and ends with a place.
+  */
 trait SequenceNet[S, E] extends StateTransitionNet[S, E] {
 
   def sequence: Seq[TransitionBehaviour[S, E]]

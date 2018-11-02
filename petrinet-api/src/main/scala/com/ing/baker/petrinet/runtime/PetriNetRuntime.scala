@@ -31,25 +31,43 @@ trait PetriNetRuntime[P, T, S, E] {
   /**
     * This function is called when a transition throws an exception.
     *
-    * By default the transition is blocked
+    * By default the transition is blocked.
     */
   def handleException(job: Job[P, T, S])(throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[P]): ExceptionStrategy = BlockTransition
 
   /**
     * Returns the task that should be executed for a transition.
     */
-  def taskProvider(petriNet: PetriNet[P, T], t: T): TransitionTask[P, S, E]
+  def transitionTask(petriNet: PetriNet[P, T], t: T)(marking: Marking[P], state: S, input: Any): IO[(Marking[P], E)]
 
   /**
-    * Returns a Job -> IO[TransitionEvent]
+    * Checks if a transition is automatically 'fireable' by the runtime (not triggered by some outside input).
+    *
+    * By default, cold transitions (without in adjacent places) are not auto fireable.
+    */
+  def isAutoFireable[S](instance: Instance[P, T, S], t: T): Boolean = !instance.process.incomingPlaces(t).isEmpty
+
+  /**
+    * Defines which tokens from a marking for a particular place are consumable by a transition.
+    *
+    * By default ALL tokens from that place are consumable.
+    *
+    * You can override this for example in case you use a colored (data) petri net model with filter rules on the edges.
+    */
+  def consumableTokens(petriNet: PetriNet[P, T])(marking: Marking[P], p: P, t: T): MultiSet[Any] = marking.getOrElse(p, MultiSet.empty)
+
+  /**
+    * Takes a Job specification, executes it and returns a TransitionEvent (asychronously using cats.effect.IO)
+    *
+    * TODO
+    *
+    * The use of cats.effect.IO is not really necessary at this point. It was mainly chosen to support cancellation in
+    * the future: https://typelevel.org/cats-effect/datatypes/io.html#cancelable-processes
+    *
+    * However, since that is not used this can be refactored to a simple function: Job -> TransitionEvent
+    *
     */
   def jobExecutor(topology: PetriNet[P, T]): Job[P, T, S] ⇒ IO[TransitionEvent[T]] = {
-
-    val cachedTransitionTasks: Map[T, _] =
-      topology.transitions.map(t ⇒ t -> taskProvider(topology, t)).toMap
-
-    def transitionFunction(t: T) =
-      cachedTransitionTasks(t).asInstanceOf[TransitionTask[P, S, E]]
 
     def exceptionStackTrace(e: Throwable): String = {
       val sw = new StringWriter()
@@ -65,7 +83,7 @@ trait PetriNetRuntime[P, T, S, E] {
       val jobIO =
         try {
           // calling the transition function could potentially throw an exception
-          transitionFunction(transition)(job.consume, job.processState, job.input)
+          transitionTask(topology, transition)(job.consume, job.processState, job.input)
         } catch {
           case e: Throwable ⇒ IO.raiseError(e)
         }
@@ -74,13 +92,13 @@ trait PetriNetRuntime[P, T, S, E] {
       jobIO.map {
         case (produced, out) ⇒
           TransitionFiredEvent(job.id, transition, job.correlationId, startTime, System.currentTimeMillis(), job.consume, produced, out)
-      }.handle {
+      }.handleException {
         // In case an exception was thrown by the transition, we compute the failure strategy and return a TransitionFailedEvent
         case e: Throwable ⇒
           val failureCount = job.failureCount + 1
           val failureStrategy = handleException(job)(e, failureCount, startTime, topology.outMarking(transition))
           TransitionFailedEvent(job.id, transition, job.correlationId, startTime, System.currentTimeMillis(), job.consume, job.input, exceptionStackTrace(e), failureStrategy)
-      }.handle {
+      }.handleException {
         // If an exception was thrown while computing the failure strategy we block the interaction from firing
         case e: Throwable =>
           log.error(s"Exception while handling transition failure", e)
@@ -111,22 +129,13 @@ trait PetriNetRuntime[P, T, S, E] {
     }
   }
 
-  def consumableTokens(petriNet: PetriNet[P, T])(marking: Marking[P], p: P, t: T): MultiSet[Any] = marking.getOrElse(p, MultiSet.empty)
-
   /**
     * Checks whether a transition is 'enabled' in a marking.
-    *
-    * @param marking The marking.
-    * @param t The transition.
-    * @return
     */
   def isEnabled(petriNet: PetriNet[P, T])(marking: Marking[P], t: T): Boolean = consumableMarkings(petriNet)(marking, t).nonEmpty
 
   /**
     * Returns all enabled transitions for a marking.
-    *
-    * @param marking marking
-    * @return
     */
   def enabledTransitions(petriNet: PetriNet[P, T])(marking: Marking[P]): Iterable[T] =
     petriNet.transitions.filter(t ⇒ consumableMarkings(petriNet)(marking, t).nonEmpty)
@@ -150,13 +159,6 @@ trait PetriNetRuntime[P, T, S, E] {
           }
       }
     }
-
-  /**
-    * Checks if a transition is automatically fireable by the runtime (not triggered by some outside input)
-    *
-    * By default, cold transitions (without in adjacent places) are not picked.
-    */
-  def isAutoFireable[S](instance: Instance[P, T, S], t: T) = !instance.process.incomingPlaces(t).isEmpty
 
   /**
     * Finds the (optional) first transition that is enabled & automatically fireable
