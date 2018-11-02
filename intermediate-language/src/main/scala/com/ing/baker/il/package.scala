@@ -2,31 +2,10 @@ package com.ing.baker
 
 import java.security.MessageDigest
 
-import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, MissingEventTransition, MultiFacilitatorTransition, Place, Transition}
-
-
 package object il {
 
   val processIdName = "$ProcessID$"
-  val SuccessEventAppend = "Successful"
   val exhaustedEventAppend = "RetryExhausted"
-
-  implicit class TransitionAdditions(transition: Transition) {
-
-    def isInteraction: Boolean = PartialFunction.cond(transition) {
-      case _: InteractionTransition => true
-    }
-
-    def isMultiFacilitatorTransition: Boolean = transition.isInstanceOf[MultiFacilitatorTransition]
-
-    def isEventMissing: Boolean = transition.isInstanceOf[MissingEventTransition]
-
-    def isSensoryEvent: Boolean =
-      transition match {
-      case EventTransition(_, true, _) => true
-      case _ => false
-    }
-  }
 
   def sha256HashCode(str: String): Long = {
     val sha256Digest: MessageDigest = MessageDigest.getInstance("SHA-256")
@@ -35,8 +14,8 @@ package object il {
 
   def zeroPaddedSHA256(text: String): String = {
 
-    import java.security.MessageDigest
     import java.math.BigInteger
+    import java.security.MessageDigest
 
     val sha256Digest: MessageDigest = MessageDigest.getInstance("SHA-256")
     val digest = sha256Digest.digest(text.getBytes("UTF-8"))

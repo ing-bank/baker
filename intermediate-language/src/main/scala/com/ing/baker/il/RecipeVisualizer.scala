@@ -40,7 +40,7 @@ object RecipeVisualizer {
   private def nodeLabelFn: Either[Place, Transition] ⇒ String = {
     case Left(place) if place.isEmptyEventIngredient ⇒ s"empty:${place.label}"
     case Left(place) ⇒ place.label
-    case Right(transition) if transition.isMultiFacilitatorTransition ⇒ s"multi:${transition.label}"
+    case Right(transition: MultiFacilitatorTransition) ⇒ s"multi:${transition.label}"
     case Right(transition) => transition.label
   }
 
@@ -54,11 +54,11 @@ object RecipeVisualizer {
         case Left(place: Place) if ingredientNames contains place.label ⇒ style.providedIngredientAttributes
         case Left(_) ⇒ style.ingredientAttributes
         case Right(t: InteractionTransition) if eventNames.intersect(t.eventsToFire.map(_.name).toSet).nonEmpty => style.firedInteractionAttributes
+        case Right(_: InteractionTransition) ⇒ style.interactionAttributes
         case Right(transition: Transition) if eventNames.contains(transition.label) ⇒ style.eventFiredAttributes
-        case Right(transition: Transition) if transition.isMultiFacilitatorTransition => style.choiceAttributes
-        case Right(transition: Transition) if transition.isInteraction ⇒ style.interactionAttributes
-        case Right(transition: Transition) if transition.isEventMissing ⇒ style.eventMissingAttributes
-        case Right(transition: Transition) if transition.isSensoryEvent => style.sensoryEventAttributes
+        case Right(_: MultiFacilitatorTransition) => style.choiceAttributes
+        case Right(_: MissingEventTransition) ⇒ style.eventMissingAttributes
+        case Right(EventTransition(_, true, _)) => style.sensoryEventAttributes
         case Right(_) ⇒ style.eventAttributes
       }
 
@@ -89,7 +89,7 @@ object RecipeVisualizer {
 
     // specifies which transitions to compact (remove)
     val transitionsToCompact = (node: RecipePetriNetGraph#NodeT) => node.value match {
-      case Right(transition: Transition) => transition.isInstanceOf[IntermediateTransition] || transition.isMultiFacilitatorTransition
+      case Right(transition: Transition) => transition.isInstanceOf[IntermediateTransition] || transition.isInstanceOf[MultiFacilitatorTransition]
       case _ => false
     }
 
