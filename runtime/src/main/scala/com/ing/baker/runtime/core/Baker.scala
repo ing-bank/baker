@@ -23,9 +23,8 @@ import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.core
 import com.ing.baker.runtime.core.events.{BakerEvent, EventReceived, InteractionCompleted, InteractionFailed}
 import com.ing.baker.runtime.core.interations.{InteractionImplementation, InteractionManager, MethodInteractionImplementation}
-import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
 import com.ing.baker.runtime.petrinet.RecipeRuntime
-import com.ing.baker.types.Value
+import com.ing.baker.types.{Converters, RecordValue, Value}
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
@@ -37,7 +36,20 @@ import scala.util.Try
 
 object Baker {
 
-  val eventExtractor: EventExtractor = new CompositeEventExtractor()
+  /**
+    * Transforms an object into a RuntimeEvent if possible.
+    */
+  def extractEvent(event: Any): RuntimeEvent = {
+    // transforms the given object into a RuntimeEvent instance
+    event match {
+      case runtimeEvent: RuntimeEvent => runtimeEvent
+      case obj                        =>
+        Converters.toValue(obj) match {
+          case RecordValue(entries) => RuntimeEvent(obj.getClass.getSimpleName, entries.toSeq)
+          case other                => throw new IllegalArgumentException(s"Unexpected value: $other")
+        }
+    }
+  }
 }
 
 /**
@@ -224,7 +236,11 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     // transforms the given object into a RuntimeEvent instance
     val runtimeEvent: RuntimeEvent = event match {
       case runtimeEvent: RuntimeEvent => runtimeEvent
-      case _                          => Baker.eventExtractor.extractEvent(event)
+      case obj                        =>
+        Converters.toValue(obj) match {
+          case RecordValue(entries) => RuntimeEvent(obj.getClass.getSimpleName, entries.toSeq)
+          case other                => throw new IllegalArgumentException(s"Unexpected value: $other")
+        }
     }
 
     // sends the ProcessEvent command to the actor and retrieves a Source (stream) of responses.

@@ -6,7 +6,6 @@ import java.util.UUID
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
 import com.ing.baker.runtime.core._
-import com.ing.baker.runtime.core.Baker.eventExtractor
 import com.ing.baker.runtime.core.interations.MethodInteractionImplementation._
 import com.ing.baker.runtime.core.{BakerException, RuntimeEvent}
 import com.ing.baker.runtime.petrinet.FatalInteractionException
@@ -81,7 +80,7 @@ object MethodInteractionImplementation {
       Some(eventForProvidedIngredient(interaction.interactionName, eventToComplyTo.name, output, eventToComplyTo.ingredients.head))
     }
     else {
-      val runtimeEvent = eventExtractor.extractEvent(output)
+      val runtimeEvent: RuntimeEvent = Baker.extractEvent(output)
 
       val nullIngredientNames = runtimeEvent.providedIngredients.collect {
         case (name, null) => name
