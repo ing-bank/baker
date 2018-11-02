@@ -1,9 +1,11 @@
-package com.ing.baker.runtime.core.interations
+package com.ing.baker.runtime.core
 
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.core.RuntimeEvent
 import com.ing.baker.types.{Type, Value}
 
+/**
+  * Provides an implementation for an interaction.
+  */
 trait InteractionImplementation {
 
   /**

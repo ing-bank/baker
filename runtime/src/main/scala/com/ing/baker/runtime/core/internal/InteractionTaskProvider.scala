@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.petrinet
+package com.ing.baker.runtime.core.internal
 
 import java.lang.reflect.InvocationTargetException
 
@@ -9,7 +9,6 @@ import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor, processIdName}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime._
 import com.ing.baker.runtime.core.events.{InteractionCompleted, InteractionStarted}
-import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.{LoggerFactory, MDC}

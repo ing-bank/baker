@@ -7,7 +7,7 @@ import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol.{GetIndex, Index}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
 import com.ing.baker.runtime.actor.serialization.Encryption
-import com.ing.baker.runtime.core.interations.InteractionManager
+import com.ing.baker.runtime.core.internal.InteractionManager
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 

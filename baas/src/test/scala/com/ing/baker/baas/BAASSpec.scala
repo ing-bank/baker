@@ -11,7 +11,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, processId}
 import com.ing.baker.recipe.{commonserialize, scaladsl}
-import com.ing.baker.runtime.core.interations.MethodInteractionImplementation
+import com.ing.baker.runtime.core.internal.MethodInteractionImplementation
 import com.ing.baker.runtime.core.{Baker, ProcessState, SensoryEventStatus}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 

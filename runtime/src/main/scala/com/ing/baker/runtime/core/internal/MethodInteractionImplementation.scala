@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.core.interations
+package com.ing.baker.runtime.core.internal
 
 import java.lang.reflect.Method
 import java.util.UUID
@@ -6,9 +6,8 @@ import java.util.UUID
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
 import com.ing.baker.runtime.core._
-import com.ing.baker.runtime.core.interations.MethodInteractionImplementation._
+import com.ing.baker.runtime.core.internal.MethodInteractionImplementation._
 import com.ing.baker.runtime.core.{BakerException, RuntimeEvent}
-import com.ing.baker.runtime.petrinet.FatalInteractionException
 import com.ing.baker.types.{Converters, Type, Value}
 import org.slf4j.{Logger, LoggerFactory}
 

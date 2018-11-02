@@ -2,7 +2,8 @@ package com.ing.baker.runtime.actor.interactions
 
 import com.ing.baker.il.IngredientDescriptor
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.core.interations.{InteractionImplementation, InteractionManager}
+import com.ing.baker.runtime.core.InteractionImplementation
+import com.ing.baker.runtime.core.internal.InteractionManager
 import com.ing.baker.types
 import org.mockito.Mockito.when
 import org.scalatest.mockito.MockitoSugar

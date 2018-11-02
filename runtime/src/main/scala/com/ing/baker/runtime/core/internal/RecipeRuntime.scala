@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.petrinet
+package com.ing.baker.runtime.core.internal
 
 import akka.event.EventStream
 import cats.effect.IO
@@ -9,7 +9,6 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.petrinet.runtime._
 import com.ing.baker.runtime.core.events.InteractionFailed
-import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 
 object RecipeRuntime {

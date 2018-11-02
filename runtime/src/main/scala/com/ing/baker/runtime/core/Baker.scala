@@ -22,8 +22,7 @@ import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.core
 import com.ing.baker.runtime.core.events.{BakerEvent, EventReceived, InteractionCompleted, InteractionFailed}
-import com.ing.baker.runtime.core.interations.{InteractionImplementation, InteractionManager, MethodInteractionImplementation}
-import com.ing.baker.runtime.petrinet.RecipeRuntime
+import com.ing.baker.runtime.core.internal.{InteractionManager, MethodInteractionImplementation, RecipeRuntime}
 import com.ing.baker.types.{Converters, RecordValue, Value}
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory

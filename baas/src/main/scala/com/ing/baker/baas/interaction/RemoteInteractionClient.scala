@@ -8,8 +8,7 @@ import com.ing.baker.baas.KryoUtil.defaultKryoPool
 import com.ing.baker.baas.ClientUtils._
 import com.ing.baker.baas.interaction.http.ExecuteInteractionHTTPRequest
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.core.RuntimeEvent
-import com.ing.baker.runtime.core.interations.InteractionImplementation
+import com.ing.baker.runtime.core.{InteractionImplementation, RuntimeEvent}
 import com.ing.baker.types.{Type, Value}
 import org.slf4j.LoggerFactory
 
