@@ -1,130 +1,15 @@
 package com.ing.baker.il
 
-import com.ing.baker.il.RecipeVisualizer.log
 import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.api._
 import com.typesafe.config.{Config, ConfigFactory}
-import dot._
 import org.slf4j.LoggerFactory
-
-import scala.collection.JavaConverters._
-import scala.language.higherKinds
-import scalax.collection.{Graph, GraphEdge, GraphPredef}
+import scalax.collection.Graph
 import scalax.collection.edge.WLDiEdge
-import scalax.collection.io.dot.{DotAttr, _}
 import scalax.collection.io.dot.implicits._
+import scalax.collection.io.dot.{DotAttr, _}
 
-class RecipeStyle(config: Config) {
-
-  val visualizationConfig = config.getConfig("baker.visualization")
-  val configuredStyle = visualizationConfig.getString("style")
-
-  val pickedStyle = if (!visualizationConfig.hasPath(s"styles.$configuredStyle")) {
-    log.warn(s"no configuration for recipe style '$configuredStyle' found, falling back to 'default' style")
-    "default"
-  } else
-    configuredStyle
-
-  val styleConfig = visualizationConfig.getConfig(s"styles.$pickedStyle")
-
-  def readAttributes(keys: String*): List[DotAttr] = {
-    val values = keys.foldLeft[Map[String, AnyRef]](Map.empty) {
-      case (acc, key) =>
-        val map = styleConfig.getConfig(key)
-          .entrySet().asScala
-          .map(e => e.getKey -> e.getValue.unwrapped())
-        acc ++ map
-    }
-
-    values
-      .-("shape") // shape is not allowed to be overriden
-      .map {
-      case (key, s: String) => Some(DotAttr(key, s))
-      case (key, n: java.lang.Integer) => Some(DotAttr(key, n.intValue()))
-      case (key, n: java.lang.Long) => Some(DotAttr(key, n.longValue()))
-      case (key, n: java.lang.Float) => Some(DotAttr(key, n.floatValue()))
-      case (key, n: java.lang.Double) => Some(DotAttr(key, n.doubleValue()))
-      case (key, other) =>
-        RecipeVisualizer.log.warn(s"unusable configuration: $key = $other");
-        None
-    }.toList.flatten
-  }
-
-  val rootAttributes = readAttributes("root")
-
-  val commonNodeAttributes = List(
-    DotAttrStmt(
-      Elem.node,
-      readAttributes("common")
-    ))
-
-  val ingredientAttributes: List[DotAttr] =
-    DotAttr("shape", "circle") +: readAttributes("ingredient")
-
-  val providedIngredientAttributes: List[DotAttr] =
-    DotAttr("shape", "circle") +: readAttributes("ingredient", "fired")
-
-  val missingIngredientAttributes: List[DotAttr] = List(
-    DotAttr("shape", "circle"),
-    DotAttr("style", "filled"),
-    DotAttr("color", "\"#EE0000\""),
-    DotAttr("penwidth", "5.0")
-  )
-
-  val eventAttributes: List[DotAttr] =
-    DotAttr("shape", "diamond") +: readAttributes("event")
-
-  val sensoryEventAttributes: List[DotAttr] =
-    DotAttr("shape", "diamond") +: readAttributes("sensory-event")
-
-  val interactionAttributes: List[DotAttr] =
-    DotAttr("shape", "rect") +: readAttributes("interaction")
-
-  val eventFiredAttributes: List[DotAttr] =
-    DotAttr("shape", "diamond") +: readAttributes("event", "fired")
-
-  val firedInteractionAttributes: List[DotAttr] =
-    DotAttr("shape", "rect") +: readAttributes("interaction", "fired")
-
-  val eventMissingAttributes: List[DotAttr] = List(
-    DotAttr("shape", "diamond"),
-    DotAttr("margin", 0.3D),
-    DotAttr("style", "rounded, filled"),
-    DotAttr("color", "\"#EE0000\""),
-    DotAttr("penwidth", "5.0")
-  )
-
-  val choiceAttributes: List[DotAttr] = List(
-    DotAttr("shape", "point"),
-    DotAttr("fillcolor", "\"#D0D93C\""),
-    DotAttr("width", 0.3),
-    DotAttr("height", 0.3)
-  )
-
-  val emptyEventAttributes: List[DotAttr] = List(
-    DotAttr("shape", "point"),
-    DotAttr("fillcolor", "\"#D0D93C\""),
-    DotAttr("width", 0.1),
-    DotAttr("height", 0.1)
-  )
-
-  val preconditionORAttributes: List[DotAttr] = List(
-    DotAttr("shape", "circle"),
-    DotAttr("fillcolor", "\"#D0D93C\""),
-    DotAttr("fontcolor", "black"),
-    DotAttr("label", "OR"),
-    DotAttr("style", "filled")
-  )
-
-  // this will be removed soon
-  val sieveAttributes: List[DotAttr] = List(
-    DotAttr("shape", "rect"),
-    DotAttr("margin", 0.5D),
-    DotAttr("color", "\"#7594d6\""),
-    DotAttr("style", "rounded, filled"),
-    DotAttr("penwidth", 2)
-  )
-}
+import scala.language.higherKinds
 
 object RecipeVisualizer {
 
@@ -159,7 +44,7 @@ object RecipeVisualizer {
     case Right(transition) => transition.label
   }
 
-  private def nodeDotAttrFn(style: RecipeStyle): (RecipePetriNetGraph#NodeT, Set[String], Set[String]) => List[DotAttr] =
+  private def nodeDotAttrFn(style: RecipeVisualStyle): (RecipePetriNetGraph#NodeT, Set[String], Set[String]) => List[DotAttr] =
     (node: RecipePetriNetGraph#NodeT, eventNames: Set[String], ingredientNames: Set[String]) ⇒
       node.value match {
         case Left(place: Place) if place.isInteractionEventOutput => style.choiceAttributes
@@ -177,7 +62,7 @@ object RecipeVisualizer {
         case Right(_) ⇒ style.eventAttributes
       }
 
-  private def generateDot(graph: RecipePetriNetGraph, style: RecipeStyle, filter: String => Boolean, eventNames: Set[String], ingredientNames: Set[String]): String = {
+  private def generateDot(graph: RecipePetriNetGraph, style: RecipeVisualStyle, filter: String => Boolean, eventNames: Set[String], ingredientNames: Set[String]): String = {
 
     val myRoot = DotRootGraph(directed = graph.isDirected,
       id = None,
@@ -228,10 +113,42 @@ object RecipeVisualizer {
                       eventNames: Set[String] = Set.empty,
                       ingredientNames: Set[String] = Set.empty): String =
 
-    generateDot(recipe.petriNet.innerGraph, new RecipeStyle(config), filter, eventNames, ingredientNames)
+    generateDot(recipe.petriNet.innerGraph, new RecipeVisualStyle(config), filter, eventNames, ingredientNames)
 
 
-  def visualizePetrinet(petriNet: RecipePetriNet): String =
-    GraphDot.generateDot(petriNet.innerGraph, PetriNetDot.petriNetTheme[Place, Transition])
+  def visualizePetriNet[P, T](graph: PetriNetGraph[P, T]): String = {
 
+    val nodeLabelFn: Either[P, T] ⇒ String = node ⇒ node match {
+      case Left(p)  ⇒ s"$p"
+      case Right(t) ⇒ s"$t"
+    }
+
+    val nodeDotAttrFn: Either[P, T] => List[DotAttr] = node ⇒ node match {
+      case Left(nodeA)  ⇒ List(DotAttr("shape", "circle"))
+      case Right(nodeB) ⇒ List(DotAttr("shape", "square"))
+    }
+
+    val myRoot = DotRootGraph(
+      directed = graph.isDirected,
+      id = None,
+      attrStmts = List.empty,
+      attrList = List.empty)
+
+    def myNodeTransformer(innerNode: PetriNetGraph[P, T]#NodeT): Option[(DotGraph, DotNodeStmt)] = {
+      Some((myRoot, DotNodeStmt(nodeLabelFn(innerNode.value), nodeDotAttrFn(innerNode.value))))
+    }
+
+    def myEdgeTransformer(innerEdge: PetriNetGraph[P, T]#EdgeT): Option[(DotGraph, DotEdgeStmt)] = {
+
+      val source = innerEdge.edge.sources.head.value
+      val target = innerEdge.edge.targets.head.value
+
+      Some((myRoot, DotEdgeStmt(nodeLabelFn(source), nodeLabelFn(target), List.empty)))
+    }
+
+    graph2DotExport(graph).toDot(
+      dotRoot = myRoot,
+      edgeTransformer = myEdgeTransformer,
+      cNodeTransformer = Some(myNodeTransformer))
+  }
 }
