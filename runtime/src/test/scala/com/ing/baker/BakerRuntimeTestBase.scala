@@ -115,6 +115,7 @@ trait BakerRuntimeTestBase
        |  actor {
        |    provider = "akka.cluster.ClusterActorRefProvider"
        |    allow-java-serialization = off
+       |    serialize-messages = on
        |    serialize-creators = off
        |  }
        |
