@@ -32,6 +32,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 import scala.util.Try
+import Baker._
 
 object Baker {
 
@@ -233,14 +234,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   def processEventAsync(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): BakerResponse = {
 
     // transforms the given object into a RuntimeEvent instance
-    val runtimeEvent: RuntimeEvent = event match {
-      case runtimeEvent: RuntimeEvent => runtimeEvent
-      case obj                        =>
-        Converters.toValue(obj) match {
-          case RecordValue(entries) => RuntimeEvent(obj.getClass.getSimpleName, entries.toSeq)
-          case other                => throw new IllegalArgumentException(s"Unexpected value: $other")
-        }
-    }
+    val runtimeEvent: RuntimeEvent = extractEvent(event)
 
     // sends the ProcessEvent command to the actor and retrieves a Source (stream) of responses.
     val response: Future[SourceRef[Any]] = processIndexActor
