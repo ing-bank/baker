@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.actor.process_index
 
-import akka.actor.{ActorRef, Props, Terminated}
+import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props, Terminated}
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.pattern.{ask, pipe}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
@@ -40,7 +40,7 @@ object ProcessIndex {
   sealed trait ProcessStatus
 
   //message
-  case object CheckForProcessesToBeDeleted extends InternalBakerMessage
+  case object CheckForProcessesToBeDeleted extends NoSerializationVerificationNeeded
 
   //The process is created and not deleted
   case object Active extends ProcessStatus

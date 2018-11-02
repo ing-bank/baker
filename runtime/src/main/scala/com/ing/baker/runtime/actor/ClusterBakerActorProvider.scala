@@ -25,7 +25,7 @@ import scala.concurrent.duration._
 
 object ClusterBakerActorProvider {
 
-  case class GetShardIndex(entityId: String) extends InternalBakerMessage
+  case class GetShardIndex(entityId: String) extends BakerProtoMessage
 
   /**
     * This function calculates the names of the ActorIndex actors
