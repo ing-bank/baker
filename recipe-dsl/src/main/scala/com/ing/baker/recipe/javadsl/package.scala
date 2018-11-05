@@ -23,15 +23,7 @@ package object javadsl {
     }
   }
 
-  def eventClassToCommonEvent(eventClass: Class[_], firingLimit: Option[Int]): common.Event =
-    new common.Event {
-      override val name: String = eventClass.getSimpleName
-      override val providedIngredients: Seq[common.Ingredient] =
-        eventClass.getDeclaredFields
-          .filter(field => !field.isSynthetic)
-          .map(f => createIngredient(f.getName, parseType(f.getGenericType, s"Unsupported type for ingredient '${f.getName}' on event '${eventClass.getSimpleName}'")))
-      override val maxFiringLimit: Option[Int] = firingLimit
-    }
+  def eventClassToCommonEvent(eventClass: Class[_], firingLimit: Option[Int]): common.Event = new javadsl.Event(eventClass, firingLimit)
 
   def interactionClassToCommonInteraction(interactionClass: Class[_], newName: Option[String]): InteractionDescriptor = {
 
