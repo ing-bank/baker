@@ -1,8 +1,6 @@
-package com.ing.baker.runtime.java_api;
+package com.ing.baker.runtime.core.events;
 
-import com.ing.baker.runtime.core.events.*;
-
-public interface TestBakerEventListener {
+public interface AnnotatedEventSubscriberExample {
 
     @Subscribe
     void receiveBakerEvent(BakerEvent event);
