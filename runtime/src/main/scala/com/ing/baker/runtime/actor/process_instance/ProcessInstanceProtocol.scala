@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.actor.process_instance
 
 import com.ing.baker.petrinet.api.{Identifiable, Marking, MultiSet}
-import com.ing.baker.runtime.actor.BakerProtoMessage
+import com.ing.baker.runtime.actor.serialization.BakerProtoMessage
 
 /**
  * Describes the messages to and from a PetriNetInstance actor.

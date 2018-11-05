@@ -17,7 +17,7 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.actor.serialization.Encryption
+import com.ing.baker.runtime.actor.serialization.{BakerProtoMessage, Encryption}
 import com.ing.baker.runtime.core.events.{ProcessCreated, RejectReason}
 import com.ing.baker.runtime.core.internal.{InteractionManager, RecipeRuntime}
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, events, namedCachedThreadPool}

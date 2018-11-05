@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.actor.recipe_manager
 
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.actor.BakerProtoMessage
+import com.ing.baker.runtime.actor.serialization.BakerProtoMessage
 
 object RecipeManagerProtocol {
   //Add a recipe
