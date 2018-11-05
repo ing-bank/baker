@@ -4,7 +4,6 @@ import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.recipe.annotations.FiresEvent;
 import com.ing.baker.recipe.annotations.ProcessId;
 import com.ing.baker.recipe.annotations.RequiresIngredient;
-import com.ing.baker.recipe.javadsl.Interaction;
 import com.ing.baker.recipe.javadsl.Recipe;
 import com.ing.baker.runtime.core.BakerException;
 import org.junit.Assert;
@@ -126,7 +125,7 @@ public class JavaCompiledRecipeTest {
         }
     }
 
-    public static class SieveImpl implements Interaction {
+    public static class SieveImpl {
         @FiresEvent(oneOf = {ProvideAppendRequestIds.class} )
         public ProvideAppendRequestIds apply(@RequiresIngredient("RequestIDStringOne") String requestIDStringOne,
                                @RequiresIngredient("RequestIDStringTwo") String requestIDStringTwo) {
@@ -134,7 +133,7 @@ public class JavaCompiledRecipeTest {
         }
     }
 
-    public static class SieveImplWithoutDefaultConstruct implements Interaction {
+    public static class SieveImplWithoutDefaultConstruct {
         public SieveImplWithoutDefaultConstruct(String param){}
 
         @FiresEvent(oneOf = {ProvideAppendRequestIds.class} )
@@ -144,7 +143,7 @@ public class JavaCompiledRecipeTest {
         }
     }
 
-    public interface InteractionOne extends Interaction {
+    public interface InteractionOne {
 
         class ProvidesRequestIDStringOne {
             public final String RequestIDStringOne;
@@ -166,7 +165,7 @@ public class JavaCompiledRecipeTest {
         public String name = "InteractionOne";
     }
 
-    public static class InteractionTwo implements Interaction {
+    public static class InteractionTwo {
 
         class ProvidesRequestIDStringTwo {
             public final String RequestIDStringTwo;
@@ -184,7 +183,7 @@ public class JavaCompiledRecipeTest {
         public String name = "InteractionTwo";
     }
 
-    public interface InteractionThree extends Interaction {
+    public interface InteractionThree {
         void apply(@RequiresIngredient("RequestIDStringOne") String requestIDStringOne,
                    @RequiresIngredient("RequestIDStringTwo") String requestIDStringTwo);
     }
@@ -198,7 +197,7 @@ public class JavaCompiledRecipeTest {
         public String name = InteractionThree.class.getSimpleName();
     }
 
-    public static class RegisterIndividual implements Interaction {
+    public static class RegisterIndividual {
 
         class ProvidesRequestIDStringThree {
             public final String RequestIDStringThree;

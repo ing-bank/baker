@@ -2,9 +2,8 @@ package com.ing.baker.recipe.javadsl.interactions;
 
 import com.ing.baker.recipe.annotations.FiresEvent;
 import com.ing.baker.recipe.annotations.RequiresIngredient;
-import com.ing.baker.recipe.javadsl.Interaction;
 
-public interface SimpleInteraction extends Interaction {
+public interface SimpleInteraction {
 
     class InitialIngredientEvent {
         final String initialIngredient;
