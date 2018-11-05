@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.core.interations
+package com.ing.baker.runtime.core.internal
 
 import java.lang.reflect.Method
 import java.util.UUID
@@ -6,10 +6,8 @@ import java.util.UUID
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
 import com.ing.baker.runtime.core._
-import com.ing.baker.runtime.core.Baker.eventExtractor
-import com.ing.baker.runtime.core.interations.MethodInteractionImplementation._
+import com.ing.baker.runtime.core.internal.MethodInteractionImplementation._
 import com.ing.baker.runtime.core.{BakerException, RuntimeEvent}
-import com.ing.baker.runtime.petrinet.FatalInteractionException
 import com.ing.baker.types.{Converters, Type, Value}
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -74,14 +72,8 @@ object MethodInteractionImplementation {
     // when the interaction does not fire an event, Void or Unit is a valid output type
     if (interaction.eventsToFire.isEmpty && output == null)
       None
-
-    // if the interaction directly produces an ingredient
-    else if (interaction.providedIngredientEvent.isDefined) {
-      val eventToComplyTo = interaction.providedIngredientEvent.get
-      Some(eventForProvidedIngredient(interaction.interactionName, eventToComplyTo.name, output, eventToComplyTo.ingredients.head))
-    }
     else {
-      val runtimeEvent = eventExtractor.extractEvent(output)
+      val runtimeEvent: RuntimeEvent = Baker.extractEvent(output)
 
       val nullIngredientNames = runtimeEvent.providedIngredients.collect {
         case (name, null) => name

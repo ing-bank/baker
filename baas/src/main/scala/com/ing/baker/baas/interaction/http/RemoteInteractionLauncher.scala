@@ -8,7 +8,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.RouteResult
 import akka.stream.ActorMaterializer
 import com.ing.baker.baas.BAASClient
-import com.ing.baker.runtime.core.interations.InteractionImplementation
+import com.ing.baker.runtime.core.InteractionImplementation
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Future, Promise}

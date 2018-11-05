@@ -1,16 +1,15 @@
-package com.ing.baker.runtime.java_api;
+package com.ing.baker.runtime.core.events;
 
-import com.ing.baker.runtime.core.events.*;
 import org.junit.Assert;
 import org.junit.Test;
 
 import static org.mockito.Mockito.*;
 
-public class JEventSubscriberTest {
+public class AnnotatedEventSubscriberTest {
     @Test
     public void shouldReceiveBakerEvents() {
-        TestBakerEventListener listenerMock = mock(TestBakerEventListener.class);
-        JEventSubscriber subscriber = new JEventSubscriber(listenerMock);
+        AnnotatedEventSubscriberExample listenerMock = mock(AnnotatedEventSubscriberExample.class);
+        AnnotatedEventSubscriber subscriber = new AnnotatedEventSubscriber(listenerMock);
 
         ProcessCreated processCreated = mock(ProcessCreated.class);
         EventReceived eventReceived = mock(EventReceived.class);
@@ -49,7 +48,7 @@ public class JEventSubscriberTest {
     public void failForNonBakerEventTypes() {
         NotBakerEventBakerEventListener listenerMock = mock(NotBakerEventBakerEventListener.class);
         try {
-            new JEventSubscriber(listenerMock); // fail during construction
+            new AnnotatedEventSubscriber(listenerMock); // fail during construction
             Assert.fail();
         } catch(IllegalArgumentException e) {
             if (!e.getMessage().equals("BakerEventListener methods cannot listen other types than BakerEvent")) Assert.fail();
@@ -62,7 +61,7 @@ public class JEventSubscriberTest {
     public void failForInvalidListenerFunctionsWithManyParameters() {
         MoreThanOneArgumentBakerEventListener listenerMock = mock(MoreThanOneArgumentBakerEventListener.class);
         try {
-            new JEventSubscriber(listenerMock); // fail during construction
+            new AnnotatedEventSubscriber(listenerMock); // fail during construction
             Assert.fail();
         } catch(IllegalArgumentException e) {
             if (!e.getMessage().equals("BakerEventListener methods should have only one parameter")) Assert.fail();
@@ -75,7 +74,7 @@ public class JEventSubscriberTest {
     public void failForListenerClassesWithoutAnyAnnotatedFunctions() {
         NotAnnotatedBakerEventListener listenerMock = mock(NotAnnotatedBakerEventListener.class);
         try {
-            new JEventSubscriber(listenerMock); // fail during construction
+            new AnnotatedEventSubscriber(listenerMock); // fail during construction
             Assert.fail();
         } catch(IllegalArgumentException e) {
             if (!e.getMessage().equals("BakerEventListener should have at least one @Subscribe annotated method")) Assert.fail();

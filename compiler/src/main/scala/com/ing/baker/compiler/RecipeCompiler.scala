@@ -7,6 +7,7 @@ import com.ing.baker.il.petrinet._
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.recipe.common._
+import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
 
 import scala.language.postfixOps
@@ -17,6 +18,12 @@ object RecipeCompiler {
     def unzipFlatten: (Seq[A], Seq[B]) = seq.unzip match {
       case (a, b) => (a.flatten, b.flatten)
     }
+  }
+
+  def arc(t: Transition, p: Place, weight: Long): Arc = WLDiEdge[Node, Edge](Right(t), Left(p))(weight, Edge(None))
+
+  def arc(p: Place, t: Transition, weight: Long, eventFilter: Option[String] = None): Arc = {
+    WLDiEdge[Node, Edge](Left(p), Right(t))(weight, Edge(eventFilter))
   }
 
   /**

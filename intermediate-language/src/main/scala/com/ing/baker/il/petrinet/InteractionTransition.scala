@@ -9,19 +9,16 @@ import org.slf4j._
 
 /**
   * A transition that represents an Interaction
-  *
-  * @tparam I The class/interface of the interaction
   */
 case class InteractionTransition(eventsToFire: Seq[EventDescriptor],
-                                    originalEvents: Seq[EventDescriptor],
-                                    providedIngredientEvent: Option[EventDescriptor],
-                                    requiredIngredients: Seq[IngredientDescriptor],
-                                    interactionName: String,
-                                    originalInteractionName: String,
-                                    predefinedParameters: Map[String, Value],
-                                    maximumInteractionCount: Option[Int],
-                                    failureStrategy: InteractionFailureStrategy,
-                                    eventOutputTransformers: Map[String, EventOutputTransformer] = Map.empty)
+                                 originalEvents: Seq[EventDescriptor],
+                                 requiredIngredients: Seq[IngredientDescriptor],
+                                 interactionName: String,
+                                 originalInteractionName: String,
+                                 predefinedParameters: Map[String, Value],
+                                 maximumInteractionCount: Option[Int],
+                                 failureStrategy: InteractionFailureStrategy,
+                                 eventOutputTransformers: Map[String, EventOutputTransformer] = Map.empty)
 
   extends Transition {
 

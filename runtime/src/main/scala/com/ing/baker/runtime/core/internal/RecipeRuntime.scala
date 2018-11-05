@@ -1,14 +1,14 @@
-package com.ing.baker.runtime.petrinet
+package com.ing.baker.runtime.core.internal
 
 import akka.event.EventStream
+import cats.effect.IO
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
-import com.ing.baker.petrinet.api.{Marking, MultiSet, PetriNet}
+import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.petrinet.runtime._
 import com.ing.baker.runtime.core.events.InteractionFailed
-import com.ing.baker.runtime.core.interations.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 
 object RecipeRuntime {
@@ -20,6 +20,24 @@ object RecipeRuntime {
           ingredients = state.ingredients ++ providedIngredients,
           eventNames = state.eventNames :+ name)
     }
+
+  /**
+    * Creates the produced marking (tokens) given the output (event) of the interaction.
+    */
+  def createProducedMarking(interaction: InteractionTransition, outAdjacent: MultiSet[Place]): RuntimeEvent => Marking[Place] = { event =>
+    outAdjacent.keys.map { place =>
+      val value: Any = {
+        interaction.eventsToFire.find(_.name == event.name).map(_.name).getOrElse {
+          throw new IllegalStateException(
+            s"Method output: $event is not an instance of any of the specified events: ${
+              interaction.eventsToFire
+                .mkString(",")
+            }")
+        }
+      }
+      place -> MultiSet.copyOff(Seq(value))
+    }.toMarking
+  }
 }
 
 class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
@@ -32,12 +50,15 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
     case _ => true
   }
 
+  /**
+    * Tokens which are inhibited by the Edge filter may not be consumed.
+    */
   override def consumableTokens(petriNet: PetriNet[Place, Transition])(marking: Marking[Place], p: Place, t: Transition): MultiSet[Any] = {
     val edge = petriNet.findPTEdge(p, t).map(_.asInstanceOf[Edge]).get
 
     marking.get(p) match {
       case None         ⇒ MultiSet.empty
-      case Some(tokens) ⇒ tokens.filter { case (e, count) ⇒ edge.isAllowed(e) }
+      case Some(tokens) ⇒ tokens.filter { case (e, _) ⇒ edge.isAllowed(e) }
     }
   }
 
@@ -67,7 +88,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
             case ExceptionStrategyOutcome.RetryWithDelay(delay) => RetryWithDelay(delay)
             case ExceptionStrategyOutcome.Continue(eventName) => {
               val runtimeEvent = new RuntimeEvent(eventName, Seq.empty)
-              Continue(createProducedMarking(interaction, outMarking)(runtimeEvent), runtimeEvent)
+              Continue(RecipeRuntime.createProducedMarking(interaction, outMarking)(runtimeEvent), runtimeEvent)
             }
           }
 
@@ -77,5 +98,6 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
 
   val interactionTaskProvider = new InteractionTaskProvider(recipe, interactionManager, eventStream)
 
-  override def taskProvider(petriNet: PetriNet[Place, Transition], t: Transition): TransitionTask[Place, ProcessState, RuntimeEvent] = interactionTaskProvider.apply(petriNet, t)
+  override def transitionTask(petriNet: PetriNet[Place, Transition], t: Transition)(marking: Marking[Place], state: ProcessState, input: Any): IO[(Marking[Place], RuntimeEvent)] =
+    interactionTaskProvider.apply(petriNet, t)(marking, state, input)
 }

@@ -13,12 +13,12 @@ trait StateTransitionNet[S, E] {
 
   val runtime: PetriNetRuntime[Place, Transition, S, E] = new PetriNetRuntime[Place, Transition, S, E] {
     override val eventSource: (Transition) ⇒ (S) ⇒ (E) ⇒ S = _ ⇒ eventSourceFunction
-    override def taskProvider(petriNet: PetriNet[Place, Transition], t: Transition): TransitionTask[Place, S, E] =
-      (_, state, _) ⇒ {
-        val eventTask = t.asInstanceOf[StateTransition[S, E]].produceEvent(state)
-        val produceMarking: Marking[Place] = petriNet.outMarking(t).toMarking
-        eventTask.map(e ⇒ (produceMarking, e))
-      }
+    override def transitionTask(petriNet: PetriNet[Place, Transition], t: Transition)
+                               (marking: Marking[Place], state: S, input: Any): IO[(Marking[Place], E)] = {
+      val eventTask = t.asInstanceOf[StateTransition[S, E]].produceEvent(state)
+      val produceMarking: Marking[Place] = petriNet.outMarking(t).toMarking
+      eventTask.map(e ⇒ (produceMarking, e))
+    }
     override def handleException(job: Job[Place, Transition, S])
                                 (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]) =
       job.transition.exceptionStrategy(throwable, failureCount, outMarking)

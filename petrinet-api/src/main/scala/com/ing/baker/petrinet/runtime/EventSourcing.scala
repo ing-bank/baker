@@ -47,7 +47,7 @@ object EventSourcing {
     marking: Marking[P],
     state: Any) extends Event
 
-  def apply[P, T, S, E](sourceFn: T ⇒ EventSource[S, E]): Instance[P, T, S] ⇒ Event ⇒ Instance[P, T, S] = instance ⇒ {
+  def apply[P, T, S, E](sourceFn: T ⇒ (S ⇒ E ⇒ S)): Instance[P, T, S] ⇒ Event ⇒ Instance[P, T, S] = instance ⇒ {
     case InitializedEvent(initialMarking, initialState) ⇒
       Instance[P, T, S](instance.process, 1, initialMarking.asInstanceOf[Marking[P]], initialState.asInstanceOf[S], Map.empty, Set.empty)
     case e: TransitionFiredEvent[_, _, _] ⇒

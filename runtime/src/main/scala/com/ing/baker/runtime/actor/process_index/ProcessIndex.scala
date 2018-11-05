@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.actor.process_index
 
-import akka.actor.{ActorRef, Props, Terminated}
+import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props, Terminated}
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.pattern.{ask, pipe}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
@@ -17,11 +17,10 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.actor.serialization.Encryption
+import com.ing.baker.runtime.actor.serialization.{BakerProtoMessage, Encryption}
 import com.ing.baker.runtime.core.events.{ProcessCreated, RejectReason}
-import com.ing.baker.runtime.core.interations.InteractionManager
+import com.ing.baker.runtime.core.internal.{InteractionManager, RecipeRuntime}
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, events, namedCachedThreadPool}
-import com.ing.baker.runtime.petrinet._
 
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -40,7 +39,7 @@ object ProcessIndex {
   sealed trait ProcessStatus
 
   //message
-  case object CheckForProcessesToBeDeleted extends InternalBakerMessage
+  case object CheckForProcessesToBeDeleted extends NoSerializationVerificationNeeded
 
   //The process is created and not deleted
   case object Active extends ProcessStatus

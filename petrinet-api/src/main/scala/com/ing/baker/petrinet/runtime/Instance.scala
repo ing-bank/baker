@@ -29,6 +29,9 @@ case class Instance[P, T, S](
    */
   lazy val availableMarking: Marking[P] = marking |-| reservedMarking
 
+  /**
+    * The active jobs for the process instance.
+    */
   def activeJobs: Iterable[Job[P, T, S]] = jobs.values.filter(_.isActive)
 
   def isBlockedReason(transition: T): Option[String] = jobs.values.map {

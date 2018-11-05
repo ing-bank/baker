@@ -15,7 +15,7 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol.{AllRecipes, GetAllRecipes, RecipeInformation}
 import com.ing.baker.runtime.actor.serialization.Encryption
-import com.ing.baker.runtime.core.interations.InteractionManager
+import com.ing.baker.runtime.core.internal.InteractionManager
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.types
 import com.typesafe.config.{Config, ConfigFactory}

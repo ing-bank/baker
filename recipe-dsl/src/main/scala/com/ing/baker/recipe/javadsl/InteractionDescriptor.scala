@@ -236,7 +236,7 @@ case class InteractionDescriptor private(
 }
 
 object InteractionDescriptor {
-  def of[T <: Interaction](interactionClass: Class[T]): InteractionDescriptor = interactionClassToCommonInteraction(interactionClass, None)
+  def of[T](interactionClass: Class[T]): InteractionDescriptor = interactionClassToCommonInteraction(interactionClass, None)
 
-  def of[T <: Interaction](interactionClass: Class[T], name: String): InteractionDescriptor = interactionClassToCommonInteraction(interactionClass, Some(name))
+  def of[T](interactionClass: Class[T], name: String): InteractionDescriptor = interactionClassToCommonInteraction(interactionClass, Some(name))
 }
