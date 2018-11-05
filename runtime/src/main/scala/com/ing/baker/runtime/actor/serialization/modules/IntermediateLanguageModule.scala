@@ -69,7 +69,7 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
             val pt = protobuf.InteractionTransition(
               eventsToFire = t.eventsToFire.map(ctx.toProto[protobuf.EventDescriptor]),
               originalEvents = t.originalEvents.map(ctx.toProto[protobuf.EventDescriptor]),
-              providedIngredientEvent = t.providedIngredientEvent.map(ctx.toProto[protobuf.EventDescriptor]),
+              providedIngredientEvent = None,
               requiredIngredients = t.requiredIngredients.map(ctx.toProto[protobuf.IngredientDescriptor]),
               interactionName = Option(t.interactionName),
               originalInteractionName = Option(t.originalInteractionName),
@@ -163,10 +163,12 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
 
           case OneofNode.InteractionTransition(t: protobuf.InteractionTransition) =>
 
+            // in 1.3.x an interaction could directly provide an ingredient
+            val providedIngredientEvent = t.providedIngredientEvent.map(ctx.toDomain[il.EventDescriptor])
+
             Right(il.petrinet.InteractionTransition(
-              eventsToFire = t.eventsToFire.map(ctx.toDomain[il.EventDescriptor]),
-              originalEvents = t.originalEvents.map(ctx.toDomain[il.EventDescriptor]),
-              providedIngredientEvent = t.providedIngredientEvent.map(ctx.toDomain[il.EventDescriptor]),
+              eventsToFire = t.eventsToFire.map(ctx.toDomain[il.EventDescriptor]) ++ providedIngredientEvent,
+              originalEvents = t.originalEvents.map(ctx.toDomain[il.EventDescriptor])  ++ providedIngredientEvent,
               requiredIngredients = t.requiredIngredients.map(ctx.toDomain[il.IngredientDescriptor]),
               interactionName = t.interactionName.getOrMissing("interactionName"),
               originalInteractionName = t.originalInteractionName.getOrMissing("originalInteractionName"),

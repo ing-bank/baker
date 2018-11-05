@@ -72,12 +72,6 @@ object MethodInteractionImplementation {
     // when the interaction does not fire an event, Void or Unit is a valid output type
     if (interaction.eventsToFire.isEmpty && output == null)
       None
-
-    // if the interaction directly produces an ingredient
-    else if (interaction.providedIngredientEvent.isDefined) {
-      val eventToComplyTo = interaction.providedIngredientEvent.get
-      Some(eventForProvidedIngredient(interaction.interactionName, eventToComplyTo.name, output, eventToComplyTo.ingredients.head))
-    }
     else {
       val runtimeEvent: RuntimeEvent = Baker.extractEvent(output)
 
