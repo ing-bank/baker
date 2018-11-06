@@ -45,7 +45,7 @@ trait PetriNetRuntime[P, T, S, E] {
     *
     * By default, cold transitions (without in adjacent places) are not auto fireable.
     */
-  def isAutoFireable[S](instance: Instance[P, T, S], t: T): Boolean = !instance.process.incomingPlaces(t).isEmpty
+  def isAutoFireable(instance: Instance[P, T, S], t: T): Boolean = !instance.process.incomingPlaces(t).isEmpty
 
   /**
     * Defines which tokens from a marking for a particular place are consumable by a transition.
@@ -141,9 +141,9 @@ trait PetriNetRuntime[P, T, S, E] {
     petriNet.transitions.filter(t ⇒ consumableMarkings(petriNet)(marking, t).nonEmpty)
 
   /**
-    * Fires a specific transition with input, computes the marking it should consume
+    * Creates a job for a specific transition with input, computes the marking it should consume
     */
-  def createJob[S, I](transition: T, input: I, correlationId: Option[String] = None): State[Instance[P, T, S], Either[String, Job[P, T, S]]] =
+  def createJob(transition: T, input: Any, correlationId: Option[String] = None): State[Instance[P, T, S], Either[String, Job[P, T, S]]] =
     State { instance ⇒
       instance.isBlockedReason(transition) match {
         case Some(reason) ⇒
@@ -163,7 +163,7 @@ trait PetriNetRuntime[P, T, S, E] {
   /**
     * Finds the (optional) first transition that is enabled & automatically fireable
     */
-  def firstEnabledJob[S]: State[Instance[P, T, S], Option[Job[P, T, S]]] = State { instance ⇒
+  def firstEnabledJob: State[Instance[P, T, S], Option[Job[P, T, S]]] = State { instance ⇒
     enabledParameters(instance.process)(instance.availableMarking).find {
       case (t, markings) ⇒ !instance.isBlockedReason(t).isDefined && isAutoFireable(instance, t)
     }.map {
@@ -176,9 +176,9 @@ trait PetriNetRuntime[P, T, S, E] {
   /**
     * Finds all automated enabled transitions.
     */
-  def allEnabledJobs[S]: State[Instance[P, T, S], Set[Job[P, T, S]]] =
-    firstEnabledJob[S].flatMap {
+  def allEnabledJobs: State[Instance[P, T, S], Set[Job[P, T, S]]] =
+    firstEnabledJob.flatMap {
       case None      ⇒ State.pure(Set.empty)
-      case Some(job) ⇒ allEnabledJobs[S].map(_ + job)
+      case Some(job) ⇒ allEnabledJobs.map(_ + job)
     }
 }

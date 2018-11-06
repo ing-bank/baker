@@ -215,7 +215,7 @@ class ProcessInstance[P, T, S, E](processType: String,
         case Some(correlationId) if instance.hasReceivedCorrelationId(correlationId) =>
             sender() ! AlreadyReceived(correlationId)
         case _ =>
-          runtime.createJob[S, Any](transition, input, correlationIdOption).run(instance).value match {
+          runtime.createJob(transition, input, correlationIdOption).run(instance).value match {
             case (updatedInstance, Right(job)) ⇒
               executeJob(job, sender())
               context become running(updatedInstance, scheduledRetries)

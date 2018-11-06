@@ -22,7 +22,7 @@ trait StateTransitionNet[S, E] {
     override def handleException(job: Job[Place, Transition, S])
                                 (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]) =
       job.transition.exceptionStrategy(throwable, failureCount, outMarking)
-    override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition): Boolean =
+    override def isAutoFireable(instance: Instance[Place, Transition, S], t: Transition): Boolean =
       t.isAutomated && instance.isBlockedReason(t).isEmpty
   }
 
