@@ -3,6 +3,7 @@ package com.ing.baker.runtime.actor.serialization.modules
 import com.google.protobuf.ByteString
 import com.ing.baker.runtime.actor.protobuf
 import com.ing.baker.runtime.actor.protobuf._
+import com.ing.baker.runtime.actor.serialization.{ProtoEventAdapter, ProtoEventAdapterModule}
 import com.ing.baker.types
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{LocalDate, LocalDateTime, LocalTime}

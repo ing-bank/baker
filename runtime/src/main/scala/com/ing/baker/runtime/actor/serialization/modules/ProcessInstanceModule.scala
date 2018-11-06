@@ -4,6 +4,7 @@ import com.ing.baker.petrinet.api.MultiSet
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{ExceptionStrategy, MarkingData}
 import com.ing.baker.runtime.actor.process_instance.protobuf.FailureStrategyMessage.StrategyTypeMessage
 import com.ing.baker.runtime.actor.process_instance.{protobuf, ProcessInstanceProtocol => protocol}
+import com.ing.baker.runtime.actor.serialization.{ProtoEventAdapter, ProtoEventAdapterModule}
 
 class ProcessInstanceModule extends ProtoEventAdapterModule {
 

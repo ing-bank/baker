@@ -305,7 +305,6 @@ object ProtoEventAdapterSpec {
   }
 }
 
-@deprecated("marked deprecated because of -XFatal-Warnings and deprecated sieves", "1.4.0")
 class ProtoEventAdapterSpec extends WordSpecLike with Checkers with Matchers with BeforeAndAfterAll {
 
   val actorSystem = ActorSystem()

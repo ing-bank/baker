@@ -10,7 +10,7 @@ import com.ing.baker.runtime.actor.process_instance.protobuf._
 import com.ing.baker.runtime.actor.process_instance.protobuf.FailureStrategy.StrategyType
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization._
 import com.ing.baker.runtime.actor.protobuf.{ProducedToken, SerializedData}
-import com.ing.baker.runtime.actor.serialization.modules.ProtoEventAdapter
+import com.ing.baker.runtime.actor.serialization.ProtoEventAdapter
 
 object ProcessInstanceSerialization {
 
