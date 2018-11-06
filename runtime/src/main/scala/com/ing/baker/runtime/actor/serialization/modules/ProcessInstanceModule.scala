@@ -8,6 +8,7 @@ import com.ing.baker.runtime.actor.process_instance.{protobuf, ProcessInstancePr
 class ProcessInstanceModule extends ProtoEventAdapterModule {
 
   override def toProto(ctx: ProtoEventAdapter): PartialFunction[AnyRef, scalapb.GeneratedMessage] = {
+
     case protocol.GetState =>
       protobuf.GetState()
     case protocol.Stop(delete) =>
@@ -53,6 +54,11 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
       case ExceptionStrategy.Continue(marking, output) => protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.CONTINUE), None, toProtoMarking(marking, ctx), Some(ctx.toProtoAny(output.asInstanceOf[AnyRef])))
       case ExceptionStrategy.RetryWithDelay(delay) => protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.RETRY), Some(delay))
     }
+
+    // These 3 messages do not have a domain class, they are directly persisted by the ProcessInstance actor
+    case msg: protobuf.TransitionFired => msg
+    case msg: protobuf.TransitionFailed => msg
+    case msg: protobuf.Initialized => msg
   }
 
   private def toProtoMarking(markingData: MarkingData, ctx: ProtoEventAdapter): Seq[protobuf.MarkingData] = {
@@ -67,6 +73,7 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
   }
 
   override def toDomain(ctx: ProtoEventAdapter): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
+
     case protobuf.GetState() =>
       protocol.GetState
     case protobuf.Stop(Some(delete)) =>
@@ -110,6 +117,11 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
       protocol.ExceptionStrategy.RetryWithDelay(retryDelay)
     case protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.CONTINUE), _, marking, Some(output)) =>
       protocol.ExceptionStrategy.Continue(toDomainMarking(marking, ctx), ctx.toDomain[Any](output))
+
+    // These 3 messages do not have a domain class, they are directly persisted by the ProcessInstance actor
+    case msg: protobuf.TransitionFired => msg
+    case msg: protobuf.TransitionFailed => msg
+    case msg: protobuf.Initialized => msg
   }
 
   private def toDomainMarking(markingData: Seq[protobuf.MarkingData], ctx: ProtoEventAdapter): protocol.MarkingData = {
