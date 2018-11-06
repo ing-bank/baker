@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.4.0 (NOT YET RELEASED)
+## 2.0.0 (NOT YET RELEASED)
 
 - Fixed [#99](https://github.com/ing-bank/baker/issues/99): re-added the feature to get an index of all process instances in Baker
 - Fixed [#50](https://github.com/ing-bank/baker/issues/50): update protobuf to 3.5.1 to fix a security related issue (CVE-2015-5237)
@@ -11,7 +11,7 @@
 - New feature: Added a list of event names to the process state that can be retreived from memory
 - New feature: Added an optional correlation id to events to achieve idempotent event delivery
 - New feature: Allow listeners to subscribe to internal baker events.
-- Update akka to 2.5.11
+- New feature: Optionally allow `@javax.inject.Named` to be used instead of `@RequiresIngredient`.
 
 ## 1.3.5
 

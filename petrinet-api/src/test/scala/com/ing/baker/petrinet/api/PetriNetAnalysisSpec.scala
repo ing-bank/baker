@@ -22,7 +22,7 @@ object DSL {
 
   type MarkingLike[T] = T ⇒ SimpleMarking
 
-  type SimpleMarking = MultiSet[Int]
+  type SimpleMarking = MultiSet[Place]
 
   case class TransitionAdjacency(in: SimpleMarking, out: SimpleMarking)
 
