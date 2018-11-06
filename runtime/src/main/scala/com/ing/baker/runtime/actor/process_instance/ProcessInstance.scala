@@ -44,12 +44,11 @@ object ProcessInstance {
 /**
   * This actor is responsible for maintaining the state of a single petri net instance.
   */
-class ProcessInstance[P, T, S, E](processType: String,
+class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
+                                  processType: String,
                                   processTopology: PetriNet[P, T],
                                   settings: Settings,
-                                  runtime: PetriNetRuntime[P, T, S, E])(
-                                  override implicit val placeIdentifier: Identifiable[P],
-                                  override implicit val transitionIdentifier: Identifiable[T]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSource) {
+                                  runtime: PetriNetRuntime[P, T, S, E]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSource) {
 
   import context.dispatcher
 
@@ -69,7 +68,7 @@ class ProcessInstance[P, T, S, E](processType: String,
     InstanceState(instance.sequenceNr, marshal[P](instance.marking), instance.state, instance.jobs.mapValues(fromExecutionJob(_)).map(identity))
 
   implicit def fromExecutionJob(job: com.ing.baker.petrinet.runtime.Job[P, T, S]): JobState =
-    JobState(job.id, transitionIdentifier(job.transition).value, marshal(job.consume), job.input, job.failure.map(fromExecutionExceptionState))
+    JobState(job.id, implicitly[Identifiable[T]].apply(job.transition).value, marshal(job.consume), job.input, job.failure.map(fromExecutionExceptionState))
 
   implicit def fromExecutionExceptionState(exceptionState: com.ing.baker.petrinet.runtime.ExceptionState): ExceptionState =
     ExceptionState(exceptionState.failureCount, exceptionState.failureReason, fromExecutionExceptionStrategy(exceptionState.failureStrategy))
@@ -140,7 +139,7 @@ class ProcessInstance[P, T, S, E](processType: String,
     case event @ TransitionFiredEvent(jobId, t, correlationId, timeStarted, timeCompleted, consumed, produced, output) ⇒
 
       val transition = t.asInstanceOf[T]
-      val transitionId = transitionIdentifier(transition).value
+      val transitionId = implicitly[Identifiable[T]].apply(transition).value
 
       log.transitionFired(processId, transition.toString, jobId, timeStarted, timeCompleted)
 
@@ -158,7 +157,7 @@ class ProcessInstance[P, T, S, E](processType: String,
     case event @ TransitionFailedEvent(jobId, t, correlationId, timeStarted, timeFailed, consume, input, reason, strategy) ⇒
 
       val transition = t.asInstanceOf[T]
-      val transitionId = transitionIdentifier(transition).value
+      val transitionId = implicitly[Identifiable[T]].apply(transition).value
 
       log.transitionFailed(processId, transition.toString, jobId, timeStarted, timeFailed, reason)
 
