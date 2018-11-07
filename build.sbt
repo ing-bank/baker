@@ -125,6 +125,7 @@ lazy val recipeRuntime = project.in(file("runtime"))
       ) ++ testDeps(
         akkaTestKit,
         akkaStreamTestKit,
+        akkaMultiNodeTestkit,
         akkaInmemoryJournal,
         levelDB,
         levelDBJni,
@@ -134,6 +135,11 @@ lazy val recipeRuntime = project.in(file("runtime"))
         mockito,
         logback)
         ++ providedDeps(findbugs)
+  )
+  .enablePlugins(MultiJvmPlugin)
+  .configs(MultiJvm)
+  .settings(
+//    logLevel := Level.Debug
   )
   .dependsOn(intermediateLanguage, petrinetApi, testScope(recipeDsl), testScope(recipeCompiler), testScope(bakertypes))
 
