@@ -95,18 +95,18 @@ trait PetriNetRuntime[P, T, S, E] {
 
           val produced: Marking[Long] = producedMarking.marshall
 
-          TransitionFiredEvent(job.id, transitionIdentifier(transition).value, job.correlationId, startTime, System.currentTimeMillis(), consumed, produced, out)
+          TransitionFiredEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, produced, out)
       }.handleException {
         // In case an exception was thrown by the transition, we compute the failure strategy and return a TransitionFailedEvent
         case e: Throwable ⇒
           val failureCount = job.failureCount + 1
           val failureStrategy = handleException(job)(e, failureCount, startTime, topology.outMarking(transition))
-          TransitionFailedEvent(job.id, transitionIdentifier(transition).value, job.correlationId, startTime, System.currentTimeMillis(), consumed, job.input, exceptionStackTrace(e), failureStrategy)
+          TransitionFailedEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, job.input, exceptionStackTrace(e), failureStrategy)
       }.handleException {
         // If an exception was thrown while computing the failure strategy we block the interaction from firing
         case e: Throwable =>
           log.error(s"Exception while handling transition failure", e)
-          TransitionFailedEvent(job.id, transitionIdentifier(transition).value, job.correlationId, startTime, System.currentTimeMillis(), consumed, job.input, exceptionStackTrace(e), ExceptionStrategy.BlockTransition)
+          TransitionFailedEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, job.input, exceptionStackTrace(e), ExceptionStrategy.BlockTransition)
       }
     }
   }

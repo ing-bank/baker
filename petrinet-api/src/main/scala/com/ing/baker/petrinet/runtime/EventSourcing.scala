@@ -45,8 +45,6 @@ object EventSourcing {
      marking: Marking[Long],
      state: Any) extends Event
 
-
-
   def apply[P : Identifiable, T : Identifiable, S, E](sourceFn: T ⇒ (S ⇒ E ⇒ S)): Instance[P, T, S] ⇒ Event ⇒ Instance[P, T, S] = instance ⇒ {
     case InitializedEvent(initial, initialState) ⇒
 

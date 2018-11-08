@@ -1,16 +1,12 @@
 package com.ing.baker.runtime.actor.process_instance
 
-import com.ing.baker.petrinet.api.{Identifiable, Marking, MultiSet}
+import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.actor.serialization.BakerProtoMessage
 
 /**
  * Describes the messages to and from a PetriNetInstance actor.
  */
 object ProcessInstanceProtocol {
-
-  def marshal[P : Identifiable](marking: Marking[P]): Marking[Long] = marking.map {
-    case (p, mset) ⇒ implicitly[Identifiable[P]].apply(p).value -> mset
-  }.toMap
 
   /**
    * A common trait for all commands to a petri net instance.
@@ -29,9 +25,9 @@ object ProcessInstanceProtocol {
 
   object Initialize {
 
-    def apply[P : Identifiable](marking: Marking[P]): Initialize = Initialize(marshal[P](marking), null)
+    def apply[P : Identifiable](marking: Marking[P]): Initialize = Initialize(marking.marshall, null)
 
-    def apply[P : Identifiable](marking: Marking[P], state: Any): Initialize = Initialize(marshal[P](marking), state)
+    def apply[P : Identifiable](marking: Marking[P], state: Any): Initialize = Initialize(marking.marshall, state)
   }
 
   /**
@@ -71,9 +67,9 @@ object ProcessInstanceProtocol {
 
   object Initialized {
 
-    def apply[P : Identifiable](marking: Marking[P]): Initialized = Initialized(marshal[P](marking), null)
+    def apply[P : Identifiable](marking: Marking[P]): Initialized = Initialized(marking.marshall, null)
 
-    def apply[P : Identifiable](marking: Marking[P], state: Any): Initialized = Initialized(marshal[P](marking), state)
+    def apply[P : Identifiable](marking: Marking[P], state: Any): Initialized = Initialized(marking.marshall, state)
   }
 
   /**

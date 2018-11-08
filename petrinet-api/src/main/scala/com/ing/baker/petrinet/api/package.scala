@@ -23,7 +23,12 @@ package object api extends MultiSetOps with MarkingOps {
     */
   type Marking[P] = Map[P, MultiSet[Any]]
 
-  implicit class IdentifiableOps[T : Identifiable](seq: Iterable[T]) {
+  implicit class IdentifiableOps[T : Identifiable](e: T) {
+
+    def getId: Long = implicitly[Identifiable[T]].apply(e).value
+  }
+
+  implicit class IdentifiableSeqOps[T : Identifiable](seq: Iterable[T]) {
     def findById(id: Long): Option[T] = seq.find(e ⇒ implicitly[Identifiable[T]].apply(e).value == id)
     def getById(id: Long, name: String = "element"): T = findById(id).getOrElse { throw new IllegalStateException(s"No $name found with id: $id") }
   }
@@ -41,9 +46,6 @@ package object api extends MultiSetOps with MarkingOps {
   def translateKeys[K1, K2, V](map: Map[K1, V], fn: K1 => K2): Map[K2, V] = map.map { case (key, value) ⇒ fn(key) -> value }
 
   type PetriNetGraph[P, T] = Graph[Either[P, T], WLDiEdge]
-
-  implicit def placeToNode[P, T](p: P): Either[P, T] = Left(p)
-  implicit def transitionToNode[P, T](t: T): Either[P, T] = Right(t)
 
   implicit class PetriNetGraphNodeOps[P, T](val node: PetriNetGraph[P, T]#NodeT) {
 

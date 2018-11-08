@@ -149,7 +149,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       expectMsgClass(classOf[Initialized])
 
       actor ! GetState
-      expectMsgPF() { case InstanceState(1, initialMarkingData, `initialState`, _) if marshal(initialMarking) == initialMarkingData ⇒ }
+      expectMsgPF() { case InstanceState(1, initialMarkingData, `initialState`, _) if initialMarking.marshall == initialMarkingData ⇒ }
     }
 
     "Respond with a TransitionFailed message if a transition failed to fire" in new TestSequenceNet {
@@ -296,7 +296,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       // validate the final state
       val endMarking: Marking[Place] = place(3).markWithN(1)
-      val expectedFinalState = InstanceState(3, marshal[Place](endMarking), Set(1, 2), Map.empty)
+      val expectedFinalState = InstanceState(3, endMarking.marshall, Set(1, 2), Map.empty)
       actor ! GetState
       expectMsg(expectedFinalState)
 
