@@ -8,16 +8,11 @@ import com.ing.baker.runtime.actor.serialization.BakerProtoMessage
  */
 object ProcessInstanceProtocol {
 
-  /**
-   * Type alias for marking data.
-   */
-  type MarkingData = Map[Long, MultiSet[Any]]
-
-  def marshal[P](marking: Marking[P])(implicit identifiable: Identifiable[P]): MarkingData = marking.map {
-    case (p, mset) ⇒ identifiable(p).value -> mset
+  def marshal[P : Identifiable](marking: Marking[P]): Marking[Long] = marking.map {
+    case (p, mset) ⇒ implicitly[Identifiable[P]].apply(p).value -> mset
   }.toMap
 
-  def unmarshal[P](data: MarkingData, placeById: Long ⇒ P): Marking[P] = data.map {
+  def unmarshal[P](data: Marking[Long], placeById: Long ⇒ P): Marking[P] = data.map {
     case (id, mset) ⇒ placeById(id) -> mset
   }
 
@@ -46,7 +41,7 @@ object ProcessInstanceProtocol {
   /**
    * Command to initialize a petri net instance.
    */
-  case class Initialize(marking: MarkingData, state: Any) extends Command
+  case class Initialize(marking: Marking[Long], state: Any) extends Command
 
   /**
    * Command to fire a specific transition with input.
@@ -91,7 +86,7 @@ object ProcessInstanceProtocol {
    * This message is only send in response to an Initialize message.
    */
   case class Initialized(
-    marking: MarkingData,
+    marking: Marking[Long],
     state: Any) extends Response
 
   /**
@@ -108,8 +103,8 @@ object ProcessInstanceProtocol {
     jobId: Long,
     override val transitionId: Long,
     correlationId: Option[String],
-    consumed: MarkingData,
-    produced: MarkingData,
+    consumed: Marking[Long],
+    produced: Marking[Long],
     state: InstanceState,
     newJobsIds: Set[Long],
     output: Any) extends TransitionResponse
@@ -121,7 +116,7 @@ object ProcessInstanceProtocol {
     jobId: Long,
     override val transitionId: Long,
     correlationId: Option[String],
-    consume: MarkingData,
+    consume: Marking[Long],
     input: Any,
     reason: String,
     strategy: ExceptionStrategy) extends TransitionResponse
@@ -153,7 +148,7 @@ object ProcessInstanceProtocol {
       require(delay > 0, "Delay must be greater then zero")
     }
 
-    case class Continue(marking: MarkingData, output: Any) extends ExceptionStrategy
+    case class Continue(marking: Marking[Long], output: Any) extends ExceptionStrategy
   }
 
 
@@ -163,7 +158,7 @@ object ProcessInstanceProtocol {
   case class JobState(
       id: Long,
       transitionId: Long,
-      consumedMarking: MarkingData,
+      consumedMarking: Marking[Long],
       input: Any,
       exceptionState: Option[ExceptionState]) {
 
@@ -179,7 +174,7 @@ object ProcessInstanceProtocol {
    */
   case class InstanceState(
     sequenceNr: Long,
-    marking: MarkingData,
+    marking: Marking[Long],
     state: Any,
     jobs: Map[Long, JobState]) extends Response
 }

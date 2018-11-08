@@ -5,10 +5,9 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.petrinet.api.MultiSet
+import com.ing.baker.petrinet.api.{Marking, MultiSet}
 import com.ing.baker.runtime.actor.serialization.Encryption._
 import com.ing.baker.runtime.actor.serialization.ProtoEventAdapterSpec._
-
 import com.ing.baker.{AllTypeRecipe, types}
 import javax.crypto.BadPaddingException
 import org.scalacheck.Gen
@@ -174,7 +173,7 @@ object ProtoEventAdapterSpec {
     val correlationIdGen = Gen.uuid.map(_.toString)
 
     val multiSetGen: Gen[MultiSet[Any]] = Gen.nonEmptyMap[Any, Int](GenUtil.tuple(tokenDataGen, Gen.posNum[Int]))
-    val markingDataGen: Gen[MarkingData] = Gen.mapOf(GenUtil.tuple(placeIdGen, multiSetGen))
+    val markingDataGen: Gen[Marking[Long]] = Gen.mapOf(GenUtil.tuple(placeIdGen, multiSetGen))
 
     val getStateGen = Gen.const(GetState)
     val stopGen = Gen.oneOf(true, false).map(Stop(_))

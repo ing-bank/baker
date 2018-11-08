@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.actor.serialization.modules
 
-import com.ing.baker.petrinet.api.MultiSet
-import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{ExceptionStrategy, MarkingData}
+import com.ing.baker.petrinet.api.{Marking, MultiSet}
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy
 import com.ing.baker.runtime.actor.process_instance.protobuf.FailureStrategyMessage.StrategyTypeMessage
 import com.ing.baker.runtime.actor.process_instance.{protobuf, ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.actor.serialization.{ProtoEventAdapter, ProtoEventAdapterModule}
@@ -62,7 +62,7 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
     case msg: protobuf.Initialized => msg
   }
 
-  private def toProtoMarking(markingData: MarkingData, ctx: ProtoEventAdapter): Seq[protobuf.MarkingData] = {
+  private def toProtoMarking(markingData: Marking[Long], ctx: ProtoEventAdapter): Seq[protobuf.MarkingData] = {
     markingData.flatMap { case (placeId, multiSet) =>
       if (multiSet.isEmpty)
         throw new IllegalArgumentException(s"Empty marking encoutered for place id: $placeId")
@@ -125,8 +125,8 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
     case msg: protobuf.Initialized => msg
   }
 
-  private def toDomainMarking(markingData: Seq[protobuf.MarkingData], ctx: ProtoEventAdapter): protocol.MarkingData = {
-    markingData.foldLeft[MarkingData](Map.empty) {
+  private def toDomainMarking(markingData: Seq[protobuf.MarkingData], ctx: ProtoEventAdapter): Marking[Long] = {
+    markingData.foldLeft[Marking[Long]](Map.empty) {
       case (acc, protobuf.MarkingData(Some(placeId), Some(data), Some(count))) =>
         val placeData: MultiSet[Any] = acc.get(placeId).getOrElse(MultiSet.empty)
         val deserializedData = ctx.toDomain[Any](data)
