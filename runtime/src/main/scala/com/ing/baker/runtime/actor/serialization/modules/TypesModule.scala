@@ -114,7 +114,6 @@ class TypesModule extends ProtoEventAdapterModule {
         case Primitive(BIG_DECIMAL_JAVA) => types.FloatBig
         case Primitive(BIG_INT_JAVA) => types.IntBig
 
-        case Primitive(JODA_DATETIME) => types.Date
         case Primitive(JODA_LOCAL_DATE) => types.Date
         case Primitive(JODA_LOCAL_DATETIME) => types.Date
 
