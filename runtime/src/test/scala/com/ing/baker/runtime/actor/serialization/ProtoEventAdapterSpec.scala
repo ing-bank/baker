@@ -173,7 +173,7 @@ object ProtoEventAdapterSpec {
     val transitionInputGen = Runtime.runtimeEventGen
     val correlationIdGen = Gen.uuid.map(_.toString)
 
-    val multiSetGen: Gen[MultiSet[_]] = Gen.nonEmptyMap[Any, Int](GenUtil.tuple(tokenDataGen, Gen.posNum[Int]))
+    val multiSetGen: Gen[MultiSet[Any]] = Gen.nonEmptyMap[Any, Int](GenUtil.tuple(tokenDataGen, Gen.posNum[Int]))
     val markingDataGen: Gen[MarkingData] = Gen.mapOf(GenUtil.tuple(placeIdGen, multiSetGen))
 
     val getStateGen = Gen.const(GetState)

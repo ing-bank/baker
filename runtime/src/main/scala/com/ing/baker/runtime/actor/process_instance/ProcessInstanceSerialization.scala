@@ -57,8 +57,8 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](ser
   def serializeEvent(e: EventSourcing.Event): Instance[P, T, S] ⇒ AnyRef =
     _ ⇒ e match {
       case e: InitializedEvent[_] ⇒ serializeInitialized(e.asInstanceOf[InitializedEvent[P]])
-      case e: TransitionFiredEvent[_, _, _] ⇒ serializeTransitionFired(e.asInstanceOf[TransitionFiredEvent[P, T, Any]])
-      case e: TransitionFailedEvent[_, _, _] ⇒ serializeTransitionFailed(e.asInstanceOf[TransitionFailedEvent[P, T, Any]])
+      case e: TransitionFiredEvent[_] ⇒ serializeTransitionFired(e.asInstanceOf[TransitionFiredEvent[P]])
+      case e: TransitionFailedEvent[_] ⇒ serializeTransitionFailed(e.asInstanceOf[TransitionFailedEvent[P]])
     }
 
   private def missingFieldException(field: String) = throw new IllegalStateException(s"Missing field in serialized data: $field")
@@ -130,7 +130,7 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](ser
     protobuf.Initialized(initialMarking, initialState)
   }
 
-  private def deserializeTransitionFailed(e: protobuf.TransitionFailed): Instance[P, T, S] ⇒ TransitionFailedEvent[P, T, Any] = {
+  private def deserializeTransitionFailed(e: protobuf.TransitionFailed): Instance[P, T, S] ⇒ TransitionFailedEvent[P] = {
     instance ⇒
 
       val jobId = e.jobId.getOrElse(missingFieldException("job_id"))
@@ -147,12 +147,10 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](ser
         case other@_ ⇒ throw new IllegalStateException(s"Invalid failure strategy: $other")
       }
 
-      val transition = instance.process.transitions.getById(transitionId, "transition in petrinet")
-
-      TransitionFailedEvent[P, T, Any](jobId, transition, e.correlationId, timeStarted, timeFailed, consumed, input, failureReason, failureStrategy)
+      TransitionFailedEvent[P](jobId, transitionId, e.correlationId, timeStarted, timeFailed, consumed, input, failureReason, failureStrategy)
   }
 
-  private def serializeTransitionFailed(e: TransitionFailedEvent[P, T, Any]): protobuf.TransitionFailed = {
+  private def serializeTransitionFailed(e: TransitionFailedEvent[P]): protobuf.TransitionFailed = {
 
     val strategy = e.exceptionStrategy match {
       case BlockTransition ⇒ FailureStrategy(Some(StrategyType.BLOCK_TRANSITION))
@@ -163,7 +161,7 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](ser
 
     protobuf.TransitionFailed(
       jobId = Some(e.jobId),
-      transitionId = Some(implicitly[Identifiable[T]].apply(e.transition).value),
+      transitionId = Some(e.transitionId),
       timeStarted = Some(e.timeStarted),
       timeFailed = Some(e.timeFailed),
       inputData = serializeObject(e.input),
@@ -173,14 +171,14 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](ser
     )
   }
 
-  private def serializeTransitionFired(e: TransitionFiredEvent[P, T, Any]): protobuf.TransitionFired = {
+  private def serializeTransitionFired(e: TransitionFiredEvent[P]): protobuf.TransitionFired = {
 
     val consumedTokens = serializeConsumedMarking(e.consumed)
     val producedTokens = serializeProducedMarking(e.produced)
 
     protobuf.TransitionFired(
       jobId = Some(e.jobId),
-      transitionId = Some(implicitly[Identifiable[T]].apply(e.transition).value),
+      transitionId = Some(e.transitionId),
       timeStarted = Some(e.timeStarted),
       timeCompleted = Some(e.timeCompleted),
       consumed = consumedTokens,
@@ -189,7 +187,7 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](ser
     )
   }
 
-  private def deserializeTransitionFired(e: protobuf.TransitionFired): Instance[P, T, S] ⇒ TransitionFiredEvent[P, T, Any] = instance ⇒ {
+  private def deserializeTransitionFired(e: protobuf.TransitionFired): Instance[P, T, S] ⇒ TransitionFiredEvent[P] = instance ⇒ {
 
     val consumed: Marking[P] = deserializeConsumedMarking(instance, e.consumed)
     val produced: Marking[P] = deserializeProducedMarking(instance, e.produced)
@@ -197,11 +195,10 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](ser
     val output = e.data.map(deserializeObject).orNull
 
     val transitionId = e.transitionId.getOrElse(missingFieldException("transition_id"))
-    val transition = instance.process.transitions.getById(transitionId, "transition in petrinet")
     val jobId = e.jobId.getOrElse(missingFieldException("job_id"))
     val timeStarted = e.timeStarted.getOrElse(missingFieldException("time_started"))
     val timeCompleted = e.timeCompleted.getOrElse(missingFieldException("time_completed"))
 
-    TransitionFiredEvent[P, T, Any](jobId, transition, e.correlationId, timeStarted, timeCompleted, consumed, produced, output)
+    TransitionFiredEvent[P](jobId, transitionId, e.correlationId, timeStarted, timeCompleted, consumed, produced, output)
   }
 }

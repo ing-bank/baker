@@ -128,8 +128,8 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
   private def toDomainMarking(markingData: Seq[protobuf.MarkingData], ctx: ProtoEventAdapter): protocol.MarkingData = {
     markingData.foldLeft[MarkingData](Map.empty) {
       case (acc, protobuf.MarkingData(Some(placeId), Some(data), Some(count))) =>
-        val placeData: MultiSet[AnyRef] = acc.get(placeId).map(_.asInstanceOf[MultiSet[AnyRef]]).getOrElse(MultiSet.empty)
-        val deserializedData = ctx.toDomain[AnyRef](data)
+        val placeData: MultiSet[Any] = acc.get(placeId).getOrElse(MultiSet.empty)
+        val deserializedData = ctx.toDomain[Any](data)
         acc + (placeId -> (placeData + (deserializedData -> count)))
       case _ => throw new IllegalStateException("missing data in serialized data when deserializing MarkingData")
     }

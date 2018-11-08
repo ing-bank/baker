@@ -74,13 +74,11 @@ class ProcessQuerySpec extends AkkaTestBase("ProcessQuerySpec") with BeforeAndAf
         .request(3)
         .expectNext(InitializedEvent(marking = p1.markWithN(1), state = ()))
         .expectNextChainingPF {
-          case TransitionFiredEvent(_, transition, _, _, _, consumed, produced, _) ⇒
-            transition shouldBe t1
+          case TransitionFiredEvent(_, 1, _, _, _, consumed, produced, _) ⇒
             consumed shouldBe p1.markWithN(1)
             produced shouldBe p2.markWithN(1)
         }.expectNextChainingPF {
-          case TransitionFiredEvent(_, transition, _, _, _, consumed, produced, _) ⇒
-            transition shouldBe t2
+          case TransitionFiredEvent(_, 2, _, _, _, consumed, produced, _) ⇒
             consumed shouldBe p2.markWithN(1)
             produced shouldBe p3.markWithN(1)
         }

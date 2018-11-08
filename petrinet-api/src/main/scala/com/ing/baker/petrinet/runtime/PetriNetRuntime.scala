@@ -67,7 +67,7 @@ trait PetriNetRuntime[P, T, S, E] {
     * However, since that is not used this can be refactored to a simple function: Job -> TransitionEvent
     *
     */
-  def jobExecutor(topology: PetriNet[P, T]): Job[P, T, S] ⇒ IO[TransitionEvent[T]] = {
+  def jobExecutor(topology: PetriNet[P, T])(implicit transitionIdentifier: Identifiable[T], placeIdentifier: Identifiable[P]): Job[P, T, S] ⇒ IO[TransitionEvent] = {
 
     def exceptionStackTrace(e: Throwable): String = {
       val sw = new StringWriter()
@@ -91,18 +91,18 @@ trait PetriNetRuntime[P, T, S, E] {
       // translates the job output to an EventSourcing.Event
       jobIO.map {
         case (produced, out) ⇒
-          TransitionFiredEvent(job.id, transition, job.correlationId, startTime, System.currentTimeMillis(), job.consume, produced, out)
+          TransitionFiredEvent(job.id, transitionIdentifier(transition).value, job.correlationId, startTime, System.currentTimeMillis(), job.consume, produced, out)
       }.handleException {
         // In case an exception was thrown by the transition, we compute the failure strategy and return a TransitionFailedEvent
         case e: Throwable ⇒
           val failureCount = job.failureCount + 1
           val failureStrategy = handleException(job)(e, failureCount, startTime, topology.outMarking(transition))
-          TransitionFailedEvent(job.id, transition, job.correlationId, startTime, System.currentTimeMillis(), job.consume, job.input, exceptionStackTrace(e), failureStrategy)
+          TransitionFailedEvent(job.id, transitionIdentifier(transition).value, job.correlationId, startTime, System.currentTimeMillis(), job.consume, job.input, exceptionStackTrace(e), failureStrategy)
       }.handleException {
         // If an exception was thrown while computing the failure strategy we block the interaction from firing
         case e: Throwable =>
           log.error(s"Exception while handling transition failure", e)
-          TransitionFailedEvent(job.id, transition, job.correlationId, startTime, System.currentTimeMillis(), job.consume, job.input, exceptionStackTrace(e), ExceptionStrategy.BlockTransition)
+          TransitionFailedEvent(job.id, transitionIdentifier(transition).value, job.correlationId, startTime, System.currentTimeMillis(), job.consume, job.input, exceptionStackTrace(e), ExceptionStrategy.BlockTransition)
       }
     }
   }

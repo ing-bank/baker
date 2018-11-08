@@ -136,10 +136,9 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
     case GetState ⇒
       sender() ! fromExecutionInstance(instance)
 
-    case event @ TransitionFiredEvent(jobId, t, correlationId, timeStarted, timeCompleted, consumed, produced, output) ⇒
+    case event @ TransitionFiredEvent(jobId, transitionId, correlationId, timeStarted, timeCompleted, consumed, produced, output) ⇒
 
-      val transition = t.asInstanceOf[T]
-      val transitionId = implicitly[Identifiable[T]].apply(transition).value
+      val transition = instance.process.transitions.getById(transitionId)
 
       log.transitionFired(processId, transition.toString, jobId, timeStarted, timeCompleted)
 
@@ -154,10 +153,9 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
           }
       )
 
-    case event @ TransitionFailedEvent(jobId, t, correlationId, timeStarted, timeFailed, consume, input, reason, strategy) ⇒
+    case event @ TransitionFailedEvent(jobId, transitionId, correlationId, timeStarted, timeFailed, consume, input, reason, strategy) ⇒
 
-      val transition = t.asInstanceOf[T]
-      val transitionId = implicitly[Identifiable[T]].apply(transition).value
+      val transition = instance.process.transitions.getById(transitionId)
 
       log.transitionFailed(processId, transition.toString, jobId, timeStarted, timeFailed, reason)
 
@@ -180,8 +178,8 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
           )
 
         case Continue(produced, out) =>
-          val transitionFiredEvent = TransitionFiredEvent[P, T, E](
-            jobId, transition, correlationId, timeStarted, timeFailed, consume.asInstanceOf[Marking[P]], produced.asInstanceOf[Marking[P]], out.asInstanceOf[E])
+          val transitionFiredEvent = TransitionFiredEvent[P](
+            jobId, transitionId, correlationId, timeStarted, timeFailed, consume.asInstanceOf[Marking[P]], produced.asInstanceOf[Marking[P]], out)
 
           persistEvent(instance, transitionFiredEvent)(
             eventSource.apply(instance)

@@ -11,14 +11,14 @@ object ProcessInstanceProtocol {
   /**
    * Type alias for marking data.
    */
-  type MarkingData = Map[Long, MultiSet[_]]
+  type MarkingData = Map[Long, MultiSet[Any]]
 
   def marshal[P](marking: Marking[P])(implicit identifiable: Identifiable[P]): MarkingData = marking.map {
     case (p, mset) ⇒ identifiable(p).value -> mset
   }.toMap
 
   def unmarshal[P](data: MarkingData, placeById: Long ⇒ P): Marking[P] = data.map {
-    case (id, mset) ⇒ placeById(id) -> mset.asInstanceOf[MultiSet[Any]]
+    case (id, mset) ⇒ placeById(id) -> mset
   }
 
   /**
