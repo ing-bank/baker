@@ -33,7 +33,7 @@ object ProcessInstanceProtocol {
   /**
    * Command to initialize a petri net instance.
    */
-  case class Initialize(marking: Marking[Long], state: Any) extends Command
+  case class Initialize(marking: Marking[Id], state: Any) extends Command
 
   /**
    * Command to fire a specific transition with input.
@@ -78,7 +78,7 @@ object ProcessInstanceProtocol {
    * This message is only send in response to an Initialize message.
    */
   case class Initialized(
-    marking: Marking[Long],
+    marking: Marking[Id],
     state: Any) extends Response
 
   /**
@@ -93,10 +93,10 @@ object ProcessInstanceProtocol {
    */
   case class TransitionFired(
     jobId: Long,
-    override val transitionId: Long,
+    override val transitionId: Id,
     correlationId: Option[String],
-    consumed: Marking[Long],
-    produced: Marking[Long],
+    consumed: Marking[Id],
+    produced: Marking[Id],
     state: InstanceState,
     newJobsIds: Set[Long],
     output: Any) extends TransitionResponse
@@ -106,9 +106,9 @@ object ProcessInstanceProtocol {
    */
   case class TransitionFailed(
     jobId: Long,
-    override val transitionId: Long,
+    override val transitionId: Id,
     correlationId: Option[String],
-    consume: Marking[Long],
+    consume: Marking[Id],
     input: Any,
     reason: String,
     strategy: ExceptionStrategy) extends TransitionResponse
@@ -117,7 +117,7 @@ object ProcessInstanceProtocol {
    * Response indicating that the transition could not be fired because it is not enabled.
    */
   case class TransitionNotEnabled(
-    override val transitionId: Long,
+    override val transitionId: Id,
     reason: String) extends TransitionResponse
 
   /**
@@ -140,7 +140,7 @@ object ProcessInstanceProtocol {
       require(delay > 0, "Delay must be greater then zero")
     }
 
-    case class Continue(marking: Marking[Long], output: Any) extends ExceptionStrategy
+    case class Continue(marking: Marking[Id], output: Any) extends ExceptionStrategy
   }
 
 
@@ -150,7 +150,7 @@ object ProcessInstanceProtocol {
   case class JobState(
       id: Long,
       transitionId: Long,
-      consumedMarking: Marking[Long],
+      consumedMarking: Marking[Id],
       input: Any,
       exceptionState: Option[ExceptionState]) {
 
@@ -166,7 +166,7 @@ object ProcessInstanceProtocol {
    */
   case class InstanceState(
     sequenceNr: Long,
-    marking: Marking[Long],
+    marking: Marking[Id],
     state: Any,
     jobs: Map[Long, JobState]) extends Response
 }

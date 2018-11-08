@@ -71,7 +71,7 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](ser
 
   private def deserializeObject(obj: SerializedData): AnyRef = serializer.toDomain[AnyRef](obj)
 
-  private def deserializeProducedMarking(instance: Instance[P, T, S], produced: Seq[ProducedToken]): Marking[Long] = {
+  private def deserializeProducedMarking(instance: Instance[P, T, S], produced: Seq[ProducedToken]): Marking[Id] = {
     produced.foldLeft(Marking.empty[Long]) {
       case (accumulated, ProducedToken(Some(placeId), Some(_), Some(count), data)) ⇒
         val value = data.map(deserializeObject).orNull // In the colored petrinet, tokens have values and they could be null.
@@ -80,7 +80,7 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](ser
     }
   }
 
-  private def serializeProducedMarking(produced: Marking[Long]): Seq[ProducedToken] = {
+  private def serializeProducedMarking(produced: Marking[Id]): Seq[ProducedToken] = {
     produced.toSeq.flatMap {
       case (placeId, tokens) ⇒ tokens.toSeq.map {
         case (value, count) ⇒ ProducedToken(
@@ -93,7 +93,7 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](ser
     }
   }
 
-  private def serializeConsumedMarking(m: Marking[Long]): Seq[protobuf.ConsumedToken] =
+  private def serializeConsumedMarking(m: Marking[Id]): Seq[protobuf.ConsumedToken] =
     m.toSeq.flatMap {
       case (placeId, tokens) ⇒ tokens.toSeq.map {
         case (value, count) ⇒ protobuf.ConsumedToken(
@@ -104,7 +104,7 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](ser
       }
     }
 
-  private def deserializeConsumedMarking(instance: Instance[P, T, S], persisted: Seq[protobuf.ConsumedToken]): Marking[Long] = {
+  private def deserializeConsumedMarking(instance: Instance[P, T, S], persisted: Seq[protobuf.ConsumedToken]): Marking[Id] = {
     persisted.foldLeft(Marking.empty[Long]) {
       case (accumulated, protobuf.ConsumedToken(Some(placeId), Some(tokenId), Some(count))) ⇒
         val place = instance.process.places.getById(placeId, "place in the petrinet")
@@ -186,8 +186,8 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](ser
 
   private def deserializeTransitionFired(e: protobuf.TransitionFired): Instance[P, T, S] ⇒ TransitionFiredEvent = instance ⇒ {
 
-    val consumed: Marking[Long] = deserializeConsumedMarking(instance, e.consumed)
-    val produced: Marking[Long] = deserializeProducedMarking(instance, e.produced)
+    val consumed: Marking[Id] = deserializeConsumedMarking(instance, e.consumed)
+    val produced: Marking[Id] = deserializeProducedMarking(instance, e.produced)
 
     val output = e.data.map(deserializeObject).orNull
 

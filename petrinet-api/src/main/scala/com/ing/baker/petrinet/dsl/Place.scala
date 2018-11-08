@@ -5,7 +5,7 @@ import com.ing.baker.petrinet.api._
 object Place {
   def apply(id: Long): Place = Place(id, s"p$id")
 
-  implicit val identifiable: Identifiable[Place] = p => Id(p.id)
+  implicit val identifiable: Identifiable[Place] = p => p.id
 }
 
 /**

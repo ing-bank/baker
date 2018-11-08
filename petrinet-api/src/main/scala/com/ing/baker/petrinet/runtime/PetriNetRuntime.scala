@@ -79,7 +79,7 @@ trait PetriNetRuntime[P, T, S, E] {
 
       val startTime = System.currentTimeMillis()
       val transition = job.transition
-      val consumed: Marking[Long] = job.consume.marshall
+      val consumed: Marking[Id] = job.consume.marshall
 
       val jobIO =
         try {
@@ -93,7 +93,7 @@ trait PetriNetRuntime[P, T, S, E] {
       jobIO.map {
         case (producedMarking, out) ⇒
 
-          val produced: Marking[Long] = producedMarking.marshall
+          val produced: Marking[Id] = producedMarking.marshall
 
           TransitionFiredEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, produced, out)
       }.handleException {

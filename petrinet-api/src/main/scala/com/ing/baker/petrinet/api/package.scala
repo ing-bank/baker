@@ -6,7 +6,10 @@ import scalax.collection.edge.WLDiEdge
 
 package object api extends MultiSetOps with MarkingOps {
 
-  case class Id(value: Long) extends AnyVal
+  /**
+    * Identifier type for elements.
+    */
+  type Id = Long
 
   /**
     * Type alias for something that is identifiable.
@@ -25,20 +28,20 @@ package object api extends MultiSetOps with MarkingOps {
 
   implicit class IdentifiableOps[T : Identifiable](e: T) {
 
-    def getId: Long = implicitly[Identifiable[T]].apply(e).value
+    def getId: Long = implicitly[Identifiable[T]].apply(e)
   }
 
   implicit class IdentifiableSeqOps[T : Identifiable](seq: Iterable[T]) {
-    def findById(id: Long): Option[T] = seq.find(e ⇒ implicitly[Identifiable[T]].apply(e).value == id)
+    def findById(id: Long): Option[T] = seq.find(e ⇒ implicitly[Identifiable[T]].apply(e) == id)
     def getById(id: Long, name: String = "element"): T = findById(id).getOrElse { throw new IllegalStateException(s"No $name found with id: $id") }
   }
 
   implicit class MarkingMarshall[P : Identifiable](marking: Marking[P]) {
 
-    def marshall: Marking[Long] = translateKeys(marking, (p: P) => implicitly[Identifiable[P]].apply(p).value)
+    def marshall: Marking[Id] = translateKeys(marking, (p: P) => implicitly[Identifiable[P]].apply(p))
   }
 
-  implicit class MarkingUnMarshall(marking: Marking[Long]) {
+  implicit class MarkingUnMarshall(marking: Marking[Id]) {
 
     def unmarshall[P : Identifiable](places: Iterable[P]): Marking[P] = translateKeys(marking, (id: Long) => places.getById(id, "place in petrinet"))
   }

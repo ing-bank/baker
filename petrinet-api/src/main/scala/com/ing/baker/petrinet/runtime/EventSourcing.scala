@@ -8,7 +8,7 @@ object EventSourcing {
 
   sealed trait TransitionEvent extends Event {
     val jobId: Long
-    val transitionId: Long
+    val transitionId: Id
   }
 
   /**
@@ -16,12 +16,12 @@ object EventSourcing {
    */
   case class TransitionFiredEvent(
      override val jobId: Long,
-     override val transitionId: Long,
+     override val transitionId: Id,
      correlationId: Option[String],
      timeStarted: Long,
      timeCompleted: Long,
-     consumed: Marking[Long],
-     produced: Marking[Long],
+     consumed: Marking[Id],
+     produced: Marking[Id],
      output: Any) extends TransitionEvent
 
   /**
@@ -29,11 +29,11 @@ object EventSourcing {
    */
   case class TransitionFailedEvent(
     override val jobId: Long,
-    override val transitionId: Long,
+    override val transitionId: Id,
     correlationId: Option[String],
     timeStarted: Long,
     timeFailed: Long,
-    consume: Marking[Long],
+    consume: Marking[Id],
     input: Any,
     failureReason: String,
     exceptionStrategy: ExceptionStrategy) extends TransitionEvent
@@ -42,7 +42,7 @@ object EventSourcing {
     * An event describing the fact that an instance was initialized.
     */
   case class InitializedEvent(
-     marking: Marking[Long],
+     marking: Marking[Id],
      state: Any) extends Event
 
   def apply[P : Identifiable, T : Identifiable, S, E](sourceFn: T ⇒ (S ⇒ E ⇒ S)): Instance[P, T, S] ⇒ Event ⇒ Instance[P, T, S] = instance ⇒ {

@@ -62,7 +62,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
   override def receiveCommand: Receive = uninitialized
 
-  implicit def marshallMarking(marking: Marking[Any]): Marking[Long] = marking.asInstanceOf[Marking[P]].marshall
+  implicit def marshallMarking(marking: Marking[Any]): Marking[Id] = marking.asInstanceOf[Marking[P]].marshall
 
   implicit def fromExecutionInstance(instance: com.ing.baker.petrinet.runtime.Instance[P, T, S]): InstanceState =
     InstanceState(instance.sequenceNr, instance.marking.marshall, instance.state, instance.jobs.mapValues(fromExecutionJob(_)).map(identity))
