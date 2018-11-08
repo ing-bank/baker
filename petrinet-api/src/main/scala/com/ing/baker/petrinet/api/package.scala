@@ -28,6 +28,18 @@ package object api extends MultiSetOps with MarkingOps {
     def getById(id: Long, name: String = "element"): T = findById(id).getOrElse { throw new IllegalStateException(s"No $name found with id: $id") }
   }
 
+  implicit class MarkingMarshall[P : Identifiable](marking: Marking[P]) {
+
+    def marshall: Marking[Long] = translateKeys(marking, (p: P) => implicitly[Identifiable[P]].apply(p).value)
+  }
+
+  implicit class MarkingUnMarshall(marking: Marking[Long]) {
+
+    def unmarshall[P : Identifiable](places: Iterable[P]): Marking[P] = translateKeys(marking, (id: Long) => places.getById(id, "place in petrinet"))
+  }
+
+  def translateKeys[K1, K2, V](map: Map[K1, V], fn: K1 => K2): Map[K2, V] = map.map { case (key, value) ⇒ fn(key) -> value }
+
   type PetriNetGraph[P, T] = Graph[Either[P, T], WLDiEdge]
 
   implicit def placeToNode[P, T](p: P): Either[P, T] = Left(p)

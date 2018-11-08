@@ -45,10 +45,10 @@ object ProcessInstance {
   * This actor is responsible for maintaining the state of a single petri net instance.
   */
 class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
-                                  processType: String,
-                                  processTopology: PetriNet[P, T],
-                                  settings: Settings,
-                                  runtime: PetriNetRuntime[P, T, S, E]) extends ProcessInstanceRecovery[P, T, S, E](processTopology, settings.encryption, runtime.eventSource) {
+     processType: String,
+     petriNet: PetriNet[P, T],
+     settings: Settings,
+     runtime: PetriNetRuntime[P, T, S, E]) extends ProcessInstanceRecovery[P, T, S, E](petriNet, settings.encryption, runtime.eventSource) {
 
   import context.dispatcher
 
@@ -56,7 +56,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
   val processId = context.self.path.name
 
-  val executor = runtime.jobExecutor(topology)
+  val executor = runtime.jobExecutor(petriNet)
 
   override def persistenceId: String = processId2PersistenceId(processType, processId)
 
@@ -81,10 +81,9 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
   }
 
   def uninitialized: Receive = {
-    case Initialize(markingData, state) ⇒
+    case Initialize(initialMarking, state) ⇒
 
-      val initialMarking = unmarshal[P](markingData, id => topology.places.getById(id, "place in petrinet"))
-      val uninitialized = Instance.uninitialized[P, T, S](processTopology)
+      val uninitialized = Instance.uninitialized[P, T, S](petriNet)
       val event = InitializedEvent(initialMarking, state)
 
       persistEvent(uninitialized, event) {
@@ -178,8 +177,8 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
           )
 
         case Continue(produced, out) =>
-          val transitionFiredEvent = TransitionFiredEvent[P](
-            jobId, transitionId, correlationId, timeStarted, timeFailed, consume.asInstanceOf[Marking[P]], produced.asInstanceOf[Marking[P]], out)
+          val transitionFiredEvent = TransitionFiredEvent(
+            jobId, transitionId, correlationId, timeStarted, timeFailed, consume, produced, out)
 
           persistEvent(instance, transitionFiredEvent)(
             eventSource.apply(instance)
@@ -206,7 +205,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
         * This should only return once the initial transition is completed & persisted
         * That way we are sure the correlation id is persisted.
         */
-      val transition = topology.transitions.getById(transitionId, "transition in petrinet")
+      val transition = petriNet.transitions.getById(transitionId, "transition in petrinet")
 
       correlationIdOption match {
         case Some(correlationId) if instance.hasReceivedCorrelationId(correlationId) =>

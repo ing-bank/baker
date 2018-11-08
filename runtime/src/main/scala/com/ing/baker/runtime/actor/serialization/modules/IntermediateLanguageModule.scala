@@ -104,7 +104,7 @@ class IntermediateLanguageModule extends ProtoEventAdapterModule {
         case (place, tokens) ⇒ tokens.toSeq.map {
           case (value, count) ⇒ ProducedToken(
             placeId = Option(place.id),
-            tokenId = Option(tokenIdentifier(place)(value)),
+            tokenId = Option(tokenIdentifier(value)),
             count = Option(count),
             tokenData = Option(ctx.toProtoAny(value.asInstanceOf[AnyRef]))
           )

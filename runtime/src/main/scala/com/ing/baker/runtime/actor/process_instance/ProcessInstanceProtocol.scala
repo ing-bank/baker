@@ -12,10 +12,6 @@ object ProcessInstanceProtocol {
     case (p, mset) ⇒ implicitly[Identifiable[P]].apply(p).value -> mset
   }.toMap
 
-  def unmarshal[P](data: Marking[Long], placeById: Long ⇒ P): Marking[P] = data.map {
-    case (id, mset) ⇒ placeById(id) -> mset
-  }
-
   /**
    * A common trait for all commands to a petri net instance.
    */
