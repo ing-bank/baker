@@ -1,10 +1,10 @@
 package com.ing.baker.petrinet.dsl
 
-import com.ing.baker.petrinet.api.{Id, Identifiable}
+import com.ing.baker.petrinet.api.Identifiable
 import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
 
 object Transition {
-  implicit val identifiable: Identifiable[Transition] = p => Id(p.id)
+  implicit val identifiable: Identifiable[Transition] = p => p.id
 }
 
 /**

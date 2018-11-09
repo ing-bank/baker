@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor.serialization.modules
+package com.ing.baker.runtime.actor.serialization
 
 /**
   * A module that can translate to/from protobuf for a particular domain.

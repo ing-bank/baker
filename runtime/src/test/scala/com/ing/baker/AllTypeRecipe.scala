@@ -13,7 +13,6 @@ import scala.concurrent.duration.DurationInt
   *
   * @see com.ing.baker.Examples
   */
-@deprecated("marked deprecated because of -XFatal-Warnings and deprecated sieves", "1.4.0")
 object AllTypeRecipe {
 
   case class Payload(data: Map[String, String], userData: Map[String, java.lang.Integer])
@@ -184,6 +183,7 @@ object AllTypeRecipe {
           .withFailureStrategy(InteractionFailureStrategy.FireEventAfterFailure()),
         interactionSix,
         interactionSeven,
+        sieveInteraction,
         allTypesInteraction.withPredefinedIngredients(
           bigPayloadIngredient(Payload(Map("stringKey" -> "stringValue"), Map("someOtherStringKey" -> java.lang.Integer.MAX_VALUE))),
           javaBooleanIngredient(java.lang.Boolean.TRUE),
@@ -224,5 +224,4 @@ object AllTypeRecipe {
       .withSensoryEvents(bigPayloadEvent, mapEvent)
       .withEventReceivePeriod(1 minute)
       .withRetentionPeriod(5 minutes)
-      .withSieves(sieveInteraction)
 }

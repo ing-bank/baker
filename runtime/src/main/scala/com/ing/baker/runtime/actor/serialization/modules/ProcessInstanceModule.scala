@@ -1,13 +1,15 @@
 package com.ing.baker.runtime.actor.serialization.modules
 
-import com.ing.baker.petrinet.api.MultiSet
-import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{ExceptionStrategy, MarkingData}
+import com.ing.baker.petrinet.api._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy
 import com.ing.baker.runtime.actor.process_instance.protobuf.FailureStrategyMessage.StrategyTypeMessage
 import com.ing.baker.runtime.actor.process_instance.{protobuf, ProcessInstanceProtocol => protocol}
+import com.ing.baker.runtime.actor.serialization.{ProtoEventAdapter, ProtoEventAdapterModule}
 
 class ProcessInstanceModule extends ProtoEventAdapterModule {
 
   override def toProto(ctx: ProtoEventAdapter): PartialFunction[AnyRef, scalapb.GeneratedMessage] = {
+
     case protocol.GetState =>
       protobuf.GetState()
     case protocol.Stop(delete) =>
@@ -53,9 +55,14 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
       case ExceptionStrategy.Continue(marking, output) => protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.CONTINUE), None, toProtoMarking(marking, ctx), Some(ctx.toProtoAny(output.asInstanceOf[AnyRef])))
       case ExceptionStrategy.RetryWithDelay(delay) => protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.RETRY), Some(delay))
     }
+
+    // These 3 messages do not have a domain class, they are directly persisted by the ProcessInstance actor
+    case msg: protobuf.TransitionFired => msg
+    case msg: protobuf.TransitionFailed => msg
+    case msg: protobuf.Initialized => msg
   }
 
-  private def toProtoMarking(markingData: MarkingData, ctx: ProtoEventAdapter): Seq[protobuf.MarkingData] = {
+  private def toProtoMarking(markingData: Marking[Id], ctx: ProtoEventAdapter): Seq[protobuf.MarkingData] = {
     markingData.flatMap { case (placeId, multiSet) =>
       if (multiSet.isEmpty)
         throw new IllegalArgumentException(s"Empty marking encoutered for place id: $placeId")
@@ -67,6 +74,7 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
   }
 
   override def toDomain(ctx: ProtoEventAdapter): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
+
     case protobuf.GetState() =>
       protocol.GetState
     case protobuf.Stop(Some(delete)) =>
@@ -110,13 +118,18 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
       protocol.ExceptionStrategy.RetryWithDelay(retryDelay)
     case protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.CONTINUE), _, marking, Some(output)) =>
       protocol.ExceptionStrategy.Continue(toDomainMarking(marking, ctx), ctx.toDomain[Any](output))
+
+    // These 3 messages do not have a domain class, they are directly persisted by the ProcessInstance actor
+    case msg: protobuf.TransitionFired => msg
+    case msg: protobuf.TransitionFailed => msg
+    case msg: protobuf.Initialized => msg
   }
 
-  private def toDomainMarking(markingData: Seq[protobuf.MarkingData], ctx: ProtoEventAdapter): protocol.MarkingData = {
-    markingData.foldLeft[MarkingData](Map.empty) {
+  private def toDomainMarking(markingData: Seq[protobuf.MarkingData], ctx: ProtoEventAdapter): Marking[Id] = {
+    markingData.foldLeft[Marking[Id]](Map.empty) {
       case (acc, protobuf.MarkingData(Some(placeId), Some(data), Some(count))) =>
-        val placeData: MultiSet[AnyRef] = acc.get(placeId).map(_.asInstanceOf[MultiSet[AnyRef]]).getOrElse(MultiSet.empty)
-        val deserializedData = ctx.toDomain[AnyRef](data)
+        val placeData: MultiSet[Any] = acc.get(placeId).getOrElse(MultiSet.empty)
+        val deserializedData = ctx.toDomain[Any](data)
         acc + (placeId -> (placeData + (deserializedData -> count)))
       case _ => throw new IllegalStateException("missing data in serialized data when deserializing MarkingData")
     }

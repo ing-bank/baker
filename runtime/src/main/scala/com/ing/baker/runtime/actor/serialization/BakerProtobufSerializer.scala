@@ -1,11 +1,11 @@
 package com.ing.baker.runtime.actor.serialization
 
 import akka.actor.ExtendedActorSystem
-import akka.serialization.{SerializationExtension, SerializerWithStringManifest}
-import com.ing.baker.{il, types}
+import akka.serialization.{Serialization, SerializationExtension, SerializerWithStringManifest}
+import com.ing.baker.il
 import com.ing.baker.runtime.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
-import com.ing.baker.runtime.actor.protobuf
+import com.ing.baker.runtime.actor.{process_instance, protobuf}
 import com.ing.baker.runtime.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.{actor, core}
@@ -21,7 +21,7 @@ object BakerProtobufSerializer {
 class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
   import BakerProtobufSerializer._
 
-  def getSerializationExtension() = SerializationExtension.get(system)
+  def getSerializationExtension(): Serialization = SerializationExtension.get(system)
 
   // TODO remove this lazy modifier, but be aware removing lazy causes the tests to hang.
   private lazy val protoEventAdapter = new ProtoEventAdapterImpl(getSerializationExtension(), NoEncryption)
@@ -70,6 +70,10 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     Entry("ProcessInstanceProtocol.TransitionNotEnabled", classOf[ProcessInstanceProtocol.TransitionNotEnabled], actor.process_instance.protobuf.TransitionNotEnabled),
     Entry("ProcessInstanceProtocol.TransitionFailed", classOf[ProcessInstanceProtocol.TransitionFailed], actor.process_instance.protobuf.TransitionFailedMessage),
     Entry("ProcessInstanceProtocol.TransitionFired", classOf[ProcessInstanceProtocol.TransitionFired], actor.process_instance.protobuf.TransitionFiredMessage),
+
+    Entry("TransitionFired", classOf[process_instance.protobuf.TransitionFired], process_instance.protobuf.TransitionFired),
+    Entry("TransitionFailed", classOf[process_instance.protobuf.TransitionFailed], process_instance.protobuf.TransitionFailed),
+    Entry("Initialized", classOf[process_instance.protobuf.Initialized], process_instance.protobuf.Initialized),
 
     Entry("RecipeManager.RecipeAdded", classOf[RecipeManager.RecipeAdded], actor.recipe_manager.protobuf.RecipeAdded),
     Entry("RecipeManagerProtocol.AddRecipe", classOf[RecipeManagerProtocol.AddRecipe], actor.recipe_manager.protobuf.AddRecipe),

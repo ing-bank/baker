@@ -13,8 +13,8 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.dsl._
 import com.ing.baker.petrinet.runtime.EventSourcing.{InitializedEvent, TransitionFiredEvent}
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSpec._
+import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Matchers._
 
@@ -72,17 +72,15 @@ class ProcessQuerySpec extends AkkaTestBase("ProcessQuerySpec") with BeforeAndAf
         .map(_._2) // Get the event from the tuple
         .runWith(TestSink.probe)
         .request(3)
-        .expectNext(InitializedEvent(marking = p1.markWithN(1), state = ()))
+        .expectNext(InitializedEvent(marking = p1.markWithN(1).marshall, state = ()))
         .expectNextChainingPF {
-          case TransitionFiredEvent(_, transition, _, _, _, consumed, produced, _) ⇒
-            transition shouldBe t1
-            consumed shouldBe p1.markWithN(1)
-            produced shouldBe p2.markWithN(1)
+          case TransitionFiredEvent(_, 1, _, _, _, consumed, produced, _) ⇒
+            consumed shouldBe p1.markWithN(1).marshall
+            produced shouldBe p2.markWithN(1).marshall
         }.expectNextChainingPF {
-          case TransitionFiredEvent(_, transition, _, _, _, consumed, produced, _) ⇒
-            transition shouldBe t2
-            consumed shouldBe p2.markWithN(1)
-            produced shouldBe p3.markWithN(1)
+          case TransitionFiredEvent(_, 2, _, _, _, consumed, produced, _) ⇒
+            consumed shouldBe p2.markWithN(1).marshall
+            produced shouldBe p3.markWithN(1).marshall
         }
 
     }

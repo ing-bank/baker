@@ -45,7 +45,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
   /**
     * All transitions except sensory event interactions are auto-fireable by the runtime
     */
-  override def isAutoFireable[S](instance: Instance[Place, Transition, S], t: Transition): Boolean = t match {
+  override def isAutoFireable(instance: Instance[Place, Transition, ProcessState], t: Transition): Boolean = t match {
     case EventTransition(_, true, _) => false
     case _ => true
   }

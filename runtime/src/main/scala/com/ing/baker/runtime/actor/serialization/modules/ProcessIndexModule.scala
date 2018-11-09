@@ -7,6 +7,7 @@ import com.ing.baker.runtime.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.actor.process_index.ProcessIndex.{Active, Deleted, ProcessStatus}
 import com.ing.baker.runtime.actor.process_index.{ProcessIndex, ProcessIndexProtocol, protobuf}
 import com.ing.baker.runtime.actor.protobuf.RuntimeEvent
+import com.ing.baker.runtime.actor.serialization.{ProtoEventAdapter, ProtoEventAdapterModule}
 import com.ing.baker.runtime.core
 
 import scala.concurrent.duration.FiniteDuration
