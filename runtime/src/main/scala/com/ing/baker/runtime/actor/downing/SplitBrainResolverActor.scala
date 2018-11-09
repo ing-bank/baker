@@ -1,12 +1,12 @@
 package com.ing.baker.runtime.actor.downing
 
-import akka.actor.{Actor, Props}
+import akka.actor.{Actor, Cancellable, Props}
 import akka.cluster.ClusterEvent._
-import akka.cluster.{Cluster, ClusterEvent, Member, MemberStatus}
+import akka.cluster._
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import com.ing.baker.runtime.actor.downing.SplitBrainResolverActor.ActOnSbrDecision
 
-import scala.collection.immutable
+import scala.collection.immutable.SortedSet
 import scala.concurrent.duration.FiniteDuration
 
 private[downing] object SplitBrainResolverActor {
@@ -19,11 +19,26 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
 
   val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
-  val cluster = Cluster(context.system)
+  var isLeader = false
 
-  private var isLeader = false
-  private var members: immutable.SortedSet[Member] = immutable.SortedSet.empty(Member.ordering)
-  private var unreachables: immutable.Set[Member] = immutable.Set.empty[Member]
+  var allMembers: SortedSet[Member] = SortedSet.empty(Member.ordering)
+  var unreachableNodes: Set[UniqueAddress] = Set.empty[UniqueAddress]
+//  var allNodes: SortedSet[UniqueAddress] = allMembers.map(m => m.uniqueAddress)
+
+  private def unreachableMembers(): Set[Member] = allMembers.filter(m => unreachableNodes contains m.uniqueAddress)
+  private def reachableNodes(): Set[UniqueAddress] = allMembers.filterNot(m => unreachableNodes contains m.uniqueAddress).map(m => m.uniqueAddress)
+  private def isMember: Boolean = allMembers.exists(_.uniqueAddress == cluster.selfUniqueAddress)
+  private def oldestNode: UniqueAddress = allMembers.head.uniqueAddress // first member is the oldest in this sorted set
+
+  private def replaceMember(member: Member): Unit = {
+    allMembers -= member
+    allMembers += member
+  }
+
+  import context.dispatcher
+  val actOnSbrDecisionTask: Cancellable = context.system.scheduler.schedule(downRemovalMargin, downRemovalMargin, self, ActOnSbrDecision)
+
+  val cluster = Cluster(context.system)
 
   override def preStart(): Unit = {
     cluster.subscribe(self, ClusterEvent.InitialStateAsEvents, classOf[ClusterDomainEvent])
@@ -32,28 +47,18 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
 
   override def postStop(): Unit = {
     cluster.unsubscribe(self)
-    //    tickTask.cancel()
+    actOnSbrDecisionTask.cancel()
     super.postStop()
   }
 
   override def receive: Receive = {
 
     // Initial Cluster State is received in the beginning for once
-    case state: CurrentClusterState =>
-      isLeader = state.leader contains cluster.selfAddress
-      members = state.members.filterNot(_.status == MemberStatus.Removed)
-      scheduleSbrDecision()
-    //      members = immutable.SortedSet.empty(Member.ordering) union state.members.filterNot {m =>
-    //        m.status == MemberStatus.Removed
-    //      }
+    case clusterState: CurrentClusterState =>
+      isLeader = clusterState.leader contains cluster.selfAddress
+      allMembers = clusterState.members.filterNot(m => m.status == MemberStatus.Removed)
 
     // member events
-    case MemberJoined(member) =>
-      log.info("Member joined {}", member)
-
-    case MemberWeaklyUp(member) =>
-      log.info("Member weakly up {}", member)
-
     case MemberUp(member) =>
       log.info("Member up {}", member)
       replaceMember(member)
@@ -68,65 +73,43 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
 
     case MemberRemoved(member, previousStatus) =>
       log.info("Member removed {}, previous status {}", member, previousStatus)
-      members -= member
+      allMembers -= member
 
     // cluster domain events
     case LeaderChanged(newLeader) =>
       log.info("Leader changed to {}", newLeader)
       isLeader = newLeader contains cluster.selfAddress
 
-    case RoleLeaderChanged(role, newLeader) =>
-      log.info("Role leader changed. Role {}, new leader {}", role, newLeader)
-
-    case ClusterShuttingDown =>
-      log.info("Cluster shutting down")
-
     // reachability events
     case UnreachableMember(member) =>
       log.info("Unreachable member {}", member)
       replaceMember(member)
-      unreachables += member
-      scheduleSbrDecision()
+      if (!Set[MemberStatus](MemberStatus.Down, MemberStatus.Exiting).contains(member.status))
+        unreachableNodes += member.uniqueAddress
 
     case ReachableMember(member) =>
       log.info("Reachable member {}", member)
       replaceMember(member)
-      unreachables -= member
-
-    // data center reachability events
-    case UnreachableDataCenter(dc) =>
-      log.info("Unreachable data center {}", dc)
-
-    case ReachableDataCenter(dc) =>
-      log.info("Reachable data center {}", dc)
+      unreachableNodes -= member.uniqueAddress
 
     case ActOnSbrDecision =>
-      log.info("act on sbr decision")
+      log.info("act on sbr decision. self: {} isLeader: {}", cluster.selfAddress, isLeader)
       sbrDecision()
 
     case _ => () // do nothing for other messages
 
   }
 
-  private def replaceMember(member: Member): Unit = {
-    members -= member
-    members += member
-  }
-
-  private def isMember: Boolean = members.exists(_.uniqueAddress == cluster.selfUniqueAddress)
-
-  private def oldestMember: Member = members.head // first member is the oldest in this sorted set
-
   /*
     macro SbrDecision() {
-      if (IsMember(self) /\ IsLeader(self) /\ Cardinality(unreachables[self]) > 0) {
+      if (IsMember(self) /\ IsLeader(self) /\ Cardinality(unreachableNodes[self]) > 0) {
         with (nodesToDown = NodesToDown(self)) {
           debug[self] := <<"sbr decision. nodesToDown=", nodesToDown>>;
 
           if (Contains(nodesToDown, self)) {
             \* leader going down
             members[self] := {};
-            unreachables[self] := {};
+            unreachableNodes[self] := {};
 
             \* mark this node as dead so it does not come back again
             deadNodes := deadNodes \cup {self};
@@ -137,7 +120,7 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
             }
           } else {
             members[self] := members[self] \ nodesToDown;
-            unreachables[self] := unreachables[self] \ nodesToDown;
+            unreachableNodes[self] := unreachableNodes[self] \ nodesToDown;
           }
         }
       }
@@ -146,48 +129,44 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
     NodesToDown(n) ==
       IF Cardinality(members[n]) = 0
       THEN Nodes \* Down all known nodes since I am not a member and I do not know any members
-      ELSE IF Cardinality(unreachables[n]) * 2 = Cardinality(members[n]) \* cannot decide minority or majority? equal size?
-           THEN IF Contains(unreachables[n], oldestNode) \* Check if the oldest node is unreachable, and let the group with oldest member survives
+      ELSE IF Cardinality(unreachableNodes[n]) * 2 = Cardinality(members[n]) \* cannot decide minority or majority? equal size?
+           THEN IF Contains(unreachableNodes[n], oldestNode) \* Check if the oldest node is unreachable, and let the group with oldest member survives
                 THEN Reachables(n) \* down reachables
-                ELSE unreachables[n] \* down unreachables
-           ELSE IF Cardinality(unreachables[n]) * 2 < Cardinality(members[n]) \* am I in majority?
-                THEN unreachables[n] \* down unreachables
+                ELSE unreachableNodes[n] \* down unreachableNodes
+           ELSE IF Cardinality(unreachableNodes[n]) * 2 < Cardinality(members[n]) \* am I in majority?
+                THEN unreachableNodes[n] \* down unreachableNodes
                 ELSE Reachables(n) \* down reachables
 
    */
   private def sbrDecision(): Unit = {
 
-    if (isMember && isLeader && unreachables.nonEmpty) {
+    if (isMember && isLeader && unreachableNodes.nonEmpty) {
       val nodesToDown = this.nodesToDown()
-      log.info("{} downing these nodes {}", cluster.selfUniqueAddress, nodesToDown)
-      if (nodesToDown.exists(_.uniqueAddress == cluster.selfUniqueAddress)) {
+      log.info("{} downing these nodes {}", cluster.selfAddress, nodesToDown)
+      if (nodesToDown contains cluster.selfUniqueAddress) {
         // leader going down
         cluster.leave(cluster.selfAddress)
       } else {
-        nodesToDown.foreach(m => cluster.leave(m.uniqueAddress.address))
+        nodesToDown.foreach(a => cluster.leave(a.address))
       }
     }
   }
 
-  private def nodesToDown(): Set[Member] = {
-    if (unreachables.size * 2 == members.size) { // cannot decide minority or majority? equal size?
-      if (unreachables contains oldestMember) {
-        members diff unreachables // down reachables
+  private def nodesToDown(): Set[UniqueAddress] = {
+    val unreachableMemberSize = unreachableMembers().size
+    if (unreachableMemberSize * 2 == allMembers.size) { // cannot decide minority or majority? equal size?
+      if (unreachableNodes contains oldestNode) {
+        reachableNodes()
       } else {
-        unreachables // down unreachables
+        unreachableNodes
       }
     } else {
-      if (unreachables.size * 2 < members.size) { // am I in majority?
-        unreachables // down unreachables
+      if (unreachableMemberSize * 2 < allMembers.size) { // am I in majority?
+        unreachableNodes
       } else {
-        members diff unreachables // down reachables
+        reachableNodes()
       }
     }
-  }
-
-  private def scheduleSbrDecision(): Unit = {
-    import context.dispatcher
-    context.system.scheduler.scheduleOnce(downRemovalMargin, self, ActOnSbrDecision)
   }
 
 }

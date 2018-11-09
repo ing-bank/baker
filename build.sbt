@@ -27,7 +27,9 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     Package.ManifestAttributes(
       "Build-Time" -> new java.util.Date().toString,
       "Build-Commit" -> git.gitHeadCommit.value.getOrElse("No Git Revision Found")
-    )
+    ),
+  // TODO remove this resolver when done with tests
+  resolvers += Resolver.bintrayRepo("tanukkii007", "maven")
 )
 
 val dependencyOverrideSettings = Seq(
@@ -110,6 +112,8 @@ lazy val recipeRuntime = project.in(file("runtime"))
         akkaPersistenceQuery,
         akkaClusterSharding,
         akkaInmemoryJournal,
+        // TODO remove this dependency when done with tests
+        "com.github.TanUkkii007" %% "akka-cluster-custom-downing" % "0.0.12",
         akkaSlf4j,
         akkaStream,
         ficusConfig,

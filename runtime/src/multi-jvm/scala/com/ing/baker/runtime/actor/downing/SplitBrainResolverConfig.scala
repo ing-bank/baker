@@ -2,7 +2,7 @@ package com.ing.baker.runtime.actor.downing
 
 import akka.cluster.MultiNodeClusterSpec
 import akka.remote.testkit.MultiNodeConfig
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 
 final case class SplitBrainResolverConfig() extends MultiNodeConfig {
 
@@ -12,25 +12,39 @@ final case class SplitBrainResolverConfig() extends MultiNodeConfig {
   val nodeD = role("nodeD")
   val nodeE = role("nodeE")
 
-  commonConfig(ConfigFactory.parseString(
+  val bakerSplitBrainResolverConfig: Config = ConfigFactory.parseString(
     """
       |akka.cluster.downing-provider-class = com.ing.baker.runtime.actor.downing.SplitBrainResolver
       |baker.cluster.split-brain-resolver {
       |  down-removal-margin = 10 seconds
       |}
+    """.stripMargin
+  )
+
+  val tanukkiSplitBrainResolverConfig: Config = ConfigFactory.parseString(
+    """
+      |akka.cluster.downing-provider-class = "tanukki.akka.cluster.autodown.MajorityLeaderAutoDowning"
+      |custom-downing {
+      |  stable-after = 10s
+      |  majority-leader-auto-downing {
+      |    majority-member-role = ""
+      |    down-if-in-minority = true
+      |    shutdown-actor-system-on-resolution = true
+      |  }
+      |}
+    """.stripMargin
+  )
+
+  commonConfig(ConfigFactory.parseString(
+    """
       |akka.cluster.metrics.enabled=off
       |akka.actor.warn-about-java-serializer-usage = off
       |akka.remote.log-remote-lifecycle-events = off
       |akka.loglevel = INFO
     """.stripMargin)
+    .withFallback(bakerSplitBrainResolverConfig)
+//    .withFallback(tanukkiSplitBrainResolverConfig)
     .withFallback(MultiNodeClusterSpec.clusterConfig(true))
   )
-
-//  nodeConfig(nodeA, nodeB, nodeC, nodeD, nodeE)(ConfigFactory.parseString(
-//    """
-//      |akka.cluster {
-//      |  roles = [role]
-//      |}
-//    """.stripMargin))
 
 }
