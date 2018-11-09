@@ -38,6 +38,9 @@ object RecipeVisualizer {
       }
   }
 
+  /**
+    * Returns the label for a node.
+    */
   private def nodeLabelFn: Either[Place, Transition] ⇒ String = {
     case Left(Place(label, EmptyEventIngredientPlace)) ⇒ s"empty:${label}"
     case Left(place) ⇒ place.label
@@ -45,6 +48,9 @@ object RecipeVisualizer {
     case Right(transition) => transition.label
   }
 
+  /**
+    * Returns the style attributes for a node.
+    */
   private def nodeDotAttrFn(style: RecipeVisualStyle): (RecipePetriNetGraph#NodeT, Set[String], Set[String]) => List[DotAttr] =
     (node: RecipePetriNetGraph#NodeT, eventNames: Set[String], ingredientNames: Set[String]) ⇒
       node.value match {
@@ -84,9 +90,10 @@ object RecipeVisualizer {
 
     // specifies which places to compact (remove)
     val placesToCompact = (node: RecipePetriNetGraph#NodeT) => node.value match {
-      case Left(Place(_, IngredientPlace))           => true
-      case Left(Place(_, EmptyEventIngredientPlace)) => true
-      case Left(Place(_, EventOrPreconditionPlace))  => true
+      case Left(Place(_, IngredientPlace))           => false
+      case Left(Place(_, EmptyEventIngredientPlace)) => false
+      case Left(Place(_, EventOrPreconditionPlace))  => false
+      case Left(Place(_, _))  => true
       case _ => false
     }
 
