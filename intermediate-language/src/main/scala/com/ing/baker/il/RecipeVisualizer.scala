@@ -1,5 +1,6 @@
 package com.ing.baker.il
 
+import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.api._
 import com.typesafe.config.{Config, ConfigFactory}
@@ -38,7 +39,7 @@ object RecipeVisualizer {
   }
 
   private def nodeLabelFn: Either[Place, Transition] ⇒ String = {
-    case Left(place) if place.isEmptyEventIngredient ⇒ s"empty:${place.label}"
+    case Left(Place(label, EmptyEventIngredientPlace)) ⇒ s"empty:${label}"
     case Left(place) ⇒ place.label
     case Right(transition: MultiFacilitatorTransition) ⇒ s"multi:${transition.label}"
     case Right(transition) => transition.label
@@ -47,11 +48,11 @@ object RecipeVisualizer {
   private def nodeDotAttrFn(style: RecipeVisualStyle): (RecipePetriNetGraph#NodeT, Set[String], Set[String]) => List[DotAttr] =
     (node: RecipePetriNetGraph#NodeT, eventNames: Set[String], ingredientNames: Set[String]) ⇒
       node.value match {
-        case Left(place: Place) if place.isInteractionEventOutput => style.choiceAttributes
-        case Left(place: Place) if place.isOrEventPrecondition => style.preconditionORAttributes
-        case Left(place: Place) if place.isEmptyEventIngredient ⇒ style.emptyEventAttributes
+        case Left(Place(_, InteractionEventOutputPlace)) => style.choiceAttributes
+        case Left(Place(_, EventOrPreconditionPlace)) => style.preconditionORAttributes
+        case Left(Place(_, EmptyEventIngredientPlace)) ⇒ style.emptyEventAttributes
         case Left(_: Place) if node.incomingTransitions.isEmpty => style.missingIngredientAttributes
-        case Left(place: Place) if ingredientNames contains place.label ⇒ style.providedIngredientAttributes
+        case Left(Place(label, _)) if ingredientNames contains label ⇒ style.providedIngredientAttributes
         case Left(_) ⇒ style.ingredientAttributes
         case Right(t: InteractionTransition) if eventNames.intersect(t.eventsToFire.map(_.name).toSet).nonEmpty => style.firedInteractionAttributes
         case Right(_: InteractionTransition) ⇒ style.interactionAttributes
@@ -83,7 +84,9 @@ object RecipeVisualizer {
 
     // specifies which places to compact (remove)
     val placesToCompact = (node: RecipePetriNetGraph#NodeT) => node.value match {
-      case Left(place: Place) => !(place.isIngredient | place.isEmptyEventIngredient | place.isOrEventPrecondition)
+      case Left(Place(_, IngredientPlace))           => true
+      case Left(Place(_, EmptyEventIngredientPlace)) => true
+      case Left(Place(_, EventOrPreconditionPlace))  => true
       case _ => false
     }
 
