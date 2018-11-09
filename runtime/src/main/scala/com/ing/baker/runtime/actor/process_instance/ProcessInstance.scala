@@ -62,18 +62,18 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
   override def receiveCommand: Receive = uninitialized
 
-  implicit def marshallMarking(marking: Marking[Any]): Marking[Id] = marking.asInstanceOf[Marking[P]].marshall
+  private implicit def marshallMarking(marking: Marking[Any]): Marking[Id] = marking.asInstanceOf[Marking[P]].marshall
 
-  implicit def fromExecutionInstance(instance: com.ing.baker.petrinet.runtime.Instance[P, T, S]): InstanceState =
+  private implicit def fromExecutionInstance(instance: com.ing.baker.petrinet.runtime.Instance[P, T, S]): InstanceState =
     InstanceState(instance.sequenceNr, instance.marking.marshall, instance.state, instance.jobs.mapValues(fromExecutionJob(_)).map(identity))
 
-  implicit def fromExecutionJob(job: com.ing.baker.petrinet.runtime.Job[P, T, S]): JobState =
+  private implicit def fromExecutionJob(job: com.ing.baker.petrinet.runtime.Job[P, T, S]): JobState =
     JobState(job.id, job.transition.getId, job.consume.marshall, job.input, job.failure.map(fromExecutionExceptionState))
 
-  implicit def fromExecutionExceptionState(exceptionState: com.ing.baker.petrinet.runtime.ExceptionState): ExceptionState =
+  private implicit def fromExecutionExceptionState(exceptionState: com.ing.baker.petrinet.runtime.ExceptionState): ExceptionState =
     ExceptionState(exceptionState.failureCount, exceptionState.failureReason, fromExecutionExceptionStrategy(exceptionState.failureStrategy))
 
-  implicit def fromExecutionExceptionStrategy(strategy: com.ing.baker.petrinet.runtime.ExceptionStrategy): ExceptionStrategy = strategy match {
+  private implicit def fromExecutionExceptionStrategy(strategy: com.ing.baker.petrinet.runtime.ExceptionStrategy): ExceptionStrategy = strategy match {
     case com.ing.baker.petrinet.runtime.ExceptionStrategy.Fatal => ExceptionStrategy.Fatal
     case com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition => ExceptionStrategy.BlockTransition
     case com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay(delay) => ExceptionStrategy.RetryWithDelay(delay)

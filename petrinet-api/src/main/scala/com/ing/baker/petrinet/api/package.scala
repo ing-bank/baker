@@ -26,6 +26,13 @@ package object api extends MultiSetOps with MarkingOps {
     */
   type Marking[P] = Map[P, MultiSet[Any]]
 
+  /**
+    * Type alias for a petri net graph.
+    *
+    * See also: scala-graph (https://github.com/scala-graph/scala-graph
+    */
+  type PetriNetGraph[P, T] = Graph[Either[P, T], WLDiEdge]
+
   implicit class IdentifiableOps[T : Identifiable](e: T) {
 
     def getId: Long = implicitly[Identifiable[T]].apply(e)
@@ -47,8 +54,6 @@ package object api extends MultiSetOps with MarkingOps {
   }
 
   def translateKeys[K1, K2, V](map: Map[K1, V], fn: K1 => K2): Map[K2, V] = map.map { case (key, value) ⇒ fn(key) -> value }
-
-  type PetriNetGraph[P, T] = Graph[Either[P, T], WLDiEdge]
 
   implicit class PetriNetGraphNodeOps[P, T](val node: PetriNetGraph[P, T]#NodeT) {
 

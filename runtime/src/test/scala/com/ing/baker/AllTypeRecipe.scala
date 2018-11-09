@@ -95,7 +95,7 @@ object AllTypeRecipe {
 
   val interactionOne = Interaction(
     name = "interactionOne",
-    inputIngredients = bigPayloadIngredient,
+    inputIngredients = Seq(bigPayloadIngredient),
     output = Seq(javaDataEvent)
   )
 
@@ -113,7 +113,7 @@ object AllTypeRecipe {
 
   val interactionFour = Interaction(
     name = "interactionFour",
-    inputIngredients = javaIntegerIngredient,
+    inputIngredients = Seq(javaIntegerIngredient),
     output = Seq(jodaEvent)
   )
 
@@ -125,19 +125,19 @@ object AllTypeRecipe {
 
   val interactionSix = Interaction(
     name = "interactionSix",
-    inputIngredients = jodaLocalDateIngredient,
+    inputIngredients = Seq(jodaLocalDateIngredient),
     output = Seq()
   )
 
   val interactionSeven = Interaction(
     name = "interactionSeven",
-    inputIngredients = javaIntegerIngredient,
+    inputIngredients = Seq(javaIntegerIngredient),
     output = Seq(scalaDataEvent)
   )
 
   val sieveInteraction = Interaction(
     name = "sieveInteraction",
-    inputIngredients = javaIntegerIngredient,
+    inputIngredients = Seq(javaIntegerIngredient),
     output = Seq(scalaDataEvent)
   )
 

@@ -38,7 +38,7 @@ object TestRecipe {
   val missingScalaOptional2: Ingredient[Option[Int]] = Ingredient[Option[Int]]("missingScalaOptional2")
 
   //Events as used in the recipe & objects used in runtime
-  val initialEvent = Event("InitialEvent", initialIngredient, None)
+  val initialEvent = Event("InitialEvent", Seq(initialIngredient), maxFiringLimit = None)
 
   case class InitialEvent(initialIngredient: String)
 

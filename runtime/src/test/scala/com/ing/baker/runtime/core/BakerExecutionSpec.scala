@@ -1034,7 +1034,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
     "be able to use the same ingredient multiple times as input parameter for an interaction" in {
       val recipe: Recipe =
-        "sameIngredientMultipleTime"
+        Recipe("sameIngredientMultipleTime")
           .withInteractions(
             interactionOne,
             interactionThree
@@ -1057,7 +1057,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val receivePeriod: FiniteDuration = 100 milliseconds
 
       val recipe: Recipe =
-        "eventReceiveExpirationRecipe"
+        Recipe("eventReceiveExpirationRecipe")
           .withSensoryEvents(initialEvent)
           .withInteractions(interactionOne)
           .withEventReceivePeriod(receivePeriod)
@@ -1078,7 +1078,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val receivePeriod: FiniteDuration = 10 seconds
 
       val recipe: Recipe =
-        "eventReceiveInTimeRecipe"
+        Recipe("eventReceiveInTimeRecipe")
           .withSensoryEvents(initialEvent)
           .withInteractions(interactionOne)
           .withEventReceivePeriod(receivePeriod)
@@ -1121,7 +1121,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val retentionPeriod = 2 seconds
 
       val recipe: Recipe =
-        "RetentionPeriodRecipe"
+        Recipe("RetentionPeriodRecipe")
           .withSensoryEvents(initialEvent)
           .withInteractions(interactionOne)
           .withRetentionPeriod(retentionPeriod)
