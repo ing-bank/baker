@@ -20,3 +20,5 @@ native/
 .ensime
 /**/*.pdf
 /**/.DS_Store
+persisted-messages/
+

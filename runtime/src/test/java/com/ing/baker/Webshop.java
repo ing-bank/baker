@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 
 public class Webshop {
 
-    class CustomerInfo {
+    public static class CustomerInfo {
         public final String name;
         public final String address;
         public final String email;
@@ -38,14 +38,14 @@ public class Webshop {
         }
     }
 
-    class OrderPlaced {
+    public static class OrderPlaced {
         public final String order;
         public OrderPlaced(String order) {
             this.order = order;
         }
     }
 
-    class CustomerInfoReceived {
+    public static class CustomerInfoReceived {
         public final CustomerInfo customerInfo;
 
         public CustomerInfoReceived(CustomerInfo customerInfo) {
