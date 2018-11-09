@@ -12,14 +12,14 @@ class PetriNet[P, T](val innerGraph: PetriNetGraph[P, T]) {
     *
     * @return The set of places
     */
-  lazy val places: Set[P] = innerGraph.nodes.collect { case n if n.isPlace ⇒ n.asPlace }.toSet
+  val places: Set[P] = innerGraph.nodes.collect { case n if n.isPlace ⇒ n.asPlace }.toSet
 
   /**
     * The set of transitions of the petri net
     *
     * @return The set of transitions.
     */
-  lazy val transitions: Set[T] = innerGraph.nodes.collect { case n if n.isTransition ⇒ n.asTransition }.toSet
+  val transitions: Set[T] = innerGraph.nodes.collect { case n if n.isTransition ⇒ n.asTransition }.toSet
 
   /**
     * The out-adjecent places of a transition.
@@ -99,7 +99,7 @@ class PetriNet[P, T](val innerGraph: PetriNetGraph[P, T]) {
   /**
     * We override the hashCode function since the scalax.collections.Graph hashCode is non deterministic
     */
-  override lazy val hashCode = {
+  override val hashCode = {
 
     innerGraph.edges.map(e => (e.source.value, e.target.value, e.weight, e.label)).toSet.hashCode
   }
