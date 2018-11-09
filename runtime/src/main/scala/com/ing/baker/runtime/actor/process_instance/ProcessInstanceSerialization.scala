@@ -107,7 +107,7 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](ser
   private def deserializeConsumedMarking(instance: Instance[P, T, S], persisted: Seq[protobuf.ConsumedToken]): Marking[Id] = {
     persisted.foldLeft(Marking.empty[Long]) {
       case (accumulated, protobuf.ConsumedToken(Some(placeId), Some(tokenId), Some(count))) ⇒
-        val place = instance.process.places.getById(placeId, "place in the petrinet")
+        val place = instance.petriNet.places.getById(placeId, "place in the petrinet")
         val value = instance.marking(place).keySet.find(e ⇒ tokenIdentifier(e) == tokenId).get
         accumulated.add(placeId, value, count)
       case _ ⇒ throw new IllegalStateException("Missing data in persisted ConsumedToken")

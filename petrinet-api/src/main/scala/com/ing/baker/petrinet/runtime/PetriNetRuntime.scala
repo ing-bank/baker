@@ -45,7 +45,7 @@ trait PetriNetRuntime[P, T, S, E] {
     *
     * By default, cold transitions (without in adjacent places) are not auto fireable.
     */
-  def isAutoFireable(instance: Instance[P, T, S], t: T): Boolean = !instance.process.incomingPlaces(t).isEmpty
+  def isAutoFireable(instance: Instance[P, T, S], t: T): Boolean = !instance.petriNet.incomingPlaces(t).isEmpty
 
   /**
     * Defines which tokens from a marking for a particular place are consumable by a transition.
@@ -153,7 +153,7 @@ trait PetriNetRuntime[P, T, S, E] {
         case Some(reason) ⇒
           (instance, Left(reason))
         case None ⇒
-          enabledParameters(instance.process)(instance.availableMarking).get(transition) match {
+          enabledParameters(instance.petriNet)(instance.availableMarking).get(transition) match {
             case None ⇒
               (instance, Left(s"Not enough consumable tokens"))
             case Some(params) ⇒
@@ -168,7 +168,7 @@ trait PetriNetRuntime[P, T, S, E] {
     * Finds the (optional) first transition that is enabled & automatically fireable
     */
   def firstEnabledJob: State[Instance[P, T, S], Option[Job[P, T, S]]] = State { instance ⇒
-    enabledParameters(instance.process)(instance.availableMarking).find {
+    enabledParameters(instance.petriNet)(instance.availableMarking).find {
       case (t, markings) ⇒ !instance.isBlockedReason(t).isDefined && isAutoFireable(instance, t)
     }.map {
       case (t, markings) ⇒

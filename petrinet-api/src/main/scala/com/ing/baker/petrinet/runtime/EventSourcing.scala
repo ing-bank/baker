@@ -48,15 +48,15 @@ object EventSourcing {
   def apply[P : Identifiable, T : Identifiable, S, E](sourceFn: T ⇒ (S ⇒ E ⇒ S)): Instance[P, T, S] ⇒ Event ⇒ Instance[P, T, S] = instance ⇒ {
     case InitializedEvent(initial, initialState) ⇒
 
-      val initialMarking: Marking[P] = initial.unmarshall(instance.process.places)
+      val initialMarking: Marking[P] = initial.unmarshall(instance.petriNet.places)
 
-      Instance[P, T, S](instance.process, 1, initialMarking, initialState.asInstanceOf[S], Map.empty, Set.empty)
+      Instance[P, T, S](instance.petriNet, 1, initialMarking, initialState.asInstanceOf[S], Map.empty, Set.empty)
     case e: TransitionFiredEvent ⇒
 
-      val transition = instance.process.transitions.getById(e.transitionId)
+      val transition = instance.petriNet.transitions.getById(e.transitionId)
       val newState = sourceFn(transition)(instance.state)(e.output.asInstanceOf[E])
-      val consumed: Marking[P] = e.consumed.unmarshall(instance.process.places)
-      val produced: Marking[P] = e.produced.unmarshall(instance.process.places)
+      val consumed: Marking[P] = e.consumed.unmarshall(instance.petriNet.places)
+      val produced: Marking[P] = e.produced.unmarshall(instance.petriNet.places)
 
       instance.copy[P, T, S](
         sequenceNr = instance.sequenceNr + 1,
@@ -66,9 +66,9 @@ object EventSourcing {
         jobs = instance.jobs - e.jobId
       )
     case e: TransitionFailedEvent ⇒
-      val transition = instance.process.transitions.getById(e.transitionId)
+      val transition = instance.petriNet.transitions.getById(e.transitionId)
 
-      val consumed: Marking[P] = e.consume.unmarshall(instance.process.places)
+      val consumed: Marking[P] = e.consume.unmarshall(instance.petriNet.places)
 
       val job = instance.jobs.getOrElse(e.jobId, {
         Job[P, T, S](e.jobId, e.correlationId, instance.state, transition, consumed, e.input, None)

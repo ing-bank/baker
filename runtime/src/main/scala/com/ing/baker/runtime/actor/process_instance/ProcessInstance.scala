@@ -137,7 +137,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
     case event @ TransitionFiredEvent(jobId, transitionId, correlationId, timeStarted, timeCompleted, consumed, produced, output) ⇒
 
-      val transition = instance.process.transitions.getById(transitionId)
+      val transition = instance.petriNet.transitions.getById(transitionId)
 
       log.transitionFired(processId, transition.toString, jobId, timeStarted, timeCompleted)
 
@@ -154,7 +154,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
     case event @ TransitionFailedEvent(jobId, transitionId, correlationId, timeStarted, timeFailed, consume, input, reason, strategy) ⇒
 
-      val transition = instance.process.transitions.getById(transitionId)
+      val transition = instance.petriNet.transitions.getById(transitionId)
 
       log.transitionFailed(processId, transition.toString, jobId, timeStarted, timeFailed, reason)
 

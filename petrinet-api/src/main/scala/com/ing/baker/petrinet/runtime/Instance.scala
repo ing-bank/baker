@@ -12,7 +12,7 @@ object Instance {
  * Keeps the state of a petri net instance.
  */
 case class Instance[P, T, S](
-    process: PetriNet[P, T],
+    petriNet: PetriNet[P, T],
     sequenceNr: Long,
     marking: Marking[P],
     state: S,
