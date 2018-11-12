@@ -23,7 +23,6 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
 
   var allMembers: SortedSet[Member] = SortedSet.empty(Member.ordering)
   var unreachableNodes: Set[UniqueAddress] = Set.empty[UniqueAddress]
-//  var allNodes: SortedSet[UniqueAddress] = allMembers.map(m => m.uniqueAddress)
 
   private def unreachableMembers(): Set[Member] = allMembers.filter(m => unreachableNodes contains m.uniqueAddress)
   private def reachableNodes(): Set[UniqueAddress] = allMembers.filterNot(m => unreachableNodes contains m.uniqueAddress).map(m => m.uniqueAddress)
@@ -140,15 +139,22 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
    */
   private def sbrDecision(): Unit = {
 
+
     if (isMember && isLeader && unreachableNodes.nonEmpty) {
+      log.info(s"I am leader: Unreachables: $unreachableNodes")
+
       val nodesToDown = this.nodesToDown()
       log.info("{} downing these nodes {}", cluster.selfAddress, nodesToDown)
       if (nodesToDown contains cluster.selfUniqueAddress) {
         // leader going down
-        cluster.leave(cluster.selfAddress)
+        cluster.down(cluster.selfAddress)
+        log.info(s"Self node left cluster: ${cluster.selfAddress}")
       } else {
-        nodesToDown.foreach(a => cluster.leave(a.address))
+        nodesToDown.foreach(a => cluster.down(a.address))
+        log.info(s"Nodes $nodesToDown left cluster")
       }
+    } else {
+      log.info(s"Not leader: Unreachables: $unreachableNodes")
     }
   }
 

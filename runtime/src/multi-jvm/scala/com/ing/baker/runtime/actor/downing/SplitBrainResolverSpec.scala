@@ -54,7 +54,7 @@ abstract class SplitBrainResolverSpec(splitBrainResolverConfig: SplitBrainResolv
       enterBarrier("await-completion-1")
     }
 
-    "be able to DOWN a 'middle' node that is UNREACHABLE" taggedAs LongRunningTest ignore {
+    "be able to DOWN a 'middle' node that is UNREACHABLE" taggedAs LongRunningTest in {
       val secondAddress = address(nodeB)
 
       enterBarrier("before-exit-second-node")
@@ -84,7 +84,7 @@ abstract class SplitBrainResolverSpec(splitBrainResolverConfig: SplitBrainResolv
       enterBarrier("await-completion-2")
     }
 
-    "DOWN itself when in minority" taggedAs LongRunningTest ignore {
+    "DOWN itself when in minority" taggedAs LongRunningTest in {
       val thirdAddress = address(nodeC)
       val fourthAddress = address(nodeD)
 
