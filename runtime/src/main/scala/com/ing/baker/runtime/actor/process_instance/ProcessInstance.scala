@@ -39,6 +39,14 @@ object ProcessInstance {
     else
       None
   }
+
+  def props[P : Identifiable, T : Identifiable, S, E](processType: String, petriNet: PetriNet[P, T], petriNetRuntime: PetriNetRuntime[P, T, S, E], settings: Settings): Props =
+    Props(new ProcessInstance[P, T, S, E](
+      processType,
+      petriNet,
+      settings,
+      petriNetRuntime)
+    )
 }
 
 /**
