@@ -1,6 +1,5 @@
 package com.ing.baker.runtime.core
 
-import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.types.{Type, Value}
 
 /**
@@ -26,5 +25,5 @@ trait InteractionImplementation {
     * @param input
     * @return
     */
-  def execute(interaction: InteractionTransition, input: Seq[Value]): Option[RuntimeEvent]
+  def execute(input: Seq[Value]): Option[RuntimeEvent]
 }

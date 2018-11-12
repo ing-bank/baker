@@ -33,11 +33,11 @@ case class RemoteInteractionClient(override val name: String,
     * @param input
     * @return
     */
-  override def execute(interaction: InteractionTransition, input: Seq[Value]): Option[RuntimeEvent] = {
+  override def execute(input: Seq[Value]): Option[RuntimeEvent] = {
 
     log.info(s"Calling remote execution of interaction: $name on $uri")
 
-    val request = ExecuteInteractionHTTPRequest(interaction, input)
+    val request = ExecuteInteractionHTTPRequest(input)
 
     val httpRequest = HttpRequest(
         uri = s"$uri/execute",
