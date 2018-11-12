@@ -43,89 +43,13 @@ object MethodInteractionImplementation {
       case _          => unmockedClass.getMethods.find(_.getName == "apply").get
     }
   }
-
-  /**
-    * This transforms the 'apply' method of the given object into an InteractionImplementation
-    *
-    * @param impl The interaction implementation object
-    * @return An InteractionImplementation instance.
-    */
-  def anyRefToInteractionImplementations(impl: AnyRef): Seq[InteractionImplementation] = {
-
-    val applyMethod: Method = getApplyMethod(impl.getClass)
-
-    val interactionNames = Set(getInteractionName(impl, getApplyMethod(impl.getClass)))
-
-    interactionNames.map { name => new MethodInteractionImplementation(name, impl, applyMethod, Set.empty)}.toSeq
-  }
-
-  def toImplementationMap(implementations: java.lang.Iterable[AnyRef]): Map[String, InteractionImplementation] =
-    toImplementationMap(implementations.asScala)
-
-  def toImplementationMap(implementations: Iterable[AnyRef]): Map[String, InteractionImplementation] =
-    implementations.flatMap(anyRefToInteractionImplementations _).map {
-      i => i.name -> i
-    }.toMap
-
-  def createRuntimeEvent(interaction: InteractionTransition, output: Any): Option[RuntimeEvent] = {
-
-    // when the interaction does not fire an event, Void or Unit is a valid output type
-    if (interaction.eventsToFire.isEmpty && output == null)
-      None
-    else {
-      val runtimeEvent: RuntimeEvent = Baker.extractEvent(output)
-
-      val nullIngredientNames = runtimeEvent.providedIngredients.collect {
-        case (name, null) => name
-      }
-
-      if(nullIngredientNames.nonEmpty) {
-        val msg: String = s"Interaction ${interaction.interactionName} returned null value for ingredients: ${nullIngredientNames.mkString(",")}"
-        log.error(msg)
-        throw new FatalInteractionException(msg)
-      }
-
-      interaction.originalEvents.find(_.name == runtimeEvent.name) match {
-        case None =>
-          throw new FatalInteractionException(s"No event with name '${runtimeEvent.name}' is known by this interaction")
-        case Some(eventType) =>
-          val errors = runtimeEvent.validateEvent(eventType)
-
-          if (errors.nonEmpty)
-            throw new FatalInteractionException(s"Event '${runtimeEvent.name}' does not match the expected type: ${errors.mkString}")
-      }
-
-      Some(runtimeEvent)
-    }
-  }
-
-  def eventForProvidedIngredient[I](interactionName: String, runtimeEventName: String, providedIngredient: Any, ingredientToComplyTo: IngredientDescriptor): RuntimeEvent = {
-
-    if (providedIngredient == null) {
-      val msg: String = s"null value provided for ingredient '${ingredientToComplyTo.name}' for interaction '$interactionName'"
-      log.error(msg)
-      throw new FatalInteractionException(msg)
-    }
-
-    val ingredientValue = Converters.toValue(providedIngredient)
-
-    if (ingredientValue.isInstanceOf(ingredientToComplyTo.`type`))
-      RuntimeEvent(runtimeEventName , Seq((ingredientToComplyTo.name, ingredientValue)))
-    else {
-      throw new FatalInteractionException(
-        s"""
-           |Ingredient: ${ingredientToComplyTo.name} provided by an interaction but does not comply to the expected type
-           |Expected  : ${ingredientToComplyTo.`type`}
-           |Provided  : ${providedIngredient.getClass}
-         """.stripMargin)
-    }
-  }
 }
 
-case class MethodInteractionImplementation(override val name: String,
-                                           implementation: AnyRef,
-                                           method: Method,
-                                           returnType: Set[EventDescriptor]) extends InteractionImplementation {
+case class MethodInteractionImplementation(implementation: AnyRef) extends InteractionImplementation {
+
+  val method = getApplyMethod(implementation.getClass)
+
+  override val name = getInteractionName(implementation, method)
 
   val log: Logger = LoggerFactory.getLogger(MethodInteractionImplementation.getClass)
 
@@ -138,7 +62,7 @@ case class MethodInteractionImplementation(override val name: String,
     }
   }.toSeq
 
-  override def execute(interaction: InteractionTransition, input: Seq[Value]): Option[RuntimeEvent] =  {
+  override def execute(input: Seq[Value]): Option[RuntimeEvent] =  {
 
     val invocationId = UUID.randomUUID().toString
 
@@ -154,6 +78,13 @@ case class MethodInteractionImplementation(override val name: String,
     if (log.isTraceEnabled)
       log.trace(s"[$invocationId] result: $output")
 
-    createRuntimeEvent(interaction, output)
+    // when the interaction does not fire an event, Void or Unit is a valid output type
+    if (output == null)
+      None
+    else {
+      val runtimeEvent: RuntimeEvent = Baker.extractEvent(output)
+
+      Some(runtimeEvent)
+    }
   }
 }

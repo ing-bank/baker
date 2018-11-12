@@ -22,7 +22,7 @@ class LocalBakerActorProvider(config: Config, configuredEncryption: Encryption) 
   override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(
     implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {
     val indexActorRef = actorSystem.actorOf(
-      ProcessIndex.props(actorIdleTimeout, configuredEncryption, interactionManager, recipeManager), "baker-process-index")
+      ProcessIndex.props(actorIdleTimeout, configuredEncryption, interactionManager, recipeManager))
 
     actorSystem.scheduler.schedule(retentionCheckInterval, retentionCheckInterval, indexActorRef, CheckForProcessesToBeDeleted)(actorSystem.dispatcher)
 
@@ -30,7 +30,7 @@ class LocalBakerActorProvider(config: Config, configuredEncryption: Encryption) 
   }
 
   override def createRecipeManagerActor()(implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {
-    actorSystem.actorOf(RecipeManager.props(), "baker-recipe-manager")
+    actorSystem.actorOf(RecipeManager.props())
   }
 
   override def getIndex(actorRef: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[ActorMetadata] = {

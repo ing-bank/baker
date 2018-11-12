@@ -37,6 +37,28 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
     }
   }
 
+  def validateEvent(interaction: InteractionTransition, event: RuntimeEvent) = {
+    val nullIngredientNames = event.providedIngredients.collect {
+      case (name, null) => name
+    }
+
+    if(nullIngredientNames.nonEmpty) {
+      val msg: String = s"Interaction ${interaction.interactionName} returned null value for ingredients: ${nullIngredientNames.mkString(",")}"
+      log.error(msg)
+      throw new FatalInteractionException(msg)
+    }
+
+    interaction.originalEvents.find(_.name == event.name) match {
+      case None =>
+        throw new FatalInteractionException(s"No event with name '${event.name}' is known by this interaction")
+      case Some(eventType) =>
+        val errors = event.validateEvent(eventType)
+
+        if (errors.nonEmpty)
+          throw new FatalInteractionException(s"Event '${event.name}' does not match the expected type: ${errors.mkString}")
+    }
+  }
+
   def interactionTransitionTask(interaction: InteractionTransition,
                                 outAdjacent: MultiSet[Place],
                                 processState: ProcessState): IO[(Marking[Place], RuntimeEvent)] = {
@@ -63,13 +85,20 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
           // publish the fact that we started the interaction
           eventStream.publish(InteractionStarted(timeStarted, recipe.name, recipe.recipeId, processState.processId, interaction.interactionName))
 
-          val interactionOutput = implementation.execute(interaction, input)
+          val interactionOutput = implementation.execute(input)
 
           val (outputEvent, output) = interactionOutput match {
             case None =>
+
+              if (!interaction.eventsToFire.isEmpty)
+                throw new FatalInteractionException("Interaction")
+
               (RuntimeEvent.create(interaction.interactionName, Seq.empty), null.asInstanceOf[RuntimeEvent])
 
             case Some(event) =>
+
+              validateEvent(interaction, event)
+
               // check if no null ingredients are provided
               val nullIngredients = event.providedIngredients.collect {
                 case (name, null) => s"null value provided for ingredient: $name"
