@@ -1,6 +1,8 @@
 package com.ing.baker.runtime.actor.downing
 
+import akka.actor.Address
 import akka.cluster.MultiNodeClusterSpec
+import akka.remote.testconductor.RoleName
 import akka.remote.testkit.{MultiNodeSpec, STMultiNodeSpec}
 import akka.remote.transport.ThrottlerTransportAdapter.Direction.Both
 import akka.testkit.{ImplicitSender, LongRunningTest}
@@ -102,36 +104,70 @@ abstract class SplitBrainResolverWithNetworkSplitSpec(splitBrainResolverConfig: 
       enterBarrier("await-completion-2")
     }
 
-    "DOWN itself when in minority" taggedAs LongRunningTest in {
-      val firstAddress = address(nodeA)
+    "DOWN itself (first node) when in minority" taggedAs LongRunningTest in {
+      val fourthAddress = address(nodeD)
 
-      enterBarrier("before-unreachable-first-node")
+      enterBarrier("before-unreachable-fourth-node")
       runOn(nodeA) {
-        // drop all messages from/to 'first' node
-        testConductor.blackhole(nodeA, nodeC, Both).await
+        // drop all messages from/to 'fourth' node
         testConductor.blackhole(nodeA, nodeD, Both).await
+        testConductor.blackhole(nodeC, nodeD, Both).await
+      }
 
-        enterBarrier("unreachable-first-node")
+      runOn(nodeA, nodeC) {
+        enterBarrier("unreachable-fourth-node")
 
+        awaitMembersUp(numberOfMembers = 2, canNotBePartOfMemberRing = Set(fourthAddress), 30 seconds)
+      }
+
+      runOn(nodeD) {
         awaitAssert(
           clusterView.isTerminated should be(true),
           20 seconds,
           1 second
         )
-      }
-
-      runOn(nodeC, nodeD) {
-        enterBarrier("unreachable-first-node")
-
-        awaitMembersUp(numberOfMembers = 2, canNotBePartOfMemberRing = Set(firstAddress), 30 seconds)
+        enterBarrier("unreachable-fourth-node")
       }
 
       runOn(nodeB, nodeE) {
-        enterBarrier("unreachable-first-node")
+        enterBarrier("unreachable-fourth-node")
       }
 
       enterBarrier("await-completion-3")
     }
 
+    "In equal split DOWN the .... side" taggedAs LongRunningTest in {
+      // At this point, only A and C are alive
+      val all: Seq[(Address, RoleName)] = Seq(nodeA, nodeC).map(n => (address(n), n))
+      val (_, oldestNode) = all.min
+      val (toDownAddress, toDownNode) = all.max
+
+      enterBarrier("before-equal-split")
+      runOn(nodeA) {
+        testConductor.blackhole(nodeA, nodeC, Both).await
+      }
+
+      runOn(oldestNode) {
+        enterBarrier("split-between-remaining-nodes")
+
+        // Test that A survives the split
+        awaitMembersUp(numberOfMembers = 1, canNotBePartOfMemberRing = Set(toDownAddress), 30 seconds)
+      }
+
+      runOn(toDownNode) {
+        awaitAssert(
+          clusterView.isTerminated should be(true),
+          20 seconds,
+          1 second
+        )
+        enterBarrier("split-between-remaining-nodes")
+      }
+
+      runOn(nodeB, nodeD, nodeE) {
+        enterBarrier("split-between-remaining-nodes")
+      }
+
+      enterBarrier("await-completion-4")
+    }
   }
 }

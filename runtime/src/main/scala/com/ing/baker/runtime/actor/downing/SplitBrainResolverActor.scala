@@ -27,7 +27,7 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
   private def unreachableMembers(): Set[Member] = allMembers.filter(m => unreachableNodes contains m.uniqueAddress)
   private def reachableNodes(): Set[UniqueAddress] = allMembers.filterNot(m => unreachableNodes contains m.uniqueAddress).map(m => m.uniqueAddress)
   private def isMember: Boolean = allMembers.exists(_.uniqueAddress == cluster.selfUniqueAddress)
-  private def oldestNode: UniqueAddress = allMembers.head.uniqueAddress // first member is the oldest in this sorted set
+  private def nodeWithSmallestAddress: UniqueAddress = allMembers.head.uniqueAddress // first member is the oldest in this sorted set
 
   private def replaceMember(member: Member): Unit = {
     allMembers -= member
@@ -101,44 +101,6 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
 
   }
 
-  /*
-    macro SbrDecision() {
-      if (IsMember(self) /\ IsLeader(self) /\ Cardinality(unreachableNodes[self]) > 0) {
-        with (nodesToDown = NodesToDown(self)) {
-          debug[self] := <<"sbr decision. nodesToDown=", nodesToDown>>;
-
-          if (Contains(nodesToDown, self)) {
-            \* leader going down
-            members[self] := {};
-            unreachableNodes[self] := {};
-
-            \* mark this node as dead so it does not come back again
-            deadNodes := deadNodes \cup {self};
-
-            \* choose another node as oldest node if I am the oldest and going down.
-            if(oldestNode = self) {
-              oldestNode := ChooseOne(Nodes \ {self});
-            }
-          } else {
-            members[self] := members[self] \ nodesToDown;
-            unreachableNodes[self] := unreachableNodes[self] \ nodesToDown;
-          }
-        }
-      }
-    }
-
-    NodesToDown(n) ==
-      IF Cardinality(members[n]) = 0
-      THEN Nodes \* Down all known nodes since I am not a member and I do not know any members
-      ELSE IF Cardinality(unreachableNodes[n]) * 2 = Cardinality(members[n]) \* cannot decide minority or majority? equal size?
-           THEN IF Contains(unreachableNodes[n], oldestNode) \* Check if the oldest node is unreachable, and let the group with oldest member survives
-                THEN Reachables(n) \* down reachables
-                ELSE unreachableNodes[n] \* down unreachableNodes
-           ELSE IF Cardinality(unreachableNodes[n]) * 2 < Cardinality(members[n]) \* am I in majority?
-                THEN unreachableNodes[n] \* down unreachableNodes
-                ELSE Reachables(n) \* down reachables
-
-   */
   private def sbrDecision(): Unit = {
 
 
@@ -163,7 +125,7 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
   private def nodesToDown(): Set[UniqueAddress] = {
     val unreachableMemberSize = unreachableMembers().size
     if (unreachableMemberSize * 2 == allMembers.size) { // cannot decide minority or majority? equal size?
-      if (unreachableNodes contains oldestNode) {
+      if (unreachableNodes contains nodeWithSmallestAddress) {
         reachableNodes()
       } else {
         unreachableNodes
