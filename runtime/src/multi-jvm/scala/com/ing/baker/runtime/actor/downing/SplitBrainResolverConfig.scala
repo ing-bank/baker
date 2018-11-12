@@ -16,7 +16,7 @@ final case class SplitBrainResolverConfig(useFailureDetectorPuppet: Boolean) ext
     """
       |akka.cluster.downing-provider-class = com.ing.baker.runtime.actor.downing.SplitBrainResolver
       |baker.cluster.split-brain-resolver {
-      |  down-removal-margin = 10 seconds
+      |  down-removal-margin = 2 seconds
       |}
     """.stripMargin
   )

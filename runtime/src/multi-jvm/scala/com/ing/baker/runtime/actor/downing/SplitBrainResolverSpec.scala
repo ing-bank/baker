@@ -101,7 +101,7 @@ abstract class SplitBrainResolverSpec(splitBrainResolverConfig: SplitBrainResolv
 
         awaitAssert(
           clusterView.isTerminated should be(true),
-          10 seconds,
+          20 seconds,
           1 second
         )
       }
@@ -111,7 +111,7 @@ abstract class SplitBrainResolverSpec(splitBrainResolverConfig: SplitBrainResolv
 
         awaitAssert(
           clusterView.isTerminated should be(true),
-          10 seconds,
+          20 seconds,
           1 second
         )
       }
