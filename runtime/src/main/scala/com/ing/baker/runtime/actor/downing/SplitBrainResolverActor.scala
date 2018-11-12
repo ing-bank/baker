@@ -78,6 +78,8 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
     case LeaderChanged(newLeader) =>
       log.info("Leader changed to {}", newLeader)
       isLeader = newLeader contains cluster.selfAddress
+      // TODO test if this (acting immediately) doesn't break some corner case scenarios
+      if (isLeader) sbrDecision()
 
     // reachability events
     case UnreachableMember(member) =>

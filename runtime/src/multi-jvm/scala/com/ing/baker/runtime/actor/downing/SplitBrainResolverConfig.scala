@@ -35,6 +35,8 @@ final case class SplitBrainResolverConfig(useFailureDetectorPuppet: Boolean) ext
     """.stripMargin
   )
 
+  testTransport(on = true)
+
   commonConfig(ConfigFactory.parseString(
     """
       |akka.cluster.metrics.enabled=off
