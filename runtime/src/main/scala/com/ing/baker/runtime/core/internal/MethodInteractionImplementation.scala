@@ -1,41 +1,20 @@
 package com.ing.baker.runtime.core.internal
 
-import java.lang.reflect.Method
 import java.util.UUID
 
-import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.il.{EventDescriptor, IngredientDescriptor}
-import com.ing.baker.runtime.core._
-import com.ing.baker.runtime.core.internal.MethodInteractionImplementation._
-import com.ing.baker.runtime.core.{BakerException, RuntimeEvent}
+import com.ing.baker.runtime.core.{BakerException, RuntimeEvent, _}
 import com.ing.baker.types.{Converters, Type, Value}
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.LoggerFactory
 
-import scala.collection.JavaConverters._
 import scala.util.Try
 
-object MethodInteractionImplementation {
+case class MethodInteractionImplementation(implementation: AnyRef) extends InteractionImplementation {
 
   val log = LoggerFactory.getLogger(classOf[MethodInteractionImplementation])
 
-  def getInteractionName(impl: Any, method: Method): String = {
+  val method = {
 
-    Try {
-      method.getDeclaringClass.getDeclaredField("name")
-    }.toOption match {
-      case Some(field) if field.getType == classOf[String] =>
-        field.setAccessible(true)
-        field.get(impl).asInstanceOf[String]
-      case None =>
-        method.getDeclaringClass.getInterfaces.find {
-          clazz => Try { clazz.getMethod(method.getName, method.getParameterTypes.toSeq: _*) }.isSuccess
-        }.getOrElse(method.getDeclaringClass).getSimpleName
-    }
-  }
-
-  def getApplyMethod(clazz: Class[_]): Method = {
-
-    val unmockedClass = unmock(clazz)
+    val unmockedClass = unmock(implementation.getClass)
 
     unmockedClass.getMethods.count(_.getName == "apply") match {
       case 0          => throw new BakerException("Method does not have a apply function")
@@ -43,15 +22,21 @@ object MethodInteractionImplementation {
       case _          => unmockedClass.getMethods.find(_.getName == "apply").get
     }
   }
-}
 
-case class MethodInteractionImplementation(implementation: AnyRef) extends InteractionImplementation {
+  override val name = {
 
-  val method = getApplyMethod(implementation.getClass)
-
-  override val name = getInteractionName(implementation, method)
-
-  val log: Logger = LoggerFactory.getLogger(MethodInteractionImplementation.getClass)
+    Try {
+      method.getDeclaringClass.getDeclaredField("name")
+    }.toOption match {
+      case Some(field) if field.getType == classOf[String] =>
+        field.setAccessible(true)
+        field.get(implementation).asInstanceOf[String]
+      case None =>
+        method.getDeclaringClass.getInterfaces.find {
+          clazz => Try { clazz.getMethod(method.getName, method.getParameterTypes.toSeq: _*) }.isSuccess
+        }.getOrElse(method.getDeclaringClass).getSimpleName
+    }
+  }
 
   /**
     * The required input.

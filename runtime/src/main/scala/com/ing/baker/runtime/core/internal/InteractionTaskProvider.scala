@@ -91,7 +91,7 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
             case None =>
 
               if (!interaction.eventsToFire.isEmpty)
-                throw new FatalInteractionException("Interaction")
+                throw new FatalInteractionException(s"Interaction ${interaction.interactionName} did not provide an output")
 
               (RuntimeEvent.create(interaction.interactionName, Seq.empty), null.asInstanceOf[RuntimeEvent])
 
