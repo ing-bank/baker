@@ -21,5 +21,5 @@ case class Job[P, T, S](
     case _                                                ⇒ false
   }
 
-  def failureCount = failure.map(_.failureCount).getOrElse(0)
+  def failureCount: Int = failure.map(_.failureCount).getOrElse(0)
 }

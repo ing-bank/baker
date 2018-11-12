@@ -8,11 +8,10 @@ import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExten
 import akka.testkit.{TestDuration, TestKit, TestProbe}
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.recipe.CaseClassIngredient
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
-import com.ing.baker.recipe.scaladsl.{Recipe, _}
+import com.ing.baker.recipe.scaladsl.Recipe
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
@@ -236,37 +235,104 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
     }
 
-    "backwards compatibility in serialization of case class ingredients" ignore {
-      val tmpDir = System.getProperty("java.io.tmpdir")
-      val journalPath = tmpDir + "/journal"
-      val snapshotsPath = tmpDir + "/snapshots"
-      val processId = "test-process-5"
+    "backwards compatibility in serialization of case class ingredients" in {
 
-      val actorSystem = ActorSystem("backwardsCompatibilityOfEvents", levelDbConfig("backwardsCompatibilityOfEvents", 3004, 10 seconds, journalPath, snapshotsPath))
-      val recoveryRecipeName = "backwardsCompatibilityOfEvents"
+      import better.files._
+
+      /**
+        * This is the path where the original messages where persisted
+        *
+        * For the test they are copied to a temporary directory in /target
+        *
+        * !!! If you want to create a new test case the following flag to true
+        */
+      val createNewCase: Boolean = false
+
+      val journalPath = "runtime/src/test/resources/persisted-messages"
+      val journalDir = File(journalPath)
+
+      val testPath = if (createNewCase) journalPath else "runtime/target/backwardsCompatibilityOfEvents"
+      val testDir = File(testPath).createDirectoryIfNotExists()
+
+      if (!createNewCase) {
+        testDir.delete()
+        testDir.createDirectory()
+        journalDir./("journal").copyToDirectory(testDir)
+      }
+
+      val config = levelDbConfig(
+        "backwardsCompatibilityOfEvents",
+        3004,
+        10 seconds,
+        s"$testPath/journal",
+        s"$testPath/snapshots")
+
+      val actorSystem = ActorSystem("backwardsCompatibilityOfEvents", config)
 
       try {
-        val recipe =
-          Recipe(recoveryRecipeName)
-            .withInteraction(caseClassIngredientInteraction)
-            .withInteraction(caseClassIngredientInteraction2)
-            .withSensoryEvent(initialEvent)
 
-        val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
+        import com.ing.baker.Webshop._
 
-        // Bake a new recipe, fire initial event. 2nd time baking with the same processId fails, so comment this part out after creating the process
-        baker.bake(recipeId, processId)
+        val recipe = Webshop.webshopRecipe
 
-        when(testCaseClassIngredientInteractionMock.apply(anyString())).thenReturn(CaseClassIngredientInteractionSuccessful(caseClassIngredientValue))
-        when(testCaseClassIngredientInteraction2Mock.apply(any[CaseClassIngredient]())).thenReturn(EmptyEvent())
+        // test data
+        val customerInfo = new Webshop.CustomerInfo("klaas", "straat", "email")
+        val processId = "backwards-compatible-process"
+        val order = "123"
+        val trackingId = "trackingId"
+        val goods = "some goods"
 
-        verify(testCaseClassIngredientInteractionMock).apply(initialIngredientValue)
-        verify(testCaseClassIngredientInteraction2Mock).apply(caseClassIngredientValue)
-        baker.getIngredients(processId) shouldBe Map("initialIngredient" -> initialIngredientValue, "caseClassIngredient" -> caseClassIngredientValue)
-        // Process creation finished
+        // mocks
+        val shipGoodsMock: ShipGoods = mock[Webshop.ShipGoods]
+        val sendInvoiceMock: SendInvoice = mock[Webshop.SendInvoice]
+        val manufactureGoodsMock: ManufactureGoods = mock[Webshop.ManufactureGoods]
+        val validateOrderMock: ValidateOrder = mock[Webshop.ValidateOrder]
 
-        // check if events/ingredients are ok
+        val implementations = Seq(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock)
+
+        val (baker, recipeId) = setupBakerWithRecipe(recipe, implementations)(actorSystem)
+
+        def createProcess(): Unit = {
+
+          baker.bake(recipeId, processId)
+
+          // prepare mocks
+          when(shipGoodsMock.apply(anyString(), any[CustomerInfo]())).thenReturn(new ShipGoods.GoodsShipped(trackingId))
+          when(sendInvoiceMock.apply(any[CustomerInfo]())).thenReturn(new SendInvoice.InvoiceWasSent())
+          when(manufactureGoodsMock.apply(anyString())).thenReturn(new ManufactureGoods.GoodsManufactured(goods))
+          when(validateOrderMock.apply(anyString(), anyString())).thenReturn(new ValidateOrder.Valid())
+
+          // process the events
+          baker.processEvent(processId, new CustomerInfoReceived(customerInfo));
+          baker.processEvent(processId, new OrderPlaced(order));
+          baker.processEvent(processId, new PaymentMade());
+        }
+
+        if (createNewCase)
+          createProcess();
+
+        val expectedIngredients = ingredientMap(
+          "customerInfo" -> customerInfo,
+          "order" -> order,
+          "goods" -> goods,
+          "trackingId" -> trackingId)
+
+        val expectedEvents = eventList(
+          new CustomerInfoReceived(customerInfo),
+          new OrderPlaced(order),
+          new ValidateOrder.Valid(),
+          new PaymentMade(),
+          new ManufactureGoods.GoodsManufactured(goods),
+          new ShipGoods.GoodsShipped(trackingId),
+          new SendInvoice.InvoiceWasSent()
+        )
+
+        baker.getIngredients(processId) shouldBe expectedIngredients
+
+        baker.events(processId) shouldBe expectedEvents
+
       } finally {
+
         TestKit.shutdownActorSystem(actorSystem)
       }
     }
@@ -898,84 +964,6 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       }
     }
 
-    //    "do not join to akka cluster and fail to bootstrap if persistence init actor times out" in {
-    //      val recipeName = "lazyClusterJoinTest"
-    //      val persistenceInitDuration = 3 seconds
-    //      val journalInitializeTimeout = 2 seconds
-    //      val actorSystem = ActorSystem(recipeName, levelDbConfig(recipeName, 3005, journalInitializeTimeout))
-    //
-    //      val persistenceInitActorProps = Props(new Actor() {
-    //        override def receive = {
-    //          case msg =>
-    //            Thread.sleep(persistenceInitDuration.toMillis)
-    //            sender() ! msg
-    //            context.stop(self)
-    //        }
-    //      })
-    //
-    //      intercept[TimeoutException] {
-    //        try {
-    //          setupBakerWithRecipe(recipeName, appendUUIDToTheRecipeName = false, persistenceInitActorProps)(actorSystem)
-    //        } finally {
-    //          TestKit.shutdownActorSystem(actorSystem)
-    //        }
-    //      }
-    //
-    //    }
-    //
-    //    "join to akka cluster after the persistence init actor returns within predefined timeout config" in {
-    //      val recipeName = "lazyClusterJoinTest"
-    //      val persistenceInitDuration = 2 seconds
-    //      val journalInitializeTimeout = 3 seconds
-    //      val actorSystem1 = ActorSystem(recipeName, levelDbConfig(recipeName, 3005, journalInitializeTimeout))
-    //      val lock = new ReentrantLock()
-    //
-    //      println("system1 init members: " + Cluster(actorSystem1).state.members)
-    ////      println("system2 init members: " + Cluster(actorSystem2).state.members)
-    //
-    //      def persistenceInitActorProps = Props(new Actor() {
-    //        override def receive = {
-    //          case msg =>
-    //            lock.lock()
-    //            Thread.sleep(persistenceInitDuration.toMillis)
-    //            sender() ! msg
-    //            lock.unlock()
-    //            context.stop(self)
-    //        }
-    //      })
-    //
-    //      try {
-    //        setupBakerWithRecipe(recipeName, appendUUIDToTheRecipeName = false, persistenceInitActorProps)(actorSystem1)
-    //        println("system1 members after first node: " + Cluster(actorSystem1).state.members)
-    ////        println("system2 members after first node: " + Cluster(actorSystem2).state.members)
-    //
-    //        val actorSystem2 = ActorSystem(recipeName, levelDbConfig(recipeName, 3006, journalInitializeTimeout))
-    //        try {
-    //          lock.lock()
-    //          setupBakerWithRecipe(recipeName, appendUUIDToTheRecipeName = false, persistenceInitActorProps)(actorSystem2)
-    //        } catch {
-    //          case _: TimeoutException =>
-    //            println("system1 after timeout members: " + Cluster(actorSystem1).state.members)
-    //            println("system2 after timeout members: " + Cluster(actorSystem2).state.members)
-    //            TestKit.shutdownActorSystem(actorSystem2)
-    //          case e: Exception => fail("Unexpected exception here: " + e.getMessage)
-    //        }
-    //
-    //        val actorSystem3 = ActorSystem(recipeName, levelDbConfig(recipeName, 3007, journalInitializeTimeout))
-    //        try {
-    //          lock.unlock()
-    //          setupBakerWithRecipe(recipeName, appendUUIDToTheRecipeName = false, persistenceInitActorProps)(actorSystem3)
-    //          println("system1 members: " + Cluster(actorSystem1).state.members)
-    //          println("system3 members: " + Cluster(actorSystem3).state.members)
-    //        } finally {
-    //          TestKit.shutdownActorSystem(actorSystem3)
-    //        }
-    //      } finally {
-    //        TestKit.shutdownActorSystem(actorSystem1)
-    //      }
-    //
-    //    }
-
     "when acknowledging the first event, not wait on the rest" in {
       val (baker, recipeId) = setupBakerWithRecipe("NotWaitForTheRest")
 
@@ -1034,7 +1022,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
     "be able to use the same ingredient multiple times as input parameter for an interaction" in {
       val recipe: Recipe =
-        "sameIngredientMultipleTime"
+        Recipe("sameIngredientMultipleTime")
           .withInteractions(
             interactionOne,
             interactionThree
@@ -1057,7 +1045,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val receivePeriod: FiniteDuration = 100 milliseconds
 
       val recipe: Recipe =
-        "eventReceiveExpirationRecipe"
+        Recipe("eventReceiveExpirationRecipe")
           .withSensoryEvents(initialEvent)
           .withInteractions(interactionOne)
           .withEventReceivePeriod(receivePeriod)
@@ -1078,7 +1066,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val receivePeriod: FiniteDuration = 10 seconds
 
       val recipe: Recipe =
-        "eventReceiveInTimeRecipe"
+        Recipe("eventReceiveInTimeRecipe")
           .withSensoryEvents(initialEvent)
           .withInteractions(interactionOne)
           .withEventReceivePeriod(receivePeriod)
@@ -1121,7 +1109,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val retentionPeriod = 2 seconds
 
       val recipe: Recipe =
-        "RetentionPeriodRecipe"
+        Recipe("RetentionPeriodRecipe")
           .withSensoryEvents(initialEvent)
           .withInteractions(interactionOne)
           .withRetentionPeriod(retentionPeriod)

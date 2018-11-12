@@ -22,8 +22,6 @@ case class InteractionTransition(eventsToFire: Seq[EventDescriptor],
 
   extends Transition {
 
-  val log: Logger = LoggerFactory.getLogger(classOf[InteractionTransition])
-
   override val label: String = interactionName
 
   override val id: Long = il.sha256HashCode(s"InteractionTransition:$label")
