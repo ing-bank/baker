@@ -4,7 +4,7 @@ import akka.cluster.MultiNodeClusterSpec
 import akka.remote.testkit.MultiNodeConfig
 import com.typesafe.config.{Config, ConfigFactory}
 
-final case class SplitBrainResolverConfig() extends MultiNodeConfig {
+final case class SplitBrainResolverConfig(useFailureDetectorPuppet: Boolean) extends MultiNodeConfig {
 
   val nodeA = role("nodeA")
   val nodeB = role("nodeB")
@@ -44,7 +44,7 @@ final case class SplitBrainResolverConfig() extends MultiNodeConfig {
     """.stripMargin)
     .withFallback(bakerSplitBrainResolverConfig)
 //    .withFallback(tanukkiSplitBrainResolverConfig)
-    .withFallback(MultiNodeClusterSpec.clusterConfig(true))
+    .withFallback(MultiNodeClusterSpec.clusterConfig(useFailureDetectorPuppet))
   )
 
 }
