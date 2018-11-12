@@ -57,6 +57,8 @@ object Dependencies {
 
   val protobufJava =              "com.google.protobuf"        % "protobuf-java"                       % "3.5.1"
 
+  val betterFiles =               "com.github.pathikrit"       %% "better-files"                       % "3.6.0"
+
   val kryoSerializers =           "de.javakaffee"              %  "kryo-serializers"                   % "0.41"
   val objenisis =                 "org.objenesis"              %  "objenesis"                          % "2.5.1"
 

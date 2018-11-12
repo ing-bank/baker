@@ -6,16 +6,14 @@ import java.util.{Optional, UUID}
 import akka.actor.ActorSystem
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.testkit.{TestDuration, TestKit, TestProbe}
-import com.ing.baker.Webshop.CustomerInfoReceived
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.recipe.CaseClassIngredient
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
-import com.ing.baker.recipe.scaladsl.{Recipe, _}
+import com.ing.baker.recipe.scaladsl.Recipe
 import org.mockito.Matchers._
-import org.mockito.Mockito.{mock, _}
+import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.slf4j.LoggerFactory
@@ -239,18 +237,37 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
     "backwards compatibility in serialization of case class ingredients" in {
 
-      /**
-        * !!! Note this path is EXCLUDED in the .gitignore
-        *
-        * If you make changes you must manually add the files in git afterwards:
-        *
-        * git add -f runtime/src/test/resources/persisted-messages
-        */
-      val path = "runtime/src/test/resources/persisted-messages"
-      val journalPath = path + "/journal"
-      val snapshotsPath = path + "/snapshots"
+      import better.files._
 
-      val actorSystem = ActorSystem("backwardsCompatibilityOfEvents", levelDbConfig("backwardsCompatibilityOfEvents", 3004, 10 seconds, journalPath, snapshotsPath))
+      /**
+        * This is the path where the original messages where persisted
+        *
+        * For the test they are copied to a temporary directory in /target
+        *
+        * !!! If you want to create a new test case the following flag to true
+        */
+      val createNewCase: Boolean = false
+
+      val journalPath = "runtime/src/test/resources/persisted-messages"
+      val journalDir = File(journalPath)
+
+      val testPath = if (createNewCase) journalPath else "runtime/target/backwardsCompatibilityOfEvents"
+      val testDir = File(testPath).createDirectoryIfNotExists()
+
+      if (!createNewCase) {
+        testDir.delete()
+        testDir.createDirectory()
+        journalDir./("journal").copyToDirectory(testDir)
+      }
+
+      val config = levelDbConfig(
+        "backwardsCompatibilityOfEvents",
+        3004,
+        10 seconds,
+        s"$testPath/journal",
+        s"$testPath/snapshots")
+
+      val actorSystem = ActorSystem("backwardsCompatibilityOfEvents", config)
 
       try {
 
@@ -291,7 +308,8 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           baker.processEvent(processId, new PaymentMade());
         }
 
-//        createProcess();
+        if (createNewCase)
+          createProcess();
 
         val expectedIngredients = ingredientMap(
           "customerInfo" -> customerInfo,
@@ -314,6 +332,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         baker.events(processId) shouldBe expectedEvents
 
       } finally {
+
         TestKit.shutdownActorSystem(actorSystem)
       }
     }
