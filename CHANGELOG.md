@@ -4,9 +4,9 @@
 
 ### Bugfixes
 
-- [#112](https://github.com/ing-bank/baker/issues/112): User specified timeout in processEvent calls were ignored.
-- [#103](https://github.com/ing-bank/baker/issues/103): NullPointer exception when providing implementations directly to `JBaker`
-- [#50](https://github.com/ing-bank/baker/issues/50): Updated protobuf to 3.5.1 to fix a security related issue (CVE-2015-5237)
+- [#112](https://github.com/ing-bank/baker/issues/112) User specified timeout in processEvent calls were ignored.
+- [#103](https://github.com/ing-bank/baker/issues/103) NullPointer exception when providing implementations directly to `JBaker`
+- [#50](https://github.com/ing-bank/baker/issues/50) Updated protobuf to 3.5.1 to fix a security related issue (CVE-2015-5237)
 
 ### New features
 
