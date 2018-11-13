@@ -8,7 +8,13 @@ For new features see the [changelog](https://github.com/ing-bank/baker/blob/mast
 
 `com.ing.baker.recipe.javadsl.Ingredient` was removed.
 
-This was a tagging interface that was not used in the project. It served no purpose.
+This was a tagging interface that was not used in the project.
+
+You can remove all references to this interface in your project.
+
+One thing to note is that `Ingredient` extended from `java.io.Serializable`.
+
+If you depended on this behaviour just replace `Ingredient` by `java.io.Serializable`.
 
 ## @ProvidesIngredient removed
 
@@ -28,12 +34,12 @@ interface GetEmail {
 
 This feature has been removed. Internally this was already translated to an implicitly generated event: `$interactionName + Successful`.
 
-Just now we require that you do this expclitly to avoid confusion.
+Now it is required that you do this expclitly to avoid confusion.
 
-You can easily migrate your existing interactions.
+The refactor is very straight forwfard:
 
 ``` java
-import com.ing.baker.recipe.annotations.ProvidesIngredient;
+import com.ing.baker.recipe.annotations.FiresEvent;
 
 interface GetEmail {
 
@@ -49,4 +55,8 @@ interface GetEmail {
 }
 
 ```
+
+If you use [lombok](https://projectlombok.org) annotations you can get rid of a lot of the boiler plate by using `@Value` on the event class.
+
+In `scala` it is recommended to use case classes.
 
