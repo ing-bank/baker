@@ -1,33 +1,44 @@
 package com.ing.baker.runtime.actor.downing
 
 import akka.actor.Address
-import akka.cluster.{Cluster, Member, MemberStatus, UniqueAddress}
+import akka.cluster.{Cluster, Member, UniqueAddress}
 
 import scala.collection.SortedSet
+import scala.concurrent.duration.Deadline
 
-case class ClusterHelper(cluster: Cluster) {
+case class ClusterHelper(cluster: Cluster, memberStatusLastChanged: Map[UniqueAddress, Deadline] ) {
 
-  def members: SortedSet[Member] = cluster.state.members
+  val memberStatusLastChangedReadable: Map[UniqueAddress, Long] = memberStatusLastChanged.map { case (address, deadline) =>
+    address -> deadline.timeLeft.toSeconds
+  }
 
-  def unreachables: Set[Member] = cluster.state.unreachable
+  val unstableMembers: Set[UniqueAddress] = memberStatusLastChanged.filter(_._2.hasTimeLeft()).keys.toSet
 
-  def reachables: SortedSet[Member] = members diff unreachables
+  val members: SortedSet[Member] = cluster.state.members
 
-  def reachableUniqueAddresses: SortedSet[UniqueAddress] = reachables.map(_.uniqueAddress)
+  val unreachables: Set[Member] = cluster.state.unreachable.filterNot { member =>
+    unstableMembers.contains(member.uniqueAddress)
+  }
 
-  def unreachableUniqueAddresses: Set[UniqueAddress] = unreachables.map(_.uniqueAddress)
+  val reachables: SortedSet[Member] = (members diff unreachables).filterNot { member =>
+    unstableMembers.contains(member.uniqueAddress)
+  }
 
-  def nodeWithSmallestAddress: UniqueAddress = members.head.uniqueAddress
+  val reachableUniqueAddresses: SortedSet[UniqueAddress] = reachables.map(_.uniqueAddress)
 
-  def amIMember: Boolean = members.exists(_.uniqueAddress == cluster.selfUniqueAddress)
+  val unreachableUniqueAddresses: Set[UniqueAddress] = unreachables.map(_.uniqueAddress)
 
-  def amILeader: Boolean = cluster.state.leader.contains(cluster.selfAddress)
+  val nodeWithSmallestAddress: Option[UniqueAddress] = members.headOption.map(_.uniqueAddress)
+
+  val amIMember: Boolean = members.exists(_.uniqueAddress == cluster.selfUniqueAddress)
+
+  val amILeader: Boolean = cluster.state.leader.contains(cluster.selfAddress)
+
+  val myUniqueAddress: UniqueAddress = cluster.selfUniqueAddress
 
   def downSelf(): Unit =
     cluster.down(cluster.selfAddress)
 
   def down(address: Address): Unit =
     cluster.down(address)
-
-  def myUniqueAddress: UniqueAddress = cluster.selfUniqueAddress
 }
