@@ -1,17 +1,69 @@
 # Changelog
 
-## 2.0.0 (NOT YET RELEASED)
+## 2.0.0
 
-- Fixed [#99](https://github.com/ing-bank/baker/issues/99): re-added the feature to get an index of all process instances in Baker
-- Fixed [#50](https://github.com/ing-bank/baker/issues/50): update protobuf to 3.5.1 to fix a security related issue (CVE-2015-5237)
-- Fixed [#110](https://github.com/ing-bank/baker/issues/110): display sensory events with a different style in the visual recipe
-- Fixed [#111](https://github.com/ing-bank/baker/issues/111): also mark executed interactions with green color in the visual process state
-- Fixed [#112](https://github.com/ing-bank/baker/issues/112): specified timeout in processEvent calls ignored
-- Fixed [#103](https://github.com/ing-bank/baker/issues/103): NullPointer exception when providing implementations directly to `JBaker`
-- New feature: Added a list of event names to the process state that can be retreived from memory
-- New feature: Added an optional correlation id to events to achieve idempotent event delivery
-- New feature: Allow listeners to subscribe to internal baker events.
+### Bugfixes
+
+- [#112](https://github.com/ing-bank/baker/issues/112): User specified timeout in processEvent calls were ignored.
+- [#103](https://github.com/ing-bank/baker/issues/103): NullPointer exception when providing implementations directly to `JBaker`
+- [#50](https://github.com/ing-bank/baker/issues/50): Updated protobuf to 3.5.1 to fix a security related issue (CVE-2015-5237)
+
+### New features
+
+- [#110](https://github.com/ing-bank/baker/issues/110) Sensory events are now displayed with a different style in the visual recipe.
+- [#111](https://github.com/ing-bank/baker/issues/111) Executed interactions are now displayed with a green color in the visual recipe.
+- [#108](https://github.com/ing-bank/baker/issues/108) Deprecated the sieve concept, only 'normal' interactions remain.
+- [#99](https://github.com/ing-bank/baker/issues/99) Added the option to get an index of all process instances.
+``` java
+// ProcessMetaData contains 'recipeId', 'processId' and 'createdTime' fields.
+java.util.Set<ProcessMetadata> index = baker.getIndex();
+```
+
+- Added a list of event names to the process state that can be retreived from memory:
+``` java
+java.util.List<String> eventNames =
+    baker.getProcessState(processId).getEventNames();
+```
+
+- Added an optional correlation id to events to achieve idempotent event delivery
+``` java
+String correlationId = ... //
+SensoryEventStatus status =
+    baker.processEvent(processId, event, correlationId);
+
+switch (status) {
+   case Received:
+     // the event was received normally (first time)
+   case AlreadyReceived:
+     // an event with this correlation id was already received
+}
+```
 - New feature: Optionally allow `@javax.inject.Named` to be used instead of `@RequiresIngredient`.
+``` java
+import javax.inject.Named;
+import com.example.CustomerData;
+
+interface ExampleInteraction {
+
+   class Output { }
+
+   @FiresEvent(oneOf = { Output.class } )
+   Output apply(@Named("customer") CustomerData customer);
+}
+```
+- Recipe information can be retrieved at runtime:
+``` java
+import com.ing.baker.runtime.core.RecipeInformation;
+
+RecipeInformation info = baker.getRecipe(recipeId);
+
+// any errors (missing interaction implementations)
+info.getErrors();
+
+// the time the recipe was added / created.
+info.getRecipeCreatedTime();
+```
+- Allow listeners to subscribe to internal baker events, see documentation [here](https://ing-bank.github.io/baker/documentation/event-listener).
 
 ## 1.3.5
 

@@ -1,24 +1,26 @@
-# Migration from 1.3.x to 2.0.0
+# Migration Guide
+
+## From 1.3.x to 2.0.0
 
 This guide only describes how to migrate your existing application.
 
 Summary:
 
-- ALL persisted data from baker 1.3.x IS compatible and CAN be used with 2.0.0
-- When running a cluster, DOWNTIME IS REQUIRED because of binary incompatible changes in the message protocol.
+- *ALL* persisted data from baker `1.3.x` *IS COMPATIBLE* and can be used with `2.0.0`
+- When running a cluster *DOWNTIME IS REQUIRED* because of binary incompatible changes in the message protocol.
 - Some small code refactors are necessary (see below).
 
 For a full list new features see the [changelog](https://github.com/ing-bank/baker/blob/master/CHANGELOG.md).
 
-## Downtime required for clusters with state
+### Downtime required for clusters with state
 
-In 2.0.0 some binary incompatible changes where made in the message protocol.
+In `2.0.0` some binary incompatible changes where made in the message protocol.
 
-This requires you to bring down the entire cluster (1.3.x) and bring it up again (2.0.0).
+This requires you to bring down the entire cluster (`1.3.x`) and bring it up again (`2.0.0`).
 
-A rolling deploy IS NOT tested and NOT recommended.
+A rolling deploy *IS NOT* tested and *NOT* recommended.
 
-## Removed Ingredient interface
+### Removed Ingredient interface
 
 `com.ing.baker.recipe.javadsl.Ingredient` was removed.
 
@@ -30,7 +32,7 @@ One thing to note is that `Ingredient` extended from `scala.Serializable`.
 
 If you depended on this behaviour just replace `Ingredient` by `scala.Serializable`.
 
-## @ProvidesIngredient removed
+### @ProvidesIngredient removed
 
 In `1.3.x` you could directly provide an ingredient from an interaction. For example:
 
