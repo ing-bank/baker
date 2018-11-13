@@ -8,7 +8,12 @@ import com.twitter.chill.{IKryoRegistrar, KryoInstantiator}
 import de.javakaffee.kryoserializers.guava._
 import de.javakaffee.kryoserializers.jodatime.{JodaDateTimeSerializer, JodaLocalDateSerializer, JodaLocalDateTimeSerializer}
 
-@Deprecated
+/**
+  * This serializer was used in Baker 1.3.x for to serialize ingredient data.
+  *
+  * It is kept for backwards compatibility.
+  */
+@deprecated("Should not be actively used, kept for backwards compatibility", "2.0.0")
 class KryoSerializer(system: ExtendedActorSystem) extends AkkaSerializer(system) {
 
   override def kryoInstantiator: KryoInstantiator = {
