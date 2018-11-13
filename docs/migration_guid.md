@@ -2,7 +2,21 @@
 
 This guide only describes how to migrate your existing application.
 
-For new features see the [changelog](https://github.com/ing-bank/baker/blob/master/CHANGELOG.md).
+Summary:
+
+- ALL persisted data from baker 1.3.x IS compatible and CAN be used with 2.0.0
+- When running a cluster, DOWNTIME IS REQUIRED because of binary incompatible changes in the message protocol.
+- Some small code refactors are necessary (see below).
+
+For a full list new features see the [changelog](https://github.com/ing-bank/baker/blob/master/CHANGELOG.md).
+
+## Downtime required for clusters with state
+
+In 2.0.0 some binary incompatible changes where made in the message protocol.
+
+This requires you to bring down the entire cluster (1.3.x) and bring it up again (2.0.0).
+
+A rolling deploy IS NOT tested and NOT recommended.
 
 ## Removed Ingredient interface
 
@@ -12,9 +26,9 @@ This was a tagging interface that was not used in the project.
 
 You can remove all references to this interface in your project.
 
-One thing to note is that `Ingredient` extended from `java.io.Serializable`.
+One thing to note is that `Ingredient` extended from `scala.Serializable`.
 
-If you depended on this behaviour just replace `Ingredient` by `java.io.Serializable`.
+If you depended on this behaviour just replace `Ingredient` by `scala.Serializable`.
 
 ## @ProvidesIngredient removed
 
