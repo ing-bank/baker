@@ -45,7 +45,7 @@ trait PetriNetRuntime[P, T, S, E] {
     *
     * By default, cold transitions (without in adjacent places) are not auto fireable.
     */
-  def isAutoFireable[S](instance: Instance[P, T, S], t: T): Boolean = !instance.process.incomingPlaces(t).isEmpty
+  def isAutoFireable(instance: Instance[P, T, S], t: T): Boolean = !instance.petriNet.incomingPlaces(t).isEmpty
 
   /**
     * Defines which tokens from a marking for a particular place are consumable by a transition.
@@ -67,7 +67,7 @@ trait PetriNetRuntime[P, T, S, E] {
     * However, since that is not used this can be refactored to a simple function: Job -> TransitionEvent
     *
     */
-  def jobExecutor(topology: PetriNet[P, T]): Job[P, T, S] ⇒ IO[TransitionEvent[T]] = {
+  def jobExecutor(topology: PetriNet[P, T])(implicit transitionIdentifier: Identifiable[T], placeIdentifier: Identifiable[P]): Job[P, T, S] ⇒ IO[TransitionEvent] = {
 
     def exceptionStackTrace(e: Throwable): String = {
       val sw = new StringWriter()
@@ -79,6 +79,7 @@ trait PetriNetRuntime[P, T, S, E] {
 
       val startTime = System.currentTimeMillis()
       val transition = job.transition
+      val consumed: Marking[Id] = job.consume.marshall
 
       val jobIO =
         try {
@@ -90,19 +91,22 @@ trait PetriNetRuntime[P, T, S, E] {
 
       // translates the job output to an EventSourcing.Event
       jobIO.map {
-        case (produced, out) ⇒
-          TransitionFiredEvent(job.id, transition, job.correlationId, startTime, System.currentTimeMillis(), job.consume, produced, out)
+        case (producedMarking, out) ⇒
+
+          val produced: Marking[Id] = producedMarking.marshall
+
+          TransitionFiredEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, produced, out)
       }.handleException {
         // In case an exception was thrown by the transition, we compute the failure strategy and return a TransitionFailedEvent
         case e: Throwable ⇒
           val failureCount = job.failureCount + 1
           val failureStrategy = handleException(job)(e, failureCount, startTime, topology.outMarking(transition))
-          TransitionFailedEvent(job.id, transition, job.correlationId, startTime, System.currentTimeMillis(), job.consume, job.input, exceptionStackTrace(e), failureStrategy)
+          TransitionFailedEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, job.input, exceptionStackTrace(e), failureStrategy)
       }.handleException {
         // If an exception was thrown while computing the failure strategy we block the interaction from firing
         case e: Throwable =>
           log.error(s"Exception while handling transition failure", e)
-          TransitionFailedEvent(job.id, transition, job.correlationId, startTime, System.currentTimeMillis(), job.consume, job.input, exceptionStackTrace(e), ExceptionStrategy.BlockTransition)
+          TransitionFailedEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, job.input, exceptionStackTrace(e), ExceptionStrategy.BlockTransition)
       }
     }
   }
@@ -141,15 +145,15 @@ trait PetriNetRuntime[P, T, S, E] {
     petriNet.transitions.filter(t ⇒ consumableMarkings(petriNet)(marking, t).nonEmpty)
 
   /**
-    * Fires a specific transition with input, computes the marking it should consume
+    * Creates a job for a specific transition with input, computes the marking it should consume
     */
-  def createJob[S, I](transition: T, input: I, correlationId: Option[String] = None): State[Instance[P, T, S], Either[String, Job[P, T, S]]] =
+  def createJob(transition: T, input: Any, correlationId: Option[String] = None): State[Instance[P, T, S], Either[String, Job[P, T, S]]] =
     State { instance ⇒
       instance.isBlockedReason(transition) match {
         case Some(reason) ⇒
           (instance, Left(reason))
         case None ⇒
-          enabledParameters(instance.process)(instance.availableMarking).get(transition) match {
+          enabledParameters(instance.petriNet)(instance.availableMarking).get(transition) match {
             case None ⇒
               (instance, Left(s"Not enough consumable tokens"))
             case Some(params) ⇒
@@ -163,8 +167,8 @@ trait PetriNetRuntime[P, T, S, E] {
   /**
     * Finds the (optional) first transition that is enabled & automatically fireable
     */
-  def firstEnabledJob[S]: State[Instance[P, T, S], Option[Job[P, T, S]]] = State { instance ⇒
-    enabledParameters(instance.process)(instance.availableMarking).find {
+  def firstEnabledJob: State[Instance[P, T, S], Option[Job[P, T, S]]] = State { instance ⇒
+    enabledParameters(instance.petriNet)(instance.availableMarking).find {
       case (t, markings) ⇒ !instance.isBlockedReason(t).isDefined && isAutoFireable(instance, t)
     }.map {
       case (t, markings) ⇒
@@ -176,9 +180,9 @@ trait PetriNetRuntime[P, T, S, E] {
   /**
     * Finds all automated enabled transitions.
     */
-  def allEnabledJobs[S]: State[Instance[P, T, S], Set[Job[P, T, S]]] =
-    firstEnabledJob[S].flatMap {
+  def allEnabledJobs: State[Instance[P, T, S], Set[Job[P, T, S]]] =
+    firstEnabledJob.flatMap {
       case None      ⇒ State.pure(Set.empty)
-      case Some(job) ⇒ allEnabledJobs[S].map(_ + job)
+      case Some(job) ⇒ allEnabledJobs.map(_ + job)
     }
 }

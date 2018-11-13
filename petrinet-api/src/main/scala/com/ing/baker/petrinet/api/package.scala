@@ -6,7 +6,10 @@ import scalax.collection.edge.WLDiEdge
 
 package object api extends MultiSetOps with MarkingOps {
 
-  case class Id(value: Long) extends AnyVal
+  /**
+    * Identifier type for elements.
+    */
+  type Id = Long
 
   /**
     * Type alias for something that is identifiable.
@@ -23,15 +26,34 @@ package object api extends MultiSetOps with MarkingOps {
     */
   type Marking[P] = Map[P, MultiSet[Any]]
 
-  implicit class IdentifiableOps[T : Identifiable](seq: Iterable[T]) {
-    def findById(id: Long): Option[T] = seq.find(e ⇒ implicitly[Identifiable[T]].apply(e).value == id)
+  /**
+    * Type alias for a petri net graph.
+    *
+    * See also: scala-graph (https://github.com/scala-graph/scala-graph
+    */
+  type PetriNetGraph[P, T] = Graph[Either[P, T], WLDiEdge]
+
+  implicit class IdentifiableOps[T : Identifiable](e: T) {
+
+    def getId: Long = implicitly[Identifiable[T]].apply(e)
+  }
+
+  implicit class IdentifiableSeqOps[T : Identifiable](seq: Iterable[T]) {
+    def findById(id: Long): Option[T] = seq.find(e ⇒ implicitly[Identifiable[T]].apply(e) == id)
     def getById(id: Long, name: String = "element"): T = findById(id).getOrElse { throw new IllegalStateException(s"No $name found with id: $id") }
   }
 
-  type PetriNetGraph[P, T] = Graph[Either[P, T], WLDiEdge]
+  implicit class MarkingMarshall[P : Identifiable](marking: Marking[P]) {
 
-  implicit def placeToNode[P, T](p: P): Either[P, T] = Left(p)
-  implicit def transitionToNode[P, T](t: T): Either[P, T] = Right(t)
+    def marshall: Marking[Id] = translateKeys(marking, (p: P) => implicitly[Identifiable[P]].apply(p))
+  }
+
+  implicit class MarkingUnMarshall(marking: Marking[Id]) {
+
+    def unmarshall[P : Identifiable](places: Iterable[P]): Marking[P] = translateKeys(marking, (id: Long) => places.getById(id, "place in petrinet"))
+  }
+
+  def translateKeys[K1, K2, V](map: Map[K1, V], fn: K1 => K2): Map[K2, V] = map.map { case (key, value) ⇒ fn(key) -> value }
 
   implicit class PetriNetGraphNodeOps[P, T](val node: PetriNetGraph[P, T]#NodeT) {
 

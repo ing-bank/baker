@@ -1,9 +1,8 @@
 package com.ing.baker.il.petrinet
 
 import com.ing.baker.il
-import com.ing.baker.il.petrinet.Place.{FiringLimiterPlace, PlaceType}
-import Place._
-import com.ing.baker.petrinet.api.{Id, Identifiable}
+import com.ing.baker.il.petrinet.Place.PlaceType
+import com.ing.baker.petrinet.api.Identifiable
 
 object Place {
 
@@ -18,24 +17,10 @@ object Place {
   case object EmptyEventIngredientPlace extends PlaceType
   case object MultiTransitionPlace extends PlaceType
 
-  implicit val identifiable: Identifiable[Place] = p => Id(p.id)
+  implicit val identifiable: Identifiable[Place] = p => p.id
 }
 
 case class Place(label: String, placeType: PlaceType) {
 
   val id: Long = il.sha256HashCode(s"$placeType:$label")
-
-  def isIngredient: Boolean = placeType == IngredientPlace
-
-  def isInteractionEventOutput: Boolean = placeType == InteractionEventOutputPlace
-
-  def isFiringLimiter: Boolean = placeType.isInstanceOf[FiringLimiterPlace]
-
-  def isEventPrecondition: Boolean = placeType == EventPreconditionPlace
-
-  def isOrEventPrecondition: Boolean = placeType == EventOrPreconditionPlace
-
-  def isIntermediate: Boolean = placeType == IntermediatePlace
-
-  def isEmptyEventIngredient: Boolean = placeType == EmptyEventIngredientPlace
 }

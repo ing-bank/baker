@@ -460,7 +460,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @param implementation The implementation object
     */
   def addImplementation(implementation: AnyRef): Unit =
-    MethodInteractionImplementation.anyRefToInteractionImplementations(implementation).foreach(interactionManager.addImplementation)
+    interactionManager.addImplementation(new MethodInteractionImplementation(implementation))
 
   /**
     * Adds a sequence of interaction implementation to baker.

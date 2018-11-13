@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actor.serialization.modules
+package com.ing.baker.runtime.actor.serialization
 
 import com.ing.baker.runtime.actor.protobuf.SerializedData
 

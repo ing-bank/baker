@@ -9,6 +9,7 @@ import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import com.ing.baker.il.petrinet.{EventTransition, Place, RecipePetriNet, Transition}
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, IngredientDescriptor}
 import com.ing.baker.petrinet.api.{Marking, PetriNet}
+import com.ing.baker.runtime.actor.process_index.ProcessIndex.CheckForProcessesToBeDeleted
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
@@ -123,12 +124,11 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
     "delete a process if a retention period is defined, stop command is received" in {
 
       val recipeRetentionPeriod = 500 milliseconds
-      val cleanupInterval = 50 milliseconds
 
       val processProbe = TestProbe()
       val recipeManagerProbe = TestProbe()
 
-      val actorIndex = createActorIndex(processProbe.ref, recipeManagerProbe.ref, cleanupInterval)
+      val actorIndex = createActorIndex(processProbe.ref, recipeManagerProbe.ref)
 
       val processId = UUID.randomUUID().toString
 
@@ -141,6 +141,11 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
       processProbe.expectMsg(initializeMsg)
+
+      Thread.sleep(recipeRetentionPeriod.toMillis)
+
+      // inform the index to check for processes to be cleaned up
+      actorIndex ! CheckForProcessesToBeDeleted
 
       processProbe.expectMsg(Stop(delete = true))
     }
@@ -310,12 +315,9 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
   }
 
   private def createActorIndex(petriNetActorRef: ActorRef,
-                               recipeManager: ActorRef,
-                               cleanupInterval: FiniteDuration = 50 milliseconds) = {
-
+                               recipeManager: ActorRef): ActorRef = {
 
     val props = Props(new ProcessIndex(
-      cleanupInterval,
       Option.empty,
       Encryption.NoEncryption,
       new InteractionManager(),

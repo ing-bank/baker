@@ -126,6 +126,7 @@ lazy val recipeRuntime = project.in(file("runtime"))
         akkaPersistenceCassandra,
         levelDB,
         levelDBJni,
+        betterFiles,
         junitInterface,
         scalaTest,
         scalaCheck,

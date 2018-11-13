@@ -76,7 +76,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
 
     "give a list of wrong ingredients if an ingredient is of the wrong type" in {
       val initialIngredientInt = Ingredient[Int]("initialIngredient")
-      val initialEventInt = Event("InitialEvent", initialIngredientInt, None)
+      val initialEventInt = Event("InitialEvent", Seq(initialIngredientInt), None)
 
       val recipe = Recipe("WrongTypedIngredient")
         .withInteractions(
@@ -92,8 +92,8 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
       val initialIngredientOptionalString = Ingredient[Optional[String]]("initialIngredientOptionalInt")
       val initialIngredientOptionInt = Ingredient[Option[List[Int]]]("initialIngredientOptionInt")
       val initialIngredientOptionString = Ingredient[Option[List[String]]]("initialIngredientOptionInt")
-      val initialEventIntOptional = Event("initialEventIntOptional", initialIngredientOptionalString, None)
-      val initialEventIntOption = Event("initialEventIntOption", initialIngredientOptionString, None)
+      val initialEventIntOptional = Event("initialEventIntOptional", Seq(initialIngredientOptionalString), None)
+      val initialEventIntOption = Event("initialEventIntOption", Seq(initialIngredientOptionString), None)
       val interactionOptional =
         Interaction(
           name = "InteractionWithOptional",
@@ -119,7 +119,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
 
     "give no errors if an Optional ingredient is of the correct Optional type" in {
       val initialIngredientInt = Ingredient[Optional[List[Int]]]("initialIngredient")
-      val initialEventInt = Event("InitialEvent", initialIngredientInt, None)
+      val initialEventInt = Event("InitialEvent", Seq(initialIngredientInt), None)
       val interactionOptional =
         Interaction(
           name = "InteractionWithOptional",

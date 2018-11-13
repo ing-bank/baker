@@ -22,7 +22,7 @@ package object dsl {
     */
   type Arc = WLDiEdge[Node]
 
-  implicit class TransitionDSL[Input, Output, State](t: Transition) {
+  implicit class TransitionDSL(t: Transition) {
     def ~>(p: Place, weight: Long = 1): Arc = arc(t, p, weight)
   }
 

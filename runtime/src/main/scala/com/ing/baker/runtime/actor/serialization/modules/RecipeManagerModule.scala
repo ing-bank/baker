@@ -2,6 +2,7 @@ package com.ing.baker.runtime.actor.serialization.modules
 
 import com.ing.baker.il
 import com.ing.baker.runtime.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol, protobuf}
+import com.ing.baker.runtime.actor.serialization.{ProtoEventAdapter, ProtoEventAdapterModule}
 import com.ing.baker.runtime.actor.{recipe_manager, protobuf => ilp}
 
 class RecipeManagerModule extends ProtoEventAdapterModule {
