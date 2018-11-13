@@ -83,5 +83,4 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
     case _ => () // do nothing for other messages
 
   }
-
 }

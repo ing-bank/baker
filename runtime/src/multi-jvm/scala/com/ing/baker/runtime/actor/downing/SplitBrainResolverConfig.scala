@@ -4,7 +4,10 @@ import akka.cluster.MultiNodeClusterSpec
 import akka.remote.testkit.MultiNodeConfig
 import com.typesafe.config.{Config, ConfigFactory}
 
-final case class SplitBrainResolverConfig(useFailureDetectorPuppet: Boolean) extends MultiNodeConfig {
+import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
+
+final case class SplitBrainResolverConfig(useFailureDetectorPuppet: Boolean, downRemovalMargin: Duration = 2 seconds) extends MultiNodeConfig {
 
   val nodeA = role("nodeA")
   val nodeB = role("nodeB")
@@ -13,10 +16,10 @@ final case class SplitBrainResolverConfig(useFailureDetectorPuppet: Boolean) ext
   val nodeE = role("nodeE")
 
   val bakerSplitBrainResolverConfig: Config = ConfigFactory.parseString(
-    """
+    s"""
       |akka.cluster.downing-provider-class = com.ing.baker.runtime.actor.downing.SplitBrainResolver
       |baker.cluster.split-brain-resolver {
-      |  down-removal-margin = 2 seconds
+      |  down-removal-margin = $downRemovalMargin
       |}
     """.stripMargin
   )
