@@ -123,11 +123,11 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         { case msg@InteractionStarted(_, _, _, `processId`, "InteractionTwo") => msg },
         { case msg@InteractionStarted(_, _, _, `processId`, "InteractionThree") => msg },
         { case msg@InteractionStarted(_, _, _, `processId`, "ProvidesNothingInteraction") => msg },
-        { case msg@InteractionCompleted(_, _, _, _, `processId`, "InteractionOne", RuntimeEvent("InteractionOneSuccessful", Seq(Tuple2("interactionOneIngredient",PrimitiveValue("interactionOneIngredient"))))) => msg },
-        { case msg@InteractionCompleted(_, _, _, _, `processId`, "InteractionTwo", RuntimeEvent("EventFromInteractionTwo", Seq(Tuple2("interactionTwoIngredient", PrimitiveValue("interactionTwoIngredient"))))) => msg },
-        { case msg@InteractionCompleted(_, _, _, _, `processId`, "InteractionThree", RuntimeEvent("InteractionThreeSuccessful", Seq(Tuple2("interactionThreeIngredient", PrimitiveValue("interactionThreeIngredient"))))) => msg },
-        { case msg@InteractionCompleted(_, _, _, _, `processId`, "ProvidesNothingInteraction", RuntimeEvent("ProvidesNothingInteraction", Seq())) => msg },
-        { case msg@InteractionCompleted(_, _, _, _, `processId`, "SieveInteraction", RuntimeEvent("SieveInteractionSuccessful", Seq(Tuple2("sievedIngredient", PrimitiveValue("sievedIngredient"))))) => msg }
+        { case msg@InteractionCompleted(_, _, _, _, `processId`, "InteractionOne", Some(RuntimeEvent("InteractionOneSuccessful", Seq(Tuple2("interactionOneIngredient",PrimitiveValue("interactionOneIngredient")))))) => msg },
+        { case msg@InteractionCompleted(_, _, _, _, `processId`, "InteractionTwo", Some(RuntimeEvent("EventFromInteractionTwo", Seq(Tuple2("interactionTwoIngredient", PrimitiveValue("interactionTwoIngredient")))))) => msg },
+        { case msg@InteractionCompleted(_, _, _, _, `processId`, "InteractionThree", Some(RuntimeEvent("InteractionThreeSuccessful", Seq(Tuple2("interactionThreeIngredient", PrimitiveValue("interactionThreeIngredient")))))) => msg },
+        { case msg@InteractionCompleted(_, _, _, _, `processId`, "ProvidesNothingInteraction", None) => msg },
+        { case msg@InteractionCompleted(_, _, _, _, `processId`, "SieveInteraction", Some(RuntimeEvent("SieveInteractionSuccessful", Seq(Tuple2("sievedIngredient", PrimitiveValue("sievedIngredient")))))) => msg }
       )
 
       listenerProbe.expectNoMessage(eventReceiveTimeout)

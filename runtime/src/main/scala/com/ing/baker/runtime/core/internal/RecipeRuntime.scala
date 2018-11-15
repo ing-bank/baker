@@ -23,18 +23,15 @@ object RecipeRuntime {
 
   /**
     * Creates the produced marking (tokens) given the output (event) of the interaction.
+    *
+    * It fills a token in the out adjacent place of the transition with the interaction name
     */
-  def createProducedMarking(interaction: InteractionTransition, outAdjacent: MultiSet[Place]): RuntimeEvent => Marking[Place] = { event =>
+  def createProducedMarking(interaction: InteractionTransition, outAdjacent: MultiSet[Place], event: Option[RuntimeEvent]): Marking[Place] = {
     outAdjacent.keys.map { place =>
-      val value: Any = {
-        interaction.eventsToFire.find(_.name == event.name).map(_.name).getOrElse {
-          throw new IllegalStateException(
-            s"Method output: $event is not an instance of any of the specified events: ${
-              interaction.eventsToFire
-                .mkString(",")
-            }")
-        }
-      }
+
+      // use the event name as a token value, otherwise null
+      val value: Any = event.map(_.name).getOrElse(null)
+
       place -> MultiSet.copyOff(Seq(value))
     }.toMarking
   }
@@ -88,7 +85,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
             case ExceptionStrategyOutcome.RetryWithDelay(delay) => RetryWithDelay(delay)
             case ExceptionStrategyOutcome.Continue(eventName) => {
               val runtimeEvent = new RuntimeEvent(eventName, Seq.empty)
-              Continue(RecipeRuntime.createProducedMarking(interaction, outMarking)(runtimeEvent), runtimeEvent)
+              Continue(RecipeRuntime.createProducedMarking(interaction, outMarking, Some(runtimeEvent)), runtimeEvent)
             }
           }
 
