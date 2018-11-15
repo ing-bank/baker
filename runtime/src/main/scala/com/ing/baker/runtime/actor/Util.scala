@@ -4,8 +4,7 @@ import java.util.UUID
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
 
-import akka.actor.{ActorLogging, ActorSystem, PoisonPill, Props}
-import akka.cluster.Cluster
+import akka.actor.{ActorLogging, ActorSystem, NoSerializationVerificationNeeded, PoisonPill, Props}
 import akka.event.DiagnosticLoggingAdapter
 import akka.event.Logging.LogLevel
 import akka.pattern.ask
@@ -19,8 +18,8 @@ import scala.util.{Failure, Success}
 
 object Util {
 
-  case object Ping extends InternalBakerMessage
-  case object Pong extends InternalBakerMessage
+  case object Ping extends NoSerializationVerificationNeeded
+  case object Pong extends NoSerializationVerificationNeeded
 
   class AwaitPersistenceInit extends PersistentActor with ActorLogging {
 

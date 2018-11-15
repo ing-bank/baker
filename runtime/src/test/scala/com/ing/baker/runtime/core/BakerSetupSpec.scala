@@ -35,7 +35,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         baker.addImplementations(mockImplementations)
 
-        when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn("foobar")
+        when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(InteractionOneSuccessful("foobar"))
 
         val recipeId = baker.addRecipe(simpleRecipe)
         val processId = java.util.UUID.randomUUID().toString

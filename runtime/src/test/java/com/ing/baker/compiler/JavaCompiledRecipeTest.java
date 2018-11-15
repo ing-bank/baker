@@ -1,10 +1,9 @@
 package com.ing.baker.compiler;
 
 import com.ing.baker.il.CompiledRecipe;
+import com.ing.baker.recipe.annotations.FiresEvent;
 import com.ing.baker.recipe.annotations.ProcessId;
-import com.ing.baker.recipe.annotations.ProvidesIngredient;
 import com.ing.baker.recipe.annotations.RequiresIngredient;
-import com.ing.baker.recipe.javadsl.Interaction;
 import com.ing.baker.recipe.javadsl.Recipe;
 import com.ing.baker.runtime.core.BakerException;
 import org.junit.Assert;
@@ -118,49 +117,75 @@ public class JavaCompiledRecipeTest {
 
     public static class EventWithoutIngredientsNorPreconditions{}
 
-    public static class SieveImpl implements Interaction {
-        @ProvidesIngredient("AppendedRequestIds")
-        public String apply(@RequiresIngredient("RequestIDStringOne") String requestIDStringOne,
-                               @RequiresIngredient("RequestIDStringTwo") String requestIDStringTwo) {
-            return requestIDStringOne + requestIDStringTwo;
+    public static class ProvideAppendRequestIds {
+        public final String AppendedRequestIds;
+
+        public ProvideAppendRequestIds(String appendedRequestIds) {
+            AppendedRequestIds = appendedRequestIds;
         }
     }
 
-    public static class SieveImplWithoutDefaultConstruct implements Interaction {
+    public static class SieveImpl {
+        @FiresEvent(oneOf = {ProvideAppendRequestIds.class} )
+        public ProvideAppendRequestIds apply(@RequiresIngredient("RequestIDStringOne") String requestIDStringOne,
+                               @RequiresIngredient("RequestIDStringTwo") String requestIDStringTwo) {
+            return new ProvideAppendRequestIds(requestIDStringOne + requestIDStringTwo);
+        }
+    }
+
+    public static class SieveImplWithoutDefaultConstruct {
         public SieveImplWithoutDefaultConstruct(String param){}
 
-        @ProvidesIngredient("AppendedRequestIds")
-        public String apply(@RequiresIngredient("RequestIDStringOne") String requestIDStringOne,
+        @FiresEvent(oneOf = {ProvideAppendRequestIds.class} )
+        public ProvideAppendRequestIds apply(@RequiresIngredient("RequestIDStringOne") String requestIDStringOne,
                             @RequiresIngredient("RequestIDStringTwo") String requestIDStringTwo) {
-            return requestIDStringOne + requestIDStringTwo;
+            return new ProvideAppendRequestIds(requestIDStringOne + requestIDStringTwo);
         }
     }
 
-    public interface InteractionOne extends Interaction {
-        @ProvidesIngredient("RequestIDStringOne")
-        String apply(@ProcessId String requestId);
+    public interface InteractionOne {
+
+        class ProvidesRequestIDStringOne {
+            public final String RequestIDStringOne;
+
+            public ProvidesRequestIDStringOne(String requestIDStringOne) {
+                this.RequestIDStringOne = requestIDStringOne;
+            }
+        }
+
+        @FiresEvent(oneOf = { ProvidesRequestIDStringOne.class })
+        ProvidesRequestIDStringOne apply(@ProcessId String requestId);
     }
 
     public static class InteractionOneImpl implements InteractionOne {
-        public String apply(String requestId) {
-            return requestId;
+        public ProvidesRequestIDStringOne apply(String requestId) {
+            return new ProvidesRequestIDStringOne(requestId);
         }
 
         public String name = "InteractionOne";
     }
 
-    public static class InteractionTwo implements Interaction {
-        @ProvidesIngredient("RequestIDStringTwo")
-        public String apply(@ProcessId String requestId) {
-              return requestId;
+    public static class InteractionTwo {
+
+        class ProvidesRequestIDStringTwo {
+            public final String RequestIDStringTwo;
+
+            public ProvidesRequestIDStringTwo(String requestIDStringTwo) {
+                this.RequestIDStringTwo = requestIDStringTwo;
+            }
+        }
+
+        @FiresEvent(oneOf = {ProvidesRequestIDStringTwo.class})
+        public ProvidesRequestIDStringTwo apply(@ProcessId String requestId) {
+              return new ProvidesRequestIDStringTwo(requestId);
           }
 
         public String name = "InteractionTwo";
     }
 
-    public interface InteractionThree extends Interaction {
-        public void apply(@RequiresIngredient("RequestIDStringOne") String requestIDStringOne,
-                          @RequiresIngredient("RequestIDStringTwo") String requestIDStringTwo);
+    public interface InteractionThree {
+        void apply(@RequiresIngredient("RequestIDStringOne") String requestIDStringOne,
+                   @RequiresIngredient("RequestIDStringTwo") String requestIDStringTwo);
     }
 
     public static class InteractionThreeImpl implements InteractionThree {
@@ -172,11 +197,19 @@ public class JavaCompiledRecipeTest {
         public String name = InteractionThree.class.getSimpleName();
     }
 
-    public static class RegisterIndividual implements Interaction {
+    public static class RegisterIndividual {
 
-        @ProvidesIngredient("RequestIDStringThree")
-        public String apply(@ProcessId String requestId, @RequiresIngredient("RequestIDStringOne") String requestIDStringOne) {
-            return requestId;
+        class ProvidesRequestIDStringThree {
+            public final String RequestIDStringThree;
+
+            public ProvidesRequestIDStringThree(String requestIDStringTwo) {
+                this.RequestIDStringThree = requestIDStringTwo;
+            }
+        }
+
+        @FiresEvent(oneOf = { ProvidesRequestIDStringThree.class })
+        public ProvidesRequestIDStringThree apply(@ProcessId String requestId, @RequiresIngredient("RequestIDStringOne") String requestIDStringOne) {
+            return new ProvidesRequestIDStringThree(requestId);
         }
     }
 

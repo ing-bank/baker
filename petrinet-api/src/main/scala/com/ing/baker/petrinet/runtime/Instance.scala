@@ -5,14 +5,14 @@ import com.ing.baker.petrinet.api._
 import scala.util.Random
 
 object Instance {
-  def uninitialized[P[_], T, S](process: PetriNet[P[_], T]): Instance[P, T, S] = Instance[P, T, S](process, 0, Marking.empty, null.asInstanceOf[S], Map.empty, Set.empty)
+  def uninitialized[P, T, S](process: PetriNet[P, T]): Instance[P, T, S] = Instance[P, T, S](process, 0, Marking.empty, null.asInstanceOf[S], Map.empty, Set.empty)
 }
 
 /**
  * Keeps the state of a petri net instance.
  */
-case class Instance[P[_], T, S](
-    process: PetriNet[P[_], T],
+case class Instance[P, T, S](
+    petriNet: PetriNet[P, T],
     sequenceNr: Long,
     marking: Marking[P],
     state: S,
@@ -29,6 +29,9 @@ case class Instance[P[_], T, S](
    */
   lazy val availableMarking: Marking[P] = marking |-| reservedMarking
 
+  /**
+    * The active jobs for the process instance.
+    */
   def activeJobs: Iterable[Job[P, T, S]] = jobs.values.filter(_.isActive)
 
   def isBlockedReason(transition: T): Option[String] = jobs.values.map {

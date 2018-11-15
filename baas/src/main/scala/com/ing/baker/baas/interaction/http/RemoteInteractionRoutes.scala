@@ -4,7 +4,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.util.ByteString
 import com.ing.baker.baas.KryoUtil.defaultKryoPool
 import com.ing.baker.baas.http.BaasMarshalling
-import com.ing.baker.runtime.core.interations.InteractionImplementation
+import com.ing.baker.runtime.core.InteractionImplementation
 import org.slf4j.LoggerFactory
 
 

@@ -29,7 +29,7 @@ object ReflectionHelpers {
       else if (annotationType.equals(classOf[javax.inject.Named]))
         annotation.asInstanceOf[javax.inject.Named].value()
       else if (annotationType.equals(classOf[annotations.ProcessId]))
-        common.ProcessIdName
+        common.processIdName
       else annotationType.getSimpleName
     }
 

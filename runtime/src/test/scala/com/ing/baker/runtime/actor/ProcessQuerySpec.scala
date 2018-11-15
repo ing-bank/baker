@@ -10,9 +10,10 @@ import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.TestProbe
 import akka.util.Timeout
 import com.ing.baker.petrinet.api._
-import com.ing.baker.petrinet.dsl.colored._
+import com.ing.baker.petrinet.dsl._
 import com.ing.baker.petrinet.runtime.EventSourcing.{InitializedEvent, TransitionFiredEvent}
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSpec._
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Matchers._
@@ -45,19 +46,19 @@ class ProcessQuerySpec extends AkkaTestBase("ProcessQuerySpec") with BeforeAndAf
 
       val readJournal = PersistenceQuery(system).readJournalFor[ReadJournal with CurrentEventsByPersistenceIdQuery]("inmemory-read-journal")
 
-      val p1 = Place[Unit](id = 1)
-      val p2 = Place[Unit](id = 2)
-      val p3 = Place[Unit](id = 3)
-      val t1 = nullTransition[Unit](id = 1, automated = true)
-      val t2 = nullTransition[Unit](id = 2, automated = true)
+      val p1 = Place(id = 1)
+      val p2 = Place(id = 2)
+      val p3 = Place(id = 3)
+      val t1 = nullTransition(id = 1, automated = true)
+      val t2 = nullTransition(id = 2, automated = true)
 
       val petriNet = createPetriNet(p1 ~> t1, t1 ~> p2, p2 ~> t2, t2 ~> p3)
       val processId = UUID.randomUUID().toString
-      val instance = createPetriNetActor[Unit, Unit](petriNet, runtime, processId)
+      val instance = createProcessInstance[Unit, Unit](petriNet, runtime, processId)
 
-      instance ! Initialize(Marking(p1 -> 1), ())
+      instance ! Initialize(p1.markWithN(1), ())
 
-      expectMsg(Initialized(Marking(p1 -> 1), ()))
+      expectMsg(Initialized(p1.markWithN(1), ()))
       expectMsgPF(timeOut) { case TransitionFired(_, 1, _, _, _, _, _, _) ⇒ }
       expectMsgPF(timeOut) { case TransitionFired(_, 2, _, _, _, _, _, _) ⇒ }
 
@@ -71,17 +72,15 @@ class ProcessQuerySpec extends AkkaTestBase("ProcessQuerySpec") with BeforeAndAf
         .map(_._2) // Get the event from the tuple
         .runWith(TestSink.probe)
         .request(3)
-        .expectNext(InitializedEvent(marking = Marking(p1 -> 1), state = ()))
+        .expectNext(InitializedEvent(marking = p1.markWithN(1).marshall, state = ()))
         .expectNextChainingPF {
-          case TransitionFiredEvent(_, transition, _, _, _, consumed, produced, _) ⇒
-            transition shouldBe t1
-            consumed shouldBe Marking(p1 -> 1)
-            produced shouldBe Marking(p2 -> 1)
+          case TransitionFiredEvent(_, 1, _, _, _, consumed, produced, _) ⇒
+            consumed shouldBe p1.markWithN(1).marshall
+            produced shouldBe p2.markWithN(1).marshall
         }.expectNextChainingPF {
-          case TransitionFiredEvent(_, transition, _, _, _, consumed, produced, _) ⇒
-            transition shouldBe t2
-            consumed shouldBe Marking(p2 -> 1)
-            produced shouldBe Marking(p3 -> 1)
+          case TransitionFiredEvent(_, 2, _, _, _, consumed, produced, _) ⇒
+            consumed shouldBe p2.markWithN(1).marshall
+            produced shouldBe p3.markWithN(1).marshall
         }
 
     }
@@ -94,21 +93,21 @@ class ProcessQuerySpec extends AkkaTestBase("ProcessQuerySpec") with BeforeAndAf
 
       // Setup petriNet and instances
 
-      val p1 = Place[Unit](id = 1)
-      val p2 = Place[Unit](id = 2)
-      val p3 = Place[Unit](id = 3)
-      val t1 = nullTransition[Unit](id = 1, automated = true)
-      val t2 = nullTransition[Unit](id = 2, automated = true)
+      val p1 = Place(id = 1)
+      val p2 = Place(id = 2)
+      val p3 = Place(id = 3)
+      val t1 = nullTransition(id = 1, automated = true)
+      val t2 = nullTransition(id = 2, automated = true)
       val petriNet = createPetriNet(p1 ~> t1, t1 ~> p2, p2 ~> t2, t2 ~> p3)
 
       val processId1 = UUID.randomUUID().toString
-      val instance1 = createPetriNetActor[Unit, Unit](petriNet, runtime, processId1)
+      val instance1 = createProcessInstance[Unit, Unit](petriNet, runtime, processId1)
 
       val processId2 = UUID.randomUUID().toString
-      val instance2 = createPetriNetActor[Unit, Unit](petriNet, runtime, processId2)
+      val instance2 = createProcessInstance[Unit, Unit](petriNet, runtime, processId2)
 
       val processId3 = UUID.randomUUID().toString
-      val instance3 = createPetriNetActor[Unit, Unit](petriNet, runtime, processId3)
+      val instance3 = createProcessInstance[Unit, Unit](petriNet, runtime, processId3)
 
       instance1 ! Initialize(Marking.empty[Place], ())
       instance2 ! Initialize(Marking.empty[Place], ())
@@ -131,21 +130,21 @@ class ProcessQuerySpec extends AkkaTestBase("ProcessQuerySpec") with BeforeAndAf
 
       // Setup petriNet and instances
 
-      val p1 = Place[Unit](id = 1)
-      val p2 = Place[Unit](id = 2)
-      val p3 = Place[Unit](id = 3)
-      val t1 = nullTransition[Unit](id = 1, automated = true)
-      val t2 = nullTransition[Unit](id = 2, automated = true)
+      val p1 = Place(id = 1)
+      val p2 = Place(id = 2)
+      val p3 = Place(id = 3)
+      val t1 = nullTransition(id = 1, automated = true)
+      val t2 = nullTransition(id = 2, automated = true)
       val petriNet = createPetriNet(p1 ~> t1, t1 ~> p2, p2 ~> t2, t2 ~> p3)
 
       val processId1 = UUID.randomUUID().toString
-      val instance1 = createPetriNetActor[Unit, Unit](petriNet, runtime, processId1)
+      val instance1 = createProcessInstance[Unit, Unit](petriNet, runtime, processId1)
 
       val processId2 = UUID.randomUUID().toString
-      val instance2 = createPetriNetActor[Unit, Unit](petriNet, runtime, processId2)
+      val instance2 = createProcessInstance[Unit, Unit](petriNet, runtime, processId2)
 
       val processId3 = UUID.randomUUID().toString
-      val instance3 = createPetriNetActor[Unit, Unit](petriNet, runtime, processId3)
+      val instance3 = createProcessInstance[Unit, Unit](petriNet, runtime, processId3)
 
       instance1 ! Initialize(Marking.empty[Place], ())
       instance2 ! Initialize(Marking.empty[Place], ())

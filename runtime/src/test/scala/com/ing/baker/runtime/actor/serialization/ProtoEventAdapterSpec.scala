@@ -5,10 +5,9 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.petrinet.api.MultiSet
+import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.actor.serialization.Encryption._
 import com.ing.baker.runtime.actor.serialization.ProtoEventAdapterSpec._
-
 import com.ing.baker.{AllTypeRecipe, types}
 import javax.crypto.BadPaddingException
 import org.scalacheck.Gen
@@ -94,10 +93,9 @@ object ProtoEventAdapterSpec {
     val recipeEntriesGen = GenUtil.tuple(recipeIdGen, recipeGen)
 
     val recipeInformationGen: Gen[RecipeInformation] = for {
-      recipeId <- recipeIdGen
       compiledRecipe <- recipeGen
       timestamp <- timestampGen
-    } yield RecipeInformation(recipeId, compiledRecipe, timestamp)
+    } yield RecipeInformation(compiledRecipe, timestamp)
 
     val allRecipesGen: Gen[AllRecipes] = Gen.listOf(recipeInformationGen).map(AllRecipes(_))
 
@@ -174,8 +172,8 @@ object ProtoEventAdapterSpec {
     val transitionInputGen = Runtime.runtimeEventGen
     val correlationIdGen = Gen.uuid.map(_.toString)
 
-    val multiSetGen: Gen[MultiSet[_]] = Gen.nonEmptyMap[Any, Int](GenUtil.tuple(tokenDataGen, Gen.posNum[Int]))
-    val markingDataGen: Gen[MarkingData] = Gen.mapOf(GenUtil.tuple(placeIdGen, multiSetGen))
+    val multiSetGen: Gen[MultiSet[Any]] = Gen.nonEmptyMap[Any, Int](GenUtil.tuple(tokenDataGen, Gen.posNum[Int]))
+    val markingDataGen: Gen[Marking[Id]] = Gen.mapOf(GenUtil.tuple(placeIdGen, multiSetGen))
 
     val getStateGen = Gen.const(GetState)
     val stopGen = Gen.oneOf(true, false).map(Stop(_))
@@ -306,7 +304,6 @@ object ProtoEventAdapterSpec {
   }
 }
 
-@deprecated("marked deprecated because of -XFatal-Warnings and deprecated sieves", "1.4.0")
 class ProtoEventAdapterSpec extends WordSpecLike with Checkers with Matchers with BeforeAndAfterAll {
 
   val actorSystem = ActorSystem()

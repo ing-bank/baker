@@ -1,7 +1,7 @@
 package com.ing.baker
 
+import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.{UntilDeadline, UntilMaximumRetries}
-import com.ing.baker.recipe.common.{FiresOneOfEvents, InteractionFailureStrategy, ProvidesIngredient, ProvidesNothing}
 import com.ing.baker.recipe.scaladsl._
 import org.joda.time.{DateTime, LocalDate, LocalDateTime}
 
@@ -13,7 +13,6 @@ import scala.concurrent.duration.DurationInt
   *
   * @see com.ing.baker.Examples
   */
-@deprecated("marked deprecated because of -XFatal-Warnings and deprecated sieves", "1.4.0")
 object AllTypeRecipe {
 
   case class Payload(data: Map[String, String], userData: Map[String, java.lang.Integer])
@@ -96,50 +95,50 @@ object AllTypeRecipe {
 
   val interactionOne = Interaction(
     name = "interactionOne",
-    inputIngredients = bigPayloadIngredient,
-    output = FiresOneOfEvents(javaDataEvent)
+    inputIngredients = Seq(bigPayloadIngredient),
+    output = Seq(javaDataEvent)
   )
 
   val interactionTwo = Interaction(
     name = "interactionTwo",
     inputIngredients = Seq(javaBooleanIngredient, javaByteIngredient),
-    output = FiresOneOfEvents(byteArrayEvent, otherEvent)
+    output = Seq(byteArrayEvent, otherEvent)
   )
 
   val interactionThree = Interaction(
     name = "interactionThree",
     inputIngredients = Seq(bigPayloadIngredient, javaByteIngredient),
-    output = FiresOneOfEvents(emptyEvent, otherEvent, mapEvent)
+    output = Seq(emptyEvent, otherEvent, mapEvent)
   )
 
   val interactionFour = Interaction(
     name = "interactionFour",
-    inputIngredients = javaIntegerIngredient,
-    output = FiresOneOfEvents(jodaEvent)
+    inputIngredients = Seq(javaIntegerIngredient),
+    output = Seq(jodaEvent)
   )
 
   val interactionFive = Interaction(
     name = "interactionFive",
     inputIngredients = Seq.empty,
-    output = ProvidesIngredient(javaStringIngredient)
+    output = Seq(emptyEvent)
   )
 
   val interactionSix = Interaction(
     name = "interactionSix",
-    inputIngredients = jodaLocalDateIngredient,
-    output = ProvidesNothing
+    inputIngredients = Seq(jodaLocalDateIngredient),
+    output = Seq()
   )
 
   val interactionSeven = Interaction(
     name = "interactionSeven",
-    inputIngredients = javaIntegerIngredient,
-    output = FiresOneOfEvents(scalaDataEvent)
+    inputIngredients = Seq(javaIntegerIngredient),
+    output = Seq(scalaDataEvent)
   )
 
   val sieveInteraction = Interaction(
     name = "sieveInteraction",
-    inputIngredients = javaIntegerIngredient,
-    output = FiresOneOfEvents(scalaDataEvent)
+    inputIngredients = Seq(javaIntegerIngredient),
+    output = Seq(scalaDataEvent)
   )
 
   val allTypesInteraction = Interaction(
@@ -149,7 +148,7 @@ object AllTypeRecipe {
       jodaDateTimeIngredient, jodaLocalDateIngredient, jodaLocalDateTimeIngredient, booleanIngredient, byteIngredient, shortIngredient, charIngredient, intIngredient,
       longIngredient, floatIngredient, doubleIngredient, stringIngredient, bigDecimalIngredient, bigIntIngredient, optionalIngredient, optionalIngredientForNone,
       primitiveOptionalIngredient, listIngredient, mapIngredient, mapIngredientWithPrimitives, mapIngredientWithBoxedTypes),
-    output = FiresOneOfEvents(emptyEvent)
+    output = Seq(emptyEvent)
   )
 
   // recipe
@@ -170,8 +169,7 @@ object AllTypeRecipe {
           )
           .withMaximumInteractionCount(5)
           .withOverriddenIngredientName("longIngredient", "renamedLongIngredient")
-          .withRequiredOneOfEvents(mapEvent, otherEvent)
-          .withOverriddenOutputIngredientName("renamedIngredient"),
+          .withRequiredOneOfEvents(mapEvent, otherEvent),
         interactionFour.withFailureStrategy(InteractionFailureStrategy.RetryWithIncrementalBackoff.builder()
           .withInitialDelay(5.seconds)
           .withBackoffFactor(2.0)
@@ -185,6 +183,7 @@ object AllTypeRecipe {
           .withFailureStrategy(InteractionFailureStrategy.FireEventAfterFailure()),
         interactionSix,
         interactionSeven,
+        sieveInteraction,
         allTypesInteraction.withPredefinedIngredients(
           bigPayloadIngredient(Payload(Map("stringKey" -> "stringValue"), Map("someOtherStringKey" -> java.lang.Integer.MAX_VALUE))),
           javaBooleanIngredient(java.lang.Boolean.TRUE),
@@ -225,5 +224,4 @@ object AllTypeRecipe {
       .withSensoryEvents(bigPayloadEvent, mapEvent)
       .withEventReceivePeriod(1 minute)
       .withRetentionPeriod(5 minutes)
-      .withSieves(sieveInteraction)
 }

@@ -1,15 +1,15 @@
 package com.ing.baker.runtime.actor.serialization
 
+import com.ing.baker.runtime.actor.serialization.KryoSerializerSpec._
 import com.twitter.chill.{KryoPool, ScalaKryoInstantiator}
 import org.scalatest.{FunSuite, Matchers}
 
+object KryoSerializerSpec  {
 
-case class Test1(a: Int, b: String)
+  case class Test1(a: Int, b: String)
+}
 
-case class Test2(a: Int, b: String)
-
-case class Test3(a: Int, b: String, c: String)
-
+@deprecated("Should not be actively used, kept for backwards compatibility", "2.0.0")
 class KryoSerializerSpec extends FunSuite with Matchers {
 
   test("kryo can serialize/deserialize case classes") {

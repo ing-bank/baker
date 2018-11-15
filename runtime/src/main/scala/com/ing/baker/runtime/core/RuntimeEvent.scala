@@ -1,22 +1,9 @@
 package com.ing.baker.runtime.core
 
 import com.ing.baker.il.EventDescriptor
-import com.ing.baker.types.{Converters, NullValue, Value}
+import com.ing.baker.types.{NullValue, Value}
 
 import scala.collection.JavaConverters._
-
-
-object RuntimeEvent {
-
-  def create(name: String, ingredients: Seq[(String, Any)]): RuntimeEvent = {
-    val ingredientValues = ingredients.map {
-      case (name, obj) => name -> Converters.toValue(obj)
-    }
-
-    RuntimeEvent(name, ingredientValues)
-  }
-
-}
 
 case class RuntimeEvent(name: String,
                         providedIngredients: Seq[(String, Value)]) {

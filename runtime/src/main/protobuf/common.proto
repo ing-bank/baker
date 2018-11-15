@@ -29,7 +29,7 @@ enum PrimitiveType {
     FLOAT_BIG = 18;
     CHAR_ARRAY = 17;
     BYTE_ARRAY = 22;
-    DATE = 26;
+    DATE = 23;
 
     // depcrecated but do not remove!
     BIG_INT_JAVA = 21;
@@ -42,7 +42,6 @@ enum PrimitiveType {
     SHORT_PRIMITIVE = 6;
     BYTE_PRIMITIVE = 4;
     BOOLEAN_PRIMITIVE = 2;
-    JODA_DATETIME = 23;
     JODA_LOCAL_DATE = 24;
     JODA_LOCAL_DATETIME = 25;
 }
@@ -155,6 +154,7 @@ message EventDescriptor {
 
 message CompiledRecipe {
     optional string name = 1;
+    optional string recipeId = 7;
     optional PetriNet petrinet = 2;
     repeated ProducedToken initialMarking = 3;
     repeated string validationErrors = 4;

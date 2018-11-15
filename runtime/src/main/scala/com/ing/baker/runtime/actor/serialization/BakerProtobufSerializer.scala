@@ -1,11 +1,11 @@
 package com.ing.baker.runtime.actor.serialization
 
 import akka.actor.ExtendedActorSystem
-import akka.serialization.{SerializationExtension, SerializerWithStringManifest}
-import com.ing.baker.{il, types}
+import akka.serialization.{Serialization, SerializationExtension, SerializerWithStringManifest}
+import com.ing.baker.il
 import com.ing.baker.runtime.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
-import com.ing.baker.runtime.actor.protobuf
+import com.ing.baker.runtime.actor.{process_instance, protobuf}
 import com.ing.baker.runtime.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.{actor, core}
@@ -16,12 +16,16 @@ object BakerProtobufSerializer {
   case class Entry[A <: GeneratedMessage with Message[A]](manifest: String, domainClass: Class[_], pbt: GeneratedMessageCompanion[A])
 
   private val log = LoggerFactory.getLogger(classOf[BakerProtobufSerializer])
+
+  // Hardcoded serializerId for this serializer. This should not conflict with other serializers.
+  // Values from 0 to 40 are reserved for Akka internal usage.
+  val identifier = 101
 }
 
 class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
   import BakerProtobufSerializer._
 
-  def getSerializationExtension() = SerializationExtension.get(system)
+  def getSerializationExtension(): Serialization = SerializationExtension.get(system)
 
   // TODO remove this lazy modifier, but be aware removing lazy causes the tests to hang.
   private lazy val protoEventAdapter = new ProtoEventAdapterImpl(getSerializationExtension(), NoEncryption)
@@ -34,6 +38,8 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
 
     Entry("baker.types.Type", classOf[com.ing.baker.types.Type], actor.protobuf.Type),
     Entry("baker.types.Value", classOf[com.ing.baker.types.Value], actor.protobuf.Value),
+
+    Entry("ProcessIndex.GetShardIndex", classOf[com.ing.baker.runtime.actor.ClusterBakerActorProvider.GetShardIndex], actor.process_index.protobuf.GetShardIndex),
 
     Entry("ProcessIndex.ActorCreated", classOf[ProcessIndex.ActorCreated], actor.process_index.protobuf.ActorCreated),
     Entry("ProcessIndex.ActorPassivated", classOf[ProcessIndex.ActorPassivated], actor.process_index.protobuf.ActorPassivated),
@@ -69,6 +75,10 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     Entry("ProcessInstanceProtocol.TransitionFailed", classOf[ProcessInstanceProtocol.TransitionFailed], actor.process_instance.protobuf.TransitionFailedMessage),
     Entry("ProcessInstanceProtocol.TransitionFired", classOf[ProcessInstanceProtocol.TransitionFired], actor.process_instance.protobuf.TransitionFiredMessage),
 
+    Entry("TransitionFired", classOf[process_instance.protobuf.TransitionFired], process_instance.protobuf.TransitionFired),
+    Entry("TransitionFailed", classOf[process_instance.protobuf.TransitionFailed], process_instance.protobuf.TransitionFailed),
+    Entry("Initialized", classOf[process_instance.protobuf.Initialized], process_instance.protobuf.Initialized),
+
     Entry("RecipeManager.RecipeAdded", classOf[RecipeManager.RecipeAdded], actor.recipe_manager.protobuf.RecipeAdded),
     Entry("RecipeManagerProtocol.AddRecipe", classOf[RecipeManagerProtocol.AddRecipe], actor.recipe_manager.protobuf.AddRecipe),
     Entry("RecipeManagerProtocol.AddRecipeResponse", classOf[RecipeManagerProtocol.AddRecipeResponse], actor.recipe_manager.protobuf.AddRecipeResponse),
@@ -79,9 +89,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     Entry("RecipeManagerProtocol.AllRecipes", classOf[RecipeManagerProtocol.AllRecipes], actor.recipe_manager.protobuf.AllRecipes)
   )
 
-  // Hardcoded serializerId for this serializer. This should not conflict with other serializers.
-  // Values from 0 to 40 are reserved for Akka internal usage.
-  override def identifier: Int = 101
+  override def identifier: Int = BakerProtobufSerializer.identifier
 
   override def manifest(o: AnyRef): String = {
 

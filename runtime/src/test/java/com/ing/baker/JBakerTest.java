@@ -13,8 +13,8 @@ import com.ing.baker.runtime.core.EventListener;
 import com.ing.baker.runtime.core.RecipeInformation;
 import com.ing.baker.runtime.core.events.ProcessCreated;
 import com.ing.baker.runtime.core.events.Subscribe;
+import com.ing.baker.runtime.core.events.AnnotatedEventSubscriber;
 import com.ing.baker.runtime.java_api.JBaker;
-import com.ing.baker.runtime.java_api.JEventSubscriber;
 import com.ing.baker.types.Converters;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -128,7 +128,7 @@ public class JBakerTest {
         // -- register
 
         jBaker.registerBakerEventListener(new EmptySubscriber());
-        verify(mockBaker).registerEventListenerPF(any(JEventSubscriber.class));
+        verify(mockBaker).registerEventListenerPF(any(AnnotatedEventSubscriber.class));
 
         // -- bake
 
@@ -176,7 +176,7 @@ public class JBakerTest {
         verify(mockBaker).getAllRecipes(any(FiniteDuration.class));
 
         when(mockBaker.getRecipe(any(String.class), any(FiniteDuration.class)))
-                .thenReturn(new RecipeInformation(testRecipeId, null, 0l, new scala.collection.immutable.HashSet<String>()));
+                .thenReturn(new RecipeInformation(null, 0l, new scala.collection.immutable.HashSet<String>()));
         jBaker.getRecipe(testRecipeId);
         verify(mockBaker).getRecipe(eq(testRecipeId), any(FiniteDuration.class));
 

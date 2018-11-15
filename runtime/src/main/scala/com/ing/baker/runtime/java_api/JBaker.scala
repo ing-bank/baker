@@ -6,6 +6,7 @@ import java.util.{Collections, UUID}
 import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core._
+import com.ing.baker.runtime.core.events.AnnotatedEventSubscriber
 import com.ing.baker.types.Value
 
 import scala.collection.JavaConverters._
@@ -578,7 +579,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @return
     */
   def registerBakerEventListener(listener: AnyRef) = {
-    baker.registerEventListenerPF(new JEventSubscriber(listener))
+    baker.registerEventListenerPF(new AnnotatedEventSubscriber(listener))
   }
 
   /**

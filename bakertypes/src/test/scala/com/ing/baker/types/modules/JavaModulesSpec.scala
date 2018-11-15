@@ -32,6 +32,20 @@ class JavaModulesSpec extends WordSpecLike with Matchers {
 
   val listValueForEnumABC = ListValue(List(PrimitiveValue(ValueA.name()), PrimitiveValue(ValueB.name()), PrimitiveValue(ValueC.name())))
 
+  val mapValue = RecordValue(Map(
+    "a" -> PrimitiveValue(1),
+    "b" -> PrimitiveValue(2),
+    "c" -> PrimitiveValue(3)
+  ))
+
+  val scalaMap = Map(
+    "a" -> 1,
+    "b" -> 2,
+    "c" -> 3
+  )
+
+  val javaMap: util.Map[String, Int] = scalaMap.asJava
+
   "The converters utility" should {
 
     "be able to autobox null values to java Optionals" in {
@@ -130,6 +144,47 @@ class JavaModulesSpec extends WordSpecLike with Matchers {
       toJava[java.util.List[Int]](listValue123) shouldBe javaList
     }
 
+    "be able to create java.util.List<T> objects" in {
+
+      val javaList = new util.ArrayList[String]()
+      javaList.add("a")
+      javaList.add("b")
+      javaList.add("c")
+
+      listValueABC.asList(classOf[String]) shouldBe javaList
+    }
+
+    "be able to create java.util.Set<T> objects" in {
+
+      val javaSet = new util.HashSet[String]()
+      javaSet.add("a")
+      javaSet.add("b")
+      javaSet.add("c")
+
+      listValueABC.asSet(classOf[String]) shouldBe javaSet
+    }
+
+    "be able to create java.util.Map<K, V> objects" in {
+
+      val javaMap = new util.HashMap[String, Integer]()
+      javaMap.put("a", 1)
+      javaMap.put("b", 2)
+      javaMap.put("c", 3)
+
+      mapValue.asMap(classOf[String], classOf[java.lang.Integer]) shouldBe javaMap
+    }
+
+    "fail to convert a unsupported value into a java List<T>/Set<T>/Map<K, V> objects" in {
+      intercept[IllegalArgumentException] (PrimitiveValue("a").asList(classOf[String]))
+        .getMessage shouldBe "value of type class com.ing.baker.types.PrimitiveValue cannot be converted to a java.util.List object"
+
+      intercept[IllegalArgumentException] (PrimitiveValue("a").asSet(classOf[String]))
+        .getMessage shouldBe "value of type class com.ing.baker.types.PrimitiveValue cannot be converted to a java.util.Set object"
+
+      intercept[IllegalArgumentException] (PrimitiveValue("a").asMap(classOf[String], classOf[java.lang.Integer]))
+        .getMessage shouldBe "value of type class com.ing.baker.types.PrimitiveValue cannot be converted to a java.util.Map object"
+    }
+
     "be able to parse pojo objects" in {
 
       toValue(new PersonPojo("john", 42)) shouldBe recordPerson
@@ -140,28 +195,14 @@ class JavaModulesSpec extends WordSpecLike with Matchers {
       toJava[PersonPojo](recordPerson) shouldBe new PersonPojo("john", 42)
     }
 
-    val valueMap = RecordValue(Map(
-      "a" -> PrimitiveValue(1),
-      "b" -> PrimitiveValue(2),
-      "c" -> PrimitiveValue(3)
-    ))
-
-    val scalaMap = Map(
-      "a" -> 1,
-      "b" -> 2,
-      "c" -> 3
-    )
-
-    val javaMap: util.Map[String, Int] = scalaMap.asJava
-
     "be able to parse java.util.Map objects" in {
 
-      toValue(javaMap) shouldBe valueMap
+      toValue(javaMap) shouldBe mapValue
     }
 
     "be able to create java.util.Map objects" in {
 
-      toJava[java.util.Map[String, Int]](valueMap) shouldBe javaMap
+      toJava[java.util.Map[String, Int]](mapValue) shouldBe javaMap
     }
 
 

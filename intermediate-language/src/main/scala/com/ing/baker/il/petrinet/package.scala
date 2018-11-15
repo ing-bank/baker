@@ -5,18 +5,15 @@ import scalax.collection.edge.WLDiEdge
 
 package object petrinet {
 
-  type RecipePetriNet = PetriNet[Place[_], Transition]
-
-  def arc(t: Transition, p: Place[_], weight: Long): Arc = WLDiEdge[Node, Edge[Any]](Right(t), Left(p))(weight, Edge[Any](None))
-
-  def arc[C](p: Place[C], t: Transition, weight: Long, eventFilter: Option[String] = None): Arc = {
-    WLDiEdge[Node, Edge[C]](Left(p), Right(t))(weight, Edge[C](eventFilter))
-  }
+  /**
+    * Type alias for a petri net with recipe Place and Transition types
+    */
+  type RecipePetriNet = PetriNet[Place, Transition]
 
   /**
     * Type alias for the node type of the scalax.collection.Graph backing the petri net.
     */
-  type Node = Either[Place[_], Transition]
+  type Node = Either[Place, Transition]
 
   /**
     * Type alias for the edge type of the scalax.collection.Graph backing the petri net.

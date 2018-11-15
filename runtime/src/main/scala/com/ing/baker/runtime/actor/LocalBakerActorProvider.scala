@@ -3,11 +3,11 @@ package com.ing.baker.runtime.actor
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.Materializer
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
-import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
+import com.ing.baker.runtime.actor.process_index.ProcessIndex.{ActorMetadata, CheckForProcessesToBeDeleted}
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol.{GetIndex, Index}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
 import com.ing.baker.runtime.actor.serialization.Encryption
-import com.ing.baker.runtime.core.interations.InteractionManager
+import com.ing.baker.runtime.core.internal.InteractionManager
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 
@@ -21,8 +21,12 @@ class LocalBakerActorProvider(config: Config, configuredEncryption: Encryption) 
 
   override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(
     implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {
-    actorSystem.actorOf(
-      ProcessIndex.props(retentionCheckInterval, actorIdleTimeout, configuredEncryption, interactionManager, recipeManager))
+    val indexActorRef = actorSystem.actorOf(
+      ProcessIndex.props(actorIdleTimeout, configuredEncryption, interactionManager, recipeManager))
+
+    actorSystem.scheduler.schedule(retentionCheckInterval, retentionCheckInterval, indexActorRef, CheckForProcessesToBeDeleted)(actorSystem.dispatcher)
+
+    indexActorRef
   }
 
   override def createRecipeManagerActor()(implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {

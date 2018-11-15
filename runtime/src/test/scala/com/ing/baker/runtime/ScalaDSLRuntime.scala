@@ -2,8 +2,7 @@ package com.ing.baker.runtime
 
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction}
-import com.ing.baker.runtime.core.RuntimeEvent
-import com.ing.baker.runtime.core.interations.InteractionImplementation
+import com.ing.baker.runtime.core.{InteractionImplementation, RuntimeEvent}
 import com.ing.baker.types.Converters.toJava
 import com.ing.baker.types.{Converters, Type, Value}
 
@@ -21,7 +20,7 @@ object ScalaDSLRuntime {
 
     override val inputTypes: Seq[Type] = i.inputIngredients.map(_.ingredientType)
 
-    override def execute(interaction: InteractionTransition, input: Seq[Value]): Option[RuntimeEvent] = Some(fn(input))
+    override def execute(input: Seq[Value]): Option[RuntimeEvent] = Some(fn(input))
   }
 
   // TODO use shapeless to abstract over function arity and add type safety

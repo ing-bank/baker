@@ -1,5 +1,5 @@
 package com.ing.baker.runtime.core.events
 
-import com.ing.baker.runtime.actor.InternalBakerMessage
+import akka.actor.NoSerializationVerificationNeeded
 
-trait BakerEvent extends InternalBakerMessage
+trait BakerEvent extends NoSerializationVerificationNeeded

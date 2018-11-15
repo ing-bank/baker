@@ -9,10 +9,9 @@ import com.ing.baker.baas.http.BAASAPI
 import com.ing.baker.baas.interaction.http.RemoteInteractionLauncher
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.recipe.common.ProvidesIngredient
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Ingredients, Interaction, processId}
+import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, processId}
 import com.ing.baker.recipe.{commonserialize, scaladsl}
-import com.ing.baker.runtime.core.interations.MethodInteractionImplementation
+import com.ing.baker.runtime.core.internal.MethodInteractionImplementation
 import com.ing.baker.runtime.core.{Baker, ProcessState, SensoryEventStatus}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
@@ -42,32 +41,6 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
 
   launcher.start()
 
-
-  "Serialize and deserialize a common recipe" in {
-    val originalRecipe: commonserialize.Recipe = new commonserialize.Recipe(setupSimpleRecipe("name"))
-    val serializedRecipe = KryoUtil.serialize(originalRecipe)
-    val deserializedRecipe = KryoUtil.deserialize[commonserialize.Recipe](serializedRecipe)
-
-    deserializedRecipe shouldBe originalRecipe
-  }
-
-  "Serialize and deserialize a compiled recipe" in {
-    val compiledRecipe = RecipeCompiler.compileRecipe(setupSimpleRecipe("test"))
-
-    val serializedRecipe = KryoUtil.serialize(compiledRecipe)
-    val deserializedRecipe = KryoUtil.deserialize[CompiledRecipe](serializedRecipe)
-
-    deserializedRecipe shouldBe compiledRecipe
-  }
-
-  "Add a implementation to the BAAS API" in {
-    launcher.registerToBaker(baasClient)
-  }
-
-  "Send recipe to the BAAS API" in {
-    val originalRecipe = new commonserialize.Recipe(setupSimpleRecipe("recipename"))
-    baasClient.addRecipe(originalRecipe)
-  }
 
   "Happy flow simple recipe BAAS" ignore {
     val recipeName = "simpleRecipe" + UUID.randomUUID().toString
@@ -106,18 +79,19 @@ object BAASSpec {
 
   val initialEvent = Event("InitialEvent", initialIngredient, None)
   case class InitialEvent(initialIngredient: String)
+  case class InteractionOneEvent(interactionOneIngredient: String)
 
   val interactionOne =
     Interaction(
       name = "InteractionOne",
       inputIngredients = Seq(processId, initialIngredient),
-      output = ProvidesIngredient(interactionOneIngredient))
+      output = Seq(Event[InteractionOneEvent]))
 
   case class InteractionOne() {
     def name: String = "InteractionOne"
-    def apply(processId: String, initialIngredient: String): String = {
+    def apply(processId: String, initialIngredient: String): InteractionOneEvent = {
       println("Executing interactionOne")
-      initialIngredient
+      InteractionOneEvent(initialIngredient)
     }
   }
 

@@ -6,7 +6,7 @@ import com.ing.baker.types.Converters
 
 case class Interaction private(override val name: String,
                                override val inputIngredients: Seq[common.Ingredient],
-                               override val output: InteractionOutput,
+                               override val output: Seq[common.Event],
                                override val requiredEvents: Set[String] = Set.empty,
                                override val requiredOneOfEvents: Set[Set[String]] = Set.empty,
                                override val predefinedIngredients: Map[String, com.ing.baker.types.Value] = Map.empty,
@@ -52,9 +52,9 @@ case class Interaction private(override val name: String,
                                    newIngredient: String): Interaction =
     copy(overriddenIngredientNames = overriddenIngredientNames + (oldIngredient -> newIngredient))
 
-  def withOverriddenOutputIngredientName(newIngredientOutputName: String): Interaction =
-    copy(overriddenOutputIngredientName = Some(newIngredientOutputName))
+  def withEventOutputTransformer(event: common.Event, ingredientRenames: Map[String, String]): Interaction =
+    copy(eventOutputTransformers = eventOutputTransformers + (event -> EventOutputTransformer(event.name, ingredientRenames)))
 
-  def withEventOutputTransformer(event: Event, newEventName: String, ingredientRenames: Map[String, String]): Interaction =
+  def withEventOutputTransformer(event: common.Event, newEventName: String, ingredientRenames: Map[String, String]): Interaction =
     copy(eventOutputTransformers = eventOutputTransformers + (event -> EventOutputTransformer(newEventName, ingredientRenames)))
 }

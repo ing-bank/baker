@@ -23,15 +23,7 @@ package object javadsl {
     }
   }
 
-  def eventClassToCommonEvent(eventClass: Class[_], firingLimit: Option[Int]): common.Event =
-    new common.Event {
-      override val name: String = eventClass.getSimpleName
-      override val providedIngredients: Seq[common.Ingredient] =
-        eventClass.getDeclaredFields
-          .filter(field => !field.isSynthetic)
-          .map(f => createIngredient(f.getName, parseType(f.getGenericType, s"Unsupported type for ingredient '${f.getName}' on event '${eventClass.getSimpleName}'")))
-      override val maxFiringLimit: Option[Int] = firingLimit
-    }
+  def eventClassToCommonEvent(eventClass: Class[_], firingLimit: Option[Int]): common.Event = new javadsl.Event(eventClass, firingLimit)
 
   def interactionClassToCommonInteraction(interactionClass: Class[_], newName: Option[String]): InteractionDescriptor = {
 
@@ -49,16 +41,9 @@ package object javadsl {
             method.parameterTypeForName(name).get,
             s"Unsupported type for ingredient '$name' on interaction '${interactionClass.getName}'")))
 
-    val output: common.InteractionOutput = {
-      if (method.isAnnotationPresent(classOf[annotations.ProvidesIngredient]) && method.isAnnotationPresent(classOf[annotations.FiresEvent]))
-        throw new common.RecipeValidationException(s"Interaction $name has both ProvidesIngredient and FiresEvent annotation, only one may be specified")
-      //ProvidesIngredient
-      else if (method.isAnnotationPresent(classOf[annotations.ProvidesIngredient])) {
-        val interactionOutputName: String = method.getAnnotation(classOf[annotations.ProvidesIngredient]).value()
-        common.ProvidesIngredient(createIngredient(interactionOutputName, parseType(method.getGenericReturnType, s"Unsupported return type for interaction '${interactionClass.getSimpleName}'")))
-      }
-      //ProvidesEvent
-      else if (method.isAnnotationPresent(classOf[annotations.FiresEvent])) {
+    val output: Seq[common.Event] = {
+
+      if (method.isAnnotationPresent(classOf[annotations.FiresEvent])) {
         val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[annotations.FiresEvent]).oneOf()
 
         outputEventClasses.foreach {
@@ -67,18 +52,9 @@ package object javadsl {
               throw new common.RecipeValidationException(s"Interaction $name provides event '${eventClass.getName}' that is incompatible with it's return type")
         }
 
-        val events: Seq[common.Event] = outputEventClasses.map(eventClassToCommonEvent(_, None))
-        common.FiresOneOfEvents(events: _*)
+        outputEventClasses.map(eventClassToCommonEvent(_, None))
       }
-      else if (method.getReturnType().equals(classOf[Void]))
-        common.ProvidesNothing
-      //ProvidesNothing
-      else {
-
-        //
-        common.ProvidesNothing
-      }
-
+      else Seq.empty
     }
 
     InteractionDescriptor(name, inputIngredients, output, Set.empty, Set.empty, Map.empty, Map.empty, None, None, None, Map.empty, newName)

@@ -1,8 +1,12 @@
 package com.ing.baker.runtime
 
-import java.util.concurrent.TimeUnit
+import java.lang.Thread.UncaughtExceptionHandler
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.{Executors, ThreadFactory, TimeUnit}
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
+import scala.util.control.NonFatal
 
 package object core {
 
@@ -31,5 +35,32 @@ package object core {
       clazz.getClassLoader.loadClass(originalName)
     } else
       clazz
+  }
+
+  def namedCachedThreadPool(threadNamePrefix: String): ExecutionContext =
+    ExecutionContext.fromExecutorService(Executors.newCachedThreadPool(daemonThreadFactory(threadNamePrefix)))
+
+  /** A `ThreadFactory` which creates daemon threads, using the given name. */
+  def daemonThreadFactory(threadName: String, exitJvmOnFatalError: Boolean = true): ThreadFactory = new ThreadFactory {
+    val defaultThreadFactory = Executors.defaultThreadFactory()
+    val idx = new AtomicInteger(0)
+    def newThread(r: Runnable) = {
+      val t = defaultThreadFactory.newThread(r)
+      t.setDaemon(true)
+      t.setName(s"$threadName-${idx.incrementAndGet()}")
+      t.setUncaughtExceptionHandler(new UncaughtExceptionHandler {
+        def uncaughtException(t: Thread, e: Throwable): Unit = {
+          System.err.println(s"------------ UNHANDLED EXCEPTION ---------- (${t.getName})")
+          e.printStackTrace(System.err)
+          if (exitJvmOnFatalError) {
+            e match {
+              case NonFatal(_) => ()
+              case fatal => System.exit(-1)
+            }
+          }
+        }
+      })
+      t
+    }
   }
 }
