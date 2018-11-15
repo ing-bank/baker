@@ -23,7 +23,7 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
       // compiles the recipe
       val compiledRecipe = RecipeCompiler.compileRecipe(webShopRecipe)
 
-      println(s"Visual recipe: ${compiledRecipe.getRecipeVisualization}")
+//      println(s"Visual recipe: ${compiledRecipe.getRecipeVisualization}")
 
       // prints any validation errors the compiler found
       compiledRecipe.validationErrors shouldBe empty
