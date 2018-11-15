@@ -7,8 +7,8 @@ You define an [interaction](../concepts#interaction) with a java interface. For 
 ``` java
 package com.example;
 
-import com.ing.baker.recipe.annotations.FiresEvent;
-import com.ing.baker.recipe.annotations.RequiresIngredient;
+import com.ing.baker.recipe.annotations.*;
+import javax.inject.Named;
 
 public interface ValidateOrder {
 
@@ -20,7 +20,7 @@ public interface ValidateOrder {
 
     @FiresEvent(oneOf = {Failed.class, Valid.class})
     Outcome apply(@ProcessId String processId,
-                  @RequiresIngredient("order") String key);
+                  @Named("order") String key);
 }
 ```
 
