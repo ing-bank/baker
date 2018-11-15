@@ -40,9 +40,7 @@ Pull (or clone) from https://github.com/ing-bank/ing-bank.github.io
 Then execute the following commands inside the repository directory.
 
 ``` bash
-cd baker
-git pull
-cd ..
+git pull --recurse-submodules
 git commit -am 'update baker docs'
 git push
 ```
