@@ -244,15 +244,27 @@
       
 
 
+  <li class="md-nav__item">
+    <a href="../../migration_guide/" title="Migration Guide" class="md-nav__link">
+      Migration Guide
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
     
-    <label class="md-nav__link" for="nav-2">
+    <label class="md-nav__link" for="nav-3">
       Documentation
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-2">
+      <label class="md-nav__title" for="nav-3">
         Documentation
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -288,6 +300,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../../documentation/event-listener/" title="Events" class="md-nav__link">
+      Events
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../../documentation/visualization/" title="Visualization" class="md-nav__link">
       Visualization
     </a>
@@ -308,13 +332,13 @@
 
   <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4" checked>
     
-    <label class="md-nav__link" for="nav-3">
+    <label class="md-nav__link" for="nav-4">
       Presentations
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
-      <label class="md-nav__title" for="nav-3">
+      <label class="md-nav__title" for="nav-4">
         Presentations
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1135,7 +1159,7 @@
 <div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">registerIndividual</span> <span class="k">=</span> <span class="nc">Interaction</span><span class="o">(</span>
   <span class="n">name</span> <span class="k">=</span> <span class="s">&quot;RegisterIndividual&quot;</span><span class="o">,</span>
   <span class="n">inputIngredients</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span><span class="n">name</span><span class="o">,</span> <span class="n">address</span><span class="o">),</span>
-  <span class="n">output</span> <span class="k">=</span> <span class="nc">FiresOneOfEvents</span><span class="o">(</span><span class="n">registerIndividualSuccessful</span><span class="o">,</span> <span class="n">registerIndividualFailed</span><span class="o">)</span>
+  <span class="n">output</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span><span class="n">registerIndividualSuccessful</span><span class="o">,</span> <span class="n">registerIndividualFailed</span><span class="o">)</span>
 <span class="o">)</span>
 </pre></div>
 
@@ -1192,7 +1216,7 @@
 <p>val mixFirstThree = Interaction(
   name = "MixFirstThree",
   inputIngredients = Seq(milk, eggs, flour),
-  output = FiresOneOfEvents(batterMixed)
+  output = Seq(batterMixed)
 )</p>
 <p>val mixFirstThreeImpl = mixFirstThree implement {
   (milk: String, eggs: String, flour: String) =&gt;
