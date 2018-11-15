@@ -16,6 +16,10 @@ object BakerProtobufSerializer {
   case class Entry[A <: GeneratedMessage with Message[A]](manifest: String, domainClass: Class[_], pbt: GeneratedMessageCompanion[A])
 
   private val log = LoggerFactory.getLogger(classOf[BakerProtobufSerializer])
+
+  // Hardcoded serializerId for this serializer. This should not conflict with other serializers.
+  // Values from 0 to 40 are reserved for Akka internal usage.
+  val identifier = 101
 }
 
 class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
@@ -85,9 +89,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     Entry("RecipeManagerProtocol.AllRecipes", classOf[RecipeManagerProtocol.AllRecipes], actor.recipe_manager.protobuf.AllRecipes)
   )
 
-  // Hardcoded serializerId for this serializer. This should not conflict with other serializers.
-  // Values from 0 to 40 are reserved for Akka internal usage.
-  override def identifier: Int = 101
+  override def identifier: Int = BakerProtobufSerializer.identifier
 
   override def manifest(o: AnyRef): String = {
 

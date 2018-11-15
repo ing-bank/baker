@@ -4,14 +4,15 @@ import akka.actor.ExtendedActorSystem
 import akka.serialization.{SerializationExtension, SerializerWithStringManifest}
 
 /**
-  * This serializer was used in Baker 1.3.x for ProcessInstance events
+  * This serializer was used in Baker 1.3.x for ProcessInstance events.
   *
-  * It is kept for backwards compatibility but just forwards to BakerProtobufSerializer
+  * It is kept for backwards compatibility but just forwards to BakerProtobufSerializer.
   */
-@Deprecated
+@deprecated("Should not be actively used, kept for backwards compatibility", "2.0.0")
 class ScalaPBSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
 
-  private lazy val protobufSerializer = SerializationExtension.get(system).serializerByIdentity(101).asInstanceOf[BakerProtobufSerializer]
+  private lazy val protobufSerializer = SerializationExtension.get(system).serializerByIdentity(
+    BakerProtobufSerializer.identifier).asInstanceOf[BakerProtobufSerializer]
 
   // Hardcoded serializerId for this serializer. This should not conflict with other serializers.
   // Values from 0 to 40 are reserved for Akka internal usage.

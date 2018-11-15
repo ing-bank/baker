@@ -409,7 +409,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
       case EventReceived(_, recipeName, _, processId, _, event) if processFilter(recipeName) =>
         listener.processEvent(processId, event)
-      case InteractionCompleted(_, _, recipeName, _, processId, _, event) if processFilter(recipeName) =>
+      case InteractionCompleted(_, _, recipeName, _, processId, _, Some(event)) if processFilter(recipeName) =>
         listener.processEvent(processId, event)
       case InteractionFailed(_, _, recipeName, _, processId, _, _, _, ExceptionStrategyOutcome.Continue(eventName)) if processFilter(recipeName) =>
         listener.processEvent(processId, RuntimeEvent(eventName, Seq.empty))
