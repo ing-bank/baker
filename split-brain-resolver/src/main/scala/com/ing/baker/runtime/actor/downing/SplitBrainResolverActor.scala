@@ -19,11 +19,15 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
 
   val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
-  import context.dispatcher
   var memberStatusLastChanged: Map[UniqueAddress, Deadline] = Map()
 
   val cluster = Cluster(context.system)
-  var actOnSbrDecisionTask: Cancellable = context.system.scheduler.schedule(0 seconds, downRemovalMargin / 2, self, ActOnSbrDecision)
+
+  // Send the SBR triggers more often than the defined downRemovalMargin duration to be quicker to catch all unreachable nodes within one downRemovalMargin time slot
+  private val schedulerTickFrequency: FiniteDuration = downRemovalMargin / 2
+
+  import context.dispatcher
+  val actOnSbrDecisionTask: Cancellable = context.system.scheduler.schedule(0 seconds, schedulerTickFrequency, self, ActOnSbrDecision)
 
   override def preStart(): Unit = {
     cluster.subscribe(self, ClusterEvent.InitialStateAsEvents, classOf[ClusterDomainEvent])
@@ -40,19 +44,15 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
 
     // member events
     case MemberUp(member) =>
-      log.info("Member up {}", member)
       memberStatusLastChanged -= member.uniqueAddress
 
     case MemberLeft(member) =>
-      log.info("Member left {}", member)
       memberStatusLastChanged -= member.uniqueAddress
 
     case MemberExited(member) =>
-      log.info("Member exited {}", member)
       memberStatusLastChanged -= member.uniqueAddress
 
-    case MemberRemoved(member, previousStatus) =>
-      log.info("Member removed {}, previous status {}", member, previousStatus)
+    case MemberRemoved(member, _) =>
       memberStatusLastChanged -= member.uniqueAddress
 
     // reachability events
@@ -65,7 +65,6 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
       memberStatusLastChanged -= member.uniqueAddress
 
     case ActOnSbrDecision =>
-      log.info("act on sbr decision. self: {}", cluster.selfAddress)
       strategy.sbrDecision(ClusterHelper(cluster, memberStatusLastChanged))
 
     case _ => () // do nothing for other messages

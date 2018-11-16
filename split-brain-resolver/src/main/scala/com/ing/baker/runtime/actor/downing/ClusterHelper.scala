@@ -8,6 +8,7 @@ import scala.concurrent.duration.Deadline
 
 case class ClusterHelper(cluster: Cluster, memberStatusLastChanged: Map[UniqueAddress, Deadline]) {
 
+  // Take a snapshot of the cluster state
   private val clusterState: ClusterEvent.CurrentClusterState = cluster.state
 
   val members: SortedSet[Member] = clusterState.members

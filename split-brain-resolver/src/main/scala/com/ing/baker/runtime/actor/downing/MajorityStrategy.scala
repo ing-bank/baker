@@ -9,17 +9,14 @@ class MajorityStrategy extends Strategy {
 
   override def sbrDecision(clusterHelper: ClusterHelper): Unit = {
     if (clusterHelper.amIMember && clusterHelper.amILeader && clusterHelper.unreachables.nonEmpty) {
-      log.info("I am leader: Unreachables: {}", clusterHelper.unreachables)
-
       val nodesToDown = this.nodesToDown(clusterHelper)
-      log.info(s"${clusterHelper.myUniqueAddress} downing these nodes $nodesToDown")
+
+      log.info(s"SplitBrainResolver: ${clusterHelper.myUniqueAddress} downing these nodes $nodesToDown")
       if (nodesToDown contains clusterHelper.myUniqueAddress) {
         // leader going down
         clusterHelper.downSelf()
-        log.info("Self node left cluster: {}", clusterHelper.myUniqueAddress)
       } else {
         nodesToDown.foreach(a => clusterHelper.down(a.address))
-        log.info("Nodes {} left cluster", nodesToDown)
       }
     }
   }
