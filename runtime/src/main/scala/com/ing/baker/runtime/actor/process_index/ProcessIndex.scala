@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.actor.process_index
 
-import akka.actor.{ActorRef, Props, Terminated}
+import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props, Terminated}
 import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.pattern.{ask, pipe}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
@@ -8,7 +8,7 @@ import akka.stream.scaladsl.{Source, StreamRefs}
 import akka.stream.{Materializer, StreamRefAttributes}
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.{Place, RecipePetriNet, Transition}
-import com.ing.baker.petrinet.runtime.{PetriNetRuntime, namedCachedThreadPool}
+import com.ing.baker.petrinet.runtime.PetriNetRuntime
 import com.ing.baker.runtime.actor.Util.logging._
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.process_index.ProcessIndex._
@@ -17,11 +17,10 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.actor.serialization.Encryption
+import com.ing.baker.runtime.actor.serialization.{BakerProtoMessage, Encryption}
 import com.ing.baker.runtime.core.events.{ProcessCreated, RejectReason}
-import com.ing.baker.runtime.core.interations.InteractionManager
-import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, events}
-import com.ing.baker.runtime.petrinet._
+import com.ing.baker.runtime.core.internal.{InteractionManager, RecipeRuntime}
+import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, events, namedCachedThreadPool}
 
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -30,17 +29,16 @@ import scala.concurrent.{Await, ExecutionContext}
 
 object ProcessIndex {
 
-  def props(cleanupInterval: FiniteDuration = 1 minute,
-            processIdleTimeout: Option[FiniteDuration],
+  def props(processIdleTimeout: Option[FiniteDuration],
             configuredEncryption: Encryption,
             interactionManager: InteractionManager,
             recipeManager: ActorRef)(implicit materializer: Materializer) =
-    Props(new ProcessIndex(cleanupInterval, processIdleTimeout, configuredEncryption, interactionManager, recipeManager))
+    Props(new ProcessIndex(processIdleTimeout, configuredEncryption, interactionManager, recipeManager))
 
   sealed trait ProcessStatus
 
   //message
-  case object CheckForProcessesToBeDeleted extends InternalBakerMessage
+  case object CheckForProcessesToBeDeleted extends NoSerializationVerificationNeeded
 
   //The process is created and not deleted
   case object Active extends ProcessStatus
@@ -67,21 +65,12 @@ object ProcessIndex {
   // when an actor is created
   case class ActorCreated(recipeId: String, processId: String, createdDateTime: Long) extends BakerProtoMessage
 
-  def processInstanceProps(recipeName: String, petriNet: RecipePetriNet, petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent], settings: Settings): Props =
-    Props(new ProcessInstance[Place, Transition, ProcessState, RuntimeEvent](
-      recipeName,
-      petriNet,
-      settings,
-      petriNetRuntime)
-    )
-
   private val bakerExecutionContext: ExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
 
   private val updateCacheTimeout: FiniteDuration = 5 seconds
 }
 
-class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
-                   processIdleTimeout: Option[FiniteDuration],
+class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
                    configuredEncryption: Encryption,
                    interactionManager: InteractionManager,
                    recipeManager: ActorRef)(implicit materializer: Materializer) extends PersistentActor {
@@ -92,8 +81,6 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
   private val recipeCache: mutable.Map[String, (CompiledRecipe, Long)] = mutable.Map[String, (CompiledRecipe, Long)]()
 
   import context.dispatcher
-
-  context.system.scheduler.schedule(cleanupInterval, cleanupInterval, context.self, CheckForProcessesToBeDeleted)
 
   def updateCache() = {
     // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
@@ -112,7 +99,7 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
     }
 
   def getCompiledRecipe(recipeId: String): Option[CompiledRecipe] =
-    getRecipeWithTimeStamp(recipeId).map{_._1}
+    getRecipeWithTimeStamp(recipeId).map { case (recipe, _) => recipe }
 
   def getOrCreateProcessActor(processId: String): ActorRef =
     context.child(processId).getOrElse(createProcessActor(processId))
@@ -129,13 +116,14 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
       new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream)
 
     val processActorProps =
-      processInstanceProps(compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
+      ProcessInstance.props[Place, Transition, ProcessState, RuntimeEvent](
+        compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
         ProcessInstance.Settings(
           executionContext = bakerExecutionContext,
           encryption = configuredEncryption,
           idleTTL = processIdleTimeout))
 
-    val processActor = context.actorOf(processActorProps, name = processId)
+    val processActor = context.actorOf(props = processActorProps, name = processId)
 
     context.watch(processActor)
     processActor

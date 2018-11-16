@@ -42,6 +42,10 @@ message GetIndex {
 
 }
 
+message GetShardIndex {
+    optional string entityId = 1;
+}
+
 message Index {
     repeated ActorMetaData entries = 1;
 }

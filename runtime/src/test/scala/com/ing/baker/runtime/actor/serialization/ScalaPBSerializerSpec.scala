@@ -11,6 +11,7 @@ import org.scalacheck.{Gen, Prop, Test}
 import org.scalatest.prop.Checkers
 import org.scalatest.{FunSuiteLike, Matchers}
 
+@deprecated("Should not be actively used, kept for backwards compatibility", "2.0.0")
 class ScalaPBSerializerSpec extends TestKit(ActorSystem("ScalaPBSerializerSpec"))
   with Checkers with FunSuiteLike with Matchers {
 

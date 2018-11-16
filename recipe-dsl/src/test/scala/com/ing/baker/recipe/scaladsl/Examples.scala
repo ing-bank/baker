@@ -32,17 +32,17 @@ object Examples {
 
     val validateOrder = Interaction(
       name = "ValidateOrder",
-      inputIngredients = order,
+      inputIngredients = Seq(order),
       output = Seq(valid, sorry))
 
     val manufactureGoods = Interaction(
       name = "ManufactureGoods",
-      inputIngredients = order,
+      inputIngredients = Seq(order),
       output = Seq(goodsManufactured))
 
     val sendInvoice = Interaction(
       name = "SendInvoice",
-      inputIngredients = customerInfo,
+      inputIngredients = Seq(customerInfo),
       output = Seq(invoiceWasSent))
 
     val shipGoods = Interaction(
@@ -149,7 +149,7 @@ object Examples {
     //Interactions
     val createCustomer = Interaction(
       name = "CreateCustomer",
-      inputIngredients = customerName,
+      inputIngredients = Seq(customerName),
       output = Seq(createCustomerSuccessful)
     )
 

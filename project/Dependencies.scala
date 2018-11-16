@@ -3,7 +3,7 @@ import sbt._
 //noinspection TypeAnnotation
 object Dependencies {
 
-  val akkaVersion = "2.5.14"
+  val akkaVersion = "2.5.17"
   val jvmV = "1.8"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
 
@@ -58,11 +58,12 @@ object Dependencies {
 
   val protobufJava =              "com.google.protobuf"        % "protobuf-java"                       % "3.5.1"
 
+  val betterFiles =               "com.github.pathikrit"       %% "better-files"                       % "3.6.0"
+
   val kryoSerializers =           "de.javakaffee"              %  "kryo-serializers"                   % "0.41"
   val objenisis =                 "org.objenesis"              %  "objenesis"                          % "2.5.1"
 
   val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.9.9"
-  val jodaConvert =               "org.joda"                   %  "joda-convert"                       % "1.8.1"
   val slf4jApi =                  "org.slf4j"                  %  "slf4j-api"                          % "1.7.25"
   val scalaCheck =                "org.scalacheck"             %% "scalacheck"                         % "1.13.4"
 

@@ -3,6 +3,7 @@ package com.ing.baker.runtime.actor.serialization.modules
 import com.google.protobuf.ByteString
 import com.ing.baker.runtime.actor.protobuf
 import com.ing.baker.runtime.actor.protobuf._
+import com.ing.baker.runtime.actor.serialization.{ProtoEventAdapter, ProtoEventAdapterModule}
 import com.ing.baker.types
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{LocalDate, LocalDateTime, LocalTime}
@@ -114,7 +115,6 @@ class TypesModule extends ProtoEventAdapterModule {
         case Primitive(BIG_DECIMAL_JAVA) => types.FloatBig
         case Primitive(BIG_INT_JAVA) => types.IntBig
 
-        case Primitive(JODA_DATETIME) => types.Date
         case Primitive(JODA_LOCAL_DATE) => types.Date
         case Primitive(JODA_LOCAL_DATETIME) => types.Date
 

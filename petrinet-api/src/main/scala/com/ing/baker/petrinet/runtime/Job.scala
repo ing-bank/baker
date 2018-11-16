@@ -6,7 +6,7 @@ import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
 /**
  * A Job encapsulates all the parameters that make a firing transition in a petri net.
  */
-case class Job[P[_], T, S](
+case class Job[P, T, S](
     id: Long,
     correlationId: Option[String],
     processState: S,
@@ -21,5 +21,5 @@ case class Job[P[_], T, S](
     case _                                                ⇒ false
   }
 
-  def failureCount = failure.map(_.failureCount).getOrElse(0)
+  def failureCount: Int = failure.map(_.failureCount).getOrElse(0)
 }

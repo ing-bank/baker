@@ -3,7 +3,7 @@ package com.ing.baker.runtime.actor
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.Materializer
 import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
-import com.ing.baker.runtime.core.interations.InteractionManager
+import com.ing.baker.runtime.core.internal.InteractionManager
 
 import scala.concurrent.duration.FiniteDuration
 

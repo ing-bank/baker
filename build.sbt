@@ -61,8 +61,7 @@ lazy val petrinetApi = project.in(file("petrinet-api"))
       catsCore,
       catsEffect,
       scalapbRuntime,
-      slf4jApi,
-      kryo
+      slf4jApi
       ) ++ testDeps(
       scalaCheck,
       scalaTest,
@@ -92,7 +91,6 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
       slf4jApi,
       scalaGraphDot,
       objenisis,
-      jodaTime,
       typeSafeConfig
     ) ++ testDeps(scalaTest, scalaCheck, logback)
   ).dependsOn(petrinetApi, bakertypes)
@@ -119,17 +117,18 @@ lazy val runtime = project.in(file("runtime"))
         chill,
         objenisis,
         scalapbRuntime,
-        kryoSerializers,
         protobufJava,
-        jodaTime,
-        jodaConvert,
+        kryo,
+        kryoSerializers,
         slf4jApi
       ) ++ testDeps(
         akkaTestKit,
         akkaStreamTestKit,
         akkaInmemoryJournal,
+        akkaPersistenceCassandra,
         levelDB,
         levelDBJni,
+        betterFiles,
         junitInterface,
         scalaTest,
         scalaCheck,
@@ -176,7 +175,6 @@ lazy val recipeDsl = project.in(file("recipe-dsl"))
         javaxInject,
         paranamer,
         scalaReflect(scalaVersion.value),
-        jodaTime
       ) ++
         testDeps(
           scalaTest,
@@ -203,6 +201,8 @@ lazy val baas = project.in(file("baas"))
     moduleName := "baker-baas",
     libraryDependencies ++=
       compileDeps(
+        kryo,
+        kryoSerializers,
         akkaHttp,
         akkaPersistenceCassandra) ++
       testDeps(

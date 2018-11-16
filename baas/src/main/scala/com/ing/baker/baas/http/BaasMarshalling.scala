@@ -3,7 +3,7 @@ package com.ing.baker.baas.http
 import akka.http.scaladsl.marshalling.PredefinedToEntityMarshallers
 import akka.http.scaladsl.unmarshalling.PredefinedFromEntityUnmarshallers
 import com.ing.baker.baas.KryoUtil
-import com.ing.baker.recipe.commonserialize.Recipe
+import com.ing.baker.recipe.common.Recipe
 import com.ing.baker.runtime.core.{RuntimeEvent, SensoryEventStatus}
 import com.twitter.chill.KryoPool
 

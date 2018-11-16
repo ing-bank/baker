@@ -3,9 +3,11 @@ package com.ing.baker.runtime.actor.serialization.modules
 import java.util.concurrent.TimeUnit
 
 import akka.stream.SourceRef
+import com.ing.baker.runtime.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.actor.process_index.ProcessIndex.{Active, Deleted, ProcessStatus}
 import com.ing.baker.runtime.actor.process_index.{ProcessIndex, ProcessIndexProtocol, protobuf}
 import com.ing.baker.runtime.actor.protobuf.RuntimeEvent
+import com.ing.baker.runtime.actor.serialization.{ProtoEventAdapter, ProtoEventAdapterModule}
 import com.ing.baker.runtime.core
 
 import scala.concurrent.duration.FiniteDuration
@@ -27,6 +29,9 @@ class ProcessIndexModule extends ProtoEventAdapterModule {
 
     case ProcessIndexProtocol.GetIndex =>
       protobuf.GetIndex()
+
+    case GetShardIndex(entityId) =>
+    protobuf.GetShardIndex(Some(entityId))
 
     case ProcessIndexProtocol.Index(entries) =>
       protobuf.Index(entries.map(e => ctx.toProto[protobuf.ActorMetaData](e)).toList)
@@ -82,6 +87,9 @@ class ProcessIndexModule extends ProtoEventAdapterModule {
 
     case protobuf.GetIndex() =>
       ProcessIndexProtocol.GetIndex
+
+    case protobuf.GetShardIndex(Some(entityId)) =>
+      GetShardIndex(entityId)
 
     case protobuf.Index(entries) =>
       ProcessIndexProtocol.Index(entries.map(e => ctx.toDomain[ProcessIndex.ActorMetadata](e)))

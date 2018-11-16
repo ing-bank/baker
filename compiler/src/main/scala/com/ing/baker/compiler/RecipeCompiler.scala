@@ -7,6 +7,7 @@ import com.ing.baker.il.petrinet._
 import com.ing.baker.il.{CompiledRecipe, EventDescriptor, ValidationSettings}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.recipe.common._
+import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
 
 import scala.language.postfixOps
@@ -17,6 +18,12 @@ object RecipeCompiler {
     def unzipFlatten: (Seq[A], Seq[B]) = seq.unzip match {
       case (a, b) => (a.flatten, b.flatten)
     }
+  }
+
+  def arc(t: Transition, p: Place, weight: Long): Arc = WLDiEdge[Node, Edge](Right(t), Left(p))(weight, Edge(None))
+
+  def arc(p: Place, t: Transition, weight: Long, eventFilter: Option[String] = None): Arc = {
+    WLDiEdge[Node, Edge](Left(p), Right(t))(weight, Edge(eventFilter))
   }
 
   /**
@@ -59,7 +66,7 @@ object RecipeCompiler {
   }
 
   private def buildEventPreconditionArcs(eventName: String,
-                                         preconditionPlace: Place[_],
+                                         preconditionPlace: Place,
                                          preconditionTransition: String => Option[Transition],
                                          interactionTransition: Transition): (Seq[Arc], Seq[String]) = {
 
@@ -92,7 +99,7 @@ object RecipeCompiler {
         val eventTransitionCount = eventTransitions.count(e => e.event.name == event.name)
         if(eventTransitionCount > 1) {
           //Create a new intermediate event place
-          val eventCombinerPlace: Place[_] = createPlace(label = event.name, placeType = IntermediatePlace)
+          val eventCombinerPlace: Place = createPlace(label = event.name, placeType = IntermediatePlace)
           //Create a new intermediate event transition
           val interactionToEventTransition: IntermediateTransition = IntermediateTransition(s"${interaction.interactionName}:${event.name}")
           //link the interaction output place to the intermediate transition
@@ -284,10 +291,10 @@ object RecipeCompiler {
       ++ internalEventArcs
       ++ multipleOutputFacilitatorArcs)
 
-    val petriNet: PetriNet[Place[_], Transition] = new PetriNet(Graph(arcs: _*))
+    val petriNet: PetriNet[Place, Transition] = new PetriNet(Graph(arcs: _*))
 
     val initialMarking: Marking[Place] = petriNet.places.collect {
-      case p@Place(_, FiringLimiterPlace(n)) => p -> Map((null, n))
+      case p @ Place(_, FiringLimiterPlace(n)) => p -> Map[Any, Int]((null, n))
     }.toMarking
 
     val errors = preconditionORErrors ++ preconditionANDErrors ++ precompileErrors
@@ -336,5 +343,5 @@ object RecipeCompiler {
     ingredientsWithMultipleConsumers
   }
 
-  private def createPlace(label: String, placeType: PlaceType): Place[Any] = Place(label = s"${placeType.labelPrepend}$label", placeType)
+  private def createPlace(label: String, placeType: PlaceType): Place = Place(label = s"${placeType.labelPrepend}$label", placeType)
 }

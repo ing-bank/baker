@@ -1,25 +1,12 @@
 package com.ing.baker.runtime.actor.process_instance
 
-import com.ing.baker.petrinet.api.{HMap, Identifiable, Marking, MultiSet}
-import com.ing.baker.runtime.actor.{BakerProtoMessage, InternalBakerMessage}
+import com.ing.baker.petrinet.api._
+import com.ing.baker.runtime.actor.serialization.BakerProtoMessage
 
 /**
  * Describes the messages to and from a PetriNetInstance actor.
  */
 object ProcessInstanceProtocol {
-
-  /**
-   * Type alias for marking data.
-   */
-  type MarkingData = Map[Long, MultiSet[_]]
-
-  def marshal[P[_]](marking: Marking[P])(implicit identifiable: Identifiable[P[_]]): MarkingData = marking.map {
-    case (p, mset) ⇒ identifiable(p).value -> mset
-  }.toMap
-
-  def unmarshal[P[_]](data: MarkingData, placeById: Long ⇒ P[_]): Marking[P] = HMap[P, MultiSet](data.map {
-    case (id, mset) ⇒ placeById(id) -> mset
-  }.toMap)
 
   /**
    * A common trait for all commands to a petri net instance.
@@ -38,15 +25,15 @@ object ProcessInstanceProtocol {
 
   object Initialize {
 
-    def apply[P[_]](marking: Marking[P])(implicit placeIdentifier: Identifiable[P[_]]): Initialize = Initialize(marshal[P](marking), null)
+    def apply[P : Identifiable](marking: Marking[P]): Initialize = Initialize(marking.marshall, null)
 
-    def apply[P[_]](marking: Marking[P], state: Any)(implicit placeIdentifier: Identifiable[P[_]]): Initialize = Initialize(marshal[P](marking), state)
+    def apply[P : Identifiable](marking: Marking[P], state: Any): Initialize = Initialize(marking.marshall, state)
   }
 
   /**
    * Command to initialize a petri net instance.
    */
-  case class Initialize(marking: MarkingData, state: Any) extends Command
+  case class Initialize(marking: Marking[Id], state: Any) extends Command
 
   /**
    * Command to fire a specific transition with input.
@@ -80,9 +67,9 @@ object ProcessInstanceProtocol {
 
   object Initialized {
 
-    def apply[P[_]](marking: Marking[P])(implicit placeIdentifier: Identifiable[P[_]]): Initialized = Initialized(marshal[P](marking), null)
+    def apply[P : Identifiable](marking: Marking[P]): Initialized = Initialized(marking.marshall, null)
 
-    def apply[P[_]](marking: Marking[P], state: Any)(implicit placeIdentifier: Identifiable[P[_]]): Initialized = Initialized(marshal[P](marking), state)
+    def apply[P : Identifiable](marking: Marking[P], state: Any): Initialized = Initialized(marking.marshall, state)
   }
 
   /**
@@ -91,7 +78,7 @@ object ProcessInstanceProtocol {
    * This message is only send in response to an Initialize message.
    */
   case class Initialized(
-    marking: MarkingData,
+    marking: Marking[Id],
     state: Any) extends Response
 
   /**
@@ -106,10 +93,10 @@ object ProcessInstanceProtocol {
    */
   case class TransitionFired(
     jobId: Long,
-    override val transitionId: Long,
+    override val transitionId: Id,
     correlationId: Option[String],
-    consumed: MarkingData,
-    produced: MarkingData,
+    consumed: Marking[Id],
+    produced: Marking[Id],
     state: InstanceState,
     newJobsIds: Set[Long],
     output: Any) extends TransitionResponse
@@ -119,9 +106,9 @@ object ProcessInstanceProtocol {
    */
   case class TransitionFailed(
     jobId: Long,
-    override val transitionId: Long,
+    override val transitionId: Id,
     correlationId: Option[String],
-    consume: MarkingData,
+    consume: Marking[Id],
     input: Any,
     reason: String,
     strategy: ExceptionStrategy) extends TransitionResponse
@@ -130,7 +117,7 @@ object ProcessInstanceProtocol {
    * Response indicating that the transition could not be fired because it is not enabled.
    */
   case class TransitionNotEnabled(
-    override val transitionId: Long,
+    override val transitionId: Id,
     reason: String) extends TransitionResponse
 
   /**
@@ -153,7 +140,7 @@ object ProcessInstanceProtocol {
       require(delay > 0, "Delay must be greater then zero")
     }
 
-    case class Continue(marking: MarkingData, output: Any) extends ExceptionStrategy
+    case class Continue(marking: Marking[Id], output: Any) extends ExceptionStrategy
   }
 
 
@@ -163,7 +150,7 @@ object ProcessInstanceProtocol {
   case class JobState(
       id: Long,
       transitionId: Long,
-      consumedMarking: MarkingData,
+      consumedMarking: Marking[Id],
       input: Any,
       exceptionState: Option[ExceptionState]) {
 
@@ -179,7 +166,7 @@ object ProcessInstanceProtocol {
    */
   case class InstanceState(
     sequenceNr: Long,
-    marking: MarkingData,
+    marking: Marking[Id],
     state: Any,
     jobs: Map[Long, JobState]) extends Response
 }

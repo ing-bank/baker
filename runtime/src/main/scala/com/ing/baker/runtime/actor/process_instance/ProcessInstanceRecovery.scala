@@ -7,14 +7,12 @@ import com.ing.baker.petrinet.runtime.EventSourcing._
 import com.ing.baker.petrinet.runtime.{EventSourcing, Instance}
 import com.ing.baker.runtime.actor.serialization.{Encryption, ProtoEventAdapterImpl}
 
-abstract class ProcessInstanceRecovery[P[_], T, S, E](
-     val topology: PetriNet[P[_], T],
-     encryption: Encryption,
-     eventSourceFn: T => (S => E => S)) extends PersistentActor {
+abstract class ProcessInstanceRecovery[P : Identifiable, T : Identifiable, S, E](
+    val petriNet: PetriNet[P, T],
+    encryption: Encryption,
+    eventSourceFn: T => (S => E => S)) extends PersistentActor {
 
   implicit val system = context.system
-  implicit val placeIdentifier: Identifiable[P[_]]
-  implicit val transitionIdentifier: Identifiable[T]
 
   val eventSource = EventSourcing.apply[P, T, S, E](eventSourceFn)
 
@@ -28,7 +26,7 @@ abstract class ProcessInstanceRecovery[P[_], T, S, E](
     persist(serializedEvent) { persisted => fn(e) }
   }
 
-  private var recoveringState: Instance[P, T, S] = Instance.uninitialized[P, T, S](topology)
+  private var recoveringState: Instance[P, T, S] = Instance.uninitialized[P, T, S](petriNet)
 
   private def applyToRecoveringState(e: AnyRef) = {
     val deserializedEvent = serializer.deserializeEvent(e)(recoveringState)

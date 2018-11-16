@@ -3,9 +3,9 @@ package com.ing.baker.runtime.actor.recipe_manager
 import akka.actor.{ActorLogging, Props}
 import akka.persistence.PersistentActor
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.actor.BakerProtoMessage
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
+import com.ing.baker.runtime.actor.serialization.BakerProtoMessage
 
 import scala.collection.mutable
 

@@ -22,10 +22,8 @@ import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.core
 import com.ing.baker.runtime.core.events.{BakerEvent, EventReceived, InteractionCompleted, InteractionFailed}
-import com.ing.baker.runtime.core.interations.{InteractionImplementation, InteractionManager, MethodInteractionImplementation}
-import com.ing.baker.runtime.event_extractors.{CompositeEventExtractor, EventExtractor}
-import com.ing.baker.runtime.petrinet.RecipeRuntime
-import com.ing.baker.types.Value
+import com.ing.baker.runtime.core.internal.{InteractionManager, MethodInteractionImplementation, RecipeRuntime}
+import com.ing.baker.types.{Converters, RecordValue, Value}
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
@@ -34,10 +32,24 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 import scala.util.Try
+import Baker._
 
 object Baker {
 
-  val eventExtractor: EventExtractor = new CompositeEventExtractor()
+  /**
+    * Transforms an object into a RuntimeEvent if possible.
+    */
+  def extractEvent(event: Any): RuntimeEvent = {
+    // transforms the given object into a RuntimeEvent instance
+    event match {
+      case runtimeEvent: RuntimeEvent => runtimeEvent
+      case obj                        =>
+        Converters.toValue(obj) match {
+          case RecordValue(entries) => RuntimeEvent(obj.getClass.getSimpleName, entries.toSeq)
+          case other                => throw new IllegalArgumentException(s"Unexpected value: $other")
+        }
+    }
+  }
 }
 
 /**
@@ -222,10 +234,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   def processEventAsync(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): BakerResponse = {
 
     // transforms the given object into a RuntimeEvent instance
-    val runtimeEvent: RuntimeEvent = event match {
-      case runtimeEvent: RuntimeEvent => runtimeEvent
-      case _                          => Baker.eventExtractor.extractEvent(event)
-    }
+    val runtimeEvent: RuntimeEvent = extractEvent(event)
 
     // sends the ProcessEvent command to the actor and retrieves a Source (stream) of responses.
     val response: Future[SourceRef[Any]] = processIndexActor
@@ -400,7 +409,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
       case EventReceived(_, recipeName, _, processId, _, event) if processFilter(recipeName) =>
         listener.processEvent(processId, event)
-      case InteractionCompleted(_, _, recipeName, _, processId, _, event) if processFilter(recipeName) =>
+      case InteractionCompleted(_, _, recipeName, _, processId, _, Some(event)) if processFilter(recipeName) =>
         listener.processEvent(processId, event)
       case InteractionFailed(_, _, recipeName, _, processId, _, _, _, ExceptionStrategyOutcome.Continue(eventName)) if processFilter(recipeName) =>
         listener.processEvent(processId, RuntimeEvent(eventName, Seq.empty))
@@ -451,7 +460,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     * @param implementation The implementation object
     */
   def addImplementation(implementation: AnyRef): Unit =
-    MethodInteractionImplementation.anyRefToInteractionImplementations(implementation).foreach(interactionManager.addImplementation)
+    interactionManager.addImplementation(new MethodInteractionImplementation(implementation))
 
   /**
     * Adds a sequence of interaction implementation to baker.

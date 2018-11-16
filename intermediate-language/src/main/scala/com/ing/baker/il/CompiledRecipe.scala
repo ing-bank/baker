@@ -28,7 +28,7 @@ object CompiledRecipe {
       val petriNetId: String = petriNet.places.toList.sortBy(_.id).mkString +
         petriNet.transitions.toList.sortBy(_.id).mkString
 
-      val initMarkingId: String = initialMarking.data.toList.sortBy {
+      val initMarkingId: String = initialMarking.toList.sortBy {
         case (place, _) => place.id
       }.map {
         case (_, tokens) => tokens.toList.sortBy {
@@ -107,8 +107,7 @@ case class CompiledRecipe(name: String,
     *
     * @return
     */
-  def getPetriNetVisualization: String =
-    RecipeVisualizer.visualizePetrinet(petriNet)
+  def getPetriNetVisualization: String = RecipeVisualizer.visualizePetriNet(petriNet.innerGraph)
 
   val interactionTransitions: Set[InteractionTransition] = petriNet.transitions.collect {
     case t: InteractionTransition => t
