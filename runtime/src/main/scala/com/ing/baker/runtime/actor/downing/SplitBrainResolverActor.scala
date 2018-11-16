@@ -23,7 +23,7 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
   var memberStatusLastChanged: Map[UniqueAddress, Deadline] = Map()
 
   val cluster = Cluster(context.system)
-  var actOnSbrDecisionTask: Cancellable = context.system.scheduler.schedule(0 seconds, downRemovalMargin, self, ActOnSbrDecision)
+  var actOnSbrDecisionTask: Cancellable = context.system.scheduler.schedule(0 seconds, downRemovalMargin / 2, self, ActOnSbrDecision)
 
   override def preStart(): Unit = {
     cluster.subscribe(self, ClusterEvent.InitialStateAsEvents, classOf[ClusterDomainEvent])
@@ -58,7 +58,7 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
     // reachability events
     case UnreachableMember(member) =>
       log.info("Unreachable member {}", member)
-      memberStatusLastChanged += (member.uniqueAddress -> Deadline.now.+(downRemovalMargin).+(2 seconds))
+      memberStatusLastChanged += (member.uniqueAddress -> Deadline.now.+(downRemovalMargin))
 
     case ReachableMember(member) =>
       log.info("Reachable member {}", member)

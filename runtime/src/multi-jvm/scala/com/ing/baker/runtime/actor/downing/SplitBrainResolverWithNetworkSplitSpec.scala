@@ -33,10 +33,9 @@ abstract class SplitBrainResolverWithNetworkSplitSpec(splitBrainResolverConfig: 
 
       runOn(nodeA) {
         // drop all messages from/to 'fifth' node
-        testConductor.blackhole(nodeA, nodeE, Both).await
-        testConductor.blackhole(nodeB, nodeE, Both).await
-        testConductor.blackhole(nodeC, nodeE, Both).await
-        testConductor.blackhole(nodeD, nodeE, Both).await
+        Set(nodeA, nodeB, nodeC, nodeD)
+          .map(testConductor.blackhole(_, nodeE, Both))
+          .foreach(_.await)
 
         enterBarrier("unreachable-fifth-node")
 
@@ -70,9 +69,9 @@ abstract class SplitBrainResolverWithNetworkSplitSpec(splitBrainResolverConfig: 
       enterBarrier("before-unreachable-second-node")
       runOn(nodeA) {
         // drop all messages to/from 'second' node
-        testConductor.blackhole(nodeA, nodeB, Both).await
-        testConductor.blackhole(nodeC, nodeB, Both).await
-        testConductor.blackhole(nodeD, nodeB, Both).await
+        Set(nodeA, nodeC, nodeD)
+          .map(testConductor.blackhole(_, nodeB, Both))
+          .foreach(_.await)
 
         enterBarrier("unreachable-second-node")
 
@@ -110,8 +109,9 @@ abstract class SplitBrainResolverWithNetworkSplitSpec(splitBrainResolverConfig: 
       enterBarrier("before-unreachable-fourth-node")
       runOn(nodeA) {
         // drop all messages from/to 'fourth' node
-        testConductor.blackhole(nodeA, nodeD, Both).await
-        testConductor.blackhole(nodeC, nodeD, Both).await
+        Set(nodeA, nodeC)
+          .map(testConductor.blackhole(_, nodeD, Both))
+          .foreach(_.await)
       }
 
       runOn(nodeA, nodeC) {

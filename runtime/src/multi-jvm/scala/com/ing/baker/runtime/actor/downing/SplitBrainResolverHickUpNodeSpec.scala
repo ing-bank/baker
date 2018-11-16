@@ -2,20 +2,16 @@ package com.ing.baker.runtime.actor.downing
 
 import akka.actor.Cancellable
 import akka.cluster.MultiNodeClusterSpec
-import akka.remote.testconductor.RoleName
 import akka.remote.testkit.{MultiNodeSpec, STMultiNodeSpec}
-import akka.remote.transport.ThrottlerTransportAdapter.Direction.Both
 import akka.testkit.{ImplicitSender, LongRunningTest}
 
-import scala.annotation.tailrec
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.duration._
 
-class SplitBrainResolverHickUpNodeSpecMultiJvmNodeA extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 5 seconds))
-class SplitBrainResolverHickUpNodeSpecMultiJvmNodeB extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 5 seconds))
-class SplitBrainResolverHickUpNodeSpecMultiJvmNodeC extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 5 seconds))
-class SplitBrainResolverHickUpNodeSpecMultiJvmNodeD extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 5 seconds))
-class SplitBrainResolverHickUpNodeSpecMultiJvmNodeE extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 5 seconds))
+class SplitBrainResolverHickUpNodeSpecMultiJvmNodeA extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 7 seconds))
+class SplitBrainResolverHickUpNodeSpecMultiJvmNodeB extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 7 seconds))
+class SplitBrainResolverHickUpNodeSpecMultiJvmNodeC extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 7 seconds))
+class SplitBrainResolverHickUpNodeSpecMultiJvmNodeD extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 7 seconds))
+class SplitBrainResolverHickUpNodeSpecMultiJvmNodeE extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 7 seconds))
 
 abstract class SplitBrainResolverHickUpNodeSpec(splitBrainResolverConfig: SplitBrainResolverConfig) extends MultiNodeSpec(splitBrainResolverConfig)
   with STMultiNodeSpec with ImplicitSender with MultiNodeClusterSpec {
@@ -25,39 +21,21 @@ abstract class SplitBrainResolverHickUpNodeSpec(splitBrainResolverConfig: SplitB
   muteMarkingAsUnreachable()
 
   import system.dispatcher
-  var task: Option[Cancellable] = None
+
+  var scheduleReachable: Option[Cancellable] = None
+  var scheduleUnreachable: Option[Cancellable] = None
 
   val addressNodeD = address(nodeD)
   val addressNodeE = address(nodeE)
 
-  def hickUpOn(): Unit = {
-    log.info("Hick on")
-//    testConductor.blackhole(nodeA, nodeE, Both).await
-//    testConductor.blackhole(nodeB, nodeE, Both).await
-//    testConductor.blackhole(nodeC, nodeE, Both).await
-    markNodeAsUnavailable(addressNodeE)
-  }
-
-  def hickUpOff(): Unit = {
-    log.info("Hick off")
-//    testConductor.throttle(nodeA, nodeE, Both, Double.MaxValue).await
-//    testConductor.throttle(nodeB, nodeE, Both, Double.MaxValue).await
-//    testConductor.throttle(nodeC, nodeE, Both, Double.MaxValue).await
-    markNodeAsAvailable(addressNodeE)
-  }
-
-  def doOn(): Cancellable =  {
-    system.scheduler.scheduleOnce(2 seconds, () => {
-      hickUpOn()
-      task = Option(doOff())
-    })
-  }
-
-  def doOff(): Cancellable = {
-    system.scheduler.scheduleOnce(2 seconds, () => {
-      hickUpOff()
-      task = Option(doOn())
-    })
+  def statusNodeE(reachable: Boolean): Unit = {
+    if (reachable) {
+        markNodeAsAvailable(addressNodeE)
+      log.info("NodeE reachable")
+    } else {
+        markNodeAsUnavailable(addressNodeE)
+      log.info("NodeE UNreachable")
+    }
   }
 
   "The majority leader in a 5 node cluster" must {
@@ -65,44 +43,55 @@ abstract class SplitBrainResolverHickUpNodeSpec(splitBrainResolverConfig: SplitB
     "cluster should be up" taggedAs LongRunningTest in {
       awaitClusterUp(nodeA, nodeB, nodeC, nodeD, nodeE)
       enterBarrier("cluster-is-up")
-    }
-
-    "remove node even when another node is causing a hick-up" taggedAs LongRunningTest in {
-      val blackholeNodeDTask = system.scheduler.scheduleOnce(8 seconds, () => {
-        runOn(nodeA) {
-          log.info("Making nodeD unreachable")
-//          testConductor.blackhole(nodeA, nodeD, Both).await
-//          testConductor.blackhole(nodeB, nodeD, Both).await
-//          testConductor.blackhole(nodeC, nodeD, Both).await
-//          testConductor.blackhole(nodeE, nodeD, Both).await
-          markNodeAsUnavailable(addressNodeD)
-        }
-      })
 
       runOn(nodeA) {
-        task = Some(doOff())
+        scheduleReachable = Some(system.scheduler.schedule(0 seconds, 2 second, () => statusNodeE(reachable = true)))
+        scheduleUnreachable = Some(system.scheduler.schedule(1 seconds, 2 second, () => statusNodeE(reachable = false)))
+      }
+
+      Thread.sleep(10 * 1000)
+      enterBarrier("waited-for-10-seconds")
+
+      runOn(nodeA, nodeB, nodeC, nodeD) {
+        log.info("10 seconds passed, checking for cluster state")
+        awaitMembersUp(numberOfMembers = 5, canNotBePartOfMemberRing = Set.empty, 2 seconds)
+      }
+    }
+
+    "majority should down one unreachable node (nodeD) but not the unstable(flickering) node (nodeE)" taggedAs LongRunningTest in {
+      runOn(nodeA) {
+        markNodeAsUnavailable(addressNodeD)
       }
 
       runOn(nodeD) {
         awaitAssert(
           clusterView.isTerminated should be(true),
-          60 seconds,
+          20 seconds,
           1 second
         )
-        enterBarrier("unreachable-fourth-node")
+        enterBarrier("fourth-node-down")
       }
 
-      // NodeD should not be part of the cluster
-      runOn(nodeA, nodeB, nodeC, nodeE) {
-        awaitMembersUp(numberOfMembers = 4, canNotBePartOfMemberRing = Set(addressNodeD), 60 seconds)
-        enterBarrier("unreachable-fourth-node")
+      runOn(nodeA, nodeB, nodeC) {
+        awaitMembersUp(numberOfMembers = 4, canNotBePartOfMemberRing = Set(addressNodeD), 20 seconds)
+        enterBarrier("fourth-node-down")
       }
 
-      enterBarrier("finish-before-cleanup")
+      runOn(nodeA) {
+        statusNodeE(reachable = true)
+      }
 
-      // Cleanup the tasks
-      task.foreach(_.cancel)
-      blackholeNodeDTask.cancel()
+      runOn(nodeE) {
+        awaitMembersUp(numberOfMembers = 4, canNotBePartOfMemberRing = Set(addressNodeD), 20 seconds)
+        enterBarrier("fourth-node-down")
+      }
+
     }
+
+    "cleanup" in {
+      scheduleReachable.foreach(_.cancel())
+      scheduleUnreachable.foreach(_.cancel())
+    }
+
   }
 }

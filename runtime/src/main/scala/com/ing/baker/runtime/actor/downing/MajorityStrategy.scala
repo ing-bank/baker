@@ -12,12 +12,6 @@ class MajorityStrategy extends Strategy {
       log.info("I am leader: Unreachables: {}", clusterHelper.unreachables)
 
       val nodesToDown = this.nodesToDown(clusterHelper)
-//      log.info(s"\n\n\nME: {}\n\n\n", clusterHelper.myUniqueAddress)
-//      log.info(s"\n\n\nLAST CHANGED DATA: {}\n\n\n", clusterHelper.memberStatusLastChangedReadable)
-//      log.info(s"\n\n\nUNSTABLE NODES: {}\n\n\n", clusterHelper.unstableMembers)
-//      log.info(s"\n\n\nUNREACHABLE NODES: {}\n\n\n", clusterHelper.unreachables)
-//      log.info(s"\n\n\nREAL UNREACHABLE NODES: {}\n\n\n", clusterHelper.cluster.state.unreachable)
-//      log.info(s"\n\n\nNODES TO DOWN: {}\n\n\n", nodesToDown)
       log.info(s"${clusterHelper.myUniqueAddress} downing these nodes $nodesToDown")
       if (nodesToDown contains clusterHelper.myUniqueAddress) {
         // leader going down

@@ -1,27 +1,25 @@
 package com.ing.baker.runtime.actor.downing
 
 import akka.actor.Address
-import akka.cluster.{Cluster, Member, UniqueAddress}
+import akka.cluster.{Cluster, ClusterEvent, Member, UniqueAddress}
 
 import scala.collection.SortedSet
 import scala.concurrent.duration.Deadline
 
-case class ClusterHelper(cluster: Cluster, memberStatusLastChanged: Map[UniqueAddress, Deadline] ) {
+case class ClusterHelper(cluster: Cluster, memberStatusLastChanged: Map[UniqueAddress, Deadline]) {
 
-  val memberStatusLastChangedReadable: Map[UniqueAddress, Long] = memberStatusLastChanged.map { case (address, deadline) =>
-    address -> deadline.timeLeft.toSeconds
-  }
+  private val clusterState: ClusterEvent.CurrentClusterState = cluster.state
 
-  val unstableMembers: Set[UniqueAddress] = memberStatusLastChanged.filter(_._2.hasTimeLeft()).keys.toSet
+  val members: SortedSet[Member] = clusterState.members
 
-  val members: SortedSet[Member] = cluster.state.members
+  val unstableMembersUniqueAddresses: Set[UniqueAddress] = memberStatusLastChanged.filter(_._2.hasTimeLeft()).keys.toSet
 
-  val unreachables: Set[Member] = cluster.state.unreachable.filterNot { member =>
-    unstableMembers.contains(member.uniqueAddress)
+  val unreachables: Set[Member] = clusterState.unreachable.filterNot { member =>
+    unstableMembersUniqueAddresses.contains(member.uniqueAddress)
   }
 
   val reachables: SortedSet[Member] = (members diff unreachables).filterNot { member =>
-    unstableMembers.contains(member.uniqueAddress)
+    unstableMembersUniqueAddresses.contains(member.uniqueAddress)
   }
 
   val reachableUniqueAddresses: SortedSet[UniqueAddress] = reachables.map(_.uniqueAddress)
@@ -32,7 +30,7 @@ case class ClusterHelper(cluster: Cluster, memberStatusLastChanged: Map[UniqueAd
 
   val amIMember: Boolean = members.exists(_.uniqueAddress == cluster.selfUniqueAddress)
 
-  val amILeader: Boolean = cluster.state.leader.contains(cluster.selfAddress)
+  val amILeader: Boolean = clusterState.leader.contains(cluster.selfAddress)
 
   val myUniqueAddress: UniqueAddress = cluster.selfUniqueAddress
 
