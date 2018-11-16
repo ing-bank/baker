@@ -24,20 +24,6 @@ final case class SplitBrainResolverConfig(useFailureDetectorPuppet: Boolean, dow
     """.stripMargin
   )
 
-  val tanukkiSplitBrainResolverConfig: Config = ConfigFactory.parseString(
-    """
-      |akka.cluster.downing-provider-class = "tanukki.akka.cluster.autodown.MajorityLeaderAutoDowning"
-      |custom-downing {
-      |  stable-after = 10s
-      |  majority-leader-auto-downing {
-      |    majority-member-role = ""
-      |    down-if-in-minority = true
-      |    shutdown-actor-system-on-resolution = true
-      |  }
-      |}
-    """.stripMargin
-  )
-
   testTransport(on = true)
 
   commonConfig(ConfigFactory.parseString(
@@ -48,7 +34,6 @@ final case class SplitBrainResolverConfig(useFailureDetectorPuppet: Boolean, dow
       |akka.loglevel = INFO
     """.stripMargin)
     .withFallback(bakerSplitBrainResolverConfig)
-//    .withFallback(tanukkiSplitBrainResolverConfig)
     .withFallback(MultiNodeClusterSpec.clusterConfig(useFailureDetectorPuppet))
   )
 

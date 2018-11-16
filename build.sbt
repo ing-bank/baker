@@ -27,9 +27,7 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     Package.ManifestAttributes(
       "Build-Time" -> new java.util.Date().toString,
       "Build-Commit" -> git.gitHeadCommit.value.getOrElse("No Git Revision Found")
-    ),
-  // TODO remove this resolver when done with tests
-  resolvers += Resolver.bintrayRepo("tanukkii007", "maven")
+    )
 )
 
 val dependencyOverrideSettings = Seq(
@@ -148,8 +146,6 @@ lazy val splitBrainResolver = project.in(file("split-brain-resolver"))
       compileDeps(
         akkaActor,
         akkaCluster,
-        // TODO remove this dependency when done with tests
-        "com.github.TanUkkii007" %% "akka-cluster-custom-downing" % "0.0.12",
         akkaSlf4j,
         ficusConfig
       ) ++ testDeps(
