@@ -98,7 +98,7 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
   ).dependsOn(petrinetApi, bakertypes)
 
 
-lazy val recipeRuntime = project.in(file("runtime"))
+lazy val runtime = project.in(file("runtime"))
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
   .settings(
@@ -112,8 +112,6 @@ lazy val recipeRuntime = project.in(file("runtime"))
         akkaPersistenceQuery,
         akkaClusterSharding,
         akkaInmemoryJournal,
-        // TODO remove this dependency when done with tests
-        "com.github.TanUkkii007" %% "akka-cluster-custom-downing" % "0.0.12",
         akkaSlf4j,
         akkaStream,
         ficusConfig,
@@ -129,7 +127,6 @@ lazy val recipeRuntime = project.in(file("runtime"))
       ) ++ testDeps(
         akkaTestKit,
         akkaStreamTestKit,
-        akkaMultiNodeTestkit,
         akkaInmemoryJournal,
         levelDB,
         levelDBJni,
@@ -140,12 +137,33 @@ lazy val recipeRuntime = project.in(file("runtime"))
         logback)
         ++ providedDeps(findbugs)
   )
+  .dependsOn(intermediateLanguage, petrinetApi, testScope(recipeDsl), testScope(recipeCompiler), testScope(bakertypes))
+
+lazy val splitBrainResolver = project.in(file("split-brain-resolver"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "baker-split-brain-resolver",
+    // we have to exclude the sources because of a compiler bug: https://issues.scala-lang.org/browse/SI-10134
+    sources in (Compile, doc) := Seq.empty,
+    libraryDependencies ++=
+      compileDeps(
+        akkaActor,
+        akkaCluster,
+        // TODO remove this dependency when done with tests
+        "com.github.TanUkkii007" %% "akka-cluster-custom-downing" % "0.0.12",
+        akkaSlf4j,
+        ficusConfig
+      ) ++ testDeps(
+        akkaTestKit,
+        akkaMultiNodeTestkit,
+        scalaTest
+      ) ++ providedDeps(findbugs)
+  )
   .enablePlugins(MultiJvmPlugin)
   .configs(MultiJvm)
   .settings(
 //    logLevel := Level.Debug
   )
-  .dependsOn(intermediateLanguage, petrinetApi, testScope(recipeDsl), testScope(recipeCompiler), testScope(bakertypes))
 
 lazy val recipeDsl = project.in(file("recipe-dsl"))
   .settings(defaultModuleSettings)
@@ -199,10 +217,10 @@ lazy val baas = project.in(file("baas"))
         scalaCheck
       )
   )
-  .dependsOn(recipeDsl, recipeCompiler, intermediateLanguage, recipeRuntime, testScope(recipeRuntime))
+  .dependsOn(recipeDsl, recipeCompiler, intermediateLanguage, runtime, testScope(runtime))
 
 lazy val baker = project
   .in(file("."))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
-  .aggregate(bakertypes, petrinetApi, recipeRuntime, recipeCompiler, recipeDsl, intermediateLanguage)
+  .aggregate(bakertypes, petrinetApi, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver)
