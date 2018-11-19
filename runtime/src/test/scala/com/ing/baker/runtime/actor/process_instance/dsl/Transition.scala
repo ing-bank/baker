@@ -1,4 +1,4 @@
-package com.ing.baker.petrinet.dsl
+package com.ing.baker.runtime.actor.process_instance.dsl
 
 import com.ing.baker.petrinet.api.Identifiable
 import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.BlockTransition

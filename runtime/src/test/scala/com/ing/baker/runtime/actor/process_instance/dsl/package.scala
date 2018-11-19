@@ -1,4 +1,4 @@
-package com.ing.baker.petrinet
+package com.ing.baker.runtime.actor.process_instance
 
 import com.ing.baker.petrinet.api.{MultiSet, PetriNet}
 import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy
