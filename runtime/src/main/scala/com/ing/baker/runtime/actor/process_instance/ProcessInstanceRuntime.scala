@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory
  */
 trait ProcessInstanceRuntime[P, T, S, E] {
 
-  val log = LoggerFactory.getLogger("com.ing.baker.petrinet.runtime.PetriNetRuntime")
+  val log = LoggerFactory.getLogger("com.ing.baker.runtime.actor.process_instance.ProcessInstanceRuntime")
 
   /**
     * The event source function for the state associated with a process instance.
