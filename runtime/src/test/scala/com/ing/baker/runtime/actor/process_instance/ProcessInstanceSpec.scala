@@ -8,8 +8,7 @@ import akka.testkit.TestDuration
 import akka.util.Timeout
 import com.ing.baker.petrinet.api._
 import com.ing.baker.petrinet.dsl._
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.{Fatal, RetryWithDelay}
-import com.ing.baker.petrinet.runtime.PetriNetRuntime
+import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.{Fatal, RetryWithDelay}
 import com.ing.baker.runtime.actor.AkkaTestBase
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
@@ -55,7 +54,7 @@ object ProcessInstanceSpec {
 
   def processInstanceProps[S, E](
                                   topology: PetriNet[Place, Transition],
-                                  runtime: PetriNetRuntime[Place, Transition, S, E],
+                                  runtime: ProcessInstanceRuntime[Place, Transition, S, E],
                                   settings: Settings): Props =
 
     Props(new ProcessInstance[Place, Transition, S, E](
@@ -69,7 +68,7 @@ object ProcessInstanceSpec {
     system.actorOf(props, name)
   }
 
-  def createProcessInstance[S, E](petriNet: PetriNet[Place, Transition], runtime: PetriNetRuntime[Place, Transition, S, E], processId: String = UUID.randomUUID().toString)(implicit system: ActorSystem): ActorRef = {
+  def createProcessInstance[S, E](petriNet: PetriNet[Place, Transition], runtime: ProcessInstanceRuntime[Place, Transition, S, E], processId: String = UUID.randomUUID().toString)(implicit system: ActorSystem): ActorRef = {
 
     createPetriNetActor(processInstanceProps(petriNet, runtime, instanceSettings), processId)
   }

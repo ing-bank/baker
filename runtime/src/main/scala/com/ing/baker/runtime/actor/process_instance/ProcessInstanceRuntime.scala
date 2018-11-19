@@ -1,12 +1,14 @@
-package com.ing.baker.petrinet.runtime
+package com.ing.baker.runtime.actor.process_instance
 
 import java.io.{PrintWriter, StringWriter}
 
 import cats.data.State
 import cats.effect.IO
 import com.ing.baker.petrinet.api._
-import com.ing.baker.petrinet.runtime.EventSourcing.{TransitionEvent, TransitionFailedEvent, TransitionFiredEvent}
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
+import com.ing.baker.runtime.core._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEventSourcing._
+import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.BlockTransition
+import com.ing.baker.runtime.actor.process_instance.internal.{ExceptionStrategy, Instance, Job}
 import org.slf4j.LoggerFactory
 
 /**
@@ -17,7 +19,7 @@ import org.slf4j.LoggerFactory
  * @tparam S The state type
  * @tparam E The event type
  */
-trait PetriNetRuntime[P, T, S, E] {
+trait ProcessInstanceRuntime[P, T, S, E] {
 
   val log = LoggerFactory.getLogger("com.ing.baker.petrinet.runtime.PetriNetRuntime")
 

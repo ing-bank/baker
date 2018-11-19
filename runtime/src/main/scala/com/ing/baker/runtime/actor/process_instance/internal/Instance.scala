@@ -1,4 +1,4 @@
-package com.ing.baker.petrinet.runtime
+package com.ing.baker.runtime.actor.process_instance.internal
 
 import com.ing.baker.petrinet.api._
 

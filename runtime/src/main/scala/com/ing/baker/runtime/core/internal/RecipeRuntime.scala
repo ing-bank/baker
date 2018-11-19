@@ -6,8 +6,9 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.api._
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
-import com.ing.baker.petrinet.runtime._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceRuntime
+import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
+import com.ing.baker.runtime.actor.process_instance.internal._
 import com.ing.baker.runtime.core.events.InteractionFailed
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 
@@ -37,7 +38,7 @@ object RecipeRuntime {
   }
 }
 
-class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream) extends PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] {
+class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream) extends ProcessInstanceRuntime[Place, Transition, ProcessState, RuntimeEvent] {
 
   /**
     * All transitions except sensory event interactions are auto-fireable by the runtime

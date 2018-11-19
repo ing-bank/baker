@@ -6,9 +6,9 @@ import akka.persistence.query.scaladsl._
 import akka.serialization.SerializationExtension
 import akka.stream.scaladsl._
 import com.ing.baker.petrinet.api._
-import com.ing.baker.petrinet.runtime.EventSourcing._
-import com.ing.baker.petrinet.runtime._
-import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceSerialization}
+import com.ing.baker.runtime.actor.process_instance._
+import com.ing.baker.runtime.actor.process_instance.internal._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEventSourcing._
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.actor.serialization.{Encryption, ProtoEventAdapterImpl}
 
@@ -27,7 +27,7 @@ object ProcessQuery {
 
     val persistentId = ProcessInstance.processId2PersistenceId(processTypeName, processId)
     val src = readJournal.currentEventsByPersistenceId(persistentId, 0, Long.MaxValue)
-    val eventSource = EventSourcing.apply[P, T, S, E](eventSourceFn)
+    val eventSource = ProcessInstanceEventSourcing.apply[P, T, S, E](eventSourceFn)
 
     src.scan[(Instance[P, T, S], Event)]((Instance.uninitialized[P, T, S](topology), null.asInstanceOf[Event])) {
       case ((instance, prev), e) ⇒

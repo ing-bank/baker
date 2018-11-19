@@ -2,8 +2,9 @@ package com.ing.baker.petrinet.dsl
 
 import cats.effect.IO
 import com.ing.baker.petrinet.api._
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
-import com.ing.baker.petrinet.runtime._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceRuntime
+import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.BlockTransition
+import com.ing.baker.runtime.actor.process_instance.internal._
 
 import scala.util.Random
 
@@ -11,7 +12,7 @@ trait StateTransitionNet[S, E] {
 
   def eventSourceFunction: S ⇒ E ⇒ S
 
-  val runtime: PetriNetRuntime[Place, Transition, S, E] = new PetriNetRuntime[Place, Transition, S, E] {
+  val runtime: ProcessInstanceRuntime[Place, Transition, S, E] = new ProcessInstanceRuntime[Place, Transition, S, E] {
     override val eventSource: (Transition) ⇒ (S) ⇒ (E) ⇒ S = _ ⇒ eventSourceFunction
     override def transitionTask(petriNet: PetriNet[Place, Transition], t: Transition)
                                (marking: Marking[Place], state: S, input: Any): IO[(Marking[Place], E)] = {
