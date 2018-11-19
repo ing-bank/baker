@@ -1,7 +1,7 @@
-package com.ing.baker.petrinet.runtime
+package com.ing.baker.runtime.actor.process_instance.internal
 
 import com.ing.baker.petrinet.api.Marking
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay
+import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.RetryWithDelay
 
 /**
  * A Job encapsulates all the parameters that make a firing transition in a petri net.

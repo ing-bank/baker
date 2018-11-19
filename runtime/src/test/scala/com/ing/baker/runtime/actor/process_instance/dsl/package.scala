@@ -1,7 +1,7 @@
-package com.ing.baker.petrinet
+package com.ing.baker.runtime.actor.process_instance
 
 import com.ing.baker.petrinet.api.{MultiSet, PetriNet}
-import com.ing.baker.petrinet.runtime.ExceptionStrategy
+import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
 

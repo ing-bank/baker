@@ -7,12 +7,13 @@ import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import cats.effect.IO
 import cats.syntax.apply._
 import com.ing.baker.petrinet.api._
-import com.ing.baker.petrinet.runtime.EventSourcing._
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.{Continue, RetryWithDelay}
-import com.ing.baker.petrinet.runtime._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstance._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEventSourcing._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceLogger._
-import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{ExceptionState, ExceptionStrategy, _}
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.{Continue, RetryWithDelay}
+import com.ing.baker.runtime.actor.process_instance.internal._
+import com.ing.baker.runtime.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.actor.serialization.Encryption
 
 import scala.concurrent.ExecutionContext
@@ -40,12 +41,12 @@ object ProcessInstance {
       None
   }
 
-  def props[P : Identifiable, T : Identifiable, S, E](processType: String, petriNet: PetriNet[P, T], petriNetRuntime: PetriNetRuntime[P, T, S, E], settings: Settings): Props =
+  def props[P : Identifiable, T : Identifiable, S, E](processType: String, petriNet: PetriNet[P, T], runtime: ProcessInstanceRuntime[P, T, S, E], settings: Settings): Props =
     Props(new ProcessInstance[P, T, S, E](
       processType,
       petriNet,
       settings,
-      petriNetRuntime)
+      runtime)
     )
 }
 
@@ -56,7 +57,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
      processType: String,
      petriNet: PetriNet[P, T],
      settings: Settings,
-     runtime: PetriNetRuntime[P, T, S, E]) extends ProcessInstanceRecovery[P, T, S, E](petriNet, settings.encryption, runtime.eventSource) {
+     runtime: ProcessInstanceRuntime[P, T, S, E]) extends ProcessInstanceEventSourcing[P, T, S, E](petriNet, settings.encryption, runtime.eventSource) {
 
   import context.dispatcher
 
@@ -72,20 +73,20 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
   private implicit def marshallMarking(marking: Marking[Any]): Marking[Id] = marking.asInstanceOf[Marking[P]].marshall
 
-  private implicit def fromExecutionInstance(instance: com.ing.baker.petrinet.runtime.Instance[P, T, S]): InstanceState =
-    InstanceState(instance.sequenceNr, instance.marking.marshall, instance.state, instance.jobs.mapValues(fromExecutionJob(_)).map(identity))
+  private implicit def fromExecutionInstance(instance: internal.Instance[P, T, S]): protocol.InstanceState =
+    protocol.InstanceState(instance.sequenceNr, instance.marking.marshall, instance.state, instance.jobs.mapValues(fromExecutionJob(_)).map(identity))
 
-  private implicit def fromExecutionJob(job: com.ing.baker.petrinet.runtime.Job[P, T, S]): JobState =
-    JobState(job.id, job.transition.getId, job.consume.marshall, job.input, job.failure.map(fromExecutionExceptionState))
+  private implicit def fromExecutionJob(job: internal.Job[P, T, S]): protocol.JobState =
+    protocol.JobState(job.id, job.transition.getId, job.consume.marshall, job.input, job.failure.map(fromExecutionExceptionState))
 
-  private implicit def fromExecutionExceptionState(exceptionState: com.ing.baker.petrinet.runtime.ExceptionState): ExceptionState =
-    ExceptionState(exceptionState.failureCount, exceptionState.failureReason, fromExecutionExceptionStrategy(exceptionState.failureStrategy))
+  private implicit def fromExecutionExceptionState(exceptionState: internal.ExceptionState): protocol.ExceptionState =
+    protocol.ExceptionState(exceptionState.failureCount, exceptionState.failureReason, fromExecutionExceptionStrategy(exceptionState.failureStrategy))
 
-  private implicit def fromExecutionExceptionStrategy(strategy: com.ing.baker.petrinet.runtime.ExceptionStrategy): ExceptionStrategy = strategy match {
-    case com.ing.baker.petrinet.runtime.ExceptionStrategy.Fatal => ExceptionStrategy.Fatal
-    case com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition => ExceptionStrategy.BlockTransition
-    case com.ing.baker.petrinet.runtime.ExceptionStrategy.RetryWithDelay(delay) => ExceptionStrategy.RetryWithDelay(delay)
-    case com.ing.baker.petrinet.runtime.ExceptionStrategy.Continue(marking, output) => ExceptionStrategy.Continue(marking.asInstanceOf[Marking[P]].marshall, output)
+  private implicit def fromExecutionExceptionStrategy(strategy: internal.ExceptionStrategy): protocol.ExceptionStrategy = strategy match {
+    case internal.ExceptionStrategy.Fatal                     => protocol.ExceptionStrategy.Fatal
+    case internal.ExceptionStrategy.BlockTransition           => protocol.ExceptionStrategy.BlockTransition
+    case internal.ExceptionStrategy.RetryWithDelay(delay)     => protocol.ExceptionStrategy.RetryWithDelay(delay)
+    case internal.ExceptionStrategy.Continue(marking, output) => protocol.ExceptionStrategy.Continue(marking.asInstanceOf[Marking[P]].marshall, output)
   }
 
   def uninitialized: Receive = {
@@ -267,7 +268,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
   def scheduleFailedJobsForRetry(instance: Instance[P, T, S]): Map[Long, Cancellable] = {
     instance.jobs.values.foldLeft(Map.empty[Long, Cancellable]) {
-      case (map, j @ Job(_, _, _, _, _, _, Some(com.ing.baker.petrinet.runtime.ExceptionState(failureTime, _, _, RetryWithDelay(delay))))) ⇒
+      case (map, j @ Job(_, _, _, _, _, _, Some(internal.ExceptionState(failureTime, _, _, RetryWithDelay(delay))))) ⇒
         val newDelay = failureTime + delay - System.currentTimeMillis()
         if (newDelay < 0) {
           executeJob(j, sender())

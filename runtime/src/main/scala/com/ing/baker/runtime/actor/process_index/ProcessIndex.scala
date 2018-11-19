@@ -8,14 +8,13 @@ import akka.stream.scaladsl.{Source, StreamRefs}
 import akka.stream.{Materializer, StreamRefAttributes}
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.{Place, RecipePetriNet, Transition}
-import com.ing.baker.petrinet.runtime.PetriNetRuntime
 import com.ing.baker.runtime.actor.Util.logging._
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol}
+import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol, ProcessInstanceRuntime}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.{BakerProtoMessage, Encryption}
 import com.ing.baker.runtime.core.events.{ProcessCreated, RejectReason}
@@ -112,7 +111,7 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
   }
 
   def createProcessActor(processId: String, compiledRecipe: CompiledRecipe): ActorRef = {
-    val petriNetRuntime: PetriNetRuntime[Place, Transition, ProcessState, RuntimeEvent] =
+    val petriNetRuntime: ProcessInstanceRuntime[Place, Transition, ProcessState, RuntimeEvent] =
       new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream)
 
     val processActorProps =
