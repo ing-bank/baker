@@ -10,7 +10,7 @@ import scala.concurrent.duration._
 
 
 private[downing] object SplitBrainResolverActor {
-  def props(downRemovalMargin: FiniteDuration) = Props(classOf[SplitBrainResolverActor], downRemovalMargin, new MajorityStrategy())
+  def props(downRemovalMargin: FiniteDuration, strategy: Strategy) = Props(classOf[SplitBrainResolverActor], downRemovalMargin, strategy)
 
   case object ActOnSbrDecision
 }

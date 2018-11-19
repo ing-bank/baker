@@ -7,11 +7,11 @@ import akka.testkit.{ImplicitSender, LongRunningTest}
 
 import scala.concurrent.duration.DurationInt
 
-class SplitBrainResolverHickUpNodeSpecMultiJvmNodeA extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 7 seconds))
-class SplitBrainResolverHickUpNodeSpecMultiJvmNodeB extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 7 seconds))
-class SplitBrainResolverHickUpNodeSpecMultiJvmNodeC extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 7 seconds))
-class SplitBrainResolverHickUpNodeSpecMultiJvmNodeD extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 7 seconds))
-class SplitBrainResolverHickUpNodeSpecMultiJvmNodeE extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 7 seconds))
+class SplitBrainResolverHickUpNodeSpecMultiJvmNodeA extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 7 seconds, strategyConfig = MajorityStrategyConfig))
+class SplitBrainResolverHickUpNodeSpecMultiJvmNodeB extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 7 seconds, strategyConfig = MajorityStrategyConfig))
+class SplitBrainResolverHickUpNodeSpecMultiJvmNodeC extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 7 seconds, strategyConfig = MajorityStrategyConfig))
+class SplitBrainResolverHickUpNodeSpecMultiJvmNodeD extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 7 seconds, strategyConfig = MajorityStrategyConfig))
+class SplitBrainResolverHickUpNodeSpecMultiJvmNodeE extends SplitBrainResolverHickUpNodeSpec(SplitBrainResolverConfig(useFailureDetectorPuppet = true, downRemovalMargin = 7 seconds, strategyConfig = MajorityStrategyConfig))
 
 abstract class SplitBrainResolverHickUpNodeSpec(splitBrainResolverConfig: SplitBrainResolverConfig) extends MultiNodeSpec(splitBrainResolverConfig)
   with STMultiNodeSpec with ImplicitSender with MultiNodeClusterSpec {
@@ -34,7 +34,7 @@ abstract class SplitBrainResolverHickUpNodeSpec(splitBrainResolverConfig: SplitB
       log.info("NodeE reachable")
     } else {
         markNodeAsUnavailable(addressNodeE)
-      log.info("NodeE UNreachable")
+      log.info("NodeE Unreachable")
     }
   }
 

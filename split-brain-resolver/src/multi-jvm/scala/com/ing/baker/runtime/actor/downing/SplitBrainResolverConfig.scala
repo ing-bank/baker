@@ -7,13 +7,40 @@ import com.typesafe.config.{Config, ConfigFactory}
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
 
-final case class SplitBrainResolverConfig(useFailureDetectorPuppet: Boolean, downRemovalMargin: Duration = 2 seconds) extends MultiNodeConfig {
+sealed trait StrategyConfig
+object MajorityStrategyConfig extends StrategyConfig
+case class RefereeStrategyConfig(refereeAddress: String, downAllIfLessThanNodes: Int) extends StrategyConfig
+
+final case class SplitBrainResolverConfig(useFailureDetectorPuppet: Boolean,
+                                          downRemovalMargin: Duration = 2 seconds,
+                                          strategyConfig: StrategyConfig
+                                         )
+  extends MultiNodeConfig {
 
   val nodeA = role("nodeA")
   val nodeB = role("nodeB")
   val nodeC = role("nodeC")
   val nodeD = role("nodeD")
   val nodeE = role("nodeE")
+
+  testTransport(on = true)
+
+  val strategyConfigString: String =
+    strategyConfig match {
+      case MajorityStrategyConfig =>
+        s"""
+           |baker.cluster.split-brain-resolver.active-strategy = "majority"
+        """
+
+      case RefereeStrategyConfig(refereeAddress, downAllIfLessThanNodes) =>
+        s"""
+           |baker.cluster.split-brain-resolver.active-strategy = "referee"
+           |baker.cluster.split-brain-resolver.referee {
+           |  address = $refereeAddress
+           |  down-all-if-less-than-nodes = $downAllIfLessThanNodes
+           |}
+        """
+    }
 
   val bakerSplitBrainResolverConfig: Config = ConfigFactory.parseString(
     s"""
@@ -24,8 +51,6 @@ final case class SplitBrainResolverConfig(useFailureDetectorPuppet: Boolean, dow
     """.stripMargin
   )
 
-  testTransport(on = true)
-
   commonConfig(ConfigFactory.parseString(
     """
       |akka.cluster.metrics.enabled=off
@@ -34,7 +59,7 @@ final case class SplitBrainResolverConfig(useFailureDetectorPuppet: Boolean, dow
       |akka.loglevel = INFO
     """.stripMargin)
     .withFallback(bakerSplitBrainResolverConfig)
+    .withFallback(ConfigFactory.parseString(strategyConfigString.stripMargin))
     .withFallback(MultiNodeClusterSpec.clusterConfig(useFailureDetectorPuppet))
   )
-
 }
