@@ -29,6 +29,8 @@ abstract class SplitBrainResolverNodeCrashSpec(splitBrainResolverConfig: SplitBr
       enterBarrier("before-exit-fifth-node")
 
       runOn(nodeA) {
+        log.info(s"NODE-A - ADDRESS: ${address(nodeA)}")
+
         // kill 'fifth' node
         testConductor.exit(nodeE, 0).await
         enterBarrier("down-fifth-node")

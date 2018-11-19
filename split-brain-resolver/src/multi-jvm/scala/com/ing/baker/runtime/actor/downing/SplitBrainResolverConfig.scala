@@ -62,4 +62,11 @@ final case class SplitBrainResolverConfig(useFailureDetectorPuppet: Boolean,
     .withFallback(ConfigFactory.parseString(strategyConfigString.stripMargin))
     .withFallback(MultiNodeClusterSpec.clusterConfig(useFailureDetectorPuppet))
   )
+
+  nodeConfig(nodeA) {
+    ConfigFactory.parseString(
+      """
+        |akka.remote.netty.tcp.port = 49999
+      """.stripMargin)
+  }
 }
