@@ -7,12 +7,11 @@ import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.stream.scaladsl.{Source, StreamRefs}
 import akka.stream.{Materializer, StreamRefAttributes}
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.il.petrinet.{Place, RecipePetriNet, Transition}
+import com.ing.baker.il.petrinet.{Place, Transition}
+import com.ing.baker.runtime.core._
 import com.ing.baker.runtime.actor.Util.logging._
-import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol, ProcessInstanceRuntime}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
@@ -65,8 +64,6 @@ object ProcessIndex {
   case class ActorCreated(recipeId: String, processId: String, createdDateTime: Long) extends BakerProtoMessage
 
   private val bakerExecutionContext: ExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
-
-  private val updateCacheTimeout: FiniteDuration = 5 seconds
 }
 
 class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
@@ -80,6 +77,8 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
   private val recipeCache: mutable.Map[String, (CompiledRecipe, Long)] = mutable.Map[String, (CompiledRecipe, Long)]()
 
   import context.dispatcher
+
+  val updateCacheTimeout: FiniteDuration = context.system.settings.config.getDuration("baker.process-index-update-cache-timeout").toScala
 
   def updateCache() = {
     // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
