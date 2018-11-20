@@ -114,7 +114,7 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
           eventStream.publish(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, recipe.name, recipe.recipeId, processState.processId, interaction.interactionName, outputEvent))
 
           // create the output marking for the petri net
-          val outputMarking: Marking[Place] = RecipeRuntime.createProducedMarking(interaction, outAdjacent, outputEvent)
+          val outputMarking: Marking[Place] = RecipeRuntime.createProducedMarking(outAdjacent, outputEvent)
 
           (outputMarking, outputEvent.getOrElse(null))
 

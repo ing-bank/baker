@@ -10,6 +10,7 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstanceRuntime
 import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.actor.process_instance.internal._
 import com.ing.baker.runtime.core.events.InteractionFailed
+import com.ing.baker.runtime.core.internal.RecipeRuntime.createProducedMarking
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 
 object RecipeRuntime {
@@ -27,7 +28,7 @@ object RecipeRuntime {
     *
     * It fills a token in the out adjacent place of the transition with the interaction name
     */
-  def createProducedMarking(interaction: InteractionTransition, outAdjacent: MultiSet[Place], event: Option[RuntimeEvent]): Marking[Place] = {
+  def createProducedMarking(outAdjacent: MultiSet[Place], event: Option[RuntimeEvent]): Marking[Place] = {
     outAdjacent.keys.map { place =>
 
       // use the event name as a token value, otherwise null
@@ -85,8 +86,8 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
             case ExceptionStrategyOutcome.BlockTransition => BlockTransition
             case ExceptionStrategyOutcome.RetryWithDelay(delay) => RetryWithDelay(delay)
             case ExceptionStrategyOutcome.Continue(eventName) => {
-              val runtimeEvent = new RuntimeEvent(eventName, Seq.empty)
-              Continue(RecipeRuntime.createProducedMarking(interaction, outMarking, Some(runtimeEvent)), runtimeEvent)
+              val runtimeEvent = RuntimeEvent(eventName, Seq.empty)
+              Continue(createProducedMarking(outMarking, Some(runtimeEvent)), runtimeEvent)
             }
           }
 

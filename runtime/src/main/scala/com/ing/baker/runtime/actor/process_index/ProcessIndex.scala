@@ -110,12 +110,12 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
   }
 
   def createProcessActor(processId: String, compiledRecipe: CompiledRecipe): ActorRef = {
-    val petriNetRuntime: ProcessInstanceRuntime[Place, Transition, ProcessState, RuntimeEvent] =
+    val runtime: ProcessInstanceRuntime[Place, Transition, ProcessState, RuntimeEvent] =
       new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream)
 
     val processActorProps =
       ProcessInstance.props[Place, Transition, ProcessState, RuntimeEvent](
-        compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
+        compiledRecipe.name, compiledRecipe.petriNet, runtime,
         ProcessInstance.Settings(
           executionContext = bakerExecutionContext,
           encryption = configuredEncryption,
