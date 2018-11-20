@@ -143,24 +143,10 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
     // parameterNamesToValues overwrites mapped token values which overwrites context map (in order of importance)
     val argumentNamesToValues: Map[String, Value] = interaction.predefinedParameters ++ state.ingredients + processId
 
-    def throwMissingInputException = (name: String) => {
-      val msg =
-        s"""
-           |IllegalArgumentException at Interaction: $toString
-           |Missing parameter: $name
-           |Required input   : ${interaction.requiredIngredients.mkString(",")}
-           |Provided input   : ${argumentNamesToValues.keySet.toSeq.sorted.mkString(",")}
-         """.stripMargin
-      log.warn(msg)
-      throw new IllegalArgumentException(msg)
-    }
-
     // map the values to the input places, throw an error if a value is not found
-    val interactionInput: Seq[Value] =
-      interaction.requiredIngredients.map {
-        case IngredientDescriptor(name, _) => argumentNamesToValues.getOrElse(name, throwMissingInputException).asInstanceOf[Value]
-      }
-
-    interactionInput
+    interaction.requiredIngredients.map {
+      case IngredientDescriptor(name, _) =>
+        argumentNamesToValues.getOrElse(name, throw new FatalInteractionException(s"Missing parameter '$name'"))
+    }
   }
 }
