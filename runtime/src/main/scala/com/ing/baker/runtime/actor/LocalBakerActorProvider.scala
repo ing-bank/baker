@@ -16,17 +16,14 @@ import scala.concurrent.duration._
 
 class LocalBakerActorProvider(config: Config, configuredEncryption: Encryption) extends BakerActorProvider {
 
-  private val retentionCheckInterval = config.as[Option[FiniteDuration]]("baker.actor.retention-check-interval").getOrElse(1 minute)
+  private val retentionCheckInterval = config.as[FiniteDuration]("baker.actor.retention-check-interval")
   val actorIdleTimeout: Option[FiniteDuration] = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout")
 
   override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(
     implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {
-    val indexActorRef = actorSystem.actorOf(
-      ProcessIndex.props(actorIdleTimeout, configuredEncryption, interactionManager, recipeManager))
 
-    actorSystem.scheduler.schedule(retentionCheckInterval, retentionCheckInterval, indexActorRef, CheckForProcessesToBeDeleted)(actorSystem.dispatcher)
-
-    indexActorRef
+    actorSystem.actorOf(
+      ProcessIndex.props(actorIdleTimeout, Some(retentionCheckInterval), configuredEncryption, interactionManager, recipeManager))
   }
 
   override def createRecipeManagerActor()(implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {

@@ -7,19 +7,17 @@ import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.stream.scaladsl.{Source, StreamRefs}
 import akka.stream.{Materializer, StreamRefAttributes}
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.il.petrinet.{Place, RecipePetriNet, Transition}
+import com.ing.baker.il.petrinet.{Place, Transition}
 import com.ing.baker.runtime.actor.Util.logging._
-import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol, ProcessInstanceRuntime}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.{BakerProtoMessage, Encryption}
 import com.ing.baker.runtime.core.events.{ProcessCreated, RejectReason}
 import com.ing.baker.runtime.core.internal.{InteractionManager, RecipeRuntime}
-import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, events, namedCachedThreadPool}
+import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, events, namedCachedThreadPool, _}
 
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -29,10 +27,11 @@ import scala.concurrent.{Await, ExecutionContext}
 object ProcessIndex {
 
   def props(processIdleTimeout: Option[FiniteDuration],
+            retentionCheckInterval: Option[FiniteDuration],
             configuredEncryption: Encryption,
             interactionManager: InteractionManager,
             recipeManager: ActorRef)(implicit materializer: Materializer) =
-    Props(new ProcessIndex(processIdleTimeout, configuredEncryption, interactionManager, recipeManager))
+    Props(new ProcessIndex(processIdleTimeout, retentionCheckInterval, configuredEncryption, interactionManager, recipeManager))
 
   sealed trait ProcessStatus
 
@@ -66,20 +65,27 @@ object ProcessIndex {
 
   private val bakerExecutionContext: ExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
 
-  private val updateCacheTimeout: FiniteDuration = 5 seconds
+
 }
 
 class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
+                   retentionCheckInterval: Option[FiniteDuration],
                    configuredEncryption: Encryption,
                    interactionManager: InteractionManager,
                    recipeManager: ActorRef)(implicit materializer: Materializer) extends PersistentActor {
 
   val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
+  import context.dispatcher
+
+  private val updateCacheTimeout: FiniteDuration = context.system.settings.config.getDuration("baker.process-index-update-cache-timeout").toScala
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
   private val recipeCache: mutable.Map[String, (CompiledRecipe, Long)] = mutable.Map[String, (CompiledRecipe, Long)]()
 
-  import context.dispatcher
+  // if there is a retention check interval defined we schedule a recurring message
+  retentionCheckInterval.foreach { interval =>
+    context.system.scheduler.schedule(interval, interval, context.self, CheckForProcessesToBeDeleted)
+  }
 
   def updateCache() = {
     // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
