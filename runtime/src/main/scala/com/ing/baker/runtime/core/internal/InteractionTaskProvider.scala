@@ -18,9 +18,27 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
 
   def apply(petriNet: PetriNet[Place, Transition], t: Transition)(marking: Marking[Place], state: ProcessState, input: Any): IO[(Marking[Place], RuntimeEvent)] = {
     t match {
-      case interaction: InteractionTransition => interactionTransitionTask(interaction, petriNet.outMarking(t), state)
+      case interaction: InteractionTransition => interactionTask(interaction, petriNet.outMarking(t), state)
       case t: EventTransition                 => IO.pure(petriNet.outMarking(t).toMarking, input.asInstanceOf[RuntimeEvent])
       case t                                  => IO.pure(petriNet.outMarking(t).toMarking, null.asInstanceOf[RuntimeEvent])
+    }
+  }
+
+  /**
+    * Creates the input parameters for an interaction implementation
+    */
+  def createInput(interaction: InteractionTransition, state: ProcessState): Seq[Value] = {
+
+    // the process id is a special ingredient that is always available
+    val processId: (String, Value) = processIdName -> PrimitiveValue(state.processId.toString)
+
+    // a map of all ingredients
+    val allIngredients: Map[String, Value] = interaction.predefinedParameters ++ state.ingredients + processId
+
+    // arranges the ingredients in the expected order
+    interaction.requiredIngredients.map {
+      case IngredientDescriptor(name, _) =>
+        allIngredients.getOrElse(name, throw new FatalInteractionException(s"Missing parameter '$name'"))
     }
   }
 
@@ -46,8 +64,9 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
     optionalEvent match {
 
       case None =>
+        // an event was expected but none was provided
         if (!interaction.eventsToFire.isEmpty)
-          throw new FatalInteractionException(s"Interaction ${interaction.interactionName} did not provide an output")
+          throw new FatalInteractionException(s"Interaction '${interaction.interactionName}' did not provide any output, expected one of: ${interaction.eventsToFire.map(_.name).mkString(",")}")
 
       case Some(event) =>
 
@@ -55,14 +74,14 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
           case (name, null) => name
         }
 
-        // null values for ingredients are not allowed
+        // null values for ingredients are NOT allowed
         if(nullIngredientNames.nonEmpty)
-          throw new FatalInteractionException(s"Interaction ${interaction.interactionName} returned null value for ingredients: ${nullIngredientNames.mkString(",")}")
+          throw new FatalInteractionException(s"Interaction '${interaction.interactionName}' returned null for the following ingredients: ${nullIngredientNames.mkString(",")}")
 
         // the event name must match an event name from the interaction output
         interaction.originalEvents.find(_.name == event.name) match {
           case None =>
-            throw new FatalInteractionException(s"No event with name '${event.name}' is known by this interaction")
+            throw new FatalInteractionException(s"Interaction '${interaction.interactionName}' returned unkown event '${event.name}, expected one of: ${interaction.eventsToFire.map(_.name).mkString(",")}")
           case Some(eventType) =>
             val errors = event.validateEvent(eventType)
 
@@ -72,11 +91,11 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
     }
   }
 
-  def interactionTransitionTask(interaction: InteractionTransition,
-                                outAdjacent: MultiSet[Place],
-                                processState: ProcessState): IO[(Marking[Place], RuntimeEvent)] = {
+  def interactionTask(interaction: InteractionTransition,
+                      outAdjacent: MultiSet[Place],
+                      processState: ProcessState): IO[(Marking[Place], RuntimeEvent)] = {
 
-      // returns a delayed task that will get executed by the baker petrinet runtime
+      // returns a delayed task that will get executed by the process instance
       IO {
 
         // add MDC values for logging
@@ -116,7 +135,7 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
           // create the output marking for the petri net
           val outputMarking: Marking[Place] = RecipeRuntime.createProducedMarking(outAdjacent, outputEvent)
 
-          (outputMarking, outputEvent.getOrElse(null))
+          (outputMarking, outputEvent.orNull)
 
         } finally {
           // remove the MDC values
@@ -129,24 +148,4 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
         case e: Throwable                 => IO.raiseError(e)
       }
     }
-
-  /**
-    * Convert place names which are the same as argument names to actual parameter values.
-    *
-    * @return Sequence of values in order of argument lists
-    */
-  def createInput(interaction: InteractionTransition, state: ProcessState): Seq[Value] = {
-
-    // We do not support any other type then String types
-    val processId: (String, Value) = processIdName -> PrimitiveValue(state.processId.toString)
-
-    // parameterNamesToValues overwrites mapped token values which overwrites context map (in order of importance)
-    val argumentNamesToValues: Map[String, Value] = interaction.predefinedParameters ++ state.ingredients + processId
-
-    // map the values to the input places, throw an error if a value is not found
-    interaction.requiredIngredients.map {
-      case IngredientDescriptor(name, _) =>
-        argumentNamesToValues.getOrElse(name, throw new FatalInteractionException(s"Missing parameter '$name'"))
-    }
-  }
 }
