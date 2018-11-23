@@ -8,7 +8,7 @@ To create a release run the following:
 
 1. Make sure tests are OK:
 
-    `sbt clean test`
+    `sbt ";+clean;+test"`
 
 2. Create the release:
 
