@@ -87,7 +87,13 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
 
   import context.dispatcher
 
-  context.system.scheduler.schedule(cleanupInterval, cleanupInterval, context.self, CheckForProcessesToBeDeleted)
+  val config = context.system.settings.config
+
+  private val retentionPeriodEnabled = config.getBoolean("baker.actor.retention-period-enabled")
+  private val receivePeriodEnabled = config.getBoolean("baker.actor.receive-period-enabled")
+
+  if (retentionPeriodEnabled)
+    context.system.scheduler.schedule(cleanupInterval, cleanupInterval, context.self, CheckForProcessesToBeDeleted)
 
   def updateCache() = {
     // TODO this is a synchronous ask on an actor which is considered bad practice, alternative?
@@ -203,7 +209,8 @@ class ProcessIndex(cleanupInterval: FiniteDuration = 1 minute,
         compiledRecipe.eventReceivePeriod match {
           case Some(receivePeriod) =>
             index.get(processId).foreach { p =>
-              if (System.currentTimeMillis() - p.createdDateTime > receivePeriod.toMillis) {
+              if (receivePeriodEnabled &&
+                (System.currentTimeMillis() - p.createdDateTime > receivePeriod.toMillis)) {
                 sender() ! ReceivePeriodExpired(processId)
               }
               else
