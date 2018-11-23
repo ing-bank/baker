@@ -127,6 +127,7 @@ lazy val recipeRuntime = project.in(file("runtime"))
         levelDB,
         levelDBJni,
         betterFiles,
+        graphvizJava,
         junitInterface,
         scalaTest,
         scalaCheck,
