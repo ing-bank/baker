@@ -1,6 +1,5 @@
 package com.ing.baker.runtime
 
-import java.nio.file.{Files, Paths}
 import java.util.UUID
 
 import com.ing.baker.BakerRuntimeTestBase
