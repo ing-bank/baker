@@ -1,8 +1,8 @@
-package com.ing.baker.petrinet.dsl
+package com.ing.baker.runtime.actor.process_instance.dsl
 
 import cats.effect.IO
 import com.ing.baker.petrinet.api._
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.BlockTransition
+import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.BlockTransition
 
 
 case class TransitionBehaviour[S, E](

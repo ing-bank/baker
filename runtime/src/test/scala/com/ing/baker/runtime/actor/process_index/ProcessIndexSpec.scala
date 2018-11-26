@@ -318,10 +318,11 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
                                recipeManager: ActorRef): ActorRef = {
 
     val props = Props(new ProcessIndex(
-      Option.empty,
-      Encryption.NoEncryption,
-      new InteractionManager(),
-      recipeManager) {
+      processIdleTimeout = None,
+      retentionCheckInterval = None,
+      configuredEncryption = Encryption.NoEncryption,
+      interactionManager = new InteractionManager(),
+      recipeManager = recipeManager) {
       override def createProcessActor(id: String, compiledRecipe: CompiledRecipe) = petriNetActorRef
     })
 

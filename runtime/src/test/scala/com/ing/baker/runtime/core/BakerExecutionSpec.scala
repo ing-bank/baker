@@ -249,10 +249,10 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         */
       val createNewCase: Boolean = false
 
-      val journalPath = "runtime/src/test/resources/persisted-messages"
+      val journalPath = "src/test/resources/persisted-messages"
       val journalDir = File(journalPath)
 
-      val testPath = if (createNewCase) journalPath else "runtime/target/backwardsCompatibilityOfEvents"
+      val testPath = if (createNewCase) journalPath else "target/backwardsCompatibilityOfEvents"
       val testDir = File(testPath).createDirectoryIfNotExists()
 
       if (!createNewCase) {
@@ -261,7 +261,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         journalDir./("journal").copyToDirectory(testDir)
       }
 
-      val config = levelDbConfig(
+      val config = clusterLevelDBConfig(
         "backwardsCompatibilityOfEvents",
         3004,
         10 seconds,
@@ -898,7 +898,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       val journalId = java.util.UUID.randomUUID().toString
 
-      val indexTestSystem = ActorSystem("indexTest", levelDbConfig(
+      val indexTestSystem = ActorSystem("indexTest", clusterLevelDBConfig(
         actorSystemName = "indexTest",
         port = 3005,
         journalPath = s"target/journal-$journalId",
@@ -935,7 +935,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
     //Only works if persistence actors are used (think cassandra)
     "recover the state of a process from a persistence store" in {
-      val system1 = ActorSystem("persistenceTest1", levelDbConfig("persistenceTest1", 3002))
+      val system1 = ActorSystem("persistenceTest1", localLevelDBConfig("persistenceTest1"))
       val recoveryRecipeName = "RecoveryRecipe"
       val processId = UUID.randomUUID().toString
 
@@ -953,7 +953,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         TestKit.shutdownActorSystem(system1)
       }
 
-      val system2 = ActorSystem("persistenceTest2", levelDbConfig("persistenceTest2", 3003))
+      val system2 = ActorSystem("persistenceTest2", localLevelDBConfig("persistenceTest2"))
       try {
         val baker2 = new Baker()(system2)
         baker2.addImplementations(mockImplementations)
