@@ -7,7 +7,7 @@ import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.stream.scaladsl.{Source, StreamRefs}
 import akka.stream.{Materializer, StreamRefAttributes}
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.il.petrinet.{Place, Transition}
+import com.ing.baker.il.petrinet.{Place, RecipePetriNet, Transition}
 import com.ing.baker.runtime.actor.Util.logging._
 import com.ing.baker.runtime.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
@@ -117,12 +117,12 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
   }
 
   def createProcessActor(processId: String, compiledRecipe: CompiledRecipe): ActorRef = {
-    val petriNetRuntime: ProcessInstanceRuntime[Place, Transition, ProcessState, RuntimeEvent] =
+    val runtime: ProcessInstanceRuntime[Place, Transition, ProcessState, RuntimeEvent] =
       new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream)
 
     val processActorProps =
       ProcessInstance.props[Place, Transition, ProcessState, RuntimeEvent](
-        compiledRecipe.name, compiledRecipe.petriNet, petriNetRuntime,
+        compiledRecipe.name, compiledRecipe.petriNet, runtime,
         ProcessInstance.Settings(
           executionContext = bakerExecutionContext,
           encryption = configuredEncryption,

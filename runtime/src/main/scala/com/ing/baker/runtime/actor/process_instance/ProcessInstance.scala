@@ -2,7 +2,6 @@ package com.ing.baker.runtime.actor.process_instance
 
 import akka.actor._
 import akka.event.{DiagnosticLoggingAdapter, Logging}
-import akka.pattern.pipe
 import akka.persistence.{DeleteMessagesFailure, DeleteMessagesSuccess}
 import cats.effect.IO
 import cats.syntax.apply._
@@ -259,10 +258,13 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
     Try(context.self).foreach { self =>
 
       // executes the IO task on the ExecutionContext
-      val future = IO.shift(settings.executionContext) *> executor(job)
+      val io = IO.shift(settings.executionContext) *> executor(job)
 
-      // translate to future and pipes the result of the future back to the actor
-      future.unsafeToFuture().pipeTo(self)(originalSender)
+      // pipes the result back this actor
+      io.unsafeRunAsync {
+        case Right(event)    => self.tell(event, originalSender)
+        case Left(exception) => self.tell(Status.Failure(exception), originalSender)
+      }
     }
   }
 

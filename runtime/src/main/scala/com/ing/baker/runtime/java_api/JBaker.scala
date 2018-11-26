@@ -8,6 +8,7 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core._
 import com.ing.baker.runtime.core.events.AnnotatedEventSubscriber
 import com.ing.baker.types.Value
+import javax.annotation.Nonnull
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
@@ -30,21 +31,21 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @param compiledRecipe The compiled recipe.
     * @return A recipe identifier.
     */
-  def addRecipe(compiledRecipe: CompiledRecipe): String = baker.addRecipe(compiledRecipe)
+  def addRecipe(@Nonnull compiledRecipe: CompiledRecipe): String = baker.addRecipe(compiledRecipe)
 
   /**
     * Adds a single interaction implementation to baker.
     *
     * @param implementation The implementation that should be added.
     */
-  def addImplementation(implementation: AnyRef): Unit = baker.addImplementation(implementation)
+  def addImplementation(@Nonnull implementation: AnyRef): Unit = baker.addImplementation(implementation)
 
   /**
     * Adds all the provided interaction implementations to baker.
     *
     * @param implementations An iterable of implementations that should be added.
     */
-  def addImplementations(implementations: java.lang.Iterable[AnyRef]): Unit = implementations.asScala.foreach(addImplementation)
+  def addImplementations(@Nonnull implementations: java.lang.Iterable[AnyRef]): Unit = implementations.asScala.foreach(addImplementation)
 
   /**
     * Attempts to gracefully shutdown the baker system.
@@ -67,7 +68,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @param processId The process identifier
     */
   @throws[TimeoutException]("When the process is not baked within the given deadline")
-  def bake(recipeId: String, processId: String): Unit =
+  def bake(@Nonnull recipeId: String, @Nonnull processId: String): Unit =
     baker.bake(recipeId, processId)
 
   /**
@@ -78,7 +79,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @param timeout   the timeout for the Bake
     */
   @throws[TimeoutException]("When the process is not baked within the given deadline")
-  def bake(recipeId: String, processId: String, timeout: java.time.Duration): Unit =
+  def bake(@Nonnull recipeId: String, @Nonnull processId: String, @Nonnull timeout: java.time.Duration): Unit =
     baker.bake(recipeId, processId, timeout.toScala)
 
   /**
@@ -88,7 +89,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @param processId The process identifier
     */
   @throws[TimeoutException]("When the process does not respond within the given deadline")
-  def bake(recipeId: String, processId: UUID): Unit = bake(recipeId, processId.toString)
+  def bake(@Nonnull recipeId: String, @Nonnull processId: UUID): Unit = bake(recipeId, processId.toString)
 
   /**
     * This bakes (creates) a new process instance of the recipe.
@@ -98,7 +99,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @param timeout   the timeout for the Bake
     */
   @throws[TimeoutException]("When the process does not respond within the given deadline")
-  def bake(recipeId: String, processId: UUID, timeout: java.time.Duration): Unit =
+  def bake(@Nonnull recipeId: String, @Nonnull processId: UUID, @Nonnull timeout: java.time.Duration): Unit =
     bake(recipeId, processId.toString, timeout)
 
   /**
@@ -112,7 +113,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
-  def processEvent(processId: String, event: Any): SensoryEventStatus =
+  def processEvent(@Nonnull processId: String, @Nonnull event: Any): SensoryEventStatus =
     baker.processEvent(processId, event, None)
 
   /**
@@ -126,7 +127,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
-  def processEvent(processId: UUID, event: Any): SensoryEventStatus =
+  def processEvent(@Nonnull processId: UUID, @Nonnull event: Any): SensoryEventStatus =
     processEvent(processId.toString, event)
 
   /**
@@ -140,7 +141,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
-  def processEvent(processId: String, event: Any, timeout: java.time.Duration): SensoryEventStatus =
+  def processEvent(@Nonnull processId: String, @Nonnull event: Any, @Nonnull timeout: java.time.Duration): SensoryEventStatus =
     baker.processEvent(processId, event, None, timeout.toScala)
 
   /**
@@ -154,7 +155,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
-  def processEvent(processId: UUID, event: Any, timeout: java.time.Duration): SensoryEventStatus =
+  def processEvent(@Nonnull processId: UUID, @Nonnull event: Any, @Nonnull timeout: java.time.Duration): SensoryEventStatus =
     processEvent(processId.toString, event, timeout)
 
   /**
@@ -169,7 +170,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
-  def processEvent(processId: String, event: Any, correlationId: String): SensoryEventStatus =
+  def processEvent(@Nonnull processId: String, @Nonnull event: Any, @Nonnull correlationId: String): SensoryEventStatus =
     baker.processEvent(processId, event, Some(correlationId))
 
   /**
@@ -184,7 +185,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
-  def processEvent(processId: UUID, event: Any, correlationId: String): SensoryEventStatus =
+  def processEvent(@Nonnull processId: UUID, @Nonnull event: Any, @Nonnull correlationId: String): SensoryEventStatus =
     processEvent(processId.toString, event, correlationId)
 
   /**
@@ -200,7 +201,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
-  def processEvent(processId: String, event: Any, correlationId: String, timeout: java.time.Duration): SensoryEventStatus =
+  def processEvent(@Nonnull processId: String, @Nonnull event: Any, @Nonnull correlationId: String, @Nonnull timeout: java.time.Duration): SensoryEventStatus =
     baker.processEvent(processId, event, Some(correlationId), timeout.toScala)
 
   /**
@@ -216,7 +217,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
-  def processEvent(processId: UUID, event: Any, correlationId: String, timeout: java.time.Duration): SensoryEventStatus =
+  def processEvent(@Nonnull processId: UUID, @Nonnull event: Any, @Nonnull correlationId: String, @Nonnull timeout: java.time.Duration): SensoryEventStatus =
     processEvent(processId.toString, event, correlationId, timeout)
 
   /**
@@ -227,7 +228,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @param event     The event to fire
     * @return
     */
-  def processEventAsync(processId: String, event: Any): BakerResponse =
+  def processEventAsync(@Nonnull processId: String, @Nonnull event: Any): BakerResponse =
     baker.processEventAsync(processId, event)
 
   /**
@@ -238,7 +239,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @param event     The event to fire
     * @return
     */
-  def processEventAsync(processId: UUID, event: Any): BakerResponse =
+  def processEventAsync(@Nonnull processId: UUID, @Nonnull event: Any): BakerResponse =
     processEventAsync(processId.toString, event)
 
   /**
@@ -250,7 +251,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @param timeout   How long to wait for a response from the process
     * @return
     */
-  def processEventAsync(processId: String, event: Any, timeout: java.time.Duration): BakerResponse =
+  def processEventAsync(@Nonnull processId: String, @Nonnull event: Any, @Nonnull timeout: java.time.Duration): BakerResponse =
     baker.processEventAsync(processId, event, None, timeout.toScala)
 
   /**
@@ -264,7 +265,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     */
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[NoSuchProcessException]("When no process exists for the given id")
-  def processEventAsync(processId: UUID, event: Any, timeout: java.time.Duration): BakerResponse =
+  def processEventAsync(@Nonnull processId: UUID, @Nonnull event: Any, @Nonnull timeout: java.time.Duration): BakerResponse =
     processEventAsync(processId.toString, event, timeout)
 
   /**
@@ -278,7 +279,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     */
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[NoSuchProcessException]("When no process exists for the given id")
-  def processEventAsync(processId: String, event: Any, correlationId: String): BakerResponse =
+  def processEventAsync(@Nonnull processId: String, @Nonnull event: Any, @Nonnull correlationId: String): BakerResponse =
     baker.processEventAsync(processId, event, Some(correlationId))
 
   /**
@@ -292,7 +293,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     */
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[NoSuchProcessException]("When no process exists for the given id")
-  def processEventAsync(processId: UUID, event: Any, correlationId: String): BakerResponse =
+  def processEventAsync(@Nonnull processId: UUID, @Nonnull event: Any, @Nonnull correlationId: String): BakerResponse =
     baker.processEventAsync(processId.toString, event, Some(correlationId))
 
   /**
@@ -307,7 +308,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     */
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[NoSuchProcessException]("When no process exists for the given id")
-  def processEventAsync(processId: String, event: Any, correlationId: String, timeout: java.time.Duration): BakerResponse =
+  def processEventAsync(@Nonnull processId: String, @Nonnull event: Any, @Nonnull correlationId: String, @Nonnull timeout: java.time.Duration): BakerResponse =
     baker.processEventAsync(processId, event, Some(correlationId), timeout.toScala)
 
   /**
@@ -322,7 +323,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     */
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[NoSuchProcessException]("When no process exists for the given id")
-  def processEventAsync(processId: UUID, event: Any, correlationId: String, timeout: java.time.Duration): BakerResponse =
+  def processEventAsync(@Nonnull processId: UUID, @Nonnull event: Any, @Nonnull correlationId: String, @Nonnull timeout: java.time.Duration): BakerResponse =
     baker.processEventAsync(processId.toString, event, Some(correlationId), timeout.toScala)
 
 
@@ -336,7 +337,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
-  def getIngredients(processId: String, timeout: java.time.Duration): java.util.Map[String, Value] =
+  def getIngredients(@Nonnull processId: String, @Nonnull timeout: java.time.Duration): java.util.Map[String, Value] =
     baker
       .getIngredients(processId, timeout.toScala)
       .asJava
@@ -353,7 +354,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
-  def getIngredients(processId: UUID, timeout: java.time.Duration): java.util.Map[String, Value] =
+  def getIngredients(@Nonnull processId: UUID, @Nonnull timeout: java.time.Duration): java.util.Map[String, Value] =
     getIngredients(processId.toString, timeout)
 
   /**
@@ -365,7 +366,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the default deadline")
-  def getIngredients(processId: String): java.util.Map[String, Value] =
+  def getIngredients(@Nonnull processId: String): java.util.Map[String, Value] =
     baker.getIngredients(processId).asJava
 
   /**
@@ -377,7 +378,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the default deadline")
-  def getIngredients(processId: UUID): java.util.Map[String, Value] =
+  def getIngredients(@Nonnull processId: UUID): java.util.Map[String, Value] =
     getIngredients(processId.toString)
 
   /**
@@ -394,7 +395,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
-  def getEvents(processId: String, timeout: java.time.Duration): EventList =
+  def getEvents(@Nonnull processId: String, @Nonnull timeout: java.time.Duration): EventList =
     new EventList(baker.events(processId, timeout.toScala))
 
   /**
@@ -411,7 +412,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
-  def getEvents(processId: UUID, timeout: java.time.Duration): EventList =
+  def getEvents(@Nonnull processId: UUID, @Nonnull timeout: java.time.Duration): EventList =
     getEvents(processId.toString, timeout)
 
   /**
@@ -427,7 +428,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the default deadline")
-  def getEvents(processId: String): EventList =
+  def getEvents(@Nonnull processId: String): EventList =
     new EventList(baker.events(processId))
 
   /**
@@ -442,7 +443,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the default deadline")
-  def getEvents(processId: UUID): EventList = getEvents(processId.toString)
+  def getEvents(@Nonnull processId: UUID): EventList = getEvents(processId.toString)
 
   /**
     * Returns the recipe information for the given RecipeId
@@ -451,7 +452,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @return The JRecipeInformation recipe
     */
   @throws[TimeoutException]("When the recipe is not found within the default deadline")
-  def getRecipe(recipeId: String): RecipeInformation =
+  def getRecipe(@Nonnull recipeId: String): RecipeInformation =
     baker.getRecipe(recipeId)
 
   /**
@@ -462,7 +463,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @return The JRecipeInformation for the recipe
     */
   @throws[TimeoutException]("When the recipe is not found within the given deadline")
-  def getRecipe(recipeId: String, timeout: java.time.Duration): RecipeInformation =
+  def getRecipe(@Nonnull recipeId: String, @Nonnull timeout: java.time.Duration): RecipeInformation =
     baker.getRecipe(recipeId, timeout.toScala)
 
   /**
@@ -472,7 +473,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @return The compiled recipe
     */
   @throws[TimeoutException]("When the compiled recipe is not found within the default deadline")
-  def getCompiledRecipe(recipeId: String): CompiledRecipe =
+  def getCompiledRecipe(@Nonnull recipeId: String): CompiledRecipe =
     baker.getCompiledRecipe(recipeId)
 
   /**
@@ -483,7 +484,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @return The compiled recipe
     */
   @throws[TimeoutException]("When the compiled recipe is not found within the given deadline")
-  def getCompiledRecipe(recipeId: String, timeout: java.time.Duration): CompiledRecipe =
+  def getCompiledRecipe(@Nonnull recipeId: String, @Nonnull timeout: java.time.Duration): CompiledRecipe =
     baker.getCompiledRecipe(recipeId, timeout.toScala)
 
   /**
@@ -502,7 +503,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @return A map with all recipes from recipeId -> JRecipeInformation
     */
   @throws[TimeoutException]("When the Baker does not respond within the given deadline")
-  def getAllRecipes(timeout: java.time.Duration): java.util.Map[String, RecipeInformation] =
+  def getAllRecipes(@Nonnull timeout: java.time.Duration): java.util.Map[String, RecipeInformation] =
     baker.getAllRecipes(timeout.toScala).asJava
 
   /**
@@ -516,7 +517,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @param timeout
     * @return An index of all processes
     */
-  def getIndex(timeout: java.time.Duration): java.util.Set[ProcessMetadata] =
+  def getIndex(@Nonnull timeout: java.time.Duration): java.util.Set[ProcessMetadata] =
     baker.getIndex(timeout.toScala).asJava
 
   /**
@@ -550,7 +551,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @param recipeName the name of all recipes this event listener should be triggered for
     * @param listener   The listener to subscribe to events.
     */
-  def registerEventListener(recipeName: String, listener: EventListener): Unit = baker.registerEventListener(recipeName, listener)
+  def registerEventListener(@Nonnull recipeName: String, @Nonnull listener: EventListener): Unit = baker.registerEventListener(recipeName, listener)
 
   /**
     * Registers a listener to all runtime events for this baker instance.
@@ -569,7 +570,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     *
     * @param listener The listener to subscribe to events.
     */
-  def registerEventListener(listener: EventListener): Unit = baker.registerEventListener(listener)
+  def registerEventListener(@Nonnull listener: EventListener): Unit = baker.registerEventListener(listener)
 
 
   /**
@@ -578,7 +579,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @param listener
     * @return
     */
-  def registerBakerEventListener(listener: AnyRef) = {
+  def registerBakerEventListener(@Nonnull listener: AnyRef) = {
     baker.registerEventListenerPF(new AnnotatedEventSubscriber(listener))
   }
 
@@ -592,7 +593,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[TimeoutException]("When the process does not respond within the default deadline")
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[NoSuchProcessException]("If the process is not found")
-  def getVisualState(processId: String, timeout: java.time.Duration): String =
+  def getVisualState(@Nonnull processId: String, @Nonnull timeout: java.time.Duration): String =
     baker.getVisualState(processId, timeout.toScala)
 
   /**
@@ -604,7 +605,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[TimeoutException]("When the process does not respond within the default deadline")
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[NoSuchProcessException]("If the process is not found")
-  def getProcessState(processId: String): ProcessState =
+  def getProcessState(@Nonnull processId: String): ProcessState =
     baker.getProcessState(processId)
 
   /**
@@ -617,7 +618,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[TimeoutException]("When the process does not respond within the default deadline")
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[NoSuchProcessException]("If the process is not found")
-  def getProcessState(processId: String, timeout: java.time.Duration): ProcessState =
+  def getProcessState(@Nonnull processId: String, @Nonnull timeout: java.time.Duration): ProcessState =
     baker.getProcessState(processId, timeout.toScala)
 
   /**
@@ -629,7 +630,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[TimeoutException]("When the process does not respond within the default deadline")
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[NoSuchProcessException]("If the process is not found")
-  def getProcessState(processId: UUID): ProcessState =
+  def getProcessState(@Nonnull processId: UUID): ProcessState =
     baker.getProcessState(processId.toString)
 
   /**
@@ -642,7 +643,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[TimeoutException]("When the process does not respond within the default deadline")
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[NoSuchProcessException]("If the process is not found")
-  def getProcessState(processId: UUID, timeout: java.time.Duration): ProcessState =
+  def getProcessState(@Nonnull processId: UUID, @Nonnull timeout: java.time.Duration): ProcessState =
     baker.getProcessState(processId.toString, timeout.toScala)
 
   /**
@@ -654,7 +655,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[TimeoutException]("When the process does not respond within the default deadline")
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[NoSuchProcessException]("If the process is not found")
-  def getEventNames(processId: String): java.util.List[String] =
+  def getEventNames(@Nonnull processId: String): java.util.List[String] =
     baker.eventNames(processId).asJava
 
   /**
@@ -667,7 +668,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[TimeoutException]("When the process does not respond within the default deadline")
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[NoSuchProcessException]("If the process is not found")
-  def getEventNames(processId: String, timeout: java.time.Duration): java.util.List[String] =
+  def getEventNames(@Nonnull processId: String, @Nonnull timeout: java.time.Duration): java.util.List[String] =
     baker.eventNames(processId, timeout.toScala).asJava
 
   /**
@@ -679,7 +680,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[TimeoutException]("When the process does not respond within the default deadline")
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[NoSuchProcessException]("If the process is not found")
-  def getEventNames(processId: UUID): java.util.List[String] =
+  def getEventNames(@Nonnull processId: UUID): java.util.List[String] =
     baker.eventNames(processId.toString).asJava
 
   /**
@@ -692,7 +693,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[TimeoutException]("When the process does not respond within the default deadline")
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[NoSuchProcessException]("If the process is not found")
-  def getEventNames(processId: UUID, timeout: java.time.Duration): java.util.List[String] =
+  def getEventNames(@Nonnull processId: UUID, @Nonnull timeout: java.time.Duration): java.util.List[String] =
     baker.eventNames(processId.toString, timeout.toScala).asJava
 
   /**
@@ -705,7 +706,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[TimeoutException]("When the process does not respond within the default deadline")
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[NoSuchProcessException]("If the process is not found")
-  def getVisualState(processId: UUID, timeout: java.time.Duration): String =
+  def getVisualState(@Nonnull processId: UUID, @Nonnull timeout: java.time.Duration): String =
     getVisualState(processId.toString, timeout)
 
   /**
@@ -717,7 +718,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[NoSuchProcessException]("If the process is not found")
   @throws[TimeoutException]("When the process does not respond within the default deadline")
-  def getVisualState(processId: String): String =
+  def getVisualState(@Nonnull processId: String): String =
     baker.getVisualState(processId)
 
   /**
@@ -729,6 +730,6 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[NoSuchProcessException]("If the process is not found")
   @throws[TimeoutException]("When the process does not respond within the default deadline")
-  def getVisualState(processId: UUID): String =
+  def getVisualState(@Nonnull processId: UUID): String =
     getVisualState(processId.toString)
 }

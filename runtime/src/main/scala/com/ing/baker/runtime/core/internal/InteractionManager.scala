@@ -26,7 +26,7 @@ class InteractionManager(private var interactionImplementations: Seq[Interaction
       }
   }
 
-  private def computeAbsentMethod(interaction: InteractionTransition): InteractionImplementation =
+  private def findInteractionImplementation(interaction: InteractionTransition): InteractionImplementation =
       interactionImplementations.find(implementation => isCompatibleImplementation(interaction, implementation)).orNull
 
   /**
@@ -48,5 +48,5 @@ class InteractionManager(private var interactionImplementations: Seq[Interaction
     * @return An option containing the implementation if available
     */
   def getImplementation(interaction: InteractionTransition): Option[InteractionImplementation] =
-    Option(implementationCache.computeIfAbsent(interaction, (computeAbsentMethod _).asJava))
+    Option(implementationCache.computeIfAbsent(interaction, (findInteractionImplementation _).asJava))
 }

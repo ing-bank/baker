@@ -38,6 +38,7 @@ object Dependencies {
 
   val scalaGraph  =               "org.scala-graph"            %% "graph-core"                         % "1.11.5"
   val scalaGraphDot =             "org.scala-graph"            %% "graph-dot"                          % "1.11.5"
+  val graphvizJava =              "guru.nidi"                  %  "graphviz-java"                      % "0.8.0"
 
   val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "0.10"
   val catsCore =                  "org.typelevel"              %% "cats-core"                          % "1.1.0"

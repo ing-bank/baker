@@ -1,11 +1,13 @@
 package com.ing.baker
 
+import java.nio.file.Paths
 import java.util.UUID
 
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import com.ing.baker.recipe.TestRecipe.{fireTwoEventsInteraction, _}
 import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.{CaseClassIngredient, common}
 import com.ing.baker.runtime.core.{Baker, RuntimeEvent}
 import com.ing.baker.types.{Converters, Value}
@@ -100,6 +102,16 @@ trait BakerRuntimeTestBase
       testSieveInteractionMock,
       testOptionalIngredientInteractionMock,
       testProvidesNothingInteractionMock)
+
+  def writeRecipeToSVGFile(recipe: CompiledRecipe) = {
+
+    import guru.nidi.graphviz.engine.{Format, Graphviz}
+    import guru.nidi.graphviz.parse.Parser
+
+    val g = Parser.read(recipe.getRecipeVisualization)
+
+    Graphviz.fromGraph(g).render(Format.SVG).toFile(Paths.get(recipe.name).toFile)
+  }
 
   protected def localLevelDBConfig(actorSystemName: String,
                                    journalInitializeTimeout: FiniteDuration = 10 seconds,
