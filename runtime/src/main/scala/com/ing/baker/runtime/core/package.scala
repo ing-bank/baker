@@ -4,11 +4,28 @@ import java.lang.Thread.UncaughtExceptionHandler
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{Executors, ThreadFactory, TimeUnit}
 
+import cats.effect.IO
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 import scala.util.control.NonFatal
 
 package object core {
+
+  implicit class IOHandleErrors[T](io: IO[T]) {
+
+    def handleException[Y >: T](pf: PartialFunction[Throwable, Y]): IO[Y] =
+      io.attempt.flatMap {
+        case Right(result)   => IO.pure(result)
+        case Left(throwable) => pf.lift(throwable).map(IO.pure(_)).getOrElse(IO.raiseError(throwable))
+      }
+
+    def handleExceptionWith[Y >: T](pf: PartialFunction[Throwable, IO[Y]]): IO[Y] =
+      io.attempt.flatMap {
+        case Right(result)   => IO.pure(result)
+        case Left(throwable) => pf.lift(throwable).getOrElse(IO.raiseError(throwable))
+      }
+  }
 
   implicit class JavaDurationConversions(duration: java.time.Duration) {
     def toScala: FiniteDuration = FiniteDuration(duration.toMillis, TimeUnit.MILLISECONDS)

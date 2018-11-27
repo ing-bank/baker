@@ -28,22 +28,18 @@ object ProcessEventActor {
     implicit val akkaTimeout: Timeout = timeout
     Source.queue[Any](100, OverflowStrategy.fail).mapMaterializedValue { queue ⇒
       val sender = actorSystem.actorOf(Props(new ProcessEventActor(cmd, recipe, queue, waitForRetries)(timeout, actorSystem)))
-      val fireTransitionCmd = createFireTransitionCmd(recipe, cmd.processId, cmd.event, cmd.correlationId)
+
+      require(cmd.event != null, "Event can not be null")
+
+      val t: Transition = recipe.petriNet.transitions.find(_.label == cmd.event.name).getOrElse {
+        throw new IllegalArgumentException(s"No such event known in recipe: ${cmd.event.name}")
+      }
+
+      val fireTransitionCmd = FireTransition(t.id, cmd.event, cmd.correlationId)
+
       receiver.tell(fireTransitionCmd, sender)
       NotUsed.getInstance()
     }
-  }
-
-  def transitionForRuntimeEvent(runtimeEvent: RuntimeEvent, compiledRecipe: CompiledRecipe): Transition =
-    compiledRecipe.petriNet.transitions.find(_.label == runtimeEvent.name).getOrElse {
-      throw new IllegalArgumentException(s"No such event known in recipe: ${runtimeEvent.name}")
-    }
-
-  def createFireTransitionCmd(recipe: CompiledRecipe, processId: String, runtimeEvent: RuntimeEvent, correlationId: Option[String]): FireTransition = {
-    require(runtimeEvent != null, "Event can not be null")
-    val t: Transition = transitionForRuntimeEvent(runtimeEvent, recipe)
-
-    FireTransition(t.id, runtimeEvent, correlationId)
   }
 }
 

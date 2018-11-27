@@ -38,7 +38,7 @@ WebShop Recipe:
 ```
 A visual representation of the WebShop recipe looks like the following, where the events are colored in gray, ingredients in orange and interactions in lilac:
 
-![](webshop.png)
+![](docs/images/webshop.svg)
 
 
 Baker consists of a DSL that allows developers to choose interactions from a catalogue and re-use them in their own recipes.

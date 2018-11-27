@@ -7,7 +7,7 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
   scalaVersion := "2.12.4",
   crossScalaVersions := Seq("2.11.12", "2.12.4"),
-  fork in test := true,
+  fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
   javacOptions := Seq("-source", jvmV, "-target", jvmV),
   scalacOptions := Seq(
@@ -127,6 +127,7 @@ lazy val runtime = project.in(file("runtime"))
         levelDB,
         levelDBJni,
         betterFiles,
+        graphvizJava,
         junitInterface,
         scalaTest,
         scalaCheck,

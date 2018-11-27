@@ -129,13 +129,13 @@ object RecipeVisualizer {
   def visualizePetriNet[P, T](graph: PetriNetGraph[P, T]): String = {
 
     val nodeLabelFn: Either[P, T] ⇒ String = node ⇒ node match {
-      case Left(p)  ⇒ s"$p"
-      case Right(t) ⇒ s"$t"
+      case Left(p)  ⇒ p.toString
+      case Right(t) ⇒ t.toString
     }
 
     val nodeDotAttrFn: Either[P, T] => List[DotAttr] = node ⇒ node match {
-      case Left(nodeA)  ⇒ List(DotAttr("shape", "circle"))
-      case Right(nodeB) ⇒ List(DotAttr("shape", "square"))
+      case Left(_)  ⇒ List(DotAttr("shape", "circle"))
+      case Right(_) ⇒ List(DotAttr("shape", "square"))
     }
 
     val myRoot = DotRootGraph(

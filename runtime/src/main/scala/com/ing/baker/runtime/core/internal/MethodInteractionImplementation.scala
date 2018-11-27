@@ -28,9 +28,13 @@ case class MethodInteractionImplementation(implementation: AnyRef) extends Inter
     Try {
       method.getDeclaringClass.getDeclaredField("name")
     }.toOption match {
+
+      // In case a specific 'name' field was found, this is used
       case Some(field) if field.getType == classOf[String] =>
         field.setAccessible(true)
         field.get(implementation).asInstanceOf[String]
+
+      // Otherwise, try to find the interface that declared the method or falls back to the implementation class
       case None =>
         method.getDeclaringClass.getInterfaces.find {
           clazz => Try { clazz.getMethod(method.getName, method.getParameterTypes.toSeq: _*) }.isSuccess
@@ -41,8 +45,10 @@ case class MethodInteractionImplementation(implementation: AnyRef) extends Inter
   /**
     * The required input.
     */
-  override val inputTypes: Seq[Type] = method.getGenericParameterTypes.map {
-    jType => try { Converters.readJavaType(jType) } catch {
+  override val inputTypes: Seq[Type] = method.getGenericParameterTypes.map { javaType =>
+    try {
+      Converters.readJavaType(javaType)
+    } catch {
       case e: Exception => throw new IllegalArgumentException(s"Unsupported parameter type for interaction implementation '$name'", e)
     }
   }.toSeq
@@ -51,25 +57,21 @@ case class MethodInteractionImplementation(implementation: AnyRef) extends Inter
 
     val invocationId = UUID.randomUUID().toString
 
-    val inputArgs = input.zip(method.getGenericParameterTypes).map {
-      case (value, targetType) => value.as(targetType)
+    // translate the Value objects to the expected input types
+    val inputArgs: Seq[AnyRef] = input.zip(method.getGenericParameterTypes).map {
+      case (value, targetType) => value.as(targetType).asInstanceOf[AnyRef]
     }
 
     if (log.isTraceEnabled)
       log.trace(s"[$invocationId] invoking '$name' with parameters ${inputArgs.toString}")
 
-    val output = method.invoke(implementation, inputArgs.asInstanceOf[Seq[AnyRef]]: _*)
+    // invoke the .apply method
+    val output = method.invoke(implementation, inputArgs: _*)
 
     if (log.isTraceEnabled)
       log.trace(s"[$invocationId] result: $output")
 
-    // when the interaction does not fire an event, Void or Unit is a valid output type
-    if (output == null)
-      None
-    else {
-      val runtimeEvent: RuntimeEvent = Baker.extractEvent(output)
-
-      Some(runtimeEvent)
-    }
+    // if output == null => None, otherwise extract event
+    Option(output).map(Baker.extractEvent)
   }
 }

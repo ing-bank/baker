@@ -13,7 +13,7 @@ import akka.util.Timeout
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
-import com.ing.baker.petrinet.runtime.EventSourcing.TransitionFiredEvent
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEventSourcing.TransitionFiredEvent
 import com.ing.baker.runtime.actor._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
@@ -204,10 +204,10 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     val initializeFuture = processIndexActor.ask(CreateProcess(recipeId, processId))(timeout)
 
     val eventualState: Future[ProcessState] = initializeFuture.map {
-      case msg: Initialized             => msg.state.asInstanceOf[ProcessState]
+      case msg: Initialized        => msg.state.asInstanceOf[ProcessState]
       case ProcessAlreadyExists(_) => throw new IllegalArgumentException(s"Process with id '$processId' already exists.")
-      case NoRecipeFound(_)             => throw new IllegalArgumentException(s"Recipe with id '$recipeId' does not exist.")
-      case msg @ _                      => throw new BakerException(s"Unexpected message of type: ${msg.getClass}")
+      case NoRecipeFound(_)        => throw new IllegalArgumentException(s"Recipe with id '$recipeId' does not exist.")
+      case msg @ _                 => throw new BakerException(s"Unexpected message of type: ${msg.getClass}")
     }
 
     eventualState

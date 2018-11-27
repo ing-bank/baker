@@ -3,9 +3,9 @@ package com.ing.baker.runtime.actor.process_instance
 import java.security.MessageDigest
 
 import com.ing.baker.petrinet.api._
-import com.ing.baker.petrinet.runtime.EventSourcing._
-import com.ing.baker.petrinet.runtime.ExceptionStrategy.{BlockTransition, Fatal, RetryWithDelay}
-import com.ing.baker.petrinet.runtime.{EventSourcing, Instance}
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEventSourcing._
+import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, Fatal, RetryWithDelay}
+import com.ing.baker.runtime.actor.process_instance.internal.Instance
 import com.ing.baker.runtime.actor.process_instance.protobuf._
 import com.ing.baker.runtime.actor.process_instance.protobuf.FailureStrategy.StrategyType
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization._
@@ -43,7 +43,7 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](ser
     * De-serializes a persistence.protobuf.Event to a EvenSourcing.Event. An Instance is required to 'wire' or 'reference'
     * the message back into context.
     */
-  def deserializeEvent(event: AnyRef): Instance[P, T, S] ⇒ EventSourcing.Event = event match {
+  def deserializeEvent(event: AnyRef): Instance[P, T, S] ⇒ ProcessInstanceEventSourcing.Event = event match {
     case e: protobuf.Initialized ⇒ deserializeInitialized(e)
     case e: protobuf.TransitionFired ⇒ deserializeTransitionFired(e)
     case e: protobuf.TransitionFailed ⇒ deserializeTransitionFailed(e)
@@ -52,7 +52,7 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](ser
   /**
     * Serializes an EventSourcing.Event to a persistence.protobuf.Event.
     */
-  def serializeEvent(e: EventSourcing.Event): Instance[P, T, S] ⇒ AnyRef =
+  def serializeEvent(e: ProcessInstanceEventSourcing.Event): Instance[P, T, S] ⇒ AnyRef =
     _ ⇒ e match {
       case e: InitializedEvent ⇒ serializeInitialized(e)
       case e: TransitionFiredEvent ⇒ serializeTransitionFired(e)

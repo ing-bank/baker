@@ -6,9 +6,9 @@
         </encoder>
     </appender>
 
-    <logger name="com.ing.baker.runtime.actor.process_instance.ProcessInstance" level="OFF" />
+    <logger name="com.ing.baker.runtime.actor" level="OFF" />
 
-    <root level="INFO">
+    <root level="WARN">
         <appender-ref ref="CONSOLE"/>
     </root>
 </configuration>
