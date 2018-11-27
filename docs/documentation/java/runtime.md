@@ -1,6 +1,6 @@
 # Runtime
 
-In the [DSL](../recipe_dsl) we have defined a *description* of your recipe.
+With the [Recipe DSL](../recipe_dsl) you can create a *description* of your recipe.
 
 This does **not** yet constitutate a runnable process. It is just a blue print.
 
@@ -27,27 +27,11 @@ ActorSystem actorSystem = ActorSystem.create();
 JBaker baker = new JBaker(actorSystem);
 ```
 
-## Adding Recipe
-
-When
-
-``` java
-Config config =
-
-ActorSystem actorSystem = ActorSystem.create();
-
-JBaker baker = new JBaker(actorSystem);
-```
-
-When you create a [recipe](../recipe_dsl) in the `DSL` you specify, among others, the interactions.
-
-A recipe on its own does not executute. We need to create a "runable instance" of the recipe.
-
-Which we blabla "Bake the recipe". There we have to specify the real implementations of our recipe.
-
 ## Adding interaction implementations
 
-See [here](../interactions) how to define and implement an interaction in java. Once you have an implementation you can add it like:
+Before you can add a recipe all the interactions for that recipe *MUST* have an implemention in Baker.
+
+You can add it like this:
 
 ``` java
 
@@ -56,16 +40,47 @@ ValidateOrderImpl validateOrderImpl = new ValidateOrderImpl();
 baker.addImplementation(validateOrderImpl);
 ```
 
-## Creating a recipe instance
+## Compiling your Recipe
 
+Because a recipe is writen in a `DSL` and you have multiple options like `Java` and `Scala`. We need to compile our DSL Recipe to something that Baker understands and can execture.
+For this we have a `RecipeCompiler`.
 
-## Firing events
-
-
-``` java
-
-baker.processEvent(processId, new OrderPlaced("order"));
-
+```java
+CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
 ```
 
-##
+!!! hint "Did you know?!"
+    You can use a compiled recipe to create a visual representation. [See the visualization page how to create a visual graph.](../../visualization)
+
+
+## Adding your Compiled Recipe
+
+You will need tell baker which Compiled Recipe to run. Giving the Compiled Recipe will give you recipeId. Which you will need to create process instances.
+
+```java
+String recipeId = baker.addRecipe(compiledRecipe);
+```
+
+## Putting it all together
+
+Combining all these steps with give us the following:
+
+```java
+// Implementations, probably defined in other files
+ValidateOrderImpl validateOrderImpl = new ValidateOrderImpl();
+ManufactureGoodsImpl manufactureGoodsImpl = new ManufactureGoodsImpl();
+
+// Compiling the Recipe
+CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
+
+// Creating a Baker Runtime
+JBaker baker = new JBaker();
+
+// Add the Implementations
+baker.addImplementations(validateOrderImpl, manufactureGoodsImpl);
+
+// Add the Compiled Recipe
+String recipeId = baker.addRecipe(compiledRecipe);
+```
+
+Baker is now ready to create an instance for the recipe and execute it.
