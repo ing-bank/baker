@@ -27,7 +27,7 @@ See the links on how to install the tools.
 For mac it is 2 commands:
 
 ```
-brew install mkdocs
+pip install mkdocs
 pip install --user mkdocs-material
 ```
 
