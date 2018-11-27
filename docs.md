@@ -22,13 +22,10 @@ To create a release run the following:
 
 We use [mkdocs](https://github.com/mkdocs/mkdocs) with the [material](https://github.com/squidfunk/mkdocs-material) theme to generate the documentation site 
 
-See the links on how to install the tools.
-
-For mac it is 2 commands:
+How to install the tools.
 
 ```
-pip install mkdocs
-pip install --user mkdocs-material
+pip install --user mkdocs mkdocs-material pymdown-extensions
 ```
 
 ### Usage

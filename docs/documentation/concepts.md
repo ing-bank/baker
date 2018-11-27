@@ -45,7 +45,7 @@ When finished, an interaction provides an event as its output.
 
 ### Interaction failure
 
-An interaction may fail to produce an event for any number of reasons.
+An interaction may fail to fulfill its intended purpose.
 
 We distinquish 2 types of failures.
 
@@ -64,7 +64,7 @@ We distinquish 2 types of failures.
 
     They are modelled by returning an event from the interaction.
 
-### Failure mitigation (Failure strategies)
+### Failure mitigation
 
 In case of technical failures, baker offers 2 mitigation strategies:
 
@@ -97,3 +97,25 @@ We distinquish 2 types of events.
 2. Interaction output (internal)
 
     These events are provided as a result of an interaction being executed.
+
+## Recipe
+
+*Events*, *Interactions* and *Ingredients* can be composed into recipes.
+
+Recipes are analagous to blueprints for a process (or workflow).
+
+Baker provides a `DSL` for both java and scala in which you can declaritively describe your recipe.
+
+The main take away is that when declaring your recipe you do not have to think about order.
+
+Small java example:
+```
+new Recipe("webshop")
+    .withSensoryEvents(
+        OrderPlaced.class,
+        CustomerInfoReceived.class
+    .withInteractions(
+        of(ValidateOrder.class),
+        of(ManufactureGoods.class));
+```
+
