@@ -2,15 +2,63 @@
 
 The purpose of the type system is express the form of [ingredients](concepts#ingredient) in baker.
 
-### Why not just use the java type system?
+### Why not use the java type system?
 
-1. We want to garuantee that all data can be read back from persistent storage.
+1. To garuantee that all data can be read back from persistent storage.
 
     This is for the benefit of being able to write generic analysis/data-mining tools on the persisted events.
 
-2. We want to Baker as a service, receiving new recipes at runtime.
+2. To run Baker As A Service, receiving new recipes at runtime.
 
     Unless opting for OSGi or similar, you cannot load new class definitions. This makes it very impractical or impossible to depend on java classes.
+
+The main concepts in this type system are *Types* and *Values*.
+
+An important difference from type systems in programming languages is that *Values* do **not** have
+an explicit inherint type associated with them.
+
+You can argue whether you can call this a type system at all. Perhaps a schema system is more accurate.
+
+## Types
+
+### Primitives
+
+| Type | Java parallel | Description |
+| --- | --- | --- |
+| `Bool` | `boolean` | *single* bit, `true` or `false`, `1` or `0` |
+| `Char` | `char` | Unsigned `16` bit integer |
+| `Byte` | `byte` | Signed `8` bit integer |
+| `Int16` | `short` | Signed `16` bit integer |
+| `Int32` | `int` | Signed `32` bit integer |
+| `Int64` | `long` | Signed `64` bit integer |
+| `IntBig` | `BigInteger` | Integer of arbitrary size |
+| `Float32` | `float` | Signed `32` bit floating point |
+| `Float64` | `double` | Signed `64` bit floating point |
+| `FloatBig` | `BigDecimal` | Floating point of arbitrary size |
+| `Date` | `long` | A *UTC* date in the *ISO-8601* calendar system with *millisecond* precision |
+| `ByteArray` | `Array<Byte>` | Byte array, often used for binary data |
+| `CharArray` | `String` | Character array, or commmonly called `String` |
+
+### Structured types
+
+| Type | Java parallel | Description |
+| --- | --- | --- |
+| `ListType<T>` | `java.util.List<T>` | A list of values, all of the same type |
+| `OptionType<T>` | `java.util.Optional<T>` | Matches against `T` or `null` |
+| `EnumType` | `enum class` | A set of predifined options (strings) |
+| `RecordType` | `pojo class` | A record with a specific set of fields |
+| `MapType<T>` | `java.util.Map<String, T>` | A record with arbitrary fields, all of the same type |
+
+## Values
+
+Values are pure data without any direct associated type. These very closely match the *JSON* data format.
+
+| Value | Description |
+| --- | --- |
+| `NullValue` | Analogues to `null`, `Optional.empty`, `None`, etc ... |
+| `PrimitiveValue` | Wrapper for for: <br/>- A Java primitive (or boxed variant)<br/> - `java.lang.String`<br/> - `java.math.BigInteger`<br/> - `java.math.BigDecimal`<br/> - `scala.math.BigInt`<br/> - `Array<Byte>`|
+| `ListValue` | A list of values |
+| `RecordValue` | A set of `String -> Value` pairs |
 
 ## Interoptability with java types
 

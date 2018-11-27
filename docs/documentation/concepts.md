@@ -43,7 +43,9 @@ Within this contract it may do anything. For example:
 
 When finished, an interaction provides an event as its output.
 
-### Failure
+### Interaction failure
+
+An interaction may fail to produce an event for any number of reasons.
 
 We distinquish 2 types of failures.
 
@@ -68,15 +70,17 @@ In case of technical failures, baker offers 2 mitigation strategies:
 
 1. Retry with incremental backoff
 
-    This retries the interaction after some time. Configurable options:
+    This retries the interaction with some configurable parameters:
 
-    `initialTimeout=100 milliseconds`, `backoffFactor=2`, `maximumInterval=10 minutes`, `period=24 hours`
+    - `initialTimeout`: The initial delay for the first retry.
+    - `backoffFactor`: The backoff factor.
+    - `maximumInterval`: The maximum interval between retries.
 
 2. Continue with an event.
 
     This is analagous to a try/catch in java code. The exception is logged but the process continues with a specified event.
 
-When no failure strategy is defined for an interaction by default
+When no failure strategy is defined for an interaction by default the interaction is *blocked*.
 
 ## Event
 
