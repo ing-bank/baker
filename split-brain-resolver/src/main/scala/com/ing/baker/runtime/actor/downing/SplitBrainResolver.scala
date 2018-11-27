@@ -9,9 +9,12 @@ import scala.concurrent.duration.{DurationDouble, FiniteDuration}
 class SplitBrainResolver(actorSystem: ActorSystem) extends DowningProvider {
 
   override val downRemovalMargin: FiniteDuration = {
-    val margin = actorSystem.settings.config.as[FiniteDuration]("baker.cluster.split-brain-resolver.down-removal-margin")
-    if (margin < 1.second) throw new IllegalArgumentException("Invalid config: baker.cluster.split-brain-resolver.down-removal-margin should be greater than 1 second")
-    else margin
+    val stableAfter = actorSystem.settings.config.as[Option[FiniteDuration]]("baker-split-brain-resolver.stable-after")
+      .getOrElse(throw new IllegalArgumentException("Invalid config: Missing baker-split-brain-resolver.stable-after"))
+
+    // This check is to prevent so frequent split brain checks
+    if (stableAfter < 1.second) throw new IllegalArgumentException("Invalid config: baker-split-brain-resolver.stable-after should be greater than 1 second")
+    else stableAfter
   }
 
   override def downingActorProps: Option[Props] = Some(SplitBrainResolverActor.props(downRemovalMargin))

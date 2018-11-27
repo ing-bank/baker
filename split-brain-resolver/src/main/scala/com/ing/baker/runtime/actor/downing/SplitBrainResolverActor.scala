@@ -10,12 +10,12 @@ import scala.concurrent.duration._
 
 
 private[downing] object SplitBrainResolverActor {
-  def props(downRemovalMargin: FiniteDuration) = Props(classOf[SplitBrainResolverActor], downRemovalMargin, new MajorityStrategy())
+  def props(stableAfterPeriod: FiniteDuration) = Props(classOf[SplitBrainResolverActor], stableAfterPeriod, new MajorityStrategy())
 
   case object ActOnSbrDecision
 }
 
-private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration, strategy: Strategy) extends Actor {
+private[downing] class SplitBrainResolverActor(stableAfterPeriod: FiniteDuration, strategy: Strategy) extends Actor {
 
   val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
@@ -23,8 +23,8 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
 
   val cluster = Cluster(context.system)
 
-  // Send the SBR triggers more often than the defined downRemovalMargin duration to be quicker to catch all unreachable nodes within one downRemovalMargin time slot
-  private val schedulerTickFrequency: FiniteDuration = downRemovalMargin / 2
+  // Send the SBR triggers more often than the defined stable-after period to be quicker to catch all unreachable nodes within one time slot
+  private val schedulerTickFrequency: FiniteDuration = stableAfterPeriod / 2
 
   import context.dispatcher
   val actOnSbrDecisionTask: Cancellable = context.system.scheduler.schedule(0 seconds, schedulerTickFrequency, self, ActOnSbrDecision)
@@ -57,12 +57,14 @@ private[downing] class SplitBrainResolverActor(downRemovalMargin: FiniteDuration
 
     // reachability events
     case UnreachableMember(member) =>
-      log.info("Unreachable member {}", member)
-      memberStatusLastChanged += (member.uniqueAddress -> Deadline.now.+(downRemovalMargin))
+      log.debug("Unreachable member {}", member)
+      memberStatusLastChanged += (member.uniqueAddress -> Deadline.now.+(stableAfterPeriod))
+      log.debug("Members: {}", memberStatusLastChanged)
 
     case ReachableMember(member) =>
-      log.info("Reachable member {}", member)
+      log.debug("Reachable member {}", member)
       memberStatusLastChanged -= member.uniqueAddress
+      log.debug("Members: {}", memberStatusLastChanged)
 
     case ActOnSbrDecision =>
       strategy.sbrDecision(ClusterHelper(cluster, memberStatusLastChanged))
