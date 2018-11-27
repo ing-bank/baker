@@ -2,7 +2,7 @@
 
 With the [Recipe DSL](../recipe_dsl) you can create a *description* of your recipe.
 
-This does **not** yet constitutate a runnable process. It is just a blue print.
+This does **not** yet constitute a runnable process. It is just a description.
 
 To execute & manage your recipes you require the *Baker Runtime*.
 
@@ -15,13 +15,11 @@ JBaker baker = new JBaker();
 
 Baker is build on top op [akka](https://www.akka.io).
 
-It requires an `ActorSystem` to start up. In the previous example the actor system is not provided. In that case baker will create an actor system for you.
+It requires an `ActorSystem` to start. In the previous example the actor system is not provided. In that case baker will create an actor system for you.
 
 If you already have an actor system then you can give it to Baker.
 
 ``` java
-Config config =
-
 ActorSystem actorSystem = ActorSystem.create();
 
 JBaker baker = new JBaker(actorSystem);

@@ -1,4 +1,4 @@
-# Visualization
+# Recipe Visualization
 
 ## Generate a .dot representation
 

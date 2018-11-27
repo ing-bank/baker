@@ -84,7 +84,7 @@ When no failure strategy is defined for an interaction by default the interactio
 
 ## Event
 
-Events indicate something of interest happened for our process.
+Events indicate something of interest happened for a process instance.
 
 An event has a *name* and can (optionally) provide ingredients.
 
@@ -104,9 +104,9 @@ We distinquish 2 types of events.
 
 Recipes are analagous to blueprints for a process (or workflow).
 
-Baker provides a `DSL` for both java and scala in which you can declaritively describe your recipe.
+Baker provides a [Recipe DSL](develop/recipe_dsl) in which you can declaritively describe your recipe.
 
-Small java example:
+Small example:
 ``` java
 new Recipe("webshop")
     .withSensoryEvents(

@@ -28,7 +28,7 @@ To be interpreted as an interaction the interface requires an `apply` function w
 
 * The method **must** be annotated with @FiresEvent
 
-* All arguments **must** be annotated with either `@Named`, `@RequiresIngredient`, `@ProcessId`
+* All arguments **must** be annotated:
 
     `@Named` and `@RequiresIngredient` are used for ingredient data that the interaction requires, the *name* must be specfied.
 

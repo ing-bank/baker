@@ -1,6 +1,6 @@
 # Recipe DSL
 
-Let's take the web shop recipe as an example.
+Let's start with the web shop recipe as an example.
 
 ``` java
 final Recipe webshopRecipe = new Recipe("webshop")
@@ -25,7 +25,7 @@ final Recipe webshopRecipe = new Recipe("webshop")
 
 ## Predefining ingredients
 
-An interaction normally requires its input ingredients to be delivered from [Events](../concepts#event).
+An interaction normally requires its input ingredients to be delivered from [Events](../../concepts#event).
 
 Sometimes however it is useful to *predefine* (or *hard code*) the value of an ingredient.
 
@@ -47,7 +47,7 @@ Note that *predefined* ingredients are **always** available and do not have to b
 
 Each time all *remaining* ingredients are provided, the interaction will fire.
 
-You cannot predefine *all* input ingredients of an interaction.
+You can **not** predefine *ALL* input ingredients of an interaction.
 
 
 ## Interaction Failure strategy
@@ -56,23 +56,29 @@ When an interaction throws an exception there are a number of mitigation strateg
 
 ### Fire event
 
-This option is analagous to a try/catch in code. When an exception is raised from the interaction you may specify an
-event to fire.
+This option is analagous to a `try { } catch { }` in code. When an exception is raised from the interaction you specify an
+event to fire. So instead of failing the process continues.
 
 Example:
 
 ``` java
   .withInteractions(
-    of(ValidateOrder.class).withInteractionFailureStrategy
-
+    of(ValidateOrder.class)
+    .withInteractionFailureStrategy(
+       InteractionFailureStrategy.FireEvent("ValidateOrderFailed")
+     )
+   )
 ```
 
-### Retry
+### Retry with incremental backoff
+
+Incremental backoff allows you to configure a retry mechanism that takes longer for each retry.
+The idea here is that you quickly retry at first but slower over time. To not overload your system but give it time to recover.
 
 ``` java
   .withInteractions(
     of(ValidateOrder.class)
-      .withDefaultFailureStrategy(new RetryWithIncrementalBackoffBuilder()
+      .withFailureStrategy(new RetryWithIncrementalBackoffBuilder()
         .withInitialDelay(Duration.ofMillis(100))
         .withBackoffFactor(2.0)
         .withMaxTimeBetweenRetries(Duration.ofMinutes(10))
@@ -85,21 +91,18 @@ What do these parameters mean?
 
 | name | meaning |
 | --- | --- |
-| `initialDelay` | The delay for the 1st retry |
-| `backoffFactor` | The multiplication factor for the delay (optional, default = 2) |
-| `maxTimeBetweenRetries` | The maximum delay |
-| `deadLine` | The total amount of time spend delaying |
+| `initialDelay` | The delay for the first retry. |
+| `backoffFactor` | The backoff factor for the delay (optional, `default = 2`) |
+| `maxTimeBetweenRetries` | The maximum interval between retries. |
+| `deadLine` | The maximum total amount of time spend delaying. |
 
+For our example this results in the following delay pattern:
 
-So in our example the interaction will be retried after an initial delay of `100` milleseconds and a default backoff factor of `2.0`.
+`100 millis` -> `200 millis` -> `400 millis` -> `...` ->  `10 minutes` -> `10 minutes`
 
-This results in the following retry pattern:
+Note that these delays do **not** include interaction execution time.
 
-`100 millis -> 200 millis -> 400 millis -> ... ->  10 minutes -> 10 minutes`
-
-Note that these delays are *after* interaction completion.
-
-So for example, if the initial delay is `100` milleseconds and the execution takes `5` seconds then the second retry will
+For example, if the first retry execution takes `5` seconds (and fails again) then the second retry will
 be triggered after (from the start):
 
 `(100 millis + 5 seconds + 200 millis) = 5.3 seconds`

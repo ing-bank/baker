@@ -1,4 +1,4 @@
-# Recipe compiler
+# Recipe Compiler
 
 This documentation is for developers of Bakers and others who might be interested about the internal mechanics.
 
