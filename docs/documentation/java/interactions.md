@@ -26,7 +26,7 @@ public interface ValidateOrder {
 
 To be interpreted as an interaction the interface requires an `apply` function with some restrictions.
 
-* The method *must* be annotated with @FiresEvent
+* The method **must** be annotated with @FiresEvent
 
 * All arguments **must** be annotated with either `@Named`, `@RequiresIngredient`, `@ProcessId`
 

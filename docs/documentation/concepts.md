@@ -98,7 +98,7 @@ We distinquish 2 types of events.
 
     These events are provided as a result of an interaction being executed.
 
-## Recipe
+## **Recipe**
 
 *Events*, *Interactions* and *Ingredients* can be composed into recipes.
 
@@ -106,10 +106,8 @@ Recipes are analagous to blueprints for a process (or workflow).
 
 Baker provides a `DSL` for both java and scala in which you can declaritively describe your recipe.
 
-The main take away is that when declaring your recipe you do not have to think about order.
-
 Small java example:
-```
+``` java
 new Recipe("webshop")
     .withSensoryEvents(
         OrderPlaced.class,
@@ -119,3 +117,6 @@ new Recipe("webshop")
         of(ManufactureGoods.class));
 ```
 
+The main take away is that when declaring your recipe you do not have to think about order.
+
+Everything is automatically linked by the data requirements of the interactions.
