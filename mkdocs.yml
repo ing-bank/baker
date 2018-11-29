@@ -1,10 +1,27 @@
 site_name: Baker
+
+repo_name: 'ing-bank/baker'
+repo_url: 'https://github.com/ing-bank/baker'
+
 theme:
   name: 'material'
+
+extra_css:
+  - css/ing.css
+
 markdown_extensions:
   - codehilite
   - pymdownx.superfences
   - admonition
 
-repo_name: 'ing-bank/baker'
-repo_url: 'https://github.com/ing-bank/baker'
+
+nav:
+  - 'index.md'
+  - Documentation:
+    - 'documentation/concepts.md'
+    - 'documentation/recipe-dsl.md'
+    - 'documentation/recipe-visualization.md'
+    - 'documentation/runtime.md'
+  - Presentations:
+    - '2017 - Mucon (London)' : 'presentations/muCon-London-7-Nov-2017.md'
+    - '2017 - Scala By The Bay' : 'presentations/ScaleByTheBay-18-Nov-2017.md'
