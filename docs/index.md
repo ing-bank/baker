@@ -15,6 +15,8 @@ More about these concepts [here](documentation/concepts).
 
 A visual representation of the recipe allows product owners, architects and developers to talk the same language:
 
+##### Visual representation
+
 ![](images/webshop.svg)
 
 
