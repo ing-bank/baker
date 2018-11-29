@@ -1,6 +1,6 @@
 # Type system
 
-The purpose of the type system is express the form of [ingredients](concepts#ingredient) in baker.
+The purpose of the type system is express the form of [ingredients](concepts.md#ingredient) in baker.
 
 ### Why not use the java type system?
 

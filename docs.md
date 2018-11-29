@@ -38,7 +38,9 @@ mkdocs serve
 
 This will run an http server serving the site on port `8000`
 
-All `.md` files under docs are automatically added.
+All `.md` files are in de `/docs` directory.
+
+If you add a file you must add it to the `/mkdocs.yml` file under `- nav: `.
 
 ### Publishing changes
 

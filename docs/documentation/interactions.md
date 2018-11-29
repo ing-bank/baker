@@ -30,7 +30,7 @@ To be interpreted as an interaction the interface requires an `apply` function w
 
 * All arguments **must** be annotated:
 
-    `@Named` and `@RequiresIngredient` are used for ingredient data that the interaction requires, the *name* must be specfied.
+    `@Named` or `@RequiresIngredient` are used for ingredient data that the interaction requires, the *name* must be specfied.
 
     `@ProcessId` is used for injecting the process instance id.
 

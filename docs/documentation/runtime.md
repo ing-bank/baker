@@ -1,6 +1,6 @@
 # Runtime
 
-With the [Recipe DSL](../recipe_dsl) you can create a *description* of your recipe.
+With the [Recipe DSL](recipe-dsl.md) you can create a *description* of your recipe.
 
 This does **not** yet constitute a runnable process. It is just a description.
 
@@ -48,7 +48,7 @@ CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
 ```
 
 !!! hint "Did you know?!"
-    You can use a compiled recipe to create a visual representation. [See the visualization page how to create a visual graph.](../../visualization)
+    You can use a compiled recipe to create a visual representation. [See the visualization page how to create a visual graph.](recipe-visualization.md)
 
 
 ## Adding your Compiled Recipe

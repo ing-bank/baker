@@ -14,12 +14,15 @@ markdown_extensions:
   - pymdownx.superfences
   - admonition
 
-
 nav:
   - 'index.md'
+  - 'migration-guide.md'
   - Documentation:
     - 'documentation/concepts.md'
-    - 'documentation/recipe-dsl.md'
+    - 'documentation/type-system.md'
+    - DSL:
+      - 'documentation/recipe-dsl.md'
+      - 'documentation/interactions.md'
     - 'documentation/recipe-visualization.md'
     - 'documentation/runtime.md'
   - Presentations:

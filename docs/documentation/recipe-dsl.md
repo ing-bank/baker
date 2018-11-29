@@ -25,7 +25,7 @@ final Recipe webshopRecipe = new Recipe("webshop")
 
 ## Predefining ingredients
 
-An interaction normally requires its input ingredients to be delivered from [Events](../../concepts#event).
+An interaction normally requires its input ingredients to be delivered from [Events](concepts.md#event).
 
 Sometimes however it is useful to *predefine* (or *hard code*) the value of an ingredient.
 
