@@ -25,6 +25,7 @@ nav:
       - 'documentation/interactions.md'
     - 'documentation/recipe-visualization.md'
     - 'documentation/runtime.md'
+    - 'documentation/event-listener.md'
   - Presentations:
     - '2017 - Mucon (London)' : 'presentations/muCon-London-7-Nov-2017.md'
     - '2017 - Scala By The Bay' : 'presentations/ScaleByTheBay-18-Nov-2017.md'
