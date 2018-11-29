@@ -2,7 +2,7 @@
 
 ## Recap
 
-On the [runtime](runtime.md) page we discussed how you could could add your [Recipe](dictionary.md#recipe) to Baker.
+On the [runtime](runtime.md) page we discussed how you could could add your [recipe](dictionary.md#recipe) to Baker.
 
 Lets summarize what we have done so far.
 
@@ -26,9 +26,9 @@ String recipeId = "...";
 
 ## Create a process instance
 
-Given a valid Baker a [Recipe id](dictionary.md#recipe-id) we can now execute a Recipe.
+Given a valid Baker a [recipe id](dictionary.md#recipe-id) we can now execute a Recipe.
 
-Or in other words we can create a [Process instance](dictionary.md#process-instance).
+Or in other words we can create a [process instance](dictionary.md#process-instance).
 
 ```scala tab="Scala"
 // A unique processId ment to distinct this process from other process instances
@@ -51,14 +51,14 @@ baker.bake(recipeId, processId);
 
 In our webshop example the first events that can happen are `OrderPlaced` `PaymentMade` and `CustomerInfoReceived`.
 
-These are so called [Sensory events](dictionary.md#sensory-event) as can be [seen is a starting point for our webshop example](../index.md#visual-representation).
+These are so called [sensory events](dictionary.md#sensory-event) as can be [seen is a starting point for our webshop example](../index.md#visual-representation).
 
 ```scala tab="Scala"
 // The CustomerInfoReceived and OrderPlaced events require some data (Ingredients)
 val customerInfo = CustomerInfo("John", "Elm. Street", "johndoe@example.com")
 val order = "123";
 
-// Lets produce the `OrderPlaced` and `CustomerInfoReceived` Sensory Events.
+// Lets produce the `OrderPlaced` and `CustomerInfoReceived` sensory Events.
 baker.processEvent(processId, CustomerInfoRecived(customerInfo))
 baker.processEvent(processId, OrderPlaced(order))
 ```
@@ -68,7 +68,7 @@ baker.processEvent(processId, OrderPlaced(order))
 CustomerInfo customerInfo = new CustomerInfo("John", "Elm. Street", "johndoe@example.com");
 String order = "123";
 
-// Lets produce the `OrderPlaced` and `CustomerInfoReceived` Sensory Events.
+// Lets produce the `OrderPlaced` and `CustomerInfoReceived` sensory Events.
 baker.processEvent(processId, new CustomerInfoRecived(customerInfo));
 baker.processEvent(processId, new OrderPlaced(order));
 ```
@@ -101,7 +101,7 @@ The `ValidateOrder` Interaction in turn produced the `Valid` event.
 
 We can also see that the `ManufactureGoods` Interaction is still purple, meaning that it has not been executed. This is correct because `ManufactureGoods` requires an additional event called `PaymentMade`.
 
-## Adding aditional Sensory events to the process
+## Adding aditional sensory events to the process
 
 Lets provide the `PaymentMade` event and review the process status afterwards.
 
@@ -125,4 +125,49 @@ Visualizing the new state will give us the following image.
 
 ![](/images/webshop-state-2.svg)
 
+With the `PaymentMade` sensory event, Baker had enough to resolve the whole Recipe. All interactions are executed and the `InvoiceWasSent` event was produced.
+
+## Process instance state inquiry
+
+During runtime it is often useful to *inquire* on the state of a process instance.
+
+### Events
+
+We can ask Baker for a list of all the events for our process.
+
+Using this list we can check if the `InvoiceWasSend` event was produced.
+
+```scala tab="Scala"
+// Get all events that has happend for this process id
+val events: Seq[RuntimeEvent] = baker.getEvents(processId)
+if (events.exists(_.name == "InvoiceWasSend"))
+    // Yes the invoice was send!
+```
+
+```java tab="Java"
+// Get all events that has happend for this process id
+EventList events = baker.getEvents(processId);
+if (events.hasEventOccured(InvoiceWasSend.class))
+    // Yes the invoice was send!
+```
+
+### Ingredients
+
+Sometimes it is useful to know what the ingredient values are accumulated for a process instance.
+
+For example, you might want to know the value of the `trackingId`.
+
+```scala tab="Scala"
+// Get all ingredients that are accumulated for a process instance
+val ingredients: Map[String, Value] = baker.getIngredients(processId)
+
+val trackingId: String = ingredients("trackingId").as[String]
+```
+
+```java tab="Java"
+// Get all ingredients that are accumulated for a process instance
+Map<String, Value> ingredients = baker.getIngredients(processId);
+
+String trackingId = ingredients.get("trackingId").as(String.class);
+```
 

@@ -126,14 +126,14 @@ public class Webshop {
     ValidateOrder validateOrderMock = mock(ValidateOrder.class);
 
 
-//    @Test
+    @Test
     public void testWebshop() throws TimeoutException {
 
-        Config config = ConfigFactory.load("cassandra.conf");
+//        Config config = ConfigFactory.load("cassandra.conf");
 
         CompiledRecipe recipe = RecipeCompiler.compileRecipe(webshopRecipe);
 
-        System.out.println(recipe.getRecipeVisualization());
+//        System.out.println(recipe.getRecipeVisualization());
 
         // test data
         CustomerInfo customerInfo = new CustomerInfo("klaas", "straat", "email");
@@ -145,7 +145,7 @@ public class Webshop {
         when(manufactureGoodsMock.apply(any())).thenReturn(new ManufactureGoods.GoodsManufactured("goods"));
         when(validateOrderMock.apply(any(), any())).thenReturn(new ValidateOrder.Valid());
 
-        JBaker baker = new JBaker(ActorSystem.apply("webshop", config));
+        JBaker baker = new JBaker(ActorSystem.apply("webshop"));
 
         baker.addImplementations(ImmutableList.of(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock));
 
@@ -156,10 +156,11 @@ public class Webshop {
         System.out.println("recipeId: " + recipeId);
         System.out.println("processId: " + processId);
 
-//        baker.bake(recipeId, processId);
-//
-//        baker.processEvent(processId, new CustomerInfoReceived(customerInfo));
-//        baker.processEvent(processId, new OrderPlaced(order));
+
+        baker.bake(recipeId, processId);
+
+        baker.processEvent(processId, new CustomerInfoReceived(customerInfo));
+        baker.processEvent(processId, new OrderPlaced(order));
 //        baker.processEvent(processId, new PaymentMade());
 
         System.out.println("ingredients: " + baker.getIngredients(processId).toString());

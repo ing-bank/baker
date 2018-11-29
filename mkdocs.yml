@@ -19,7 +19,6 @@ nav:
   - 'migration-guide.md'
   - Documentation:
     - 'documentation/concepts.md'
-    - 'documentation/type-system.md'
     - DSL:
       - 'documentation/recipe-dsl.md'
       - 'documentation/interactions.md'
@@ -27,6 +26,7 @@ nav:
     - 'documentation/runtime.md'
     - 'documentation/process-execution.md'
     - 'documentation/event-listener.md'
+    - 'documentation/type-system.md'
     - 'documentation/dictionary.md'
   - Presentations:
     - '2017 - Mucon (London)' : 'presentations/muCon-London-7-Nov-2017.md'
