@@ -26,7 +26,7 @@ The *name* points to the intended meaning of the data. ("customerData", "orderNu
 
 The *type* sets limits on the form of data that is accepted. (a number, a list of strings, ...)
 
-This type is expressed by the [baker type system](type_system).
+This type is expressed by the [baker type system](type-system.md).
 
 ## Interaction
 
@@ -104,7 +104,7 @@ We distinquish 2 types of events.
 
 Recipes are analagous to blueprints for a process (or workflow).
 
-Baker provides a [Recipe DSL](develop/recipe_dsl) in which you can declaritively describe your recipe.
+Baker provides a [Recipe DSL](recipe-dsl.md) in which you can declaritively describe your recipe.
 
 Small example:
 ``` java
