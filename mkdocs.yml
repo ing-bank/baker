@@ -25,6 +25,7 @@ nav:
       - 'documentation/interactions.md'
     - 'documentation/recipe-visualization.md'
     - 'documentation/runtime.md'
+    - 'documentation/process-execution.md'
     - 'documentation/event-listener.md'
   - Presentations:
     - '2017 - Mucon (London)' : 'presentations/muCon-London-7-Nov-2017.md'

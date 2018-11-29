@@ -14,7 +14,7 @@ Because of these limitations it is **not** recommended to use these listeners fo
 
 ## Process instance events
 
-You might be interested which [Events](concepts#event) are raised for process instances of a recipe.
+You might be interested which [Events](concepts.md#event) are raised for process instances of a recipe.
 
 For this purpose there is an [EventListener](https://github.com/ing-bank/baker/blob/master/runtime/src/main/scala/com/ing/baker/runtime/core/EventListener.scala) interface.
 
