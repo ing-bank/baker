@@ -27,7 +27,7 @@ akka cluster without baker.
 
 ## How to use
 
-In order to use Baker `SplitBrainResolver`, first of all, you need add
+In order to use Baker `SplitBrainResolver`, first of all, you need to add
 baker-split-brain-resolver dependency to your project. See example
 below:
 
