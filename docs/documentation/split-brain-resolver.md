@@ -32,14 +32,14 @@ baker-split-brain-resolver dependency to your project. See example
 below:
 
 ``` scala tab="Sbt"
-libraryDependencies += "com.ing.baker" %% "baker-split-brain-resolver" % "2.0.1"
+libraryDependencies += "com.ing.baker" %% "baker-split-brain-resolver" % "2.0.2"
 ```
 
 ``` xml tab="Maven"
 <dependency>
   <groupId>com.ing.baker</groupId>
   <artifactId>baker-split-brain-resolver_2.12</artifactId>
-  <version>2.0.1</version>
+  <version>2.0.2</version>
 </dependency>
 ```
 
