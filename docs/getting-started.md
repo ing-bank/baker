@@ -28,3 +28,8 @@ dependencies += "com.ing.baker" %% "baker-recipe-dsl" % "2.0.1"
 dependencies += "com.ing.baker" %% "baker-compiler" % "2.0.1"
 dependencies += "com.ing.baker" %% "baker-runtime" % "2.0.1"
 ```
+
+After this you can:
+
+ - Familiarize yourself with the [concepts](documentation/concepts.md).
+ - Immediately start [writing your recipes](documentation/recipe-dsl.md).

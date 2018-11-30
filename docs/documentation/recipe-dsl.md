@@ -167,7 +167,7 @@ The idea here is that you quickly retry at first but slower over time. To not ov
       .withFailureStrategy(new RetryWithIncrementalBackoffBuilder()
         .withInitialDelay(Duration.ofMillis(100))
         .withBackoffFactor(2.0)
-        .withMaxTimeBetweenRetries(Duration.ofMinutes(10))
+        .withMaxTimeBetweenRetries(Duration.ofSeconds(100))
         .withDeadline(Duration.ofHours(24))
         .build())
   )
@@ -184,7 +184,11 @@ What do these parameters mean?
 
 For our example this results in the following delay pattern:
 
-`100 millis` -> `200 millis` -> `400 millis` -> `...` ->  `10 minutes` -> `10 minutes`
+`100 millis` -> `200 millis` -> `400 millis` -> `...` ->  `100 seconds` -> `100 seconds`
+
+Which can be visualized like this:
+
+![](/images/incremental-backoff.png)
 
 Note that these delays do **not** include interaction execution time.
 
