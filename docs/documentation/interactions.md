@@ -2,7 +2,7 @@
 
 ## Defining
 
-You define an [interaction](../concepts#interaction) with a java interface. For example:
+You define an [interaction](../concepts#interaction) with a java interface. An example:
 
 ``` java
 package com.example;
@@ -33,6 +33,8 @@ To be used as an interaction the interface requires an `apply` method with some 
     `@Named` or `@RequiresIngredient` are used for ingredient data that the interaction requires, the *name* must be specfied.
 
     `@ProcessId` is used for injecting the [process id](dictionary.md#process-id).
+
+* The output classes have the same [restrictions](recipe-dsl.md#sensory-events) as sensory events.
 
 ## Implementation
 

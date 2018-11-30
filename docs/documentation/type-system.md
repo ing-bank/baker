@@ -46,7 +46,7 @@ You can argue whether you can call this a type system at all. Perhaps a schema s
 | `ListType<T>` | `java.util.List<T>` | A list of values, all of the same type |
 | `OptionType<T>` | `java.util.Optional<T>` | Matches against `T` or `null` |
 | `EnumType` | `enum class` | A set of predifined options (strings) |
-| `RecordType` | `pojo class` | A record with a specific set of fields |
+| `RecordType` | `POJO class` | A record with a specific set of fields |
 | `MapType<T>` | `java.util.Map<String, T>` | A record with arbitrary fields, all of the same type |
 
 ## Values

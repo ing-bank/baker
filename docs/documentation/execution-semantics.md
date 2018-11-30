@@ -1,20 +1,14 @@
 # Execution sementics
 
-A recipe can be represented (and [visualized](recipe-visualization.md)) as a graph.
-
-This graph is actually a higher level representation of a [petri net](https://en.wikipedia.org/wiki/Petri_net) (which is also a graph).
-
-The execution of a process instance based around this petri net.
-
 ### Execution loop
 
-In summary this is the execution loop of a process instance.
+This is a short description of the execution loop of a process instance
 
-1. An event is raised and provides ingredients.
+1. An [event](concepts.md#event) is raised and provides ingredients.
 
     Either given to baker as a [sensory event](process-execution.md#providing-a-sensory-event) or by an interaction.
 
-2. A check is done which interactions have all their requirements met and those are executed.
+2. A check is done which [interactions](concepts.md#interaction) have all their requirements met and those are executed.
 3. An interaction completes its execution and outputs an event (`GOTO 1.`)
 
 ### Notes
@@ -28,7 +22,13 @@ To know more you will first need to understand the how a petri net works.
 
 Below is an explanation of how a recipe relates to a petri net.
 
-## Recipe Compiler
+# In depth
+
+A recipe can be represented (and [visualized](recipe-visualization.md)) as a graph.
+
+This graph is actually a higher level representation of a [petri net](https://en.wikipedia.org/wiki/Petri_net) (which is also a graph).
+
+The execution of a process instance based around this petri net.
 
 The recipe compiler takes a recipe and creates a petri net.
 

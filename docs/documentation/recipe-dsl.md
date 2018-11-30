@@ -29,7 +29,11 @@ final Recipe webshopRecipe = new Recipe("webshop")
 
 ## Sensory events
 
-[Events](concepts.md#event) are simple `pojo` classes.
+[Events](concepts.md#event) are simple `POJO` classes.
+
+The fields of the `POJO` class must be compatible with the baker type system.
+
+See the [supported types](type-system.md#default-supported-types) for more information.
 
 They can be added using the `.withSensoryEvents(..)` method.
 
@@ -37,9 +41,9 @@ They can be added using the `.withSensoryEvents(..)` method.
 
 A *firing limit* is a limit on the number of times a sensory event may be received by a [process instance](dictionary.md#process-instance).
 
-By default have a firing limit of `1` per process instance.
+By default sensory events have a firing limit of `1` per process instance.
 
-This means the event will be rejected with status `FiringLimitMet` after the first it is received.
+This means the event will be rejected with status `FiringLimitMet` after the first time it is received.
 
 If you want to send an event more then once you may add it like this:
 
@@ -70,7 +74,7 @@ There are a number of options to tailor an interaction for your recipe.
 
 By default there is *no* limit on the number of times an Interaction may fire.
 
-Sometimes it is desireable to set a limit.
+Sometimes you may want to set a limit.
 
 For example, to ensure the goods are shipped only once.
 
