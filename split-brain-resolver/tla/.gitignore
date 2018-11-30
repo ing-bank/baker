@@ -1,0 +1,10 @@
+.settings
+*.out
+*.launch
+*SnapShot*
+*.project
+*.pmap
+*.aux
+*.tex
+*.st
+*.fp

@@ -94,7 +94,7 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
   ).dependsOn(petrinetApi, bakertypes)
 
 
-lazy val recipeRuntime = project.in(file("runtime"))
+lazy val runtime = project.in(file("runtime"))
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
   .settings(
@@ -136,6 +136,30 @@ lazy val recipeRuntime = project.in(file("runtime"))
         ++ providedDeps(findbugs)
   )
   .dependsOn(intermediateLanguage, petrinetApi, testScope(recipeDsl), testScope(recipeCompiler), testScope(bakertypes))
+
+lazy val splitBrainResolver = project.in(file("split-brain-resolver"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "baker-split-brain-resolver",
+    // we have to exclude the sources because of a compiler bug: https://issues.scala-lang.org/browse/SI-10134
+    sources in (Compile, doc) := Seq.empty,
+    libraryDependencies ++=
+      compileDeps(
+        akkaActor,
+        akkaCluster,
+        akkaSlf4j,
+        ficusConfig
+      ) ++ testDeps(
+        akkaTestKit,
+        akkaMultiNodeTestkit,
+        scalaTest
+      ) ++ providedDeps(findbugs)
+  )
+  .enablePlugins(MultiJvmPlugin)
+  .configs(MultiJvm)
+  .settings(
+//    logLevel := Level.Debug
+  )
 
 lazy val recipeDsl = project.in(file("recipe-dsl"))
   .settings(defaultModuleSettings)
@@ -190,10 +214,10 @@ lazy val baas = project.in(file("baas"))
         scalaCheck
       )
   )
-  .dependsOn(recipeDsl, recipeCompiler, intermediateLanguage, recipeRuntime, testScope(recipeRuntime))
+  .dependsOn(recipeDsl, recipeCompiler, intermediateLanguage, runtime, testScope(runtime))
 
 lazy val baker = project
   .in(file("."))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
-  .aggregate(bakertypes, petrinetApi, recipeRuntime, recipeCompiler, recipeDsl, intermediateLanguage)
+  .aggregate(bakertypes, petrinetApi, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver)
