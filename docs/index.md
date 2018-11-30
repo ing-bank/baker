@@ -18,9 +18,9 @@ Baker allows you to:
 
 - *Declaritavely* design your processes using a [recipe DSL](documentation/recipe-dsl.md).
 - Manage your recipes using the [baker runtime](documentation/baker-runtime.md).
-- [Create](documentation/process-execution.md#create-a-process-instance) process instances of your recipes.
-- [Fire](documentation/process-execution.md#providing-a-sensory-event) sensory events.
-- [Inquire](documentation/process-execution.md#state-inquiry) the state of your process instances.
+- [Create process instances](documentation/process-execution.md#create-a-process-instance) of your recipes.
+- [Fire sensory events](documentation/process-execution.md#providing-a-sensory-event).
+- [Inquire the state](documentation/process-execution.md#state-inquiry) of your process instances.
 
 ## Visual representation
 

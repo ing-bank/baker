@@ -28,7 +28,7 @@ digraph d {
 ```
 ## Visualize
 
-Once you have a `.dot` representation there are various methods to visualize this.
+Once you have a `.dot` representation there are a few methods to visualize this.
 
 ### Online
 
@@ -93,4 +93,5 @@ as an example.
 For an overview on what is possible to configure check out the [graphviz](https://www.graphviz.org/) documentation.
 
 It is not possible to alter the `shape` attribute, it is hard coded (fixed) for all elements in the graph.
+
 This is done to garuantee a common visual language for all recipes.

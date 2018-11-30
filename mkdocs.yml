@@ -17,7 +17,6 @@ markdown_extensions:
 nav:
   - 'index.md'
   - 'getting-started.md'
-  - 'migration-guide.md'
   - Documentation:
     - 'documentation/concepts.md'
     - DSL:
@@ -31,6 +30,4 @@ nav:
     - 'documentation/type-system.md'
     - 'documentation/split-brain-resolver.md'
     - 'documentation/dictionary.md'
-  - Presentations:
-    - '2017 - Mucon (London)' : 'presentations/muCon-London-7-Nov-2017.md'
-    - '2017 - Scala By The Bay' : 'presentations/ScaleByTheBay-18-Nov-2017.md'
+  - 'migration-guide.md'
