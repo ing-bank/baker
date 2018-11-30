@@ -24,15 +24,15 @@ public interface ValidateOrder {
 }
 ```
 
-To be interpreted as an interaction the interface requires an `apply` function with some restrictions.
+To be used as an interaction the interface requires an `apply` method with some restrictions.
 
-* The method **must** be annotated with @FiresEvent
+* The method **must** be annotated with ``@FiresEvent`
 
-* All arguments **must** be annotated:
+* *ALL* arguments **must** be annotated:
 
     `@Named` or `@RequiresIngredient` are used for ingredient data that the interaction requires, the *name* must be specfied.
 
-    `@ProcessId` is used for injecting the process instance id.
+    `@ProcessId` is used for injecting the [process id](dictionary.md#process-id).
 
 ## Implementation
 

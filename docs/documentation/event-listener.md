@@ -1,5 +1,12 @@
 # Event Listener
 
+Often it may be of interest to be notified of *events* that occur while operating Baker.
+
+There are 2 types of events that can be subscribed to.
+
+1. [Events](concepts.md#event) that occur in the context of a process instance.
+2. Technical / internal events that occur within the baker runtime.
+
 ### Important limitations
 
 1. Event delivery is *asynchronous*, **NO** order guarantee is given
@@ -21,23 +28,20 @@ For this purpose there is an [EventListener](https://github.com/ing-bank/baker/b
 You may implement this interface and register it to Baker.
 
 ``` scala tab="Scala"
-import com.ing.baker.runtime.core._
-
-val baker: Baker = ??? // initialize baker
 val listener: EventListener = new EventListener {
    override def processEvent(processId: String, event: RuntimeEvent) = ???
 }
+
+val baker: Baker = ??? // initialize baker
 
 baker.registerEventListener(listener);
 ```
 
 ``` java tab="Java"
-import com.ing.baker.runtime.core.*;
-
 EventListener listener = new EventListener() {
    @Override
-   public void processEvent(String processId, RuntimeEvent event ) {
-      // do something
+   public void processEvent(String processId, RuntimeEvent event) {
+      //
    }
 }
 

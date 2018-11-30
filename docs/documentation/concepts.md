@@ -15,10 +15,9 @@ There is **no hiërarchy** in this data. (`Animal -> Dog -> Labrador` is not pos
 Examples:
 
 - an IBAN
-- an address
 - a track and trace code
-- a product number
 - a list of phone numbers
+- a customer information object with name, email, etc ...
 
 An ingredient is defined by a *name* and *type*.
 
@@ -84,25 +83,33 @@ When no failure strategy is defined for an interaction by default the interactio
 
 ## Event
 
-Events indicate something of interest happened for a process instance.
-
 An event has a *name* and can (optionally) provide ingredients.
+
+The purpose of events is therefor twofold.
+
+1. It signifies something of interest happened for a [process instance](dictionary.md#process-instance).
+
+    Example, *"the customer placed the order"*, *"terms and conditions where accepted"*
+
+2. The event may provide ingredients required to continue the process.
+
+    Example, *"OrderPlaced"* -> `<list of products>`
 
 We distinquish 2 types of events.
 
-1. Sensory events (external)
+1. Sensory events (*external*)
 
-    These events are provided from outside of the process
+    These events are provided from outside of the process.
 
-2. Interaction output (internal)
+2. Interaction output (*internal*)
 
-    These events are provided as a result of an interaction being executed.
+    These events are a result of an interaction being executed.
 
 ## **Recipe**
 
 *Events*, *Interactions* and *Ingredients* can be composed into recipes.
 
-Recipes are analagous to blueprints for a process (or workflow).
+Recipes are analagous to process blueprints (or workflow).
 
 Baker provides a [Recipe DSL](recipe-dsl.md) in which you can declaritively describe your recipe.
 

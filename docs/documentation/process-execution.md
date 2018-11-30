@@ -2,7 +2,7 @@
 
 ## Recap
 
-On the [runtime](runtime.md) page we discussed how you could could add your [recipe](dictionary.md#recipe) to Baker.
+On the [runtime](runtime.md) page we discussed how you could could initialize Baker and add your [recipe](dictionary.md#recipe) to it.
 
 Lets summarize what we have done so far.
 
@@ -18,7 +18,7 @@ val recipeId: String = ???
 ```java tab="Java"
 // To execute a recipe you will need a Baker instance
 // This should be the same instance as you used to register your Recipe
-JBaker baker = ...;
+JBaker baker = null; //
 
 // The recipe id was given to us when we add our Recipe to Baker
 String recipeId = "...";
@@ -31,27 +31,32 @@ Given a valid Baker a [recipe id](dictionary.md#recipe-id) we can now execute a 
 Or in other words we can create a [process instance](dictionary.md#process-instance).
 
 ```scala tab="Scala"
-// A unique processId ment to distinct this process from other process instances
+// Assuming you have a compiled recipe
+val recipe: CompiledRecipe = ???
+
+// A unique identifier ment to distinguish this process from other process instances
 val processId = "a-unique-process-id"
 
-// Tell Baker that we want to register a new process for a certain recipe.
-baker.bake(recipeId, processId)
+// Tell Baker that we want to create a new process for a certain recipe.
+baker.bake(recipe.recipeId, processId)
 ```
 
 ```java tab="Java"
-// A unique processId ment to distinct this process from other process instances
-// We use a random UUID but you could use whatever you like.
-String processId = "a-unique-process-id"
+// Assuming you have a compiled recipe
+CompiledRecipe recipe = null; //
 
-// Tell Baker that we want to register a new process for a certain recipe.
-baker.bake(recipeId, processId);
+// A unique identifier ment to distinguish this process from other process instances
+String processId = "a-unique-process-id";
+
+// Tell Baker that we want to create a new process for a certain recipe.
+baker.bake(recipe.recipeId(), processId);
 ```
 
-## Process an event
+## Providing a sensory event
 
-In our webshop example the first events that can happen are `OrderPlaced` `PaymentMade` and `CustomerInfoReceived`.
+In our [webshop example](../index.md#visual-representation) the first events that can happen are `OrderPlaced`, `PaymentMade` and `CustomerInfoReceived`.
 
-These are so called [sensory events](dictionary.md#sensory-event) as can be [seen is a starting point for our webshop example](../index.md#visual-representation).
+These are so called [sensory events](dictionary.md#sensory-event) since they are not the result of an interaction but must be provided by the user of Baker.
 
 ```scala tab="Scala"
 // The CustomerInfoReceived and OrderPlaced events require some data (Ingredients)
@@ -69,11 +74,57 @@ CustomerInfo customerInfo = new CustomerInfo("John", "Elm. Street", "johndoe@exa
 String order = "123";
 
 // Lets produce the `OrderPlaced` and `CustomerInfoReceived` sensory Events.
-baker.processEvent(processId, new CustomerInfoRecived(customerInfo));
+baker.processEvent(processId, new CustomerInfoReceived(customerInfo));
 baker.processEvent(processId, new OrderPlaced(order));
 ```
 
-## Visualize process state
+### Correlation id
+
+Optionally you may provide a `correlation id` with an event. The purpose of this id is idempotent event delivery.
+
+When sending the same event correlation id multiple times, only the first will it be processed.
+
+This can be applied to the `OrderPlaced` event for example.
+
+``` scala tab="Scala"
+val orderId = "a unique order id"
+
+val statusA: SensoryEventStatus = baker.processEvent(processId, new OrderPlaced(order), orderId)
+val statusB: SensoryEventStatus = baker.processEvent(processId, new OrderPlaced(order), orderId)
+
+// statusA == Received
+// statusB == AlreadyReceived
+
+```
+
+``` java tab="Java"
+String orderId = "a unique order id";
+
+SensoryEventStatus statusA = baker.processEvent(processId, new OrderPlaced(order), orderId);
+SensoryEventStatus statusB = baker.processEvent(processId, new OrderPlaced(order), orderId);
+
+// statusA == Received
+// statusB == AlreadyReceived
+
+```
+
+## Sensory event status
+
+In response to recieving a sensory event baker returns a status code indicating how it processed it.
+
+| Status | Description |
+| --- | --- |
+| `Received` | The event was received normally |
+| `AlreadyReceived` | An event with the same correlation id was already received |
+| `ProcessDeleted` | The process instance was deleted |
+| `ReceivePeriodExpired` | The receive period for the process instance has passed |
+| `FiringLimitMet` | The [firing limit](recipe-dsl.md#firing-limit) for the event was met |
+
+## State inquiry
+
+During runtime it is often useful to *inquire* on the state of a process instance.
+
+## Visualize process instance state
 
 When processing events Baker will check which Interactions have all the required Ingredients and Events in order to execute.
 
@@ -101,35 +152,6 @@ The `ValidateOrder` Interaction in turn produced the `Valid` event.
 
 We can also see that the `ManufactureGoods` Interaction is still purple, meaning that it has not been executed. This is correct because `ManufactureGoods` requires an additional event called `PaymentMade`.
 
-## Adding aditional sensory events to the process
-
-Lets provide the `PaymentMade` event and review the process status afterwards.
-
-```scala tab="Scala"
-// Provide the PaymentMade sensory event
-baker.processEvent(processId, PaymentMade())
-
-// Check the dot representation of the current state again
-val dotRepresentation: String = baker.getVisualState(processId)
-```
-
-```java tab="Java"
-// Provide the PaymentMade sensory event
-baker.processEvent(processId, new PaymentMade());
-
-// Check the dot representation of the current state again
-String dotRepresentation = baker.getVisualState(processId);
-```
-
-Visualizing the new state will give us the following image.
-
-![](/images/webshop-state-2.svg)
-
-With the `PaymentMade` sensory event, Baker had enough to resolve the whole Recipe. All interactions are executed and the `InvoiceWasSent` event was produced.
-
-## Process instance state inquiry
-
-During runtime it is often useful to *inquire* on the state of a process instance.
 
 ### Events
 
@@ -138,14 +160,14 @@ We can ask Baker for a list of all the events for our process.
 Using this list we can check if the `InvoiceWasSend` event was produced.
 
 ```scala tab="Scala"
-// Get all events that has happend for this process id
+// Get all events that have happend for this process instance
 val events: Seq[RuntimeEvent] = baker.getEvents(processId)
 if (events.exists(_.name == "InvoiceWasSend"))
     // Yes the invoice was send!
 ```
 
 ```java tab="Java"
-// Get all events that has happend for this process id
+// Get all events that have happend for this process instance
 EventList events = baker.getEvents(processId);
 if (events.hasEventOccured(InvoiceWasSend.class))
     // Yes the invoice was send!

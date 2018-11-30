@@ -8,7 +8,13 @@ To execute & manage your recipes you require the *Baker Runtime*.
 
 ## Starting the baker runtime
 Creating a baker runtime is as easy as calling the empty constructor.
-``` java
+
+``` scala tab="Scala"
+// Create a Baker Runtime
+val baker = new Baker();
+```
+
+``` java tab="Java"
 // Create a Baker Runtime
 JBaker baker = new JBaker();
 ```
@@ -19,7 +25,13 @@ It requires an `ActorSystem` to start. In the previous example the actor system 
 
 If you already have an actor system then you can give it to Baker.
 
-``` java
+``` scala tab="Scala"
+val actorSystem = ActorSystem();
+
+Baker baker = new Baker(actorSystem);
+```
+
+``` java tab="Java"
 ActorSystem actorSystem = ActorSystem.create();
 
 JBaker baker = new JBaker(actorSystem);
@@ -29,10 +41,15 @@ JBaker baker = new JBaker(actorSystem);
 
 Before you can add a recipe all the interactions for that recipe *MUST* have an implemention in Baker.
 
-You can add it like this:
+You can add them like this:
 
-``` java
+``` scala tab="Scala"
+val validateOrderImpl = new ValidateOrderImpl()
 
+baker.addImplementation(validateOrderImpl)
+```
+
+``` java tab="Java"
 ValidateOrderImpl validateOrderImpl = new ValidateOrderImpl();
 
 baker.addImplementation(validateOrderImpl);
@@ -40,10 +57,17 @@ baker.addImplementation(validateOrderImpl);
 
 ## Compiling your Recipe
 
-Because a recipe is writen in a `DSL` and you have multiple options like `Java` and `Scala`. We need to compile our DSL Recipe to something that Baker understands and can execture.
-For this we have a `RecipeCompiler`.
+A recipe is writen in a `DSL`. This is just a declarative description of your process.
 
-```java
+In order to execute it we need to compile it. This connects all the pieces into a graph (more precisly a [petri net](https://en.wikipedia.org/wiki/Petri_net)).
+
+For this purpose there is the `RecipeCompiler`.
+
+``` scala tab="Scala"
+val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+```
+
+``` java tab="Java"
 CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
 ```
 
@@ -53,15 +77,19 @@ CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
 
 ## Adding your Compiled Recipe
 
-You will need tell baker which Compiled Recipe to run. Giving the Compiled Recipe will give you recipeId. Which you will need to create process instances.
+Once you have compiled your recipe you can add it to Baker.
 
-```java
-String recipeId = baker.addRecipe(compiledRecipe);
+``` scala tab="Scala"
+baker.addRecipe(compiledRecipe)
+```
+
+``` java tab="Java"
+baker.addRecipe(compiledRecipe);
 ```
 
 ## Putting it all together
 
-Combining all these steps with give us the following:
+Combining all these steps gives us the following:
 
 ```java
 // Implementations, probably defined in other files

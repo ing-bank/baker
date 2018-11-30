@@ -2,6 +2,8 @@
 
 Let's start with the web shop recipe as an example.
 
+The complete code example can be found [here](https://github.com/ing-bank/baker/blob/master/runtime/src/test/java/com/ing/baker/Webshop.java).
+
 ``` java
 final Recipe webshopRecipe = new Recipe("webshop")
     .withSensoryEvents(
@@ -23,18 +25,57 @@ final Recipe webshopRecipe = new Recipe("webshop")
             .build());
 ```
 
-## Predefining ingredients
+## Sensory events
 
-An interaction normally requires its input ingredients to be delivered from [Events](concepts.md#event).
+[Events](concepts.md#event) are simple `pojo` classes.
+
+They can be added using the `.withSensoryEvents(..)` method.
+
+### Firing limit
+
+A *firing limit* is a limit on the number of times a sensory event may be received by a [process instance](dictionary.md#process-instance).
+
+By default have a firing limit of `1` per process instance.
+
+This means the event will be rejected with status `FiringLimitMet` after the first it is received.
+
+If you want to send an event more then once you may add it like this:
+
+``` java
+   .withSensoryEventsNoFiringLimit(CustomerInfoReceived.class)
+```
+
+In this example the `CustomerInfoReceived` can now be received multiple times by a process instance.
+
+## Interactions
+
+Interactions are interfaces with some requirements. See [here](interactions.md) how to define them.
+
+You can include interactions in your recipe using the static `of(..)` method.
+
+``` java
+import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
+
+final Recipe webshopRecipe = new Recipe("webshop")
+    .withInteractions(
+        of(ValidateOrder.class)
+    )
+```
+
+There are a number of options to tailor an interaction for your recipe.
+
+### Predefining ingredients
+
+An interaction normally requires all its input ingredients to be provided from [Events](concepts.md#event).
 
 Sometimes however it is useful to *predefine* (or *hard code*) the value of an ingredient.
 
 For example:
 
-- The template of an email
+- An email template
 - An application/requester id when calling an external system
 
-This can be accomplished by:
+This can be done by:
 
 ``` java
   .withInteractions(
@@ -49,12 +90,37 @@ Each time all *remaining* ingredients are provided, the interaction will fire.
 
 You can **not** predefine *ALL* input ingredients of an interaction.
 
+### Event requirements
 
-## Interaction Failure strategy
+As mentioned before, the DSL is declarative, you do not have to think about order. This is implicit in the data requirements of the interactions.
+
+However, sometimes data requirements are not enough.
+
+For example, you might want to be sure to only send an invoice (`SendInvoice`) *AFTER* the goods where shipped (`GoodsShipped`).
+
+``` java
+    of(SendInvoice.class)
+        .withRequiredEvents(ShipGoods.GoodsShipped.class)
+```
+
+In this case the `GoodsShipped` event *MUST* happen before the interaction may execute.
+
+You can specify multiple events in a single clause. These are bundled with an `AND` condition, meaning *ALL* events in the clause are required.
+
+You can also require a single event from a number of options.
+
+``` java
+    of(SendInvoice.class)
+        .withRequiredOneOfEvents(EventA.class, EventB.class)
+```
+
+In this case the interaction may fire if *either* `EventA` OR `EventB` has occured.
+
+### Interaction Failure strategy
 
 When an interaction throws an exception there are a number of mitigation strategies:
 
-### Fire event
+#### Fire event
 
 This option is analagous to a `try { } catch { }` in code. When an exception is raised from the interaction you specify an
 event to fire. So instead of failing the process continues.
@@ -70,7 +136,7 @@ Example:
    )
 ```
 
-### Retry with incremental backoff
+#### Retry with incremental backoff
 
 Incremental backoff allows you to configure a retry mechanism that takes longer for each retry.
 The idea here is that you quickly retry at first but slower over time. To not overload your system but give it time to recover.
