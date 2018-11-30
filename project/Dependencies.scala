@@ -29,6 +29,7 @@ object Dependencies {
   val akkaSlf4j =                 "com.typesafe.akka"          %% "akka-slf4j"                         % akkaVersion
   val akkaTestKit =               "com.typesafe.akka"          %% "akka-testkit"                       % akkaVersion
   val akkaStreamTestKit =         "com.typesafe.akka"          %% "akka-stream-testkit"                % akkaVersion
+  val akkaMultiNodeTestkit =      "com.typesafe.akka"          %% "akka-multi-node-testkit"            % akkaVersion
   val akkaHttp =                  "com.typesafe.akka"          %% "akka-http"                          % "10.0.10"
   val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.7"
   val levelDBJni =                "org.fusesource.leveldbjni"  %  "leveldbjni-all"                     % "1.8"
@@ -43,7 +44,7 @@ object Dependencies {
   val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "0.10"
   val catsCore =                  "org.typelevel"              %% "cats-core"                          % "1.1.0"
 
-  def scalaReflect(scalaV: String) = "org.scala-lang"             %  "scala-reflect"                   % scalaV
+  def scalaReflect(scalaV: String): ModuleID = "org.scala-lang"%  "scala-reflect"                      % scalaV
   val javaxInject =               "javax.inject"               %  "javax.inject"                       % "1"
 
   val paranamer =                 "com.thoughtworks.paranamer" %  "paranamer"                          % "2.8"

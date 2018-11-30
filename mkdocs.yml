@@ -29,6 +29,7 @@ nav:
     - 'documentation/event-listener.md'
     - 'documentation/execution-semantics.md'
     - 'documentation/type-system.md'
+    - 'documentation/split-brain-resolver.md'
     - 'documentation/dictionary.md'
   - Presentations:
     - '2017 - Mucon (London)' : 'presentations/muCon-London-7-Nov-2017.md'
