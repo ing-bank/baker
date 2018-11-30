@@ -1,4 +1,4 @@
-# Runtime
+# Baker Runtime
 
 With the [Recipe DSL](recipe-dsl.md) you can create a *description* of your recipe.
 

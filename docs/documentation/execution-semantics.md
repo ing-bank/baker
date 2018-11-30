@@ -1,12 +1,34 @@
-# Recipe Compiler
+# Execution sementics
 
-This documentation is for developers of Bakers and others who might be interested about the internal mechanics.
+A recipe can be represented (and [visualized](recipe-visualization.md)) as a graph.
 
-## Introduction
+This graph is actually a higher level representation of a [petri net](https://en.wikipedia.org/wiki/Petri_net) (which is also a graph).
 
-A recipe can be represented (and [visualization](visualization)) as a graph.
+The execution of a process instance based around this petri net.
 
-It can be seen as a higher level representation of a petri net (which is also a graph)
+### Execution loop
+
+In summary this is the execution loop of a process instance.
+
+1. An event is raised and provides ingredients.
+
+    Either given to baker as a [sensory event](process-execution.md#providing-a-sensory-event) or by an interaction.
+
+2. A check is done which interactions have all their requirements met and those are executed.
+3. An interaction completes its execution and outputs an event (`GOTO 1.`)
+
+### Notes
+
+- A sensory event may be provided 1 or more times depending on its [firing limit](recipe-dsl.md#firing-limit).
+- When ingredients are provided multiple times, the latest value overrides the previous.
+- An interaction fires when all it's ingredients and required events are provided.
+    This may happen 1 or more times depending on the [maximum interaction count](recipe-dsl.md#maximum-interaction-count).
+
+To know more you will first need to understand the how a petri net works.
+
+Below is an explanation of how a recipe relates to a petri net.
+
+## Recipe Compiler
 
 The recipe compiler takes a recipe and creates a petri net.
 

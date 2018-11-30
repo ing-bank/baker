@@ -16,6 +16,7 @@ markdown_extensions:
 
 nav:
   - 'index.md'
+  - 'getting-started.md'
   - 'migration-guide.md'
   - Documentation:
     - 'documentation/concepts.md'
@@ -23,9 +24,10 @@ nav:
       - 'documentation/recipe-dsl.md'
       - 'documentation/interactions.md'
     - 'documentation/recipe-visualization.md'
-    - 'documentation/runtime.md'
+    - 'documentation/baker-runtime.md'
     - 'documentation/process-execution.md'
     - 'documentation/event-listener.md'
+    - 'documentation/execution-semantics.md'
     - 'documentation/type-system.md'
     - 'documentation/dictionary.md'
   - Presentations:

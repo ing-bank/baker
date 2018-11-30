@@ -1,6 +1,8 @@
 # Recipe DSL
 
-Let's start with the web shop recipe as an example.
+The recipe DSL allows you to declaritively describe your process.
+
+Let's start with the [web shop](../index.md#visual-representation) recipe as an example.
 
 The complete code example can be found [here](https://github.com/ing-bank/baker/blob/master/runtime/src/test/java/com/ing/baker/Webshop.java).
 
@@ -63,6 +65,20 @@ final Recipe webshopRecipe = new Recipe("webshop")
 ```
 
 There are a number of options to tailor an interaction for your recipe.
+
+### Maximum interaction count
+
+By default there is *no* limit on the number of times an Interaction may fire.
+
+Sometimes it is desireable to set a limit.
+
+For example, to ensure the goods are shipped only once.
+
+``` java
+    .withInteractions(
+        of(ShipGoods.class).withMaximumInteractionCount(1)
+     )
+```
 
 ### Predefining ingredients
 

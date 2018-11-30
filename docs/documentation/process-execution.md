@@ -2,7 +2,7 @@
 
 ## Recap
 
-On the [runtime](runtime.md) page we discussed how you could could initialize Baker and add your [recipe](dictionary.md#recipe) to it.
+On the [runtime](baker-runtime.md) page we discussed how you could could initialize Baker and add your [recipe](dictionary.md#recipe) to it.
 
 Lets summarize what we have done so far.
 
@@ -26,7 +26,7 @@ String recipeId = "...";
 
 ## Create a process instance
 
-Given a valid Baker a [recipe id](dictionary.md#recipe-id) we can now execute a Recipe.
+Given a valid [recipe id](dictionary.md#recipe-id) we can now execute a Recipe.
 
 Or in other words we can create a [process instance](dictionary.md#process-instance).
 
@@ -78,11 +78,19 @@ baker.processEvent(processId, new CustomerInfoReceived(customerInfo));
 baker.processEvent(processId, new OrderPlaced(order));
 ```
 
+When receiving events Baker will check which Interactions have all the required Ingredients and Events met.
+
+It will execute those interactions.
+
+Those interactions will raise more events.
+
+For more information about the exact execution sementics see [here](execution-semantics.md).
+
 ### Correlation id
 
-Optionally you may provide a `correlation id` with an event. The purpose of this id is idempotent event delivery.
+Optionally you may provide a `correlation id` with an event. The purpose of this identifier is idempotent event delivery.
 
-When sending the same event correlation id multiple times, only the first will it be processed.
+When sending the same event correlation id multiple times, only the first will be processed.
 
 This can be applied to the `OrderPlaced` event for example.
 
@@ -126,9 +134,6 @@ During runtime it is often useful to *inquire* on the state of a process instanc
 
 ## Visualize process instance state
 
-When processing events Baker will check which Interactions have all the required Ingredients and Events in order to execute.
-
-Baker will continue to do so until there are no Interactions left to execute.
 
 We can use the visualizer to see what Baker has done with the given events.
 

@@ -4,7 +4,7 @@ Often it may be of interest to be notified of *events* that occur while operatin
 
 There are 2 types of events that can be subscribed to.
 
-1. [Events](concepts.md#event) that occur in the context of a process instance.
+1. [Events](concepts.md#event) defined in your recipe that occur in the context of a process instance.
 2. Technical / internal events that occur within the baker runtime.
 
 ### Important limitations
@@ -78,7 +78,7 @@ In scala [partial functions](https://www.scala-lang.org/api/2.12.1/scala/Partial
 
 In java you can register objects that have methods annotated with `@Subscribe`.
 
-In case you are interested in *all* events you can register to the general [BakerEvent](https://github.com/ing-bank/baker/blob/master/runtime/src/main/scala/com/ing/baker/runtime/core/events/BakerEvent.scala).
+In case you are interested in *ALL* events you can register to the general [BakerEvent](https://github.com/ing-bank/baker/blob/master/runtime/src/main/scala/com/ing/baker/runtime/core/events/BakerEvent.scala).
 
 In the example below a listener is registered that is only interested in `EventReceived`:
 
