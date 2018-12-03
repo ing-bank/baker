@@ -6,7 +6,11 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.actor.process_instance.internal.{ExceptionState, ExceptionStrategy, Instance, Job}
 import com.ing.baker.runtime.actor.serialization.{Encryption, ProtoEventAdapterImpl}
 import ProcessInstanceEventSourcing._
-import akka.actor.NoSerializationVerificationNeeded
+import akka.NotUsed
+import akka.actor.{ActorSystem, NoSerializationVerificationNeeded}
+import akka.persistence.query.scaladsl.CurrentEventsByPersistenceIdQuery
+import akka.stream.scaladsl.Source
+import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 
 object ProcessInstanceEventSourcing {
 
@@ -81,6 +85,29 @@ object ProcessInstanceEventSourcing {
       instance.copy[P, T, S](jobs = instance.jobs + (job.id -> updatedJob))
   }
 
+  def eventsForInstance[P : Identifiable, T : Identifiable, S, E](
+      processTypeName: String,
+      processId: String,
+      topology: PetriNet[P, T],
+      encryption: Encryption = NoEncryption,
+      readJournal: CurrentEventsByPersistenceIdQuery,
+      eventSourceFn: T ⇒ (S ⇒ E ⇒ S))(implicit actorSystem: ActorSystem): Source[(Instance[P, T, S], Event), NotUsed] = {
+
+    val protoEventAdapter = new ProtoEventAdapterImpl(SerializationExtension.get(actorSystem), encryption)
+    val serializer = new ProcessInstanceSerialization[P, T, S, E](protoEventAdapter)
+
+    val persistentId = ProcessInstance.processId2PersistenceId(processTypeName, processId)
+    val src = readJournal.currentEventsByPersistenceId(persistentId, 0, Long.MaxValue)
+    val eventSource = ProcessInstanceEventSourcing.apply[P, T, S, E](eventSourceFn)
+
+    src.scan[(Instance[P, T, S], Event)]((Instance.uninitialized[P, T, S](topology), null.asInstanceOf[Event])) {
+      case ((instance, _), e) ⇒
+        val serializedEvent = e.event.asInstanceOf[AnyRef]
+        val deserializedEvent = serializer.deserializeEvent(serializedEvent)(instance)
+        val updatedInstance = eventSource.apply(instance)(deserializedEvent)
+        (updatedInstance, deserializedEvent)
+    }.drop(1) // Just to drop the first event 'uninitialized', not interesting for the consumers.
+  }
 }
 
 abstract class ProcessInstanceEventSourcing[P : Identifiable, T : Identifiable, S, E](
