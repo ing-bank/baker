@@ -3,7 +3,6 @@ package com.ing.baker.runtime.core
 /**
   * Listener interface for events from baker.
   */
-//@deprecated("Use event bus instead", "1.4.0")
 trait EventListener {
 
   /**

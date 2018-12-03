@@ -1,5 +1,31 @@
 ## Introduction
 
-In this development documentation everything should be found that is needed for developers to get started with Baker.
+Baker is a library that reduces the effort to orchestrate (micro)service-based process flows.
 
-This is also a good start point for anyone that just want to know more about Baker.
+Developers declare the orchestration logic in a *Recipe* (process blueprint).
+
+A *Recipe* is made out of:
+
+- *Interactions* (functions)
+- *Ingredients* (data)
+- *Events*
+
+More about these concepts [here](documentation/concepts).
+
+## Overview
+
+Baker allows you to:
+
+- *Declaritavely* design your processes using a [recipe DSL](documentation/recipe-dsl.md).
+- Manage your recipes using the [baker runtime](documentation/baker-runtime.md).
+- [Create process instances](documentation/process-execution.md#create-a-process-instance) of your recipes.
+- [Fire sensory events](documentation/process-execution.md#providing-a-sensory-event).
+- [Inquire the state](documentation/process-execution.md#state-inquiry) of your process instances.
+
+## Visual representation
+
+A visual representation of the recipe allows product owners, architects and developers to talk the same language.
+
+Below an example of a simple web shop recipe:
+
+![](images/webshop.svg)

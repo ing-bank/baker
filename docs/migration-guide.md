@@ -6,7 +6,7 @@ This guide only describes how to migrate your existing application.
 
 Summary:
 
-- *ALL* persisted data from baker `1.3.x` *IS COMPATIBLE* and can be used with `2.0.0`
+- *ALL* persisted data from baker `1.3.x` *IS COMPATIBLE* and can be used with `2.0.x`
 - When running a cluster *DOWNTIME IS REQUIRED* because of binary incompatible changes in the message protocol.
 - Some small code refactors are necessary (see below).
 

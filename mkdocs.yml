@@ -1,9 +1,33 @@
 site_name: Baker
-theme:
-  name: 'material'
-markdown_extensions:
-  - codehilite
-  - pymdownx.superfences
 
 repo_name: 'ing-bank/baker'
 repo_url: 'https://github.com/ing-bank/baker'
+
+theme:
+  name: 'material'
+
+extra_css:
+  - css/ing.css
+
+markdown_extensions:
+  - codehilite
+  - pymdownx.superfences
+  - admonition
+
+nav:
+  - 'index.md'
+  - 'getting-started.md'
+  - Documentation:
+    - 'documentation/concepts.md'
+    - DSL:
+      - 'documentation/recipe-dsl.md'
+      - 'documentation/interactions.md'
+    - 'documentation/recipe-visualization.md'
+    - 'documentation/baker-runtime.md'
+    - 'documentation/process-execution.md'
+    - 'documentation/event-listener.md'
+    - 'documentation/execution-semantics.md'
+    - 'documentation/type-system.md'
+    - 'documentation/split-brain-resolver.md'
+    - 'documentation/dictionary.md'
+  - 'migration-guide.md'
