@@ -1,8 +1,16 @@
 # Getting started
 
+## Project setup
+
 Baker is released to [maven central](https://search.maven.org/search?q=com.ing.baker).
 
 You can add following dependencies to your `maven` or `sbt` project to start using it:
+
+``` scala tab="Sbt"
+dependencies += "com.ing.baker" %% "baker-recipe-dsl" % "2.0.1"
+dependencies += "com.ing.baker" %% "baker-compiler" % "2.0.1"
+dependencies += "com.ing.baker" %% "baker-runtime" % "2.0.1"
+```
 
 ``` maven tab="Maven"
 <dependencies>
@@ -23,13 +31,13 @@ You can add following dependencies to your `maven` or `sbt` project to start usi
 
 ```
 
-``` scala tab="Sbt"
-dependencies += "com.ing.baker" %% "baker-recipe-dsl" % "2.0.1"
-dependencies += "com.ing.baker" %% "baker-compiler" % "2.0.1"
-dependencies += "com.ing.baker" %% "baker-runtime" % "2.0.1"
-```
+### Module dependencies
 
-After this you can:
+![](../images/deps.svg)
+
+## Developing with baker
+
+After adding the dependencies you can continue to:
 
  - Familiarize yourself with the [concepts](documentation/concepts.md).
  - Immediately start [writing your recipes](documentation/recipe-dsl.md).

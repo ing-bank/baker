@@ -29,13 +29,32 @@ final Recipe webshopRecipe = new Recipe("webshop")
 
 ## Sensory events
 
-[Events](concepts.md#event) are simple `POJO` classes.
+[Events](concepts.md#event) are simple `POJO` classes. For example:
 
-The fields of the `POJO` class must be compatible with the baker type system.
+``` scala tab="Scala"
+case class CustomerInfoReceived(customerInfo: CustomerInfo)
+
+```
+
+``` java tab="Java"
+public class CustomerInfoReceived {
+    public final CustomerInfo customerInfo;
+
+    public CustomerInfoReceived(CustomerInfo customerInfo) {
+        this.customerInfo = customerInfo;
+    }
+}
+```
+
+The field types of the `POJO` class must be compatible with the baker type system.
 
 See the [supported types](type-system.md#default-supported-types) for more information.
 
+The names of the fields are obtained using java reflection.
+
 They can be added using the `.withSensoryEvents(..)` method.
+
+
 
 ### Firing limit
 
