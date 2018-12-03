@@ -1,48 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-     <loc>/</loc>
-     <lastmod>2018-11-15</lastmod>
+     <loc>None</loc>
+     <lastmod>2018-12-03</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>/migration_guide/</loc>
-     <lastmod>2018-11-15</lastmod>
+     <loc>None</loc>
+     <lastmod>2018-12-03</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>/documentation/compiler/</loc>
-     <lastmod>2018-11-15</lastmod>
+     <loc>None</loc>
+     <lastmod>2018-12-03</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>/documentation/concepts/</loc>
-     <lastmod>2018-11-15</lastmod>
+     <loc>None</loc>
+     <lastmod>2018-12-03</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>/documentation/event-listener/</loc>
-     <lastmod>2018-11-15</lastmod>
+     <loc>None</loc>
+     <lastmod>2018-12-03</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>/documentation/visualization/</loc>
-     <lastmod>2018-11-15</lastmod>
+     <loc>None</loc>
+     <lastmod>2018-12-03</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>/presentations/ScaleByTheBay-18-Nov-2017/</loc>
-     <lastmod>2018-11-15</lastmod>
+     <loc>None</loc>
+     <lastmod>2018-12-03</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>/presentations/baker-pitch/</loc>
-     <lastmod>2018-11-15</lastmod>
+     <loc>None</loc>
+     <lastmod>2018-12-03</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
-     <loc>/presentations/muCon-London-7-Nov-2017/</loc>
-     <lastmod>2018-11-15</lastmod>
+     <loc>None</loc>
+     <lastmod>2018-12-03</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+    <url>
+     <loc>None</loc>
+     <lastmod>2018-12-03</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+    <url>
+     <loc>None</loc>
+     <lastmod>2018-12-03</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+    <url>
+     <loc>None</loc>
+     <lastmod>2018-12-03</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+    <url>
+     <loc>None</loc>
+     <lastmod>2018-12-03</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+    <url>
+     <loc>None</loc>
+     <lastmod>2018-12-03</lastmod>
      <changefreq>daily</changefreq>
     </url>
 </urlset>

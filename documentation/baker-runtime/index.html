@@ -36,7 +36,7 @@
     
     
       
-        <title>Concepts - Baker</title>
+        <title>Baker Runtime - Baker</title>
       
     
     
@@ -93,7 +93,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#concepts" tabindex="1" class="md-skip">
+      <a href="#baker-runtime" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -119,7 +119,7 @@
                 Baker
               </span>
               <span class="md-header-nav__topic">
-                Concepts
+                Baker Runtime
               </span>
             
           
@@ -279,90 +279,11 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-      
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="__toc">
-        Concepts
-      </label>
-    
-    <a href="./" title="Concepts" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../concepts/" title="Concepts" class="md-nav__link">
       Concepts
     </a>
-    
-      
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#ingredient" title="Ingredient" class="md-nav__link">
-    Ingredient
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#interaction" title="Interaction" class="md-nav__link">
-    Interaction
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#interaction-failure" title="Interaction failure" class="md-nav__link">
-    Interaction failure
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#failure-mitigation" title="Failure mitigation" class="md-nav__link">
-    Failure mitigation
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#event" title="Event" class="md-nav__link">
-    Event
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#recipe" title="Recipe" class="md-nav__link">
-    Recipe
-  </a>
-  
-</li>
-      
-      
-      
-      
-      
-    </ul>
-  
-</nav>
-    
   </li>
 
         
@@ -430,11 +351,77 @@
           
           
 
+  
 
-  <li class="md-nav__item">
-    <a href="../baker-runtime/" title="Baker Runtime" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Baker Runtime
+      </label>
+    
+    <a href="./" title="Baker Runtime" class="md-nav__link md-nav__link--active">
       Baker Runtime
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#starting-the-baker-runtime" title="Starting the baker runtime" class="md-nav__link">
+    Starting the baker runtime
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-interaction-implementations" title="Adding interaction implementations" class="md-nav__link">
+    Adding interaction implementations
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compiling-your-recipe" title="Compiling your Recipe" class="md-nav__link">
+    Compiling your Recipe
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-your-compiled-recipe" title="Adding your Compiled Recipe" class="md-nav__link">
+    Adding your Compiled Recipe
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#putting-it-all-together" title="Putting it all together" class="md-nav__link">
+    Putting it all together
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
         
@@ -548,49 +535,36 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#ingredient" title="Ingredient" class="md-nav__link">
-    Ingredient
+  <a href="#starting-the-baker-runtime" title="Starting the baker runtime" class="md-nav__link">
+    Starting the baker runtime
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#interaction" title="Interaction" class="md-nav__link">
-    Interaction
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#interaction-failure" title="Interaction failure" class="md-nav__link">
-    Interaction failure
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#failure-mitigation" title="Failure mitigation" class="md-nav__link">
-    Failure mitigation
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#event" title="Event" class="md-nav__link">
-    Event
+  <a href="#adding-interaction-implementations" title="Adding interaction implementations" class="md-nav__link">
+    Adding interaction implementations
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#recipe" title="Recipe" class="md-nav__link">
-    Recipe
+  <a href="#compiling-your-recipe" title="Compiling your Recipe" class="md-nav__link">
+    Compiling your Recipe
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-your-compiled-recipe" title="Adding your Compiled Recipe" class="md-nav__link">
+    Adding your Compiled Recipe
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#putting-it-all-together" title="Putting it all together" class="md-nav__link">
+    Putting it all together
   </a>
   
 </li>
@@ -611,118 +585,111 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/ing-bank/baker/edit/master/docs/documentation/concepts.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/ing-bank/baker/edit/master/docs/documentation/baker-runtime.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                <h1 id="concepts">Concepts</h1>
-<p>Baker introduces <em>interactions</em>, <em>ingredients</em>, and <em>events</em> as a model of abstracting.</p>
-<p>With these three components we can create recipes (process blue prints)</p>
-<h2 id="ingredient">Ingredient</h2>
-<p>Ingredients are <em>pure data</em>.</p>
-<p>This data is <strong>immutable</strong>, can not be changed after entering the process.</p>
-<p>There is <strong>no hiërarchy</strong> in this data. (<code>Animal -&gt; Dog -&gt; Labrador</code> is not possible to express)</p>
-<p>Examples:</p>
-<ul>
-<li>an IBAN</li>
-<li>a track and trace code</li>
-<li>a list of phone numbers</li>
-<li>a customer information object with name, email, etc ...</li>
-</ul>
-<p>An ingredient is defined by a <em>name</em> and <em>type</em>.</p>
-<p>The <em>name</em> points to the intended meaning of the data. ("customerData", "orderNumber", ...)</p>
-<p>The <em>type</em> sets limits on the form of data that is accepted. (a number, a list of strings, ...)</p>
-<p>This type is expressed by the <a href="../type-system/">baker type system</a>.</p>
-<h2 id="interaction">Interaction</h2>
-<p>An interaction is analagous to a function.</p>
-<p>It requires <em>input</em> (<a href="#ingredient">ingredients</a>) and provides <em>output</em> (<a href="#event">events</a>).</p>
-<p>Within this contract it may do anything. For example:</p>
-<ul>
-<li>query an external system</li>
-<li>put a message on a bus</li>
-<li>generate a document or image</li>
-<li>extract or compose ingredients into others</li>
-</ul>
-<p>When finished, an interaction provides an event as its output.</p>
-<h3 id="interaction-failure">Interaction failure</h3>
-<p>An interaction may fail to fulfill its intended purpose.</p>
-<p>We distinquish 2 types of failures.</p>
-<ol>
-<li>
-<p>A <em>technical</em> failure is one that could be retried and succeed. For example:</p>
-<ul>
-<li>Time outs because of unreliable network, packet loss</li>
-<li>External system is temporarily down or unresponsive</li>
-<li>External system returned a malformed/unexpected response</li>
-</ul>
-<p>These failures are unexpected and are are modeled by throwing an exception from the interaction.</p>
-</li>
-<li>
-<p>A <em>functional</em> failure is one that cannot be retried. For example:</p>
-<ul>
-<li>The customer is too young for the request.</li>
-<li>Not enough credit to perform the transfer.</li>
-</ul>
-<p>These failures are expected possible outcomes of the interaction.</p>
-<p>They are modelled by returning an event from the interaction.</p>
-</li>
-</ol>
-<h3 id="failure-mitigation">Failure mitigation</h3>
-<p>In case of technical failures, baker offers 2 mitigation strategies:</p>
-<ol>
-<li>
-<p>Retry with incremental backoff</p>
-<p>This retries the interaction with some configurable parameters:</p>
-<ul>
-<li><code>initialTimeout</code>: The initial delay for the first retry.</li>
-<li><code>backoffFactor</code>: The backoff factor.</li>
-<li><code>maximumInterval</code>: The maximum interval between retries.</li>
-</ul>
-</li>
-<li>
-<p>Continue with an event.</p>
-<p>This is analagous to a try/catch in java code. The exception is logged but the process continues with a specified event.</p>
-</li>
-</ol>
-<p>When no failure strategy is defined for an interaction by default the interaction is <em>blocked</em>.</p>
-<h2 id="event">Event</h2>
-<p>An event has a <em>name</em> and can (optionally) provide ingredients.</p>
-<p>The purpose of events is therefor twofold.</p>
-<ol>
-<li>
-<p>It signifies something of interest happened for a <a href="../dictionary/#process-instance">process instance</a>.</p>
-<p>Example, <em>"the customer placed the order"</em>, <em>"terms and conditions where accepted"</em></p>
-</li>
-<li>
-<p>The event may provide ingredients required to continue the process.</p>
-<p>Example, <em>"OrderPlaced"</em> -&gt; <code>&lt;list of products&gt;</code></p>
-</li>
-</ol>
-<p>We distinquish 2 types of events.</p>
-<ol>
-<li>
-<p>Sensory events (<em>external</em>)</p>
-<p>These events are provided from outside of the process.</p>
-</li>
-<li>
-<p>Interaction output (<em>internal</em>)</p>
-<p>These events are a result of an interaction being executed.</p>
-</li>
-</ol>
-<h2 id="recipe"><strong>Recipe</strong></h2>
-<p><em>Events</em>, <em>Interactions</em> and <em>Ingredients</em> can be composed into recipes.</p>
-<p>Recipes are analagous to process blueprints (or workflow).</p>
-<p>Baker provides a <a href="../recipe-dsl/">Recipe DSL</a> in which you can declaritively describe your recipe.</p>
-<p>Small example:
-<div class="codehilite"><pre><span></span><span class="k">new</span> <span class="n">Recipe</span><span class="o">(</span><span class="s">&quot;webshop&quot;</span><span class="o">)</span>
-    <span class="o">.</span><span class="na">withSensoryEvents</span><span class="o">(</span>
-        <span class="n">OrderPlaced</span><span class="o">.</span><span class="na">class</span><span class="o">,</span>
-        <span class="n">CustomerInfoReceived</span><span class="o">.</span><span class="na">class</span>
-    <span class="o">.</span><span class="na">withInteractions</span><span class="o">(</span>
-        <span class="n">of</span><span class="o">(</span><span class="n">ValidateOrder</span><span class="o">.</span><span class="na">class</span><span class="o">),</span>
-        <span class="n">of</span><span class="o">(</span><span class="n">ManufactureGoods</span><span class="o">.</span><span class="na">class</span><span class="o">));</span>
-</pre></div></p>
-<p>The main take away is that when declaring your recipe you do not have to think about order.</p>
-<p>Everything is automatically linked by the data requirements of the interactions.</p>
+                <h1 id="baker-runtime">Baker Runtime</h1>
+<p>With the <a href="../recipe-dsl/">Recipe DSL</a> you can create a <em>description</em> of your recipe.</p>
+<p>This does <strong>not</strong> yet constitute a runnable process. It is just a description.</p>
+<p>To execute &amp; manage your recipes you require the <em>Baker Runtime</em>.</p>
+<h2 id="starting-the-baker-runtime">Starting the baker runtime</h2>
+<p>Creating a baker runtime is as easy as calling the empty constructor.</p>
+<div class="superfences-tabs">
+<input name="__tabs_1" type="radio" id="__tab_1_0" checked="checked" />
+<label for="__tab_1_0">Scala</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="c1">// Create a Baker Runtime</span>
+<span class="k">val</span> <span class="n">baker</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">Baker</span><span class="o">();</span>
+</pre></div></div>
+<input name="__tabs_1" type="radio" id="__tab_1_1" />
+<label for="__tab_1_1">Java</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="c1">// Create a Baker Runtime</span>
+<span class="n">JBaker</span> <span class="n">baker</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JBaker</span><span class="o">();</span>
+</pre></div></div>
+</div>
+<p>Baker is build on top op <a href="https://www.akka.io">akka</a>.</p>
+<p>It requires an <code>ActorSystem</code> to start. In the previous example the actor system is not provided. In that case baker will create an actor system for you.</p>
+<p>If you already have an actor system then you can give it to Baker.</p>
+<div class="superfences-tabs">
+<input name="__tabs_2" type="radio" id="__tab_2_0" checked="checked" />
+<label for="__tab_2_0">Scala</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">actorSystem</span> <span class="k">=</span> <span class="nc">ActorSystem</span><span class="o">();</span>
+
+<span class="nc">Baker</span> <span class="n">baker</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">Baker</span><span class="o">(</span><span class="n">actorSystem</span><span class="o">);</span>
+</pre></div></div>
+<input name="__tabs_2" type="radio" id="__tab_2_1" />
+<label for="__tab_2_1">Java</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">ActorSystem</span> <span class="n">actorSystem</span> <span class="o">=</span> <span class="n">ActorSystem</span><span class="o">.</span><span class="na">create</span><span class="o">();</span>
+
+<span class="n">JBaker</span> <span class="n">baker</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JBaker</span><span class="o">(</span><span class="n">actorSystem</span><span class="o">);</span>
+</pre></div></div>
+</div>
+<h2 id="adding-interaction-implementations">Adding interaction implementations</h2>
+<p>Before you can add a recipe all the interactions for that recipe <em>MUST</em> have an implemention in Baker.</p>
+<p>You can add them like this:</p>
+<div class="superfences-tabs">
+<input name="__tabs_3" type="radio" id="__tab_3_0" checked="checked" />
+<label for="__tab_3_0">Scala</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">validateOrderImpl</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">ValidateOrderImpl</span><span class="o">()</span>
+
+<span class="n">baker</span><span class="o">.</span><span class="n">addImplementation</span><span class="o">(</span><span class="n">validateOrderImpl</span><span class="o">)</span>
+</pre></div></div>
+<input name="__tabs_3" type="radio" id="__tab_3_1" />
+<label for="__tab_3_1">Java</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">ValidateOrderImpl</span> <span class="n">validateOrderImpl</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ValidateOrderImpl</span><span class="o">();</span>
+
+<span class="n">baker</span><span class="o">.</span><span class="na">addImplementation</span><span class="o">(</span><span class="n">validateOrderImpl</span><span class="o">);</span>
+</pre></div></div>
+</div>
+<h2 id="compiling-your-recipe">Compiling your Recipe</h2>
+<p>A recipe is writen in a <code>DSL</code>. This is just a declarative description of your process.</p>
+<p>In order to execute it we need to compile it. This connects all the pieces into a graph (more precisly a <a href="https://en.wikipedia.org/wiki/Petri_net">petri net</a>).</p>
+<p>For this purpose there is the <code>RecipeCompiler</code>.</p>
+<div class="superfences-tabs">
+<input name="__tabs_4" type="radio" id="__tab_4_0" checked="checked" />
+<label for="__tab_4_0">Scala</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">compiledRecipe</span><span class="k">:</span> <span class="kt">CompiledRecipe</span> <span class="o">=</span> <span class="nc">RecipeCompiler</span><span class="o">.</span><span class="n">compileRecipe</span><span class="o">(</span><span class="n">recipe</span><span class="o">)</span>
+</pre></div></div>
+<input name="__tabs_4" type="radio" id="__tab_4_1" />
+<label for="__tab_4_1">Java</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">CompiledRecipe</span> <span class="n">compiledRecipe</span> <span class="o">=</span> <span class="n">RecipeCompiler</span><span class="o">.</span><span class="na">compileRecipe</span><span class="o">(</span><span class="n">recipe</span><span class="o">);</span>
+</pre></div></div>
+</div>
+<div class="admonition hint">
+<p class="admonition-title">Did you know?!</p>
+<p>You can use a compiled recipe to create a visual representation. <a href="../recipe-visualization/">See the visualization page how to create a visual graph.</a></p>
+</div>
+<h2 id="adding-your-compiled-recipe">Adding your Compiled Recipe</h2>
+<p>Once you have compiled your recipe you can add it to Baker.</p>
+<div class="superfences-tabs">
+<input name="__tabs_5" type="radio" id="__tab_5_0" checked="checked" />
+<label for="__tab_5_0">Scala</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">baker</span><span class="o">.</span><span class="n">addRecipe</span><span class="o">(</span><span class="n">compiledRecipe</span><span class="o">)</span>
+</pre></div></div>
+<input name="__tabs_5" type="radio" id="__tab_5_1" />
+<label for="__tab_5_1">Java</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">baker</span><span class="o">.</span><span class="na">addRecipe</span><span class="o">(</span><span class="n">compiledRecipe</span><span class="o">);</span>
+</pre></div></div>
+</div>
+<h2 id="putting-it-all-together">Putting it all together</h2>
+<p>Combining all these steps gives us the following:</p>
+<div class="codehilite"><pre><span></span><span class="c1">// Implementations, probably defined in other files</span>
+<span class="n">ValidateOrderImpl</span> <span class="n">validateOrderImpl</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ValidateOrderImpl</span><span class="o">();</span>
+<span class="n">ManufactureGoodsImpl</span> <span class="n">manufactureGoodsImpl</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ManufactureGoodsImpl</span><span class="o">();</span>
+
+<span class="c1">// Compiling the Recipe</span>
+<span class="n">CompiledRecipe</span> <span class="n">compiledRecipe</span> <span class="o">=</span> <span class="n">RecipeCompiler</span><span class="o">.</span><span class="na">compileRecipe</span><span class="o">(</span><span class="n">recipe</span><span class="o">);</span>
+
+<span class="c1">// Creating a Baker Runtime</span>
+<span class="n">JBaker</span> <span class="n">baker</span> <span class="o">=</span> <span class="k">new</span> <span class="n">JBaker</span><span class="o">();</span>
+
+<span class="c1">// Add the Implementations</span>
+<span class="n">baker</span><span class="o">.</span><span class="na">addImplementations</span><span class="o">(</span><span class="n">validateOrderImpl</span><span class="o">,</span> <span class="n">manufactureGoodsImpl</span><span class="o">);</span>
+
+<span class="c1">// Add the Compiled Recipe</span>
+<span class="n">String</span> <span class="n">recipeId</span> <span class="o">=</span> <span class="n">baker</span><span class="o">.</span><span class="na">addRecipe</span><span class="o">(</span><span class="n">compiledRecipe</span><span class="o">);</span>
+</pre></div>
+
+<p>Baker is now ready to create an instance for the recipe and execute it.</p>
                 
                   
                 
@@ -743,7 +710,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../../getting-started/" title="Getting started" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../recipe-visualization/" title="Recipe Visualization" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -752,19 +719,19 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Getting started
+                Recipe Visualization
               </span>
             </div>
           </a>
         
         
-          <a href="../recipe-dsl/" title="Recipe DSL" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../process-execution/" title="Process Execution" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Recipe DSL
+                Process Execution
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
