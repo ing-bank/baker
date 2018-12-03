@@ -1,4 +1,4 @@
-import Dependencies._
+import Dependencies.{scalaGraph, _}
 import sbt.Keys._
 
 def testScope(project: ProjectReference) = project % "test->test;test->compile"
@@ -50,24 +50,6 @@ lazy val defaultModuleSettings = commonSettings ++ dependencyOverrideSettings ++
 
 lazy val scalaPBSettings = Seq(PB.targets in Compile := Seq(scalapb.gen() -> (sourceManaged in Compile).value))
 
-lazy val petrinetApi = project.in(file("petrinet-api"))
-  .settings(defaultModuleSettings)
-  .settings(
-    moduleName := "petrinet-api",
-    libraryDependencies ++= compileDeps(
-      scalaGraph,
-      catsCore,
-      catsEffect,
-      scalapbRuntime,
-      slf4jApi
-      ) ++ testDeps(
-      scalaCheck,
-      scalaTest,
-      mockito,
-      logback
-    )
-  )
-
 lazy val bakertypes = project.in(file("bakertypes"))
   .settings(defaultModuleSettings)
   .settings(
@@ -76,6 +58,7 @@ lazy val bakertypes = project.in(file("bakertypes"))
       slf4jApi,
       ficusConfig,
       objenisis,
+      scalapbRuntime,
       jodaTime,
       scalaReflect(scalaVersion.value)
     ) ++ testDeps(scalaTest, scalaCheck, logback, scalaCheck)
@@ -86,12 +69,13 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
   .settings(
     moduleName := "baker-intermediate-language",
     libraryDependencies ++= compileDeps(
+      scalaGraph,
       slf4jApi,
       scalaGraphDot,
       objenisis,
       typeSafeConfig
     ) ++ testDeps(scalaTest, scalaCheck, logback)
-  ).dependsOn(petrinetApi, bakertypes)
+  ).dependsOn(bakertypes)
 
 
 lazy val runtime = project.in(file("runtime"))
@@ -111,6 +95,8 @@ lazy val runtime = project.in(file("runtime"))
         akkaSlf4j,
         akkaStream,
         ficusConfig,
+        catsCore,
+        catsEffect,
         guava,
         chill,
         objenisis,
@@ -135,7 +121,7 @@ lazy val runtime = project.in(file("runtime"))
         logback)
         ++ providedDeps(findbugs)
   )
-  .dependsOn(intermediateLanguage, petrinetApi, testScope(recipeDsl), testScope(recipeCompiler), testScope(bakertypes))
+  .dependsOn(intermediateLanguage, testScope(recipeDsl), testScope(recipeCompiler), testScope(bakertypes))
 
 lazy val splitBrainResolver = project.in(file("split-brain-resolver"))
   .settings(defaultModuleSettings)
@@ -189,7 +175,7 @@ lazy val recipeCompiler = project.in(file("compiler"))
     libraryDependencies ++=
       compileDeps(slf4jApi) ++ testDeps(scalaTest, scalaCheck, logback)
   )
-  .dependsOn(recipeDsl, intermediateLanguage, petrinetApi, testScope(recipeDsl))
+  .dependsOn(recipeDsl, intermediateLanguage, testScope(recipeDsl))
 
 lazy val baas = project.in(file("baas"))
   .settings(defaultModuleSettings)
@@ -220,4 +206,4 @@ lazy val baker = project
   .in(file("."))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
-  .aggregate(bakertypes, petrinetApi, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver)
+  .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver)
