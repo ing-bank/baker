@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.2
+- New feature: Split Brain Resolver is added. See the [documentation](https://ing-bank.github.io/baker/documentation/split-brain-resolver/) of this feature for more information.
+
+## 2.0.1
+- Bugfix: Fixed the broken Event Receive Period in the 2.0.0 release.
+
 ## 2.0.0
 
 ### Bugfixes
