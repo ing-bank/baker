@@ -25,8 +25,24 @@ Baker Split Brain Resolver is a general purpose implementation for Akka
 which could be configured for a baker cluster as well as for another
 akka cluster without baker.
 
-## How to use
+## Strategies
+The current version of the Split Brain Resolver algorithm supports only
+the `Majority` strategy which makes the majority of the nodes survive
+and downs (terminates) the nodes at the minority side of the network
+partition. In case of the number of nodes on each side of the network
+partition are equal, the side with the oldest akka node survives. By
+deciding to down one side, you do not end up with 2 akka clusters
+during the network partition.
 
+There could be other strategies implemented later, for now the
+`Majority` strategy works for most of the use cases. You can read about
+other possible strategies supported by the commercial Lightbend Split
+Brain Resolver [here](https://developer.lightbend.com/docs/akka-commercial-addons/current/split-brain-resolver.html#strategies).
+
+`Majority` strategy is configured by default, so you do not need extra
+configuration for this.
+
+## How to use
 In order to use Baker `SplitBrainResolver`, first of all, you need to add
 baker-split-brain-resolver dependency to your project. See example
 below:
