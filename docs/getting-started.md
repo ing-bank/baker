@@ -31,11 +31,24 @@ dependencies += "com.ing.baker" %% "baker-runtime" % "2.0.1"
 
 ```
 
-### Module dependencies
+This includes *ALL* baker modules to your project. If you only need partial functionality you can pick and choose the modules you need.
 
-![](../images/deps.svg)
+### Modules
 
-## Developing with baker
+An explanation of the baker modules.
+
+| Module | Description |
+| --- | --- |
+| recipe-dsl | [DSL](documentation/recipe-dsl.md) to describe your recipes (process blueprints) *declaritively* |
+| runtime | [Runtime](documentation/baker-runtime.md) based on [akka](htts://www.akka.io) to manage and execute your recipes |
+| compiler | [Compiles your recipe](documentation/baker-runtime.md#compiling-your-recipe) description into a model that the runtime can execute |
+| intermediate-language | Recipe and Petri Net model that the runtime can execute |
+
+This is the dependency graph between the modules.
+
+![](images/deps.svg)
+
+## Continuing from here
 
 After adding the dependencies you can continue to:
 

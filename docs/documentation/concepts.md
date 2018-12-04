@@ -109,11 +109,11 @@ We distinquish 2 types of events.
 
 *Events*, *Interactions* and *Ingredients* can be composed into recipes.
 
-Recipes are analagous to process blueprints (or workflow).
+Recipes are analagous to process blueprints.
 
 Baker provides a [Recipe DSL](recipe-dsl.md) in which you can declaritively describe your recipe.
 
-Small example:
+A small example:
 ``` java
 new Recipe("webshop")
     .withSensoryEvents(
@@ -126,4 +126,4 @@ new Recipe("webshop")
 
 The main take away is that when declaring your recipe you do not have to think about order.
 
-Everything is automatically linked by the data requirements of the interactions.
+Everything is automatically linked by the *data* requirements of the interactions.

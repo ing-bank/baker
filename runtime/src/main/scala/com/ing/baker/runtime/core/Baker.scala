@@ -33,6 +33,7 @@ import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 import scala.util.Try
 import Baker._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEventSourcing
 
 object Baker {
 
@@ -254,7 +255,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     getProcessState(processId, timeout).eventNames
 
   private def getEventsForRecipe(processId: String, compiledRecipe: CompiledRecipe): Source[(RuntimeEvent, Long), NotUsed] = {
-    ProcessQuery
+    ProcessInstanceEventSourcing
       .eventsForInstance[Place, Transition, ProcessState, RuntimeEvent](compiledRecipe.name, processId, compiledRecipe.petriNet, configuredEncryption, readJournal, RecipeRuntime.eventSourceFn)
       .collect {
         case (_, TransitionFiredEvent(_, _, _, _, time, _, _, runtimeEvent: RuntimeEvent))
