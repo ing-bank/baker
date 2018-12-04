@@ -1,5 +1,7 @@
 # Recipe Visualization
 
+Here we explain how to create a visual representation of your recipe like [this one](../index.md#visual-representation)
+
 ## Generate a .dot representation
 
 Baker can turn a recipe into a .dot representation. `.dot` is a notation for representing graphs.
@@ -32,7 +34,7 @@ Once you have a `.dot` representation there are a few methods to visualize this.
 
 ### Online
 
-You can copy the .dot output and use [webgraphviz.com](http://www.webgraphviz.com).
+You can copy the `.dot` string and use [webgraphviz.com](http://www.webgraphviz.com).
 
 ### Local
 

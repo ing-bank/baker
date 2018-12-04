@@ -17,14 +17,13 @@ More about these concepts [here](documentation/concepts).
 Baker allows you to:
 
 - *Declaritavely* design your processes using a [recipe DSL](documentation/recipe-dsl.md).
+- [Visualize](documentation/recipe-visualization.md) your recipe allowing product owners, architects and developers to talk the same language.
 - Manage your recipes using the [baker runtime](documentation/baker-runtime.md).
 - [Create process instances](documentation/process-execution.md#create-a-process-instance) of your recipes.
 - [Fire sensory events](documentation/process-execution.md#providing-a-sensory-event).
 - [Inquire the state](documentation/process-execution.md#state-inquiry) of your process instances.
 
 ## Visual representation
-
-A visual representation of the recipe allows product owners, architects and developers to talk the same language.
 
 Below an example of a simple web shop recipe:
 
