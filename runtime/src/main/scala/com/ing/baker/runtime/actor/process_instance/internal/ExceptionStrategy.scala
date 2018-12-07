@@ -18,7 +18,7 @@ object ExceptionStrategy {
    * Retries firing the transition after some delay.
    */
   case class RetryWithDelay(delay: Long) extends ExceptionStrategy {
-    require(delay > 0, "Delay must be greater then zero")
+    require(delay >= 0, "Delay must be greater then zero")
   }
 
   case class Continue[P, O](marking: Marking[P], output: O) extends ExceptionStrategy {}

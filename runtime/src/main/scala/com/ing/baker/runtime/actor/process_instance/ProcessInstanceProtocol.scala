@@ -44,6 +44,16 @@ object ProcessInstanceProtocol {
     correlationId: Option[String] = None) extends Command
 
   /**
+    * Command to retry a blocked transition that is blocked.
+    */
+  case class RetryBlockedTransition(jobId: Long) extends Command
+
+  /**
+    * Command to resolve a blocked transition.
+    */
+  case class ResolveFailure(jobId: Long, marking: Marking[Id], output: Any) extends Command
+
+  /**
    * A common trait for all responses coming from a petri net instance.
    */
   sealed trait Response extends BakerProtoMessage
@@ -119,6 +129,16 @@ object ProcessInstanceProtocol {
   case class TransitionNotEnabled(
     override val transitionId: Id,
     reason: String) extends TransitionResponse
+
+  /**
+    * Response when trying to resolve or re-try a job that is not blocked.
+    */
+  case class TransitionIsNotBlocked(jobId: Long) extends Response
+
+  /**
+    * Response when trying to resolve or re-try a non existing job
+    */
+  case class NoSuchJob(jobId: Long) extends Response
 
   /**
    * The exception state of a transition.

@@ -2,6 +2,7 @@ package com.ing.baker.runtime.actor.process_instance
 
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props, Terminated}
 import akka.testkit.TestDuration
@@ -27,6 +28,8 @@ import scala.concurrent.Promise
 import scala.concurrent.duration._
 import scala.util.Success
 import ProcessInstanceSpec._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.BlockTransition
+import org.scalatest.Matchers
 
 
 sealed trait Event
@@ -73,7 +76,7 @@ object ProcessInstanceSpec {
   }
 }
 
-class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with ScalaFutures with MockitoSugar {
+class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with ScalaFutures with MockitoSugar with Matchers {
 
   def dilatedMillis(millis: Long)(implicit system: ActorSystem): Long = FiniteDuration(millis, TimeUnit.MILLISECONDS).dilated.toMillis
 
@@ -165,6 +168,77 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       actor ! FireTransition(transitionId = 1, input = null)
 
       expectMsgClass(classOf[TransitionFailed])
+    }
+
+    "Be able to retry a failed (blocked) transition when requested" in new TestSequenceNet {
+
+      val counter = new AtomicInteger(0)
+
+      override val sequence = Seq(
+        transition() { _ ⇒
+          if (counter.getAndIncrement() == 0)
+            throw new RuntimeException("t1 failed!")
+          else
+            Added(1)
+        })
+
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+
+      actor ! Initialize(initialMarking, Set.empty)
+      expectMsgClass(classOf[Initialized])
+
+      actor ! FireTransition(transitionId = 1, input = null)
+
+      expectMsgClass(classOf[TransitionFailed])
+
+      actor ! GetState
+
+      val state: InstanceState = expectMsgClass(classOf[InstanceState])
+
+      state.jobs.size shouldBe 1
+
+      val (jobId, jobState) = state.jobs.head
+
+      jobState.exceptionState should matchPattern {
+        case Some(ExceptionState(_, _, BlockTransition)) =>
+      }
+
+      actor ! RetryBlockedTransition(jobId)
+
+      // expect that the failure is resolved
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _, _) ⇒ }
+    }
+
+    "Be able to resolve a failed (blocked) transition when requested" in new TestSequenceNet {
+
+      override val sequence = Seq(
+        transition() { _ ⇒ throw new RuntimeException("t1 failed!") })
+
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+
+      actor ! Initialize(initialMarking, Set.empty)
+      expectMsgClass(classOf[Initialized])
+
+      actor ! FireTransition(transitionId = 1, input = null)
+
+      expectMsgClass(classOf[TransitionFailed])
+
+      actor ! GetState
+
+      val state: InstanceState = expectMsgClass(classOf[InstanceState])
+
+      state.jobs.size shouldBe 1
+
+      val (jobId, jobState) = state.jobs.head
+
+      jobState.exceptionState should matchPattern {
+        case Some(ExceptionState(_, _, BlockTransition)) =>
+      }
+
+      actor ! ResolveFailure(jobId, place(2).markWithN(1).marshall, Added(2))
+
+      // expect that the failure is resolved
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _, Added(2)) ⇒ }
     }
 
     "Respond with a AlreadyReceived message if the given corellation id was received earlier" in new TestSequenceNet {

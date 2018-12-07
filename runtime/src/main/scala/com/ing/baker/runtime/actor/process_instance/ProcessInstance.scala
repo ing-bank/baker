@@ -233,6 +233,50 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
     case Initialize(_, _) ⇒
       sender() ! AlreadyInitialized(processId)
+
+    case RetryBlockedTransition(jobId) =>
+
+      instance.jobs.get(jobId) match {
+        // retry is only allowed if the interaction was blocked previously
+        case Some(job @ internal.Job(_, _, _, _, _, _, Some(blocked @ internal.ExceptionState(_, _, _, internal.ExceptionStrategy.BlockTransition)))) =>
+
+          val updatedJob: Job[P, T, S] = job.copy(failure = Some(blocked.copy(failureStrategy = internal.ExceptionStrategy.RetryWithDelay(0))))
+          val updatedInstance: Instance[P, T, S] = instance.copy(jobs = instance.jobs + (jobId -> updatedJob))
+
+          executeJob(job, sender())
+          context become running(updatedInstance, scheduledRetries)
+
+        case Some(_) =>
+          sender() ! TransitionIsNotBlocked(jobId)
+
+        case None =>
+          sender() ! NoSuchJob(jobId)
+      }
+
+    case ResolveFailure(jobId, produce, output) =>
+
+      instance.jobs.get(jobId) match {
+        // retry is only allowed if the interaction was blocked previously
+        case Some(internal.Job(_, correlationId, _, transition, consumed, _, Some(internal.ExceptionState(_, _, _, internal.ExceptionStrategy.BlockTransition)))) =>
+
+          val producedMarking: Marking[P] = produce.unmarshall[P](petriNet.places)
+
+          if (petriNet.outMarking(transition) != producedMarking.multiplicities)
+            sender() ! "Illegal marking"
+          else {
+
+            // to resolve the failure a successful TransitionFiredEvent is created
+            val event = TransitionFiredEvent(jobId, transition.getId, correlationId, System.currentTimeMillis(), System.currentTimeMillis(), consumed.marshall, produce, output)
+            // here we process the TransitionFiredEvent event synchronously
+            running(instance, scheduledRetries).apply(event)
+          }
+
+        case Some(_) =>
+          sender() ! TransitionIsNotBlocked(jobId)
+
+        case None =>
+          sender() ! NoSuchJob(jobId)
+      }
   }
 
   def step(instance: Instance[P, T, S]): (Instance[P, T, S], Set[Job[P, T, S]]) = {

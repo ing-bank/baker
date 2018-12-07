@@ -25,14 +25,6 @@ object BakerEventsSpec {
 
   val log = LoggerFactory.getLogger(classOf[BakerEventsSpec])
 
-  def matchPF[T](pf: PartialFunction[T, Any]) = Matchers.argThat(new hamcrest.BaseMatcher[T] {
-    override def matches(o: scala.Any): Boolean = pf.isDefinedAt(o.asInstanceOf[T])
-
-    override def describeTo(description: Description): Unit = {
-      description.appendValue(pf)
-    }
-  })
-
   def listenerFunction(probe: ActorRef, logEvents: Boolean = false): PartialFunction[BakerEvent, Unit] = {
     case event: BakerEvent =>
       if (logEvents) {
