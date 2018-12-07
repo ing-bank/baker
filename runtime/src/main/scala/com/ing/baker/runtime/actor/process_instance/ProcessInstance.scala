@@ -256,7 +256,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
     case ResolveFailure(jobId, produce, output) =>
 
       instance.jobs.get(jobId) match {
-        // retry is only allowed if the interaction was blocked previously
+        // resolving is only allowed if the interaction was blocked previously
         case Some(internal.Job(_, correlationId, _, transition, consumed, _, Some(internal.ExceptionState(_, _, _, internal.ExceptionStrategy.BlockTransition)))) =>
 
           val producedMarking: Marking[P] = produce.unmarshall[P](petriNet.places)
@@ -267,7 +267,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
             // to resolve the failure a successful TransitionFiredEvent is created
             val event = TransitionFiredEvent(jobId, transition.getId, correlationId, System.currentTimeMillis(), System.currentTimeMillis(), consumed.marshall, produce, output)
-            // here we process the TransitionFiredEvent event synchronously
+            // and processed synchronously
             running(instance, scheduledRetries).apply(event)
           }
 

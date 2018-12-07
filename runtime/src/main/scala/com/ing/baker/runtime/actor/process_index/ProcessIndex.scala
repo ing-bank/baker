@@ -141,6 +141,19 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
         .exists { p => meta.createdDateTime + p.toMillis < System.currentTimeMillis() }
   }
 
+  def withActiveProcess(processId: String)(fn: ActorRef => Unit) = {
+    context.child(processId) match {
+      case None if !index.contains(processId) => sender() ! NoSuchProcess(processId)
+      case None if index(processId).isDeleted => sender() ! ProcessDeleted(processId)
+      case None =>
+        persist(ActorActivated(processId)) { _ =>
+          val actor = createProcessActor(processId)
+          fn(actor)
+        }
+      case Some(actorRef) => fn(actorRef)
+    }
+  }
+
   override def receiveCommand: Receive = {
 
     case GetIndex =>
@@ -174,13 +187,17 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
     case CreateProcess(recipeId, processId) =>
       context.child(processId) match {
         case None if !index.contains(processId) =>
-          // first check if the recipe exists
+
+          // First check if the recipe exists
           getCompiledRecipe(recipeId) match {
             case Some(compiledRecipe) =>
 
               val createdTime = System.currentTimeMillis()
 
+              // this persists the fact that we created a process instance
               persist(ActorCreated(recipeId, processId, createdTime)) { _ =>
+
+                // after that we actually create the ProcessInstance actor
                 val processState = ProcessState(processId, Map.empty, List.empty)
                 val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
 
@@ -200,95 +217,73 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
         case _ => sender() ! ProcessAlreadyExists(processId)
       }
 
-    case cmd @ ProcessEvent(processId: String, eventToFire: RuntimeEvent, correlationId, waitForRetries, processEventTimout) =>
-
+    case cmd @ ProcessEvent(processId: String, event: RuntimeEvent, _, waitForRetries, processEventTimout) =>
+      
       def rejectWith(msg: Any, rejectReason: RejectReason): Unit = {
         context.system.eventStream.publish(events.EventRejected(System.currentTimeMillis(), cmd.processId, cmd.correlationId, cmd.event, rejectReason))
         Source.single(msg).runWith(StreamRefs.sourceRef()).map(ProcessEventResponse(processId, _)).pipeTo(sender())
       }
 
-      //Forwards the event message to the Actor if its in the Receive period for the compiledRecipe
-      def forwardEventIfInReceivePeriod(actorRef: ActorRef, recipe: CompiledRecipe) = {
-
-        def forwardEvent(): Unit = {
-
-          val source = ProcessEventActor.processEvent(actorRef, recipe, cmd, waitForRetries)(processEventTimout, context.system, materializer)
-          val sourceRef = source.runWith(StreamRefs.sourceRef().addAttributes(StreamRefAttributes.subscriptionTimeout(processEventTimout)))
-
-          sourceRef.map(ProcessEventResponse(processId, _)).pipeTo(sender())
-        }
-
-        recipe.eventReceivePeriod match {
-          case Some(receivePeriod) =>
-            index.get(processId).foreach { p =>
-              if (System.currentTimeMillis() - p.createdDateTime > receivePeriod.toMillis) {
-
-                rejectWith(ReceivePeriodExpired(processId), RejectReason.ReceivePeriodExpired)
-              }
-              else
-                forwardEvent()
-            }
-
+      def forwardEvent(actorRef: ActorRef, recipe: CompiledRecipe): Unit = {
+        recipe.sensoryEvents.find(sensoryEvent => sensoryEvent.name == event.name) match {
           case None =>
-            forwardEvent()
-        }
-      }
-
-      //Validates if the event is correct for the given
-      //If not return a InvalidEvent message to the sender
-      //Otherwise forwardEventIfInReceivePeriod
-      def validateEventAvailableForRecipe(actorRef: ActorRef, recipe: CompiledRecipe) = {
-        recipe.sensoryEvents.find(sensoryEvent => sensoryEvent.name == eventToFire.name) match {
-          case None =>
-            rejectWith(InvalidEvent(processId, s"No event with name '${eventToFire.name}' found in recipe '${recipe.name}'"), RejectReason.InvalidEvent)
+            rejectWith(InvalidEvent(processId, s"No event with name '${event.name}' found in recipe '${recipe.name}'"), RejectReason.InvalidEvent)
           case Some(sensoryEvent) =>
             //Check If the sensory event is valid for this recipe
-            val eventValidationErrors = eventToFire.validateEvent(sensoryEvent)
+            val eventValidationErrors = event.validateEvent(sensoryEvent)
+
             if (eventValidationErrors.nonEmpty)
               rejectWith(InvalidEvent(processId, s"Invalid event: " + eventValidationErrors.mkString(",")), RejectReason.InvalidEvent)
             else {
-              forwardEventIfInReceivePeriod(actorRef, recipe)
+
+              recipe.eventReceivePeriod match {
+
+                // if the receive period is expired the event is rejected
+                case Some(receivePeriod) if System.currentTimeMillis() - index(processId).createdDateTime > receivePeriod.toMillis =>
+                  rejectWith(ReceivePeriodExpired(processId), RejectReason.ReceivePeriodExpired)
+
+                // otherwise the event is forwarded
+                case _ =>
+                  val source = ProcessEventActor.processEvent(actorRef, recipe, cmd, waitForRetries)(processEventTimout, context.system, materializer)
+                  val sourceRef = source.runWith(StreamRefs.sourceRef().addAttributes(StreamRefAttributes.subscriptionTimeout(processEventTimout)))
+
+                  sourceRef.map(ProcessEventResponse(processId, _)).pipeTo(sender())
+              }
             }
         }
       }
 
-      //Handles the event, assumes the process is created
-      def handleEventWithActor(actorRef: ActorRef) = {
-        index.get(processId) match {
-          case Some(actorMetadata) =>
-            val recipeId = actorMetadata.recipeId
-            getCompiledRecipe(recipeId).foreach { compiledRecipe: CompiledRecipe =>
-              validateEventAvailableForRecipe(actorRef, compiledRecipe)
-            }
-          case None =>
-            rejectWith(NoSuchProcess(processId), RejectReason.NoSuchProcess)
-        }
-      }
-
-      //Check if the process has a active actor
-      //If not check if it is available and start
-      //If not return a Uninitialized message
       context.child(processId) match {
         case None if !index.contains(processId) => rejectWith(NoSuchProcess(processId), RejectReason.NoSuchProcess)
         case None if index(processId).isDeleted => rejectWith(ProcessDeleted(processId), RejectReason.ProcessDeleted)
-        case None =>
-          persist(ActorActivated(processId)) { _ =>
-            handleEventWithActor(createProcessActor(processId))
-          }
-        case Some(actorRef) => handleEventWithActor(actorRef)
+
+        case _ =>
+          // here we activate the process (if required) and forward the event
+          withActiveProcess(processId) { actorRef =>
+            getCompiledRecipe(index(processId).recipeId).foreach { compiledRecipe: CompiledRecipe =>
+              forwardEvent(actorRef, compiledRecipe)
+            }
+        }
+      }
+
+    case RetryBlockedInteraction(processId, interactionName) =>
+
+      withActiveProcess(processId) { actorRef =>
+
+        val recipe = getCompiledRecipe(index(processId).recipeId).get
+
+//        recipe.interactionTransitions.find(_.interactionName == interactionName) match {
+//
+//          case None =>
+//          case Some()
+//        }
+
+        actorRef.forward(null)
       }
 
     case GetProcessState(processId) =>
-      context.child(processId) match {
-        case None if !index.contains(processId) => sender() ! NoSuchProcess(processId)
-        case None if index(processId).isDeleted => sender() ! ProcessDeleted(processId)
-        case None if index.contains(processId) =>
-          persist(ActorActivated(processId)) {
-            _ =>
-              createProcessActor(processId).forward(ProcessInstanceProtocol.GetState)
-          }
-        case Some(actorRef) => actorRef.forward(ProcessInstanceProtocol.GetState)
-      }
+
+      withActiveProcess(processId) { actorRef => actorRef.forward(GetState) }
 
     case GetCompiledRecipe(processId) =>
       index.get(processId) match {
