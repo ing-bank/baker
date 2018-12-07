@@ -56,12 +56,16 @@ Afterwards you will need to update the ing-bank.github.io repository.
 
 The `gh-pages` branch from baker is a sub repository located in the `/baker` directory.
 
-Pull (or clone) from https://github.com/ing-bank/ing-bank.github.io
+If not cloned before, clone from https://github.com/ing-bank/ing-bank.github.io with the following command:
+``` bash
+git clone --recurse-submodules https://github.com/ing-bank/ing-bank.github.io.git
+```
 
 Then execute the following commands inside the repository directory.
 
 ``` bash
-git pull --recurse-submodules
+cd ing-bank.github.io/
+git submodule update --recursive --remote
 git commit -am 'update baker docs'
-git push
+git push origin master
 ```
