@@ -283,8 +283,8 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#module-dependencies" title="Module dependencies" class="md-nav__link">
-    Module dependencies
+  <a href="#modules" title="Modules" class="md-nav__link">
+    Modules
   </a>
   
 </li>
@@ -295,8 +295,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#developing-with-baker" title="Developing with baker" class="md-nav__link">
-    Developing with baker
+  <a href="#continuing-from-here" title="Continuing from here" class="md-nav__link">
+    Continuing from here
   </a>
   
 </li>
@@ -533,8 +533,8 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#module-dependencies" title="Module dependencies" class="md-nav__link">
-    Module dependencies
+  <a href="#modules" title="Modules" class="md-nav__link">
+    Modules
   </a>
   
 </li>
@@ -545,8 +545,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#developing-with-baker" title="Developing with baker" class="md-nav__link">
-    Developing with baker
+  <a href="#continuing-from-here" title="Continuing from here" class="md-nav__link">
+    Continuing from here
   </a>
   
 </li>
@@ -600,9 +600,38 @@
 <span class="nt">&lt;/dependencies&gt;</span>
 </pre></div></div>
 </div>
-<h3 id="module-dependencies">Module dependencies</h3>
+<p>This includes <em>ALL</em> baker modules to your project. If you only need partial functionality you can pick and choose the modules you need.</p>
+<h3 id="modules">Modules</h3>
+<p>An explanation of the baker modules.</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>recipe-dsl</td>
+<td><a href="../documentation/recipe-dsl/">DSL</a> to describe your recipes (process blueprints) <em>declaritively</em></td>
+</tr>
+<tr>
+<td>runtime</td>
+<td><a href="../documentation/baker-runtime/">Runtime</a> based on <a href="htts://www.akka.io">akka</a> to manage and execute your recipes</td>
+</tr>
+<tr>
+<td>compiler</td>
+<td><a href="../documentation/baker-runtime/#compiling-your-recipe">Compiles your recipe</a> description into a model that the runtime can execute</td>
+</tr>
+<tr>
+<td>intermediate-language</td>
+<td>Recipe and Petri Net model that the runtime can execute</td>
+</tr>
+</tbody>
+</table>
+<p>This is the dependency graph between the modules.</p>
 <p><img alt="" src="../images/deps.svg" /></p>
-<h2 id="developing-with-baker">Developing with baker</h2>
+<h2 id="continuing-from-here">Continuing from here</h2>
 <p>After adding the dependencies you can continue to:</p>
 <ul>
 <li>Familiarize yourself with the <a href="../documentation/concepts/">concepts</a>.</li>

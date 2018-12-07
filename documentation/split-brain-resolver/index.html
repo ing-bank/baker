@@ -447,6 +447,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#strategies" title="Strategies" class="md-nav__link">
+    Strategies
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#how-to-use" title="How to use" class="md-nav__link">
     How to use
   </a>
@@ -521,6 +528,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#strategies" title="Strategies" class="md-nav__link">
+    Strategies
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#how-to-use" title="How to use" class="md-nav__link">
     How to use
   </a>
@@ -567,6 +581,20 @@ cluster members.</p>
 <p>Baker Split Brain Resolver is a general purpose implementation for Akka
 which could be configured for a baker cluster as well as for another
 akka cluster without baker.</p>
+<h2 id="strategies">Strategies</h2>
+<p>The current version of the Split Brain Resolver algorithm supports only
+the <code>Majority</code> strategy which makes the majority of the nodes survive
+and downs (terminates) the nodes at the minority side of the network
+partition. In case of the number of nodes on each side of the network
+partition are equal, the side with the oldest akka node survives. By
+deciding to down one side, you do not end up with 2 akka clusters
+during the network partition.</p>
+<p>There could be other strategies implemented later, for now the
+<code>Majority</code> strategy works for most of the use cases. You can read about
+other possible strategies supported by the commercial Lightbend Split
+Brain Resolver <a href="https://developer.lightbend.com/docs/akka-commercial-addons/current/split-brain-resolver.html#strategies">here</a>.</p>
+<p><code>Majority</code> strategy is configured by default, so you do not need extra
+configuration for this.</p>
 <h2 id="how-to-use">How to use</h2>
 <p>In order to use Baker <code>SplitBrainResolver</code>, first of all, you need to add
 baker-split-brain-resolver dependency to your project. See example

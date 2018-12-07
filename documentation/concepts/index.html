@@ -710,9 +710,9 @@
 </ol>
 <h2 id="recipe"><strong>Recipe</strong></h2>
 <p><em>Events</em>, <em>Interactions</em> and <em>Ingredients</em> can be composed into recipes.</p>
-<p>Recipes are analagous to process blueprints (or workflow).</p>
+<p>Recipes are analagous to process blueprints.</p>
 <p>Baker provides a <a href="../recipe-dsl/">Recipe DSL</a> in which you can declaritively describe your recipe.</p>
-<p>Small example:
+<p>A small example:
 <div class="codehilite"><pre><span></span><span class="k">new</span> <span class="n">Recipe</span><span class="o">(</span><span class="s">&quot;webshop&quot;</span><span class="o">)</span>
     <span class="o">.</span><span class="na">withSensoryEvents</span><span class="o">(</span>
         <span class="n">OrderPlaced</span><span class="o">.</span><span class="na">class</span><span class="o">,</span>
@@ -722,7 +722,7 @@
         <span class="n">of</span><span class="o">(</span><span class="n">ManufactureGoods</span><span class="o">.</span><span class="na">class</span><span class="o">));</span>
 </pre></div></p>
 <p>The main take away is that when declaring your recipe you do not have to think about order.</p>
-<p>Everything is automatically linked by the data requirements of the interactions.</p>
+<p>Everything is automatically linked by the <em>data</em> requirements of the interactions.</p>
                 
                   
                 
