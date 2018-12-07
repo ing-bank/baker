@@ -20,3 +20,4 @@ native/
 .ensime
 /**/*.pdf
 /**/.DS_Store
+site/
