@@ -174,7 +174,7 @@ if (events.exists(_.name == "InvoiceWasSend"))
 ```java tab="Java"
 // Get all events that have happend for this process instance
 EventList events = baker.getEvents(processId);
-if (events.hasEventOccured(InvoiceWasSend.class))
+if (events.hasEventOccurred(InvoiceWasSend.class))
     // Yes the invoice was send!
 ```
 
