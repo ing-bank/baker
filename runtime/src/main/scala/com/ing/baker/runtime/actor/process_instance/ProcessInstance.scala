@@ -148,14 +148,18 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
       log.transitionFired(processId, transition.toString, jobId, timeStarted, timeCompleted)
 
+      // persist the success event
       persistEvent(instance, event)(
         eventSource.apply(instance)
           .andThen(step)
           .andThen {
             case (updatedInstance, newJobs) ⇒
+
+              // the sender is notified of the transition having fired
               sender() ! TransitionFired(jobId, transitionId, correlationId, consumed, produced, updatedInstance, newJobs.map(_.id), output)
+
+              // the job is removed from the state since it completed
               context become running(updatedInstance, scheduledRetries - jobId)
-              updatedInstance
           }
       )
 
@@ -172,13 +176,20 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
           val originalSender = sender()
 
+          // persist the failure event
           persistEvent(instance, event)(
             eventSource.apply(instance)
               .andThen { updatedInstance ⇒
+
+                // a retry is scheduled on the scheduler of the actor system
                 val retry = system.scheduler.scheduleOnce(delay milliseconds) {
                   executeJob(updatedInstance.jobs(jobId), originalSender)
                 }
+
+                // the sender is notified of the failed transition
                 sender() ! TransitionFailed(jobId, transitionId, correlationId, consume, input, reason, strategy)
+
+                // the state is updated
                 context become running(updatedInstance, scheduledRetries + (jobId -> retry))
               }
           )
@@ -239,10 +250,14 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
         // retry is only allowed if the interaction was blocked previously
         case Some(job @ internal.Job(_, _, _, _, _, _, Some(blocked @ internal.ExceptionState(_, _, _, internal.ExceptionStrategy.BlockTransition)))) =>
 
+          // the job is updated so it cannot be retried again
           val updatedJob: Job[P, T, S] = job.copy(failure = Some(blocked.copy(failureStrategy = internal.ExceptionStrategy.RetryWithDelay(0))))
           val updatedInstance: Instance[P, T, S] = instance.copy(jobs = instance.jobs + (jobId -> updatedJob))
 
+          // executes the job
           executeJob(job, sender())
+
+          // switch to the new state
           context become running(updatedInstance, scheduledRetries)
 
         case Some(_) =>
@@ -260,12 +275,14 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
           val producedMarking: Marking[P] = produce.unmarshall[P](petriNet.places)
 
+          // the provided marking must be valid according to the petri net
           if (petriNet.outMarking(transition) != producedMarking.multiplicities)
-            sender() ! "Illegal marking"
+            sender() ! akka.actor.Status.Failure(new IllegalArgumentException("Invalid marking"))
           else {
 
             // to resolve the failure a successful TransitionFiredEvent is created
             val event = TransitionFiredEvent(jobId, transition.getId, correlationId, System.currentTimeMillis(), System.currentTimeMillis(), consumed.marshall, produce, output)
+
             // and processed synchronously
             running(instance, scheduledRetries).apply(event)
           }
