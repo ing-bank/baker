@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 import akka.stream.SourceRef
 import com.ing.baker.runtime.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.actor.process_index.ProcessIndex.{Active, Deleted, ProcessStatus}
-import com.ing.baker.runtime.actor.process_index.{ProcessIndex, ProcessIndexProtocol, protobuf}
+import com.ing.baker.runtime.actor.process_index.{ProcessIndex, ProcessIndexProtocol => protocol, protobuf}
 import com.ing.baker.runtime.actor.protobuf.RuntimeEvent
 import com.ing.baker.runtime.actor.serialization.{ProtoEventAdapter, ProtoEventAdapterModule}
 import com.ing.baker.runtime.core
@@ -27,48 +27,54 @@ class ProcessIndexModule extends ProtoEventAdapterModule {
     case ProcessIndex.ActorDeleted(processId) =>
       protobuf.ActorDeleted(Option(processId))
 
-    case ProcessIndexProtocol.GetIndex =>
+    case protocol.GetIndex =>
       protobuf.GetIndex()
 
     case GetShardIndex(entityId) =>
     protobuf.GetShardIndex(Some(entityId))
 
-    case ProcessIndexProtocol.Index(entries) =>
+    case protocol.Index(entries) =>
       protobuf.Index(entries.map(e => ctx.toProto[protobuf.ActorMetaData](e)).toList)
 
     case ProcessIndex.ActorMetadata(recipeId, processId, createdDateTime, processStatus) =>
       val isDeleted = processStatus == Deleted
       protobuf.ActorMetaData(Some(recipeId), Some(processId), Some(createdDateTime), Some(isDeleted))
 
-    case ProcessIndexProtocol.CreateProcess(recipeId, processId) =>
+    case protocol.CreateProcess(recipeId, processId) =>
       protobuf.CreateProcess(Some(recipeId), Some(processId))
 
-    case ProcessIndexProtocol.ProcessEvent(processId, event, correlationId, waitForRetries, timeout) =>
+    case protocol.ProcessEvent(processId, event, correlationId, waitForRetries, timeout) =>
       protobuf.ProcessEvent(Some(processId), Some(ctx.toProto[RuntimeEvent](event)), correlationId, Some(waitForRetries), Some(timeout.toMillis))
 
-    case ProcessIndexProtocol.ProcessEventResponse(processId, sourceRef) =>
+    case protocol.RetryBlockedInteraction(processId, interactionName) =>
+      protobuf.RetryBlockedInteraction(Some(processId), Some(interactionName))
+
+    case protocol.ResolveBlockedInteraction(processId, interactionName, event) =>
+      protobuf.ResolveBlockedInteraction(Some(processId), Some(interactionName), Some(ctx.toProto[RuntimeEvent](event)))
+
+    case protocol.ProcessEventResponse(processId, sourceRef) =>
       val serializedSourceRef = ctx.toProtoAny(sourceRef)
       protobuf.ProcessEventResponse(Some(processId), Some(serializedSourceRef))
 
-    case ProcessIndexProtocol.GetProcessState(processId) =>
+    case protocol.GetProcessState(processId) =>
       protobuf.GetProcessState(Some(processId))
 
-    case ProcessIndexProtocol.GetCompiledRecipe(recipeId) =>
+    case protocol.GetCompiledRecipe(recipeId) =>
       protobuf.GetCompiledRecipe(Some(recipeId))
 
-    case ProcessIndexProtocol.ReceivePeriodExpired(processId) =>
+    case protocol.ReceivePeriodExpired(processId) =>
       protobuf.ReceivePeriodExpired(Some(processId))
 
-    case ProcessIndexProtocol.InvalidEvent(processId, reason) =>
+    case protocol.InvalidEvent(processId, reason) =>
       protobuf.InvalidEvent(Some(processId), Some(reason))
 
-    case ProcessIndexProtocol.ProcessDeleted(processId) =>
+    case protocol.ProcessDeleted(processId) =>
       protobuf.ProcessDeleted(Some(processId))
 
-    case ProcessIndexProtocol.NoSuchProcess(processId) =>
+    case protocol.NoSuchProcess(processId) =>
       protobuf.NoSuchProcess(Some(processId))
 
-    case ProcessIndexProtocol.ProcessAlreadyExists(processId) =>
+    case protocol.ProcessAlreadyExists(processId) =>
       protobuf.ProcessAlreadyExists(Some(processId))
   }
 
@@ -86,47 +92,53 @@ class ProcessIndexModule extends ProtoEventAdapterModule {
       ProcessIndex.ActorDeleted(processId)
 
     case protobuf.GetIndex() =>
-      ProcessIndexProtocol.GetIndex
+      protocol.GetIndex
 
     case protobuf.GetShardIndex(Some(entityId)) =>
       GetShardIndex(entityId)
 
     case protobuf.Index(entries) =>
-      ProcessIndexProtocol.Index(entries.map(e => ctx.toDomain[ProcessIndex.ActorMetadata](e)))
+      protocol.Index(entries.map(e => ctx.toDomain[ProcessIndex.ActorMetadata](e)))
 
     case protobuf.ActorMetaData(Some(recipeId), Some(processId), Some(createdTimeMillis), Some(isDeleted)) =>
       val processStatus: ProcessStatus = if (isDeleted) Deleted else Active
       ProcessIndex.ActorMetadata(recipeId, processId, createdTimeMillis, processStatus)
 
     case protobuf.CreateProcess(Some(recipeId), Some(processId)) =>
-      ProcessIndexProtocol.CreateProcess(recipeId, processId)
+      protocol.CreateProcess(recipeId, processId)
 
     case protobuf.ProcessEvent(Some(processId), Some(event), correlationId, Some(waitForRetries), Some(timeoutMillis)) =>
-      ProcessIndexProtocol.ProcessEvent(processId, ctx.toDomain[core.RuntimeEvent](event), correlationId, waitForRetries, FiniteDuration(timeoutMillis, TimeUnit.MILLISECONDS))
+      protocol.ProcessEvent(processId, ctx.toDomain[core.RuntimeEvent](event), correlationId, waitForRetries, FiniteDuration(timeoutMillis, TimeUnit.MILLISECONDS))
+
+    case protobuf.RetryBlockedInteraction(Some(processId), Some(interactionName)) =>
+      protocol.RetryBlockedInteraction(processId, interactionName)
+
+    case protobuf.ResolveBlockedInteraction(Some(processId), Some(interactionName), Some(event)) =>
+      protocol.ResolveBlockedInteraction(processId, interactionName, ctx.toDomain[core.RuntimeEvent](event))
 
     case protobuf.ProcessEventResponse(Some(processId), Some(sourceRef)) =>
       val deserializedSourceRef = ctx.toDomain[SourceRef[Any]](sourceRef)
-      ProcessIndexProtocol.ProcessEventResponse(processId, deserializedSourceRef)
+      protocol.ProcessEventResponse(processId, deserializedSourceRef)
 
     case protobuf.GetProcessState(Some(processId)) =>
-      ProcessIndexProtocol.GetProcessState(processId)
+      protocol.GetProcessState(processId)
 
     case protobuf.GetCompiledRecipe(Some(recipeId)) =>
-      ProcessIndexProtocol.GetCompiledRecipe(recipeId)
+      protocol.GetCompiledRecipe(recipeId)
 
     case protobuf.ReceivePeriodExpired(Some(processId)) =>
-      ProcessIndexProtocol.ReceivePeriodExpired(processId)
+      protocol.ReceivePeriodExpired(processId)
 
     case protobuf.InvalidEvent(Some(processId), Some(reason)) =>
-      ProcessIndexProtocol.InvalidEvent(processId, reason)
+      protocol.InvalidEvent(processId, reason)
 
     case protobuf.ProcessDeleted(Some(processId)) =>
-      ProcessIndexProtocol.ProcessDeleted(processId)
+      protocol.ProcessDeleted(processId)
 
     case protobuf.NoSuchProcess(Some(processId)) =>
-      ProcessIndexProtocol.NoSuchProcess(processId)
+      protocol.NoSuchProcess(processId)
 
     case protobuf.ProcessAlreadyExists(Some(processId)) =>
-      ProcessIndexProtocol.ProcessAlreadyExists(processId)
+      protocol.ProcessAlreadyExists(processId)
   }
 }

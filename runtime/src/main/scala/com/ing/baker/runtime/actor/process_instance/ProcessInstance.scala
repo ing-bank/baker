@@ -93,13 +93,18 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
       val uninitialized = Instance.uninitialized[P, T, S](petriNet)
       val event = InitializedEvent(initialMarking, state)
 
+      // persist the initialized event
       persistEvent(uninitialized, event) {
         eventSource.apply(uninitialized)
           .andThen(step)
           .andThen {
             case (updatedInstance, _) ⇒
-              context become running(updatedInstance, Map.empty)
+
+              // notifies the sender that initialization was successful
               sender() ! Initialized(initialMarking, state)
+
+              // update the state
+              context become running(updatedInstance, Map.empty)
           }
       }
 
@@ -244,10 +249,10 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
     case Initialize(_, _) ⇒
       sender() ! AlreadyInitialized(processId)
 
-    case RetryBlockedTransition(jobId) =>
+    case RetryBlockedJob(jobId) =>
 
       instance.jobs.get(jobId) match {
-        // retry is only allowed if the interaction was blocked previously
+        // retry is only allowed if the interaction is blocked by a failure
         case Some(job @ internal.Job(_, _, _, _, _, _, Some(blocked @ internal.ExceptionState(_, _, _, internal.ExceptionStrategy.BlockTransition)))) =>
 
           // the job is updated so it cannot be retried again
@@ -261,23 +266,23 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
           context become running(updatedInstance, scheduledRetries)
 
         case Some(_) =>
-          sender() ! TransitionIsNotBlocked(jobId)
+          sender() ! InvalidCommand(s"Job with id '$jobId' is not blocked")
 
         case None =>
-          sender() ! NoSuchJob(jobId)
+          sender() ! InvalidCommand(s"Job with id '$jobId' does not exist")
       }
 
-    case ResolveBlockedTransition(jobId, produce, output) =>
+    case ResolveBlockedJob(jobId, produce, output) =>
 
       instance.jobs.get(jobId) match {
-        // resolving is only allowed if the interaction was blocked previously
+        // resolving is only allowed if the interaction is blocked by a failure
         case Some(internal.Job(_, correlationId, _, transition, consumed, _, Some(internal.ExceptionState(_, _, _, internal.ExceptionStrategy.BlockTransition)))) =>
 
           val producedMarking: Marking[P] = produce.unmarshall[P](petriNet.places)
 
           // the provided marking must be valid according to the petri net
           if (petriNet.outMarking(transition) != producedMarking.multiplicities)
-            sender() ! akka.actor.Status.Failure(new IllegalArgumentException("Invalid marking"))
+            sender() ! InvalidCommand(s"Invalid marking provided")
           else {
 
             // to resolve the failure a successful TransitionFiredEvent is created
@@ -288,13 +293,18 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
           }
 
         case Some(_) =>
-          sender() ! TransitionIsNotBlocked(jobId)
+          sender() ! InvalidCommand(s"Job with id '$jobId' is not blocked")
 
         case None =>
-          sender() ! NoSuchJob(jobId)
+          sender() ! InvalidCommand(s"Job with id '$jobId' does not exist")
       }
   }
 
+  /**
+    * This functions 'steps' the execution of the instance.
+    *
+    * It finds which transitions are enabled and executes those.
+    */
   def step(instance: Instance[P, T, S]): (Instance[P, T, S], Set[Job[P, T, S]]) = {
 
     runtime.allEnabledJobs.run(instance).value match {

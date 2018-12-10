@@ -203,7 +203,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         case Some(ExceptionState(_, _, BlockTransition)) =>
       }
 
-      actor ! RetryBlockedTransition(jobId)
+      actor ! RetryBlockedJob(jobId)
 
       // expect that the failure is resolved
       expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _, _) ⇒ }
@@ -235,7 +235,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         case Some(ExceptionState(_, _, BlockTransition)) =>
       }
 
-      actor ! ResolveBlockedTransition(jobId, place(2).markWithN(1).marshall, Added(2))
+      actor ! ResolveBlockedJob(jobId, place(2).markWithN(1).marshall, Added(2))
 
       // expect that the failure is resolved
       expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _, Added(2)) ⇒ }

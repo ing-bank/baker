@@ -63,6 +63,17 @@ message ProcessEvent {
     optional int64 timeout = 5;
 }
 
+message RetryBlockedInteraction {
+    optional string processId = 1;
+    optional string interactionName = 2;
+}
+
+message ResolveBlockedInteraction {
+    optional string processId = 1;
+    optional string interactionName = 2;
+    optional RuntimeEvent event = 3;
+}
+
 message ProcessEventResponse {
     optional string processId = 1;
     optional SerializedData sourceRef = 2;

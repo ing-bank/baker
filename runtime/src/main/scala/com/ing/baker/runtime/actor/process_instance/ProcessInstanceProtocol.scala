@@ -46,12 +46,12 @@ object ProcessInstanceProtocol {
   /**
     * Command to retry a blocked transition that is blocked.
     */
-  case class RetryBlockedTransition(jobId: Long) extends Command
+  case class RetryBlockedJob(jobId: Long) extends Command
 
   /**
     * Command to resolve a blocked transition.
     */
-  case class ResolveBlockedTransition(jobId: Long, marking: Marking[Id], output: Any) extends Command
+  case class ResolveBlockedJob(jobId: Long, marking: Marking[Id], output: Any) extends Command
 
   /**
    * A common trait for all responses coming from a petri net instance.
@@ -131,14 +131,11 @@ object ProcessInstanceProtocol {
     reason: String) extends TransitionResponse
 
   /**
-    * Response when trying to resolve or re-try a job that is not blocked.
+    * General response indicating that the send command was invalid.
+    *
+    * @param reason The invalid reason.
     */
-  case class TransitionIsNotBlocked(jobId: Long) extends Response
-
-  /**
-    * Response when trying to resolve or re-try a non existing job
-    */
-  case class NoSuchJob(jobId: Long) extends Response
+  case class InvalidCommand(reason: String) extends Response
 
   /**
    * The exception state of a transition.

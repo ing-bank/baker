@@ -286,7 +286,7 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
         } yield jobId
 
         jobIdOptionT.value.onComplete {
-          case Success(Some(jobId)) => actorRef.tell(RetryBlockedTransition(jobId), originalSender)
+          case Success(Some(jobId)) => actorRef.tell(RetryBlockedJob(jobId), originalSender)
           case Success(_)           => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not blocked"))
           case Failure(exception)   => originalSender ! akka.actor.Status.Failure(exception)
         }
@@ -315,7 +315,7 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
               case None        =>
                 val petriNet = getCompiledRecipe(index(processId).recipeId).get.petriNet
                 val producedMarking = RecipeRuntime.createProducedMarking(petriNet.outMarking(interaction), Some(event))
-                actorRef.tell(ResolveBlockedTransition(jobId, producedMarking.marshall, event), originalSender)
+                actorRef.tell(ResolveBlockedJob(jobId, producedMarking.marshall, event), originalSender)
               case Some(error) =>
                 log.warning("Invalid event given: " + error)
                 originalSender ! InvalidEvent(processId, error)
