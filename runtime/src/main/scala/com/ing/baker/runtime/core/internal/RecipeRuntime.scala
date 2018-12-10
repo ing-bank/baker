@@ -43,7 +43,7 @@ object RecipeRuntime {
     *
     * Returns an optional error message.
     */
-  def validateEvent(interaction: InteractionTransition, optionalEvent: Option[RuntimeEvent]): Option[String] = {
+  def validateInteractionOutput(interaction: InteractionTransition, optionalEvent: Option[RuntimeEvent]): Option[String] = {
 
     optionalEvent match {
 

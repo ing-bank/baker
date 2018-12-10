@@ -856,7 +856,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         ingredientMap(
           "initialIngredient" -> initialIngredientValue)
 
-      baker.resolveBlockedInteraction(processId, interactionOne.name, InteractionOneSuccessful("success!"))(timeout)
+      baker.resolveInteraction(processId, interactionOne.name, InteractionOneSuccessful("success!"))(timeout)
 
       baker.getIngredients(processId) shouldBe
         ingredientMap(

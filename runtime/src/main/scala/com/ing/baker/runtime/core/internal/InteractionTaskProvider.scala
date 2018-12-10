@@ -84,7 +84,7 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
           val interactionOutput: Option[RuntimeEvent] = implementation.execute(input)
 
           // validates the event, throws a FatalInteraction exception if invalid
-          RecipeRuntime.validateEvent(interaction, interactionOutput).foreach { validationError =>
+          RecipeRuntime.validateInteractionOutput(interaction, interactionOutput).foreach { validationError =>
             throw new FatalInteractionException(validationError)
           }
 
