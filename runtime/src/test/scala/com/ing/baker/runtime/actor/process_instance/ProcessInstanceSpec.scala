@@ -433,7 +433,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
     "Block a transition if the exception strategy function throws an exception" in new TestSequenceNet {
 
       val faultyExceptionHandler: TransitionExceptionHandler[Place] = {
-        case (_, _, _) ⇒ throw new IllegalStateException("Boom!")
+        case (_, _, _) ⇒ throw new IllegalStateException("Expected test failure")
       }
 
       override def sequence =

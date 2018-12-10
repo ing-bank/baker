@@ -249,6 +249,28 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   }
 
   /**
+    * Retries a blocked interaction.
+    *
+    * @return
+    */
+  def retryBlockedInteraction(processId: String, interactionName: String)(timeout: FiniteDuration = defaultProcessEventTimeout) = {
+
+    processIndexActor.ask(RetryBlockedInteraction(processId, interactionName))(timeout)
+  }
+
+  /**
+    * Retries a blocked interaction.
+    *
+    * @return
+    */
+  def resolveBlockedInteraction(processId: String, interactionName: String, event: Any)(timeout: FiniteDuration = defaultProcessEventTimeout) = {
+
+    val futureResult = processIndexActor.ask(ResolveBlockedInteraction(processId, interactionName, extractEvent(event)))(timeout)
+
+    Await.result(futureResult, timeout)
+  }
+
+  /**
     * Synchronously returns all event names that occurred for a process.
     */
   def eventNames(processId: String, timeout: FiniteDuration = defaultInquireTimeout): List[String] =

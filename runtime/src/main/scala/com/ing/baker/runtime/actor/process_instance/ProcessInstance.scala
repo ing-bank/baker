@@ -253,7 +253,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
           sender() ! NoSuchJob(jobId)
       }
 
-    case ResolveFailure(jobId, produce, output) =>
+    case ResolveBlockedTransition(jobId, produce, output) =>
 
       instance.jobs.get(jobId) match {
         // resolving is only allowed if the interaction was blocked previously

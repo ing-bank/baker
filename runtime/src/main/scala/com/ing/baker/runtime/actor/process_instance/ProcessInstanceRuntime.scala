@@ -83,21 +83,12 @@ trait ProcessInstanceRuntime[P, T, S, E] {
       val transition = job.transition
       val consumed: Marking[Id] = job.consume.marshall
 
-      val jobIO =
-        try {
-          // calling the transition function could potentially throw an exception
-          transitionTask(topology, transition)(job.consume, job.processState, job.input)
-        } catch {
-          case e: Throwable ⇒ IO.raiseError(e)
-        }
-
-      // translates the job output to an EventSourcing.Event
-      jobIO.map {
+      IO.unit.flatMap { _ =>
+        // calling transitionTask(...) could potentially throw an exception
+        transitionTask(topology, transition)(job.consume, job.processState, job.input)
+      }.map {
         case (producedMarking, out) ⇒
-
-          val produced: Marking[Id] = producedMarking.marshall
-
-          TransitionFiredEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, produced, out)
+          TransitionFiredEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, producedMarking.marshall, out)
       }.handleException {
         // In case an exception was thrown by the transition, we compute the failure strategy and return a TransitionFailedEvent
         case e: Throwable ⇒
@@ -122,8 +113,8 @@ trait ProcessInstanceRuntime[P, T, S, E] {
       case (place, count) ⇒ (place, count, consumableTokens(petriNet)(marking, place, t))
     }
 
-    // check if any
-    if (consumable.exists { case (place, count, tokens) ⇒ tokens.multisetSize < count })
+    // check if any any places have an insufficient number of tokens
+    if (consumable.exists { case (_, count, tokens) ⇒ tokens.multisetSize < count })
       Seq.empty
     else {
       val consume = consumable.map {

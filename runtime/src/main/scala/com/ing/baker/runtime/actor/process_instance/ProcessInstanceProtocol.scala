@@ -51,7 +51,7 @@ object ProcessInstanceProtocol {
   /**
     * Command to resolve a blocked transition.
     */
-  case class ResolveFailure(jobId: Long, marking: Marking[Id], output: Any) extends Command
+  case class ResolveBlockedTransition(jobId: Long, marking: Marking[Id], output: Any) extends Command
 
   /**
    * A common trait for all responses coming from a petri net instance.
@@ -162,7 +162,6 @@ object ProcessInstanceProtocol {
 
     case class Continue(marking: Marking[Id], output: Any) extends ExceptionStrategy
   }
-
 
   /**
    * Response containing the state of the `Job`.

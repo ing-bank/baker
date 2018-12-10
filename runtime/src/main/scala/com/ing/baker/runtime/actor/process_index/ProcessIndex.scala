@@ -6,13 +6,15 @@ import akka.pattern.{ask, pipe}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.stream.scaladsl.{Source, StreamRefs}
 import akka.stream.{Materializer, StreamRefAttributes}
+import akka.util.Timeout
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.il.petrinet.{Place, RecipePetriNet, Transition}
+import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
+import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.actor.Util.logging._
 import com.ing.baker.runtime.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceProtocol, ProcessInstanceRuntime}
+import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceRuntime}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.{BakerProtoMessage, Encryption}
 import com.ing.baker.runtime.core.events.{ProcessCreated, RejectReason}
@@ -21,8 +23,10 @@ import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, events, namedCach
 
 import scala.collection.mutable
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext}
-
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.{Failure, Success}
+import cats.data.OptionT
+import cats.instances.future._
 
 object ProcessIndex {
 
@@ -64,8 +68,6 @@ object ProcessIndex {
   case class ActorCreated(recipeId: String, processId: String, createdDateTime: Long) extends BakerProtoMessage
 
   private val bakerExecutionContext: ExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
-
-
 }
 
 class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
@@ -116,6 +118,7 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
     createProcessActor(processId, compiledRecipe)
   }
 
+  // creates a ProcessInstanceActor, does not do any validation
   def createProcessActor(processId: String, compiledRecipe: CompiledRecipe): ActorRef = {
     val runtime: ProcessInstanceRuntime[Place, Transition, ProcessState, RuntimeEvent] =
       new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream)
@@ -218,7 +221,7 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
       }
 
     case cmd @ ProcessEvent(processId: String, event: RuntimeEvent, _, waitForRetries, processEventTimout) =>
-      
+
       def rejectWith(msg: Any, rejectReason: RejectReason): Unit = {
         context.system.eventStream.publish(events.EventRejected(System.currentTimeMillis(), cmd.processId, cmd.correlationId, cmd.event, rejectReason))
         Source.single(msg).runWith(StreamRefs.sourceRef()).map(ProcessEventResponse(processId, _)).pipeTo(sender())
@@ -270,15 +273,54 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
 
       withActiveProcess(processId) { actorRef =>
 
-        val recipe = getCompiledRecipe(index(processId).recipeId).get
+        implicit val timeout: Timeout = 2 seconds
 
-//        recipe.interactionTransitions.find(_.interactionName == interactionName) match {
-//
-//          case None =>
-//          case Some()
-//        }
+        val originalSender = sender()
 
-        actorRef.forward(null)
+        // we find which job correlates with the interaction
+        val jobIdOptionT: OptionT[Future, Long] = for {
+          recipe     <- OptionT.fromOption(getCompiledRecipe(index(processId).recipeId))
+          transition <- OptionT.fromOption(recipe.interactionTransitions.find(_.interactionName == interactionName))
+          state      <- OptionT(actorRef.ask(GetState).mapTo[InstanceState].map(Option(_)))
+          jobId      <- OptionT.fromOption(state.jobs.collectFirst { case (jobId, job) if job.transitionId == transition.id => jobId }  )
+        } yield jobId
+
+        jobIdOptionT.value.onComplete {
+          case Success(Some(jobId)) => actorRef.tell(RetryBlockedTransition(jobId), originalSender)
+          case Success(_)           => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not blocked"))
+          case Failure(exception)   => originalSender ! akka.actor.Status.Failure(exception)
+        }
+      }
+
+    case ResolveBlockedInteraction(processId, interactionName, event) =>
+
+      withActiveProcess(processId) { actorRef =>
+
+        implicit val timeout: Timeout = 2 seconds
+
+        val originalSender = sender()
+
+        // we find which job correlates with the interaction
+        val jobIdOptionT: OptionT[Future, (InteractionTransition, Long)] = for {
+          recipe <- OptionT.fromOption(getCompiledRecipe(index(processId).recipeId))
+          transition <- OptionT.fromOption(recipe.interactionTransitions.find(_.interactionName == interactionName))
+          state <- OptionT(actorRef.ask(GetState).mapTo[InstanceState].map(Option(_)))
+          jobId <- OptionT.fromOption(state.jobs.collectFirst { case (jobId, job) if job.transitionId == transition.id => jobId })
+        } yield (transition, jobId)
+
+        jobIdOptionT.value.onComplete {
+          case Success(Some((interaction, jobId))) =>
+            RecipeRuntime.validateEvent(interaction, Some(event)) match {
+
+              case None        =>
+                val petriNet = getCompiledRecipe(index(processId).recipeId).get.petriNet
+                val producedMarking = RecipeRuntime.createProducedMarking(petriNet.outMarking(interaction), Some(event))
+                actorRef.tell(ResolveBlockedTransition(jobId, producedMarking.marshall , event), originalSender)
+              case Some(error) => originalSender ! InvalidEvent(processId, error)
+            }
+          case Success(_)         => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not blocked"))
+          case Failure(exception) => originalSender ! akka.actor.Status.Failure(exception)
+        }
       }
 
     case GetProcessState(processId) =>
