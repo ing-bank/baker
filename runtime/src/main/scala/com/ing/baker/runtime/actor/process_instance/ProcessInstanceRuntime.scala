@@ -142,19 +142,17 @@ trait ProcessInstanceRuntime[P, T, S, E] {
     */
   def createJob(transition: T, input: Any, correlationId: Option[String] = None): State[Instance[P, T, S], Either[String, Job[P, T, S]]] =
     State { instance ⇒
-      instance.isBlockedReason(transition) match {
-        case Some(reason) ⇒
-          (instance, Left(reason))
-        case None ⇒
-          enabledParameters(instance.petriNet)(instance.availableMarking).get(transition) match {
-            case None ⇒
-              (instance, Left(s"Not enough consumable tokens"))
-            case Some(params) ⇒
-              val job = Job[P, T, S](instance.nextJobId(), correlationId, instance.state, transition, params.head, input)
-              val updatedInstance = instance.copy[P, T, S](jobs = instance.jobs + (job.id -> job))
-              (updatedInstance, Right(job))
-          }
-      }
+      if (instance.isBlocked(transition))
+        (instance, Left("Transition is blocked by a previous failure"))
+      else
+        enabledParameters(instance.petriNet)(instance.availableMarking).get(transition) match {
+          case None ⇒
+            (instance, Left(s"Not enough consumable tokens"))
+          case Some(params) ⇒
+            val job = Job[P, T, S](instance.nextJobId(), correlationId, instance.state, transition, params.head, input)
+            val updatedInstance = instance.copy[P, T, S](jobs = instance.jobs + (job.id -> job))
+            (updatedInstance, Right(job))
+        }
     }
 
   /**
@@ -162,7 +160,7 @@ trait ProcessInstanceRuntime[P, T, S, E] {
     */
   def firstEnabledJob: State[Instance[P, T, S], Option[Job[P, T, S]]] = State { instance ⇒
     enabledParameters(instance.petriNet)(instance.availableMarking).find {
-      case (t, markings) ⇒ !instance.isBlockedReason(t).isDefined && isAutoFireable(instance, t)
+      case (t, markings) ⇒ !instance.isBlocked(t) && isAutoFireable(instance, t)
     }.map {
       case (t, markings) ⇒
         val job = Job[P, T, S](instance.nextJobId(), None, instance.state, t, markings.head, null)
