@@ -66,7 +66,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
   override def handleException(job: Job[Place, Transition, ProcessState])
                               (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]): ExceptionStrategy = {
 
-    if (throwable.isInstanceOf[Error])
+    if (throwable.isInstanceOf[Error] || throwable.isInstanceOf[FatalInteractionException])
       BlockTransition
     else
       job.transition match {
