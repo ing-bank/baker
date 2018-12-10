@@ -345,7 +345,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @return
     */
   def retryInteraction(@Nonnull processId: String, @Nonnull interactionName: String, @Nonnull timeout: java.time.Duration): Unit =
-    baker.retryInteraction(processId, interactionName)(timeout.toScala)
+    baker.retryInteraction(processId, interactionName, timeout.toScala)
 
   /**
     * Resolves a blocked interaction by giving it's output.
@@ -367,7 +367,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     * @return
     */
   def resolveInteraction(@Nonnull processId: String, @Nonnull interactionName: String, @Nonnull event: Any, @Nonnull timeout: java.time.Duration): Unit =
-    baker.resolveInteraction(processId, interactionName, event)(timeout.toScala)
+    baker.resolveInteraction(processId, interactionName, event, timeout.toScala)
 
 
   /**
