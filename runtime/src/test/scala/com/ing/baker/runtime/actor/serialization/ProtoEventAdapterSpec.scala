@@ -200,7 +200,6 @@ object ProtoEventAdapterSpec {
 
     val failureStrategyGen: Gen[ExceptionStrategy] = Gen.oneOf(
       Gen.const(ExceptionStrategy.BlockTransition),
-      Gen.const(ExceptionStrategy.Fatal),
       Gen.posNum[Long].map(delay => ExceptionStrategy.RetryWithDelay(delay)),
       for {
         marking <- markingDataGen

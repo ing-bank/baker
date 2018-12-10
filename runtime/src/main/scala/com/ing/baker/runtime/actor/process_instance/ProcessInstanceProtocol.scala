@@ -152,8 +152,6 @@ object ProcessInstanceProtocol {
 
   object ExceptionStrategy {
 
-    case object Fatal extends ExceptionStrategy
-
     case object BlockTransition extends ExceptionStrategy
 
     case class RetryWithDelay(delay: Long) extends ExceptionStrategy {

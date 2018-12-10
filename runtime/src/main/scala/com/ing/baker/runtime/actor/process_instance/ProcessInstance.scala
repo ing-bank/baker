@@ -82,7 +82,6 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
     protocol.ExceptionState(exceptionState.failureCount, exceptionState.failureReason, fromExecutionExceptionStrategy(exceptionState.failureStrategy))
 
   private implicit def fromExecutionExceptionStrategy(strategy: internal.ExceptionStrategy): protocol.ExceptionStrategy = strategy match {
-    case internal.ExceptionStrategy.Fatal                     => protocol.ExceptionStrategy.Fatal
     case internal.ExceptionStrategy.BlockTransition           => protocol.ExceptionStrategy.BlockTransition
     case internal.ExceptionStrategy.RetryWithDelay(delay)     => protocol.ExceptionStrategy.RetryWithDelay(delay)
     case internal.ExceptionStrategy.Continue(marking, output) => protocol.ExceptionStrategy.Continue(marking.asInstanceOf[Marking[P]].marshall, output)

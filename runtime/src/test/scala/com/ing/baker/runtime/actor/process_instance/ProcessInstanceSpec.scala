@@ -8,18 +8,21 @@ import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props, Terminated}
 import akka.testkit.TestDuration
 import akka.util.Timeout
 import com.ing.baker.petrinet.api._
-import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.{Fatal, RetryWithDelay}
-import com.ing.baker.runtime.actor.process_instance.dsl._
 import com.ing.baker.runtime.actor.AkkaTestBase
-import com.ing.baker.runtime.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.BlockTransition
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSpec._
+import com.ing.baker.runtime.actor.process_instance.dsl._
+import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.RetryWithDelay
+import com.ing.baker.runtime.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.core.namedCachedThreadPool
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
+import org.scalatest.Matchers
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.time.{Milliseconds, Span}
@@ -27,9 +30,6 @@ import org.scalatest.time.{Milliseconds, Span}
 import scala.concurrent.Promise
 import scala.concurrent.duration._
 import scala.util.Success
-import ProcessInstanceSpec._
-import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.BlockTransition
-import org.scalatest.Matchers
 
 
 sealed trait Event
@@ -311,7 +311,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val retryHandler: TransitionExceptionHandler[Place] = {
         case (_, n, _) if n < 3 ⇒ RetryWithDelay(dilatedMillis(10 * Math.pow(2, n).toLong))
-        case _               ⇒ Fatal
+        case _                  ⇒ internal.ExceptionStrategy.BlockTransition
       }
 
       override val sequence = Seq(
@@ -334,7 +334,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       // expect 3 failure messages
       expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.RetryWithDelay(delay1)) ⇒ }
       expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.RetryWithDelay(delay2)) ⇒ }
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.Fatal) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.BlockTransition) ⇒ }
 
       // attempt to fire t1 explicitly
       actor ! FireTransition(transitionId = 1, input = null)
