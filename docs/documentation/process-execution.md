@@ -128,6 +128,43 @@ In response to recieving a sensory event baker returns a status code indicating 
 | `ReceivePeriodExpired` | The receive period for the process instance has passed |
 | `FiringLimitMet` | The [firing limit](recipe-dsl.md#firing-limit) for the event was met |
 
+## Incident resolving
+
+It is possible that during execution a process instance becomes *blocked*.
+
+This can happen either because it is [directly blocked](recipe-dsl.md#block-interaction) by a exception or that the retry strategy was exhuasted.
+
+At this point it is possible to resolve the blocked interaction in 2 ways.
+
+### 1. Force retry
+
+For example, the retry strategy for *"SendInvoice"* was exhausted after a few hours or retrying.
+
+However, we checked and know the *"invoice"* service is up again and want to continue to process for our customer.
+
+``` scala tab="Scala"
+baker.retryInteraction(processId, "SendInvoice")
+```
+
+``` java tab="Java"
+baker.retryInteraction(processId, "SendInvoice");
+```
+
+### 2. Specify the interaction output
+
+For example, the *"ShipGoods"* backend service is not idempotent and failed with an exception. It is not retried but *blocked*.
+
+However, we checked and know the goods were actually shipped and want to continue the process for our customer.
+
+``` scala tab="Scala"
+baker.resolveInteraction(processId, "ShipGoods", GoodsShipped("some goods"))
+```
+
+``` java tab="Java"
+baker.resolveInteraction(processId, "ShipGoods", new GoodsSchipped("some goods"));
+```
+
+
 ## State inquiry
 
 During runtime it is often useful to *inquire* on the state of a process instance.

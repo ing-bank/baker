@@ -159,6 +159,16 @@ In this case the interaction may fire if *either* `EventA` OR `EventB` has occur
 
 When an interaction throws an exception there are a number of mitigation strategies:
 
+#### Block interaction
+
+This option is for non idempotent interactions that cannot be retried.
+
+When an exception is thrown from the interaction the interaction is *blocked*.
+
+This means that the interaction cannot execute again automatically.
+
+It requires [manual intervening]() to continue the process from then on.
+
 #### Fire event
 
 This option is analagous to a `try { } catch { }` in code. When an exception is raised from the interaction you specify an
