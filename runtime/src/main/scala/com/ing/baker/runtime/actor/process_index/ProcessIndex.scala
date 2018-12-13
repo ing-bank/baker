@@ -159,7 +159,7 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
     }
   }
 
-  def getInteractionJob(processId: String, interactionName: String, processActor: ActorRef) = {
+  def getInteractionJob(processId: String, interactionName: String, processActor: ActorRef): OptionT[Future, (InteractionTransition, Id)] = {
     // we find which job correlates with the interaction
     for {
       recipe     <- OptionT.fromOption(getCompiledRecipe(index(processId).recipeId))
