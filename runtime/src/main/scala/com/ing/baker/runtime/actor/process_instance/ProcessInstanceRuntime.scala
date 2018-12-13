@@ -83,21 +83,12 @@ trait ProcessInstanceRuntime[P, T, S, E] {
       val transition = job.transition
       val consumed: Marking[Id] = job.consume.marshall
 
-      val jobIO =
-        try {
-          // calling the transition function could potentially throw an exception
-          transitionTask(topology, transition)(job.consume, job.processState, job.input)
-        } catch {
-          case e: Throwable ⇒ IO.raiseError(e)
-        }
-
-      // translates the job output to an EventSourcing.Event
-      jobIO.map {
+      IO.unit.flatMap { _ =>
+        // calling transitionTask(...) could potentially throw an exception
+        transitionTask(topology, transition)(job.consume, job.processState, job.input)
+      }.map {
         case (producedMarking, out) ⇒
-
-          val produced: Marking[Id] = producedMarking.marshall
-
-          TransitionFiredEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, produced, out)
+          TransitionFiredEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, producedMarking.marshall, out)
       }.handleException {
         // In case an exception was thrown by the transition, we compute the failure strategy and return a TransitionFailedEvent
         case e: Throwable ⇒
@@ -122,8 +113,8 @@ trait ProcessInstanceRuntime[P, T, S, E] {
       case (place, count) ⇒ (place, count, consumableTokens(petriNet)(marking, place, t))
     }
 
-    // check if any
-    if (consumable.exists { case (place, count, tokens) ⇒ tokens.multisetSize < count })
+    // check if any any places have an insufficient number of tokens
+    if (consumable.exists { case (_, count, tokens) ⇒ tokens.multisetSize < count })
       Seq.empty
     else {
       val consume = consumable.map {
@@ -151,19 +142,17 @@ trait ProcessInstanceRuntime[P, T, S, E] {
     */
   def createJob(transition: T, input: Any, correlationId: Option[String] = None): State[Instance[P, T, S], Either[String, Job[P, T, S]]] =
     State { instance ⇒
-      instance.isBlockedReason(transition) match {
-        case Some(reason) ⇒
-          (instance, Left(reason))
-        case None ⇒
-          enabledParameters(instance.petriNet)(instance.availableMarking).get(transition) match {
-            case None ⇒
-              (instance, Left(s"Not enough consumable tokens"))
-            case Some(params) ⇒
-              val job = Job[P, T, S](instance.nextJobId(), correlationId, instance.state, transition, params.head, input)
-              val updatedInstance = instance.copy[P, T, S](jobs = instance.jobs + (job.id -> job))
-              (updatedInstance, Right(job))
-          }
-      }
+      if (instance.isBlocked(transition))
+        (instance, Left("Transition is blocked by a previous failure"))
+      else
+        enabledParameters(instance.petriNet)(instance.availableMarking).get(transition) match {
+          case None ⇒
+            (instance, Left(s"Not enough consumable tokens"))
+          case Some(params) ⇒
+            val job = Job[P, T, S](instance.nextJobId(), correlationId, instance.state, transition, params.head, input)
+            val updatedInstance = instance.copy[P, T, S](jobs = instance.jobs + (job.id -> job))
+            (updatedInstance, Right(job))
+        }
     }
 
   /**
@@ -171,7 +160,7 @@ trait ProcessInstanceRuntime[P, T, S, E] {
     */
   def firstEnabledJob: State[Instance[P, T, S], Option[Job[P, T, S]]] = State { instance ⇒
     enabledParameters(instance.petriNet)(instance.availableMarking).find {
-      case (t, markings) ⇒ !instance.isBlockedReason(t).isDefined && isAutoFireable(instance, t)
+      case (t, markings) ⇒ !instance.isBlocked(t) && isAutoFireable(instance, t)
     }.map {
       case (t, markings) ⇒
         val job = Job[P, T, S](instance.nextJobId(), None, instance.state, t, markings.head, null)

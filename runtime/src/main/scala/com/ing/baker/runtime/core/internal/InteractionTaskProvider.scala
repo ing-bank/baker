@@ -54,43 +54,6 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
     }
   }
 
-  /**
-    * Validates the output event of an interaction
-    *
-    * @throws FatalInteractionException If the event was invalid.
-    */
-  def validateEvent(interaction: InteractionTransition, optionalEvent: Option[RuntimeEvent]) = {
-
-    optionalEvent match {
-
-      case None =>
-        // an event was expected but none was provided
-        if (!interaction.eventsToFire.isEmpty)
-          throw new FatalInteractionException(s"Interaction '${interaction.interactionName}' did not provide any output, expected one of: ${interaction.eventsToFire.map(_.name).mkString(",")}")
-
-      case Some(event) =>
-
-        val nullIngredientNames = event.providedIngredients.collect {
-          case (name, null) => name
-        }
-
-        // null values for ingredients are NOT allowed
-        if(nullIngredientNames.nonEmpty)
-          throw new FatalInteractionException(s"Interaction '${interaction.interactionName}' returned null for the following ingredients: ${nullIngredientNames.mkString(",")}")
-
-        // the event name must match an event name from the interaction output
-        interaction.originalEvents.find(_.name == event.name) match {
-          case None =>
-            throw new FatalInteractionException(s"Interaction '${interaction.interactionName}' returned unkown event '${event.name}, expected one of: ${interaction.eventsToFire.map(_.name).mkString(",")}")
-          case Some(eventType) =>
-            val errors = event.validateEvent(eventType)
-
-            if (errors.nonEmpty)
-              throw new FatalInteractionException(s"Event '${event.name}' does not match the expected type: ${errors.mkString}")
-        }
-    }
-  }
-
   def interactionTask(interaction: InteractionTransition,
                       outAdjacent: MultiSet[Place],
                       processState: ProcessState): IO[(Marking[Place], RuntimeEvent)] = {
@@ -121,7 +84,9 @@ class InteractionTaskProvider(recipe: CompiledRecipe, interactionManager: Intera
           val interactionOutput: Option[RuntimeEvent] = implementation.execute(input)
 
           // validates the event, throws a FatalInteraction exception if invalid
-          validateEvent(interaction, interactionOutput)
+          RecipeRuntime.validateInteractionOutput(interaction, interactionOutput).foreach { validationError =>
+            throw new FatalInteractionException(validationError)
+          }
 
           // transform the event if there is one
           val outputEvent: Option[RuntimeEvent] = interactionOutput

@@ -37,6 +37,47 @@ object RecipeRuntime {
       place -> MultiSet.copyOff(Seq(value))
     }.toMarking
   }
+
+  /**
+    * Validates the output event of an interaction
+    *
+    * Returns an optional error message.
+    */
+  def validateInteractionOutput(interaction: InteractionTransition, optionalEvent: Option[RuntimeEvent]): Option[String] = {
+
+    optionalEvent match {
+
+      // an event was expected but none was provided
+      case None =>
+        if (!interaction.eventsToFire.isEmpty)
+          Some(s"Interaction '${interaction.interactionName}' did not provide any output, expected one of: ${interaction.eventsToFire.map(_.name).mkString(",")}")
+        else
+          None
+
+      case Some(event) =>
+
+        val nullIngredientNames = event.providedIngredients.collect {
+          case (name, null) => name
+        }
+
+        // null values for ingredients are NOT allowed
+        if(nullIngredientNames.nonEmpty)
+          Some(s"Interaction '${interaction.interactionName}' returned null for the following ingredients: ${nullIngredientNames.mkString(",")}")
+        else
+        // the event name must match an event name from the interaction output
+        interaction.originalEvents.find(_.name == event.name) match {
+          case None =>
+            Some(s"Interaction '${interaction.interactionName}' returned unknown event '${event.name}, expected one of: ${interaction.eventsToFire.map(_.name).mkString(",")}")
+          case Some(eventType) =>
+            val errors = event.validateEvent(eventType)
+
+            if (errors.nonEmpty)
+              Some(s"Event '${event.name}' does not match the expected type: ${errors.mkString}")
+            else
+              None
+        }
+    }
+  }
 }
 
 class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream) extends ProcessInstanceRuntime[Place, Transition, ProcessState, RuntimeEvent] {

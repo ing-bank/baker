@@ -40,7 +40,7 @@ message TransitionFired {
 message FailureStrategy {
     enum StrategyType {
         BLOCK_TRANSITION = 0;
-        FATAL = 1;
+//        FATAL = 1; deprecated option, do not re-use this identifier!
         RETRY = 2;
     }
 
@@ -157,7 +157,7 @@ message TransitionFailedMessage {
 message FailureStrategyMessage {
     enum StrategyTypeMessage {
         BLOCK_TRANSITION = 0;
-        FATAL = 1;
+//        FATAL = 1; deprecated option, do not re-use this identifier!
         RETRY = 2;
         CONTINUE = 3;
     }
@@ -166,4 +166,13 @@ message FailureStrategyMessage {
     optional int64 retryDelay = 2;
     repeated MarkingData marking = 3;
     optional SerializedData output = 4;
+}
+
+message OverrideExceptionStrategy {
+    optional int64 jobId = 1;
+    optional FailureStrategyMessage failureStrategy = 2;
+}
+
+message InvalidCommand {
+    optional string reason = 1;
 }

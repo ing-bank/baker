@@ -4,11 +4,11 @@ import java.security.MessageDigest
 
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEventSourcing._
-import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, Fatal, RetryWithDelay}
-import com.ing.baker.runtime.actor.process_instance.internal.Instance
-import com.ing.baker.runtime.actor.process_instance.protobuf._
-import com.ing.baker.runtime.actor.process_instance.protobuf.FailureStrategy.StrategyType
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization._
+import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, RetryWithDelay}
+import com.ing.baker.runtime.actor.process_instance.internal.Instance
+import com.ing.baker.runtime.actor.process_instance.protobuf.FailureStrategy.StrategyType
+import com.ing.baker.runtime.actor.process_instance.protobuf._
 import com.ing.baker.runtime.actor.protobuf.{ProducedToken, SerializedData}
 import com.ing.baker.runtime.actor.serialization.ProtoEventAdapter
 
@@ -139,7 +139,6 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](ser
       val consumed = deserializeConsumedMarking(instance, e.consumed)
       val failureStrategy = e.failureStrategy.getOrElse(missingFieldException("time_failed")) match {
         case FailureStrategy(Some(StrategyType.BLOCK_TRANSITION), _) ⇒ BlockTransition
-        case FailureStrategy(Some(StrategyType.FATAL), _) ⇒ Fatal
         case FailureStrategy(Some(StrategyType.RETRY), Some(delay)) ⇒ RetryWithDelay(delay)
         case other@_ ⇒ throw new IllegalStateException(s"Invalid failure strategy: $other")
       }
@@ -151,7 +150,6 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](ser
 
     val strategy = e.exceptionStrategy match {
       case BlockTransition ⇒ FailureStrategy(Some(StrategyType.BLOCK_TRANSITION))
-      case Fatal ⇒ FailureStrategy(Some(StrategyType.FATAL))
       case RetryWithDelay(delay) ⇒ FailureStrategy(Some(StrategyType.RETRY), Some(delay))
       case _ => throw new IllegalArgumentException("Unsupported exception strategy")
     }

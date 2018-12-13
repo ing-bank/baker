@@ -249,6 +249,42 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   }
 
   /**
+    * Retries a blocked interaction.
+    *
+    * @return
+    */
+  def retryInteraction(processId: String, interactionName: String, timeout: FiniteDuration = defaultProcessEventTimeout): Unit = {
+
+    val futureResult = processIndexActor.ask(RetryBlockedInteraction(processId, interactionName))(timeout)
+
+    Await.result(futureResult, timeout)
+  }
+
+  /**
+    * Resolves a blocked interaction by specifying it's output.
+    *
+    * @return
+    */
+  def resolveInteraction(processId: String, interactionName: String, event: Any, timeout: FiniteDuration = defaultProcessEventTimeout): Unit = {
+
+    val futureResult = processIndexActor.ask(ResolveBlockedInteraction(processId, interactionName, extractEvent(event)))(timeout)
+
+    Await.result(futureResult, timeout)
+  }
+
+  /**
+    * Stops the retrying of an interaction.
+    *
+    * @return
+    */
+  def stopRetryingInteraction(processId: String, interactionName: String, timeout: FiniteDuration = defaultProcessEventTimeout): Unit = {
+
+    val futureResult = processIndexActor.ask(StopRetryingInteraction(processId, interactionName))(timeout)
+
+    Await.result(futureResult, timeout)
+  }
+
+  /**
     * Synchronously returns all event names that occurred for a process.
     */
   def eventNames(processId: String, timeout: FiniteDuration = defaultInquireTimeout): List[String] =
@@ -351,11 +387,10 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     processIndexActor
       .ask(GetProcessState(processId))(Timeout.durationToTimeout(timeout))
       .flatMap {
-        case instane: InstanceState   => Future.successful(instane.state.asInstanceOf[ProcessState])
-        case Uninitialized(id)        => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
-        case NoSuchProcess(id)        => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
-        case ProcessDeleted(id)       => Future.failed(new ProcessDeletedException(s"Process $id is deleted"))
-        case msg                      => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
+        case instance: InstanceState => Future.successful(instance.state.asInstanceOf[ProcessState])
+        case NoSuchProcess(id)       => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
+        case ProcessDeleted(id)      => Future.failed(new ProcessDeletedException(s"Process $id is deleted"))
+        case msg                     => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
       }
   }
 

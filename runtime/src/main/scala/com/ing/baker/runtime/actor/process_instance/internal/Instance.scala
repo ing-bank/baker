@@ -34,13 +34,13 @@ case class Instance[P, T, S](
     */
   def activeJobs: Iterable[Job[P, T, S]] = jobs.values.filter(_.isActive)
 
-  def isBlockedReason(transition: T): Option[String] = jobs.values.map {
+  /**
+    * Checks whether a transition is blocked by a previous failure.
+    */
+  def isBlocked(transition: T): Boolean = jobs.values.collectFirst {
     case Job(_, _, _, `transition`, _, _, Some(ExceptionState(_, _, reason, _))) ⇒
-      Some(s"Transition '$transition' is blocked because it failed previously with: $reason")
-    case Job(_, _, _, t, _, _, Some(ExceptionState(_, _, reason, ExceptionStrategy.Fatal))) ⇒
-      Some(s"Transition '$t' caused a Fatal exception")
-    case _ ⇒ None
-  }.find(_.isDefined).flatten
+      s"Transition '$transition' is blocked because it failed previously with: $reason"
+  }.isDefined
 
   def hasReceivedCorrelationId(correlationId: String): Boolean =
     receivedCorrelationIds.contains(correlationId) || jobs.values.exists(_.correlationId == Some(correlationId))

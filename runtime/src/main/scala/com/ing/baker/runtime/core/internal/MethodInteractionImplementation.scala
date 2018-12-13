@@ -2,7 +2,7 @@ package com.ing.baker.runtime.core.internal
 
 import java.util.UUID
 
-import com.ing.baker.runtime.core.{BakerException, RuntimeEvent, _}
+import com.ing.baker.runtime.core.{RuntimeEvent, _}
 import com.ing.baker.types.{Converters, Type, Value}
 import org.slf4j.LoggerFactory
 
@@ -17,8 +17,8 @@ case class MethodInteractionImplementation(implementation: AnyRef) extends Inter
     val unmockedClass = unmock(implementation.getClass)
 
     unmockedClass.getMethods.count(_.getName == "apply") match {
-      case 0          => throw new BakerException("Method does not have a apply function")
-      case n if n > 1 => throw new BakerException("Method has multiple apply functions")
+      case 0          => throw new IllegalArgumentException("Implementation does not have a apply function")
+      case n if n > 1 => throw new IllegalArgumentException("Implementation has multiple apply functions")
       case _          => unmockedClass.getMethods.find(_.getName == "apply").get
     }
   }

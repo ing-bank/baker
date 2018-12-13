@@ -82,7 +82,6 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
     protocol.ExceptionState(exceptionState.failureCount, exceptionState.failureReason, fromExecutionExceptionStrategy(exceptionState.failureStrategy))
 
   private implicit def fromExecutionExceptionStrategy(strategy: internal.ExceptionStrategy): protocol.ExceptionStrategy = strategy match {
-    case internal.ExceptionStrategy.Fatal                     => protocol.ExceptionStrategy.Fatal
     case internal.ExceptionStrategy.BlockTransition           => protocol.ExceptionStrategy.BlockTransition
     case internal.ExceptionStrategy.RetryWithDelay(delay)     => protocol.ExceptionStrategy.RetryWithDelay(delay)
     case internal.ExceptionStrategy.Continue(marking, output) => protocol.ExceptionStrategy.Continue(marking.asInstanceOf[Marking[P]].marshall, output)
@@ -94,13 +93,18 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
       val uninitialized = Instance.uninitialized[P, T, S](petriNet)
       val event = InitializedEvent(initialMarking, state)
 
+      // persist the initialized event
       persistEvent(uninitialized, event) {
         eventSource.apply(uninitialized)
           .andThen(step)
           .andThen {
             case (updatedInstance, _) ⇒
-              context become running(updatedInstance, Map.empty)
+
+              // notifies the sender that initialization was successful
               sender() ! Initialized(initialMarking, state)
+
+              // update the state
+              context become running(updatedInstance, Map.empty)
           }
       }
 
@@ -149,14 +153,18 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
       log.transitionFired(processId, transition.toString, jobId, timeStarted, timeCompleted)
 
+      // persist the success event
       persistEvent(instance, event)(
         eventSource.apply(instance)
           .andThen(step)
           .andThen {
             case (updatedInstance, newJobs) ⇒
+
+              // the sender is notified of the transition having fired
               sender() ! TransitionFired(jobId, transitionId, correlationId, consumed, produced, updatedInstance, newJobs.map(_.id), output)
+
+              // the job is removed from the state since it completed
               context become running(updatedInstance, scheduledRetries - jobId)
-              updatedInstance
           }
       )
 
@@ -173,13 +181,20 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
           val originalSender = sender()
 
+          // persist the failure event
           persistEvent(instance, event)(
             eventSource.apply(instance)
               .andThen { updatedInstance ⇒
+
+                // a retry is scheduled on the scheduler of the actor system
                 val retry = system.scheduler.scheduleOnce(delay milliseconds) {
                   executeJob(updatedInstance.jobs(jobId), originalSender)
                 }
+
+                // the sender is notified of the failed transition
                 sender() ! TransitionFailed(jobId, transitionId, correlationId, consume, input, reason, strategy)
+
+                // the state is updated
                 context become running(updatedInstance, scheduledRetries + (jobId -> retry))
               }
           )
@@ -233,8 +248,96 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
     case Initialize(_, _) ⇒
       sender() ! AlreadyInitialized(processId)
+
+    case OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.RetryWithDelay(timeout)) =>
+
+      instance.jobs.get(jobId) match {
+        // retry is only allowed if the interaction is blocked by a failure
+        case Some(job @ internal.Job(_, _, _, _, _, _, Some(blocked @ internal.ExceptionState(_, _, _, internal.ExceptionStrategy.BlockTransition)))) =>
+
+          val now = System.currentTimeMillis()
+
+          // the job is updated so it cannot be retried again
+          val updatedJob: Job[P, T, S] = job.copy(failure = Some(blocked.copy(failureStrategy = internal.ExceptionStrategy.RetryWithDelay(timeout))))
+          val updatedInstance: Instance[P, T, S] = instance.copy(jobs = instance.jobs + (jobId -> updatedJob))
+          val originalSender = sender()
+
+          // execute the job immediately if there is no timeout
+          if (timeout == 0) {
+            executeJob(job, originalSender)
+          }
+          else {
+            // schedule the retry
+            val scheduledRetry = system.scheduler.scheduleOnce(timeout millisecond)(executeJob(job, originalSender))
+
+            // switch to the new state
+            context become running(updatedInstance, scheduledRetries + (jobId -> scheduledRetry))
+          }
+
+        case Some(_) =>
+          sender() ! InvalidCommand(s"Job with id '$jobId' is not blocked")
+
+        case None =>
+          sender() ! InvalidCommand(s"Job with id '$jobId' does not exist")
+      }
+
+    case OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.Continue(produce, output)) =>
+
+      instance.jobs.get(jobId) match {
+        // resolving is only allowed if the interaction is blocked by a failure
+        case Some(internal.Job(_, correlationId, _, transition, consumed, _, Some(internal.ExceptionState(_, _, _, internal.ExceptionStrategy.BlockTransition)))) =>
+
+          val producedMarking: Marking[P] = produce.unmarshall[P](petriNet.places)
+
+          // the provided marking must be valid according to the petri net
+          if (petriNet.outMarking(transition) != producedMarking.multiplicities)
+            sender() ! InvalidCommand(s"Invalid marking provided")
+          else {
+
+            // to resolve the failure a successful TransitionFiredEvent is created
+            val event = TransitionFiredEvent(jobId, transition.getId, correlationId, System.currentTimeMillis(), System.currentTimeMillis(), consumed.marshall, produce, output)
+
+            // and processed synchronously
+            running(instance, scheduledRetries).apply(event)
+          }
+
+        case Some(_) =>
+          sender() ! InvalidCommand(s"Job with id '$jobId' is not blocked")
+
+        case None =>
+          sender() ! InvalidCommand(s"Job with id '$jobId' does not exist")
+      }
+
+    case OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.BlockTransition) =>
+
+      instance.jobs.get(jobId) match {
+        // blocking is only allowed when the interaction is currently retrying
+        case Some(job @ internal.Job(_, correlationId, _, transition, consumed, _, Some(internal.ExceptionState(_, _, failureReason, internal.ExceptionStrategy.RetryWithDelay(_))))) =>
+
+          if (scheduledRetries(jobId).cancel()) {
+
+            val now = System.currentTimeMillis()
+
+            // to block the interaction a failure event is created to prevent retry after reboot
+            val event = TransitionFailedEvent(jobId, transition.getId, correlationId, now, now, consumed.marshall, job.input, failureReason, internal.ExceptionStrategy.BlockTransition)
+
+            // and processed synchronously
+            running(instance, scheduledRetries - jobId).apply(event)
+          }
+
+        case Some(_) =>
+          sender() ! InvalidCommand(s"Job with id '$jobId' is not retrying")
+
+        case None =>
+          sender() ! InvalidCommand(s"Job with id '$jobId' does not exist")
+      }
   }
 
+  /**
+    * This functions 'steps' the execution of the instance.
+    *
+    * It finds which transitions are enabled and executes those.
+    */
   def step(instance: Instance[P, T, S]): (Instance[P, T, S], Set[Job[P, T, S]]) = {
 
     runtime.allEnabledJobs.run(instance).value match {

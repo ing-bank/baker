@@ -44,6 +44,14 @@ object ProcessInstanceProtocol {
     correlationId: Option[String] = None) extends Command
 
   /**
+    * Overrides the chosen exception strategy of a job (running transition)
+    *
+    * @param jobId The id of the job.
+    * @param failureStrategy The new failure strategy
+    */
+  case class OverrideExceptionStrategy(jobId: Long, failureStrategy: ExceptionStrategy) extends Command
+
+  /**
    * A common trait for all responses coming from a petri net instance.
    */
   sealed trait Response extends BakerProtoMessage
@@ -121,6 +129,13 @@ object ProcessInstanceProtocol {
     reason: String) extends TransitionResponse
 
   /**
+    * General response indicating that the send command was invalid.
+    *
+    * @param reason The invalid reason.
+    */
+  case class InvalidCommand(reason: String) extends Response
+
+  /**
    * The exception state of a transition.
    */
   case class ExceptionState(
@@ -132,17 +147,14 @@ object ProcessInstanceProtocol {
 
   object ExceptionStrategy {
 
-    case object Fatal extends ExceptionStrategy
-
     case object BlockTransition extends ExceptionStrategy
 
     case class RetryWithDelay(delay: Long) extends ExceptionStrategy {
-      require(delay > 0, "Delay must be greater then zero")
+      require(delay >= 0, "Delay must be greater then zero")
     }
 
     case class Continue(marking: Marking[Id], output: Any) extends ExceptionStrategy
   }
-
 
   /**
    * Response containing the state of the `Job`.

@@ -22,7 +22,6 @@ object BakerResponse {
     response.map(translateFirstMessage)
 
   private def translateFirstMessage(msg: Any): SensoryEventStatus = msg match {
-    case ProcessInstanceProtocol.Uninitialized(processId) => throw new NoSuchProcessException(s"No such process: $processId")
     case _: ProcessInstanceProtocol.TransitionFired => SensoryEventStatus.Received
     case _: ProcessInstanceProtocol.TransitionNotEnabled => SensoryEventStatus.FiringLimitMet
     case _: ProcessInstanceProtocol.AlreadyReceived => SensoryEventStatus.AlreadyReceived

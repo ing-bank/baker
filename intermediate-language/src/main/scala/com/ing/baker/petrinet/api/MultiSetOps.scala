@@ -20,6 +20,12 @@ trait MultiSetOps {
         }
       }
 
+    /**
+      * This checks that the given (other) multiset is a sub set of this one.
+      *
+      * @param other
+      * @return
+      */
     def isSubSet(other: MultiSet[T]): Boolean =
       !other.exists {
         case (element, count) ⇒ mset.get(element) match {
@@ -30,8 +36,6 @@ trait MultiSetOps {
       }
 
     def multisetSize: Int = mset.values.sum
-
-    def multiplicities(map: MultiSet[T]): Map[T, Int] = map
 
     def setMultiplicity(map: Map[T, Int])(element: T, m: Int) = map + (element -> m)
 

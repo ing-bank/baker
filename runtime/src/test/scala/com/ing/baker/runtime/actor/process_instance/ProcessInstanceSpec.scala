@@ -2,23 +2,27 @@ package com.ing.baker.runtime.actor.process_instance
 
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.{ActorRef, ActorSystem, PoisonPill, Props, Terminated}
 import akka.testkit.TestDuration
 import akka.util.Timeout
 import com.ing.baker.petrinet.api._
-import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.{Fatal, RetryWithDelay}
-import com.ing.baker.runtime.actor.process_instance.dsl._
 import com.ing.baker.runtime.actor.AkkaTestBase
-import com.ing.baker.runtime.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.actor.process_instance.ProcessInstance.Settings
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.BlockTransition
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSpec._
+import com.ing.baker.runtime.actor.process_instance.dsl._
+import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.RetryWithDelay
+import com.ing.baker.runtime.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.core.namedCachedThreadPool
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
+import org.scalatest.Matchers
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.time.{Milliseconds, Span}
@@ -26,7 +30,6 @@ import org.scalatest.time.{Milliseconds, Span}
 import scala.concurrent.Promise
 import scala.concurrent.duration._
 import scala.util.Success
-import ProcessInstanceSpec._
 
 
 sealed trait Event
@@ -73,7 +76,7 @@ object ProcessInstanceSpec {
   }
 }
 
-class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with ScalaFutures with MockitoSugar {
+class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with ScalaFutures with MockitoSugar with Matchers {
 
   def dilatedMillis(millis: Long)(implicit system: ActorSystem): Long = FiniteDuration(millis, TimeUnit.MILLISECONDS).dilated.toMillis
 
@@ -167,6 +170,115 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       expectMsgClass(classOf[TransitionFailed])
     }
 
+    "Be able to retry a failed (blocked) transition when requested" in new TestSequenceNet {
+
+      val counter = new AtomicInteger(0)
+
+      override val sequence = Seq(
+        transition() { _ ⇒
+          if (counter.getAndIncrement() == 0)
+            throw new RuntimeException("t1 failed!")
+          else
+            Added(1)
+        })
+
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+
+      actor ! Initialize(initialMarking, Set.empty)
+      expectMsgClass(classOf[Initialized])
+
+      actor ! FireTransition(transitionId = 1, input = null)
+
+      expectMsgClass(classOf[TransitionFailed])
+
+      actor ! GetState
+
+      val state: InstanceState = expectMsgClass(classOf[InstanceState])
+
+      state.jobs.size shouldBe 1
+
+      val (jobId, jobState) = state.jobs.head
+
+      jobState.exceptionState should matchPattern {
+        case Some(ExceptionState(_, _, BlockTransition)) =>
+      }
+
+      actor ! OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.RetryWithDelay(0))
+
+      // expect that the failure is resolved
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _, _) ⇒ }
+    }
+
+    "Be able to resolve a failed (blocked) transition when requested" in new TestSequenceNet {
+
+      override val sequence = Seq(
+        transition() { _ ⇒ throw new RuntimeException("t1 failed!") })
+
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+
+      actor ! Initialize(initialMarking, Set.empty)
+      expectMsgClass(classOf[Initialized])
+
+      actor ! FireTransition(transitionId = 1, input = null)
+
+      expectMsgClass(classOf[TransitionFailed])
+
+      actor ! GetState
+
+      val state: InstanceState = expectMsgClass(classOf[InstanceState])
+
+      state.jobs.size shouldBe 1
+
+      val (jobId, jobState) = state.jobs.head
+
+      jobState.exceptionState should matchPattern {
+        case Some(ExceptionState(_, _, BlockTransition)) =>
+      }
+
+      actor ! OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.Continue(place(2).markWithN(1).marshall, Added(2)))
+
+      // expect that the failure is resolved
+      expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _, Added(2)) ⇒ }
+    }
+
+    "Be able to block a retrying transition when requested" in new TestSequenceNet {
+
+      val retryHandler: TransitionExceptionHandler[Place] = {
+        case (_, n, _) if n < 3 ⇒ RetryWithDelay(5000)
+        case _                  ⇒ internal.ExceptionStrategy.BlockTransition
+      }
+
+      override val sequence = Seq(
+        transition(exceptionHandler = retryHandler) { _ ⇒ throw new RuntimeException("Expected test failure") }
+      )
+
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+
+      actor ! Initialize(initialMarking, Set.empty)
+      expectMsgClass(classOf[Initialized])
+
+      actor ! FireTransition(transitionId = 1, input = null)
+
+      expectMsgClass(classOf[TransitionFailed])
+
+      actor ! GetState
+
+      val state: InstanceState = expectMsgClass(classOf[InstanceState])
+
+      state.jobs.size shouldBe 1
+
+      val (jobId, jobState) = state.jobs.head
+
+      jobState.exceptionState should matchPattern {
+        case Some(ExceptionState(_, _, protocol.ExceptionStrategy.RetryWithDelay(5000))) =>
+      }
+
+      actor ! OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.BlockTransition)
+
+      // expect that the failure is resolved
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.BlockTransition) ⇒ }
+    }
+
     "Respond with a AlreadyReceived message if the given corellation id was received earlier" in new TestSequenceNet {
 
       val testCorrelationId = "abc"
@@ -237,7 +349,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       val retryHandler: TransitionExceptionHandler[Place] = {
         case (_, n, _) if n < 3 ⇒ RetryWithDelay(dilatedMillis(10 * Math.pow(2, n).toLong))
-        case _               ⇒ Fatal
+        case _                  ⇒ internal.ExceptionStrategy.BlockTransition
       }
 
       override val sequence = Seq(
@@ -260,7 +372,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       // expect 3 failure messages
       expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.RetryWithDelay(delay1)) ⇒ }
       expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.RetryWithDelay(delay2)) ⇒ }
-      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.Fatal) ⇒ }
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.BlockTransition) ⇒ }
 
       // attempt to fire t1 explicitly
       actor ! FireTransition(transitionId = 1, input = null)
@@ -359,7 +471,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
     "Block a transition if the exception strategy function throws an exception" in new TestSequenceNet {
 
       val faultyExceptionHandler: TransitionExceptionHandler[Place] = {
-        case (_, _, _) ⇒ throw new IllegalStateException("Boom!")
+        case (_, _, _) ⇒ throw new IllegalStateException("Expected test failure")
       }
 
       override def sequence =

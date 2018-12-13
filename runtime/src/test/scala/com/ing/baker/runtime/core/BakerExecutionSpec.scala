@@ -837,6 +837,63 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       baker.events(processId).map(_.name) should contain(interactionOne.retryExhaustedEventName)
     }
 
+    "resolve a blocked interaction" in {
+      val recipe =
+        Recipe("ResolveBlockedInteractionRecipe")
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent)
+
+      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
+
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenThrow(new RuntimeException("Expected test failure"))
+
+      val processId = UUID.randomUUID().toString
+
+      baker.bake(recipeId, processId)
+      val status = baker.processEvent(processId, InitialEvent(initialIngredientValue))
+
+      baker.getIngredients(processId) shouldBe
+        ingredientMap(
+          "initialIngredient" -> initialIngredientValue)
+
+      baker.resolveInteraction(processId, interactionOne.name, InteractionOneSuccessful("success!"))
+
+      baker.getIngredients(processId) shouldBe
+        ingredientMap(
+          "initialIngredient" -> initialIngredientValue,
+          "interactionOneOriginalIngredient" -> "success!")
+    }
+
+    "retry a blocked interaction" in {
+      val recipe =
+        Recipe("RetryBlockedInteractionRecipe")
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent)
+
+      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
+
+      when(testInteractionOneMock.apply(anyString(), anyString()))
+        .thenThrow(new RuntimeException("Expected test failure"))
+        .thenReturn(InteractionOneSuccessful("success!"))
+
+      val processId = UUID.randomUUID().toString
+
+      baker.bake(recipeId, processId)
+      val status = baker.processEvent(processId, InitialEvent(initialIngredientValue))
+
+      baker.getIngredients(processId) shouldBe
+        ingredientMap(
+          "initialIngredient" -> initialIngredientValue)
+
+      baker.retryInteraction(processId, interactionOne.name)
+
+      baker.getIngredients(processId) shouldBe
+        ingredientMap(
+          "initialIngredient" -> initialIngredientValue,
+          "interactionOneOriginalIngredient" -> "success!")
+
+    }
+
     "be able to return all occurred events" in {
 
       val (baker, recipeId) = setupBakerWithRecipe("CheckEventRecipe")
@@ -1154,7 +1211,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       baker.processEvent(processId, InitialEvent(initialIngredientValue))
 
-      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+      verify(testInteractionOneMock).apply(processId, "initialIngredient")
       baker.getIngredients(processId) shouldBe ingredientMap("initialIngredient" -> initialIngredientValue)
     }
 

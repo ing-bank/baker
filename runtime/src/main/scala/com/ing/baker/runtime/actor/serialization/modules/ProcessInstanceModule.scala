@@ -25,9 +25,15 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
         protobuf.AlreadyInitialized(Some(processId))
     case protocol.Uninitialized(processId) =>
         protobuf.Uninitialized(Some(processId))
-
     case protocol.FireTransition(transitionid, input, correlationId) =>
       protobuf.FireTransition(Some(transitionid), Some(ctx.toProtoAny(input.asInstanceOf[AnyRef])), correlationId)
+
+    case protocol.OverrideExceptionStrategy(jobId, strategy) =>
+      protobuf.OverrideExceptionStrategy(Some(jobId), Some(ctx.toProto[protobuf.FailureStrategyMessage](strategy)))
+
+    case protocol.InvalidCommand(reason) =>
+      protobuf.InvalidCommand(Some(reason))
+
     case protocol.AlreadyReceived(correlationId) =>
       protobuf.AlreadyReceived(Some(correlationId))
     case protocol.TransitionNotEnabled(transitionId, reason) =>
@@ -50,7 +56,6 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
     case protocol.ExceptionState(failureCount, failureReason, failureStrategy) =>
       protobuf.ExceptionState(Some(failureCount), Some(failureReason), Some(ctx.toProto[protobuf.FailureStrategyMessage](failureStrategy)))
     case exceptionStrategy: ExceptionStrategy => exceptionStrategy match {
-      case ExceptionStrategy.Fatal => protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.FATAL), None)
       case ExceptionStrategy.BlockTransition => protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.BLOCK_TRANSITION), None)
       case ExceptionStrategy.Continue(marking, output) => protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.CONTINUE), None, toProtoMarking(marking, ctx), Some(ctx.toProtoAny(output.asInstanceOf[AnyRef])))
       case ExceptionStrategy.RetryWithDelay(delay) => protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.RETRY), Some(delay))
@@ -93,6 +98,12 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
 
     case protobuf.FireTransition(Some(transitionId), Some(input), correlationId) =>
       protocol.FireTransition(transitionId, ctx.toDomain[Any](input), correlationId)
+
+    case protobuf.OverrideExceptionStrategy(Some(jobId), Some(failureStrategyMessage)) =>
+      protocol.OverrideExceptionStrategy(jobId, ctx.toDomain[protocol.ExceptionStrategy](failureStrategyMessage))
+    case protobuf.InvalidCommand(Some(reason)) =>
+      protocol.InvalidCommand(reason)
+
     case protobuf.AlreadyReceived(Some(correlationId)) =>
       protocol.AlreadyReceived(correlationId)
     case protobuf.TransitionNotEnabled(Some(transitionId), Some(reason)) =>
@@ -110,8 +121,6 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
       protocol.JobState(jobId, transitionId, toDomainMarking(consumed, ctx), ctx.toDomain[Any](input), exceptionState.map(ctx.toDomain[protocol.ExceptionState]))
     case protobuf.ExceptionState(Some(failureCount), Some(failureReason), Some(strategy)) =>
       protocol.ExceptionState(failureCount, failureReason, ctx.toDomain[ExceptionStrategy](strategy))
-    case protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.FATAL), _, _, _) =>
-      protocol.ExceptionStrategy.Fatal
     case protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.BLOCK_TRANSITION), _, _, _) =>
       protocol.ExceptionStrategy.BlockTransition
     case protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.RETRY), Some(retryDelay), _, _) =>

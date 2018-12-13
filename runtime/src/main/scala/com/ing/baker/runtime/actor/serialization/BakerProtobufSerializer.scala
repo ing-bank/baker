@@ -51,6 +51,10 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     Entry("ProcessIndexProtocol.Index", classOf[ProcessIndexProtocol.Index], actor.process_index.protobuf.Index),
     Entry("ProcessIndexProtocol.CreateProcess", classOf[ProcessIndexProtocol.CreateProcess], actor.process_index.protobuf.CreateProcess),
     Entry("ProcessIndexProtocol.ProcessEvent", classOf[ProcessIndexProtocol.ProcessEvent], actor.process_index.protobuf.ProcessEvent),
+    Entry("ProcessIndexProtocol.RetryBlockedInteraction", classOf[ProcessIndexProtocol.RetryBlockedInteraction], actor.process_index.protobuf.RetryBlockedInteraction),
+    Entry("ProcessIndexProtocol.ResolveBlockedInteraction", classOf[ProcessIndexProtocol.ResolveBlockedInteraction], actor.process_index.protobuf.ResolveBlockedInteraction),
+    Entry("ProcessIndexProtocol.StopRetryingInteraction", classOf[ProcessIndexProtocol.StopRetryingInteraction], actor.process_index.protobuf.StopRetryingInteraction),
+
     Entry("ProcessIndexProtocol.ProcessEventResponse", classOf[ProcessIndexProtocol.ProcessEventResponse], actor.process_index.protobuf.ProcessEventResponse),
     Entry("ProcessIndexProtocol.GetProcessState", classOf[ProcessIndexProtocol.GetProcessState], actor.process_index.protobuf.GetProcessState),
     Entry("ProcessIndexProtocol.GetCompiledRecipe", classOf[ProcessIndexProtocol.GetCompiledRecipe], actor.process_index.protobuf.GetCompiledRecipe),
@@ -70,6 +74,9 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     Entry("ProcessInstanceProtocol.AlreadyInitialized", classOf[ProcessInstanceProtocol.AlreadyInitialized], actor.process_instance.protobuf.AlreadyInitialized),
 
     Entry("ProcessInstanceProtocol.FireTransition", classOf[ProcessInstanceProtocol.FireTransition], actor.process_instance.protobuf.FireTransition),
+    Entry("ProcessInstanceProtocol.OverrideExceptionStrategy", classOf[ProcessInstanceProtocol.OverrideExceptionStrategy], actor.process_instance.protobuf.OverrideExceptionStrategy),
+    Entry("ProcessInstanceProtocol.InvalidCommand", classOf[ProcessInstanceProtocol.InvalidCommand], actor.process_instance.protobuf.InvalidCommand),
+
     Entry("ProcessInstanceProtocol.AlreadyReceived", classOf[ProcessInstanceProtocol.AlreadyReceived], actor.process_instance.protobuf.AlreadyReceived),
     Entry("ProcessInstanceProtocol.TransitionNotEnabled", classOf[ProcessInstanceProtocol.TransitionNotEnabled], actor.process_instance.protobuf.TransitionNotEnabled),
     Entry("ProcessInstanceProtocol.TransitionFailed", classOf[ProcessInstanceProtocol.TransitionFailed], actor.process_instance.protobuf.TransitionFailedMessage),

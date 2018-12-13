@@ -118,6 +118,7 @@ public class JBakerTest {
         String processStringId = UUID.randomUUID().toString();
         String testEvent = "testEvent";
         String testCorrelationId = "testCorrelationId";
+        String testInteractionName = "testInteraction";
         java.time.Duration testTimeout = java.time.Duration.ofSeconds(1);
         FiniteDuration testTimeoutScala = new FiniteDuration(testTimeout.toMillis(), TimeUnit.MILLISECONDS);
         EventListener testListener = (processId, event) -> {
@@ -227,6 +228,26 @@ public class JBakerTest {
 
         jBaker.processEvent(processUUID, testEvent, testCorrelationId, testTimeout);
         verify(mockBaker).processEvent(eq(processUUID.toString()), eq(testEvent), eq(Option.apply(testCorrelationId)), eq(testTimeoutScala));
+
+        // incident resolving
+
+        jBaker.retryInteraction(processStringId, testInteractionName);
+        verify(mockBaker).retryInteraction(eq(processStringId), eq(testInteractionName), any(FiniteDuration.class));
+
+        jBaker.retryInteraction(processStringId, testInteractionName, testTimeout);
+        verify(mockBaker).retryInteraction(eq(processStringId), eq(testInteractionName), eq(testTimeoutScala));
+
+        jBaker.resolveInteraction(processStringId, testInteractionName, testEvent);
+        verify(mockBaker).resolveInteraction(eq(processStringId), eq(testInteractionName), eq(testEvent), any(FiniteDuration.class));
+
+        jBaker.resolveInteraction(processStringId, testInteractionName, testEvent, testTimeout);
+        verify(mockBaker).resolveInteraction(eq(processStringId), eq(testInteractionName), eq(testEvent), eq(testTimeoutScala));
+
+        jBaker.stopRetryingInteraction(processStringId, testInteractionName);
+        verify(mockBaker).stopRetryingInteraction(eq(processStringId), eq(testInteractionName), any(FiniteDuration.class));
+
+        jBaker.stopRetryingInteraction(processStringId, testInteractionName, testTimeout);
+        verify(mockBaker).stopRetryingInteraction(eq(processStringId), eq(testInteractionName), eq(testTimeoutScala));
     }
 
     @Test

@@ -28,6 +28,11 @@ object ProcessIndexProtocol {
 
   case class GetCompiledRecipe(override val processId: String) extends ProcessIndexMessage
 
+  case class RetryBlockedInteraction(override val processId: String, interactionName: String) extends ProcessIndexMessage
+
+  case class ResolveBlockedInteraction(override val processId: String, interactionName: String, output: RuntimeEvent) extends ProcessIndexMessage
+
+  case class StopRetryingInteraction(override val processId: String, interactionName: String) extends ProcessIndexMessage
 
   // --- RESPONSES
 

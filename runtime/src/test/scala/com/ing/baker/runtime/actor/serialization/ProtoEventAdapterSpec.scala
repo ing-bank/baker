@@ -136,13 +136,6 @@ object ProtoEventAdapterSpec {
       timeout <- Gen.posNum[Long].map(millis => FiniteDuration(millis, TimeUnit.MILLISECONDS))
     } yield ProcessEvent(processId, event, correlationId, waitForRetries, timeout)
 
-//    val dummySourceRef: SourceRef[Any] = Await.result(Source.single("").runWith(StreamRefs.sourceRef()), 2 seconds)
-//
-//    val processEventResponseGen = for {
-//      processId <- processIdGen
-//      sourceRef <- Gen.const(dummySourceRef)
-//    } yield ProcessEventResponse(processId, sourceRef)
-
     val getProcessStateGen = processIdGen.map(GetProcessState(_))
     val getCompiledRecipeGen = processIdGen.map(GetCompiledRecipe(_))
     val receivePeriodExpiredGen = processIdGen.map(ReceivePeriodExpired(_))
@@ -155,9 +148,25 @@ object ProtoEventAdapterSpec {
     val noSuchProcessGen = processIdGen.map(NoSuchProcess(_))
     val processAlreadyExistsGen = processIdGen.map(ProcessAlreadyExists(_))
 
+    val retryBlockedInteractionGen = for {
+      processId <- processIdGen
+      interactionName <- Gen.alphaStr
+    } yield RetryBlockedInteraction(processId, interactionName)
+
+    val resolveBlockedInteraction = for {
+      processId <- processIdGen
+      interactionName <- Gen.alphaStr
+      event <- Runtime.runtimeEventGen
+    } yield ResolveBlockedInteraction(processId, interactionName, event)
+
+    val stopRetryingInteractionGen = for {
+      processId <- processIdGen
+      interactionName <- Gen.alphaStr
+    } yield StopRetryingInteraction(processId, interactionName)
+
     val messagesGen: Gen[AnyRef] = Gen.oneOf(getIndexGen, indexGen, createProcessGen, processEventGen,
       getProcessStateGen, getCompiledRecipeGen, receivePeriodExpiredGen, invalidEventGen, processDeletedGen,
-      noSuchProcessGen, processAlreadyExistsGen)
+      noSuchProcessGen, processAlreadyExistsGen, retryBlockedInteractionGen, resolveBlockedInteraction, stopRetryingInteractionGen)
   }
 
   object ProcessInstance {
@@ -200,7 +209,6 @@ object ProtoEventAdapterSpec {
 
     val failureStrategyGen: Gen[ExceptionStrategy] = Gen.oneOf(
       Gen.const(ExceptionStrategy.BlockTransition),
-      Gen.const(ExceptionStrategy.Fatal),
       Gen.posNum[Long].map(delay => ExceptionStrategy.RetryWithDelay(delay)),
       for {
         marking <- markingDataGen
@@ -250,13 +258,23 @@ object ProtoEventAdapterSpec {
       strategy <- failureStrategyGen
     } yield TransitionFailed(jobId, transitionId, correlationId, consume, input, reason, strategy)
 
+    val overrideFailureGen = for {
+      jobId <- jobIdGen
+      strategy <- failureStrategyGen
+    } yield OverrideExceptionStrategy(jobId, strategy)
+
+    val invalidCommandGen = for {
+      reason <- Gen.alphaStr
+    } yield InvalidCommand(reason)
+
     val transitionNotEnabledGen = for {
       transitionId <- transitionIdGen
       reason <- Gen.alphaStr
     } yield TransitionNotEnabled(transitionId, reason)
 
     val messagesGen: Gen[AnyRef] = Gen.oneOf(getStateGen, stopGen, initializeGen, initializedGen, uninitializedGen,
-      alreadyInitializedGen, fireTransitionGen, transitionFiredGen, transitionFailedGen, transitionNotEnabledGen)
+      alreadyInitializedGen, fireTransitionGen, transitionFiredGen, transitionFailedGen, transitionNotEnabledGen,
+      overrideFailureGen, invalidCommandGen)
   }
 
   object Types {

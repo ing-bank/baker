@@ -24,7 +24,7 @@ trait StateTransitionNet[S, E] {
                                 (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]) =
       job.transition.exceptionStrategy(throwable, failureCount, outMarking)
     override def isAutoFireable(instance: Instance[Place, Transition, S], t: Transition): Boolean =
-      t.isAutomated && instance.isBlockedReason(t).isEmpty
+      t.isAutomated && !instance.isBlocked(t)
   }
 
   def stateTransition(id: Long = Math.abs(Random.nextLong), label: Option[String] = None, automated: Boolean = false,
