@@ -12,9 +12,6 @@ import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.core.events.RejectReason._
 import com.ing.baker.runtime.core.events._
 import com.ing.baker.types.PrimitiveValue
-import org.hamcrest
-import org.hamcrest.Description
-import org.mockito.Matchers
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration._

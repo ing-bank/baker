@@ -2,7 +2,7 @@ package com.ing.baker.runtime.core.internal
 
 import java.util.UUID
 
-import com.ing.baker.runtime.core.{BakerException, RuntimeEvent, _}
+import com.ing.baker.runtime.core.{RuntimeEvent, _}
 import com.ing.baker.types.{Converters, Type, Value}
 import org.slf4j.LoggerFactory
 

@@ -866,7 +866,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
     "retry a blocked interaction" in {
       val recipe =
-        Recipe("RetrylockedInteractionRecipe")
+        Recipe("RetryBlockedInteractionRecipe")
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
