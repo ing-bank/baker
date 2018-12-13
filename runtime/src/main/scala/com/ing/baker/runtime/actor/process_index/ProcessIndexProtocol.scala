@@ -32,6 +32,8 @@ object ProcessIndexProtocol {
 
   case class ResolveBlockedInteraction(override val processId: String, interactionName: String, output: RuntimeEvent) extends ProcessIndexMessage
 
+  case class StopRetryingInteraction(override val processId: String, interactionName: String) extends ProcessIndexMessage
+
   // --- RESPONSES
 
   /**

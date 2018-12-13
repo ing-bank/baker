@@ -369,6 +369,26 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   def resolveInteraction(@Nonnull processId: String, @Nonnull interactionName: String, @Nonnull event: Any, @Nonnull timeout: java.time.Duration): Unit =
     baker.resolveInteraction(processId, interactionName, event, timeout.toScala)
 
+  /**
+    * Stops a retrying interaction.
+    *
+    * @param processId The process identifier.
+    * @param interactionName The name of the retrying interaction.
+    * @return
+    */
+  def stopRetryingInteraction(@Nonnull processId: String, @Nonnull interactionName: String): Unit =
+    baker.stopRetryingInteraction(processId, interactionName)
+
+  /**
+    * Resolves a blocked interaction by giving it's output.
+    *
+    * @param processId The process identifier.
+    * @param interactionName The name of the retrying interaction.
+    * @param timeout       How long to wait for a response from the process
+    * @return
+    */
+  def stopRetryingInteraction(@Nonnull processId: String, @Nonnull interactionName: String, @Nonnull timeout: java.time.Duration): Unit =
+    baker.stopRetryingInteraction(processId, interactionName, timeout.toScala)
 
   /**
     * Returns all the ingredients that are accumulated for a given process.

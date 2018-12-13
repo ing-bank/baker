@@ -159,9 +159,14 @@ object ProtoEventAdapterSpec {
       event <- Runtime.runtimeEventGen
     } yield ResolveBlockedInteraction(processId, interactionName, event)
 
+    val stopRetryingInteractionGen = for {
+      processId <- processIdGen
+      interactionName <- Gen.alphaStr
+    } yield StopRetryingInteraction(processId, interactionName)
+
     val messagesGen: Gen[AnyRef] = Gen.oneOf(getIndexGen, indexGen, createProcessGen, processEventGen,
       getProcessStateGen, getCompiledRecipeGen, receivePeriodExpiredGen, invalidEventGen, processDeletedGen,
-      noSuchProcessGen, processAlreadyExistsGen, retryBlockedInteractionGen, resolveBlockedInteraction)
+      noSuchProcessGen, processAlreadyExistsGen, retryBlockedInteractionGen, resolveBlockedInteraction, stopRetryingInteractionGen)
   }
 
   object ProcessInstance {

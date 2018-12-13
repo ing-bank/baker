@@ -241,6 +241,44 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _, Added(2)) ⇒ }
     }
 
+    "Be able to block a retrying transition when requested" in new TestSequenceNet {
+
+      val retryHandler: TransitionExceptionHandler[Place] = {
+        case (_, n, _) if n < 3 ⇒ RetryWithDelay(5000)
+        case _                  ⇒ internal.ExceptionStrategy.BlockTransition
+      }
+
+      override val sequence = Seq(
+        transition(exceptionHandler = retryHandler) { _ ⇒ throw new RuntimeException("Expected test failure") }
+      )
+
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime)
+
+      actor ! Initialize(initialMarking, Set.empty)
+      expectMsgClass(classOf[Initialized])
+
+      actor ! FireTransition(transitionId = 1, input = null)
+
+      expectMsgClass(classOf[TransitionFailed])
+
+      actor ! GetState
+
+      val state: InstanceState = expectMsgClass(classOf[InstanceState])
+
+      state.jobs.size shouldBe 1
+
+      val (jobId, jobState) = state.jobs.head
+
+      jobState.exceptionState should matchPattern {
+        case Some(ExceptionState(_, _, protocol.ExceptionStrategy.RetryWithDelay(5000))) =>
+      }
+
+      actor ! OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.BlockTransition)
+
+      // expect that the failure is resolved
+      expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.BlockTransition) ⇒ }
+    }
+
     "Respond with a AlreadyReceived message if the given corellation id was received earlier" in new TestSequenceNet {
 
       val testCorrelationId = "abc"

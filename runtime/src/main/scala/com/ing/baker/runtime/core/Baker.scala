@@ -273,6 +273,18 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   }
 
   /**
+    * Stops the retrying of an interaction.
+    *
+    * @return
+    */
+  def stopRetryingInteraction(processId: String, interactionName: String, timeout: FiniteDuration = defaultProcessEventTimeout): Unit = {
+
+    val futureResult = processIndexActor.ask(StopRetryingInteraction(processId, interactionName))(timeout)
+
+    Await.result(futureResult, timeout)
+  }
+
+  /**
     * Synchronously returns all event names that occurred for a process.
     */
   def eventNames(processId: String, timeout: FiniteDuration = defaultInquireTimeout): List[String] =

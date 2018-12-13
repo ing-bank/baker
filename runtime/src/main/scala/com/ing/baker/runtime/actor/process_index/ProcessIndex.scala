@@ -27,7 +27,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 import cats.data.OptionT
 import cats.instances.future._
-import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{Continue, RetryWithDelay}
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 
 object ProcessIndex {
 
@@ -81,6 +81,7 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
 
   import context.dispatcher
 
+  private val processInquireTimeout: FiniteDuration = context.system.settings.config.getDuration("baker.process-inquire-timeout").toScala
   private val updateCacheTimeout: FiniteDuration = context.system.settings.config.getDuration("baker.process-index-update-cache-timeout").toScala
   private val index: mutable.Map[String, ActorMetadata] = mutable.Map[String, ActorMetadata]()
   private val recipeCache: mutable.Map[String, (CompiledRecipe, Long)] = mutable.Map[String, (CompiledRecipe, Long)]()
@@ -156,6 +157,16 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
         }
       case Some(actorRef) => fn(actorRef)
     }
+  }
+
+  def getInteractionJob(processId: String, interactionName: String, processActor: ActorRef) = {
+    // we find which job correlates with the interaction
+    for {
+      recipe     <- OptionT.fromOption(getCompiledRecipe(index(processId).recipeId))
+      transition <- OptionT.fromOption(recipe.interactionTransitions.find(_.interactionName == interactionName))
+      state      <- OptionT(processActor.ask(GetState)(processInquireTimeout).mapTo[InstanceState].map(Option(_)))
+      jobId      <- OptionT.fromOption(state.jobs.collectFirst { case (jobId, job) if job.transitionId == transition.id => jobId }  )
+    } yield (transition, jobId)
   }
 
   override def receiveCommand: Receive = {
@@ -270,53 +281,47 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
         }
       }
 
-    case RetryBlockedInteraction(processId, interactionName) =>
+    case StopRetryingInteraction(processId, interactionName) =>
 
-      withActiveProcess(processId) { actorRef =>
-
-        implicit val timeout: Timeout = 2 seconds
+      withActiveProcess(processId) { processActor =>
 
         val originalSender = sender()
 
         // we find which job correlates with the interaction
-        val jobIdOptionT: OptionT[Future, Long] = for {
-          recipe     <- OptionT.fromOption(getCompiledRecipe(index(processId).recipeId))
-          transition <- OptionT.fromOption(recipe.interactionTransitions.find(_.interactionName == interactionName))
-          state      <- OptionT(actorRef.ask(GetState).mapTo[InstanceState].map(Option(_)))
-          jobId      <- OptionT.fromOption(state.jobs.collectFirst { case (jobId, job) if job.transitionId == transition.id => jobId }  )
-        } yield jobId
+        getInteractionJob(processId, interactionName, processActor).value.onComplete {
+          case Success(Some((_, jobId))) => processActor.tell(OverrideExceptionStrategy(jobId, BlockTransition), originalSender)
+          case Success(_)                => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not retrying"))
+          case Failure(exception)        => originalSender ! akka.actor.Status.Failure(exception)
+        }
+      }
 
-        jobIdOptionT.value.onComplete {
-          case Success(Some(jobId)) => actorRef.tell(OverrideExceptionStrategy(jobId, RetryWithDelay(0)), originalSender)
-          case Success(_)           => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not blocked"))
-          case Failure(exception)   => originalSender ! akka.actor.Status.Failure(exception)
+    case RetryBlockedInteraction(processId, interactionName) =>
+
+      withActiveProcess(processId) { processActor =>
+
+        val originalSender = sender()
+
+        getInteractionJob(processId, interactionName, processActor).value.onComplete {
+          case Success(Some((_, jobId))) => processActor.tell(OverrideExceptionStrategy(jobId, RetryWithDelay(0)), originalSender)
+          case Success(_)                => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not blocked"))
+          case Failure(exception)        => originalSender ! akka.actor.Status.Failure(exception)
         }
       }
 
     case ResolveBlockedInteraction(processId, interactionName, event) =>
 
-      withActiveProcess(processId) { actorRef =>
-
-        implicit val timeout: Timeout = 2 seconds
+      withActiveProcess(processId) { processActor =>
 
         val originalSender = sender()
 
-        // we find which job correlates with the interaction
-        val jobIdOptionT: OptionT[Future, (InteractionTransition, Long)] = for {
-          recipe <- OptionT.fromOption(getCompiledRecipe(index(processId).recipeId))
-          transition <- OptionT.fromOption(recipe.interactionTransitions.find(_.interactionName == interactionName))
-          state <- OptionT(actorRef.ask(GetState).mapTo[InstanceState].map(Option(_)))
-          jobId <- OptionT.fromOption(state.jobs.collectFirst { case (jobId, job) if job.transitionId == transition.id => jobId })
-        } yield (transition, jobId)
-
-        jobIdOptionT.value.onComplete {
+        getInteractionJob(processId, interactionName, processActor).value.onComplete {
           case Success(Some((interaction, jobId))) =>
             RecipeRuntime.validateInteractionOutput(interaction, Some(event)) match {
 
               case None        =>
                 val petriNet = getCompiledRecipe(index(processId).recipeId).get.petriNet
                 val producedMarking = RecipeRuntime.createProducedMarking(petriNet.outMarking(interaction), Some(event))
-                actorRef.tell(OverrideExceptionStrategy(jobId, Continue(producedMarking.marshall, event)), originalSender)
+                processActor.tell(OverrideExceptionStrategy(jobId, Continue(producedMarking.marshall, event)), originalSender)
               case Some(error) =>
                 log.warning("Invalid event given: " + error)
                 originalSender ! InvalidEvent(processId, error)
