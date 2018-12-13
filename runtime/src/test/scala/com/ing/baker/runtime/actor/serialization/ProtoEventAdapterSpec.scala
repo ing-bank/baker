@@ -253,13 +253,10 @@ object ProtoEventAdapterSpec {
       strategy <- failureStrategyGen
     } yield TransitionFailed(jobId, transitionId, correlationId, consume, input, reason, strategy)
 
-    val retryJobGen = jobIdGen.map(RetryBlockedJob(_))
-
-    val resolveJobGen = for {
+    val overrideFailureGen = for {
       jobId <- jobIdGen
-      produced <- markingDataGen
-      output <- Runtime.runtimeEventGen
-    } yield ResolveBlockedJob(jobId, produced, output)
+      strategy <- failureStrategyGen
+    } yield OverrideExceptionStrategy(jobId, strategy)
 
     val invalidCommandGen = for {
       reason <- Gen.alphaStr
@@ -272,7 +269,7 @@ object ProtoEventAdapterSpec {
 
     val messagesGen: Gen[AnyRef] = Gen.oneOf(getStateGen, stopGen, initializeGen, initializedGen, uninitializedGen,
       alreadyInitializedGen, fireTransitionGen, transitionFiredGen, transitionFailedGen, transitionNotEnabledGen,
-      retryJobGen, resolveJobGen, invalidCommandGen)
+      overrideFailureGen, invalidCommandGen)
   }
 
   object Types {

@@ -28,10 +28,9 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
     case protocol.FireTransition(transitionid, input, correlationId) =>
       protobuf.FireTransition(Some(transitionid), Some(ctx.toProtoAny(input.asInstanceOf[AnyRef])), correlationId)
 
-    case protocol.RetryBlockedJob(jobId) =>
-      protobuf.RetryBlockedJob(Some(jobId))
-    case protocol.ResolveBlockedJob(jobId, marking, output) =>
-      protobuf.ResolveBlockedJob(Some(jobId), toProtoMarking(marking, ctx), Some(ctx.toProtoAny(output.asInstanceOf[AnyRef])))
+    case protocol.OverrideExceptionStrategy(jobId, strategy) =>
+      protobuf.OverrideExceptionStrategy(Some(jobId), Some(ctx.toProto[protobuf.FailureStrategyMessage](strategy)))
+
     case protocol.InvalidCommand(reason) =>
       protobuf.InvalidCommand(Some(reason))
 
@@ -100,10 +99,8 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
     case protobuf.FireTransition(Some(transitionId), Some(input), correlationId) =>
       protocol.FireTransition(transitionId, ctx.toDomain[Any](input), correlationId)
 
-    case protobuf.RetryBlockedJob(Some(jobId)) =>
-      protocol.RetryBlockedJob(jobId)
-    case protobuf.ResolveBlockedJob(Some(jobId), produced, Some(output)) =>
-      protocol.ResolveBlockedJob(jobId, toDomainMarking(produced, ctx), ctx.toDomain[Any](output))
+    case protobuf.OverrideExceptionStrategy(Some(jobId), Some(failureStrategyMessage)) =>
+      protocol.OverrideExceptionStrategy(jobId, ctx.toDomain[protocol.ExceptionStrategy](failureStrategyMessage))
     case protobuf.InvalidCommand(Some(reason)) =>
       protocol.InvalidCommand(reason)
 

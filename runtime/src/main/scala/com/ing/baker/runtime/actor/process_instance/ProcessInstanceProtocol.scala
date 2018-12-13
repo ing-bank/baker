@@ -44,14 +44,12 @@ object ProcessInstanceProtocol {
     correlationId: Option[String] = None) extends Command
 
   /**
-    * Command to retry a blocked transition that is blocked.
+    * Overrides the chosen exception strategy of a job (running transition)
+    *
+    * @param jobId The id of the job.
+    * @param failureStrategy The new failure strategy
     */
-  case class RetryBlockedJob(jobId: Long) extends Command
-
-  /**
-    * Command to resolve a blocked transition.
-    */
-  case class ResolveBlockedJob(jobId: Long, marking: Marking[Id], output: Any) extends Command
+  case class OverrideExceptionStrategy(jobId: Long, failureStrategy: ExceptionStrategy) extends Command
 
   /**
    * A common trait for all responses coming from a petri net instance.
@@ -152,7 +150,7 @@ object ProcessInstanceProtocol {
     case object BlockTransition extends ExceptionStrategy
 
     case class RetryWithDelay(delay: Long) extends ExceptionStrategy {
-      require(delay > 0, "Delay must be greater then zero")
+      require(delay >= 0, "Delay must be greater then zero")
     }
 
     case class Continue(marking: Marking[Id], output: Any) extends ExceptionStrategy

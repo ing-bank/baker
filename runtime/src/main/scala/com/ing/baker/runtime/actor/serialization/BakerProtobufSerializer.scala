@@ -54,7 +54,6 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     Entry("ProcessIndexProtocol.RetryBlockedInteraction", classOf[ProcessIndexProtocol.RetryBlockedInteraction], actor.process_index.protobuf.RetryBlockedInteraction),
     Entry("ProcessIndexProtocol.ResolveBlockedInteraction", classOf[ProcessIndexProtocol.ResolveBlockedInteraction], actor.process_index.protobuf.ResolveBlockedInteraction),
 
-
     Entry("ProcessIndexProtocol.ProcessEventResponse", classOf[ProcessIndexProtocol.ProcessEventResponse], actor.process_index.protobuf.ProcessEventResponse),
     Entry("ProcessIndexProtocol.GetProcessState", classOf[ProcessIndexProtocol.GetProcessState], actor.process_index.protobuf.GetProcessState),
     Entry("ProcessIndexProtocol.GetCompiledRecipe", classOf[ProcessIndexProtocol.GetCompiledRecipe], actor.process_index.protobuf.GetCompiledRecipe),
@@ -74,8 +73,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     Entry("ProcessInstanceProtocol.AlreadyInitialized", classOf[ProcessInstanceProtocol.AlreadyInitialized], actor.process_instance.protobuf.AlreadyInitialized),
 
     Entry("ProcessInstanceProtocol.FireTransition", classOf[ProcessInstanceProtocol.FireTransition], actor.process_instance.protobuf.FireTransition),
-    Entry("ProcessInstanceProtocol.RetryBlockedJob", classOf[ProcessInstanceProtocol.RetryBlockedJob], actor.process_instance.protobuf.RetryBlockedJob),
-    Entry("ProcessInstanceProtocol.ResolveBlockedJob", classOf[ProcessInstanceProtocol.ResolveBlockedJob], actor.process_instance.protobuf.ResolveBlockedJob),
+    Entry("ProcessInstanceProtocol.OverrideExceptionStrategy", classOf[ProcessInstanceProtocol.OverrideExceptionStrategy], actor.process_instance.protobuf.OverrideExceptionStrategy),
     Entry("ProcessInstanceProtocol.InvalidCommand", classOf[ProcessInstanceProtocol.InvalidCommand], actor.process_instance.protobuf.InvalidCommand),
 
     Entry("ProcessInstanceProtocol.AlreadyReceived", classOf[ProcessInstanceProtocol.AlreadyReceived], actor.process_instance.protobuf.AlreadyReceived),

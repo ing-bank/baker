@@ -133,20 +133,6 @@ message TransitionNotEnabled {
     optional string reason = 2;
 }
 
-message RetryBlockedJob {
-    optional int64 jobId = 1;
-}
-
-message ResolveBlockedJob {
-    optional int64 jobId = 1;
-    repeated MarkingData produced = 2;
-    optional SerializedData output = 3;
-}
-
-message InvalidCommand {
-    optional string reason = 1;
-}
-
 message TransitionFiredMessage {
     optional int64 jobId = 1;
     optional int64 transitionId = 2;
@@ -180,4 +166,13 @@ message FailureStrategyMessage {
     optional int64 retryDelay = 2;
     repeated MarkingData marking = 3;
     optional SerializedData output = 4;
+}
+
+message OverrideExceptionStrategy {
+    optional int64 jobId = 1;
+    optional FailureStrategyMessage failureStrategy = 2;
+}
+
+message InvalidCommand {
+    optional string reason = 1;
 }

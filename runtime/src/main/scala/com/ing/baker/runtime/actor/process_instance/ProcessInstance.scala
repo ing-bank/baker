@@ -249,21 +249,30 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
     case Initialize(_, _) ⇒
       sender() ! AlreadyInitialized(processId)
 
-    case RetryBlockedJob(jobId) =>
+    case OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.RetryWithDelay(timeout)) =>
 
       instance.jobs.get(jobId) match {
         // retry is only allowed if the interaction is blocked by a failure
         case Some(job @ internal.Job(_, _, _, _, _, _, Some(blocked @ internal.ExceptionState(_, _, _, internal.ExceptionStrategy.BlockTransition)))) =>
 
+          val now = System.currentTimeMillis()
+
           // the job is updated so it cannot be retried again
-          val updatedJob: Job[P, T, S] = job.copy(failure = Some(blocked.copy(failureStrategy = internal.ExceptionStrategy.RetryWithDelay(0))))
+          val updatedJob: Job[P, T, S] = job.copy(failure = Some(blocked.copy(failureStrategy = internal.ExceptionStrategy.RetryWithDelay(timeout))))
           val updatedInstance: Instance[P, T, S] = instance.copy(jobs = instance.jobs + (jobId -> updatedJob))
+          val originalSender = sender()
 
-          // executes the job
-          executeJob(job, sender())
+          // execute the job immediately if there is no timeout
+          if (timeout == 0) {
+            executeJob(job, originalSender)
+          }
+          else {
+            // schedule the retry
+            val scheduledRetry = system.scheduler.scheduleOnce(timeout millisecond)(executeJob(job, originalSender))
 
-          // switch to the new state
-          context become running(updatedInstance, scheduledRetries)
+            // switch to the new state
+            context become running(updatedInstance, scheduledRetries + (jobId -> scheduledRetry))
+          }
 
         case Some(_) =>
           sender() ! InvalidCommand(s"Job with id '$jobId' is not blocked")
@@ -272,7 +281,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
           sender() ! InvalidCommand(s"Job with id '$jobId' does not exist")
       }
 
-    case ResolveBlockedJob(jobId, produce, output) =>
+    case OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.Continue(produce, output)) =>
 
       instance.jobs.get(jobId) match {
         // resolving is only allowed if the interaction is blocked by a failure
@@ -294,6 +303,30 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
         case Some(_) =>
           sender() ! InvalidCommand(s"Job with id '$jobId' is not blocked")
+
+        case None =>
+          sender() ! InvalidCommand(s"Job with id '$jobId' does not exist")
+      }
+
+    case OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.BlockTransition) =>
+
+      instance.jobs.get(jobId) match {
+        // blocking is only allowed when the interaction is currently retrying
+        case Some(job @ internal.Job(_, correlationId, _, transition, consumed, _, Some(internal.ExceptionState(_, _, failureReason, internal.ExceptionStrategy.RetryWithDelay(_))))) =>
+
+          if (scheduledRetries(jobId).cancel()) {
+
+            val now = System.currentTimeMillis()
+
+            // to block the interaction a failure event is created to prevent retry after reboot
+            val event = TransitionFailedEvent(jobId, transition.getId, correlationId, now, now, consumed.marshall, job.input, failureReason, internal.ExceptionStrategy.BlockTransition)
+
+            // and processed synchronously
+            running(instance, scheduledRetries - jobId).apply(event)
+          }
+
+        case Some(_) =>
+          sender() ! InvalidCommand(s"Job with id '$jobId' is not retrying")
 
         case None =>
           sender() ! InvalidCommand(s"Job with id '$jobId' does not exist")
