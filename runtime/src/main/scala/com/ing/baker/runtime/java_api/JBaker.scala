@@ -361,6 +361,8 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   /**
     * Resolves a blocked interaction by giving it's output.
     *
+    * !!! You should provide an event of the original interaction. Event / ingredient renames are done by Baker.
+    *
     * @param processId The process identifier.
     * @param interactionName The name of the blocked interaction.
     * @param event The output of the interaction.

@@ -263,6 +263,8 @@ class Baker()(implicit val actorSystem: ActorSystem) {
   /**
     * Resolves a blocked interaction by specifying it's output.
     *
+    * !!! You should provide an event of the original interaction. Event / ingredient renames are done by Baker.
+    *
     * @return
     */
   def resolveInteraction(processId: String, interactionName: String, event: Any, timeout: FiniteDuration = defaultProcessEventTimeout): Unit = {

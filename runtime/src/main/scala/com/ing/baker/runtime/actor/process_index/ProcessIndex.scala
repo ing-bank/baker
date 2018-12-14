@@ -321,7 +321,9 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
               case None        =>
                 val petriNet = getCompiledRecipe(index(processId).recipeId).get.petriNet
                 val producedMarking = RecipeRuntime.createProducedMarking(petriNet.outMarking(interaction), Some(event))
-                processActor.tell(OverrideExceptionStrategy(jobId, Continue(producedMarking.marshall, event)), originalSender)
+                val transformedEvent = RecipeRuntime.transformInteractionEvent(interaction, event)
+
+                processActor.tell(OverrideExceptionStrategy(jobId, Continue(producedMarking.marshall, transformedEvent)), originalSender)
               case Some(error) =>
                 log.warning("Invalid event given: " + error)
                 originalSender ! InvalidEvent(processId, error)
