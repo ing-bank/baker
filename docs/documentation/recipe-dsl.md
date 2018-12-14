@@ -231,6 +231,24 @@ be triggered after (from the start):
 This also means that the `24 hour` deadline **does not** include interaction execution time. It is advisable to take this
 into account when coming up with this number.
 
+**Retry exhaustion**
+
+It can happen that after some time, when an interaction keeps failing, that the retry is exhausted.
+
+When this happens 2 things may happen.
+
+Either the interaction becomes [blocked(#blocked-interaction).
+
+Or if you configure so, the process continues with a predefined event:
+
+```
+.withFailureStrategy(new RetryWithIncrementalBackoffBuilder()
+  .withFireRetryExhaustedEvent(SomeEvent.class))
+
+```
+
+Note that this event class **requires** an empty constructor to be present and **cannot** provide ingredients.
+
 ## Default failure strategy
 
 You can also define a default failure strategy on the recipe level.
