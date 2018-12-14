@@ -292,7 +292,7 @@ class Baker()(implicit val actorSystem: ActorSystem) {
 
   private def getEventsForRecipe(processId: String, compiledRecipe: CompiledRecipe): Source[(RuntimeEvent, Long), NotUsed] = {
     ProcessInstanceEventSourcing
-      .eventsForInstance[Place, Transition, ProcessState, RuntimeEvent](compiledRecipe.name, processId, compiledRecipe.petriNet, configuredEncryption, readJournal, RecipeRuntime.eventSourceFn)
+      .eventsForInstance[Place, Transition, ProcessState, RuntimeEvent](compiledRecipe.name, processId, compiledRecipe.petriNet, configuredEncryption, readJournal, RecipeRuntime.recipeEventSourceFn)
       .collect {
         case (_, TransitionFiredEvent(_, _, _, _, time, _, _, runtimeEvent: RuntimeEvent))
           if runtimeEvent != null && compiledRecipe.allEvents.exists(e => e.name equals runtimeEvent.name) => (runtimeEvent, time)

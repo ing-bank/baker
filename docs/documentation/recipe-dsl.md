@@ -161,13 +161,15 @@ When an interaction throws an exception there are a number of mitigation strateg
 
 #### Block interaction
 
-This option is for non idempotent interactions that cannot be retried.
+This is the *DEFAULT* strategy if no other is defined and no [default strategy](#default-failure-strategy) is defined.
+
+This option is suitable for non idempotent interactions that cannot be retried.
 
 When an exception is thrown from the interaction the interaction is *blocked*.
 
 This means that the interaction cannot execute again automatically.
 
-It requires [manual intervening]() to continue the process from then on.
+It requires [manual intervening](process-execution.md#incident-resolving) to continue the process from then on.
 
 #### Fire event
 
@@ -228,3 +230,40 @@ be triggered after (from the start):
 
 This also means that the `24 hour` deadline **does not** include interaction execution time. It is advisable to take this
 into account when coming up with this number.
+
+**Retry exhaustion**
+
+It can happen that after some time, when an interaction keeps failing, that the retry is exhausted.
+
+When this happens 2 things may happen.
+
+Either the interaction becomes [blocked(#blocked-interaction).
+
+Or if you configure so, the process continues with a predefined event:
+
+```
+.withFailureStrategy(new RetryWithIncrementalBackoffBuilder()
+  .withFireRetryExhaustedEvent(SomeEvent.class))
+
+```
+
+Note that this event class **requires** an empty constructor to be present and **cannot** provide ingredients.
+
+## Default failure strategy
+
+You can also define a default failure strategy on the recipe level.
+
+This then serves as a fallback if none is defined for an interaction.
+
+For example:
+
+``` java
+final Recipe webshopRecipe = new Recipe("webshop")
+    .withDefaultFailureStrategy(
+        new RetryWithIncrementalBackoffBuilder()
+            .withInitialDelay(Duration.ofMillis(100))
+            .withDeadline(Duration.ofHours(24))
+            .withMaxTimeBetweenRetries(Duration.ofMinutes(10))
+            .build());
+```
+
