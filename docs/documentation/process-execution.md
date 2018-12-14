@@ -161,8 +161,10 @@ baker.resolveInteraction(processId, "ShipGoods", GoodsShipped("some goods"))
 ```
 
 ``` java tab="Java"
-baker.resolveInteraction(processId, "ShipGoods", new GoodsSchipped("some goods"));
+baker.resolveInteraction(processId, "ShipGoods", new GoodsShipped("some goods"));
 ```
+
+Note that the event provided *SHOULD NOT* include any [event or ingredient renames](recipe-dsl.md#event-renames) specified for the interaction.
 
 
 ## State inquiry

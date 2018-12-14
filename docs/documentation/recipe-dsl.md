@@ -129,6 +129,23 @@ Each time all *remaining* ingredients are provided, the interaction will fire.
 
 You can **not** predefine *ALL* input ingredients of an interaction.
 
+### Event renames
+
+Sometimes it useful to rename an interaction event and/or its ingredients to fit better in the context of your recipe.
+
+For example, to rename the `GoodsManufactured` event and its ingredient.
+
+``` java
+  .withInteractions(
+    of(ManufactureGoods.class)
+      .withEventTransformation(
+        GoodsManufactured.class, "ManufacturingDone",
+        ImmutableMap.of("goods", "manufacturedGoods")
+      )
+    )
+  )
+```
+
 ### Event requirements
 
 As mentioned before, the DSL is declarative, you do not have to think about order. This is implicit in the data requirements of the interactions.
