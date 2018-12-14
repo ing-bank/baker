@@ -398,6 +398,13 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#block-interaction" title="Block interaction" class="md-nav__link">
+    Block interaction
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#fire-event" title="Fire event" class="md-nav__link">
     Fire event
   </a>
@@ -418,6 +425,13 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#default-failure-strategy" title="Default failure strategy" class="md-nav__link">
+    Default failure strategy
+  </a>
   
 </li>
       
@@ -640,6 +654,13 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#block-interaction" title="Block interaction" class="md-nav__link">
+    Block interaction
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#fire-event" title="Fire event" class="md-nav__link">
     Fire event
   </a>
@@ -660,6 +681,13 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#default-failure-strategy" title="Default failure strategy" class="md-nav__link">
+    Default failure strategy
+  </a>
   
 </li>
       
@@ -794,6 +822,12 @@
 <p>In this case the interaction may fire if <em>either</em> <code>EventA</code> OR <code>EventB</code> has occured.</p>
 <h3 id="interaction-failure-strategy">Interaction Failure strategy</h3>
 <p>When an interaction throws an exception there are a number of mitigation strategies:</p>
+<h4 id="block-interaction">Block interaction</h4>
+<p>This is the <em>DEFAULT</em> strategy if no other is defined and no <a href="#default-failure-strategy">default strategy</a> is defined.</p>
+<p>This option is suitable for non idempotent interactions that cannot be retried.</p>
+<p>When an exception is thrown from the interaction the interaction is <em>blocked</em>.</p>
+<p>This means that the interaction cannot execute again automatically.</p>
+<p>It requires <a href="../process-execution/#incident-resolving">manual intervening</a> to continue the process from then on.</p>
 <h4 id="fire-event">Fire event</h4>
 <p>This option is analagous to a <code>try { } catch { }</code> in code. When an exception is raised from the interaction you specify an
 event to fire. So instead of failing the process continues.</p>
@@ -857,6 +891,28 @@ be triggered after (from the start):</p>
 <p><code>(100 millis + 5 seconds + 200 millis) = 5.3 seconds</code></p>
 <p>This also means that the <code>24 hour</code> deadline <strong>does not</strong> include interaction execution time. It is advisable to take this
 into account when coming up with this number.</p>
+<p><strong>Retry exhaustion</strong></p>
+<p>It can happen that after some time, when an interaction keeps failing, that the retry is exhausted.</p>
+<p>When this happens 2 things may happen.</p>
+<p>Either the interaction becomes [blocked(#blocked-interaction).</p>
+<p>Or if you configure so, the process continues with a predefined event:</p>
+<div class="codehilite"><pre><span></span><span class="na">.withFailureStrategy</span><span class="p">(</span><span class="no">new</span> <span class="no">RetryWithIncrementalBackoffBuilder</span><span class="p">()</span>
+  <span class="na">.withFireRetryExhaustedEvent</span><span class="p">(</span><span class="no">SomeEvent.class</span><span class="p">))</span>
+</pre></div>
+
+<p>Note that this event class <strong>requires</strong> an empty constructor to be present and <strong>cannot</strong> provide ingredients.</p>
+<h2 id="default-failure-strategy">Default failure strategy</h2>
+<p>You can also define a default failure strategy on the recipe level.</p>
+<p>This then serves as a fallback if none is defined for an interaction.</p>
+<p>For example:</p>
+<div class="codehilite"><pre><span></span><span class="kd">final</span> <span class="n">Recipe</span> <span class="n">webshopRecipe</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Recipe</span><span class="o">(</span><span class="s">&quot;webshop&quot;</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withDefaultFailureStrategy</span><span class="o">(</span>
+        <span class="k">new</span> <span class="n">RetryWithIncrementalBackoffBuilder</span><span class="o">()</span>
+            <span class="o">.</span><span class="na">withInitialDelay</span><span class="o">(</span><span class="n">Duration</span><span class="o">.</span><span class="na">ofMillis</span><span class="o">(</span><span class="mi">100</span><span class="o">))</span>
+            <span class="o">.</span><span class="na">withDeadline</span><span class="o">(</span><span class="n">Duration</span><span class="o">.</span><span class="na">ofHours</span><span class="o">(</span><span class="mi">24</span><span class="o">))</span>
+            <span class="o">.</span><span class="na">withMaxTimeBetweenRetries</span><span class="o">(</span><span class="n">Duration</span><span class="o">.</span><span class="na">ofMinutes</span><span class="o">(</span><span class="mi">10</span><span class="o">))</span>
+            <span class="o">.</span><span class="na">build</span><span class="o">());</span>
+</pre></div>
                 
                   
                 

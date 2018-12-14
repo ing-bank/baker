@@ -433,6 +433,33 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#incident-resolving" title="Incident resolving" class="md-nav__link">
+    Incident resolving
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-force-retry" title="1. Force retry" class="md-nav__link">
+    1. Force retry
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-specify-the-interaction-output" title="2. Specify the interaction output" class="md-nav__link">
+    2. Specify the interaction output
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#state-inquiry" title="State inquiry" class="md-nav__link">
     State inquiry
   </a>
@@ -612,6 +639,33 @@
   <a href="#sensory-event-status" title="Sensory event status" class="md-nav__link">
     Sensory event status
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#incident-resolving" title="Incident resolving" class="md-nav__link">
+    Incident resolving
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-force-retry" title="1. Force retry" class="md-nav__link">
+    1. Force retry
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-specify-the-interaction-output" title="2. Specify the interaction output" class="md-nav__link">
+    2. Specify the interaction output
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -806,17 +860,47 @@
 </tr>
 </tbody>
 </table>
+<h2 id="incident-resolving">Incident resolving</h2>
+<p>It is possible that during execution a process instance becomes <em>blocked</em>.</p>
+<p>This can happen either because it is <a href="../recipe-dsl/#block-interaction">directly blocked</a> by a exception or that the retry strategy was exhuasted.</p>
+<p>At this point it is possible to resolve the blocked interaction in 2 ways.</p>
+<h3 id="1-force-retry">1. Force retry</h3>
+<p>For example, the retry strategy for <em>"SendInvoice"</em> was exhausted after a few hours or retrying.</p>
+<p>However, we checked and know the <em>"invoice"</em> service is up again and want to continue to process for our customer.</p>
+<div class="superfences-tabs">
+<input name="__tabs_5" type="radio" id="__tab_5_0" checked="checked" />
+<label for="__tab_5_0">Scala</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">baker</span><span class="o">.</span><span class="n">retryInteraction</span><span class="o">(</span><span class="n">processId</span><span class="o">,</span> <span class="s">&quot;SendInvoice&quot;</span><span class="o">)</span>
+</pre></div></div>
+<input name="__tabs_5" type="radio" id="__tab_5_1" />
+<label for="__tab_5_1">Java</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">baker</span><span class="o">.</span><span class="na">retryInteraction</span><span class="o">(</span><span class="n">processId</span><span class="o">,</span> <span class="s">&quot;SendInvoice&quot;</span><span class="o">);</span>
+</pre></div></div>
+</div>
+<h3 id="2-specify-the-interaction-output">2. Specify the interaction output</h3>
+<p>For example, the <em>"ShipGoods"</em> backend service is not idempotent and failed with an exception. It is not retried but <em>blocked</em>.</p>
+<p>However, we checked and know the goods were actually shipped and want to continue the process for our customer.</p>
+<div class="superfences-tabs">
+<input name="__tabs_6" type="radio" id="__tab_6_0" checked="checked" />
+<label for="__tab_6_0">Scala</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">baker</span><span class="o">.</span><span class="n">resolveInteraction</span><span class="o">(</span><span class="n">processId</span><span class="o">,</span> <span class="s">&quot;ShipGoods&quot;</span><span class="o">,</span> <span class="nc">GoodsShipped</span><span class="o">(</span><span class="s">&quot;some goods&quot;</span><span class="o">))</span>
+</pre></div></div>
+<input name="__tabs_6" type="radio" id="__tab_6_1" />
+<label for="__tab_6_1">Java</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">baker</span><span class="o">.</span><span class="na">resolveInteraction</span><span class="o">(</span><span class="n">processId</span><span class="o">,</span> <span class="s">&quot;ShipGoods&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="n">GoodsSchipped</span><span class="o">(</span><span class="s">&quot;some goods&quot;</span><span class="o">));</span>
+</pre></div></div>
+</div>
 <h2 id="state-inquiry">State inquiry</h2>
 <p>During runtime it is often useful to <em>inquire</em> on the state of a process instance.</p>
 <h2 id="visualize-process-instance-state">Visualize process instance state</h2>
 <p>We can use the visualizer to see what Baker has done with the given events.</p>
 <div class="superfences-tabs">
-<input name="__tabs_5" type="radio" id="__tab_5_0" checked="checked" />
-<label for="__tab_5_0">Scala</label>
+<input name="__tabs_7" type="radio" id="__tab_7_0" checked="checked" />
+<label for="__tab_7_0">Scala</label>
 <div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">dotRepresentation</span><span class="k">:</span> <span class="kt">String</span> <span class="o">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">getVisualState</span><span class="o">(</span><span class="n">processId</span><span class="o">)</span>
 </pre></div></div>
-<input name="__tabs_5" type="radio" id="__tab_5_1" />
-<label for="__tab_5_1">Java</label>
+<input name="__tabs_7" type="radio" id="__tab_7_1" />
+<label for="__tab_7_1">Java</label>
 <div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">String</span> <span class="n">dotRepresentation</span> <span class="o">=</span> <span class="n">baker</span><span class="o">.</span><span class="na">getVisualState</span><span class="o">(</span><span class="n">processId</span><span class="o">);</span>
 </pre></div></div>
 </div>
@@ -834,18 +918,18 @@ The <code>ValidateOrder</code> Interaction in turn produced the <code>Valid</cod
 <p>We can ask Baker for a list of all the events for our process.</p>
 <p>Using this list we can check if the <code>InvoiceWasSend</code> event was produced.</p>
 <div class="superfences-tabs">
-<input name="__tabs_6" type="radio" id="__tab_6_0" checked="checked" />
-<label for="__tab_6_0">Scala</label>
+<input name="__tabs_8" type="radio" id="__tab_8_0" checked="checked" />
+<label for="__tab_8_0">Scala</label>
 <div class="superfences-content"><div class="codehilite"><pre><span></span><span class="c1">// Get all events that have happend for this process instance</span>
 <span class="k">val</span> <span class="n">events</span><span class="k">:</span> <span class="kt">Seq</span><span class="o">[</span><span class="kt">RuntimeEvent</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">getEvents</span><span class="o">(</span><span class="n">processId</span><span class="o">)</span>
 <span class="k">if</span> <span class="o">(</span><span class="n">events</span><span class="o">.</span><span class="n">exists</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s">&quot;InvoiceWasSend&quot;</span><span class="o">))</span>
     <span class="c1">// Yes the invoice was send!</span>
 </pre></div></div>
-<input name="__tabs_6" type="radio" id="__tab_6_1" />
-<label for="__tab_6_1">Java</label>
+<input name="__tabs_8" type="radio" id="__tab_8_1" />
+<label for="__tab_8_1">Java</label>
 <div class="superfences-content"><div class="codehilite"><pre><span></span><span class="c1">// Get all events that have happend for this process instance</span>
 <span class="n">EventList</span> <span class="n">events</span> <span class="o">=</span> <span class="n">baker</span><span class="o">.</span><span class="na">getEvents</span><span class="o">(</span><span class="n">processId</span><span class="o">);</span>
-<span class="k">if</span> <span class="o">(</span><span class="n">events</span><span class="o">.</span><span class="na">hasEventOccured</span><span class="o">(</span><span class="n">InvoiceWasSend</span><span class="o">.</span><span class="na">class</span><span class="o">))</span>
+<span class="k">if</span> <span class="o">(</span><span class="n">events</span><span class="o">.</span><span class="na">hasEventOccurred</span><span class="o">(</span><span class="n">InvoiceWasSend</span><span class="o">.</span><span class="na">class</span><span class="o">))</span>
     <span class="c1">// Yes the invoice was send!</span>
 </pre></div></div>
 </div>
@@ -853,15 +937,15 @@ The <code>ValidateOrder</code> Interaction in turn produced the <code>Valid</cod
 <p>Sometimes it is useful to know what the ingredient values are accumulated for a process instance.</p>
 <p>For example, you might want to know the value of the <code>trackingId</code>.</p>
 <div class="superfences-tabs">
-<input name="__tabs_7" type="radio" id="__tab_7_0" checked="checked" />
-<label for="__tab_7_0">Scala</label>
+<input name="__tabs_9" type="radio" id="__tab_9_0" checked="checked" />
+<label for="__tab_9_0">Scala</label>
 <div class="superfences-content"><div class="codehilite"><pre><span></span><span class="c1">// Get all ingredients that are accumulated for a process instance</span>
 <span class="k">val</span> <span class="n">ingredients</span><span class="k">:</span> <span class="kt">Map</span><span class="o">[</span><span class="kt">String</span>, <span class="kt">Value</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">getIngredients</span><span class="o">(</span><span class="n">processId</span><span class="o">)</span>
 
 <span class="k">val</span> <span class="n">trackingId</span><span class="k">:</span> <span class="kt">String</span> <span class="o">=</span> <span class="n">ingredients</span><span class="o">(</span><span class="s">&quot;trackingId&quot;</span><span class="o">).</span><span class="n">as</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span>
 </pre></div></div>
-<input name="__tabs_7" type="radio" id="__tab_7_1" />
-<label for="__tab_7_1">Java</label>
+<input name="__tabs_9" type="radio" id="__tab_9_1" />
+<label for="__tab_9_1">Java</label>
 <div class="superfences-content"><div class="codehilite"><pre><span></span><span class="c1">// Get all ingredients that are accumulated for a process instance</span>
 <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Value</span><span class="o">&gt;</span> <span class="n">ingredients</span> <span class="o">=</span> <span class="n">baker</span><span class="o">.</span><span class="na">getIngredients</span><span class="o">(</span><span class="n">processId</span><span class="o">);</span>
 
