@@ -32,6 +32,7 @@ You can now stop this retry from continueing unnecessarily.
 baker.stopRetryingInteraction(processId, interactionName);
 ```
 
+More documentation these features [here](https://ing-bank.github.io/baker/documentation/process-execution/#incident-resolving).
 
 ## 2.0.2
 - New feature: Split Brain Resolver is added. See the [documentation](https://ing-bank.github.io/baker/documentation/split-brain-resolver/) of this feature for more information.
