@@ -1,5 +1,38 @@
 # Changelog
 
+# 2.0.3
+
+- New feature: Dealing with blocked interactions.
+
+An interaction can become blocked. Either directly or after retry was exhausted.
+
+It is now possible to continue a process instance manually from that state.
+
+Either force another retry:
+
+``` java
+baker.retryInteraction(processId, interactionName);
+```
+
+Or manually specify the interaction output.
+
+``` java
+baker.resolveInteraction(processId, interactionName, event);
+```
+
+Note, this *ONLY* works if the interaction has become blocked.
+
+- New feature: Stop the retry of an interaction.
+
+Sometimes, perhaps because of a bug in the code, a interaction is failing with the same exception each retry.
+
+You can now stop this retry from continueing unnecessarily.
+
+``` java
+baker.stopRetryingInteraction(processId, interactionName);
+```
+
+
 ## 2.0.2
 - New feature: Split Brain Resolver is added. See the [documentation](https://ing-bank.github.io/baker/documentation/split-brain-resolver/) of this feature for more information.
 
