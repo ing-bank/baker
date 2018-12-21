@@ -522,8 +522,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../execution-semantics/" title="Execution sementics" class="md-nav__link">
-      Execution sementics
+    <a href="../execution-semantics/" title="Execution semantics" class="md-nav__link">
+      Execution semantics
     </a>
   </li>
 
@@ -865,7 +865,7 @@
 <p>This can happen either because it is <a href="../recipe-dsl/#block-interaction">directly blocked</a> by a exception or that the retry strategy was exhuasted.</p>
 <p>At this point it is possible to resolve the blocked interaction in 2 ways.</p>
 <h3 id="1-force-retry">1. Force retry</h3>
-<p>For example, the retry strategy for <em>"SendInvoice"</em> was exhausted after a few hours or retrying.</p>
+<p>For example, the retry strategy for <em>"SendInvoice"</em> was exhausted after a few hours of retrying.</p>
 <p>However, we checked and know the <em>"invoice"</em> service is up again and want to continue to process for our customer.</p>
 <div class="superfences-tabs">
 <input name="__tabs_5" type="radio" id="__tab_5_0" checked="checked" />
@@ -887,9 +887,10 @@
 </pre></div></div>
 <input name="__tabs_6" type="radio" id="__tab_6_1" />
 <label for="__tab_6_1">Java</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">baker</span><span class="o">.</span><span class="na">resolveInteraction</span><span class="o">(</span><span class="n">processId</span><span class="o">,</span> <span class="s">&quot;ShipGoods&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="n">GoodsSchipped</span><span class="o">(</span><span class="s">&quot;some goods&quot;</span><span class="o">));</span>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">baker</span><span class="o">.</span><span class="na">resolveInteraction</span><span class="o">(</span><span class="n">processId</span><span class="o">,</span> <span class="s">&quot;ShipGoods&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="n">GoodsShipped</span><span class="o">(</span><span class="s">&quot;some goods&quot;</span><span class="o">));</span>
 </pre></div></div>
 </div>
+<p>Note that the event provided <em>SHOULD NOT</em> include any <a href="../recipe-dsl/#event-renames">event or ingredient renames</a> specified for the interaction.</p>
 <h2 id="state-inquiry">State inquiry</h2>
 <p>During runtime it is often useful to <em>inquire</em> on the state of a process instance.</p>
 <h2 id="visualize-process-instance-state">Visualize process instance state</h2>

@@ -383,6 +383,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#event-renames" title="Event renames" class="md-nav__link">
+    Event renames
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#event-requirements" title="Event requirements" class="md-nav__link">
     Event requirements
   </a>
@@ -517,8 +524,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../execution-semantics/" title="Execution sementics" class="md-nav__link">
-      Execution sementics
+    <a href="../execution-semantics/" title="Execution semantics" class="md-nav__link">
+      Execution semantics
     </a>
   </li>
 
@@ -634,6 +641,13 @@
           <li class="md-nav__item">
   <a href="#predefining-ingredients" title="Predefining ingredients" class="md-nav__link">
     Predefining ingredients
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#event-renames" title="Event renames" class="md-nav__link">
+    Event renames
   </a>
   
 </li>
@@ -804,6 +818,19 @@
 <p>Note that <em>predefined</em> ingredients are <strong>always</strong> available and do not have to be provided by an event for each interaction call.</p>
 <p>Each time all <em>remaining</em> ingredients are provided, the interaction will fire.</p>
 <p>You can <strong>not</strong> predefine <em>ALL</em> input ingredients of an interaction.</p>
+<h3 id="event-renames">Event renames</h3>
+<p>Sometimes it useful to rename an interaction event and/or its ingredients to fit better in the context of your recipe.</p>
+<p>For example, to rename the <code>GoodsManufactured</code> event and its ingredient.</p>
+<div class="codehilite"><pre><span></span>  <span class="o">.</span><span class="na">withInteractions</span><span class="o">(</span>
+    <span class="n">of</span><span class="o">(</span><span class="n">ManufactureGoods</span><span class="o">.</span><span class="na">class</span><span class="o">)</span>
+      <span class="o">.</span><span class="na">withEventTransformation</span><span class="o">(</span>
+        <span class="n">GoodsManufactured</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="s">&quot;ManufacturingDone&quot;</span><span class="o">,</span>
+        <span class="n">ImmutableMap</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="s">&quot;goods&quot;</span><span class="o">,</span> <span class="s">&quot;manufacturedGoods&quot;</span><span class="o">)</span>
+      <span class="o">)</span>
+    <span class="o">)</span>
+  <span class="o">)</span>
+</pre></div>
+
 <h3 id="event-requirements">Event requirements</h3>
 <p>As mentioned before, the DSL is declarative, you do not have to think about order. This is implicit in the data requirements of the interactions.</p>
 <p>However, sometimes data requirements are not enough.</p>
