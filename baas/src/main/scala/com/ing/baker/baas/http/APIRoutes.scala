@@ -3,22 +3,21 @@ package com.ing.baker.baas.http
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import com.ing.baker.baas.interaction.RemoteInteractionClient
-import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.recipe.commonserialize
+import com.ing.baker.baas.protocol._
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core.{Baker, RuntimeEvent}
 
 import scala.concurrent.duration._
 
-object APIRoutes extends Directives with BaasMarshalling {
+class APIRoutes(override val actorSystem: ActorSystem) extends Directives with ClientUtils {
 
   implicit val timeout: FiniteDuration = 30 seconds
 
   val defaultEventConfirm = "receive"
 
-  def apply(baker: Baker)(implicit actorSystem: ActorSystem): Route = {
+  def apply(baker: Baker): Route = {
 
     def recipeRoutes(requestId: String) = {
-
       path("event") {
         post {
           (entity(as[RuntimeEvent]) & parameter('confirm.as[String] ?)) { (event, confirm) =>
@@ -68,9 +67,7 @@ object APIRoutes extends Directives with BaasMarshalling {
 
       path("recipe") {
         post {
-          entity(as[commonserialize.Recipe]) { recipe =>
-
-            val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+          entity(as[CompiledRecipe]) { compiledRecipe =>
 
             try {
               println(s"Adding recipe called: ${compiledRecipe.name}")
@@ -90,7 +87,7 @@ object APIRoutes extends Directives with BaasMarshalling {
           entity(as[AddInteractionHTTPRequest]) { request =>
 
             //Create a RemoteInteractionImplementation
-            val interactionImplementation = RemoteInteractionClient(request.name, request.uri, request.inputTypes)
+            val interactionImplementation = RemoteInteractionClient(request.name, request.uri, request.inputTypes)(actorSystem)
             println(s"Adding interaction called: ${request.name}")
 
             //Register it to BAAS
@@ -104,4 +101,6 @@ object APIRoutes extends Directives with BaasMarshalling {
     }
     baasRoutes
   }
+
+
 }

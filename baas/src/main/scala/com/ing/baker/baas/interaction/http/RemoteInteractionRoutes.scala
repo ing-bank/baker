@@ -1,16 +1,17 @@
 package com.ing.baker.baas.interaction.http
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.util.ByteString
-import com.ing.baker.baas.KryoUtil.defaultKryoPool
-import com.ing.baker.baas.http.BaasMarshalling
+import com.ing.baker.baas.http.ClientUtils
+import com.ing.baker.baas.interaction.protocol._
 import com.ing.baker.runtime.core.InteractionImplementation
 import org.slf4j.LoggerFactory
 
 
-object RemoteInteractionRoutes extends Directives with BaasMarshalling {
+class RemoteInteractionRoutes(override val actorSystem: ActorSystem) extends Directives with ClientUtils {
 
-  val log = LoggerFactory.getLogger(RemoteInteractionRoutes.getClass.getName)
+  override val log = LoggerFactory.getLogger(this.getClass.getName)
 
   def apply(implementations: Map[String, InteractionImplementation]): Route = {
     val baasRoutes = {
@@ -25,11 +26,11 @@ object RemoteInteractionRoutes extends Directives with BaasMarshalling {
               log.info(s"interaction implementation called for: ${interactionName}")
 
               val byteArray: Array[Byte] = string.toArray
-              val request = kryoPool.fromBytes(byteArray).asInstanceOf[ExecuteInteractionHTTPRequest]
+              val request = serializer.serialize(byteArray).asInstanceOf[ExecuteInteractionHTTPRequest]
 
               log.info(s"Executing interaction: $interactionName")
 
-              val runtimeEvent = implementation.execute(request.interaction, request.input).orNull
+              val runtimeEvent = implementation.execute(request.input).orNull
 
               log.info(s"Interaction executed: ${interactionName}")
 

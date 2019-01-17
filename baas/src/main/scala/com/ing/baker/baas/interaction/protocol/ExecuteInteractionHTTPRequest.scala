@@ -1,4 +1,4 @@
-package com.ing.baker.baas.interaction.http
+package com.ing.baker.baas.interaction.protocol
 
 import com.ing.baker.types.Value
 

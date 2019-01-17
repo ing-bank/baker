@@ -1,7 +1,6 @@
 package com.ing.baker.baas.http
 
 import akka.actor.ActorSystem
-import com.ing.baker.baas.KryoUtil
 import com.ing.baker.runtime.core.Baker
 
 import scala.concurrent.Await
@@ -16,5 +15,5 @@ object BAASAPIRunner extends App {
 
   //Startup the BAASAPI
   val baasAPI = new BAASAPI(baker, host, port)(actorSystem)
-  Await.result(baasAPI.start(), 10 seconds)
+  Await.result(actorSystem.whenTerminated, Duration.Inf)
 }

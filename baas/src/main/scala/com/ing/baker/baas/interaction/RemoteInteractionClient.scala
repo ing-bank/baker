@@ -4,10 +4,8 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpRequest
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
-import com.ing.baker.baas.KryoUtil.defaultKryoPool
-import com.ing.baker.baas.ClientUtils._
-import com.ing.baker.baas.interaction.http.ExecuteInteractionHTTPRequest
-import com.ing.baker.il.petrinet.InteractionTransition
+import com.ing.baker.baas.http.ClientUtils
+import com.ing.baker.baas.interaction.protocol.ExecuteInteractionHTTPRequest
 import com.ing.baker.runtime.core.{InteractionImplementation, RuntimeEvent}
 import com.ing.baker.types.{Type, Value}
 import org.slf4j.LoggerFactory
@@ -18,9 +16,9 @@ import scala.concurrent.duration._
 //This communicates with a RemoteInteractionImplementationClient that execute the request.
 case class RemoteInteractionClient(override val name: String,
                                    uri: String,
-                                   override val inputTypes: Seq[Type])(implicit val actorSystem: ActorSystem) extends InteractionImplementation {
+                                   override val inputTypes: Seq[Type])(implicit val actorSystem: ActorSystem) extends InteractionImplementation with ClientUtils {
 
-  val log = LoggerFactory.getLogger(classOf[RemoteInteractionClient])
+  override val log = LoggerFactory.getLogger(classOf[RemoteInteractionClient])
 
   implicit val timout: FiniteDuration = 30 seconds
   implicit val materializer = ActorMaterializer()
@@ -42,7 +40,7 @@ case class RemoteInteractionClient(override val name: String,
     val httpRequest = HttpRequest(
         uri = s"$uri/execute",
         method = akka.http.scaladsl.model.HttpMethods.POST,
-        entity = ByteString.fromArray(defaultKryoPool.toBytesWithClass(request)))
+        entity = ByteString.fromArray(serializer.serialize(request).get))
 
     Option(doRequestAndParseResponse[RuntimeEvent](httpRequest))
   }

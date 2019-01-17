@@ -5,14 +5,14 @@ import java.util.UUID
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import com.ing.baker.baas.BAASSpec.{InteractionOne, _}
-import com.ing.baker.baas.http.BAASAPI
+import com.ing.baker.baas.http._
 import com.ing.baker.baas.interaction.http.RemoteInteractionLauncher
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, processId}
-import com.ing.baker.recipe.{commonserialize, scaladsl}
+import com.ing.baker.recipe.scaladsl
+import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.runtime.core.internal.MethodInteractionImplementation
-import com.ing.baker.runtime.core.{Baker, ProcessState, SensoryEventStatus}
+import com.ing.baker.runtime.core.{Baker, InteractionImplementation, ProcessState, SensoryEventStatus}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.Await
@@ -27,26 +27,32 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
 //  Startup a empty BAAS cluster
   val baker = new Baker()(system)
   val baasAPI: BAASAPI = new BAASAPI(baker, host, port)(system)
-  Await.result(baasAPI.start(), 10 seconds)
 
   //Start a BAAS API
   val baasClient: BAASClient = new BAASClient(host, port)
 
   // implementations
-  val localImplementations = Seq(InteractionOne(), InteractionTwo())
+  val localImplementations: Seq[AnyRef] = Seq(InteractionOne(), InteractionTwo())
+  val mappedInteractions: Map[String, InteractionImplementation] =
+    localImplementations.map(i => (i.getClass.getSimpleName, MethodInteractionImplementation(i))).toMap
 
   // host the local implementations
-  val launcher = RemoteInteractionLauncher.apply(
-    MethodInteractionImplementation.toImplementationMap(localImplementations), "localhost", 8090)
-
+  val launcher = RemoteInteractionLauncher.apply(mappedInteractions, "localhost", 8090);
   launcher.start()
 
+  override def beforeAll() {
+    Await.result(baasAPI.start(), 10 seconds)
+  }
 
-  "Happy flow simple recipe BAAS" ignore {
+  override def afterAll() {
+    Await.result(baasAPI.stop(), 10 seconds)
+  }
+
+  "Happy flow simple recipe BAAS" in {
     val recipeName = "simpleRecipe" + UUID.randomUUID().toString
-    val recipe = setupSimpleRecipe(recipeName)
-
-    val recipeId = baasClient.addRecipe(recipe)
+    val recipe: Recipe = setupSimpleRecipe(recipeName)
+    val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+    val recipeId = baasClient.addRecipe(compiledRecipe)
 
     val requestId = UUID.randomUUID().toString
 
@@ -68,8 +74,6 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
 //    println(s"procesState : ${requestState.processState}")
 //    println(s"visualState : ${requestState.visualState}")
   }
-
-  override def afterAll() = shutdown(system)
 }
 
 object BAASSpec {
@@ -77,7 +81,7 @@ object BAASSpec {
   val initialIngredient = Ingredient[String]("initialIngredient")
   val interactionOneIngredient = Ingredient[String]("interactionOneIngredient")
 
-  val initialEvent = Event("InitialEvent", initialIngredient, None)
+  val initialEvent = Event("InitialEvent", initialIngredient)
   case class InitialEvent(initialIngredient: String)
   case class InteractionOneEvent(interactionOneIngredient: String)
 

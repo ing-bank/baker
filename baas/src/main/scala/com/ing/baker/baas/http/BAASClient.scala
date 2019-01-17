@@ -1,14 +1,13 @@
-package com.ing.baker.baas
+package com.ing.baker.baas.http
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpMethods._
 import akka.http.scaladsl.model._
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
-import com.ing.baker.baas.KryoUtil.defaultKryoPool
-import com.ing.baker.baas.ClientUtils._
-import com.ing.baker.baas.http.AddInteractionHTTPRequest
-import com.ing.baker.recipe.common
+import com.ing.baker.baas.protocol._
+import com.ing.baker.baas.EventConfirmation
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core.{Baker, ProcessState, RuntimeEvent, SensoryEventStatus}
 import com.ing.baker.types.{Type, Value}
 import org.slf4j.LoggerFactory
@@ -16,7 +15,7 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class BAASClient(val host: String, val port: Int)(implicit val actorSystem: ActorSystem) {
+class BAASClient(val host: String, val port: Int)(implicit val actorSystem: ActorSystem) extends ClientUtils {
 
   val baseUri = s"http://$host:$port"
 
@@ -27,12 +26,12 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
       log.info("Got response body: " + body.utf8String)
     }
 
-  val log = LoggerFactory.getLogger(classOf[BAASClient])
+  override val log = LoggerFactory.getLogger(classOf[BAASClient])
   implicit val requestTimeout: FiniteDuration = 30 seconds
 
-  def addRecipe(recipe: common.Recipe) : String = {
+  def addRecipe(recipe: CompiledRecipe) : String = {
 
-    val serializedRecipe = KryoUtil.serialize(recipe)
+    val serializedRecipe: Array[Byte] = serializer.serialize(recipe).get
 
     val httpRequest = HttpRequest(
         uri = baseUri +  "/recipe",
@@ -51,7 +50,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
     val request = HttpRequest(
       uri = s"$baseUri/implementation",
       method = POST,
-      entity = ByteString.fromArray(defaultKryoPool.toBytesWithClass(addInteractionHTTPRequest)))
+      entity = ByteString.fromArray(serializer.serialize(addInteractionHTTPRequest).get))
 
     doRequest(request, logEntity)
   }
@@ -65,7 +64,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
     val request = HttpRequest(
         uri =  s"$baseUri/$requestId/event?confirm=${confirmation.name}",
         method = POST,
-        entity = ByteString.fromArray(defaultKryoPool.toBytesWithClass(runtimeEvent)))
+        entity = ByteString.fromArray(serializer.serialize(runtimeEvent).get))
 
     doRequestAndParseResponse[SensoryEventStatus](request)
   }
