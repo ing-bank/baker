@@ -32,9 +32,12 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
 
   val manifestInfo = Seq(
     Entry("core.RuntimeEvent", classOf[core.RuntimeEvent], protobuf.RuntimeEvent),
+    Entry("com.ing.baker.runtime.core.RuntimeEvent", classOf[core.RuntimeEvent], protobuf.RuntimeEvent),
     Entry("core.ProcessState", classOf[core.ProcessState], protobuf.ProcessState),
+    Entry("com.ing.baker.runtime.core.ProcessState", classOf[core.ProcessState], protobuf.ProcessState),
 
     Entry("il.CompiledRecipe", classOf[il.CompiledRecipe], protobuf.CompiledRecipe),
+    Entry("com.ing.baker.il.CompiledRecipe", classOf[il.CompiledRecipe], protobuf.CompiledRecipe),
 
     Entry("baker.types.Type", classOf[com.ing.baker.types.Type], actor.protobuf.Type),
     Entry("baker.types.Value", classOf[com.ing.baker.types.Value], actor.protobuf.Value),

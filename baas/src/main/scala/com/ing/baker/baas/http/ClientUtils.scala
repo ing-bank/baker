@@ -8,9 +8,10 @@ import akka.http.scaladsl.unmarshalling.{PredefinedFromEntityUnmarshallers, Unma
 import akka.serialization.{Serialization, SerializationExtension}
 import akka.stream.Materializer
 import akka.util.ByteString
+import com.ing.baker.baas.interaction.protocol.ExecuteInteractionHTTPRequest
 import com.ing.baker.baas.protocol._
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.core.{RuntimeEvent, SensoryEventStatus}
+import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, SensoryEventStatus}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Await
@@ -49,15 +50,22 @@ trait ClientUtils {
     }
   }
 
-  def akkaProtoUnmarshaller[T: ClassTag](implicit ct: ClassTag[T]): Unmarshaller[HttpEntity, T] =
+  def akkaProtoUnmarshaller[T](implicit ct: ClassTag[T]): Unmarshaller[HttpEntity, T] =
     PredefinedFromEntityUnmarshallers.byteArrayUnmarshaller.map { string: Array[Byte] =>
       serializer.deserialize(string, ct.runtimeClass).get.asInstanceOf[T]
     }
 
-  def akkaProtoMarshaller[T: ClassTag]: Marshaller[T, MessageEntity] = PredefinedToEntityMarshallers.ByteArrayMarshaller.compose[T] { obj =>
-    serializer.serialize(obj.asInstanceOf[AnyRef]).get
+  def akkaProtoMarshaller[T <: AnyRef]: Marshaller[T, MessageEntity] = PredefinedToEntityMarshallers.ByteArrayMarshaller.compose[T] { obj =>
+    serializer.serialize(obj).get
   }
 
+  implicit val processStateMarshaller = akkaProtoMarshaller[ProcessState]
+  implicit val processStateUnmarshaller = akkaProtoUnmarshaller[ProcessState]
+
+  implicit val executeInteractionHTTPRequestMarshaller = akkaProtoMarshaller[ExecuteInteractionHTTPRequest]
+  implicit val executeInteractionHTTPRequestUnmarshaller = akkaProtoUnmarshaller[ExecuteInteractionHTTPRequest]
+
+  implicit val addInteractionMarshaller = akkaProtoMarshaller[AddInteractionHTTPRequest]
   implicit val addInteractionUnmarshaller = akkaProtoUnmarshaller[AddInteractionHTTPRequest]
 
   implicit val eventMarshaller = akkaProtoMarshaller[RuntimeEvent]

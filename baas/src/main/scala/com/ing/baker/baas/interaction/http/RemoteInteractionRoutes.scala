@@ -21,16 +21,13 @@ class RemoteInteractionRoutes(override val actorSystem: ActorSystem) extends Dir
 
         path("execute") {
           post {
-            entity(as[ByteString]) { string =>
+            entity(as[ExecuteInteractionHTTPRequest]) { executeInteractionHTTPRequest =>
 
               log.info(s"interaction implementation called for: ${interactionName}")
 
-              val byteArray: Array[Byte] = string.toArray
-              val request = serializer.serialize(byteArray).asInstanceOf[ExecuteInteractionHTTPRequest]
-
               log.info(s"Executing interaction: $interactionName")
 
-              val runtimeEvent = implementation.execute(request.input).orNull
+              val runtimeEvent = implementation.execute(executeInteractionHTTPRequest.input).orNull
 
               log.info(s"Interaction executed: ${interactionName}")
 

@@ -1,6 +1,8 @@
 package com.ing.baker.baas.http
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.HttpMethods._
 import akka.http.scaladsl.model._
 import akka.stream.ActorMaterializer
@@ -8,10 +10,12 @@ import akka.util.ByteString
 import com.ing.baker.baas.protocol._
 import com.ing.baker.baas.EventConfirmation
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.actor.serialization.BakerProtobufSerializer
 import com.ing.baker.runtime.core.{Baker, ProcessState, RuntimeEvent, SensoryEventStatus}
 import com.ing.baker.types.{Type, Value}
 import org.slf4j.LoggerFactory
 
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
@@ -30,15 +34,14 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
   implicit val requestTimeout: FiniteDuration = 30 seconds
 
   def addRecipe(recipe: CompiledRecipe) : String = {
-
-    val serializedRecipe: Array[Byte] = serializer.serialize(recipe).get
-
-    val httpRequest = HttpRequest(
+    val httpRequest = for {
+      body <- Marshal(recipe).to[RequestEntity]
+      httpRequest = HttpRequest(
         uri = baseUri +  "/recipe",
         method = akka.http.scaladsl.model.HttpMethods.POST,
-        entity = ByteString.fromArray(serializedRecipe))
-
-    doRequestAndParseResponse[String](httpRequest)
+        entity = body)
+    } yield doRequestAndParseResponse[String](httpRequest)
+    Await.result(httpRequest, 10 seconds)
   }
 
   def addRemoteImplementation(interactionName: String, uri: String, inputTypes: Seq[Type]) = {

@@ -5,7 +5,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import com.ing.baker.baas.interaction.RemoteInteractionClient
 import com.ing.baker.baas.protocol._
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.core.{Baker, RuntimeEvent}
+import com.ing.baker.runtime.core.{Baker, ProcessState, RuntimeEvent}
 
 import scala.concurrent.duration._
 
@@ -23,43 +23,49 @@ class APIRoutes(override val actorSystem: ActorSystem) extends Directives with C
           (entity(as[RuntimeEvent]) & parameter('confirm.as[String] ?)) { (event, confirm) =>
 
             val sensoryEventStatus = confirm.getOrElse(defaultEventConfirm) match {
-              case "received"  => baker.processEventAsync(requestId, event).confirmReceived()
+              case "received" => baker.processEventAsync(requestId, event).confirmReceived()
               case "completed" => baker.processEventAsync(requestId, event).confirmCompleted()
-              case other      => throw new IllegalArgumentException(s"Unsupported confirm type: $other")
+              case other => throw new IllegalArgumentException(s"Unsupported confirm type: $other")
             }
 
             complete(sensoryEventStatus)
           }
         }
       } ~
-      path("events") {
-        get {
-          val events = baker.events(requestId).toList
-          complete(events)
-        }
-      } ~
-      path(Segment / "bake")  { recipeId =>
-        post {
-          val processState = baker.bake(recipeId, requestId)
-          complete(processState.processId)
-        }
-      } ~
-      path("ingredients") {
-        get {
+        path("events") {
+          get {
+            val events = baker.events(requestId).toList
+            complete(events)
+          }
+        } ~
+        path("state") {
+          get {
+            val events: ProcessState = baker.getProcessState(requestId)
+            complete(events)
+          }
+        } ~
+        path(Segment / "bake") { recipeId =>
+          post {
+            val processState = baker.bake(recipeId, requestId)
+            complete(processState.processId)
+          }
+        } ~
+        path("ingredients") {
+          get {
 
-          val ingredients = baker.getIngredients(requestId)
+            val ingredients = baker.getIngredients(requestId)
 
-          complete(ingredients)
+            complete(ingredients)
+          }
+        } ~
+        path("visual_state") {
+          get {
+
+            val visualState = baker.getVisualState(requestId)
+
+            complete(visualState)
+          }
         }
-      } ~
-      path("visual_state") {
-        get {
-
-          val visualState = baker.getVisualState(requestId)
-
-          complete(visualState)
-        }
-      }
     }
 
 
@@ -82,22 +88,24 @@ class APIRoutes(override val actorSystem: ActorSystem) extends Directives with C
           }
         }
       } ~
-      path("implementation") {
-        post {
-          entity(as[AddInteractionHTTPRequest]) { request =>
+        path("implementation") {
+          post {
+            entity(as[AddInteractionHTTPRequest]) { request =>
 
-            //Create a RemoteInteractionImplementation
-            val interactionImplementation = RemoteInteractionClient(request.name, request.uri, request.inputTypes)(actorSystem)
-            println(s"Adding interaction called: ${request.name}")
+              //Create a RemoteInteractionImplementation
+              val interactionImplementation = RemoteInteractionClient(request.name, request.uri, request.inputTypes)(actorSystem)
+              println(s"Adding interaction called: ${request.name}")
 
-            //Register it to BAAS
-            baker.addImplementation(interactionImplementation)
+              //Register it to BAAS
+              baker.addImplementation(interactionImplementation)
 
-            //return response
-            complete(s"Interaction: ${interactionImplementation.name} added")
+              //return response
+              complete(s"Interaction: ${interactionImplementation.name} added")
+            }
           }
-        }
-      } ~ pathPrefix(Segment) { recipeRoutes _ }
+        } ~ pathPrefix(Segment) {
+        recipeRoutes _
+      }
     }
     baasRoutes
   }

@@ -12,9 +12,10 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.scaladsl
 import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.runtime.core.internal.MethodInteractionImplementation
-import com.ing.baker.runtime.core.{Baker, InteractionImplementation, ProcessState, SensoryEventStatus}
+import com.ing.baker.runtime.core.{Baker, InteractionImplementation, ProcessState, RuntimeEvent, SensoryEventStatus}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
+import scala.collection.immutable
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
@@ -38,17 +39,20 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
 
   // host the local implementations
   val launcher = RemoteInteractionLauncher.apply(mappedInteractions, "localhost", 8090);
-  launcher.start()
+  Await.result(launcher.start(), 10 seconds)
 
   override def beforeAll() {
     Await.result(baasAPI.start(), 10 seconds)
+    launcher.registerToBaker(baasClient)
   }
 
   override def afterAll() {
     Await.result(baasAPI.stop(), 10 seconds)
+//    launcher.stop()
   }
 
   "Happy flow simple recipe BAAS" in {
+
     val recipeName = "simpleRecipe" + UUID.randomUUID().toString
     val recipe: Recipe = setupSimpleRecipe(recipeName)
     val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
@@ -67,7 +71,7 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     processState.ingredients.keys should contain("initialIngredient")
     processState.ingredients.keys should contain("interactionOneIngredient")
 
-    val events = baasClient.getEvents(requestId)
+    val events: immutable.Seq[RuntimeEvent] = baasClient.getEvents(requestId)
 
     println(s"events: $events")
 

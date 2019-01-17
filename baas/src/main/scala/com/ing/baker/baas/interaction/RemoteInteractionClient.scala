@@ -40,7 +40,7 @@ case class RemoteInteractionClient(override val name: String,
     val httpRequest = HttpRequest(
         uri = s"$uri/execute",
         method = akka.http.scaladsl.model.HttpMethods.POST,
-        entity = ByteString.fromArray(serializer.serialize(request).get))
+        entity = serializer.serialize(request).get)
 
     Option(doRequestAndParseResponse[RuntimeEvent](httpRequest))
   }
