@@ -38,12 +38,12 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     localImplementations.map(i => (i.getClass.getSimpleName, MethodInteractionImplementation(i))).toMap
 
   // host the local implementations
-  val launcher = RemoteInteractionLauncher.apply(mappedInteractions, "localhost", 8090);
-  Await.result(launcher.start(), 10 seconds)
+  val remoteInteractionLauncher = RemoteInteractionLauncher.apply(mappedInteractions, "localhost", 8090);
+  Await.result(remoteInteractionLauncher.start(), 10 seconds)
 
   override def beforeAll() {
     Await.result(baasAPI.start(), 10 seconds)
-    launcher.registerToBaker(baasClient)
+    remoteInteractionLauncher.registerToBaker(baasClient)
   }
 
   override def afterAll() {
@@ -74,9 +74,7 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     val events: immutable.Seq[RuntimeEvent] = baasClient.getEvents(requestId)
 
     println(s"events: $events")
-
-//    println(s"procesState : ${requestState.processState}")
-//    println(s"visualState : ${requestState.visualState}")
+    println(s"procesState : ${processState.ingredients}")
   }
 }
 

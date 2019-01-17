@@ -15,5 +15,5 @@ object BAASAPIRunner extends App {
 
   //Startup the BAASAPI
   val baasAPI = new BAASAPI(baker, host, port)(actorSystem)
-  Await.result(actorSystem.whenTerminated, Duration.Inf)
+  Await.result(baasAPI.start(), 10 seconds)
 }
