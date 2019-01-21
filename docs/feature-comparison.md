@@ -1,4 +1,5 @@
-| Feature | Baker | Camunda | Pega | Netflix Conductor | Uber Cadence | Apache Airflow | 
+| Feature | Baker | Camunda | Pega | Netflix Conductor | Uber Cadence | Apache Airflow |
+| --- | --- | --- | --- | --- | --- | --- |
 | Owned By | ING | Camunda | PEGA Systems | Netflix | Uber | Community |
 | Primary Purpose | Orchestration of (micro-)services | Process Automation | Workflow or case management | Orchestration of (micro-)services | Orchestration of long-running business logic | Workflow of big-data pipelines |
 | Typical Use | Straight Through Processing (STP) | Business Processes with Decision Making | Business Processes with Decision Making | STP | STP | Big data |
