@@ -6,7 +6,7 @@ import com.ing.baker.BakerRuntimeTestBase
 import akka.testkit.{TestDuration, TestKit}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl._
-import com.ing.baker.runtime.core.{Baker, RuntimeEvent}
+import com.ing.baker.runtime.core.{AkkaBaker, Baker, RuntimeEvent}
 import ScalaDSLRuntime._
 
 import scala.concurrent.duration._
@@ -66,7 +66,7 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
       val implementations =
         Seq(validateOrderImpl, manufactureGoodsImpl, sendInvoiceImpl, shipGoodsImpl)
 
-      val baker = new Baker()
+      val baker = new AkkaBaker()
 
       implementations.foreach(baker.addImplementation)
 

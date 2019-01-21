@@ -12,7 +12,7 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.scaladsl
 import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.runtime.core.internal.MethodInteractionImplementation
-import com.ing.baker.runtime.core.{Baker, InteractionImplementation, ProcessState, RuntimeEvent, SensoryEventStatus}
+import com.ing.baker.runtime.core.{AkkaBaker, InteractionImplementation, ProcessState, RuntimeEvent, SensoryEventStatus}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.collection.immutable
@@ -26,7 +26,7 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
   val port = 8081
 
 //  Startup a empty BAAS cluster
-  val baker = new Baker()(system)
+  val baker = new AkkaBaker()(system)
   val baasAPI: BAASAPI = new BAASAPI(baker, host, port)(system)
 
   //Start a BAAS API

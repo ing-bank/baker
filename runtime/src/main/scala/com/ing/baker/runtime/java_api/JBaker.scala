@@ -15,7 +15,7 @@ import scala.concurrent.duration._
 
 class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRef]) {
 
-  def this(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRef]) = this(new Baker()(actorSystem), implementations)
+  def this(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRef]) = this(new AkkaBaker()(actorSystem), implementations)
 
   def this(actorSystem: ActorSystem) = this(actorSystem, Collections.emptyList[AnyRef])
 
