@@ -1,6 +1,7 @@
 package com.ing.baker.baas.http
 
 import akka.actor.ActorSystem
+import com.ing.baker.baas.server.BAASAPI
 import com.ing.baker.runtime.core.{AkkaBaker, Baker}
 
 import scala.concurrent.Await

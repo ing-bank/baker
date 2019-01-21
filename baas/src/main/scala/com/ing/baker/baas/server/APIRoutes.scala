@@ -1,7 +1,8 @@
-package com.ing.baker.baas.http
+package com.ing.baker.baas.server
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
+import com.ing.baker.baas.http.ClientUtils
 import com.ing.baker.baas.interaction.RemoteInteractionClient
 import com.ing.baker.baas.protocol._
 import com.ing.baker.il.CompiledRecipe

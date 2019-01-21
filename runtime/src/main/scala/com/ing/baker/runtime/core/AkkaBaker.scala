@@ -26,6 +26,7 @@ import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.runtime.core.events.{BakerEvent, EventReceived, InteractionCompleted, InteractionFailed}
 import com.ing.baker.runtime.core.internal.{InteractionManager, MethodInteractionImplementation, RecipeRuntime}
 import com.ing.baker.types.Value
+import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
@@ -44,7 +45,7 @@ class AkkaBaker()(implicit val actorSystem: ActorSystem) extends Baker {
 
   private val log = LoggerFactory.getLogger(classOf[AkkaBaker])
 
-  private val config = actorSystem.settings.config
+  private val config: Config = actorSystem.settings.config
   if (!config.as[Option[Boolean]]("baker.config-file-included").getOrElse(false))
     throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
 

@@ -5,8 +5,10 @@ import java.util.UUID
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import com.ing.baker.baas.BAASSpec.{InteractionOne, _}
+import com.ing.baker.baas.client.BAASClient
 import com.ing.baker.baas.http._
 import com.ing.baker.baas.interaction.http.RemoteInteractionLauncher
+import com.ing.baker.baas.server.BAASAPI
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.scaladsl
@@ -15,7 +17,6 @@ import com.ing.baker.runtime.core.internal.MethodInteractionImplementation
 import com.ing.baker.runtime.core.{AkkaBaker, InteractionImplementation, ProcessState, RuntimeEvent, SensoryEventStatus}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
-import scala.collection.immutable
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
@@ -63,15 +64,15 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     baasClient.bake(recipeId, requestId)
 
     val sensoryEventStatusResponse: SensoryEventStatus =
-      baasClient.processEvent(requestId, InitialEvent("initialIngredient"), EventConfirmation.COMPLETED)
+      baasClient.processEvent(requestId, InitialEvent("initialIngredient"))
     sensoryEventStatusResponse shouldBe SensoryEventStatus.Completed
 
-    val processState: ProcessState = baasClient.getState(requestId)
+    val processState: ProcessState = baasClient.getProcessState(requestId)
 
     processState.ingredients.keys should contain("initialIngredient")
     processState.ingredients.keys should contain("interactionOneIngredient")
 
-    val events: immutable.Seq[RuntimeEvent] = baasClient.getEvents(requestId)
+    val events: Seq[RuntimeEvent] = baasClient.events(requestId)
 
     println(s"events: $events")
     println(s"procesState : ${processState.ingredients}")

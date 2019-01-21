@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.RouteResult
 import akka.stream.ActorMaterializer
-import com.ing.baker.baas.http.BAASClient
+import com.ing.baker.baas.client.BAASClient
 import com.ing.baker.runtime.core.InteractionImplementation
 import org.slf4j.LoggerFactory
 

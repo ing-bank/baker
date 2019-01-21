@@ -1,4 +1,4 @@
-package com.ing.baker.baas.http
+package com.ing.baker.baas.server
 
 import java.util.concurrent.atomic.AtomicReference
 
