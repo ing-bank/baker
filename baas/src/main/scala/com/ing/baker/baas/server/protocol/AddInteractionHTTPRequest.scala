@@ -1,4 +1,4 @@
-package com.ing.baker.baas.protocol
+package com.ing.baker.baas.server.protocol
 
 import com.ing.baker.types.Type
 

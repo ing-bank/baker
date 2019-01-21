@@ -1,11 +1,9 @@
-package com.ing.baker.baas.interaction.http
+package com.ing.baker.baas.interaction.server
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
-import akka.util.ByteString
-import com.ing.baker.baas.http.ClientUtils
-import com.ing.baker.baas.interaction.protocol._
-import com.ing.baker.runtime.core.InteractionImplementation
+import com.ing.baker.baas.interaction.server.protocol._
+import com.ing.baker.baas.util.ClientUtils
 import org.slf4j.LoggerFactory
 
 
@@ -13,11 +11,16 @@ class RemoteInteractionRoutes(override val actorSystem: ActorSystem) extends Dir
 
   override val log = LoggerFactory.getLogger(this.getClass.getName)
 
-  def apply(implementations: Map[String, InteractionImplementation]): Route = {
+  def apply(remoteInteractionLauncher: RemoteInteractionLauncher): Route = {
     val baasRoutes = {
       pathPrefix(Segment) { interactionName =>
 
-        val implementation = implementations.getOrElse(interactionName, throw new IllegalArgumentException(s"No such interaction: $interactionName"))
+        val implementationOptional = remoteInteractionLauncher.getImplementation(interactionName)
+
+        if(implementationOptional.isEmpty) {
+          log.error(s"No implementation found for: $interactionName")
+          throw new IllegalArgumentException(s"No such interaction: $interactionName")
+        }
 
         path("execute") {
           post {
@@ -27,7 +30,7 @@ class RemoteInteractionRoutes(override val actorSystem: ActorSystem) extends Dir
 
               log.info(s"Executing interaction: $interactionName")
 
-              val runtimeEvent = implementation.execute(executeInteractionHTTPRequest.input).orNull
+              val runtimeEvent = implementationOptional.get.execute(executeInteractionHTTPRequest.input).orNull
 
               log.info(s"Interaction executed: ${interactionName}")
 

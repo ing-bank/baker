@@ -1,16 +1,14 @@
-package com.ing.baker.baas.interaction
+package com.ing.baker.baas.interaction.client
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpRequest
-import akka.stream.ActorMaterializer
-import akka.util.ByteString
-import com.ing.baker.baas.http.ClientUtils
-import com.ing.baker.baas.interaction.protocol.ExecuteInteractionHTTPRequest
+import com.ing.baker.baas.interaction.server.protocol.ExecuteInteractionHTTPRequest
+import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.runtime.core.{InteractionImplementation, RuntimeEvent}
 import com.ing.baker.types.{Type, Value}
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.{FiniteDuration, _}
 
 //This is the interactionImplementation as running in the BAAS cluster
 //This communicates with a RemoteInteractionImplementationClient that execute the request.
@@ -21,7 +19,6 @@ case class RemoteInteractionClient(override val name: String,
   override val log = LoggerFactory.getLogger(classOf[RemoteInteractionClient])
 
   implicit val timout: FiniteDuration = 30 seconds
-  implicit val materializer = ActorMaterializer()
 
   /**
     * Executes the interaction.

@@ -1,4 +1,4 @@
-package com.ing.baker.baas.http
+package com.ing.baker.baas.util
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
@@ -6,22 +6,24 @@ import akka.http.scaladsl.marshalling.{Marshaller, PredefinedToEntityMarshallers
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.{PredefinedFromEntityUnmarshallers, Unmarshaller}
 import akka.serialization.{Serialization, SerializationExtension}
-import akka.stream.Materializer
+import akka.stream.{ActorMaterializer, Materializer}
 import akka.util.ByteString
-import com.ing.baker.baas.interaction.protocol.ExecuteInteractionHTTPRequest
-import com.ing.baker.baas.protocol._
+import com.ing.baker.baas.interaction.server.protocol.ExecuteInteractionHTTPRequest
+import com.ing.baker.baas.server.protocol.AddInteractionHTTPRequest
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, SensoryEventStatus}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Await
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.{FiniteDuration, _}
 import scala.reflect.ClassTag
 
 trait ClientUtils {
 
-  val actorSystem: ActorSystem
-  val serializer: Serialization = SerializationExtension.get(actorSystem)
+  implicit val actorSystem: ActorSystem
+  implicit val serializer: Serialization = SerializationExtension.get(actorSystem)
+  implicit val materializer = ActorMaterializer()
 
   val log = LoggerFactory.getLogger(this.getClass.getName)
 
@@ -49,6 +51,11 @@ trait ClientUtils {
         throw new RuntimeException("Request failed with response code: " + code)
     }
   }
+
+  def logEntity = (entity: ResponseEntity) =>
+    entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
+      log.info("Got response body: " + body.utf8String)
+    }
 
   def akkaProtoUnmarshaller[T](implicit ct: ClassTag[T]): Unmarshaller[HttpEntity, T] =
     PredefinedFromEntityUnmarshallers.byteArrayUnmarshaller.map { string: Array[Byte] =>

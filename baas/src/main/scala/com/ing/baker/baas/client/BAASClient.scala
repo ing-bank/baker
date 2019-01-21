@@ -5,16 +5,14 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.HttpMethods._
 import akka.http.scaladsl.model._
-import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import com.ing.baker.baas.EventConfirmation
-import com.ing.baker.baas.http.ClientUtils
-import com.ing.baker.baas.protocol._
+import com.ing.baker.baas.interaction.server.RemoteInteractionLauncher
+import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core.events.BakerEvent
 import com.ing.baker.runtime.core.{Baker, BakerResponse, EventListener, InteractionImplementation, ProcessMetadata, ProcessState, RecipeInformation, RuntimeEvent, SensoryEventStatus}
-import com.ing.baker.types.{Type, Value}
+import com.ing.baker.types.Value
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
@@ -23,36 +21,20 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-class BAASClient(val host: String, val port: Int)(implicit val actorSystem: ActorSystem) extends Baker with ClientUtils {
+class BAASClient(val selfHost: String,
+                 val selfPort: Int,
+                 val baasHost: String,
+                 val baasPort: Int)(implicit val actorSystem: ActorSystem) extends Baker with ClientUtils {
 
-  val baseUri = s"http://$host:$port"
+  val baseUri: String = s"http://$baasHost:$baasPort"
 
-  implicit val materializer = ActorMaterializer()
-
-  def logEntity = (entity: ResponseEntity) =>
-    entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
-      log.info("Got response body: " + body.utf8String)
-    }
+  private val remoteInteractionLauncher: RemoteInteractionLauncher = RemoteInteractionLauncher(selfHost, selfPort, baasHost, baasPort)
+  Await.result(remoteInteractionLauncher.start(), 10 seconds)
 
   override val log = LoggerFactory.getLogger(classOf[BAASClient])
   implicit val requestTimeout: FiniteDuration = 30 seconds
 
   private val config: Config = actorSystem.settings.config
-
-
-  def addRemoteImplementation(interactionName: String, uri: String, inputTypes: Seq[Type]) = {
-
-    //Create the request to Add the interaction implmentation to Baas
-    log.info("Registering remote implementation client")
-    val addInteractionHTTPRequest = AddInteractionHTTPRequest(interactionName, uri, inputTypes)
-
-    val request = HttpRequest(
-      uri = s"$baseUri/implementation",
-      method = POST,
-      entity = ByteString.fromArray(serializer.serialize(addInteractionHTTPRequest).get))
-
-    doRequest(request, logEntity)
-  }
 
   override val defaultBakeTimeout = config.as[FiniteDuration]("baker.bake-timeout")
   override val defaultProcessEventTimeout = config.as[FiniteDuration]("baker.process-event-timeout")
@@ -72,7 +54,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
     val httpRequest = for {
       body <- Marshal(compiledRecipe).to[RequestEntity]
       httpRequest = HttpRequest(
-        uri = baseUri +  "/recipe",
+        uri = baseUri + "/recipe",
         method = akka.http.scaladsl.model.HttpMethods.POST,
         entity = body)
     } yield doRequestAndParseResponse[String](httpRequest)
@@ -149,7 +131,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
     val runtimeEvent = Baker.extractEvent(event)
 
     val request = HttpRequest(
-      uri =  s"$baseUri/$processId/event?confirm=${EventConfirmation.COMPLETED.name}",
+      uri = s"$baseUri/$processId/event?confirm=completed",
       method = POST,
       entity = ByteString.fromArray(serializer.serialize(runtimeEvent).get))
 
@@ -364,7 +346,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
     * @param implementation The implementation object
     */
   override def addImplementation(implementation: AnyRef): Unit = {
-    //TODO implement
+    remoteInteractionLauncher.addImplementation(implementation)
   }
 
   /**
@@ -373,7 +355,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
     * @param implementations The implementation object
     */
   override def addImplementations(implementations: Seq[AnyRef]): Unit = {
-    //TODO implement
+    implementations.foreach(addImplementation)
   }
 
   /**
@@ -382,7 +364,7 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
     * @param implementation An InteractionImplementation instance
     */
   override def addImplementation(implementation: InteractionImplementation): Unit = {
-    //TODO implement
+    remoteInteractionLauncher.addImplementation(implementation)
   }
 
   /**
@@ -391,4 +373,6 @@ class BAASClient(val host: String, val port: Int)(implicit val actorSystem: Acto
   override def gracefulShutdown(timeout: FiniteDuration): Unit = {
     //TODO implement
   }
+
+
 }
