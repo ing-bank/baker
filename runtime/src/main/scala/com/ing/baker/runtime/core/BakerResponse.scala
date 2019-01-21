@@ -142,7 +142,7 @@ class BakerResponse(processId: String, source: Source[Any, NotUsed])(implicit ma
     */
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def confirmAllEvents(timeout: Duration): EventList = {
-    new EventList(confirmAllEvents(timeout.toScala))
+    EventList.ScalaWithNoTimestamps(confirmAllEvents(timeout.toScala))
   }
 
   /**
