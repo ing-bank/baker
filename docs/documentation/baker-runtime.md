@@ -19,7 +19,7 @@ val baker = new Baker();
 JBaker baker = new JBaker();
 ```
 
-Baker is build on top op [akka](https://www.akka.io).
+Baker is build on top of [akka](https://www.akka.io).
 
 It requires an `ActorSystem` to start. In the previous example the actor system is not provided. In that case baker will create an actor system for you.
 

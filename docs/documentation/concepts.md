@@ -89,7 +89,7 @@ The purpose of events is therefor twofold.
 
 1. It signifies something of interest happened for a [process instance](dictionary.md#process-instance).
 
-    Example, *"the customer placed the order"*, *"terms and conditions where accepted"*
+    Example, *"the customer placed the order"*, *"terms and conditions were accepted"*
 
 2. The event may provide ingredients required to continue the process.
 
