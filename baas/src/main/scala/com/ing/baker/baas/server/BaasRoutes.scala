@@ -21,14 +21,8 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
     def recipeRoutes(requestId: String) = {
       path("event") {
         post {
-          (entity(as[RuntimeEvent]) & parameter('confirm.as[String] ?)) { (event, confirm) =>
-
-            val sensoryEventStatus = confirm.getOrElse(defaultEventConfirm) match {
-              case "received" => baker.processEventAsync(requestId, event).confirmReceived()
-              case "completed" => baker.processEventAsync(requestId, event).confirmCompleted()
-              case other => throw new IllegalArgumentException(s"Unsupported confirm type: $other")
-            }
-
+          entity(as[RuntimeEvent]) { event =>
+            val sensoryEventStatus = baker.processEvent(requestId, event)
             complete(sensoryEventStatus)
           }
         }

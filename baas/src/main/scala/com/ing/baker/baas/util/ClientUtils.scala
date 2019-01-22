@@ -14,7 +14,7 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, SensoryEventStatus}
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{FiniteDuration, _}
 import scala.reflect.ClassTag
@@ -32,17 +32,17 @@ trait ClientUtils {
     serializer.deserialize(byteString.toArray, ct.runtimeClass).get.asInstanceOf[T]
   }
 
-  def doRequestAndParseResponse[T: ClassTag](httpRequest: HttpRequest)(implicit actorSystem: ActorSystem, materializer: Materializer, timeout: FiniteDuration): T = {
+  def doRequestAndParseResponse[T: ClassTag](httpRequest: HttpRequest)(implicit actorSystem: ActorSystem, materializer: Materializer, timeout: FiniteDuration): Future[T] = {
     doRequest(httpRequest, e => entityFromResponse[T](e))
   }
 
-  def doRequest[T](httpRequest: HttpRequest, fn: ResponseEntity => T)(implicit actorSystem: ActorSystem, materializer: Materializer, timeout: FiniteDuration): T = {
+  def doRequest[T](httpRequest: HttpRequest, fn: ResponseEntity => T)(implicit actorSystem: ActorSystem, materializer: Materializer, timeout: FiniteDuration): Future[T] = {
 
     log.info(s"Sending request: $httpRequest")
 
-    val response: HttpMessage = Await.result(Http().singleRequest(httpRequest), timeout)
+    val response: Future[HttpMessage] = Http().singleRequest(httpRequest)
 
-    response match {
+    response map {
       case HttpResponse(StatusCodes.OK, _, entity, _) =>
         fn(entity)
       case resp @ HttpResponse(code, _, _, _) =>

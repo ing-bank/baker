@@ -4,7 +4,7 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.HttpMethods._
-import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.{RequestEntity, _}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.ing.baker.baas.interaction.server.RemoteInteractionLauncher
@@ -50,14 +50,15 @@ class BaasBaker(config: Config,
     * @return A recipeId
     */
   override def addRecipe(compiledRecipe: CompiledRecipe, timeout: FiniteDuration): String = {
-    val httpRequest = for {
-      body <- Marshal(compiledRecipe).to[RequestEntity]
-      httpRequest = HttpRequest(
-        uri = baseUri + "/recipe",
-        method = akka.http.scaladsl.model.HttpMethods.POST,
-        entity = body)
-    } yield doRequestAndParseResponse[String](httpRequest)
-    Await.result(httpRequest, 10 seconds)
+    val responseFuture: Future[String] =
+      Marshal(compiledRecipe).to[RequestEntity]
+        .map { body =>
+          HttpRequest(
+            uri = baseUri + "/recipe",
+            method = akka.http.scaladsl.model.HttpMethods.POST,
+            entity = body)
+        }.flatMap(doRequestAndParseResponse[String])
+    Await.result(responseFuture, timeout)
   }
 
   /**
@@ -99,11 +100,7 @@ class BaasBaker(config: Config,
     * @return
     */
   override def bake(recipeId: String, processId: String, timeout: FiniteDuration): ProcessState = {
-    val request = HttpRequest(
-      uri = s"$baseUri/$processId/$recipeId/bake",
-      method = POST)
-
-    ProcessState(doRequestAndParseResponse[String](request), null, null)
+    Await.result(bakeAsync(recipeId, processId, timeout), timeout)
   }
 
   /**
@@ -115,7 +112,12 @@ class BaasBaker(config: Config,
     * @return
     */
   override def bakeAsync(recipeId: String, processId: String, timeout: FiniteDuration): Future[ProcessState] = {
-    Future(bake(recipeId, processId, timeout))
+    val request = HttpRequest(
+      uri = s"$baseUri/$processId/$recipeId/bake",
+      method = POST)
+    doRequestAndParseResponse[String](request).map {
+      response => ProcessState(response, null, null)
+    }
   }
 
   /**
@@ -128,13 +130,12 @@ class BaasBaker(config: Config,
     //Create request to give to Baker
     log.info("Creating runtime event to fire")
     val runtimeEvent = Baker.extractEvent(event)
-
     val request = HttpRequest(
-      uri = s"$baseUri/$processId/event?confirm=completed",
+      uri = s"$baseUri/$processId/event",
       method = POST,
       entity = ByteString.fromArray(serializer.serialize(runtimeEvent).get))
 
-    doRequestAndParseResponse[SensoryEventStatus](request)
+    Await.result(doRequestAndParseResponse[SensoryEventStatus](request), timeout)
   }
 
   /**
@@ -217,7 +218,7 @@ class BaasBaker(config: Config,
       uri = s"$baseUri/$processId/events",
       method = GET)
 
-    doRequestAndParseResponse[List[RuntimeEvent]](request)
+    Await.result(doRequestAndParseResponse[List[RuntimeEvent]](request), timeout)
   }
 
   /**
@@ -252,7 +253,7 @@ class BaasBaker(config: Config,
       uri = s"$baseUri/$processId/state",
       method = GET)
 
-    doRequestAndParseResponse[ProcessState](request)
+    Await.result(doRequestAndParseResponse[ProcessState](request), timeout)
   }
 
   /**
@@ -268,7 +269,7 @@ class BaasBaker(config: Config,
 
     //TODO change this so its not first waiting and then creating a future of it.
     //Make it so that it does not wait in the default doRequestAndParseResponse
-    Future(doRequestAndParseResponse[ProcessState](request))
+    doRequestAndParseResponse[ProcessState](request)
   }
 
   /**
@@ -302,8 +303,7 @@ class BaasBaker(config: Config,
     val request = HttpRequest(
       uri = s"$baseUri/$processId/visual_state",
       method = GET)
-
-    doRequestAndParseResponse[String](request)
+    Await.result(doRequestAndParseResponse[String](request), timeout)
   }
 
   /**
