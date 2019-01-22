@@ -4,8 +4,8 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
-import com.ing.baker.baas.BAASSpec.{InteractionOne, _}
-import com.ing.baker.baas.server.BAASAPI
+import com.ing.baker.baas.BaasSpec.{InteractionOne, _}
+import com.ing.baker.baas.server.BaasServer
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.scaladsl
@@ -16,7 +16,7 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with Matchers with BeforeAndAfterAll {
+class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with Matchers with BeforeAndAfterAll {
   def actorSystemName: String = "BAASSpec"
 
   val baasHost = "localhost"
@@ -24,7 +24,7 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
 
   // Startup a empty BAAS cluster
   val baker = new AkkaBaker()(system)
-  val baasAPI: BAASAPI = new BAASAPI(baker, baasHost, baasPort)(system)
+  val baasAPI: BaasServer = new BaasServer(baker, baasHost, baasPort)(system)
 
   // Start a BAAS API
   val baasClient: Baker = BakerProvider()
@@ -69,7 +69,7 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
   }
 }
 
-object BAASSpec {
+object BaasSpec {
 
   val initialIngredient = Ingredient[String]("initialIngredient")
   val interactionOneIngredient = Ingredient[String]("interactionOneIngredient")

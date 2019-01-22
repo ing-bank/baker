@@ -10,7 +10,7 @@ import com.ing.baker.baas.interaction.client.RemoteInteractionClient
 
 import scala.concurrent.duration._
 
-class APIRoutes(override val actorSystem: ActorSystem) extends Directives with ClientUtils {
+class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with ClientUtils {
 
   implicit val timeout: FiniteDuration = 30 seconds
 

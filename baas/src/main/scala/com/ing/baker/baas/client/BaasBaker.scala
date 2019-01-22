@@ -21,18 +21,18 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-class BAASClient(config: Config,
-                 val clientHost: String,
-                 val clientPort: Int,
-                 val baasHost: String,
-                 val baasPort: Int)(implicit val actorSystem: ActorSystem) extends Baker with ClientUtils {
+class BaasBaker(config: Config,
+                val clientHost: String,
+                val clientPort: Int,
+                val baasHost: String,
+                val baasPort: Int)(implicit val actorSystem: ActorSystem) extends Baker with ClientUtils {
 
   val baseUri: String = s"http://$baasHost:$baasPort"
 
   private val remoteInteractionLauncher: RemoteInteractionLauncher = RemoteInteractionLauncher(clientHost, clientPort, baasHost, baasPort)
   Await.result(remoteInteractionLauncher.start(), 10 seconds)
 
-  override val log: Logger = LoggerFactory.getLogger(classOf[BAASClient])
+  override val log: Logger = LoggerFactory.getLogger(classOf[BaasBaker])
   implicit val requestTimeout: FiniteDuration = 30 seconds
 
   override val defaultBakeTimeout: FiniteDuration = config.as[FiniteDuration]("baker.bake-timeout")

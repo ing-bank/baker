@@ -4,11 +4,11 @@ import akka.actor.ActorSystem
 import com.ing.baker.runtime.core.{ActorSystemProvider, Baker, BakerProvider}
 import com.typesafe.config.Config
 
-class BAASBakerProvider extends BakerProvider{
+class BaasBakerProvider extends BakerProvider{
   override def apply(config: Config): Baker = {
     implicit val actorSystem: ActorSystem = ActorSystemProvider.get(config)
 
-    new BAASClient(
+    new BaasBaker(
       config,
       config.getString("baker.engine.baas.client-host"),
       config.getInt("baker.engine.baas.client-port"),
