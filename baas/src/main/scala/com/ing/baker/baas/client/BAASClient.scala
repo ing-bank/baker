@@ -21,14 +21,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-class BAASClient(val selfHost: String,
-                 val selfPort: Int,
+class BAASClient(val clientHost: String,
+                 val clientPort: Int,
                  val baasHost: String,
                  val baasPort: Int)(implicit val actorSystem: ActorSystem) extends Baker with ClientUtils {
 
   val baseUri: String = s"http://$baasHost:$baasPort"
 
-  private val remoteInteractionLauncher: RemoteInteractionLauncher = RemoteInteractionLauncher(selfHost, selfPort, baasHost, baasPort)
+  private val remoteInteractionLauncher: RemoteInteractionLauncher = RemoteInteractionLauncher(clientHost, clientPort, baasHost, baasPort)
   Await.result(remoteInteractionLauncher.start(), 10 seconds)
 
   override val log = LoggerFactory.getLogger(classOf[BAASClient])

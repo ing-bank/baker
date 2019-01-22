@@ -5,13 +5,12 @@ import java.util.UUID
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import com.ing.baker.baas.BAASSpec.{InteractionOne, _}
-import com.ing.baker.baas.client.BAASClient
 import com.ing.baker.baas.server.BAASAPI
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.scaladsl
 import com.ing.baker.recipe.scaladsl._
-import com.ing.baker.runtime.core.{AkkaBaker, Baker, ProcessState, RuntimeEvent, SensoryEventStatus}
+import com.ing.baker.runtime.core.{AkkaBaker, Baker, BakerProvider, ProcessState, RuntimeEvent, SensoryEventStatus}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.Await
@@ -22,15 +21,13 @@ class BAASSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
 
   val baasHost = "localhost"
   val baasPort = 8081
-  val interactionHost = "localhost"
-  val interactionPort = 8091
 
   // Startup a empty BAAS cluster
   val baker = new AkkaBaker()(system)
   val baasAPI: BAASAPI = new BAASAPI(baker, baasHost, baasPort)(system)
 
   // Start a BAAS API
-  val baasClient: Baker = new BAASClient(interactionHost, interactionPort, baasHost, baasPort)
+  val baasClient: Baker = BakerProvider()
 
   // implementations
   val localImplementations: Seq[AnyRef] = Seq(InteractionOne(), InteractionTwo())
