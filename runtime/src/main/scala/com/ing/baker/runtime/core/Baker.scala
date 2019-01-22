@@ -124,7 +124,7 @@ trait Baker {
     */
   def processEventAsync(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): BakerResponse
 
-  /**
+  /**gf
     * Retries a blocked interaction.
     *
     * @return

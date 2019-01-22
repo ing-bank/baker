@@ -1,13 +1,13 @@
 package com.ing.baker.runtime.java_api
 
-import java.util.concurrent.{TimeUnit, TimeoutException}
 import java.util.{Collections, UUID}
+import java.util.concurrent.{TimeUnit, TimeoutException}
 
-import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core._
 import com.ing.baker.runtime.core.events.AnnotatedEventSubscriber
 import com.ing.baker.types.Value
+import com.typesafe.config.Config
 import javax.annotation.Nonnull
 
 import scala.collection.JavaConverters._
@@ -15,13 +15,14 @@ import scala.concurrent.duration._
 
 class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRef]) {
 
-  def this(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRef]) = this(new AkkaBaker()(actorSystem), implementations)
+  def this(config: Config, implementations: java.lang.Iterable[AnyRef]) =
+    this(BakerProvider.get(config) ,implementations)
 
-  def this(actorSystem: ActorSystem) = this(actorSystem, Collections.emptyList[AnyRef])
-
-  def this() = this(ActorSystem("BakerActorSystem"))
+  def this(config: Config) =
+    this(BakerProvider.get(config) , Collections.emptyList[AnyRef])
 
   addImplementations(implementations)
+
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.

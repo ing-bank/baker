@@ -26,7 +26,7 @@ import com.ing.baker.runtime.core.Baker._
 import com.ing.baker.runtime.core.events.{BakerEvent, EventReceived, InteractionCompleted, InteractionFailed}
 import com.ing.baker.runtime.core.internal.{InteractionManager, MethodInteractionImplementation, RecipeRuntime}
 import com.ing.baker.types.Value
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigFactory}
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
@@ -41,21 +41,24 @@ import scala.util.Try
   * The Baker is the component of the Baker library that runs one or multiples recipes.
   * For each recipe a new instance can be baked, sensory events can be send and state can be inquired upon
   */
-class AkkaBaker()(implicit val actorSystem: ActorSystem) extends Baker {
+class AkkaBaker(private val config: Config)(implicit val actorSystem: ActorSystem) extends Baker {
+
+  def this()(implicit actorSystem: ActorSystem) {
+    this(ConfigFactory.load())
+  }
 
   private val log = LoggerFactory.getLogger(classOf[AkkaBaker])
 
-  private val config: Config = actorSystem.settings.config
-  if (!config.as[Option[Boolean]]("baker.config-file-included").getOrElse(false))
+  if (!config.getAs[Boolean]("baker.config-file-included").getOrElse(false))
     throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
 
   private val interactionManager: InteractionManager = new InteractionManager()
 
-  override val defaultBakeTimeout = config.as[FiniteDuration]("baker.bake-timeout")
-  override val defaultProcessEventTimeout = config.as[FiniteDuration]("baker.process-event-timeout")
-  override val defaultInquireTimeout = config.as[FiniteDuration]("baker.process-inquire-timeout")
-  override val defaultShutdownTimeout = config.as[FiniteDuration]("baker.shutdown-timeout")
-  override val defaultAddRecipeTimeout = config.as[FiniteDuration]("baker.add-recipe-timeout")
+  override val defaultBakeTimeout: FiniteDuration = config.as[FiniteDuration]("baker.bake-timeout")
+  override val defaultProcessEventTimeout: FiniteDuration = config.as[FiniteDuration]("baker.process-event-timeout")
+  override val defaultInquireTimeout: FiniteDuration = config.as[FiniteDuration]("baker.process-inquire-timeout")
+  override val defaultShutdownTimeout: FiniteDuration = config.as[FiniteDuration]("baker.shutdown-timeout")
+  override val defaultAddRecipeTimeout: FiniteDuration = config.as[FiniteDuration]("baker.add-recipe-timeout")
 
   private val readJournalIdentifier = config.as[String]("baker.actor.read-journal-plugin")
   private implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -66,7 +69,7 @@ class AkkaBaker()(implicit val actorSystem: ActorSystem) extends Baker {
   private val configuredEncryption: Encryption = {
     val encryptionEnabled = config.getAs[Boolean]("baker.encryption.enabled").getOrElse(false)
     if (encryptionEnabled) {
-      new Encryption.AESEncryption(config.getString("baker.encryption.secret"))
+      new Encryption.AESEncryption(config.as[String]("baker.encryption.secret"))
     } else {
       NoEncryption
     }

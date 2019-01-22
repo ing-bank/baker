@@ -15,13 +15,14 @@ import com.ing.baker.runtime.core.{Baker, BakerResponse, EventListener, Interact
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-class BAASClient(val clientHost: String,
+class BAASClient(config: Config,
+                 val clientHost: String,
                  val clientPort: Int,
                  val baasHost: String,
                  val baasPort: Int)(implicit val actorSystem: ActorSystem) extends Baker with ClientUtils {
@@ -31,16 +32,14 @@ class BAASClient(val clientHost: String,
   private val remoteInteractionLauncher: RemoteInteractionLauncher = RemoteInteractionLauncher(clientHost, clientPort, baasHost, baasPort)
   Await.result(remoteInteractionLauncher.start(), 10 seconds)
 
-  override val log = LoggerFactory.getLogger(classOf[BAASClient])
+  override val log: Logger = LoggerFactory.getLogger(classOf[BAASClient])
   implicit val requestTimeout: FiniteDuration = 30 seconds
 
-  private val config: Config = actorSystem.settings.config
-
-  override val defaultBakeTimeout = config.as[FiniteDuration]("baker.bake-timeout")
-  override val defaultProcessEventTimeout = config.as[FiniteDuration]("baker.process-event-timeout")
-  override val defaultInquireTimeout = config.as[FiniteDuration]("baker.process-inquire-timeout")
-  override val defaultShutdownTimeout = config.as[FiniteDuration]("baker.shutdown-timeout")
-  override val defaultAddRecipeTimeout = config.as[FiniteDuration]("baker.add-recipe-timeout")
+  override val defaultBakeTimeout: FiniteDuration = config.as[FiniteDuration]("baker.bake-timeout")
+  override val defaultProcessEventTimeout: FiniteDuration = config.as[FiniteDuration]("baker.process-event-timeout")
+  override val defaultInquireTimeout: FiniteDuration = config.as[FiniteDuration]("baker.process-inquire-timeout")
+  override val defaultShutdownTimeout: FiniteDuration = config.as[FiniteDuration]("baker.shutdown-timeout")
+  override val defaultAddRecipeTimeout: FiniteDuration = config.as[FiniteDuration]("baker.add-recipe-timeout")
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
