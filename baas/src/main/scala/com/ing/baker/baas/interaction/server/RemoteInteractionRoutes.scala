@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import com.ing.baker.baas.interaction.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
+import com.ing.baker.runtime.core.RuntimeEvent
 import org.slf4j.LoggerFactory
 
 
@@ -30,7 +31,7 @@ class RemoteInteractionRoutes(override val actorSystem: ActorSystem) extends Dir
 
               log.info(s"Executing interaction: $interactionName")
 
-              val runtimeEvent = implementationOptional.get.execute(executeInteractionHTTPRequest.input).orNull
+              val runtimeEvent: RuntimeEvent = implementationOptional.get.execute(executeInteractionHTTPRequest.input).orNull
 
               log.info(s"Interaction executed: ${interactionName}")
 

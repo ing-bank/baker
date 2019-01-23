@@ -15,7 +15,7 @@ class BaasServer(baker: Baker,
                  host: String,
                  port: Int)(implicit actorSystem: ActorSystem) extends Directives {
 
-  private implicit val materializer = ActorMaterializer()
+  private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   import actorSystem.dispatcher
 

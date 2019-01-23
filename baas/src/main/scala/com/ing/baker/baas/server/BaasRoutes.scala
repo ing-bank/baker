@@ -18,7 +18,7 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
 
   def apply(baker: Baker): Route = {
 
-    def recipeRoutes(requestId: String) = {
+    def instanceRoutes(requestId: String) = {
       path("event") {
         post {
           entity(as[RuntimeEvent]) { event =>
@@ -81,6 +81,11 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
               }
             }
           }
+        } ~
+        get {
+          pathPrefix(Segment) { recipeId =>
+            complete(baker.getRecipe(recipeId))
+          }
         }
       } ~
         path("implementation") {
@@ -99,7 +104,7 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
             }
           }
         } ~ pathPrefix(Segment) {
-        recipeRoutes _
+        instanceRoutes _
       }
     }
     baasRoutes

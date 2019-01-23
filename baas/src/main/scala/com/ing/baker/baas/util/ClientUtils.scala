@@ -11,7 +11,7 @@ import akka.util.ByteString
 import com.ing.baker.baas.interaction.server.protocol.ExecuteInteractionHTTPRequest
 import com.ing.baker.baas.server.protocol.AddInteractionHTTPRequest
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, SensoryEventStatus}
+import com.ing.baker.runtime.core.{ProcessState, RecipeInformation, RuntimeEvent, SensoryEventStatus}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Await, Future}
@@ -80,6 +80,9 @@ trait ClientUtils {
 
   implicit val compiledRecipeMarshaller = akkaProtoMarshaller[CompiledRecipe]
   implicit val compiledRecipeUnmarshaller = akkaProtoUnmarshaller[CompiledRecipe]
+
+  implicit val recipeInformationMarshaller = akkaProtoMarshaller[RecipeInformation]
+  implicit val recipeInformationUnmarshaller = akkaProtoUnmarshaller[RecipeInformation]
 
   implicit val sensoryEventStatusMarhaller = akkaProtoMarshaller[SensoryEventStatus]
   implicit val sensoryEventStatusUnmarshaller = akkaProtoUnmarshaller[SensoryEventStatus]

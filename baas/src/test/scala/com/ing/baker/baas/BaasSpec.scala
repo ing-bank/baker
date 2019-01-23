@@ -27,7 +27,7 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
   val baasAPI: BaasServer = new BaasServer(baker, baasHost, baasPort)(system)
 
   // Start a BAAS API
-  val baasClient: Baker = BakerProvider()
+  val baasBaker: Baker = BakerProvider()
 
   // implementations
   val localImplementations: Seq[AnyRef] = Seq(InteractionOne(), InteractionTwo())
@@ -35,7 +35,7 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
 
   override def beforeAll() {
     Await.result(baasAPI.start(), 10 seconds)
-    baasClient.addImplementations(localImplementations)
+    baasBaker.addImplementations(localImplementations)
   }
 
   override def afterAll() {
@@ -47,25 +47,27 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     val recipeName = "simpleRecipe" + UUID.randomUUID().toString
     val recipe: Recipe = setupSimpleRecipe(recipeName)
     val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-    val recipeId = baasClient.addRecipe(compiledRecipe)
+    val recipeId = baasBaker.addRecipe(compiledRecipe)
 
     val requestId = UUID.randomUUID().toString
 
-    baasClient.bake(recipeId, requestId)
+    baasBaker.bake(recipeId, requestId)
 
     val sensoryEventStatusResponse: SensoryEventStatus =
-      baasClient.processEvent(requestId, InitialEvent("initialIngredient"))
+      baasBaker.processEvent(requestId, InitialEvent("initialIngredient"))
     sensoryEventStatusResponse shouldBe SensoryEventStatus.Completed
 
-    val processState: ProcessState = baasClient.getProcessState(requestId)
+    val processState: ProcessState = baasBaker.getProcessState(requestId)
 
     processState.ingredients.keys should contain("initialIngredient")
     processState.ingredients.keys should contain("interactionOneIngredient")
 
-    val events: Seq[RuntimeEvent] = baasClient.events(requestId)
+    val events: Seq[RuntimeEvent] = baasBaker.events(requestId)
 
     println(s"events: $events")
     println(s"procesState : ${processState.ingredients}")
+
+//    baasBaker.getRecipe(recipeId)
   }
 }
 

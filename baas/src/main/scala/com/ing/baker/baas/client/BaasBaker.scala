@@ -67,7 +67,12 @@ class BaasBaker(config: Config,
     * @param recipeId
     * @return
     */
-  override def getRecipe(recipeId: String, timeout: FiniteDuration): RecipeInformation = ???
+  override def getRecipe(recipeId: String, timeout: FiniteDuration): RecipeInformation = {
+    val request = HttpRequest(
+      uri = s"$baseUri/recipe/$recipeId",
+      method = GET)
+    Await.result(doRequestAndParseResponse[RecipeInformation](request), timeout)
+  }
 
   /**
     * Returns the compiled recipe for the given RecipeId
@@ -75,21 +80,31 @@ class BaasBaker(config: Config,
     * @param recipeId
     * @return
     */
-  override def getCompiledRecipe(recipeId: String, timeout: FiniteDuration): CompiledRecipe = ???
+  override def getCompiledRecipe(recipeId: String, timeout: FiniteDuration): CompiledRecipe = {
+    val request = HttpRequest(
+      uri = s"$baseUri/recipe/$recipeId",
+      method = GET)
+    val recipeInformation: RecipeInformation = Await.result(doRequestAndParseResponse[RecipeInformation](request), timeout)
+    recipeInformation.compiledRecipe
+  }
 
   /**
     * Returns all recipes added to this baker instance.
     *
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
-  override def getAllRecipes(timeout: FiniteDuration): Map[String, RecipeInformation] = ???
+  override def getAllRecipes(timeout: FiniteDuration): Map[String, RecipeInformation] = {
+    throw new IllegalArgumentException("Not allowed to get all recipes")
+  }
 
   /**
     * Returns a future of all recipes added to this baker instance.
     *
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
-  override def getAllRecipesAsync(timeout: FiniteDuration): Future[Map[String, RecipeInformation]] = ???
+  override def getAllRecipesAsync(timeout: FiniteDuration): Future[Map[String, RecipeInformation]] = {
+    throw new IllegalArgumentException("Not allowed to get all recipes")
+  }
 
   /**
     * Creates a process instance for the given recipeId with the given processId as identifier

@@ -39,6 +39,6 @@ case class RemoteInteractionClient(override val name: String,
         uri = s"$uri/execute",
         method = akka.http.scaladsl.model.HttpMethods.POST,
         entity = serializer.serialize(request).get)
-    Await.result(doRequestAndParseResponse[RuntimeEvent](httpRequest).mapTo[Option[RuntimeEvent]], 10 seconds)
+    Option(Await.result(doRequestAndParseResponse[RuntimeEvent](httpRequest), 10 seconds))
   }
 }
