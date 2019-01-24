@@ -180,12 +180,11 @@ lazy val recipeCompiler = project.in(file("compiler"))
 lazy val baas = project.in(file("baas"))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
+  .settings(scalaPBSettings)
   .settings(
     moduleName := "baker-baas",
     libraryDependencies ++=
       compileDeps(
-        kryo,
-        kryoSerializers,
         akkaHttp,
         akkaPersistenceCassandra) ++
       testDeps(

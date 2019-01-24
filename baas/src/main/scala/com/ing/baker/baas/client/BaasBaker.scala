@@ -8,6 +8,7 @@ import akka.http.scaladsl.model.{RequestEntity, _}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.ing.baker.baas.interaction.server.RemoteInteractionLauncher
+import com.ing.baker.baas.server.protocol.BaasServerProtocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core.events.BakerEvent
@@ -50,15 +51,16 @@ class BaasBaker(config: Config,
     * @return A recipeId
     */
   override def addRecipe(compiledRecipe: CompiledRecipe, timeout: FiniteDuration): String = {
-    val responseFuture: Future[String] =
-      Marshal(compiledRecipe).to[RequestEntity]
+    val responseFuture: Future[AddRecipeResponse] =
+      Marshal(AddRecipeRequest(compiledRecipe)).to[RequestEntity]
         .map { body =>
           HttpRequest(
             uri = baseUri + "/recipe",
-            method = akka.http.scaladsl.model.HttpMethods.POST,
+            method = POST,
             entity = body)
-        }.flatMap(doRequestAndParseResponse[String])
+        }.flatMap(doRequestAndParseResponse[AddRecipeResponse])
     Await.result(responseFuture, timeout)
+      .recipeId
   }
 
   /**
@@ -127,12 +129,15 @@ class BaasBaker(config: Config,
     * @return
     */
   override def bakeAsync(recipeId: String, processId: String, timeout: FiniteDuration): Future[ProcessState] = {
-    val request = HttpRequest(
-      uri = s"$baseUri/$processId/$recipeId/bake",
-      method = POST)
-    doRequestAndParseResponse[String](request).map {
-      response => ProcessState(response, null, null)
-    }
+    Marshal(BakeRequest(recipeId)).to[RequestEntity]
+      .map { body =>
+        HttpRequest(
+          uri = s"$baseUri/$processId/bake",
+          method = POST,
+          entity = body)
+      }
+      .flatMap(doRequestAndParseResponse[BakeResponse])
+      .map(_.processState)
   }
 
   /**
@@ -145,12 +150,18 @@ class BaasBaker(config: Config,
     //Create request to give to Baker
     log.info("Creating runtime event to fire")
     val runtimeEvent = Baker.extractEvent(event)
-    val request = HttpRequest(
-      uri = s"$baseUri/$processId/event",
-      method = POST,
-      entity = ByteString.fromArray(serializer.serialize(runtimeEvent).get))
 
-    Await.result(doRequestAndParseResponse[SensoryEventStatus](request), timeout)
+    val response = Marshal(ProcessEventRequest(runtimeEvent)).to[RequestEntity]
+      .map { body =>
+        HttpRequest(
+          uri = s"$baseUri/$processId/event",
+          method = POST,
+          entity = body)
+      }
+      .flatMap(doRequestAndParseResponse[ProcessEventResponse])
+      .map(_.status)
+    Await.result(response, timeout)
+
   }
 
   /**
@@ -232,8 +243,8 @@ class BaasBaker(config: Config,
     val request = HttpRequest(
       uri = s"$baseUri/$processId/events",
       method = GET)
-
-    Await.result(doRequestAndParseResponse[List[RuntimeEvent]](request), timeout)
+    val events = doRequestAndParseResponse[EventsResponse](request).map(_.events)
+    Await.result(events, timeout)
   }
 
   /**
@@ -264,11 +275,7 @@ class BaasBaker(config: Config,
     * @return The process state.
     */
   override def getProcessState(processId: String, timeout: FiniteDuration): ProcessState = {
-    val request = HttpRequest(
-      uri = s"$baseUri/$processId/state",
-      method = GET)
-
-    Await.result(doRequestAndParseResponse[ProcessState](request), timeout)
+    Await.result(getProcessStateAsync(processId, timeout), timeout)
   }
 
   /**
@@ -281,10 +288,7 @@ class BaasBaker(config: Config,
     val request = HttpRequest(
       uri = s"$baseUri/$processId/state",
       method = GET)
-
-    //TODO change this so its not first waiting and then creating a future of it.
-    //Make it so that it does not wait in the default doRequestAndParseResponse
-    doRequestAndParseResponse[ProcessState](request)
+    doRequestAndParseResponse[StateResponse](request).map(_.processState)
   }
 
   /**
@@ -304,7 +308,7 @@ class BaasBaker(config: Config,
     * @return A future of the provided ingredients.
     */
   override def getIngredientsAsync(processId: String, timeout: FiniteDuration): Future[Map[String, Value]] = {
-    Future(getIngredients(processId, timeout))
+    getProcessStateAsync(processId).map(_.ingredients)
   }
 
   /**
@@ -318,7 +322,8 @@ class BaasBaker(config: Config,
     val request = HttpRequest(
       uri = s"$baseUri/$processId/visual_state",
       method = GET)
-    Await.result(doRequestAndParseResponse[String](request), timeout)
+    val response = doRequestAndParseResponse[VisualStateResponse](request).map(_.visualState)
+    Await.result(response, timeout)
   }
 
   /**

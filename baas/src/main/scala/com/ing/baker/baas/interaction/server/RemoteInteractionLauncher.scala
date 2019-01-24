@@ -5,11 +5,11 @@ import java.util.concurrent.atomic.AtomicReference
 import akka.Done
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.HttpMethods.POST
-import akka.http.scaladsl.model.HttpRequest
+import akka.http.scaladsl.model.{HttpRequest, RequestEntity}
 import akka.http.scaladsl.server.RouteResult
-import akka.util.ByteString
-import com.ing.baker.baas.server.protocol.AddInteractionHTTPRequest
+import com.ing.baker.baas.server.protocol.BaasServerProtocol.{AddInteractionHTTPRequest, AddInteractionHTTPResponse}
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.runtime.core.InteractionImplementation
 import com.ing.baker.runtime.core.internal.MethodInteractionImplementation
@@ -17,7 +17,7 @@ import com.ing.baker.types.Type
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.{FiniteDuration, _}
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{Await, Future, Promise}
 
 case class RemoteInteractionLauncher(ownHost: String,
                                      ownPort: Int,
@@ -30,7 +30,7 @@ case class RemoteInteractionLauncher(ownHost: String,
 
   import actorSystem.dispatcher
 
-  val timeout: FiniteDuration = 30 seconds
+  implicit val timeout: FiniteDuration = 30 seconds
 
   private val bindingFuture = new AtomicReference[Future[Http.ServerBinding]]()
 
@@ -62,23 +62,24 @@ case class RemoteInteractionLauncher(ownHost: String,
   }
 
   //TODO change so that it not finds on name but on complete Interaction
-  def getImplementation(name: String) : Option[InteractionImplementation] = {
+  def getImplementation(name: String): Option[InteractionImplementation] = {
     interactionImplementations.get(name)
   }
 
 
-
-  private def registerRemoteImplementation(interactionName: String, inputTypes: Seq[Type]) = {
+  private def registerRemoteImplementation(interactionName: String, inputTypes: Seq[Type]): Unit = {
     //Create the request to Add the interaction implementation to Baas
     log.info("Registering remote implementation client")
     val addInteractionHTTPRequest = AddInteractionHTTPRequest(interactionName, s"http://$ownHost:$ownPort/$interactionName", inputTypes)
 
-    val baseUri: String = s"http://$baasHost:$baasPort"
-    val request = HttpRequest(
-      uri = s"$baseUri/implementation",
-      method = POST,
-      entity = ByteString.fromArray(serializer.serialize(addInteractionHTTPRequest).get))
-
-    doRequest(request, logEntity)(actorSystem, materializer, timeout)
+    //TODO add other types of responses
+    val responseFuture: Future[AddInteractionHTTPResponse] = Marshal(addInteractionHTTPRequest).to[RequestEntity]
+      .map { body =>
+        HttpRequest(
+          uri = s"http://$baasHost:$baasPort/implementation",
+          method = POST,
+          entity = body)
+      }.flatMap(doRequestAndParseResponse[AddInteractionHTTPResponse](_))
+    Await.result(responseFuture, timeout)
   }
 }

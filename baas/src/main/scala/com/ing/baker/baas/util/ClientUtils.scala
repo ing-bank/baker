@@ -9,7 +9,7 @@ import akka.serialization.{Serialization, SerializationExtension}
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.util.ByteString
 import com.ing.baker.baas.interaction.server.protocol.ExecuteInteractionHTTPRequest
-import com.ing.baker.baas.server.protocol.AddInteractionHTTPRequest
+import com.ing.baker.baas.server.protocol.BaasServerProtocol._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core.{ProcessState, RecipeInformation, RuntimeEvent, SensoryEventStatus}
 import org.slf4j.LoggerFactory
@@ -72,9 +72,6 @@ trait ClientUtils {
   implicit val executeInteractionHTTPRequestMarshaller = akkaProtoMarshaller[ExecuteInteractionHTTPRequest]
   implicit val executeInteractionHTTPRequestUnmarshaller = akkaProtoUnmarshaller[ExecuteInteractionHTTPRequest]
 
-  implicit val addInteractionMarshaller = akkaProtoMarshaller[AddInteractionHTTPRequest]
-  implicit val addInteractionUnmarshaller = akkaProtoUnmarshaller[AddInteractionHTTPRequest]
-
   implicit val eventMarshaller = akkaProtoMarshaller[RuntimeEvent]
   implicit val eventUnmarshaller = akkaProtoUnmarshaller[RuntimeEvent]
 
@@ -87,7 +84,39 @@ trait ClientUtils {
   implicit val sensoryEventStatusMarhaller = akkaProtoMarshaller[SensoryEventStatus]
   implicit val sensoryEventStatusUnmarshaller = akkaProtoUnmarshaller[SensoryEventStatus]
 
-  //TODO find out how to marshal these because we have no protobuff binding at this time
-  implicit val eventListMarshaller = akkaProtoMarshaller[List[RuntimeEvent]]
-  implicit val ingredientsMarhaller = akkaProtoMarshaller[Map[String, Any]]
+  implicit val processEventRequestMarshaller = akkaProtoMarshaller[ProcessEventRequest]
+  implicit val processEventRequestUnMarshaller = akkaProtoUnmarshaller[ProcessEventRequest]
+
+  implicit val processEventResponseMarshaller = akkaProtoMarshaller[ProcessEventResponse]
+  implicit val processEventResponseUnMarshaller = akkaProtoUnmarshaller[ProcessEventResponse]
+
+  implicit val addInteractionHTTPRequestMarshaller = akkaProtoMarshaller[AddInteractionHTTPRequest]
+  implicit val addInteractionHTTPRequestUnMarshaller = akkaProtoUnmarshaller[AddInteractionHTTPRequest]
+
+  implicit val addInteractionHTTPResponseMarshaller = akkaProtoMarshaller[AddInteractionHTTPResponse]
+  implicit val addInteractionHTTPResponseUnMarshaller = akkaProtoUnmarshaller[AddInteractionHTTPResponse]
+
+  implicit val eventsResponseMarshaller = akkaProtoMarshaller[EventsResponse]
+  implicit val eventsResponseUnMarshaller = akkaProtoUnmarshaller[EventsResponse]
+
+  implicit val stateResponseMarshaller = akkaProtoMarshaller[StateResponse]
+  implicit val stateResponseUnMarshaller = akkaProtoUnmarshaller[StateResponse]
+
+  implicit val bakeRequestMarshaller = akkaProtoMarshaller[BakeRequest]
+  implicit val bakeRequestUnMarshaller = akkaProtoUnmarshaller[BakeRequest]
+
+  implicit val bakeResponseMarshaller = akkaProtoMarshaller[BakeResponse]
+  implicit val bakeResponseUnMarshaller = akkaProtoUnmarshaller[BakeResponse]
+
+  implicit val ingredientsResponseMarshaller = akkaProtoMarshaller[IngredientsResponse]
+  implicit val ingredientsResponseUnMarshaller = akkaProtoUnmarshaller[IngredientsResponse]
+
+  implicit val visualStateResponseMarshaller = akkaProtoMarshaller[VisualStateResponse]
+  implicit val visualStateResponseUnMarshaller = akkaProtoUnmarshaller[VisualStateResponse]
+
+  implicit val addRecipeRequestMarshaller = akkaProtoMarshaller[AddRecipeRequest]
+  implicit val addRecipeRequestUnMarshaller = akkaProtoUnmarshaller[AddRecipeRequest]
+
+  implicit val addRecipeResponseMarshaller = akkaProtoMarshaller[AddRecipeResponse]
+  implicit val addRecipeResponseUnMarshaller = akkaProtoUnmarshaller[AddRecipeResponse]
 }

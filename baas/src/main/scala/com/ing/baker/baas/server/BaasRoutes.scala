@@ -2,7 +2,7 @@ package com.ing.baker.baas.server
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
-import com.ing.baker.baas.server.protocol._
+import com.ing.baker.baas.server.protocol.BaasServerProtocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core.{Baker, ProcessState, RuntimeEvent}
@@ -21,44 +21,42 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
     def instanceRoutes(requestId: String) = {
       path("event") {
         post {
-          entity(as[RuntimeEvent]) { event =>
-            val sensoryEventStatus = baker.processEvent(requestId, event)
-            complete(sensoryEventStatus)
+          entity(as[ProcessEventRequest]) { request =>
+            val sensoryEventStatus = baker.processEvent(requestId, request.event)
+            complete(ProcessEventResponse(sensoryEventStatus))
           }
         }
       } ~
         path("events") {
           get {
-            val events = baker.events(requestId).toList
-            complete(events)
+            val events = baker.events(requestId)
+            complete(EventsResponse(events))
           }
         } ~
         path("state") {
           get {
             val events: ProcessState = baker.getProcessState(requestId)
-            complete(events)
+            complete(StateResponse(events))
           }
         } ~
-        path(Segment / "bake") { recipeId =>
+        path( "bake") {
           post {
-            val processState = baker.bake(recipeId, requestId)
-            complete(processState.processId)
+            entity(as[BakeRequest]) { request =>
+              val processState = baker.bake(request.recipeId, requestId)
+              complete(BakeResponse(processState))
+            }
           }
         } ~
         path("ingredients") {
           get {
-
             val ingredients = baker.getIngredients(requestId)
-
-            complete(ingredients)
+            complete(IngredientsResponse(ingredients))
           }
         } ~
         path("visual_state") {
           get {
-
             val visualState = baker.getVisualState(requestId)
-
-            complete(visualState)
+            complete(VisualStateResponse(visualState))
           }
         }
     }
@@ -68,12 +66,11 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
 
       path("recipe") {
         post {
-          entity(as[CompiledRecipe]) { compiledRecipe =>
-
+          entity(as[AddRecipeRequest]) { case AddRecipeRequest(compiledRecipe) =>
             try {
               println(s"Adding recipe called: ${compiledRecipe.name}")
               val recipeId = baker.addRecipe(compiledRecipe)
-              complete(recipeId)
+              complete(AddRecipeResponse(recipeId))
             } catch {
               case e: Exception => {
                 println(s"Exception when adding recipe: ${e.getMessage}")
@@ -100,7 +97,8 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
               baker.addImplementation(interactionImplementation)
 
               //return response
-              complete(s"Interaction: ${interactionImplementation.name} added")
+              complete(AddInteractionHTTPResponse(
+                s"Interaction: ${interactionImplementation.name} added"))
             }
           }
         } ~ pathPrefix(Segment) {
