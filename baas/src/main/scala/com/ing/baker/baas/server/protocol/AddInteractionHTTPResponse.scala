@@ -1,3 +1,3 @@
 package com.ing.baker.baas.server.protocol
 
-case class AddInteractionHTTPResponse(description: String)
+case class AddInteractionHTTPResponse(description: String) extends BaasResponse

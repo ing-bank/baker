@@ -26,6 +26,8 @@ object BaasProtobufSerializer {
   val manifestInfo: Seq[Entry[_]]= Seq(
     BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.AddRecipeRequest", classOf[protocol.AddRecipeRequest], protobuf.AddRecipeRequest),
     BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.AddRecipeResponse", classOf[protocol.AddRecipeResponse], protobuf.AddRecipeResponse),
+    BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.AddInteractionHTTPRequest", classOf[protocol.AddInteractionHTTPRequest], protobuf.AddInteractionHTTPRequest),
+    BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.AddInteractionHTTPResponse", classOf[protocol.AddInteractionHTTPResponse], protobuf.AddInteractionHTTPResponse),
   )
 }
 

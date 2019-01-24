@@ -67,7 +67,6 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     println(s"events: $events")
     println(s"procesState : ${processState.ingredients}")
 
-//    baasBaker.getRecipe(recipeId)
   }
 }
 

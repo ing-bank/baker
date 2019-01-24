@@ -8,10 +8,61 @@ option (scalapb.options) = {
     flat_package: true
 };
 
+message AddInteractionHTTPRequest {
+    optional string name = 1;
+    optional string uri = 2;
+    repeated Type type = 3;
+}
+
+message AddInteractionHTTPResponse {
+    optional string message = 1;
+}
+
 message AddRecipeRequest {
     optional CompiledRecipe compiledRecipe = 1;
 }
 
 message AddRecipeResponse {
     optional string recipeId = 1;
+}
+
+message BakeRequest {
+    optional string recipeId= 1;
+}
+
+message BakeResponse {
+    optional ProcessState processState= 1;
+}
+
+message EventsResponse {
+    repeated RuntimeEvent runtimeEvent = 1;
+}
+
+message IngredientsResponse {
+    repeated Ingredient ingredients = 1;
+}
+
+message ProcessEventRequest {
+    optional RuntimeEvent runtimeEvent = 1;
+}
+
+enum SensoryEventStatus {
+    Received = 0;
+    Completed = 1;
+    FiringLimitMet = 2;
+    ReceivePeriodExpired = 3;
+    AlreadyReceived = 4;
+    ProcessDeleted = 5;
+}
+
+message ProcessEventResponse {
+    optional SensoryEventStatus sensoryEventStatus = 1;
+}
+
+message StateResponse {
+    optional ProcessState processState= 1;
+}
+
+message VisualState {
+    optional string VisualStateResponse = 1;
 }
