@@ -9,7 +9,7 @@ import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.HttpMethods.POST
 import akka.http.scaladsl.model.{HttpRequest, RequestEntity}
 import akka.http.scaladsl.server.RouteResult
-import com.ing.baker.baas.server.protocol.BaasServerProtocol.{AddInteractionHTTPRequest, AddInteractionHTTPResponse}
+import com.ing.baker.baas.server.protocol.{AddInteractionHTTPRequest, AddInteractionHTTPResponse}
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.runtime.core.InteractionImplementation
 import com.ing.baker.runtime.core.internal.MethodInteractionImplementation

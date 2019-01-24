@@ -9,7 +9,7 @@ import akka.serialization.{Serialization, SerializationExtension}
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.util.ByteString
 import com.ing.baker.baas.interaction.server.protocol.ExecuteInteractionHTTPRequest
-import com.ing.baker.baas.server.protocol.BaasServerProtocol._
+import com.ing.baker.baas.server.protocol._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core.{ProcessState, RecipeInformation, RuntimeEvent, SensoryEventStatus}
 import org.slf4j.LoggerFactory

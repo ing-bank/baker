@@ -2,11 +2,10 @@ package com.ing.baker.baas.server
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
-import com.ing.baker.baas.server.protocol.BaasServerProtocol._
-import com.ing.baker.baas.util.ClientUtils
-import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.core.{Baker, ProcessState, RuntimeEvent}
 import com.ing.baker.baas.interaction.client.RemoteInteractionClient
+import com.ing.baker.baas.server.protocol._
+import com.ing.baker.baas.util.ClientUtils
+import com.ing.baker.runtime.core.{Baker, ProcessState}
 
 import scala.concurrent.duration._
 

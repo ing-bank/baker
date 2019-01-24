@@ -8,7 +8,7 @@ import akka.http.scaladsl.model.{RequestEntity, _}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.ing.baker.baas.interaction.server.RemoteInteractionLauncher
-import com.ing.baker.baas.server.protocol.BaasServerProtocol._
+import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core.events.BakerEvent
