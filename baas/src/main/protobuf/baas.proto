@@ -39,7 +39,7 @@ message EventsResponse {
 }
 
 message IngredientsResponse {
-    repeated Ingredient ingredients = 1;
+    map<string, Value> ingredients = 1;
 }
 
 message ProcessEventRequest {
@@ -63,6 +63,10 @@ message StateResponse {
     optional ProcessState processState= 1;
 }
 
-message VisualState {
+message VisualStateResponse {
     optional string VisualStateResponse = 1;
+}
+
+message ExecuteInteractionHTTPRequest {
+    repeated Value values = 1;
 }

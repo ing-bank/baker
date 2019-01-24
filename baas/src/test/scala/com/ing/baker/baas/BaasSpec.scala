@@ -64,8 +64,12 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
 
     val events: Seq[RuntimeEvent] = baasBaker.events(requestId)
 
-    println(s"events: $events")
-    println(s"procesState : ${processState.ingredients}")
+//    println(s"events: $events")
+//    println(s"procesState : ${processState.ingredients}")
+
+    val visualState = baasBaker.getVisualState(requestId)
+
+//    println(visualState)
 
   }
 }

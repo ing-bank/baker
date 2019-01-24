@@ -2,6 +2,7 @@ package com.ing.baker.baas.serialization
 
 import akka.actor.ExtendedActorSystem
 import akka.serialization.{Serialization, SerializationExtension}
+import com.ing.baker.baas.interaction.server.{protocol => interactionProtocol}
 import com.ing.baker.baas.serialization.modules.BaasMessagesModule
 import com.ing.baker.baas.server.protocol
 import com.ing.baker.runtime.actor.serialization.BakerProtobufSerializer.Entry
@@ -24,10 +25,19 @@ object BaasProtobufSerializer {
   val identifier = 102
 
   val manifestInfo: Seq[Entry[_]]= Seq(
-    BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.AddRecipeRequest", classOf[protocol.AddRecipeRequest], protobuf.AddRecipeRequest),
-    BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.AddRecipeResponse", classOf[protocol.AddRecipeResponse], protobuf.AddRecipeResponse),
     BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.AddInteractionHTTPRequest", classOf[protocol.AddInteractionHTTPRequest], protobuf.AddInteractionHTTPRequest),
     BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.AddInteractionHTTPResponse", classOf[protocol.AddInteractionHTTPResponse], protobuf.AddInteractionHTTPResponse),
+    BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.AddRecipeRequest", classOf[protocol.AddRecipeRequest], protobuf.AddRecipeRequest),
+    BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.AddRecipeResponse", classOf[protocol.AddRecipeResponse], protobuf.AddRecipeResponse),
+    BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.BakeRequest", classOf[protocol.BakeRequest], protobuf.BakeRequest),
+    BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.BakeResponse", classOf[protocol.BakeResponse], protobuf.BakeResponse),
+    BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.EventsResponse", classOf[protocol.EventsResponse], protobuf.EventsResponse),
+    BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.IngredientsResponse", classOf[protocol.IngredientsResponse], protobuf.IngredientsResponse),
+    BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.ProcessEventRequest", classOf[protocol.ProcessEventRequest], protobuf.ProcessEventRequest),
+    BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.ProcessEventResponse", classOf[protocol.ProcessEventResponse], protobuf.ProcessEventResponse),
+    BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.StateResponse", classOf[protocol.StateResponse], protobuf.StateResponse),
+    BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.VisualStateResponse", classOf[protocol.VisualStateResponse], protobuf.VisualStateResponse),
+    BakerProtobufSerializer.Entry("com.ing.baker.baas.interaction.server.protocol.ExecuteInteractionHTTPRequest", classOf[interactionProtocol.ExecuteInteractionHTTPRequest], protobuf.ExecuteInteractionHTTPRequest),
   )
 }
 
