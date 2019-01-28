@@ -7,7 +7,7 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
-import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.stream.{ActorMaterializer, SourceRef}
 import akka.util.Timeout
 import com.ing.baker.il._
@@ -221,18 +221,22 @@ class AkkaBaker(private val config: Config)(implicit val actorSystem: ActorSyste
     */
   override def processEventAsync(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): BakerResponse = {
 
+    val source = Await.result(processEventStream(processId, event, correlationId, timeout), timeout)
+
+    new BakerResponse(processId, source)
+  }
+
+  /**
+    * Creates a stream of specific events.
+    */
+  override def processEventStream(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): Future[Source[BakerResponseEventProtocol, NotUsed]] = {
     // transforms the given object into a RuntimeEvent instance
     val runtimeEvent: RuntimeEvent = extractEvent(event)
 
-    // sends the ProcessEvent command to the actor and retrieves a Source (stream) of responses.
-    val response: Future[SourceRef[Any]] = processIndexActor
-      .ask(ProcessEvent(processId, runtimeEvent, correlationId, true, timeout))(timeout)
+    processIndexActor
+      .ask(ProcessEvent(processId, runtimeEvent, correlationId, waitForRetries = true, timeout))(timeout)
       .mapTo[ProcessEventResponse]
-      .map(_.sourceRef)
-
-    val source = Await.result(response, timeout)
-
-    new BakerResponse(processId, source)
+      .map(_.sourceRef.via(Flow.fromFunction(BakerResponseEventProtocol.fromProtocols)))
   }
 
   /**

@@ -18,24 +18,13 @@ object BakerResponse {
 
   private case class CompletedResponse(sensoryEventStatus: SensoryEventStatus, events: Seq[RuntimeEvent])
 
-  private def firstMessage(processId: String, response: Future[Any])(implicit ec: ExecutionContext): Future[SensoryEventStatus] =
-    response.map(translateFirstMessage)
+  private def firstMessage(processId: String, response: Future[BakerResponseEventProtocol])(implicit ec: ExecutionContext): Future[SensoryEventStatus] =
+    response.map(_.toSensoryEventStatus)
 
-  private def translateFirstMessage(msg: Any): SensoryEventStatus = msg match {
-    case _: ProcessInstanceProtocol.TransitionFired => SensoryEventStatus.Received
-    case _: ProcessInstanceProtocol.TransitionNotEnabled => SensoryEventStatus.FiringLimitMet
-    case _: ProcessInstanceProtocol.AlreadyReceived => SensoryEventStatus.AlreadyReceived
-    case ProcessIndexProtocol.NoSuchProcess(processId) => throw new NoSuchProcessException(s"No such process: $processId")
-    case ProcessIndexProtocol.ReceivePeriodExpired(_) => SensoryEventStatus.ReceivePeriodExpired
-    case ProcessIndexProtocol.ProcessDeleted(_) => SensoryEventStatus.ProcessDeleted
-    case ProcessIndexProtocol.InvalidEvent(_, invalidEventMessage) => throw new IllegalArgumentException(invalidEventMessage)
-    case msg@_ => throw new BakerException(s"Unexpected actor response message: $msg")
-  }
-
-  private def allMessages(processId: String, response: Future[Seq[Any]])(implicit ec: ExecutionContext): Future[CompletedResponse] =
+  private def allMessages(processId: String, response: Future[Seq[BakerResponseEventProtocol]])(implicit ec: ExecutionContext): Future[CompletedResponse] =
     response.map { msgs =>
 
-      val sensoryEventStatus = msgs.headOption.map(translateFirstMessage).map {
+      val sensoryEventStatus = msgs.headOption.map(_.toSensoryEventStatus).map {
         case SensoryEventStatus.Received => SensoryEventStatus.Completed // If the first message is success, then it means we have all the events completed
         case other => other
       }
@@ -51,18 +40,18 @@ object BakerResponse {
     case _ => None
   }
 
-  private def createFlow(processId: String, source: Source[Any, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext):
+  private def createFlow(processId: String, source: Source[BakerResponseEventProtocol, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext):
                                                               (Future[SensoryEventStatus], Future[CompletedResponse]) = {
 
-    val sinkHead = Sink.head[Any]
-    val sinkLast = Sink.seq[Any]
+    val sinkHead = Sink.head[BakerResponseEventProtocol]
+    val sinkLast = Sink.seq[BakerResponseEventProtocol]
 
     val graph = RunnableGraph.fromGraph(GraphDSL.create(sinkHead, sinkLast)((_, _)) {
       implicit b =>
         (head, last) => {
           import GraphDSL.Implicits._
 
-          val bcast = b.add(Broadcast[Any](2))
+          val bcast = b.add(Broadcast[BakerResponseEventProtocol](2))
           source ~> bcast.in
           bcast.out(0) ~> head.in
           bcast.out(1) ~> last.in
@@ -76,7 +65,7 @@ object BakerResponse {
   }
 }
 
-class BakerResponse(processId: String, source: Source[Any, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext) {
+class BakerResponse(processId: String, source: Source[BakerResponseEventProtocol, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext) {
 
   private val (receivedFuture, completedFuture) = BakerResponse.createFlow(processId, source)
 

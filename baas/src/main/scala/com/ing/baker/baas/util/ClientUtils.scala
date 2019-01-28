@@ -1,11 +1,13 @@
 package com.ing.baker.baas.util
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.{Marshaller, PredefinedToEntityMarshallers}
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.{PredefinedFromEntityUnmarshallers, Unmarshaller}
 import akka.serialization.{Serialization, SerializationExtension}
+import akka.stream.scaladsl.Flow
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.util.ByteString
 import com.ing.baker.baas.interaction.server.protocol.{ExecuteInteractionHTTPRequest, ExecuteInteractionHTTPResponse}
@@ -26,6 +28,12 @@ trait ClientUtils {
   implicit val materializer = ActorMaterializer()
 
   val log = LoggerFactory.getLogger(this.getClass.getName)
+
+  def serializeFlow[T <: AnyRef]: Flow[T, ByteString, NotUsed] =
+    Flow.fromFunction(obj => ByteString(serializer.serialize(obj).get ++ ByteString("\n")))
+
+  def deserializeFlow[T](implicit ct: ClassTag[T]): Flow[ByteString, T, NotUsed] =
+    Flow.fromFunction(string => serializer.deserialize(string.toArray, ct.runtimeClass).get.asInstanceOf)
 
   def entityFromResponse[T: ClassTag](entity: ResponseEntity)(implicit ct: ClassTag[T], materializer: Materializer, timeout: FiniteDuration): T = {
     val byteString = Await.result(entity.dataBytes.runFold(ByteString(""))(_ ++ _), timeout)

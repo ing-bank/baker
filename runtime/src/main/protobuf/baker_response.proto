@@ -1,0 +1,50 @@
+syntax = "proto2";
+
+import "scalapb/scalapb.proto";
+import "common.proto";
+
+option java_package = "com.ing.baker.runtime.core.protobuf";
+option (scalapb.options) = {
+    flat_package: true
+};
+
+
+message BakerResponseEventProtocol {
+    oneof sealed_value {
+        InstanceTransitionFired insTransitionFired = 1;
+        InstanceTransitionNotEnabled insTransitionNotEnabled = 2;
+        InstanceAlreadyReceived insAlreadyReceived = 3;
+        IndexNoSuchProcess idxNoSuchProcess = 4;
+        IndexReceivePeriodExpired idxReceivedPeriodExpired = 5;
+        IndexProcessDeleted idxProcessDeleted = 6;
+        IndexInvalidEvent idxInvalidEvent = 7;
+    }
+}
+
+message InstanceTransitionFired {
+
+}
+
+message InstanceTransitionNotEnabled {
+
+}
+
+message InstanceAlreadyReceived {
+
+}
+
+message IndexNoSuchProcess {
+    optional string processId = 1;
+}
+
+message IndexReceivePeriodExpired {
+
+}
+
+message IndexProcessDeleted {
+
+}
+
+message IndexInvalidEvent {
+    optional string message = 1;
+}
