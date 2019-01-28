@@ -38,6 +38,7 @@ object BaasProtobufSerializer {
     BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.StateResponse", classOf[protocol.StateResponse], protobuf.StateResponse),
     BakerProtobufSerializer.Entry("com.ing.baker.baas.server.protocol.VisualStateResponse", classOf[protocol.VisualStateResponse], protobuf.VisualStateResponse),
     BakerProtobufSerializer.Entry("com.ing.baker.baas.interaction.server.protocol.ExecuteInteractionHTTPRequest", classOf[interactionProtocol.ExecuteInteractionHTTPRequest], protobuf.ExecuteInteractionHTTPRequest),
+    BakerProtobufSerializer.Entry("com.ing.baker.baas.interaction.server.protocol.ExecuteInteractionHTTPResponse", classOf[interactionProtocol.ExecuteInteractionHTTPResponse], protobuf.ExecuteInteractionHTTPResponse),
   )
 }
 

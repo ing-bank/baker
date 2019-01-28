@@ -21,6 +21,14 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   def this(config: Config) =
     this(BakerProvider.get(config) , Collections.emptyList[AnyRef])
 
+  def this(baker: Baker) =
+    this(baker: Baker, Collections.emptyList[AnyRef])
+
+  def this(implementations: java.lang.Iterable[AnyRef]) =
+    this(BakerProvider.get() , implementations)
+
+
+
   addImplementations(implementations)
 
 

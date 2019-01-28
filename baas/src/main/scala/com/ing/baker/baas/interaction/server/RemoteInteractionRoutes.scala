@@ -31,11 +31,11 @@ class RemoteInteractionRoutes(override val actorSystem: ActorSystem) extends Dir
 
               log.info(s"Executing interaction: $interactionName")
 
-              val runtimeEvent: RuntimeEvent = implementationOptional.get.execute(executeInteractionHTTPRequest.input).orNull
+              val runtimeEventOptional: Option[RuntimeEvent] = implementationOptional.get.execute(executeInteractionHTTPRequest.input)
 
               log.info(s"Interaction executed: ${interactionName}")
 
-              complete(runtimeEvent)
+              complete(ExecuteInteractionHTTPResponse(runtimeEventOptional))
             }
           }
         } ~

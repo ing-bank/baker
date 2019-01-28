@@ -59,6 +59,10 @@ class BaasMessagesModule extends ProtoEventAdapterModule {
     case interactionProtocol.ExecuteInteractionHTTPRequest(values) =>
       val valuesProto = values.map(ctx.toProto[bakerProto.Value])
       protobuf.ExecuteInteractionHTTPRequest(valuesProto)
+
+    case interactionProtocol.ExecuteInteractionHTTPResponse(runtimeEventOptional) =>
+      val runtimeEventOptionalProto =  runtimeEventOptional.map(ctx.toProto[bakerProto.RuntimeEvent])
+      protobuf.ExecuteInteractionHTTPResponse(runtimeEventOptionalProto)
   }
 
   override def toDomain(ctx: ProtoEventAdapter): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
@@ -109,6 +113,10 @@ class BaasMessagesModule extends ProtoEventAdapterModule {
     case protobuf.ExecuteInteractionHTTPRequest(valuesProto) =>
       val values = valuesProto.map(ctx.toDomain[Value])
       interactionProtocol.ExecuteInteractionHTTPRequest(values)
+
+    case protobuf.ExecuteInteractionHTTPResponse(runtimeEventOptionalProto) =>
+      val runtimeEventOptional = runtimeEventOptionalProto.map(ctx.toDomain[core.RuntimeEvent])
+      interactionProtocol.ExecuteInteractionHTTPResponse(runtimeEventOptional)
   }
 
 

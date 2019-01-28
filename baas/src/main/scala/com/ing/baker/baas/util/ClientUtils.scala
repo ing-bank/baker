@@ -8,7 +8,7 @@ import akka.http.scaladsl.unmarshalling.{PredefinedFromEntityUnmarshallers, Unma
 import akka.serialization.{Serialization, SerializationExtension}
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.util.ByteString
-import com.ing.baker.baas.interaction.server.protocol.ExecuteInteractionHTTPRequest
+import com.ing.baker.baas.interaction.server.protocol.{ExecuteInteractionHTTPRequest, ExecuteInteractionHTTPResponse}
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core.{ProcessState, RecipeInformation, RuntimeEvent, SensoryEventStatus}
@@ -71,6 +71,9 @@ trait ClientUtils {
 
   implicit val executeInteractionHTTPRequestMarshaller = akkaProtoMarshaller[ExecuteInteractionHTTPRequest]
   implicit val executeInteractionHTTPRequestUnmarshaller = akkaProtoUnmarshaller[ExecuteInteractionHTTPRequest]
+
+  implicit val executeInteractionHTTPResponseMarshaller = akkaProtoMarshaller[ExecuteInteractionHTTPResponse]
+  implicit val executeInteractionHTTPResponseUnmarshaller = akkaProtoUnmarshaller[ExecuteInteractionHTTPResponse]
 
   implicit val eventMarshaller = akkaProtoMarshaller[RuntimeEvent]
   implicit val eventUnmarshaller = akkaProtoUnmarshaller[RuntimeEvent]

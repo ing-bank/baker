@@ -2,7 +2,7 @@ package com.ing.baker.baas.interaction.client
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpRequest
-import com.ing.baker.baas.interaction.server.protocol.ExecuteInteractionHTTPRequest
+import com.ing.baker.baas.interaction.server.protocol.{ExecuteInteractionHTTPRequest, ExecuteInteractionHTTPResponse}
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.runtime.core.{InteractionImplementation, RuntimeEvent}
 import com.ing.baker.types.{Type, Value}
@@ -39,6 +39,8 @@ case class RemoteInteractionClient(override val name: String,
         uri = s"$uri/execute",
         method = akka.http.scaladsl.model.HttpMethods.POST,
         entity = serializer.serialize(request).get)
-    Option(Await.result(doRequestAndParseResponse[RuntimeEvent](httpRequest), 10 seconds))
+    //
+    Await.result(doRequestAndParseResponse[ExecuteInteractionHTTPResponse](httpRequest), 10 seconds)
+      .runtimeEventOptional
   }
 }

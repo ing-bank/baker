@@ -207,8 +207,7 @@ class BaasBaker(config: Config,
     * Synchronously returns all event names that occurred for a process.
     */
   override def eventNames(processId: String, timeout: FiniteDuration): List[String] = {
-    //TODO implement
-    List()
+    getProcessState(processId, timeout).eventNames
   }
 
   /**

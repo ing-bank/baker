@@ -70,3 +70,7 @@ message VisualStateResponse {
 message ExecuteInteractionHTTPRequest {
     repeated Value values = 1;
 }
+
+message ExecuteInteractionHTTPResponse {
+    optional RuntimeEvent runtimeEvent = 1;
+}
