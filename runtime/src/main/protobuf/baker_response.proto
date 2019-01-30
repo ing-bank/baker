@@ -22,29 +22,29 @@ message BakerResponseEventProtocol {
 }
 
 message InstanceTransitionFired {
-
+    optional SerializedData data = 1;
 }
 
 message InstanceTransitionNotEnabled {
-
+    optional SerializedData data = 1;
 }
 
 message InstanceAlreadyReceived {
-
+    optional SerializedData data = 1;
 }
 
 message IndexNoSuchProcess {
-    optional string processId = 1;
+    optional SerializedData data = 1;
 }
 
 message IndexReceivePeriodExpired {
-
+    optional SerializedData data = 1;
 }
 
 message IndexProcessDeleted {
-
+    optional SerializedData data = 1;
 }
 
 message IndexInvalidEvent {
-    optional string message = 1;
+    optional SerializedData data = 1;
 }

@@ -10,7 +10,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.scaladsl
 import com.ing.baker.recipe.scaladsl._
-import com.ing.baker.runtime.core.{AkkaBaker, Baker, BakerProvider, ProcessState, RuntimeEvent, SensoryEventStatus}
+import com.ing.baker.runtime.core.{AkkaBaker, Baker, BakerProvider, BakerResponse, ProcessState, RuntimeEvent, SensoryEventStatus}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.Await
@@ -69,7 +69,11 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
 
     val visualState = baasBaker.getVisualState(requestId)
 
-//    println(visualState)
+    println(visualState)
+
+    val response: BakerResponse = baasBaker.processEventAsync(requestId, InitialEvent("initialIngredient"))
+
+    println(response.confirmAllEvents(5.second))
 
   }
 }

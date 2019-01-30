@@ -35,13 +35,15 @@ object BakerResponse {
       CompletedResponse(sensoryEventStatus, events)
     }
 
-  private def translateOtherMessage(msg: Any): Option[RuntimeEvent] = msg match {
-    case fired: ProcessInstanceProtocol.TransitionFired => Option(fired.output.asInstanceOf[RuntimeEvent])
-    case _ => None
+  private def translateOtherMessage(msg: BakerResponseEventProtocol): Option[RuntimeEvent] = msg match {
+    case fired: BakerResponseEventProtocol.InstanceTransitionFired =>
+      Option(fired.value.asInstanceOf[ProcessInstanceProtocol.TransitionFired].output.asInstanceOf[RuntimeEvent])
+    case _ =>
+      None
   }
 
   private def createFlow(processId: String, source: Source[BakerResponseEventProtocol, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext):
-                                                              (Future[SensoryEventStatus], Future[CompletedResponse]) = {
+  (Future[SensoryEventStatus], Future[CompletedResponse]) = {
 
     val sinkHead = Sink.head[BakerResponseEventProtocol]
     val sinkLast = Sink.seq[BakerResponseEventProtocol]

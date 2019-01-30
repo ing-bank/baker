@@ -22,17 +22,27 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
   def apply(baker: Baker): Route = {
 
     def instanceRoutes(requestId: String) = {
-      path("event") {
+      pathPrefix("event") {
         path("stream") {
-          entity(as[ProcessEventRequest]) { request =>
-            complete(baker.processEventStream(requestId, request).map { source0 =>
-              HttpResponse(
-                status = StatusCodes.OK,
-                entity = CloseDelimited(
-                  contentType = ContentTypes.`application/octet-stream`,
-                  data = source0.via(serializeFlow))
-              )
-            })
+          post {
+            entity(as[ProcessEventRequest]) { request =>
+              println(Console.MAGENTA_B + request + Console.RESET)
+              complete(baker.processEventStream(requestId, request.event).map { source0 =>
+                HttpResponse(
+                  status = StatusCodes.OK,
+                  entity = CloseDelimited(
+                    contentType = ContentTypes.`application/octet-stream`,
+                    data = source0.map { t =>
+                      println(Console.MAGENTA + "SENDING :: " + t + Console.RESET)
+                      t
+                    }.via(serializeFlow).throttle(
+                      cost = 1,
+                      per = 1.second,
+                      costCalculation = _ => 1,
+                    ))
+                )
+              })
+            }
           }
         } ~
         post {

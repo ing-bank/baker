@@ -6,40 +6,54 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
 sealed trait BakerResponseEventProtocol {
 
   def toSensoryEventStatus: SensoryEventStatus = this match {
-    case BakerResponseEventProtocol.InstanceTransitionFired => SensoryEventStatus.Received
-    case BakerResponseEventProtocol.InstanceTransitionNotEnabled => SensoryEventStatus.FiringLimitMet
-    case BakerResponseEventProtocol.InstanceAlreadyReceived => SensoryEventStatus.AlreadyReceived
-    case BakerResponseEventProtocol.IndexNoSuchProcess(processId) => throw new NoSuchProcessException(s"No such process: $processId")
-    case BakerResponseEventProtocol.IndexReceivePeriodExpired => SensoryEventStatus.ReceivePeriodExpired
-    case BakerResponseEventProtocol.IndexProcessDeleted => SensoryEventStatus.ProcessDeleted
-    case BakerResponseEventProtocol.IndexInvalidEvent(invalidEventMessage) => throw new IllegalArgumentException(invalidEventMessage)
+    case BakerResponseEventProtocol.InstanceTransitionFired(_) =>
+      SensoryEventStatus.Received
+
+    case BakerResponseEventProtocol.InstanceTransitionNotEnabled(_) =>
+      SensoryEventStatus.FiringLimitMet
+
+    case BakerResponseEventProtocol.InstanceAlreadyReceived(_) =>
+      SensoryEventStatus.AlreadyReceived
+
+    case BakerResponseEventProtocol.IndexNoSuchProcess(event) =>
+      throw new NoSuchProcessException(s"No such process: ${event.asInstanceOf[ProcessIndexProtocol.NoSuchProcess].processId}")
+
+    case BakerResponseEventProtocol.IndexReceivePeriodExpired(_) =>
+      SensoryEventStatus.ReceivePeriodExpired
+
+    case BakerResponseEventProtocol.IndexProcessDeleted(_) =>
+      SensoryEventStatus.ProcessDeleted
+
+    case BakerResponseEventProtocol.IndexInvalidEvent(event) =>
+      throw new IllegalArgumentException(event.asInstanceOf[ProcessIndexProtocol.InvalidEvent].msg)
   }
+
 }
 
 object BakerResponseEventProtocol {
 
-  case object InstanceTransitionFired extends BakerResponseEventProtocol
+  case class InstanceTransitionFired(value: Any) extends BakerResponseEventProtocol
 
-  case object InstanceTransitionNotEnabled extends BakerResponseEventProtocol
+  case class InstanceTransitionNotEnabled(value: Any) extends BakerResponseEventProtocol
 
-  case object InstanceAlreadyReceived extends BakerResponseEventProtocol
+  case class InstanceAlreadyReceived(value: Any) extends BakerResponseEventProtocol
 
-  case class IndexNoSuchProcess(processId: String) extends BakerResponseEventProtocol
+  case class IndexNoSuchProcess(value: Any) extends BakerResponseEventProtocol
 
-  case object IndexReceivePeriodExpired extends BakerResponseEventProtocol
+  case class IndexReceivePeriodExpired(value: Any) extends BakerResponseEventProtocol
 
-  case object IndexProcessDeleted extends BakerResponseEventProtocol
+  case class IndexProcessDeleted(value: Any) extends BakerResponseEventProtocol
 
-  case class IndexInvalidEvent(message: String) extends BakerResponseEventProtocol
+  case class IndexInvalidEvent(value: Any) extends BakerResponseEventProtocol
 
   def fromProtocols(msg: Any): BakerResponseEventProtocol = msg match {
-    case _: ProcessInstanceProtocol.TransitionFired => InstanceTransitionFired
-    case _: ProcessInstanceProtocol.TransitionNotEnabled => InstanceTransitionNotEnabled
-    case _: ProcessInstanceProtocol.AlreadyReceived => InstanceAlreadyReceived
-    case ProcessIndexProtocol.NoSuchProcess(processId) => IndexNoSuchProcess(processId)
-    case ProcessIndexProtocol.ReceivePeriodExpired(_) => IndexReceivePeriodExpired
-    case ProcessIndexProtocol.ProcessDeleted(_) => IndexProcessDeleted
-    case ProcessIndexProtocol.InvalidEvent(_, invalidEventMessage) => IndexInvalidEvent(invalidEventMessage)
+    case event: ProcessInstanceProtocol.TransitionFired => InstanceTransitionFired(event)
+    case event: ProcessInstanceProtocol.TransitionNotEnabled => InstanceTransitionNotEnabled(event)
+    case event: ProcessInstanceProtocol.AlreadyReceived => InstanceAlreadyReceived(event)
+    case event: ProcessIndexProtocol.NoSuchProcess => IndexNoSuchProcess(event)
+    case event: ProcessIndexProtocol.ReceivePeriodExpired => IndexReceivePeriodExpired(event)
+    case event: ProcessIndexProtocol.ProcessDeleted => IndexProcessDeleted(event)
+    case event: ProcessIndexProtocol.InvalidEvent => IndexInvalidEvent(event)
     case msg@_ => throw new BakerException(s"Unexpected actor response message: $msg")
   }
 

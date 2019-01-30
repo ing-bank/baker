@@ -6,48 +6,48 @@ import com.ing.baker.runtime.core.{protobuf, BakerResponseEventProtocol => proto
 class BakerResponseEventProtocolModule extends ProtoEventAdapterModule {
 
   override def toProto(ctx: ProtoEventAdapter): PartialFunction[AnyRef, scalapb.GeneratedMessage] = {
-    case protocol.InstanceTransitionFired =>
-      protobuf.InstanceTransitionFired()
+    case protocol.InstanceTransitionFired(data) =>
+      protobuf.InstanceTransitionFired(Some(ctx.toProtoAny(data.asInstanceOf[AnyRef])))
 
-    case protocol.InstanceTransitionNotEnabled =>
-      protobuf.InstanceTransitionNotEnabled()
+    case protocol.InstanceTransitionNotEnabled(data) =>
+      protobuf.InstanceTransitionNotEnabled(Some(ctx.toProtoAny(data.asInstanceOf[AnyRef])))
 
-    case protocol.InstanceAlreadyReceived =>
-      protobuf.InstanceAlreadyReceived()
+    case protocol.InstanceAlreadyReceived(data) =>
+      protobuf.InstanceAlreadyReceived(Some(ctx.toProtoAny(data.asInstanceOf[AnyRef])))
 
-    case protocol.IndexNoSuchProcess(processId) =>
-      protobuf.IndexNoSuchProcess(Some(processId))
+    case protocol.IndexNoSuchProcess(data) =>
+      protobuf.IndexNoSuchProcess(Some(ctx.toProtoAny(data.asInstanceOf[AnyRef])))
 
-    case protocol.IndexReceivePeriodExpired =>
-      protobuf.IndexReceivePeriodExpired()
+    case protocol.IndexReceivePeriodExpired(data) =>
+      protobuf.IndexReceivePeriodExpired(Some(ctx.toProtoAny(data.asInstanceOf[AnyRef])))
 
-    case protocol.IndexProcessDeleted =>
-      protobuf.IndexProcessDeleted()
+    case protocol.IndexProcessDeleted(data) =>
+      protobuf.IndexProcessDeleted(Some(ctx.toProtoAny(data.asInstanceOf[AnyRef])))
 
-    case protocol.IndexInvalidEvent(invalidEventMessage) =>
-      protobuf.IndexInvalidEvent(Some(invalidEventMessage))
+    case protocol.IndexInvalidEvent(data) =>
+      protobuf.IndexInvalidEvent(Some(ctx.toProtoAny(data.asInstanceOf[AnyRef])))
   }
 
   override def toDomain(ctx: ProtoEventAdapter): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
-    case protobuf.InstanceTransitionFired() =>
-      protocol.InstanceTransitionFired
+    case protobuf.InstanceTransitionFired(Some(data)) =>
+      protocol.InstanceTransitionFired(data)
 
-    case protobuf.InstanceTransitionNotEnabled() =>
-      protocol.InstanceTransitionNotEnabled
+    case protobuf.InstanceTransitionNotEnabled(Some(data)) =>
+      protocol.InstanceTransitionNotEnabled(data)
 
-    case protobuf.InstanceAlreadyReceived() =>
-      protocol.InstanceAlreadyReceived
+    case protobuf.InstanceAlreadyReceived(Some(data)) =>
+      protocol.InstanceAlreadyReceived(data)
 
-    case protobuf.IndexNoSuchProcess(Some(processId)) =>
-      protocol.IndexNoSuchProcess(processId)
+    case protobuf.IndexNoSuchProcess(Some(data)) =>
+      protocol.IndexNoSuchProcess(data)
 
-    case protobuf.IndexReceivePeriodExpired() =>
-      protocol.IndexReceivePeriodExpired
+    case protobuf.IndexReceivePeriodExpired(Some(data)) =>
+      protocol.IndexReceivePeriodExpired(data)
 
-    case protobuf.IndexProcessDeleted() =>
-      protocol.IndexProcessDeleted
+    case protobuf.IndexProcessDeleted(Some(data)) =>
+      protocol.IndexProcessDeleted(data)
 
-    case protobuf.IndexInvalidEvent(Some(invalidEventMessage)) =>
-      protocol.IndexInvalidEvent(invalidEventMessage)
+    case protobuf.IndexInvalidEvent(Some(data)) =>
+      protocol.IndexInvalidEvent(data)
   }
 }

@@ -13,6 +13,7 @@ import com.ing.baker.baas.interaction.server.RemoteInteractionLauncher
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.actor.process_instance.protobuf.TransitionNotEnabled
 import com.ing.baker.runtime.core.events.BakerEvent
 import com.ing.baker.runtime.core.{Baker, BakerResponse, BakerResponseEventProtocol, EventListener, InteractionImplementation, ProcessMetadata, ProcessState, RecipeInformation, RuntimeEvent, SensoryEventStatus}
 import com.ing.baker.types.Value
@@ -189,11 +190,19 @@ class BaasBaker(config: Config,
           uri = s"$baseUri/$processId/event/stream",
           method = POST,
           entity = body))
-      }.map { _.entity
+      }.map { r =>
+        println()
+        println(r)
+        println()
+        r.entity
         .withoutSizeLimit()
         .dataBytes
         .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 256))
         .via(deserializeFlow[BakerResponseEventProtocol])
+        .map { t =>
+          println(Console.GREEN + "GOT :: " + t + Console.RESET)
+          t
+        }
         .mapMaterializedValue(_ => NotUsed)
       }
   }
