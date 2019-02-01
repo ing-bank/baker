@@ -7,8 +7,6 @@ import akka.NotUsed
 import akka.stream.javadsl.RunnableGraph
 import akka.stream.scaladsl.{Broadcast, GraphDSL, Sink, Source}
 import akka.stream.{ClosedShape, Materializer}
-import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol
-import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.java_api.EventList
 
 import scala.concurrent.duration.{FiniteDuration, SECONDS}
@@ -36,8 +34,8 @@ object BakerResponse {
     }
 
   private def translateOtherMessage(msg: BakerResponseEventProtocol): Option[RuntimeEvent] = msg match {
-    case fired: BakerResponseEventProtocol.InstanceTransitionFired =>
-      Option(fired.value.asInstanceOf[ProcessInstanceProtocol.TransitionFired].output.asInstanceOf[RuntimeEvent])
+    case BakerResponseEventProtocol.InstanceTransitionFired(value) =>
+      Option(value.output.asInstanceOf[RuntimeEvent])
     case _ =>
       None
   }

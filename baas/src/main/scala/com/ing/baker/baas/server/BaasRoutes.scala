@@ -4,12 +4,14 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpEntity.CloseDelimited
 import akka.http.scaladsl.model.{ContentTypes, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
+import akka.stream.scaladsl.Framing
+import akka.util.ByteString
 import com.ing.baker.baas.interaction.client.RemoteInteractionClient
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
-import com.ing.baker.runtime.core.{Baker, ProcessState}
+import com.ing.baker.runtime.core.{Baker, BakerResponseEventProtocol, ProcessState, RuntimeEvent}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with ClientUtils {
@@ -21,28 +23,21 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
 
   def apply(baker: Baker): Route = {
 
+    def streamBakerResponse(requestId: String, event: RuntimeEvent): Future[HttpResponse] =
+      baker.processEventStream(requestId, event).map { source0 =>
+        HttpResponse(
+          status = StatusCodes.OK,
+          entity = CloseDelimited(
+            contentType = ContentTypes.`application/octet-stream`,
+            data = source0.via(serializeFlow[BakerResponseEventProtocol]))
+        )
+      }
+
     def instanceRoutes(requestId: String) = {
       pathPrefix("event") {
         path("stream") {
           post {
-            entity(as[ProcessEventRequest]) { request =>
-              println(Console.MAGENTA_B + request + Console.RESET)
-              complete(baker.processEventStream(requestId, request.event).map { source0 =>
-                HttpResponse(
-                  status = StatusCodes.OK,
-                  entity = CloseDelimited(
-                    contentType = ContentTypes.`application/octet-stream`,
-                    data = source0.map { t =>
-                      println(Console.MAGENTA + "SENDING :: " + t + Console.RESET)
-                      t
-                    }.via(serializeFlow).throttle(
-                      cost = 1,
-                      per = 1.second,
-                      costCalculation = _ => 1,
-                    ))
-                )
-              })
-            }
+            entity(as[ProcessEventRequest]) { req => complete(streamBakerResponse(requestId, req.event)) }
           }
         } ~
         post {
@@ -126,9 +121,7 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
                 s"Interaction: ${interactionImplementation.name} added"))
             }
           }
-        } ~ pathPrefix(Segment) {
-        instanceRoutes _
-      }
+        } ~ pathPrefix(Segment)(instanceRoutes)
     }
     baasRoutes
   }

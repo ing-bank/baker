@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.duration.FiniteDuration
 import scala.reflect.ClassTag
 
 trait ClientUtils {
@@ -30,10 +30,10 @@ trait ClientUtils {
   val log = LoggerFactory.getLogger(this.getClass.getName)
 
   def serializeFlow[T <: AnyRef]: Flow[T, ByteString, NotUsed] =
-    Flow.fromFunction(obj => ByteString(serializer.serialize(obj).get ++ ByteString("\n")))
+    Flow.fromFunction(obj => ByteString(serializer.serialize(obj).get))
 
   def deserializeFlow[T](implicit ct: ClassTag[T]): Flow[ByteString, T, NotUsed] =
-    Flow.fromFunction(string => serializer.deserialize(string.toArray, ct.runtimeClass).get.asInstanceOf)
+    Flow.fromFunction(string => serializer.deserialize(string.toArray, ct.runtimeClass).get.asInstanceOf[T])
 
   def entityFromResponse[T: ClassTag](entity: ResponseEntity)(implicit ct: ClassTag[T], materializer: Materializer, timeout: FiniteDuration): T = {
     val byteString = Await.result(entity.dataBytes.runFold(ByteString(""))(_ ++ _), timeout)

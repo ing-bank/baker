@@ -69,12 +69,27 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
 
     val visualState = baasBaker.getVisualState(requestId)
 
-    println(visualState)
+//    println(visualState)
+
+  }
+
+  "Process Event Async with http streaming" in {
+
+    val recipeName = "simpleRecipe" + UUID.randomUUID().toString
+    val recipe: Recipe = setupSimpleRecipe(recipeName)
+    val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
+    val recipeId = baasBaker.addRecipe(compiledRecipe)
+
+    val requestId = UUID.randomUUID().toString
+
+    baasBaker.bake(recipeId, requestId)
 
     val response: BakerResponse = baasBaker.processEventAsync(requestId, InitialEvent("initialIngredient"))
 
-    println(response.confirmAllEvents(5.second))
+    val events: Seq[RuntimeEvent] = response.confirmAllEvents(60.second)
+//    println(Console.YELLOW + events + Console.RESET)
 
+    assert(events.nonEmpty)
   }
 }
 

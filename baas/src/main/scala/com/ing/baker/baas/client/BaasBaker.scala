@@ -173,9 +173,7 @@ class BaasBaker(config: Config,
     * If nothing is done with the BakerResponse there is NO guarantee that the event is received by the process instance.
     */
   override def processEventAsync(processId: String, event: Any, correlationId: Option[String], timeout: FiniteDuration): BakerResponse = {
-
     val source = Await.result(processEventStream(processId, event, correlationId, timeout), timeout)
-
     new BakerResponse(processId, source)
   }
 
@@ -190,19 +188,9 @@ class BaasBaker(config: Config,
           uri = s"$baseUri/$processId/event/stream",
           method = POST,
           entity = body))
-      }.map { r =>
-        println()
-        println(r)
-        println()
-        r.entity
-        .withoutSizeLimit()
+      }.map { _.entity
         .dataBytes
-        .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = 256))
         .via(deserializeFlow[BakerResponseEventProtocol])
-        .map { t =>
-          println(Console.GREEN + "GOT :: " + t + Console.RESET)
-          t
-        }
         .mapMaterializedValue(_ => NotUsed)
       }
   }

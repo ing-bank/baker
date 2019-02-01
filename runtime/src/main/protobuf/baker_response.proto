@@ -2,6 +2,8 @@ syntax = "proto2";
 
 import "scalapb/scalapb.proto";
 import "common.proto";
+import "process_index.proto";
+import "process_instance.proto";
 
 option java_package = "com.ing.baker.runtime.core.protobuf";
 option (scalapb.options) = {
@@ -22,29 +24,29 @@ message BakerResponseEventProtocol {
 }
 
 message InstanceTransitionFired {
-    optional SerializedData data = 1;
+    optional TransitionFiredMessage data = 1;
 }
 
 message InstanceTransitionNotEnabled {
-    optional SerializedData data = 1;
+    optional TransitionNotEnabled data = 1;
 }
 
 message InstanceAlreadyReceived {
-    optional SerializedData data = 1;
+    optional AlreadyReceived data = 1;
 }
 
 message IndexNoSuchProcess {
-    optional SerializedData data = 1;
+    optional NoSuchProcess data = 1;
 }
 
 message IndexReceivePeriodExpired {
-    optional SerializedData data = 1;
+    optional ReceivePeriodExpired data = 1;
 }
 
 message IndexProcessDeleted {
-    optional SerializedData data = 1;
+    optional ProcessDeleted data = 1;
 }
 
 message IndexInvalidEvent {
-    optional SerializedData data = 1;
+    optional InvalidEvent data = 1;
 }

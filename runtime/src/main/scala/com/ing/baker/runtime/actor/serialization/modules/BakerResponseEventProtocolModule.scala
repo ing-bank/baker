@@ -2,52 +2,73 @@ package com.ing.baker.runtime.actor.serialization.modules
 
 import com.ing.baker.runtime.actor.serialization.{ProtoEventAdapter, ProtoEventAdapterModule}
 import com.ing.baker.runtime.core.{protobuf, BakerResponseEventProtocol => protocol}
+import com.ing.baker.runtime.actor.process_index.{ProcessIndexProtocol => idxProtocol}
+import com.ing.baker.runtime.actor.process_instance.{ProcessInstanceProtocol => insProtocol}
+import com.ing.baker.runtime.actor.process_index.{protobuf => idxProto}
+import com.ing.baker.runtime.actor.process_instance.{protobuf => insProto}
 
 class BakerResponseEventProtocolModule extends ProtoEventAdapterModule {
 
   override def toProto(ctx: ProtoEventAdapter): PartialFunction[AnyRef, scalapb.GeneratedMessage] = {
+
     case protocol.InstanceTransitionFired(data) =>
-      protobuf.InstanceTransitionFired(Some(ctx.toProtoAny(data.asInstanceOf[AnyRef])))
+      protobuf.BakerResponseEventProtocol().withInsTransitionFired(
+        protobuf.InstanceTransitionFired(Some(ctx.toProto[insProto.TransitionFiredMessage](data)))
+      )
 
     case protocol.InstanceTransitionNotEnabled(data) =>
-      protobuf.InstanceTransitionNotEnabled(Some(ctx.toProtoAny(data.asInstanceOf[AnyRef])))
+      protobuf.BakerResponseEventProtocol().withInsTransitionNotEnabled(
+        protobuf.InstanceTransitionNotEnabled(Some(ctx.toProto[insProto.TransitionNotEnabled](data)))
+      )
 
     case protocol.InstanceAlreadyReceived(data) =>
-      protobuf.InstanceAlreadyReceived(Some(ctx.toProtoAny(data.asInstanceOf[AnyRef])))
+      protobuf.BakerResponseEventProtocol().withInsAlreadyReceived(
+        protobuf.InstanceAlreadyReceived(Some(ctx.toProto[insProto.AlreadyReceived](data)))
+      )
 
     case protocol.IndexNoSuchProcess(data) =>
-      protobuf.IndexNoSuchProcess(Some(ctx.toProtoAny(data.asInstanceOf[AnyRef])))
+      protobuf.BakerResponseEventProtocol().withIdxNoSuchProcess(
+        protobuf.IndexNoSuchProcess(Some(ctx.toProto[idxProto.NoSuchProcess](data)))
+      )
 
     case protocol.IndexReceivePeriodExpired(data) =>
-      protobuf.IndexReceivePeriodExpired(Some(ctx.toProtoAny(data.asInstanceOf[AnyRef])))
+      protobuf.BakerResponseEventProtocol().withIdxReceivedPeriodExpired(
+        protobuf.IndexReceivePeriodExpired(Some(ctx.toProto[idxProto.ReceivePeriodExpired](data)))
+      )
 
     case protocol.IndexProcessDeleted(data) =>
-      protobuf.IndexProcessDeleted(Some(ctx.toProtoAny(data.asInstanceOf[AnyRef])))
+      protobuf.BakerResponseEventProtocol().withIdxProcessDeleted(
+        protobuf.IndexProcessDeleted(Some(ctx.toProto[idxProto.ProcessDeleted](data)))
+      )
 
     case protocol.IndexInvalidEvent(data) =>
-      protobuf.IndexInvalidEvent(Some(ctx.toProtoAny(data.asInstanceOf[AnyRef])))
+      protobuf.BakerResponseEventProtocol().withIdxInvalidEvent(
+        protobuf.IndexInvalidEvent(Some(ctx.toProto[idxProto.InvalidEvent](data)))
+      )
   }
 
   override def toDomain(ctx: ProtoEventAdapter): PartialFunction[scalapb.GeneratedMessage, AnyRef] = {
-    case protobuf.InstanceTransitionFired(Some(data)) =>
-      protocol.InstanceTransitionFired(data)
 
-    case protobuf.InstanceTransitionNotEnabled(Some(data)) =>
-      protocol.InstanceTransitionNotEnabled(data)
+    case message: protobuf.BakerResponseEventProtocol if message.sealedValue.isInsTransitionFired =>
+      protocol.InstanceTransitionFired(ctx.toDomain[insProtocol.TransitionFired](message.getInsTransitionFired.data.get))
 
-    case protobuf.InstanceAlreadyReceived(Some(data)) =>
-      protocol.InstanceAlreadyReceived(data)
+    case message: protobuf.BakerResponseEventProtocol if message.sealedValue.isInsTransitionNotEnabled =>
+      protocol.InstanceTransitionNotEnabled(ctx.toDomain[insProtocol.TransitionNotEnabled](message.getInsTransitionNotEnabled.data.get))
 
-    case protobuf.IndexNoSuchProcess(Some(data)) =>
-      protocol.IndexNoSuchProcess(data)
+    case message: protobuf.BakerResponseEventProtocol if message.sealedValue.isInsAlreadyReceived =>
+      protocol.InstanceAlreadyReceived(ctx.toDomain[insProtocol.AlreadyReceived](message.getInsAlreadyReceived.data.get))
 
-    case protobuf.IndexReceivePeriodExpired(Some(data)) =>
-      protocol.IndexReceivePeriodExpired(data)
+    case message: protobuf.BakerResponseEventProtocol if message.sealedValue.isIdxNoSuchProcess =>
+      protocol.IndexNoSuchProcess(ctx.toDomain[idxProtocol.NoSuchProcess](message.getIdxNoSuchProcess.data.get))
 
-    case protobuf.IndexProcessDeleted(Some(data)) =>
-      protocol.IndexProcessDeleted(data)
+    case message: protobuf.BakerResponseEventProtocol if message.sealedValue.isIdxReceivedPeriodExpired =>
+      protocol.IndexReceivePeriodExpired(ctx.toDomain[idxProtocol.ReceivePeriodExpired](message.getIdxReceivedPeriodExpired.data.get))
 
-    case protobuf.IndexInvalidEvent(Some(data)) =>
-      protocol.IndexInvalidEvent(data)
+    case message: protobuf.BakerResponseEventProtocol if message.sealedValue.isIdxProcessDeleted =>
+      protocol.IndexProcessDeleted(ctx.toDomain[idxProtocol.ProcessDeleted](message.getIdxProcessDeleted.data.get))
+
+    case message: protobuf.BakerResponseEventProtocol if message.sealedValue.isIdxInvalidEvent =>
+      protocol.IndexInvalidEvent(ctx.toDomain[idxProtocol.InvalidEvent](message.getIdxInvalidEvent.data.get))
+
   }
 }
