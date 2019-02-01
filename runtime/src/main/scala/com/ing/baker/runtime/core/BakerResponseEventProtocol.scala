@@ -26,6 +26,8 @@ sealed trait BakerResponseEventProtocol {
 
     case BakerResponseEventProtocol.IndexInvalidEvent(event) =>
       throw new IllegalArgumentException(event.asInstanceOf[idxProtocol.InvalidEvent].msg)
+
+    case msg@_ => throw new BakerException(s"Unexpected transformation to event status: $msg")
   }
 
 }
@@ -35,6 +37,8 @@ object BakerResponseEventProtocol {
   case class InstanceTransitionFired(value: insProtocol.TransitionFired) extends BakerResponseEventProtocol
 
   case class InstanceTransitionNotEnabled(value: insProtocol.TransitionNotEnabled) extends BakerResponseEventProtocol
+
+  case class InstanceTransitionFailed(value: insProtocol.TransitionFailed) extends BakerResponseEventProtocol
 
   case class InstanceAlreadyReceived(value: insProtocol.AlreadyReceived) extends BakerResponseEventProtocol
 
@@ -49,12 +53,13 @@ object BakerResponseEventProtocol {
   def fromProtocols(msg: Any): BakerResponseEventProtocol = msg match {
     case event: insProtocol.TransitionFired => InstanceTransitionFired(event)
     case event: insProtocol.TransitionNotEnabled => InstanceTransitionNotEnabled(event)
+    case event: insProtocol.TransitionFailed => InstanceTransitionFailed(event)
     case event: insProtocol.AlreadyReceived => InstanceAlreadyReceived(event)
     case event: idxProtocol.NoSuchProcess => IndexNoSuchProcess(event)
     case event: idxProtocol.ReceivePeriodExpired => IndexReceivePeriodExpired(event)
     case event: idxProtocol.ProcessDeleted => IndexProcessDeleted(event)
     case event: idxProtocol.InvalidEvent => IndexInvalidEvent(event)
-    case msg@_ => throw new BakerException(s"Unexpected actor response message: $msg")
+    case msg@_ => throw new BakerException(s"Unexpected protocol message: $msg")
   }
 
 }

@@ -21,6 +21,11 @@ class BakerResponseEventProtocolModule extends ProtoEventAdapterModule {
         protobuf.InstanceTransitionNotEnabled(Some(ctx.toProto[insProto.TransitionNotEnabled](data)))
       )
 
+    case protocol.InstanceTransitionFailed(data) =>
+      protobuf.BakerResponseEventProtocol().withInsTransitionFailed(
+        protobuf.InstanceTransitionFailed(Some(ctx.toProto[insProto.TransitionFailed](data)))
+      )
+
     case protocol.InstanceAlreadyReceived(data) =>
       protobuf.BakerResponseEventProtocol().withInsAlreadyReceived(
         protobuf.InstanceAlreadyReceived(Some(ctx.toProto[insProto.AlreadyReceived](data)))
@@ -54,6 +59,9 @@ class BakerResponseEventProtocolModule extends ProtoEventAdapterModule {
 
     case message: protobuf.BakerResponseEventProtocol if message.sealedValue.isInsTransitionNotEnabled =>
       protocol.InstanceTransitionNotEnabled(ctx.toDomain[insProtocol.TransitionNotEnabled](message.getInsTransitionNotEnabled.data.get))
+
+    case message: protobuf.BakerResponseEventProtocol if message.sealedValue.isInsTransitionFailed =>
+      protocol.InstanceTransitionFailed(ctx.toDomain[insProtocol.TransitionFailed](message.getInsTransitionFailed.data.get))
 
     case message: protobuf.BakerResponseEventProtocol if message.sealedValue.isInsAlreadyReceived =>
       protocol.InstanceAlreadyReceived(ctx.toDomain[insProtocol.AlreadyReceived](message.getInsAlreadyReceived.data.get))

@@ -15,11 +15,12 @@ message BakerResponseEventProtocol {
     oneof sealed_value {
         InstanceTransitionFired insTransitionFired = 1;
         InstanceTransitionNotEnabled insTransitionNotEnabled = 2;
-        InstanceAlreadyReceived insAlreadyReceived = 3;
-        IndexNoSuchProcess idxNoSuchProcess = 4;
-        IndexReceivePeriodExpired idxReceivedPeriodExpired = 5;
-        IndexProcessDeleted idxProcessDeleted = 6;
-        IndexInvalidEvent idxInvalidEvent = 7;
+        InstanceTransitionFailed insTransitionFailed = 3;
+        InstanceAlreadyReceived insAlreadyReceived = 4;
+        IndexNoSuchProcess idxNoSuchProcess = 5;
+        IndexReceivePeriodExpired idxReceivedPeriodExpired = 6;
+        IndexProcessDeleted idxProcessDeleted = 7;
+        IndexInvalidEvent idxInvalidEvent = 8;
     }
 }
 
@@ -29,6 +30,10 @@ message InstanceTransitionFired {
 
 message InstanceTransitionNotEnabled {
     optional TransitionNotEnabled data = 1;
+}
+
+message InstanceTransitionFailed {
+    optional TransitionFailed data = 1;
 }
 
 message InstanceAlreadyReceived {
