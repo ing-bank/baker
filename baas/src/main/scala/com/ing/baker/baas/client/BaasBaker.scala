@@ -5,15 +5,12 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.HttpMethods._
-import akka.http.scaladsl.model.ws.WebSocketRequest
 import akka.http.scaladsl.model.{RequestEntity, _}
-import akka.stream.scaladsl.{Flow, Framing, Source}
-import akka.util.ByteString
+import akka.stream.scaladsl.Source
 import com.ing.baker.baas.interaction.server.RemoteInteractionLauncher
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.actor.process_instance.protobuf.TransitionNotEnabled
 import com.ing.baker.runtime.core.events.BakerEvent
 import com.ing.baker.runtime.core.{Baker, BakerResponse, BakerResponseEventProtocol, EventListener, InteractionImplementation, ProcessMetadata, ProcessState, RecipeInformation, RuntimeEvent, SensoryEventStatus}
 import com.ing.baker.types.Value

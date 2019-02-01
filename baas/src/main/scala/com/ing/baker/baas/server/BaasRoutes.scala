@@ -4,8 +4,6 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpEntity.CloseDelimited
 import akka.http.scaladsl.model.{ContentTypes, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
-import akka.stream.scaladsl.Framing
-import akka.util.ByteString
 import com.ing.baker.baas.interaction.client.RemoteInteractionClient
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
