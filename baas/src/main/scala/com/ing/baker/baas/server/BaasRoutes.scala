@@ -27,7 +27,10 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
           status = StatusCodes.OK,
           entity = CloseDelimited(
             contentType = ContentTypes.`application/octet-stream`,
-            data = source0.via(serializeFlow[BakerResponseEventProtocol]))
+            data = source0
+              .via(serializeFlow[BakerResponseEventProtocol])
+              .map(_ ++ BakerResponseEventProtocol.SerializationDelimiter)
+          )
         )
       }
 

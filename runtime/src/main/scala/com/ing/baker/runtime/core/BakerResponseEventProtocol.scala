@@ -1,5 +1,6 @@
 package com.ing.baker.runtime.core
 
+import akka.util.ByteString
 import com.ing.baker.runtime.actor.process_index.{ProcessIndexProtocol => idxProtocol}
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstanceProtocol => insProtocol}
 
@@ -33,6 +34,8 @@ sealed trait BakerResponseEventProtocol {
 }
 
 object BakerResponseEventProtocol {
+
+  def SerializationDelimiter: ByteString = ByteString("|>|>|>")
 
   case class InstanceTransitionFired(value: insProtocol.TransitionFired) extends BakerResponseEventProtocol
 

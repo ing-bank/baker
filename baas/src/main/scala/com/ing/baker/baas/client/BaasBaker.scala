@@ -6,7 +6,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.HttpMethods._
 import akka.http.scaladsl.model.{RequestEntity, _}
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Framing, Source}
 import com.ing.baker.baas.interaction.server.RemoteInteractionLauncher
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
@@ -187,6 +187,7 @@ class BaasBaker(config: Config,
           entity = body))
       }.map { _.entity
         .dataBytes
+        .via(Framing.delimiter(BakerResponseEventProtocol.SerializationDelimiter, maximumFrameLength = Int.MaxValue))
         .via(deserializeFlow[BakerResponseEventProtocol])
         .mapMaterializedValue(_ => NotUsed)
       }

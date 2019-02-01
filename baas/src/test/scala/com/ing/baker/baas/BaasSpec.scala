@@ -64,7 +64,7 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
 
     val events: Seq[RuntimeEvent] = baasBaker.events(requestId)
 
-//    println(s"events: $events")
+    println(s"${Console.YELLOW} events: $events ${Console.RESET}")
 //    println(s"procesState : ${processState.ingredients}")
 
     val visualState = baasBaker.getVisualState(requestId)
@@ -87,7 +87,7 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     val response: BakerResponse = baasBaker.processEventAsync(requestId, InitialEvent("initialIngredient"))
 
     val events: Seq[RuntimeEvent] = response.confirmAllEvents(60.second)
-//    println(Console.YELLOW + events + Console.RESET)
+    println(Console.YELLOW + events + Console.RESET)
 
     assert(events.nonEmpty)
   }
