@@ -11,8 +11,8 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
-import com.ing.baker.recipe.scaladsl.Recipe
-import com.ing.baker.types.Converters
+import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
+import com.ing.baker.types.{Converters, PrimitiveValue}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
@@ -1234,6 +1234,71 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       verify(testInteractionTwoMock).apply("initialIngredient")
       baker.getIngredients(processId) shouldBe ingredientMap("initialIngredient" -> initialIngredientValue)
+    }
+
+    "Give me a better description, something about Maps validation in output event ingredients" in {
+
+      val initialIngredient = Ingredient[String]("initialIngredient")
+      val initialEvent = Event("InitialEvent", initialIngredient)
+
+      case class InteractionOneEvent(theMap: Map[String, Int])
+      case class InterOne() {
+        val name: String = "InteractionOne"
+        def apply(initialIngredient: String): InteractionOneEvent = {
+          println(Console.RED + initialIngredient + Console.RESET)
+          InteractionOneEvent(Map(initialIngredient -> 1))
+        }
+      }
+      val inter1OutputIngredient = Ingredient[Map[String, Int]]("theMap")
+      val inter1OutputEvent = Event("InteractionOneEvent", inter1OutputIngredient)
+
+      case class InteractionTwoEvent(ingredient: String)
+      case class InterTwo() {
+        val name: String = "InteractionTwo"
+        def apply(theMap: Map[String, Int]): InteractionTwoEvent = {
+          println(Console.RED + theMap + Console.RESET)
+          InteractionTwoEvent(theMap.head.toString)
+        }
+      }
+      val inter2OutputIngredient = Ingredient[String]("InteractionTwoIngredient")
+      val inter2OutputEvent = Event("InteractionTwoEvent", inter2OutputIngredient)
+
+      val recipe =
+        Recipe("MapAsIngredient")
+          .withInteractions(
+            Interaction(
+              name = "InteractionOne",
+              inputIngredients = Seq(initialIngredient),
+              output = Seq(inter1OutputEvent)
+            ),
+            Interaction(
+              name = "InteractionTwo",
+              inputIngredients = Seq(inter1OutputIngredient),
+              output = Seq(inter2OutputEvent)
+            )
+          )
+          .withSensoryEvent(initialEvent)
+
+      val baker: Baker = new Baker
+
+      baker.addImplementations(Seq(InterOne(), InterTwo()))
+
+      val compiled = RecipeCompiler.compileRecipe(recipe)
+      val viz = compiled.getRecipeVisualization
+      val recipeId = baker.addRecipe(compiled)
+
+      val processId = UUID.randomUUID().toString
+
+      baker.bake(recipeId, processId)
+
+      val res = baker.processEvent(processId, RuntimeEvent("InitialEvent", Seq("initialIngredient" -> PrimitiveValue("First!"))))
+
+      val processState: ProcessState = baker.getProcessState(processId)
+
+      println(Console.YELLOW + processState.ingredients + Console.RESET)
+      println(Console.MAGENTA + viz + Console.RESET)
+
+      succeed
     }
   }
 }
