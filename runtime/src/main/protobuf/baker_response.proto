@@ -33,7 +33,7 @@ message InstanceTransitionNotEnabled {
 }
 
 message InstanceTransitionFailed {
-    optional TransitionFailed data = 1;
+    optional TransitionFailedMessage data = 1;
 }
 
 message InstanceAlreadyReceived {
