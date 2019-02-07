@@ -11,8 +11,8 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
-import com.ing.baker.types.{Converters, PrimitiveValue}
+import com.ing.baker.recipe.scaladsl.Recipe
+import com.ing.baker.types.Converters
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
