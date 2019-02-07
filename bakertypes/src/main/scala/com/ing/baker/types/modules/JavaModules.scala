@@ -60,7 +60,7 @@ object JavaModules {
   class MapModule extends ClassModule[java.util.Map[_, _]] {
 
     override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type): MapType = {
-      val entryType = context.readType(getTypeParameter(javaType, 0))
+      val entryType = context.readType(getTypeParameter(javaType, 1))
       MapType(entryType)
     }
 
