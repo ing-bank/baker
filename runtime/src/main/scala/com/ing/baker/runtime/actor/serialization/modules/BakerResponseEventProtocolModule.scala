@@ -23,7 +23,7 @@ class BakerResponseEventProtocolModule extends ProtoEventAdapterModule {
 
     case protocol.InstanceTransitionFailed(data) =>
       protobuf.BakerResponseEventProtocol().withInsTransitionFailed(
-        protobuf.InstanceTransitionFailed(Some(ctx.toProto[insProto.TransitionFailed](data)))
+        protobuf.InstanceTransitionFailed(Some(ctx.toProto[insProto.TransitionFailedMessage](data)))
       )
 
     case protocol.InstanceAlreadyReceived(data) =>
