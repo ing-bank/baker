@@ -48,8 +48,8 @@ object ScalaModules {
   class MapModule extends ClassModule[Map[_, _]] {
 
     override def readType(context: TypeAdapter, javaType: java.lang.reflect.Type) = {
-      val entryType = context.readType(getTypeParameter(javaType, 0))
-      ListType(entryType)
+      val entryType = context.readType(getTypeParameter(javaType, 1))
+      MapType(entryType)
     }
 
     override  def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type) = value match {
