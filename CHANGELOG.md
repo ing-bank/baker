@@ -1,5 +1,9 @@
 # Changelog
 
+# 2.0.4
+
+- Fixed an issue that Map types would be translated to List types in the Java and Scala dsl
+
 # 2.0.3
 
 - New feature: Dealing with blocked interactions.
