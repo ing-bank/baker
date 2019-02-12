@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.core
 
 import java.time.Duration
-import java.util.concurrent.{CompletionStage, TimeoutException}
+import java.util.concurrent.{CompletableFuture, TimeoutException}
 
 import akka.NotUsed
 import akka.stream.javadsl.RunnableGraph
@@ -83,11 +83,11 @@ class BakerResponse(processId: String, source: Source[Any, NotUsed])(implicit ma
 
   val defaultWaitTimeout: FiniteDuration = FiniteDuration.apply(10, SECONDS)
 
-  def completedFutureJava: CompletionStage[BakerResponse.CompletedResponse] =
-    FutureConverters.toJava(completedFuture)
+  def completedFutureJava: CompletableFuture[BakerResponse.CompletedResponse] =
+    FutureConverters.toJava(completedFuture).toCompletableFuture
 
-  def receivedFutureJava: CompletionStage[SensoryEventStatus] =
-    FutureConverters.toJava(receivedFuture)
+  def receivedFutureJava: CompletableFuture[SensoryEventStatus] =
+    FutureConverters.toJava(receivedFuture).toCompletableFuture
 
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def confirmReceived(): SensoryEventStatus = {
