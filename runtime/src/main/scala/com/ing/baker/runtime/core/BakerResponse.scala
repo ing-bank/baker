@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.core
 
 import java.time.Duration
-import java.util.concurrent.TimeoutException
+import java.util.concurrent.{CompletableFuture, TimeoutException}
 
 import akka.NotUsed
 import akka.stream.javadsl.RunnableGraph
@@ -11,12 +11,13 @@ import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.java_api.EventList
 
+import scala.compat.java8.FutureConverters
 import scala.concurrent.duration.{FiniteDuration, SECONDS}
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 object BakerResponse {
 
-  private case class CompletedResponse(sensoryEventStatus: SensoryEventStatus, events: Seq[RuntimeEvent])
+  case class CompletedResponse(sensoryEventStatus: SensoryEventStatus, events: Seq[RuntimeEvent])
 
   private def firstMessage(processId: String, response: Future[Any])(implicit ec: ExecutionContext): Future[SensoryEventStatus] =
     response.map(translateFirstMessage)
@@ -78,9 +79,15 @@ object BakerResponse {
 
 class BakerResponse(processId: String, source: Source[Any, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext) {
 
-  private val (receivedFuture, completedFuture) = BakerResponse.createFlow(processId, source)
+  val (receivedFuture, completedFuture) = BakerResponse.createFlow(processId, source)
 
   val defaultWaitTimeout: FiniteDuration = FiniteDuration.apply(10, SECONDS)
+
+  def completedFutureJava: CompletableFuture[BakerResponse.CompletedResponse] =
+    FutureConverters.toJava(completedFuture).toCompletableFuture
+
+  def receivedFutureJava: CompletableFuture[SensoryEventStatus] =
+    FutureConverters.toJava(receivedFuture).toCompletableFuture
 
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   def confirmReceived(): SensoryEventStatus = {
