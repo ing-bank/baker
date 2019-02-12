@@ -237,7 +237,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
     }
 
     //This test is ignored for now since it does not work in with all operating systems
-    "backwards compatibility in serialization of case class ingredients" ignore {
+    "backwards compatibility in serialization of case class ingredients" in {
 
       import better.files._
 
@@ -249,8 +249,9 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         * !!! If you want to create a new test case the following flag to true
         */
       val createNewCase: Boolean = false
+      val isWindows: Boolean = System.getProperty("os.name").toLowerCase.contains("windows")
 
-      val journalPath = "src/test/resources/persisted-messages"
+      val journalPath = "src/test/resources/persisted-messages" + (if (isWindows) "-windows" else "")
       val journalDir = File(journalPath)
 
       val testPath = if (createNewCase) journalPath else "target/backwardsCompatibilityOfEvents"
