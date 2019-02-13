@@ -87,16 +87,12 @@ lazy val runtime = project.in(file("runtime"))
     sources in (Compile, doc) := Seq.empty,
     libraryDependencies ++=
       compileDeps(
-        akkaActor,
         akkaActorTyped,
-        akkaPersistence,
         akkaPersistenceTyped,
         akkaPersistenceQuery,
-        akkaClusterSharding,
         akkaClusterShardingTyped,
         akkaInmemoryJournal,
         akkaSlf4j,
-        akkaStream,
         akkaStreamTyped,
         ficusConfig,
         catsCore,
@@ -110,7 +106,6 @@ lazy val runtime = project.in(file("runtime"))
         kryoSerializers,
         slf4jApi
       ) ++ testDeps(
-        akkaTestKit,
         akkaTestKitTyped,
         akkaStreamTestKit,
         akkaInmemoryJournal,
