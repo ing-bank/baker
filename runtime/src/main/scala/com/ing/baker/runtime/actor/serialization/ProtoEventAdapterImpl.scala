@@ -6,7 +6,7 @@ import com.google.protobuf.ByteString
 import com.ing.baker.runtime.actor.protobuf.SerializedData
 import com.ing.baker.runtime.actor.serialization.modules._
 import scalapb.GeneratedMessage
-
+import com.ing.baker.runtime.actortyped.serialization.modules.RecipeManagerTypedModule
 import scala.util.Try
 
 import ProtoEventAdapterImpl._
@@ -19,7 +19,8 @@ object ProtoEventAdapterImpl {
     new ProcessInstanceModule,
     new RecipeManagerModule,
     new RuntimeModule,
-    new TypesModule
+    new TypesModule,
+    new RecipeManagerTypedModule
   )
 }
 
