@@ -88,12 +88,16 @@ lazy val runtime = project.in(file("runtime"))
     libraryDependencies ++=
       compileDeps(
         akkaActor,
+        akkaActorTyped,
         akkaPersistence,
+        akkaPersistenceTyped,
         akkaPersistenceQuery,
         akkaClusterSharding,
+        akkaClusterShardingTyped,
         akkaInmemoryJournal,
         akkaSlf4j,
         akkaStream,
+        akkaStreamTyped,
         ficusConfig,
         catsCore,
         catsEffect,
@@ -107,6 +111,7 @@ lazy val runtime = project.in(file("runtime"))
         slf4jApi
       ) ++ testDeps(
         akkaTestKit,
+        akkaTestKitTyped,
         akkaStreamTestKit,
         akkaInmemoryJournal,
         akkaPersistenceCassandra,
