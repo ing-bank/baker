@@ -69,6 +69,7 @@ case class RecordType(fields: Seq[RecordField]) extends Type
 
 case class MapType(valueType: Type) extends Type
 
+// FIXME: Make it sealed?
 trait PrimitiveType extends Type
 
 /**

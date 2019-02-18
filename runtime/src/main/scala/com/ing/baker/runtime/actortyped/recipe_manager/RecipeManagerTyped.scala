@@ -101,4 +101,5 @@ object RecipeManagerTyped {
   private def recipesInfo(recipes: Recipes): Seq[RecipeInformation] =
     recipes.map { case (_, (compiledRecipe, timestamp)) => RecipeInformation(compiledRecipe, timestamp) }.toSeq
 
+
 }
