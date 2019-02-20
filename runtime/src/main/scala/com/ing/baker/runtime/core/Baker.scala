@@ -34,8 +34,12 @@ import scala.language.postfixOps
 import scala.util.Try
 import Baker._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEventSourcing
+import com.typesafe.config.Config
 
 object Baker {
+
+  def apply(config: Config)(implicit system: ActorSystem): Baker =
+    new Baker(Some(config))
 
   /**
     * Transforms an object into a RuntimeEvent if possible.
@@ -57,11 +61,11 @@ object Baker {
   * The Baker is the component of the Baker library that runs one or multiples recipes.
   * For each recipe a new instance can be baked, sensory events can be send and state can be inquired upon
   */
-class Baker()(implicit val actorSystem: ActorSystem) {
+class Baker(_config: Option[Config] = None)(implicit val actorSystem: ActorSystem) {
 
   private val log = LoggerFactory.getLogger(classOf[Baker])
 
-  private val config = actorSystem.settings.config
+  private val config = _config.fold(actorSystem.settings.config)(_.withFallback(actorSystem.settings.config))
   if (!config.as[Option[Boolean]]("baker.config-file-included").getOrElse(false))
     throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
 
