@@ -227,6 +227,7 @@ lazy val integration = project.in(file("integration"))
       ) ++ testDeps(
         akkaTestKit,
         akkaMultiNodeTestkit,
+        betterFiles,
         scalaTest
       ) ++ providedDeps(findbugs)
   )

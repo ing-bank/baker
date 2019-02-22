@@ -14,6 +14,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.ing.baker.recipe.scaladsl.Examples.webshop
 import com.ing.baker.types.{PrimitiveValue, RecordValue}
 import org.scalatest.mockito.MockitoSugar
+import better.files.File
 
 import scala.concurrent.duration._
 
@@ -56,8 +57,8 @@ object InMemoryJournalConfig extends MultiNodeConfig {
       }
 
       baker {
-        //actor.provider = "cluster-sharded"
-        actor.provider = "local"
+        actor.provider = "cluster-sharded"
+        //actor.provider = "local"
         actor.read-journal-plugin = "akka.persistence.query.journal.leveldb"
         journal-initialize-timeout = 10 seconds
       }
@@ -123,7 +124,7 @@ object InMemoryJournal extends MockitoSugar {
   def seedNodeConfig(path: ActorPath): Config =
     ConfigFactory.parseString(s"""baker.cluster.seed-nodes = ["$path"]""")
 
-  val process1Id: String = UUID.randomUUID().toString
+  val process1Id: String = "!id:process-one!"
 
   val implementations: Seq[AnyRef] = Seq(
     ValidateOrder,
@@ -140,13 +141,24 @@ class InMemoryJournal extends MultiNodeSpec(InMemoryJournalConfig)
   import InMemoryJournalConfig._
   import InMemoryJournal._
 
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    File("target/journal").createDirectoryIfNotExists().delete()
+    File("target/snapshots").createDirectoryIfNotExists().delete()
+  }
+
   "A InMemoryJournal" must {
 
     "retrieve state from a remote process actor using in-memory journals" in {
+
       val baker = Baker(seedNodeConfig(node(node1)))
       enterBarrier("startup")
 
       runOn(node1) {
+
+        val compiled = RecipeCompiler.compileRecipe(webshop.webShopRecipe)
+        baker.addImplementations(InMemoryJournal.implementations)
+
         enterBarrier("recipe-setup")
 
         enterBarrier("sensory-event-1")
