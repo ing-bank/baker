@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.actor.serialization.modules
 
 import com.ing.baker.runtime.actor.protobuf
-import com.ing.baker.runtime.actor.protobuf.SerializedData
 import com.ing.baker.runtime.actor.serialization.{ProtoEventAdapter, ProtoEventAdapterModule}
 import com.ing.baker.runtime.core
 import com.ing.baker.types.Value

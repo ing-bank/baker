@@ -16,6 +16,6 @@ class EventOutputTransformerMapping extends ProtobufMapping[il.EventOutputTransf
     protobuf.EventOutputTransformer(Option(transformer.newEventName), transformer.ingredientRenames)
 
   override def fromProto(message: protobuf.EventOutputTransformer): Try[EventOutputTransformer] =
-    versioned(message.newEventName)("newEventName").map(name => il.EventOutputTransformer(name, message.ingredientRenames))
+    versioned(message.newEventName, "newEventName").map(name => il.EventOutputTransformer(name, message.ingredientRenames))
 
 }

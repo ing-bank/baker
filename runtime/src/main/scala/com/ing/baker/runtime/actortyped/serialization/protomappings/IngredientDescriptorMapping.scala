@@ -18,8 +18,8 @@ class IngredientDescriptorMapping extends ProtobufMapping[il.IngredientDescripto
 
   def fromProto(message: ProtoClass): Try[il.IngredientDescriptor] =
     for {
-      name <- versioned(message.name)("name")
-      ingredientTypeProto <- versioned(message.`type`)("type")
+      name <- versioned(message.name, "name")
+      ingredientTypeProto <- versioned(message.`type`, "type")
       ingredientType <- ctxFromProto(ingredientTypeProto)
     } yield il.IngredientDescriptor(name, ingredientType)
 

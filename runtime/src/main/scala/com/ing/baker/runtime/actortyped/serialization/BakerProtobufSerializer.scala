@@ -3,14 +3,15 @@ package com.ing.baker.runtime.actortyped.serialization
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.ExtendedActorSystem
 import akka.actor.typed.ActorRefResolver
-import akka.serialization.SerializerWithStringManifest
+import akka.serialization.{Serialization, SerializationExtension, SerializerWithStringManifest}
 import com.ing.baker.runtime.actortyped.recipe_manager.RecipeManagerSerialization
 import org.slf4j.LoggerFactory
+import com.ing.baker.runtime.actortyped.serialization.protomappings.AnyRefMapping.SerializersProvider
 
 object BakerProtobufSerializer {
 
-  private val entries: List[BinarySerializable] = List(
-    RecipeManagerSerialization.RecipeAddedSerialization
+  private def entries(implicit ev0: SerializersProvider): List[BinarySerializable] = List(
+    new RecipeManagerSerialization.RecipeAddedSerialization
   )
 
   private val log = LoggerFactory.getLogger(classOf[BakerProtobufSerializer])
@@ -22,6 +23,14 @@ object BakerProtobufSerializer {
 }
 
 class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
+
+  private val serialization: Serialization = SerializationExtension.get(system)
+
+  private implicit val serializersProvider: SerializersProvider =
+    SerializersProvider(
+      getSerializerFor = serialization.findSerializerFor,
+      serializerByIdentity = serialization.serializerByIdentity.get
+    )
 
   private val actorRefResolver =
     ActorRefResolver(system.toTyped)

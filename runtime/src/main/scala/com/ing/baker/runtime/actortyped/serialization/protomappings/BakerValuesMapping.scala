@@ -1,6 +1,8 @@
 package com.ing.baker.runtime.actortyped.serialization.protomappings
 
-import cats.implicits._
+import cats.instances.list._
+import cats.instances.try_._
+import cats.syntax.traverse._
 import com.google.protobuf.ByteString
 import com.ing.baker.types
 import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping

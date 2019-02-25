@@ -19,7 +19,7 @@ class EventDescriptorMapping extends ProtobufMapping[il.EventDescriptor] {
 
   def fromProto(message: ProtoClass): Try[il.EventDescriptor] =
     for {
-      name <- versioned(message.name)("name")
+      name <- versioned(message.name, "name")
       ingredients <- message.ingredients.toList.traverse[Try, il.IngredientDescriptor](ctxFromProto(_))
     } yield il.EventDescriptor(name, ingredients)
 

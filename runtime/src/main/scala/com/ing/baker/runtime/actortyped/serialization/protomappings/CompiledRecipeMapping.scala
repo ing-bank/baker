@@ -8,7 +8,7 @@ import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping.{versioned
 
 import scala.util.{Failure, Success, Try}
 
-class CompiledRecipeMapping extends ProtobufMapping[il.CompiledRecipe] {
+class CompiledRecipeMapping(anyMapping: ProtobufMapping.Aux[AnyRef, protobuf.SerializedData]) extends ProtobufMapping[il.CompiledRecipe] {
 
   type ProtoClass = protobuf.CompiledRecipe
 
@@ -96,7 +96,7 @@ class CompiledRecipeMapping extends ProtobufMapping[il.CompiledRecipe] {
           placeId = Option(place.id),
           tokenId = Option(tokenIdentifier(value)),
           count = Option(count),
-          tokenData = Option(toProtoAny(value.asInstanceOf[AnyRef]))
+          tokenData = Option(anyMapping.toProto(value.asInstanceOf[AnyRef]))
         )
       }
     }
@@ -115,7 +115,7 @@ class CompiledRecipeMapping extends ProtobufMapping[il.CompiledRecipe] {
   private def toDomainPlaceType(protoPlaceType: protobuf.PlaceType, limit: Option[Int]): Try[il.petrinet.Place.PlaceType] = protoPlaceType match {
     case protobuf.PlaceType.IngredientPlace => Success(il.petrinet.Place.IngredientPlace)
     case protobuf.PlaceType.InteractionEventOutputPlace => Success(il.petrinet.Place.InteractionEventOutputPlace)
-    case protobuf.PlaceType.FiringLimiterPlace => versioned(limit)("firingLimit").map(il.petrinet.Place.FiringLimiterPlace)
+    case protobuf.PlaceType.FiringLimiterPlace => versioned(limit, "firingLimit").map(il.petrinet.Place.FiringLimiterPlace)
     case protobuf.PlaceType.EventPreconditionPlace => Success(il.petrinet.Place.EventPreconditionPlace)
     case protobuf.PlaceType.EventOrPreconditionPlace => Success(il.petrinet.Place.EventOrPreconditionPlace)
     case protobuf.PlaceType.IntermediatePlace => Success(il.petrinet.Place.IntermediatePlace)

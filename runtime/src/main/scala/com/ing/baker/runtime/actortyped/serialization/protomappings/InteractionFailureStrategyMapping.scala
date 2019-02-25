@@ -48,15 +48,15 @@ class InteractionFailureStrategyMapping extends ProtobufMapping[il.failurestrate
 
       case OneofType.FireEventAfterFailure(fireEvent: protobuf.FireEventAfterFailure) =>
         for {
-          eventProto <- versioned(fireEvent.event)("event")
+          eventProto <- versioned(fireEvent.event, "event")
           event <- ctxFromProto(eventProto)
         } yield il.failurestrategy.FireEventAfterFailure(event)
 
       case OneofType.RetryWithIncrementalBackoff(incremental: protobuf.RetryWithIncrementalBackoff) =>
         for {
-          initialTimeout <- versioned(incremental.initialTimeout)("initialTimeout")
-          backoff <- versioned(incremental.backoffFactor)("backoffFactor")
-          maximumRetries <- versioned(incremental.maximumRetries)("maximumRetries")
+          initialTimeout <- versioned(incremental.initialTimeout, "initialTimeout")
+          backoff <- versioned(incremental.backoffFactor, "backoffFactor")
+          maximumRetries <- versioned(incremental.maximumRetries, "maximumRetries")
           retryExausted <- incremental.retryExhaustedEvent.traverse[Try, il.EventDescriptor](ctxFromProto(_))
         } yield il.failurestrategy.RetryWithIncrementalBackoff(
           initialTimeout = Duration(initialTimeout, TimeUnit.MILLISECONDS),
