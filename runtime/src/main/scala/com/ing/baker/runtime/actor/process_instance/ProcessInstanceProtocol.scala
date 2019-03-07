@@ -105,7 +105,6 @@ object ProcessInstanceProtocol {
     correlationId: Option[String],
     consumed: Marking[Id],
     produced: Marking[Id],
-    state: InstanceState,
     newJobsIds: Set[Long],
     output: Any) extends TransitionResponse
 

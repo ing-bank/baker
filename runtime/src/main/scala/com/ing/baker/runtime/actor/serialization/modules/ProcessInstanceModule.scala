@@ -38,9 +38,9 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
       protobuf.AlreadyReceived(Some(correlationId))
     case protocol.TransitionNotEnabled(transitionId, reason) =>
       protobuf.TransitionNotEnabled(Some(transitionId), Some(reason))
-    case protocol.TransitionFired(jobId, transitionId, correlationId, consumed, produced, state, newJobs, output) =>
+    case protocol.TransitionFired(jobId, transitionId, correlationId, consumed, produced, newJobs, output) =>
       protobuf.TransitionFiredMessage(Some(jobId), Some(transitionId), correlationId,
-        toProtoMarking(consumed, ctx), toProtoMarking(produced, ctx), Some(ctx.toProto[protobuf.InstanceState](state)),
+        toProtoMarking(consumed, ctx), toProtoMarking(produced, ctx),
         newJobs.toSeq, Some(ctx.toProtoAny(output.asInstanceOf[AnyRef])))
     case protocol.TransitionFailed(jobId, transitionId, correlationId, consume, input, reason, strategy) =>
       protobuf.TransitionFailedMessage(Some(jobId), Some(transitionId), correlationId, toProtoMarking(consume, ctx),
@@ -108,9 +108,9 @@ class ProcessInstanceModule extends ProtoEventAdapterModule {
       protocol.AlreadyReceived(correlationId)
     case protobuf.TransitionNotEnabled(Some(transitionId), Some(reason)) =>
       protocol.TransitionNotEnabled(transitionId, reason)
-    case protobuf.TransitionFiredMessage(Some(jobId), Some(transitionId), correlationId, consumed, produced, Some(state), newJobsIds, Some(output)) =>
+    case protobuf.TransitionFiredMessage(Some(jobId), Some(transitionId), correlationId, consumed, produced, newJobsIds, Some(output)) =>
       protocol.TransitionFired(jobId, transitionId, correlationId, toDomainMarking(consumed, ctx),
-        toDomainMarking(produced, ctx), ctx.toDomain[protocol.InstanceState](state), newJobsIds.toSet, ctx.toDomain[Any](output))
+        toDomainMarking(produced, ctx), newJobsIds.toSet, ctx.toDomain[Any](output))
     case protobuf.TransitionFailedMessage(Some(jobId), Some(transitionId), correlationId, consume, Some(input), Some(reason), Some(strategy)) =>
       protocol.TransitionFailed(jobId, transitionId, correlationId, toDomainMarking(consume, ctx), ctx.toDomain[Any](input), reason, ctx.toDomain[protocol.ExceptionStrategy](strategy))
 

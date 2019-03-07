@@ -161,7 +161,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
             case (updatedInstance, newJobs) ⇒
 
               // the sender is notified of the transition having fired
-              sender() ! TransitionFired(jobId, transitionId, correlationId, consumed, produced, updatedInstance, newJobs.map(_.id), output)
+              sender() ! TransitionFired(jobId, transitionId, correlationId, consumed, produced, newJobs.map(_.id), output)
 
               // the job is removed from the state since it completed
               context become running(updatedInstance, scheduledRetries - jobId)
@@ -207,7 +207,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
             eventSource.apply(instance)
               .andThen(step)
               .andThen { case (updatedInstance, newJobs) ⇒
-                sender() ! TransitionFired(jobId, transitionId, correlationId, consume, produced, updatedInstance, newJobs.map(_.id), out)
+                sender() ! TransitionFired(jobId, transitionId, correlationId, consume, produced, newJobs.map(_.id), out)
                 context become running(updatedInstance, scheduledRetries - jobId)
               })
 
