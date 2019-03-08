@@ -14,9 +14,7 @@ object AnyRefMapping {
   case class SerializersProvider(getSerializerFor: AnyRef => Serializer, serializerByIdentity: Int => Option[Serializer])
 }
 
-class AnyRefMapping(provider: SerializersProvider) extends ProtobufMapping[AnyRef] {
-
-  override type ProtoClass = protobuf.SerializedData
+class AnyRefMapping(provider: SerializersProvider) extends ProtobufMapping[AnyRef, protobuf.SerializedData] {
 
   override def toProto(obj: AnyRef): protobuf.SerializedData = {
     val serializer: Serializer = provider.getSerializerFor(obj)

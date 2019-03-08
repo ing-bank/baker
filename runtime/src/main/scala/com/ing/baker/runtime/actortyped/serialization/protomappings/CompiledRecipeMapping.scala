@@ -1,16 +1,28 @@
 package com.ing.baker.runtime.actortyped.serialization.protomappings
 
+import java.util.concurrent.TimeUnit
+
+import cats.syntax.traverse._
+import cats.instances.list._
+import cats.instances.option._
+import cats.instances.try_._
 import com.ing.baker.il
+import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization.tokenIdentifier
 import com.ing.baker.runtime.actor.protobuf
 import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping.{versioned, fromProto => ctxFromProto, toProto => ctxToProto}
+import com.ing.baker.il.petrinet.{Node, Place, RecipePetriNet, Transition}
+import com.ing.baker.petrinet.api.Marking
+import com.ing.baker.types.Value
+import scalax.collection.GraphEdge
+import scalax.collection.edge.WLDiEdge
+import scalax.collection.immutable.Graph
 
+import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
-class CompiledRecipeMapping(anyMapping: ProtobufMapping.Aux[AnyRef, protobuf.SerializedData]) extends ProtobufMapping[il.CompiledRecipe] {
-
-  type ProtoClass = protobuf.CompiledRecipe
+class CompiledRecipeMapping(anyMapping: ProtobufMapping[AnyRef, protobuf.SerializedData]) extends ProtobufMapping[il.CompiledRecipe, protobuf.CompiledRecipe] {
 
   def toProto(recipe: il.CompiledRecipe): protobuf.CompiledRecipe = {
     val eventReceiveMillis = recipe.eventReceivePeriod.map(_.toMillis)
@@ -26,8 +38,27 @@ class CompiledRecipeMapping(anyMapping: ProtobufMapping.Aux[AnyRef, protobuf.Ser
       retentionMillis)
   }
 
-  def fromProto(message: ProtoClass): Try[il.CompiledRecipe] =
-    ???
+  def fromProto(message: protobuf.CompiledRecipe): Try[il.CompiledRecipe] = {
+    for {
+      name <- versioned(message.name, "name")
+      graphMsg <- versioned(message.petrinet, "petrinet")
+      eventReceivePeriod = message.eventReceivePeriod.map(Duration(_, TimeUnit.MILLISECONDS))
+      retentionPeriod = message.retentionPeriod.map(Duration(_, TimeUnit.MILLISECONDS))
+      graph <- fromProtoGraph(graphMsg)
+      petriNet: RecipePetriNet = new com.ing.baker.petrinet.api.PetriNet(graph)
+      initialMarking <- Try(message.initialMarking.foldLeft(Marking.empty[il.petrinet.Place]) {
+        case (accumulated, protobuf.ProducedToken(Some(placeId), Some(_), Some(count), _)) ⇒ // Option[SerializedData] is always None, and we don't use it here.
+          val place = petriNet.places.getById(placeId, "place in petrinet")
+          val value = null // Values are not serialized (not interested in) in the serialized recipe
+          accumulated.add(place, value, count)
+        case _ ⇒ throw new IllegalStateException("Missing data in persisted ProducedToken")
+      })
+    } yield message.recipeId.map { recipeId =>
+      il.CompiledRecipe(name, recipeId, petriNet, initialMarking, message.validationErrors, eventReceivePeriod, retentionPeriod)
+    }.getOrElse {
+      il.CompiledRecipe(name, petriNet, initialMarking, message.validationErrors, eventReceivePeriod, retentionPeriod)
+    }
+  }
 
   private def protoNodes(recipe: il.CompiledRecipe): Seq[protobuf.Node] =
     recipe.petriNet.nodes.toList.map {
@@ -100,6 +131,102 @@ class CompiledRecipeMapping(anyMapping: ProtobufMapping.Aux[AnyRef, protobuf.Ser
         )
       }
     }
+
+  def fromProtoGraph(net: protobuf.PetriNet): Try[Graph[Node, WLDiEdge]] = {
+    val tryNodes = net.nodes.toList.traverse[Try, Either[Place, Transition]] { n =>
+
+      import protobuf.Node.OneofNode
+      n.oneofNode match {
+
+        case place: OneofNode.Place =>
+          for {
+            label <- versioned(place.value.label, "label")
+            placeTypeProto <- versioned(place.value.placeType, "placeType")
+            placeType <- toDomainPlaceType(placeTypeProto, place.value.firingLimiterPlaceMaxLimit)
+          } yield Left(il.petrinet.Place(label, placeType))
+
+        case transition: OneofNode.EventTransition =>
+          for {
+            eventDescriptorProto <- versioned(transition.value.eventDescriptor, "eventDescriptor")
+            isSensoryEvent <- versioned(transition.value.isSensoryEvent, "isSensoryEvent")
+            eventDescriptor <- ctxFromProto(eventDescriptorProto)
+            maxFiringLimit = transition.value.maxFiringLimit
+          } yield Right(il.petrinet.EventTransition(eventDescriptor, isSensoryEvent, maxFiringLimit))
+
+        case transition: OneofNode.IntermediateTransition =>
+          versioned(transition.value.label, "label")
+            .map(label => Right(il.petrinet.IntermediateTransition(label)))
+
+        case transition: OneofNode.MissingEventTransition =>
+          versioned(transition.value.label, "label")
+            .map(label => Right(il.petrinet.MissingEventTransition(label)))
+
+        case transition: OneofNode.MultiFacilitatorTransition =>
+          versioned(transition.value.label, "label")
+            .map(label => Right(il.petrinet.MultiFacilitatorTransition(label)))
+
+        case transition: OneofNode.InteractionTransition =>
+          for {
+            // in 1.3.x an interaction could directly provide an ingredient
+            providedIngredientEvent <- transition.value
+              .providedIngredientEvent
+              .traverse(ctxFromProto(_))
+            eventDescriptor <- transition.value
+              .eventsToFire.toList
+              .traverse(ctxFromProto(_))
+            originalEvents <- transition.value
+              .originalEvents.toList
+              .traverse(ctxFromProto(_))
+            requiredIngredients <- transition.value
+              .requiredIngredients.toList
+              .traverse(ctxFromProto(_))
+            interactionName <- versioned(transition.value.interactionName, "interactionName")
+            originalInteractionName <- versioned(transition.value.originalInteractionName, "originalInteractionName")
+            predefinedparameters <- transition.value
+              .predefinedParameters.toList
+              .traverse[Try, (String, Value)]
+                { case (k, v) => ctxFromProto(v).map(k -> _) }
+              .map(_.toMap)
+            failureStrategyProto <- versioned(transition.value.failureStrategy, "failureStrategy")
+            failureStrategy <- ctxFromProto(failureStrategyProto)
+            eventOutputTransformers <- transition.value
+              .eventOutputTransformers.toList
+              .traverse[Try, (String, il.EventOutputTransformer)]
+              { case (k, v) => ctxFromProto(v).map(k -> _) }
+              .map(_.toMap)
+          } yield
+            Right(il.petrinet.InteractionTransition(
+              eventsToFire = eventDescriptor ++ providedIngredientEvent,
+              originalEvents = originalEvents ++ providedIngredientEvent,
+              requiredIngredients = requiredIngredients,
+              interactionName = interactionName,
+              originalInteractionName = originalInteractionName,
+              predefinedParameters = predefinedparameters,
+              maximumInteractionCount = transition.value.maximumInteractionCount,
+              failureStrategy = failureStrategy,
+              eventOutputTransformers = eventOutputTransformers
+            ))
+
+        case other =>
+          // TODO: This is a match over a sealed trait, so in theory the only case in which this would match is when oneOfNode = Empty... should we handle it accordingly?
+          Failure(new IllegalStateException(s"Unknown node type: $other"))
+      }
+    }
+
+    val params = net.edges.toList.traverse[Try, WLDiEdge[Node] with GraphEdge.EdgeCopy[WLDiEdge]] { protoEdge =>
+      for {
+        from <- versioned(protoEdge.from, "from")
+        to <- versioned(protoEdge.to, "to")
+        weight <- versioned(protoEdge.weight, "weight")
+        fromNode <- tryNodes.map(_.apply(from.toInt))
+        toNode <- tryNodes.map(_.apply(to.toInt))
+        edge = il.petrinet.Edge(protoEdge.eventFilter)
+      } yield WLDiEdge.apply(fromNode, toNode)(weight, edge)
+    }
+
+    params.map(p => scalax.collection.immutable.Graph(p: _*))
+
+  }
 
   private def toProtoPlaceType(placeType: il.petrinet.Place.PlaceType): (Option[protobuf.PlaceType], Option[Int]) = placeType match {
     case il.petrinet.Place.IngredientPlace => Option(protobuf.PlaceType.IngredientPlace) -> None

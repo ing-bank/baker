@@ -13,11 +13,9 @@ import org.joda.time.format.ISODateTimeFormat
 
 import scala.util.{Failure, Success, Try}
 
-class BakerValuesMapping  extends ProtobufMapping[types.Value] {
+class BakerValuesMapping extends ProtobufMapping[types.Value, protobuf.Value] {
 
-  type ProtoClass = protobuf.Value
-
-  def toProto(t: types.Value): ProtoClass = protobuf.Value(t match {
+  def toProto(t: types.Value): protobuf.Value = protobuf.Value(t match {
 
     case types.NullValue =>
       NullValue(true)
@@ -75,7 +73,7 @@ class BakerValuesMapping  extends ProtobufMapping[types.Value] {
 
   })
 
-  def fromProto(message: ProtoClass): Try[types.Value] = message.oneofValue match {
+  def fromProto(message: protobuf.Value): Try[types.Value] = message.oneofValue match {
     case NullValue(_) =>
       Success(types.NullValue)
 

@@ -8,9 +8,7 @@ import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping.versioned
 
 import scala.util.Try
 
-class EventOutputTransformerMapping extends ProtobufMapping[il.EventOutputTransformer] {
-
-  override type ProtoClass = protobuf.EventOutputTransformer
+class EventOutputTransformerMapping extends ProtobufMapping[il.EventOutputTransformer, protobuf.EventOutputTransformer] {
 
   override def toProto(transformer: EventOutputTransformer): protobuf.EventOutputTransformer =
     protobuf.EventOutputTransformer(Option(transformer.newEventName), transformer.ingredientRenames)

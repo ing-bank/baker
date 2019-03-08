@@ -11,14 +11,12 @@ import com.ing.baker.runtime.actor.protobuf.Type.OneofType
 
 import scala.util.{Failure, Success, Try}
 
-class BakerTypesMapping  extends ProtobufMapping[types.Type] {
-
-  type ProtoClass = protobuf.Type
+class BakerTypesMapping extends ProtobufMapping[types.Type, protobuf.Type] {
 
   private def createPrimitive(p: PrimitiveType) =
     protobuf.Type(protobuf.Type.OneofType.Primitive(p))
 
-  def toProto(t: types.Type): ProtoClass = t match {
+  def toProto(t: types.Type): protobuf.Type = t match {
     case types.Bool =>
       createPrimitive(PrimitiveType.BOOL)
 
@@ -83,7 +81,7 @@ class BakerTypesMapping  extends ProtobufMapping[types.Type] {
       protobuf.Type(protobuf.Type.OneofType.Enum(protobuf.EnumType(options.toSeq)))
   }
 
-  def fromProto(message: ProtoClass): Try[types.Type] = {
+  def fromProto(message: protobuf.Type): Try[types.Type] = {
     message.`oneofType` match {
 
       case Primitive(BOOL) => Success(types.Bool)

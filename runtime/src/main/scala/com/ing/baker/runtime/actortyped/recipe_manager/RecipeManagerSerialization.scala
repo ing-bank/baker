@@ -11,8 +11,7 @@ import scala.util.Try
 
 object RecipeManagerSerialization {
 
-  // case class RecipeAdded(compiledRecipe: CompiledRecipe, timeStamp: Long) extends BakerProtoMessage
-  class RecipeAddedSerialization(implicit val ev0: ProtobufMapping.Aux[il.CompiledRecipe, ilproto.CompiledRecipe]) extends BinarySerializable {
+  class RecipeAddedSerialization(implicit val ev0: ProtobufMapping[il.CompiledRecipe, ilproto.CompiledRecipe]) extends BinarySerializable {
 
     type Type = RecipeAdded
 

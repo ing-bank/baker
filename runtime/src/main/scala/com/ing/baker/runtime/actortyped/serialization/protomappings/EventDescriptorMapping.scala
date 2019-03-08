@@ -8,16 +8,14 @@ import com.ing.baker.runtime.actor.protobuf
 
 import scala.util.Try
 
-class EventDescriptorMapping extends ProtobufMapping[il.EventDescriptor] {
+class EventDescriptorMapping extends ProtobufMapping[il.EventDescriptor, protobuf.EventDescriptor] {
 
-  type ProtoClass = protobuf.EventDescriptor
-
-  def toProto(event: il.EventDescriptor): ProtoClass = {
+  def toProto(event: il.EventDescriptor): protobuf.EventDescriptor = {
     val protoIngredients: Seq[protobuf.IngredientDescriptor] = event.ingredients.map(ctxToProto(_))
     protobuf.EventDescriptor(Some(event.name), protoIngredients)
   }
 
-  def fromProto(message: ProtoClass): Try[il.EventDescriptor] =
+  def fromProto(message: protobuf.EventDescriptor): Try[il.EventDescriptor] =
     for {
       name <- versioned(message.name, "name")
       ingredients <- message.ingredients.toList.traverse[Try, il.IngredientDescriptor](ctxFromProto(_))

@@ -12,9 +12,7 @@ import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping.{versioned
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
 
-class InteractionFailureStrategyMapping extends ProtobufMapping[il.failurestrategy.InteractionFailureStrategy] {
-
-  override type ProtoClass = protobuf.InteractionFailureStrategy
+class InteractionFailureStrategyMapping extends ProtobufMapping[il.failurestrategy.InteractionFailureStrategy, protobuf.InteractionFailureStrategy] {
 
   override def toProto(strategy: InteractionFailureStrategy): protobuf.InteractionFailureStrategy =
     strategy match {
