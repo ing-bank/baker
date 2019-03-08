@@ -11,6 +11,8 @@ import scala.util.Try
 
 object RecipeManagerSerialization {
 
+  val recipeAddedManifest: String = "typed.RecipeManager.RecipeAdded"
+
   class RecipeAddedSerialization(implicit val ev0: ProtobufMapping[il.CompiledRecipe, ilproto.CompiledRecipe]) extends BinarySerializable {
 
     type Type = RecipeAdded
@@ -19,7 +21,7 @@ object RecipeManagerSerialization {
       classOf[RecipeAdded]
     
     override val manifest: String =
-      "typed.RecipeManager.RecipeAdded"
+      recipeAddedManifest
 
     override def toBinary(a: RecipeAdded): Array[Byte] =
       protobuf.RecipeAddedTyped(None, Some(toProto(a.compiledRecipe)), Some(a.timeStamp)).toByteArray

@@ -36,7 +36,7 @@ object RecipeManagerTyped {
   case class RecipeInformation(compiledRecipe: CompiledRecipe, timestamp: Long) extends BakerProtoMessage
 
   /** Only event */
-  case class RecipeAdded(compiledRecipe: CompiledRecipe, timeStamp: Long) extends BakerProtoMessage
+  case class RecipeAdded(compiledRecipe: CompiledRecipe, timeStamp: Long)
 
   type Recipes = Map[String, (CompiledRecipe, Long)]
 

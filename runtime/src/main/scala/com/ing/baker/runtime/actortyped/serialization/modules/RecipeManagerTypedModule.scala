@@ -5,6 +5,7 @@ import com.ing.baker.runtime.actortyped.recipe_manager.{RecipeManagerTyped, prot
 import com.ing.baker.runtime.actor.serialization.{ProtoEventAdapter, ProtoEventAdapterModule}
 import com.ing.baker.runtime.actor.{protobuf => ilp}
 
+// TODO: Temporal until new serialization refactoring is finished
 class RecipeManagerTypedModule extends ProtoEventAdapterModule {
 
   override def toProto(ctx: ProtoEventAdapter): PartialFunction[AnyRef, scalapb.GeneratedMessage] = {
