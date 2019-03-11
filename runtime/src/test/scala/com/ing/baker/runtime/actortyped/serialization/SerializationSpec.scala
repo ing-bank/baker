@@ -11,13 +11,10 @@ import org.scalatest.FunSuiteLike
 import org.scalatest.prop.Checkers
 import com.ing.baker.pbt.RecipePropertiesSpec.recipeGen
 import com.ing.baker.runtime.actortyped.recipe_manager.RecipeManagerTyped.RecipeAdded
-import com.ing.baker.runtime.actortyped.recipe_manager.RecipeManagerSerialization
 
 class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec")) with FunSuiteLike with Checkers {
 
-  println("================== 00")
-  val serializer: BakerProtobufSerializer = SerializationExtension.get(system).serializerByIdentity(102).asInstanceOf[BakerProtobufSerializer]
-  println("================== 01")
+  val serializer: BakerTypedProtobufSerializer = SerializationExtension.get(system).serializerByIdentity(103).asInstanceOf[BakerTypedProtobufSerializer]
 
   val recipeAddedGen: Gen[RecipeAdded] =
     for {
@@ -26,21 +23,11 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
     } yield RecipeAdded(recipe, timestamp)
 
   test("Baker can compile any valid recipe") {
-    println("================== 1")
-    /*
     val prop = forAll(recipeAddedGen) { message =>
       val bytes = serializer.toBinary(message)
-      val deserialized = serializer.fromBinary(bytes, serializer.manifest(RecipeManagerSerialization.recipeAddedManifest))
+      val deserialized = serializer.fromBinary(bytes, serializer.manifest(message))
       message === deserialized
     }
     check(prop, defaultVerbose.withMinSuccessfulTests(100))
-    */
-    val message = recipeAddedGen.sample.get
-    println("================== 2")
-    val bytes = serializer.toBinary(message)
-    println("================== 3")
-    val deserialized = serializer.fromBinary(bytes, serializer.manifest(RecipeManagerSerialization.recipeAddedManifest))
-    println("================== 4")
-    message === deserialized
   }
 }

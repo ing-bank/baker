@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.Await
 
-object RecipeManagerTypedSpec {
+object RecipeManagerSpec {
   val config: Config = ConfigFactory.parseString(
     """
       |akka.persistence.journal.plugin = "inmemory-journal"
@@ -22,11 +22,11 @@ object RecipeManagerTypedSpec {
     """.stripMargin)
 }
 
-class RecipeManagerTypedSpec  extends BakerRuntimeTestBase {
+class RecipeManagerSpec  extends BakerRuntimeTestBase {
 
   override def actorSystemName = "RecipeManagerSpec"
 
-  val log = LoggerFactory.getLogger(classOf[RecipeManagerTypedSpec])
+  val log = LoggerFactory.getLogger(classOf[RecipeManagerSpec])
 
   "The RecipeManagerSpec" should {
     "Add a recipe to the list when a AddRecipe message is received" in {

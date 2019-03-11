@@ -6,6 +6,7 @@ import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior, ReplyEffec
 import akka.persistence.typed.{ExpectingReply, PersistenceId}
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.actor.serialization.BakerProtoMessage
+import com.ing.baker.runtime.actortyped.serialization.BakerSerializable
 import com.ing.baker.runtime.core.events.{RecipeAdded => CoreRecipeAdded}
 
 object RecipeManagerTyped {
@@ -36,7 +37,7 @@ object RecipeManagerTyped {
   case class RecipeInformation(compiledRecipe: CompiledRecipe, timestamp: Long) extends BakerProtoMessage
 
   /** Only event */
-  case class RecipeAdded(compiledRecipe: CompiledRecipe, timeStamp: Long)
+  case class RecipeAdded(compiledRecipe: CompiledRecipe, timeStamp: Long) extends BakerSerializable
 
   type Recipes = Map[String, (CompiledRecipe, Long)]
 
