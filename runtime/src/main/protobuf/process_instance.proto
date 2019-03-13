@@ -139,8 +139,9 @@ message TransitionFiredMessage {
     optional string correlationId = 3;
     repeated MarkingData consumed = 4;
     repeated MarkingData produced = 5;
-    repeated int64 newJobsIds = 6;
-    optional SerializedData output = 7;
+    optional InstanceState state = 6;
+    repeated int64 newJobsIds = 7;
+    optional SerializedData output = 8;
 }
 
 message TransitionFailedMessage {
