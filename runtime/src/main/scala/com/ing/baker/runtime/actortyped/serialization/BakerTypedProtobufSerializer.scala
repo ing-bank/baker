@@ -32,7 +32,7 @@ class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends Serializ
     )
   }
 
-  private val actorRefResolver =
+  private lazy val actorRefResolver =
     ActorRefResolver(system.toTyped)
 
   override def identifier: Int =
