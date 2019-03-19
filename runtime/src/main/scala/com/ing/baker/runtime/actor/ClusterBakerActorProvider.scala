@@ -62,6 +62,7 @@ class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption
   private val nrOfShards = config.as[Int]("baker.actor.cluster.nr-of-shards")
   private val retentionCheckInterval = config.as[FiniteDuration]("baker.actor.retention-check-interval")
   private val actorIdleTimeout: Option[FiniteDuration] = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout")
+  private val ingredientsFilter: List[String] = config.as[List[String]]("baker.filtered-ingredient-values")
 
   private val journalInitializeTimeout = config.as[FiniteDuration]("baker.journal-initialize-timeout")
 
@@ -90,10 +91,9 @@ class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption
 
 
   override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {
-
     ClusterSharding(actorSystem).start(
       typeName = "ProcessIndexActor",
-      entityProps = ProcessIndex.props(actorIdleTimeout, Some(retentionCheckInterval), configuredEncryption, interactionManager, recipeManager),
+      entityProps = ProcessIndex.props(actorIdleTimeout, Some(retentionCheckInterval), configuredEncryption, interactionManager, recipeManager, ingredientsFilter),
       settings = ClusterShardingSettings.create(actorSystem),
       extractEntityId = ClusterBakerActorProvider.entityIdExtractor(nrOfShards),
       extractShardId = ClusterBakerActorProvider.shardIdExtractor(nrOfShards)

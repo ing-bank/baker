@@ -14,6 +14,7 @@ import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.{
 import com.ing.baker.runtime.actor.process_instance.internal._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.actor.serialization.Encryption
+import com.ing.baker.runtime.core.ProcessState
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -24,7 +25,8 @@ object ProcessInstance {
 
   case class Settings(executionContext: ExecutionContext,
                       idleTTL: Option[FiniteDuration],
-                      encryption: Encryption)
+                      encryption: Encryption,
+                      ingredientsFilter: Seq[String])
 
   private case class IdleStop(seq: Long) extends NoSerializationVerificationNeeded
 
@@ -72,8 +74,13 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
   private implicit def marshallMarking(marking: Marking[Any]): Marking[Id] = marking.asInstanceOf[Marking[P]].marshall
 
-  private implicit def fromExecutionInstance(instance: internal.Instance[P, T, S]): protocol.InstanceState =
-    protocol.InstanceState(instance.sequenceNr, instance.marking.marshall, instance.state, instance.jobs.mapValues(fromExecutionJob(_)).map(identity))
+  private implicit def fromExecutionInstance(instance: internal.Instance[P, T, S]): protocol.InstanceState = {
+    protocol.InstanceState(
+      instance.sequenceNr,
+      instance.marking.marshall,
+      instance.state,
+      instance.jobs.mapValues(fromExecutionJob(_)).map(identity))
+  }
 
   private implicit def fromExecutionJob(job: internal.Job[P, T, S]): protocol.JobState =
     protocol.JobState(job.id, job.transition.getId, job.consume.marshall, job.input, job.failure.map(fromExecutionExceptionState))
@@ -144,8 +151,16 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
       log.idleStop(processId, settings.idleTTL.getOrElse(Duration.Zero))
       context.stop(context.self)
 
-    case GetState ⇒
-      sender() ! fromExecutionInstance(instance)
+    case GetState ⇒ {
+      val instanceState: InstanceState = fromExecutionInstance(instance)
+      instanceState.state match {
+        case state: ProcessState =>
+          sender() ! instanceState.copy(state = state.filterIngredients(settings.ingredientsFilter))
+        case _ =>
+          sender() ! instanceState
+      }
+    }
+
 
     case event @ TransitionFiredEvent(jobId, transitionId, correlationId, timeStarted, timeCompleted, consumed, produced, output) ⇒
 

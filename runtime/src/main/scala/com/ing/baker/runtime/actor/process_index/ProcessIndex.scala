@@ -35,8 +35,9 @@ object ProcessIndex {
             retentionCheckInterval: Option[FiniteDuration],
             configuredEncryption: Encryption,
             interactionManager: InteractionManager,
-            recipeManager: ActorRef)(implicit materializer: Materializer) =
-    Props(new ProcessIndex(processIdleTimeout, retentionCheckInterval, configuredEncryption, interactionManager, recipeManager))
+            recipeManager: ActorRef,
+            ingredientsFilter: Seq[String])(implicit materializer: Materializer) =
+    Props(new ProcessIndex(processIdleTimeout, retentionCheckInterval, configuredEncryption, interactionManager, recipeManager, ingredientsFilter))
 
   sealed trait ProcessStatus
 
@@ -75,7 +76,8 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
                    retentionCheckInterval: Option[FiniteDuration],
                    configuredEncryption: Encryption,
                    interactionManager: InteractionManager,
-                   recipeManager: ActorRef)(implicit materializer: Materializer) extends PersistentActor {
+                   recipeManager: ActorRef,
+                   ingredientsFilter: Seq[String])(implicit materializer: Materializer) extends PersistentActor {
 
   val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
@@ -131,7 +133,8 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
         ProcessInstance.Settings(
           executionContext = bakerExecutionContext,
           encryption = configuredEncryption,
-          idleTTL = processIdleTimeout))
+          idleTTL = processIdleTimeout,
+          ingredientsFilter = ingredientsFilter))
 
     val processActor = context.actorOf(props = processActorProps, name = processId)
 

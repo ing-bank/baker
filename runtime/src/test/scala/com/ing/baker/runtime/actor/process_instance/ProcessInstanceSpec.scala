@@ -51,7 +51,8 @@ object ProcessInstanceSpec {
   val instanceSettings = Settings(
     executionContext = testExecutionContext,
     idleTTL = None,
-    encryption = NoEncryption
+    encryption = NoEncryption,
+    Seq.empty
   )
 
   def processInstanceProps[S, E](

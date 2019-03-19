@@ -147,7 +147,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       // inform the index to check for processes to be cleaned up
       actorIndex ! CheckForProcessesToBeDeleted
 
-      processProbe.expectMsg(Stop(delete = true))
+      processProbe.expectMsg(15 seconds, Stop(delete = true))
     }
 
     "Forward the FireTransition command when a valid HandleEvent is sent" in {
@@ -322,7 +322,8 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       retentionCheckInterval = None,
       configuredEncryption = Encryption.NoEncryption,
       interactionManager = new InteractionManager(),
-      recipeManager = recipeManager) {
+      recipeManager = recipeManager,
+      Seq.empty) {
       override def createProcessActor(id: String, compiledRecipe: CompiledRecipe) = petriNetActorRef
     })
 
