@@ -238,14 +238,12 @@ class Baker()(implicit val actorSystem: ActorSystem) {
     val runtimeEvent: RuntimeEvent = extractEvent(event)
 
     // sends the ProcessEvent command to the actor and retrieves a Source (stream) of responses.
-    val response: Future[SourceRef[Any]] = processIndexActor
+    val futureSource: Future[SourceRef[Any]] = processIndexActor
       .ask(ProcessEvent(processId, runtimeEvent, correlationId, true, timeout))(timeout)
       .mapTo[ProcessEventResponse]
       .map(_.sourceRef)
 
-    val source = Await.result(response, timeout)
-
-    new BakerResponse(processId, source)
+    new BakerResponse(processId, futureSource.map(_.source))
   }
 
   /**
