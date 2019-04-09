@@ -26,6 +26,7 @@ object BakerProtobufSerializer {
     Entry("com.ing.baker.runtime.core.RuntimeEvent", classOf[core.RuntimeEvent], protobuf.RuntimeEvent),
     Entry("core.ProcessState", classOf[core.ProcessState], protobuf.ProcessState),
     Entry("com.ing.baker.runtime.core.ProcessState", classOf[core.ProcessState], protobuf.ProcessState),
+    Entry("com.ing.baker.runtime.core.BakerResponseEventProtocol", classOf[core.BakerResponseEventProtocol], core.protobuf.BakerResponseEventProtocol),
 
     Entry("il.CompiledRecipe", classOf[il.CompiledRecipe], protobuf.CompiledRecipe),
     Entry("com.ing.baker.il.CompiledRecipe", classOf[il.CompiledRecipe], protobuf.CompiledRecipe),

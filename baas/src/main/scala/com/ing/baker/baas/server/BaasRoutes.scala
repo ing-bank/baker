@@ -1,24 +1,46 @@
 package com.ing.baker.baas.server
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.HttpEntity.CloseDelimited
+import akka.http.scaladsl.model.{ContentTypes, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
 import com.ing.baker.baas.interaction.client.RemoteInteractionClient
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
-import com.ing.baker.runtime.core.{Baker, ProcessState}
+import com.ing.baker.runtime.core.{Baker, BakerResponseEventProtocol, ProcessState, RuntimeEvent}
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
 class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with ClientUtils {
 
   implicit val timeout: FiniteDuration = 30 seconds
+  implicit val ec: ExecutionContext = actorSystem.dispatcher
 
   val defaultEventConfirm = "receive"
 
   def apply(baker: Baker): Route = {
 
+    def streamBakerResponse(requestId: String, event: RuntimeEvent): Future[HttpResponse] =
+      baker.processEventStream(requestId, event).map { source0 =>
+        HttpResponse(
+          status = StatusCodes.OK,
+          entity = CloseDelimited(
+            contentType = ContentTypes.`application/octet-stream`,
+            data = source0
+              .via(serializeFlow[BakerResponseEventProtocol])
+              .map(_ ++ BakerResponseEventProtocol.SerializationDelimiter)
+          )
+        )
+      }
+
     def instanceRoutes(requestId: String) = {
-      path("event") {
+      pathPrefix("event") {
+        path("stream") {
+          post {
+            entity(as[ProcessEventRequest]) { req => complete(streamBakerResponse(requestId, req.event)) }
+          }
+        } ~
         post {
           entity(as[ProcessEventRequest]) { request =>
             val sensoryEventStatus = baker.processEvent(requestId, request.event)
@@ -38,7 +60,7 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
             complete(StateResponse(events))
           }
         } ~
-        path( "bake") {
+        path("bake") {
           post {
             entity(as[BakeRequest]) { request =>
               val processState = baker.bake(request.recipeId, requestId)
@@ -100,9 +122,7 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
                 s"Interaction: ${interactionImplementation.name} added"))
             }
           }
-        } ~ pathPrefix(Segment) {
-        instanceRoutes _
-      }
+        } ~ pathPrefix(Segment)(instanceRoutes)
     }
     baasRoutes
   }

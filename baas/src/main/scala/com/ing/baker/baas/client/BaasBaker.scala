@@ -2,17 +2,17 @@ package com.ing.baker.baas.client
 
 import akka.NotUsed
 import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.HttpMethods._
 import akka.http.scaladsl.model.{RequestEntity, _}
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import akka.stream.scaladsl.{Framing, Source}
 import com.ing.baker.baas.interaction.server.RemoteInteractionLauncher
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.core.events.BakerEvent
-import com.ing.baker.runtime.core.{Baker, BakerResponse, EventListener, InteractionImplementation, ProcessMetadata, ProcessState, RecipeInformation, RuntimeEvent, SensoryEventStatus}
+import com.ing.baker.runtime.core.{Baker, BakerResponse, BakerResponseEventProtocol, EventListener, InteractionImplementation, ProcessMetadata, ProcessState, RecipeInformation, RuntimeEvent, SensoryEventStatus}
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
@@ -170,8 +170,27 @@ class BaasBaker(config: Config,
     * If nothing is done with the BakerResponse there is NO guarantee that the event is received by the process instance.
     */
   override def processEventAsync(processId: String, event: Any, correlationId: Option[String], timeout: FiniteDuration): BakerResponse = {
-    //TODO implement
-    null
+    val source = Await.result(processEventStream(processId, event, correlationId, timeout), timeout)
+    new BakerResponse(processId, source)
+  }
+
+  /**
+    * Creates a stream of specific events.
+    */
+  override def processEventStream(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): Future[Source[BakerResponseEventProtocol, NotUsed]] = {
+    val runtimeEvent = Baker.extractEvent(event)
+    Marshal(ProcessEventRequest(runtimeEvent)).to[RequestEntity]
+      .flatMap { body =>
+        Http().singleRequest(HttpRequest(
+          uri = s"$baseUri/$processId/event/stream",
+          method = POST,
+          entity = body))
+      }.map { _.entity
+        .dataBytes
+        .via(Framing.delimiter(BakerResponseEventProtocol.SerializationDelimiter, maximumFrameLength = Int.MaxValue))
+        .via(deserializeFlow[BakerResponseEventProtocol])
+        .mapMaterializedValue(_ => NotUsed)
+      }
   }
 
   /**
