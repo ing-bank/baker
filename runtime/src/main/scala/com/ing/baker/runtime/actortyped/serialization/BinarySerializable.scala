@@ -6,7 +6,7 @@ trait BinarySerializable {
 
   type Type <: AnyRef
 
-  val tag: Class[Type]
+  val tag: Class[_ <: Type]
 
   def manifest: String
 

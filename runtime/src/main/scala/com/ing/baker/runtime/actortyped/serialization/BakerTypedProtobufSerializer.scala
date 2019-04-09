@@ -2,13 +2,20 @@ package com.ing.baker.runtime.actortyped.serialization
 
 import akka.actor.ExtendedActorSystem
 import akka.serialization.{Serialization, SerializationExtension, SerializerWithStringManifest}
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol
 import org.slf4j.LoggerFactory
 import com.ing.baker.runtime.actortyped.serialization.protomappings.AnyRefMapping.SerializersProvider
 
 object BakerTypedProtobufSerializer {
 
   private def entries(implicit ev0: SerializersProvider): List[BinarySerializable] = List(
-    //new RecipeManagerSerialization.RecipeAddedSerialization
+    RecipeManagerProtocol.addRecipeSerializer,
+    RecipeManagerProtocol.addRecipeResponseSerializer,
+    RecipeManagerProtocol.getRecipeSerializer,
+    RecipeManagerProtocol.recipeFoundSerializer,
+    RecipeManagerProtocol.noRecipeFoundSerializer,
+    RecipeManagerProtocol.getAllRecipesSerializer,
+    RecipeManagerProtocol.allRecipesSerializer
   )
 
   private val log = LoggerFactory.getLogger(classOf[BakerTypedProtobufSerializer])
@@ -39,14 +46,13 @@ class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends Serializ
       .getOrElse(throw new IllegalStateException(s"Unsupported object of type: ${o.getClass}"))
   }
 
-  override def toBinary(o: AnyRef): Array[Byte] = {
+  override def toBinary(o: AnyRef): Array[Byte] =
     BakerTypedProtobufSerializer.entries
       .find(_.isInstance(o))
       .map(_.unsafeToBinary(o))
       .getOrElse(throw new IllegalStateException(s"Unsupported object of type: ${o.getClass}"))
-  }
 
-  override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = {
+  override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef =
     BakerTypedProtobufSerializer.entries
       .find(_.manifest == manifest)
       .map(_.fromBinaryAnyRef(bytes))
@@ -55,6 +61,5 @@ class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends Serializ
         { e => BakerTypedProtobufSerializer.log.error(s"Failed to deserialize bytes with manifest $manifest", e); throw e },
         identity
       )
-  }
 }
 
