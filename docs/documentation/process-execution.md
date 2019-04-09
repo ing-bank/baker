@@ -2,7 +2,7 @@
 
 ## Recap
 
-On the [runtime](baker-runtime.md) page we discussed how you could could initialize Baker and add your [recipe](dictionary.md#recipe) to it.
+On the [runtime](baker-runtime.md) page we discussed how you could initialize Baker and add your [recipe](dictionary.md#recipe) to it.
 
 Lets summarize what we have done so far.
 
@@ -186,7 +186,7 @@ String dotRepresentation = baker.getVisualState(processId);
 
 !!! hint "Did you know?!"
     You can ask baker for a visual representation of a certain process.
-    That way you can see which Events where provided and which Interaction are ran.
+    That way you can see which Events were provided and which Interaction were run.
     [See the visualization page how to create a visual graph.](recipe-visualization.md)
 
 ![](/images/webshop-state-1.svg)

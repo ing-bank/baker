@@ -7,13 +7,11 @@ import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.recipe.javadsl.InteractionDescriptor;
 import com.ing.baker.recipe.javadsl.Recipe;
-import com.ing.baker.runtime.core.Baker;
-import com.ing.baker.runtime.core.BakerException;
-import com.ing.baker.runtime.core.EventListener;
-import com.ing.baker.runtime.core.RecipeInformation;
+import com.ing.baker.runtime.core.*;
 import com.ing.baker.runtime.core.events.ProcessCreated;
 import com.ing.baker.runtime.core.events.Subscribe;
 import com.ing.baker.runtime.core.events.AnnotatedEventSubscriber;
+import com.ing.baker.runtime.java_api.EventList;
 import com.ing.baker.runtime.java_api.JBaker;
 import com.ing.baker.types.Converters;
 import com.typesafe.config.Config;
@@ -24,9 +22,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import scala.Option;
+import scala.Tuple2;
 import scala.collection.immutable.List$;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -154,11 +154,22 @@ public class JBakerTest {
 
         // -- get events
 
-        jBaker.getEvents(processStringId);
-        verify(mockBaker).events(eq(processStringId), any(FiniteDuration.class));
+        Long timestamp = 40l;
+        RuntimeEvent event = new RuntimeEvent("event", scala.collection.JavaConverters.asScalaBuffer(new java.util.ArrayList()).toList());
+        Tuple2<RuntimeEvent, Object> withTimestamp = new Tuple2<>(event, timestamp);
+        ArrayList<Tuple2<RuntimeEvent, Object>> listWithTimestamps = new ArrayList<Tuple2<RuntimeEvent, Object>>();
+        listWithTimestamps.add(withTimestamp);
+        scala.collection.Seq<Tuple2<RuntimeEvent, Object>> list = scala.collection.JavaConverters.asScalaBuffer(listWithTimestamps).toList();
 
-        jBaker.getEvents(processUUID);
-        verify(mockBaker).events(eq(processUUID.toString()), any(FiniteDuration.class));
+        when(mockBaker.eventsWithTimestamp(eq(processStringId), any(FiniteDuration.class))).thenReturn(list);
+        jBaker.getEvents(processStringId);
+        verify(mockBaker).eventsWithTimestamp(eq(processStringId), any(FiniteDuration.class));
+
+        when(mockBaker.eventsWithTimestamp(eq(processUUID.toString()), any(FiniteDuration.class))).thenReturn(list);
+        EventList eventList = jBaker.getEvents(processUUID);
+        verify(mockBaker).eventsWithTimestamp(eq(processUUID.toString()), any(FiniteDuration.class));
+
+        assert(eventList.getEventNameListWithTimestamp().get(0).getTimestamp() == timestamp);
 
         // -- get event names
 

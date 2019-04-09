@@ -40,6 +40,12 @@ class ScalaModulesSpec extends WordSpecLike with Matchers with Checkers {
       readJavaType[java.util.Set[String]] shouldBe ListType(types.CharArray)
     }
 
+    "correctly parse map types" in {
+
+      readJavaType[Map[String, Int]] shouldBe MapType(types.Int32)
+      readJavaType[java.util.Map[String, Int]] shouldBe MapType(types.Int32)
+    }
+
     "be able to autobox null values to scala Options" in {
 
       toJava[Option[Int]](NullValue) shouldBe None

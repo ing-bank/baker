@@ -470,7 +470,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the given deadline")
   def getEvents(@Nonnull processId: String, @Nonnull timeout: java.time.Duration): EventList =
-    new EventList(baker.events(processId, timeout.toScala))
+    new EventList(baker.eventsWithTimestamp(processId, timeout.toScala))
 
   /**
     * Returns all events that have occurred for a given process.
@@ -503,7 +503,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[ProcessDeletedException]("When no process is deleted")
   @throws[TimeoutException]("When the process does not respond within the default deadline")
   def getEvents(@Nonnull processId: String): EventList =
-    new EventList(baker.events(processId))
+    new EventList(baker.eventsWithTimestamp(processId))
 
   /**
     * Returns all events that have occurred for a given process.
