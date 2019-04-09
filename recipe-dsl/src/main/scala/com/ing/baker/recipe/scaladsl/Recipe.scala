@@ -43,4 +43,6 @@ case class Recipe private(override val name: String,
   def withEventReceivePeriod(duration: FiniteDuration): Recipe = copy(eventReceivePeriod = Some(duration))
 
   def withRetentionPeriod(duration: FiniteDuration): Recipe = copy(retentionPeriod = Some(duration))
+
+  def withDefaultFailureStrategy(defaultFailureStrategy: InteractionFailureStrategy) : Recipe = copy(defaultFailureStrategy = defaultFailureStrategy)
 }

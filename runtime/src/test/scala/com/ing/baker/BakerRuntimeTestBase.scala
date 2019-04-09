@@ -9,7 +9,7 @@ import com.ing.baker.recipe.TestRecipe.{fireTwoEventsInteraction, _}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.{CaseClassIngredient, common}
-import com.ing.baker.runtime.core.{Baker, RuntimeEvent}
+import com.ing.baker.runtime.core.{AkkaBaker, Baker, RuntimeEvent}
 import com.ing.baker.types.{Converters, Value}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers._
@@ -210,7 +210,7 @@ trait BakerRuntimeTestBase
   protected def setupBakerWithRecipe(recipe: common.Recipe, implementations: Seq[AnyRef])
                                     (implicit actorSystem: ActorSystem): (Baker, String) = {
 
-    val baker = new Baker()(actorSystem)
+    val baker = new AkkaBaker()(actorSystem)
     baker.addImplementations(implementations)
     val recipeId = baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
     (baker, recipeId)
@@ -218,7 +218,7 @@ trait BakerRuntimeTestBase
 
   protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Baker = {
     setupMockResponse()
-    val baker = new Baker()(actorSystem)
+    val baker = new AkkaBaker()(actorSystem)
     baker.addImplementations(mockImplementations)
     baker
   }

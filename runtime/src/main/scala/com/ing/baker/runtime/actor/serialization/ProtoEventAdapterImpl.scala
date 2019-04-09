@@ -19,7 +19,8 @@ object ProtoEventAdapterImpl {
     new ProcessInstanceModule,
     new RecipeManagerModule,
     new RuntimeModule,
-    new TypesModule
+    new TypesModule,
+    new BakerResponseEventProtocolModule
   )
 }
 

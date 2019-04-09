@@ -145,7 +145,8 @@ public class Webshop {
         when(manufactureGoodsMock.apply(any())).thenReturn(new ManufactureGoods.GoodsManufactured("goods"));
         when(validateOrderMock.apply(any(), any())).thenReturn(new ValidateOrder.Valid());
 
-        JBaker baker = new JBaker(ActorSystem.apply("webshop", config));
+//        JBaker baker = new JBaker(ActorSystem.apply("webshop", config));
+        JBaker baker = new JBaker(config);
 
         baker.addImplementations(ImmutableList.of(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock));
 

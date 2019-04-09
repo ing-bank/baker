@@ -1,4 +1,4 @@
-package com.ing.baker.baas.http
+package com.ing.baker.baas.server
 
 import java.util.concurrent.atomic.AtomicReference
 
@@ -11,11 +11,11 @@ import com.ing.baker.runtime.core.Baker
 
 import scala.concurrent.{Future, Promise}
 
-class BAASAPI(baker: Baker,
-              host: String,
-              port: Int)(implicit actorSystem: ActorSystem) extends Directives {
+class BaasServer(baker: Baker,
+                 host: String,
+                 port: Int)(implicit actorSystem: ActorSystem) extends Directives {
 
-  private implicit val materializer = ActorMaterializer()
+  private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   import actorSystem.dispatcher
 
@@ -25,7 +25,7 @@ class BAASAPI(baker: Baker,
     val serverBindingPromise = Promise[Http.ServerBinding]()
     if (bindingFuture.compareAndSet(null, serverBindingPromise.future)) {
       val routes = RouteResult.route2HandlerFlow(
-        APIRoutes(baker))
+        new BaasRoutes(actorSystem).apply(baker))
 
       val serverFutureBinding = Http().bindAndHandle(routes, host, port)
 
