@@ -23,11 +23,13 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
     } yield RecipeAdded(recipe, timestamp)
 
   test("Baker can compile any valid recipe") {
+    val t1 = System.currentTimeMillis()
+
     val prop = forAll(recipeAddedGen) { message =>
       val bytes = serializer.toBinary(message)
       val deserialized = serializer.fromBinary(bytes, serializer.manifest(message))
       message === deserialized
     }
-    check(prop, defaultVerbose.withMinSuccessfulTests(100))
+    check(prop, defaultVerbose.withMinSuccessfulTests(10000))
   }
 }
