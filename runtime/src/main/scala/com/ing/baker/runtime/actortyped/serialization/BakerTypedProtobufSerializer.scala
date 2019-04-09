@@ -1,17 +1,14 @@
 package com.ing.baker.runtime.actortyped.serialization
 
-import akka.actor.typed.scaladsl.adapter._
 import akka.actor.ExtendedActorSystem
-import akka.actor.typed.ActorRefResolver
 import akka.serialization.{Serialization, SerializationExtension, SerializerWithStringManifest}
-import com.ing.baker.runtime.actortyped.recipe_manager.RecipeManagerSerialization
 import org.slf4j.LoggerFactory
 import com.ing.baker.runtime.actortyped.serialization.protomappings.AnyRefMapping.SerializersProvider
 
 object BakerTypedProtobufSerializer {
 
   private def entries(implicit ev0: SerializersProvider): List[BinarySerializable] = List(
-    new RecipeManagerSerialization.RecipeAddedSerialization
+    //new RecipeManagerSerialization.RecipeAddedSerialization
   )
 
   private val log = LoggerFactory.getLogger(classOf[BakerTypedProtobufSerializer])
@@ -31,9 +28,6 @@ class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends Serializ
       serializerByIdentity = serialization.serializerByIdentity.get
     )
   }
-
-  private lazy val actorRefResolver =
-    ActorRefResolver(system.toTyped)
 
   override def identifier: Int =
     BakerTypedProtobufSerializer.identifier
@@ -55,7 +49,7 @@ class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends Serializ
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = {
     BakerTypedProtobufSerializer.entries
       .find(_.manifest == manifest)
-      .map(_.fromBinaryAnyRef(bytes, actorRefResolver))
+      .map(_.fromBinaryAnyRef(bytes))
       .getOrElse(throw new IllegalStateException(s"Unsupported object with manifest $manifest"))
       .fold(
         { e => BakerTypedProtobufSerializer.log.error(s"Failed to deserialize bytes with manifest $manifest", e); throw e },

@@ -1,7 +1,5 @@
 package com.ing.baker.runtime.actortyped.serialization
 
-import akka.actor.typed.ActorRefResolver
-
 import scala.util.Try
 
 trait BinarySerializable {
@@ -14,7 +12,8 @@ trait BinarySerializable {
 
   def toBinary(a: Type): Array[Byte]
 
-  def fromBinary(binary: Array[Byte], resolver: ActorRefResolver): Try[Type]
+  // The actor resolver is commented for future Akka Typed implementation
+  def fromBinary(binary: Array[Byte]/*, resolver: ActorRefResolver*/): Try[Type]
 
   def isInstance(o: AnyRef): Boolean =
     tag.isInstance(o)
@@ -22,7 +21,8 @@ trait BinarySerializable {
   def unsafeToBinary(a: AnyRef): Array[Byte] =
     toBinary(a.asInstanceOf[Type])
 
-  def fromBinaryAnyRef(binary: Array[Byte], resolver: ActorRefResolver): Try[AnyRef] =
-    fromBinary(binary, resolver)
+  // The actor resolver is commented for future Akka Typed implementation
+  def fromBinaryAnyRef(binary: Array[Byte]/*, resolver: ActorRefResolver*/): Try[AnyRef] =
+    fromBinary(binary)
 
 }

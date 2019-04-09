@@ -3,7 +3,7 @@ import sbt._
 //noinspection TypeAnnotation
 object Dependencies {
 
-  val akkaVersion = "2.5.20"
+  val akkaVersion = "2.5.17"
   val jvmV = "1.8"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
 
@@ -20,20 +20,14 @@ object Dependencies {
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
 
   val akkaActor =                 "com.typesafe.akka"          %% "akka-actor"                         % akkaVersion
-  val akkaActorTyped =            "com.typesafe.akka"          %% "akka-actor-typed"                   % akkaVersion
   val akkaStream =                "com.typesafe.akka"          %% "akka-stream"                        % akkaVersion
-  val akkaStreamTyped =           "com.typesafe.akka"          %% "akka-stream-typed"                  % akkaVersion
   val akkaPersistence =           "com.typesafe.akka"          %% "akka-persistence"                   % akkaVersion
-  val akkaPersistenceTyped =      "com.typesafe.akka"          %% "akka-persistence-typed"             % akkaVersion
   val akkaPersistenceQuery =      "com.typesafe.akka"          %% "akka-persistence-query"             % akkaVersion
   val akkaPersistenceCassandra =  "com.typesafe.akka"          %% "akka-persistence-cassandra"         % "0.54"
   val akkaCluster =               "com.typesafe.akka"          %% "akka-cluster"                       % akkaVersion
-  val akkaClusterTyped =          "com.typesafe.akka"          %% "akka-cluster-typed"                 % akkaVersion
   val akkaClusterSharding =       "com.typesafe.akka"          %% "akka-cluster-sharding"              % akkaVersion
-  val akkaClusterShardingTyped =  "com.typesafe.akka"          %% "akka-cluster-sharding-typed"        % akkaVersion
   val akkaSlf4j =                 "com.typesafe.akka"          %% "akka-slf4j"                         % akkaVersion
   val akkaTestKit =               "com.typesafe.akka"          %% "akka-testkit"                       % akkaVersion
-  val akkaTestKitTyped =          "com.typesafe.akka"          %% "akka-actor-testkit-typed"                 % akkaVersion
   val akkaStreamTestKit =         "com.typesafe.akka"          %% "akka-stream-testkit"                % akkaVersion
   val akkaMultiNodeTestkit =      "com.typesafe.akka"          %% "akka-multi-node-testkit"            % akkaVersion
   val akkaHttp =                  "com.typesafe.akka"          %% "akka-http"                          % "10.0.10"
