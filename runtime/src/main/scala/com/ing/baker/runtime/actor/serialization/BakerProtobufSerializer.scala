@@ -20,21 +20,15 @@ object BakerProtobufSerializer {
   // Hardcoded serializerId for this serializer. This should not conflict with other serializers.
   // Values from 0 to 40 are reserved for Akka internal usage.
   val identifier = 101
-}
 
-class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
-  import BakerProtobufSerializer._
-
-  def getSerializationExtension(): Serialization = SerializationExtension.get(system)
-
-  // TODO remove this lazy modifier, but be aware removing lazy causes the tests to hang.
-  private lazy val protoEventAdapter = new ProtoEventAdapterImpl(getSerializationExtension(), NoEncryption)
-
-  val manifestInfo = Seq(
+  val manifestInfo: Seq[Entry[_]] = Seq(
     Entry("core.RuntimeEvent", classOf[core.RuntimeEvent], protobuf.RuntimeEvent),
+    Entry("com.ing.baker.runtime.core.RuntimeEvent", classOf[core.RuntimeEvent], protobuf.RuntimeEvent),
     Entry("core.ProcessState", classOf[core.ProcessState], protobuf.ProcessState),
+    Entry("com.ing.baker.runtime.core.ProcessState", classOf[core.ProcessState], protobuf.ProcessState),
 
     Entry("il.CompiledRecipe", classOf[il.CompiledRecipe], protobuf.CompiledRecipe),
+    Entry("com.ing.baker.il.CompiledRecipe", classOf[il.CompiledRecipe], protobuf.CompiledRecipe),
 
     Entry("baker.types.Type", classOf[com.ing.baker.types.Type], actor.protobuf.Type),
     Entry("baker.types.Value", classOf[com.ing.baker.types.Value], actor.protobuf.Value),
@@ -95,12 +89,23 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
     Entry("RecipeManagerProtocol.GetAllRecipes", RecipeManagerProtocol.GetAllRecipes.getClass, actor.recipe_manager.protobuf.GetAllRecipes),
     Entry("RecipeManagerProtocol.AllRecipes", classOf[RecipeManagerProtocol.AllRecipes], actor.recipe_manager.protobuf.AllRecipes)
   )
+}
+
+class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
+  import BakerProtobufSerializer._
+
+  def getSerializationExtension(): Serialization = SerializationExtension.get(system)
+
+  // TODO remove this lazy modifier, but be aware removing lazy causes the tests to hang.
+  lazy val protoEventAdapter = new ProtoEventAdapterImpl(getSerializationExtension(), NoEncryption)
+
+  def getManifestInfo(): Seq[Entry[_]] = manifestInfo
 
   override def identifier: Int = BakerProtobufSerializer.identifier
 
   override def manifest(o: AnyRef): String = {
 
-    manifestInfo
+    getManifestInfo()
       .find(_.domainClass.isInstance(o))
       .map(_.manifest)
       .getOrElse(throw new IllegalStateException(s"Unsupported object of type: ${o.getClass}"))
@@ -118,7 +123,7 @@ class BakerProtobufSerializer(system: ExtendedActorSystem) extends SerializerWit
 
   override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef = {
     try {
-      val pbt = manifestInfo
+      val pbt = getManifestInfo()
         .find(_.manifest == manifest)
         .map(_.pbt)
         .getOrElse(throw new IllegalStateException(s"Unknown manifest: $manifest"))

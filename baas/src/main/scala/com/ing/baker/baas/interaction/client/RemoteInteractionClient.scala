@@ -1,29 +1,25 @@
-package com.ing.baker.baas.interaction
+package com.ing.baker.baas.interaction.client
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpRequest
-import akka.stream.ActorMaterializer
-import akka.util.ByteString
-import com.ing.baker.baas.KryoUtil.defaultKryoPool
-import com.ing.baker.baas.ClientUtils._
-import com.ing.baker.baas.interaction.http.ExecuteInteractionHTTPRequest
-import com.ing.baker.il.petrinet.InteractionTransition
+import com.ing.baker.baas.interaction.server.protocol.{ExecuteInteractionHTTPRequest, ExecuteInteractionHTTPResponse}
+import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.runtime.core.{InteractionImplementation, RuntimeEvent}
 import com.ing.baker.types.{Type, Value}
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.duration._
+import scala.concurrent.Await
+import scala.concurrent.duration.{FiniteDuration, _}
 
 //This is the interactionImplementation as running in the BAAS cluster
 //This communicates with a RemoteInteractionImplementationClient that execute the request.
 case class RemoteInteractionClient(override val name: String,
                                    uri: String,
-                                   override val inputTypes: Seq[Type])(implicit val actorSystem: ActorSystem) extends InteractionImplementation {
+                                   override val inputTypes: Seq[Type])(implicit val actorSystem: ActorSystem) extends InteractionImplementation with ClientUtils {
 
-  val log = LoggerFactory.getLogger(classOf[RemoteInteractionClient])
+  override val log = LoggerFactory.getLogger(classOf[RemoteInteractionClient])
 
   implicit val timout: FiniteDuration = 30 seconds
-  implicit val materializer = ActorMaterializer()
 
   /**
     * Executes the interaction.
@@ -42,8 +38,9 @@ case class RemoteInteractionClient(override val name: String,
     val httpRequest = HttpRequest(
         uri = s"$uri/execute",
         method = akka.http.scaladsl.model.HttpMethods.POST,
-        entity = ByteString.fromArray(defaultKryoPool.toBytesWithClass(request)))
-
-    Option(doRequestAndParseResponse[RuntimeEvent](httpRequest))
+        entity = serializer.serialize(request).get)
+    //
+    Await.result(doRequestAndParseResponse[ExecuteInteractionHTTPResponse](httpRequest), 10 seconds)
+      .runtimeEventOptional
   }
 }
