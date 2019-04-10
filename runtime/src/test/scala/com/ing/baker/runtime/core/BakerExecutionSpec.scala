@@ -236,7 +236,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
     }
 
-    //This test is ignored for now since it does not work in with all operating systems
+    // Still broken, cause unknown, might be that we stopped being backwards compatible or data got corrupted
     "backwards compatibility in serialization of case class ingredients" ignore {
 
       import better.files._
@@ -249,8 +249,9 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         * !!! If you want to create a new test case the following flag to true
         */
       val createNewCase: Boolean = false
+      val isWindows: Boolean = System.getProperty("os.name").toLowerCase.contains("windows")
 
-      val journalPath = "src/test/resources/persisted-messages"
+      val journalPath = "src/test/resources/persisted-messages" + (if (isWindows) "-windows" else "")
       val journalDir = File(journalPath)
 
       val testPath = if (createNewCase) journalPath else "target/backwardsCompatibilityOfEvents"
@@ -349,7 +350,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
               .withPredefinedIngredients(("missingJavaOptional", ingredientValue)))
           .withSensoryEvent(initialEvent)
 
-      val baker = new Baker()
+      val baker = new AkkaBaker()
 
       baker.addImplementations(mockImplementations)
 
@@ -1013,7 +1014,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       val system2 = ActorSystem("persistenceTest2", localLevelDBConfig("persistenceTest2"))
       try {
-        val baker2 = new Baker()(system2)
+        val baker2 = new AkkaBaker()(system2)
         baker2.addImplementations(mockImplementations)
         baker2.getIngredients(processId) shouldBe finalState
         baker2.getRecipe(recipeId).compiledRecipe shouldBe compiledRecipe

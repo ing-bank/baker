@@ -3,11 +3,11 @@ package com.ing.baker.runtime.java_api
 import java.util.concurrent.{CompletableFuture, TimeUnit, TimeoutException}
 import java.util.{Collections, UUID}
 
-import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.core._
+import com.ing.baker.runtime.core.{BakerResponse, _}
 import com.ing.baker.runtime.core.events.AnnotatedEventSubscriber
 import com.ing.baker.types.Value
+import com.typesafe.config.Config
 import javax.annotation.Nonnull
 
 import scala.collection.JavaConverters._
@@ -16,13 +16,20 @@ import scala.concurrent.duration._
 
 class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRef]) {
 
-  def this(actorSystem: ActorSystem, implementations: java.lang.Iterable[AnyRef]) = this(new Baker()(actorSystem), implementations)
+  def this(config: Config, implementations: java.lang.Iterable[AnyRef]) =
+    this(BakerProvider.get(config), implementations)
 
-  def this(actorSystem: ActorSystem) = this(actorSystem, Collections.emptyList[AnyRef])
+  def this(config: Config) =
+    this(BakerProvider.get(config), Collections.emptyList[AnyRef])
 
-  def this() = this(ActorSystem("BakerActorSystem"))
+  def this(baker: Baker) =
+    this(baker: Baker, Collections.emptyList[AnyRef])
+
+  def this(implementations: java.lang.Iterable[AnyRef]) =
+    this(BakerProvider.get(), implementations)
 
   addImplementations(implementations)
+
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -405,10 +412,10 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   def getIngredientsAsync(@Nonnull processId: String, @Nonnull timeout: java.time.Duration): CompletableFuture[java.util.Map[String, Value]] =
     FutureConverters.toJava(
       baker
-        .getIngredientsAsync(processId, timeout.toScala)
-        .map(_.asJava
-            .asInstanceOf[java.util.Map[String, Value]])(baker.actorSystem.dispatcher))
+        .getIngredientsAsync(processId, timeout.toScala))
       .toCompletableFuture
+      .thenApply(_.asJava)
+
 
   /**
     * Returns all the ingredients that are accumulated for a given process.
@@ -422,10 +429,9 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   def getIngredientsAsync(@Nonnull processId: String): CompletableFuture[java.util.Map[String, Value]] =
     FutureConverters.toJava(
       baker
-        .getIngredientsAsync(processId)
-        .map(_.asJava
-          .asInstanceOf[java.util.Map[String, Value]])(baker.actorSystem.dispatcher))
+        .getIngredientsAsync(processId))
       .toCompletableFuture
+      .thenApply(_.asJava)
 
 
   /**
@@ -732,6 +738,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("If the process is not found")
   def getProcessStateAsync(@Nonnull processId: String): CompletableFuture[ProcessState] =
     FutureConverters.toJava(baker.getProcessStateAsync(processId)).toCompletableFuture
+
   /**
     * Returns the state of a process instance. This includes the ingredients and names of the events.
     *

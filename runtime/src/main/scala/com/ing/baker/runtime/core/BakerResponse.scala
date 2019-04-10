@@ -7,8 +7,6 @@ import akka.NotUsed
 import akka.stream.javadsl.RunnableGraph
 import akka.stream.scaladsl.{Broadcast, GraphDSL, Sink, Source}
 import akka.stream.{ClosedShape, Materializer}
-import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol
-import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.java_api.EventList
 
 import scala.compat.java8.FutureConverters
@@ -19,24 +17,13 @@ object BakerResponse {
 
   case class CompletedResponse(sensoryEventStatus: SensoryEventStatus, events: Seq[RuntimeEvent])
 
-  private def firstMessage(processId: String, response: Future[Any])(implicit ec: ExecutionContext): Future[SensoryEventStatus] =
-    response.map(translateFirstMessage)
+  private def firstMessage(processId: String, response: Future[BakerResponseEventProtocol])(implicit ec: ExecutionContext): Future[SensoryEventStatus] =
+    response.map(_.toSensoryEventStatus)
 
-  private def translateFirstMessage(msg: Any): SensoryEventStatus = msg match {
-    case _: ProcessInstanceProtocol.TransitionFired => SensoryEventStatus.Received
-    case _: ProcessInstanceProtocol.TransitionNotEnabled => SensoryEventStatus.FiringLimitMet
-    case _: ProcessInstanceProtocol.AlreadyReceived => SensoryEventStatus.AlreadyReceived
-    case ProcessIndexProtocol.NoSuchProcess(processId) => throw new NoSuchProcessException(s"No such process: $processId")
-    case ProcessIndexProtocol.ReceivePeriodExpired(_) => SensoryEventStatus.ReceivePeriodExpired
-    case ProcessIndexProtocol.ProcessDeleted(_) => SensoryEventStatus.ProcessDeleted
-    case ProcessIndexProtocol.InvalidEvent(_, invalidEventMessage) => throw new IllegalArgumentException(invalidEventMessage)
-    case msg@_ => throw new BakerException(s"Unexpected actor response message: $msg")
-  }
-
-  private def allMessages(processId: String, response: Future[Seq[Any]])(implicit ec: ExecutionContext): Future[CompletedResponse] =
+  private def allMessages(processId: String, response: Future[Seq[BakerResponseEventProtocol]])(implicit ec: ExecutionContext): Future[CompletedResponse] =
     response.map { msgs =>
 
-      val sensoryEventStatus = msgs.headOption.map(translateFirstMessage).map {
+      val sensoryEventStatus = msgs.headOption.map(_.toSensoryEventStatus).map {
         case SensoryEventStatus.Received => SensoryEventStatus.Completed // If the first message is success, then it means we have all the events completed
         case other => other
       }
@@ -47,21 +34,23 @@ object BakerResponse {
       CompletedResponse(sensoryEventStatus, events)
     }
 
-  private def translateOtherMessage(msg: Any): Option[RuntimeEvent] = msg match {
-    case fired: ProcessInstanceProtocol.TransitionFired => Option(fired.output.asInstanceOf[RuntimeEvent])
-    case _ => None
+  private def translateOtherMessage(msg: BakerResponseEventProtocol): Option[RuntimeEvent] = msg match {
+    case BakerResponseEventProtocol.InstanceTransitionFired(value) =>
+      Option(value.output.asInstanceOf[RuntimeEvent])
+    case _ =>
+      None
   }
 
-  private def createFlow(processId: String, futureSource: Future[Source[Any, NotUsed]])(implicit materializer: Materializer, ec: ExecutionContext):
-                                                              Future[(Future[SensoryEventStatus], Future[CompletedResponse])] = {
+  private def createFlow(processId: String, futureSource: Future[Source[BakerResponseEventProtocol, NotUsed]])(implicit materializer: Materializer, ec: ExecutionContext):
+   Future[(Future[SensoryEventStatus], Future[CompletedResponse])] = {
 
-    def graph(source: Source[Any, NotUsed]) =
-      RunnableGraph.fromGraph(GraphDSL.create(Sink.head[Any], Sink.seq[Any], source)((s1, s2, _) => (s1, s2)) {
+    def graph(source: Source[BakerResponseEventProtocol, NotUsed]) =
+      RunnableGraph.fromGraph(GraphDSL.create(Sink.head[BakerResponseEventProtocol], Sink.seq[BakerResponseEventProtocol], source)((s1, s2, _) => (s1, s2)) {
         implicit b =>
           (head, last, source0) => {
             import GraphDSL.Implicits._
 
-            val bcast = b.add(Broadcast[Any](2))
+            val bcast = b.add(Broadcast[BakerResponseEventProtocol](2))
             source0 ~> bcast.in
             bcast.out(0) ~> head.in
             bcast.out(1) ~> last.in
@@ -76,7 +65,7 @@ object BakerResponse {
   }
 }
 
-class BakerResponse(processId: String, futureSource: Future[Source[Any, NotUsed]])(implicit materializer: Materializer, ec: ExecutionContext) {
+class BakerResponse(processId: String, futureSource: Future[Source[BakerResponseEventProtocol, NotUsed]])(implicit materializer: Materializer, ec: ExecutionContext) {
 
   //val (receivedFuture, completedFuture) = BakerResponse.createFlow(processId, futureSource)
   private val futureEvents = BakerResponse.createFlow(processId, futureSource)
