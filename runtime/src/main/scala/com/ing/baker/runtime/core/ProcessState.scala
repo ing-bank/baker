@@ -1,8 +1,16 @@
 package com.ing.baker.runtime.core
 
 import com.ing.baker.types.{PrimitiveValue, Value}
+import cats.instances.list._
+import cats.instances.try_._
+import cats.syntax.traverse._
+import com.ing.baker.runtime.actortyped.serialization.BinarySerializable
+import com.ing.baker.types.Value
+import com.ing.baker.runtime.actor.protobuf
+import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping.{fromProto, toProto, versioned}
 
 import scala.collection.JavaConverters._
+import scala.util.Try
 
 /**
   * Holds the 'state' of a process instance.
@@ -46,4 +54,37 @@ case class ProcessState(processId: String,
           ingredient
       ), eventNames)
 
+}
+
+object ProcessState {
+
+  def serializer: BinarySerializable =
+    new BinarySerializable {
+
+      type Type = ProcessState
+
+      val tag: Class[ProcessState] = classOf[ProcessState]
+
+      def manifest: String = "core.ProcessState"
+
+      def toBinary(a: ProcessState): Array[Byte] = {
+        val protoIngredients = a.ingredients.toSeq.map { case (name, value) =>
+          protobuf.Ingredient(Some(name), None, Some(toProto(value)))
+        }
+        protobuf.ProcessState(Some(a.processId), protoIngredients, a.eventNames).toByteArray
+      }
+
+      def fromBinary(binary: Array[Byte]): Try[ProcessState] =
+        for {
+          message <- Try(protobuf.ProcessState.parseFrom(binary))
+          processId <- versioned(message.processId, "processId")
+          ingredients <- message.ingredients.toList.traverse[Try, (String, Value)] { i =>
+            for {
+              name <- versioned(i.name, "name")
+              protoValue <- versioned(i.value, "value")
+              value <- fromProto(protoValue)
+            } yield (name, value)
+          }
+        } yield ProcessState(processId, ingredients.toMap, message.eventNames.toList)
+    }
 }

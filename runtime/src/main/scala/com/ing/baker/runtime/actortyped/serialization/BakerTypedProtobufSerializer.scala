@@ -2,20 +2,24 @@ package com.ing.baker.runtime.actortyped.serialization
 
 import akka.actor.ExtendedActorSystem
 import akka.serialization.{Serialization, SerializationExtension, SerializerWithStringManifest}
-import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerSerialization
 import org.slf4j.LoggerFactory
 import com.ing.baker.runtime.actortyped.serialization.protomappings.AnyRefMapping.SerializersProvider
+import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 
 object BakerTypedProtobufSerializer {
 
   private def entries(implicit ev0: SerializersProvider): List[BinarySerializable] = List(
-    RecipeManagerProtocol.addRecipeSerializer,
-    RecipeManagerProtocol.addRecipeResponseSerializer,
-    RecipeManagerProtocol.getRecipeSerializer,
-    RecipeManagerProtocol.recipeFoundSerializer,
-    RecipeManagerProtocol.noRecipeFoundSerializer,
-    RecipeManagerProtocol.getAllRecipesSerializer,
-    RecipeManagerProtocol.allRecipesSerializer
+    RuntimeEvent.serializer,
+    ProcessState.serializer,
+    RecipeManagerSerialization.addRecipeSerializer,
+    RecipeManagerSerialization.addRecipeResponseSerializer,
+    RecipeManagerSerialization.getRecipeSerializer,
+    RecipeManagerSerialization.recipeFoundSerializer,
+    RecipeManagerSerialization.noRecipeFoundSerializer,
+    RecipeManagerSerialization.getAllRecipesSerializer,
+    RecipeManagerSerialization.allRecipesSerializer,
+    RecipeManagerSerialization.recipeAddedSerializer
   )
 
   private val log = LoggerFactory.getLogger(classOf[BakerTypedProtobufSerializer])

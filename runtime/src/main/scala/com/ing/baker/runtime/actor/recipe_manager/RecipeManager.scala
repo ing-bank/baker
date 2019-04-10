@@ -5,7 +5,7 @@ import akka.persistence.PersistentActor
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.actor.serialization.BakerProtoMessage
+import com.ing.baker.runtime.actortyped.serialization.BakerSerializable
 
 import scala.collection.mutable
 
@@ -15,7 +15,7 @@ object RecipeManager {
 
   //Events
   //When a recipe is added
-  case class RecipeAdded(compiledRecipe: CompiledRecipe, timeStamp: Long) extends BakerProtoMessage
+  case class RecipeAdded(compiledRecipe: CompiledRecipe, timeStamp: Long) extends BakerSerializable
 }
 
 class RecipeManager extends PersistentActor with ActorLogging {
