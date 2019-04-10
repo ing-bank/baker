@@ -3,6 +3,7 @@ package com.ing.baker.runtime.actortyped.serialization
 import akka.actor.ActorSystem
 import akka.serialization.SerializationExtension
 import akka.testkit.TestKit
+import com.ing.baker.runtime.actor.process_index.{ProcessIndexProtocol, ProcessIndexProtocolGen}
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Test.Parameters.defaultVerbose
 import org.scalacheck._
@@ -34,6 +35,18 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
 
   checkFor("core.ProcessState", ProcessStateGen.gen)
 
+  checkFor("ProcessIndex.GetShardIndex", ProcessIndexProtocolGen.getShardIndex)
+
+  checkFor("ProcessIndex.ActorCreated", ProcessIndexProtocolGen.actorCreated)
+
+  checkFor("ProcessIndex.ActorDeleted", ProcessIndexProtocolGen.actorDeleted)
+
+  checkFor("ProcessIndex.ActorPassivated", ProcessIndexProtocolGen.actorPassivated)
+
+  checkFor("ProcessIndex.ActorActivated", ProcessIndexProtocolGen.actorActivated)
+
+  checkFor("ProcessIndex.ActorMetadata", ProcessIndexProtocolGen.actorMetadata)
+
   checkFor("RecipeManagerProtocol.AddRecipe", RecipeManagerProtocolGen.addRecipe)
 
   checkFor("RecipeManagerProtocol.AddRecipeResponse", RecipeManagerProtocolGen.addRecipeResponse)
@@ -53,4 +66,22 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
   }
 
   checkFor("RecipeManager.RecipeAdded", RecipeManagerProtocolGen.recipeAdded)
+
+  test("ProcessIndexProtocol.GetIndex typed serialization") {
+    val serialized = serializer.toBinary(ProcessIndexProtocol.GetIndex)
+    val deserialized = serializer.fromBinary(serialized, serializer.manifest(ProcessIndexProtocol.GetIndex))
+    ProcessIndexProtocol.GetIndex == deserialized
+  }
+
+  checkFor("ProcessIndexProtocol.Index", ProcessIndexProtocolGen.index)
+
+  checkFor("ProcessIndexProtocol.CreateProcess", ProcessIndexProtocolGen.createProcess)
+
+  checkFor("ProcessIndexProtocol.ProcessEvent", ProcessIndexProtocolGen.processEvent)
+
+  checkFor("ProcessIndexProtocol.RetryBlockedInteraction", ProcessIndexProtocolGen.retryBlockedInteraction)
+
+  checkFor("ProcessIndexProtocol.ResolveBlockedInteraction", ProcessIndexProtocolGen.resolveBlockedInteraction)
+
+  checkFor("ProcessIndexProtocol.StopRetryingInteraction", ProcessIndexProtocolGen.stopRetryingInteraction)
 }

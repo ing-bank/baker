@@ -14,6 +14,7 @@ import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_index._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
 import com.ing.baker.runtime.actor.serialization.{BakerProtoMessage, Encryption}
+import com.ing.baker.runtime.actortyped.serialization.BakerSerializable
 import com.ing.baker.runtime.core.BakerException
 import com.ing.baker.runtime.core.internal.InteractionManager
 import com.typesafe.config.Config
@@ -25,7 +26,7 @@ import scala.concurrent.duration._
 
 object ClusterBakerActorProvider {
 
-  case class GetShardIndex(entityId: String) extends BakerProtoMessage
+  case class GetShardIndex(entityId: String) extends BakerSerializable
 
   /**
     * This function calculates the names of the ActorIndex actors

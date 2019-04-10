@@ -28,6 +28,7 @@ import scala.util.{Failure, Success}
 import cats.data.OptionT
 import cats.instances.future._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
+import com.ing.baker.runtime.actortyped.serialization.BakerSerializable
 
 object ProcessIndex {
 
@@ -50,7 +51,7 @@ object ProcessIndex {
   //The process was deleted
   case object Deleted extends ProcessStatus
 
-  case class ActorMetadata(recipeId: String, processId: String, createdDateTime: Long, processStatus: ProcessStatus) {
+  case class ActorMetadata(recipeId: String, processId: String, createdDateTime: Long, processStatus: ProcessStatus) extends BakerSerializable {
 
     def isDeleted: Boolean = processStatus == Deleted
   }
@@ -58,16 +59,16 @@ object ProcessIndex {
   // --- Events
 
   // when an actor is requested again after passivation
-  case class ActorActivated(processId: String) extends BakerProtoMessage
+  case class ActorActivated(processId: String) extends BakerSerializable
 
   // when an actor is passivated
-  case class ActorPassivated(processId: String) extends BakerProtoMessage
+  case class ActorPassivated(processId: String) extends BakerSerializable
 
   // when an actor is deleted
-  case class ActorDeleted(processId: String) extends BakerProtoMessage
+  case class ActorDeleted(processId: String) extends BakerSerializable
 
   // when an actor is created
-  case class ActorCreated(recipeId: String, processId: String, createdDateTime: Long) extends BakerProtoMessage
+  case class ActorCreated(recipeId: String, processId: String, createdDateTime: Long) extends BakerSerializable
 
   private val bakerExecutionContext: ExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
 }

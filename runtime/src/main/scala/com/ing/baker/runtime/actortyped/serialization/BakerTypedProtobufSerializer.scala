@@ -2,6 +2,7 @@ package com.ing.baker.runtime.actortyped.serialization
 
 import akka.actor.ExtendedActorSystem
 import akka.serialization.{Serialization, SerializationExtension, SerializerWithStringManifest}
+import com.ing.baker.runtime.actor.process_index.ProcessIndexSerialization
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerSerialization
 import org.slf4j.LoggerFactory
 import com.ing.baker.runtime.actortyped.serialization.protomappings.AnyRefMapping.SerializersProvider
@@ -12,6 +13,19 @@ object BakerTypedProtobufSerializer {
   private def entries(implicit ev0: SerializersProvider): List[BinarySerializable] = List(
     RuntimeEvent.serializer,
     ProcessState.serializer,
+    ProcessIndexSerialization.getShardIndex,
+    ProcessIndexSerialization.actorCreated,
+    ProcessIndexSerialization.actorDeleted,
+    ProcessIndexSerialization.actorPassivated,
+    ProcessIndexSerialization.actorActivated,
+    ProcessIndexSerialization.getIndex,
+    ProcessIndexSerialization.index,
+    ProcessIndexSerialization.createProcess,
+    ProcessIndexSerialization.processEvent,
+    ProcessIndexSerialization.retryBlockedInteraction,
+    ProcessIndexSerialization.resolveBlockedInteraction,
+    ProcessIndexSerialization.stopRetryingInteraction,
+    ProcessIndexSerialization.actorMetadata,
     RecipeManagerSerialization.addRecipeSerializer,
     RecipeManagerSerialization.addRecipeResponseSerializer,
     RecipeManagerSerialization.getRecipeSerializer,

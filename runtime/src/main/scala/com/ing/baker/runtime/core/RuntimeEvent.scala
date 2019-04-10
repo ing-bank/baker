@@ -1,13 +1,10 @@
 package com.ing.baker.runtime.core
 
-import cats.instances.list._
-import cats.instances.try_._
-import cats.syntax.traverse._
 import com.ing.baker.il.EventDescriptor
 import com.ing.baker.runtime.actortyped.serialization.BinarySerializable
 import com.ing.baker.types.{NullValue, Value}
 import com.ing.baker.runtime.actor.protobuf
-import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping.{toProto, fromProto, versioned}
+import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping.{toProto, fromProto}
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -79,24 +76,10 @@ object RuntimeEvent {
 
       def manifest: String = "core.RuntimeEvent"
 
-      def toBinary(a: RuntimeEvent): Array[Byte] = {
-        val protoIngredients = a.providedIngredients.map { case (name, value) =>
-          protobuf.Ingredient(Some(name), None, Some(toProto(value)))
-        }
-        protobuf.RuntimeEvent(Some(a.name), protoIngredients).toByteArray
-      }
+      def toBinary(a: RuntimeEvent): Array[Byte] =
+        toProto(a).toByteArray
 
       def fromBinary(binary: Array[Byte]): Try[RuntimeEvent] =
-        for {
-          message <- Try(protobuf.RuntimeEvent.parseFrom(binary))
-          name <- versioned(message.name, "name")
-          ingredients <- message.providedIngredients.toList.traverse[Try, (String, Value)] { i =>
-            for {
-              name <- versioned(i.name, "name")
-              protoValue <- versioned(i.value, "value")
-              value <- fromProto(protoValue)
-            } yield (name, value)
-          }
-        } yield RuntimeEvent(name, ingredients)
+        Try(protobuf.RuntimeEvent.parseFrom(binary)).flatMap(fromProto(_))
     }
 }

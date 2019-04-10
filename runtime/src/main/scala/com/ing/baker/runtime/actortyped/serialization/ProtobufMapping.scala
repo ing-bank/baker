@@ -5,6 +5,7 @@ import com.ing.baker.types
 import com.ing.baker.runtime.actor.protobuf
 import com.ing.baker.runtime.actortyped.serialization.protomappings.AnyRefMapping.SerializersProvider
 import com.ing.baker.runtime.actortyped.serialization.protomappings._
+import com.ing.baker.runtime.core.RuntimeEvent
 
 import scala.util.Try
 
@@ -48,4 +49,7 @@ object ProtobufMapping {
 
   implicit val eventOutputTransformerMapping: ProtobufMapping[il.EventOutputTransformer, protobuf.EventOutputTransformer] =
     new EventOutputTransformerMapping
+
+  implicit val runtimeEventMapping: ProtobufMapping[RuntimeEvent, protobuf.RuntimeEvent] =
+    new RuntimeEventMapping
 }
