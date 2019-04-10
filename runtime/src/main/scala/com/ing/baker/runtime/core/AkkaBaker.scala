@@ -7,8 +7,8 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.pattern.ask
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
-import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.Timeout
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
@@ -211,7 +211,8 @@ class AkkaBaker(private val config: Config)(implicit val actorSystem: ActorSyste
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   override def processEvent(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): SensoryEventStatus = {
-    processEventAsync(processId, event, correlationId, timeout).confirmCompleted(timeout)
+    processEventAsync(processId, event, correlationId, timeout)
+      .confirmCompleted(timeout)
   }
 
   /**
@@ -221,7 +222,7 @@ class AkkaBaker(private val config: Config)(implicit val actorSystem: ActorSyste
     */
   override def processEventAsync(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): BakerResponse = {
 
-    val source = Await.result(processEventStream(processId, event, correlationId, timeout), timeout)
+    val source = processEventStream(processId, event, correlationId, timeout)
 
     new BakerResponse(processId, source)
   }

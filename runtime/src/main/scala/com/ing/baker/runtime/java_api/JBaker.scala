@@ -1,33 +1,32 @@
 package com.ing.baker.runtime.java_api
 
+import java.util.concurrent.{CompletableFuture, TimeUnit, TimeoutException}
 import java.util.{Collections, UUID}
-import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.core._
+import com.ing.baker.runtime.core.{BakerResponse, _}
 import com.ing.baker.runtime.core.events.AnnotatedEventSubscriber
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
 import javax.annotation.Nonnull
 
 import scala.collection.JavaConverters._
+import scala.compat.java8.FutureConverters
 import scala.concurrent.duration._
 
 class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRef]) {
 
   def this(config: Config, implementations: java.lang.Iterable[AnyRef]) =
-    this(BakerProvider.get(config) ,implementations)
+    this(BakerProvider.get(config), implementations)
 
   def this(config: Config) =
-    this(BakerProvider.get(config) , Collections.emptyList[AnyRef])
+    this(BakerProvider.get(config), Collections.emptyList[AnyRef])
 
   def this(baker: Baker) =
     this(baker: Baker, Collections.emptyList[AnyRef])
 
   def this(implementations: java.lang.Iterable[AnyRef]) =
-    this(BakerProvider.get() , implementations)
-
-
+    this(BakerProvider.get(), implementations)
 
   addImplementations(implementations)
 
@@ -339,7 +338,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   /**
     * Retries a blocked interaction.
     *
-    * @param processId The process identifier.
+    * @param processId       The process identifier.
     * @param interactionName The name of the blocked interaction.
     * @return
     */
@@ -349,7 +348,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   /**
     * Retries a blocked interaction.
     *
-    * @param processId The process identifier.
+    * @param processId       The process identifier.
     * @param interactionName The name of the blocked interaction.
     * @return
     */
@@ -359,9 +358,9 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   /**
     * Resolves a blocked interaction by giving it's output.
     *
-    * @param processId The process identifier.
+    * @param processId       The process identifier.
     * @param interactionName The name of the blocked interaction.
-    * @param event The output of the interaction.
+    * @param event           The output of the interaction.
     * @return
     */
   def resolveInteraction(@Nonnull processId: String, @Nonnull interactionName: String, @Nonnull event: Any): Unit =
@@ -372,9 +371,9 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
     *
     * !!! You should provide an event of the original interaction. Event / ingredient renames are done by Baker.
     *
-    * @param processId The process identifier.
+    * @param processId       The process identifier.
     * @param interactionName The name of the blocked interaction.
-    * @param event The output of the interaction.
+    * @param event           The output of the interaction.
     * @return
     */
   def resolveInteraction(@Nonnull processId: String, @Nonnull interactionName: String, @Nonnull event: Any, @Nonnull timeout: java.time.Duration): Unit =
@@ -383,7 +382,7 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   /**
     * Stops a retrying interaction.
     *
-    * @param processId The process identifier.
+    * @param processId       The process identifier.
     * @param interactionName The name of the retrying interaction.
     * @return
     */
@@ -393,13 +392,72 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   /**
     * Resolves a blocked interaction by giving it's output.
     *
-    * @param processId The process identifier.
+    * @param processId       The process identifier.
     * @param interactionName The name of the retrying interaction.
-    * @param timeout       How long to wait for a response from the process
+    * @param timeout         How long to wait for a response from the process
     * @return
     */
   def stopRetryingInteraction(@Nonnull processId: String, @Nonnull interactionName: String, @Nonnull timeout: java.time.Duration): Unit =
     baker.stopRetryingInteraction(processId, interactionName, timeout.toScala)
+
+  /**
+    * Returns all the ingredients that are accumulated for a given process.
+    *
+    * @param processId The process identifier
+    * @param timeout   the maximum wait time
+    * @return
+    */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[ProcessDeletedException]("When no process is deleted")
+  def getIngredientsAsync(@Nonnull processId: String, @Nonnull timeout: java.time.Duration): CompletableFuture[java.util.Map[String, Value]] =
+    FutureConverters.toJava(
+      baker
+        .getIngredientsAsync(processId, timeout.toScala))
+      .toCompletableFuture
+      .thenApply(_.asJava)
+
+
+  /**
+    * Returns all the ingredients that are accumulated for a given process.
+    *
+    * @param processId The process identifier
+    * @param timeout   the maximum wait time
+    * @return
+    */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[ProcessDeletedException]("When no process is deleted")
+  def getIngredientsAsync(@Nonnull processId: String): CompletableFuture[java.util.Map[String, Value]] =
+    FutureConverters.toJava(
+      baker
+        .getIngredientsAsync(processId))
+      .toCompletableFuture
+      .thenApply(_.asJava)
+
+
+  /**
+    * Returns all the ingredients that are accumulated for a given process.
+    *
+    * @param processId The process identifier
+    * @param timeout   The maximum wait time
+    * @return
+    */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[ProcessDeletedException]("When no process is deleted")
+  def getIngredientsAsync(@Nonnull processId: UUID, @Nonnull timeout: java.time.Duration): CompletableFuture[java.util.Map[String, Value]] =
+    getIngredientsAsync(processId.toString, timeout)
+
+  /**
+    * Returns all the ingredients that are accumulated for a given process.
+    *
+    * @param processId The process identifier
+    * @param timeout   The maximum wait time
+    * @return
+    */
+  @throws[NoSuchProcessException]("When no process exists for the given id")
+  @throws[ProcessDeletedException]("When no process is deleted")
+  def getIngredientsAsync(@Nonnull processId: UUID): CompletableFuture[java.util.Map[String, Value]] =
+    getIngredientsAsync(processId.toString)
+
 
   /**
     * Returns all the ingredients that are accumulated for a given process.
@@ -669,6 +727,29 @@ class JBaker(private val baker: Baker, implementations: java.lang.Iterable[AnyRe
   @throws[NoSuchProcessException]("If the process is not found")
   def getVisualState(@Nonnull processId: String, @Nonnull timeout: java.time.Duration): String =
     baker.getVisualState(processId, timeout.toScala)
+
+  /**
+    * Returns the state of a process instance. This includes the ingredients and names of the events.
+    *
+    * @param processId The process identifier
+    * @return The state of the process instance
+    */
+  @throws[ProcessDeletedException]("If the process is already deleted")
+  @throws[NoSuchProcessException]("If the process is not found")
+  def getProcessStateAsync(@Nonnull processId: String): CompletableFuture[ProcessState] =
+    FutureConverters.toJava(baker.getProcessStateAsync(processId)).toCompletableFuture
+
+  /**
+    * Returns the state of a process instance. This includes the ingredients and names of the events.
+    *
+    * @param processId The process identifier
+    * @return The state of the process instance
+    */
+  @throws[ProcessDeletedException]("If the process is already deleted")
+  @throws[NoSuchProcessException]("If the process is not found")
+  def getProcessStateAsync(@Nonnull processId: UUID): CompletableFuture[ProcessState] =
+    getProcessStateAsync(processId.toString)
+
 
   /**
     * Returns the state of a process instance. This includes the ingredients and names of the events.

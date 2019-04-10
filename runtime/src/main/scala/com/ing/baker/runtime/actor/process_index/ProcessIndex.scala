@@ -5,7 +5,7 @@ import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.pattern.{ask, pipe}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.stream.scaladsl.{Source, StreamRefs}
-import akka.stream.{Materializer, StreamRefAttributes}
+import akka.stream.{Materializer, SourceRef, StreamRefAttributes}
 import akka.util.Timeout
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
@@ -35,8 +35,9 @@ object ProcessIndex {
             retentionCheckInterval: Option[FiniteDuration],
             configuredEncryption: Encryption,
             interactionManager: InteractionManager,
-            recipeManager: ActorRef)(implicit materializer: Materializer) =
-    Props(new ProcessIndex(processIdleTimeout, retentionCheckInterval, configuredEncryption, interactionManager, recipeManager))
+            recipeManager: ActorRef,
+            ingredientsFilter: Seq[String])(implicit materializer: Materializer) =
+    Props(new ProcessIndex(processIdleTimeout, retentionCheckInterval, configuredEncryption, interactionManager, recipeManager, ingredientsFilter))
 
   sealed trait ProcessStatus
 
@@ -75,7 +76,8 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
                    retentionCheckInterval: Option[FiniteDuration],
                    configuredEncryption: Encryption,
                    interactionManager: InteractionManager,
-                   recipeManager: ActorRef)(implicit materializer: Materializer) extends PersistentActor {
+                   recipeManager: ActorRef,
+                   ingredientsFilter: Seq[String])(implicit materializer: Materializer) extends PersistentActor {
 
   val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
@@ -131,7 +133,8 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
         ProcessInstance.Settings(
           executionContext = bakerExecutionContext,
           encryption = configuredEncryption,
-          idleTTL = processIdleTimeout))
+          idleTTL = processIdleTimeout,
+          ingredientsFilter = ingredientsFilter))
 
     val processActor = context.actorOf(props = processActorProps, name = processId)
 
@@ -260,7 +263,7 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
                 // otherwise the event is forwarded
                 case _ =>
                   val source = ProcessEventActor.processEvent(actorRef, recipe, cmd, waitForRetries)(processEventTimout, context.system, materializer)
-                  val sourceRef = source.runWith(StreamRefs.sourceRef().addAttributes(StreamRefAttributes.subscriptionTimeout(processEventTimout)))
+                  val sourceRef: Future[SourceRef[Any]] = source.runWith(StreamRefs.sourceRef().addAttributes(StreamRefAttributes.subscriptionTimeout(processEventTimout)))
 
                   sourceRef.map(ProcessEventResponse(processId, _)).pipeTo(sender())
               }

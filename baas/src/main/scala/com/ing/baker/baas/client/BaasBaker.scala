@@ -170,7 +170,7 @@ class BaasBaker(config: Config,
     * If nothing is done with the BakerResponse there is NO guarantee that the event is received by the process instance.
     */
   override def processEventAsync(processId: String, event: Any, correlationId: Option[String], timeout: FiniteDuration): BakerResponse = {
-    val source = Await.result(processEventStream(processId, event, correlationId, timeout), timeout)
+    val source = processEventStream(processId, event, correlationId, timeout)
     new BakerResponse(processId, source)
   }
 

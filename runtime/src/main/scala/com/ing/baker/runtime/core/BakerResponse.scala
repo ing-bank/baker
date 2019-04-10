@@ -41,34 +41,38 @@ object BakerResponse {
       None
   }
 
-  private def createFlow(processId: String, source: Source[BakerResponseEventProtocol, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext):
-  (Future[SensoryEventStatus], Future[CompletedResponse]) = {
+  private def createFlow(processId: String, futureSource: Future[Source[BakerResponseEventProtocol, NotUsed]])(implicit materializer: Materializer, ec: ExecutionContext):
+   Future[(Future[SensoryEventStatus], Future[CompletedResponse])] = {
 
-    val sinkHead = Sink.head[BakerResponseEventProtocol]
-    val sinkLast = Sink.seq[BakerResponseEventProtocol]
+    def graph(source: Source[BakerResponseEventProtocol, NotUsed]) =
+      RunnableGraph.fromGraph(GraphDSL.create(Sink.head[BakerResponseEventProtocol], Sink.seq[BakerResponseEventProtocol], source)((s1, s2, _) => (s1, s2)) {
+        implicit b =>
+          (head, last, source0) => {
+            import GraphDSL.Implicits._
 
-    val graph = RunnableGraph.fromGraph(GraphDSL.create(sinkHead, sinkLast)((_, _)) {
-      implicit b =>
-        (head, last) => {
-          import GraphDSL.Implicits._
+            val bcast = b.add(Broadcast[BakerResponseEventProtocol](2))
+            source0 ~> bcast.in
+            bcast.out(0) ~> head.in
+            bcast.out(1) ~> last.in
+            ClosedShape
+          }
+      })
 
-          val bcast = b.add(Broadcast[BakerResponseEventProtocol](2))
-          source ~> bcast.in
-          bcast.out(0) ~> head.in
-          bcast.out(1) ~> last.in
-          ClosedShape
-        }
-    })
+    futureSource.map(graph(_).run(materializer)).map { case (firstResponse, allResponses) =>
+      (firstMessage(processId, firstResponse), allMessages(processId, allResponses))
+    }
 
-    val (firstResponse, allResponses) = graph.run(materializer)
-
-    (firstMessage(processId, firstResponse), allMessages(processId, allResponses))
   }
 }
 
-class BakerResponse(processId: String, source: Source[BakerResponseEventProtocol, NotUsed])(implicit materializer: Materializer, ec: ExecutionContext) {
+class BakerResponse(processId: String, futureSource: Future[Source[BakerResponseEventProtocol, NotUsed]])(implicit materializer: Materializer, ec: ExecutionContext) {
 
-  val (receivedFuture, completedFuture) = BakerResponse.createFlow(processId, source)
+  //val (receivedFuture, completedFuture) = BakerResponse.createFlow(processId, futureSource)
+  private val futureEvents = BakerResponse.createFlow(processId, futureSource)
+
+  val receivedFuture: Future[SensoryEventStatus] = futureEvents.flatMap(_._1)
+
+  val completedFuture: Future[BakerResponse.CompletedResponse] = futureEvents.flatMap(_._2)
 
   val defaultWaitTimeout: FiniteDuration = FiniteDuration.apply(10, SECONDS)
 

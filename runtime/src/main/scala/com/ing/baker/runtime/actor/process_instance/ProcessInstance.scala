@@ -14,6 +14,7 @@ import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.{
 import com.ing.baker.runtime.actor.process_instance.internal._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.actor.serialization.Encryption
+import com.ing.baker.runtime.core.ProcessState
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -24,7 +25,8 @@ object ProcessInstance {
 
   case class Settings(executionContext: ExecutionContext,
                       idleTTL: Option[FiniteDuration],
-                      encryption: Encryption)
+                      encryption: Encryption,
+                      ingredientsFilter: Seq[String])
 
   private case class IdleStop(seq: Long) extends NoSerializationVerificationNeeded
 
@@ -70,18 +72,27 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
   override def receiveCommand: Receive = uninitialized
 
-  private implicit def marshallMarking(marking: Marking[Any]): Marking[Id] = marking.asInstanceOf[Marking[P]].marshall
+  private def marshallMarking(marking: Marking[Any]): Marking[Id] = marking.asInstanceOf[Marking[P]].marshall
 
-  private implicit def fromExecutionInstance(instance: internal.Instance[P, T, S]): protocol.InstanceState =
-    protocol.InstanceState(instance.sequenceNr, instance.marking.marshall, instance.state, instance.jobs.mapValues(fromExecutionJob(_)).map(identity))
+  private def mapStateToProtocol(instance: internal.Instance[P, T, S]): protocol.InstanceState = {
+    protocol.InstanceState(
+      instance.sequenceNr,
+      instance.marking.marshall,
+      instance.state match {
+        case state: ProcessState =>
+          state.filterIngredients(settings.ingredientsFilter)
+        case _ => instance.state
+      },
+      instance.jobs.mapValues(mapJobsToProtocol).map(identity))
+  }
 
-  private implicit def fromExecutionJob(job: internal.Job[P, T, S]): protocol.JobState =
-    protocol.JobState(job.id, job.transition.getId, job.consume.marshall, job.input, job.failure.map(fromExecutionExceptionState))
+  private def mapJobsToProtocol(job: internal.Job[P, T, S]): protocol.JobState =
+    protocol.JobState(job.id, job.transition.getId, job.consume.marshall, job.input, job.failure.map(mapExceptionTateToProtocol))
 
-  private implicit def fromExecutionExceptionState(exceptionState: internal.ExceptionState): protocol.ExceptionState =
-    protocol.ExceptionState(exceptionState.failureCount, exceptionState.failureReason, fromExecutionExceptionStrategy(exceptionState.failureStrategy))
+  private def mapExceptionTateToProtocol(exceptionState: internal.ExceptionState): protocol.ExceptionState =
+    protocol.ExceptionState(exceptionState.failureCount, exceptionState.failureReason, mapExceptionStrategyToProtocol(exceptionState.failureStrategy))
 
-  private implicit def fromExecutionExceptionStrategy(strategy: internal.ExceptionStrategy): protocol.ExceptionStrategy = strategy match {
+  private def mapExceptionStrategyToProtocol(strategy: internal.ExceptionStrategy): protocol.ExceptionStrategy = strategy match {
     case internal.ExceptionStrategy.BlockTransition           => protocol.ExceptionStrategy.BlockTransition
     case internal.ExceptionStrategy.RetryWithDelay(delay)     => protocol.ExceptionStrategy.RetryWithDelay(delay)
     case internal.ExceptionStrategy.Continue(marking, output) => protocol.ExceptionStrategy.Continue(marking.asInstanceOf[Marking[P]].marshall, output)
@@ -144,8 +155,16 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
       log.idleStop(processId, settings.idleTTL.getOrElse(Duration.Zero))
       context.stop(context.self)
 
-    case GetState ⇒
-      sender() ! fromExecutionInstance(instance)
+    case GetState ⇒ {
+      val instanceState: InstanceState = mapStateToProtocol(instance)
+      instanceState.state match {
+        case state: ProcessState =>
+          sender() ! instanceState.copy(state = state.filterIngredients(settings.ingredientsFilter))
+        case _ =>
+          sender() ! instanceState
+      }
+    }
+
 
     case event @ TransitionFiredEvent(jobId, transitionId, correlationId, timeStarted, timeCompleted, consumed, produced, output) ⇒
 
@@ -161,7 +180,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
             case (updatedInstance, newJobs) ⇒
 
               // the sender is notified of the transition having fired
-              sender() ! TransitionFired(jobId, transitionId, correlationId, consumed, produced, updatedInstance, newJobs.map(_.id), output)
+              sender() ! TransitionFired(jobId, transitionId, correlationId, consumed, produced, newJobs.map(_.id), output)
 
               // the job is removed from the state since it completed
               context become running(updatedInstance, scheduledRetries - jobId)
@@ -192,7 +211,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
                 }
 
                 // the sender is notified of the failed transition
-                sender() ! TransitionFailed(jobId, transitionId, correlationId, consume, input, reason, strategy)
+                sender() ! TransitionFailed(jobId, transitionId, correlationId, consume, input, reason, mapExceptionStrategyToProtocol(strategy) )
 
                 // the state is updated
                 context become running(updatedInstance, scheduledRetries + (jobId -> retry))
@@ -201,13 +220,13 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
         case Continue(produced, out) =>
           val transitionFiredEvent = TransitionFiredEvent(
-            jobId, transitionId, correlationId, timeStarted, timeFailed, consume, produced, out)
+            jobId, transitionId, correlationId, timeStarted, timeFailed, consume, marshallMarking(produced), out)
 
           persistEvent(instance, transitionFiredEvent)(
             eventSource.apply(instance)
               .andThen(step)
               .andThen { case (updatedInstance, newJobs) ⇒
-                sender() ! TransitionFired(jobId, transitionId, correlationId, consume, produced, updatedInstance, newJobs.map(_.id), out)
+                sender() ! TransitionFired(jobId, transitionId, correlationId, consume, marshallMarking(produced), newJobs.map(_.id), out)
                 context become running(updatedInstance, scheduledRetries - jobId)
               })
 
@@ -215,7 +234,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
           persistEvent(instance, event)(
             eventSource.apply(instance)
               .andThen { updatedInstance ⇒
-                sender() ! TransitionFailed(jobId, transitionId, correlationId, consume, input, reason, strategy)
+                sender() ! TransitionFailed(jobId, transitionId, correlationId, consume, input, reason, mapExceptionStrategyToProtocol(strategy))
                 context become running(updatedInstance, scheduledRetries - jobId)
               })
       }
