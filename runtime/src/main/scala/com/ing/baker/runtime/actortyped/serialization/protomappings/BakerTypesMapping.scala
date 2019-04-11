@@ -2,7 +2,7 @@ package com.ing.baker.runtime.actortyped.serialization.protomappings
 
 import cats.implicits._
 import com.ing.baker.types
-import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping
+import com.ing.baker.runtime.actortyped.serialization.ProtoMap
 import com.ing.baker.runtime.actor.protobuf
 import com.ing.baker.runtime.actor.protobuf._
 import Type.OneofType._
@@ -11,7 +11,9 @@ import com.ing.baker.runtime.actor.protobuf.Type.OneofType
 
 import scala.util.{Failure, Success, Try}
 
-class BakerTypesMapping extends ProtobufMapping[types.Type, protobuf.Type] {
+class BakerTypesMapping extends ProtoMap[types.Type, protobuf.Type] {
+
+  val companion = protobuf.Type
 
   private def createPrimitive(p: PrimitiveType) =
     protobuf.Type(protobuf.Type.OneofType.Primitive(p))

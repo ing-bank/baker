@@ -5,151 +5,121 @@ import cats.instances.try_._
 import cats.syntax.traverse._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.RecipeAdded
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.actortyped.serialization.{BinarySerializable, ProtobufMapping}
-import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping.{versioned, fromProto => ctxFromProto, toProto => ctxToProto}
+import com.ing.baker.runtime.actortyped.serialization.ProtoMap
+import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{versioned, ctxFromProto, ctxToProto}
 import com.ing.baker.runtime.actortyped.serialization.protomappings.AnyRefMapping.SerializersProvider
 
 import scala.util.Try
 
 object RecipeManagerSerialization {
 
-  def recipeAddedSerializer(implicit provider: SerializersProvider): BinarySerializable =
-    new BinarySerializable {
+  implicit def recipeAddedProto(implicit provider: SerializersProvider): ProtoMap[RecipeAdded, protobuf.RecipeAdded] =
+    new ProtoMap[RecipeAdded, protobuf.RecipeAdded] {
 
-      type Type = RecipeAdded
+      val companion = protobuf.RecipeAdded
 
-      val tag: Class[RecipeAdded] = classOf[RecipeAdded]
+      def toProto(a: RecipeAdded): protobuf.RecipeAdded =
+        protobuf.RecipeAdded(None, Option(ctxToProto(a.compiledRecipe)), Option(a.timeStamp))
 
-      def manifest: String = "RecipeManager.RecipeAdded"
-
-      def toBinary(a: RecipeAdded): Array[Byte] =
-        protobuf.RecipeAdded(None, Option(ctxToProto(a.compiledRecipe)), Option(a.timeStamp)).toByteArray
-
-      def fromBinary(binary: Array[Byte]): Try[RecipeAdded] =
+      def fromProto(message: protobuf.RecipeAdded): Try[RecipeAdded] =
         for {
-          message <- Try(protobuf.RecipeAdded.parseFrom(binary))
           compiledRecipeProto <- versioned(message.compiledRecipe, "compiledRecipe")
           timestamp <- versioned(message.timeStamp, "timestamp")
           compiledRecipe <- ctxFromProto(compiledRecipeProto)
         } yield RecipeAdded(compiledRecipe, timestamp)
     }
 
-  def addRecipeSerializer(implicit provider: SerializersProvider): BinarySerializable =
-    new BinarySerializable {
+  implicit def addRecipeProto(implicit provider: SerializersProvider): ProtoMap[AddRecipe, protobuf.AddRecipe] =
+    new ProtoMap[AddRecipe, protobuf.AddRecipe] {
 
-      type Type = AddRecipe
+      val companion = protobuf.AddRecipe
 
-      val tag: Class[AddRecipe] = classOf[AddRecipe]
+      def toProto(a: AddRecipe): protobuf.AddRecipe =
+        protobuf.AddRecipe(Option(ctxToProto(a.compiledRecipe)))
 
-      def manifest: String = "RecipeManagerProtocol.AddRecipe"
-
-      def toBinary(a: AddRecipe): Array[Byte] =
-        protobuf.AddRecipe(Option(ctxToProto(a.compiledRecipe))).toByteArray
-
-      def fromBinary(binary: Array[Byte]): Try[AddRecipe] =
+      def fromProto(message: protobuf.AddRecipe): Try[AddRecipe] =
         for {
-          message <- Try(protobuf.AddRecipe.parseFrom(binary))
           protoCompiledRecipe <- versioned(message.compiledRecipe, "compiledRecipe")
           compiledRecipe <- ctxFromProto(protoCompiledRecipe)
         } yield AddRecipe(compiledRecipe)
     }
 
-  def addRecipeResponseSerializer: BinarySerializable =
-    new BinarySerializable {
+  implicit def addRecipeResponseProto: ProtoMap[AddRecipeResponse, protobuf.AddRecipeResponse] =
+    new ProtoMap[AddRecipeResponse, protobuf.AddRecipeResponse] {
 
-      type Type = AddRecipeResponse
+      val companion = protobuf.AddRecipeResponse
 
-      val tag: Class[AddRecipeResponse] = classOf[AddRecipeResponse]
+      def toProto(a: AddRecipeResponse): protobuf.AddRecipeResponse =
+        protobuf.AddRecipeResponse(Option(a.recipeId))
 
-      def manifest: String = "RecipeManagerProtocol.AddRecipeResponse"
-
-      def toBinary(a: AddRecipeResponse): Array[Byte] =
-        protobuf.AddRecipeResponse(Option(a.recipeId)).toByteArray
-
-      def fromBinary(binary: Array[Byte]): Try[AddRecipeResponse] =
+      def fromProto(message: protobuf.AddRecipeResponse): Try[AddRecipeResponse] =
         for {
-          message <- Try(protobuf.AddRecipeResponse.parseFrom(binary))
           recipeId <- versioned(message.recipeId, "recipeId")
         } yield AddRecipeResponse(recipeId)
     }
 
-  def getRecipeSerializer: BinarySerializable =
-    new BinarySerializable {
+  implicit def getRecipeProto: ProtoMap[GetRecipe, protobuf.GetRecipe] =
+    new ProtoMap[GetRecipe, protobuf.GetRecipe] {
 
-      type Type = GetRecipe
+      val companion = protobuf.GetRecipe
 
-      val tag: Class[GetRecipe] = classOf[GetRecipe]
+      def toProto(a: GetRecipe): protobuf.GetRecipe =
+        protobuf.GetRecipe(Option(a.recipeId))
 
-      def manifest: String = "RecipeManagerProtocol.GetRecipe"
-
-      def toBinary(a: GetRecipe): Array[Byte] =
-        protobuf.GetRecipe(Option(a.recipeId)).toByteArray
-
-      def fromBinary(binary: Array[Byte]): Try[GetRecipe] =
+      def fromProto(message: protobuf.GetRecipe): Try[GetRecipe] =
         for {
-          message <- Try(protobuf.GetRecipe.parseFrom(binary))
           recipeId <- versioned(message.recipeId, "recipeId")
         } yield GetRecipe(recipeId)
     }
 
-  def recipeFoundSerializer(implicit provider: SerializersProvider): BinarySerializable =
-    new BinarySerializable {
+  implicit def recipeFoundProto(implicit provider: SerializersProvider): ProtoMap[RecipeFound, protobuf.RecipeFound] =
+    new ProtoMap[RecipeFound, protobuf.RecipeFound] {
 
-      type Type = RecipeFound
+      val companion = protobuf.RecipeFound
 
-      val tag: Class[RecipeFound] = classOf[RecipeFound]
+      def toProto(a: RecipeFound): protobuf.RecipeFound =
+        protobuf.RecipeFound(Option(ctxToProto(a.compiledRecipe)), Option(a.timestamp))
 
-      def manifest: String = "RecipeManagerProtocol.RecipeFound"
-
-      def toBinary(a: RecipeFound): Array[Byte] =
-        protobuf.RecipeFound(Option(ctxToProto(a.compiledRecipe)), Option(a.timestamp)).toByteArray
-
-      def fromBinary(binary: Array[Byte]): Try[RecipeFound] =
+      def fromProto(message: protobuf.RecipeFound): Try[RecipeFound] =
         for {
-          message <- Try(protobuf.RecipeFound.parseFrom(binary))
           compiledRecipeProto <- versioned(message.compiledRecipe, "compiledRecipe")
           timestamp <- versioned(message.timestamp, "timestamp")
           compiledRecipe <- ctxFromProto(compiledRecipeProto)
         } yield RecipeFound(compiledRecipe, timestamp)
     }
 
-  def noRecipeFoundSerializer: BinarySerializable =
-    new BinarySerializable {
+  implicit def noRecipeFoundProto: ProtoMap[NoRecipeFound, protobuf.NoRecipeFound] =
+    new ProtoMap[NoRecipeFound, protobuf.NoRecipeFound] {
 
-      type Type = NoRecipeFound
+      val companion = protobuf.NoRecipeFound
 
-      val tag: Class[NoRecipeFound] = classOf[NoRecipeFound]
+      def toProto(a: NoRecipeFound): protobuf.NoRecipeFound =
+        protobuf.NoRecipeFound(Option(a.recipeId))
 
-      def manifest: String = "RecipeManagerProtocol.NoRecipeFound"
-
-      def toBinary(a: NoRecipeFound): Array[Byte] =
-        protobuf.NoRecipeFound(Option(a.recipeId)).toByteArray
-
-      def fromBinary(binary: Array[Byte]): Try[NoRecipeFound] =
+      def fromProto(message: protobuf.NoRecipeFound): Try[NoRecipeFound] =
         for {
-          message <- Try(protobuf.NoRecipeFound.parseFrom(binary))
           recipeId <- versioned(message.recipeId, "recipeId")
         } yield NoRecipeFound(recipeId)
     }
 
-  def getAllRecipesSerializer: BinarySerializable =
-    new BinarySerializable {
+  implicit def getAllRecipesProto: ProtoMap[GetAllRecipes.type, protobuf.GetAllRecipes] =
+    new ProtoMap[GetAllRecipes.type, protobuf.GetAllRecipes] {
 
-      type Type = GetAllRecipes.type
-
-      val tag: Class[_ <: Type] = GetAllRecipes.getClass
+      val companion = protobuf.GetAllRecipes
 
       def manifest: String = "RecipeManagerProtocol.GetAllRecipes"
 
-      def toBinary(a: GetAllRecipes.type): Array[Byte] =
-        protobuf.GetAllRecipes().toByteArray
+      def toProto(a: GetAllRecipes.type): protobuf.GetAllRecipes =
+        protobuf.GetAllRecipes()
 
-      def fromBinary(binary: Array[Byte]): Try[GetAllRecipes.type] =
+      def fromProto(message: protobuf.GetAllRecipes): Try[GetAllRecipes.type] =
         Try(GetAllRecipes)
     }
 
-  implicit def recipeInformationProto(implicit provider: SerializersProvider): ProtobufMapping[RecipeInformation, protobuf.RecipeEntry] =
-    new ProtobufMapping[RecipeInformation, protobuf.RecipeEntry] {
+  implicit def recipeInformationProto(implicit provider: SerializersProvider): ProtoMap[RecipeInformation, protobuf.RecipeEntry] =
+    new ProtoMap[RecipeInformation, protobuf.RecipeEntry] {
+
+      val companion = protobuf.RecipeEntry
 
       override def toProto(a: RecipeInformation): protobuf.RecipeEntry =
         protobuf.RecipeEntry(None, Option(ctxToProto(a.compiledRecipe)), Option(a.timestamp))
@@ -162,21 +132,18 @@ object RecipeManagerSerialization {
         } yield RecipeInformation(compiledRecipe, timestamp)
     }
 
-  def allRecipesSerializer(implicit provider: SerializersProvider): BinarySerializable =
-    new BinarySerializable {
+  implicit def allRecipesProto(implicit provider: SerializersProvider): ProtoMap[AllRecipes, protobuf.AllRecipes] =
+    new ProtoMap[AllRecipes, protobuf.AllRecipes] {
 
-      type Type = AllRecipes
-
-      val tag: Class[AllRecipes] = classOf[AllRecipes]
+      val companion = protobuf.AllRecipes
 
       def manifest: String = "RecipeManagerProtocol.AllRecipes"
 
-      def toBinary(a: AllRecipes): Array[Byte] =
-        protobuf.AllRecipes(a.recipes.map(ctxToProto(_))).toByteArray
+      def toProto(a: AllRecipes): protobuf.AllRecipes =
+        protobuf.AllRecipes(a.recipes.map(ctxToProto(_)))
 
-      def fromBinary(binary: Array[Byte]): Try[AllRecipes] =
+      def fromProto(message: protobuf.AllRecipes): Try[AllRecipes] =
         for {
-          message <- Try(protobuf.AllRecipes.parseFrom(binary))
           recipes <- message.recipeEntries.toList.traverse(ctxFromProto(_))
         } yield AllRecipes(recipes)
     }

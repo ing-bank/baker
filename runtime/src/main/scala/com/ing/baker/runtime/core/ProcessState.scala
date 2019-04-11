@@ -4,10 +4,10 @@ import com.ing.baker.types.{PrimitiveValue, Value}
 import cats.instances.list._
 import cats.instances.try_._
 import cats.syntax.traverse._
-import com.ing.baker.runtime.actortyped.serialization.BinarySerializable
 import com.ing.baker.types.Value
 import com.ing.baker.runtime.actor.protobuf
-import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping.{fromProto, toProto, versioned}
+import com.ing.baker.runtime.actortyped.serialization.ProtoMap
+import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 
 import scala.collection.JavaConverters._
 import scala.util.Try
@@ -58,31 +58,26 @@ case class ProcessState(processId: String,
 
 object ProcessState {
 
-  def serializer: BinarySerializable =
-    new BinarySerializable {
+  implicit def protoMap: ProtoMap[ProcessState, protobuf.ProcessState] =
+    new ProtoMap[ProcessState, protobuf.ProcessState] {
 
-      type Type = ProcessState
+      val companion = protobuf.ProcessState
 
-      val tag: Class[ProcessState] = classOf[ProcessState]
-
-      def manifest: String = "core.ProcessState"
-
-      def toBinary(a: ProcessState): Array[Byte] = {
+      def toProto(a: ProcessState): protobuf.ProcessState = {
         val protoIngredients = a.ingredients.toSeq.map { case (name, value) =>
-          protobuf.Ingredient(Some(name), None, Some(toProto(value)))
+          protobuf.Ingredient(Some(name), None, Some(ctxToProto(value)))
         }
-        protobuf.ProcessState(Some(a.processId), protoIngredients, a.eventNames).toByteArray
+        protobuf.ProcessState(Some(a.processId), protoIngredients, a.eventNames)
       }
 
-      def fromBinary(binary: Array[Byte]): Try[ProcessState] =
+      def fromProto(message: protobuf.ProcessState): Try[ProcessState] =
         for {
-          message <- Try(protobuf.ProcessState.parseFrom(binary))
           processId <- versioned(message.processId, "processId")
           ingredients <- message.ingredients.toList.traverse[Try, (String, Value)] { i =>
             for {
               name <- versioned(i.name, "name")
               protoValue <- versioned(i.value, "value")
-              value <- fromProto(protoValue)
+              value <- ctxFromProto(protoValue)
             } yield (name, value)
           }
         } yield ProcessState(processId, ingredients.toMap, message.eventNames.toList)

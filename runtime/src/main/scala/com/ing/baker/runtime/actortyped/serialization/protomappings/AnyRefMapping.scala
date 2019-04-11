@@ -2,8 +2,8 @@ package com.ing.baker.runtime.actortyped.serialization.protomappings
 
 import com.google.protobuf.ByteString
 import akka.serialization.{Serializer, SerializerWithStringManifest}
-import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping
-import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping.versioned
+import com.ing.baker.runtime.actortyped.serialization.ProtoMap
+import com.ing.baker.runtime.actortyped.serialization.ProtoMap.versioned
 import com.ing.baker.runtime.actor.protobuf
 import com.ing.baker.runtime.actortyped.serialization.protomappings.AnyRefMapping.SerializersProvider
 
@@ -14,7 +14,9 @@ object AnyRefMapping {
   case class SerializersProvider(getSerializerFor: AnyRef => Serializer, serializerByIdentity: Int => Option[Serializer])
 }
 
-class AnyRefMapping(provider: SerializersProvider) extends ProtobufMapping[AnyRef, protobuf.SerializedData] {
+class AnyRefMapping(provider: SerializersProvider) extends ProtoMap[AnyRef, protobuf.SerializedData] {
+
+  val companion = protobuf.SerializedData
 
   override def toProto(obj: AnyRef): protobuf.SerializedData = {
     val serializer: Serializer = provider.getSerializerFor(obj)

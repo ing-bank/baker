@@ -9,7 +9,7 @@ import com.ing.baker.runtime.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actortyped.serialization.BinarySerializable
-import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping.{versioned, fromProto => ctxFromProto, toProto => ctxToProto}
+import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{versioned, ctxFromProto, ctxToProto}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try

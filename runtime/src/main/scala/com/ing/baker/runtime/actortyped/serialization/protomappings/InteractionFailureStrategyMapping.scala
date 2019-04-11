@@ -3,16 +3,18 @@ package com.ing.baker.runtime.actortyped.serialization.protomappings
 import java.util.concurrent.TimeUnit
 
 import cats.implicits._
-import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping
+import com.ing.baker.runtime.actortyped.serialization.ProtoMap
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
 import com.ing.baker.runtime.actor.protobuf
-import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping.{versioned, fromProto => ctxFromProto, toProto => ctxToProto}
+import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{versioned, ctxFromProto, ctxToProto}
 
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._
 
-class InteractionFailureStrategyMapping extends ProtobufMapping[il.failurestrategy.InteractionFailureStrategy, protobuf.InteractionFailureStrategy] {
+class InteractionFailureStrategyMapping extends ProtoMap[il.failurestrategy.InteractionFailureStrategy, protobuf.InteractionFailureStrategy] {
+
+  val companion = protobuf.InteractionFailureStrategy
 
   override def toProto(strategy: InteractionFailureStrategy): protobuf.InteractionFailureStrategy =
     strategy match {

@@ -2,13 +2,15 @@ package com.ing.baker.runtime.actortyped.serialization.protomappings
 
 import cats.implicits._
 import com.ing.baker.il
-import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping
-import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping.{ toProto => ctxToProto, fromProto => ctxFromProto, versioned }
+import com.ing.baker.runtime.actortyped.serialization.ProtoMap
+import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{ ctxToProto, ctxFromProto, versioned }
 import com.ing.baker.runtime.actor.protobuf
 
 import scala.util.Try
 
-class EventDescriptorMapping extends ProtobufMapping[il.EventDescriptor, protobuf.EventDescriptor] {
+class EventDescriptorMapping extends ProtoMap[il.EventDescriptor, protobuf.EventDescriptor] {
+
+  val companion = protobuf.EventDescriptor
 
   def toProto(event: il.EventDescriptor): protobuf.EventDescriptor = {
     val protoIngredients: Seq[protobuf.IngredientDescriptor] = event.ingredients.map(ctxToProto(_))

@@ -8,10 +8,10 @@ import cats.instances.option._
 import cats.instances.try_._
 import com.ing.baker.il
 import com.ing.baker.petrinet.api._
-import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping
+import com.ing.baker.runtime.actortyped.serialization.ProtoMap
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization.tokenIdentifier
 import com.ing.baker.runtime.actor.protobuf
-import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping.{versioned, fromProto => ctxFromProto, toProto => ctxToProto}
+import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{versioned, ctxFromProto, ctxToProto}
 import com.ing.baker.il.petrinet.{Node, Place, RecipePetriNet, Transition}
 import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.types.Value
@@ -22,7 +22,9 @@ import scalax.collection.immutable.Graph
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
-class CompiledRecipeMapping(anyMapping: ProtobufMapping[AnyRef, protobuf.SerializedData]) extends ProtobufMapping[il.CompiledRecipe, protobuf.CompiledRecipe] {
+class CompiledRecipeMapping(anyMapping: ProtoMap[AnyRef, protobuf.SerializedData]) extends ProtoMap[il.CompiledRecipe, protobuf.CompiledRecipe] {
+
+  val companion = protobuf.CompiledRecipe
 
   def toProto(recipe: il.CompiledRecipe): protobuf.CompiledRecipe = {
     val eventReceiveMillis = recipe.eventReceivePeriod.map(_.toMillis)

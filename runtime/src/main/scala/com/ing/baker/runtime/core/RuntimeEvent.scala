@@ -1,13 +1,9 @@
 package com.ing.baker.runtime.core
 
 import com.ing.baker.il.EventDescriptor
-import com.ing.baker.runtime.actortyped.serialization.BinarySerializable
 import com.ing.baker.types.{NullValue, Value}
-import com.ing.baker.runtime.actor.protobuf
-import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping.{toProto, fromProto}
 
 import scala.collection.JavaConverters._
-import scala.util.Try
 
 case class RuntimeEvent(name: String,
                         providedIngredients: Seq[(String, Value)]) {
@@ -63,23 +59,4 @@ case class RuntimeEvent(name: String,
         }
     }
   }
-}
-
-object RuntimeEvent {
-
-  def serializer: BinarySerializable =
-    new BinarySerializable {
-
-      type Type = RuntimeEvent
-
-      val tag: Class[RuntimeEvent] = classOf[RuntimeEvent]
-
-      def manifest: String = "core.RuntimeEvent"
-
-      def toBinary(a: RuntimeEvent): Array[Byte] =
-        toProto(a).toByteArray
-
-      def fromBinary(binary: Array[Byte]): Try[RuntimeEvent] =
-        Try(protobuf.RuntimeEvent.parseFrom(binary)).flatMap(fromProto(_))
-    }
 }

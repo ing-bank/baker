@@ -2,13 +2,15 @@ package com.ing.baker.runtime.actortyped.serialization.protomappings
 
 import com.ing.baker.il
 import com.ing.baker.il.EventOutputTransformer
-import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping
+import com.ing.baker.runtime.actortyped.serialization.ProtoMap
 import com.ing.baker.runtime.actor.protobuf
-import com.ing.baker.runtime.actortyped.serialization.ProtobufMapping.versioned
+import com.ing.baker.runtime.actortyped.serialization.ProtoMap.versioned
 
 import scala.util.Try
 
-class EventOutputTransformerMapping extends ProtobufMapping[il.EventOutputTransformer, protobuf.EventOutputTransformer] {
+class EventOutputTransformerMapping extends ProtoMap[il.EventOutputTransformer, protobuf.EventOutputTransformer] {
+
+  val companion = protobuf.EventOutputTransformer
 
   override def toProto(transformer: EventOutputTransformer): protobuf.EventOutputTransformer =
     protobuf.EventOutputTransformer(Option(transformer.newEventName), transformer.ingredientRenames)
