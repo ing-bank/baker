@@ -10,7 +10,7 @@ import com.ing.baker.runtime.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actortyped.serialization.ProtoMap
 
-import scala.util.Success[replacemea, replacemeb]
+import scala.util.Success
 import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{versioned, ctxFromProto, ctxToProto}
 
 import scala.concurrent.duration.FiniteDuration
