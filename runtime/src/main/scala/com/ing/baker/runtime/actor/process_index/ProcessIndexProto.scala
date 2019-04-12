@@ -2,6 +2,7 @@ package com.ing.baker.runtime.actor.process_index
 
 import java.util.concurrent.TimeUnit
 
+import akka.stream.SourceRef
 import cats.instances.list._
 import cats.instances.try_._
 import cats.syntax.traverse._
@@ -11,7 +12,8 @@ import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actortyped.serialization.ProtoMap
 
 import scala.util.Success
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{versioned, ctxFromProto, ctxToProto}
+import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
+import com.ing.baker.runtime.actortyped.serialization.protomappings.AnyRefMapping.SerializersProvider
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
@@ -239,6 +241,121 @@ object ProcessIndexProto {
           processId <- versioned(message.processId, "processId")
           interactionName <- versioned(message.interactionName, "interactionName")
         } yield StopRetryingInteraction(processId, interactionName)
+    }
+
+  implicit def processEventResponseProto(implicit provider: SerializersProvider): ProtoMap[ProcessEventResponse, protobuf.ProcessEventResponse] =
+    new ProtoMap[ProcessEventResponse, protobuf.ProcessEventResponse] {
+
+      val companion = protobuf.ProcessEventResponse
+
+      def toProto(a: ProcessEventResponse): protobuf.ProcessEventResponse =
+        protobuf.ProcessEventResponse(Some(a.processId), Some(ProtoMap.anyRefMapping.toProto(a.sourceRef)))
+
+      def fromProto(message: protobuf.ProcessEventResponse): Try[ProcessEventResponse] =
+        for {
+          processId <- versioned(message.processId, "processId")
+          sourceRefProto <- versioned(message.sourceRef, "sourceRef")
+          sourceRef <- ProtoMap.anyRefMapping.fromProto(sourceRefProto)
+        } yield ProcessEventResponse(processId, sourceRef.asInstanceOf[SourceRef[Any]])
+    }
+
+  implicit def getProcessStateProto(implicit provider: SerializersProvider): ProtoMap[GetProcessState, protobuf.GetProcessState] =
+    new ProtoMap[GetProcessState, protobuf.GetProcessState] {
+
+      val companion = protobuf.GetProcessState
+
+      def toProto(a: GetProcessState): protobuf.GetProcessState =
+        protobuf.GetProcessState(Some(a.processId))
+
+      def fromProto(message: protobuf.GetProcessState): Try[GetProcessState] =
+        for {
+          processId <- versioned(message.processId, "processId")
+        } yield GetProcessState(processId)
+    }
+
+  implicit def getCompiledRecipeProto(implicit provider: SerializersProvider): ProtoMap[GetCompiledRecipe, protobuf.GetCompiledRecipe] =
+    new ProtoMap[GetCompiledRecipe, protobuf.GetCompiledRecipe] {
+
+      val companion = protobuf.GetCompiledRecipe
+
+      def toProto(a: GetCompiledRecipe): protobuf.GetCompiledRecipe =
+        protobuf.GetCompiledRecipe(Some(a.processId))
+
+      def fromProto(message: protobuf.GetCompiledRecipe): Try[GetCompiledRecipe] =
+        for {
+          processId <- versioned(message.recipeId, "recipeId")
+        } yield GetCompiledRecipe(processId)
+    }
+
+  implicit def receivePeriodExpiredProto(implicit provider: SerializersProvider): ProtoMap[ReceivePeriodExpired, protobuf.ReceivePeriodExpired] =
+    new ProtoMap[ReceivePeriodExpired, protobuf.ReceivePeriodExpired] {
+
+      val companion = protobuf.ReceivePeriodExpired
+
+      def toProto(a: ReceivePeriodExpired): protobuf.ReceivePeriodExpired =
+        protobuf.ReceivePeriodExpired(Some(a.processId))
+
+      def fromProto(message: protobuf.ReceivePeriodExpired): Try[ReceivePeriodExpired] =
+        for {
+          processId <- versioned(message.processId, "processId")
+        } yield ReceivePeriodExpired(processId)
+    }
+
+  implicit def invalidEventProto(implicit provider: SerializersProvider): ProtoMap[InvalidEvent, protobuf.InvalidEvent] =
+    new ProtoMap[InvalidEvent, protobuf.InvalidEvent] {
+
+      val companion = protobuf.InvalidEvent
+
+      def toProto(a: InvalidEvent): protobuf.InvalidEvent =
+        protobuf.InvalidEvent(Some(a.processId), Some(a.msg))
+
+      def fromProto(message: protobuf.InvalidEvent): Try[InvalidEvent] =
+        for {
+          processId <- versioned(message.processId, "processId")
+          msg <- versioned(message.reason, "reason")
+        } yield InvalidEvent(processId, msg)
+    }
+
+  implicit def processDeletedProto(implicit provider: SerializersProvider): ProtoMap[ProcessDeleted, protobuf.ProcessDeleted] =
+    new ProtoMap[ProcessDeleted, protobuf.ProcessDeleted] {
+
+      val companion = protobuf.ProcessDeleted
+
+      def toProto(a: ProcessDeleted): protobuf.ProcessDeleted =
+        protobuf.ProcessDeleted(Some(a.processId))
+
+      def fromProto(message: protobuf.ProcessDeleted): Try[ProcessDeleted] =
+        for {
+          processId <- versioned(message.processId, "processId")
+        } yield ProcessDeleted(processId)
+    }
+
+  implicit def noSuchProcessProto(implicit provider: SerializersProvider): ProtoMap[NoSuchProcess, protobuf.NoSuchProcess] =
+    new ProtoMap[NoSuchProcess, protobuf.NoSuchProcess] {
+
+      val companion = protobuf.NoSuchProcess
+
+      def toProto(a: NoSuchProcess): protobuf.NoSuchProcess =
+        protobuf.NoSuchProcess(Some(a.processId))
+
+      def fromProto(message: protobuf.NoSuchProcess): Try[NoSuchProcess] =
+        for {
+          processId <- versioned(message.processId, "processId")
+        } yield NoSuchProcess(processId)
+    }
+
+  implicit def processAlreadyExistsProto(implicit provider: SerializersProvider): ProtoMap[ProcessAlreadyExists, protobuf.ProcessAlreadyExists] =
+    new ProtoMap[ProcessAlreadyExists, protobuf.ProcessAlreadyExists] {
+
+      val companion = protobuf.ProcessAlreadyExists
+
+      def toProto(a: ProcessAlreadyExists): protobuf.ProcessAlreadyExists =
+        protobuf.ProcessAlreadyExists(Some(a.processId))
+
+      def fromProto(message: protobuf.ProcessAlreadyExists): Try[ProcessAlreadyExists] =
+        for {
+          processId <- versioned(message.processId, "processId")
+        } yield ProcessAlreadyExists(processId)
     }
 
 }

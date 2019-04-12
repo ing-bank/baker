@@ -2,21 +2,21 @@ package com.ing.baker.runtime.actor.process_index
 
 import akka.stream.SourceRef
 import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
-import com.ing.baker.runtime.actor.serialization.BakerProtoMessage
+import com.ing.baker.runtime.actortyped.serialization.BakerSerializable
 import com.ing.baker.runtime.core.RuntimeEvent
 
 import scala.concurrent.duration.FiniteDuration
 
 object ProcessIndexProtocol {
-  sealed trait ProcessIndexMessage extends BakerProtoMessage {
+  sealed trait ProcessIndexMessage extends BakerSerializable {
     val processId: String
   }
 
   // -- COMMANDS
 
-  case object GetIndex extends BakerProtoMessage
+  case object GetIndex extends BakerSerializable
 
-  case class Index(entries: Seq[ActorMetadata]) extends BakerProtoMessage
+  case class Index(entries: Seq[ActorMetadata]) extends BakerSerializable
 
   case class CreateProcess(recipeId: String, override val processId: String) extends ProcessIndexMessage
 

@@ -35,7 +35,9 @@ object BakerTypedProtobufSerializer {
     forType[ActorDeleted].register,
     forType[ActorPassivated].register,
     forType[ActorActivated].register,
+
     forType[GetIndex.type].register,
+
     forType[Index].register,
     forType[CreateProcess].register,
     forType[ProcessEvent].register,
@@ -43,6 +45,15 @@ object BakerTypedProtobufSerializer {
     forType[ResolveBlockedInteraction].register,
     forType[StopRetryingInteraction].register,
     forType[ActorMetadata].register,
+
+    forType[ProcessEventResponse].register,
+    forType[GetProcessState].register,
+    forType[GetCompiledRecipe].register,
+    forType[ReceivePeriodExpired].register,
+    forType[InvalidEvent].register,
+    forType[ProcessDeleted].register,
+    forType[NoSuchProcess].register,
+    forType[ProcessAlreadyExists].register,
 
     forType[AddRecipe].register,
     forType[AddRecipeResponse].register,
