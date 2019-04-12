@@ -2,10 +2,14 @@ package com.ing.baker.runtime.actortyped.serialization
 
 import akka.actor.ExtendedActorSystem
 import akka.serialization.{Serialization, SerializationExtension, SerializerWithStringManifest}
-import com.ing.baker.runtime.actor.process_index.ProcessIndexSerialization
+import com.ing.baker.runtime.actor.ClusterBakerActorProvider.GetShardIndex
+import com.ing.baker.runtime.actor.process_index.ProcessIndex._
+import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
+import com.ing.baker.runtime.actor.process_index.ProcessIndexProto._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.RecipeAdded
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerSerialization._
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProto._
+import com.ing.baker.runtime.actortyped.serialization.BakerTypedProtobufSerializer.BinarySerializable
 import org.slf4j.LoggerFactory
 import com.ing.baker.runtime.actortyped.serialization.protomappings.AnyRefMapping.SerializersProvider
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
@@ -26,19 +30,19 @@ object BakerTypedProtobufSerializer {
     forType[RuntimeEvent].register,
     forType[ProcessState].register,
 
-    ProcessIndexSerialization.getShardIndex,
-    ProcessIndexSerialization.actorCreated,
-    ProcessIndexSerialization.actorDeleted,
-    ProcessIndexSerialization.actorPassivated,
-    ProcessIndexSerialization.actorActivated,
-    ProcessIndexSerialization.getIndex,
-    ProcessIndexSerialization.index,
-    ProcessIndexSerialization.createProcess,
-    ProcessIndexSerialization.processEvent,
-    ProcessIndexSerialization.retryBlockedInteraction,
-    ProcessIndexSerialization.resolveBlockedInteraction,
-    ProcessIndexSerialization.stopRetryingInteraction,
-    ProcessIndexSerialization.actorMetadata,
+    forType[GetShardIndex].register,
+    forType[ActorCreated].register,
+    forType[ActorDeleted].register,
+    forType[ActorPassivated].register,
+    forType[ActorActivated].register,
+    forType[GetIndex.type].register,
+    forType[Index].register,
+    forType[CreateProcess].register,
+    forType[ProcessEvent].register,
+    forType[RetryBlockedInteraction].register,
+    forType[ResolveBlockedInteraction].register,
+    forType[StopRetryingInteraction].register,
+    forType[ActorMetadata].register,
 
     forType[AddRecipe].register,
     forType[AddRecipeResponse].register,
@@ -70,6 +74,30 @@ object BakerTypedProtobufSerializer {
     }
   }
 
+  private trait BinarySerializable {
+
+    type Type <: AnyRef
+
+    val tag: Class[_]
+
+    def manifest: String
+
+    def toBinary(a: Type): Array[Byte]
+
+    // The actor resolver is commented for future Akka Typed implementation
+    def fromBinary(binary: Array[Byte]/*, resolver: ActorRefResolver*/): Try[Type]
+
+    def isInstance(o: AnyRef): Boolean =
+      tag.isInstance(o)
+
+    def unsafeToBinary(a: AnyRef): Array[Byte] =
+      toBinary(a.asInstanceOf[Type])
+
+    // The actor resolver is commented for future Akka Typed implementation
+    def fromBinaryAnyRef(binary: Array[Byte]/*, resolver: ActorRefResolver*/): Try[AnyRef] =
+      fromBinary(binary)
+
+  }
 }
 
 class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {

@@ -11,7 +11,7 @@ import com.ing.baker.runtime.actortyped.serialization.protomappings.AnyRefMappin
 
 import scala.util.Try
 
-object RecipeManagerSerialization {
+object RecipeManagerProto {
 
   implicit def recipeAddedProto(implicit provider: SerializersProvider): ProtoMap[RecipeAdded, protobuf.RecipeAdded] =
     new ProtoMap[RecipeAdded, protobuf.RecipeAdded] {
