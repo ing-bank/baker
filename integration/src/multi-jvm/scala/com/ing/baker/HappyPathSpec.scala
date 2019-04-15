@@ -23,7 +23,7 @@ import scala.concurrent.duration._
   * The lack of events when using a cluster baker provider is a bug specific to such mode, events can be seen from normal local provider.
   */
 
-object InMemoryJournalConfig extends MultiNodeConfig {
+object HappyPathConfig extends MultiNodeConfig {
   val node1: RoleName = role("node1")
   val node2: RoleName = role("node2")
   val nodes: List[RoleName] = List(node1, node2)
@@ -69,10 +69,10 @@ object InMemoryJournalConfig extends MultiNodeConfig {
 
 }
 
-class InMemoryJournalSpecMultiJvmNode1 extends InMemoryJournal
-class InMemoryJournalSpecMultiJvmNode2 extends InMemoryJournal
+class HappyPathSpecMultiJvmNode1 extends HappyPath
+class HappyPathSpecMultiJvmNode2 extends HappyPath
 
-object InMemoryJournal extends MockitoSugar {
+object HappyPath extends MockitoSugar {
 
   object ValidateOrder {
     val name: String = webshop.validateOrder.name
@@ -134,12 +134,12 @@ object InMemoryJournal extends MockitoSugar {
   )
 }
 
-class InMemoryJournal extends MultiNodeSpec(InMemoryJournalConfig)
+class HappyPath extends MultiNodeSpec(HappyPathConfig)
   with MultiNodeClusterSpec
   with ImplicitSender {
 
-  import InMemoryJournalConfig._
-  import InMemoryJournal._
+  import HappyPathConfig._
+  import HappyPath._
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -147,7 +147,7 @@ class InMemoryJournal extends MultiNodeSpec(InMemoryJournalConfig)
     File("target/snapshots").createDirectoryIfNotExists().delete()
   }
 
-  "A InMemoryJournal" must {
+  "A HappyPath" must {
 
     "retrieve state from a remote process actor using in-memory journals" in {
 
@@ -157,7 +157,7 @@ class InMemoryJournal extends MultiNodeSpec(InMemoryJournalConfig)
       runOn(node1) {
 
         val compiled = RecipeCompiler.compileRecipe(webshop.webShopRecipe)
-        baker.addImplementations(InMemoryJournal.implementations)
+        baker.addImplementations(HappyPath.implementations)
 
         enterBarrier("recipe-setup")
 
@@ -169,7 +169,7 @@ class InMemoryJournal extends MultiNodeSpec(InMemoryJournalConfig)
       runOn(node2) {
 
         val compiled = RecipeCompiler.compileRecipe(webshop.webShopRecipe)
-        baker.addImplementations(InMemoryJournal.implementations)
+        baker.addImplementations(HappyPath.implementations)
 
         val recipeId = baker.addRecipe(compiled)
         val processState = baker.bake(recipeId, process1Id)
@@ -179,23 +179,32 @@ class InMemoryJournal extends MultiNodeSpec(InMemoryJournalConfig)
 
         val sensoryEventStatus1 = baker.processEvent(process1Id, placeOrderRuntimeEvent)
         println(Console.YELLOW + "Sensory Event Status 1: " + sensoryEventStatus1 + Console.RESET)
-        val events1 = baker.events(process1Id)
+        val events1 = baker.getProcessState(process1Id).eventNames
         println(Console.YELLOW + "Events 1: " + events1 + Console.RESET)
 
         enterBarrier("sensory-event-1")
 
         val sensoryEventStatus2 = baker.processEvent(process1Id, receivedDataRuntimeEvent)
         println(Console.YELLOW + "Sensory Event Status 2: " + sensoryEventStatus2 + Console.RESET)
-        val events2 = baker.events(process1Id)
+        val events2 = baker.getProcessState(process1Id).eventNames
         println(Console.YELLOW + "Events 2: " + events2 + Console.RESET)
 
         enterBarrier("sensory-event-2")
 
         val sensoryEventStatus3 = baker.processEvent(process1Id, paymentMadeRuntimeEvent)
         println(Console.YELLOW + "Sensory Event Status 3: " + sensoryEventStatus3 + Console.RESET)
-        val events3 = baker.events(process1Id)
+        val events3 = baker.getProcessState(process1Id).eventNames
         println(Console.YELLOW + "Events 3: " + events3 + Console.RESET)
 
+        assert(events3 == List(
+          webshop.orderPlaced.name,
+          webshop.valid.name,
+          webshop.customerInfoReceived.name,
+          webshop.paymentMade.name,
+          webshop.goodsManufactured.name,
+          webshop.goodsShipped.name,
+          webshop.invoiceWasSent.name)
+        )
       }
 
       enterBarrier("finished")
