@@ -65,6 +65,15 @@ object BakerTypedProtobufSerializer {
     forType[ProcessInstanceProtocol.Initialized].register,
     forType[ProcessInstanceProtocol.Uninitialized].register,
     forType[ProcessInstanceProtocol.AlreadyInitialized].register,
+
+    forType[ProcessInstanceProtocol.FireTransition].register,
+    forType[ProcessInstanceProtocol.OverrideExceptionStrategy].register,
+    forType[ProcessInstanceProtocol.InvalidCommand].register,
+
+    forType[ProcessInstanceProtocol.AlreadyReceived].register,
+    forType[ProcessInstanceProtocol.TransitionNotEnabled].register,
+    forType[ProcessInstanceProtocol.TransitionFailed].register,
+    forType[ProcessInstanceProtocol.TransitionFired].register,
     
     forType[AddRecipe].register,
     forType[AddRecipeResponse].register,

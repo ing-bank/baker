@@ -186,6 +186,126 @@ object ProcessInstanceProto {
         versioned(message.processId, "processId").map(AlreadyInitialized)
     }
 
+  implicit def fireTransitionProto(implicit ev0: SerializersProvider): ProtoMap[FireTransition, protobuf.FireTransition] =
+    new ProtoMap[FireTransition, protobuf.FireTransition] {
+
+      val companion: GeneratedMessageCompanion[protobuf.FireTransition] =
+        protobuf.FireTransition
+
+      override def toProto(a: FireTransition): protobuf.FireTransition =
+        protobuf.FireTransition(Some(a.transitionId), Some(ctxToProto(a.input.asInstanceOf[AnyRef])), a.correlationId)
+
+      override def fromProto(message: protobuf.FireTransition): Try[FireTransition] =
+        for {
+          transitionId <- versioned(message.transitionId, "transitionId")
+          inputProto <- versioned(message.input, "input")
+          input <- ctxFromProto(inputProto)
+        } yield FireTransition(transitionId, input, message.correlationId)
+    }
+
+  implicit def overrideExceptionStrategyProto(implicit ev0: SerializersProvider): ProtoMap[OverrideExceptionStrategy, protobuf.OverrideExceptionStrategy] =
+    new ProtoMap[OverrideExceptionStrategy, protobuf.OverrideExceptionStrategy] {
+
+      val companion: GeneratedMessageCompanion[protobuf.OverrideExceptionStrategy] =
+        protobuf.OverrideExceptionStrategy
+
+      override def toProto(a: OverrideExceptionStrategy): protobuf.OverrideExceptionStrategy =
+        protobuf.OverrideExceptionStrategy(Some(a.jobId), Some(ctxToProto(a.failureStrategy)))
+
+      override def fromProto(message: protobuf.OverrideExceptionStrategy): Try[OverrideExceptionStrategy] =
+        for {
+          jobId <- versioned(message.jobId, "jobId")
+          strategyProto <- versioned(message.failureStrategy, "failureStrategy")
+          strategy <- ctxFromProto(strategyProto)
+        } yield  OverrideExceptionStrategy(jobId, strategy)
+    }
+
+  implicit def invalidCommandProto: ProtoMap[InvalidCommand, protobuf.InvalidCommand] =
+    new ProtoMap[InvalidCommand, protobuf.InvalidCommand] {
+
+      val companion: GeneratedMessageCompanion[protobuf.InvalidCommand] =
+        protobuf.InvalidCommand
+
+      override def toProto(a: InvalidCommand): protobuf.InvalidCommand =
+        protobuf.InvalidCommand(Some(a.reason))
+
+      override def fromProto(message: protobuf.InvalidCommand): Try[InvalidCommand] =
+        versioned(message.reason, "reason").map(InvalidCommand)
+    }
+
+  implicit def alreadyReceivedProto: ProtoMap[AlreadyReceived, protobuf.AlreadyReceived] =
+    new ProtoMap[AlreadyReceived, protobuf.AlreadyReceived] {
+
+      val companion: GeneratedMessageCompanion[protobuf.AlreadyReceived] =
+        protobuf.AlreadyReceived
+
+      override def toProto(a: AlreadyReceived): protobuf.AlreadyReceived =
+        protobuf.AlreadyReceived(Some(a.correlationId))
+
+      override def fromProto(message: protobuf.AlreadyReceived): Try[AlreadyReceived] =
+        versioned(message.correlationId, "correlationid").map(AlreadyReceived)
+    }
+
+  implicit def transitionNotEnabledProto: ProtoMap[TransitionNotEnabled, protobuf.TransitionNotEnabled] =
+    new ProtoMap[TransitionNotEnabled, protobuf.TransitionNotEnabled] {
+
+      val companion: GeneratedMessageCompanion[protobuf.TransitionNotEnabled] =
+        protobuf.TransitionNotEnabled
+
+      override def toProto(a: TransitionNotEnabled): protobuf.TransitionNotEnabled =
+        protobuf.TransitionNotEnabled(Some(a.transitionId), Some(a.reason))
+
+      override def fromProto(message: protobuf.TransitionNotEnabled): Try[TransitionNotEnabled] =
+        for {
+          transitionId <- versioned(message.transitionId, "transitionId")
+          reason <- versioned(message.reason, "reason")
+        } yield  TransitionNotEnabled(transitionId, reason)
+    }
+
+  implicit def transitionFailedProto(implicit ev0: SerializersProvider): ProtoMap[TransitionFailed, protobuf.TransitionFailedMessage] =
+    new ProtoMap[TransitionFailed, protobuf.TransitionFailedMessage] {
+
+      val companion: GeneratedMessageCompanion[protobuf.TransitionFailedMessage] =
+        protobuf.TransitionFailedMessage
+
+      override def toProto(a: TransitionFailed): protobuf.TransitionFailedMessage =
+        protobuf.TransitionFailedMessage(Some(a.jobId), Some(a.transitionId), a.correlationId, toProtoMarking(a.consume),
+          Some(ctxToProto(a.input.asInstanceOf[AnyRef])), Some(a.reason), Some(ctxToProto(a.strategy)))
+
+      override def fromProto(message: protobuf.TransitionFailedMessage): Try[TransitionFailed] =
+        for {
+          jobId <- versioned(message.jobId, "jobId")
+          transitionId <- versioned(message.transitionId, "transitionId")
+          reason <- versioned(message.reason, "reason")
+          consume <- toDomainMarking(message.consume)
+          inputProto <- versioned(message.input, "input")
+          input <- ctxFromProto(inputProto)
+          strategyProto <- versioned(message.strategy, "strategy")
+          strategy <- ctxFromProto(strategyProto)
+        } yield  TransitionFailed(jobId, transitionId, message.correlationId, consume, input, reason, strategy)
+    }
+
+  implicit def transitionFiredProto(implicit ev0: SerializersProvider): ProtoMap[TransitionFired, protobuf.TransitionFiredMessage] =
+    new ProtoMap[TransitionFired, protobuf.TransitionFiredMessage] {
+
+      val companion: GeneratedMessageCompanion[protobuf.TransitionFiredMessage] =
+        protobuf.TransitionFiredMessage
+
+      override def toProto(a: TransitionFired): protobuf.TransitionFiredMessage =
+        protobuf.TransitionFiredMessage(Some(a.jobId), Some(a.transitionId), a.correlationId,
+          toProtoMarking(a.consumed), toProtoMarking(a.produced), Option.empty, a.newJobsIds.toSeq, Some(ctxToProto(a.output.asInstanceOf[AnyRef])))
+
+      override def fromProto(message: protobuf.TransitionFiredMessage): Try[TransitionFired] =
+        for {
+          jobId <- versioned(message.jobId, "jobId")
+          transitionId <- versioned(message.transitionId, "transitionId")
+          consumed <- toDomainMarking(message.consumed)
+          produced <- toDomainMarking(message.produced)
+          outputProto <- versioned(message.output, "output")
+          output <- ctxFromProto(outputProto)
+        } yield  TransitionFired(jobId, transitionId, message.correlationId, consumed, produced, message.newJobsIds.toSet, output)
+    }
+
   private def toDomainMarking(markingData: Seq[protobuf.MarkingData])(implicit ev0: SerializersProvider): Try[Marking[Id]] = {
     markingData.foldLeft[Try[Marking[Id]]](Success(Map.empty)) {
       case (accTry, protobuf.MarkingData(Some(placeId), Some(data), Some(count))) =>
