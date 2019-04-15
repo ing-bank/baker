@@ -77,31 +77,37 @@ object HappyPath extends MockitoSugar {
   object ValidateOrder {
     val name: String = webshop.validateOrder.name
     def apply(order: String): RuntimeEvent = {
-      println(Console.MAGENTA_B + order + " validated!" + Console.RESET)
+      println(Console.MAGENTA + "order validated" + Console.RESET)
       RuntimeEvent(webshop.valid.name, Seq.empty)
     }
   }
 
   object ManufactureGoods {
     val name: String = webshop.manufactureGoods.name
-    def apply(order: String): RuntimeEvent =
+    def apply(order: String): RuntimeEvent = {
+      println(Console.MAGENTA + "goods manufactured" + Console.RESET)
       RuntimeEvent(webshop.goodsManufactured.name, Map(
         webshop.goods.name -> PrimitiveValue("Good1")
       ).toSeq)
+    }
   }
 
   object SendInvoice {
     val name: String = webshop.sendInvoice.name
-    def apply(info: webshop.CustomerInfo): RuntimeEvent =
+    def apply(info: webshop.CustomerInfo): RuntimeEvent = {
+      println(Console.MAGENTA + "invoice sent" + Console.RESET)
       RuntimeEvent(webshop.invoiceWasSent.name, Seq.empty)
+    }
   }
 
   object ShipGoods {
     val name: String = webshop.shipGoods.name
-    def apply(goods: String, info: webshop.CustomerInfo): RuntimeEvent =
+    def apply(goods: String, info: webshop.CustomerInfo): RuntimeEvent = {
+      println(Console.MAGENTA + "goods shipped" + Console.RESET)
       RuntimeEvent(webshop.goodsShipped.name, Map(
         webshop.trackingId.name -> PrimitiveValue("TrackingId1")
       ).toSeq)
+    }
   }
 
   def placeOrderRuntimeEvent: RuntimeEvent =
