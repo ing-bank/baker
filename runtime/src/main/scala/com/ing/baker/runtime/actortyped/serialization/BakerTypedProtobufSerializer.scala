@@ -6,6 +6,8 @@ import com.ing.baker.runtime.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProto._
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
+import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.RecipeAdded
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProto._
@@ -54,6 +56,10 @@ object BakerTypedProtobufSerializer {
     forType[ProcessDeleted].register,
     forType[NoSuchProcess].register,
     forType[ProcessAlreadyExists].register,
+
+    forType[ProcessInstanceProtocol.Stop].register,
+    forType[ProcessInstanceProtocol.GetState.type].register,
+    forType[ProcessInstanceProtocol.InstanceState].register,
 
     forType[AddRecipe].register,
     forType[AddRecipeResponse].register,

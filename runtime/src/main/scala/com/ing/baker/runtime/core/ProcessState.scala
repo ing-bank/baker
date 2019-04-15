@@ -1,11 +1,11 @@
 package com.ing.baker.runtime.core
 
-import com.ing.baker.types.{PrimitiveValue, Value}
+import com.ing.baker.types.PrimitiveValue
 import cats.instances.list._
 import cats.instances.try_._
 import cats.syntax.traverse._
 import com.ing.baker.types.Value
-import com.ing.baker.runtime.actor.protobuf
+import com.ing.baker.runtime.actor.{ protobuf => proto }
 import com.ing.baker.runtime.actortyped.serialization.ProtoMap
 import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 
@@ -58,19 +58,19 @@ case class ProcessState(processId: String,
 
 object ProcessState {
 
-  implicit def protoMap: ProtoMap[ProcessState, protobuf.ProcessState] =
-    new ProtoMap[ProcessState, protobuf.ProcessState] {
+  implicit def protoMap: ProtoMap[ProcessState, proto.ProcessState] =
+    new ProtoMap[ProcessState, proto.ProcessState] {
 
-      val companion = protobuf.ProcessState
+      val companion = proto.ProcessState
 
-      def toProto(a: ProcessState): protobuf.ProcessState = {
+      def toProto(a: ProcessState): proto.ProcessState = {
         val protoIngredients = a.ingredients.toSeq.map { case (name, value) =>
-          protobuf.Ingredient(Some(name), None, Some(ctxToProto(value)))
+          proto.Ingredient(Some(name), None, Some(ctxToProto(value)))
         }
-        protobuf.ProcessState(Some(a.processId), protoIngredients, a.eventNames)
+        proto.ProcessState(Some(a.processId), protoIngredients, a.eventNames)
       }
 
-      def fromProto(message: protobuf.ProcessState): Try[ProcessState] =
+      def fromProto(message: proto.ProcessState): Try[ProcessState] =
         for {
           processId <- versioned(message.processId, "processId")
           ingredients <- message.ingredients.toList.traverse[Try, (String, Value)] { i =>
