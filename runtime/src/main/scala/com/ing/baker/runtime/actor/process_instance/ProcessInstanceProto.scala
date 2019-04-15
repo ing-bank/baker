@@ -128,6 +128,64 @@ object ProcessInstanceProto {
         } yield InstanceState(sequenceNr, marking, state, jobMap)
     }
 
+  implicit def initializeProto(implicit ev0: SerializersProvider): ProtoMap[Initialize, protobuf.Initialize] =
+    new ProtoMap[Initialize, protobuf.Initialize] {
+
+      val companion: GeneratedMessageCompanion[protobuf.Initialize] =
+        protobuf.Initialize
+
+      override def toProto(a: Initialize): protobuf.Initialize =
+        protobuf.Initialize(toProtoMarking(a.marking), Some(ctxToProto(a.state.asInstanceOf[AnyRef])))
+
+      override def fromProto(message: protobuf.Initialize): Try[Initialize] =
+        for {
+          state <- versioned(message.state, "state")
+          marking <- toDomainMarking(message.markingData)
+        } yield Initialize(marking, state)
+    }
+
+   implicit def initializedProto(implicit ev0: SerializersProvider): ProtoMap[Initialized, protobuf.InitializedMessage] =
+    new ProtoMap[Initialized, protobuf.InitializedMessage] {
+
+      val companion: GeneratedMessageCompanion[protobuf.InitializedMessage] =
+        protobuf.InitializedMessage
+
+      override def toProto(a: Initialized): protobuf.InitializedMessage =
+        protobuf.InitializedMessage(toProtoMarking(a.marking), Some(ctxToProto(a.state.asInstanceOf[AnyRef])))
+
+      override def fromProto(message: protobuf.InitializedMessage): Try[Initialized] =
+        for {
+          state <- versioned(message.state, "state")
+          marking <- toDomainMarking(message.marking)
+        } yield Initialized(marking, state)
+    }
+
+  implicit def uninitializedProto(implicit ev0: SerializersProvider): ProtoMap[Uninitialized, protobuf.Uninitialized] =
+    new ProtoMap[Uninitialized, protobuf.Uninitialized] {
+
+      val companion: GeneratedMessageCompanion[protobuf.Uninitialized] =
+        protobuf.Uninitialized
+
+      override def toProto(a: Uninitialized): protobuf.Uninitialized =
+        protobuf.Uninitialized(Some(a.processId))
+
+      override def fromProto(message: protobuf.Uninitialized): Try[Uninitialized] =
+        versioned(message.processId, "processId").map(Uninitialized)
+    }
+
+  implicit def alreadyInitializedProto(implicit ev0: SerializersProvider): ProtoMap[AlreadyInitialized, protobuf.AlreadyInitialized] =
+    new ProtoMap[AlreadyInitialized, protobuf.AlreadyInitialized] {
+
+      val companion: GeneratedMessageCompanion[protobuf.AlreadyInitialized] =
+        protobuf.AlreadyInitialized
+
+      override def toProto(a: AlreadyInitialized): protobuf.AlreadyInitialized =
+        protobuf.AlreadyInitialized(Some(a.processId))
+
+      override def fromProto(message: protobuf.AlreadyInitialized): Try[AlreadyInitialized] =
+        versioned(message.processId, "processId").map(AlreadyInitialized)
+    }
+
   private def toDomainMarking(markingData: Seq[protobuf.MarkingData])(implicit ev0: SerializersProvider): Try[Marking[Id]] = {
     markingData.foldLeft[Try[Marking[Id]]](Success(Map.empty)) {
       case (accTry, protobuf.MarkingData(Some(placeId), Some(data), Some(count))) =>
@@ -150,4 +208,5 @@ object ProcessInstanceProto {
       }
     }.toSeq
   }
+
 }

@@ -61,6 +61,11 @@ object BakerTypedProtobufSerializer {
     forType[ProcessInstanceProtocol.GetState.type].register,
     forType[ProcessInstanceProtocol.InstanceState].register,
 
+    forType[ProcessInstanceProtocol.Initialize].register,
+    forType[ProcessInstanceProtocol.Initialized].register,
+    forType[ProcessInstanceProtocol.Uninitialized].register,
+    forType[ProcessInstanceProtocol.AlreadyInitialized].register,
+    
     forType[AddRecipe].register,
     forType[AddRecipeResponse].register,
     forType[GetRecipe].register,
