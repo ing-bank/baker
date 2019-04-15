@@ -259,7 +259,7 @@ object ProcessIndexProto {
         } yield ProcessEventResponse(processId, sourceRef.asInstanceOf[SourceRef[Any]])
     }
 
-  implicit def getProcessStateProto(implicit provider: SerializersProvider): ProtoMap[GetProcessState, protobuf.GetProcessState] =
+  implicit def getProcessStateProto: ProtoMap[GetProcessState, protobuf.GetProcessState] =
     new ProtoMap[GetProcessState, protobuf.GetProcessState] {
 
       val companion = protobuf.GetProcessState
@@ -273,7 +273,7 @@ object ProcessIndexProto {
         } yield GetProcessState(processId)
     }
 
-  implicit def getCompiledRecipeProto(implicit provider: SerializersProvider): ProtoMap[GetCompiledRecipe, protobuf.GetCompiledRecipe] =
+  implicit def getCompiledRecipeProto: ProtoMap[GetCompiledRecipe, protobuf.GetCompiledRecipe] =
     new ProtoMap[GetCompiledRecipe, protobuf.GetCompiledRecipe] {
 
       val companion = protobuf.GetCompiledRecipe
@@ -287,7 +287,7 @@ object ProcessIndexProto {
         } yield GetCompiledRecipe(processId)
     }
 
-  implicit def receivePeriodExpiredProto(implicit provider: SerializersProvider): ProtoMap[ReceivePeriodExpired, protobuf.ReceivePeriodExpired] =
+  implicit def receivePeriodExpiredProto: ProtoMap[ReceivePeriodExpired, protobuf.ReceivePeriodExpired] =
     new ProtoMap[ReceivePeriodExpired, protobuf.ReceivePeriodExpired] {
 
       val companion = protobuf.ReceivePeriodExpired
@@ -301,7 +301,7 @@ object ProcessIndexProto {
         } yield ReceivePeriodExpired(processId)
     }
 
-  implicit def invalidEventProto(implicit provider: SerializersProvider): ProtoMap[InvalidEvent, protobuf.InvalidEvent] =
+  implicit def invalidEventProto: ProtoMap[InvalidEvent, protobuf.InvalidEvent] =
     new ProtoMap[InvalidEvent, protobuf.InvalidEvent] {
 
       val companion = protobuf.InvalidEvent
@@ -316,7 +316,7 @@ object ProcessIndexProto {
         } yield InvalidEvent(processId, msg)
     }
 
-  implicit def processDeletedProto(implicit provider: SerializersProvider): ProtoMap[ProcessDeleted, protobuf.ProcessDeleted] =
+  implicit def processDeletedProto: ProtoMap[ProcessDeleted, protobuf.ProcessDeleted] =
     new ProtoMap[ProcessDeleted, protobuf.ProcessDeleted] {
 
       val companion = protobuf.ProcessDeleted
@@ -330,7 +330,7 @@ object ProcessIndexProto {
         } yield ProcessDeleted(processId)
     }
 
-  implicit def noSuchProcessProto(implicit provider: SerializersProvider): ProtoMap[NoSuchProcess, protobuf.NoSuchProcess] =
+  implicit def noSuchProcessProto: ProtoMap[NoSuchProcess, protobuf.NoSuchProcess] =
     new ProtoMap[NoSuchProcess, protobuf.NoSuchProcess] {
 
       val companion = protobuf.NoSuchProcess
@@ -344,7 +344,7 @@ object ProcessIndexProto {
         } yield NoSuchProcess(processId)
     }
 
-  implicit def processAlreadyExistsProto(implicit provider: SerializersProvider): ProtoMap[ProcessAlreadyExists, protobuf.ProcessAlreadyExists] =
+  implicit def processAlreadyExistsProto: ProtoMap[ProcessAlreadyExists, protobuf.ProcessAlreadyExists] =
     new ProtoMap[ProcessAlreadyExists, protobuf.ProcessAlreadyExists] {
 
       val companion = protobuf.ProcessAlreadyExists
