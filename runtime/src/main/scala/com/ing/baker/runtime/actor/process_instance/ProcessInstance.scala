@@ -13,7 +13,7 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.{Continue, RetryWithDelay}
 import com.ing.baker.runtime.actor.process_instance.internal._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstanceProtocol => protocol}
-import com.ing.baker.runtime.actor.serialization.Encryption
+import com.ing.baker.runtime.actortyped.serialization.Encryption
 import com.ing.baker.runtime.core.ProcessState
 
 import scala.concurrent.ExecutionContext

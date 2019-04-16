@@ -16,7 +16,7 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSpec._
 import com.ing.baker.runtime.actor.process_instance.dsl._
 import com.ing.baker.runtime.actor.process_instance.internal.ExceptionStrategy.RetryWithDelay
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstanceProtocol => protocol}
-import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
+import com.ing.baker.runtime.actortyped.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.core.namedCachedThreadPool
 import org.mockito.Matchers._
 import org.mockito.Mockito._

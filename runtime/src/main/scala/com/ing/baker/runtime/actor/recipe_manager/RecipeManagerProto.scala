@@ -7,7 +7,7 @@ import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.RecipeAdded
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actortyped.serialization.ProtoMap
 import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{versioned, ctxFromProto, ctxToProto}
-import com.ing.baker.runtime.actortyped.serialization.protomappings.AnyRefMapping.SerializersProvider
+import com.ing.baker.runtime.actortyped.serialization.SerializersProvider
 
 import scala.util.Try
 

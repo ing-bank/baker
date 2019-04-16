@@ -2,17 +2,11 @@ package com.ing.baker.runtime.actortyped.serialization.protomappings
 
 import com.google.protobuf.ByteString
 import akka.serialization.{Serializer, SerializerWithStringManifest}
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap
+import com.ing.baker.runtime.actortyped.serialization.{ProtoMap, SerializersProvider}
 import com.ing.baker.runtime.actortyped.serialization.ProtoMap.versioned
 import com.ing.baker.runtime.actor.protobuf
-import com.ing.baker.runtime.actortyped.serialization.protomappings.AnyRefMapping.SerializersProvider
 
 import scala.util.{Failure, Success, Try}
-
-object AnyRefMapping {
-
-  case class SerializersProvider(getSerializerFor: AnyRef => Serializer, serializerByIdentity: Int => Option[Serializer])
-}
 
 class AnyRefMapping(provider: SerializersProvider) extends ProtoMap[AnyRef, protobuf.SerializedData] {
 
@@ -20,7 +14,7 @@ class AnyRefMapping(provider: SerializersProvider) extends ProtoMap[AnyRef, prot
 
   override def toProto(obj: AnyRef): protobuf.SerializedData = {
     val serializer: Serializer = provider.getSerializerFor(obj)
-    val bytes = serializer.toBinary(obj)
+    val bytes = provider.encryption.encrypt(serializer.toBinary(obj))
     val manifest = serializer match {
       case s: SerializerWithStringManifest ⇒ s.manifest(obj)
       case _                               ⇒ if (obj != null) obj.getClass.getName else ""
@@ -41,9 +35,10 @@ class AnyRefMapping(provider: SerializersProvider) extends ProtoMap[AnyRef, prot
         case Some(serializer) => Success(serializer)
         case None => Failure(new IllegalStateException(s"No serializer found with id $serializerId"))
       }
+      decryptedBytes = provider.encryption.decrypt(bytes.toByteArray)
     } yield
       serializer match {
-        case s: SerializerWithStringManifest ⇒ s.fromBinary(bytes.toByteArray, manifest)
+        case s: SerializerWithStringManifest ⇒ s.fromBinary(decryptedBytes, manifest)
         case _                               ⇒
           val optionalClass = Try { Class.forName(manifest) }.toOption
           serializer.fromBinary(bytes.toByteArray, optionalClass)

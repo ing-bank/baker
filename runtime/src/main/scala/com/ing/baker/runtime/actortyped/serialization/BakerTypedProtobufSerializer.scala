@@ -1,7 +1,8 @@
 package com.ing.baker.runtime.actortyped.serialization
 
 import akka.actor.ExtendedActorSystem
-import akka.serialization.{Serialization, SerializationExtension, SerializerWithStringManifest}
+import akka.serialization.SerializerWithStringManifest
+import com.ing.baker.il
 import com.ing.baker.runtime.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
@@ -13,8 +14,7 @@ import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.actortyped.serialization.BakerTypedProtobufSerializer.BinarySerializable
 import org.slf4j.LoggerFactory
-import com.ing.baker.runtime.actortyped.serialization.protomappings.AnyRefMapping.SerializersProvider
-import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.core.{BakerResponseEventProtocol, ProcessState, RuntimeEvent}
 
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -29,8 +29,15 @@ object BakerTypedProtobufSerializer {
   val identifier = 103
 
   private[serialization] def entries(implicit ev0: SerializersProvider): List[BinarySerializable] = List(
+
+    forType[com.ing.baker.types.Value].register,
+    forType[com.ing.baker.types.Type].register,
+
+    forType[BakerResponseEventProtocol].register,
     forType[RuntimeEvent].register,
     forType[ProcessState].register,
+
+    forType[il.CompiledRecipe].register,
 
     forType[GetShardIndex].register,
     forType[ActorCreated].register,
@@ -74,7 +81,7 @@ object BakerTypedProtobufSerializer {
     forType[ProcessInstanceProtocol.TransitionNotEnabled].register,
     forType[ProcessInstanceProtocol.TransitionFailed].register,
     forType[ProcessInstanceProtocol.TransitionFired].register,
-    
+
     forType[AddRecipe].register,
     forType[AddRecipeResponse].register,
     forType[GetRecipe].register,
@@ -133,13 +140,7 @@ object BakerTypedProtobufSerializer {
 
 class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
 
-  private implicit def serializersProvider: SerializersProvider = {
-    val serialization: Serialization = SerializationExtension.get(system)
-    SerializersProvider(
-      getSerializerFor = serialization.findSerializerFor,
-      serializerByIdentity = serialization.serializerByIdentity.get
-    )
-  }
+  private implicit def serializersProvider: SerializersProvider = SerializersProvider(system)
 
   lazy val entriesMem: List[BinarySerializable] = BakerTypedProtobufSerializer.entries
 

@@ -9,7 +9,7 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.protobuf.FailureStrategyMessage.StrategyTypeMessage
 import com.ing.baker.runtime.actortyped.serialization.ProtoMap
 import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
-import com.ing.baker.runtime.actortyped.serialization.protomappings.AnyRefMapping.SerializersProvider
+import com.ing.baker.runtime.actortyped.serialization.SerializersProvider
 import scalapb.GeneratedMessageCompanion
 
 import scala.util.{Failure, Success, Try}

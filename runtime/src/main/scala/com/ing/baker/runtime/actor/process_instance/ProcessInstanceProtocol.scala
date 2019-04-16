@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.actor.process_instance
 
 import com.ing.baker.petrinet.api._
-import com.ing.baker.runtime.actor.serialization.BakerProtoMessage
+import com.ing.baker.runtime.actortyped.serialization.BakerSerializable
 
 /**
  * Describes the messages to and from a PetriNetInstance actor.
@@ -11,7 +11,7 @@ object ProcessInstanceProtocol {
   /**
    * A common trait for all commands to a petri net instance.
    */
-  sealed trait Command extends BakerProtoMessage
+  sealed trait Command extends BakerSerializable
 
   /**
    * Command to request the current state of the petri net instance.
@@ -54,7 +54,7 @@ object ProcessInstanceProtocol {
   /**
    * A common trait for all responses coming from a petri net instance.
    */
-  sealed trait Response extends BakerProtoMessage
+  sealed trait Response extends BakerSerializable
 
   /**
    * A response send in case any other command then 'Initialize' is sent to the actor in unitialized state.

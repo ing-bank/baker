@@ -3,10 +3,10 @@ package com.ing.baker.runtime.actor
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.Materializer
 import com.ing.baker.runtime.actor.process_index.ProcessIndex
-import com.ing.baker.runtime.actor.process_index.ProcessIndex.{ActorMetadata, CheckForProcessesToBeDeleted}
+import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol.{GetIndex, Index}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
-import com.ing.baker.runtime.actor.serialization.Encryption
+import com.ing.baker.runtime.actortyped.serialization.Encryption
 import com.ing.baker.runtime.core.internal.InteractionManager
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._

@@ -6,7 +6,6 @@ import akka.pattern.{ask, pipe}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.stream.scaladsl.{Source, StreamRefs}
 import akka.stream.{Materializer, SourceRef, StreamRefAttributes}
-import akka.util.Timeout
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
 import com.ing.baker.petrinet.api._
@@ -16,7 +15,7 @@ import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceRuntime}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.actor.serialization.{BakerProtoMessage, Encryption}
+import com.ing.baker.runtime.actortyped.serialization.Encryption
 import com.ing.baker.runtime.core.events.{ProcessCreated, RejectReason}
 import com.ing.baker.runtime.core.internal.{InteractionManager, RecipeRuntime}
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, events, namedCachedThreadPool, _}

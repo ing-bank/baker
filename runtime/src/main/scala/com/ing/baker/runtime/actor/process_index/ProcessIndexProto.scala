@@ -13,7 +13,7 @@ import com.ing.baker.runtime.actortyped.serialization.ProtoMap
 
 import scala.util.Success
 import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
-import com.ing.baker.runtime.actortyped.serialization.protomappings.AnyRefMapping.SerializersProvider
+import com.ing.baker.runtime.actortyped.serialization.SerializersProvider
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
