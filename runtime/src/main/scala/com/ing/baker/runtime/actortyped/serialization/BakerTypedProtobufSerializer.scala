@@ -28,7 +28,7 @@ object BakerTypedProtobufSerializer {
     */
   val identifier = 103
 
-  private[serialization] def entries(implicit ev0: SerializersProvider): List[BinarySerializable] = List(
+  def entries(implicit ev0: SerializersProvider): List[BinarySerializable] = List(
 
     forType[com.ing.baker.types.Value].register,
     forType[com.ing.baker.types.Type].register,
@@ -92,9 +92,9 @@ object BakerTypedProtobufSerializer {
     forType[RecipeAdded].register
   )
 
-  private[serialization] def forType[A <: AnyRef](implicit tag: ClassTag[A]): RegisterFor[A] = new RegisterFor[A](tag)
+  def forType[A <: AnyRef](implicit tag: ClassTag[A]): RegisterFor[A] = new RegisterFor[A](tag)
 
-  private[serialization] class RegisterFor[A <: AnyRef](classTag: ClassTag[A]) {
+  class RegisterFor[A <: AnyRef](classTag: ClassTag[A]) {
 
     def register[P <: scalapb.GeneratedMessage with scalapb.Message[P]](implicit protoMap: ProtoMap[A, P]): BinarySerializable = {
       new BinarySerializable {
@@ -112,7 +112,7 @@ object BakerTypedProtobufSerializer {
     }
   }
 
-  private[serialization] trait BinarySerializable {
+  trait BinarySerializable {
 
     type Type <: AnyRef
 
@@ -140,7 +140,7 @@ object BakerTypedProtobufSerializer {
 
 class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
 
-  private implicit def serializersProvider: SerializersProvider = SerializersProvider(system)
+  implicit def serializersProvider: SerializersProvider = SerializersProvider(system)
 
   lazy val entriesMem: List[BinarySerializable] = BakerTypedProtobufSerializer.entries
 
