@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.core
 
-import com.ing.baker.runtime.actor.serialization.ProtoEventAdapterSpec
+import com.ing.baker.types.TypesGen
 import org.scalacheck.Gen
 
 object ProcessStateGen {
@@ -10,7 +10,7 @@ object ProcessStateGen {
       name <- Gen.alphaNumStr
       values <- Gen.listOf(for {
         name <- Gen.alphaNumStr
-        value <- ProtoEventAdapterSpec.Types.anyValueGen
+        value <- TypesGen.anyValueGen
       } yield (name, value))
       eventNames <- Gen.listOf(Gen.alphaNumStr)
     } yield ProcessState(name, values.toMap, eventNames)

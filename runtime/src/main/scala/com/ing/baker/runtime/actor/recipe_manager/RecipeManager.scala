@@ -5,7 +5,7 @@ import akka.persistence.PersistentActor
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.actortyped.serialization.BakerSerializable
+import com.ing.baker.runtime.actor.serialization.BakerSerializable
 
 import scala.collection.mutable
 

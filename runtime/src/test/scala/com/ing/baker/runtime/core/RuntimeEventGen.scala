@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.core
 
 import org.scalacheck.Gen
-import com.ing.baker.runtime.actor.serialization.ProtoEventAdapterSpec
+import com.ing.baker.types.TypesGen
 
 object RuntimeEventGen {
 
@@ -10,7 +10,7 @@ object RuntimeEventGen {
       name <- Gen.alphaNumStr
       values <- Gen.listOf(for {
         name <- Gen.alphaNumStr
-        value <- ProtoEventAdapterSpec.Types.anyValueGen
+        value <- TypesGen.anyValueGen
       } yield (name, value))
     } yield RuntimeEvent(name, values)
 

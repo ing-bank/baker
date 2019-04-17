@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actortyped.serialization
+package com.ing.baker.runtime.actor.serialization
 
 import akka.actor.ActorSystem
 import akka.serialization.SerializationExtension

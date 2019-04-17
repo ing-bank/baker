@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.actor.recipe_manager
 
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.actortyped.serialization.BakerSerializable
+import com.ing.baker.runtime.actor.serialization.BakerSerializable
 
 sealed trait RecipeManagerProtocol extends BakerSerializable
 

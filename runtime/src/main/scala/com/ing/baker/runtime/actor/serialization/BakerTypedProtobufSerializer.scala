@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actortyped.serialization
+package com.ing.baker.runtime.actor.serialization
 
 import akka.actor.ExtendedActorSystem
 import akka.serialization.SerializerWithStringManifest
@@ -12,7 +12,7 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.RecipeAdded
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProto._
-import com.ing.baker.runtime.actortyped.serialization.BakerTypedProtobufSerializer.BinarySerializable
+import com.ing.baker.runtime.actor.serialization.BakerTypedProtobufSerializer.BinarySerializable
 import org.slf4j.LoggerFactory
 import com.ing.baker.runtime.core.{BakerResponseEventProtocol, ProcessState, RuntimeEvent}
 
@@ -76,6 +76,10 @@ object BakerTypedProtobufSerializer {
     forType[ProcessInstanceProtocol.FireTransition].register,
     forType[ProcessInstanceProtocol.OverrideExceptionStrategy].register,
     forType[ProcessInstanceProtocol.InvalidCommand].register,
+
+    forType[com.ing.baker.runtime.actor.process_instance.protobuf.TransitionFired].register(ProtoMap.identityProtoMap(com.ing.baker.runtime.actor.process_instance.protobuf.TransitionFired)),
+    forType[com.ing.baker.runtime.actor.process_instance.protobuf.TransitionFailed].register(ProtoMap.identityProtoMap(com.ing.baker.runtime.actor.process_instance.protobuf.TransitionFailed)),
+    forType[com.ing.baker.runtime.actor.process_instance.protobuf.Initialized].register(ProtoMap.identityProtoMap(com.ing.baker.runtime.actor.process_instance.protobuf.Initialized)),
 
     forType[ProcessInstanceProtocol.AlreadyReceived].register,
     forType[ProcessInstanceProtocol.TransitionNotEnabled].register,

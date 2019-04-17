@@ -14,7 +14,7 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEventSourcing
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSpec._
 import com.ing.baker.runtime.actor.process_instance.dsl._
-import com.ing.baker.runtime.actortyped.serialization.Encryption.NoEncryption
+import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.actor.AkkaTestBase
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Matchers._

@@ -2,7 +2,7 @@ package com.ing.baker.runtime.actor.process_index
 
 import akka.stream.SourceRef
 import com.ing.baker.runtime.actor.process_index.ProcessIndex.ActorMetadata
-import com.ing.baker.runtime.actortyped.serialization.BakerSerializable
+import com.ing.baker.runtime.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.core.RuntimeEvent
 
 import scala.concurrent.duration.FiniteDuration

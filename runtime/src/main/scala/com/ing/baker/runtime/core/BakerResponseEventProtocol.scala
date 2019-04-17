@@ -3,8 +3,8 @@ package com.ing.baker.runtime.core
 import akka.util.ByteString
 import com.ing.baker.runtime.actor.process_index.{ProcessIndexProtocol => idxProtocol}
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstanceProtocol => insProtocol}
-import com.ing.baker.runtime.actortyped.serialization.{ProtoMap, SerializersProvider}
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
+import com.ing.baker.runtime.actor.serialization.{ProtoMap, SerializersProvider}
+import com.ing.baker.runtime.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProto._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProto._
 import scalapb.GeneratedMessageCompanion

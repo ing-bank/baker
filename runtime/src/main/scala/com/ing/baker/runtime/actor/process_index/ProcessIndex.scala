@@ -15,7 +15,7 @@ import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceRuntime}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.actortyped.serialization.Encryption
+import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.core.events.{ProcessCreated, RejectReason}
 import com.ing.baker.runtime.core.internal.{InteractionManager, RecipeRuntime}
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, events, namedCachedThreadPool, _}
@@ -27,7 +27,7 @@ import scala.util.{Failure, Success}
 import cats.data.OptionT
 import cats.instances.future._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
-import com.ing.baker.runtime.actortyped.serialization.BakerSerializable
+import com.ing.baker.runtime.actor.serialization.BakerSerializable
 
 object ProcessIndex {
 

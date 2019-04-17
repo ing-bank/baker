@@ -2,8 +2,8 @@ package com.ing.baker.baas.server.protocol
 
 import com.ing.baker.runtime.core.ProcessState
 
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{versioned, ctxFromProto, ctxToProto}
+import com.ing.baker.runtime.actor.serialization.ProtoMap
+import com.ing.baker.runtime.actor.serialization.ProtoMap.{versioned, ctxFromProto, ctxToProto}
 import com.ing.baker.runtime.baas.protobuf
 import scalapb.GeneratedMessageCompanion
 

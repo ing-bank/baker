@@ -10,8 +10,8 @@ import com.ing.baker.runtime.actor.process_instance.internal.Instance
 import com.ing.baker.runtime.actor.process_instance.protobuf.FailureStrategy.StrategyType
 import com.ing.baker.runtime.actor.process_instance.protobuf._
 import com.ing.baker.runtime.actor.protobuf.{ProducedToken, SerializedData}
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{ctxFromProto, ctxToProto}
-import com.ing.baker.runtime.actortyped.serialization.SerializersProvider
+import com.ing.baker.runtime.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto}
+import com.ing.baker.runtime.actor.serialization.SerializersProvider
 
 import scala.util.{Failure, Success}
 

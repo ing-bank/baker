@@ -6,8 +6,8 @@ import cats.instances.try_._
 import cats.syntax.traverse._
 import com.ing.baker.types.Value
 import com.ing.baker.runtime.actor.{ protobuf => proto }
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
+import com.ing.baker.runtime.actor.serialization.ProtoMap
+import com.ing.baker.runtime.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 
 import scala.collection.JavaConverters._
 import scala.util.Try

@@ -1,13 +1,13 @@
-package com.ing.baker.runtime.actortyped.serialization.protomappings
+package com.ing.baker.runtime.actor.serialization.protomappings
 
 import java.util.concurrent.TimeUnit
 
 import cats.implicits._
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap
+import com.ing.baker.runtime.actor.serialization.ProtoMap
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.InteractionFailureStrategy
 import com.ing.baker.runtime.actor.protobuf
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{versioned, ctxFromProto, ctxToProto}
+import com.ing.baker.runtime.actor.serialization.ProtoMap.{versioned, ctxFromProto, ctxToProto}
 
 import scala.util.{Failure, Success, Try}
 import scala.concurrent.duration._

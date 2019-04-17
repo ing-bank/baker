@@ -1,10 +1,10 @@
-package com.ing.baker.runtime.actortyped.serialization.protomappings
+package com.ing.baker.runtime.actor.serialization.protomappings
 
 import com.ing.baker.il
 import com.ing.baker.il.EventOutputTransformer
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap
+import com.ing.baker.runtime.actor.serialization.ProtoMap
 import com.ing.baker.runtime.actor.protobuf
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap.versioned
+import com.ing.baker.runtime.actor.serialization.ProtoMap.versioned
 
 import scala.util.Try
 

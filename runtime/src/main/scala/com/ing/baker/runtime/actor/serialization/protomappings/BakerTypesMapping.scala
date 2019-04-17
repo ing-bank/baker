@@ -1,8 +1,8 @@
-package com.ing.baker.runtime.actortyped.serialization.protomappings
+package com.ing.baker.runtime.actor.serialization.protomappings
 
 import cats.implicits._
 import com.ing.baker.types
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap
+import com.ing.baker.runtime.actor.serialization.ProtoMap
 import com.ing.baker.runtime.actor.protobuf
 import com.ing.baker.runtime.actor.protobuf._
 import Type.OneofType._

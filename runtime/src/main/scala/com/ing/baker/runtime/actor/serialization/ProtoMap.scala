@@ -1,13 +1,13 @@
-package com.ing.baker.runtime.actortyped.serialization
+package com.ing.baker.runtime.actor.serialization
 
 import com.ing.baker.il
 import com.ing.baker.types
 import com.ing.baker.runtime.actor.protobuf
-import com.ing.baker.runtime.actortyped.serialization.protomappings._
+import com.ing.baker.runtime.actor.serialization.protomappings._
 import com.ing.baker.runtime.core.RuntimeEvent
 import scalapb.GeneratedMessageCompanion
 
-import scala.util.Try
+import scala.util.{Success, Try}
 
 trait ProtoMap[A, P <: scalapb.GeneratedMessage with scalapb.Message[P]] {
 
@@ -60,4 +60,14 @@ object ProtoMap {
 
   implicit val runtimeEventMapping: ProtoMap[RuntimeEvent, protobuf.RuntimeEvent] =
     new RuntimeEventMapping
+
+  def identityProtoMap[A <: scalapb.GeneratedMessage with scalapb.Message[A]](companion0: GeneratedMessageCompanion[A]): ProtoMap[A, A] =
+    new ProtoMap[A, A] {
+
+      override def companion: GeneratedMessageCompanion[A] = companion0
+
+      override def toProto(a: A): A = a
+
+      override def fromProto(message: A): Try[A] = Success(message)
+    }
 }

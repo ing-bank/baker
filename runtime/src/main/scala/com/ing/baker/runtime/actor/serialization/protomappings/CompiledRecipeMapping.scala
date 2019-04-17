@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.actortyped.serialization.protomappings
+package com.ing.baker.runtime.actor.serialization.protomappings
 
 import java.util.concurrent.TimeUnit
 
@@ -8,10 +8,10 @@ import cats.instances.option._
 import cats.instances.try_._
 import com.ing.baker.il
 import com.ing.baker.petrinet.api._
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap
+import com.ing.baker.runtime.actor.serialization.ProtoMap
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceSerialization.tokenIdentifier
 import com.ing.baker.runtime.actor.protobuf
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{versioned, ctxFromProto, ctxToProto}
+import com.ing.baker.runtime.actor.serialization.ProtoMap.{versioned, ctxFromProto, ctxToProto}
 import com.ing.baker.il.petrinet.{Node, Place, RecipePetriNet, Transition}
 import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.types.Value

@@ -1,7 +1,7 @@
 package com.ing.baker.baas.server.protocol
 
-import com.ing.baker.runtime.actortyped.serialization.{ProtoMap, SerializersProvider}
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
+import com.ing.baker.runtime.actor.serialization.{ProtoMap, SerializersProvider}
+import com.ing.baker.runtime.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.baas.protobuf
 import scalapb.GeneratedMessageCompanion
 

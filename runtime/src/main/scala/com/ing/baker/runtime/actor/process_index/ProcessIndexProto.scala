@@ -9,11 +9,11 @@ import cats.syntax.traverse._
 import com.ing.baker.runtime.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap
+import com.ing.baker.runtime.actor.serialization.ProtoMap
 
 import scala.util.Success
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
-import com.ing.baker.runtime.actortyped.serialization.SerializersProvider
+import com.ing.baker.runtime.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
+import com.ing.baker.runtime.actor.serialization.SerializersProvider
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Try

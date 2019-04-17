@@ -1,9 +1,9 @@
-package com.ing.baker.runtime.actortyped.serialization.protomappings
+package com.ing.baker.runtime.actor.serialization.protomappings
 
 import com.google.protobuf.ByteString
 import akka.serialization.{Serializer, SerializerWithStringManifest}
-import com.ing.baker.runtime.actortyped.serialization.{ProtoMap, SerializersProvider}
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap.versioned
+import com.ing.baker.runtime.actor.serialization.{ProtoMap, SerializersProvider}
+import com.ing.baker.runtime.actor.serialization.ProtoMap.versioned
 import com.ing.baker.runtime.actor.protobuf
 
 import scala.util.{Failure, Success, Try}

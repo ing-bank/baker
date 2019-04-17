@@ -4,8 +4,8 @@ import cats.instances.list._
 import cats.instances.try_._
 import cats.syntax.traverse._
 import com.ing.baker.runtime.core.RuntimeEvent
-import com.ing.baker.runtime.actortyped.serialization.{ProtoMap, SerializersProvider}
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
+import com.ing.baker.runtime.actor.serialization.{ProtoMap, SerializersProvider}
+import com.ing.baker.runtime.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.baas.protobuf
 import scalapb.GeneratedMessageCompanion
 

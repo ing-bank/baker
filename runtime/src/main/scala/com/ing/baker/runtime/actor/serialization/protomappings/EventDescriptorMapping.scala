@@ -1,9 +1,9 @@
-package com.ing.baker.runtime.actortyped.serialization.protomappings
+package com.ing.baker.runtime.actor.serialization.protomappings
 
 import cats.implicits._
 import com.ing.baker.il
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{ ctxToProto, ctxFromProto, versioned }
+import com.ing.baker.runtime.actor.serialization.ProtoMap
+import com.ing.baker.runtime.actor.serialization.ProtoMap.{ ctxToProto, ctxFromProto, versioned }
 import com.ing.baker.runtime.actor.protobuf
 
 import scala.util.Try

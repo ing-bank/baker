@@ -1,11 +1,11 @@
-package com.ing.baker.runtime.actortyped.serialization.protomappings
+package com.ing.baker.runtime.actor.serialization.protomappings
 
 import cats.instances.list._
 import cats.instances.try_._
 import cats.syntax.traverse._
 import com.google.protobuf.ByteString
 import com.ing.baker.types
-import com.ing.baker.runtime.actortyped.serialization.ProtoMap
+import com.ing.baker.runtime.actor.serialization.ProtoMap
 import com.ing.baker.runtime.actor.protobuf
 import protobuf.Value.OneofValue._
 import org.joda.time.{LocalDate, LocalDateTime, LocalTime}
