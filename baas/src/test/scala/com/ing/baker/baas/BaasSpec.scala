@@ -44,6 +44,7 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     reset(mockOne, mockTwo)
     Await.result(baasAPI.start(), 10 seconds)
     baasBaker.addImplementations(localImplementations)
+    println(Console.MAGENTA + 3 + Console.RESET)
   }
 
   override def afterAll() {

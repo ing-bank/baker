@@ -103,7 +103,7 @@ object BakerTypedProtobufSerializer {
 
         override val tag: Class[_] = classTag.runtimeClass
 
-        override def manifest: String = classTag.runtimeClass.getPackage.getName + "." + classTag.runtimeClass.getName
+        override def manifest: String = classTag.runtimeClass.getName
 
         override def toBinary(a: Type): Array[Byte] = protoMap.toByteArray(a)
 

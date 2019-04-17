@@ -139,7 +139,8 @@ object ProcessInstanceProto {
 
       override def fromProto(message: protobuf.Initialize): Try[Initialize] =
         for {
-          state <- versioned(message.state, "state")
+          stateProto <- versioned(message.state, "state")
+          state <- ctxFromProto(stateProto)
           marking <- toDomainMarking(message.markingData)
         } yield Initialize(marking, state)
     }
@@ -155,7 +156,8 @@ object ProcessInstanceProto {
 
       override def fromProto(message: protobuf.InitializedMessage): Try[Initialized] =
         for {
-          state <- versioned(message.state, "state")
+          stateProto <- versioned(message.state, "state")
+          state <- ctxFromProto(stateProto)
           marking <- toDomainMarking(message.marking)
         } yield Initialized(marking, state)
     }
@@ -309,11 +311,11 @@ object ProcessInstanceProto {
   private def toDomainMarking(markingData: Seq[protobuf.MarkingData])(implicit ev0: SerializersProvider): Try[Marking[Id]] = {
     markingData.foldLeft[Try[Marking[Id]]](Success(Map.empty)) {
       case (accTry, protobuf.MarkingData(Some(placeId), Some(data), Some(count))) =>
-        accTry.map { acc =>
-          val placeData: MultiSet[Any] = acc.getOrElse(placeId, MultiSet.empty)
-          val deserializedData = ctxFromProto(data)
-          acc + (placeId -> (placeData + (deserializedData -> count)))
-        }
+        for {
+          acc <- accTry
+          deserializedData <- ctxFromProto(data)
+          placeData: MultiSet[Any] = acc.getOrElse(placeId, MultiSet.empty)
+        } yield acc + (placeId -> (placeData + (deserializedData -> count)))
       case _ =>
         Failure(new IllegalStateException("missing data in serialized data when deserializing MarkingData"))
     }

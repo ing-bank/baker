@@ -13,6 +13,8 @@ import com.ing.baker.runtime.actor.protobuf.{ProducedToken, SerializedData}
 import com.ing.baker.runtime.actortyped.serialization.ProtoMap.{ctxFromProto, ctxToProto}
 import com.ing.baker.runtime.actortyped.serialization.SerializersProvider
 
+import scala.util.{Failure, Success}
+
 object ProcessInstanceSerialization {
 
   /**
@@ -72,7 +74,10 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](pro
       Some(ctxToProto(obj.asInstanceOf[AnyRef]))
   }
 
-  private def deserializeObject(obj: SerializedData): AnyRef = ctxFromProto(obj)
+  private def deserializeObject(obj: SerializedData): AnyRef = ctxFromProto(obj) match {
+    case Success(value) => value.asInstanceOf[AnyRef]
+    case Failure(exception) => throw exception
+  }
 
   private def deserializeProducedMarking(instance: Instance[P, T, S], produced: Seq[ProducedToken]): Marking[Id] = {
     produced.foldLeft(Marking.empty[Long]) {

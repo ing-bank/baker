@@ -36,8 +36,6 @@ object BaasProtobufSerializer {
 
 class BaasProtobufSerializer(system: ExtendedActorSystem) extends BakerTypedProtobufSerializer(system) {
 
-  override implicit def serializersProvider: SerializersProvider = SerializersProvider(system)
-
   override lazy val entriesMem: List[BinarySerializable] = BaasProtobufSerializer.entries ++ BakerTypedProtobufSerializer.entries
 
 }
