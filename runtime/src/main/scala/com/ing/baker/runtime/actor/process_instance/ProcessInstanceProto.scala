@@ -61,8 +61,11 @@ object ProcessInstanceProto {
             Success(ExceptionStrategy.BlockTransition)
           case protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.RETRY), Some(retryDelay), _, _) =>
             Success(ExceptionStrategy.RetryWithDelay(retryDelay))
-          case protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.CONTINUE), _, marking, Some(output)) =>
-            toDomainMarking(marking).map(ExceptionStrategy.Continue(_, ctxFromProto(output)))
+          case protobuf.FailureStrategyMessage(Some(StrategyTypeMessage.CONTINUE), _, markingProto, Some(outputProto)) =>
+            for {
+              marking <- toDomainMarking(markingProto)
+              output <- ctxFromProto(outputProto)
+            } yield ExceptionStrategy.Continue(marking, output)
           case _ =>
             Failure(new IllegalStateException("Got a protobuf.FailureStrategyMessage with an unrecognized StrategyTypeMessage"))
         }
