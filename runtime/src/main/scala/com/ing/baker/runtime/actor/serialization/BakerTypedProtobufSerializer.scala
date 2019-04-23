@@ -28,86 +28,163 @@ object BakerTypedProtobufSerializer {
     */
   val identifier = 101
 
+  /*
+  Entry("core.RuntimeEvent", classOf[core.RuntimeEvent], protobuf.RuntimeEvent),
+  Entry("com.ing.baker.runtime.core.RuntimeEvent", classOf[core.RuntimeEvent], protobuf.RuntimeEvent),
+  Entry("core.ProcessState", classOf[core.ProcessState], protobuf.ProcessState),
+  Entry("com.ing.baker.runtime.core.ProcessState", classOf[core.ProcessState], protobuf.ProcessState),
+  Entry("com.ing.baker.runtime.core.BakerResponseEventProtocol", classOf[core.BakerResponseEventProtocol], core.protobuf.BakerResponseEventProtocol),
+
+  Entry("il.CompiledRecipe", classOf[il.CompiledRecipe], protobuf.CompiledRecipe),
+  Entry("com.ing.baker.il.CompiledRecipe", classOf[il.CompiledRecipe], protobuf.CompiledRecipe),
+
+  Entry("baker.types.Type", classOf[com.ing.baker.types.Type], actor.protobuf.Type),
+  Entry("baker.types.Value", classOf[com.ing.baker.types.Value], actor.protobuf.Value),
+
+  Entry("ProcessIndex.GetShardIndex", classOf[com.ing.baker.runtime.actor.ClusterBakerActorProvider.GetShardIndex], actor.process_index.protobuf.GetShardIndex),
+
+  Entry("ProcessIndex.ActorCreated", classOf[ProcessIndex.ActorCreated], actor.process_index.protobuf.ActorCreated),
+  Entry("ProcessIndex.ActorPassivated", classOf[ProcessIndex.ActorPassivated], actor.process_index.protobuf.ActorPassivated),
+  Entry("ProcessIndex.ActorActivated", classOf[ProcessIndex.ActorActivated], actor.process_index.protobuf.ActorActivated),
+  Entry("ProcessIndex.ActorDeleted", classOf[ProcessIndex.ActorDeleted], actor.process_index.protobuf.ActorDeleted),
+  Entry("ProcessIndex.ActorMetadata", classOf[ProcessIndex.ActorMetadata], actor.process_index.protobuf.ActorMetaData),
+
+  Entry("ProcessIndexProtocol.GetIndex", ProcessIndexProtocol.GetIndex.getClass, actor.process_index.protobuf.GetIndex),
+  Entry("ProcessIndexProtocol.Index", classOf[ProcessIndexProtocol.Index], actor.process_index.protobuf.Index),
+  Entry("ProcessIndexProtocol.CreateProcess", classOf[ProcessIndexProtocol.CreateProcess], actor.process_index.protobuf.CreateProcess),
+  Entry("ProcessIndexProtocol.ProcessEvent", classOf[ProcessIndexProtocol.ProcessEvent], actor.process_index.protobuf.ProcessEvent),
+  Entry("ProcessIndexProtocol.RetryBlockedInteraction", classOf[ProcessIndexProtocol.RetryBlockedInteraction], actor.process_index.protobuf.RetryBlockedInteraction),
+  Entry("ProcessIndexProtocol.ResolveBlockedInteraction", classOf[ProcessIndexProtocol.ResolveBlockedInteraction], actor.process_index.protobuf.ResolveBlockedInteraction),
+  Entry("ProcessIndexProtocol.StopRetryingInteraction", classOf[ProcessIndexProtocol.StopRetryingInteraction], actor.process_index.protobuf.StopRetryingInteraction),
+
+  Entry("ProcessIndexProtocol.ProcessEventResponse", classOf[ProcessIndexProtocol.ProcessEventResponse], actor.process_index.protobuf.ProcessEventResponse),
+  Entry("ProcessIndexProtocol.GetProcessState", classOf[ProcessIndexProtocol.GetProcessState], actor.process_index.protobuf.GetProcessState),
+  Entry("ProcessIndexProtocol.GetCompiledRecipe", classOf[ProcessIndexProtocol.GetCompiledRecipe], actor.process_index.protobuf.GetCompiledRecipe),
+  Entry("ProcessIndexProtocol.ReceivePeriodExpired", classOf[ProcessIndexProtocol.ReceivePeriodExpired], actor.process_index.protobuf.ReceivePeriodExpired),
+  Entry("ProcessIndexProtocol.InvalidEvent", classOf[ProcessIndexProtocol.InvalidEvent], actor.process_index.protobuf.InvalidEvent),
+  Entry("ProcessIndexProtocol.ProcessDeleted", classOf[ProcessIndexProtocol.ProcessDeleted], actor.process_index.protobuf.ProcessDeleted),
+  Entry("ProcessIndexProtocol.NoSuchProcess", classOf[ProcessIndexProtocol.NoSuchProcess], actor.process_index.protobuf.NoSuchProcess),
+  Entry("ProcessIndexProtocol.ProcessAlreadyExists", classOf[ProcessIndexProtocol.ProcessAlreadyExists], actor.process_index.protobuf.ProcessAlreadyExists),
+
+  Entry("ProcessInstanceProtocol.Stop", classOf[ProcessInstanceProtocol.Stop], actor.process_instance.protobuf.Stop),
+  Entry("ProcessInstanceProtocol.GetState", ProcessInstanceProtocol.GetState.getClass, actor.process_instance.protobuf.GetState),
+  Entry("ProcessInstanceProtocol.InstanceState", classOf[ProcessInstanceProtocol.InstanceState], actor.process_instance.protobuf.InstanceState),
+
+  Entry("ProcessInstanceProtocol.Initialize", classOf[ProcessInstanceProtocol.Initialize], actor.process_instance.protobuf.Initialize),
+  Entry("ProcessInstanceProtocol.Initialized", classOf[ProcessInstanceProtocol.Initialized], actor.process_instance.protobuf.InitializedMessage),
+  Entry("ProcessInstanceProtocol.Uninitialized", classOf[ProcessInstanceProtocol.Uninitialized], actor.process_instance.protobuf.Uninitialized),
+  Entry("ProcessInstanceProtocol.AlreadyInitialized", classOf[ProcessInstanceProtocol.AlreadyInitialized], actor.process_instance.protobuf.AlreadyInitialized),
+
+  Entry("ProcessInstanceProtocol.FireTransition", classOf[ProcessInstanceProtocol.FireTransition], actor.process_instance.protobuf.FireTransition),
+  Entry("ProcessInstanceProtocol.OverrideExceptionStrategy", classOf[ProcessInstanceProtocol.OverrideExceptionStrategy], actor.process_instance.protobuf.OverrideExceptionStrategy),
+  Entry("ProcessInstanceProtocol.InvalidCommand", classOf[ProcessInstanceProtocol.InvalidCommand], actor.process_instance.protobuf.InvalidCommand),
+
+  Entry("ProcessInstanceProtocol.AlreadyReceived", classOf[ProcessInstanceProtocol.AlreadyReceived], actor.process_instance.protobuf.AlreadyReceived),
+  Entry("ProcessInstanceProtocol.TransitionNotEnabled", classOf[ProcessInstanceProtocol.TransitionNotEnabled], actor.process_instance.protobuf.TransitionNotEnabled),
+  Entry("ProcessInstanceProtocol.TransitionFailed", classOf[ProcessInstanceProtocol.TransitionFailed], actor.process_instance.protobuf.TransitionFailedMessage),
+  Entry("ProcessInstanceProtocol.TransitionFired", classOf[ProcessInstanceProtocol.TransitionFired], actor.process_instance.protobuf.TransitionFiredMessage),
+
+  Entry("TransitionFired", classOf[process_instance.protobuf.TransitionFired], process_instance.protobuf.TransitionFired),
+  Entry("TransitionFailed", classOf[process_instance.protobuf.TransitionFailed], process_instance.protobuf.TransitionFailed),
+  Entry("Initialized", classOf[process_instance.protobuf.Initialized], process_instance.protobuf.Initialized),
+
+  Entry("RecipeManager.RecipeAdded", classOf[RecipeManager.RecipeAdded], actor.recipe_manager.protobuf.RecipeAdded),
+  Entry("RecipeManagerProtocol.AddRecipe", classOf[RecipeManagerProtocol.AddRecipe], actor.recipe_manager.protobuf.AddRecipe),
+  Entry("RecipeManagerProtocol.AddRecipeResponse", classOf[RecipeManagerProtocol.AddRecipeResponse], actor.recipe_manager.protobuf.AddRecipeResponse),
+  Entry("RecipeManagerProtocol.GetRecipe", classOf[RecipeManagerProtocol.GetRecipe], actor.recipe_manager.protobuf.GetRecipe),
+  Entry("RecipeManagerProtocol.RecipeFound", classOf[RecipeManagerProtocol.RecipeFound], actor.recipe_manager.protobuf.RecipeFound),
+  Entry("RecipeManagerProtocol.NoRecipeFound", classOf[RecipeManagerProtocol.NoRecipeFound], actor.recipe_manager.protobuf.NoRecipeFound),
+  Entry("RecipeManagerProtocol.GetAllRecipes", RecipeManagerProtocol.GetAllRecipes.getClass, actor.recipe_manager.protobuf.GetAllRecipes),
+  Entry("RecipeManagerProtocol.AllRecipes", classOf[RecipeManagerProtocol.AllRecipes], actor.recipe_manager.protobuf.AllRecipes)
+  */
+
   def entries(implicit ev0: SerializersProvider): List[BinarySerializable] = List(
 
-    forType[com.ing.baker.types.Value].register,
-    forType[com.ing.baker.types.Type].register,
+    forType[com.ing.baker.types.Value].register("baker.types.Value"),
+    forType[com.ing.baker.types.Type].register("baker.types.Type"),
 
-    forType[BakerResponseEventProtocol].register,
-    forType[RuntimeEvent].register,
-    forType[ProcessState].register,
+    forType[BakerResponseEventProtocol].register("com.ing.baker.runtime.core.BakerResponseEventProtocol"),
+    forType[RuntimeEvent].register("core.RuntimeEvent"),
+    forType[ProcessState].register("core.ProcessState"),
 
-    forType[il.CompiledRecipe].register,
+    forType[il.CompiledRecipe].register("il.CompiledRecipe"),
 
-    forType[GetShardIndex].register,
-    forType[ActorCreated].register,
-    forType[ActorDeleted].register,
-    forType[ActorPassivated].register,
-    forType[ActorActivated].register,
+    forType[GetShardIndex].register("ProcessIndex.GetShardIndex"),
+    forType[ActorCreated].register("ProcessIndex.ActorCreated"),
+    forType[ActorDeleted].register("ProcessIndex.ActorDeleted"),
+    forType[ActorPassivated].register("ProcessIndex.ActorPassivated"),
+    forType[ActorActivated].register("ProcessIndex.ActorActivated"),
+    forType[ActorMetadata].register("ProcessIndex.ActorMetadata"),
 
-    forType[GetIndex.type].register,
+    forType[GetIndex.type].register("ProcessIndexProtocol.GetIndex"),
 
-    forType[Index].register,
-    forType[CreateProcess].register,
-    forType[ProcessEvent].register,
-    forType[RetryBlockedInteraction].register,
-    forType[ResolveBlockedInteraction].register,
-    forType[StopRetryingInteraction].register,
-    forType[ActorMetadata].register,
+    forType[Index].register("ProcessIndexProtocol.Index"),
+    forType[CreateProcess].register("ProcessIndexProtocol.CreateProcess"),
+    forType[ProcessEvent].register("ProcessIndexProtocol.ProcessEvent"),
+    forType[RetryBlockedInteraction].register("ProcessIndexProtocol.RetryBlockedInteraction"),
+    forType[ResolveBlockedInteraction].register("ProcessIndexProtocol.ResolveBlockedInteraction"),
+    forType[StopRetryingInteraction].register("ProcessIndexProtocol.StopRetryingInteraction"),
 
-    forType[ProcessEventResponse].register,
-    forType[GetProcessState].register,
-    forType[GetCompiledRecipe].register,
-    forType[ReceivePeriodExpired].register,
-    forType[InvalidEvent].register,
-    forType[ProcessDeleted].register,
-    forType[NoSuchProcess].register,
-    forType[ProcessAlreadyExists].register,
+    forType[ProcessEventResponse].register("ProcessIndexProtocol.ProcessEventResponse"),
+    forType[GetProcessState].register("ProcessIndexProtocol.GetProcessState"),
+    forType[GetCompiledRecipe].register("ProcessIndexProtocol.GetCompiledRecipe"),
+    forType[ReceivePeriodExpired].register("ProcessIndexProtocol.ReceivePeriodExpired"),
+    forType[InvalidEvent].register("ProcessIndexProtocol.InvalidEvent"),
+    forType[ProcessDeleted].register("ProcessIndexProtocol.ProcessDeleted"),
+    forType[NoSuchProcess].register("ProcessIndexProtocol.NoSuchProcess"),
+    forType[ProcessAlreadyExists].register("ProcessIndexProtocol.ProcessAlreadyExists"),
 
-    forType[ProcessInstanceProtocol.Stop].register,
-    forType[ProcessInstanceProtocol.GetState.type].register,
-    forType[ProcessInstanceProtocol.InstanceState].register,
+    forType[ProcessInstanceProtocol.Stop].register("ProcessInstanceProtocol.Stop"),
+    forType[ProcessInstanceProtocol.GetState.type].register("ProcessInstanceProtocol.GetState"),
+    forType[ProcessInstanceProtocol.InstanceState].register("ProcessInstanceProtocol.InstanceState"),
 
-    forType[ProcessInstanceProtocol.Initialize].register,
-    forType[ProcessInstanceProtocol.Initialized].register,
-    forType[ProcessInstanceProtocol.Uninitialized].register,
-    forType[ProcessInstanceProtocol.AlreadyInitialized].register,
+    forType[ProcessInstanceProtocol.Initialize].register("ProcessInstanceProtocol.Initialize"),
+    forType[ProcessInstanceProtocol.Initialized].register("ProcessInstanceProtocol.Initialized"),
+    forType[ProcessInstanceProtocol.Uninitialized].register("ProcessInstanceProtocol.Uninitialized"),
+    forType[ProcessInstanceProtocol.AlreadyInitialized].register("ProcessInstanceProtocol.AlreadyInitialized"),
 
-    forType[ProcessInstanceProtocol.FireTransition].register,
-    forType[ProcessInstanceProtocol.OverrideExceptionStrategy].register,
-    forType[ProcessInstanceProtocol.InvalidCommand].register,
+    forType[ProcessInstanceProtocol.FireTransition].register("ProcessInstanceProtocol.FireTransition"),
+    forType[ProcessInstanceProtocol.OverrideExceptionStrategy].register("ProcessInstanceProtocol.OverrideExceptionStrategy"),
+    forType[ProcessInstanceProtocol.InvalidCommand].register("ProcessInstanceProtocol.InvalidCommand"),
 
-    forType[com.ing.baker.runtime.actor.process_instance.protobuf.TransitionFired].register(ProtoMap.identityProtoMap(com.ing.baker.runtime.actor.process_instance.protobuf.TransitionFired)),
-    forType[com.ing.baker.runtime.actor.process_instance.protobuf.TransitionFailed].register(ProtoMap.identityProtoMap(com.ing.baker.runtime.actor.process_instance.protobuf.TransitionFailed)),
-    forType[com.ing.baker.runtime.actor.process_instance.protobuf.Initialized].register(ProtoMap.identityProtoMap(com.ing.baker.runtime.actor.process_instance.protobuf.Initialized)),
+    forType[ProcessInstanceProtocol.AlreadyReceived].register("ProcessInstanceProtocol.AlreadyReceived"),
+    forType[ProcessInstanceProtocol.TransitionNotEnabled].register("ProcessInstanceProtocol.TransitionNotEnabled"),
+    forType[ProcessInstanceProtocol.TransitionFailed].register("ProcessInstanceProtocol.TransitionFailed"),
+    forType[ProcessInstanceProtocol.TransitionFired].register("ProcessInstanceProtocol.TransitionFired"),
 
-    forType[ProcessInstanceProtocol.AlreadyReceived].register,
-    forType[ProcessInstanceProtocol.TransitionNotEnabled].register,
-    forType[ProcessInstanceProtocol.TransitionFailed].register,
-    forType[ProcessInstanceProtocol.TransitionFired].register,
+    forType[com.ing.baker.runtime.actor.process_instance.protobuf.TransitionFired].register("TransitionFired")(ProtoMap.identityProtoMap(com.ing.baker.runtime.actor.process_instance.protobuf.TransitionFired)),
+    forType[com.ing.baker.runtime.actor.process_instance.protobuf.TransitionFailed].register("TransitionFailed")(ProtoMap.identityProtoMap(com.ing.baker.runtime.actor.process_instance.protobuf.TransitionFailed)),
+    forType[com.ing.baker.runtime.actor.process_instance.protobuf.Initialized].register("Initialized")(ProtoMap.identityProtoMap(com.ing.baker.runtime.actor.process_instance.protobuf.Initialized)),
 
-    forType[AddRecipe].register,
-    forType[AddRecipeResponse].register,
-    forType[GetRecipe].register,
-    forType[RecipeFound].register,
-    forType[NoRecipeFound].register,
-    forType[GetAllRecipes.type].register,
-    forType[AllRecipes].register,
-    forType[RecipeAdded].register
+    forType[AddRecipe].register("RecipeManagerProtocol.AddRecipe"),
+    forType[AddRecipeResponse].register("RecipeManagerProtocol.AddRecipeResponse"),
+    forType[GetRecipe].register("RecipeManagerProtocol.GetRecipe"),
+    forType[RecipeFound].register("RecipeManagerProtocol.RecipeFound"),
+    forType[NoRecipeFound].register("RecipeManagerProtocol.NoRecipeFound"),
+    forType[GetAllRecipes.type].register("RecipeManagerProtocol.GetAllRecipes"),
+    forType[AllRecipes].register("RecipeManagerProtocol.AllRecipes"),
+
+    forType[RecipeAdded].register("RecipeManager.RecipeAdded")
   )
 
   def forType[A <: AnyRef](implicit tag: ClassTag[A]): RegisterFor[A] = new RegisterFor[A](tag)
 
   class RegisterFor[A <: AnyRef](classTag: ClassTag[A]) {
 
-    def register[P <: scalapb.GeneratedMessage with scalapb.Message[P]](implicit protoMap: ProtoMap[A, P]): BinarySerializable = {
+    def register[P <: scalapb.GeneratedMessage with scalapb.Message[P]](implicit protoMap: ProtoMap[A, P]): BinarySerializable =
+      register[P](None)
+
+    def register[P <: scalapb.GeneratedMessage with scalapb.Message[P]](overrideName: String)(implicit protoMap: ProtoMap[A, P]): BinarySerializable =
+      register[P](Some(overrideName))
+
+    def register[P <: scalapb.GeneratedMessage with scalapb.Message[P]](overrideName: Option[String])(implicit protoMap: ProtoMap[A, P]): BinarySerializable = {
       new BinarySerializable {
 
         override type Type = A
 
         override val tag: Class[_] = classTag.runtimeClass
 
-        override def manifest: String = classTag.runtimeClass.getName
+        override val manifest: String = overrideName.getOrElse(classTag.runtimeClass.getName)
 
         override def toBinary(a: Type): Array[Byte] = protoMap.toByteArray(a)
 
