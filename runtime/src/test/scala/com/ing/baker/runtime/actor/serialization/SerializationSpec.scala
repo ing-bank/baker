@@ -30,7 +30,7 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
   val serializer: BakerTypedProtobufSerializer =
     SerializationExtension
       .get(system)
-      .serializerByIdentity(103)
+      .serializerByIdentity(101)
       .asInstanceOf[BakerTypedProtobufSerializer]
 
   def checkFor[A <: AnyRef](name: String, gen: Gen[A]): Unit = {

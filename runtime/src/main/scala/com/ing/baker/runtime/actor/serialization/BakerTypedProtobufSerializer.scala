@@ -26,7 +26,7 @@ object BakerTypedProtobufSerializer {
   /** Hardcoded serializerId for this serializer. This should not conflict with other serializers.
     * Values from 0 to 40 are reserved for Akka internal usage.
     */
-  val identifier = 103
+  val identifier = 101
 
   def entries(implicit ev0: SerializersProvider): List[BinarySerializable] = List(
 
