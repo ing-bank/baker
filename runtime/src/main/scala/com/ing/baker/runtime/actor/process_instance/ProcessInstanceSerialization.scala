@@ -116,7 +116,10 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](pro
     persisted.foldLeft(Marking.empty[Long]) {
       case (accumulated, protobuf.ConsumedToken(Some(placeId), Some(tokenId), Some(count))) ⇒
         val place = instance.petriNet.places.getById(placeId, "place in the petrinet")
-        val value = instance.marking(place).keySet.find(e ⇒ tokenIdentifier(e) == tokenId).get
+        val keySet = instance.marking(place).keySet
+        val value = keySet.find(e ⇒ tokenIdentifier(e) == tokenId).getOrElse(
+          throw new IllegalStateException(s"Missing token with id $tokenId, keySet = $keySet")
+        )
         accumulated.add(placeId, value, count)
       case _ ⇒ throw new IllegalStateException("Missing data in persisted ConsumedToken")
     }
