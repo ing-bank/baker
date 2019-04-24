@@ -41,7 +41,7 @@ class AnyRefMapping(provider: SerializersProvider) extends ProtoMap[AnyRef, prot
         case s: SerializerWithStringManifest ⇒ s.fromBinary(decryptedBytes, manifest)
         case _                               ⇒
           val optionalClass = Try { Class.forName(manifest) }.toOption
-          serializer.fromBinary(bytes.toByteArray, optionalClass)
+          serializer.fromBinary(decryptedBytes, optionalClass)
       }
 
 }

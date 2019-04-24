@@ -31,6 +31,6 @@ class EncryptionPropertiesSpec extends FunSuite with Checkers {
         plainText == decryptedPlainText
     }
 
-    check(property, Test.Parameters.defaultVerbose.withMinSuccessfulTests(100))
+    check(property, Test.Parameters.defaultVerbose.withMinSuccessfulTests(10))
   }
 }

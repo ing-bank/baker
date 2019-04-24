@@ -18,6 +18,8 @@ import org.scalacheck._
 import org.scalatest.FunSuiteLike
 import org.scalatest.prop.Checkers
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol
+import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
+import com.ing.baker.runtime.actor.serialization.Encryption.{AESEncryption, NoEncryption}
 import com.ing.baker.runtime.core.BakerResponseEventProtocol.{IndexInvalidEvent, IndexNoSuchProcess, IndexProcessDeleted, IndexReceivePeriodExpired, InstanceAlreadyReceived, InstanceTransitionFailed, InstanceTransitionFired, InstanceTransitionNotEnabled}
 import com.ing.baker.runtime.core.{BakerResponseEventProtocol, ProcessState, RuntimeEvent}
 import com.ing.baker.types.Value
@@ -35,11 +37,54 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
 
   def checkFor[A <: AnyRef](name: String, gen: Gen[A]): Unit = {
     test(s"$name typed serialization") {
-      check(forAll(gen)(m =>
-        m == serializer.fromBinary(serializer.toBinary(m), serializer.manifest(m))),
-        defaultVerbose.withMinSuccessfulTests(10)
+      check(forAll(gen) { m =>
+        m == serializer.fromBinary(serializer.toBinary(m), serializer.manifest(m))
+      },
+        defaultVerbose.withMinSuccessfulTests(3)
       )
     }
+  }
+
+  test("Encryption works for the AnyRefMapping (case class)") {
+
+    val data = GetRecipe("test")
+    val encryption = new AESEncryption(List.fill(16)("0").mkString)
+    val withEncryption = serializer.serializersProvider.copy(encryption = encryption)
+    val withoutEncryption = serializer.serializersProvider.copy(encryption = NoEncryption)
+    val mapperEncryption = ProtoMap.anyRefMapping(withEncryption)
+    val mapperNoEncryption = ProtoMap.anyRefMapping(withoutEncryption)
+
+    val protoEn = mapperEncryption.toProto(data)
+    val protoNe = mapperNoEncryption.toProto(data)
+
+    val xEn = protoEn.data.get
+    val xNe = protoNe.data.get
+    assert(xEn != xNe)
+
+    val yEn = mapperEncryption.fromProto(protoEn).get.asInstanceOf[GetRecipe]
+    val yNe = mapperNoEncryption.fromProto(protoNe).get.asInstanceOf[GetRecipe]
+    assert(yEn == yNe)
+  }
+
+  test("Encryption works for the AnyRefMapping (primitive value)") {
+
+    val data = "test"
+    val encryption = new AESEncryption(List.fill(16)("0").mkString)
+    val withEncryption = serializer.serializersProvider.copy(encryption = encryption)
+    val withoutEncryption = serializer.serializersProvider.copy(encryption = NoEncryption)
+    val mapperEncryption = ProtoMap.anyRefMapping(withEncryption)
+    val mapperNoEncryption = ProtoMap.anyRefMapping(withoutEncryption)
+
+    val protoEn = mapperEncryption.toProto(data)
+    val protoNe = mapperNoEncryption.toProto(data)
+
+    val xEn = protoEn.data.get
+    val xNe = protoNe.data.get
+    assert(xEn != xNe)
+
+    val yEn = mapperEncryption.fromProto(protoEn).get.asInstanceOf[String]
+    val yNe = mapperNoEncryption.fromProto(protoNe).get.asInstanceOf[String]
+    assert(yEn == yNe)
   }
 
   checkFor("core.RuntimeEvent", SerializationSpec.Runtime.runtimeEventGen)
