@@ -1,6 +1,7 @@
 package com.ing.baker.compiler;
 
 import com.ing.baker.il.CompiledRecipe;
+import com.ing.baker.recipe.annotations.AsyncInteraction;
 import com.ing.baker.recipe.annotations.FiresEvent;
 import com.ing.baker.recipe.annotations.ProcessId;
 import com.ing.baker.recipe.annotations.RequiresIngredient;
@@ -12,6 +13,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
 
 import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
 import static org.junit.Assert.assertEquals;
@@ -153,13 +155,15 @@ public class JavaCompiledRecipeTest {
             }
         }
 
+        @AsyncInteraction
         @FiresEvent(oneOf = { ProvidesRequestIDStringOne.class })
-        ProvidesRequestIDStringOne apply(@ProcessId String requestId);
+        CompletableFuture<ProvidesRequestIDStringOne> apply(@ProcessId String requestId);
     }
 
     public static class InteractionOneImpl implements InteractionOne {
-        public ProvidesRequestIDStringOne apply(String requestId) {
-            return new ProvidesRequestIDStringOne(requestId);
+        public CompletableFuture<ProvidesRequestIDStringOne> apply(String requestId) {
+            return CompletableFuture.completedFuture(
+                    new ProvidesRequestIDStringOne(requestId));
         }
 
         public String name = "InteractionOne";

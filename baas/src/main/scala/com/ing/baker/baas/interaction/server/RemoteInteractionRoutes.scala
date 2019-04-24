@@ -7,8 +7,12 @@ import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.runtime.core.RuntimeEvent
 import org.slf4j.LoggerFactory
 
+import scala.concurrent.Future
+
 
 class RemoteInteractionRoutes(override val actorSystem: ActorSystem) extends Directives with ClientUtils {
+
+  import actorSystem.dispatcher
 
   override val log = LoggerFactory.getLogger(this.getClass.getName)
 
@@ -31,11 +35,11 @@ class RemoteInteractionRoutes(override val actorSystem: ActorSystem) extends Dir
 
               log.info(s"Executing interaction: $interactionName")
 
-              val runtimeEventOptional: Option[RuntimeEvent] = implementationOptional.get.execute(executeInteractionHTTPRequest.input)
+              val runtimeEventOptional: Future[Option[RuntimeEvent]] = implementationOptional.get.execute(executeInteractionHTTPRequest.input)
 
               log.info(s"Interaction executed: ${interactionName}")
 
-              complete(ExecuteInteractionHTTPResponse(runtimeEventOptional))
+              complete(runtimeEventOptional.map(ExecuteInteractionHTTPResponse))
             }
           }
         } ~

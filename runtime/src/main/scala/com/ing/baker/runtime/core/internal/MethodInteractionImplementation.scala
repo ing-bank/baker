@@ -6,9 +6,10 @@ import com.ing.baker.runtime.core.{RuntimeEvent, _}
 import com.ing.baker.types.{Converters, Type, Value}
 import org.slf4j.LoggerFactory
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-case class MethodInteractionImplementation(implementation: AnyRef) extends InteractionImplementation {
+case class MethodInteractionImplementation(implementation: AnyRef)(implicit ec: ExecutionContext) extends InteractionImplementation {
 
   val log = LoggerFactory.getLogger(classOf[MethodInteractionImplementation])
 
@@ -53,7 +54,7 @@ case class MethodInteractionImplementation(implementation: AnyRef) extends Inter
     }
   }.toSeq
 
-  override def execute(input: Seq[Value]): Option[RuntimeEvent] =  {
+  override def execute(input: Seq[Value]): Future[Option[RuntimeEvent]] =  {
 
     val invocationId = UUID.randomUUID().toString
 
@@ -72,6 +73,6 @@ case class MethodInteractionImplementation(implementation: AnyRef) extends Inter
       log.trace(s"[$invocationId] result: $output")
 
     // if output == null => None, otherwise extract event
-    Option(output).map(Baker.extractEvent)
+    Baker.extractEvent(output).map(Option(_))
   }
 }

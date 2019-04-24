@@ -6,6 +6,7 @@ import com.ing.baker.runtime.core.{InteractionImplementation, RuntimeEvent}
 import com.ing.baker.types.Converters.toJava
 import com.ing.baker.types.{Converters, Type, Value}
 
+import scala.concurrent.Future
 import scala.reflect.runtime.universe.TypeTag
 
 /**
@@ -20,7 +21,7 @@ object ScalaDSLRuntime {
 
     override val inputTypes: Seq[Type] = i.inputIngredients.map(_.ingredientType)
 
-    override def execute(input: Seq[Value]): Option[RuntimeEvent] = Some(fn(input))
+    override def execute(input: Seq[Value]): Future[Option[RuntimeEvent]] = Future.successful(Some(fn(input)))
   }
 
   // TODO use shapeless to abstract over function arity and add type safety

@@ -232,12 +232,12 @@ class AkkaBaker(private val config: Config)(implicit val actorSystem: ActorSyste
     */
   override def processEventStream(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): Future[Source[BakerResponseEventProtocol, NotUsed]] = {
     // transforms the given object into a RuntimeEvent instance
-    val runtimeEvent: RuntimeEvent = extractEvent(event)
-
-    processIndexActor
-      .ask(ProcessEvent(processId, runtimeEvent, correlationId, waitForRetries = true, timeout))(timeout)
-      .mapTo[ProcessEventResponse]
-      .map(_.sourceRef.via(Flow.fromFunction(BakerResponseEventProtocol.fromProtocols)))
+    extractEvent(event).flatMap { runtimeEvent =>
+      processIndexActor
+        .ask(ProcessEvent(processId, runtimeEvent, correlationId, waitForRetries = true, timeout))(timeout)
+        .mapTo[ProcessEventResponse]
+        .map(_.sourceRef.via(Flow.fromFunction(BakerResponseEventProtocol.fromProtocols)))
+    }
   }
 
   /**
@@ -261,7 +261,9 @@ class AkkaBaker(private val config: Config)(implicit val actorSystem: ActorSyste
     */
   override def resolveInteraction(processId: String, interactionName: String, event: Any, timeout: FiniteDuration = defaultProcessEventTimeout): Unit = {
 
-    val futureResult = processIndexActor.ask(ResolveBlockedInteraction(processId, interactionName, extractEvent(event)))(timeout)
+    val futureResult = extractEvent(event).flatMap { runtimeEvent =>
+      processIndexActor.ask(ResolveBlockedInteraction(processId, interactionName, runtimeEvent))(timeout)
+    }
 
     Await.result(futureResult, timeout)
   }
