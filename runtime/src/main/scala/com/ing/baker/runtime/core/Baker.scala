@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.core
 
-import java.util.concurrent.{CompletableFuture, TimeoutException}
+import java.util.concurrent.TimeoutException
 
 import akka.NotUsed
 import akka.stream.scaladsl.Source
@@ -8,38 +8,26 @@ import com.ing.baker.il._
 import com.ing.baker.runtime.core.events.BakerEvent
 import com.ing.baker.types.{Converters, RecordValue, Value}
 
-import scala.compat.java8.FutureConverters
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.language.postfixOps
-import scala.reflect.ClassTag
 
 object Baker {
-
-  val completableFutureClass: ClassTag[CompletableFuture[Any]] = implicitly[ClassTag[CompletableFuture[Any]]]
 
   /**
     * Transforms an object into a RuntimeEvent if possible.
     */
-  def extractEvent(event: Any): Future[RuntimeEvent] = {
+  def extractEvent(event: Any): RuntimeEvent = {
     // transforms the given object into a RuntimeEvent instance
     event match {
-      case runtimeEventAsync if completableFutureClass.runtimeClass.isInstance(runtimeEventAsync) =>
-        val typed = runtimeEventAsync.asInstanceOf[CompletableFuture[Any]]
-        FutureConverters.toScala[RuntimeEvent](typed.thenApply(extractEventSimple))
-      case other => Future.successful(extractEventSimple(other))
-    }
-  }
-
-  def extractEventSimple(event: Any): RuntimeEvent =
-    event match {
       case runtimeEvent: RuntimeEvent => runtimeEvent
-      case obj =>
+      case obj                        =>
         Converters.toValue(obj) match {
           case RecordValue(entries) => RuntimeEvent(obj.getClass.getSimpleName, entries.toSeq)
-          case other => throw new IllegalArgumentException(s"Unexpected value: $other")
+          case other                => throw new IllegalArgumentException(s"Unexpected value: $other")
         }
     }
+  }
 }
 
 /**

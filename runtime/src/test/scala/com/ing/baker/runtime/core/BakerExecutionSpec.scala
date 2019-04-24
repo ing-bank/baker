@@ -404,8 +404,8 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       baker.bake(recipeId, processId)
       baker.processEvent(processId, InitialEvent(initialIngredientValue))
 
-      verify(listenerMock).processEvent(processId.toString, Baker.extractEventSimple(InitialEvent(initialIngredientValue)))
-      verify(listenerMock).processEvent(processId.toString, Baker.extractEventSimple(InteractionOneSuccessful(interactionOneIngredientValue)))
+      verify(listenerMock).processEvent(processId.toString, Baker.extractEvent(InitialEvent(initialIngredientValue)))
+      verify(listenerMock).processEvent(processId.toString, Baker.extractEvent(InteractionOneSuccessful(interactionOneIngredientValue)))
     }
 
     "return a list of events that where caused by a sensory event" in {
@@ -833,7 +833,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       baker.processEvent(processId, InitialEvent(initialIngredientValue))
 
       Thread.sleep(50)
-      verify(listenerMock).processEvent(processId.toString, Baker.extractEventSimple(InitialEvent(initialIngredientValue)))
+      verify(listenerMock).processEvent(processId.toString, Baker.extractEvent(InitialEvent(initialIngredientValue)))
       verify(listenerMock).processEvent(processId.toString, RuntimeEvent(interactionOne.retryExhaustedEventName, Seq.empty))
 
       baker.events(processId).map(_.name) should contain(interactionOne.retryExhaustedEventName)
@@ -908,11 +908,11 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       //Check if both the new event and the events occurred in the past are in the eventsList
       baker.events(processId) should contain only(
-        Baker.extractEventSimple(InitialEvent(initialIngredientValue)),
-        Baker.extractEventSimple(SieveInteractionSuccessful(sievedIngredientValue)),
-        Baker.extractEventSimple(EventFromInteractionTwo(interactionTwoIngredientValue)),
+        Baker.extractEvent(InitialEvent(initialIngredientValue)),
+        Baker.extractEvent(SieveInteractionSuccessful(sievedIngredientValue)),
+        Baker.extractEvent(EventFromInteractionTwo(interactionTwoIngredientValue)),
         RuntimeEvent("InteractionOneSuccessful", Seq("interactionOneIngredient" -> Converters.toValue(interactionOneIngredientValue))),
-        Baker.extractEventSimple(InteractionThreeSuccessful(interactionThreeIngredientValue))
+        Baker.extractEvent(InteractionThreeSuccessful(interactionThreeIngredientValue))
       )
 
       //Execute another event
@@ -920,13 +920,13 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       //Check if both the new event and the events occurred in the past are in the eventsList
       baker.events(processId) should contain only(
-        Baker.extractEventSimple(InitialEvent(initialIngredientValue)),
-        Baker.extractEventSimple(EventFromInteractionTwo(interactionTwoIngredientValue)),
+        Baker.extractEvent(InitialEvent(initialIngredientValue)),
+        Baker.extractEvent(EventFromInteractionTwo(interactionTwoIngredientValue)),
         RuntimeEvent("SecondEvent", Seq.empty),
         RuntimeEvent("InteractionOneSuccessful", Seq("interactionOneIngredient" -> Converters.toValue(interactionOneIngredientValue))),
-        Baker.extractEventSimple(SieveInteractionSuccessful(sievedIngredientValue)),
-        Baker.extractEventSimple(InteractionThreeSuccessful(interactionThreeIngredientValue)),
-        Baker.extractEventSimple(InteractionFourSuccessful(interactionFourIngredientValue))
+        Baker.extractEvent(SieveInteractionSuccessful(sievedIngredientValue)),
+        Baker.extractEvent(InteractionThreeSuccessful(interactionThreeIngredientValue)),
+        Baker.extractEvent(InteractionFourSuccessful(interactionFourIngredientValue))
       )
     }
 

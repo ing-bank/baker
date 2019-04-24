@@ -8,7 +8,7 @@ import com.ing.baker.runtime.core.{InteractionImplementation, RuntimeEvent}
 import com.ing.baker.types.{Type, Value}
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.{FiniteDuration, _}
 
 //This is the interactionImplementation as running in the BAAS cluster
@@ -29,7 +29,7 @@ case class RemoteInteractionClient(override val name: String,
     * @param input
     * @return
     */
-  override def execute(input: Seq[Value]): Option[RuntimeEvent] = {
+  override def execute(input: Seq[Value]): Future[Option[RuntimeEvent]] = {
 
     log.info(s"Calling remote execution of interaction: $name on $uri")
 
@@ -40,7 +40,6 @@ case class RemoteInteractionClient(override val name: String,
         method = akka.http.scaladsl.model.HttpMethods.POST,
         entity = serializer.serialize(request).get)
     //
-    Await.result(doRequestAndParseResponse[ExecuteInteractionHTTPResponse](httpRequest), 10 seconds)
-      .runtimeEventOptional
+    doRequestAndParseResponse[ExecuteInteractionHTTPResponse](httpRequest).map(_.runtimeEventOptional)(actorSystem.dispatcher)
   }
 }

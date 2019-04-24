@@ -152,8 +152,7 @@ class BaasBaker(config: Config,
 
     val response =
       for {
-        runtimeEvent <- Baker.extractEvent(event)
-        request <- Marshal(ProcessEventRequest(runtimeEvent)).to[RequestEntity]
+        request <- Marshal(ProcessEventRequest(Baker.extractEvent(event))).to[RequestEntity]
           .map { body =>
             HttpRequest(
               uri = s"$baseUri/$processId/event",
@@ -181,8 +180,7 @@ class BaasBaker(config: Config,
     */
   override def processEventStream(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): Future[Source[BakerResponseEventProtocol, NotUsed]] = {
     for {
-      runtimeEvent <- Baker.extractEvent(event)
-      request <- Marshal(ProcessEventRequest(runtimeEvent)).to[RequestEntity]
+      request <- Marshal(ProcessEventRequest(Baker.extractEvent(event))).to[RequestEntity]
         .map { body =>
           HttpRequest(
             uri = s"$baseUri/$processId/event/stream",
