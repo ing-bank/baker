@@ -232,8 +232,10 @@ class AkkaBaker(private val config: Config)(implicit val actorSystem: ActorSyste
     */
   override def processEventStream(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): Future[Source[BakerResponseEventProtocol, NotUsed]] = {
     // transforms the given object into a RuntimeEvent instance
+    val runtimeEvent: RuntimeEvent = extractEvent(event)
+
     processIndexActor
-      .ask(ProcessEvent(processId, extractEvent(event), correlationId, waitForRetries = true, timeout))(timeout)
+      .ask(ProcessEvent(processId, runtimeEvent, correlationId, waitForRetries = true, timeout))(timeout)
       .mapTo[ProcessEventResponse]
       .map(_.sourceRef.via(Flow.fromFunction(BakerResponseEventProtocol.fromProtocols)))
   }

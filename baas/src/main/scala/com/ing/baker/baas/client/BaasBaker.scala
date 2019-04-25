@@ -149,18 +149,17 @@ class BaasBaker(config: Config,
   override def processEvent(processId: String, event: Any, correlationId: Option[String], timeout: FiniteDuration): SensoryEventStatus = {
     //Create request to give to Baker
     log.info("Creating runtime event to fire")
+    val runtimeEvent = Baker.extractEvent(event)
 
-    val response =
-      for {
-        request <- Marshal(ProcessEventRequest(Baker.extractEvent(event))).to[RequestEntity]
-          .map { body =>
-            HttpRequest(
-              uri = s"$baseUri/$processId/event",
-              method = POST,
-              entity = body)
-          }
-        response <- doRequestAndParseResponse[ProcessEventResponse](request)
-      } yield response.status
+    val response = Marshal(ProcessEventRequest(runtimeEvent)).to[RequestEntity]
+      .map { body =>
+        HttpRequest(
+          uri = s"$baseUri/$processId/event",
+          method = POST,
+          entity = body)
+      }
+      .flatMap(doRequestAndParseResponse[ProcessEventResponse])
+      .map(_.status)
     Await.result(response, timeout)
 
   }
@@ -179,20 +178,19 @@ class BaasBaker(config: Config,
     * Creates a stream of specific events.
     */
   override def processEventStream(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): Future[Source[BakerResponseEventProtocol, NotUsed]] = {
-    for {
-      request <- Marshal(ProcessEventRequest(Baker.extractEvent(event))).to[RequestEntity]
-        .map { body =>
-          HttpRequest(
-            uri = s"$baseUri/$processId/event/stream",
-            method = POST,
-            entity = body)
-        }
-      response <- Http().singleRequest(request)
-    } yield response.entity
-      .dataBytes
-      .via(Framing.delimiter(BakerResponseEventProtocol.SerializationDelimiter, maximumFrameLength = Int.MaxValue))
-      .via(deserializeFlow[BakerResponseEventProtocol])
-      .mapMaterializedValue(_ => NotUsed)
+    val runtimeEvent = Baker.extractEvent(event)
+    Marshal(ProcessEventRequest(runtimeEvent)).to[RequestEntity]
+      .flatMap { body =>
+        Http().singleRequest(HttpRequest(
+          uri = s"$baseUri/$processId/event/stream",
+          method = POST,
+          entity = body))
+      }.map { _.entity
+        .dataBytes
+        .via(Framing.delimiter(BakerResponseEventProtocol.SerializationDelimiter, maximumFrameLength = Int.MaxValue))
+        .via(deserializeFlow[BakerResponseEventProtocol])
+        .mapMaterializedValue(_ => NotUsed)
+      }
   }
 
   /**
