@@ -9,13 +9,15 @@ import akka.testkit.ImplicitSender
 import akka.cluster.MultiNodeClusterSpec
 import akka.remote.testkit.MultiNodeSpec
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.runtime.core.{Baker, RuntimeEvent}
+import com.ing.baker.runtime.core.{AkkaBaker, Baker, RuntimeEvent}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.ing.baker.recipe.scaladsl.Examples.webshop
 import com.ing.baker.types.{PrimitiveValue, RecordValue}
 import org.scalatest.mockito.MockitoSugar
 import better.files.File
+import com.ing.baker.il.CompiledRecipe
 
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 
 
@@ -130,8 +132,6 @@ object HappyPath extends MockitoSugar {
   def seedNodeConfig(path: ActorPath): Config =
     ConfigFactory.parseString(s"""baker.cluster.seed-nodes = ["$path"]""")
 
-  val process1Id: String = "!id:process-one!"
-
   val implementations: Seq[AnyRef] = Seq(
     ValidateOrder,
     ManufactureGoods,
@@ -153,64 +153,68 @@ class HappyPath extends MultiNodeSpec(HappyPathConfig)
     File("target/snapshots").createDirectoryIfNotExists().delete()
   }
 
+  override def afterAll(): Unit = {
+    Await.result(system.terminate(), 10.seconds)
+  }
+
+  def runHappyFlow(baker: Baker, recipeId: String, processId: String): Unit = {
+
+    val processState = baker.bake(recipeId, processId)
+    println(Console.YELLOW + "Process State: " + processState + Console.RESET)
+
+    val sensoryEventStatus1 = baker.processEvent(processId, placeOrderRuntimeEvent)
+    println(Console.YELLOW + s"[$processId] Sensory Event Status 1: " + sensoryEventStatus1 + Console.RESET)
+    val events1 = baker.getProcessState(processId).eventNames
+    println(Console.YELLOW + "[$processId] Events 1: " + events1 + Console.RESET)
+
+    val sensoryEventStatus2 = baker.processEvent(processId, receivedDataRuntimeEvent)
+    println(Console.YELLOW + s"[$processId] Sensory Event Status 2: " + sensoryEventStatus2 + Console.RESET)
+    val events2 = baker.getProcessState(processId).eventNames
+    println(Console.YELLOW + s"[$processId] Events 2: " + events2 + Console.RESET)
+
+    val sensoryEventStatus3 = baker.processEvent(processId, paymentMadeRuntimeEvent)
+    println(Console.YELLOW + s"[$processId] Sensory Event Status 3: " + sensoryEventStatus3 + Console.RESET)
+    val events3 = baker.getProcessState(processId).eventNames
+    println(Console.YELLOW + s"[$processId] Events 3: " + events3 + Console.RESET)
+
+    assert(events3 == List(
+      webshop.orderPlaced.name,
+      webshop.valid.name,
+      webshop.customerInfoReceived.name,
+      webshop.paymentMade.name,
+      webshop.goodsManufactured.name,
+      webshop.goodsShipped.name,
+      webshop.invoiceWasSent.name)
+    )
+  }
+
   "A HappyPath" must {
 
     "retrieve state from a remote process actor using in-memory journals" in {
 
-      val baker = Baker(seedNodeConfig(node(node1)))
-      enterBarrier("startup")
+      val baker = new AkkaBaker(ConfigFactory.load().withFallback(seedNodeConfig(node(node1))))
+      baker.addImplementations(HappyPath.implementations)
+      val compiled = RecipeCompiler.compileRecipe(webshop.webShopRecipe)
+      val recipeId = baker.addRecipe(compiled)
+
+      enterBarrier("Setup finished")
 
       runOn(node1) {
 
-        val compiled = RecipeCompiler.compileRecipe(webshop.webShopRecipe)
-        baker.addImplementations(HappyPath.implementations)
+        runHappyFlow(baker, recipeId, UUID.randomUUID().toString)
+        runHappyFlow(baker, recipeId, UUID.randomUUID().toString)
+        runHappyFlow(baker, recipeId, UUID.randomUUID().toString)
 
-        enterBarrier("recipe-setup")
-
-        enterBarrier("sensory-event-1")
-
-        enterBarrier("sensory-event-2")
+        enterBarrier("Happy flow finished")
       }
 
       runOn(node2) {
 
-        val compiled = RecipeCompiler.compileRecipe(webshop.webShopRecipe)
-        baker.addImplementations(HappyPath.implementations)
+        runHappyFlow(baker, recipeId, UUID.randomUUID().toString)
+        runHappyFlow(baker, recipeId, UUID.randomUUID().toString)
+        runHappyFlow(baker, recipeId, UUID.randomUUID().toString)
 
-        val recipeId = baker.addRecipe(compiled)
-        val processState = baker.bake(recipeId, process1Id)
-        println(Console.YELLOW + "Process State: " + processState + Console.RESET)
-
-        enterBarrier("recipe-setup")
-
-        val sensoryEventStatus1 = baker.processEvent(process1Id, placeOrderRuntimeEvent)
-        println(Console.YELLOW + "Sensory Event Status 1: " + sensoryEventStatus1 + Console.RESET)
-        val events1 = baker.getProcessState(process1Id).eventNames
-        println(Console.YELLOW + "Events 1: " + events1 + Console.RESET)
-
-        enterBarrier("sensory-event-1")
-
-        val sensoryEventStatus2 = baker.processEvent(process1Id, receivedDataRuntimeEvent)
-        println(Console.YELLOW + "Sensory Event Status 2: " + sensoryEventStatus2 + Console.RESET)
-        val events2 = baker.getProcessState(process1Id).eventNames
-        println(Console.YELLOW + "Events 2: " + events2 + Console.RESET)
-
-        enterBarrier("sensory-event-2")
-
-        val sensoryEventStatus3 = baker.processEvent(process1Id, paymentMadeRuntimeEvent)
-        println(Console.YELLOW + "Sensory Event Status 3: " + sensoryEventStatus3 + Console.RESET)
-        val events3 = baker.getProcessState(process1Id).eventNames
-        println(Console.YELLOW + "Events 3: " + events3 + Console.RESET)
-
-        assert(events3 == List(
-          webshop.orderPlaced.name,
-          webshop.valid.name,
-          webshop.customerInfoReceived.name,
-          webshop.paymentMade.name,
-          webshop.goodsManufactured.name,
-          webshop.goodsShipped.name,
-          webshop.invoiceWasSent.name)
-        )
+        enterBarrier("Happy flow finished")
       }
 
       enterBarrier("finished")
