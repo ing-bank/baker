@@ -14,6 +14,8 @@ import com.ing.baker.runtime.core.events.AnnotatedEventSubscriber;
 import com.ing.baker.runtime.java_api.EventList;
 import com.ing.baker.runtime.java_api.JBaker;
 import com.ing.baker.types.Converters;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -42,12 +44,15 @@ public class JBakerTest {
             new JavaCompiledRecipeTest.SieveImpl());
 
     private static ActorSystem actorSystem = null;
+    private static Config config = null;
+
 
     @Rule
     public final ExpectedException exception = ExpectedException.none();
 
     @BeforeClass
     public static void init() {
+        config = ConfigFactory.load();
         actorSystem = ActorSystem.apply("JBakerTest");
     }
 
@@ -61,7 +66,7 @@ public class JBakerTest {
 
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupSimpleRecipe());
 
-        JBaker jBaker = new JBaker(actorSystem);
+        JBaker jBaker = new JBaker(config);
         jBaker.addImplementations(implementationsList);
         String recipeId = jBaker.addRecipe(compiledRecipe);
 
@@ -82,7 +87,7 @@ public class JBakerTest {
 
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
 
-        JBaker jBaker = new JBaker(actorSystem);
+        JBaker jBaker = new JBaker(config);
         jBaker.addImplementations(implementationsList);
         String recipeId = jBaker.addRecipe(compiledRecipe);
 
@@ -101,7 +106,7 @@ public class JBakerTest {
 
         exception.expect(BakerException.class);
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
-        JBaker jBaker = new JBaker(actorSystem);
+        JBaker jBaker = new JBaker(config);
 
         jBaker.addRecipe(compiledRecipe);
     }
@@ -264,7 +269,7 @@ public class JBakerTest {
     @Test
     public void shouldExecuteCompleteFlow() throws BakerException, TimeoutException {
 
-        JBaker jBaker = new JBaker(actorSystem);
+        JBaker jBaker = new JBaker(config);
 
         jBaker.addImplementations(implementationsList);
 
@@ -286,7 +291,7 @@ public class JBakerTest {
         exception.expect(BakerException.class);
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
 
-        JBaker jBaker = new JBaker(actorSystem);
+        JBaker jBaker = new JBaker(config);
 
         jBaker.addImplementations(implementationsList);
 

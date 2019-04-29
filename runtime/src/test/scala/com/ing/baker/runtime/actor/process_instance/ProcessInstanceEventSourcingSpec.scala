@@ -59,8 +59,8 @@ class ProcessInstanceEventSourcingSpec extends AkkaTestBase("ProcessQuerySpec") 
       instance ! Initialize(p1.markWithN(1), ())
 
       expectMsg(Initialized(p1.markWithN(1), ()))
-      expectMsgPF(timeOut) { case TransitionFired(_, 1, _, _, _, _, _, _) ⇒ }
-      expectMsgPF(timeOut) { case TransitionFired(_, 2, _, _, _, _, _, _) ⇒ }
+      expectMsgPF(timeOut) { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
+      expectMsgPF(timeOut) { case TransitionFired(_, 2, _, _, _, _, _) ⇒ }
 
       ProcessInstanceEventSourcing.eventsForInstance[Place, Transition, Unit, Unit](
         "test",

@@ -31,7 +31,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent))
 
-        val baker = new Baker()
+        val baker = new AkkaBaker()
 
         baker.addImplementations(mockImplementations)
 
@@ -47,14 +47,14 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
       "providing implementations in a sequence" in {
 
-        val baker = new Baker()
+        val baker = new AkkaBaker()
 
         baker.addImplementations(mockImplementations)
       }
 
       "providing an implementation with the class simplename same as the interaction" in {
 
-        val baker = new Baker()
+        val baker = new AkkaBaker()
 
         baker.addImplementation(new implementations.InteractionOne())
       }
@@ -65,7 +65,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction((interactionOne.withName("interactionOneRenamed")))
           .withSensoryEvent(initialEvent)
 
-        val baker = new Baker()
+        val baker = new AkkaBaker()
 
         baker.addImplementation(new implementations.InteractionOne())
 
@@ -78,7 +78,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = new Baker()
+        val baker = new AkkaBaker()
 
         baker.addImplementation(new InteractionOneFieldName())
 
@@ -91,7 +91,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = new Baker()
+        val baker = new AkkaBaker()
 
         baker.addImplementation(new InteractionOneInterfaceImplementation())
 
@@ -103,7 +103,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(complexIngredientInteraction)
           .withSensoryEvent(initialEvent)
 
-        val baker = new Baker()
+        val baker = new AkkaBaker()
 
         baker.addImplementation(mock[ComplexIngredientInteraction])
 
@@ -118,7 +118,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(secondEvent)
 
-        val baker = new Baker()
+        val baker = new AkkaBaker()
 
         baker.addImplementations(mockImplementations)
 
@@ -133,7 +133,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = new Baker()
+        val baker = new AkkaBaker()
 
         intercept[BakerException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
@@ -147,7 +147,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = new Baker()
+        val baker = new AkkaBaker()
 
         baker.addImplementation(new InteractionOneWrongApply())
 

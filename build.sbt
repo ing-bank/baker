@@ -183,13 +183,11 @@ lazy val recipeCompiler = project.in(file("compiler"))
 
 lazy val baas = project.in(file("baas"))
   .settings(defaultModuleSettings)
-  .settings(noPublishSettings)
+  .settings(scalaPBSettings)
   .settings(
     moduleName := "baker-baas",
     libraryDependencies ++=
       compileDeps(
-        kryo,
-        kryoSerializers,
         akkaHttp,
         akkaPersistenceCassandra) ++
       testDeps(
@@ -210,7 +208,7 @@ lazy val baker = project
   .in(file("."))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
-  .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver)
+  .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver, baas)
 
 lazy val integration = project.in(file("integration"))
   .dependsOn(testScope(runtime))
