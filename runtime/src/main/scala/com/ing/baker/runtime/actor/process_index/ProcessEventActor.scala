@@ -13,7 +13,8 @@ import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.RetryWithDelay
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.core.events.RejectReason
-import com.ing.baker.runtime.core.{RuntimeEvent, events}
+import com.ing.baker.runtime.core.{AkkaBaker, RuntimeEvent, events}
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -52,14 +53,20 @@ class ProcessEventActor(cmd: ProcessEvent, recipe: CompiledRecipe, queue: Source
 
   context.setReceiveTimeout(timeout)
 
+  private val log = LoggerFactory.getLogger(classOf[ProcessEventActor])
+
   def completeWith(msg: Any) = {
     queue.offer(msg)
+    log.debug("Stopping ProcessEventActor and completing queue")
     queue.complete()
     stopActor()
   }
 
   def rejectedWith(msg: Any, rejectReason: RejectReason) = {
     system.eventStream.publish(events.EventRejected(System.currentTimeMillis(), cmd.processId, cmd.correlationId, cmd.event, rejectReason))
+    log.debug("Stopping ProcessEventActor and rejecting queue")
+    log.debug("Reject reason: " + rejectReason)
+    log.debug("message: " + msg)
     completeWith(msg)
   }
 
@@ -97,18 +104,24 @@ class ProcessEventActor(cmd: ProcessEvent, recipe: CompiledRecipe, queue: Source
 
     //Akka default cases
     case ReceiveTimeout ⇒
+      log.debug("Timeout on ProcessEventActor")
       queue.fail(new TimeoutException(s"Timeout, no message received in: $timeout"))
       stopActor()
 
     case msg @ _ ⇒
+      log.debug("Unexpected message on ProcessEventActor")
       queue.fail(new IllegalStateException(s"Unexpected message: $msg"))
       stopActor()
   }
 
-  def stopActor() = context.stop(self)
+  def stopActor() = {
+    log.debug("Stopping the ProcessEventActor")
+    context.stop(self)
+  }
 
   def stopActorIfDone(): Unit =
     if (runningJobs.isEmpty) {
+      log.debug("Stopping ProcessEventActor and completing queue")
       queue.complete()
       stopActor()
     }
