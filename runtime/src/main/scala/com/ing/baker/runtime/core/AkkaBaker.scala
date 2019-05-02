@@ -14,7 +14,7 @@ import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
 import com.ing.baker.runtime.actor._
-import com.ing.baker.runtime.actor.process_index.ProcessEventActor
+import com.ing.baker.runtime.actor.process_index.ProcessEventReceiver
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEventSourcing
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEventSourcing.TransitionFiredEvent
@@ -232,7 +232,7 @@ class AkkaBaker(private val config: Config)(implicit val actorSystem: ActorSyste
   def processEventStream(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): Source[BakerResponseEventProtocol, NotUsed] = {
     // transforms the given object into a RuntimeEvent instance
     val runtimeEvent: RuntimeEvent = extractEvent(event)
-    val (responseStream: Source[Any, NotUsed], receiver: ActorRef) = ProcessEventActor.apply(waitForRetries = true)(timeout, actorSystem, materializer)
+    val (responseStream: Source[Any, NotUsed], receiver: ActorRef) = ProcessEventReceiver.apply(waitForRetries = true)(timeout, actorSystem, materializer)
 
     processIndexActor ! ProcessEvent(processId, runtimeEvent, correlationId, waitForRetries = true, timeout, receiver)
     responseStream.via(Flow.fromFunction(BakerResponseEventProtocol.fromProtocols))

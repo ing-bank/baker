@@ -8,6 +8,11 @@ option (scalapb.options) = {
     flat_package: true
 };
 
+// ProcessEvent Protocol
+message ProcessEventRejected {
+    optional string message = 1;
+}
+
 // Events
 
 message ActorCreated {

@@ -15,36 +15,21 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.FiniteDuration
 
-object ProcessEventActor {
+object ProcessEventReceiver {
 
-  case class Initialize(queue: SourceQueueWithComplete[Any])
+  case class InitializeProcessEventReceiver(queue: SourceQueueWithComplete[Any])
 
-  //case class ProcessEventRejected(message: String) extends BakerSerializable
+  case class ProcessEventRejected(message: String) extends BakerSerializable
 
   /**
     * Returns a Source of all the messages from a process instance in response to a message.
     */
   def apply(/*processInstance: ActorRef, recipe: CompiledRecipe, cmd: ProcessEvent, */ waitForRetries: Boolean = false)
            (implicit timeout: FiniteDuration, actorSystem: ActorSystem, materializer: Materializer): (Source[Any, NotUsed], ActorRef) = {
-    val receiver = actorSystem.actorOf(Props(new ProcessEventActor(/*cmd, recipe,queue,*/ waitForRetries)(timeout, actorSystem)))
+    val receiver = actorSystem.actorOf(Props(new ProcessEventReceiver(/*cmd, recipe,queue,*/ waitForRetries)(timeout, actorSystem)))
     implicit val akkaTimeout: Timeout = timeout
     val source = Source.queue[Any](100, OverflowStrategy.fail).mapMaterializedValue { queue ⇒
-      receiver ! Initialize(queue)
-      //TODO move this validation to the process index
-      /*
-      require(cmd.event != null, "Event can not be null")
-
-      //TODO translate this error to an actor message for ProcessEventActor
-      val t: Transition = recipe.petriNet.transitions.find(_.label == cmd.event.name).getOrElse {
-        throw new IllegalArgumentException(s"No such event known in recipe: ${cmd.event.name}")
-      }
-      */
-
-      //TODO move to process index
-      //val fireTransitionCmd = FireTransition(t.id, cmd.event, cmd.correlationId)
-
-      // TODO make this redirect on process index
-      //processInstance.tell(fireTransitionCmd, sender)
+      receiver ! InitializeProcessEventReceiver(queue)
       NotUsed.getInstance()
     }
     (source, receiver)
@@ -54,18 +39,18 @@ object ProcessEventActor {
 /**
   * An actor that pushes all received messages on a SourceQueueWithComplete.
   */
-class ProcessEventActor(/*cmd: ProcessEvent, recipe: CompiledRecipe,*/ waitForRetries: Boolean)(implicit timeout: FiniteDuration, system: ActorSystem) extends Actor {
+class ProcessEventReceiver(/*cmd: ProcessEvent, recipe: CompiledRecipe,*/ waitForRetries: Boolean)(implicit timeout: FiniteDuration, system: ActorSystem) extends Actor {
   var runningJobs = Set.empty[Long]
   //TODO Move event stream publishing to process instance
   //var firstReceived = false
 
   context.setReceiveTimeout(timeout)
 
-  private val log = LoggerFactory.getLogger(classOf[ProcessEventActor])
+  private val log = LoggerFactory.getLogger(classOf[ProcessEventReceiver])
 
   def receive: Receive = {
 
-    case ProcessEventActor.Initialize(queue) => context.become(initialized(queue))
+    case ProcessEventReceiver.InitializeProcessEventReceiver(queue) => context.become(initialized(queue))
   }
 
   def initialized(queue: SourceQueueWithComplete[Any]): Receive = {
