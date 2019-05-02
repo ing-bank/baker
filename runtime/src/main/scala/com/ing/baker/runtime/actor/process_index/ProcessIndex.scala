@@ -6,7 +6,6 @@ import akka.pattern.{ask, pipe}
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.stream.scaladsl.{Source, StreamRefs}
 import akka.stream.{Materializer, SourceRef, StreamRefAttributes}
-import akka.util.Timeout
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
 import com.ing.baker.petrinet.api._
@@ -16,7 +15,7 @@ import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.process_instance.{ProcessInstance, ProcessInstanceRuntime}
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.actor.serialization.{BakerProtoMessage, Encryption}
+import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.core.events.{ProcessCreated, RejectReason}
 import com.ing.baker.runtime.core.internal.{InteractionManager, RecipeRuntime}
 import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, events, namedCachedThreadPool, _}
@@ -28,6 +27,7 @@ import scala.util.{Failure, Success}
 import cats.data.OptionT
 import cats.instances.future._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
+import com.ing.baker.runtime.actor.serialization.BakerSerializable
 
 object ProcessIndex {
 
@@ -50,7 +50,7 @@ object ProcessIndex {
   //The process was deleted
   case object Deleted extends ProcessStatus
 
-  case class ActorMetadata(recipeId: String, processId: String, createdDateTime: Long, processStatus: ProcessStatus) {
+  case class ActorMetadata(recipeId: String, processId: String, createdDateTime: Long, processStatus: ProcessStatus) extends BakerSerializable {
 
     def isDeleted: Boolean = processStatus == Deleted
   }
@@ -58,16 +58,16 @@ object ProcessIndex {
   // --- Events
 
   // when an actor is requested again after passivation
-  case class ActorActivated(processId: String) extends BakerProtoMessage
+  case class ActorActivated(processId: String) extends BakerSerializable
 
   // when an actor is passivated
-  case class ActorPassivated(processId: String) extends BakerProtoMessage
+  case class ActorPassivated(processId: String) extends BakerSerializable
 
   // when an actor is deleted
-  case class ActorDeleted(processId: String) extends BakerProtoMessage
+  case class ActorDeleted(processId: String) extends BakerSerializable
 
   // when an actor is created
-  case class ActorCreated(recipeId: String, processId: String, createdDateTime: Long) extends BakerProtoMessage
+  case class ActorCreated(recipeId: String, processId: String, createdDateTime: Long) extends BakerSerializable
 
   private val bakerExecutionContext: ExecutionContext = namedCachedThreadPool(s"Baker.CachedThreadPool")
 }

@@ -41,8 +41,8 @@ object Dependencies {
   val scalaGraphDot =             "org.scala-graph"            %% "graph-dot"                          % "1.11.5"
   val graphvizJava =              "guru.nidi"                  %  "graphviz-java"                      % "0.8.0"
 
-  val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "0.10"
-  val catsCore =                  "org.typelevel"              %% "cats-core"                          % "1.1.0"
+  val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "1.2.0"
+  val catsCore =                  "org.typelevel"              %% "cats-core"                          % "1.5.0"
 
   def scalaReflect(scalaV: String): ModuleID = "org.scala-lang"%  "scala-reflect"                      % scalaV
   val javaxInject =               "javax.inject"               %  "javax.inject"                       % "1"

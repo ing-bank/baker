@@ -1,6 +1,5 @@
 package com.ing.baker.runtime.actor.serialization
 
-import com.typesafe.config.Config
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 
@@ -42,3 +41,4 @@ trait Encryption {
 
   def decrypt(codeBytes: Array[Byte]): Array[Byte]
 }
+

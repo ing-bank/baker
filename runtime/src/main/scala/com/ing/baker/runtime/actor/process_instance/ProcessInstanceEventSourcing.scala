@@ -1,16 +1,15 @@
 package com.ing.baker.runtime.actor.process_instance
 
 import akka.persistence.{PersistentActor, RecoveryCompleted}
-import akka.serialization.SerializationExtension
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.actor.process_instance.internal.{ExceptionState, ExceptionStrategy, Instance, Job}
-import com.ing.baker.runtime.actor.serialization.{Encryption, ProtoEventAdapterImpl}
 import ProcessInstanceEventSourcing._
 import akka.NotUsed
 import akka.actor.{ActorSystem, NoSerializationVerificationNeeded}
 import akka.persistence.query.scaladsl.CurrentEventsByPersistenceIdQuery
 import akka.stream.scaladsl.Source
-import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
+import com.ing.baker.runtime.actor.serialization.Encryption
+import com.ing.baker.runtime.actor.serialization.SerializersProvider
 
 object ProcessInstanceEventSourcing {
 
@@ -89,12 +88,11 @@ object ProcessInstanceEventSourcing {
       processTypeName: String,
       processId: String,
       topology: PetriNet[P, T],
-      encryption: Encryption = NoEncryption,
+      encryption: Encryption,
       readJournal: CurrentEventsByPersistenceIdQuery,
       eventSourceFn: T ⇒ (S ⇒ E ⇒ S))(implicit actorSystem: ActorSystem): Source[(Instance[P, T, S], Event), NotUsed] = {
 
-    val protoEventAdapter = new ProtoEventAdapterImpl(SerializationExtension.get(actorSystem), encryption)
-    val serializer = new ProcessInstanceSerialization[P, T, S, E](protoEventAdapter)
+    val serializer = new ProcessInstanceSerialization[P, T, S, E](SerializersProvider(actorSystem, encryption))
 
     val persistentId = ProcessInstance.processId2PersistenceId(processTypeName, processId)
     val src = readJournal.currentEventsByPersistenceId(persistentId, 0, Long.MaxValue)
@@ -119,8 +117,7 @@ abstract class ProcessInstanceEventSourcing[P : Identifiable, T : Identifiable, 
 
   val eventSource = ProcessInstanceEventSourcing.apply[P, T, S, E](eventSourceFn)
 
-  private val protoEventAdapter = new ProtoEventAdapterImpl(SerializationExtension.get(system), encryption)
-  private val serializer = new ProcessInstanceSerialization[P, T, S, E](protoEventAdapter)
+  private val serializer = new ProcessInstanceSerialization[P, T, S, E](SerializersProvider(system, encryption))
 
   def onRecoveryCompleted(state: Instance[P, T, S])
 

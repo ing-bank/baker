@@ -5,7 +5,7 @@ import org.scalacheck.Prop.forAll
 import org.scalacheck._
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
-import Encryption._
+import com.ing.baker.runtime.actor.serialization.Encryption._
 
 class EncryptionPropertiesSpec extends FunSuite with Checkers {
 
@@ -31,6 +31,6 @@ class EncryptionPropertiesSpec extends FunSuite with Checkers {
         plainText == decryptedPlainText
     }
 
-    check(property, Test.Parameters.defaultVerbose.withMinSuccessfulTests(100))
+    check(property, Test.Parameters.defaultVerbose.withMinSuccessfulTests(10))
   }
 }
