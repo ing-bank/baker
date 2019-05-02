@@ -177,7 +177,7 @@ class BaasBaker(config: Config,
   /**
     * Creates a stream of specific events.
     */
-  override def processEventStream(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): Future[Source[BakerResponseEventProtocol, NotUsed]] = {
+  def processEventStream(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): Future[Source[BakerResponseEventProtocol, NotUsed]] = {
     val runtimeEvent = Baker.extractEvent(event)
     Marshal(ProcessEventRequest(runtimeEvent)).to[RequestEntity]
       .flatMap { body =>

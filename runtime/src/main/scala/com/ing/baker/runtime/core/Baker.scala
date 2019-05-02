@@ -125,11 +125,6 @@ trait Baker {
   def processEventAsync(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): BakerResponse
 
   /**
-    * Creates a stream of specific events.
-    */
-  def processEventStream(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): Future[Source[BakerResponseEventProtocol, NotUsed]]
-
-  /**gf
     * Retries a blocked interaction.
     *
     * @return

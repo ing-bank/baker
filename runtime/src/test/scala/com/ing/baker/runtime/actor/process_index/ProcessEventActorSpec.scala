@@ -49,7 +49,7 @@ class ProcessEventActorSpec extends TestKit(ActorSystem("ProcessApiSpec", Proces
 
       val processEventCmd = ProcessEvent("", RuntimeEvent(webshop.orderPlaced.name, Seq.empty), None, true, 1 second)
 
-      val source: Source[Any, NotUsed] = ProcessEventActor.processEvent(processProbe.ref, webShopRecipe, processEventCmd)
+      val source: Source[Any, NotUsed] = ProcessEventActor.apply(processProbe.ref, webShopRecipe, processEventCmd)
 
       val runSource: TestSubscriber.Probe[Long] = source.map(_.asInstanceOf[TransitionResponse].transitionId).runWith(TestSink.probe)
 
@@ -69,7 +69,7 @@ class ProcessEventActorSpec extends TestKit(ActorSystem("ProcessApiSpec", Proces
 
       val processEventCmd = ProcessEvent("", RuntimeEvent(webshop.orderPlaced.name, Seq.empty), None, true, 1 second)
 
-      val source: Source[Any, NotUsed] = ProcessEventActor.processEvent(processProbe.ref, webShopRecipe, processEventCmd)
+      val source: Source[Any, NotUsed] = ProcessEventActor.apply(processProbe.ref, webShopRecipe, processEventCmd)
 
       val runSource = source.map(_.asInstanceOf[TransitionResponse].transitionId).runWith(TestSink.probe)
 
@@ -92,7 +92,7 @@ class ProcessEventActorSpec extends TestKit(ActorSystem("ProcessApiSpec", Proces
         val processProbe = TestProbe()
         val processEventCmd = ProcessEvent("", RuntimeEvent(webshop.orderPlaced.name, Seq.empty), None, true, 1 second)
 
-        val source: Source[Any, NotUsed] = ProcessEventActor.processEvent(processProbe.ref, webShopRecipe, processEventCmd)
+        val source: Source[Any, NotUsed] = ProcessEventActor.apply(processProbe.ref, webShopRecipe, processEventCmd)
         val runSource: TestSubscriber.Probe[Any] = source.runWith(TestSink.probe)
 
         processProbe.expectMsgType[FireTransition]

@@ -151,7 +151,7 @@ object BakerTypedProtobufSerializer {
 
 class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
 
-  implicit def serializersProvider: SerializersProvider = SerializersProvider(system)
+  implicit def serializersProvider: SerializersProvider = SerializersProvider(system, system.provider)
 
   lazy val entriesMem: List[BinarySerializable] = BakerTypedProtobufSerializer.entries
 
