@@ -2,7 +2,7 @@ package com.ing.baker.runtime.actor.serialization
 
 import java.util.concurrent.TimeUnit
 
-import akka.actor.ActorSystem
+import akka.actor.{Actor, ActorSystem, Props}
 import akka.serialization.SerializationExtension
 import akka.testkit.TestKit
 import com.ing.baker.compiler.RecipeCompiler
@@ -113,7 +113,7 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
 
   checkFor("ProcessIndexProtocol.CreateProcess", SerializationSpec.ProcessIndex.createProcessGen)
 
-  checkFor("ProcessIndexProtocol.ProcessEvent", SerializationSpec.ProcessIndex.processEventGen)
+  checkFor("ProcessIndexProtocol.ProcessEvent", SerializationSpec.ProcessIndex.processEventGen(system))
 
   checkFor("ProcessIndexProtocol.RetryBlockedInteraction", SerializationSpec.ProcessIndex.retryBlockedInteractionGen)
 
@@ -286,13 +286,18 @@ object SerializationSpec {
       processId <- processIdGen
     } yield CreateProcess(recipeId, processId)
 
-    val processEventGen: Gen[ProcessEvent] = for {
+    class SimpleActor extends Actor {
+      override def receive: Receive = { case _ => () }
+    }
+
+    def processEventGen(system: ActorSystem): Gen[ProcessEvent] = for {
       processId <- processIdGen
       event <- Runtime.runtimeEventGen
       correlationId <- Gen.option(processIdGen)
       waitForRetries <- Gen.oneOf(true, false)
       timeout <- Gen.posNum[Long].map(millis => FiniteDuration(millis, TimeUnit.MILLISECONDS))
-    } yield ProcessEvent(processId, event, correlationId, waitForRetries, timeout)
+      receiver = system.actorOf(Props(new SimpleActor))
+    } yield ProcessEvent(processId, event, correlationId, waitForRetries, timeout, receiver)
 
     val getProcessStateGen: Gen[GetProcessState] = processIdGen.map(GetProcessState)
     val getCompiledRecipeGen: Gen[GetCompiledRecipe] = processIdGen.map(GetCompiledRecipe)
@@ -322,7 +327,7 @@ object SerializationSpec {
       interactionName <- Gen.alphaStr
     } yield StopRetryingInteraction(processId, interactionName)
 
-    val messagesGen: Gen[AnyRef] = Gen.oneOf(getIndexGen, indexGen, createProcessGen, processEventGen,
+    def messagesGen(system: ActorSystem): Gen[AnyRef] = Gen.oneOf(getIndexGen, indexGen, createProcessGen, processEventGen(system),
       getProcessStateGen, getCompiledRecipeGen, receivePeriodExpiredGen, invalidEventGen, processDeletedGen,
       noSuchProcessGen, processAlreadyExistsGen, retryBlockedInteractionGen, resolveBlockedInteraction, stopRetryingInteractionGen)
 

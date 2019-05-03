@@ -252,14 +252,12 @@ object ProcessIndexProto {
       val companion = protobuf.ProcessEventResponse
 
       def toProto(a: ProcessEventResponse): protobuf.ProcessEventResponse =
-        protobuf.ProcessEventResponse(Some(a.processId), Some(ProtoMap.anyRefMapping.toProto(a.sourceRef)))
+        protobuf.ProcessEventResponse(Some(a.processId), None)
 
       def fromProto(message: protobuf.ProcessEventResponse): Try[ProcessEventResponse] =
         for {
           processId <- versioned(message.processId, "processId")
-          sourceRefProto <- versioned(message.sourceRef, "sourceRef")
-          sourceRef <- ProtoMap.anyRefMapping.fromProto(sourceRefProto)
-        } yield ProcessEventResponse(processId, sourceRef.asInstanceOf[SourceRef[Any]])
+        } yield ProcessEventResponse(processId)
     }
 
   implicit def getProcessStateProto: ProtoMap[GetProcessState, protobuf.GetProcessState] =

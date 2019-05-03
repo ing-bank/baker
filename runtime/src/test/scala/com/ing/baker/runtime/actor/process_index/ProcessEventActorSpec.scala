@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.actor.process_index
 
 import akka.NotUsed
-import akka.actor.ActorSystem
+import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
 import akka.stream.testkit.TestSubscriber
@@ -46,14 +46,16 @@ class ProcessEventActorSpec extends TestKit(ActorSystem("ProcessApiSpec", Proces
     "return a source of FireTransition responses resulting from a TransitionFired command" in {
 
       val processProbe = TestProbe()
+      val (source: Source[Any, NotUsed], receiver: ActorRef) = ProcessEventReceiver.apply(waitForRetries = true)
+      val cmd = ProcessEvent("", RuntimeEvent(webshop.orderPlaced.name, Seq.empty), None, true, 1 second, receiver)
+      val transition = webShopRecipe.petriNet.transitions.find(_.label == cmd.event.name).get
+      val fireTransitionCmd = FireTransition(transition.id, cmd.event, cmd.correlationId)
 
-      val processEventCmd = ProcessEvent("", RuntimeEvent(webshop.orderPlaced.name, Seq.empty), None, true, 1 second)
-
-      val source: Source[Any, NotUsed] = ProcessEventReceiver.apply(processProbe.ref, webShopRecipe, processEventCmd)
+      processProbe.ref.tell(fireTransitionCmd, receiver)
 
       val runSource: TestSubscriber.Probe[Long] = source.map(_.asInstanceOf[TransitionResponse].transitionId).runWith(TestSink.probe)
 
-      processProbe.expectMsgPF() { case FireTransition(_, _, _) => }
+      processProbe.expectMsgPF() { case FireTransition(_, _, _) => () }
 
       processProbe.reply(TransitionFired(1, 1, None, Map.empty, Map.empty, Set(2, 3), null))
       processProbe.reply(TransitionFired(2, 2, None, Map.empty, Map.empty, Set.empty, null))
@@ -66,10 +68,12 @@ class ProcessEventActorSpec extends TestKit(ActorSystem("ProcessApiSpec", Proces
     "wait for the completion of all jobs even if one fails with TransitionFailed" in {
 
       val processProbe = TestProbe()
+      val (source: Source[Any, NotUsed], receiver: ActorRef) = ProcessEventReceiver.apply(waitForRetries = true)
+      val cmd = ProcessEvent("", RuntimeEvent(webshop.orderPlaced.name, Seq.empty), None, true, 1 second, receiver)
+      val transition = webShopRecipe.petriNet.transitions.find(_.label == cmd.event.name).get
+      val fireTransitionCmd = FireTransition(transition.id, cmd.event, cmd.correlationId)
 
-      val processEventCmd = ProcessEvent("", RuntimeEvent(webshop.orderPlaced.name, Seq.empty), None, true, 1 second)
-
-      val source: Source[Any, NotUsed] = ProcessEventReceiver.apply(processProbe.ref, webShopRecipe, processEventCmd)
+      processProbe.ref.tell(fireTransitionCmd, receiver)
 
       val runSource = source.map(_.asInstanceOf[TransitionResponse].transitionId).runWith(TestSink.probe)
 
@@ -90,9 +94,13 @@ class ProcessEventActorSpec extends TestKit(ActorSystem("ProcessApiSpec", Proces
 
       def check(msg: Any) = {
         val processProbe = TestProbe()
-        val processEventCmd = ProcessEvent("", RuntimeEvent(webshop.orderPlaced.name, Seq.empty), None, true, 1 second)
+        val (source: Source[Any, NotUsed], receiver: ActorRef) = ProcessEventReceiver.apply(waitForRetries = true)
+        val cmd = ProcessEvent("", RuntimeEvent(webshop.orderPlaced.name, Seq.empty), None, true, 1 second, receiver)
+        val transition = webShopRecipe.petriNet.transitions.find(_.label == cmd.event.name).get
+        val fireTransitionCmd = FireTransition(transition.id, cmd.event, cmd.correlationId)
 
-        val source: Source[Any, NotUsed] = ProcessEventReceiver.apply(processProbe.ref, webShopRecipe, processEventCmd)
+        processProbe.ref.tell(fireTransitionCmd, receiver)
+
         val runSource: TestSubscriber.Probe[Any] = source.runWith(TestSink.probe)
 
         processProbe.expectMsgType[FireTransition]

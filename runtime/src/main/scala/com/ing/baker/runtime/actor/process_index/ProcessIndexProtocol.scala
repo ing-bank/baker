@@ -23,7 +23,7 @@ object ProcessIndexProtocol {
 
   case class ProcessEvent(override val processId: String, event: RuntimeEvent, correlationId: Option[String], waitForRetries: Boolean, timeout: FiniteDuration, receiver: ActorRef) extends ProcessIndexMessage
 
-  case class ProcessEventResponse(override val processId: String, sourceRef: SourceRef[Any]) extends ProcessIndexMessage
+  case class ProcessEventResponse(override val processId: String) extends ProcessIndexMessage
 
   case class GetProcessState(override val processId: String) extends ProcessIndexMessage
 

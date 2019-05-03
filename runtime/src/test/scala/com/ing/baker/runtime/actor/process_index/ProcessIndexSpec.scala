@@ -79,15 +79,6 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
   implicit val materializer: Materializer = ActorMaterializer()
 
-  def expectProcessEventReply(reply: Any): Unit = {
-
-    expectMsgType[ProcessEventResponse]
-      .sourceRef
-      .runWith(TestSink.probe)
-      .requestNext(reply)
-      .expectComplete()
-  }
-
   "ProcessIndex" should {
 
     "create the PetriNetInstance actor when Initialize message is received" in {
@@ -175,20 +166,19 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       petriNetActorProbe.expectMsg(initializeMsg)
 
-      val runtimeEvent = new RuntimeEvent("Event", Seq.empty)
+      val runtimeEvent = RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! ProcessEvent(processId, runtimeEvent, None, true, 1 seconds)
+      actorIndex ! ProcessEvent(processId, runtimeEvent, None, true, 1 seconds, self)
 
       petriNetActorProbe.expectMsgAllClassOf(classOf[FireTransition])
 
-      expectMsgType[ProcessEventResponse]
     }
 
     "reply with a Unititalized message when attempting to fire an event to a not existing process" in {
 
       val petriNetActorProbe = TestProbe("petrinet-probe")
-
-      val recipeManagerProbe = TestProbe()
+      val recipeManagerProbe = TestProbe("recipe-manager-probe")
+      val processEventReceiverProbe = TestProbe("process-event-receiver-probe")
 
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManagerProbe.ref)
 
@@ -201,17 +191,17 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val RuntimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds, processEventReceiverProbe.ref)
 
-      expectProcessEventReply(NoSuchProcess(processId))
+      processEventReceiverProbe.expectMsg(NoSuchProcess(processId))
     }
 
     "reply with a InvalidEvent message when attempting to fire an event that is now know in the compiledRecipe" in {
 
       val receivePeriodTimeout = 500 milliseconds
       val petriNetActorProbe = TestProbe("petrinet-probe")
-
-      val recipeManagerProbe = TestProbe()
+      val recipeManagerProbe = TestProbe("recipe-manager-probe")
+      val processEventReceiverProbe = TestProbe("process-event-receiver-probe")
 
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManagerProbe.ref)
 
@@ -231,17 +221,17 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val RuntimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds, processEventReceiverProbe.ref)
 
-      expectProcessEventReply(InvalidEvent(processId ,s"No event with name 'Event' found in recipe 'name'"))
+      processEventReceiverProbe.expectMsg(InvalidEvent(processId ,s"No event with name 'Event' found in recipe 'name'"))
     }
 
     "reply with a InvalidEvent message when attempting to fire an event that does not comply to the recipe" in {
 
       val receivePeriodTimeout = 500 milliseconds
       val petriNetActorProbe = TestProbe("petrinet-probe")
-
-      val recipeManagerProbe = TestProbe()
+      val recipeManagerProbe = TestProbe("recipe-manager-probe")
+      val processEventReceiverProbe = TestProbe("process-event-receiver-probe")
 
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManagerProbe.ref)
 
@@ -264,17 +254,17 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val RuntimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds, processEventReceiverProbe.ref)
 
-      expectProcessEventReply(InvalidEvent(processId ,s"Invalid event: no value was provided for ingredient 'ingredientName'"))
+      processEventReceiverProbe.expectMsg(InvalidEvent(processId ,s"Invalid event: no value was provided for ingredient 'ingredientName'"))
     }
 
     "reply with a EventReceivePeriodExpired message when attempting to fire an event after expiration period" in {
 
       val receivePeriodTimeout = 1000 milliseconds
       val petriNetActorProbe = TestProbe("petrinet-probe")
-
-      val recipeManagerProbe = TestProbe()
+      val recipeManagerProbe = TestProbe("recipe-manager-probe")
+      val processEventReceiverProbe = TestProbe("process-event-receiver-probe")
 
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManagerProbe.ref)
 
@@ -298,19 +288,17 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val RuntimeEvent = new RuntimeEvent("Event", Seq.empty)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds, processEventReceiverProbe.ref)
 
       petriNetActorProbe.expectMsgAllClassOf(classOf[FireTransition])
 
-      expectMsgType[ProcessEventResponse]
-
       Thread.sleep(receivePeriodTimeout.toMillis * 2)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds)
+      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, true, 1 seconds, processEventReceiverProbe.ref)
 
       petriNetActorProbe.expectNoMessage(noMsgExpectTimeout)
 
-      expectProcessEventReply(ReceivePeriodExpired(processId))
+      processEventReceiverProbe.expectMsg(ReceivePeriodExpired(processId))
     }
   }
 

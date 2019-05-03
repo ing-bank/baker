@@ -7,6 +7,7 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Props, ReceiveTimeout}
 import akka.stream.scaladsl.{Source, SourceQueueWithComplete}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.Timeout
+import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.RetryWithDelay
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.actor.serialization.BakerSerializable
@@ -24,9 +25,8 @@ object ProcessEventReceiver {
   /**
     * Returns a Source of all the messages from a process instance in response to a message.
     */
-  def apply(/*processInstance: ActorRef, recipe: CompiledRecipe, cmd: ProcessEvent, */ waitForRetries: Boolean = false)
-           (implicit timeout: FiniteDuration, actorSystem: ActorSystem, materializer: Materializer): (Source[Any, NotUsed], ActorRef) = {
-    val receiver = actorSystem.actorOf(Props(new ProcessEventReceiver(/*cmd, recipe,queue,*/ waitForRetries)(timeout, actorSystem)))
+  def apply(waitForRetries: Boolean = false)(implicit timeout: FiniteDuration, actorSystem: ActorSystem, materializer: Materializer): (Source[Any, NotUsed], ActorRef) = {
+    val receiver = actorSystem.actorOf(Props(new ProcessEventReceiver(waitForRetries)(timeout, actorSystem)))
     implicit val akkaTimeout: Timeout = timeout
     val source = Source.queue[Any](100, OverflowStrategy.fail).mapMaterializedValue { queue ⇒
       receiver ! InitializeProcessEventReceiver(queue)
@@ -39,10 +39,11 @@ object ProcessEventReceiver {
 /**
   * An actor that pushes all received messages on a SourceQueueWithComplete.
   */
-class ProcessEventReceiver(/*cmd: ProcessEvent, recipe: CompiledRecipe,*/ waitForRetries: Boolean)(implicit timeout: FiniteDuration, system: ActorSystem) extends Actor {
+class ProcessEventReceiver(waitForRetries: Boolean)(implicit timeout: FiniteDuration, system: ActorSystem) extends Actor {
+
+  /** Cache used for storing messages which arrive before initialization */
+  var cache = List.empty[Any]
   var runningJobs = Set.empty[Long]
-  //TODO Move event stream publishing to process instance
-  //var firstReceived = false
 
   context.setReceiveTimeout(timeout)
 
@@ -50,29 +51,35 @@ class ProcessEventReceiver(/*cmd: ProcessEvent, recipe: CompiledRecipe,*/ waitFo
 
   def receive: Receive = {
 
-    case ProcessEventReceiver.InitializeProcessEventReceiver(queue) => context.become(initialized(queue))
+    case ProcessEventReceiver.InitializeProcessEventReceiver(queue) =>
+      val initf = initialized(queue)
+      cache.foreach(initf.apply)
+      context.become(initf)
+
+    case msg =>
+      println(s"${Console.BLUE} Have to cache $msg because arrived before initialization of ProcessEventReceiver ${Console.RESET}")
+      log.debug(s"Have to cache $msg because arrived before initialization of ProcessEventReceiver")
+      cache = msg :: cache
   }
 
   def initialized(queue: SourceQueueWithComplete[Any]): Receive = {
 
     def stopActorIfDone(): Unit =
       if (runningJobs.isEmpty) {
-        log.debug("Stopping ProcessEventActor and completing queue")
+        log.debug("Stopping ProcessEventReceiver and completing queue")
         queue.complete()
         stopActor()
       }
 
     def completeWith(msg: Any) = {
       queue.offer(msg)
-      log.debug("Stopping ProcessEventActor and completing queue")
+      log.debug("Stopping ProcessEventReceiver and completing queue")
       queue.complete()
       stopActor()
     }
 
     def rejectedWith(msg: Any, rejectReason: RejectReason) = {
-      //TODO Move event stream publishing to process instance
-      //system.eventStream.publish(events.EventRejected(System.currentTimeMillis(), cmd.processId, cmd.correlationId, cmd.event, rejectReason))
-      log.debug("Stopping ProcessEventActor and rejecting queue")
+      log.debug("Stopping ProcessEventReceiver and rejecting queue")
       log.debug("Reject reason: " + rejectReason)
       log.debug("message: " + msg)
       completeWith(msg)
@@ -92,14 +99,6 @@ class ProcessEventReceiver(/*cmd: ProcessEvent, recipe: CompiledRecipe,*/ waitFo
       case e: TransitionFired ⇒
         queue.offer(e)
 
-        //TODO Move event stream publishing to process instance
-        /*
-        if (!firstReceived)
-          system.eventStream.publish(events.EventReceived(System.currentTimeMillis(), recipe.name, recipe.recipeId, cmd.processId, cmd.correlationId, cmd.event))
-
-        firstReceived = true
-        */
-
         runningJobs = runningJobs ++ e.newJobsIds - e.jobId
 
         stopActorIfDone()
@@ -112,21 +111,36 @@ class ProcessEventReceiver(/*cmd: ProcessEvent, recipe: CompiledRecipe,*/ waitFo
         queue.offer(msg)
         stopActorIfDone()
 
+      // Rejections
+      case msg: ReceivePeriodExpired =>
+        println(Console.BLUE + msg + Console.RESET)
+        rejectedWith(msg, RejectReason.ReceivePeriodExpired)
+
+      case msg: InvalidEvent =>
+        rejectedWith(msg, RejectReason.InvalidEvent)
+
+      case msg: ProcessDeleted =>
+        rejectedWith(msg, RejectReason.ProcessDeleted)
+
+      case msg: NoSuchProcess =>
+        rejectedWith(msg, RejectReason.NoSuchProcess)
+
       //Akka default cases
       case ReceiveTimeout ⇒
-        log.debug("Timeout on ProcessEventActor")
+        log.debug("Timeout on ProcessEventReceiver")
+        println(Console.BLUE + "times up!" + Console.RESET)
         queue.fail(new TimeoutException(s"Timeout, no message received in: $timeout"))
         stopActor()
 
       case msg@_ ⇒
-        log.debug("Unexpected message on ProcessEventActor")
+        log.debug("Unexpected message on ProcessEventReceiver")
         queue.fail(new IllegalStateException(s"Unexpected message: $msg"))
         stopActor()
     }
   }
 
   def stopActor() = {
-    log.debug("Stopping the ProcessEventActor")
+    log.debug("Stopping the ProcessEventReceiver")
     context.stop(self)
   }
 }
