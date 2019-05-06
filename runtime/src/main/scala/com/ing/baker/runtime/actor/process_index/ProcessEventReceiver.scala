@@ -57,7 +57,6 @@ class ProcessEventReceiver(waitForRetries: Boolean)(implicit timeout: FiniteDura
       context.become(initf)
 
     case msg =>
-      println(s"${Console.BLUE} Have to cache $msg because arrived before initialization of ProcessEventReceiver ${Console.RESET}")
       log.debug(s"Have to cache $msg because arrived before initialization of ProcessEventReceiver")
       cache = msg :: cache
   }
@@ -113,7 +112,6 @@ class ProcessEventReceiver(waitForRetries: Boolean)(implicit timeout: FiniteDura
 
       // Rejections
       case msg: ReceivePeriodExpired =>
-        println(Console.BLUE + msg + Console.RESET)
         rejectedWith(msg, RejectReason.ReceivePeriodExpired)
 
       case msg: InvalidEvent =>
@@ -128,7 +126,6 @@ class ProcessEventReceiver(waitForRetries: Boolean)(implicit timeout: FiniteDura
       //Akka default cases
       case ReceiveTimeout ⇒
         log.debug("Timeout on ProcessEventReceiver")
-        println(Console.BLUE + "times up!" + Console.RESET)
         queue.fail(new TimeoutException(s"Timeout, no message received in: $timeout"))
         stopActor()
 

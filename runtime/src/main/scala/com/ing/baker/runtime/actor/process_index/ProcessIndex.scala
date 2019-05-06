@@ -258,7 +258,6 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
 
                 // if the receive period is expired the event is rejected
                 case Some(receivePeriod) if System.currentTimeMillis() - index(processId).createdDateTime > receivePeriod.toMillis =>
-                  println(Console.YELLOW + cmd + Console.RESET)
                   rejectWith(ReceivePeriodExpired(processId), RejectReason.ReceivePeriodExpired)
 
                 // otherwise the event is forwarded
@@ -281,7 +280,6 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
         }
       }
 
-      println(Console.MAGENTA + cmd + Console.RESET)
       context.child(processId) match {
         case None if !index.contains(processId) => rejectWith(NoSuchProcess(processId), RejectReason.NoSuchProcess)
         case None if index(processId).isDeleted => rejectWith(ProcessDeleted(processId), RejectReason.ProcessDeleted)

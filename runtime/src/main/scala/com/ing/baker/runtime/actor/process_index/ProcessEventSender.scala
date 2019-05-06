@@ -90,7 +90,6 @@ class ProcessEventSender(receiver: ActorRef, cmd: ProcessEvent, recipe: Compiled
     //Akka default cases
     case ReceiveTimeout ⇒
       log.debug("Timeout on ProcessEventSender")
-      receiver ! ReceiveTimeout
       stopActor()
 
     case msg@_ ⇒
