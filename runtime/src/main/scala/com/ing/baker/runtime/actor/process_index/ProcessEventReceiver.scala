@@ -53,7 +53,7 @@ class ProcessEventReceiver(waitForRetries: Boolean)(implicit timeout: FiniteDura
 
     case ProcessEventReceiver.InitializeProcessEventReceiver(queue) =>
       val initf = initialized(queue)
-      cache.foreach(initf.apply)
+      cache.reverse.foreach(initf.apply)
       context.become(initf)
 
     case msg =>
