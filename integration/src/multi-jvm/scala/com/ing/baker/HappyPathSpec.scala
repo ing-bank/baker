@@ -21,10 +21,9 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 
 
-/** NOTES:
-  * The lack of events when using a cluster baker provider is a bug specific to such mode, events can be seen from normal local provider.
+/**
+  * To run these tests: sbt integration/multi-jvm:test
   */
-
 object HappyPathConfig extends MultiNodeConfig {
   val node1: RoleName = role("node1")
   val node2: RoleName = role("node2")
@@ -79,7 +78,6 @@ object HappyPath extends MockitoSugar {
   object ValidateOrder {
     val name: String = webshop.validateOrder.name
     def apply(order: String): RuntimeEvent = {
-      println(Console.MAGENTA + "order validated" + Console.RESET)
       RuntimeEvent(webshop.valid.name, Seq.empty)
     }
   }
@@ -87,7 +85,6 @@ object HappyPath extends MockitoSugar {
   object ManufactureGoods {
     val name: String = webshop.manufactureGoods.name
     def apply(order: String): RuntimeEvent = {
-      println(Console.MAGENTA + "goods manufactured" + Console.RESET)
       RuntimeEvent(webshop.goodsManufactured.name, Map(
         webshop.goods.name -> PrimitiveValue("Good1")
       ).toSeq)
@@ -97,7 +94,6 @@ object HappyPath extends MockitoSugar {
   object SendInvoice {
     val name: String = webshop.sendInvoice.name
     def apply(info: webshop.CustomerInfo): RuntimeEvent = {
-      println(Console.MAGENTA + "invoice sent" + Console.RESET)
       RuntimeEvent(webshop.invoiceWasSent.name, Seq.empty)
     }
   }
@@ -105,7 +101,6 @@ object HappyPath extends MockitoSugar {
   object ShipGoods {
     val name: String = webshop.shipGoods.name
     def apply(goods: String, info: webshop.CustomerInfo): RuntimeEvent = {
-      println(Console.MAGENTA + "goods shipped" + Console.RESET)
       RuntimeEvent(webshop.goodsShipped.name, Map(
         webshop.trackingId.name -> PrimitiveValue("TrackingId1")
       ).toSeq)
@@ -160,22 +155,15 @@ class HappyPath extends MultiNodeSpec(HappyPathConfig)
   def runHappyFlow(baker: Baker, recipeId: String, processId: String): Unit = {
 
     val processState = baker.bake(recipeId, processId)
-    println(Console.YELLOW + "Process State: " + processState + Console.RESET)
 
     val sensoryEventStatus1 = baker.processEvent(processId, placeOrderRuntimeEvent)
-    println(Console.YELLOW + s"[$processId] Sensory Event Status 1: " + sensoryEventStatus1 + Console.RESET)
     val events1 = baker.getProcessState(processId).eventNames
-    println(Console.YELLOW + "[$processId] Events 1: " + events1 + Console.RESET)
 
     val sensoryEventStatus2 = baker.processEvent(processId, receivedDataRuntimeEvent)
-    println(Console.YELLOW + s"[$processId] Sensory Event Status 2: " + sensoryEventStatus2 + Console.RESET)
     val events2 = baker.getProcessState(processId).eventNames
-    println(Console.YELLOW + s"[$processId] Events 2: " + events2 + Console.RESET)
 
     val sensoryEventStatus3 = baker.processEvent(processId, paymentMadeRuntimeEvent)
-    println(Console.YELLOW + s"[$processId] Sensory Event Status 3: " + sensoryEventStatus3 + Console.RESET)
     val events3 = baker.getProcessState(processId).eventNames
-    println(Console.YELLOW + s"[$processId] Events 3: " + events3 + Console.RESET)
 
     assert(events3 == List(
       webshop.orderPlaced.name,

@@ -66,8 +66,6 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
   val processId = context.self.path.name
 
-  println(Console.MAGENTA_B + "Started " + processId + Console.RESET)
-
   val executor = runtime.jobExecutor(petriNet)
 
   override def persistenceId: String = processId2PersistenceId(processType, processId)
