@@ -125,8 +125,8 @@ trait BakerRuntimeTestBase
          |
          |  actor {
          |    provider = "akka.actor.LocalActorRefProvider"
-         |    allow-java-serialization = off
-         |    serialize-messages = on
+         |    allow-java-serialization = on
+         |    serialize-messages = off
          |    serialize-creators = off
          |  }
          |
@@ -154,7 +154,7 @@ trait BakerRuntimeTestBase
          |  journal-initialize-timeout = $journalInitializeTimeout
          |}
          |
-       |logging.root.level = DEBUG
+         |logging.root.level = DEBUG
     """.stripMargin)
 
   protected def clusterLevelDBConfig(actorSystemName: String,

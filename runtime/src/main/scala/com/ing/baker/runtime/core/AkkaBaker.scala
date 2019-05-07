@@ -14,6 +14,7 @@ import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
 import com.ing.baker.runtime.actor._
+import com.ing.baker.runtime.actor.process_index.ProcessEventReceiver
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEventSourcing
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceEventSourcing.TransitionFiredEvent
@@ -221,23 +222,20 @@ class AkkaBaker(private val config: Config)(implicit val actorSystem: ActorSyste
     * If nothing is done with the BakerResponse there is NO guarantee that the event is received by the process instance.
     */
   override def processEventAsync(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): BakerResponse = {
-
     val source = processEventStream(processId, event, correlationId, timeout)
-
-    new BakerResponse(processId, source)
+    new BakerResponse(processId, Future.successful(source))
   }
 
   /**
     * Creates a stream of specific events.
     */
-  override def processEventStream(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): Future[Source[BakerResponseEventProtocol, NotUsed]] = {
+  def processEventStream(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): Source[BakerResponseEventProtocol, NotUsed] = {
     // transforms the given object into a RuntimeEvent instance
     val runtimeEvent: RuntimeEvent = extractEvent(event)
+    val (responseStream: Source[Any, NotUsed], receiver: ActorRef) = ProcessEventReceiver(waitForRetries = true)(timeout, actorSystem, materializer)
 
-    processIndexActor
-      .ask(ProcessEvent(processId, runtimeEvent, correlationId, waitForRetries = true, timeout))(timeout)
-      .mapTo[ProcessEventResponse]
-      .map(_.sourceRef.via(Flow.fromFunction(BakerResponseEventProtocol.fromProtocols)))
+    processIndexActor ! ProcessEvent(processId, runtimeEvent, correlationId, waitForRetries = true, timeout, receiver)
+    responseStream.via(Flow.fromFunction(BakerResponseEventProtocol.fromProtocols))
   }
 
   /**

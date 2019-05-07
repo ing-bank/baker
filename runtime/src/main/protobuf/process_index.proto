@@ -8,6 +8,11 @@ option (scalapb.options) = {
     flat_package: true
 };
 
+// ProcessEvent Protocol
+message ProcessEventRejected {
+    optional string message = 1;
+}
+
 // Events
 
 message ActorCreated {
@@ -61,6 +66,7 @@ message ProcessEvent {
     optional string correlationId = 3;
     optional bool waitForRetries = 4;
     optional int64 timeout = 5;
+    optional ActorRefId receiver = 6;
 }
 
 message RetryBlockedInteraction {

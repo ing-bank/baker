@@ -7,6 +7,8 @@ import com.ing.baker.runtime.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProto._
+import com.ing.baker.runtime.actor.process_index.ProcessEventReceiverProto._
+import com.ing.baker.runtime.actor.process_index.ProcessEventReceiver
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager.RecipeAdded
@@ -63,6 +65,8 @@ object BakerTypedProtobufSerializer {
     forType[ProcessDeleted].register("ProcessIndexProtocol.ProcessDeleted"),
     forType[NoSuchProcess].register("ProcessIndexProtocol.NoSuchProcess"),
     forType[ProcessAlreadyExists].register("ProcessIndexProtocol.ProcessAlreadyExists"),
+
+    forType[ProcessEventReceiver.ProcessEventRejected].register,
 
     forType[ProcessInstanceProtocol.Stop].register("ProcessInstanceProtocol.Stop"),
     forType[ProcessInstanceProtocol.GetState.type].register("ProcessInstanceProtocol.GetState"),
@@ -151,7 +155,7 @@ object BakerTypedProtobufSerializer {
 
 class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
 
-  implicit def serializersProvider: SerializersProvider = SerializersProvider(system)
+  implicit def serializersProvider: SerializersProvider = SerializersProvider(system, system.provider)
 
   lazy val entriesMem: List[BinarySerializable] = BakerTypedProtobufSerializer.entries
 

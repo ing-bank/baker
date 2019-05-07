@@ -7,7 +7,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import com.ing.baker.baas.interaction.client.RemoteInteractionClient
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
-import com.ing.baker.runtime.core.{Baker, BakerResponseEventProtocol, ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.core.{AkkaBaker, Baker, BakerResponseEventProtocol, ProcessState, RuntimeEvent}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -19,20 +19,18 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
 
   val defaultEventConfirm = "receive"
 
-  def apply(baker: Baker): Route = {
+  def apply(baker: AkkaBaker): Route = {
 
-    def streamBakerResponse(requestId: String, event: RuntimeEvent): Future[HttpResponse] =
-      baker.processEventStream(requestId, event).map { source0 =>
-        HttpResponse(
-          status = StatusCodes.OK,
-          entity = CloseDelimited(
-            contentType = ContentTypes.`application/octet-stream`,
-            data = source0
-              .via(serializeFlow[BakerResponseEventProtocol])
-              .map(_ ++ BakerResponseEventProtocol.SerializationDelimiter)
-          )
+    def streamBakerResponse(requestId: String, event: RuntimeEvent): HttpResponse =
+      HttpResponse(
+        status = StatusCodes.OK,
+        entity = CloseDelimited(
+          contentType = ContentTypes.`application/octet-stream`,
+          data = baker.processEventStream(requestId, event)
+            .via(serializeFlow[BakerResponseEventProtocol])
+            .map(_ ++ BakerResponseEventProtocol.SerializationDelimiter)
         )
-      }
+      )
 
     def instanceRoutes(requestId: String) = {
       pathPrefix("event") {

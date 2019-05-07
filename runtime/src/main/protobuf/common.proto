@@ -14,6 +14,11 @@ message SerializedData {
     optional bytes data = 3;
 }
 
+// Akka
+message ActorRefId {
+    optional string identifier = 1;
+}
+
 // Baker type system messages
 enum PrimitiveType {
 

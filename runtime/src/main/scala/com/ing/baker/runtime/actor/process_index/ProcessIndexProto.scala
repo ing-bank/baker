@@ -171,7 +171,7 @@ object ProcessIndexProto {
         } yield CreateProcess(recipeId, processId)
     }
 
-  implicit def processEventProto: ProtoMap[ProcessEvent, protobuf.ProcessEvent] =
+  implicit def processEventProto(implicit provider: SerializersProvider): ProtoMap[ProcessEvent, protobuf.ProcessEvent] =
     new ProtoMap[ProcessEvent, protobuf.ProcessEvent] {
 
       val companion = protobuf.ProcessEvent
@@ -182,7 +182,8 @@ object ProcessIndexProto {
           Some(ctxToProto(a.event)),
           a.correlationId,
           Some(a.waitForRetries),
-          Some(a.timeout.toMillis)
+          Some(a.timeout.toMillis),
+          Some(ctxToProto(a.receiver))
         )
 
       def fromProto(message: protobuf.ProcessEvent): Try[ProcessEvent] =
@@ -191,9 +192,11 @@ object ProcessIndexProto {
           eventProto <- versioned(message.event, "event")
           waitFor <- versioned(message.waitForRetries, "waitForRetries")
           timeout <- versioned(message.timeout, "timeout")
+          actorRefId <- versioned(message.receiver, "receiver")
           event <- ctxFromProto(eventProto)
+          receiver <- ctxFromProto(actorRefId)
           time = FiniteDuration(timeout, TimeUnit.MILLISECONDS)
-        } yield ProcessEvent(processId, event, message.correlationId, waitFor, time)
+        } yield ProcessEvent(processId, event, message.correlationId, waitFor, time, receiver)
     }
 
   implicit def retryBlockedInteractionProto: ProtoMap[RetryBlockedInteraction, protobuf.RetryBlockedInteraction] =
@@ -249,14 +252,12 @@ object ProcessIndexProto {
       val companion = protobuf.ProcessEventResponse
 
       def toProto(a: ProcessEventResponse): protobuf.ProcessEventResponse =
-        protobuf.ProcessEventResponse(Some(a.processId), Some(ProtoMap.anyRefMapping.toProto(a.sourceRef)))
+        protobuf.ProcessEventResponse(Some(a.processId), None)
 
       def fromProto(message: protobuf.ProcessEventResponse): Try[ProcessEventResponse] =
         for {
           processId <- versioned(message.processId, "processId")
-          sourceRefProto <- versioned(message.sourceRef, "sourceRef")
-          sourceRef <- ProtoMap.anyRefMapping.fromProto(sourceRefProto)
-        } yield ProcessEventResponse(processId, sourceRef.asInstanceOf[SourceRef[Any]])
+        } yield ProcessEventResponse(processId)
     }
 
   implicit def getProcessStateProto: ProtoMap[GetProcessState, protobuf.GetProcessState] =

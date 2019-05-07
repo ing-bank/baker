@@ -1,5 +1,6 @@
 package com.ing.baker.runtime.actor.serialization
 
+import akka.actor.ActorRef
 import com.ing.baker.il
 import com.ing.baker.types
 import com.ing.baker.runtime.actor.protobuf
@@ -34,11 +35,14 @@ object ProtoMap {
   def versioned[A](a: Option[A], name: String): Try[A] =
     Try(a.getOrElse(throw new IllegalStateException(s"Missing field '$name' from protobuf message, probably we recieved a different version of the message")))
 
-  implicit def anyRefMapping(implicit provider: SerializersProvider): ProtoMap[AnyRef, protobuf.SerializedData] =
-    new AnyRefMapping(provider)
+  implicit def anyRefMapping(implicit ev0: SerializersProvider): ProtoMap[AnyRef, protobuf.SerializedData] =
+    new AnyRefMapping(ev0)
 
   implicit def compiledRecipeMapping(implicit ev0: ProtoMap[AnyRef, protobuf.SerializedData]): ProtoMap[il.CompiledRecipe, protobuf.CompiledRecipe] =
     new CompiledRecipeMapping(ev0)
+
+  implicit def akkaActorRefMapping(implicit ev0: SerializersProvider): ProtoMap[ActorRef, protobuf.ActorRefId] =
+    new ActorRefMapping(ev0)
 
   implicit val eventDescriptorMapping: ProtoMap[il.EventDescriptor, protobuf.EventDescriptor] =
     new EventDescriptorMapping

@@ -2,10 +2,9 @@ package com.ing.baker.runtime.actor.process_index
 
 import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props, Terminated}
 import akka.event.{DiagnosticLoggingAdapter, Logging}
-import akka.pattern.{ask, pipe}
+import akka.pattern.ask
 import akka.persistence.{PersistentActor, RecoveryCompleted}
-import akka.stream.scaladsl.{Source, StreamRefs}
-import akka.stream.{Materializer, SourceRef, StreamRefAttributes}
+import akka.stream.Materializer
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
 import com.ing.baker.petrinet.api._
@@ -23,7 +22,7 @@ import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent, events, namedCach
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 import cats.data.OptionT
 import cats.instances.future._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
@@ -235,14 +234,15 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
         case _ => sender() ! ProcessAlreadyExists(processId)
       }
 
-    case cmd @ ProcessEvent(processId: String, event: RuntimeEvent, _, waitForRetries, processEventTimout) =>
+    case cmd @ ProcessEvent(processId: String, event: RuntimeEvent, _, waitForRetries, processEventTimout, streamReceiver) =>
 
       def rejectWith(msg: Any, rejectReason: RejectReason): Unit = {
         context.system.eventStream.publish(events.EventRejected(System.currentTimeMillis(), cmd.processId, cmd.correlationId, cmd.event, rejectReason))
-        Source.single(msg).runWith(StreamRefs.sourceRef()).map(ProcessEventResponse(processId, _)).pipeTo(sender())
+        // Rejections are directly sent to the receiver side
+        streamReceiver ! msg
       }
 
-      def forwardEvent(actorRef: ActorRef, recipe: CompiledRecipe): Unit = {
+      def forwardEvent(processInstance: ActorRef, recipe: CompiledRecipe): Unit = {
         recipe.sensoryEvents.find(sensoryEvent => sensoryEvent.name == event.name) match {
           case None =>
             rejectWith(InvalidEvent(processId, s"No event with name '${event.name}' found in recipe '${recipe.name}'"), RejectReason.InvalidEvent)
@@ -262,10 +262,19 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
 
                 // otherwise the event is forwarded
                 case _ =>
-                  val source = ProcessEventActor.processEvent(actorRef, recipe, cmd, waitForRetries)(processEventTimout, context.system, materializer)
-                  val sourceRef: Future[SourceRef[Any]] = source.runWith(StreamRefs.sourceRef().addAttributes(StreamRefAttributes.subscriptionTimeout(processEventTimout)))
-
-                  sourceRef.map(ProcessEventResponse(processId, _)).pipeTo(sender())
+                  (for {
+                    _ <- Try(require(cmd.event != null, "Event can not be null"))
+                    transition <- recipe.petriNet.transitions.find(_.label == cmd.event.name) match {
+                      case Some(transition0) => Success(transition0)
+                      case None => Failure(new IllegalArgumentException(s"No such event known in recipe: ${cmd.event.name}"))
+                    }
+                  } yield FireTransition(transition.id, cmd.event, cmd.correlationId)).fold(
+                    { error => rejectWith(InvalidEvent(processId, error.getMessage), RejectReason.InvalidEvent) },
+                    { event =>
+                      val streamSender = context.actorOf(ProcessEventSender(streamReceiver, cmd, recipe, waitForRetries)(processEventTimout))
+                      processInstance.tell(event, streamSender)
+                    }
+                  )
               }
             }
         }

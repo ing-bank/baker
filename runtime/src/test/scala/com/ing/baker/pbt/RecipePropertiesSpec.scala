@@ -36,7 +36,7 @@ class RecipePropertiesSpec extends FunSuite with Checkers {
       compiledRecipe.validationErrors.isEmpty
     }
 
-    check(prop, defaultVerbose.withMinSuccessfulTests(100))
+    check(prop, defaultVerbose.withMinSuccessfulTests(10))
   }
 
   ignore("Baker produces all possible ingredients if all sensory events are fired at least once") {
