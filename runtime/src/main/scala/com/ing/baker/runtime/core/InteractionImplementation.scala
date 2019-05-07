@@ -2,6 +2,8 @@ package com.ing.baker.runtime.core
 
 import com.ing.baker.types.{Type, Value}
 
+import scala.concurrent.Future
+
 /**
   * Provides an implementation for an interaction.
   */
@@ -25,5 +27,5 @@ trait InteractionImplementation {
     * @param input
     * @return
     */
-  def execute(input: Seq[Value]): Option[RuntimeEvent]
+  def execute(input: Seq[Value]): Future[Option[RuntimeEvent]]
 }

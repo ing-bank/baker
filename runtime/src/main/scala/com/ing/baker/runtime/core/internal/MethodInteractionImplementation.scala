@@ -1,14 +1,18 @@
 package com.ing.baker.runtime.core.internal
 
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
 
 import com.ing.baker.runtime.core.{RuntimeEvent, _}
 import com.ing.baker.types.{Converters, Type, Value}
 import org.slf4j.LoggerFactory
 
+import scala.compat.java8.FutureConverters
+import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 import scala.util.Try
 
-case class MethodInteractionImplementation(implementation: AnyRef) extends InteractionImplementation {
+case class MethodInteractionImplementation(implementation: AnyRef)(implicit ec: ExecutionContext) extends InteractionImplementation {
 
   val log = LoggerFactory.getLogger(classOf[MethodInteractionImplementation])
 
@@ -53,7 +57,24 @@ case class MethodInteractionImplementation(implementation: AnyRef) extends Inter
     }
   }.toSeq
 
-  override def execute(input: Seq[Value]): Option[RuntimeEvent] =  {
+  /**
+    * Transforms an object outcome of executing an interaction into a RuntimeEvent if possible.
+    */
+  private def extractInteractionEventResult(event: Any)(implicit ec: ExecutionContext): Future[RuntimeEvent] = {
+    val futureClass: ClassTag[Future[Any]] = implicitly[ClassTag[Future[Any]]]
+    val completableFutureClass: ClassTag[CompletableFuture[Any]] = implicitly[ClassTag[CompletableFuture[Any]]]
+    event match {
+      case runtimeEventAsync if futureClass.runtimeClass.isInstance(runtimeEventAsync) =>
+        val typed = runtimeEventAsync.asInstanceOf[Future[Any]]
+        typed.map(Baker.extractEvent)
+      case runtimeEventAsync if completableFutureClass.runtimeClass.isInstance(runtimeEventAsync) =>
+        val typed = runtimeEventAsync.asInstanceOf[CompletableFuture[Any]]
+        FutureConverters.toScala[Any](typed).map(Baker.extractEvent)
+      case other => Future.successful(Baker.extractEvent(other))
+    }
+  }
+
+  override def execute(input: Seq[Value]): Future[Option[RuntimeEvent]] =  {
 
     val invocationId = UUID.randomUUID().toString
 
@@ -68,10 +89,16 @@ case class MethodInteractionImplementation(implementation: AnyRef) extends Inter
     // invoke the .apply method
     val output = method.invoke(implementation, inputArgs: _*)
 
-    if (log.isTraceEnabled)
-      log.trace(s"[$invocationId] result: $output")
-
     // if output == null => None, otherwise extract event
-    Option(output).map(Baker.extractEvent)
+    Option(output) match {
+      case Some(output0) =>
+
+        if (log.isTraceEnabled)
+          log.trace(s"[$invocationId] result: $output0")
+
+        extractInteractionEventResult(output0).map(Option(_))
+      case None =>
+        Future.successful(None)
+    }
   }
 }

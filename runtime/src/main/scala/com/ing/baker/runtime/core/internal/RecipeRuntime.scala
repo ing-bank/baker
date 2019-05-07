@@ -17,6 +17,8 @@ import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.MDC
 
+import scala.concurrent.{ExecutionContext, Future}
+
 object RecipeRuntime {
   def recipeEventSourceFn: Transition => (ProcessState => RuntimeEvent => ProcessState) =
     _ => state => {
@@ -115,7 +117,7 @@ object RecipeRuntime {
   }
 }
 
-class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream) extends ProcessInstanceRuntime[Place, Transition, ProcessState, RuntimeEvent] {
+class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime[Place, Transition, ProcessState, RuntimeEvent] {
 
   /**
     * All transitions except sensory event interactions are auto-fireable by the runtime
@@ -183,7 +185,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
                       processState: ProcessState): IO[(Marking[Place], RuntimeEvent)] = {
 
     // returns a delayed task that will get executed by the process instance
-    IO {
+    IO.fromFuture(IO {
 
       // add MDC values for logging
       MDC.put("processId", processState.processId)
@@ -205,26 +207,27 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
         eventStream.publish(InteractionStarted(timeStarted, recipe.name, recipe.recipeId, processState.processId, interaction.interactionName))
 
         // executes the interaction and obtain the (optional) output event
-        val interactionOutput: Option[RuntimeEvent] = implementation.execute(input)
+        implementation.execute(input).map { interactionOutput =>
 
-        // validates the event, throws a FatalInteraction exception if invalid
-        RecipeRuntime.validateInteractionOutput(interaction, interactionOutput).foreach { validationError =>
-          throw new FatalInteractionException(validationError)
+          // validates the event, throws a FatalInteraction exception if invalid
+          RecipeRuntime.validateInteractionOutput(interaction, interactionOutput).foreach { validationError =>
+            throw new FatalInteractionException(validationError)
+          }
+
+          // transform the event if there is one
+          val outputEvent: Option[RuntimeEvent] = interactionOutput
+            .map(e => transformInteractionEvent(interaction, e))
+
+          val timeCompleted = System.currentTimeMillis()
+
+          // publish the fact that the interaction completed
+          eventStream.publish(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, recipe.name, recipe.recipeId, processState.processId, interaction.interactionName, outputEvent))
+
+          // create the output marking for the petri net
+          val outputMarking: Marking[Place] = RecipeRuntime.createProducedMarking(outAdjacent, outputEvent)
+
+          (outputMarking, outputEvent.orNull)
         }
-
-        // transform the event if there is one
-        val outputEvent: Option[RuntimeEvent] = interactionOutput
-          .map(e => transformInteractionEvent(interaction, e))
-
-        val timeCompleted = System.currentTimeMillis()
-
-        // publish the fact that the interaction completed
-        eventStream.publish(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, recipe.name, recipe.recipeId, processState.processId, interaction.interactionName, outputEvent))
-
-        // create the output marking for the petri net
-        val outputMarking: Marking[Place] = RecipeRuntime.createProducedMarking(outAdjacent, outputEvent)
-
-        (outputMarking, outputEvent.orNull)
 
       } finally {
         // remove the MDC values
@@ -232,7 +235,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
         MDC.remove("recipeName")
       }
 
-    }.handleExceptionWith {
+    }).handleExceptionWith {
       case e: InvocationTargetException => IO.raiseError(e.getCause)
       case e: Throwable                 => IO.raiseError(e)
     }

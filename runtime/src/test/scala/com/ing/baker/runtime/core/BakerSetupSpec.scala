@@ -11,6 +11,8 @@ import org.mockito.Mockito.when
 import scala.language.postfixOps
 import com.ing.baker.runtime.ScalaDSLRuntime._
 
+import scala.concurrent.Future
+
 
 class BakerSetupSpec extends BakerRuntimeTestBase {
 
@@ -35,7 +37,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         baker.addImplementations(mockImplementations)
 
-        when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(InteractionOneSuccessful("foobar"))
+        when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful("foobar")))
 
         val recipeId = baker.addRecipe(simpleRecipe)
         val processId = java.util.UUID.randomUUID().toString

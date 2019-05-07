@@ -5,6 +5,7 @@ import java.util.Optional
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.scaladsl._
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 //By adding the javadsl Ingredient tag the object will be serialized by Kryo
@@ -98,7 +99,7 @@ object TestRecipe {
   trait InteractionOne {
     def name: String = "InteractionOne"
 
-    def apply(processId: String, initialIngredient: String): InteractionOneSuccessful
+    def apply(processId: String, initialIngredient: String): Future[InteractionOneSuccessful]
   }
 
   val interactionTwo =
