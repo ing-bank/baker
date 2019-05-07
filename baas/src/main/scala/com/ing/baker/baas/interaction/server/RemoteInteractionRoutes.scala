@@ -31,15 +31,15 @@ class RemoteInteractionRoutes(override val actorSystem: ActorSystem) extends Dir
           post {
             entity(as[ExecuteInteractionHTTPRequest]) { executeInteractionHTTPRequest =>
 
-              log.info(s"interaction implementation called for: ${interactionName}")
+              log.info(s"interaction implementation called for: $interactionName")
 
               log.info(s"Executing interaction: $interactionName")
 
               val runtimeEventOptional: Future[Option[RuntimeEvent]] = implementationOptional.get.execute(executeInteractionHTTPRequest.input)
 
-              log.info(s"Interaction executed: ${interactionName}")
+              log.info(s"Interaction executed: $interactionName")
 
-              complete(runtimeEventOptional.map(ExecuteInteractionHTTPResponse))
+              complete(runtimeEventOptional.map(ExecuteInteractionHTTPResponse(_)))
             }
           }
         } ~
