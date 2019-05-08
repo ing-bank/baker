@@ -6,7 +6,7 @@
         </encoder>
     </appender>
 
-    <logger name="com.ing.baker.runtime.actor" level="OFF" />
+    <logger name="com.ing.baker.runtime.core.actor" level="OFF" />
 
     <root level="WARN">
         <appender-ref ref="CONSOLE"/>

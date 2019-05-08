@@ -12,13 +12,13 @@ import akka.stream.scaladsl.{Flow, Source}
 import akka.util.Timeout
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
-import com.ing.baker.runtime.actor._
-import com.ing.baker.runtime.actor.process_index.ProcessEventReceiver
-import com.ing.baker.runtime.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
-import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.actor.serialization.Encryption
-import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
+import com.ing.baker.runtime.core.actor._
+import com.ing.baker.runtime.core.actor.process_index.ProcessEventReceiver
+import com.ing.baker.runtime.core.actor.process_index.ProcessIndexProtocol._
+import com.ing.baker.runtime.core.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
+import com.ing.baker.runtime.core.actor.recipe_manager.RecipeManagerProtocol._
+import com.ing.baker.runtime.core.actor.serialization.Encryption
+import com.ing.baker.runtime.core.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.common._
 import com.ing.baker.runtime.{common, core}
 import com.ing.baker.runtime.core.events.{BakerEvent, EventReceived, InteractionCompleted, InteractionFailed}

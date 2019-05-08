@@ -3,8 +3,8 @@ package com.ing.baker.baas.serialization
 import akka.actor.ExtendedActorSystem
 import com.ing.baker.baas.interaction.server.protocol.{ExecuteInteractionHTTPRequest, ExecuteInteractionHTTPResponse}
 import com.ing.baker.baas.server.protocol._
-import com.ing.baker.runtime.actor.serialization.BakerTypedProtobufSerializer.BinarySerializable
-import com.ing.baker.runtime.actor.serialization.{BakerTypedProtobufSerializer, SerializersProvider}
+import com.ing.baker.runtime.core.actor.serialization.BakerTypedProtobufSerializer.BinarySerializable
+import com.ing.baker.runtime.core.actor.serialization.{BakerTypedProtobufSerializer, SerializersProvider}
 import org.slf4j.LoggerFactory
 
 

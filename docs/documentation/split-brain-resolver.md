@@ -80,7 +80,7 @@ Example config for a baker cluster having less than 10 nodes is the
 following:
 ```
 akka.cluster.down-removal-margin = 7 seconds
-akka.cluster.downing-provider-class = com.ing.baker.runtime.actor.downing.SplitBrainResolver
+akka.cluster.downing-provider-class = com.ing.baker.runtime.core.actor.downing.SplitBrainResolver
 
 baker-split-brain-resolver {
   stable-after = 7 seconds
