@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.core
+package com.ing.baker.runtime.common
 
 /**
   * Thrown when a (compiled) recipe with validation errors was added to Baker.

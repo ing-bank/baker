@@ -1,5 +1,7 @@
-package com.ing.baker.runtime.core
+package com.ing.baker.runtime.common
 
+import com.ing.baker.il.EventDescriptor
+import com.ing.baker.runtime.core.RuntimeEvent
 import com.ing.baker.types.{Type, Value}
 
 import scala.concurrent.Future
@@ -18,6 +20,8 @@ trait InteractionImplementation {
     * The required input.
     */
   val inputTypes: Seq[Type]
+
+  val optionalOutputEvents: Option[Set[EventDescriptor]] = None
 
   /**
     * Executes the interaction.

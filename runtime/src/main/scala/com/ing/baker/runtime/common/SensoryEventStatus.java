@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.core;
+package com.ing.baker.runtime.common;
 
 /**
  * A status object indicating how baker reacted to an event it received.

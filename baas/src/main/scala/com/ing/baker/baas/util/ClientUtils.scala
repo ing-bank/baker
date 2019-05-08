@@ -13,12 +13,13 @@ import akka.util.ByteString
 import com.ing.baker.baas.interaction.server.protocol.{ExecuteInteractionHTTPRequest, ExecuteInteractionHTTPResponse}
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.core.{ProcessState, RecipeInformation, RuntimeEvent, SensoryEventStatus}
+import com.ing.baker.runtime.common.{RecipeInformation, SensoryEventStatus}
+import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{Await, Future}
 import scala.reflect.ClassTag
 
 trait ClientUtils {

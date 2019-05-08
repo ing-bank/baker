@@ -97,7 +97,7 @@ interface ExampleInteraction {
 ```
 - Recipe information can be retrieved at runtime:
 ``` java
-import com.ing.baker.runtime.core.RecipeInformation;
+import com.ing.baker.runtime.common.RecipeInformation;
 
 RecipeInformation info = baker.getRecipe(recipeId);
 

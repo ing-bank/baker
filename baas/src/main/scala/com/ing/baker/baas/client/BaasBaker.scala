@@ -11,7 +11,9 @@ import com.ing.baker.baas.interaction.server.RemoteInteractionLauncher
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.core.{Baker, BakerResponse, BakerResponseEventProtocol, EventListener, InteractionImplementation, ProcessMetadata, ProcessState, RecipeInformation, ScalaBaker}
+import com.ing.baker.runtime.common.{EventListener, InteractionImplementation, ProcessMetadata, RecipeInformation}
+import com.ing.baker.runtime.core.{BakerResponse, BakerResponseEventProtocol, ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
@@ -102,7 +104,7 @@ class BaasBaker(config: Config,
   override def processEvent(processId: String, event: Any): Future[BakerResponse] = {
     //Create request to give to Baker
 //    log.info("Creating runtime event to fire")
-//    val runtimeEvent = Baker.extractEvent(event)
+//    val runtimeEvent = RuntimeEvent.extractEvent(event)
 //
 //    Marshal(ProcessEventRequest(runtimeEvent)).to[RequestEntity]
 //      .map { body =>
@@ -120,7 +122,7 @@ class BaasBaker(config: Config,
     * Creates a stream of specific events.
     */
   def processEventStream(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): Future[Source[BakerResponseEventProtocol, NotUsed]] = {
-    val runtimeEvent = Baker.extractEvent(event)
+    val runtimeEvent = RuntimeEvent.extractEvent(event)
     Marshal(ProcessEventRequest(runtimeEvent)).to[RequestEntity]
       .flatMap { body =>
         Http().singleRequest(HttpRequest(

@@ -15,7 +15,7 @@ import com.ing.baker.runtime.actor.process_index._
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManager
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.actor.serialization.BakerSerializable
-import com.ing.baker.runtime.core.BakerException
+import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.core.internal.InteractionManager
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._

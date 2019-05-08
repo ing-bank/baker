@@ -9,13 +9,14 @@ import akka.testkit.ImplicitSender
 import akka.cluster.MultiNodeClusterSpec
 import akka.remote.testkit.MultiNodeSpec
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.runtime.core.{AkkaBaker, Baker, RuntimeEvent}
+import com.ing.baker.runtime.core.{AkkaBaker, RuntimeEvent}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.ing.baker.recipe.scaladsl.Examples.webshop
 import com.ing.baker.types.{PrimitiveValue, RecordValue}
 import org.scalatest.mockito.MockitoSugar
 import better.files.File
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.scaladsl.Baker
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._

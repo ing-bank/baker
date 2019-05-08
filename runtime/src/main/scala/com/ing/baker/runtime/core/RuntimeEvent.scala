@@ -1,9 +1,27 @@
 package com.ing.baker.runtime.core
 
 import com.ing.baker.il.EventDescriptor
-import com.ing.baker.types.{NullValue, Value}
+import com.ing.baker.types.{Converters, NullValue, RecordValue, Value}
 
 import scala.collection.JavaConverters._
+
+object RuntimeEvent {
+
+  /**
+    * Transforms an object into a RuntimeEvent if possible.
+    */
+  def extractEvent(event: Any): RuntimeEvent = {
+    // transforms the given object into a RuntimeEvent instance
+    event match {
+      case runtimeEvent: RuntimeEvent => runtimeEvent
+      case obj =>
+        Converters.toValue(obj) match {
+          case RecordValue(entries) => RuntimeEvent(obj.getClass.getSimpleName, entries.toSeq)
+          case other => throw new IllegalArgumentException(s"Unexpected value: $other")
+        }
+    }
+  }
+}
 
 case class RuntimeEvent(name: String,
                         providedIngredients: Seq[(String, Value)]) {

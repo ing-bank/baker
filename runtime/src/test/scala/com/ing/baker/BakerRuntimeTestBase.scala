@@ -10,6 +10,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.{CaseClassIngredient, common}
 import com.ing.baker.runtime.core.{AkkaBaker, Baker, RuntimeEvent}
+import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.types.{Converters, Value}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers._
@@ -51,7 +52,7 @@ trait BakerRuntimeTestBase
   def ingredientMap(entries: (String, Any)*): Map[String, Value] =
     entries.map { case (name, obj) => name -> Converters.toValue(obj) }.toMap
 
-  def eventList(events: Any*): Seq[RuntimeEvent]= events.map(e => Baker.extractEvent((e)))
+  def eventList(events: Any*): Seq[RuntimeEvent]= events.map(e => RuntimeEvent.extractEvent((e)))
 
   //Can be used to check the state after firing the initialEvent
   protected val afterInitialState = ingredientMap(

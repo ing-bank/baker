@@ -1,9 +1,22 @@
-package com.ing.baker.runtime.core
+package com.ing.baker.runtime.common
 
-import com.ing.baker.il._
+import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.core.{BakerResponse, ProcessState}
 import com.ing.baker.types.Value
 
-import scala.language.postfixOps
+/**
+  * A Baker using the Scala collection types
+  *
+  * @tparam F the type of Future to use in the return types
+  */
+trait ScalaBaker[F[_]] extends BakerInterface[F, Map, Seq, Set]
+
+/**
+  * A Baker using the Java collection types
+  *
+  * @tparam F the type of Future to use in the return types
+  */
+trait JavaBaker[F[_]] extends BakerInterface[F, java.util.Map, java.util.List, java.util.Set]
 
 /**
   * The BakerInterface is a class we use to ensure the Scala and Java Baker classes have the same methods.

@@ -11,7 +11,7 @@ import akka.http.scaladsl.model.{HttpRequest, RequestEntity}
 import akka.http.scaladsl.server.RouteResult
 import com.ing.baker.baas.server.protocol.{AddInteractionHTTPRequest, AddInteractionHTTPResponse}
 import com.ing.baker.baas.util.ClientUtils
-import com.ing.baker.runtime.core.InteractionImplementation
+import com.ing.baker.runtime.common.InteractionImplementation
 import com.ing.baker.runtime.core.internal.MethodInteractionImplementation
 import com.ing.baker.types.Type
 import org.slf4j.LoggerFactory

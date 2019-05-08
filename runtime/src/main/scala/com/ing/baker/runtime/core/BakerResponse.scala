@@ -7,7 +7,8 @@ import akka.NotUsed
 import akka.stream.javadsl.RunnableGraph
 import akka.stream.scaladsl.{Broadcast, GraphDSL, Sink, Source}
 import akka.stream.{ClosedShape, Materializer}
-import com.ing.baker.runtime.java_api.EventList
+import com.ing.baker.runtime.common.{NoSuchProcessException, SensoryEventStatus}
+import com.ing.baker.runtime.javadsl.EventList
 
 import scala.compat.java8.FutureConverters
 import scala.concurrent.duration.{FiniteDuration, SECONDS}

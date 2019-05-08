@@ -7,6 +7,7 @@ import com.ing.baker.runtime.actor.serialization.{ProtoMap, SerializersProvider}
 import com.ing.baker.runtime.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.actor.process_index.ProcessIndexProto._
 import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProto._
+import com.ing.baker.runtime.common.{BakerException, NoSuchProcessException, SensoryEventStatus}
 import scalapb.GeneratedMessageCompanion
 
 import scala.util.Try

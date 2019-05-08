@@ -3,7 +3,7 @@ package com.ing.baker.runtime.core.internal
 import java.util.concurrent.ConcurrentHashMap
 
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.core.InteractionImplementation
+import com.ing.baker.runtime.common.InteractionImplementation
 
 import scala.compat.java8.FunctionConverters._
 

@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.core
+package com.ing.baker.runtime.common
 
 /**
   * Thrown when attempting to act or inquire on an already deleted process.

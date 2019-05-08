@@ -6,7 +6,7 @@ import com.ing.baker.recipe.annotations.FiresEvent;
 import com.ing.baker.recipe.annotations.ProcessId;
 import com.ing.baker.recipe.annotations.RequiresIngredient;
 import com.ing.baker.recipe.javadsl.Recipe;
-import com.ing.baker.runtime.core.BakerException;
+import com.ing.baker.runtime.common.BakerException;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;

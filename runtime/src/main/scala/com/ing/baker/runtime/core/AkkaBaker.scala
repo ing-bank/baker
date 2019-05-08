@@ -19,10 +19,11 @@ import com.ing.baker.runtime.actor.process_instance.ProcessInstanceProtocol.{Ini
 import com.ing.baker.runtime.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.actor.serialization.Encryption
 import com.ing.baker.runtime.actor.serialization.Encryption.NoEncryption
-import com.ing.baker.runtime.core
-import com.ing.baker.runtime.core.Baker._
+import com.ing.baker.runtime.common._
+import com.ing.baker.runtime.{common, core}
 import com.ing.baker.runtime.core.events.{BakerEvent, EventReceived, InteractionCompleted, InteractionFailed}
 import com.ing.baker.runtime.core.internal.{InteractionManager, MethodInteractionImplementation}
+import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.types.Value
 import com.typesafe.config.{Config, ConfigFactory}
 import net.ceedubs.ficus.Ficus._
@@ -121,11 +122,11 @@ class AkkaBaker(private val config: Config)(implicit val actorSystem: ActorSyste
     * @param recipeId
     * @return
     */
-  override def getRecipe(recipeId: String): Future[RecipeInformation] = {
+  override def getRecipe(recipeId: String): Future[common.RecipeInformation] = {
     // here we ask the RecipeManager actor to return us the recipe for the given id
     recipeManager.ask(GetRecipe(recipeId))(defaultInquireTimeout).flatMap {
       case RecipeFound(compiledRecipe, timestamp) =>
-        Future.successful(core.RecipeInformation(compiledRecipe, timestamp, getImplementationErrors(compiledRecipe)))
+        Future.successful(common.RecipeInformation(compiledRecipe, timestamp, getImplementationErrors(compiledRecipe)))
       case NoRecipeFound(_) =>
         Future.failed(new IllegalArgumentException(s"No recipe found for recipe with id: $recipeId"))
     }
@@ -136,11 +137,11 @@ class AkkaBaker(private val config: Config)(implicit val actorSystem: ActorSyste
     *
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
-  override def getAllRecipes: Future[Map[String, RecipeInformation]] =
+  override def getAllRecipes: Future[Map[String, common.RecipeInformation]] =
     recipeManager.ask(GetAllRecipes)(defaultInquireTimeout)
       .mapTo[AllRecipes]
       .map(_.recipes.map { ri =>
-        ri.compiledRecipe.recipeId -> core.RecipeInformation(ri.compiledRecipe, ri.timestamp, getImplementationErrors(ri.compiledRecipe))
+        ri.compiledRecipe.recipeId -> common.RecipeInformation(ri.compiledRecipe, ri.timestamp, getImplementationErrors(ri.compiledRecipe))
       }.toMap)
 
   /**
@@ -193,7 +194,7 @@ class AkkaBaker(private val config: Config)(implicit val actorSystem: ActorSyste
   def processEventStream(processId: String, event: Any, correlationId: Option[String] = None): Source[BakerResponseEventProtocol, NotUsed] = {
     // transforms the given object into a RuntimeEvent instance
     val timeout = defaultProcessEventTimeout
-    val runtimeEvent: RuntimeEvent = extractEvent(event)
+    val runtimeEvent: RuntimeEvent = RuntimeEvent.extractEvent(event)
     val (responseStream: Source[Any, NotUsed], receiver: ActorRef) = ProcessEventReceiver(waitForRetries = true)(timeout, actorSystem, materializer)
 
     processIndexActor ! ProcessEvent(processId, runtimeEvent, correlationId, waitForRetries = true, timeout, receiver)
@@ -217,7 +218,7 @@ class AkkaBaker(private val config: Config)(implicit val actorSystem: ActorSyste
     * @return
     */
   override def resolveInteraction(processId: String, interactionName: String, event: Any): Future[Unit] = {
-    processIndexActor.ask(ResolveBlockedInteraction(processId, interactionName, extractEvent(event)))(defaultProcessEventTimeout).mapTo[Unit]
+    processIndexActor.ask(ResolveBlockedInteraction(processId, interactionName, RuntimeEvent.extractEvent(event)))(defaultProcessEventTimeout).mapTo[Unit]
   }
 
   /**

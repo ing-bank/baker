@@ -85,7 +85,7 @@ In the example below a listener is registered that is only interested in `EventR
 ``` scala tab="Scala"
 import com.ing.baker.runtime.core.events._
 
-val baker: com.ing.baker.runtime.core.Baker = ??? // initialize baker
+val baker: com.ing.baker.runtime.scaladsl.Baker = ??? // initialize baker
 
 baker.registerListenerPF {
 
@@ -105,7 +105,7 @@ class Subscriber {
    }
 }
 
-com.ing.baker.runtime.JBaker baker = null; // initialize baker
+com.ing.baker.runtime.javadsl.JBaker baker = null; // initialize baker
 
 baker.registerEventListener(new Subscriber());
 

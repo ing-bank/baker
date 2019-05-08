@@ -1,8 +1,8 @@
-package com.ing.baker.runtime.java_api
+package com.ing.baker.runtime.javadsl
 
 import com.ing.baker.runtime.core.RuntimeEvent
 
-class EventWithTimestamp private[java_api](private val event: RuntimeEvent, private val timestamp: Long) {
+class EventWithTimestamp private[javadsl](private val event: RuntimeEvent, private val timestamp: Long) {
 
   def getEvent: String = event.name
 

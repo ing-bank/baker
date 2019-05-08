@@ -11,7 +11,9 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder
 import com.ing.baker.recipe.scaladsl
 import com.ing.baker.recipe.scaladsl._
-import com.ing.baker.runtime.core.{AkkaBaker, Baker, BakerProvider, BakerResponse, ProcessState, RuntimeEvent, SensoryEventStatus}
+import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.core.{AkkaBaker, Baker, BakerProvider, BakerResponse, ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.scaladsl.Baker
 import org.mockito.Matchers.anyString
 import org.mockito.Mockito.{mock, reset, when}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}

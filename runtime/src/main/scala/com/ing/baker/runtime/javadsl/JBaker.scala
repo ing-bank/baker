@@ -1,10 +1,11 @@
-package com.ing.baker.runtime
+package com.ing.baker.runtime.javadsl
 
 import java.util
-import java.util.Collections
 import java.util.concurrent.{CompletableFuture, TimeoutException}
 
+import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.common._
 import com.ing.baker.runtime.core.{BakerResponse, _}
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
@@ -32,26 +33,14 @@ object JBaker {
       .toCompletableFuture
       .thenApply(_.asJava)
   }
+
+  def akka(config: Config, actorSystem: ActorSystem): JBaker = new JBaker(new AkkaBaker(config)(actorSystem))
+
 }
 
-class JBaker(private val baker: ScalaBaker[Future], implementations: java.util.Set[AnyRef]) extends JavaBaker[CompletableFuture] {
+class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[CompletableFuture] {
 
   import JBaker._
-
-  def this(config: Config, implementations: java.util.Set[AnyRef]) =
-    this(BakerProvider.get(config), implementations)
-
-  def this(config: Config) =
-    this(BakerProvider.get(config), Collections.emptySet[AnyRef]())
-
-  def this(baker: Baker) =
-    this(baker: Baker, Collections.emptySet[AnyRef]())
-
-  def this(implementations: java.util.Set[AnyRef]) =
-    this(BakerProvider.get(), implementations)
-
-  addImplementations(implementations)
-
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.

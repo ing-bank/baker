@@ -1,6 +1,7 @@
 package com.ing.baker.runtime.core
 
 import com.ing.baker.BakerRuntimeTestBase
+import com.ing.baker.runtime.scaladsl.Baker
 import com.typesafe.config.{Config, ConfigValueFactory}
 
 class IllegalArgumentTestClass {}
@@ -42,7 +43,7 @@ class BakerProviderSpec extends BakerRuntimeTestBase {
         var config: Config = defaultActorSystem.settings.config
         config = config.withValue(
           "baker.engine-provider",
-          ConfigValueFactory.fromAnyRef("com.ing.baker.runtime.core.Baker"))
+          ConfigValueFactory.fromAnyRef("com.ing.baker.runtime.scaladsl.Baker"))
 
         intercept[IllegalArgumentException] {
           BakerProvider.get(config)

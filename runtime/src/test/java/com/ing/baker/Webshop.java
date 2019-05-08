@@ -9,7 +9,7 @@ import com.ing.baker.recipe.annotations.RequiresIngredient;
 import com.ing.baker.recipe.javadsl.Interaction;
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy;
 import com.ing.baker.recipe.javadsl.Recipe;
-import com.ing.baker.runtime.JBaker;
+import com.ing.baker.runtime.javadsl.JBaker;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 

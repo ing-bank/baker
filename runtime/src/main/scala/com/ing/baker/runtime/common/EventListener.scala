@@ -1,4 +1,6 @@
-package com.ing.baker.runtime.core
+package com.ing.baker.runtime.common
+
+import com.ing.baker.runtime.core.RuntimeEvent
 
 /**
   * Listener interface for events from baker.

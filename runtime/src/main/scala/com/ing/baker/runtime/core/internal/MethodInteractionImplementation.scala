@@ -3,6 +3,7 @@ package com.ing.baker.runtime.core.internal
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
+import com.ing.baker.runtime.common.InteractionImplementation
 import com.ing.baker.runtime.core.{RuntimeEvent, _}
 import com.ing.baker.types.{Converters, Type, Value}
 import org.slf4j.LoggerFactory
@@ -66,11 +67,11 @@ case class MethodInteractionImplementation(implementation: AnyRef)(implicit ec: 
     event match {
       case runtimeEventAsync if futureClass.runtimeClass.isInstance(runtimeEventAsync) =>
         val typed = runtimeEventAsync.asInstanceOf[Future[Any]]
-        typed.map(Baker.extractEvent)
+        typed.map(RuntimeEvent.extractEvent)
       case runtimeEventAsync if completableFutureClass.runtimeClass.isInstance(runtimeEventAsync) =>
         val typed = runtimeEventAsync.asInstanceOf[CompletableFuture[Any]]
-        FutureConverters.toScala[Any](typed).map(Baker.extractEvent)
-      case other => Future.successful(Baker.extractEvent(other))
+        FutureConverters.toScala[Any](typed).map(RuntimeEvent.extractEvent)
+      case other => Future.successful(RuntimeEvent.extractEvent(other))
     }
   }
 

@@ -10,6 +10,7 @@ import org.mockito.Mockito.when
 
 import scala.language.postfixOps
 import com.ing.baker.runtime.ScalaDSLRuntime._
+import com.ing.baker.runtime.common.{BakerException, RecipeValidationException}
 
 import scala.concurrent.Future
 

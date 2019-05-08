@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.core
+package com.ing.baker.runtime.common
 
 /**
   * This class holds some meta data of a baker process.

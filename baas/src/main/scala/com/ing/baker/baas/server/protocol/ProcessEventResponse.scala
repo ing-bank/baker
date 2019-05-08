@@ -1,10 +1,10 @@
 package com.ing.baker.baas.server.protocol
 
-import com.ing.baker.runtime.core.SensoryEventStatus
 import com.ing.baker.runtime.actor.serialization.ProtoMap
 import com.ing.baker.runtime.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.baas.protobuf
-import com.ing.baker.runtime.core
+import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.{common, core}
 import scalapb.GeneratedMessageCompanion
 
 import scala.util.Try
@@ -28,25 +28,25 @@ object ProcessEventResponse {
         } yield ProcessEventResponse(fromSensoryEventStatusProto(status))
     }
 
-  private def toSensoryEventStatusProto(sensoryEventStatus: core.SensoryEventStatus): protobuf.SensoryEventStatus = {
+  private def toSensoryEventStatusProto(sensoryEventStatus: SensoryEventStatus): protobuf.SensoryEventStatus = {
     sensoryEventStatus match {
-      case core.SensoryEventStatus.Received => protobuf.SensoryEventStatus.Received
-      case core.SensoryEventStatus.AlreadyReceived => protobuf.SensoryEventStatus.AlreadyReceived
-      case core.SensoryEventStatus.Completed => protobuf.SensoryEventStatus.Completed
-      case core.SensoryEventStatus.FiringLimitMet => protobuf.SensoryEventStatus.FiringLimitMet
-      case core.SensoryEventStatus.ProcessDeleted => protobuf.SensoryEventStatus.ProcessDeleted
-      case core.SensoryEventStatus.ReceivePeriodExpired => protobuf.SensoryEventStatus.ReceivePeriodExpired
+      case common.SensoryEventStatus.Received => protobuf.SensoryEventStatus.Received
+      case common.SensoryEventStatus.AlreadyReceived => protobuf.SensoryEventStatus.AlreadyReceived
+      case common.SensoryEventStatus.Completed => protobuf.SensoryEventStatus.Completed
+      case common.SensoryEventStatus.FiringLimitMet => protobuf.SensoryEventStatus.FiringLimitMet
+      case common.SensoryEventStatus.ProcessDeleted => protobuf.SensoryEventStatus.ProcessDeleted
+      case common.SensoryEventStatus.ReceivePeriodExpired => protobuf.SensoryEventStatus.ReceivePeriodExpired
     }
   }
 
-  private def fromSensoryEventStatusProto(sensoryEventStatus: protobuf.SensoryEventStatus): core.SensoryEventStatus = {
+  private def fromSensoryEventStatusProto(sensoryEventStatus: protobuf.SensoryEventStatus): SensoryEventStatus = {
     sensoryEventStatus match {
-      case protobuf.SensoryEventStatus.Received => core.SensoryEventStatus.Received
-      case protobuf.SensoryEventStatus.AlreadyReceived => core.SensoryEventStatus.AlreadyReceived
-      case protobuf.SensoryEventStatus.Completed => core.SensoryEventStatus.Completed
-      case protobuf.SensoryEventStatus.FiringLimitMet => core.SensoryEventStatus.FiringLimitMet
-      case protobuf.SensoryEventStatus.ProcessDeleted => core.SensoryEventStatus.ProcessDeleted
-      case protobuf.SensoryEventStatus.ReceivePeriodExpired => core.SensoryEventStatus.ReceivePeriodExpired
+      case protobuf.SensoryEventStatus.Received => common.SensoryEventStatus.Received
+      case protobuf.SensoryEventStatus.AlreadyReceived => common.SensoryEventStatus.AlreadyReceived
+      case protobuf.SensoryEventStatus.Completed => common.SensoryEventStatus.Completed
+      case protobuf.SensoryEventStatus.FiringLimitMet => common.SensoryEventStatus.FiringLimitMet
+      case protobuf.SensoryEventStatus.ProcessDeleted => common.SensoryEventStatus.ProcessDeleted
+      case protobuf.SensoryEventStatus.ReceivePeriodExpired => common.SensoryEventStatus.ReceivePeriodExpired
       case _ =>  throw new IllegalArgumentException("Invalid SensoryEventStatus received during deserialisation")
     }
   }

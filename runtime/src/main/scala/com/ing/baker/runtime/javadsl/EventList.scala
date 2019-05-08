@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.java_api
+package com.ing.baker.runtime.javadsl
 
 import com.ing.baker.runtime.core.RuntimeEvent
 
