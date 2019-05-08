@@ -105,7 +105,7 @@ class Subscriber {
    }
 }
 
-com.ing.baker.runtime.java_api.JBaker baker = null; // initialize baker
+com.ing.baker.runtime.JBaker baker = null; // initialize baker
 
 baker.registerEventListener(new Subscriber());
 

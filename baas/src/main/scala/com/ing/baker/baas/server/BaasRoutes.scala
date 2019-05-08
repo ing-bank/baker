@@ -7,10 +7,10 @@ import akka.http.scaladsl.server.{Directives, Route}
 import com.ing.baker.baas.interaction.client.RemoteInteractionClient
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
-import com.ing.baker.runtime.core.{AkkaBaker, Baker, BakerResponseEventProtocol, ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.core.{AkkaBaker, BakerResponse, BakerResponseEventProtocol, ProcessState, RuntimeEvent}
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with ClientUtils {
 
@@ -39,43 +39,43 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
             entity(as[ProcessEventRequest]) { req => complete(streamBakerResponse(requestId, req.event)) }
           }
         } ~
-        post {
-          entity(as[ProcessEventRequest]) { request =>
-            val sensoryEventStatus = baker.processEvent(requestId, request.event)
-            complete(ProcessEventResponse(sensoryEventStatus))
+          post {
+            entity(as[ProcessEventRequest]) { request =>
+              val response: Future[BakerResponse] = baker.processEvent(requestId, request.event)
+              complete(response.map(x => ProcessEventResponse(x.confirmCompleted())))
+            }
           }
-        }
       } ~
         path("events") {
           get {
-            val events = baker.events(requestId)
-            complete(EventsResponse(events))
+            val processState = baker.getProcessState(requestId)
+            complete(processState.map(x => EventsResponse(x.eventNames.map(name => RuntimeEvent(name, Seq.empty)))))
           }
         } ~
         path("state") {
           get {
-            val events: ProcessState = baker.getProcessState(requestId)
-            complete(StateResponse(events))
+            val events = baker.getProcessState(requestId).map(StateResponse(_))
+            complete(events)
           }
         } ~
         path("bake") {
           post {
             entity(as[BakeRequest]) { request =>
-              val processState = baker.bake(request.recipeId, requestId)
-              complete(BakeResponse(processState))
+              baker.bake(request.recipeId, requestId)
+              complete(BakeResponse(new ProcessState("", Map.empty, List.empty)))
             }
           }
         } ~
         path("ingredients") {
           get {
             val ingredients = baker.getIngredients(requestId)
-            complete(IngredientsResponse(ingredients))
+            complete(ingredients.map(IngredientsResponse(_)))
           }
         } ~
         path("visual_state") {
           get {
             val visualState = baker.getVisualState(requestId)
-            complete(VisualStateResponse(visualState))
+            complete(visualState.map(VisualStateResponse(_)))
           }
         }
     }
@@ -89,7 +89,7 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
             try {
               println(s"Adding recipe called: ${compiledRecipe.name}")
               val recipeId = baker.addRecipe(compiledRecipe)
-              complete(AddRecipeResponse(recipeId))
+              complete(recipeId.map(AddRecipeResponse(_)))
             } catch {
               case e: Exception => {
                 println(s"Exception when adding recipe: ${e.getMessage}")
@@ -98,11 +98,11 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
             }
           }
         } ~
-        get {
-          pathPrefix(Segment) { recipeId =>
-            complete(baker.getRecipe(recipeId))
+          get {
+            pathPrefix(Segment) { recipeId =>
+              complete(baker.getRecipe(recipeId))
+            }
           }
-        }
       } ~
         path("implementation") {
           post {
@@ -124,6 +124,4 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
     }
     baasRoutes
   }
-
-
 }

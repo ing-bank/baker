@@ -12,5 +12,6 @@ case class RecipeInformation(compiledRecipe: CompiledRecipe, recipeCreatedTime: 
 
   def getRecipeCreatedTime(): Long = recipeCreatedTime
 
+  //TODO do we keep using Set here??
   def getErrors(): java.util.Set[String] = errors.asJava
 }

@@ -104,7 +104,7 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
         goodsShipped.instance(testTrackingId),
         invoiceWasSent.instance())
 
-      TestKit.awaitCond(baker.events(processId) equals expectedEvents, 2.seconds.dilated)
+      TestKit.awaitCond(baker.getEvents(processId) equals expectedEvents, 2.seconds.dilated)
     }
   }
 

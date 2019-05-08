@@ -12,7 +12,7 @@ import com.ing.baker.runtime.core.events.ProcessCreated;
 import com.ing.baker.runtime.core.events.Subscribe;
 import com.ing.baker.runtime.core.events.AnnotatedEventSubscriber;
 import com.ing.baker.runtime.java_api.EventList;
-import com.ing.baker.runtime.java_api.JBaker;
+import com.ing.baker.runtime.JBaker;
 import com.ing.baker.types.Converters;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -129,7 +129,7 @@ public class JBakerTest {
         EventListener testListener = (processId, event) -> {
         };
 
-        when(mockBaker.eventNames(any(String.class), any(FiniteDuration.class))).thenReturn(List$.MODULE$.empty());
+        when(mockBaker.getEventNames(any(String.class), any(FiniteDuration.class))).thenReturn(List$.MODULE$.empty());
 
         // -- register
 
@@ -174,16 +174,16 @@ public class JBakerTest {
         // -- get event names
 
         jBaker.getEventNames(processStringId);
-        verify(mockBaker).eventNames(eq(processStringId), any(FiniteDuration.class));
+        verify(mockBaker).getEventNames(eq(processStringId), any(FiniteDuration.class));
 
         jBaker.getEventNames(processUUID);
-        verify(mockBaker).eventNames(eq(processUUID.toString()), any(FiniteDuration.class));
+        verify(mockBaker).getEventNames(eq(processUUID.toString()), any(FiniteDuration.class));
 
         jBaker.getEventNames(processStringId, testTimeout);
-        verify(mockBaker).eventNames(eq(processStringId), eq(testTimeoutScala));
+        verify(mockBaker).getEventNames(eq(processStringId), eq(testTimeoutScala));
 
         jBaker.getEventNames(processUUID, testTimeout);
-        verify(mockBaker).eventNames(eq(processUUID.toString()), eq(testTimeoutScala));
+        verify(mockBaker).getEventNames(eq(processUUID.toString()), eq(testTimeoutScala));
 
         // -- get recipe
 

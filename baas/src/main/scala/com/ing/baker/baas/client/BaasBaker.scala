@@ -11,8 +11,7 @@ import com.ing.baker.baas.interaction.server.RemoteInteractionLauncher
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.core.events.BakerEvent
-import com.ing.baker.runtime.core.{Baker, BakerResponse, BakerResponseEventProtocol, EventListener, InteractionImplementation, ProcessMetadata, ProcessState, RecipeInformation, RuntimeEvent, SensoryEventStatus}
+import com.ing.baker.runtime.core.{Baker, BakerResponse, BakerResponseEventProtocol, EventListener, InteractionImplementation, ProcessMetadata, ProcessState, RecipeInformation, ScalaBaker}
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
@@ -36,11 +35,11 @@ class BaasBaker(config: Config,
   override val log: Logger = LoggerFactory.getLogger(classOf[BaasBaker])
   implicit val requestTimeout: FiniteDuration = 30 seconds
 
-  override val defaultBakeTimeout: FiniteDuration = config.as[FiniteDuration]("baker.bake-timeout")
-  override val defaultProcessEventTimeout: FiniteDuration = config.as[FiniteDuration]("baker.process-event-timeout")
-  override val defaultInquireTimeout: FiniteDuration = config.as[FiniteDuration]("baker.process-inquire-timeout")
-  override val defaultShutdownTimeout: FiniteDuration = config.as[FiniteDuration]("baker.shutdown-timeout")
-  override val defaultAddRecipeTimeout: FiniteDuration = config.as[FiniteDuration]("baker.add-recipe-timeout")
+  val defaultBakeTimeout: FiniteDuration = config.as[FiniteDuration]("baker.bake-timeout")
+  val defaultProcessEventTimeout: FiniteDuration = config.as[FiniteDuration]("baker.process-event-timeout")
+  val defaultInquireTimeout: FiniteDuration = config.as[FiniteDuration]("baker.process-inquire-timeout")
+  val defaultShutdownTimeout: FiniteDuration = config.as[FiniteDuration]("baker.shutdown-timeout")
+  val defaultAddRecipeTimeout: FiniteDuration = config.as[FiniteDuration]("baker.add-recipe-timeout")
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -50,8 +49,7 @@ class BaasBaker(config: Config,
     * @param compiledRecipe The compiled recipe.
     * @return A recipeId
     */
-  override def addRecipe(compiledRecipe: CompiledRecipe, timeout: FiniteDuration): String = {
-    val responseFuture: Future[AddRecipeResponse] =
+  override def addRecipe(compiledRecipe: CompiledRecipe): Future[String] = {
       Marshal(AddRecipeRequest(compiledRecipe)).to[RequestEntity]
         .map { body =>
           HttpRequest(
@@ -59,8 +57,7 @@ class BaasBaker(config: Config,
             method = POST,
             entity = body)
         }.flatMap(doRequestAndParseResponse[AddRecipeResponse])
-    Await.result(responseFuture, timeout)
-      .recipeId
+      .map(_.recipeId)
   }
 
   /**
@@ -69,43 +66,11 @@ class BaasBaker(config: Config,
     * @param recipeId
     * @return
     */
-  override def getRecipe(recipeId: String, timeout: FiniteDuration): RecipeInformation = {
+  override def getRecipe(recipeId: String): Future[RecipeInformation] = {
     val request = HttpRequest(
       uri = s"$baseUri/recipe/$recipeId",
       method = GET)
-    Await.result(doRequestAndParseResponse[RecipeInformation](request), timeout)
-  }
-
-  /**
-    * Returns the compiled recipe for the given RecipeId
-    *
-    * @param recipeId
-    * @return
-    */
-  override def getCompiledRecipe(recipeId: String, timeout: FiniteDuration): CompiledRecipe = {
-    val request = HttpRequest(
-      uri = s"$baseUri/recipe/$recipeId",
-      method = GET)
-    val recipeInformation: RecipeInformation = Await.result(doRequestAndParseResponse[RecipeInformation](request), timeout)
-    recipeInformation.compiledRecipe
-  }
-
-  /**
-    * Returns all recipes added to this baker instance.
-    *
-    * @return All recipes in the form of map of recipeId -> CompiledRecipe
-    */
-  override def getAllRecipes(timeout: FiniteDuration): Map[String, RecipeInformation] = {
-    throw new IllegalArgumentException("Not allowed to get all recipes")
-  }
-
-  /**
-    * Returns a future of all recipes added to this baker instance.
-    *
-    * @return All recipes in the form of map of recipeId -> CompiledRecipe
-    */
-  override def getAllRecipesAsync(timeout: FiniteDuration): Future[Map[String, RecipeInformation]] = {
-    throw new IllegalArgumentException("Not allowed to get all recipes")
+    doRequestAndParseResponse[RecipeInformation](request)
   }
 
   /**
@@ -116,19 +81,7 @@ class BaasBaker(config: Config,
     * @param timeout
     * @return
     */
-  override def bake(recipeId: String, processId: String, timeout: FiniteDuration): ProcessState = {
-    Await.result(bakeAsync(recipeId, processId, timeout), timeout)
-  }
-
-  /**
-    * Asynchronously creates a process instance for the given recipeId with the given processId as identifier
-    *
-    * @param recipeId  The recipeId for the recipe to bake
-    * @param processId The identifier for the newly baked process
-    * @param timeout
-    * @return
-    */
-  override def bakeAsync(recipeId: String, processId: String, timeout: FiniteDuration): Future[ProcessState] = {
+  override def bake(recipeId: String, processId: String): Future[Unit] = {
     Marshal(BakeRequest(recipeId)).to[RequestEntity]
       .map { body =>
         HttpRequest(
@@ -137,7 +90,7 @@ class BaasBaker(config: Config,
           entity = body)
       }
       .flatMap(doRequestAndParseResponse[BakeResponse])
-      .map(_.processState)
+      .map(_ => ())
   }
 
   /**
@@ -146,33 +99,22 @@ class BaasBaker(config: Config,
     * @param processId The process identifier
     * @param event     The event object
     */
-  override def processEvent(processId: String, event: Any, correlationId: Option[String], timeout: FiniteDuration): SensoryEventStatus = {
+  override def processEvent(processId: String, event: Any): Future[BakerResponse] = {
     //Create request to give to Baker
-    log.info("Creating runtime event to fire")
-    val runtimeEvent = Baker.extractEvent(event)
-
-    val response = Marshal(ProcessEventRequest(runtimeEvent)).to[RequestEntity]
-      .map { body =>
-        HttpRequest(
-          uri = s"$baseUri/$processId/event",
-          method = POST,
-          entity = body)
-      }
-      .flatMap(doRequestAndParseResponse[ProcessEventResponse])
-      .map(_.status)
-    Await.result(response, timeout)
-
+//    log.info("Creating runtime event to fire")
+//    val runtimeEvent = Baker.extractEvent(event)
+//
+//    Marshal(ProcessEventRequest(runtimeEvent)).to[RequestEntity]
+//      .map { body =>
+//        HttpRequest(
+//          uri = s"$baseUri/$processId/event",
+//          method = POST,
+//          entity = body)
+//      }
+//      .flatMap(doRequestAndParseResponse[ProcessEventResponse])
+    ???
   }
 
-  /**
-    * Notifies Baker that an event has happened.
-    *
-    * If nothing is done with the BakerResponse there is NO guarantee that the event is received by the process instance.
-    */
-  override def processEventAsync(processId: String, event: Any, correlationId: Option[String], timeout: FiniteDuration): BakerResponse = {
-    val source = processEventStream(processId, event, correlationId, timeout)
-    new BakerResponse(processId, source)
-  }
 
   /**
     * Creates a stream of specific events.
@@ -194,115 +136,12 @@ class BaasBaker(config: Config,
   }
 
   /**
-    * Retries a blocked interaction.
-    *
-    * @return
-    */
-  override def retryInteraction(processId: String, interactionName: String, timeout: FiniteDuration): Unit = {
-    //TODO implement
-  }
-
-  /**
-    * Resolves a blocked interaction by specifying it's output.
-    *
-    * !!! You should provide an event of the original interaction. Event / ingredient renames are done by Baker.
-    *
-    * @return
-    */
-  override def resolveInteraction(processId: String, interactionName: String, event: Any, timeout: FiniteDuration): Unit = {
-    //TODO implement
-  }
-
-  /**
-    * Stops the retrying of an interaction.
-    *
-    * @return
-    */
-  override def stopRetryingInteraction(processId: String, interactionName: String, timeout: FiniteDuration): Unit = {
-    //TODO implement
-  }
-
-  /**
-    * Synchronously returns all event names that occurred for a process.
-    */
-  override def eventNames(processId: String, timeout: FiniteDuration): List[String] = {
-    getProcessState(processId, timeout).eventNames
-  }
-
-  /**
-    * Returns a stream of all events with their timestamps for a process.
-    *
-    * @param processId The process identifier.
-    * @return The source of events.
-    */
-  override def eventsWithTimestampAsync(processId: String): Source[(RuntimeEvent, Long), NotUsed] = {
-    //TODO implement and remove Source from Baker interface
-    null
-  }
-
-  /**
-    * Returns a stream of all events for a process.
-    *
-    * @param processId The process identifier.
-    * @return A sequence of events with their timestamps.
-    */
-  override def eventsAsync(processId: String): Source[RuntimeEvent, NotUsed] = {
-    //TODO implement
-    null
-  }
-
-  /**
-    * Synchronously returns a sequence of all events for a process.
-    *
-    * @param processId The process identifier.
-    * @param timeout   How long to wait to retrieve the events.
-    */
-  override def events(processId: String, timeout: FiniteDuration): Seq[RuntimeEvent] = {
-    val request = HttpRequest(
-      uri = s"$baseUri/$processId/events",
-      method = GET)
-    val events = doRequestAndParseResponse[EventsResponse](request).map(_.events)
-    Await.result(events, timeout)
-  }
-
-  /**
-    * Synchronously returns a sequence of all events with their timestamps for a process.
-    *
-    * @param processId The process identifier.
-    * @param timeout   How long to wait to retrieve the events.
-    * @return A sequence of events with their timestamps.
-    */
-  override def eventsWithTimestamp(processId: String, timeout: FiniteDuration): Seq[(RuntimeEvent, Long)] = ???
-
-  /**
-    * Returns an index of all processes.
-    *
-    * Can potentially return a partial index when baker runs in cluster mode
-    * and not all shards can be reached within the given timeout.
-    *
-    * Does not include deleted processes.
-    *
-    * @return An index of all processes
-    */
-  override def getIndex(timeout: FiniteDuration): Set[ProcessMetadata] = ???
-
-  /**
     * Returns the process state.
     *
     * @param processId The process identifier
     * @return The process state.
     */
-  override def getProcessState(processId: String, timeout: FiniteDuration): ProcessState = {
-    Await.result(getProcessStateAsync(processId, timeout), timeout)
-  }
-
-  /**
-    * returns a future with the process state.
-    *
-    * @param processId The process identifier
-    * @return The process state.
-    */
-  override def getProcessStateAsync(processId: String, timeout: FiniteDuration): Future[ProcessState] = {
+  override def getProcessState(processId: String): Future[ProcessState] = {
     val request = HttpRequest(
       uri = s"$baseUri/$processId/state",
       method = GET)
@@ -315,18 +154,8 @@ class BaasBaker(config: Config,
     * @param processId The process id.
     * @return The provided ingredients.
     */
-  override def getIngredients(processId: String, timeout: FiniteDuration): Map[String, Value] = {
-    getProcessState(processId).ingredients
-  }
-
-  /**
-    * Returns a future of all the provided ingredients for a given process id.
-    *
-    * @param processId The process id.
-    * @return A future of the provided ingredients.
-    */
-  override def getIngredientsAsync(processId: String, timeout: FiniteDuration): Future[Map[String, Value]] = {
-    getProcessStateAsync(processId).map(_.ingredients)
+  override def getIngredients(processId: String): Future[Map[String, Value]] = {
+    getProcessState(processId).map(_.ingredients)
   }
 
   /**
@@ -336,44 +165,13 @@ class BaasBaker(config: Config,
     * @param timeout   How long to wait to retrieve the process state.
     * @return A visual (.dot) representation of the process state.
     */
-  override def getVisualState(processId: String, timeout: FiniteDuration): String = {
+  override def getVisualState(processId: String): Future[String] = {
     val request = HttpRequest(
       uri = s"$baseUri/$processId/visual_state",
       method = GET)
-    val response = doRequestAndParseResponse[VisualStateResponse](request).map(_.visualState)
-    Await.result(response, timeout)
+    doRequestAndParseResponse[VisualStateResponse](request).map(_.visualState)
   }
 
-  /**
-    * Registers a listener to all runtime events for recipes with the given name run in this baker instance.
-    *
-    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
-    */
-  override def registerEventListener(recipeName: String, listener: EventListener): Boolean = {
-    //TODO implement
-    false
-  }
-
-  /**
-    * Registers a listener to all runtime events for all recipes that run in this Baker instance.
-    *
-    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
-    */
-  override def registerEventListener(listener: EventListener): Boolean = {
-    //TODO implement
-    false
-  }
-
-  /**
-    * This registers a listener function.
-    *
-    * @param pf A partial function that receives the events.
-    * @return
-    */
-  override def registerEventListenerPF(pf: PartialFunction[BakerEvent, Unit]): Boolean = {
-    //TODO implement
-    false
-  }
 
   /**
     * Adds an interaction implementation to baker.
@@ -382,8 +180,8 @@ class BaasBaker(config: Config,
     *
     * @param implementation The implementation object
     */
-  override def addImplementation(implementation: AnyRef): Unit = {
-    remoteInteractionLauncher.addImplementation(implementation)
+  override def addImplementation(implementation: AnyRef): Future[Unit] = {
+    Future.successful(remoteInteractionLauncher.addImplementation(implementation))
   }
 
   /**
@@ -391,8 +189,8 @@ class BaasBaker(config: Config,
     *
     * @param implementations The implementation object
     */
-  override def addImplementations(implementations: Seq[AnyRef]): Unit = {
-    implementations.foreach(addImplementation)
+  override def addImplementations(implementations: Set[AnyRef]): Future[Unit] = {
+    Future.successful(implementations.foreach(addImplementation))
   }
 
   /**
@@ -400,16 +198,76 @@ class BaasBaker(config: Config,
     *
     * @param implementation An InteractionImplementation instance
     */
-  override def addImplementation(implementation: InteractionImplementation): Unit = {
-    remoteInteractionLauncher.addImplementation(implementation)
+  override def addImplementation(implementation: InteractionImplementation): Future[Unit] = {
+    Future.successful(remoteInteractionLauncher.addImplementation(implementation))
   }
+
+  /**
+    * Returns all recipes added to this baker instance.
+    *
+    * @return All recipes in the form of map of recipeId -> CompiledRecipe
+    */
+  override def getAllRecipes: Future[Map[String, RecipeInformation]] = ???
+
+  /**
+    * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
+    *
+    * @param processId The process identifier
+    * @param event     The event object
+    */
+  override def processEvent(processId: String, event: Any, correlationId: String): Future[BakerResponse] = ???
+
+  /**
+    * Returns an index of all processes.
+    *
+    * Can potentially return a partial index when baker runs in cluster mode
+    * and not all shards can be reached within the given timeout.
+    *
+    * Does not include deleted processes.
+    *
+    * @return An index of all processes
+    */
+  override def getIndex(): Future[Set[ProcessMetadata]] = ???
+
+  /**
+    * Registers a listener to all runtime events for recipes with the given name run in this baker instance.
+    *
+    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
+    */
+  override def registerEventListener(recipeName: String, listener: EventListener): Future[Unit] = ???
+
+  /**
+    * Registers a listener to all runtime events for all recipes that run in this Baker instance.
+    *
+    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
+    */
+  override def registerEventListener(listener: EventListener): Future[Unit] = ???
 
   /**
     * Attempts to gracefully shutdown the baker system.
     */
-  override def gracefulShutdown(timeout: FiniteDuration): Unit = {
-    //TODO implement
-  }
+  override def gracefulShutdown(): Future[Unit] = ???
 
+  /**
+    * Retries a blocked interaction.
+    *
+    * @return
+    */
+  override def retryInteraction(processId: String, interactionName: String): Future[Unit] = ???
 
+  /**
+    * Resolves a blocked interaction by specifying it's output.
+    *
+    * !!! You should provide an event of the original interaction. Event / ingredient renames are done by Baker.
+    *
+    * @return
+    */
+  override def resolveInteraction(processId: String, interactionName: String, event: Any): Future[Unit] = ???
+
+  /**
+    * Stops the retrying of an interaction.
+    *
+    * @return
+    */
+  override def stopRetryingInteraction(processId: String, interactionName: String): Future[Unit] = ???
 }
