@@ -40,11 +40,7 @@ import scala.util.Try
   * The Baker is the component of the Baker library that runs one or multiples recipes.
   * For each recipe a new instance can be baked, sensory events can be send and state can be inquired upon
   */
-class AkkaBaker(private val config: Config)(implicit val actorSystem: ActorSystem) extends Baker {
-
-  def this()(implicit actorSystem: ActorSystem) {
-    this(ConfigFactory.load())
-  }
+class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends Baker {
 
   private val log = LoggerFactory.getLogger(classOf[AkkaBaker])
 

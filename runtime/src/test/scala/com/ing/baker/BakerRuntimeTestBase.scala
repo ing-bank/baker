@@ -9,7 +9,7 @@ import com.ing.baker.recipe.TestRecipe.{fireTwoEventsInteraction, _}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.{CaseClassIngredient, common}
-import com.ing.baker.runtime.akka.{AkkaBaker, Baker, RuntimeEvent}
+import com.ing.baker.runtime.akka.{AkkaBaker, RuntimeEvent}
 import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.types.{Converters, Value}
 import com.typesafe.config.{Config, ConfigFactory}
@@ -23,7 +23,7 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 
 trait BakerRuntimeTestBase
-  extends WordSpecLike
+  extends AsyncWordSpecLike
     with Matchers
     with MockitoSugar
     with BeforeAndAfter
@@ -88,8 +88,8 @@ trait BakerRuntimeTestBase
   protected val testOptionalIngredientInteractionMock: OptionalIngredientInteraction = mock[OptionalIngredientInteraction]
   protected val testProvidesNothingInteractionMock: ProvidesNothingInteraction = mock[ProvidesNothingInteraction]
 
-  protected val mockImplementations: Seq[AnyRef] =
-    Seq(
+  protected val mockImplementations: Set[AnyRef] =
+    Set(
       testInteractionOneMock,
       testInteractionTwoMock,
       testInteractionThreeMock,
@@ -201,7 +201,7 @@ trait BakerRuntimeTestBase
     * @return
     */
   protected def setupBakerWithRecipe(recipeName: String, appendUUIDToTheRecipeName: Boolean = true)
-                                    (implicit actorSystem: ActorSystem): (Baker, String) = {
+                                    (implicit actorSystem: ActorSystem): Future[(Baker, String)] = {
     val newRecipeName = if (appendUUIDToTheRecipeName) s"$recipeName-${UUID.randomUUID().toString}" else recipeName
     val recipe = getRecipe(newRecipeName)
     setupMockResponse()
@@ -209,18 +209,17 @@ trait BakerRuntimeTestBase
     setupBakerWithRecipe(recipe, mockImplementations)(actorSystem)
   }
 
-  protected def setupBakerWithRecipe(recipe: common.Recipe, implementations: Seq[AnyRef])
-                                    (implicit actorSystem: ActorSystem): (Baker, String) = {
+  protected def setupBakerWithRecipe(recipe: common.Recipe, implementations: Set[AnyRef])
+                                    (implicit actorSystem: ActorSystem): Future[(Baker, String)] = {
 
-    val baker = new AkkaBaker()(actorSystem)
+    val baker = Baker.akka(actorSystem)
     baker.addImplementations(implementations)
-    val recipeId = baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
-    (baker, recipeId)
+    baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).map(baker -> _)(actorSystem.dispatcher)
   }
 
   protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Baker = {
     setupMockResponse()
-    val baker = new AkkaBaker()(actorSystem)
+    val baker = Baker.akka(actorSystem)
     baker.addImplementations(mockImplementations)
     baker
   }

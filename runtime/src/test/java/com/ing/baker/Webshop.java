@@ -1,6 +1,8 @@
 package com.ing.baker;
 
+import akka.actor.ActorSystem;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.recipe.annotations.FiresEvent;
@@ -9,11 +11,13 @@ import com.ing.baker.recipe.annotations.RequiresIngredient;
 import com.ing.baker.recipe.javadsl.Interaction;
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy;
 import com.ing.baker.recipe.javadsl.Recipe;
+import com.ing.baker.runtime.akka.ProcessState;
 import com.ing.baker.runtime.javadsl.JBaker;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
 import java.time.Duration;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
@@ -124,7 +128,7 @@ public class Webshop {
 
 
 //    @Test
-    public void testWebshop() throws TimeoutException {
+    public void testWebshop() throws TimeoutException, ExecutionException, InterruptedException {
 
         Config config = ConfigFactory.load("cassandra.conf");
 
@@ -143,11 +147,11 @@ public class Webshop {
         when(validateOrderMock.apply(any(), any())).thenReturn(new ValidateOrder.Valid());
 
 //        JBaker baker = new JBaker(ActorSystem.apply("webshop", config));
-        JBaker baker = new JBaker(config);
+        JBaker baker = JBaker.akka(config, ActorSystem.create("webshop"));
 
-        baker.addImplementations(ImmutableList.of(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock));
+        baker.addImplementations(ImmutableSet.of(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock));
 
-        String recipeId = baker.addRecipe(recipe);
+        String recipeId = baker.addRecipe(recipe).get();
 
         String processId = "56a70f82-a24d-497f-b3ac-57366adbb39c"; //UUID.randomUUID().toString();
 
@@ -162,6 +166,6 @@ public class Webshop {
 //        baker.processEvent(processId, new PaymentMade());
 
         System.out.println("ingredients: " + baker.getIngredients(processId).toString());
-        System.out.println("events: " + baker.getEvents(processId).toString());
+        System.out.println("events: " + baker.getProcessState(processId).thenApply(ProcessState::eventNames).get().toString());
     }
 }

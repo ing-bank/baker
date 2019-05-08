@@ -3,7 +3,7 @@ package com.ing.baker.runtime.scaladsl
 import akka.actor.ActorSystem
 import com.ing.baker.runtime.common.ScalaBaker
 import com.ing.baker.runtime.akka.AkkaBaker
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigFactory}
 
 import scala.concurrent.Future
 
@@ -14,5 +14,11 @@ import scala.concurrent.Future
 trait Baker extends ScalaBaker[Future]
 
 object Baker {
-  def akka(config: Config)(implicit actorSystem: ActorSystem): Baker = new AkkaBaker(config)
+
+  def akka(config: Config, actorSystem: ActorSystem): AkkaBaker =
+    new AkkaBaker(config)(actorSystem)
+
+  def akka(actorSystem: ActorSystem): AkkaBaker =
+    akka(ConfigFactory.load(), actorSystem)
+
 }
