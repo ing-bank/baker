@@ -9,7 +9,7 @@ import akka.testkit.ImplicitSender
 import akka.cluster.MultiNodeClusterSpec
 import akka.remote.testkit.MultiNodeSpec
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.runtime.core.{AkkaBaker, RuntimeEvent}
+import com.ing.baker.runtime.akka.{AkkaBaker, RuntimeEvent}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.ing.baker.recipe.scaladsl.Examples.webshop
 import com.ing.baker.types.{PrimitiveValue, RecordValue}

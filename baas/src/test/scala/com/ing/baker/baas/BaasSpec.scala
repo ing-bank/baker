@@ -12,7 +12,7 @@ import com.ing.baker.recipe.javadsl.InteractionFailureStrategy.RetryWithIncremen
 import com.ing.baker.recipe.scaladsl
 import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.core.{AkkaBaker, Baker, BakerProvider, BakerResponse, ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.akka.{AkkaBaker, Baker, BakerProvider, BakerResponse, ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.scaladsl.Baker
 import org.mockito.Matchers.anyString
 import org.mockito.Mockito.{mock, reset, when}

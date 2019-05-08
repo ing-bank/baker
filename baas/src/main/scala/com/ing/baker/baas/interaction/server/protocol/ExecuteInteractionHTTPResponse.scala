@@ -1,6 +1,6 @@
 package com.ing.baker.baas.interaction.server.protocol
 
-import com.ing.baker.runtime.core.RuntimeEvent
+import com.ing.baker.runtime.akka.RuntimeEvent
 
 import cats.instances.option._
 import cats.instances.try_._
@@ -8,8 +8,8 @@ import cats.syntax.traverse._
 
 import com.ing.baker.baas.server.protocol.BaasRequest
 
-import com.ing.baker.runtime.core.actor.serialization.ProtoMap
-import com.ing.baker.runtime.core.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto}
+import com.ing.baker.runtime.akka.actor.serialization.ProtoMap
+import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto}
 import com.ing.baker.runtime.baas.protobuf
 import scalapb.GeneratedMessageCompanion
 

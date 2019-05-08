@@ -3,9 +3,9 @@ package com.ing.baker.baas.server.protocol
 import cats.instances.list._
 import cats.instances.try_._
 import cats.syntax.traverse._
-import com.ing.baker.runtime.core.RuntimeEvent
-import com.ing.baker.runtime.core.actor.serialization.{ProtoMap, SerializersProvider}
-import com.ing.baker.runtime.core.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
+import com.ing.baker.runtime.akka.RuntimeEvent
+import com.ing.baker.runtime.akka.actor.serialization.{ProtoMap, SerializersProvider}
+import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.baas.protobuf
 import scalapb.GeneratedMessageCompanion
 

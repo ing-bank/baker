@@ -2,7 +2,7 @@ package com.ing.baker.baas.http
 
 import akka.actor.ActorSystem
 import com.ing.baker.baas.server.BaasServer
-import com.ing.baker.runtime.core.{ActorSystemProvider, AkkaBaker}
+import com.ing.baker.runtime.akka.{ActorSystemProvider, AkkaBaker}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._

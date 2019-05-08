@@ -9,7 +9,7 @@ import com.ing.baker.recipe.TestRecipe.{fireTwoEventsInteraction, _}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.{CaseClassIngredient, common}
-import com.ing.baker.runtime.core.{AkkaBaker, Baker, RuntimeEvent}
+import com.ing.baker.runtime.akka.{AkkaBaker, Baker, RuntimeEvent}
 import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.types.{Converters, Value}
 import com.typesafe.config.{Config, ConfigFactory}

@@ -1,10 +1,10 @@
 package com.ing.baker.baas.server.protocol
 
-import com.ing.baker.runtime.core.actor.serialization.ProtoMap
-import com.ing.baker.runtime.core.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
+import com.ing.baker.runtime.akka.actor.serialization.ProtoMap
+import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.baas.protobuf
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.{common, core}
+import com.ing.baker.runtime.{common, akka}
 import scalapb.GeneratedMessageCompanion
 
 import scala.util.Try

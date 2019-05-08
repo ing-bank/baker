@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.common
 
-import com.ing.baker.runtime.core.RuntimeEvent
+import com.ing.baker.runtime.akka.RuntimeEvent
 
 /**
   * Listener interface for events from baker.

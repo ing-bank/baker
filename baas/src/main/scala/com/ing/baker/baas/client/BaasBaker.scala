@@ -12,7 +12,7 @@ import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.{EventListener, InteractionImplementation, ProcessMetadata, RecipeInformation}
-import com.ing.baker.runtime.core.{BakerResponse, BakerResponseEventProtocol, ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.akka.{BakerResponse, BakerResponseEventProtocol, ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.types.Value
 import com.typesafe.config.Config

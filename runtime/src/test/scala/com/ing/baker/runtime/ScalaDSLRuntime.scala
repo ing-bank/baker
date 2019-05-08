@@ -3,7 +3,7 @@ package com.ing.baker.runtime
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction}
 import com.ing.baker.runtime.common.InteractionImplementation
-import com.ing.baker.runtime.core.RuntimeEvent
+import com.ing.baker.runtime.akka.RuntimeEvent
 import com.ing.baker.types.Converters.toJava
 import com.ing.baker.types.{Converters, Type, Value}
 

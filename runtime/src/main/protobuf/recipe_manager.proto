@@ -3,7 +3,7 @@ syntax = "proto2";
 import "common.proto";
 import "scalapb/scalapb.proto";
 
-option java_package = "com.ing.baker.runtime.core.actor.recipe_manager.protobuf";
+option java_package = "com.ing.baker.runtime.akka.actor.recipe_manager.protobuf";
 option (scalapb.options) = {
     flat_package: true
 };

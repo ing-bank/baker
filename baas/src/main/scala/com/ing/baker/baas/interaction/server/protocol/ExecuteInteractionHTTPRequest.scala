@@ -7,8 +7,8 @@ import cats.syntax.traverse._
 import com.ing.baker.baas.server.protocol.BaasRequest
 import com.ing.baker.types.Value
 
-import com.ing.baker.runtime.core.actor.serialization.ProtoMap
-import com.ing.baker.runtime.core.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto}
+import com.ing.baker.runtime.akka.actor.serialization.ProtoMap
+import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto}
 import com.ing.baker.runtime.baas.protobuf
 import scalapb.GeneratedMessageCompanion
 

@@ -7,7 +7,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, RouteResult}
 import akka.stream.ActorMaterializer
-import com.ing.baker.runtime.core.AkkaBaker
+import com.ing.baker.runtime.akka.AkkaBaker
 
 import scala.concurrent.{Future, Promise}
 

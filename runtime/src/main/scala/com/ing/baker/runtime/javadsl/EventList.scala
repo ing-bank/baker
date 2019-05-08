@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.javadsl
 
-import com.ing.baker.runtime.core.RuntimeEvent
+import com.ing.baker.runtime.akka.RuntimeEvent
 
 import scala.collection.JavaConverters._
 

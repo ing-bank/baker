@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.javadsl
 
-import com.ing.baker.runtime.core.RuntimeEvent
+import com.ing.baker.runtime.akka.RuntimeEvent
 
 class EventWithTimestamp private[javadsl](private val event: RuntimeEvent, private val timestamp: Long) {
 

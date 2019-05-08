@@ -7,7 +7,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import com.ing.baker.baas.interaction.client.RemoteInteractionClient
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
-import com.ing.baker.runtime.core.{AkkaBaker, BakerResponse, BakerResponseEventProtocol, ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.akka.{AkkaBaker, BakerResponse, BakerResponseEventProtocol, ProcessState, RuntimeEvent}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}

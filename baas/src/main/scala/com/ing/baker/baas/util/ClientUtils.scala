@@ -14,7 +14,7 @@ import com.ing.baker.baas.interaction.server.protocol.{ExecuteInteractionHTTPReq
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.{RecipeInformation, SensoryEventStatus}
-import com.ing.baker.runtime.core.{ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.akka.{ProcessState, RuntimeEvent}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global

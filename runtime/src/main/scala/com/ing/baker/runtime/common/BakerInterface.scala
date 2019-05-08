@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.common
 
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.core.{BakerResponse, ProcessState}
+import com.ing.baker.runtime.akka.{BakerResponse, ProcessState}
 import com.ing.baker.types.Value
 
 /**

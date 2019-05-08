@@ -6,7 +6,7 @@ import java.util.concurrent.{CompletableFuture, TimeoutException}
 import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common._
-import com.ing.baker.runtime.core.{BakerResponse, _}
+import com.ing.baker.runtime.akka.{BakerResponse, _}
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
 import javax.annotation.Nonnull

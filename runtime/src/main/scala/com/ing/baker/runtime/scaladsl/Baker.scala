@@ -2,7 +2,7 @@ package com.ing.baker.runtime.scaladsl
 
 import akka.actor.ActorSystem
 import com.ing.baker.runtime.common.ScalaBaker
-import com.ing.baker.runtime.core.AkkaBaker
+import com.ing.baker.runtime.akka.AkkaBaker
 import com.typesafe.config.Config
 
 import scala.concurrent.Future

@@ -3,7 +3,7 @@ syntax = "proto2";
 import "common.proto";
 import "scalapb/scalapb.proto";
 
-option java_package = "com.ing.baker.runtime.core.actor.process_instance.protobuf";
+option java_package = "com.ing.baker.runtime.akka.actor.process_instance.protobuf";
 option (scalapb.options) = {
     flat_package: true
 };
@@ -18,14 +18,14 @@ message ConsumedToken {
 
 message Initialized {
 
-    option (scalapb.message).extends = "com.ing.baker.runtime.core.actor.serialization.BakerSerializable";
+    option (scalapb.message).extends = "com.ing.baker.runtime.akka.actor.serialization.BakerSerializable";
 
     repeated ProducedToken initial_marking = 1;
     optional SerializedData initial_state = 2;
 }
 
 message TransitionFired {
-    option (scalapb.message).extends = "com.ing.baker.runtime.core.actor.serialization.BakerSerializable";
+    option (scalapb.message).extends = "com.ing.baker.runtime.akka.actor.serialization.BakerSerializable";
 
     optional int64 job_id = 1;
     optional string correlation_id = 9;
@@ -50,7 +50,7 @@ message FailureStrategy {
 
 message TransitionFailed {
 
-    option (scalapb.message).extends = "com.ing.baker.runtime.core.actor.serialization.BakerSerializable";
+    option (scalapb.message).extends = "com.ing.baker.runtime.akka.actor.serialization.BakerSerializable";
 
     optional int64 job_id = 1;
     optional string correlation_id = 10;
