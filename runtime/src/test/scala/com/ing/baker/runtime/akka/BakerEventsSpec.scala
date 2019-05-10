@@ -14,6 +14,7 @@ import com.ing.baker.runtime.akka.events._
 import com.ing.baker.types.PrimitiveValue
 import org.slf4j.LoggerFactory
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -91,142 +92,119 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
 
   "Baker" should {
 
-    /*TODO FIX THIS TESTS
     "notify ProcessCreated/EventReceived/InteractionStarted/InteractionCompleted events with correct timestamps" in {
       val recipeName = "EventReceivedEventRecipe"
       val processId = UUID.randomUUID().toString
-      val (baker, recipeId) = setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
-
-      val listenerProbe = TestProbe()
-
-      baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
-
-      baker.bake(recipeId, processId)
-      baker.processEvent(processId, InitialEvent(initialIngredientValue), Some("someId"))
-
-      // TODO check the order of the timestamps later
-      expectMsgInAnyOrderPF(listenerProbe,
-        { case msg@ProcessCreated(_, `recipeId`, `recipeName`, `processId`) => msg },
-        { case msg@EventReceived(_, _, _, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`))))) => msg },
-        { case msg@InteractionStarted(_, _, _, `processId`, "SieveInteraction") => msg },
-        { case msg@InteractionStarted(_, _, _, `processId`, "InteractionOne") => msg },
-        { case msg@InteractionStarted(_, _, _, `processId`, "InteractionTwo") => msg },
-        { case msg@InteractionStarted(_, _, _, `processId`, "InteractionThree") => msg },
-        { case msg@InteractionStarted(_, _, _, `processId`, "ProvidesNothingInteraction") => msg },
-        { case msg@InteractionCompleted(_, _, _, _, `processId`, "InteractionOne", Some(RuntimeEvent("InteractionOneSuccessful", Seq(Tuple2("interactionOneIngredient",PrimitiveValue("interactionOneIngredient")))))) => msg },
-        { case msg@InteractionCompleted(_, _, _, _, `processId`, "InteractionTwo", Some(RuntimeEvent("EventFromInteractionTwo", Seq(Tuple2("interactionTwoIngredient", PrimitiveValue("interactionTwoIngredient")))))) => msg },
-        { case msg@InteractionCompleted(_, _, _, _, `processId`, "InteractionThree", Some(RuntimeEvent("InteractionThreeSuccessful", Seq(Tuple2("interactionThreeIngredient", PrimitiveValue("interactionThreeIngredient")))))) => msg },
-        { case msg@InteractionCompleted(_, _, _, _, `processId`, "ProvidesNothingInteraction", None) => msg },
-        { case msg@InteractionCompleted(_, _, _, _, `processId`, "SieveInteraction", Some(RuntimeEvent("SieveInteractionSuccessful", Seq(Tuple2("sievedIngredient", PrimitiveValue("sievedIngredient")))))) => msg }
-      )
-
-      listenerProbe.expectNoMessage(eventReceiveTimeout)
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
+        listenerProbe = TestProbe()
+        _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
+        _ <- baker.bake(recipeId, processId)
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue), "someId")
+        // TODO check the order of the timestamps later
+        _ = expectMsgInAnyOrderPF(listenerProbe,
+          { case msg@ProcessCreated(_, `recipeId`, `recipeName`, `processId`) => msg },
+          { case msg@EventReceived(_, _, _, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`))))) => msg },
+          { case msg@InteractionStarted(_, _, _, `processId`, "SieveInteraction") => msg },
+          { case msg@InteractionStarted(_, _, _, `processId`, "InteractionOne") => msg },
+          { case msg@InteractionStarted(_, _, _, `processId`, "InteractionTwo") => msg },
+          { case msg@InteractionStarted(_, _, _, `processId`, "InteractionThree") => msg },
+          { case msg@InteractionStarted(_, _, _, `processId`, "ProvidesNothingInteraction") => msg },
+          { case msg@InteractionCompleted(_, _, _, _, `processId`, "InteractionOne", Some(RuntimeEvent("InteractionOneSuccessful", Seq(Tuple2("interactionOneIngredient",PrimitiveValue("interactionOneIngredient")))))) => msg },
+          { case msg@InteractionCompleted(_, _, _, _, `processId`, "InteractionTwo", Some(RuntimeEvent("EventFromInteractionTwo", Seq(Tuple2("interactionTwoIngredient", PrimitiveValue("interactionTwoIngredient")))))) => msg },
+          { case msg@InteractionCompleted(_, _, _, _, `processId`, "InteractionThree", Some(RuntimeEvent("InteractionThreeSuccessful", Seq(Tuple2("interactionThreeIngredient", PrimitiveValue("interactionThreeIngredient")))))) => msg },
+          { case msg@InteractionCompleted(_, _, _, _, `processId`, "ProvidesNothingInteraction", None) => msg },
+          { case msg@InteractionCompleted(_, _, _, _, `processId`, "SieveInteraction", Some(RuntimeEvent("SieveInteractionSuccessful", Seq(Tuple2("sievedIngredient", PrimitiveValue("sievedIngredient")))))) => msg }
+        )
+        _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
+      } yield succeed
     }
 
     "notify EventRejected event with InvalidEvent reason" in {
       val recipeName = "EventRejectedEventRecipe"
       val processId = UUID.randomUUID().toString
-      val (baker, recipeId) = setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
-
-      val listenerProbe = TestProbe()
-
-      baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
-
-      baker.bake(recipeId, processId)
-
-      // We used async function here because ThirdEvent is not part of the recipe and throws exception
-      baker.processEventAsync(processId, ThirdEvent(), Some("someId"))
-
-      listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-        case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("ThirdEvent", Seq()), InvalidEvent) => msg
-      }
-
-      listenerProbe.expectNoMessage(eventReceiveTimeout)
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
+        listenerProbe = TestProbe()
+        _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
+        _ <- baker.bake(recipeId, processId)
+        // We used async function here because ThirdEvent is not part of the recipe and throws exception
+        _ <- baker.processEvent(processId, ThirdEvent(), "someId")
+        _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
+          case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("ThirdEvent", Seq()), InvalidEvent) => msg
+        }
+        _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
+      } yield succeed
     }
 
     "notify EventRejected event with AlreadyReceived reason" in {
       val recipeName = "AlreadyReceivedRecipe"
       val processId = UUID.randomUUID().toString
-      val (baker, recipeId) = setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
-
-      val listenerProbe = TestProbe()
-
-      baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
-
-      baker.bake(recipeId, processId)
-      baker.processEvent(processId, InitialEvent(initialIngredientValue), Some("someId"))
-      baker.processEvent(processId, InitialEvent(initialIngredientValue), Some("someId")) // Same correlationId cannot be used twice
-
-      listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-        case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), AlreadyReceived) => msg
-      }
-
-      listenerProbe.expectNoMessage(eventReceiveTimeout)
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
+        listenerProbe = TestProbe()
+        _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
+        _ <- baker.bake(recipeId, processId)
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue), "someId")
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue), "someId") // Same correlationId cannot be used twice
+        _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
+          case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), AlreadyReceived) => msg
+        }
+        _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
+      } yield succeed
     }
 
     "notify EventRejected event with FiringLimitMet reason" in {
       val recipeName = "FiringLimitMetRecipe"
       val processId = UUID.randomUUID().toString
-      val (baker, recipeId) = setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
-
-      val listenerProbe = TestProbe()
-
-      baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
-
-      baker.bake(recipeId, processId)
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
-      baker.processEvent(processId, InitialEvent(initialIngredientValue)) // Firing limit is set to 1 in the recipe
-
-      listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-        case msg@EventRejected(_, `processId`, None, RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), FiringLimitMet) => msg
-      }
-
-      listenerProbe.expectNoMessage(eventReceiveTimeout)
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
+        listenerProbe = TestProbe()
+        _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
+        _ <- baker.bake(recipeId, processId)
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue))
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)) // Firing limit is set to 1 in the recipe
+        _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
+          case msg@EventRejected(_, `processId`, None, RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), FiringLimitMet) => msg
+        }
+        _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
+      } yield succeed
     }
 
     "notify EventRejected event with ReceivePeriodExpired reason" in {
       val recipeName = "ReceivePeriodExpiredRecipe"
       val processId = UUID.randomUUID().toString
-      val (baker, recipeId) = setupBakerWithRecipe(getRecipe(recipeName).withEventReceivePeriod(eventReceiveTimeout), mockImplementations)
-
-      val listenerProbe = TestProbe()
-
-      baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
-
-      baker.bake(recipeId, processId)
-
-      Thread.sleep(eventReceiveTimeout.toMillis)
-
-      baker.processEvent(processId, InitialEvent(initialIngredientValue), Some("someId"))
-
-      listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-        case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), ReceivePeriodExpired) => msg
-      }
-
-      listenerProbe.expectNoMessage(eventReceiveTimeout)
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(getRecipe(recipeName).withEventReceivePeriod(eventReceiveTimeout), mockImplementations)
+        listenerProbe = TestProbe()
+        _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
+        _ <- baker.bake(recipeId, processId)
+        _ <- Future {
+          Thread.sleep(eventReceiveTimeout.toMillis)
+        }
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue), "someId")
+        _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
+          case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), ReceivePeriodExpired) => msg
+        }
+        _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
+      } yield succeed
     }
 
     "notify EventRejected event with NoSuchProcess reason" in {
       val recipeName = "NoSuchProcessRecipe"
       val processId = UUID.randomUUID().toString
-      val (baker, _) = setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
-
-      val listenerProbe = TestProbe()
-
-      baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
-
-      // Skipped baking the process here, so the process with processId does not exist
-
-      // use a different processId and use async function because the sync version throws NoSuchProcessException
-      baker.processEventAsync(processId, InitialEvent(initialIngredientValue), Some("someId"))
-
-      listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-        case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), NoSuchProcess) => msg
-      }
-
-      listenerProbe.expectNoMessage(eventReceiveTimeout)
+      for {
+        (baker, _) <- setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
+        listenerProbe = TestProbe()
+        _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
+        // Skipped baking the process here, so the process with processId does not exist
+        // use a different processId and use async function because the sync version throws NoSuchProcessException
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue), "someId")
+        _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
+          case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), NoSuchProcess) => msg
+        }
+        _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
+      } yield succeed
     }
-
-  */
   }
 }

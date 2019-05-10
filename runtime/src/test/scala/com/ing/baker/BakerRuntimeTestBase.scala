@@ -213,15 +213,15 @@ trait BakerRuntimeTestBase
                                     (implicit actorSystem: ActorSystem): Future[(Baker, String)] = {
 
     val baker = Baker.akka(actorSystem)
-    baker.addImplementations(implementations)
-    baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).map(baker -> _)(actorSystem.dispatcher)
+    baker.addImplementations(implementations).flatMap { _ =>
+      baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).map(baker -> _)(actorSystem.dispatcher)
+    }
   }
 
-  protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Baker = {
+  protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Future[Baker] = {
     setupMockResponse()
     val baker = Baker.akka(actorSystem)
-    baker.addImplementations(mockImplementations)
-    baker
+    baker.addImplementations(mockImplementations).map { _ => baker }
   }
 
   protected def setupMockResponse(): Unit = {

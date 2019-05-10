@@ -268,7 +268,6 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("If the process is already deleted")
-  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   override def getIngredients(processId: String): Future[Map[String, Value]] =
     getProcessState(processId).map(_.ingredients)
 

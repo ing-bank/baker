@@ -11,6 +11,7 @@ import com.ing.baker.baas.interaction.server.RemoteInteractionLauncher
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.akka.events.BakerEvent
 import com.ing.baker.runtime.common.{EventListener, InteractionImplementation, ProcessMetadata, RecipeInformation}
 import com.ing.baker.runtime.akka.{BakerResponse, BakerResponseEventProtocol, ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.scaladsl.Baker
@@ -272,4 +273,12 @@ class BaasBaker(config: Config,
     * @return
     */
   override def stopRetryingInteraction(processId: String, interactionName: String): Future[Unit] = ???
+
+  /**
+    * This registers a listener function.
+    *
+    * @param pf A partial function that receives the events.
+    * @return
+    */
+  override def registerEventListenerPF(pf: PartialFunction[BakerEvent, Unit]): Future[Unit] = ???
 }

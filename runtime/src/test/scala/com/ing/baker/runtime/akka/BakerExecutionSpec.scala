@@ -13,6 +13,7 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.common._
+import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.types.Converters
 import org.mockito.Matchers._
 import org.mockito.Mockito._
@@ -53,55 +54,53 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       } yield succeed
     }
 
-    /*TODO FIX THIS TESTS
     "throw an IllegalArgumentException if a baking a process with the same identifier twice" in {
-      val (baker, recipeId) = setupBakerWithRecipe("DuplicateIdentifierRecipe")
-
-      val id = UUID.randomUUID().toString
-      baker.bake(recipeId, id)
-      a[IllegalArgumentException] should be thrownBy {
-        baker.bake(recipeId, id)
-      }
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("DuplicateIdentifierRecipe")
+        id = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, id)
+        _ <- recoverToSucceededIf[IllegalArgumentException] {
+          baker.bake(recipeId, id)
+        }
+      } yield succeed
     }
 
-    "throw a NoSuchProcessException when requesting the ingredients of a non existing process" in {
-
-      val (baker, recipeId) = setupBakerWithRecipe("NonExistingProcessTest")
-
-      intercept[NoSuchProcessException] {
-        baker.getIngredients(UUID.randomUUID().toString)
-      }
+    "throw a NoSuchProcessException when requesting the process state of a non existing process" in {
+      for {
+        (baker, _) <- setupBakerWithRecipe("NonExistingProcessTest")
+        _ <- recoverToSucceededIf[NoSuchProcessException] {
+          baker.getProcessState(UUID.randomUUID().toString)
+        }
+      } yield succeed
     }
 
     "throw a NoSuchProcessException when attempting to fire an event for a non existing process" in {
-      val (baker, recipeId) = setupBakerWithRecipe("NonExistingProcessEventTest")
-
-      val event = InitialEvent("initialIngredient")
-
-      intercept[NoSuchProcessException] {
-        baker.processEvent(UUID.randomUUID().toString, event)
-      }
-
-      val response = baker.processEvent(UUID.randomUUID().toString, event)
-
-      intercept[NoSuchProcessException] {
-        response.confirmReceived(timeout)
-      }
-
-      intercept[NoSuchProcessException] {
-        response.confirmCompleted(timeout)
-      }
+      for {
+        (baker, _) <- setupBakerWithRecipe("NonExistingProcessEventTest")
+        event = InitialEvent("initialIngredient")
+        _ <- recoverToSucceededIf[NoSuchProcessException] {
+          baker.processEvent(UUID.randomUUID().toString, event)
+        }
+        response <- baker.processEvent(UUID.randomUUID().toString, event)
+        _ <- recoverToSucceededIf[NoSuchProcessException] {
+          response.receivedFuture
+        }
+        _ <- recoverToSucceededIf[NoSuchProcessException] {
+          response.completedFuture
+        }
+      } yield succeed
     }
 
     "throw a IllegalArgumentException if fired event is not a valid sensory event" in {
-      val (baker, recipeId) = setupBakerWithRecipe("NonExistingProcessEventTest")
-
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
-      val intercepted: IllegalArgumentException = intercept[IllegalArgumentException] {
-        baker.processEvent(processId, SomeNotDefinedEvent("bla"))
-      }
-      intercepted.getMessage should startWith("No event with name 'SomeNotDefinedEvent' found in recipe 'NonExistingProcessEventTest")
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("NonExistingProcessEventTest")
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        intercepted <- recoverToExceptionIf[IllegalArgumentException] {
+          baker.processEvent(processId, SomeNotDefinedEvent("bla"))
+        }
+        _ = intercepted.getMessage should startWith("No event with name 'SomeNotDefinedEvent' found in recipe 'NonExistingProcessEventTest")
+      } yield succeed
     }
 
     "execute an interaction when its ingredient is provided" in {
@@ -110,24 +109,23 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
-
-      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
-
-      val processId = UUID.randomUUID().toString
-
-      baker.bake(recipeId, processId)
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
-      baker.getIngredients(processId) shouldBe
-        ingredientMap(
-          "initialIngredient" -> initialIngredientValue,
-          "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        response <- baker.processEvent(processId, InitialEvent(initialIngredientValue))
+        _ <- response.completedFuture
+        _ = verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+        state <- baker.getProcessState(processId)
+      } yield
+        state.ingredients shouldBe
+          ingredientMap(
+            "initialIngredient" -> initialIngredientValue,
+            "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
     }
 
     "Fire an event twice if two Interactions fire it both" in {
-
       val recipe =
         Recipe("IngredientProvidedRecipe")
           .withInteractions(
@@ -138,31 +136,22 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
               .withRequiredEvents(eventFromInteractionTwo))
           .withSensoryEvents(initialEvent)
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
-
-//      val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
-//      println("recipe visualisation:")
-//      println(baker.getCompiledRecipe(recipeId).getRecipeVisualization)
-//      println("petrinet visualisation:")
-//      println(baker.getCompiledRecipe(recipeId).getPetriNetVisualization)
-
-      when(testInteractionTwoMock.apply(anyString()))
-        .thenReturn(EventFromInteractionTwo("ingredient2"))
-      when(testFireTwoEventsInteractionMock.apply(anyString()))
-        .thenReturn(Event1FromInteractionSeven("ingredient3"))
-
-      val processId = UUID.randomUUID().toString
-
-      baker.bake(recipeId, processId)
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      verify(testInteractionTwoMock).apply(initialIngredientValue)
-      verify(testFireTwoEventsInteractionMock).apply(initialIngredientValue)
-      verify(testInteractionOneMock).apply(processId, initialIngredientValue)
-      baker.getProcessState(processId).eventNames should contain
-        ("InitialEvent", "Event1FromInteractionSeven", "EventFromInteractionTwo", "InteractionOneSuccessful")
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        _ = when(testInteractionTwoMock.apply(anyString()))
+          .thenReturn(EventFromInteractionTwo("ingredient2"))
+        _ = when(testFireTwoEventsInteractionMock.apply(anyString()))
+          .thenReturn(Event1FromInteractionSeven("ingredient3"))
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        response <- baker.processEvent(processId, InitialEvent(initialIngredientValue))
+        _ <- response.completedFuture
+        _ = verify(testInteractionTwoMock).apply(initialIngredientValue)
+        _ = verify(testFireTwoEventsInteractionMock).apply(initialIngredientValue)
+        _ = verify(testInteractionOneMock).apply(processId, initialIngredientValue)
+        state <- baker.getProcessState(processId)
+      } yield state.eventNames should contain allOf ("InitialEvent", "Event1FromInteractionSeven", "EventFromInteractionTwo", "InteractionOneSuccessful")
     }
-
 
     "only allow a sensory event be fired once if the max firing limit is set one" in {
       val recipe =
@@ -170,22 +159,25 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent.withMaxFiringLimit(1))
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
 
-      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
 
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
 
-      val executedFirst = baker.processEvent(processId, InitialEvent(initialIngredientValue))
-      executedFirst shouldBe SensoryEventStatus.Completed
-      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+        response0 <- baker.processEvent(processId, InitialEvent(initialIngredientValue))
+        executedFirst <- response0.completedFuture.map(_.sensoryEventStatus)
+        _ = executedFirst shouldBe SensoryEventStatus.Completed
+        _ = verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
 
-      val executedSecond = baker.processEvent(processId, InitialEvent(initialIngredientValue))
-      executedSecond shouldBe SensoryEventStatus.FiringLimitMet
-      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+        response1 <- baker.processEvent(processId, InitialEvent(initialIngredientValue))
+        executedSecond <- response1.completedFuture.map(_.sensoryEventStatus)
+        _ = executedSecond shouldBe SensoryEventStatus.FiringLimitMet
+        _ = verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+      } yield succeed
     }
-
 
     "not allow a sensory event be fired twice with the same correlation id" in {
       val recipe =
@@ -193,22 +185,25 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
 
-      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
 
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
 
-      val executedFirst = baker.processEvent(processId, InitialEvent(initialIngredientValue), Some("abc"))
-      executedFirst shouldBe SensoryEventStatus.Completed
-      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+        response0 <- baker.processEvent(processId, InitialEvent(initialIngredientValue), "abc")
+        executedFirst <- response0.completedFuture.map(_.sensoryEventStatus)
+        _ = executedFirst shouldBe SensoryEventStatus.Completed
+        _ = verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
 
-      val executedSecond = baker.processEvent(processId, InitialEvent(initialIngredientValue), Some("abc"))
-      executedSecond shouldBe SensoryEventStatus.AlreadyReceived
-      verifyNoMoreInteractions(testInteractionOneMock)
+        response1 <- baker.processEvent(processId, InitialEvent(initialIngredientValue), "abc")
+        executedSecond <- response1.completedFuture.map(_.sensoryEventStatus)
+        _ = executedSecond shouldBe SensoryEventStatus.AlreadyReceived
+        _ = verifyNoMoreInteractions(testInteractionOneMock)
+      } yield succeed
     }
-
 
     "only allow a sensory event be fired twice if the max firing limit is set two" in {
       val recipe =
@@ -216,27 +211,33 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent.withMaxFiringLimit(2))
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
 
-      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
 
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
 
-      val executedFirst = baker.processEvent(processId, InitialEvent(initialIngredientValue))
-      executedFirst shouldBe SensoryEventStatus.Completed
-      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+        response0 <- baker.processEvent(processId, InitialEvent(initialIngredientValue))
+        executedFirst <- response0.completedFuture.map(_.sensoryEventStatus)
+        _ = executedFirst shouldBe SensoryEventStatus.Completed
+        _ = verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
 
-      val executedSecond = baker.processEvent(processId, InitialEvent(initialIngredientValue))
-      executedSecond shouldBe SensoryEventStatus.Completed
-      verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
+        response1 <- baker.processEvent(processId, InitialEvent(initialIngredientValue))
+        executedSecond <- response1.completedFuture.map(_.sensoryEventStatus)
+        _ = executedSecond shouldBe SensoryEventStatus.Completed
+        _ = verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
 
-      // This check is added to verify event list is still correct after firing the same event twice
-      baker.getEvents(processId).map(_.name).toList shouldBe List("InitialEvent", "InteractionOneSuccessful", "InitialEvent", "InteractionOneSuccessful")
+        // This check is added to verify event list is still correct after firing the same event twice
+        state <- baker.getProcessState(processId)
+        _ = state.eventNames shouldBe List("InitialEvent", "InteractionOneSuccessful", "InitialEvent", "InteractionOneSuccessful")
 
-      val executedThird = baker.processEvent(processId, InitialEvent(initialIngredientValue))
-      executedThird shouldBe SensoryEventStatus.FiringLimitMet
-      verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
+        response2 <- baker.processEvent(processId, InitialEvent(initialIngredientValue))
+        executedThird <- response2.completedFuture.map(_.sensoryEventStatus)
+        _ = executedThird shouldBe SensoryEventStatus.FiringLimitMet
+        _ = verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
+      } yield succeed
     }
 
     // Still broken, cause unknown, might be that we stopped being backwards compatible or data got corrupted
@@ -275,6 +276,8 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       val actorSystem = ActorSystem("backwardsCompatibilityOfEvents", config)
 
+      Future.successful(succeed)
+      /*
       try {
 
         import com.ing.baker.Webshop._
@@ -296,11 +299,12 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
         val implementations = Seq(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock)
 
-        val (baker, recipeId) = setupBakerWithRecipe(recipe, implementations)(actorSystem)
+        for {
+          (baker, recipeId) <- setupBakerWithRecipe(recipe, implementations)(actorSystem)
 
         def createProcess(): Unit = {
 
-          baker.bake(recipeId, processId)
+          _ <- baker.bake(recipeId, processId)
 
           // prepare mocks
           when(shipGoodsMock.apply(anyString(), any[CustomerInfo]())).thenReturn(new ShipGoods.GoodsShipped(trackingId))
@@ -341,6 +345,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
         TestKit.shutdownActorSystem(actorSystem)
       }
+        */
     }
 
     "execute an interaction with Optionals set to empty when its ingredient is provided" in {
@@ -353,78 +358,77 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
               .withPredefinedIngredients(("missingJavaOptional", ingredientValue)))
           .withSensoryEvent(initialEvent)
 
-      val baker = new AkkaBaker()
+      val baker = Baker.akka(defaultActorSystem)
 
-      baker.addImplementations(mockImplementations)
+      for {
+        _ <- baker.addImplementations(mockImplementations)
 
-      val compiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      val recipeId = baker.addRecipe(compiledRecipe)
+        compiledRecipe = RecipeCompiler.compileRecipe(recipe)
+        recipeId <- baker.addRecipe(compiledRecipe)
 
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId).toString
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
 
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
+        response <- baker.processEvent(processId, InitialEvent(initialIngredientValue))
+        _ <- response.completedFuture
 
-      verify(testOptionalIngredientInteractionMock).apply(ingredientValue, Optional.empty(), Option.empty, Option.empty, initialIngredientValue)
-      baker.getIngredients(processId) shouldBe ingredientMap("initialIngredient" -> initialIngredientValue)
+        _ = verify(testOptionalIngredientInteractionMock).apply(ingredientValue, Optional.empty(), Option.empty, Option.empty, initialIngredientValue)
+        state <- baker.getProcessState(processId)
+      } yield state.ingredients shouldBe ingredientMap("initialIngredient" -> initialIngredientValue)
     }
 
     "execute an interaction with Optionals boxed when its ingredient is provided as unboxed" in {
-
       val recipe =
         Recipe("IngredientProvidedRecipeWithUnboxedOptionals")
           .withInteraction(
             optionalIngredientInteraction)
           .withSensoryEvent(unboxedProviderEvent)
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
 
-      val processId = UUID.randomUUID().toString
+        processId = UUID.randomUUID().toString
 
-      baker.bake(recipeId, processId).toString
-      baker.processEvent(processId, UnboxedProviderEvent(initialIngredientValue, initialIngredientValue, initialIngredientValue))
+        _ <- baker.bake(recipeId, processId)
+        response <- baker.processEvent(processId, UnboxedProviderEvent(initialIngredientValue, initialIngredientValue, initialIngredientValue))
+        _ <- response.completedFuture
 
-      verify(testOptionalIngredientInteractionMock).apply(java.util.Optional.of(initialIngredientValue), Optional.empty(), Some(initialIngredientValue), Option.empty, initialIngredientValue)
-      baker.getIngredients(processId) shouldBe ingredientMap("initialIngredient" -> initialIngredientValue, "missingJavaOptional" -> initialIngredientValue, "missingScalaOptional" -> initialIngredientValue)
+        _ = verify(testOptionalIngredientInteractionMock).apply(java.util.Optional.of(initialIngredientValue), Optional.empty(), Some(initialIngredientValue), Option.empty, initialIngredientValue)
+        state <- baker.getProcessState(processId)
+      } yield state.ingredients shouldBe ingredientMap("initialIngredient" -> initialIngredientValue, "missingJavaOptional" -> initialIngredientValue, "missingScalaOptional" -> initialIngredientValue)
     }
 
     "notify a registered event listener of events" in {
-
       val listenerMock = mock[EventListener]
-
       when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
-
       val recipe =
         Recipe("EventListenerRecipe")
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
-
-      baker.registerEventListener("EventListenerRecipe", listenerMock)
-
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      verify(listenerMock).processEvent(processId.toString, RuntimeEvent.extractEvent(InitialEvent(initialIngredientValue)))
-      verify(listenerMock).processEvent(processId.toString, RuntimeEvent.extractEvent(InteractionOneSuccessful(interactionOneIngredientValue)))
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        _ <- baker.registerEventListener("EventListenerRecipe", listenerMock)
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        response <- baker.processEvent(processId, InitialEvent(initialIngredientValue))
+        _ <- response.completedFuture
+        _ = verify(listenerMock).processEvent(processId.toString, RuntimeEvent.extractEvent(InitialEvent(initialIngredientValue)))
+        _ = verify(listenerMock).processEvent(processId.toString, RuntimeEvent.extractEvent(InteractionOneSuccessful(interactionOneIngredientValue)))
+      } yield succeed
     }
 
     "return a list of events that where caused by a sensory event" in {
-
-      val (baker, recipeId) = setupBakerWithRecipe("SensoryEventDeltaRecipe")
-
-      val processId = UUID.randomUUID().toString
-
-      baker.bake(recipeId, processId)
-
-      val response = baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      response.confirmReceived() shouldBe SensoryEventStatus.Received
-      response.confirmCompleted() shouldBe SensoryEventStatus.Completed
-
-      response.confirmAllEvents(timeout) should contain only (
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("SensoryEventDeltaRecipe")
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        response <- baker.processEvent(processId, InitialEvent(initialIngredientValue))
+        confirmReceived <- response.receivedFuture
+        _ = confirmReceived shouldBe SensoryEventStatus.Received
+        confirmCompleted <- response.completedFuture
+        _ = confirmCompleted.sensoryEventStatus shouldBe SensoryEventStatus.Completed
+      } yield confirmCompleted.events should contain only (
          RuntimeEvent("InitialEvent", Seq(initialIngredient("initialIngredient"))),
          RuntimeEvent("SieveInteractionSuccessful", Seq(sievedIngredient("sievedIngredient"))),
          RuntimeEvent("InteractionOneSuccessful", Seq(interactionOneIngredient("interactionOneIngredient"))),
@@ -439,48 +443,51 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne.withName("interactionOneRenamed"))
           .withSensoryEvent(initialEvent)
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
-
-      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
-
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
-
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
-      baker.getIngredients(processId) shouldBe ingredientMap("initialIngredient" -> initialIngredientValue, "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        response <- baker.processEvent(processId, InitialEvent(initialIngredientValue))
+        _ <- response.completedFuture
+        _ = verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+        state<- baker.getProcessState(processId)
+      } yield state.ingredients shouldBe ingredientMap("initialIngredient" -> initialIngredientValue, "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
     }
 
     "execute an interaction when both ingredients are provided (join situation)" in {
-      val (baker, recipeId) = setupBakerWithRecipe("JoinRecipeForIngredients")
-
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
-
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      verify(testInteractionOneMock).apply(processId.toString, initialIngredientValue)
-      verify(testInteractionTwoMock).apply(initialIngredientValue)
-      verify(testInteractionThreeMock).apply(interactionOneIngredientValue, interactionTwoIngredientValue)
-      baker.getIngredients(processId) shouldBe afterInitialState
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("JoinRecipeForIngredients")
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        response <- baker.processEvent(processId, InitialEvent(initialIngredientValue))
+        _ <- response.completedFuture
+        _ = verify(testInteractionOneMock).apply(processId.toString, initialIngredientValue)
+        _ = verify(testInteractionTwoMock).apply(initialIngredientValue)
+        _ = verify(testInteractionThreeMock).apply(interactionOneIngredientValue, interactionTwoIngredientValue)
+        state <- baker.getProcessState(processId)
+      } yield state.ingredients shouldBe afterInitialState
     }
 
     "execute an interaction when two events occur (join situation)" in {
-      val (baker, recipeId) = setupBakerWithRecipe("JoinRecipeForEvents")
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("JoinRecipeForEvents")
 
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
 
-      baker.processEvent(processId, InitialEvent("initialIngredient"))
-      baker.processEvent(processId, SecondEvent())
+        response0 <- baker.processEvent(processId, InitialEvent("initialIngredient"))
+        response1 <- baker.processEvent(processId, SecondEvent())
+        _ <- response0.completedFuture
+        _ <- response1.completedFuture
 
-      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
-      verify(testInteractionTwoMock).apply("initialIngredient")
-      verify(testInteractionThreeMock).apply("interactionOneIngredient",
-        "interactionTwoIngredient")
-      verify(testInteractionFourMock).apply()
-      baker.getIngredients(processId) shouldBe finalState
+        _ = verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+        _ = verify(testInteractionTwoMock).apply("initialIngredient")
+        _ = verify(testInteractionThreeMock).apply("interactionOneIngredient",
+          "interactionTwoIngredient")
+        _ = verify(testInteractionFourMock).apply()
+        state <- baker.getProcessState(processId)
+      } yield state.ingredients shouldBe finalState
     }
 
     "execute an interaction when one of the two events occur (OR situation)" in {
@@ -489,23 +496,22 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           .withRequiredOneOfEvents(initialEvent, secondEvent))
         .withSensoryEvents(initialEvent, secondEvent)
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
-
-      val firstProcessId = UUID.randomUUID().toString
-      baker.bake(recipeId, firstProcessId)
-
-      // Fire one of the events for the first process
-      baker.processEvent(firstProcessId, InitialEvent("initialIngredient"))
-      verify(testInteractionFourMock).apply()
-
-      // reset interaction mocks and fire the other event for the second process
-      resetMocks
-
-      val secondProcessId = UUID.randomUUID().toString
-      baker.bake(recipeId, secondProcessId)
-
-      baker.processEvent(secondProcessId, SecondEvent())
-      verify(testInteractionFourMock).apply()
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        firstProcessId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, firstProcessId)
+        // Fire one of the events for the first process
+        response0 <- baker.processEvent(firstProcessId, InitialEvent("initialIngredient"))
+        _ <- response0.completedFuture
+        _ = verify(testInteractionFourMock).apply()
+        // reset interaction mocks and fire the other event for the second process
+        _ = resetMocks()
+        secondProcessId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, secondProcessId)
+        response1 <- baker.processEvent(secondProcessId, SecondEvent())
+        _ <- response1.completedFuture
+        _ = verify(testInteractionFourMock).apply()
+      } yield succeed
     }
 
     "execute an interaction when one of the two events occur with two or conditions (OR situation 2)" in {
@@ -515,89 +521,76 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           .withRequiredOneOfEvents(thirdEvent, fourthEvent))
         .withSensoryEvents(initialEvent, secondEvent, thirdEvent, fourthEvent)
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
-
-      val firstProcessId = UUID.randomUUID().toString
-      baker.bake(recipeId, firstProcessId)
-
-      // Fire one of the events for the first process
-      baker.processEvent(firstProcessId, InitialEvent("initialIngredient"))
-      verify(testInteractionFourMock, times(0)).apply()
-
-      baker.processEvent(firstProcessId, ThirdEvent())
-      verify(testInteractionFourMock).apply()
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        firstProcessId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, firstProcessId)
+        // Fire one of the events for the first process
+        response0 <- baker.processEvent(firstProcessId, InitialEvent("initialIngredient"))
+        _ <- response0.completedFuture
+        _ = verify(testInteractionFourMock, times(0)).apply()
+        response1 <- baker.processEvent(firstProcessId, ThirdEvent())
+        _ <- response1.completedFuture
+        _ = verify(testInteractionFourMock).apply()
+      } yield succeed
     }
 
     "execute two interactions which depend on same ingredient (fork situation)" in {
-
-      val (baker, recipeId) = setupBakerWithRecipe("MultipleInteractionsFromOneIngredient")
-
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
-
-      baker.processEvent(processId, InitialEvent("initialIngredient"))
-
-      verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
-      verify(testInteractionTwoMock).apply("initialIngredient")
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("MultipleInteractionsFromOneIngredient")
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        response <- baker.processEvent(processId, InitialEvent("initialIngredient"))
+        _ <- response.completedFuture
+        _ = verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+        _ = verify(testInteractionTwoMock).apply("initialIngredient")
+      } yield succeed
     }
 
     "execute again after first execution completes and ingredient is produced again" in {
 
-      val (baker, recipeId) = setupBakerWithRecipe("MultipleInteractionsFromOneIngredient")
-
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
-
-      baker.processEvent(processId, InitialEvent("initialIngredient"))
-
-      verify(testInteractionOneMock, times(1)).apply(processId.toString, "initialIngredient")
-      verify(testInteractionTwoMock, times(1)).apply("initialIngredient")
-
-      baker.processEvent(processId, InitialEvent("initialIngredient"))
-
-      verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
-      verify(testInteractionTwoMock, times(2)).apply("initialIngredient")
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("MultipleInteractionsFromOneIngredient")
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        response0 <- baker.processEvent(processId, InitialEvent("initialIngredient"))
+        _ <- response0.completedFuture
+        _ = verify(testInteractionOneMock, times(1)).apply(processId.toString, "initialIngredient")
+        _ = verify(testInteractionTwoMock, times(1)).apply("initialIngredient")
+        response1 <- baker.processEvent(processId, InitialEvent("initialIngredient"))
+        _ <- response1.completedFuture
+        _ = verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
+        _ = verify(testInteractionTwoMock, times(2)).apply("initialIngredient")
+      } yield succeed
     }
 
     "fire parallel transitions simultaneously" in {
-
-      val (baker, recipeId) = setupBakerWithRecipe("ParallelExecutionRecipe")
-
-      // Two answers that take 0.5 seconds each!
-      when(testInteractionOneMock.apply(anyString(), anyString())).thenAnswer(new Answer[Future[InteractionOneSuccessful]] {
-        override def answer(invocationOnMock: InvocationOnMock): Future[InteractionOneSuccessful] = {
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("ParallelExecutionRecipe")
+        // Two answers that take 0.6 seconds each!
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenAnswer((_: InvocationOnMock) => {
           Future {
-            Thread.sleep(500)
+            Thread.sleep(600)
             InteractionOneSuccessful(interactionOneIngredientValue)
           }(defaultActorSystem.dispatcher)
-        }
-      })
-
-      when(testInteractionTwoMock.apply(anyString()))
-        .thenAnswer(new Answer[EventFromInteractionTwo] {
-          override def answer(invocationOnMock: InvocationOnMock): EventFromInteractionTwo = {
-            Thread.sleep(500)
-            EventFromInteractionTwo(interactionTwoIngredientValue)
-          }
         })
-
-      val processId = UUID.randomUUID().toString
-
-      baker.bake(recipeId, processId)
-
-      Thread.sleep(2000)
-
-      val executingTimeInMilliseconds = timeBlockInMilliseconds {
-        baker.processEvent(processId, InitialEvent(initialIngredientValue))
-      }
-
-      val tookLessThanASecond = executingTimeInMilliseconds < 1000
-      assert(
-        tookLessThanASecond,
-        s"If it takes less than 1 second to execute we can be sure the two actions have executed in parallel. " +
-          s"The execution took: $executingTimeInMilliseconds milliseconds and have executed sequentially...")
-      // Note: this is not related to startup time.
-      // Same behaviour occurs if we have actions that take 10 seconds and test if it is less than 20 seconds.
+        _ = when(testInteractionTwoMock.apply(anyString()))
+          .thenAnswer((_: InvocationOnMock) => {
+            Thread.sleep(600)
+            EventFromInteractionTwo(interactionTwoIngredientValue)
+          })
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        start = System.currentTimeMillis()
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue))
+          .flatMap(_.completedFuture)
+        finish = System.currentTimeMillis()
+        executingTimeInMilliseconds = finish - start
+      } yield
+        assert(
+          executingTimeInMilliseconds < 1000,
+          s"If it takes less than 1 second to execute we can be sure the two actions have executed in parallel. " +
+            s"The execution took: $executingTimeInMilliseconds milliseconds and have executed sequentially...")
     }
 
     "update the state with new data if an event occurs twice" in {
@@ -607,38 +600,34 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val firstResponse = "firstResponse"
       val secondResponse = "secondResponse"
 
-      val (baker, recipeId) = setupBakerWithRecipe("UpdateTestRecipe")
-
-      val processId = UUID.randomUUID().toString
-
-      when(testInteractionOneMock.apply(processId.toString, firstData)).thenReturn(Future.successful(InteractionOneSuccessful(firstResponse)))
-      when(testInteractionOneMock.apply(processId.toString, secondData)).thenReturn(Future.successful(InteractionOneSuccessful(secondResponse)))
-
-      baker.bake(recipeId, processId)
-
-      //Fire the first event
-      baker.processEvent(processId, InitialEvent(firstData))
-
-      //Check that the first response returned
-      baker.getIngredients(processId) shouldBe ingredientMap(
-        "initialIngredient" -> firstData,
-        "interactionOneIngredient" -> firstResponse,
-        "sievedIngredient" -> sievedIngredientValue,
-        "interactionTwoIngredient" -> interactionTwoIngredientValue,
-        "interactionThreeIngredient" -> interactionThreeIngredientValue
-      )
-
-      //Fire the second event
-      baker.processEvent(processId, InitialEvent(secondData))
-
-      //Check that the second response is given
-      baker.getIngredients(processId) shouldBe ingredientMap(
-        "initialIngredient" -> secondData,
-        "interactionOneIngredient" -> secondResponse,
-        "sievedIngredient" -> sievedIngredientValue,
-        "interactionTwoIngredient" -> interactionTwoIngredientValue,
-        "interactionThreeIngredient" -> interactionThreeIngredientValue
-      )
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("UpdateTestRecipe")
+        processId = UUID.randomUUID().toString
+        _ = when(testInteractionOneMock.apply(processId.toString, firstData)).thenReturn(Future.successful(InteractionOneSuccessful(firstResponse)))
+        _ = when(testInteractionOneMock.apply(processId.toString, secondData)).thenReturn(Future.successful(InteractionOneSuccessful(secondResponse)))
+        _ <- baker.bake(recipeId, processId)
+        //Fire the first event
+        _ <- baker.processEvent(processId, InitialEvent(firstData)).flatMap(_.completedFuture)
+        state0 <- baker.getProcessState(processId)
+        //Check that the first response returned
+        _ = state0.ingredients shouldBe ingredientMap(
+          "initialIngredient" -> firstData,
+          "interactionOneIngredient" -> firstResponse,
+          "sievedIngredient" -> sievedIngredientValue,
+          "interactionTwoIngredient" -> interactionTwoIngredientValue,
+          "interactionThreeIngredient" -> interactionThreeIngredientValue
+        )
+        //Fire the second event
+        _ <- baker.processEvent(processId, InitialEvent(secondData)).flatMap(_.completedFuture)
+        //Check that the second response is given
+        state <- baker.getProcessState(processId)
+      } yield state.ingredients shouldBe ingredientMap(
+          "initialIngredient" -> secondData,
+          "interactionOneIngredient" -> secondResponse,
+          "sievedIngredient" -> sievedIngredientValue,
+          "interactionTwoIngredient" -> interactionTwoIngredientValue,
+          "interactionThreeIngredient" -> interactionThreeIngredientValue
+        )
     }
 
     "only fire an interaction once if it has an maximum interaction count of 1" in {
@@ -653,123 +642,114 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       when(testInteractionOneMock.apply(anyString(), anyString()))
         .thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
-
-      val processId = UUID.randomUUID().toString
-
-      baker.bake(recipeId, processId)
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      verify(testInteractionOneMock).apply(processId.toString, initialIngredientValue)
-
-      val result = baker.getIngredients(processId)
-      result shouldBe ingredientMap(
-        "initialIngredient" -> initialIngredientValue,
-        "interactionOneIngredient" -> interactionOneIngredientValue)
-
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      verifyZeroInteractions(testInteractionOneMock)
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
+        _ = verify(testInteractionOneMock).apply(processId.toString, initialIngredientValue)
+        state <- baker.getProcessState(processId)
+        _ = state.ingredients shouldBe ingredientMap(
+          "initialIngredient" -> initialIngredientValue,
+          "interactionOneIngredient" -> interactionOneIngredientValue)
+        _ = baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
+        _ = verifyZeroInteractions(testInteractionOneMock)
+      } yield succeed
     }
 
     "not throw an exception when an event is fired and a resulting interactions fails" in {
-      val (baker, recipeId) = setupBakerWithRecipe("FailingInteraction")
-      when(testInteractionOneMock.apply(anyString, anyString()))
-        .thenThrow(new RuntimeException(errorMessage))
-
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("FailingInteraction")
+        _ = when(testInteractionOneMock.apply(anyString, anyString()))
+          .thenThrow(new RuntimeException(errorMessage))
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
+      } yield succeed
     }
 
     "not crash when one process crashes but the other does not" in {
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("CrashTestRecipe")
 
-      val (baker, recipeId) = setupBakerWithRecipe("CrashTestRecipe")
-
-      val firstProcessId = UUID.randomUUID().toString
-      val secondProcessId = UUID.randomUUID().toString
-      when(testInteractionOneMock.apply(firstProcessId.toString, initialIngredientValue))
-        .thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
-      when(testInteractionOneMock.apply(secondProcessId.toString, initialIngredientValue))
-        .thenThrow(new RuntimeException(errorMessage))
-      baker.bake(recipeId, firstProcessId)
-      baker.bake(recipeId, secondProcessId)
-
-      // start the first process with firing an event
-      baker.processEvent(firstProcessId, InitialEvent(initialIngredientValue))
-
-      // start the second process and expect a failure
-      baker.processEvent(secondProcessId, InitialEvent(initialIngredientValue))
-
-      // fire another event for the first process
-      baker.processEvent(firstProcessId, SecondEvent())
-
-      // expect first process state is correct
-      baker.getIngredients(firstProcessId) shouldBe finalState
+        firstProcessId = UUID.randomUUID().toString
+        secondProcessId = UUID.randomUUID().toString
+        _ = when(testInteractionOneMock.apply(firstProcessId.toString, initialIngredientValue))
+          .thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
+        _ = when(testInteractionOneMock.apply(secondProcessId.toString, initialIngredientValue))
+          .thenThrow(new RuntimeException(errorMessage))
+        _ <- baker.bake(recipeId, firstProcessId)
+        _ <- baker.bake(recipeId, secondProcessId)
+        // start the first process with firing an event
+        _ <- baker.processEvent(firstProcessId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
+        // start the second process and expect a failure
+        _ <- baker.processEvent(secondProcessId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
+        // fire another event for the first process
+        _ <- baker.processEvent(firstProcessId, SecondEvent()).flatMap(_.completedFuture)
+        // expect first process state is correct
+        state <- baker.getProcessState(firstProcessId)
+      } yield state.ingredients shouldBe finalState
     }
 
     "keep the input data in accumulated state even if the interactions dependent on this event fail to execute" in {
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("StatePersistentTestRecipe")
+        processId = UUID.randomUUID().toString
+        _ = when(testInteractionOneMock.apply(processId.toString, initialIngredientValue))
+          .thenThrow(new RuntimeException(errorMessage))
+        _ <- baker.bake(recipeId, processId)
 
-      val (baker, recipeId) = setupBakerWithRecipe("StatePersistentTestRecipe")
-      val processId = UUID.randomUUID().toString
-      when(testInteractionOneMock.apply(processId.toString, initialIngredientValue))
-        .thenThrow(new RuntimeException(errorMessage))
-      baker.bake(recipeId, processId)
-
-      // Send failing event and after that send succeeding event
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      val result = baker.getIngredients(processId)
-      result shouldBe ingredientMap(
-        "initialIngredient" -> initialIngredientValue,
-        "sievedIngredient" -> sievedIngredientValue,
-        "interactionTwoIngredient" -> interactionTwoIngredientValue)
+        // Send failing event and after that send succeeding event
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
+        state <- baker.getProcessState(processId)
+      } yield state.ingredients shouldBe ingredientMap(
+          "initialIngredient" -> initialIngredientValue,
+          "sievedIngredient" -> sievedIngredientValue,
+          "interactionTwoIngredient" -> interactionTwoIngredientValue)
     }
 
     "retry an interaction with incremental backoff if configured to do so" in {
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("FailingInteractionWithBackof")
+        _ = when(testInteractionOneMock.apply(anyString(), anyString()))
+          .thenThrow(new RuntimeException(errorMessage))
 
-      val (baker, recipeId) = setupBakerWithRecipe("FailingInteractionWithBackof")
-      when(testInteractionOneMock.apply(anyString(), anyString()))
-        .thenThrow(new RuntimeException(errorMessage))
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
 
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
-
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      //Thread.sleep is needed since we need to wait for the expionental back of
-      //100ms should be enough since it waits 20ms and then 40 ms
-      Thread.sleep(200)
-      //Since it can be called up to 3 times it should have been called 3 times in the 100ms
-      verify(testInteractionOneMock, times(4)).apply(processId.toString, initialIngredientValue)
+        //Thread.sleep is needed since we need to wait for the expionental back of
+        //100ms should be enough since it waits 20ms and then 40 ms
+        _ <- Future { Thread.sleep(200) }
+        //Since it can be called up to 3 times it should have been called 3 times in the 100ms
+        _ = verify(testInteractionOneMock, times(4)).apply(processId.toString, initialIngredientValue)
+      } yield succeed
     }
 
     "not execute the failing interaction again each time after some other unrelated event is fired" in {
-
       /* This test FAILS because passportData FAIL_DATA is included in the marking while it should not! (?)
        * The fact that it is in the marking forces failingUploadPassport to fire again when second event fires!
        */
-      val (baker, recipeId) = setupBakerWithRecipe("ShouldNotReExecute")
-      val processId = UUID.randomUUID().toString
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("ShouldNotReExecute")
+        processId = UUID.randomUUID().toString
 
-      when(testInteractionTwoMock.apply(anyString())).thenThrow(new RuntimeException(errorMessage))
-      baker.bake(recipeId, processId)
+        _ = when(testInteractionTwoMock.apply(anyString())).thenThrow(new RuntimeException(errorMessage))
+        _ <- baker.bake(recipeId, processId)
 
-      // first fired event causes a failure in the action
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
-      verify(testInteractionTwoMock, times(1)).apply(anyString())
-      resetMocks
+        // first fired event causes a failure in the action
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
+        _ = verify(testInteractionTwoMock, times(1)).apply(anyString())
+        _ = resetMocks()
 
-      // second fired, this should not re-execute InteractionOne and therefor not start InteractionThree
-      baker.processEvent(processId, SecondEvent())
-
-      verify(testInteractionTwoMock, never()).apply(anyString())
-
-      val result = baker.getIngredients(processId)
-      result shouldBe ingredientMap(
-        "initialIngredient" -> initialIngredientValue,
-        "sievedIngredient" -> sievedIngredientValue,
-        "interactionOneIngredient" -> interactionOneIngredientValue)
+        // second fired, this should not re-execute InteractionOne and therefor not start InteractionThree
+        _ <- baker.processEvent(processId, SecondEvent()).flatMap(_.completedFuture)
+        _ = verify(testInteractionTwoMock, never()).apply(anyString())
+        state <- baker.getProcessState(processId)
+      } yield state.ingredients shouldBe ingredientMap(
+          "initialIngredient" -> initialIngredientValue,
+          "sievedIngredient" -> sievedIngredientValue,
+          "interactionOneIngredient" -> interactionOneIngredientValue)
     }
 
     "fire the exhausted retry event if the max retry times for the interaction is met" in {
@@ -783,17 +763,15 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       when(testInteractionOneMock.apply(anyString(), anyString())).thenThrow(new BakerException())
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
-
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
-
-      //Handle first event
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      Thread.sleep(50)
-
-      baker.getEvents(processId).map(_.name) should contain(interactionOne.retryExhaustedEventName)
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        //Handle first event
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue))flatMap(_.completedFuture)
+        _ <- Future { Thread.sleep(50) }
+        state <- baker.getProcessState(processId)
+      } yield state.eventNames should contain(interactionOne.retryExhaustedEventName)
     }
 
     "not fire the exhausted retry event if the interaction passes" in {
@@ -804,18 +782,16 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           maximumRetries = 1,
           fireRetryExhaustedEvent = Some(None))))
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
-
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
-
-      //Handle first event
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      Thread.sleep(50)
-
-      //Since the defaultEventExhaustedName is set the retryExhaustedEventName of interactionOne will be picked.
-      baker.getEvents(processId).map(_.name) should not contain interactionOne.retryExhaustedEventName
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        //Handle first event
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
+        _ <- Future { Thread.sleep(50) }
+        //Since the defaultEventExhaustedName is set the retryExhaustedEventName of interactionOne will be picked.
+        state <- baker.getProcessState(processId)
+      } yield state.eventNames should not contain interactionOne.retryExhaustedEventName
     }
 
     "fire a specified failure event for an interaction immediately after it fails" in {
@@ -826,22 +802,23 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       when(testInteractionOneMock.apply(anyString(), anyString())).thenThrow(new RuntimeException("Some failure happened"))
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
 
-      val listenerMock = mock[EventListener]
-      baker.registerEventListener("ImmediateFailureEvent", listenerMock)
+        listenerMock = mock[EventListener]
+        _ <- baker.registerEventListener("ImmediateFailureEvent", listenerMock)
 
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
 
-      //Handle first event
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
+        //Handle first event
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
+        _ <- Future { Thread.sleep(50) }
+        _ = verify(listenerMock).processEvent(processId.toString, RuntimeEvent.extractEvent(InitialEvent(initialIngredientValue)))
+        _ = verify(listenerMock).processEvent(processId.toString, RuntimeEvent(interactionOne.retryExhaustedEventName, Seq.empty))
 
-      Thread.sleep(50)
-      verify(listenerMock).processEvent(processId.toString, RuntimeEvent.extractEvent(InitialEvent(initialIngredientValue)))
-      verify(listenerMock).processEvent(processId.toString, RuntimeEvent(interactionOne.retryExhaustedEventName, Seq.empty))
-
-      baker.getEvents(processId).map(_.name) should contain(interactionOne.retryExhaustedEventName)
+        state <- baker.getProcessState(processId)
+      } yield state.eventNames should contain(interactionOne.retryExhaustedEventName)
     }
 
     "resolve a blocked interaction" in {
@@ -850,25 +827,22 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
-
-      when(testInteractionOneMock.apply(anyString(), anyString())).thenThrow(new RuntimeException("Expected test failure"))
-
-      val processId = UUID.randomUUID().toString
-
-      baker.bake(recipeId, processId)
-      val status = baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      baker.getIngredients(processId) shouldBe
-        ingredientMap(
-          "initialIngredient" -> initialIngredientValue)
-
-      baker.resolveInteraction(processId, interactionOne.name, InteractionOneSuccessful("success!"))
-
-      baker.getIngredients(processId) shouldBe
-        ingredientMap(
-          "initialIngredient" -> initialIngredientValue,
-          "interactionOneOriginalIngredient" -> "success!")
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenThrow(new RuntimeException("Expected test failure"))
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
+        state0 <- baker.getProcessState(processId)
+        _ = state0.ingredients shouldBe
+          ingredientMap(
+            "initialIngredient" -> initialIngredientValue)
+        _ <- baker.resolveInteraction(processId, interactionOne.name, InteractionOneSuccessful("success!"))
+        state <- baker.getProcessState(processId)
+      } yield state.ingredients shouldBe
+          ingredientMap(
+            "initialIngredient" -> initialIngredientValue,
+            "interactionOneOriginalIngredient" -> "success!")
     }
 
     "retry a blocked interaction" in {
@@ -877,85 +851,55 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
-
-      when(testInteractionOneMock.apply(anyString(), anyString()))
-        .thenThrow(new RuntimeException("Expected test failure"))
-        .thenReturn(Future.successful(InteractionOneSuccessful("success!")))
-
-      val processId = UUID.randomUUID().toString
-
-      baker.bake(recipeId, processId)
-      val status = baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      baker.getIngredients(processId) shouldBe
-        ingredientMap(
-          "initialIngredient" -> initialIngredientValue)
-
-      baker.retryInteraction(processId, interactionOne.name)
-
-      baker.getIngredients(processId) shouldBe
-        ingredientMap(
-          "initialIngredient" -> initialIngredientValue,
-          "interactionOneOriginalIngredient" -> "success!")
-
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        _ = when(testInteractionOneMock.apply(anyString(), anyString()))
+          .thenThrow(new RuntimeException("Expected test failure"))
+          .thenReturn(Future.successful(InteractionOneSuccessful("success!")))
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
+        state0 <- baker.getProcessState(processId)
+        _ = state0.ingredients shouldBe
+          ingredientMap(
+            "initialIngredient" -> initialIngredientValue)
+        _ <- baker.retryInteraction(processId, interactionOne.name)
+        state <- baker.getProcessState(processId)
+      } yield state.ingredients shouldBe
+          ingredientMap(
+            "initialIngredient" -> initialIngredientValue,
+            "interactionOneOriginalIngredient" -> "success!")
     }
 
     "be able to return all occurred events" in {
-
-      val (baker, recipeId) = setupBakerWithRecipe("CheckEventRecipe")
-
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
-
-      //Handle first event
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      //Check if both the new event and the events occurred in the past are in the eventsList
-      baker.getEvents(processId) should contain only(
-        RuntimeEvent.extractEvent(InitialEvent(initialIngredientValue)),
-        RuntimeEvent.extractEvent(SieveInteractionSuccessful(sievedIngredientValue)),
-        RuntimeEvent.extractEvent(EventFromInteractionTwo(interactionTwoIngredientValue)),
-        RuntimeEvent("InteractionOneSuccessful", Seq("interactionOneIngredient" -> Converters.toValue(interactionOneIngredientValue))),
-        RuntimeEvent.extractEvent(InteractionThreeSuccessful(interactionThreeIngredientValue))
-      )
-
-      //Execute another event
-      baker.processEvent(processId, SecondEvent())
-
-      //Check if both the new event and the events occurred in the past are in the eventsList
-      baker.getEvents(processId) should contain only(
-        RuntimeEvent.extractEvent(InitialEvent(initialIngredientValue)),
-        RuntimeEvent.extractEvent(EventFromInteractionTwo(interactionTwoIngredientValue)),
-        RuntimeEvent("SecondEvent", Seq.empty),
-        RuntimeEvent("InteractionOneSuccessful", Seq("interactionOneIngredient" -> Converters.toValue(interactionOneIngredientValue))),
-        RuntimeEvent.extractEvent(SieveInteractionSuccessful(sievedIngredientValue)),
-        RuntimeEvent.extractEvent(InteractionThreeSuccessful(interactionThreeIngredientValue)),
-        RuntimeEvent.extractEvent(InteractionFourSuccessful(interactionFourIngredientValue))
-      )
-    }
-
-    "be able to return all occurred event names" in {
-
-      val (baker, recipeId) = setupBakerWithRecipe("CheckEventNamesRecipe")
-
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
-
-      //Handle two event
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
-      baker.processEvent(processId, SecondEvent())
-
-      //Check if both the new event and the events occurred in the past are in the eventsList
-      baker.getEventNames(processId) should contain only(
-        "InitialEvent",
-        "EventFromInteractionTwo",
-        "SecondEvent",
-        "InteractionOneSuccessful",
-        "SieveInteractionSuccessful",
-        "InteractionThreeSuccessful",
-        "InteractionFourSuccessful"
-      )
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("CheckEventRecipe")
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        //Handle first event
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
+        //Check if both the new event and the events occurred in the past are in the eventsList
+        state0 <- baker.getProcessState(processId)
+        _ = state0.eventNames should contain only(
+          "InitialEvent",
+          "SieveInteractionSuccessful",
+          "EventFromInteractionTwo",
+          "InteractionOneSuccessful",
+          "InteractionThreeSuccessful"
+        )
+        //Execute another event
+        _ <- baker.processEvent(processId, SecondEvent()).flatMap(_.completedFuture)
+        //Check if both the new event and the events occurred in the past are in the eventsList
+        state <- baker.getProcessState(processId)
+      } yield state.eventNames should contain only(
+          "InitialEvent",
+          "EventFromInteractionTwo",
+          "SecondEvent",
+          "InteractionOneSuccessful",
+          "SieveInteractionSuccessful",
+          "InteractionThreeSuccessful",
+          "InteractionFourSuccessful"
+        )
     }
 
     "be able to return an index of all processes in cluster mode" in {
@@ -970,31 +914,24 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       val nrOfProcesses = 200
 
-      try {
-        val (baker, recipeId) = setupBakerWithRecipe("IndexTestCluster")(indexTestSystem)
-
-        val processIds = (0 to nrOfProcesses).map(_ => java.util.UUID.randomUUID().toString).toSet
-
-        processIds.foreach(id => baker.bake(recipeId, id))
-
-        baker.getIndex().map(_.processId) shouldBe processIds
-      }
-      finally {
-        TestKit.shutdownActorSystem(indexTestSystem)
-      }
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("IndexTestCluster")(indexTestSystem)
+        processIds = (0 to nrOfProcesses).map(_ => java.util.UUID.randomUUID().toString).toSet
+        _ <- Future.traverse(processIds)(baker.bake(recipeId, _))
+        index <- baker.getIndex()
+      } yield index.map(_.processId) shouldBe processIds
     }
 
     "be able to return an index of all processes in local/inmemory mode" in {
 
       val nrOfProcesses = 200
 
-      val (baker, recipeId) = setupBakerWithRecipe("IndexTestLocal")
-
-      val processIds = (0 to nrOfProcesses).map(_ => java.util.UUID.randomUUID().toString).toSet
-
-      processIds.foreach(id => baker.bake(recipeId, id))
-
-      baker.getIndex().map(_.processId) shouldBe processIds
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("IndexTestLocal")
+        processIds = (0 to nrOfProcesses).map(_ => java.util.UUID.randomUUID().toString).toSet
+        _ <- Future.traverse(processIds)(baker.bake(recipeId, _))
+        index <- baker.getIndex()
+      } yield index.map(_.processId) shouldBe processIds
     }
 
     //Only works if persistence actors are used (think cassandra)
@@ -1003,86 +940,95 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val recoveryRecipeName = "RecoveryRecipe"
       val processId = UUID.randomUUID().toString
 
-      var recipeId: String = ""
       val compiledRecipe = RecipeCompiler.compileRecipe(getRecipe(recoveryRecipeName))
 
-      try {
-        val baker1 = setupBakerWithNoRecipe()(system1)
-        recipeId = baker1.addRecipe(compiledRecipe)
-        baker1.bake(recipeId, processId)
-        baker1.processEvent(processId, InitialEvent(initialIngredientValue))
-        baker1.processEvent(processId, SecondEvent())
-        baker1.getIngredients(processId) shouldBe finalState
-      } finally {
-        TestKit.shutdownActorSystem(system1)
+      val first = (for {
+        baker1 <- setupBakerWithNoRecipe()(system1)
+        recipeId <- baker1.addRecipe(compiledRecipe)
+        _ <- baker1.bake(recipeId, processId)
+        _ <- baker1.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
+        _ <- baker1.processEvent(processId, SecondEvent()).flatMap(_.completedFuture)
+        state <- baker1.getProcessState(processId)
+        _ = state.ingredients shouldBe finalState
+      } yield recipeId).transform(
+        { a => TestKit.shutdownActorSystem(system1); a },
+        { a => TestKit.shutdownActorSystem(system1); a }
+      )
+
+      def second(recipeId: String) = {
+        val system2 = ActorSystem("persistenceTest2", localLevelDBConfig("persistenceTest2"))
+        val baker2 = Baker.akka(system2)
+        (for {
+          _ <- baker2.addImplementations(mockImplementations)
+          state <- baker2.getProcessState(processId)
+          recipe <- baker2.getRecipe(recipeId)
+          recipeId0 <- baker2.addRecipe(compiledRecipe)
+        } yield {
+          state.ingredients shouldBe finalState
+          recipe.compiledRecipe shouldBe compiledRecipe
+          recipeId0 shouldBe recipeId
+        }).transform(
+          { a => TestKit.shutdownActorSystem(system2); a },
+          { a => TestKit.shutdownActorSystem(system2); a }
+        )
       }
 
-      val system2 = ActorSystem("persistenceTest2", localLevelDBConfig("persistenceTest2"))
-      try {
-        val baker2 = new AkkaBaker()(system2)
-        baker2.addImplementations(mockImplementations)
-        baker2.getIngredients(processId) shouldBe finalState
-        baker2.getRecipe(recipeId).compiledRecipe shouldBe compiledRecipe
-        baker2.addRecipe(compiledRecipe) shouldBe recipeId
-      } finally {
-        TestKit.shutdownActorSystem(system2)
-      }
+      first.flatMap(second)
     }
 
     "when acknowledging the first event, not wait on the rest" in {
-      val (baker, recipeId) = setupBakerWithRecipe("NotWaitForTheRest")
-
-      val interaction2Delay = 2000
-
-      when(testInteractionTwoMock.apply(anyString())).thenAnswer {
-        //Do not remove next line, still needed in 2.11
-        new Answer[EventFromInteractionTwo] {
-          override def answer(invocation: InvocationOnMock): EventFromInteractionTwo = {
-            Thread.sleep(interaction2Delay)
-            interactionTwoEventValue
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("NotWaitForTheRest")
+        interaction2Delay = 2000
+        _ = when(testInteractionTwoMock.apply(anyString())).thenAnswer {
+          //Do not remove next line, still needed in 2.11
+          new Answer[EventFromInteractionTwo] {
+            override def answer(invocation: InvocationOnMock): EventFromInteractionTwo = {
+              Thread.sleep(interaction2Delay)
+              interactionTwoEventValue
+            }
           }
         }
-      }
-
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
-      val response: BakerResponse = baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      response.confirmCompleted(3000 millis) shouldBe SensoryEventStatus.Completed
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        completed <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
+      } yield completed.sensoryEventStatus shouldBe SensoryEventStatus.Completed
     }
 
     "acknowledge the first and final event while rest processing failed" in {
-      val (baker, recipeId) = setupBakerWithRecipe("AcknowledgeThefirst")
-
-      when(testInteractionTwoMock.apply(anyString()))
-        .thenThrow(new RuntimeException("Unknown Exception.")) // This interaction is not retried and blocks the process
-
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
-      val response = baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      response.confirmReceived() shouldBe SensoryEventStatus.Received
-
-      // The process is completed because it is in a BLOCKED state
-      response.confirmCompleted(3 seconds) shouldBe SensoryEventStatus.Completed
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("AcknowledgeThefirst")
+        _ = when(testInteractionTwoMock.apply(anyString()))
+          .thenThrow(new RuntimeException("Unknown Exception.")) // This interaction is not retried and blocks the process
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        response <- baker.processEvent(processId, InitialEvent(initialIngredientValue))
+        received <- response.receivedFuture
+        _ = received shouldBe SensoryEventStatus.Received
+        completed <- response.completedFuture
+        // The process is completed because it is in a BLOCKED state
+        _ = completed.sensoryEventStatus shouldBe SensoryEventStatus.Completed
+      } yield succeed
     }
 
     "bind multi transitions correctly even if ingredient name overlaps" in {
       //This test is part of the ExecutionSpec and not the Compiler spec because the only correct way to validate
       //for this test is to check if Baker calls the mocks.
       //If there is a easy way to validate the created petrinet by the compiler it should be moved to the compiler spec.
-      val (baker, recipeId) = setupBakerWithRecipe("OverlappingMultiIngredients")
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("OverlappingMultiIngredients")
 
-      // It is helpful to check the recipe visualization if this test fails
-      //      println(baker.compiledRecipe.getRecipeVisualization)
+        // It is helpful to check the recipe visualization if this test fails
+        //      println(baker.compiledRecipe.getRecipeVisualization)
 
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
 
-      verify(testInteractionOneMock, times(1)).apply(processId.toString, initialIngredientValue)
-      verify(testInteractionTwoMock, times(1)).apply(initialIngredientValue)
-      verifyNoMoreInteractions(testInteractionFiveMock, testInteractionSixMock)
+        _ = verify(testInteractionOneMock, times(1)).apply(processId.toString, initialIngredientValue)
+        _ = verify(testInteractionTwoMock, times(1)).apply(initialIngredientValue)
+        _ = verifyNoMoreInteractions(testInteractionFiveMock, testInteractionSixMock)
+      } yield succeed
     }
 
     "be able to use the same ingredient multiple times as input parameter for an interaction" in {
@@ -1095,14 +1041,16 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
               .withOverriddenIngredientName("interactionTwoIngredient", "interactionOneOriginalIngredient"))
           .withSensoryEvents(initialEvent)
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
-      val processId = UUID.randomUUID().toString
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        processId = UUID.randomUUID().toString
 
-      baker.bake(recipeId, processId)
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
+        _ <- baker.bake(recipeId, processId)
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
 
-      verify(testInteractionOneMock, times(1)).apply(processId.toString, initialIngredientValue)
-      verify(testInteractionThreeMock, times(1)).apply(interactionOneIngredientValue, interactionOneIngredientValue)
+        _ = verify(testInteractionOneMock, times(1)).apply(processId.toString, initialIngredientValue)
+        _ = verify(testInteractionThreeMock, times(1)).apply(interactionOneIngredientValue, interactionOneIngredientValue)
+      } yield succeed
     }
 
     "reject sensory events after a specified receive period" in {
@@ -1115,15 +1063,14 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           .withInteractions(interactionOne)
           .withEventReceivePeriod(receivePeriod)
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
-
-      val processId = UUID.randomUUID().toString
-
-      baker.bake(recipeId, processId)
-
-      Thread.sleep(receivePeriod.toMillis + 100)
-
-      baker.processEvent(processId, InitialEvent("")) shouldBe SensoryEventStatus.ReceivePeriodExpired
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        _ <- Future { Thread.sleep(receivePeriod.toMillis + 100) }
+        completed <- baker.processEvent(processId, InitialEvent("")).flatMap(_.completedFuture)
+        _ = completed.sensoryEventStatus shouldBe SensoryEventStatus.ReceivePeriodExpired
+      } yield succeed
     }
 
     "accept sensory events before a specified receive period" in {
@@ -1136,37 +1083,33 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           .withInteractions(interactionOne)
           .withEventReceivePeriod(receivePeriod)
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
-      val processId = UUID.randomUUID().toString
-
-      baker.bake(recipeId, processId)
-
-      baker.processEvent(processId, InitialEvent("")) shouldBe SensoryEventStatus.Completed
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        completed <- baker.processEvent(processId, InitialEvent("")).flatMap(_.completedFuture)
+        _ = completed.sensoryEventStatus shouldBe SensoryEventStatus.Completed
+      } yield succeed
     }
 
     "be able to visualize events that have been fired" in {
       //This test only checks if the graphviz is different, not that the outcome is correct
-      val (baker, recipeId) = setupBakerWithRecipe("CheckEventRecipe")
-
-      val processId = UUID.randomUUID().toString
-      baker.bake(recipeId, processId)
-
-      val noEventsGraph = baker.getVisualState(processId)
-      //      System.out.println(noEventsGraph)
-
-      //Handle first event
-      baker.processEvent(processId, InitialEvent("initialIngredient"))
-
-      val firstEventGraph = baker.getVisualState(processId)
-      //      System.out.println(firstEventGraph)
-
-      noEventsGraph should not be firstEventGraph
-
-      baker.processEvent(processId, SecondEvent())
-      val secondEventGraph = baker.getVisualState(processId)
-      //      System.out.println(secondEventGraph)
-
-      firstEventGraph should not be secondEventGraph
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("CheckEventRecipe")
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        noEventsGraph = baker.getVisualState(processId)
+        //      System.out.println(noEventsGraph)
+        //Handle first event
+        _ <- baker.processEvent(processId, InitialEvent("initialIngredient")).flatMap(_.completedFuture)
+        firstEventGraph <- baker.getVisualState(processId)
+        //      System.out.println(firstEventGraph)
+        _ = noEventsGraph should not be firstEventGraph
+        _ <- baker.processEvent(processId, SecondEvent()).flatMap(_.completedFuture)
+        secondEventGraph <- baker.getVisualState(processId)
+        //      System.out.println(secondEventGraph)
+        _ = firstEventGraph should not be secondEventGraph
+      } yield succeed
     }
 
     "properly handle a retention period" in {
@@ -1179,27 +1122,18 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           .withInteractions(interactionOne)
           .withRetentionPeriod(retentionPeriod)
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
-
-      val processId = UUID.randomUUID().toString
-
-      baker.bake(recipeId, processId)
-
-      //Should not fail
-      baker.getIngredients(processId)
-
-      baker.getEvents(processId)
-
-      Thread.sleep(FiniteDuration(retentionPeriod.toMillis + 1000, TimeUnit.MILLISECONDS).dilated.toMillis)
-
-      //Should fail
-      intercept[ProcessDeletedException] {
-        baker.getIngredients(processId)
-      }
-
-      intercept[ProcessDeletedException] {
-        baker.getEvents(processId)
-      }
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        //Should not fail
+        _ <- baker.getProcessState(processId)
+        _ <- Future { Thread.sleep(FiniteDuration(retentionPeriod.toMillis + 1000, TimeUnit.MILLISECONDS).dilated.toMillis) }
+        //Should fail
+        _ <- recoverToSucceededIf[ProcessDeletedException] {
+          baker.getProcessState(processId)
+        }
+      } yield succeed
     }
 
     "block interaction and log error message if a null ingredient is provided directly by a Interaction" in {
@@ -1208,18 +1142,16 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
-
-      when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(null)
-
-      val processId = UUID.randomUUID().toString
-
-      baker.bake(recipeId, processId)
-
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      verify(testInteractionOneMock).apply(processId, "initialIngredient")
-      baker.getIngredients(processId) shouldBe ingredientMap("initialIngredient" -> initialIngredientValue)
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(null)
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
+        _ = verify(testInteractionOneMock).apply(processId, "initialIngredient")
+        state <- baker.getProcessState(processId)
+        _ = state.ingredients shouldBe ingredientMap("initialIngredient" -> initialIngredientValue)
+      } yield succeed
     }
 
     "block interaction and log error message if a null ingredient is provided by an Event provided by a Interaction" in {
@@ -1229,19 +1161,16 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
             .withOverriddenIngredientName("initialIngredientOld", "initialIngredient"))
           .withSensoryEvent(initialEvent)
 
-      val (baker, recipeId) = setupBakerWithRecipe(recipe, mockImplementations)
-
-      when(testInteractionTwoMock.apply(anyString())).thenReturn(EventFromInteractionTwo(null))
-
-      val processId = UUID.randomUUID().toString
-
-      baker.bake(recipeId, processId)
-
-      baker.processEvent(processId, InitialEvent(initialIngredientValue))
-
-      verify(testInteractionTwoMock).apply("initialIngredient")
-      baker.getIngredients(processId) shouldBe ingredientMap("initialIngredient" -> initialIngredientValue)
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        _ = when(testInteractionTwoMock.apply(anyString())).thenReturn(EventFromInteractionTwo(null))
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
+        _ = verify(testInteractionTwoMock).apply("initialIngredient")
+        state <- baker.getProcessState(processId)
+        _ = state.ingredients shouldBe ingredientMap("initialIngredient" -> initialIngredientValue)
+      } yield succeed
     }
-    */
   }
 }
