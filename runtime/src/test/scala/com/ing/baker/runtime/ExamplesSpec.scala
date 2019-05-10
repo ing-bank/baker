@@ -5,16 +5,15 @@ import java.util.UUID
 import com.ing.baker.BakerRuntimeTestBase
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl._
-import com.ing.baker.runtime.akka.{AkkaBaker, RuntimeEvent}
 import ScalaDSLRuntime._
+import com.ing.baker.runtime.scaladsl.Baker
 
-import scala.concurrent.duration._
+import scala.concurrent.Future
 
 class ExamplesSpec extends BakerRuntimeTestBase  {
   override def actorSystemName = "ExamplesSpec"
 
   "The WebShop recipe" should {
-/*TODO FIX THIS TESTS
     import Examples.webshop._
 
     "compile without validation errors" in {
@@ -25,7 +24,7 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
 //      println(s"Visual recipe: ${compiledRecipe.getRecipeVisualization}")
 
       // prints any validation errors the compiler found
-      compiledRecipe.validationErrors shouldBe empty
+      Future { compiledRecipe.validationErrors shouldBe empty }
     }
 
     "run a happy flow" in {
@@ -48,14 +47,14 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
       }
 
       val manufactureGoodsImpl = manufactureGoods implement {
-        (order: String) => {
+        order: String => {
           // Some logic here
           goodsManufactured.instance(testGoods)
         }
       }
 
       val sendInvoiceImpl = sendInvoice implement {
-        (customerInfo: CustomerInfo) => invoiceWasSent.instance()
+        customerInfo: CustomerInfo => invoiceWasSent.instance()
       }
 
       val shipGoodsImpl = shipGoods implement {
@@ -65,45 +64,34 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
       val implementations =
         Seq(validateOrderImpl, manufactureGoodsImpl, sendInvoiceImpl, shipGoodsImpl)
 
-      val baker = new AkkaBaker()
+      val baker = Baker.akka(defaultActorSystem)
 
-      implementations.foreach(baker.addImplementation)
-
-      val recipeId = baker.addRecipe(compiledRecipe)
-
-      val processId = UUID.randomUUID().toString
-
-      baker.bake(recipeId, processId)
-
-      implicit val timeout: FiniteDuration = 2.seconds.dilated
-
-      // fire events
-
-      baker.processEvent(processId, orderPlaced.instance(testOrder))
-      baker.processEvent(processId, paymentMade.instance())
-      baker.processEvent(processId, customerInfoReceived.instance(testCustomerInfoData))
-
-      val expectedIngredients = IngredientMap(
-        order -> testOrder,
-        goods -> testGoods,
-        customerInfo -> testCustomerInfoData,
-        trackingId -> testTrackingId)
-
-      val actualIngredients = baker.getIngredients(processId)
-
-      // assert the that all ingredients are provided
-      actualIngredients shouldBe expectedIngredients
-
-      val expectedEvents = List(
-        orderPlaced.instance(testOrder),
-        valid.instance(),
-        paymentMade.instance(),
-        goodsManufactured.instance(testGoods),
-        customerInfoReceived.instance(testCustomerInfoData),
-        goodsShipped.instance(testTrackingId),
-        invoiceWasSent.instance())
-
-      TestKit.awaitCond(baker.getEvents(processId) equals expectedEvents, 2.seconds.dilated)
+      for {
+        _ <- Future.traverse(implementations)(baker.addImplementation)
+        recipeId <- baker.addRecipe(compiledRecipe)
+        processId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, processId)
+        _ <- baker.processEvent(processId, orderPlaced.instance(testOrder)).flatMap(_.completedFuture)
+        _ <- baker.processEvent(processId, paymentMade.instance()).flatMap(_.completedFuture)
+        _ <- baker.processEvent(processId, customerInfoReceived.instance(testCustomerInfoData)).flatMap(_.completedFuture)
+        expectedIngredients = IngredientMap(
+          order -> testOrder,
+          goods -> testGoods,
+          customerInfo -> testCustomerInfoData,
+          trackingId -> testTrackingId)
+        state <- baker.getProcessState(processId)
+        // assert the that all ingredients are provided
+        _ = state.ingredients shouldBe expectedIngredients
+        expectedEvents = List(
+          orderPlaced.instance(testOrder),
+          valid.instance(),
+          paymentMade.instance(),
+          goodsManufactured.instance(testGoods),
+          customerInfoReceived.instance(testCustomerInfoData),
+          goodsShipped.instance(testTrackingId),
+          invoiceWasSent.instance())
+        _ = state.eventNames shouldBe expectedEvents.map(_.name)
+      } yield succeed
     }
   }
 
@@ -117,8 +105,7 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
       val compiledRecipe = RecipeCompiler.compileRecipe(openAccountRecipe)
 
       // prints any validation errors the compiler found
-      compiledRecipe.validationErrors shouldBe empty
+      Future { compiledRecipe.validationErrors shouldBe empty }
     }
-    */
   }
 }

@@ -37,43 +37,47 @@ class BakerInquireSpec extends BakerRuntimeTestBase {
       } yield recipe.compiledRecipe.name shouldBe "returnRecipe"
     }
 
-    /*TODO FIX THIS TESTS
     "return all recipes if asked" in {
-      val (baker, recipeId) = setupBakerWithRecipe("returnAllRecipes", false)
-      val recipeId2 = baker.addRecipe(RecipeCompiler.compileRecipe(getRecipe("returnAllRecipes2")))
-      val recipes: Map[String, RecipeInformation] = baker.getAllRecipes()
-      recipes.size shouldBe 2
-      recipes(recipeId).compiledRecipe.name shouldBe "returnAllRecipes"
-      recipes(recipeId2).compiledRecipe.name shouldBe "returnAllRecipes2"
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("returnAllRecipes", false)
+        recipeId2 <- baker.addRecipe(RecipeCompiler.compileRecipe(getRecipe("returnAllRecipes2")))
+        recipes <- baker.getAllRecipes
+        _ = recipes.size shouldBe 2
+        _ = recipes(recipeId).compiledRecipe.name shouldBe "returnAllRecipes"
+        _ = recipes(recipeId2).compiledRecipe.name shouldBe "returnAllRecipes2"
+      } yield succeed
     }
 
     "return no errors of a recipe with no errors if asked" in {
-      val (baker, recipeId) = setupBakerWithRecipe("returnHealthRecipe", false)
-      val recipeInformation: RecipeInformation = baker.getRecipe(recipeId)
-      recipeInformation should have(
-        'recipeId (recipeId),
-        'errors (Set.empty)
-      )
-    }
-
-    "return no errors of all recipes if none contain errors if asked" in {
-      val (baker, recipeId) = setupBakerWithRecipe("returnHealthAllRecipe", false)
-      val recipeId2 = baker.addRecipe(RecipeCompiler.compileRecipe(getRecipe("returnHealthAllRecipe2")))
-      val recipeInformations: Map[String, RecipeInformation] = baker.getAllRecipes()
-      recipeInformations.size shouldBe 2
-      recipeInformations.get(recipeId)
-        .map(_ should have(
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("returnHealthRecipe", false)
+        recipeInformation <- baker.getRecipe(recipeId)
+        _ = recipeInformation should have(
           'recipeId (recipeId),
           'errors (Set.empty)
         )
-      )
-      recipeInformations.get(recipeId2)
-        .map(_ should have(
-          'recipeId (recipeId2),
-          'errors (Set.empty)
-        )
-      )
+      } yield succeed
     }
-    */
+
+    "return no errors of all recipes if none contain errors if asked" in {
+      for {
+        (baker, recipeId) <- setupBakerWithRecipe("returnHealthAllRecipe", false)
+        recipeId2 <- baker.addRecipe(RecipeCompiler.compileRecipe(getRecipe("returnHealthAllRecipe2")))
+        recipeInformations <- baker.getAllRecipes
+        _ = recipeInformations.size shouldBe 2
+        _ = recipeInformations.get(recipeId)
+          .map(_ should have(
+            'recipeId (recipeId),
+            'errors (Set.empty)
+          )
+        )
+        _ = recipeInformations.get(recipeId2)
+          .map(_ should have(
+            'recipeId (recipeId2),
+            'errors (Set.empty)
+          )
+        )
+      } yield succeed
+    }
   }
 }

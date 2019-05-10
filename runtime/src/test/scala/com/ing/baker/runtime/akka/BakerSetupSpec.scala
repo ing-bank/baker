@@ -11,6 +11,7 @@ import org.mockito.Mockito.when
 import scala.language.postfixOps
 import com.ing.baker.runtime.ScalaDSLRuntime._
 import com.ing.baker.runtime.common.{BakerException, RecipeValidationException}
+import com.ing.baker.runtime.scaladsl.Baker
 
 import scala.concurrent.Future
 
@@ -20,60 +21,52 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
   override def actorSystemName = "BakerSetupSpec"
 
   before {
-    resetMocks
+    resetMocks()
   }
 
   "The Baker execution engine during setup" should {
 
-    /* TODO FIX THIS TESTS
     "bootstrap correctly without throwing an error if provided a correct recipe and correct implementations" when {
 
-
       "correcly load extensions when specified in the configuration" in {
-
         val simpleRecipe = RecipeCompiler.compileRecipe(Recipe("SimpleRecipe")
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent))
 
-        val baker = new AkkaBaker()
+        val baker = Baker.akka(defaultActorSystem)
 
-        baker.addImplementations(mockImplementations)
-
-        when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful("foobar")))
-
-        val recipeId = baker.addRecipe(simpleRecipe)
-        val processId = java.util.UUID.randomUUID().toString
-
-        baker.bake(recipeId, processId)
-        baker.processEvent(processId, initialEvent.instance("initialIngredient"))
-
+        for {
+          _ <- baker.addImplementations(mockImplementations)
+          _ = when (testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful("foobar")))
+          recipeId <- baker.addRecipe(simpleRecipe)
+          processId = java.util.UUID.randomUUID().toString
+          _ <- baker.bake(recipeId, processId)
+          _ <- baker.processEvent(processId, initialEvent.instance("initialIngredient")).flatMap(_.completedFuture)
+        } yield succeed
       }
 
       "providing implementations in a sequence" in {
-
-        val baker = new AkkaBaker()
-
-        baker.addImplementations(mockImplementations)
+        val baker = Baker.akka(defaultActorSystem)
+        baker.addImplementations(mockImplementations).map(_ => succeed)
       }
 
       "providing an implementation with the class simplename same as the interaction" in {
-
-        val baker = new AkkaBaker()
-
-        baker.addImplementation(new implementations.InteractionOne())
+        val baker = Baker.akka(defaultActorSystem)
+        baker.addImplementation(new implementations.InteractionOne()).map(_ => succeed)
       }
 
       "providing an implementation for a renamed interaction" in {
 
         val recipe = Recipe("simpleNameImplementationWithRename")
-          .withInteraction((interactionOne.withName("interactionOneRenamed")))
+          .withInteraction(interactionOne.withName("interactionOneRenamed"))
           .withSensoryEvent(initialEvent)
 
-        val baker = new AkkaBaker()
+        val baker = Baker.akka(defaultActorSystem)
 
-        baker.addImplementation(new implementations.InteractionOne())
-
-        baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+        for {
+          _ <- baker.addImplementation(new implementations.InteractionOne())
+          _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+        } yield succeed
       }
 
       "providing an implementation with a name field" in {
@@ -82,11 +75,12 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = new AkkaBaker()
+        val baker = Baker.akka(defaultActorSystem)
 
-        baker.addImplementation(new InteractionOneFieldName())
-
-        baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+        for {
+          _ <- baker.addImplementation(new InteractionOneFieldName())
+          _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+        } yield succeed
       }
 
       "providing the implementation in a sequence with the interface its implementing with the correct name" in {
@@ -95,11 +89,12 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = new AkkaBaker()
+        val baker = Baker.akka(defaultActorSystem)
 
-        baker.addImplementation(new InteractionOneInterfaceImplementation())
-
-        baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+        for {
+          _ <- baker.addImplementation(new InteractionOneInterfaceImplementation())
+          _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+        } yield succeed
       }
 
       "the recipe contains complex ingredients that are serializable" in {
@@ -107,11 +102,12 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(complexIngredientInteraction)
           .withSensoryEvent(initialEvent)
 
-        val baker = new AkkaBaker()
+        val baker = Baker.akka(defaultActorSystem)
 
-        baker.addImplementation(mock[ComplexIngredientInteraction])
-
-        baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+        for {
+          _ <- baker.addImplementation(mock[ComplexIngredientInteraction])
+          _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+        } yield succeed
       }
     }
 
@@ -122,13 +118,13 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(secondEvent)
 
-        val baker = new AkkaBaker()
+        val baker = Baker.akka(defaultActorSystem)
 
         baker.addImplementations(mockImplementations)
 
-        intercept[RecipeValidationException] {
+        recoverToExceptionIf[RecipeValidationException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
-        } should have('message ("Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction"))
+        }.map(_ should have('message ("Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction")))
       }
 
       "a recipe does not provide an implementation for an interaction" in {
@@ -137,11 +133,11 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = new AkkaBaker()
+        val baker = Baker.akka(defaultActorSystem)
 
-        intercept[BakerException] {
+        recoverToExceptionIf[BakerException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
-        } should have('message ("No implementation provided for interaction: InteractionOne"))
+        }.map(_ should have('message ("No implementation provided for interaction: InteractionOne")))
       }
 
       // TODO uncheck ignore when fixed
@@ -151,15 +147,14 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = new AkkaBaker()
+        val baker = Baker.akka(defaultActorSystem)
 
         baker.addImplementation(new InteractionOneWrongApply())
 
-        intercept[BakerException] {
+        recoverToExceptionIf[BakerException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
-        } should have('message ("No implementation provided for interaction: InteractionOne"))
+        }.map(_ should have('message ("No implementation provided for interaction: InteractionOne")))
       }
     }
-  */
   }
 }
