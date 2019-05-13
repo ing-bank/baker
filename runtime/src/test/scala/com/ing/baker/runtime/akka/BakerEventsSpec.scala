@@ -145,8 +145,8 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         listenerProbe = TestProbe()
         _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
         _ <- baker.bake(recipeId, processId)
-        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue), "someId")
-        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue), "someId") // Same correlationId cannot be used twice
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue), "someId").flatMap(_.completedFuture)
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue), "someId").flatMap(_.completedFuture) // Same correlationId cannot be used twice
         _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
           case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), AlreadyReceived) => msg
         }
@@ -162,8 +162,8 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         listenerProbe = TestProbe()
         _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
         _ <- baker.bake(recipeId, processId)
-        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue))
-        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)) // Firing limit is set to 1 in the recipe
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
+        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture) // Firing limit is set to 1 in the recipe
         _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
           case msg@EventRejected(_, `processId`, None, RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), FiringLimitMet) => msg
         }

@@ -203,7 +203,7 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     * @return
     */
   override def retryInteraction(processId: String, interactionName: String): Future[Unit] = {
-    processIndexActor.ask(RetryBlockedInteraction(processId, interactionName))(defaultProcessEventTimeout).mapTo[Unit]
+    processIndexActor.ask(RetryBlockedInteraction(processId, interactionName))(defaultProcessEventTimeout).map(_ => ())
   }
 
   /**
@@ -214,7 +214,7 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     * @return
     */
   override def resolveInteraction(processId: String, interactionName: String, event: Any): Future[Unit] = {
-    processIndexActor.ask(ResolveBlockedInteraction(processId, interactionName, RuntimeEvent.extractEvent(event)))(defaultProcessEventTimeout).mapTo[Unit]
+    processIndexActor.ask(ResolveBlockedInteraction(processId, interactionName, RuntimeEvent.extractEvent(event)))(defaultProcessEventTimeout).map(_ => ())
   }
 
   /**
@@ -223,7 +223,7 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     * @return
     */
   override def stopRetryingInteraction(processId: String, interactionName: String): Future[Unit] = {
-    processIndexActor.ask(StopRetryingInteraction(processId, interactionName))(defaultProcessEventTimeout).mapTo[Unit]
+    processIndexActor.ask(StopRetryingInteraction(processId, interactionName))(defaultProcessEventTimeout).map(_ => ())
   }
 
   /**

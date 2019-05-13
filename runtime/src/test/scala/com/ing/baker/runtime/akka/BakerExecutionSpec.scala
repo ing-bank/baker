@@ -14,7 +14,6 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFail
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.common._
 import com.ing.baker.runtime.scaladsl.Baker
-import com.ing.baker.types.Converters
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
@@ -78,9 +77,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       for {
         (baker, _) <- setupBakerWithRecipe("NonExistingProcessEventTest")
         event = InitialEvent("initialIngredient")
-        _ <- recoverToSucceededIf[NoSuchProcessException] {
-          baker.processEvent(UUID.randomUUID().toString, event)
-        }
+        _ <- baker.processEvent(UUID.randomUUID().toString, event)
         response <- baker.processEvent(UUID.randomUUID().toString, event)
         _ <- recoverToSucceededIf[NoSuchProcessException] {
           response.receivedFuture
@@ -97,7 +94,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         processId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, processId)
         intercepted <- recoverToExceptionIf[IllegalArgumentException] {
-          baker.processEvent(processId, SomeNotDefinedEvent("bla"))
+          baker.processEvent(processId, SomeNotDefinedEvent("bla")).flatMap(_.completedFuture)
         }
         _ = intercepted.getMessage should startWith("No event with name 'SomeNotDefinedEvent' found in recipe 'NonExistingProcessEventTest")
       } yield succeed
@@ -240,45 +237,47 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       } yield succeed
     }
 
-    // Still broken, cause unknown, might be that we stopped being backwards compatible or data got corrupted
-    "backwards compatibility in serialization of case class ingredients" ignore {
+    "backwards compatibility in serialization of case class ingredients" in {
 
-      import better.files._
-
-      /**
-        * This is the path where the original messages where persisted
-        *
-        * For the test they are copied to a temporary directory in /target
-        *
-        * !!! If you want to create a new test case the following flag to true
-        */
-      val createNewCase: Boolean = false
       val isWindows: Boolean = System.getProperty("os.name").toLowerCase.contains("windows")
 
-      val journalPath = "src/test/resources/persisted-messages" + (if (isWindows) "-windows" else "")
-      val journalDir = File(journalPath)
+      // This tests are broken on windows, requires some investigation
+      // Still broken, cause unknown, might be that we stopped being backwards compatible or data got corrupted
+      if (isWindows) Future.successful {
+        println(Console.YELLOW + "WARNING: You are testing on a Windows system, notice that this test is not working and needs to eventually be addressed")
+        succeed
+      } else {
+        import better.files._
 
-      val testPath = if (createNewCase) journalPath else "target/backwardsCompatibilityOfEvents"
-      val testDir = File(testPath).createDirectoryIfNotExists()
+        /**
+          * This is the path where the original messages where persisted
+          *
+          * For the test they are copied to a temporary directory in /target
+          *
+          * !!! If you want to create a new test case the following flag to true
+          */
+        val createNewCase: Boolean = false
 
-      if (!createNewCase) {
-        testDir.delete()
-        testDir.createDirectory()
-        journalDir./("journal").copyToDirectory(testDir)
-      }
+        val journalPath = "src/test/resources/persisted-messages" + (if (isWindows) "-windows" else "")
+        val journalDir = File(journalPath)
 
-      val config = clusterLevelDBConfig(
-        "backwardsCompatibilityOfEvents",
-        3004,
-        10 seconds,
-        s"$testPath/journal",
-        s"$testPath/snapshots")
+        val testPath = if (createNewCase) journalPath else "target/backwardsCompatibilityOfEvents"
+        val testDir = File(testPath).createDirectoryIfNotExists()
 
-      val actorSystem = ActorSystem("backwardsCompatibilityOfEvents", config)
+        if (!createNewCase) {
+          testDir.delete()
+          testDir.createDirectory()
+          journalDir./("journal").copyToDirectory(testDir)
+        }
 
-      Future.successful(succeed)
-      /*
-      try {
+        val config = clusterLevelDBConfig(
+          "backwardsCompatibilityOfEvents",
+          3004,
+          10 seconds,
+          s"$testPath/journal",
+          s"$testPath/snapshots")
+
+        val actorSystem = ActorSystem("backwardsCompatibilityOfEvents", config)
 
         import com.ing.baker.Webshop._
 
@@ -299,53 +298,50 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
         val implementations = Seq(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock)
 
-        for {
-          (baker, recipeId) <- setupBakerWithRecipe(recipe, implementations)(actorSystem)
+        def createProcess(baker: Baker, recipeId: String): Future[Unit] = {
+          for {
+            _ <- baker.bake(recipeId, processId)
+              // prepare mocks
+            _ = when(shipGoodsMock.apply(anyString(), any[CustomerInfo] ())).thenReturn( new ShipGoods.GoodsShipped(trackingId))
+            _ = when(sendInvoiceMock.apply(any[CustomerInfo] ())).thenReturn( new SendInvoice.InvoiceWasSent())
+            _ = when(manufactureGoodsMock.apply(anyString())).thenReturn( new ManufactureGoods.GoodsManufactured(goods))
+            _ = when(validateOrderMock.apply(anyString(), anyString())).thenReturn( new ValidateOrder.Valid())
 
-        def createProcess(): Unit = {
-
-          _ <- baker.bake(recipeId, processId)
-
-          // prepare mocks
-          when(shipGoodsMock.apply(anyString(), any[CustomerInfo]())).thenReturn(new ShipGoods.GoodsShipped(trackingId))
-          when(sendInvoiceMock.apply(any[CustomerInfo]())).thenReturn(new SendInvoice.InvoiceWasSent())
-          when(manufactureGoodsMock.apply(anyString())).thenReturn(new ManufactureGoods.GoodsManufactured(goods))
-          when(validateOrderMock.apply(anyString(), anyString())).thenReturn(new ValidateOrder.Valid())
-
-          // process the events
-          baker.processEvent(processId, new CustomerInfoReceived(customerInfo));
-          baker.processEvent(processId, new OrderPlaced(order));
-          baker.processEvent(processId, new PaymentMade());
+            // process the events
+            _ <- baker.processEvent(processId, new CustomerInfoReceived(customerInfo)).flatMap(_.completedFuture)
+            _ <- baker.processEvent(processId, new OrderPlaced(order)).flatMap(_.completedFuture)
+            _ <- baker.processEvent(processId, new PaymentMade()).flatMap(_.completedFuture)
+          } yield ()
         }
 
-        if (createNewCase)
-          createProcess();
+        (for {
+          (baker, recipeId) <- setupBakerWithRecipe(recipe, implementations)(actorSystem)
+          _ <- if (createNewCase) createProcess(baker, recipeId) else Future.unit
 
-        val expectedIngredients = ingredientMap(
-          "customerInfo" -> customerInfo,
-          "order" -> order,
-          "goods" -> goods,
-          "trackingId" -> trackingId)
+          expectedIngredients = ingredientMap(
+            "customerInfo" -> customerInfo,
+            "order" -> order,
+            "goods" -> goods,
+            "trackingId" -> trackingId)
 
-        val expectedEvents = eventList(
-          new CustomerInfoReceived(customerInfo),
-          new OrderPlaced(order),
-          new ValidateOrder.Valid(),
-          new PaymentMade(),
-          new ManufactureGoods.GoodsManufactured(goods),
-          new ShipGoods.GoodsShipped(trackingId),
-          new SendInvoice.InvoiceWasSent()
+          expectedEvents = eventList(
+            new CustomerInfoReceived(customerInfo),
+            new OrderPlaced(order),
+            new ValidateOrder.Valid(),
+            new PaymentMade(),
+            new ManufactureGoods.GoodsManufactured(goods),
+            new ShipGoods.GoodsShipped(trackingId),
+            new SendInvoice.InvoiceWasSent()
+          )
+
+          state <- baker.getProcessState(processId)
+          _ = state.ingredients shouldBe expectedIngredients
+          _ = state.eventNames shouldBe expectedEvents.map(_.name)
+        } yield succeed).transform(
+          {e => TestKit.shutdownActorSystem(actorSystem); e},
+          {a => TestKit.shutdownActorSystem(actorSystem); a}
         )
-
-        baker.getIngredients(processId) shouldBe expectedIngredients
-
-        baker.getEvents(processId) shouldBe expectedEvents
-
-      } finally {
-
-        TestKit.shutdownActorSystem(actorSystem)
       }
-        */
     }
 
     "execute an interaction with Optionals set to empty when its ingredient is provided" in {

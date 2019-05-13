@@ -41,26 +41,19 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     config.getString("baker.engine.baas.baas-host"),
     config.getInt("baker.engine.baas.baas-port"))
 
-  val mockOne = mock(classOf[InteractionOne])
-  val mockTwo = mock(classOf[InteractionTwo])
-
   import system.dispatcher
-
-  // implementations
-  val localImplementations: Seq[AnyRef] = Seq(mockOne, mockTwo)
-
-
-  override def beforeAll() {
-    reset(mockOne, mockTwo)
-    Await.result(baasAPI.start(), 10 seconds)
-    baasBaker.addImplementations(localImplementations)
-  }
 
   override def afterAll() {
     Await.result(baasAPI.stop(), 10 seconds)
   }
 
   "Happy flow simple recipe BAAS" in {
+    val mockOne = mock(classOf[InteractionOne])
+    val mockTwo = mock(classOf[InteractionTwo])
+    val localImplementations: Seq[AnyRef] = Seq(mockOne, mockTwo)
+    Await.result(baasAPI.start(), 10 seconds)
+    baasBaker.addImplementations(localImplementations)
+
     when(mockOne.apply(anyString(), anyString()))
       .thenReturn(InteractionOneEvent("InteractionOneOutput"))
 
@@ -91,6 +84,12 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
   }
 
   "Process Event Async with http streaming" in {
+    val mockOne = mock(classOf[InteractionOne])
+    val mockTwo = mock(classOf[InteractionTwo])
+    val localImplementations: Seq[AnyRef] = Seq(mockOne, mockTwo)
+    Await.result(baasAPI.start(), 10 seconds)
+    baasBaker.addImplementations(localImplementations)
+
     when(mockOne.apply(anyString(), anyString()))
       .thenReturn(InteractionOneEvent("InteractionOneOutput"))
 
