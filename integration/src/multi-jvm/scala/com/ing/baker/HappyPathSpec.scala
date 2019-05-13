@@ -158,13 +158,13 @@ class HappyPath extends MultiNodeSpec(HappyPathConfig)
     val processState = baker.bake(recipeId, processId)
 
     val sensoryEventStatus1 = baker.processEvent(processId, placeOrderRuntimeEvent)
-    val events1 = baker.getProcessState(processId).eventNames
+    val events1 = Await.result(baker.getProcessState(processId), 10 seconds).eventNames
 
     val sensoryEventStatus2 = baker.processEvent(processId, receivedDataRuntimeEvent)
-    val events2 = baker.getProcessState(processId).eventNames
+    val events2 = Await.result(baker.getProcessState(processId), 10 seconds).eventNames
 
     val sensoryEventStatus3 = baker.processEvent(processId, paymentMadeRuntimeEvent)
-    val events3 = baker.getProcessState(processId).eventNames
+    val events3 = Await.result(baker.getProcessState(processId), 10 seconds).eventNames
 
     assert(events3 == List(
       webshop.orderPlaced.name,
@@ -184,7 +184,7 @@ class HappyPath extends MultiNodeSpec(HappyPathConfig)
       val baker = new AkkaBaker(ConfigFactory.load().withFallback(seedNodeConfig(node(node1))))
       baker.addImplementations(HappyPath.implementations)
       val compiled = RecipeCompiler.compileRecipe(webshop.webShopRecipe)
-      val recipeId = baker.addRecipe(compiled)
+      val recipeId = Await.result(baker.addRecipe(compiled), 10 seconds)
 
       enterBarrier("Setup finished")
 

@@ -27,6 +27,7 @@ import cats.data.OptionT
 import cats.instances.future._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
+import com.ing.baker.types.Value
 
 object ProcessIndex {
 
@@ -215,7 +216,7 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
               persist(ActorCreated(recipeId, processId, createdTime)) { _ =>
 
                 // after that we actually create the ProcessInstance actor
-                val processState = ProcessState(processId, Map.empty, List.empty)
+                val processState = ProcessState(processId, Map.empty[String, Value], List.empty)
                 val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
 
                 createProcessActor(processId, compiledRecipe).forward(initializeCmd)

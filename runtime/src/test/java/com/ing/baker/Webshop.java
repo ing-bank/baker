@@ -2,7 +2,6 @@ package com.ing.baker;
 
 import akka.actor.ActorSystem;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.recipe.annotations.FiresEvent;
@@ -41,6 +40,7 @@ public class Webshop {
 
     public static class OrderPlaced {
         public final String order;
+
         public OrderPlaced(String order) {
             this.order = order;
         }
@@ -56,11 +56,14 @@ public class Webshop {
 
     public interface ValidateOrder extends Interaction {
 
-        interface Outcome { }
+        interface Outcome {
+        }
 
-        class Failed implements Outcome { }
+        class Failed implements Outcome {
+        }
 
-        class Valid implements Outcome { }
+        class Valid implements Outcome {
+        }
 
         @FiresEvent(oneOf = {Failed.class, Valid.class})
         Outcome apply(@ProcessId String processId, @RequiresIngredient("order") String key);
@@ -69,20 +72,22 @@ public class Webshop {
     public interface ManufactureGoods extends Interaction {
         class GoodsManufactured {
             public final String goods;
+
             public GoodsManufactured(String goods) {
                 this.goods = goods;
             }
         }
 
-        @FiresEvent(oneOf = { GoodsManufactured.class })
+        @FiresEvent(oneOf = {GoodsManufactured.class})
         GoodsManufactured apply(@RequiresIngredient("order") String order);
     }
 
     public interface SendInvoice extends Interaction {
 
-        class InvoiceWasSent { }
+        class InvoiceWasSent {
+        }
 
-        @FiresEvent(oneOf = { InvoiceWasSent.class})
+        @FiresEvent(oneOf = {InvoiceWasSent.class})
         InvoiceWasSent apply(@RequiresIngredient("customerInfo") CustomerInfo customerInfo);
     }
 
@@ -96,11 +101,12 @@ public class Webshop {
             }
         }
 
-        @FiresEvent(oneOf = { GoodsShipped.class })
+        @FiresEvent(oneOf = {GoodsShipped.class})
         GoodsShipped apply(@RequiresIngredient("goods") String goods, @RequiresIngredient("customerInfo") CustomerInfo customerInfo);
     }
 
-    public static class PaymentMade { }
+    public static class PaymentMade {
+    }
 
     public final static Recipe webshopRecipe = new Recipe("webshop")
             .withSensoryEvents(
@@ -127,7 +133,7 @@ public class Webshop {
     ValidateOrder validateOrderMock = mock(ValidateOrder.class);
 
 
-//    @Test
+    //    @Test
     public void testWebshop() throws TimeoutException, ExecutionException, InterruptedException {
 
         Config config = ConfigFactory.load("cassandra.conf");
@@ -149,7 +155,7 @@ public class Webshop {
 //        JBaker baker = new JBaker(ActorSystem.apply("webshop", config));
         JBaker baker = JBaker.akka(config, ActorSystem.create("webshop"));
 
-        baker.addImplementations(ImmutableSet.of(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock));
+        baker.addImplementations(ImmutableList.of(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock));
 
         String recipeId = baker.addRecipe(recipe).get();
 

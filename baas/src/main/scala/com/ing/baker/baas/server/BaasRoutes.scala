@@ -8,6 +8,7 @@ import com.ing.baker.baas.interaction.client.RemoteInteractionClient
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.runtime.akka.{AkkaBaker, BakerResponse, BakerResponseEventProtocol, ProcessState, RuntimeEvent}
+import com.ing.baker.types.Value
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -62,7 +63,7 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
           post {
             entity(as[BakeRequest]) { request =>
               baker.bake(request.recipeId, requestId)
-              complete(BakeResponse(new ProcessState("", Map.empty, List.empty)))
+              complete(BakeResponse(new ProcessState("", Map.empty[String, Value], List.empty)))
             }
           }
         } ~

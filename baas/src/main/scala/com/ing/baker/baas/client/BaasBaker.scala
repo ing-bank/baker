@@ -192,7 +192,7 @@ class BaasBaker(config: Config,
     *
     * @param implementations The implementation object
     */
-  override def addImplementations(implementations: Set[AnyRef]): Future[Unit] = {
+  override def addImplementations(implementations: Seq[AnyRef]): Future[Unit] = {
     Future.successful(implementations.foreach(addImplementation))
   }
 

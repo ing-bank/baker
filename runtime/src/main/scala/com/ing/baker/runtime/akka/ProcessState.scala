@@ -5,7 +5,7 @@ import cats.instances.list._
 import cats.instances.try_._
 import cats.syntax.traverse._
 import com.ing.baker.types.Value
-import com.ing.baker.runtime.akka.actor.{ protobuf => proto }
+import com.ing.baker.runtime.akka.actor.{protobuf => proto}
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 
@@ -57,6 +57,12 @@ case class ProcessState(processId: String,
 }
 
 object ProcessState {
+
+  def apply(processId: String,
+            ingredients: java.util.Map[String, Value],
+            eventNames: java.util.List[String]): ProcessState = {
+    ProcessState(processId, ingredients.asScala.toMap, eventNames.asScala.toList)
+  }
 
   implicit def protoMap: ProtoMap[ProcessState, proto.ProcessState] =
     new ProtoMap[ProcessState, proto.ProcessState] {

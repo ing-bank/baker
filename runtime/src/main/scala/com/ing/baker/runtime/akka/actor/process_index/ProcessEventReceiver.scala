@@ -57,7 +57,7 @@ class ProcessEventReceiver(waitForRetries: Boolean)(implicit timeout: FiniteDura
       context.become(initf)
 
     case msg =>
-      log.debug(s"Have to cache $msg because arrived before initialization of ProcessEventReceiver")
+      log.trace(s"Have to cache $msg because arrived before initialization of ProcessEventReceiver")
       cache = msg :: cache
   }
 
@@ -65,22 +65,22 @@ class ProcessEventReceiver(waitForRetries: Boolean)(implicit timeout: FiniteDura
 
     def stopActorIfDone(): Unit =
       if (runningJobs.isEmpty) {
-        log.debug("Stopping ProcessEventReceiver and completing queue")
+        log.trace("Stopping ProcessEventReceiver and completing queue")
         queue.complete()
         stopActor()
       }
 
     def completeWith(msg: Any) = {
       queue.offer(msg)
-      log.debug("Stopping ProcessEventReceiver and completing queue")
+      log.trace("Stopping ProcessEventReceiver and completing queue")
       queue.complete()
       stopActor()
     }
 
     def rejectedWith(msg: Any, rejectReason: RejectReason) = {
-      log.debug("Stopping ProcessEventReceiver and rejecting queue")
-      log.debug("Reject reason: " + rejectReason)
-      log.debug("message: " + msg)
+      log.trace("Stopping ProcessEventReceiver and rejecting queue")
+      log.trace("Reject reason: " + rejectReason)
+      log.trace("message: " + msg)
       completeWith(msg)
     }
 

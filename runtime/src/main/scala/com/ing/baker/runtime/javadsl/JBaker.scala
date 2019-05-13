@@ -1,12 +1,13 @@
 package com.ing.baker.runtime.javadsl
 
 import java.util
-import java.util.concurrent.{CompletableFuture, TimeoutException}
+import java.util.concurrent.CompletableFuture
 
 import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.common._
 import com.ing.baker.runtime.akka.{BakerResponse, _}
+import com.ing.baker.runtime.common._
+import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
 import javax.annotation.Nonnull
@@ -35,6 +36,7 @@ object JBaker {
   }
 
   def akka(config: Config, actorSystem: ActorSystem): JBaker = new JBaker(new AkkaBaker(config)(actorSystem))
+  def other(baker: Baker) = new JBaker(baker)
 
 }
 
@@ -74,8 +76,8 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
     *
     * @param implementations An iterable of implementations that should be added.
     */
-  def addImplementations(@Nonnull implementations: java.util.Set[AnyRef]): CompletableFuture[Unit] =
-    toCompletableFuture(baker.addImplementations(implementations.asScala.toSet))
+  def addImplementations(@Nonnull implementations: java.util.List[AnyRef]): CompletableFuture[Unit] =
+    toCompletableFuture(baker.addImplementations(implementations.asScala))
 
   /**
     * Attempts to gracefully shutdown the baker system.
@@ -160,7 +162,6 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("When no process is deleted")
-  @throws[TimeoutException]("When the process does not respond within the given deadline")
   def getIngredients(@Nonnull processId: String): CompletableFuture[java.util.Map[String, Value]] =
     toCompletableFutureMap(baker.getIngredients(processId))
 
@@ -254,7 +255,6 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
     * @param processId The process identifier
     * @return The state of the process instance
     */
-  @throws[TimeoutException]("When the process does not respond within the default deadline")
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[NoSuchProcessException]("If the process is not found")
   def getProcessState(@Nonnull processId: String): CompletableFuture[ProcessState] =

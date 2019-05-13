@@ -19,6 +19,7 @@ import com.ing.baker.runtime.akka.actor.serialization.Encryption
 import com.ing.baker.runtime.akka.internal.InteractionManager
 import com.ing.baker.runtime.akka.{ProcessState, RuntimeEvent}
 import com.ing.baker.types
+import com.ing.baker.types.Value
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Mockito
 import org.mockito.Mockito.when
@@ -83,7 +84,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
     "create the PetriNetInstance actor when Initialize message is received" in {
       val processId = UUID.randomUUID().toString
-      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty[String, Value], List.empty))
 
       val petriNetActorProbe = TestProbe()
 
@@ -96,7 +97,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
     "not create the PetriNetInstance actor if already created" in {
       val processId = UUID.randomUUID().toString
-      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty[String, Value], List.empty))
 
       val petriNetActorProbe = TestProbe()
       val actorIndex = createActorIndex(petriNetActorProbe.ref, recipeManager)
@@ -130,7 +131,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
         CompiledRecipe("name", recipeId, new PetriNet(Graph.empty), Marking.empty, Seq.empty,
           Option.empty, Some(recipeRetentionPeriod)), 0L))))
 
-      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty[String, Value], List.empty))
       processProbe.expectMsg(initializeMsg)
 
       Thread.sleep(recipeRetentionPeriod.toMillis)
@@ -151,7 +152,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val processId = UUID.randomUUID().toString
 
-      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty[String, Value], List.empty))
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
       val eventType = EventDescriptor("Event", Seq.empty)
@@ -207,7 +208,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val processId = UUID.randomUUID().toString
 
-      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty[String, Value], List.empty))
 
       actorIndex ! CreateProcess(recipeId, processId)
       recipeManagerProbe.expectMsg(GetAllRecipes)
@@ -237,7 +238,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val processId = UUID.randomUUID().toString
 
-      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty[String, Value], List.empty))
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
       val eventType = EventDescriptor("Event", Seq(IngredientDescriptor("ingredientName", types.CharArray)))
@@ -270,7 +271,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       val processId = UUID.randomUUID().toString
 
-      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty, List.empty))
+      val initializeMsg = Initialize(Marking.empty[Place], ProcessState(processId, Map.empty[String, Value], List.empty))
 
       val petrinetMock: RecipePetriNet = mock[RecipePetriNet]
       val eventType = EventDescriptor("Event", Seq.empty)

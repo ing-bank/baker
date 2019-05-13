@@ -5,11 +5,11 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
-import com.ing.baker.recipe.TestRecipe.{fireTwoEventsInteraction, _}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.recipe.TestRecipe.{fireTwoEventsInteraction, _}
 import com.ing.baker.recipe.{CaseClassIngredient, common}
-import com.ing.baker.runtime.akka.{AkkaBaker, RuntimeEvent}
+import com.ing.baker.runtime.akka.RuntimeEvent
 import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.types.{Converters, Value}
 import com.typesafe.config.{Config, ConfigFactory}
@@ -52,7 +52,7 @@ trait BakerRuntimeTestBase
   def ingredientMap(entries: (String, Any)*): Map[String, Value] =
     entries.map { case (name, obj) => name -> Converters.toValue(obj) }.toMap
 
-  def eventList(events: Any*): Seq[RuntimeEvent]= events.map(e => RuntimeEvent.extractEvent((e)))
+  def eventList(events: Any*): Seq[RuntimeEvent] = events.map(e => RuntimeEvent.extractEvent((e)))
 
   //Can be used to check the state after firing the initialEvent
   protected val afterInitialState = ingredientMap(
@@ -88,8 +88,8 @@ trait BakerRuntimeTestBase
   protected val testOptionalIngredientInteractionMock: OptionalIngredientInteraction = mock[OptionalIngredientInteraction]
   protected val testProvidesNothingInteractionMock: ProvidesNothingInteraction = mock[ProvidesNothingInteraction]
 
-  protected val mockImplementations: Set[AnyRef] =
-    Set(
+  protected val mockImplementations: Seq[AnyRef] =
+    Seq(
       testInteractionOneMock,
       testInteractionTwoMock,
       testInteractionThreeMock,
@@ -166,23 +166,23 @@ trait BakerRuntimeTestBase
                                      snapshotsPath: String = "target/snapshots"): Config =
 
     ConfigFactory.parseString(
-    s"""
-       |akka {
-       |
+      s"""
+         |akka {
+         |
        |  actor.provider = "akka.cluster.ClusterActorRefProvider"
-       |
+         |
        |  remote {
-       |    netty.tcp {
-       |      hostname = localhost
-       |      port = $port
-       |    }
-       |  }
-       |}
-       |
+         |    netty.tcp {
+         |      hostname = localhost
+         |      port = $port
+         |    }
+         |  }
+         |}
+         |
        |baker {
-       |  actor.provider = "cluster-sharded"
-       |  cluster.seed-nodes = ["akka.tcp://$actorSystemName@localhost:$port"]
-       |}
+         |  actor.provider = "cluster-sharded"
+         |  cluster.seed-nodes = ["akka.tcp://$actorSystemName@localhost:$port"]
+         |}
     """.stripMargin).withFallback(localLevelDBConfig(actorSystemName, journalInitializeTimeout, journalPath, snapshotsPath))
 
   implicit protected val defaultActorSystem = ActorSystem(actorSystemName)
@@ -209,7 +209,7 @@ trait BakerRuntimeTestBase
     setupBakerWithRecipe(recipe, mockImplementations)(actorSystem)
   }
 
-  protected def setupBakerWithRecipe(recipe: common.Recipe, implementations: Set[AnyRef])
+  protected def setupBakerWithRecipe(recipe: common.Recipe, implementations: Seq[AnyRef])
                                     (implicit actorSystem: ActorSystem): Future[(Baker, String)] = {
 
     val baker = Baker.akka(actorSystem)

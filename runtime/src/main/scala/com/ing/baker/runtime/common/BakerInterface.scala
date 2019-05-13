@@ -159,7 +159,7 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     *
     * @param implementations The implementation object
     */
-  def addImplementations(implementations: Set[AnyRef]): F[Unit]
+  def addImplementations(implementations: Seq[AnyRef]): F[Unit]
 
   /**
     * Adds an interaction implementation to baker.

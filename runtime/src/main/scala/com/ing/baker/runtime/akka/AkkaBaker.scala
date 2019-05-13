@@ -366,7 +366,7 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     *
     * @param implementations The implementation object
     */
-  override def addImplementations(implementations: Set[AnyRef]): Future[Unit] =
+  override def addImplementations(implementations: Seq[AnyRef]): Future[Unit] =
     Future.successful(implementations.foreach(addImplementation))
 
   /**
