@@ -17,6 +17,11 @@ import scala.compat.java8.FutureConverters
 import scala.concurrent.Future
 
 object JBaker {
+
+  def akka(config: Config, actorSystem: ActorSystem): JBaker = new JBaker(new AkkaBaker(config)(actorSystem))
+
+  def other(baker: Baker) = new JBaker(baker)
+
   private def toCompletableFuture[T](scalaFuture: Future[T]): CompletableFuture[T] = {
     FutureConverters.toJava(scalaFuture).toCompletableFuture
   }
@@ -34,9 +39,6 @@ object JBaker {
       .toCompletableFuture
       .thenApply(_.asJava)
   }
-
-  def akka(config: Config, actorSystem: ActorSystem): JBaker = new JBaker(new AkkaBaker(config)(actorSystem))
-  def other(baker: Baker) = new JBaker(baker)
 
 }
 

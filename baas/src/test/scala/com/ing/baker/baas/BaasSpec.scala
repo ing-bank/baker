@@ -4,6 +4,8 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
+import com.ing.baker.baas.BaasSpec._
+import com.ing.baker.baas.client.BaasBaker
 import com.ing.baker.baas.server.BaasServer
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
@@ -12,6 +14,7 @@ import com.ing.baker.recipe.scaladsl
 import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.Baker
+import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.anyString
 import org.mockito.Mockito.{mock, reset, when}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
@@ -25,17 +28,23 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
   val baasHost = "localhost"
   val baasPort = 8081
 
-  /*TODO FIX THIS TESTS
   // Startup a empty BAAS cluster
-  val baker = Baker.akka(system)
+  val config: Config = ConfigFactory.load()
+  val baker = Baker.akka(config, system)
   val baasAPI: BaasServer = new BaasServer(baker, baasHost, baasPort)(system)
 
   // Start a BAAS API
-  val baasBaker: Baker = BakerProvider()
+  val baasBaker: Baker = new BaasBaker(
+    config,
+    config.getString("baker.engine.baas.client-host"),
+    config.getInt("baker.engine.baas.client-port"),
+    config.getString("baker.engine.baas.baas-host"),
+    config.getInt("baker.engine.baas.baas-port"))
 
   val mockOne = mock(classOf[InteractionOne])
   val mockTwo = mock(classOf[InteractionTwo])
 
+  import system.dispatcher
 
   // implementations
   val localImplementations: Seq[AnyRef] = Seq(mockOne, mockTwo)
@@ -62,31 +71,23 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     val recipeName = "simpleRecipe" + UUID.randomUUID().toString
     val recipe: Recipe = setupSimpleRecipe(recipeName)
     val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-    val recipeId = baasBaker.addRecipe(compiledRecipe)
-
     val requestId = UUID.randomUUID().toString
 
-    baasBaker.bake(recipeId, requestId)
+    for {
+      recipeId <- baasBaker.addRecipe(compiledRecipe)
+      _ <- baasBaker.bake(recipeId, requestId)
+      sensoryEventStatusResponse <- baasBaker.processEvent(requestId, InitialEvent("initialIngredient"))
+          .flatMap(_.completedFuture).map(_.sensoryEventStatus)
+      _ = sensoryEventStatusResponse shouldBe SensoryEventStatus.Completed
+      processState <- baasBaker.getProcessState(requestId)
 
-    val sensoryEventStatusResponse: SensoryEventStatus =
-      baasBaker.processEvent(requestId, InitialEvent("initialIngredient"))
-    sensoryEventStatusResponse shouldBe SensoryEventStatus.Completed
+      _ = processState.ingredients.keys should contain("initialIngredient")
+      _ = processState.ingredients.keys should contain("interactionOneIngredient")
+      _ = processState.ingredients.keys should contain("interactionTwoIngredient")
 
-    val processState: ProcessState = baasBaker.getProcessState(requestId)
-
-    processState.ingredients.keys should contain("initialIngredient")
-    processState.ingredients.keys should contain("interactionOneIngredient")
-    processState.ingredients.keys should contain("interactionTwoIngredient")
-
-    val events: Seq[RuntimeEvent] = baasBaker.getEvents(requestId)
-
-//    println(s"${Console.YELLOW} events: $events ${Console.RESET}")
-//    println(s"procesState : ${processState.ingredients}")
-
-    val visualState = baasBaker.getVisualState(requestId)
-
-//    println(visualState)
-
+      _ = baasBaker.getVisualState(requestId)
+      //    println(visualState)
+    } yield succeed
   }
 
   "Process Event Async with http streaming" in {
@@ -94,25 +95,20 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
       .thenReturn(InteractionOneEvent("InteractionOneOutput"))
 
     when(mockTwo.apply(anyString(), anyString()))
-      .thenThrow(new RuntimeException("InteractionTwoFailure"))
       .thenReturn(InteractionTwoEvent("InteractionTwoOutput"))
 
     val recipeName = "simpleRecipe" + UUID.randomUUID().toString
     val recipe: Recipe = setupSimpleRecipe(recipeName)
     val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-    val recipeId = baasBaker.addRecipe(compiledRecipe)
-
     val requestId = UUID.randomUUID().toString
 
-
-    baasBaker.bake(recipeId, requestId)
-
-    val response: BakerResponse = baasBaker.processEventAsync(requestId, InitialEvent("initialIngredient"))
-
-    val events: Seq[RuntimeEvent] = response.confirmAllEvents(60.second)
-//    println(Console.YELLOW + events + Console.RESET)
-
-    assert(events.nonEmpty)
+    for {
+      recipeId <- baasBaker.addRecipe(compiledRecipe)
+      _ <- baasBaker.bake(recipeId, requestId)
+      response <- baasBaker.processEvent(requestId, InitialEvent("initialIngredient"))
+      events <- response.completedFuture.map(_.events)
+      _ = assert(events.nonEmpty)
+    } yield succeed
   }
 }
 
@@ -165,6 +161,5 @@ object BaasSpec {
           .build()
       )
   }
-  */
 
 }

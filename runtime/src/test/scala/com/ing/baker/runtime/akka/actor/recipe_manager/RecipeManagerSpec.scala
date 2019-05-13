@@ -11,8 +11,6 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.typesafe.config.{Config, ConfigFactory}
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.Await
-
 object RecipeManagerSpec {
   val config: Config = ConfigFactory.parseString(
     """
@@ -29,25 +27,24 @@ class RecipeManagerSpec  extends BakerRuntimeTestBase {
   val log = LoggerFactory.getLogger(classOf[RecipeManagerSpec])
 
   "The RecipeManagerSpec" should {
-    /*TODO FIX THIS TESTS
     "Add a recipe to the list when a AddRecipe message is received" in {
       val compiledRecipe = RecipeCompiler.compileRecipe(TestRecipe.getRecipe("AddRecipeRecipe"))
       val recipeManager: ActorRef = defaultActorSystem.actorOf(RecipeManager.props(),  s"recipeManager-${UUID.randomUUID().toString}")
 
-      val futureAddResult = recipeManager.ask(AddRecipe(compiledRecipe))(timeout)
-      val recipeId: String = Await.result(futureAddResult, timeout) match {
-        case AddRecipeResponse(x) => x
-        case _ => fail("Adding recipe failed")
-      }
-
-      val futureGetResult = recipeManager.ask(GetRecipe(recipeId))(timeout)
-      Await.result(futureGetResult, timeout) match {
-        case RecipeFound(recipe, _) => recipe
-        case NoRecipeFound(_) => fail("Recipe not found")
-        case _ => fail("Unknown response received")
-      }
+      for {
+        futureAddResult <- recipeManager.ask(AddRecipe(compiledRecipe))(timeout)
+        recipeId: String = futureAddResult match {
+          case AddRecipeResponse(x) => x
+          case _ => fail("Adding recipe failed")
+        }
+        futureGetResult <- recipeManager.ask(GetRecipe(recipeId))(timeout)
+        _ = futureGetResult match {
+          case RecipeFound(_, _) => succeed
+          case NoRecipeFound(_) => fail("Recipe not found")
+          case _ => fail("Unknown response received")
+        }
+      } yield succeed
     }
-    */
   }
 
 }

@@ -18,6 +18,7 @@ import com.ing.baker.runtime.javadsl.EventList;
 import com.ing.baker.runtime.javadsl.JBaker;
 import com.ing.baker.runtime.scaladsl.Baker;
 import com.ing.baker.types.Converters;
+import com.ing.baker.types.Value;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.junit.AfterClass;
@@ -33,6 +34,7 @@ import scala.concurrent.duration.FiniteDuration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -51,7 +53,6 @@ public class JBakerTest {
     private static Config config = null;
 
 
-    /*TODO FIX THIS TESTS
     @Rule
     public final ExpectedException exception = ExpectedException.none();
 
@@ -67,240 +68,75 @@ public class JBakerTest {
     }
 
     @Test
-    public void shouldSetupJBakerWithDefaultActorFramework() throws BakerException, TimeoutException {
+    public void shouldSetupJBakerWithDefaultActorFramework() throws BakerException, ExecutionException, InterruptedException {
 
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupSimpleRecipe());
 
-        JBaker jBaker = new JBaker(config);
-        jBaker.addImplementations(implementationsList);
-        String recipeId = jBaker.addRecipe(compiledRecipe);
+        String processId = UUID.randomUUID().toString();
+        JBaker jBaker = JBaker.akka(config, actorSystem);
+        java.util.Map<String, Value> ingredients = jBaker.addImplementations(implementationsList)
+            .thenCompose(x -> jBaker.addRecipe(compiledRecipe))
+            .thenCompose(recipeId -> {
+                assertEquals(compiledRecipe.getValidationErrors().size(), 0);
+                return jBaker.bake(recipeId, processId);
+            })
+            .thenCompose(x -> jBaker.processEvent(processId, new JavaCompiledRecipeTest.EventOne()))
+            .thenCompose(BakerResponse::completedFutureJava)
+            .thenCompose(x -> jBaker.getProcessState(processId))
+            .thenApply(ProcessState::getIngredients)
+            .get();
+
+        assertEquals(1, ingredients.size());
+        Object requestIdstringOne = ingredients.get("RequestIDStringOne");
+        assertEquals(Converters.toValue(processId), requestIdstringOne);
+    }
+
+    @Test
+    public void shouldSetupJBakerWithGivenActorFramework() throws BakerException, ExecutionException, InterruptedException {
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupSimpleRecipe());
 
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
+
+        JBaker jBaker = JBaker.akka(config, actorSystem);
+        jBaker.addImplementations(implementationsList);
+        String recipeId = jBaker.addRecipe(compiledRecipe).get();
+
         String requestId = UUID.randomUUID().toString();
-        jBaker.bake(recipeId, requestId);
-        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
+        jBaker.bake(recipeId, requestId).get();
+        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne()).get().completedFutureJava().get();
+        java.util.Map<String, Value> ingredients = jBaker.getProcessState(requestId).get().getIngredients();
 
-        assertEquals(1, jBaker.getIngredients(requestId).size());
+        assertEquals(1, ingredients.size());
 
-        Object requestIdstringOne = jBaker.getIngredients(requestId).get("RequestIDStringOne");
+        Object requestIdstringOne = ingredients.get("RequestIDStringOne");
         assertEquals(Converters.toValue(requestId), requestIdstringOne);
     }
 
     @Test
-    public void shouldSetupJBakerWithGivenActorFramework() throws BakerException, TimeoutException {
-        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupSimpleRecipe());
+    public void shouldFailWhenMissingImplementations() throws BakerException, ExecutionException, InterruptedException {
 
-        assertEquals(compiledRecipe.getValidationErrors().size(), 0);
-
-        JBaker jBaker = new JBaker(config);
-        jBaker.addImplementations(implementationsList);
-        String recipeId = jBaker.addRecipe(compiledRecipe);
-
-        String requestId = UUID.randomUUID().toString();
-        jBaker.bake(recipeId, requestId);
-        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
-
-        assertEquals(1, jBaker.getIngredients(requestId).size());
-
-        Object requestIdstringOne = jBaker.getIngredients(requestId).get("RequestIDStringOne");
-        assertEquals(Converters.toValue(requestId), requestIdstringOne);
-    }
-
-    @Test
-    public void shouldFailWhenMissingImplementations() throws BakerException {
-
-        exception.expect(BakerException.class);
+        exception.expect(ExecutionException.class);
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
-        JBaker jBaker = new JBaker(config);
+        JBaker jBaker = JBaker.akka(config, actorSystem);
 
-        jBaker.addRecipe(compiledRecipe);
+        jBaker.addRecipe(compiledRecipe).get();
     }
 
     @Test
-    public void shouldProxyToBaker() throws Exception {
+    public void shouldExecuteCompleteFlow() throws BakerException, ExecutionException, InterruptedException {
 
-        Baker mockBaker = mock(Baker.class);
-
-        JBaker jBaker = new JBaker(mockBaker, Collections.emptyList());
-
-        String testRecipeId = "testRecipe";
-        UUID processUUID = UUID.randomUUID();
-        String processStringId = UUID.randomUUID().toString();
-        String testEvent = "testEvent";
-        String testCorrelationId = "testCorrelationId";
-        String testInteractionName = "testInteraction";
-        java.time.Duration testTimeout = java.time.Duration.ofSeconds(1);
-        FiniteDuration testTimeoutScala = new FiniteDuration(testTimeout.toMillis(), TimeUnit.MILLISECONDS);
-        EventListener testListener = (processId, event) -> {
-        };
-
-        when(mockBaker.getEventNames(any(String.class), any(FiniteDuration.class))).thenReturn(List$.MODULE$.empty());
-
-        // -- register
-
-        jBaker.registerBakerEventListener(new EmptySubscriber());
-        verify(mockBaker).registerEventListenerPF(any(AnnotatedEventSubscriber.class));
-
-        // -- bake
-
-        jBaker.bake(testRecipeId, processStringId);
-        verify(mockBaker).bake(eq(testRecipeId), eq(processStringId), any(FiniteDuration.class));
-
-        jBaker.bake(testRecipeId, processUUID);
-        verify(mockBaker).bake(eq(testRecipeId), eq(processUUID.toString()), any(FiniteDuration.class));
-
-        // -- get ingredients
-
-        jBaker.getIngredients(processStringId);
-        verify(mockBaker).getIngredients(eq(processStringId), any(FiniteDuration.class));
-
-        jBaker.getIngredients(processUUID);
-        verify(mockBaker).getIngredients(eq(processUUID.toString()), any(FiniteDuration.class));
-
-        // -- get events
-
-        Long timestamp = 40l;
-        RuntimeEvent event = new RuntimeEvent("event", scala.collection.JavaConverters.asScalaBuffer(new java.util.ArrayList()).toList());
-        Tuple2<RuntimeEvent, Object> withTimestamp = new Tuple2<>(event, timestamp);
-        ArrayList<Tuple2<RuntimeEvent, Object>> listWithTimestamps = new ArrayList<Tuple2<RuntimeEvent, Object>>();
-        listWithTimestamps.add(withTimestamp);
-        scala.collection.Seq<Tuple2<RuntimeEvent, Object>> list = scala.collection.JavaConverters.asScalaBuffer(listWithTimestamps).toList();
-
-        when(mockBaker.eventsWithTimestamp(eq(processStringId), any(FiniteDuration.class))).thenReturn(list);
-        jBaker.getEvents(processStringId);
-        verify(mockBaker).eventsWithTimestamp(eq(processStringId), any(FiniteDuration.class));
-
-        when(mockBaker.eventsWithTimestamp(eq(processUUID.toString()), any(FiniteDuration.class))).thenReturn(list);
-        EventList eventList = jBaker.getEvents(processUUID);
-        verify(mockBaker).eventsWithTimestamp(eq(processUUID.toString()), any(FiniteDuration.class));
-
-        assert(eventList.getEventNameListWithTimestamp().get(0).getTimestamp() == timestamp);
-
-        // -- get event names
-
-        jBaker.getEventNames(processStringId);
-        verify(mockBaker).getEventNames(eq(processStringId), any(FiniteDuration.class));
-
-        jBaker.getEventNames(processUUID);
-        verify(mockBaker).getEventNames(eq(processUUID.toString()), any(FiniteDuration.class));
-
-        jBaker.getEventNames(processStringId, testTimeout);
-        verify(mockBaker).getEventNames(eq(processStringId), eq(testTimeoutScala));
-
-        jBaker.getEventNames(processUUID, testTimeout);
-        verify(mockBaker).getEventNames(eq(processUUID.toString()), eq(testTimeoutScala));
-
-        // -- get recipe
-
-        when(mockBaker.getAllRecipes(any(FiniteDuration.class)))
-                .thenReturn(new scala.collection.immutable.HashMap<String, RecipeInformation>());
-        jBaker.getAllRecipes();
-        verify(mockBaker).getAllRecipes(any(FiniteDuration.class));
-
-        when(mockBaker.getRecipe(any(String.class), any(FiniteDuration.class)))
-                .thenReturn(new RecipeInformation(null, 0l, new scala.collection.immutable.HashSet<String>()));
-        jBaker.getRecipe(testRecipeId);
-        verify(mockBaker).getRecipe(eq(testRecipeId), any(FiniteDuration.class));
-
-        // -- get index
-
-        jBaker.getIndex();
-        verify(mockBaker).getIndex(any(FiniteDuration.class));
-
-        jBaker.getIndex(testTimeout);
-        verify(mockBaker).getIndex(eq(testTimeoutScala));
-
-        // -- register listener
-
-        jBaker.registerEventListener(testListener);
-        verify(mockBaker).registerEventListener(eq(testListener));
-
-        jBaker.registerEventListener(testRecipeId, testListener);
-        verify(mockBaker).registerEventListener(eq(testRecipeId), eq(testListener));
-
-        // -- process event
-
-        jBaker.processEvent(processStringId, testEvent);
-        verify(mockBaker).processEvent(eq(processStringId), eq(testEvent), eq(Option.empty()), any(FiniteDuration.class));
-
-        jBaker.processEvent(processUUID, testEvent);
-        verify(mockBaker).processEvent(eq(processUUID.toString()), eq(testEvent), eq(Option.empty()), any(FiniteDuration.class));
-
-        // with correlation id
-
-        jBaker.processEvent(processStringId, testEvent, testCorrelationId);
-        verify(mockBaker).processEvent(eq(processStringId), eq(testEvent), eq(Option.apply(testCorrelationId)), any(FiniteDuration.class));
-
-        jBaker.processEvent(processUUID, testEvent, testCorrelationId);
-        verify(mockBaker).processEvent(eq(processUUID.toString()), eq(testEvent), eq(Option.apply(testCorrelationId)), any(FiniteDuration.class));
-
-        // with timeout
-
-        jBaker.processEvent(processStringId, testEvent, testTimeout);
-        verify(mockBaker).processEvent(eq(processStringId), eq(testEvent), eq(Option.empty()), eq(testTimeoutScala));
-
-        jBaker.processEvent(processUUID, testEvent, testTimeout);
-        verify(mockBaker).processEvent(eq(processUUID.toString()), eq(testEvent), eq(Option.empty()), eq(testTimeoutScala));
-
-        // with correlation id and timeout
-
-        jBaker.processEvent(processStringId, testEvent, testCorrelationId, testTimeout);
-        verify(mockBaker).processEvent(eq(processStringId), eq(testEvent), eq(Option.apply(testCorrelationId)), eq(testTimeoutScala));
-
-        jBaker.processEvent(processUUID, testEvent, testCorrelationId, testTimeout);
-        verify(mockBaker).processEvent(eq(processUUID.toString()), eq(testEvent), eq(Option.apply(testCorrelationId)), eq(testTimeoutScala));
-
-        // incident resolving
-
-        jBaker.retryInteraction(processStringId, testInteractionName);
-        verify(mockBaker).retryInteraction(eq(processStringId), eq(testInteractionName), any(FiniteDuration.class));
-
-        jBaker.retryInteraction(processStringId, testInteractionName, testTimeout);
-        verify(mockBaker).retryInteraction(eq(processStringId), eq(testInteractionName), eq(testTimeoutScala));
-
-        jBaker.resolveInteraction(processStringId, testInteractionName, testEvent);
-        verify(mockBaker).resolveInteraction(eq(processStringId), eq(testInteractionName), eq(testEvent), any(FiniteDuration.class));
-
-        jBaker.resolveInteraction(processStringId, testInteractionName, testEvent, testTimeout);
-        verify(mockBaker).resolveInteraction(eq(processStringId), eq(testInteractionName), eq(testEvent), eq(testTimeoutScala));
-
-        jBaker.stopRetryingInteraction(processStringId, testInteractionName);
-        verify(mockBaker).stopRetryingInteraction(eq(processStringId), eq(testInteractionName), any(FiniteDuration.class));
-
-        jBaker.stopRetryingInteraction(processStringId, testInteractionName, testTimeout);
-        verify(mockBaker).stopRetryingInteraction(eq(processStringId), eq(testInteractionName), eq(testTimeoutScala));
-    }
-
-    @Test
-    public void shouldExecuteCompleteFlow() throws BakerException, TimeoutException {
-
-        JBaker jBaker = new JBaker(config);
+        JBaker jBaker = JBaker.akka(config, actorSystem);
 
         jBaker.addImplementations(implementationsList);
 
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
 
-        String recipeId = jBaker.addRecipe(compiledRecipe);
+        String recipeId = jBaker.addRecipe(compiledRecipe).get();
 
         String requestId = UUID.randomUUID().toString();
-        jBaker.bake(recipeId, requestId);
-        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne());
-        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventTwo());
-    }
-
-    @Test
-    public void shouldFailWhenSieveNotDefaultConstructor() throws BakerException {
-        Recipe recipe = JavaCompiledRecipeTest.setupComplexRecipe()
-                .withSieve(InteractionDescriptor.of(JavaCompiledRecipeTest.SieveImplWithoutDefaultConstruct.class));
-
-        exception.expect(BakerException.class);
-        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
-
-        JBaker jBaker = new JBaker(config);
-
-        jBaker.addImplementations(implementationsList);
-
-        jBaker.addRecipe(compiledRecipe);
+        jBaker.bake(recipeId, requestId).get();
+        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne()).get().completedFutureJava().get();
+        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventTwo()).get().completedFutureJava().get();
     }
 
     final static class EmptySubscriber {
@@ -311,5 +147,4 @@ public class JBakerTest {
         }
     }
 
-*/
 }
