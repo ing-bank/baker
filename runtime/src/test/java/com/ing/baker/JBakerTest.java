@@ -1,6 +1,8 @@
 package com.ing.baker;
 
 import akka.actor.ActorSystem;
+import akka.stream.ActorMaterializer;
+import akka.stream.Materializer;
 import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.JavaCompiledRecipeTest;
 import com.ing.baker.compiler.RecipeCompiler;
@@ -35,6 +37,7 @@ public class JBakerTest {
             new JavaCompiledRecipeTest.SieveImpl());
 
     private static ActorSystem actorSystem = null;
+    private static Materializer materializer = null;
     private static Config config = null;
 
 
@@ -45,6 +48,7 @@ public class JBakerTest {
     public static void init() {
         config = ConfigFactory.load();
         actorSystem = ActorSystem.apply("JBakerTest");
+        materializer = ActorMaterializer.create(actorSystem);
     }
 
     @AfterClass
@@ -58,7 +62,7 @@ public class JBakerTest {
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupSimpleRecipe());
 
         String processId = UUID.randomUUID().toString();
-        JBaker jBaker = JBaker.akka(config, actorSystem);
+        JBaker jBaker = JBaker.akka(config, actorSystem, materializer);
         java.util.Map<String, Value> ingredients = jBaker.addImplementations(implementationsList)
             .thenCompose(x -> jBaker.addRecipe(compiledRecipe))
             .thenCompose(recipeId -> {
@@ -82,7 +86,7 @@ public class JBakerTest {
 
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
 
-        JBaker jBaker = JBaker.akka(config, actorSystem);
+        JBaker jBaker = JBaker.akka(config, actorSystem, materializer);
         jBaker.addImplementations(implementationsList);
         String recipeId = jBaker.addRecipe(compiledRecipe).get();
 
@@ -102,7 +106,7 @@ public class JBakerTest {
 
         exception.expect(ExecutionException.class);
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
-        JBaker jBaker = JBaker.akka(config, actorSystem);
+        JBaker jBaker = JBaker.akka(config, actorSystem, materializer);
 
         jBaker.addRecipe(compiledRecipe).get();
     }
@@ -110,7 +114,7 @@ public class JBakerTest {
     @Test
     public void shouldExecuteCompleteFlow() throws BakerException, ExecutionException, InterruptedException {
 
-        JBaker jBaker = JBaker.akka(config, actorSystem);
+        JBaker jBaker = JBaker.akka(config, actorSystem, materializer);
 
         jBaker.addImplementations(implementationsList);
 

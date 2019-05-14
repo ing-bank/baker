@@ -1,12 +1,30 @@
 package com.ing.baker.runtime.scaladsl
 
-import akka.actor.ActorSystem
-import com.ing.baker.runtime.common.ScalaBaker
-import com.ing.baker.runtime.akka.AkkaBaker
+import akka.actor.{ActorSystem, Address}
+import akka.stream.Materializer
+import cats.data.NonEmptyList
 import com.ing.baker.runtime.akka.events.BakerEvent
-import com.typesafe.config.{Config, ConfigFactory}
+import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
+import com.ing.baker.runtime.common.ScalaBaker
+import com.typesafe.config.Config
 
 import scala.concurrent.Future
+
+object Baker {
+
+  def akkaLocalDefault(actorSystem: ActorSystem, materializer: Materializer): AkkaBaker =
+    new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem, materializer))
+
+  def akkaClusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem, materializer: Materializer): AkkaBaker =
+    new AkkaBaker(AkkaBakerConfig.clusterDefault(seedNodes, actorSystem, materializer))
+
+  def akka(config: AkkaBakerConfig): AkkaBaker =
+    new AkkaBaker(config)
+
+  def akka(config: Config, actorSystem: ActorSystem, materializer: Materializer): AkkaBaker =
+    new AkkaBaker(AkkaBakerConfig.from(config, actorSystem, materializer))
+
+}
 
 /**
   * The Baker is the component of the Baker library that runs one or multiples recipes.
@@ -25,15 +43,5 @@ trait Baker extends ScalaBaker[Future] {
   override type Result = SensoryEventResult
 
   override type Moments = SensoryEventMoments
-
-}
-
-object Baker {
-
-  def akka(config: Config, actorSystem: ActorSystem): AkkaBaker =
-    new AkkaBaker(config)(actorSystem)
-
-  def akka(actorSystem: ActorSystem): AkkaBaker =
-    akka(ConfigFactory.load(), actorSystem)
 
 }

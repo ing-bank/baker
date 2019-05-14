@@ -7,6 +7,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl._
 import ScalaDSLRuntime._
 import com.ing.baker.runtime.scaladsl.Baker
+import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.Future
 
@@ -64,7 +65,7 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
       val implementations =
         Seq(validateOrderImpl, manufactureGoodsImpl, sendInvoiceImpl, shipGoodsImpl)
 
-      val baker = Baker.akka(defaultActorSystem)
+      val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
       for {
         _ <- Future.traverse(implementations)(baker.addImplementation)

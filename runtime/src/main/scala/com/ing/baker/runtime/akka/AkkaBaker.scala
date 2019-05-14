@@ -2,11 +2,8 @@ package com.ing.baker.runtime.akka
 
 import java.util.concurrent.TimeoutException
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorRef, Props}
 import akka.pattern.{FutureRef, ask}
-import akka.persistence.query.PersistenceQuery
-import akka.persistence.query.scaladsl._
-import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
@@ -14,70 +11,34 @@ import com.ing.baker.runtime.akka.actor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.akka.actor.serialization.Encryption
-import com.ing.baker.runtime.akka.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.akka.events.{BakerEvent, EventReceived, InteractionCompleted, InteractionFailed}
-import com.ing.baker.runtime.akka.internal.{InteractionManager, MethodInteractionImplementation}
+import com.ing.baker.runtime.akka.internal.MethodInteractionImplementation
 import com.ing.baker.runtime.common._
-import com.ing.baker.runtime.scaladsl.{Baker, SensoryEventMoments}
 import com.ing.baker.runtime.{common, scaladsl}
+import com.ing.baker.runtime.scaladsl.{Baker, SensoryEventMoments}
 import com.ing.baker.types.Value
-import com.typesafe.config.Config
-import net.ceedubs.ficus.Ficus._
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.duration.FiniteDuration
 import scala.language.postfixOps
 import scala.util.Try
-
 
 /**
   * The Baker is the component of the Baker library that runs one or multiples recipes.
   * For each recipe a new instance can be baked, sensory events can be send and state can be inquired upon
   */
-class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends Baker {
+class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
 
-  private val log = LoggerFactory.getLogger(classOf[AkkaBaker])
+  import config.{materializer, system}
 
-  if (!config.getAs[Boolean]("baker.config-file-included").getOrElse(false))
-    throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
+  private val log: Logger = LoggerFactory.getLogger(classOf[AkkaBaker])
 
-  private val interactionManager: InteractionManager = new InteractionManager()
-
-  val defaultBakeTimeout: FiniteDuration = config.as[FiniteDuration]("baker.bake-timeout")
-  val defaultProcessEventTimeout: FiniteDuration = config.as[FiniteDuration]("baker.process-event-timeout")
-  val defaultInquireTimeout: FiniteDuration = config.as[FiniteDuration]("baker.process-inquire-timeout")
-  val defaultShutdownTimeout: FiniteDuration = config.as[FiniteDuration]("baker.shutdown-timeout")
-  val defaultAddRecipeTimeout: FiniteDuration = config.as[FiniteDuration]("baker.add-recipe-timeout")
-
-  private val readJournalIdentifier = config.as[String]("baker.actor.read-journal-plugin")
-  private implicit val materializer: ActorMaterializer = ActorMaterializer()
-
-  private val readJournal = PersistenceQuery(actorSystem)
-    .readJournalFor[CurrentEventsByPersistenceIdQuery with PersistenceIdsQuery with CurrentPersistenceIdsQuery](readJournalIdentifier)
-
-  private val configuredEncryption: Encryption = {
-    val encryptionEnabled = config.getAs[Boolean]("baker.encryption.enabled").getOrElse(false)
-    if (encryptionEnabled) {
-      new Encryption.AESEncryption(config.as[String]("baker.encryption.secret"))
-    } else {
-      NoEncryption
-    }
-  }
-
-  private val bakerActorProvider =
-    config.as[Option[String]]("baker.actor.provider") match {
-      case None | Some("local") => new LocalBakerActorProvider(config, configuredEncryption)
-      case Some("cluster-sharded") => new ClusterBakerActorProvider(config, configuredEncryption)
-      case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
-    }
-
-  val recipeManager: ActorRef = bakerActorProvider.createRecipeManagerActor()
+  val recipeManager: ActorRef =
+    config.bakerActorProvider.createRecipeManagerActor()
 
   val processIndexActor: ActorRef =
-    bakerActorProvider.createProcessIndexActor(interactionManager, recipeManager)
+    config.bakerActorProvider.createProcessIndexActor(config.interactionManager, recipeManager)
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -98,14 +59,14 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     if (compiledRecipe.validationErrors.nonEmpty)
       return Future.failed(new RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
 
-    recipeManager.ask(AddRecipe(compiledRecipe))(defaultAddRecipeTimeout) flatMap {
+    recipeManager.ask(AddRecipe(compiledRecipe))(config.defaultAddRecipeTimeout) flatMap {
       case AddRecipeResponse(recipeId) => Future.successful(recipeId)
       case _ => Future.failed(new BakerException(s"Unexpected error happened when adding recipe"))
     }
   }
 
   private def getImplementationErrors(compiledRecipe: CompiledRecipe): Set[String] = {
-    compiledRecipe.interactionTransitions.filterNot(interactionManager.getImplementation(_).isDefined)
+    compiledRecipe.interactionTransitions.filterNot(config.interactionManager.getImplementation(_).isDefined)
       .map(s => s"No implementation provided for interaction: ${s.originalInteractionName}")
   }
 
@@ -117,7 +78,7 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     */
   override def getRecipe(recipeId: String): Future[common.RecipeInformation] = {
     // here we ask the RecipeManager actor to return us the recipe for the given id
-    recipeManager.ask(GetRecipe(recipeId))(defaultInquireTimeout).flatMap {
+    recipeManager.ask(GetRecipe(recipeId))(config.defaultInquireTimeout).flatMap {
       case RecipeFound(compiledRecipe, timestamp) =>
         Future.successful(common.RecipeInformation(compiledRecipe, timestamp, getImplementationErrors(compiledRecipe)))
       case NoRecipeFound(_) =>
@@ -131,7 +92,7 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
   override def getAllRecipes: Future[Map[String, common.RecipeInformation]] =
-    recipeManager.ask(GetAllRecipes)(defaultInquireTimeout)
+    recipeManager.ask(GetAllRecipes)(config.defaultInquireTimeout)
       .mapTo[AllRecipes]
       .map(_.recipes.map { ri =>
         ri.compiledRecipe.recipeId -> common.RecipeInformation(ri.compiledRecipe, ri.timestamp, getImplementationErrors(ri.compiledRecipe))
@@ -145,7 +106,7 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     * @return
     */
   override def bake(recipeId: String, processId: String): Future[Unit] = {
-    processIndexActor.ask(CreateProcess(recipeId, processId))(defaultBakeTimeout).flatMap {
+    processIndexActor.ask(CreateProcess(recipeId, processId))(config.defaultBakeTimeout).flatMap {
       case _: Initialized =>
         Future.successful(())
       case ProcessAlreadyExists(_) =>
@@ -162,9 +123,9 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
       processId = processId,
       event = RuntimeEvent.extractEvent(event),
       correlationId = correlationId,
-      timeout = defaultProcessEventTimeout,
+      timeout = config.defaultProcessEventTimeout,
       reaction = FireSensoryEventReaction.NotifyWhenReceived
-    ))(defaultProcessEventTimeout).flatMap {
+    ))(config.defaultProcessEventTimeout).flatMap {
       // TODO MOVE THIS TO A FUNCTION
       case FireSensoryEventRejection.InvalidEvent(_, message) =>
         Future.failed(new IllegalArgumentException(message))
@@ -187,9 +148,9 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
       processId = processId,
       event = RuntimeEvent.extractEvent(event),
       correlationId = correlationId,
-      timeout = defaultProcessEventTimeout,
+      timeout = config.defaultProcessEventTimeout,
       reaction = FireSensoryEventReaction.NotifyWhenCompleted(waitForRetries = true)
-    ))(defaultProcessEventTimeout).flatMap {
+    ))(config.defaultProcessEventTimeout).flatMap {
       case FireSensoryEventRejection.InvalidEvent(_, message) =>
         Future.failed(new IllegalArgumentException(message))
       case FireSensoryEventRejection.NoSuchProcess(processId0) =>
@@ -207,17 +168,17 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     }
 
   def fireSensoryEvent(processId: String, event: Any, correlationId: Option[String]): scaladsl.SensoryEventMoments = {
-    val futureRef = FutureRef(defaultProcessEventTimeout)
+    val futureRef = FutureRef(config.defaultProcessEventTimeout)
     val futureReceived =
       processIndexActor.ask(ProcessEvent(
         processId = processId,
         event = RuntimeEvent.extractEvent(event),
         correlationId = correlationId,
-        timeout = defaultProcessEventTimeout,
+        timeout = config.defaultProcessEventTimeout,
         reaction = FireSensoryEventReaction.NotifyBoth(
           waitForRetries = true,
           completeReceiver = futureRef.ref)
-      ))(defaultProcessEventTimeout).flatMap {
+      ))(config.defaultProcessEventTimeout).flatMap {
         case FireSensoryEventRejection.InvalidEvent(_, message) =>
           Future.failed(new IllegalArgumentException(message))
         case FireSensoryEventRejection.NoSuchProcess(processId0) =>
@@ -259,7 +220,7 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     * @return
     */
   override def retryInteraction(processId: String, interactionName: String): Future[Unit] = {
-    processIndexActor.ask(RetryBlockedInteraction(processId, interactionName))(defaultProcessEventTimeout).map(_ => ())
+    processIndexActor.ask(RetryBlockedInteraction(processId, interactionName))(config.defaultProcessEventTimeout).map(_ => ())
   }
 
   /**
@@ -270,7 +231,7 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     * @return
     */
   override def resolveInteraction(processId: String, interactionName: String, event: Any): Future[Unit] = {
-    processIndexActor.ask(ResolveBlockedInteraction(processId, interactionName, RuntimeEvent.extractEvent(event)))(defaultProcessEventTimeout).map(_ => ())
+    processIndexActor.ask(ResolveBlockedInteraction(processId, interactionName, RuntimeEvent.extractEvent(event)))(config.defaultProcessEventTimeout).map(_ => ())
   }
 
   /**
@@ -279,7 +240,7 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     * @return
     */
   override def stopRetryingInteraction(processId: String, interactionName: String): Future[Unit] = {
-    processIndexActor.ask(StopRetryingInteraction(processId, interactionName))(defaultProcessEventTimeout).map(_ => ())
+    processIndexActor.ask(StopRetryingInteraction(processId, interactionName))(config.defaultProcessEventTimeout).map(_ => ())
   }
 
   /**
@@ -293,8 +254,8 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     * @return An index of all processes
     */
   override def getIndex: Future[Set[ProcessMetadata]] = {
-    Future.successful(bakerActorProvider
-      .getIndex(processIndexActor)(actorSystem, defaultInquireTimeout)
+    Future.successful(config.bakerActorProvider
+      .getIndex(processIndexActor)(system, config.defaultInquireTimeout)
       .map(p => ProcessMetadata(p.recipeId, p.processId, p.createdDateTime)).toSet)
   }
 
@@ -308,7 +269,7 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
   @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   override def getProcessState(processId: String): Future[ProcessState] =
     processIndexActor
-      .ask(GetProcessState(processId))(Timeout.durationToTimeout(defaultInquireTimeout))
+      .ask(GetProcessState(processId))(Timeout.durationToTimeout(config.defaultInquireTimeout))
       .flatMap {
         case instance: InstanceState => Future.successful(instance.state.asInstanceOf[ProcessState])
         case NoSuchProcess(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
@@ -335,15 +296,15 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     */
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[NoSuchProcessException]("If the process is not found")
-  override def getVisualState(processId: String): Future[String] = {
+  override def getVisualState(processId: String, style: RecipeVisualStyle = RecipeVisualStyle.default): Future[String] = {
     for {
-      getRecipeResponse <- processIndexActor.ask(GetCompiledRecipe(processId))(defaultInquireTimeout)
+      getRecipeResponse <- processIndexActor.ask(GetCompiledRecipe(processId))(config.defaultInquireTimeout)
       processState <- getProcessState(processId)
       response <- getRecipeResponse match {
         case RecipeFound(compiledRecipe, _) =>
           Future.successful(RecipeVisualizer.visualizeRecipe(
             compiledRecipe,
-            config,
+            style,
             eventNames = processState.eventNames.toSet,
             ingredientNames = processState.ingredients.keySet))
         case ProcessDeleted(_) =>
@@ -392,7 +353,7 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     */
   def registerEventListenerPF(pf: PartialFunction[BakerEvent, Unit]): Future[Unit] = {
 
-    val listenerActor = actorSystem.actorOf(Props(new Actor() {
+    val listenerActor = system.actorOf(Props(new Actor() {
       override def receive: Receive = {
         case event: BakerEvent => Try {
           pf.applyOrElse[BakerEvent, Unit](event, _ => ())
@@ -402,7 +363,7 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
       }
     }))
 
-    actorSystem.eventStream.subscribe(listenerActor, classOf[BakerEvent])
+    system.eventStream.subscribe(listenerActor, classOf[BakerEvent])
     Future.successful(())
   }
 
@@ -414,7 +375,7 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     * @param implementation The implementation object
     */
   override def addImplementation(implementation: AnyRef): Future[Unit] =
-    Future.successful(interactionManager.addImplementation(MethodInteractionImplementation(implementation)))
+    Future.successful(config.interactionManager.addImplementation(MethodInteractionImplementation(implementation)))
 
   /**
     * Adds a sequence of interaction implementation to baker.
@@ -430,11 +391,11 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     * @param implementation An InteractionImplementation instance
     */
   override def addImplementation(implementation: InteractionImplementation): Future[Unit] =
-    Future.successful(interactionManager.addImplementation(implementation))
+    Future.successful(config.interactionManager.addImplementation(implementation))
 
   /**
     * Attempts to gracefully shutdown the baker system.
     */
   override def gracefulShutdown(): Future[Unit] =
-    Future.successful(GracefulShutdown.gracefulShutdownActorSystem(actorSystem, defaultShutdownTimeout))
+    Future.successful(GracefulShutdown.gracefulShutdownActorSystem(system, config.defaultShutdownTimeout))
 }

@@ -4,6 +4,7 @@ import java.nio.file.Paths
 import java.util.UUID
 
 import akka.actor.ActorSystem
+import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestKit
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
@@ -106,12 +107,9 @@ trait BakerRuntimeTestBase
       testProvidesNothingInteractionMock)
 
   def writeRecipeToSVGFile(recipe: CompiledRecipe) = {
-
     import guru.nidi.graphviz.engine.{Format, Graphviz}
     import guru.nidi.graphviz.parse.Parser
-
     val g = Parser.read(recipe.getRecipeVisualization)
-
     Graphviz.fromGraph(g).render(Format.SVG).toFile(Paths.get(recipe.name).toFile)
   }
 
@@ -185,7 +183,9 @@ trait BakerRuntimeTestBase
          |}
     """.stripMargin).withFallback(localLevelDBConfig(actorSystemName, journalInitializeTimeout, journalPath, snapshotsPath))
 
-  implicit protected val defaultActorSystem = ActorSystem(actorSystemName)
+  implicit protected val defaultActorSystem: ActorSystem = ActorSystem(actorSystemName)
+
+  implicit protected val defaultMaterializer: Materializer = ActorMaterializer.create(defaultActorSystem)
 
   override def afterAll(): Unit = {
     TestKit.shutdownActorSystem(defaultActorSystem)
@@ -201,26 +201,24 @@ trait BakerRuntimeTestBase
     * @return
     */
   protected def setupBakerWithRecipe(recipeName: String, appendUUIDToTheRecipeName: Boolean = true)
-                                    (implicit actorSystem: ActorSystem): Future[(Baker, String)] = {
+                                    (implicit actorSystem: ActorSystem, materializer: Materializer): Future[(Baker, String)] = {
     val newRecipeName = if (appendUUIDToTheRecipeName) s"$recipeName-${UUID.randomUUID().toString}" else recipeName
     val recipe = getRecipe(newRecipeName)
     setupMockResponse()
-
-    setupBakerWithRecipe(recipe, mockImplementations)(actorSystem)
+    setupBakerWithRecipe(recipe, mockImplementations)(actorSystem, materializer)
   }
 
   protected def setupBakerWithRecipe(recipe: common.Recipe, implementations: Seq[AnyRef])
-                                    (implicit actorSystem: ActorSystem): Future[(Baker, String)] = {
-
-    val baker = Baker.akka(actorSystem)
+                                    (implicit actorSystem: ActorSystem, materializer: Materializer): Future[(Baker, String)] = {
+    val baker = Baker.akka(ConfigFactory.load(), actorSystem, materializer)
     baker.addImplementations(implementations).flatMap { _ =>
       baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).map(baker -> _)(actorSystem.dispatcher)
     }
   }
 
-  protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Future[Baker] = {
+  protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem, materializer: Materializer): Future[Baker] = {
     setupMockResponse()
-    val baker = Baker.akka(actorSystem)
+    val baker = Baker.akka(ConfigFactory.load(), actorSystem, materializer)
     baker.addImplementations(mockImplementations).map { _ => baker }
   }
 

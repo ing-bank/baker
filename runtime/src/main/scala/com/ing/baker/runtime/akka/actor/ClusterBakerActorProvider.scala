@@ -1,12 +1,13 @@
 package com.ing.baker.runtime.akka.actor
 
-import akka.actor.{ActorRef, ActorSystem, Address, AddressFromURIString, PoisonPill}
+import akka.actor.{ActorRef, ActorSystem, Address, PoisonPill}
 import akka.cluster.Cluster
 import akka.cluster.sharding.ShardRegion._
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
 import akka.stream.Materializer
 import akka.util.Timeout
+import cats.data.NonEmptyList
 import com.ing.baker.il.sha256HashCode
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
@@ -15,10 +16,7 @@ import com.ing.baker.runtime.akka.actor.process_index._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager
 import com.ing.baker.runtime.akka.actor.serialization.Encryption
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
-import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.akka.internal.InteractionManager
-import com.typesafe.config.Config
-import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{Await, TimeoutException}
@@ -56,26 +54,19 @@ object ClusterBakerActorProvider {
   val recipeManagerName = "RecipeManager"
 }
 
-class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption) extends BakerActorProvider {
+class ClusterBakerActorProvider(
+    nrOfShards: Int,
+    retentionCheckInterval: FiniteDuration,
+    actorIdleTimeout: Option[FiniteDuration],
+    journalInitializeTimeout: FiniteDuration,
+    seedNodes: NonEmptyList[Address],
+    ingredientsFilter: List[String],
+    configuredEncryption: Encryption
+  ) extends BakerActorProvider {
 
   private val log = LoggerFactory.getLogger(classOf[ClusterBakerActorProvider])
 
-  private val nrOfShards = config.as[Int]("baker.actor.cluster.nr-of-shards")
-  private val retentionCheckInterval = config.as[FiniteDuration]("baker.actor.retention-check-interval")
-  private val actorIdleTimeout: Option[FiniteDuration] = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout")
-  private val ingredientsFilter: List[String] = config.as[List[String]]("baker.filtered-ingredient-values")
-
-  private val journalInitializeTimeout = config.as[FiniteDuration]("baker.journal-initialize-timeout")
-
   private def initializeCluster()(implicit actorSystem: ActorSystem) = {
-
-    val seedNodes: List[Address] = config.as[Option[List[String]]]("baker.cluster.seed-nodes") match {
-      case Some(_seedNodes) if _seedNodes.nonEmpty =>
-        _seedNodes map AddressFromURIString.parse
-      case None =>
-        throw new BakerException("Baker cluster configuration without baker.cluster.seed-nodes")
-    }
-
     /**
       * Join cluster after waiting for the persistenceInit actor, otherwise terminate here.
       */
@@ -84,10 +75,9 @@ class ClusterBakerActorProvider(config: Config, configuredEncryption: Encryption
     } catch {
       case _: TimeoutException => throw new IllegalStateException(s"Timeout when trying to initialize the akka journal, waited $journalInitializeTimeout")
     }
-
     // join the cluster
     log.info("PersistenceInit actor started successfully, joining cluster seed nodes {}", seedNodes)
-    Cluster.get(actorSystem).joinSeedNodes(seedNodes)
+    Cluster.get(actorSystem).joinSeedNodes(seedNodes.toList)
   }
 
 

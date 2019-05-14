@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.common
 
-import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.akka.ProcessState
 import com.ing.baker.types.Value
 
@@ -58,7 +58,6 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     */
   def getAllRecipes: F[Map[String, RecipeInformation]]
 
-  //TODO why does this return a processState? No new information will be in it.
   /**
     * Creates a process instance for the given recipeId with the given processId as identifier
     *
@@ -203,7 +202,7 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     *
     * @return An index of all processes
     */
-  def getIndex(): F[Set[ProcessMetadata]]
+  def getIndex: F[Set[ProcessMetadata]]
 
   /**
     * Returns the process state.
@@ -230,12 +229,11 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     * Returns the visual state (.dot) for a given process.
     *
     * @param processId The process identifier.
-    * @param timeout   How long to wait to retrieve the process state.
     * @return A visual (.dot) representation of the process state.
     */
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[NoSuchProcessException]("If the process is not found")
-  def getVisualState(processId: String): F[String]
+  def getVisualState(processId: String, style: RecipeVisualStyle = RecipeVisualStyle.default): F[String]
 
   /**
     * Registers a listener to all runtime events for recipes with the given name run in this baker instance.

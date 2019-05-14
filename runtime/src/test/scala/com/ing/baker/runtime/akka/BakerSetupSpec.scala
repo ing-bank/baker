@@ -12,6 +12,7 @@ import scala.language.postfixOps
 import com.ing.baker.runtime.ScalaDSLRuntime._
 import com.ing.baker.runtime.common.{BakerException, RecipeValidationException}
 import com.ing.baker.runtime.scaladsl.Baker
+import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.Future
 
@@ -33,7 +34,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent))
 
-        val baker = Baker.akka(defaultActorSystem)
+        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
         for {
           _ <- baker.addImplementations(mockImplementations)
@@ -46,12 +47,12 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
       }
 
       "providing implementations in a sequence" in {
-        val baker = Baker.akka(defaultActorSystem)
+        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
         baker.addImplementations(mockImplementations).map(_ => succeed)
       }
 
       "providing an implementation with the class simplename same as the interaction" in {
-        val baker = Baker.akka(defaultActorSystem)
+        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
         baker.addImplementation(new implementations.InteractionOne()).map(_ => succeed)
       }
 
@@ -61,7 +62,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne.withName("interactionOneRenamed"))
           .withSensoryEvent(initialEvent)
 
-        val baker = Baker.akka(defaultActorSystem)
+        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
         for {
           _ <- baker.addImplementation(new implementations.InteractionOne())
@@ -75,7 +76,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = Baker.akka(defaultActorSystem)
+        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
         for {
           _ <- baker.addImplementation(new InteractionOneFieldName())
@@ -89,7 +90,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = Baker.akka(defaultActorSystem)
+        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
         for {
           _ <- baker.addImplementation(new InteractionOneInterfaceImplementation())
@@ -102,7 +103,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(complexIngredientInteraction)
           .withSensoryEvent(initialEvent)
 
-        val baker = Baker.akka(defaultActorSystem)
+        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
         for {
           _ <- baker.addImplementation(mock[ComplexIngredientInteraction])
@@ -118,7 +119,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(secondEvent)
 
-        val baker = Baker.akka(defaultActorSystem)
+        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
         baker.addImplementations(mockImplementations)
 
@@ -133,7 +134,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = Baker.akka(defaultActorSystem)
+        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
         recoverToExceptionIf[BakerException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
@@ -147,7 +148,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = Baker.akka(defaultActorSystem)
+        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
         baker.addImplementation(new InteractionOneWrongApply())
 

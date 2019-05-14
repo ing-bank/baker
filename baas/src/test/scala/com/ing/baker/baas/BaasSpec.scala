@@ -3,6 +3,7 @@ package com.ing.baker.baas
 import java.util.UUID
 
 import akka.actor.ActorSystem
+import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestKit
 import com.ing.baker.baas.BaasSpec._
 import com.ing.baker.baas.client.BaasBaker
@@ -30,7 +31,8 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
 
   // Startup a empty BAAS cluster
   val config: Config = ConfigFactory.load()
-  val baker = Baker.akka(config, system)
+  val materializer: Materializer = ActorMaterializer.create(system)
+  val baker = Baker.akka(config, system, materializer)
   val baasAPI: BaasServer = new BaasServer(baker, baasHost, baasPort)(system)
 
   // Start a BAAS API

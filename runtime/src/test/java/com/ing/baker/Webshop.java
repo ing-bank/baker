@@ -1,6 +1,9 @@
 package com.ing.baker;
 
+import akka.actor.Actor;
 import akka.actor.ActorSystem;
+import akka.stream.ActorMaterializer;
+import akka.stream.Materializer;
 import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
@@ -134,7 +137,7 @@ public class Webshop {
 
 
     //    @Test
-    public void testWebshop() throws TimeoutException, ExecutionException, InterruptedException {
+    public void testWebshop() throws ExecutionException, InterruptedException {
 
         Config config = ConfigFactory.load("cassandra.conf");
 
@@ -153,7 +156,9 @@ public class Webshop {
         when(validateOrderMock.apply(any(), any())).thenReturn(new ValidateOrder.Valid());
 
 //        JBaker baker = new JBaker(ActorSystem.apply("webshop", config));
-        JBaker baker = JBaker.akka(config, ActorSystem.create("webshop"));
+        ActorSystem system = ActorSystem.create("webshop");
+        Materializer materializer = ActorMaterializer.create(system);
+        JBaker baker = JBaker.akka(config, system, materializer);
 
         baker.addImplementations(ImmutableList.of(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock));
 

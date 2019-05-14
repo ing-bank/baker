@@ -7,7 +7,7 @@ import akka.http.scaladsl.model.{RequestEntity, _}
 import com.ing.baker.baas.interaction.server.RemoteInteractionLauncher
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
-import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.akka.events.BakerEvent
 import com.ing.baker.runtime.common.{EventListener, InteractionImplementation, ProcessMetadata, RecipeInformation, SensoryEventStatus}
 import com.ing.baker.runtime.akka.ProcessState
@@ -179,7 +179,7 @@ class BaasBaker(config: Config,
     * @param processId The process identifier.
     * @return A visual (.dot) representation of the process state.
     */
-  override def getVisualState(processId: String): Future[String] = {
+  override def getVisualState(processId: String, style: RecipeVisualStyle = RecipeVisualStyle.default): Future[String] = {
     val request = HttpRequest(
       uri = s"$baseUri/$processId/visual_state",
       method = GET)

@@ -3,9 +3,12 @@ package com.ing.baker.runtime.javadsl
 import java.util
 import java.util.concurrent.CompletableFuture
 
-import akka.actor.ActorSystem
-import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.{AkkaBaker, ProcessState}
+import akka.actor.{ActorSystem, Address}
+import akka.stream.Materializer
+import cats.data.NonEmptyList
+import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
+import com.ing.baker.runtime.akka._
 import com.ing.baker.runtime.common._
 import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.types.Value
@@ -18,33 +21,27 @@ import scala.concurrent.Future
 
 object JBaker {
 
-  def akka(config: Config, actorSystem: ActorSystem): JBaker = new JBaker(new AkkaBaker(config)(actorSystem))
+  def akkaLocalDefault(actorSystem: ActorSystem, materializer: Materializer): JBaker =
+    new JBaker(new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem, materializer)))
 
-  def other(baker: Baker) = new JBaker(baker)
-
-  private def toCompletableFuture[T](scalaFuture: Future[T]): CompletableFuture[T] = {
-    FutureConverters.toJava(scalaFuture).toCompletableFuture
+  def akkaClusterDefault(seedNodes: java.util.List[Address], actorSystem: ActorSystem, materializer: Materializer): JBaker = {
+    val nodes =
+      if(seedNodes.isEmpty) throw new BakerException("Baker cluster configuration without baker.cluster.seed-nodes")
+      else NonEmptyList.fromListUnsafe(seedNodes.asScala.toList)
+    new JBaker(new AkkaBaker(AkkaBakerConfig.clusterDefault(nodes, actorSystem, materializer)))
   }
 
-  private def toCompletableFutureSet[T](scalaFuture: Future[Set[T]]): CompletableFuture[java.util.Set[T]] = {
-    FutureConverters.toJava(
-      scalaFuture)
-      .toCompletableFuture
-      .thenApply(_.asJava)
-  }
+  def akka(config: AkkaBakerConfig): JBaker =
+    new JBaker(Baker.akka(config))
 
-  private def toCompletableFutureMap[K, V](scalaFuture: Future[Map[K, V]]): CompletableFuture[java.util.Map[K, V]] = {
-    FutureConverters.toJava(
-      scalaFuture)
-      .toCompletableFuture
-      .thenApply(_.asJava)
-  }
+  def akka(config: Config, actorSystem: ActorSystem, materializer: Materializer): JBaker =
+    new JBaker(Baker.akka(config, actorSystem, materializer))
 
+  def other(baker: Baker) =
+    new JBaker(baker)
 }
 
 class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[CompletableFuture] {
-
-  import JBaker._
 
   override type Result = SensoryEventResult
 
@@ -212,8 +209,8 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
     *
     * @return An index of all processes
     */
-  def getIndex(): CompletableFuture[util.Set[ProcessMetadata]] =
-    toCompletableFutureSet(baker.getIndex())
+  def getIndex: CompletableFuture[util.Set[ProcessMetadata]] =
+    toCompletableFutureSet(baker.getIndex)
 
   /**
     * Registers a listener to all runtime events for this baker instance.
@@ -265,8 +262,8 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
     */
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[NoSuchProcessException]("If the process is not found")
-  def getVisualState(@Nonnull processId: String): CompletableFuture[String] =
-    toCompletableFuture(baker.getVisualState(processId))
+  def getVisualState(@Nonnull processId: String, style: RecipeVisualStyle = RecipeVisualStyle.default): CompletableFuture[String] =
+    toCompletableFuture(baker.getVisualState(processId, style))
 
   /**
     * Returns the state of a process instance. This includes the ingredients and names of the events.
@@ -278,4 +275,20 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
   @throws[NoSuchProcessException]("If the process is not found")
   def getProcessState(@Nonnull processId: String): CompletableFuture[ProcessState] =
     toCompletableFuture(baker.getProcessState(processId))
+
+  private def toCompletableFuture[T](scalaFuture: Future[T]): CompletableFuture[T] =
+    FutureConverters.toJava(scalaFuture).toCompletableFuture
+
+  private def toCompletableFutureSet[T](scalaFuture: Future[Set[T]]): CompletableFuture[java.util.Set[T]] =
+    FutureConverters.toJava(
+      scalaFuture)
+      .toCompletableFuture
+      .thenApply(_.asJava)
+
+  private def toCompletableFutureMap[K, V](scalaFuture: Future[Map[K, V]]): CompletableFuture[java.util.Map[K, V]] =
+    FutureConverters.toJava(
+      scalaFuture)
+      .toCompletableFuture
+      .thenApply(_.asJava)
+
 }
