@@ -35,7 +35,6 @@ object BakerTypedProtobufSerializer {
     forType[com.ing.baker.types.Value].register("baker.types.Value"),
     forType[com.ing.baker.types.Type].register("baker.types.Type"),
 
-    forType[BakerResponseEventProtocol].register("com.ing.baker.runtime.core.BakerResponseEventProtocol"),
     forType[RuntimeEvent].register("core.RuntimeEvent"),
     forType[ProcessState].register("core.ProcessState"),
 

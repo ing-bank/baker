@@ -5,18 +5,12 @@ import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.JavaCompiledRecipeTest;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.recipe.javadsl.InteractionDescriptor;
-import com.ing.baker.recipe.javadsl.Recipe;
-import com.ing.baker.runtime.common.BakerException;
-import com.ing.baker.runtime.common.EventListener;
-import com.ing.baker.runtime.common.RecipeInformation;
-import com.ing.baker.runtime.akka.*;
+import com.ing.baker.runtime.akka.ProcessState;
 import com.ing.baker.runtime.akka.events.ProcessCreated;
 import com.ing.baker.runtime.akka.events.Subscribe;
-import com.ing.baker.runtime.akka.events.AnnotatedEventSubscriber;
-import com.ing.baker.runtime.javadsl.EventList;
+import com.ing.baker.runtime.common.BakerException;
 import com.ing.baker.runtime.javadsl.JBaker;
-import com.ing.baker.runtime.scaladsl.Baker;
+import com.ing.baker.runtime.javadsl.SensoryEventResult;
 import com.ing.baker.types.Converters;
 import com.ing.baker.types.Value;
 import com.typesafe.config.Config;
@@ -26,20 +20,11 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import scala.Option;
-import scala.Tuple2;
-import scala.collection.immutable.List$;
-import scala.concurrent.duration.FiniteDuration;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
 
 public class JBakerTest {
 
@@ -80,8 +65,12 @@ public class JBakerTest {
                 assertEquals(compiledRecipe.getValidationErrors().size(), 0);
                 return jBaker.bake(recipeId, processId);
             })
-            .thenCompose(x -> jBaker.processEvent(processId, new JavaCompiledRecipeTest.EventOne()))
-            .thenCompose(BakerResponse::completedFutureJava)
+            .thenCompose(x -> jBaker.fireSensoryEventCompleted(processId, new JavaCompiledRecipeTest.EventOne()))
+            .thenApply(SensoryEventResult::events)
+            .thenApply(x -> {
+                x.forEach(System.out::println);
+                return null;
+            })
             .thenCompose(x -> jBaker.getProcessState(processId))
             .thenApply(ProcessState::getIngredients)
             .get();

@@ -46,6 +46,10 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
 
   import JBaker._
 
+  override type Result = SensoryEventResult
+
+  override type Moments = SensoryEventMoments
+
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
     *
@@ -96,33 +100,30 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
   def bake(@Nonnull recipeId: String, @Nonnull processId: String): CompletableFuture[Unit] =
     toCompletableFuture(baker.bake(recipeId, processId))
 
-  /**
-    * This fires the given event in the recipe for the process with the given processId
-    * The future is completed once the all events that are fired by this sensory event are handled
-    *
-    * @param processId The process identifier
-    * @param event     The event to fire
-    * @return
-    */
-  @throws[NoSuchProcessException]("When no process exists for the given id")
-  @throws[ProcessDeletedException]("When no process is deleted")
-  def processEvent(@Nonnull processId: String, @Nonnull event: Any): CompletableFuture[BakerResponse] =
-    toCompletableFuture(baker.processEvent(processId, event))
+  def fireSensoryEventReceived(processId: String, event: Any): CompletableFuture[SensoryEventStatus] =
+    toCompletableFuture(baker.fireSensoryEventReceived(processId, event))
 
-  /**
-    * This fires the given event in the recipe for the process with the given processId
-    * This waits with returning until all steps that can be executed are executed by Baker
-    *
-    * @param processId     The process identifier
-    * @param event         The event to fire
-    * @param correlationId An identifier for the event
-    * @return
-    */
-  @throws[NoSuchProcessException]("When no process exists for the given id")
-  @throws[ProcessDeletedException]("When no process is deleted")
-  def processEvent(@Nonnull processId: String, @Nonnull event: Any, @Nonnull correlationId: String): CompletableFuture[BakerResponse] =
-    toCompletableFuture(baker.processEvent(processId, event, correlationId))
+  def fireSensoryEventCompleted(processId: String, event: Any): CompletableFuture[SensoryEventResult] =
+    toCompletableFuture(baker.fireSensoryEventCompleted(processId, event)).thenApply { result =>
+      new SensoryEventResult(
+        status = result.status,
+        events = result.events.asJava,
+        ingredients = result.ingredients.asJava
+      )
+    }
 
+  def fireSensoryEvent(processId: String, event: Any): SensoryEventMoments = {
+    val scalaResult = baker.fireSensoryEvent(processId, event)
+    new SensoryEventMoments(
+      received = toCompletableFuture(scalaResult.received),
+      completed = toCompletableFuture(scalaResult.completed).thenApply { result =>
+        new SensoryEventResult(
+          status = result.status,
+          events = result.events.asJava,
+          ingredients = result.ingredients.asJava
+        )
+      })
+  }
 
   /**
     * Retries a blocked interaction.
@@ -159,7 +160,6 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
     * Returns all the ingredients that are accumulated for a given process.
     *
     * @param processId The process identifier
-    * @param timeout   the maximum wait time
     * @return
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
@@ -192,7 +192,6 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
     *
     * Does not include deleted processes.
     *
-    * @param timeout
     * @return An index of all processes
     */
   def getIndex(): CompletableFuture[util.Set[ProcessMetadata]] =

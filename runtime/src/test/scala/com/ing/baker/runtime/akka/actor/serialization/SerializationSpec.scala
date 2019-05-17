@@ -143,8 +143,6 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
 
   checkFor("RecipeManager.RecipeAdded", SerializationSpec.RecipeManager.recipeAddedGen)
 
-  checkFor("BakerResponseEventProtocol", SerializationSpec.BakerResponseStream.eventProtocolGen)
-
   checkFor("ProcessInstanceProtocol.Stop", SerializationSpec.ProcessInstance.stopGen)
 
   test("ProcessInstanceProtocol.GetState typed serialization") {
@@ -514,18 +512,4 @@ object SerializationSpec {
     val messagesGen: Gen[AnyRef] = Gen.oneOf(anyValueGen, anyTypeGen)
   }
 
-  object BakerResponseStream {
-
-    val eventProtocolGen: Gen[BakerResponseEventProtocol] =
-      Gen.oneOf(
-        ProcessInstance.transitionFiredGen.map(InstanceTransitionFired),
-        ProcessInstance.transitionNotEnabledGen.map(InstanceTransitionNotEnabled),
-        ProcessInstance.transitionFailedGen.map(InstanceTransitionFailed),
-        ProcessInstance.alreadyReceived.map(InstanceAlreadyReceived),
-        ProcessIndex.noSuchProcessGen.map(IndexNoSuchProcess),
-        ProcessIndex.receivePeriodExpiredGen.map(IndexReceivePeriodExpired),
-        ProcessIndex.processDeletedGen.map(IndexProcessDeleted),
-        ProcessIndex.invalidEventGen.map(IndexInvalidEvent)
-      )
-  }
 }

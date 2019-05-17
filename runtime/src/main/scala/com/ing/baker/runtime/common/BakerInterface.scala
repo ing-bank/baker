@@ -28,6 +28,10 @@ trait JavaBaker[F[_]] extends BakerInterface[F, java.util.Map, java.util.List, j
   */
 trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
 
+  type Result <: SensoryEventResult[Seq, Map]
+
+  type Moments <: SensoryEventMoments[F, Result]
+
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
     *
@@ -64,24 +68,43 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
   def bake(recipeId: String, processId: String): F[Unit]
 
   /**
-    * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
+    * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
+    *
+    * Possible failures:
+    *   `NoSuchProcessException` -> When no process exists for the given id
+    *   `ProcessDeletedException` -> If the process is already deleted
     *
     * @param processId The process identifier
     * @param event     The event object
     */
-  @throws[NoSuchProcessException]("When no process exists for the given id")
-  @throws[ProcessDeletedException]("If the process is already deleted")
-  def processEvent(processId: String, event: Any): F[BakerResponse]
+  def fireSensoryEventReceived(processId: String, event: Any): F[SensoryEventStatus]
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
     *
+    * Possible failures:
+    *   `NoSuchProcessException` -> When no process exists for the given id
+    *   `ProcessDeletedException` -> If the process is already deleted
+    *
     * @param processId The process identifier
     * @param event     The event object
     */
-  @throws[NoSuchProcessException]("When no process exists for the given id")
-  @throws[ProcessDeletedException]("If the process is already deleted")
-  def processEvent(processId: String, event: Any, correlationId: String): F[BakerResponse]
+  def fireSensoryEventCompleted(processId: String, event: Any): F[Result]
+
+  /**
+    * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
+    * the process, and another for when the event was fully executed by the process.
+    *
+    * Possible failures:
+    *   `NoSuchProcessException` -> When no process exists for the given id
+    *   `ProcessDeletedException` -> If the process is already deleted
+    *
+    * @param processId The process identifier
+    * @param event     The event object
+    */
+  def fireSensoryEvent(processId: String, event: Any): Moments
+
+  //TODO fire functions with correlation ID
 
   //TODO why do we have this and do we want to keep this?
   //TODO why is this named index when it return ProcessMetaData?

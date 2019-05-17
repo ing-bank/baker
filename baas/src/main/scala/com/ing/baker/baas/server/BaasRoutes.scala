@@ -7,7 +7,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import com.ing.baker.baas.interaction.client.RemoteInteractionClient
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
-import com.ing.baker.runtime.akka.{AkkaBaker, BakerResponse, BakerResponseEventProtocol, ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.akka.{AkkaBaker, ProcessState, RuntimeEvent}
 import com.ing.baker.types.Value
 
 import scala.concurrent.duration._
@@ -22,6 +22,7 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
 
   def apply(baker: AkkaBaker): Route = {
 
+    /*
     def streamBakerResponse(requestId: String, event: RuntimeEvent): HttpResponse =
       HttpResponse(
         status = StatusCodes.OK,
@@ -32,20 +33,15 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
             .map(_ ++ BakerResponseEventProtocol.SerializationDelimiter)
         )
       )
+      */
 
     def instanceRoutes(requestId: String) = {
       pathPrefix("event") {
         path("stream") {
           post {
-            entity(as[ProcessEventRequest]) { req => complete(streamBakerResponse(requestId, req.event)) }
+            entity(as[ProcessEventRequest]) { req => complete("Hi") }
           }
-        } ~
-          post {
-            entity(as[ProcessEventRequest]) { request =>
-              val response: Future[BakerResponse] = baker.processEvent(requestId, request.event)
-              complete(response.map(x => ProcessEventResponse(x.confirmCompleted())))
-            }
-          }
+        }
       } ~
         path("events") {
           get {

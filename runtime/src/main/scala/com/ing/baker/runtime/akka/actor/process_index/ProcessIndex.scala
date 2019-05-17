@@ -5,7 +5,7 @@ import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.pattern.ask
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.stream.Materializer
-import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.Util.logging._
@@ -23,7 +23,8 @@ import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-import cats.data.OptionT
+import cats.data.{EitherT, OptionT}
+import cats.effect.IO
 import cats.instances.future._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
@@ -102,10 +103,9 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
 
   def getRecipeWithTimeStamp(recipeId: String): Option[(CompiledRecipe, Long)] =
     recipeCache.get(recipeId) match {
-      case None => {
+      case None =>
         updateCache()
         recipeCache.get(recipeId)
-      }
       case other => other
     }
 
@@ -151,8 +151,8 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
 
   def withActiveProcess(processId: String)(fn: ActorRef => Unit) = {
     context.child(processId) match {
-      case None if !index.contains(processId) => sender() ! NoSuchProcess(processId)
-      case None if index(processId).isDeleted => sender() ! ProcessDeleted(processId)
+      case None if !index.contains(processId) => sender() ! ProcessRejection.NoSuchProcess(processId)
+      case None if index(processId).isDeleted => sender() ! ProcessRejection.ProcessDeleted(processId)
       case None =>
         persist(ActorActivated(processId)) { _ =>
           val actor = createProcessActor(processId)
@@ -228,70 +228,110 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
                 index += processId -> actorMetadata
               }
 
-            case None => sender() ! NoRecipeFound(recipeId)
+            case None =>
+              sender() ! CreateProcessRejection.NoRecipeFound(recipeId, processId)
           }
 
-        case _ if index(processId).isDeleted => sender() ! ProcessDeleted(processId)
-        case _ => sender() ! ProcessAlreadyExists(processId)
+        case _ if index(processId).isDeleted =>
+          sender() ! CreateProcessRejection.ProcessDeleted(processId)
+        case _ =>
+          sender() ! CreateProcessRejection.ProcessAlreadyExists(processId)
       }
 
-    case cmd @ ProcessEvent(processId: String, event: RuntimeEvent, _, waitForRetries, processEventTimout, streamReceiver) =>
+    case command@ProcessEvent(processId, event, correlationId, _, _) =>
 
-      def rejectWith(msg: Any, rejectReason: RejectReason): Unit = {
-        context.system.eventStream.publish(events.EventRejected(System.currentTimeMillis(), cmd.processId, cmd.correlationId, cmd.event, rejectReason))
-        // Rejections are directly sent to the receiver side
-        streamReceiver ! msg
+      run { streamSender =>
+        for {
+          instanceAndMeta <- fetchInstance
+          (processInstance, metadata) = instanceAndMeta
+          recipe <- fetchRecipe(metadata)
+          transitionAndDescriptor <- validateEventIsInRecipe(recipe)
+          (transition, descriptor) = transitionAndDescriptor
+          _ <- validateEventIsSound(descriptor)
+          _ <- validateWithinReceivePeriod(recipe, metadata)
+        } yield processInstance.tell(FireTransition(transition.id, event, correlationId), streamSender)
       }
 
-      def forwardEvent(processInstance: ActorRef, recipe: CompiledRecipe): Unit = {
-        recipe.sensoryEvents.find(sensoryEvent => sensoryEvent.name == event.name) match {
+      type FireEventIO[+A] = EitherT[IO, FireSensoryEventRejection, A]
+
+      def run(program: ActorRef => FireEventIO[Unit]): Unit = {
+        val streamSender = context.actorOf(
+          ProcessEventSender(sender, command))
+        program(streamSender).value.unsafeRunSync() match {
+          case Left(rejection) => streamSender ! rejection
+          case Right(_) => ()
+        }
+      }
+
+      def reject[A](rejection: FireSensoryEventRejection): FireEventIO[A] =
+        EitherT.leftT(rejection)
+
+      def accept[A](a: A): FireEventIO[A] =
+        EitherT.rightT(a)
+
+      def continue: FireEventIO[Unit] =
+        accept(())
+
+      def async[A](callback: (Either[Throwable, A] => Unit) => Unit): FireEventIO[A] =
+        EitherT.liftF(IO.async(callback))
+
+      def fetchCurrentTime: FireEventIO[Long] =
+        EitherT.liftF(IO { System.currentTimeMillis() })
+
+      def fetchInstance: FireEventIO[(ActorRef, ActorMetadata)] =
+        context.child(processId) match {
+          case Some(process) =>
+            accept(process -> index(processId))
+          case None if !index.contains(processId) =>
+            reject(FireSensoryEventRejection.NoSuchProcess(processId))
+          case None if index(processId).isDeleted =>
+            reject(FireSensoryEventRejection.ProcessDeleted(processId))
           case None =>
-            rejectWith(InvalidEvent(processId, s"No event with name '${event.name}' found in recipe '${recipe.name}'"), RejectReason.InvalidEvent)
-          case Some(sensoryEvent) =>
-            //Check If the sensory event is valid for this recipe
-            val eventValidationErrors = event.validateEvent(sensoryEvent)
-
-            if (eventValidationErrors.nonEmpty)
-              rejectWith(InvalidEvent(processId, s"Invalid event: " + eventValidationErrors.mkString(",")), RejectReason.InvalidEvent)
-            else {
-
-              recipe.eventReceivePeriod match {
-
-                // if the receive period is expired the event is rejected
-                case Some(receivePeriod) if System.currentTimeMillis() - index(processId).createdDateTime > receivePeriod.toMillis =>
-                  rejectWith(ReceivePeriodExpired(processId), RejectReason.ReceivePeriodExpired)
-
-                // otherwise the event is forwarded
-                case _ =>
-                  (for {
-                    _ <- Try(require(cmd.event != null, "Event can not be null"))
-                    transition <- recipe.petriNet.transitions.find(_.label == cmd.event.name) match {
-                      case Some(transition0) => Success(transition0)
-                      case None => Failure(new IllegalArgumentException(s"No such event known in recipe: ${cmd.event.name}"))
-                    }
-                  } yield FireTransition(transition.id, cmd.event, cmd.correlationId)).fold(
-                    { error => rejectWith(InvalidEvent(processId, error.getMessage), RejectReason.InvalidEvent) },
-                    { event =>
-                      val streamSender = context.actorOf(ProcessEventSender(streamReceiver, cmd, recipe, waitForRetries)(processEventTimout))
-                      processInstance.tell(event, streamSender)
-                    }
-                  )
+            async { callback =>
+              persist(ActorActivated(processId)) { _ =>
+                callback(Right(createProcessActor(processId) -> index(processId)))
               }
             }
         }
+
+      def fetchRecipe(metadata: ActorMetadata): FireEventIO[CompiledRecipe] =
+        accept(getCompiledRecipe(metadata.recipeId).get)
+
+      def validateEventIsInRecipe(recipe: CompiledRecipe): FireEventIO[(Transition, EventDescriptor)] = {
+        val transition0 = recipe.petriNet.transitions.find(_.label == event.name)
+        val sensoryEvent0 = recipe.sensoryEvents.find(_.name == event.name)
+        (transition0, sensoryEvent0) match {
+          case (Some(transition), Some(sensoryEvent)) =>
+            accept(transition -> sensoryEvent)
+          case _ =>
+            reject(FireSensoryEventRejection.InvalidEvent(
+              processId,
+              s"No event with name '${event.name}' found in recipe '${recipe.name}'"
+            ))
+        }
       }
 
-      context.child(processId) match {
-        case None if !index.contains(processId) => rejectWith(NoSuchProcess(processId), RejectReason.NoSuchProcess)
-        case None if index(processId).isDeleted => rejectWith(ProcessDeleted(processId), RejectReason.ProcessDeleted)
+      def validateEventIsSound(descriptor: EventDescriptor): FireEventIO[Unit] = {
+        val eventValidationErrors = event.validateEvent(descriptor)
+        if (eventValidationErrors.nonEmpty)
+          reject(FireSensoryEventRejection.InvalidEvent(
+            processId,
+            s"Invalid event: " + eventValidationErrors.mkString(",")
+          ))
+        else continue
+      }
 
-        case _ =>
-          // here we activate the process (if required) and forward the event
-          withActiveProcess(processId) { actorRef =>
-            getCompiledRecipe(index(processId).recipeId).foreach { compiledRecipe: CompiledRecipe =>
-              forwardEvent(actorRef, compiledRecipe)
-            }
-        }
+      def validateWithinReceivePeriod(recipe: CompiledRecipe, metadata: ActorMetadata): FireEventIO[Unit] = {
+        def outOfReceivePeriod(current: Long, period: FiniteDuration): Boolean =
+          current - metadata.createdDateTime > period.toMillis
+        for {
+          currentTime <- fetchCurrentTime
+          _ <- recipe.eventReceivePeriod match {
+            case Some(receivePeriod) if outOfReceivePeriod(currentTime, receivePeriod) =>
+              reject(FireSensoryEventRejection.ReceivePeriodExpired(processId))
+            case _ => continue
+          }
+        } yield ()
       }
 
     case StopRetryingInteraction(processId, interactionName) =>
@@ -331,7 +371,7 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
           case Success(Some((interaction, jobId))) =>
             RecipeRuntime.validateInteractionOutput(interaction, Some(event)) match {
 
-              case None        =>
+              case None =>
                 val petriNet = getCompiledRecipe(index(processId).recipeId).get.petriNet
                 val producedMarking = RecipeRuntime.createProducedMarking(petriNet.outMarking(interaction), Some(event))
                 val transformedEvent = RecipeRuntime.transformInteractionEvent(interaction, event)
@@ -339,7 +379,7 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
                 processActor.tell(OverrideExceptionStrategy(jobId, Continue(producedMarking.marshall, transformedEvent)), originalSender)
               case Some(error) =>
                 log.warning("Invalid event given: " + error)
-                originalSender ! InvalidEvent(processId, error)
+                originalSender ! InvalidEventWhenResolveBlocked(processId, error)
             }
           case Success(_)         => originalSender ! akka.actor.Status.Failure(new IllegalArgumentException("Interaction is not blocked"))
           case Failure(exception) => originalSender ! akka.actor.Status.Failure(exception)
@@ -352,13 +392,13 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
 
     case GetCompiledRecipe(processId) =>
       index.get(processId) match {
-        case Some(processMetadata) if processMetadata.isDeleted => sender() ! ProcessDeleted(processId)
+        case Some(processMetadata) if processMetadata.isDeleted => sender() ! ProcessRejection.ProcessDeleted(processId)
         case Some(processMetadata) =>
           getRecipeWithTimeStamp(processMetadata.recipeId) match {
             case Some((compiledRecipe, timestamp)) => sender() ! RecipeFound(compiledRecipe, timestamp)
-            case None => sender() ! NoSuchProcess(processId)
+            case None => sender() ! ProcessRejection.NoSuchProcess(processId)
           }
-        case None => sender() ! NoSuchProcess(processId)
+        case None => sender() ! ProcessRejection.NoSuchProcess(processId)
       }
     case cmd =>
       log.error(s"Unrecognized command $cmd")

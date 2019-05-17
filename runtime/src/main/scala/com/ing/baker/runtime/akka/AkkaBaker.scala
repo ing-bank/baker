@@ -5,6 +5,7 @@ import java.util.concurrent.TimeoutException
 import akka.NotUsed
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.pattern.ask
+import akka.pattern.FutureRef
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
 import akka.stream.ActorMaterializer
@@ -20,7 +21,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.Encryption
 import com.ing.baker.runtime.akka.actor.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.common._
-import com.ing.baker.runtime.{common, akka}
+import com.ing.baker.runtime.{akka, common}
 import com.ing.baker.runtime.akka.events.{BakerEvent, EventReceived, InteractionCompleted, InteractionFailed}
 import com.ing.baker.runtime.akka.internal.{InteractionManager, MethodInteractionImplementation}
 import com.ing.baker.runtime.scaladsl.Baker
@@ -81,6 +82,10 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
 
   val processIndexActor: ActorRef =
     bakerActorProvider.createProcessIndexActor(interactionManager, recipeManager)
+
+  override type Result = SensoryEventResult
+
+  override type Moments = SensoryEventMoments
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -145,56 +150,72 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     *
     * @param recipeId  The recipeId for the recipe to bake
     * @param processId The identifier for the newly baked process
-    * @param timeout
     * @return
     */
   override def bake(recipeId: String, processId: String): Future[Unit] = {
     processIndexActor.ask(CreateProcess(recipeId, processId))(defaultBakeTimeout).flatMap {
       case _: Initialized =>
         Future.successful(())
-      case ProcessAlreadyExists(_) =>
+      case CreateProcessRejection.ProcessAlreadyExists(_) =>
         Future.failed(new IllegalArgumentException(s"Process with id '$processId' already exists."))
-      case NoRecipeFound(_) =>
+      case CreateProcessRejection.NoRecipeFound(_, _) =>
         Future.failed(new IllegalArgumentException(s"Recipe with id '$recipeId' does not exist."))
       case msg@_ =>
         Future.failed(new BakerException(s"Unexpected message of type: ${msg.getClass}"))
     }
   }
 
-  /**
-    * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
-    *
-    * @param processId The process identifier
-    * @param event     The event object
-    */
-  @throws[NoSuchProcessException]("When no process exists for the given id")
-  @throws[ProcessDeletedException]("If the process is already deleted")
-  override def processEvent(processId: String, event: Any): Future[BakerResponse] = {
-    val source = processEventStream(processId, event, None)
-    Future.successful(new BakerResponse(processId, Future.successful(source)))
-  }
+  def fireSensoryEventReceived(processId: String, event: Any): Future[SensoryEventStatus] =
+    processIndexActor.ask(ProcessEvent(
+      processId = processId,
+      event = RuntimeEvent.extractEvent(event),
+      correlationId = None,
+      timeout = defaultProcessEventTimeout,
+      reaction = FireSensoryEventReaction.NotifyWhenReceived
+    ))(defaultProcessEventTimeout).flatMap {
+      case rejection: FireSensoryEventRejection =>
+        Future.failed(new BakerException(rejection.asReason.toString))
+      case status: SensoryEventStatus =>
+        Future.successful(status)
+    }
 
-  /**
-    * Notifies Baker that an event has happened.
-    *
-    * If nothing is done with the BakerResponse there is NO guarantee that the event is received by the process instance.
-    */
-  override def processEvent(processId: String, event: Any, correlationId: String): Future[BakerResponse] = {
-    val source = processEventStream(processId, event, Some(correlationId))
-    Future.successful(new BakerResponse(processId, Future.successful(source)))
-  }
+  def fireSensoryEventCompleted(processId: String, event: Any): Future[SensoryEventResult] =
+    processIndexActor.ask(ProcessEvent(
+      processId = processId,
+      event = RuntimeEvent.extractEvent(event),
+      correlationId = None,
+      timeout = defaultProcessEventTimeout,
+      reaction = FireSensoryEventReaction.NotifyWhenCompleted(waitForRetries = true)
+    ))(defaultProcessEventTimeout).flatMap {
+      case rejection: FireSensoryEventRejection =>
+        Future.failed(new BakerException(rejection.asReason.toString))
+      case result: SensoryEventResult =>
+        Future.successful(result)
+    }
 
-  /**
-    * Creates a stream of specific events.
-    */
-  def processEventStream(processId: String, event: Any, correlationId: Option[String] = None): Source[BakerResponseEventProtocol, NotUsed] = {
-    // transforms the given object into a RuntimeEvent instance
-    val timeout = defaultProcessEventTimeout
-    val runtimeEvent: RuntimeEvent = RuntimeEvent.extractEvent(event)
-    val (responseStream: Source[Any, NotUsed], receiver: ActorRef) = ProcessEventReceiver(waitForRetries = true)(timeout, actorSystem, materializer)
-
-    processIndexActor ! ProcessEvent(processId, runtimeEvent, correlationId, waitForRetries = true, timeout, receiver)
-    responseStream.via(Flow.fromFunction(BakerResponseEventProtocol.fromProtocols))
+  def fireSensoryEvent(processId: String, event: Any): SensoryEventMoments = {
+    val futureRef = FutureRef(defaultProcessEventTimeout)
+    val futureReceived =
+      processIndexActor.ask(ProcessEvent(
+        processId = processId,
+        event = RuntimeEvent.extractEvent(event),
+        correlationId = None,
+        timeout = defaultProcessEventTimeout,
+        reaction = FireSensoryEventReaction.NotifyBoth(waitForRetries = true, completeReceiver = futureRef.ref)
+      ))(defaultProcessEventTimeout).flatMap {
+        case rejection: FireSensoryEventRejection =>
+          Future.failed(new BakerException(rejection.asReason.toString))
+        case status: SensoryEventStatus =>
+          Future.successful(status)
+      }
+    val futureCompleted =
+      futureRef.future.flatMap {
+        case rejection: FireSensoryEventRejection =>
+          Future.failed(new BakerException(rejection.asReason.toString))
+        case result: SensoryEventResult =>
+          Future.successful(result)
+      }
+    SensoryEventMoments(futureReceived, futureCompleted)
   }
 
   /**
@@ -255,8 +276,8 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
       .ask(GetProcessState(processId))(Timeout.durationToTimeout(defaultInquireTimeout))
       .flatMap {
         case instance: InstanceState => Future.successful(instance.state.asInstanceOf[ProcessState])
-        case NoSuchProcess(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
-        case ProcessDeleted(id) => Future.failed(new ProcessDeletedException(s"Process $id is deleted"))
+        case ProcessRejection.NoSuchProcess(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
+        case ProcessRejection.ProcessDeleted(id) => Future.failed(new ProcessDeletedException(s"Process $id is deleted"))
         case msg => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
       }
 
@@ -275,7 +296,6 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     * Returns the visual state (.dot) for a given process.
     *
     * @param processId The process identifier.
-    * @param timeout   How long to wait to retrieve the process state.
     * @return A visual (.dot) representation of the process state.
     */
   @throws[ProcessDeletedException]("If the process is already deleted")
@@ -291,7 +311,7 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
             config,
             eventNames = processState.eventNames.toSet,
             ingredientNames = processState.ingredients.keySet))
-        case ProcessDeleted(_) =>
+        case ProcessRejection.ProcessDeleted(_) =>
           Future.failed(new ProcessDeletedException(s"Process $processId is deleted"))
         case Uninitialized(_) =>
           Future.failed(new NoSuchProcessException(s"Process $processId is not found"))

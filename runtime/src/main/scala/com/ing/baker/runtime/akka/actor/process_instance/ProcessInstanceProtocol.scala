@@ -142,17 +142,44 @@ object ProcessInstanceProtocol {
     failureReason: String,
     failureStrategy: ExceptionStrategy)
 
-  sealed trait ExceptionStrategy
+  sealed trait ExceptionStrategy {
+
+    def isBlock: Boolean
+
+    def isRetry: Boolean
+
+    def isContinue: Boolean
+  }
 
   object ExceptionStrategy {
 
-    case object BlockTransition extends ExceptionStrategy
+    case object BlockTransition extends ExceptionStrategy {
+
+      def isBlock: Boolean = true
+
+      def isRetry: Boolean = false
+
+      def isContinue: Boolean = false
+    }
 
     case class RetryWithDelay(delay: Long) extends ExceptionStrategy {
       require(delay >= 0, "Delay must be greater then zero")
+
+      def isBlock: Boolean = false
+
+      def isRetry: Boolean = true
+
+      def isContinue: Boolean = false
     }
 
-    case class Continue(marking: Marking[Id], output: Any) extends ExceptionStrategy
+    case class Continue(marking: Marking[Id], output: Any) extends ExceptionStrategy {
+
+      def isBlock: Boolean = false
+
+      def isRetry: Boolean = false
+
+      def isContinue: Boolean = true
+    }
   }
 
   /**

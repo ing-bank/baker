@@ -12,8 +12,8 @@ import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.events.BakerEvent
-import com.ing.baker.runtime.common.{EventListener, InteractionImplementation, ProcessMetadata, RecipeInformation}
-import com.ing.baker.runtime.akka.{BakerResponse, BakerResponseEventProtocol, ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.common._
+import com.ing.baker.runtime.akka.{BakerResponseEventProtocol, ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
@@ -81,7 +81,6 @@ class BaasBaker(config: Config,
     *
     * @param recipeId  The recipeId for the recipe to bake
     * @param processId The identifier for the newly baked process
-    * @param timeout
     * @return
     */
   override def bake(recipeId: String, processId: String): Future[Unit] = {
@@ -97,31 +96,46 @@ class BaasBaker(config: Config,
   }
 
   /**
-    * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
+    * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
+    *
+    * Possible failures:
+    *   `NoSuchProcessException` -> When no process exists for the given id
+    *   `ProcessDeletedException` -> If the process is already deleted
     *
     * @param processId The process identifier
     * @param event     The event object
     */
-  override def processEvent(processId: String, event: Any): Future[BakerResponse] = {
-    //Create request to give to Baker
-//    log.info("Creating runtime event to fire")
-//    val runtimeEvent = RuntimeEvent.extractEvent(event)
-//
-//    Marshal(ProcessEventRequest(runtimeEvent)).to[RequestEntity]
-//      .map { body =>
-//        HttpRequest(
-//          uri = s"$baseUri/$processId/event",
-//          method = POST,
-//          entity = body)
-//      }
-//      .flatMap(doRequestAndParseResponse[ProcessEventResponse])
-    ???
-  }
+  def fireSensoryEventReceived(processId: String, event: Any): Future[SensoryEventStatus] = ???
 
+  /**
+    * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
+    *
+    * Possible failures:
+    *   `NoSuchProcessException` -> When no process exists for the given id
+    *   `ProcessDeletedException` -> If the process is already deleted
+    *
+    * @param processId The process identifier
+    * @param event     The event object
+    */
+  def fireSensoryEventCompleted(processId: String, event: Any): Future[SensoryEventResult] = ???
+
+  /**
+    * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
+    * the process, and another for when the event was fully executed by the process.
+    *
+    * Possible failures:
+    *   `NoSuchProcessException` -> When no process exists for the given id
+    *   `ProcessDeletedException` -> If the process is already deleted
+    *
+    * @param processId The process identifier
+    * @param event     The event object
+    */
+  def fireSensoryEvent(processId: String, event: Any): SensoryEventMoments = ???
 
   /**
     * Creates a stream of specific events.
     */
+  /*
   def processEventStream(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): Future[Source[BakerResponseEventProtocol, NotUsed]] = {
     val runtimeEvent = RuntimeEvent.extractEvent(event)
     Marshal(ProcessEventRequest(runtimeEvent)).to[RequestEntity]
@@ -137,6 +151,7 @@ class BaasBaker(config: Config,
         .mapMaterializedValue(_ => NotUsed)
       }
   }
+   */
 
   /**
     * Returns the process state.
@@ -211,14 +226,6 @@ class BaasBaker(config: Config,
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
   override def getAllRecipes: Future[Map[String, RecipeInformation]] = ???
-
-  /**
-    * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
-    *
-    * @param processId The process identifier
-    * @param event     The event object
-    */
-  override def processEvent(processId: String, event: Any, correlationId: String): Future[BakerResponse] = ???
 
   /**
     * Returns an index of all processes.
