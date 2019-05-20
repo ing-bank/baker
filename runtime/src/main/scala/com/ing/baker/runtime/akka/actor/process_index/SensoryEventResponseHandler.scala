@@ -2,31 +2,32 @@ package com.ing.baker.runtime.akka.actor.process_index
 
 import akka.actor.{Actor, ActorRef, Props, ReceiveTimeout}
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.akka.{RuntimeEvent, SensoryEventResult}
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{FireSensoryEventReaction, ProcessEvent, FireSensoryEventRejection}
+import com.ing.baker.runtime.akka.RuntimeEvent
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{FireSensoryEventReaction, FireSensoryEventRejection, ProcessEvent}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.akka.events.{EventReceived, EventRejected, RejectReason}
+import com.ing.baker.runtime.akka.events.{EventReceived, EventRejected}
 import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.scaladsl.SensoryEventResult
 import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.duration.FiniteDuration
-
-object ProcessEventSender {
+object SensoryEventResponseHandler {
 
   def apply(receiver: ActorRef, command: ProcessEvent): Props =
-    Props(new ProcessEventSender(receiver, command))
+    Props(new SensoryEventResponseHandler(receiver, command))
 }
 
 /**
-  * An actor that pushes all received messages on the process instance side to the node which requested a process event operation.
-  * It's main usage is the publishing of events to the system event stream and logging message throughput.
+  * An actor which builds the response to fireSensoryEvent* requests
+  * - Obtains the data from the process instance (by accumulating transition firing outcomes)
+  * - Publishes events to the system event stream
+  * - Does involving logging
   */
-class ProcessEventSender(receiver: ActorRef, command: ProcessEvent) extends Actor {
+class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) extends Actor {
 
   context.setReceiveTimeout(command.timeout)
 
-  val log: Logger = LoggerFactory.getLogger(classOf[ProcessEventSender])
+  val log: Logger = LoggerFactory.getLogger(classOf[SensoryEventResponseHandler])
 
   val waitForRetries: Boolean = command.reaction match {
     case FireSensoryEventReaction.NotifyWhenReceived => false
@@ -136,7 +137,7 @@ class ProcessEventSender(receiver: ActorRef, command: ProcessEvent) extends Acto
 
   def streaming(runningJobs: Set[Long], cache: List[Any]): Receive = {
     if(runningJobs.isEmpty) notifyComplete(cache)
-    {
+    PartialFunction {
       case event: TransitionFired ⇒
         context.become(streaming(runningJobs ++ event.newJobsIds - event.jobId, cache :+ event))
       case event:TransitionFailed if event.strategy.isRetry && waitForRetries ⇒

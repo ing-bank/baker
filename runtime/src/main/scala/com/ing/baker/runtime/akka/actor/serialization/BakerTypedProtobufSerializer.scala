@@ -3,20 +3,17 @@ package com.ing.baker.runtime.akka.actor.serialization
 import akka.actor.ExtendedActorSystem
 import akka.serialization.SerializerWithStringManifest
 import com.ing.baker.il
-import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.GetShardIndex
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
+import com.ing.baker.runtime
+import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
-import com.ing.baker.runtime.akka.actor.process_index.ProcessEventReceiverProto._
-import com.ing.baker.runtime.akka.actor.process_index.ProcessEventReceiver
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager.RecipeAdded
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
+import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.serialization.BakerTypedProtobufSerializer.BinarySerializable
 import org.slf4j.LoggerFactory
-import com.ing.baker.runtime.akka.{BakerResponseEventProtocol, ProcessState, RuntimeEvent}
 
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -30,75 +27,128 @@ object BakerTypedProtobufSerializer {
     */
   val identifier = 101
 
-  def entries(implicit ev0: SerializersProvider): List[BinarySerializable] = List(
+  def entries(implicit ev0: SerializersProvider): List[BinarySerializable] =
+    commonEntries ++ processIndexEntries ++ processInstanceEntries ++ recipeManagerEntries
 
-    forType[com.ing.baker.types.Value].register("baker.types.Value"),
-    forType[com.ing.baker.types.Type].register("baker.types.Type"),
+  def commonEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
+    List(
+      forType[com.ing.baker.types.Value]
+        .register("baker.types.Value"),
+      forType[com.ing.baker.types.Type]
+        .register("baker.types.Type"),
+      forType[runtime.akka.RuntimeEvent]
+        .register("core.RuntimeEvent"),
+      forType[runtime.akka.ProcessState]
+        .register("core.ProcessState"),
+      forType[il.CompiledRecipe]
+        .register("il.CompiledRecipe")
+    )
 
-    forType[RuntimeEvent].register("core.RuntimeEvent"),
-    forType[ProcessState].register("core.ProcessState"),
+  def processIndexEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
+    List (
+      forType[ClusterBakerActorProvider.GetShardIndex]
+        .register("ProcessIndex.GetShardIndex"),
+      forType[ProcessIndex.ActorCreated]
+        .register("ProcessIndex.ActorCreated"),
+      forType[ProcessIndex.ActorDeleted]
+        .register("ProcessIndex.ActorDeleted"),
+      forType[ProcessIndex.ActorPassivated]
+        .register("ProcessIndex.ActorPassivated"),
+      forType[ProcessIndex.ActorActivated]
+        .register("ProcessIndex.ActorActivated"),
+      forType[ProcessIndex.ActorMetadata]
+        .register("ProcessIndex.ActorMetadata"),
+      forType[ProcessIndexProtocol.GetIndex.type]
+        .register("ProcessIndexProtocol.GetIndex"),
+      forType[ProcessIndexProtocol.Index]
+        .register("ProcessIndexProtocol.Index"),
+      forType[ProcessIndexProtocol.CreateProcess]
+        .register("ProcessIndexProtocol.CreateProcess"),
+      /*
+      forType[ProcessIndexProtocol.ProcessRejection.NoSuchProcess]
+        .register("ProcessIndex.ProcessRejection.NoSuchProcess"),
+      forType[ProcessIndexProtocol.ProcessRejection.ProcessDeleted]
+        .register("ProcessIndex.ProcessRejection.NoSuchProcess"),
+      forType[ProcessIndexProtocol.CreateProcessRejection]
+        .register("ProcessIndexProtocol.CreateProcessRejection"),
+       */
+      forType[ProcessIndexProtocol.RetryBlockedInteraction]
+        .register("ProcessIndexProtocol.RetryBlockedInteraction"),
+      forType[ProcessIndexProtocol.ResolveBlockedInteraction]
+        .register("ProcessIndexProtocol.ResolveBlockedInteraction"),
+      forType[ProcessIndexProtocol.StopRetryingInteraction]
+        .register("ProcessIndexProtocol.StopRetryingInteraction"),
+      forType[ProcessIndexProtocol.ProcessEventResponse]
+        .register("ProcessIndexProtocol.ProcessEventResponse"),
+      forType[ProcessIndexProtocol.GetProcessState]
+        .register("ProcessIndexProtocol.GetProcessState"),
+      forType[ProcessIndexProtocol.GetCompiledRecipe]
+        .register("ProcessIndexProtocol.GetCompiledRecipe"),
+      /*
+      forType[ProcessIndexProtocol.ProcessEvent]
+        .register("ProcessIndexProtocol.ProcessEvent"),
+      forType[ProcessIndexProtocol.FireSensoryEventRejection]
+        .register("ProcessIndexProtocol.FireSensoryEventRejection")
+       */
+    )
 
-    forType[il.CompiledRecipe].register("il.CompiledRecipe"),
+    def processInstanceEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
+      List(
+      forType[ProcessInstanceProtocol.Stop]
+        .register("ProcessInstanceProtocol.Stop"),
+      forType[ProcessInstanceProtocol.GetState.type]
+        .register("ProcessInstanceProtocol.GetState"),
+      forType[ProcessInstanceProtocol.InstanceState]
+        .register("ProcessInstanceProtocol.InstanceState"),
+      forType[ProcessInstanceProtocol.Initialize]
+        .register("ProcessInstanceProtocol.Initialize"),
+      forType[ProcessInstanceProtocol.Initialized]
+        .register("ProcessInstanceProtocol.Initialized"),
+      forType[ProcessInstanceProtocol.Uninitialized]
+        .register("ProcessInstanceProtocol.Uninitialized"),
+      forType[ProcessInstanceProtocol.AlreadyInitialized]
+        .register("ProcessInstanceProtocol.AlreadyInitialized"),
+      forType[ProcessInstanceProtocol.FireTransition]
+        .register("ProcessInstanceProtocol.FireTransition"),
+      forType[ProcessInstanceProtocol.OverrideExceptionStrategy]
+        .register("ProcessInstanceProtocol.OverrideExceptionStrategy"),
+      forType[ProcessInstanceProtocol.InvalidCommand]
+        .register("ProcessInstanceProtocol.InvalidCommand"),
+      forType[ProcessInstanceProtocol.AlreadyReceived]
+        .register("ProcessInstanceProtocol.AlreadyReceived"),
+      forType[ProcessInstanceProtocol.TransitionNotEnabled]
+        .register("ProcessInstanceProtocol.TransitionNotEnabled"),
+      forType[ProcessInstanceProtocol.TransitionFailed]
+        .register("ProcessInstanceProtocol.TransitionFailed"),
+      forType[ProcessInstanceProtocol.TransitionFired]
+        .register("ProcessInstanceProtocol.TransitionFired"),
+      forType[runtime.akka.actor.process_instance.protobuf.TransitionFired]
+        .register("TransitionFired")(ProtoMap.identityProtoMap(runtime.akka.actor.process_instance.protobuf.TransitionFired)),
+      forType[runtime.akka.actor.process_instance.protobuf.TransitionFailed]
+        .register("TransitionFailed")(ProtoMap.identityProtoMap(runtime.akka.actor.process_instance.protobuf.TransitionFailed)),
+      forType[runtime.akka.actor.process_instance.protobuf.Initialized]
+        .register("Initialized")(ProtoMap.identityProtoMap(runtime.akka.actor.process_instance.protobuf.Initialized))
+    )
 
-    forType[GetShardIndex].register("ProcessIndex.GetShardIndex"),
-    forType[ActorCreated].register("ProcessIndex.ActorCreated"),
-    forType[ActorDeleted].register("ProcessIndex.ActorDeleted"),
-    forType[ActorPassivated].register("ProcessIndex.ActorPassivated"),
-    forType[ActorActivated].register("ProcessIndex.ActorActivated"),
-    forType[ActorMetadata].register("ProcessIndex.ActorMetadata"),
-
-    forType[GetIndex.type].register("ProcessIndexProtocol.GetIndex"),
-
-    forType[Index].register("ProcessIndexProtocol.Index"),
-    forType[CreateProcess].register("ProcessIndexProtocol.CreateProcess"),
-    forType[ProcessEvent].register("ProcessIndexProtocol.ProcessEvent"),
-    forType[RetryBlockedInteraction].register("ProcessIndexProtocol.RetryBlockedInteraction"),
-    forType[ResolveBlockedInteraction].register("ProcessIndexProtocol.ResolveBlockedInteraction"),
-    forType[StopRetryingInteraction].register("ProcessIndexProtocol.StopRetryingInteraction"),
-
-    forType[ProcessEventResponse].register("ProcessIndexProtocol.ProcessEventResponse"),
-    forType[GetProcessState].register("ProcessIndexProtocol.GetProcessState"),
-    forType[GetCompiledRecipe].register("ProcessIndexProtocol.GetCompiledRecipe"),
-    forType[ReceivePeriodExpired].register("ProcessIndexProtocol.ReceivePeriodExpired"),
-    forType[InvalidEvent].register("ProcessIndexProtocol.InvalidEvent"),
-    forType[ProcessDeleted].register("ProcessIndexProtocol.ProcessDeleted"),
-    forType[NoSuchProcess].register("ProcessIndexProtocol.NoSuchProcess"),
-    forType[ProcessAlreadyExists].register("ProcessIndexProtocol.ProcessAlreadyExists"),
-
-    forType[ProcessEventReceiver.ProcessEventRejected].register,
-
-    forType[ProcessInstanceProtocol.Stop].register("ProcessInstanceProtocol.Stop"),
-    forType[ProcessInstanceProtocol.GetState.type].register("ProcessInstanceProtocol.GetState"),
-    forType[ProcessInstanceProtocol.InstanceState].register("ProcessInstanceProtocol.InstanceState"),
-
-    forType[ProcessInstanceProtocol.Initialize].register("ProcessInstanceProtocol.Initialize"),
-    forType[ProcessInstanceProtocol.Initialized].register("ProcessInstanceProtocol.Initialized"),
-    forType[ProcessInstanceProtocol.Uninitialized].register("ProcessInstanceProtocol.Uninitialized"),
-    forType[ProcessInstanceProtocol.AlreadyInitialized].register("ProcessInstanceProtocol.AlreadyInitialized"),
-
-    forType[ProcessInstanceProtocol.FireTransition].register("ProcessInstanceProtocol.FireTransition"),
-    forType[ProcessInstanceProtocol.OverrideExceptionStrategy].register("ProcessInstanceProtocol.OverrideExceptionStrategy"),
-    forType[ProcessInstanceProtocol.InvalidCommand].register("ProcessInstanceProtocol.InvalidCommand"),
-
-    forType[ProcessInstanceProtocol.AlreadyReceived].register("ProcessInstanceProtocol.AlreadyReceived"),
-    forType[ProcessInstanceProtocol.TransitionNotEnabled].register("ProcessInstanceProtocol.TransitionNotEnabled"),
-    forType[ProcessInstanceProtocol.TransitionFailed].register("ProcessInstanceProtocol.TransitionFailed"),
-    forType[ProcessInstanceProtocol.TransitionFired].register("ProcessInstanceProtocol.TransitionFired"),
-
-    forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFired].register("TransitionFired")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFired)),
-    forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailed].register("TransitionFailed")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailed)),
-    forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.Initialized].register("Initialized")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.Initialized)),
-
-    forType[AddRecipe].register("RecipeManagerProtocol.AddRecipe"),
-    forType[AddRecipeResponse].register("RecipeManagerProtocol.AddRecipeResponse"),
-    forType[GetRecipe].register("RecipeManagerProtocol.GetRecipe"),
-    forType[RecipeFound].register("RecipeManagerProtocol.RecipeFound"),
-    forType[NoRecipeFound].register("RecipeManagerProtocol.NoRecipeFound"),
-    forType[GetAllRecipes.type].register("RecipeManagerProtocol.GetAllRecipes"),
-    forType[AllRecipes].register("RecipeManagerProtocol.AllRecipes"),
-
-    forType[RecipeAdded].register("RecipeManager.RecipeAdded")
-  )
+  def recipeManagerEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
+    List(
+      forType[RecipeManagerProtocol.AddRecipe]
+        .register("RecipeManagerProtocol.AddRecipe"),
+      forType[RecipeManagerProtocol.AddRecipeResponse]
+        .register("RecipeManagerProtocol.AddRecipeResponse"),
+      forType[RecipeManagerProtocol.GetRecipe]
+        .register("RecipeManagerProtocol.GetRecipe"),
+      forType[RecipeManagerProtocol.RecipeFound]
+        .register("RecipeManagerProtocol.RecipeFound"),
+      forType[RecipeManagerProtocol.NoRecipeFound]
+        .register("RecipeManagerProtocol.NoRecipeFound"),
+      forType[RecipeManagerProtocol.GetAllRecipes.type]
+        .register("RecipeManagerProtocol.GetAllRecipes"),
+      forType[RecipeManagerProtocol.AllRecipes]
+        .register("RecipeManagerProtocol.AllRecipes"),
+      forType[RecipeManager.RecipeAdded]
+        .register("RecipeManager.RecipeAdded")
+    )
 
   def forType[A <: AnyRef](implicit tag: ClassTag[A]): RegisterFor[A] = new RegisterFor[A](tag)
 

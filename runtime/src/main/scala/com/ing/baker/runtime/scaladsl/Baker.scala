@@ -21,6 +21,11 @@ trait Baker extends ScalaBaker[Future] {
     * @return
     */
   def registerEventListenerPF(pf: PartialFunction[BakerEvent, Unit]): Future[Unit]
+
+  override type Result = SensoryEventResult
+
+  override type Moments = SensoryEventMoments
+
 }
 
 object Baker {

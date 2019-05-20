@@ -2,31 +2,27 @@ package com.ing.baker.runtime.akka
 
 import java.util.concurrent.TimeoutException
 
-import akka.NotUsed
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
-import akka.pattern.ask
-import akka.pattern.FutureRef
+import akka.pattern.{FutureRef, ask}
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Flow, Source}
 import akka.util.Timeout
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.akka.actor._
-import com.ing.baker.runtime.akka.actor.process_index.ProcessEventReceiver
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.Encryption
 import com.ing.baker.runtime.akka.actor.serialization.Encryption.NoEncryption
-import com.ing.baker.runtime.common._
-import com.ing.baker.runtime.{akka, common}
 import com.ing.baker.runtime.akka.events.{BakerEvent, EventReceived, InteractionCompleted, InteractionFailed}
 import com.ing.baker.runtime.akka.internal.{InteractionManager, MethodInteractionImplementation}
-import com.ing.baker.runtime.scaladsl.Baker
+import com.ing.baker.runtime.common._
+import com.ing.baker.runtime.scaladsl.{Baker, SensoryEventMoments}
+import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Value
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import org.slf4j.LoggerFactory
 
@@ -82,10 +78,6 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
 
   val processIndexActor: ActorRef =
     bakerActorProvider.createProcessIndexActor(interactionManager, recipeManager)
-
-  override type Result = SensoryEventResult
-
-  override type Moments = SensoryEventMoments
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -165,11 +157,11 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     }
   }
 
-  def fireSensoryEventReceived(processId: String, event: Any): Future[SensoryEventStatus] =
+  def fireSensoryEventReceived(processId: String, event: Any, correlationId: Option[String]): Future[SensoryEventStatus] =
     processIndexActor.ask(ProcessEvent(
       processId = processId,
       event = RuntimeEvent.extractEvent(event),
-      correlationId = None,
+      correlationId = correlationId,
       timeout = defaultProcessEventTimeout,
       reaction = FireSensoryEventReaction.NotifyWhenReceived
     ))(defaultProcessEventTimeout).flatMap {
@@ -179,29 +171,31 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
         Future.successful(status)
     }
 
-  def fireSensoryEventCompleted(processId: String, event: Any): Future[SensoryEventResult] =
+  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: Option[String]): Future[scaladsl.SensoryEventResult] =
     processIndexActor.ask(ProcessEvent(
       processId = processId,
       event = RuntimeEvent.extractEvent(event),
-      correlationId = None,
+      correlationId = correlationId,
       timeout = defaultProcessEventTimeout,
       reaction = FireSensoryEventReaction.NotifyWhenCompleted(waitForRetries = true)
     ))(defaultProcessEventTimeout).flatMap {
       case rejection: FireSensoryEventRejection =>
         Future.failed(new BakerException(rejection.asReason.toString))
-      case result: SensoryEventResult =>
+      case result: scaladsl.SensoryEventResult =>
         Future.successful(result)
     }
 
-  def fireSensoryEvent(processId: String, event: Any): SensoryEventMoments = {
+  def fireSensoryEvent(processId: String, event: Any, correlationId: Option[String]): scaladsl.SensoryEventMoments = {
     val futureRef = FutureRef(defaultProcessEventTimeout)
     val futureReceived =
       processIndexActor.ask(ProcessEvent(
         processId = processId,
         event = RuntimeEvent.extractEvent(event),
-        correlationId = None,
+        correlationId = correlationId,
         timeout = defaultProcessEventTimeout,
-        reaction = FireSensoryEventReaction.NotifyBoth(waitForRetries = true, completeReceiver = futureRef.ref)
+        reaction = FireSensoryEventReaction.NotifyBoth(
+          waitForRetries = true,
+          completeReceiver = futureRef.ref)
       ))(defaultProcessEventTimeout).flatMap {
         case rejection: FireSensoryEventRejection =>
           Future.failed(new BakerException(rejection.asReason.toString))
@@ -212,7 +206,7 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
       futureRef.future.flatMap {
         case rejection: FireSensoryEventRejection =>
           Future.failed(new BakerException(rejection.asReason.toString))
-        case result: SensoryEventResult =>
+        case result: scaladsl.SensoryEventResult =>
           Future.successful(result)
       }
     SensoryEventMoments(futureReceived, futureCompleted)

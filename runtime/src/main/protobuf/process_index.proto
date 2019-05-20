@@ -60,6 +60,27 @@ message CreateProcess {
     optional string processId = 2;
 }
 
+message CreateProcessRejection {
+    oneof sealed_value {
+       CreateProcessRejection_NoRecipeFound noRecipeFound = 1;
+       CreateProcessRejection_ProcessDeleted processDeleted = 2;
+       CreateProcessRejection_ProcessAlreadyExists processAlreadyExists = 3;
+    }
+}
+
+message CreateProcessRejection_NoRecipeFound {
+    optional string recipeId = 1;
+    optional string processId = 2;
+}
+
+message CreateProcessRejection_ProcessDeleted {
+    optional string recipeId = 1;
+}
+
+message CreateProcessRejection_ProcessAlreadyExists {
+    optional string recipeId = 1;
+}
+
 message ProcessEvent {
     optional string processId = 1;
     optional RuntimeEvent event = 2;

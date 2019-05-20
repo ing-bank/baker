@@ -171,6 +171,27 @@ object ProcessIndexProto {
         } yield CreateProcess(recipeId, processId)
     }
 
+  /*
+  implicit def createProcessRejectionProto: ProtoMap[CreateProcessRejection, protobuf.CreateProcessRejection] =
+    new ProtoMap[CreateProcessRejection, protobuf.CreateProcessRejection] {
+
+      val companion = protobuf.CreateProcessRejection
+
+      def toProto(a: CreateProcessRejection): protobuf.CreateProcessRejection =
+        a match {
+          case CreateProcessRejection.NoRecipeFound(recipeId, processId) =>
+            protobuf.CreateProcessRejection.SealedValue.NoRecipeFound(Some(recipeId), Some(processId))
+          case CreateProcessRejection.ProcessDeleted(processId) =>
+          case CreateProcessRejection.ProcessAlreadyExists(processId) =>
+        }
+        protobuf.CreateProcessRejection(Some(a.processId))
+
+      def fromProto(message: protobuf.CreateProcessRejection): Try[CreateProcessRejection] =
+        for {
+          processId <- versioned(message.processId, "processId")
+        } yield CreateProcessRejection(processId)
+    }
+
   implicit def processEventProto(implicit provider: SerializersProvider): ProtoMap[ProcessEvent, protobuf.ProcessEvent] =
     new ProtoMap[ProcessEvent, protobuf.ProcessEvent] {
 
@@ -198,6 +219,7 @@ object ProcessIndexProto {
           time = FiniteDuration(timeout, TimeUnit.MILLISECONDS)
         } yield ProcessEvent(processId, event, message.correlationId, waitFor, time, receiver)
     }
+   */
 
   implicit def retryBlockedInteractionProto: ProtoMap[RetryBlockedInteraction, protobuf.RetryBlockedInteraction] =
     new ProtoMap[RetryBlockedInteraction, protobuf.RetryBlockedInteraction] {
@@ -288,6 +310,7 @@ object ProcessIndexProto {
         } yield GetCompiledRecipe(processId)
     }
 
+  /*
   implicit def receivePeriodExpiredProto: ProtoMap[ReceivePeriodExpired, protobuf.ReceivePeriodExpired] =
     new ProtoMap[ReceivePeriodExpired, protobuf.ReceivePeriodExpired] {
 
@@ -358,5 +381,6 @@ object ProcessIndexProto {
           processId <- versioned(message.processId, "processId")
         } yield ProcessAlreadyExists(processId)
     }
+    */
 
 }

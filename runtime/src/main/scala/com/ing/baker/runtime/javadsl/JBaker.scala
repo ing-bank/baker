@@ -5,7 +5,7 @@ import java.util.concurrent.CompletableFuture
 
 import akka.actor.ActorSystem
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.akka.{BakerResponse, _}
+import com.ing.baker.runtime.akka.{AkkaBaker, ProcessState}
 import com.ing.baker.runtime.common._
 import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.types.Value
@@ -100,10 +100,10 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
   def bake(@Nonnull recipeId: String, @Nonnull processId: String): CompletableFuture[Unit] =
     toCompletableFuture(baker.bake(recipeId, processId))
 
-  def fireSensoryEventReceived(processId: String, event: Any): CompletableFuture[SensoryEventStatus] =
+  def fireSensoryEventReceived(processId: String, event: Any, correlationId: Option[String]): CompletableFuture[SensoryEventStatus] =
     toCompletableFuture(baker.fireSensoryEventReceived(processId, event))
 
-  def fireSensoryEventCompleted(processId: String, event: Any): CompletableFuture[SensoryEventResult] =
+  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: Option[String]): CompletableFuture[SensoryEventResult] =
     toCompletableFuture(baker.fireSensoryEventCompleted(processId, event)).thenApply { result =>
       new SensoryEventResult(
         status = result.status,
@@ -112,7 +112,7 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
       )
     }
 
-  def fireSensoryEvent(processId: String, event: Any): SensoryEventMoments = {
+  def fireSensoryEvent(processId: String, event: Any, correlationId: Option[String]): SensoryEventMoments = {
     val scalaResult = baker.fireSensoryEvent(processId, event)
     new SensoryEventMoments(
       received = toCompletableFuture(scalaResult.received),

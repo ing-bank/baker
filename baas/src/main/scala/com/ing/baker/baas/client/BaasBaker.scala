@@ -1,20 +1,17 @@
 package com.ing.baker.baas.client
 
-import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.HttpMethods._
 import akka.http.scaladsl.model.{RequestEntity, _}
-import akka.stream.scaladsl.{Framing, Source}
 import com.ing.baker.baas.interaction.server.RemoteInteractionLauncher
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.events.BakerEvent
-import com.ing.baker.runtime.common._
-import com.ing.baker.runtime.akka.{BakerResponseEventProtocol, ProcessState, RuntimeEvent}
-import com.ing.baker.runtime.scaladsl.Baker
+import com.ing.baker.runtime.common.{EventListener, InteractionImplementation, ProcessMetadata, RecipeInformation, SensoryEventStatus}
+import com.ing.baker.runtime.akka.ProcessState
+import com.ing.baker.runtime.scaladsl.{Baker, SensoryEventMoments, SensoryEventResult}
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
@@ -105,7 +102,7 @@ class BaasBaker(config: Config,
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEventReceived(processId: String, event: Any): Future[SensoryEventStatus] = ???
+  def fireSensoryEventReceived(processId: String, event: Any, correlationId: Option[String]): Future[SensoryEventStatus] = ???
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -117,7 +114,7 @@ class BaasBaker(config: Config,
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEventCompleted(processId: String, event: Any): Future[SensoryEventResult] = ???
+  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: Option[String]): Future[SensoryEventResult] = ???
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -130,7 +127,7 @@ class BaasBaker(config: Config,
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEvent(processId: String, event: Any): SensoryEventMoments = ???
+  def fireSensoryEvent(processId: String, event: Any, correlationId: Option[String]): SensoryEventMoments = ???
 
   /**
     * Creates a stream of specific events.
@@ -180,7 +177,6 @@ class BaasBaker(config: Config,
     * Returns the visual state (.dot) for a given process.
     *
     * @param processId The process identifier.
-    * @param timeout   How long to wait to retrieve the process state.
     * @return A visual (.dot) representation of the process state.
     */
   override def getVisualState(processId: String): Future[String] = {

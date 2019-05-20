@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.common
 
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.akka.{BakerResponse, ProcessState}
+import com.ing.baker.runtime.akka.ProcessState
 import com.ing.baker.types.Value
 
 /**
@@ -30,7 +30,8 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
 
   type Result <: SensoryEventResult[Seq, Map]
 
-  type Moments <: SensoryEventMoments[F, Result]
+  // TODO rename it... Stages? Outcomes? Instances? Instants? Results?
+  type Moments <: SensoryEventMoments[F, Seq, Map, Result]
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -77,7 +78,8 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEventReceived(processId: String, event: Any): F[SensoryEventStatus]
+  def fireSensoryEventReceived(processId: String, event: Any): F[SensoryEventStatus] =
+    fireSensoryEventReceived(processId, event, None)
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -89,7 +91,8 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEventCompleted(processId: String, event: Any): F[Result]
+  def fireSensoryEventCompleted(processId: String, event: Any): F[Result] =
+    fireSensoryEventCompleted(processId, event, None)
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -102,9 +105,91 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEvent(processId: String, event: Any): Moments
+  def fireSensoryEvent(processId: String, event: Any): Moments =
+    fireSensoryEvent(processId, event, None)
 
-  //TODO fire functions with correlation ID
+  /**
+    * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
+    *
+    * Possible failures:
+    *   `NoSuchProcessException` -> When no process exists for the given id
+    *   `ProcessDeletedException` -> If the process is already deleted
+    *
+    * @param processId The process identifier
+    * @param event     The event object
+    * @param correlationId Id used to ensure the process instance handles unique events
+    */
+  def fireSensoryEventReceived(processId: String, event: Any, correlationId: String): F[SensoryEventStatus] =
+    fireSensoryEventReceived(processId, event, Some(correlationId))
+
+  /**
+    * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
+    *
+    * Possible failures:
+    *   `NoSuchProcessException` -> When no process exists for the given id
+    *   `ProcessDeletedException` -> If the process is already deleted
+    *
+    * @param processId The process identifier
+    * @param event     The event object
+    * @param correlationId Id used to ensure the process instance handles unique events
+    */
+  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: String): F[Result] =
+    fireSensoryEventCompleted(processId, event, Some(correlationId))
+
+  /**
+    * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
+    * the process, and another for when the event was fully executed by the process.
+    *
+    * Possible failures:
+    *   `NoSuchProcessException` -> When no process exists for the given id
+    *   `ProcessDeletedException` -> If the process is already deleted
+    *
+    * @param processId The process identifier
+    * @param event     The event object
+    * @param correlationId Id used to ensure the process instance handles unique events
+    */
+  def fireSensoryEvent(processId: String, event: Any, correlationId: String): Moments =
+    fireSensoryEvent(processId, event, Some(correlationId))
+
+  /**
+    * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
+    *
+    * Possible failures:
+    *   `NoSuchProcessException` -> When no process exists for the given id
+    *   `ProcessDeletedException` -> If the process is already deleted
+    *
+    * @param processId The process identifier
+    * @param event     The event object
+    * @param correlationId Id used to ensure the process instance handles unique events
+    */
+  def fireSensoryEventReceived(processId: String, event: Any, correlationId: Option[String]): F[SensoryEventStatus]
+
+  /**
+    * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
+    *
+    * Possible failures:
+    *   `NoSuchProcessException` -> When no process exists for the given id
+    *   `ProcessDeletedException` -> If the process is already deleted
+    *
+    * @param processId The process identifier
+    * @param event     The event object
+    * @param correlationId Id used to ensure the process instance handles unique events
+    */
+  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: Option[String]): F[Result]
+
+  /**
+    * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
+    * the process, and another for when the event was fully executed by the process.
+    *
+    * Possible failures:
+    *   `NoSuchProcessException` -> When no process exists for the given id
+    *   `ProcessDeletedException` -> If the process is already deleted
+    *
+    * @param processId The process identifier
+    * @param event     The event object
+    * @param correlationId Id used to ensure the process instance handles unique events
+    */
+  def fireSensoryEvent(processId: String, event: Any, correlationId: Option[String]): Moments
 
   //TODO why do we have this and do we want to keep this?
   //TODO why is this named index when it return ProcessMetaData?

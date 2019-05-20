@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.akka
+package com.ing.baker.runtime.scaladsl
 
 import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.SensoryEventStatus
@@ -9,5 +9,3 @@ case class SensoryEventResult(
   events: Seq[String],
   ingredients: Map[String, Value]
 ) extends common.SensoryEventResult[Seq, Map]
-
-

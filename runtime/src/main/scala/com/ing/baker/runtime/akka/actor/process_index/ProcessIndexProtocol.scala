@@ -41,7 +41,7 @@ object ProcessIndexProtocol {
   /**
     * Currently (for now) generic rejection when interacting with the Process Index
     */
-  sealed trait ProcessRejection extends ProcessIndexMessage
+  sealed trait ProcessRejection // extends ProcessIndexMessage TODO protobuf fix
 
   object ProcessRejection {
 
@@ -71,7 +71,7 @@ object ProcessIndexProtocol {
   /**
     * Possible failures when requesting the creation of a new process instance
     */
-  sealed trait CreateProcessRejection extends ProcessIndexMessage
+  sealed trait CreateProcessRejection // extends ProcessIndexMessage TODO protobuf fix
 
   object CreateProcessRejection {
 
@@ -107,7 +107,7 @@ object ProcessIndexProtocol {
     * @param timeout Waiting time for an instance to produce some response to this request
     * @param reaction Expected reaction from the ProcessEventSender actor, see SensoryEventReaction
     */
-  case class ProcessEvent(processId: String, event: RuntimeEvent, correlationId: Option[String], timeout: FiniteDuration, reaction: FireSensoryEventReaction) extends ProcessIndexMessage
+  case class ProcessEvent(processId: String, event: RuntimeEvent, correlationId: Option[String], timeout: FiniteDuration, reaction: FireSensoryEventReaction) // extends ProcessIndexMessage TODO protobuf fix
 
   /**
     * Expected reactions when firing a sensory event

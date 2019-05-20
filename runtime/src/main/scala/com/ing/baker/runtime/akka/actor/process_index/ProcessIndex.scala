@@ -252,11 +252,11 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
         } yield processInstance.tell(FireTransition(transition.id, event, correlationId), streamSender)
       }
 
-      type FireEventIO[+A] = EitherT[IO, FireSensoryEventRejection, A]
+      type FireEventIO[A] = EitherT[IO, FireSensoryEventRejection, A]
 
       def run(program: ActorRef => FireEventIO[Unit]): Unit = {
         val streamSender = context.actorOf(
-          ProcessEventSender(sender, command))
+          SensoryEventResponseHandler(sender, command))
         program(streamSender).value.unsafeRunSync() match {
           case Left(rejection) => streamSender ! rejection
           case Right(_) => ()

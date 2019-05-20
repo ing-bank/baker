@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.common
 
-trait SensoryEventMoments[F[_], R <: SensoryEventResult[_, _]] {
+trait SensoryEventMoments[F[_], Seq[_], Map[_, _], R <: SensoryEventResult[Seq, Map]] {
 
   def received: F[SensoryEventStatus]
 
