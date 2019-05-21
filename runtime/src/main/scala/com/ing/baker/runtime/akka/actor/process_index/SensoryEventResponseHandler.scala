@@ -55,11 +55,11 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
   }
 
   def notifyComplete(cache: List[Any]): Unit = {
-    lazy val runtimeEvents = cache.flatMap {
-      case fired: TransitionFired => Some(fired.output.asInstanceOf[RuntimeEvent])
+    def runtimeEvents: List[RuntimeEvent] = cache.flatMap {
+      case fired: TransitionFired => Option(fired.output.asInstanceOf[RuntimeEvent])
       case _ => None
     }
-    lazy val result = SensoryEventResult(
+    def result = SensoryEventResult(
       status = SensoryEventStatus.Completed,
       events = runtimeEvents.map(_.name),
       ingredients = runtimeEvents.flatMap(_.providedIngredients).toMap
@@ -76,9 +76,9 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
   }
 
   def rejectWith(rejection: FireSensoryEventRejection): Unit = {
-    log.debug("Stopping ProcessEventSender and rejecting queue")
-    log.debug("Reject reason: " + rejection.asReason)
-    log.debug("message: " + rejection)
+    println("Stopping SensoryEventResponseHandler and rejecting request")
+    println("Reject reason: " + rejection.asReason)
+    println("message: " + rejection)
     context.system.eventStream.publish(
       EventRejected(
         System.currentTimeMillis(),
@@ -98,7 +98,7 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
   }
 
   def stopActor(): Unit = {
-    log.debug("Stopping the ProcessEventSender")
+    println("Stopping the SensoryEventResponseHandler")
     context.stop(self)
   }
 
@@ -117,8 +117,11 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
     handleRejections orElse {
       case recipe: CompiledRecipe =>
         context.become(waitForFirstEvent(recipe))
-      case _ ⇒
-        log.debug("Unexpected message on ProcessEventSender when expecting a compiled recipe")
+      case ReceiveTimeout ⇒
+        println("Timeout on SensoryEventResponseHandler when expecting a compiled recipe")
+        stopActor()
+      case message ⇒
+        println(s"Unexpected message $message on SensoryEventResponseHandler when expecting a compiled recipe")
         stopActor()
     }
 
@@ -128,10 +131,10 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
         notifyReceive(recipe)
         context.become(streaming(firstEvent.newJobsIds - firstEvent.jobId, List(firstEvent)))
       case ReceiveTimeout ⇒
-        log.debug("Timeout on ProcessEventSender")
+        println("Timeout on SensoryEventResponseHandler when expecting the first transition fired event")
         stopActor()
-      case _ ⇒
-        log.debug("Unexpected message on ProcessEventSender when expecting the first transition fired event")
+      case message ⇒
+        println(s"Unexpected message $message on SensoryEventResponseHandler when expecting the first transition fired event")
         stopActor()
     }
 
@@ -140,11 +143,16 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
     PartialFunction {
       case event: TransitionFired ⇒
         context.become(streaming(runningJobs ++ event.newJobsIds - event.jobId, cache :+ event))
-      case event:TransitionFailed if event.strategy.isRetry && waitForRetries ⇒
+      case event: TransitionFailed if event.strategy.isRetry && waitForRetries ⇒
         context.become(streaming(runningJobs, cache :+ event))
       case event: TransitionFailed ⇒
         context.become(streaming(runningJobs - event.jobId, cache :+ event))
+      case ReceiveTimeout ⇒
+        println("Timeout on SensoryEventResponseHandler when streaming")
+        stopActor()
+      case message ⇒
+        println(s"Unexpected message $message on SensoryEventResponseHandler when streaming")
+        stopActor()
     }
   }
 }
-

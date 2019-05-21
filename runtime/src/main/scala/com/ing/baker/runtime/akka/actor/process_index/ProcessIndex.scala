@@ -240,26 +240,33 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
 
     case command@ProcessEvent(processId, event, correlationId, _, _) =>
 
-      run { streamSender =>
+      run { responseHandler =>
         for {
           instanceAndMeta <- fetchInstance
           (processInstance, metadata) = instanceAndMeta
           recipe <- fetchRecipe(metadata)
+          _ <- initializeResponseHandler(recipe, responseHandler)
           transitionAndDescriptor <- validateEventIsInRecipe(recipe)
           (transition, descriptor) = transitionAndDescriptor
           _ <- validateEventIsSound(descriptor)
           _ <- validateWithinReceivePeriod(recipe, metadata)
-        } yield processInstance.tell(FireTransition(transition.id, event, correlationId), streamSender)
+          fireTransitionCommand = FireTransition(transition.id, event, correlationId)
+          _ <- forwardToProcessInstance(fireTransitionCommand, processInstance, responseHandler)
+        } yield ()
       }
 
       type FireEventIO[A] = EitherT[IO, FireSensoryEventRejection, A]
 
       def run(program: ActorRef => FireEventIO[Unit]): Unit = {
-        val streamSender = context.actorOf(
+        val responseHandler = context.actorOf(
           SensoryEventResponseHandler(sender, command))
-        program(streamSender).value.unsafeRunSync() match {
-          case Left(rejection) => streamSender ! rejection
-          case Right(_) => ()
+        program(responseHandler).value.unsafeRunAsync {
+          case Left(exception) =>
+            throw exception // TODO decide what to do, might never happen, except if we generalize it as a runtime for the actor
+          case Right(Left(rejection)) =>
+            responseHandler ! rejection
+          case Right(Right(())) =>
+            ()
         }
       }
 
@@ -271,6 +278,9 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
 
       def continue: FireEventIO[Unit] =
         accept(())
+
+      def sync[A](thunk: => A): FireEventIO[A] =
+        EitherT.liftF(IO(thunk))
 
       def async[A](callback: (Either[Throwable, A] => Unit) => Unit): FireEventIO[A] =
         EitherT.liftF(IO.async(callback))
@@ -296,6 +306,9 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
 
       def fetchRecipe(metadata: ActorMetadata): FireEventIO[CompiledRecipe] =
         accept(getCompiledRecipe(metadata.recipeId).get)
+
+      def initializeResponseHandler(recipe: CompiledRecipe, handler: ActorRef): FireEventIO[Unit] =
+        sync(handler ! recipe)
 
       def validateEventIsInRecipe(recipe: CompiledRecipe): FireEventIO[(Transition, EventDescriptor)] = {
         val transition0 = recipe.petriNet.transitions.find(_.label == event.name)
@@ -333,6 +346,9 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
           }
         } yield ()
       }
+
+      def forwardToProcessInstance(fireTransitionCommand: FireTransition, processInstance: ActorRef, responseHandler: ActorRef): FireEventIO[Unit] =
+        sync(processInstance.tell(fireTransitionCommand, responseHandler))
 
     case StopRetryingInteraction(processId, interactionName) =>
 

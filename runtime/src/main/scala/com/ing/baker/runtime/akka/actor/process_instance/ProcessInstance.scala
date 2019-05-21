@@ -15,6 +15,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.akka.actor.serialization.Encryption
 import com.ing.baker.runtime.akka.ProcessState
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -155,7 +156,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
       log.idleStop(processId, settings.idleTTL.getOrElse(Duration.Zero))
       context.stop(context.self)
 
-    case GetState ⇒ {
+    case GetState ⇒
       val instanceState: InstanceState = mapStateToProtocol(instance)
       instanceState.state match {
         case state: ProcessState =>
@@ -163,7 +164,6 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
         case _ =>
           sender() ! instanceState
       }
-    }
 
 
     case event @ TransitionFiredEvent(jobId, transitionId, correlationId, timeStarted, timeCompleted, consumed, produced, output) ⇒
@@ -251,7 +251,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
       correlationIdOption match {
         case Some(correlationId) if instance.hasReceivedCorrelationId(correlationId) =>
-            sender() ! AlreadyReceived(correlationId)
+            sender() ! FireSensoryEventRejection.AlreadyReceived(processId, correlationId)
         case _ =>
           runtime.createJob(transition, input, correlationIdOption).run(instance).value match {
             case (updatedInstance, Right(job)) ⇒
@@ -261,7 +261,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
               log.fireTransitionRejected(processId, transition.toString, reason)
 
-              sender() ! TransitionNotEnabled(transitionId, reason)
+              sender() ! FireSensoryEventRejection.FiringLimitMet(processId)
           }
       }
 

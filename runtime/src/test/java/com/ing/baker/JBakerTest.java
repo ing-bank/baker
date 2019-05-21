@@ -67,10 +67,6 @@ public class JBakerTest {
             })
             .thenCompose(x -> jBaker.fireSensoryEventCompleted(processId, new JavaCompiledRecipeTest.EventOne()))
             .thenApply(SensoryEventResult::events)
-            .thenApply(x -> {
-                x.forEach(System.out::println);
-                return null;
-            })
             .thenCompose(x -> jBaker.getProcessState(processId))
             .thenApply(ProcessState::getIngredients)
             .get();
@@ -92,7 +88,7 @@ public class JBakerTest {
 
         String requestId = UUID.randomUUID().toString();
         jBaker.bake(recipeId, requestId).get();
-        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne()).get().completedFutureJava().get();
+        jBaker.fireSensoryEventCompleted(requestId, new JavaCompiledRecipeTest.EventOne()).get();
         java.util.Map<String, Value> ingredients = jBaker.getProcessState(requestId).get().getIngredients();
 
         assertEquals(1, ingredients.size());
@@ -124,8 +120,8 @@ public class JBakerTest {
 
         String requestId = UUID.randomUUID().toString();
         jBaker.bake(recipeId, requestId).get();
-        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventOne()).get().completedFutureJava().get();
-        jBaker.processEvent(requestId, new JavaCompiledRecipeTest.EventTwo()).get().completedFutureJava().get();
+        jBaker.fireSensoryEventCompleted(requestId, new JavaCompiledRecipeTest.EventOne()).get();
+        jBaker.fireSensoryEventCompleted(requestId, new JavaCompiledRecipeTest.EventTwo()).get();
     }
 
     final static class EmptySubscriber {

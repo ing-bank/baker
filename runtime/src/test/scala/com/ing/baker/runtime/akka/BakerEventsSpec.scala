@@ -100,7 +100,7 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         listenerProbe = TestProbe()
         _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
         _ <- baker.bake(recipeId, processId)
-        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue), "someId")
+        _ <- baker.fireSensoryEventCompleted(processId, InitialEvent(initialIngredientValue), "someId")
         // TODO check the order of the timestamps later
         _ = expectMsgInAnyOrderPF(listenerProbe,
           { case msg@ProcessCreated(_, `recipeId`, `recipeName`, `processId`) => msg },
@@ -129,7 +129,7 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
         _ <- baker.bake(recipeId, processId)
         // We used async function here because ThirdEvent is not part of the recipe and throws exception
-        _ <- baker.processEvent(processId, ThirdEvent(), "someId")
+        _ = baker.fireSensoryEventReceived(processId, ThirdEvent(), "someId")
         _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
           case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("ThirdEvent", Seq()), InvalidEvent) => msg
         }
@@ -145,8 +145,8 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         listenerProbe = TestProbe()
         _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
         _ <- baker.bake(recipeId, processId)
-        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue), "someId").flatMap(_.completedFuture)
-        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue), "someId").flatMap(_.completedFuture) // Same correlationId cannot be used twice
+        _ <- baker.fireSensoryEventCompleted(processId, InitialEvent(initialIngredientValue), "someId")
+        _ <- baker.fireSensoryEventCompleted(processId, InitialEvent(initialIngredientValue), "someId") // Same correlationId cannot be used twice
         _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
           case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), AlreadyReceived) => msg
         }
@@ -162,8 +162,8 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         listenerProbe = TestProbe()
         _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
         _ <- baker.bake(recipeId, processId)
-        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture)
-        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue)).flatMap(_.completedFuture) // Firing limit is set to 1 in the recipe
+        _ <- baker.fireSensoryEventCompleted(processId, InitialEvent(initialIngredientValue))
+        _ <- baker.fireSensoryEventCompleted(processId, InitialEvent(initialIngredientValue)) // Firing limit is set to 1 in the recipe
         _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
           case msg@EventRejected(_, `processId`, None, RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), FiringLimitMet) => msg
         }
@@ -182,7 +182,7 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         _ <- Future {
           Thread.sleep(eventReceiveTimeout.toMillis)
         }
-        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue), "someId")
+        _ = baker.fireSensoryEventReceived(processId, InitialEvent(initialIngredientValue), "someId")
         _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
           case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), ReceivePeriodExpired) => msg
         }
@@ -199,7 +199,7 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
         // Skipped baking the process here, so the process with processId does not exist
         // use a different processId and use async function because the sync version throws NoSuchProcessException
-        _ <- baker.processEvent(processId, InitialEvent(initialIngredientValue), "someId")
+        _ = baker.fireSensoryEventReceived(processId, InitialEvent(initialIngredientValue), "someId")
         _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
           case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", Seq(Tuple2("initialIngredient", PrimitiveValue(`initialIngredientValue`)))), NoSuchProcess) => msg
         }

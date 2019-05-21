@@ -165,8 +165,19 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
       timeout = defaultProcessEventTimeout,
       reaction = FireSensoryEventReaction.NotifyWhenReceived
     ))(defaultProcessEventTimeout).flatMap {
-      case rejection: FireSensoryEventRejection =>
-        Future.failed(new BakerException(rejection.asReason.toString))
+      // TODO MOVE THIS TO A FUNCTION
+      case FireSensoryEventRejection.InvalidEvent(_, message) =>
+        Future.failed(new IllegalArgumentException(message))
+      case FireSensoryEventRejection.NoSuchProcess(processId0) =>
+        Future.failed(new NoSuchProcessException(s"Process with id $processId0 does not exist in the index"))
+      case _: FireSensoryEventRejection.FiringLimitMet =>
+        Future.successful(SensoryEventStatus.FiringLimitMet)
+      case _: FireSensoryEventRejection.AlreadyReceived =>
+        Future.successful(SensoryEventStatus.AlreadyReceived)
+      case _: FireSensoryEventRejection.ReceivePeriodExpired =>
+        Future.successful(SensoryEventStatus.ReceivePeriodExpired)
+      case _: FireSensoryEventRejection.ProcessDeleted =>
+        Future.successful(SensoryEventStatus.ProcessDeleted)
       case status: SensoryEventStatus =>
         Future.successful(status)
     }
@@ -179,8 +190,18 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
       timeout = defaultProcessEventTimeout,
       reaction = FireSensoryEventReaction.NotifyWhenCompleted(waitForRetries = true)
     ))(defaultProcessEventTimeout).flatMap {
-      case rejection: FireSensoryEventRejection =>
-        Future.failed(new BakerException(rejection.asReason.toString))
+      case FireSensoryEventRejection.InvalidEvent(_, message) =>
+        Future.failed(new IllegalArgumentException(message))
+      case FireSensoryEventRejection.NoSuchProcess(processId0) =>
+        Future.failed(new NoSuchProcessException(s"Process with id $processId0 does not exist in the index"))
+      case _: FireSensoryEventRejection.FiringLimitMet =>
+        Future.successful(scaladsl.SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
+      case _: FireSensoryEventRejection.AlreadyReceived =>
+        Future.successful(scaladsl.SensoryEventResult(SensoryEventStatus.AlreadyReceived, Seq.empty, Map.empty))
+      case _: FireSensoryEventRejection.ReceivePeriodExpired =>
+        Future.successful(scaladsl.SensoryEventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
+      case _: FireSensoryEventRejection.ProcessDeleted =>
+        Future.successful(scaladsl.SensoryEventResult(SensoryEventStatus.ProcessDeleted, Seq.empty, Map.empty))
       case result: scaladsl.SensoryEventResult =>
         Future.successful(result)
     }
@@ -197,15 +218,35 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
           waitForRetries = true,
           completeReceiver = futureRef.ref)
       ))(defaultProcessEventTimeout).flatMap {
-        case rejection: FireSensoryEventRejection =>
-          Future.failed(new BakerException(rejection.asReason.toString))
+        case FireSensoryEventRejection.InvalidEvent(_, message) =>
+          Future.failed(new IllegalArgumentException(message))
+        case FireSensoryEventRejection.NoSuchProcess(processId0) =>
+          Future.failed(new NoSuchProcessException(s"Process with id $processId0 does not exist in the index"))
+        case _: FireSensoryEventRejection.FiringLimitMet =>
+          Future.successful(SensoryEventStatus.FiringLimitMet)
+        case _: FireSensoryEventRejection.AlreadyReceived =>
+          Future.successful(SensoryEventStatus.AlreadyReceived)
+        case _: FireSensoryEventRejection.ReceivePeriodExpired =>
+          Future.successful(SensoryEventStatus.ReceivePeriodExpired)
+        case _: FireSensoryEventRejection.ProcessDeleted =>
+          Future.successful(SensoryEventStatus.ProcessDeleted)
         case status: SensoryEventStatus =>
           Future.successful(status)
       }
     val futureCompleted =
       futureRef.future.flatMap {
-        case rejection: FireSensoryEventRejection =>
-          Future.failed(new BakerException(rejection.asReason.toString))
+        case FireSensoryEventRejection.InvalidEvent(_, message) =>
+          Future.failed(new IllegalArgumentException(message))
+        case FireSensoryEventRejection.NoSuchProcess(processId0) =>
+          Future.failed(new NoSuchProcessException(s"Process with id $processId0 does not exist in the index"))
+        case _: FireSensoryEventRejection.FiringLimitMet =>
+          Future.successful(scaladsl.SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
+        case _: FireSensoryEventRejection.AlreadyReceived =>
+          Future.successful(scaladsl.SensoryEventResult(SensoryEventStatus.AlreadyReceived, Seq.empty, Map.empty))
+        case _: FireSensoryEventRejection.ReceivePeriodExpired =>
+          Future.successful(scaladsl.SensoryEventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
+        case _: FireSensoryEventRejection.ProcessDeleted =>
+          Future.successful(scaladsl.SensoryEventResult(SensoryEventStatus.ProcessDeleted, Seq.empty, Map.empty))
         case result: scaladsl.SensoryEventResult =>
           Future.successful(result)
       }

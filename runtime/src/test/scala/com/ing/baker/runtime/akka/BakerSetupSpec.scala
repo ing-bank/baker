@@ -41,7 +41,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           recipeId <- baker.addRecipe(simpleRecipe)
           processId = java.util.UUID.randomUUID().toString
           _ <- baker.bake(recipeId, processId)
-          _ <- baker.processEvent(processId, initialEvent.instance("initialIngredient")).flatMap(_.completedFuture)
+          _ <- baker.fireSensoryEventCompleted(processId, initialEvent.instance("initialIngredient"))
         } yield succeed
       }
 

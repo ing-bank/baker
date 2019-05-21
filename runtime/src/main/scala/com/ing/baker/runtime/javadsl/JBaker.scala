@@ -100,6 +100,24 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
   def bake(@Nonnull recipeId: String, @Nonnull processId: String): CompletableFuture[Unit] =
     toCompletableFuture(baker.bake(recipeId, processId))
 
+  override def fireSensoryEventReceived(processId: String, event: Any, correlationId: String): CompletableFuture[SensoryEventStatus] =
+    fireSensoryEventReceived(processId, event, Some(correlationId))
+
+  override def fireSensoryEventCompleted(processId: String, event: Any, correlationId: String): CompletableFuture[SensoryEventResult] =
+    fireSensoryEventCompleted(processId, event, Some(correlationId))
+
+  override def fireSensoryEvent(processId: String, event: Any, correlationId: String): SensoryEventMoments =
+    fireSensoryEvent(processId, event, Some(correlationId))
+
+  override def fireSensoryEventReceived(processId: String, event: Any): CompletableFuture[SensoryEventStatus] =
+    fireSensoryEventReceived(processId, event, None)
+
+  override def fireSensoryEventCompleted(processId: String, event: Any): CompletableFuture[SensoryEventResult] =
+    fireSensoryEventCompleted(processId, event, None)
+
+  override def fireSensoryEvent(processId: String, event: Any): SensoryEventMoments =
+    fireSensoryEvent(processId, event, None)
+
   def fireSensoryEventReceived(processId: String, event: Any, correlationId: Option[String]): CompletableFuture[SensoryEventStatus] =
     toCompletableFuture(baker.fireSensoryEventReceived(processId, event))
 
