@@ -33,6 +33,7 @@ import scala.concurrent.duration._
 object ProcessIndexSpec {
   val config: Config = ConfigFactory.parseString(
     """
+      |akka.actor.allow-java-serialization = off
       |akka.persistence.journal.plugin = "inmemory-journal"
       |akka.persistence.snapshot-store.plugin = "inmemory-snapshot-store"
       |akka.test.timefactor = 3.0
@@ -100,7 +101,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       petriNetActorProbe.expectMsg(initializeMsg)
       actorIndex ! CreateProcess(recipeId, processId)
       petriNetActorProbe.expectNoMessage(noMsgExpectTimeout)
-      expectMsg(CreateProcessRejection.ProcessAlreadyExists(processId))
+      expectMsg(ProcessAlreadyExists(processId))
     }
 
     "delete a process if a retention period is defined, stop command is received" in {

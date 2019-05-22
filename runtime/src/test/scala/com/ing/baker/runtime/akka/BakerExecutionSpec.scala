@@ -32,7 +32,6 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
   val log = LoggerFactory.getLogger(classOf[BakerExecutionSpec])
 
-
   before {
     resetMocks
     setupMockResponse()

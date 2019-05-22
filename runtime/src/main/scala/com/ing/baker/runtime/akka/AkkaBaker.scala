@@ -148,9 +148,9 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
     processIndexActor.ask(CreateProcess(recipeId, processId))(defaultBakeTimeout).flatMap {
       case _: Initialized =>
         Future.successful(())
-      case CreateProcessRejection.ProcessAlreadyExists(_) =>
+      case ProcessAlreadyExists(_) =>
         Future.failed(new IllegalArgumentException(s"Process with id '$processId' already exists."))
-      case CreateProcessRejection.NoRecipeFound(_, _) =>
+      case NoRecipeFound(_) =>
         Future.failed(new IllegalArgumentException(s"Recipe with id '$recipeId' does not exist."))
       case msg@_ =>
         Future.failed(new BakerException(s"Unexpected message of type: ${msg.getClass}"))
@@ -311,8 +311,8 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
       .ask(GetProcessState(processId))(Timeout.durationToTimeout(defaultInquireTimeout))
       .flatMap {
         case instance: InstanceState => Future.successful(instance.state.asInstanceOf[ProcessState])
-        case ProcessRejection.NoSuchProcess(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
-        case ProcessRejection.ProcessDeleted(id) => Future.failed(new ProcessDeletedException(s"Process $id is deleted"))
+        case NoSuchProcess(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
+        case ProcessDeleted(id) => Future.failed(new ProcessDeletedException(s"Process $id is deleted"))
         case msg => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
       }
 
@@ -346,7 +346,7 @@ class AkkaBaker(config: Config)(implicit val actorSystem: ActorSystem) extends B
             config,
             eventNames = processState.eventNames.toSet,
             ingredientNames = processState.ingredients.keySet))
-        case ProcessRejection.ProcessDeleted(_) =>
+        case ProcessDeleted(_) =>
           Future.failed(new ProcessDeletedException(s"Process $processId is deleted"))
         case Uninitialized(_) =>
           Future.failed(new NoSuchProcessException(s"Process $processId is not found"))

@@ -8,11 +8,6 @@ option (scalapb.options) = {
     flat_package: true
 };
 
-// ProcessEvent Protocol
-message ProcessEventRejected {
-    optional string message = 1;
-}
-
 // Events
 
 message ActorCreated {
@@ -32,7 +27,6 @@ message ActorActivated {
 message ActorDeleted {
     optional string processId = 1;
 }
-
 
 // Protocol
 
@@ -60,33 +54,32 @@ message CreateProcess {
     optional string processId = 2;
 }
 
-message CreateProcessRejection {
-    oneof sealed_value {
-       CreateProcessRejection_NoRecipeFound noRecipeFound = 1;
-       CreateProcessRejection_ProcessDeleted processDeleted = 2;
-       CreateProcessRejection_ProcessAlreadyExists processAlreadyExists = 3;
-    }
-}
-
-message CreateProcessRejection_NoRecipeFound {
-    optional string recipeId = 1;
-    optional string processId = 2;
-}
-
-message CreateProcessRejection_ProcessDeleted {
-    optional string recipeId = 1;
-}
-
-message CreateProcessRejection_ProcessAlreadyExists {
-    optional string recipeId = 1;
-}
-
 message ProcessEvent {
     optional string processId = 1;
     optional RuntimeEvent event = 2;
     optional string correlationId = 3;
-    optional bool waitForRetries = 4;
     optional int64 timeout = 5;
+    optional FireSensoryEventReaction reaction = 7;
+}
+
+message FireSensoryEventReaction {
+    oneof sealed_value {
+        NotifyWhenReceived received = 1;
+        NotifyWhenCompleted completed = 2;
+        NotifyBoth both = 3;
+    }
+}
+
+message NotifyWhenReceived {
+
+}
+
+message NotifyWhenCompleted {
+    optional bool waitForRetries = 1;
+}
+
+message NotifyBoth {
+    optional bool waitForRetries = 1;
     optional ActorRefId receiver = 6;
 }
 
@@ -126,6 +119,15 @@ message ReceivePeriodExpired {
 message InvalidEvent {
     optional string processId = 1;
     optional string reason = 2;
+}
+
+message SensoryEventAlreadyReceived {
+    optional string processId = 1;
+    optional string correlationId = 2;
+}
+
+message FiringLimitMet {
+    optional string processId = 1;
 }
 
 message ProcessDeleted {

@@ -64,14 +64,10 @@ object BakerTypedProtobufSerializer {
         .register("ProcessIndexProtocol.Index"),
       forType[ProcessIndexProtocol.CreateProcess]
         .register("ProcessIndexProtocol.CreateProcess"),
-      /*
-      forType[ProcessIndexProtocol.ProcessRejection.NoSuchProcess]
-        .register("ProcessIndex.ProcessRejection.NoSuchProcess"),
-      forType[ProcessIndexProtocol.ProcessRejection.ProcessDeleted]
-        .register("ProcessIndex.ProcessRejection.NoSuchProcess"),
-      forType[ProcessIndexProtocol.CreateProcessRejection]
-        .register("ProcessIndexProtocol.CreateProcessRejection"),
-       */
+      forType[ProcessIndexProtocol.NoSuchProcess]
+        .register("ProcessIndex.NoSuchProcess"),
+      forType[ProcessIndexProtocol.ProcessDeleted]
+        .register("ProcessIndex.NoSuchProcess"),
       forType[ProcessIndexProtocol.RetryBlockedInteraction]
         .register("ProcessIndexProtocol.RetryBlockedInteraction"),
       forType[ProcessIndexProtocol.ResolveBlockedInteraction]
@@ -84,12 +80,20 @@ object BakerTypedProtobufSerializer {
         .register("ProcessIndexProtocol.GetProcessState"),
       forType[ProcessIndexProtocol.GetCompiledRecipe]
         .register("ProcessIndexProtocol.GetCompiledRecipe"),
-      /*
       forType[ProcessIndexProtocol.ProcessEvent]
         .register("ProcessIndexProtocol.ProcessEvent"),
-      forType[ProcessIndexProtocol.FireSensoryEventRejection]
-        .register("ProcessIndexProtocol.FireSensoryEventRejection")
-       */
+      forType[ProcessIndexProtocol.FireSensoryEventRejection.ReceivePeriodExpired]
+        .register("ProcessIndexProtocol.FireSensoryEventRejection.ReceivePeriodExpired"),
+      forType[ProcessIndexProtocol.FireSensoryEventRejection.InvalidEvent]
+        .register("ProcessIndexProtocol.FireSensoryEventRejection.InvalidEvent"),
+      forType[ProcessIndexProtocol.FireSensoryEventRejection.ProcessDeleted]
+        .register("ProcessIndexProtocol.FireSensoryEventRejection.ProcessDeleted"),
+      forType[ProcessIndexProtocol.FireSensoryEventRejection.NoSuchProcess]
+        .register("ProcessIndexProtocol.FireSensoryEventRejection.NoSuchProcess"),
+      forType[ProcessIndexProtocol.FireSensoryEventRejection.AlreadyReceived]
+        .register("ProcessIndexProtocol.FireSensoryEventRejection.AlreadyReceived"),
+      forType[ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet]
+        .register("ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet")
     )
 
     def processInstanceEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =

@@ -2,21 +2,18 @@ package com.ing.baker.runtime.akka.actor.process_index
 
 import java.util.concurrent.TimeUnit
 
-import akka.stream.SourceRef
 import cats.instances.list._
 import cats.instances.try_._
 import cats.syntax.traverse._
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.{NotifyBoth, NotifyWhenCompleted, NotifyWhenReceived}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.akka.actor.serialization.ProtoMap
-
-import scala.util.Success
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
-import com.ing.baker.runtime.akka.actor.serialization.SerializersProvider
+import com.ing.baker.runtime.akka.actor.serialization.{ProtoMap, SerializersProvider}
 
 import scala.concurrent.duration.FiniteDuration
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 object ProcessIndexProto {
 
@@ -171,27 +168,6 @@ object ProcessIndexProto {
         } yield CreateProcess(recipeId, processId)
     }
 
-  /*
-  implicit def createProcessRejectionProto: ProtoMap[CreateProcessRejection, protobuf.CreateProcessRejection] =
-    new ProtoMap[CreateProcessRejection, protobuf.CreateProcessRejection] {
-
-      val companion = protobuf.CreateProcessRejection
-
-      def toProto(a: CreateProcessRejection): protobuf.CreateProcessRejection =
-        a match {
-          case CreateProcessRejection.NoRecipeFound(recipeId, processId) =>
-            protobuf.CreateProcessRejection.SealedValue.NoRecipeFound(Some(recipeId), Some(processId))
-          case CreateProcessRejection.ProcessDeleted(processId) =>
-          case CreateProcessRejection.ProcessAlreadyExists(processId) =>
-        }
-        protobuf.CreateProcessRejection(Some(a.processId))
-
-      def fromProto(message: protobuf.CreateProcessRejection): Try[CreateProcessRejection] =
-        for {
-          processId <- versioned(message.processId, "processId")
-        } yield CreateProcessRejection(processId)
-    }
-
   implicit def processEventProto(implicit provider: SerializersProvider): ProtoMap[ProcessEvent, protobuf.ProcessEvent] =
     new ProtoMap[ProcessEvent, protobuf.ProcessEvent] {
 
@@ -202,24 +178,44 @@ object ProcessIndexProto {
           Some(a.processId),
           Some(ctxToProto(a.event)),
           a.correlationId,
-          Some(a.waitForRetries),
           Some(a.timeout.toMillis),
-          Some(ctxToProto(a.receiver))
+          Some(a.reaction match {
+            case FireSensoryEventReaction.NotifyWhenReceived =>
+              protobuf.FireSensoryEventReaction(
+                protobuf.FireSensoryEventReaction.SealedValue.Received(protobuf.NotifyWhenReceived()))
+            case FireSensoryEventReaction.NotifyWhenCompleted(waitForRetries) =>
+              protobuf.FireSensoryEventReaction(
+                protobuf.FireSensoryEventReaction.SealedValue.Completed(protobuf.NotifyWhenCompleted(Some(waitForRetries))))
+            case FireSensoryEventReaction.NotifyBoth(waitForRetries, receiver) =>
+              protobuf.FireSensoryEventReaction(
+                protobuf.FireSensoryEventReaction.SealedValue.Both(protobuf.NotifyBoth(Some(waitForRetries), Some(ctxToProto(receiver)))))
+          })
         )
 
       def fromProto(message: protobuf.ProcessEvent): Try[ProcessEvent] =
         for {
           processId <- versioned(message.processId, "processId")
           eventProto <- versioned(message.event, "event")
-          waitFor <- versioned(message.waitForRetries, "waitForRetries")
           timeout <- versioned(message.timeout, "timeout")
-          actorRefId <- versioned(message.receiver, "receiver")
+          reactionProto <- versioned(message.reaction, "reaction")
           event <- ctxFromProto(eventProto)
-          receiver <- ctxFromProto(actorRefId)
+          reaction <- reactionProto.sealedValue match {
+            case protobuf.FireSensoryEventReaction.SealedValue.Received(_) =>
+              Success(NotifyWhenReceived)
+            case protobuf.FireSensoryEventReaction.SealedValue.Completed(protobuf.NotifyWhenCompleted(waitForRetries)) =>
+              versioned(waitForRetries, "waitForRetries").map(NotifyWhenCompleted.apply)
+            case protobuf.FireSensoryEventReaction.SealedValue.Both(protobuf.NotifyBoth(waitForRetriesProto, receiverProto)) =>
+              for {
+                waitForRetries <- versioned(waitForRetriesProto, "waitForRetries")
+                receiverProto <- versioned(receiverProto, "receiver")
+                receiver <- ctxFromProto(receiverProto)
+              } yield NotifyBoth(waitForRetries, receiver)
+            case protobuf.FireSensoryEventReaction.SealedValue.Empty =>
+              Failure(new IllegalStateException("Received Empty of the oneof FireSensoryEventReaction protocol message."))
+          }
           time = FiniteDuration(timeout, TimeUnit.MILLISECONDS)
-        } yield ProcessEvent(processId, event, message.correlationId, waitFor, time, receiver)
+        } yield ProcessEvent(processId, event, message.correlationId, time, reaction)
     }
-   */
 
   implicit def retryBlockedInteractionProto: ProtoMap[RetryBlockedInteraction, protobuf.RetryBlockedInteraction] =
     new ProtoMap[RetryBlockedInteraction, protobuf.RetryBlockedInteraction] {
@@ -310,34 +306,33 @@ object ProcessIndexProto {
         } yield GetCompiledRecipe(processId)
     }
 
-  /*
-  implicit def receivePeriodExpiredProto: ProtoMap[ReceivePeriodExpired, protobuf.ReceivePeriodExpired] =
-    new ProtoMap[ReceivePeriodExpired, protobuf.ReceivePeriodExpired] {
+  implicit def receivePeriodExpiredProtoSERejection: ProtoMap[FireSensoryEventRejection.ReceivePeriodExpired, protobuf.ReceivePeriodExpired] =
+    new ProtoMap[FireSensoryEventRejection.ReceivePeriodExpired, protobuf.ReceivePeriodExpired] {
 
       val companion = protobuf.ReceivePeriodExpired
 
-      def toProto(a: ReceivePeriodExpired): protobuf.ReceivePeriodExpired =
+      def toProto(a: FireSensoryEventRejection.ReceivePeriodExpired): protobuf.ReceivePeriodExpired =
         protobuf.ReceivePeriodExpired(Some(a.processId))
 
-      def fromProto(message: protobuf.ReceivePeriodExpired): Try[ReceivePeriodExpired] =
+      def fromProto(message: protobuf.ReceivePeriodExpired): Try[FireSensoryEventRejection.ReceivePeriodExpired] =
         for {
           processId <- versioned(message.processId, "processId")
-        } yield ReceivePeriodExpired(processId)
+        } yield FireSensoryEventRejection.ReceivePeriodExpired(processId)
     }
 
-  implicit def invalidEventProto: ProtoMap[InvalidEvent, protobuf.InvalidEvent] =
-    new ProtoMap[InvalidEvent, protobuf.InvalidEvent] {
+  implicit def invalidEventProtoSERejection: ProtoMap[FireSensoryEventRejection.InvalidEvent, protobuf.InvalidEvent] =
+    new ProtoMap[FireSensoryEventRejection.InvalidEvent, protobuf.InvalidEvent] {
 
       val companion = protobuf.InvalidEvent
 
-      def toProto(a: InvalidEvent): protobuf.InvalidEvent =
+      def toProto(a: FireSensoryEventRejection.InvalidEvent): protobuf.InvalidEvent =
         protobuf.InvalidEvent(Some(a.processId), Some(a.msg))
 
-      def fromProto(message: protobuf.InvalidEvent): Try[InvalidEvent] =
+      def fromProto(message: protobuf.InvalidEvent): Try[FireSensoryEventRejection.InvalidEvent] =
         for {
           processId <- versioned(message.processId, "processId")
           msg <- versioned(message.reason, "reason")
-        } yield InvalidEvent(processId, msg)
+        } yield FireSensoryEventRejection.InvalidEvent(processId, msg)
     }
 
   implicit def processDeletedProto: ProtoMap[ProcessDeleted, protobuf.ProcessDeleted] =
@@ -353,6 +348,65 @@ object ProcessIndexProto {
           processId <- versioned(message.processId, "processId")
         } yield ProcessDeleted(processId)
     }
+
+  implicit def processDeletedProtoSERejection: ProtoMap[FireSensoryEventRejection.ProcessDeleted, protobuf.ProcessDeleted] =
+    new ProtoMap[FireSensoryEventRejection.ProcessDeleted, protobuf.ProcessDeleted] {
+
+      val companion = protobuf.ProcessDeleted
+
+      def toProto(a: FireSensoryEventRejection.ProcessDeleted): protobuf.ProcessDeleted =
+        protobuf.ProcessDeleted(Some(a.processId))
+
+      def fromProto(message: protobuf.ProcessDeleted): Try[FireSensoryEventRejection.ProcessDeleted] =
+        for {
+          processId <- versioned(message.processId, "processId")
+        } yield FireSensoryEventRejection.ProcessDeleted(processId)
+    }
+
+  implicit def noSuchProcessProtoSERejection: ProtoMap[FireSensoryEventRejection.NoSuchProcess, protobuf.NoSuchProcess] =
+    new ProtoMap[FireSensoryEventRejection.NoSuchProcess, protobuf.NoSuchProcess] {
+
+      val companion = protobuf.NoSuchProcess
+
+      def toProto(a: FireSensoryEventRejection.NoSuchProcess): protobuf.NoSuchProcess =
+        protobuf.NoSuchProcess(Some(a.processId))
+
+      def fromProto(message: protobuf.NoSuchProcess): Try[FireSensoryEventRejection.NoSuchProcess] =
+        for {
+          processId <- versioned(message.processId, "processId")
+        } yield FireSensoryEventRejection.NoSuchProcess(processId)
+    }
+
+  implicit def firingLimitMetProtoSERejection: ProtoMap[FireSensoryEventRejection.FiringLimitMet, protobuf.FiringLimitMet] =
+    new ProtoMap[FireSensoryEventRejection.FiringLimitMet, protobuf.FiringLimitMet] {
+
+      val companion = protobuf.FiringLimitMet
+
+      def toProto(a: FireSensoryEventRejection.FiringLimitMet): protobuf.FiringLimitMet =
+        protobuf.FiringLimitMet(Some(a.processId))
+
+      def fromProto(message: protobuf.FiringLimitMet): Try[FireSensoryEventRejection.FiringLimitMet] =
+        for {
+          processId <- versioned(message.processId, "processId")
+        } yield FireSensoryEventRejection.FiringLimitMet(processId)
+    }
+
+
+  implicit def alreadyReceivedProtoSERejection: ProtoMap[FireSensoryEventRejection.AlreadyReceived, protobuf.SensoryEventAlreadyReceived] =
+    new ProtoMap[FireSensoryEventRejection.AlreadyReceived, protobuf.SensoryEventAlreadyReceived] {
+
+      val companion = protobuf.SensoryEventAlreadyReceived
+
+      def toProto(a: FireSensoryEventRejection.AlreadyReceived): protobuf.SensoryEventAlreadyReceived =
+        protobuf.SensoryEventAlreadyReceived(Some(a.processId), Some(a.correlationId))
+
+      def fromProto(message: protobuf.SensoryEventAlreadyReceived): Try[FireSensoryEventRejection.AlreadyReceived] =
+        for {
+          processId <- versioned(message.processId, "processId")
+          correlationId <- versioned(message.correlationId, "correlationId")
+        } yield FireSensoryEventRejection.AlreadyReceived(processId, correlationId)
+    }
+
 
   implicit def noSuchProcessProto: ProtoMap[NoSuchProcess, protobuf.NoSuchProcess] =
     new ProtoMap[NoSuchProcess, protobuf.NoSuchProcess] {
@@ -381,6 +435,5 @@ object ProcessIndexProto {
           processId <- versioned(message.processId, "processId")
         } yield ProcessAlreadyExists(processId)
     }
-    */
 
 }

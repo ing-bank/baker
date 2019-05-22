@@ -39,26 +39,18 @@ object ProcessIndexProtocol {
   case class InvalidEventWhenResolveBlocked(processId: String, msg: String) extends ProcessIndexMessage
 
   /**
-    * Currently (for now) generic rejection when interacting with the Process Index
+    * Returned if a process has been deleted
+    *
+    * @param processId The identifier of the processId
     */
-  sealed trait ProcessRejection // extends ProcessIndexMessage TODO protobuf fix
+  case class ProcessDeleted(processId: String) extends ProcessIndexMessage
 
-  object ProcessRejection {
-
-    /**
-      * Returned if a process has been deleted
-      *
-      * @param processId The identifier of the processId
-      */
-    case class ProcessDeleted(processId: String) extends ProcessRejection
-
-    /**
-      * Returned if the process does not exist
-      *
-      * @param processId The identifier of the processId
-      */
-    case class NoSuchProcess(processId: String) extends ProcessRejection
-  }
+  /**
+    * Returned if the process does not exist
+    *
+    * @param processId The identifier of the processId
+    */
+  case class NoSuchProcess(processId: String) extends ProcessIndexMessage
 
   /**
     * Command requesting the creation of a new process with chosen recipe and predefined identifier
@@ -69,34 +61,11 @@ object ProcessIndexProtocol {
   case class CreateProcess(recipeId: String, processId: String) extends ProcessIndexMessage
 
   /**
-    * Possible failures when requesting the creation of a new process instance
+    * Returned if there was already another process using the predefined process id
+    *
+    * @param processId Process id meant to be used but already was occupied
     */
-  sealed trait CreateProcessRejection // extends ProcessIndexMessage TODO protobuf fix
-
-  object CreateProcessRejection {
-
-    /**
-      * Returned if the required recipe was not found at the Recipe Manager
-      *
-      * @param recipeId Id of the recipe which was not found
-      * @param processId That was meant to be used but wasn't because of failure
-      */
-    case class NoRecipeFound(recipeId: String, processId: String) extends CreateProcessRejection
-
-    /**
-      * Returned if a process has been deleted
-      *
-      * @param processId The identifier of the processId
-      */
-    case class ProcessDeleted(processId: String) extends ProcessRejection
-
-    /**
-      * Returned if there was already another process using the predefined process id
-      *
-      * @param processId Process id meant to be used but already was occupied
-      */
-    case class ProcessAlreadyExists(processId: String) extends CreateProcessRejection
-  }
+  case class ProcessAlreadyExists(processId: String) extends ProcessIndexMessage
 
   /**
     * Command requesting the firing of a sensory event on corresponding process instance.

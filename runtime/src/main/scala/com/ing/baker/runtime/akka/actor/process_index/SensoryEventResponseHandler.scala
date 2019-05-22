@@ -76,9 +76,9 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
   }
 
   def rejectWith(rejection: FireSensoryEventRejection): Unit = {
-    println("Stopping SensoryEventResponseHandler and rejecting request")
-    println("Reject reason: " + rejection.asReason)
-    println("message: " + rejection)
+    log.debug("Stopping SensoryEventResponseHandler and rejecting request")
+    log.debug("Reject reason: " + rejection.asReason)
+    log.debug("message: " + rejection)
     context.system.eventStream.publish(
       EventRejected(
         System.currentTimeMillis(),
@@ -98,7 +98,7 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
   }
 
   def stopActor(): Unit = {
-    println("Stopping the SensoryEventResponseHandler")
+    log.debug("Stopping the SensoryEventResponseHandler")
     context.stop(self)
   }
 
@@ -118,10 +118,10 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
       case recipe: CompiledRecipe =>
         context.become(waitForFirstEvent(recipe))
       case ReceiveTimeout ⇒
-        println("Timeout on SensoryEventResponseHandler when expecting a compiled recipe")
+        log.debug("Timeout on SensoryEventResponseHandler when expecting a compiled recipe")
         stopActor()
       case message ⇒
-        println(s"Unexpected message $message on SensoryEventResponseHandler when expecting a compiled recipe")
+        log.debug(s"Unexpected message $message on SensoryEventResponseHandler when expecting a compiled recipe")
         stopActor()
     }
 
@@ -131,10 +131,10 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
         notifyReceive(recipe)
         context.become(streaming(firstEvent.newJobsIds - firstEvent.jobId, List(firstEvent)))
       case ReceiveTimeout ⇒
-        println("Timeout on SensoryEventResponseHandler when expecting the first transition fired event")
+        log.debug("Timeout on SensoryEventResponseHandler when expecting the first transition fired event")
         stopActor()
       case message ⇒
-        println(s"Unexpected message $message on SensoryEventResponseHandler when expecting the first transition fired event")
+        log.debug(s"Unexpected message $message on SensoryEventResponseHandler when expecting the first transition fired event")
         stopActor()
     }
 
@@ -148,10 +148,10 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
       case event: TransitionFailed ⇒
         context.become(streaming(runningJobs - event.jobId, cache :+ event))
       case ReceiveTimeout ⇒
-        println("Timeout on SensoryEventResponseHandler when streaming")
+        log.debug("Timeout on SensoryEventResponseHandler when streaming")
         stopActor()
       case message ⇒
-        println(s"Unexpected message $message on SensoryEventResponseHandler when streaming")
+        log.debug(s"Unexpected message $message on SensoryEventResponseHandler when streaming")
         stopActor()
     }
   }

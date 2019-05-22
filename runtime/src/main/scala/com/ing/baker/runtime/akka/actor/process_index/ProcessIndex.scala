@@ -5,30 +5,29 @@ import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.pattern.ask
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 import akka.stream.Materializer
-import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
+import cats.data.{EitherT, OptionT}
+import cats.effect.IO
+import cats.instances.future._
 import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.Util.logging._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceRuntime}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.akka.actor.serialization.Encryption
-import com.ing.baker.runtime.akka.events.{ProcessCreated, RejectReason}
+import com.ing.baker.runtime.akka.actor.serialization.{BakerSerializable, Encryption}
+import com.ing.baker.runtime.akka.events.ProcessCreated
 import com.ing.baker.runtime.akka.internal.{InteractionManager, RecipeRuntime}
-import com.ing.baker.runtime.akka.{ProcessState, RuntimeEvent, events, namedCachedThreadPool, _}
+import com.ing.baker.runtime.akka.{ProcessState, RuntimeEvent, namedCachedThreadPool, _}
+import com.ing.baker.types.Value
 
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
-import cats.data.{EitherT, OptionT}
-import cats.effect.IO
-import cats.instances.future._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
-import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
-import com.ing.baker.types.Value
+import scala.util.{Failure, Success}
 
 object ProcessIndex {
 
@@ -151,8 +150,8 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
 
   def withActiveProcess(processId: String)(fn: ActorRef => Unit) = {
     context.child(processId) match {
-      case None if !index.contains(processId) => sender() ! ProcessRejection.NoSuchProcess(processId)
-      case None if index(processId).isDeleted => sender() ! ProcessRejection.ProcessDeleted(processId)
+      case None if !index.contains(processId) => sender() ! NoSuchProcess(processId)
+      case None if index(processId).isDeleted => sender() ! ProcessDeleted(processId)
       case None =>
         persist(ActorActivated(processId)) { _ =>
           val actor = createProcessActor(processId)
@@ -229,13 +228,13 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
               }
 
             case None =>
-              sender() ! CreateProcessRejection.NoRecipeFound(recipeId, processId)
+              sender() ! NoRecipeFound(recipeId)
           }
 
         case _ if index(processId).isDeleted =>
-          sender() ! CreateProcessRejection.ProcessDeleted(processId)
+          sender() ! ProcessDeleted(processId)
         case _ =>
-          sender() ! CreateProcessRejection.ProcessAlreadyExists(processId)
+          sender() ! ProcessAlreadyExists(processId)
       }
 
     case command@ProcessEvent(processId, event, correlationId, _, _) =>
@@ -408,13 +407,13 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
 
     case GetCompiledRecipe(processId) =>
       index.get(processId) match {
-        case Some(processMetadata) if processMetadata.isDeleted => sender() ! ProcessRejection.ProcessDeleted(processId)
+        case Some(processMetadata) if processMetadata.isDeleted => sender() ! ProcessDeleted(processId)
         case Some(processMetadata) =>
           getRecipeWithTimeStamp(processMetadata.recipeId) match {
             case Some((compiledRecipe, timestamp)) => sender() ! RecipeFound(compiledRecipe, timestamp)
-            case None => sender() ! ProcessRejection.NoSuchProcess(processId)
+            case None => sender() ! NoSuchProcess(processId)
           }
-        case None => sender() ! ProcessRejection.NoSuchProcess(processId)
+        case None => sender() ! NoSuchProcess(processId)
       }
     case cmd =>
       log.error(s"Unrecognized command $cmd")

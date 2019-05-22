@@ -10,6 +10,7 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.petrinet.api.{Id, Marking, MultiSet}
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection.{InvalidEvent, ReceivePeriodExpired}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager.RecipeAdded
 import org.scalacheck.Prop.forAll
@@ -26,7 +27,6 @@ import com.ing.baker.{AllTypeRecipe, types}
 
 import scala.concurrent.duration._
 
-// TODO FIX THESE TESTS
 class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec")) with FunSuiteLike with Checkers {
 
   val serializer: BakerTypedProtobufSerializer =
@@ -113,7 +113,7 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
 
   checkFor("ProcessIndexProtocol.CreateProcess", SerializationSpec.ProcessIndex.createProcessGen)
 
-  //checkFor("ProcessIndexProtocol.ProcessEvent", SerializationSpec.ProcessIndex.processEventGen(system))
+  checkFor("ProcessIndexProtocol.ProcessEvent", SerializationSpec.ProcessIndex.processEventGen(system))
 
   checkFor("ProcessIndexProtocol.RetryBlockedInteraction", SerializationSpec.ProcessIndex.retryBlockedInteractionGen)
 
@@ -288,15 +288,22 @@ object SerializationSpec {
       override def receive: Receive = { case _ => () }
     }
 
-    /*
+    val waitForRetriesGen = Gen.oneOf(true, false)
+
     def processEventGen(system: ActorSystem): Gen[ProcessEvent] = for {
       processId <- processIdGen
       event <- Runtime.runtimeEventGen
       correlationId <- Gen.option(processIdGen)
-      waitForRetries <- Gen.oneOf(true, false)
       timeout <- Gen.posNum[Long].map(millis => FiniteDuration(millis, TimeUnit.MILLISECONDS))
-      receiver = system.actorOf(Props(new SimpleActor))
-    } yield ProcessEvent(processId, event, correlationId, waitForRetries, timeout, receiver)
+      reaction <- Gen.oneOf(
+        Gen.const(FireSensoryEventReaction.NotifyWhenReceived),
+        waitForRetriesGen.map(FireSensoryEventReaction.NotifyWhenCompleted.apply),
+        for {
+          waitForRetries <- waitForRetriesGen
+          receiver = system.actorOf(Props(new SimpleActor))
+        } yield FireSensoryEventReaction.NotifyBoth(waitForRetries, receiver)
+      )
+    } yield ProcessEvent(processId, event, correlationId, timeout, reaction)
 
     val getProcessStateGen: Gen[GetProcessState] = processIdGen.map(GetProcessState)
     val getCompiledRecipeGen: Gen[GetCompiledRecipe] = processIdGen.map(GetCompiledRecipe)
@@ -309,7 +316,6 @@ object SerializationSpec {
     val processDeletedGen: Gen[ProcessDeleted] = processIdGen.map(ProcessDeleted)
     val noSuchProcessGen: Gen[NoSuchProcess] = processIdGen.map(NoSuchProcess)
     val processAlreadyExistsGen: Gen[ProcessAlreadyExists] = processIdGen.map(ProcessAlreadyExists)
-     */
 
     val retryBlockedInteractionGen: Gen[RetryBlockedInteraction] = for {
       processId <- processIdGen

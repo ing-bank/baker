@@ -127,7 +127,7 @@ trait BakerRuntimeTestBase
          |
          |  actor {
          |    provider = "akka.actor.LocalActorRefProvider"
-         |    allow-java-serialization = on
+         |    allow-java-serialization = off
          |    serialize-messages = off
          |    serialize-creators = off
          |  }
