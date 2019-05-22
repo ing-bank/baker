@@ -69,9 +69,8 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     for {
       recipeId <- baasBaker.addRecipe(compiledRecipe)
       _ <- baasBaker.bake(recipeId, requestId)
-      sensoryEventStatusResponse <- baasBaker.processEvent(requestId, InitialEvent("initialIngredient"))
-          .flatMap(_.completedFuture).map(_.sensoryEventStatus)
-      _ = sensoryEventStatusResponse shouldBe SensoryEventStatus.Completed
+      response <- baasBaker.fireSensoryEventCompleted(requestId, InitialEvent("initialIngredient"))
+      _ = response.status shouldBe SensoryEventStatus.Completed
       processState <- baasBaker.getProcessState(requestId)
 
       _ = processState.ingredients.keys should contain("initialIngredient")
@@ -104,10 +103,8 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     for {
       recipeId <- baasBaker.addRecipe(compiledRecipe)
       _ <- baasBaker.bake(recipeId, requestId)
-      response <- baasBaker.processEvent(requestId, InitialEvent("initialIngredient"))
-      events <- response.completedFuture.map(_.events)
-      _ = assert(events.nonEmpty)
-    } yield succeed
+      response <- baasBaker.fireSensoryEventCompleted(requestId, InitialEvent("initialIngredient"))
+    } yield assert(response.events.nonEmpty)
   }
 }
 

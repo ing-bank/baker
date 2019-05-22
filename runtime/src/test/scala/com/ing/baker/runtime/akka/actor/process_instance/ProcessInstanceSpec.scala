@@ -9,6 +9,8 @@ import akka.testkit.TestDuration
 import akka.util.Timeout
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.AkkaTestBase
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstance.Settings
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.BlockTransition
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
@@ -280,7 +282,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       expectMsgPF() { case TransitionFailed(_, 1, _, _, _, _, protocol.ExceptionStrategy.BlockTransition) ⇒ }
     }
 
-    "Respond with a AlreadyReceived message if the given corellation id was received earlier" in new TestSequenceNet {
+    "Respond with a AlreadyReceived rejection message if the given corellation id was received earlier" in new TestSequenceNet {
 
       val testCorrelationId = "abc"
 
@@ -302,10 +304,10 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       actor ! FireTransition(transitionId = 1, input = null, correlationId = Some(testCorrelationId))
 
-      expectMsg(AlreadyReceived(testCorrelationId))
+      expectMsgType[FireSensoryEventRejection.AlreadyReceived]
     }
 
-    "Respond with a TransitionNotEnabled message if a transition is not enabled because of a previous failure" in new TestSequenceNet {
+    "Respond with a FiringLimitMet rejection message if a transition is not enabled because of a previous failure" in new TestSequenceNet {
 
       override val sequence = Seq(
         transition()(_ ⇒ throw new RuntimeException("t1 failed!")),
@@ -324,10 +326,10 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       actor ! FireTransition(transitionId = 1, ())
 
       // expect a failure message
-      expectMsgPF() { case TransitionNotEnabled(1, msg) ⇒ }
+      expectMsgType[FireSensoryEventRejection.FiringLimitMet]
     }
 
-    "Respond with a TransitionNotEnabled message if a transition is not enabled because of not enough consumable tokens" in new TestSequenceNet {
+    "Respond with a FiringLimitMet message if a transition is not enabled because of not enough consumable tokens" in new TestSequenceNet {
 
       override val sequence = Seq(
         transition()(_ ⇒ Added(1)),
@@ -343,7 +345,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       actor ! FireTransition(transitionId = 2, input = null)
 
       // expect a failure message
-      expectMsgPF() { case TransitionNotEnabled(2, _) ⇒ }
+      expectMsgType[FiringLimitMet]
     }
 
     "Retry to execute a transition with a delay when the exception strategy indicates so" in new TestSequenceNet {
@@ -379,7 +381,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       actor ! FireTransition(transitionId = 1, input = null)
 
       // expect the transition to be not enabled
-      val msg = expectMsgClass(classOf[TransitionNotEnabled])
+      expectMsgType[FiringLimitMet]
     }
 
     "Be able to restore it's state from persistent storage after termination" in new TestSequenceNet {
