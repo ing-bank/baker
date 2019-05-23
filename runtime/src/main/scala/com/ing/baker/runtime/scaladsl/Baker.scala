@@ -5,7 +5,7 @@ import akka.stream.Materializer
 import cats.data.NonEmptyList
 import com.ing.baker.runtime.akka.events.BakerEvent
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
-import com.ing.baker.runtime.common.ScalaBaker
+import com.ing.baker.runtime.common.{ScalaBaker, SensoryEventStatus}
 import com.typesafe.config.Config
 
 import scala.concurrent.Future
@@ -32,6 +32,10 @@ object Baker {
   */
 trait Baker extends ScalaBaker[Future] {
 
+  override type Result = SensoryEventResult
+
+  override type Moments = SensoryEventMoments
+
   /**
     * This registers a listener function.
     *
@@ -40,8 +44,22 @@ trait Baker extends ScalaBaker[Future] {
     */
   def registerEventListenerPF(pf: PartialFunction[BakerEvent, Unit]): Future[Unit]
 
-  override type Result = SensoryEventResult
+  def fireSensoryEventReceived(processId: String, event: Any): Future[SensoryEventStatus] =
+    fireSensoryEventReceived(processId, event, None)
 
-  override type Moments = SensoryEventMoments
+  def fireSensoryEventCompleted(processId: String, event: Any): Future[Result] =
+    fireSensoryEventCompleted(processId, event, None)
+
+  def fireSensoryEvent(processId: String, event: Any): Moments =
+    fireSensoryEvent(processId, event, None)
+
+  def fireSensoryEventReceived(processId: String, event: Any, correlationId: String): Future[SensoryEventStatus] =
+    fireSensoryEventReceived(processId, event, Some(correlationId))
+
+  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: String): Future[Result] =
+    fireSensoryEventCompleted(processId, event, Some(correlationId))
+
+  def fireSensoryEvent(processId: String, event: Any, correlationId: String): Moments =
+    fireSensoryEvent(processId, event, Some(correlationId))
 
 }

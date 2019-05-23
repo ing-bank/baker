@@ -2,6 +2,7 @@ package com.ing.baker.runtime.common
 
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.akka.ProcessState
+import com.ing.baker.runtime.common.LanguageDataStructures.{JavaApi, LanguageApi, ScalaApi}
 import com.ing.baker.types.Value
 
 /**
@@ -9,29 +10,26 @@ import com.ing.baker.types.Value
   *
   * @tparam F the type of Future to use in the return types
   */
-trait ScalaBaker[F[_]] extends BakerInterface[F, Map, Seq, Set]
+trait ScalaBaker[F[_]] extends BakerInterface[F] with ScalaApi
 
 /**
   * A Baker using the Java collection types
   *
   * @tparam F the type of Future to use in the return types
   */
-trait JavaBaker[F[_]] extends BakerInterface[F, java.util.Map, java.util.List, java.util.Set]
+trait JavaBaker[F[_]] extends BakerInterface[F] with JavaApi
 
 /**
   * The BakerInterface is a class we use to ensure the Scala and Java Baker classes have the same methods.
   *
   * @tparam F   the type of Future to use in the return types
-  * @tparam Map the type of Map to use in the return types
-  * @tparam Seq the type of Seq to use in the return types
-  * @tparam Set the type of Set to use in the return types
   */
-trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
+trait BakerInterface[F[_]] extends LanguageApi { self =>
 
-  type Result <: SensoryEventResult[Seq, Map]
+  type Result <: SensoryEventResult { type Language <: self.Language }
 
   // TODO rename it... Stages? Outcomes? Instances? Instants? Results?
-  type Moments <: SensoryEventMoments[F, Seq, Map, Result]
+  type Moments <: SensoryEventMoments[F] { type Language <: self.Language }
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -56,7 +54,7 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     *
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
-  def getAllRecipes: F[Map[String, RecipeInformation]]
+  def getAllRecipes: F[language.Map[String, RecipeInformation]]
 
   /**
     * Creates a process instance for the given recipeId with the given processId as identifier
@@ -77,8 +75,7 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEventReceived(processId: String, event: Any): F[SensoryEventStatus] =
-    fireSensoryEventReceived(processId, event, None)
+  def fireSensoryEventReceived(processId: String, event: Any): F[SensoryEventStatus]
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -90,8 +87,7 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEventCompleted(processId: String, event: Any): F[Result] =
-    fireSensoryEventCompleted(processId, event, None)
+  def fireSensoryEventCompleted(processId: String, event: Any): F[Result]
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -104,8 +100,7 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEvent(processId: String, event: Any): Moments =
-    fireSensoryEvent(processId, event, None)
+  def fireSensoryEvent(processId: String, event: Any): Moments
 
   /**
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
@@ -118,8 +113,7 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     * @param event     The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireSensoryEventReceived(processId: String, event: Any, correlationId: String): F[SensoryEventStatus] =
-    fireSensoryEventReceived(processId, event, Some(correlationId))
+  def fireSensoryEventReceived(processId: String, event: Any, correlationId: String): F[SensoryEventStatus]
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -132,8 +126,7 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     * @param event     The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: String): F[Result] =
-    fireSensoryEventCompleted(processId, event, Some(correlationId))
+  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: String): F[Result]
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -147,8 +140,7 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     * @param event     The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireSensoryEvent(processId: String, event: Any, correlationId: String): Moments =
-    fireSensoryEvent(processId, event, Some(correlationId))
+  def fireSensoryEvent(processId: String, event: Any, correlationId: String): Moments
 
   /**
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
@@ -161,7 +153,7 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     * @param event     The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireSensoryEventReceived(processId: String, event: Any, correlationId: Option[String]): F[SensoryEventStatus]
+  def fireSensoryEventReceived(processId: String, event: Any, correlationId: language.Option[String]): F[SensoryEventStatus]
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -174,7 +166,7 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     * @param event     The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: Option[String]): F[Result]
+  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: language.Option[String]): F[Result]
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -188,7 +180,7 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     * @param event     The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireSensoryEvent(processId: String, event: Any, correlationId: Option[String]): Moments
+  def fireSensoryEvent(processId: String, event: Any, correlationId: language.Option[String]): Moments
 
   //TODO why do we have this and do we want to keep this?
   //TODO why is this named index when it return ProcessMetaData?
@@ -202,7 +194,7 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     *
     * @return An index of all processes
     */
-  def getIndex: F[Set[ProcessMetadata]]
+  def getIndex: F[language.Set[ProcessMetadata]]
 
   /**
     * Returns the process state.
@@ -221,7 +213,7 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
   @throws[ProcessDeletedException]("If the process is already deleted")
-  def getIngredients(processId: String): F[Map[String, Value]]
+  def getIngredients(processId: String): F[language.Map[String, Value]]
 
   //TODO do we keep this a a future?
   //I think its strange this is a future from user perspective
@@ -265,7 +257,7 @@ trait BakerInterface[F[_], Map[_, _], Seq[_], Set[_]] {
     *
     * @param implementations The implementation object
     */
-  def addImplementations(implementations: Seq[AnyRef]): F[Unit]
+  def addImplementations(implementations: language.Seq[AnyRef]): F[Unit]
 
   /**
     * Adds an interaction implementation to baker.

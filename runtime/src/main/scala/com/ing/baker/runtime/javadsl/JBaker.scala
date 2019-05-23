@@ -1,6 +1,7 @@
 package com.ing.baker.runtime.javadsl
 
 import java.util
+import java.util.Optional
 import java.util.concurrent.CompletableFuture
 
 import com.ing.baker.runtime.akka.{AkkaBaker, ProcessState}
@@ -97,28 +98,28 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
   def bake(@Nonnull recipeId: String, @Nonnull processId: String): CompletableFuture[Unit] =
     toCompletableFuture(baker.bake(recipeId, processId))
 
-  override def fireSensoryEventReceived(processId: String, event: Any, correlationId: String): CompletableFuture[SensoryEventStatus] =
-    fireSensoryEventReceived(processId, event, Some(correlationId))
+  def fireSensoryEventReceived(processId: String, event: Any, correlationId: String): CompletableFuture[SensoryEventStatus] =
+    fireSensoryEventReceived(processId, event, Optional.of(correlationId))
 
-  override def fireSensoryEventCompleted(processId: String, event: Any, correlationId: String): CompletableFuture[SensoryEventResult] =
-    fireSensoryEventCompleted(processId, event, Some(correlationId))
+  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: String): CompletableFuture[SensoryEventResult] =
+    fireSensoryEventCompleted(processId, event, Optional.of(correlationId))
 
-  override def fireSensoryEvent(processId: String, event: Any, correlationId: String): SensoryEventMoments =
-    fireSensoryEvent(processId, event, Some(correlationId))
+  def fireSensoryEvent(processId: String, event: Any, correlationId: String): SensoryEventMoments =
+    fireSensoryEvent(processId, event, Optional.of(correlationId))
 
-  override def fireSensoryEventReceived(processId: String, event: Any): CompletableFuture[SensoryEventStatus] =
-    fireSensoryEventReceived(processId, event, None)
+  def fireSensoryEventReceived(processId: String, event: Any): CompletableFuture[SensoryEventStatus] =
+    fireSensoryEventReceived(processId, event, Optional.empty[String]())
 
-  override def fireSensoryEventCompleted(processId: String, event: Any): CompletableFuture[SensoryEventResult] =
-    fireSensoryEventCompleted(processId, event, None)
+  def fireSensoryEventCompleted(processId: String, event: Any): CompletableFuture[SensoryEventResult] =
+    fireSensoryEventCompleted(processId, event, Optional.empty[String]())
 
-  override def fireSensoryEvent(processId: String, event: Any): SensoryEventMoments =
-    fireSensoryEvent(processId, event, None)
+  def fireSensoryEvent(processId: String, event: Any): SensoryEventMoments =
+    fireSensoryEvent(processId, event, Optional.empty[String]())
 
-  def fireSensoryEventReceived(processId: String, event: Any, correlationId: Option[String]): CompletableFuture[SensoryEventStatus] =
+  def fireSensoryEventReceived(processId: String, event: Any, correlationId: Optional[String]): CompletableFuture[SensoryEventStatus] =
     toCompletableFuture(baker.fireSensoryEventReceived(processId, event))
 
-  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: Option[String]): CompletableFuture[SensoryEventResult] =
+  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: Optional[String]): CompletableFuture[SensoryEventResult] =
     toCompletableFuture(baker.fireSensoryEventCompleted(processId, event)).thenApply { result =>
       new SensoryEventResult(
         status = result.status,
@@ -127,7 +128,7 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
       )
     }
 
-  def fireSensoryEvent(processId: String, event: Any, correlationId: Option[String]): SensoryEventMoments = {
+  def fireSensoryEvent(processId: String, event: Any, correlationId: Optional[String]): SensoryEventMoments = {
     val scalaResult = baker.fireSensoryEvent(processId, event)
     new SensoryEventMoments(
       received = toCompletableFuture(scalaResult.received),
