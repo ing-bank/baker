@@ -5,7 +5,7 @@ import cats.instances.try_._
 import cats.syntax.traverse._
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap
-import com.ing.baker.runtime.akka.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.RuntimeEvent
 import com.ing.baker.types.Value
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{versioned, ctxFromProto, ctxToProto}
 
@@ -19,7 +19,7 @@ class RuntimeEventMapping extends ProtoMap[RuntimeEvent, protobuf.RuntimeEvent] 
     val protoIngredients = a.providedIngredients.map { case (name, value) =>
       protobuf.Ingredient(Some(name), None, Some(ctxToProto(value)))
     }
-    protobuf.RuntimeEvent(Some(a.name), protoIngredients)
+    protobuf.RuntimeEvent(Some(a.name), protoIngredients.toSeq)
   }
 
   override def fromProto(message: protobuf.RuntimeEvent): Try[RuntimeEvent] =
@@ -32,5 +32,5 @@ class RuntimeEventMapping extends ProtoMap[RuntimeEvent, protobuf.RuntimeEvent] 
           value <- ctxFromProto(protoValue)
         } yield (name, value)
       }
-    } yield RuntimeEvent(name, ingredients)
+    } yield RuntimeEvent(name, ingredients.toMap)
 }

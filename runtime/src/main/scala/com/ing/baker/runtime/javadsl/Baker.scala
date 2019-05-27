@@ -10,8 +10,10 @@ import akka.stream.Materializer
 import cats.data.NonEmptyList
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.akka._
-import com.ing.baker.runtime.common._
-import com.ing.baker.runtime.scaladsl.Baker
+import com.ing.baker.runtime.common
+import com.ing.baker.runtime.common.{EventListener, InteractionImplementation, ProcessMetadata, RecipeInformation, SensoryEventStatus}
+import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
+import com.ing.baker.runtime.scaladsl
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
 import javax.annotation.Nonnull
@@ -20,33 +22,35 @@ import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters
 import scala.concurrent.Future
 
-object JBaker {
+object Baker {
 
-  def akkaLocalDefault(actorSystem: ActorSystem, materializer: Materializer): JBaker =
-    new JBaker(new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem, materializer)))
+  def akkaLocalDefault(actorSystem: ActorSystem, materializer: Materializer): Baker =
+    new Baker(new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem, materializer)))
 
-  def akkaClusterDefault(seedNodes: java.util.List[Address], actorSystem: ActorSystem, materializer: Materializer): JBaker = {
+  def akkaClusterDefault(seedNodes: java.util.List[Address], actorSystem: ActorSystem, materializer: Materializer): Baker = {
     val nodes =
-      if(seedNodes.isEmpty) throw new BakerException("Baker cluster configuration without baker.cluster.seed-nodes")
+      if(seedNodes.isEmpty) throw new common.BakerException("Baker cluster configuration without baker.cluster.seed-nodes")
       else NonEmptyList.fromListUnsafe(seedNodes.asScala.toList)
-    new JBaker(new AkkaBaker(AkkaBakerConfig.clusterDefault(nodes, actorSystem, materializer)))
+    new Baker(new AkkaBaker(AkkaBakerConfig.clusterDefault(nodes, actorSystem, materializer)))
   }
 
-  def akka(config: AkkaBakerConfig): JBaker =
-    new JBaker(Baker.akka(config))
+  def akka(config: AkkaBakerConfig): Baker =
+    new Baker(scaladsl.Baker.akka(config))
 
-  def akka(config: Config, actorSystem: ActorSystem, materializer: Materializer): JBaker =
-    new JBaker(Baker.akka(config, actorSystem, materializer))
+  def akka(config: Config, actorSystem: ActorSystem, materializer: Materializer): Baker =
+    new Baker(scaladsl.Baker.akka(config, actorSystem, materializer))
 
-  def other(baker: Baker) =
-    new JBaker(baker)
+  def other(baker: scaladsl.Baker) =
+    new Baker(baker)
 }
 
-class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[CompletableFuture] {
+class Baker private(private val baker: scaladsl.Baker) extends common.Baker[CompletableFuture] with JavaApi {
 
   override type Result = SensoryEventResult
 
   override type Moments = SensoryEventMoments
+
+  override type Event = RuntimeEvent
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -98,29 +102,29 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
   def bake(@Nonnull recipeId: String, @Nonnull processId: String): CompletableFuture[Unit] =
     toCompletableFuture(baker.bake(recipeId, processId))
 
-  def fireSensoryEventReceived(processId: String, event: Any, correlationId: String): CompletableFuture[SensoryEventStatus] =
+  def fireSensoryEventReceived(processId: String, event: RuntimeEvent, correlationId: String): CompletableFuture[SensoryEventStatus] =
     fireSensoryEventReceived(processId, event, Optional.of(correlationId))
 
-  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: String): CompletableFuture[SensoryEventResult] =
+  def fireSensoryEventCompleted(processId: String, event: RuntimeEvent, correlationId: String): CompletableFuture[SensoryEventResult] =
     fireSensoryEventCompleted(processId, event, Optional.of(correlationId))
 
-  def fireSensoryEvent(processId: String, event: Any, correlationId: String): SensoryEventMoments =
+  def fireSensoryEvent(processId: String, event: RuntimeEvent, correlationId: String): SensoryEventMoments =
     fireSensoryEvent(processId, event, Optional.of(correlationId))
 
-  def fireSensoryEventReceived(processId: String, event: Any): CompletableFuture[SensoryEventStatus] =
+  def fireSensoryEventReceived(processId: String, event: RuntimeEvent): CompletableFuture[SensoryEventStatus] =
     fireSensoryEventReceived(processId, event, Optional.empty[String]())
 
-  def fireSensoryEventCompleted(processId: String, event: Any): CompletableFuture[SensoryEventResult] =
+  def fireSensoryEventCompleted(processId: String, event: RuntimeEvent): CompletableFuture[SensoryEventResult] =
     fireSensoryEventCompleted(processId, event, Optional.empty[String]())
 
-  def fireSensoryEvent(processId: String, event: Any): SensoryEventMoments =
+  def fireSensoryEvent(processId: String, event: RuntimeEvent): SensoryEventMoments =
     fireSensoryEvent(processId, event, Optional.empty[String]())
 
-  def fireSensoryEventReceived(processId: String, event: Any, correlationId: Optional[String]): CompletableFuture[SensoryEventStatus] =
-    toCompletableFuture(baker.fireSensoryEventReceived(processId, event))
+  def fireSensoryEventReceived(processId: String, event: RuntimeEvent, correlationId: Optional[String]): CompletableFuture[SensoryEventStatus] =
+    toCompletableFuture(baker.fireSensoryEventReceived(processId, event.asScala))
 
-  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: Optional[String]): CompletableFuture[SensoryEventResult] =
-    toCompletableFuture(baker.fireSensoryEventCompleted(processId, event)).thenApply { result =>
+  def fireSensoryEventCompleted(processId: String, event: RuntimeEvent, correlationId: Optional[String]): CompletableFuture[SensoryEventResult] =
+    toCompletableFuture(baker.fireSensoryEventCompleted(processId, event.asScala)).thenApply { result =>
       new SensoryEventResult(
         status = result.status,
         events = result.events.asJava,
@@ -128,8 +132,8 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
       )
     }
 
-  def fireSensoryEvent(processId: String, event: Any, correlationId: Optional[String]): SensoryEventMoments = {
-    val scalaResult = baker.fireSensoryEvent(processId, event)
+  def fireSensoryEvent(processId: String, event: RuntimeEvent, correlationId: Optional[String]): SensoryEventMoments = {
+    val scalaResult = baker.fireSensoryEvent(processId, event.asScala)
     new SensoryEventMoments(
       received = toCompletableFuture(scalaResult.received),
       completed = toCompletableFuture(scalaResult.completed).thenApply { result =>
@@ -159,8 +163,8 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
     * @param event           The output of the interaction.
     * @return
     */
-  def resolveInteraction(@Nonnull processId: String, @Nonnull interactionName: String, @Nonnull event: Any): CompletableFuture[Unit] =
-    toCompletableFuture(baker.resolveInteraction(processId, interactionName, event))
+  def resolveInteraction(@Nonnull processId: String, @Nonnull interactionName: String, @Nonnull event: RuntimeEvent): CompletableFuture[Unit] =
+    toCompletableFuture(baker.resolveInteraction(processId, interactionName, event.asScala))
 
   /**
     * Stops a retrying interaction.
@@ -178,8 +182,6 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
     * @param processId The process identifier
     * @return
     */
-  @throws[NoSuchProcessException]("When no process exists for the given id")
-  @throws[ProcessDeletedException]("When no process is deleted")
   def getIngredients(@Nonnull processId: String): CompletableFuture[java.util.Map[String, Value]] =
     toCompletableFutureMap(baker.getIngredients(processId))
 
@@ -261,8 +263,6 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
     * @param processId The process identifier
     * @return
     */
-  @throws[ProcessDeletedException]("If the process is already deleted")
-  @throws[NoSuchProcessException]("If the process is not found")
   def getVisualState(@Nonnull processId: String, style: RecipeVisualStyle = RecipeVisualStyle.default): CompletableFuture[String] =
     toCompletableFuture(baker.getVisualState(processId, style))
 
@@ -272,8 +272,6 @@ class JBaker private(private val baker: ScalaBaker[Future]) extends JavaBaker[Co
     * @param processId The process identifier
     * @return The state of the process instance
     */
-  @throws[ProcessDeletedException]("If the process is already deleted")
-  @throws[NoSuchProcessException]("If the process is not found")
   def getProcessState(@Nonnull processId: String): CompletableFuture[ProcessState] =
     toCompletableFuture(baker.getProcessState(processId))
 

@@ -11,7 +11,7 @@ import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.akka.events.BakerEvent
 import com.ing.baker.runtime.common.{EventListener, InteractionImplementation, ProcessMetadata, RecipeInformation, SensoryEventStatus}
 import com.ing.baker.runtime.akka.ProcessState
-import com.ing.baker.runtime.scaladsl.{Baker, SensoryEventMoments, SensoryEventResult}
+import com.ing.baker.runtime.scaladsl.{Baker, RuntimeEvent, SensoryEventMoments, SensoryEventResult}
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
@@ -102,7 +102,7 @@ class BaasBaker(config: Config,
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEventReceived(processId: String, event: Any, correlationId: Option[String]): Future[SensoryEventStatus] = ???
+  def fireSensoryEventReceived(processId: String, event: RuntimeEvent, correlationId: Option[String]): Future[SensoryEventStatus] = ???
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -114,7 +114,7 @@ class BaasBaker(config: Config,
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: Option[String]): Future[SensoryEventResult] = ???
+  def fireSensoryEventCompleted(processId: String, event: RuntimeEvent, correlationId: Option[String]): Future[SensoryEventResult] = ???
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -127,14 +127,14 @@ class BaasBaker(config: Config,
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEvent(processId: String, event: Any, correlationId: Option[String]): SensoryEventMoments = ???
+  def fireSensoryEvent(processId: String, event: RuntimeEvent, correlationId: Option[String]): SensoryEventMoments = ???
 
   /**
     * Creates a stream of specific events.
     */
   /*
   def processEventStream(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): Future[Source[BakerResponseEventProtocol, NotUsed]] = {
-    val runtimeEvent = RuntimeEvent.extractEvent(event)
+    val runtimeEvent = RuntimeEvent.unsafeFrom(event)
     Marshal(ProcessEventRequest(runtimeEvent)).to[RequestEntity]
       .flatMap { body =>
         Http().singleRequest(HttpRequest(
@@ -268,7 +268,7 @@ class BaasBaker(config: Config,
     *
     * @return
     */
-  override def resolveInteraction(processId: String, interactionName: String, event: Any): Future[Unit] = ???
+  override def resolveInteraction(processId: String, interactionName: String, event: RuntimeEvent): Future[Unit] = ???
 
   /**
     * Stops the retrying of an interaction.

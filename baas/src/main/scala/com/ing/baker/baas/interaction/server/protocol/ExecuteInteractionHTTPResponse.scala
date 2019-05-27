@@ -1,6 +1,6 @@
 package com.ing.baker.baas.interaction.server.protocol
 
-import com.ing.baker.runtime.akka.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.RuntimeEvent
 
 import cats.instances.option._
 import cats.instances.try_._

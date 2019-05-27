@@ -1,7 +1,5 @@
 package com.ing.baker.runtime.javadsl
 
-import com.ing.baker.runtime.akka.RuntimeEvent
-
 import scala.collection.JavaConverters._
 
 object EventList {
@@ -14,7 +12,7 @@ object EventList {
     * @return A new EventList.
     */
   def CreateFromStringList(events: java.util.List[String]): EventList =
-    new EventList(events.asScala.map(RuntimeEvent(_, Seq.empty) -> -1l))
+    new EventList(events.asScala.map(new RuntimeEvent(_) -> -1l))
 
   /**
     * Constructor from java object events with unknown timestamps represented with negative time.
@@ -24,7 +22,7 @@ object EventList {
     * @return A new EventList.
     */
   def CreateFromObjectList(events: java.util.List[Object]): EventList =
-    new EventList(events.asScala.map(obj => RuntimeEvent(obj.getClass.getSimpleName, Seq.empty) -> -1l))
+    new EventList(events.asScala.map(obj => new RuntimeEvent(obj.getClass.getSimpleName) -> -1l))
 
   /**
     * Constructor from scala `Seq` of `RuntimeEvent` with unknown timestamps represented with negative time.
@@ -40,8 +38,6 @@ object EventList {
 
 /**
   * Java API class wrapping a sequence of events for a process instance.
-  *
-  * @param events The event sequence.
   */
 class EventList(private val eventsWithTimestamp: Seq[(RuntimeEvent, Long)]) extends java.util.AbstractList[AnyRef] {
 

@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.HttpRequest
 import com.ing.baker.baas.interaction.server.protocol.{ExecuteInteractionHTTPRequest, ExecuteInteractionHTTPResponse}
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.runtime.common.InteractionImplementation
-import com.ing.baker.runtime.akka.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.RuntimeEvent
 import com.ing.baker.types.{Type, Value}
 import org.slf4j.LoggerFactory
 

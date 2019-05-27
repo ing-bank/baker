@@ -36,7 +36,7 @@ object BakerTypedProtobufSerializer {
         .register("baker.types.Value"),
       forType[com.ing.baker.types.Type]
         .register("baker.types.Type"),
-      forType[runtime.akka.RuntimeEvent]
+      forType[runtime.scaladsl.RuntimeEvent]
         .register("core.RuntimeEvent"),
       forType[runtime.akka.ProcessState]
         .register("core.ProcessState"),

@@ -13,7 +13,8 @@ import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrat
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.events.{InteractionCompleted, InteractionFailed, InteractionStarted}
 import com.ing.baker.runtime.akka.internal.RecipeRuntime._
-import com.ing.baker.runtime.akka.{ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.akka.ProcessState
+import com.ing.baker.runtime.scaladsl.RuntimeEvent
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.MDC
 
@@ -75,7 +76,7 @@ object RecipeRuntime {
           case None =>
             Some(s"Interaction '${interaction.interactionName}' returned unknown event '${event.name}, expected one of: ${interaction.eventsToFire.map(_.name).mkString(",")}")
           case Some(eventType) =>
-            val errors = event.validateEvent(eventType)
+            val errors = event.validate(eventType)
 
             if (errors.nonEmpty)
               Some(s"Event '${event.name}' does not match the expected type: ${errors.mkString}")
@@ -164,7 +165,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
             case ExceptionStrategyOutcome.BlockTransition => BlockTransition
             case ExceptionStrategyOutcome.RetryWithDelay(delay) => RetryWithDelay(delay)
             case ExceptionStrategyOutcome.Continue(eventName) => {
-              val runtimeEvent = RuntimeEvent(eventName, Seq.empty)
+              val runtimeEvent = RuntimeEvent(eventName, Map.empty)
               Continue(createProducedMarking(outMarking, Some(runtimeEvent)), runtimeEvent)
             }
           }
@@ -235,7 +236,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
         MDC.remove("recipeName")
       }
 
-    }).handleExceptionWith {
+    }).handleErrorWith {
       case e: InvocationTargetException => IO.raiseError(e.getCause)
       case e: Throwable                 => IO.raiseError(e)
     }

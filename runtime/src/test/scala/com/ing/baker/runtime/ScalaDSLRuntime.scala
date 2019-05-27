@@ -1,9 +1,8 @@
 package com.ing.baker.runtime
 
-import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction}
 import com.ing.baker.runtime.common.InteractionImplementation
-import com.ing.baker.runtime.akka.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.RuntimeEvent
 import com.ing.baker.types.Converters.toJava
 import com.ing.baker.types.{Converters, Type, Value}
 
@@ -30,24 +29,25 @@ object ScalaDSLRuntime {
 
     def implement[A : TypeTag](fn: A => RuntimeEvent): InteractionImplementation =
       new ScalaInteractionImplementation(i, { input =>
-        fn(toJava[A](input(0)))
+        fn(toJava[A](input.head))
       })
 
     def implement[A : TypeTag, B : TypeTag](fn: (A, B) => RuntimeEvent): InteractionImplementation =
       new ScalaInteractionImplementation(i, { input =>
-        fn(toJava[A](input(0)), toJava[B](input(1)))
+        fn(toJava[A](input.head), toJava[B](input(1)))
       })
 
     def implement[A : TypeTag, B : TypeTag, C : TypeTag](fn: (A, B, C) => RuntimeEvent): InteractionImplementation =
       new ScalaInteractionImplementation(i, { input =>
-        fn(toJava[A](input(0)), toJava[B](input(1)), toJava[C](input(2)))
+        fn(toJava[A](input.head), toJava[B](input(1)), toJava[C](input(2)))
       })
   }
 
   implicit class EventOps(e: Event) {
     def instance(values: Any*): RuntimeEvent = {
 
-      val providedIngredients: Seq[(String, Value)] =  e.providedIngredients.map(_.name).zip(values.toSeq.map(Converters.toValue))
+      val providedIngredients: Map[String, Value] =
+        e.providedIngredients.map(_.name).zip(values.toSeq.map(Converters.toValue)).toMap
 
       RuntimeEvent(e.name, providedIngredients)
     }

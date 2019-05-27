@@ -21,7 +21,8 @@ import org.scalatest.prop.Checkers
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
 import com.ing.baker.runtime.akka.actor.serialization.Encryption.{AESEncryption, NoEncryption}
-import com.ing.baker.runtime.akka.{ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.akka.ProcessState
+import com.ing.baker.runtime.scaladsl.RuntimeEvent
 import com.ing.baker.types.Value
 import com.ing.baker.{AllTypeRecipe, types}
 
@@ -204,8 +205,6 @@ object SerializationSpec {
 
   object Runtime {
 
-    import com.ing.baker.runtime.akka._
-
     val eventNameGen: Gen[String] = Gen.alphaStr
     val ingredientNameGen: Gen[String] = Gen.alphaStr
     val ingredientsGen: Gen[(String, Value)] = GenUtil.tuple(ingredientNameGen, Types.anyValueGen)
@@ -213,7 +212,7 @@ object SerializationSpec {
     val runtimeEventGen: Gen[RuntimeEvent] = for {
       eventName <- eventNameGen
       ingredients <- Gen.listOf(ingredientsGen)
-    } yield RuntimeEvent(eventName, ingredients)
+    } yield RuntimeEvent(eventName, ingredients.toMap)
 
     val processStateGen: Gen[ProcessState] = for {
       processId <- processIdGen

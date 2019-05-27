@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka.actor.process_index
 import akka.actor.ActorRef
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
-import com.ing.baker.runtime.akka.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.RuntimeEvent
 import com.ing.baker.runtime.akka.events.RejectReason
 
 import scala.concurrent.duration.FiniteDuration

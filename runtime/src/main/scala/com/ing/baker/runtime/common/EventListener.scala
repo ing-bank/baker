@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.common
 
-import com.ing.baker.runtime.akka.RuntimeEvent
+import com.ing.baker.runtime.scaladsl
 
 /**
   * Listener interface for events from baker.
@@ -14,5 +14,6 @@ trait EventListener {
     *
     * @param event The event.
     */
-  def processEvent(processId: String, event: RuntimeEvent)
+  // TODO refactor EventLsitener to use correct RuntimeEvent
+  def processEvent(processId: String, event: scaladsl.RuntimeEvent)
 }

@@ -2,7 +2,7 @@ package com.ing.baker.runtime.akka.events
 
 import java.util.Optional
 
-import com.ing.baker.runtime.akka.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.RuntimeEvent
 
 /**
   * Event describing the fact that an interaction was executed successfully

@@ -2,7 +2,7 @@ package com.ing.baker.runtime.akka.actor.process_index
 
 import akka.actor.{Actor, ActorRef, Props, ReceiveTimeout}
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.akka.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.RuntimeEvent
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{FireSensoryEventReaction, FireSensoryEventRejection, ProcessEvent}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._

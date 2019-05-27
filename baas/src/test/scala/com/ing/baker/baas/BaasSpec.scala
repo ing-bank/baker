@@ -14,7 +14,7 @@ import com.ing.baker.recipe.javadsl.InteractionFailureStrategy.RetryWithIncremen
 import com.ing.baker.recipe.scaladsl
 import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.Baker
+import com.ing.baker.runtime.scaladsl.{Baker, RuntimeEvent}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.anyString
 import org.mockito.Mockito.{mock, reset, when}
@@ -71,7 +71,7 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     for {
       recipeId <- baasBaker.addRecipe(compiledRecipe)
       _ <- baasBaker.bake(recipeId, requestId)
-      response <- baasBaker.fireSensoryEventCompleted(requestId, InitialEvent("initialIngredient"))
+      response <- baasBaker.fireSensoryEventCompleted(requestId, RuntimeEvent.unsafeFrom(InitialEvent("initialIngredient")))
       _ = response.status shouldBe SensoryEventStatus.Completed
       processState <- baasBaker.getProcessState(requestId)
 
@@ -105,7 +105,7 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     for {
       recipeId <- baasBaker.addRecipe(compiledRecipe)
       _ <- baasBaker.bake(recipeId, requestId)
-      response <- baasBaker.fireSensoryEventCompleted(requestId, InitialEvent("initialIngredient"))
+      response <- baasBaker.fireSensoryEventCompleted(requestId, RuntimeEvent.unsafeFrom(InitialEvent("initialIngredient")))
     } yield assert(response.events.nonEmpty)
   }
 }

@@ -1,6 +1,5 @@
 package com.ing.baker;
 
-import akka.actor.Actor;
 import akka.actor.ActorSystem;
 import akka.stream.ActorMaterializer;
 import akka.stream.Materializer;
@@ -14,13 +13,12 @@ import com.ing.baker.recipe.javadsl.Interaction;
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy;
 import com.ing.baker.recipe.javadsl.Recipe;
 import com.ing.baker.runtime.akka.ProcessState;
-import com.ing.baker.runtime.javadsl.JBaker;
+import com.ing.baker.runtime.javadsl.Baker;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
 import java.time.Duration;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
 import static org.mockito.Matchers.any;
@@ -158,7 +156,7 @@ public class Webshop {
 //        JBaker baker = new JBaker(ActorSystem.apply("webshop", config));
         ActorSystem system = ActorSystem.create("webshop");
         Materializer materializer = ActorMaterializer.create(system);
-        JBaker baker = JBaker.akka(config, system, materializer);
+        Baker baker = Baker.akka(config, system, materializer);
 
         baker.addImplementations(ImmutableList.of(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock));
 

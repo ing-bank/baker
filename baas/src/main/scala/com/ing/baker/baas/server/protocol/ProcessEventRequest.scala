@@ -1,6 +1,6 @@
 package com.ing.baker.baas.server.protocol
 
-import com.ing.baker.runtime.akka.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.RuntimeEvent
 
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}

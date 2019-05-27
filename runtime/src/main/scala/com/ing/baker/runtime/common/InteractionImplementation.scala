@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.common
 
 import com.ing.baker.il.EventDescriptor
-import com.ing.baker.runtime.akka.RuntimeEvent
+import com.ing.baker.runtime.scaladsl
 import com.ing.baker.types.{Type, Value}
 
 import scala.concurrent.Future
@@ -31,5 +31,6 @@ trait InteractionImplementation {
     * @param input
     * @return
     */
-  def execute(input: Seq[Value]): Future[Option[RuntimeEvent]]
+  // scaladsl.RuntimeEvent is temporary, refactoring of this class is on another PR
+  def execute(input: Seq[Value]): Future[Option[scaladsl.RuntimeEvent]]
 }

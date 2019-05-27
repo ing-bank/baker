@@ -5,7 +5,7 @@ import com.ing.baker.il
 import com.ing.baker.types
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.akka.actor.serialization.protomappings._
-import com.ing.baker.runtime.akka.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.RuntimeEvent
 import scalapb.GeneratedMessageCompanion
 
 import scala.util.{Success, Try}

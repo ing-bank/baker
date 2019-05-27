@@ -21,7 +21,8 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.{BakerSerializable, Encryption}
 import com.ing.baker.runtime.akka.events.ProcessCreated
 import com.ing.baker.runtime.akka.internal.{InteractionManager, RecipeRuntime}
-import com.ing.baker.runtime.akka.{ProcessState, RuntimeEvent, namedCachedThreadPool, _}
+import com.ing.baker.runtime.akka.{ProcessState, namedCachedThreadPool, _}
+import com.ing.baker.runtime.scaladsl.RuntimeEvent
 import com.ing.baker.types.Value
 
 import scala.collection.mutable
@@ -324,7 +325,7 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
       }
 
       def validateEventIsSound(descriptor: EventDescriptor): FireEventIO[Unit] = {
-        val eventValidationErrors = event.validateEvent(descriptor)
+        val eventValidationErrors = event.validate(descriptor)
         if (eventValidationErrors.nonEmpty)
           reject(FireSensoryEventRejection.InvalidEvent(
             processId,

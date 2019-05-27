@@ -13,9 +13,9 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.events.{BakerEvent, EventReceived, InteractionCompleted, InteractionFailed}
 import com.ing.baker.runtime.akka.internal.MethodInteractionImplementation
-import com.ing.baker.runtime.common._
-import com.ing.baker.runtime.{common, scaladsl}
-import com.ing.baker.runtime.scaladsl.{Baker, SensoryEventMoments}
+import com.ing.baker.runtime.scaladsl._
+import com.ing.baker.runtime.common
+import com.ing.baker.runtime.common.{BakerException, EventListener, InteractionImplementation, NoSuchProcessException, ProcessDeletedException, ProcessMetadata, RecipeValidationException, SensoryEventStatus}
 import com.ing.baker.types.Value
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -118,10 +118,10 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     }
   }
 
-  def fireSensoryEventReceived(processId: String, event: Any, correlationId: Option[String]): Future[SensoryEventStatus] =
+  def fireSensoryEventReceived(processId: String, event: RuntimeEvent, correlationId: Option[String]): Future[SensoryEventStatus] =
     processIndexActor.ask(ProcessEvent(
       processId = processId,
-      event = RuntimeEvent.extractEvent(event),
+      event = event,
       correlationId = correlationId,
       timeout = config.defaultProcessEventTimeout,
       reaction = FireSensoryEventReaction.NotifyWhenReceived
@@ -143,10 +143,10 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
         Future.successful(status)
     }
 
-  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: Option[String]): Future[scaladsl.SensoryEventResult] =
+  def fireSensoryEventCompleted(processId: String, event: RuntimeEvent, correlationId: Option[String]): Future[SensoryEventResult] =
     processIndexActor.ask(ProcessEvent(
       processId = processId,
-      event = RuntimeEvent.extractEvent(event),
+      event = event,
       correlationId = correlationId,
       timeout = config.defaultProcessEventTimeout,
       reaction = FireSensoryEventReaction.NotifyWhenCompleted(waitForRetries = true)
@@ -156,23 +156,23 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
       case FireSensoryEventRejection.NoSuchProcess(processId0) =>
         Future.failed(new NoSuchProcessException(s"Process with id $processId0 does not exist in the index"))
       case _: FireSensoryEventRejection.FiringLimitMet =>
-        Future.successful(scaladsl.SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
+        Future.successful(SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
       case _: FireSensoryEventRejection.AlreadyReceived =>
-        Future.successful(scaladsl.SensoryEventResult(SensoryEventStatus.AlreadyReceived, Seq.empty, Map.empty))
+        Future.successful(SensoryEventResult(SensoryEventStatus.AlreadyReceived, Seq.empty, Map.empty))
       case _: FireSensoryEventRejection.ReceivePeriodExpired =>
-        Future.successful(scaladsl.SensoryEventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
+        Future.successful(SensoryEventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
       case _: FireSensoryEventRejection.ProcessDeleted =>
-        Future.successful(scaladsl.SensoryEventResult(SensoryEventStatus.ProcessDeleted, Seq.empty, Map.empty))
-      case result: scaladsl.SensoryEventResult =>
+        Future.successful(SensoryEventResult(SensoryEventStatus.ProcessDeleted, Seq.empty, Map.empty))
+      case result: SensoryEventResult =>
         Future.successful(result)
     }
 
-  def fireSensoryEvent(processId: String, event: Any, correlationId: Option[String]): scaladsl.SensoryEventMoments = {
+  def fireSensoryEvent(processId: String, event: RuntimeEvent, correlationId: Option[String]): SensoryEventMoments = {
     val futureRef = FutureRef(config.defaultProcessEventTimeout)
     val futureReceived =
       processIndexActor.ask(ProcessEvent(
         processId = processId,
-        event = RuntimeEvent.extractEvent(event),
+        event = event,
         correlationId = correlationId,
         timeout = config.defaultProcessEventTimeout,
         reaction = FireSensoryEventReaction.NotifyBoth(
@@ -201,14 +201,14 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
         case FireSensoryEventRejection.NoSuchProcess(processId0) =>
           Future.failed(new NoSuchProcessException(s"Process with id $processId0 does not exist in the index"))
         case _: FireSensoryEventRejection.FiringLimitMet =>
-          Future.successful(scaladsl.SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
+          Future.successful(SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
         case _: FireSensoryEventRejection.AlreadyReceived =>
-          Future.successful(scaladsl.SensoryEventResult(SensoryEventStatus.AlreadyReceived, Seq.empty, Map.empty))
+          Future.successful(SensoryEventResult(SensoryEventStatus.AlreadyReceived, Seq.empty, Map.empty))
         case _: FireSensoryEventRejection.ReceivePeriodExpired =>
-          Future.successful(scaladsl.SensoryEventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
+          Future.successful(SensoryEventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
         case _: FireSensoryEventRejection.ProcessDeleted =>
-          Future.successful(scaladsl.SensoryEventResult(SensoryEventStatus.ProcessDeleted, Seq.empty, Map.empty))
-        case result: scaladsl.SensoryEventResult =>
+          Future.successful(SensoryEventResult(SensoryEventStatus.ProcessDeleted, Seq.empty, Map.empty))
+        case result: SensoryEventResult =>
           Future.successful(result)
       }
     SensoryEventMoments(futureReceived, futureCompleted)
@@ -230,8 +230,8 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     *
     * @return
     */
-  override def resolveInteraction(processId: String, interactionName: String, event: Any): Future[Unit] = {
-    processIndexActor.ask(ResolveBlockedInteraction(processId, interactionName, RuntimeEvent.extractEvent(event)))(config.defaultProcessEventTimeout).map(_ => ())
+  override def resolveInteraction(processId: String, interactionName: String, event: RuntimeEvent): Future[Unit] = {
+    processIndexActor.ask(ResolveBlockedInteraction(processId, interactionName, event))(config.defaultProcessEventTimeout).map(_ => ())
   }
 
   /**
@@ -265,8 +265,6 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     * @param processId The process identifier
     * @return The process state.
     */
-  @throws[NoSuchProcessException]("When no process exists for the given id")
-  @throws[TimeoutException]("When the request does not receive a reply within the given deadline")
   override def getProcessState(processId: String): Future[ProcessState] =
     processIndexActor
       .ask(GetProcessState(processId))(Timeout.durationToTimeout(config.defaultInquireTimeout))
@@ -283,8 +281,6 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     * @param processId The process id.
     * @return The provided ingredients.
     */
-  @throws[NoSuchProcessException]("When no process exists for the given id")
-  @throws[ProcessDeletedException]("If the process is already deleted")
   override def getIngredients(processId: String): Future[Map[String, Value]] =
     getProcessState(processId).map(_.ingredients)
 
@@ -324,7 +320,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
       case InteractionCompleted(_, _, recipeName, _, processId, _, Some(event)) if processFilter(recipeName) =>
         listener.processEvent(processId, event)
       case InteractionFailed(_, _, recipeName, _, processId, _, _, _, ExceptionStrategyOutcome.Continue(eventName)) if processFilter(recipeName) =>
-        listener.processEvent(processId, RuntimeEvent(eventName, Seq.empty))
+        listener.processEvent(processId, RuntimeEvent(eventName, Map.empty))
     }
   }
 

@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import com.ing.baker.baas.interaction.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
-import com.ing.baker.runtime.akka.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.RuntimeEvent
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future

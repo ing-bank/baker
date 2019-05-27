@@ -3,22 +3,20 @@ package com.ing.baker
 import java.util.UUID
 
 import akka.actor.ActorPath
-import akka.remote.testconductor.RoleName
-import akka.remote.testkit.MultiNodeConfig
-import akka.testkit.ImplicitSender
 import akka.cluster.MultiNodeClusterSpec
-import akka.remote.testkit.MultiNodeSpec
-import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.runtime.akka.{AkkaBaker, RuntimeEvent}
-import com.typesafe.config.{Config, ConfigFactory}
-import com.ing.baker.recipe.scaladsl.Examples.webshop
-import com.ing.baker.types.{PrimitiveValue, RecordValue}
-import org.scalatest.mockito.MockitoSugar
+import akka.remote.testconductor.RoleName
+import akka.remote.testkit.{MultiNodeConfig, MultiNodeSpec}
+import akka.stream.ActorMaterializer
+import akka.testkit.ImplicitSender
 import better.files.File
-import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.scaladsl.Baker
+import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.recipe.scaladsl.Examples.webshop
+import com.ing.baker.runtime.scaladsl.{Baker, RuntimeEvent}
+import com.ing.baker.types.{PrimitiveValue, RecordValue}
+import com.typesafe.config.{Config, ConfigFactory}
+import org.scalatest.mockito.MockitoSugar
 
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Await
 import scala.concurrent.duration._
 
 
@@ -79,7 +77,7 @@ object HappyPath extends MockitoSugar {
   object ValidateOrder {
     val name: String = webshop.validateOrder.name
     def apply(order: String): RuntimeEvent = {
-      RuntimeEvent(webshop.valid.name, Seq.empty)
+      RuntimeEvent(webshop.valid.name, Map.empty)
     }
   }
 
@@ -88,14 +86,14 @@ object HappyPath extends MockitoSugar {
     def apply(order: String): RuntimeEvent = {
       RuntimeEvent(webshop.goodsManufactured.name, Map(
         webshop.goods.name -> PrimitiveValue("Good1")
-      ).toSeq)
+      ))
     }
   }
 
   object SendInvoice {
     val name: String = webshop.sendInvoice.name
     def apply(info: webshop.CustomerInfo): RuntimeEvent = {
-      RuntimeEvent(webshop.invoiceWasSent.name, Seq.empty)
+      RuntimeEvent(webshop.invoiceWasSent.name, Map.empty)
     }
   }
 
@@ -104,14 +102,14 @@ object HappyPath extends MockitoSugar {
     def apply(goods: String, info: webshop.CustomerInfo): RuntimeEvent = {
       RuntimeEvent(webshop.goodsShipped.name, Map(
         webshop.trackingId.name -> PrimitiveValue("TrackingId1")
-      ).toSeq)
+      ))
     }
   }
 
   def placeOrderRuntimeEvent: RuntimeEvent =
     RuntimeEvent(webshop.orderPlaced.name, Map(
       webshop.order.name -> PrimitiveValue("Order1")
-    ).toSeq)
+    ))
 
   def receivedDataRuntimeEvent: RuntimeEvent =
     RuntimeEvent(webshop.customerInfoReceived.name, Map(
@@ -120,10 +118,10 @@ object HappyPath extends MockitoSugar {
         "address" -> PrimitiveValue("customer-address"),
         "email" -> PrimitiveValue("customer-email")
       ))
-    ).toSeq)
+    ))
 
   def paymentMadeRuntimeEvent: RuntimeEvent =
-    RuntimeEvent(webshop.paymentMade.name, Seq.empty)
+    RuntimeEvent(webshop.paymentMade.name, Map.empty)
 
   def seedNodeConfig(path: ActorPath): Config =
     ConfigFactory.parseString(s"""baker.cluster.seed-nodes = ["$path"]""")
@@ -140,8 +138,8 @@ class HappyPath extends MultiNodeSpec(HappyPathConfig)
   with MultiNodeClusterSpec
   with ImplicitSender {
 
-  import HappyPathConfig._
   import HappyPath._
+  import HappyPathConfig._
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -155,16 +153,17 @@ class HappyPath extends MultiNodeSpec(HappyPathConfig)
 
   def runHappyFlow(baker: Baker, recipeId: String, processId: String): Unit = {
 
-    val processState = baker.bake(recipeId, processId)
+    import system.dispatcher
+    Await.result(baker.bake(recipeId, processId), 10 seconds)
 
-    val sensoryEventStatus1 = baker.processEvent(processId, placeOrderRuntimeEvent)
-    val events1 = Await.result(baker.getProcessState(processId), 10 seconds).eventNames
+    val sensoryEventStatus1 = baker.fireSensoryEventCompleted(processId, placeOrderRuntimeEvent)
+    Await.result(sensoryEventStatus1.flatMap(_ => baker.getProcessState(processId)), 10 seconds).eventNames
 
-    val sensoryEventStatus2 = baker.processEvent(processId, receivedDataRuntimeEvent)
-    val events2 = Await.result(baker.getProcessState(processId), 10 seconds).eventNames
+    val sensoryEventStatus2 = baker.fireSensoryEventCompleted(processId, receivedDataRuntimeEvent)
+    Await.result(sensoryEventStatus2.flatMap(_ => baker.getProcessState(processId)), 10 seconds).eventNames
 
-    val sensoryEventStatus3 = baker.processEvent(processId, paymentMadeRuntimeEvent)
-    val events3 = Await.result(baker.getProcessState(processId), 10 seconds).eventNames
+    val sensoryEventStatus3 = baker.fireSensoryEventCompleted(processId, paymentMadeRuntimeEvent)
+    val events3 = Await.result(sensoryEventStatus3.flatMap(_ => baker.getProcessState(processId)), 10 seconds).eventNames
 
     assert(events3 == List(
       webshop.orderPlaced.name,
@@ -181,7 +180,9 @@ class HappyPath extends MultiNodeSpec(HappyPathConfig)
 
     "retrieve state from a remote process actor using in-memory journals" in {
 
-      val baker = new AkkaBaker(ConfigFactory.load().withFallback(seedNodeConfig(node(node1))))
+      val materializer = ActorMaterializer()
+      val config = ConfigFactory.load().withFallback(seedNodeConfig(node(node1)))
+      val baker = Baker.akka(config, system, materializer)
       baker.addImplementations(HappyPath.implementations)
       val compiled = RecipeCompiler.compileRecipe(webshop.webShopRecipe)
       val recipeId = Await.result(baker.addRecipe(compiled), 10 seconds)

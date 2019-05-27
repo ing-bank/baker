@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka.events
 
-import com.ing.baker.runtime.akka.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.RuntimeEvent
 
 /**
   * Event describing the fact that an event was received for a process.

@@ -10,7 +10,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.TestRecipe.{fireTwoEventsInteraction, _}
 import com.ing.baker.recipe.{CaseClassIngredient, common}
-import com.ing.baker.runtime.akka.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.RuntimeEvent
 import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.types.{Converters, Value}
 import com.typesafe.config.{Config, ConfigFactory}
@@ -53,7 +53,7 @@ trait BakerRuntimeTestBase
   def ingredientMap(entries: (String, Any)*): Map[String, Value] =
     entries.map { case (name, obj) => name -> Converters.toValue(obj) }.toMap
 
-  def eventList(events: Any*): Seq[RuntimeEvent] = events.map(e => RuntimeEvent.extractEvent((e)))
+  def eventList(events: Any*): Seq[RuntimeEvent] = events.map(RuntimeEvent.unsafeFrom)
 
   //Can be used to check the state after firing the initialEvent
   protected val afterInitialState = ingredientMap(

@@ -2,34 +2,22 @@ package com.ing.baker.runtime.common
 
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.akka.ProcessState
-import com.ing.baker.runtime.common.LanguageDataStructures.{JavaApi, LanguageApi, ScalaApi}
+import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
 import com.ing.baker.types.Value
-
-/**
-  * A Baker using the Scala collection types
-  *
-  * @tparam F the type of Future to use in the return types
-  */
-trait ScalaBaker[F[_]] extends BakerInterface[F] with ScalaApi
-
-/**
-  * A Baker using the Java collection types
-  *
-  * @tparam F the type of Future to use in the return types
-  */
-trait JavaBaker[F[_]] extends BakerInterface[F] with JavaApi
 
 /**
   * The BakerInterface is a class we use to ensure the Scala and Java Baker classes have the same methods.
   *
   * @tparam F   the type of Future to use in the return types
   */
-trait BakerInterface[F[_]] extends LanguageApi { self =>
+trait Baker[F[_]] extends LanguageApi { self =>
 
   type Result <: SensoryEventResult { type Language <: self.Language }
 
   // TODO rename it... Stages? Outcomes? Instances? Instants? Results?
   type Moments <: SensoryEventMoments[F] { type Language <: self.Language }
+
+  type Event <: RuntimeEvent { type Language <: self.Language }
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -75,7 +63,7 @@ trait BakerInterface[F[_]] extends LanguageApi { self =>
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEventReceived(processId: String, event: Any): F[SensoryEventStatus]
+  def fireSensoryEventReceived(processId: String, event: Event): F[SensoryEventStatus]
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -87,7 +75,7 @@ trait BakerInterface[F[_]] extends LanguageApi { self =>
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEventCompleted(processId: String, event: Any): F[Result]
+  def fireSensoryEventCompleted(processId: String, event: Event): F[Result]
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -100,7 +88,7 @@ trait BakerInterface[F[_]] extends LanguageApi { self =>
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEvent(processId: String, event: Any): Moments
+  def fireSensoryEvent(processId: String, event: Event): Moments
 
   /**
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
@@ -113,7 +101,7 @@ trait BakerInterface[F[_]] extends LanguageApi { self =>
     * @param event     The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireSensoryEventReceived(processId: String, event: Any, correlationId: String): F[SensoryEventStatus]
+  def fireSensoryEventReceived(processId: String, event: Event, correlationId: String): F[SensoryEventStatus]
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -126,7 +114,7 @@ trait BakerInterface[F[_]] extends LanguageApi { self =>
     * @param event     The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: String): F[Result]
+  def fireSensoryEventCompleted(processId: String, event: Event, correlationId: String): F[Result]
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -140,7 +128,7 @@ trait BakerInterface[F[_]] extends LanguageApi { self =>
     * @param event     The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireSensoryEvent(processId: String, event: Any, correlationId: String): Moments
+  def fireSensoryEvent(processId: String, event: Event, correlationId: String): Moments
 
   /**
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
@@ -153,7 +141,7 @@ trait BakerInterface[F[_]] extends LanguageApi { self =>
     * @param event     The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireSensoryEventReceived(processId: String, event: Any, correlationId: language.Option[String]): F[SensoryEventStatus]
+  def fireSensoryEventReceived(processId: String, event: Event, correlationId: language.Option[String]): F[SensoryEventStatus]
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -166,7 +154,7 @@ trait BakerInterface[F[_]] extends LanguageApi { self =>
     * @param event     The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireSensoryEventCompleted(processId: String, event: Any, correlationId: language.Option[String]): F[Result]
+  def fireSensoryEventCompleted(processId: String, event: Event, correlationId: language.Option[String]): F[Result]
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -180,7 +168,7 @@ trait BakerInterface[F[_]] extends LanguageApi { self =>
     * @param event     The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireSensoryEvent(processId: String, event: Any, correlationId: language.Option[String]): Moments
+  def fireSensoryEvent(processId: String, event: Event, correlationId: language.Option[String]): Moments
 
   //TODO why do we have this and do we want to keep this?
   //TODO why is this named index when it return ProcessMetaData?
@@ -211,8 +199,6 @@ trait BakerInterface[F[_]] extends LanguageApi { self =>
     * @param processId The process id.
     * @return The provided ingredients.
     */
-  @throws[NoSuchProcessException]("When no process exists for the given id")
-  @throws[ProcessDeletedException]("If the process is already deleted")
   def getIngredients(processId: String): F[language.Map[String, Value]]
 
   //TODO do we keep this a a future?
@@ -223,8 +209,6 @@ trait BakerInterface[F[_]] extends LanguageApi { self =>
     * @param processId The process identifier.
     * @return A visual (.dot) representation of the process state.
     */
-  @throws[ProcessDeletedException]("If the process is already deleted")
-  @throws[NoSuchProcessException]("If the process is not found")
   def getVisualState(processId: String, style: RecipeVisualStyle = RecipeVisualStyle.default): F[String]
 
   /**
@@ -285,7 +269,7 @@ trait BakerInterface[F[_]] extends LanguageApi { self =>
     *
     * @return
     */
-  def resolveInteraction(processId: String, interactionName: String, event: Any): F[Unit]
+  def resolveInteraction(processId: String, interactionName: String, event: Event): F[Unit]
 
   /**
     * Stops the retrying of an interaction.
