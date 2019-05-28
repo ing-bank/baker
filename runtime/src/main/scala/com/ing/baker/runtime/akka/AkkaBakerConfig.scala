@@ -103,7 +103,7 @@ object AkkaBakerConfig {
                 case Some(_seedNodes) if _seedNodes.nonEmpty =>
                   NonEmptyList.fromListUnsafe(_seedNodes.map(AddressFromURIString.parse))
                 case None =>
-                  throw new BakerException("Baker cluster configuration without baker.cluster.seed-nodes")
+                  throw new IllegalStateException("Baker cluster configuration without baker.cluster.seed-nodes")
               },
               configuredEncryption = encryption
             )

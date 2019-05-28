@@ -10,7 +10,7 @@ import org.mockito.Mockito.when
 
 import scala.language.postfixOps
 import com.ing.baker.runtime.ScalaDSLRuntime._
-import com.ing.baker.runtime.common.{BakerException, RecipeValidationException}
+import com.ing.baker.runtime.common.BakerException.{RecipeValidationException, ImplementationsException}
 import com.ing.baker.runtime.scaladsl.Baker
 import com.typesafe.config.ConfigFactory
 
@@ -136,7 +136,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
-        recoverToExceptionIf[BakerException] {
+        recoverToExceptionIf[ImplementationsException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
         }.map(_ should have('message ("No implementation provided for interaction: InteractionOne")))
       }
@@ -152,7 +152,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         baker.addImplementation(new InteractionOneWrongApply())
 
-        recoverToExceptionIf[BakerException] {
+        recoverToExceptionIf[ImplementationsException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
         }.map(_ should have('message ("No implementation provided for interaction: InteractionOne")))
       }

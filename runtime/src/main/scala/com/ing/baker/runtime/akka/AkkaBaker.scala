@@ -1,7 +1,5 @@
 package com.ing.baker.runtime.akka
 
-import java.util.concurrent.TimeoutException
-
 import akka.actor.{Actor, ActorRef, Props}
 import akka.pattern.{FutureRef, ask}
 import akka.util.Timeout
@@ -15,7 +13,8 @@ import com.ing.baker.runtime.akka.events.{BakerEvent, EventReceived, Interaction
 import com.ing.baker.runtime.akka.internal.MethodInteractionImplementation
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.common
-import com.ing.baker.runtime.common.{BakerException, EventListener, InteractionImplementation, NoSuchProcessException, ProcessDeletedException, ProcessMetadata, RecipeValidationException, SensoryEventStatus}
+import com.ing.baker.runtime.common.{EventListener, InteractionImplementation, ProcessMetadata, SensoryEventStatus}
+import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.types.Value
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -54,14 +53,13 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     val implementationErrors = getImplementationErrors(compiledRecipe)
 
     if (implementationErrors.nonEmpty)
-      return Future.failed(new BakerException(implementationErrors.mkString(", ")))
+      Future.failed(new ImplementationsException(implementationErrors.mkString(", ")))
 
-    if (compiledRecipe.validationErrors.nonEmpty)
-      return Future.failed(new RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
+    else if (compiledRecipe.validationErrors.nonEmpty)
+      Future.failed(new RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
 
-    recipeManager.ask(AddRecipe(compiledRecipe))(config.defaultAddRecipeTimeout) flatMap {
+    else recipeManager.ask(AddRecipe(compiledRecipe))(config.defaultAddRecipeTimeout) flatMap {
       case AddRecipeResponse(recipeId) => Future.successful(recipeId)
-      case _ => Future.failed(new BakerException(s"Unexpected error happened when adding recipe"))
     }
   }
 
@@ -113,8 +111,6 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
         Future.failed(new IllegalArgumentException(s"Process with id '$processId' already exists."))
       case NoRecipeFound(_) =>
         Future.failed(new IllegalArgumentException(s"Recipe with id '$recipeId' does not exist."))
-      case msg@_ =>
-        Future.failed(new BakerException(s"Unexpected message of type: ${msg.getClass}"))
     }
   }
 
@@ -272,7 +268,6 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
         case instance: InstanceState => Future.successful(instance.state.asInstanceOf[ProcessState])
         case NoSuchProcess(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
         case ProcessDeleted(id) => Future.failed(new ProcessDeletedException(s"Process $id is deleted"))
-        case msg => Future.failed(new BakerException(s"Unexpected actor response message: $msg"))
       }
 
   /**

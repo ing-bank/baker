@@ -14,6 +14,7 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.common._
+import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.scaladsl.{Baker, RuntimeEvent}
 import com.typesafe.config.ConfigFactory
 import org.mockito.Matchers._
@@ -743,7 +744,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           maximumRetries = 1,
           fireRetryExhaustedEvent = Some(None))))
 
-      when(testInteractionOneMock.apply(anyString(), anyString())).thenThrow(new BakerException())
+      when(testInteractionOneMock.apply(anyString(), anyString())).thenThrow(new IllegalStateException())
 
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)

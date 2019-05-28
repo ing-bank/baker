@@ -29,7 +29,7 @@ object Baker {
 
   def akkaClusterDefault(seedNodes: java.util.List[Address], actorSystem: ActorSystem, materializer: Materializer): Baker = {
     val nodes =
-      if(seedNodes.isEmpty) throw new common.BakerException("Baker cluster configuration without baker.cluster.seed-nodes")
+      if(seedNodes.isEmpty) throw new IllegalStateException("Baker cluster configuration without baker.cluster.seed-nodes")
       else NonEmptyList.fromListUnsafe(seedNodes.asScala.toList)
     new Baker(new AkkaBaker(AkkaBakerConfig.clusterDefault(nodes, actorSystem, materializer)))
   }
