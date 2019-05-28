@@ -40,6 +40,8 @@ trait Baker extends common.Baker[Future] with ScalaApi {
 
   override type Event = RuntimeEvent
 
+  override type PState = ProcessState
+
   /**
     * This registers a listener function.
     *

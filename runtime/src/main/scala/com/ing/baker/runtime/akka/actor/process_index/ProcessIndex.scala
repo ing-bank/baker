@@ -21,8 +21,8 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.{BakerSerializable, Encryption}
 import com.ing.baker.runtime.akka.events.ProcessCreated
 import com.ing.baker.runtime.akka.internal.{InteractionManager, RecipeRuntime}
-import com.ing.baker.runtime.akka.{ProcessState, namedCachedThreadPool, _}
-import com.ing.baker.runtime.scaladsl.RuntimeEvent
+import com.ing.baker.runtime.akka.{namedCachedThreadPool, _}
+import com.ing.baker.runtime.scaladsl.{ProcessState, RuntimeEvent}
 import com.ing.baker.types.Value
 
 import scala.collection.mutable

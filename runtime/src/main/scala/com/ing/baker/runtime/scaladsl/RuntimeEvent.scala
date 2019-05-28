@@ -1,9 +1,12 @@
 package com.ing.baker.runtime.scaladsl
 
 import com.ing.baker.il.EventDescriptor
+import com.ing.baker.runtime.javadsl
 import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.types.{Converters, NullValue, RecordValue, Value}
+
+import scala.collection.JavaConverters._
 
 case class RuntimeEvent(name: String, providedIngredients: Map[String, Value])
   extends common.RuntimeEvent with ScalaApi {
@@ -26,6 +29,9 @@ case class RuntimeEvent(name: String, providedIngredients: Map[String, Value])
             Seq.empty
         }
       }
+
+  def asJava: javadsl.RuntimeEvent =
+    new javadsl.RuntimeEvent(name, providedIngredients.asJava)
 }
 
 object RuntimeEvent {

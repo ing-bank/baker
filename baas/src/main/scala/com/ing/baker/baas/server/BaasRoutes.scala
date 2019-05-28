@@ -1,18 +1,16 @@
 package com.ing.baker.baas.server
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.HttpEntity.CloseDelimited
-import akka.http.scaladsl.model.{ContentTypes, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.{Directives, Route}
 import com.ing.baker.baas.interaction.client.RemoteInteractionClient
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
-import com.ing.baker.runtime.akka.{AkkaBaker, ProcessState}
-import com.ing.baker.runtime.scaladsl.RuntimeEvent
+import com.ing.baker.runtime.akka.AkkaBaker
+import com.ing.baker.runtime.scaladsl.{ProcessState, RuntimeEvent}
 import com.ing.baker.types.Value
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
 
 class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with ClientUtils {
 

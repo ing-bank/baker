@@ -21,7 +21,7 @@ import org.scalatest.prop.Checkers
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
 import com.ing.baker.runtime.akka.actor.serialization.Encryption.{AESEncryption, NoEncryption}
-import com.ing.baker.runtime.akka.ProcessState
+import com.ing.baker.runtime.scaladsl.ProcessState
 import com.ing.baker.runtime.scaladsl.RuntimeEvent
 import com.ing.baker.types.Value
 import com.ing.baker.{AllTypeRecipe, types}

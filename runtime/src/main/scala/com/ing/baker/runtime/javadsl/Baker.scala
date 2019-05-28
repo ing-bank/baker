@@ -4,7 +4,7 @@ import java.util
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 
-import com.ing.baker.runtime.akka.{AkkaBaker, ProcessState}
+import com.ing.baker.runtime.akka.AkkaBaker
 import akka.actor.{ActorSystem, Address}
 import akka.stream.Materializer
 import cats.data.NonEmptyList
@@ -51,6 +51,8 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
   override type Moments = SensoryEventMoments
 
   override type Event = RuntimeEvent
+
+  override type PState = ProcessState
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -199,7 +201,7 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     *
     * @return A map with all recipes from recipeId -> JRecipeInformation
     */
-  def getAllRecipes(): CompletableFuture[java.util.Map[String, RecipeInformation]] =
+  def getAllRecipes: CompletableFuture[java.util.Map[String, RecipeInformation]] =
     toCompletableFutureMap(baker.getAllRecipes)
 
   /**
@@ -273,7 +275,7 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     * @return The state of the process instance
     */
   def getProcessState(@Nonnull processId: String): CompletableFuture[ProcessState] =
-    toCompletableFuture(baker.getProcessState(processId))
+    toCompletableFuture(baker.getProcessState(processId)).thenApply(_.asJava)
 
   private def toCompletableFuture[T](scalaFuture: Future[T]): CompletableFuture[T] =
     FutureConverters.toJava(scalaFuture).toCompletableFuture

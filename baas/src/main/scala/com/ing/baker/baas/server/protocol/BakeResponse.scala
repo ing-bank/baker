@@ -1,6 +1,6 @@
 package com.ing.baker.baas.server.protocol
 
-import com.ing.baker.runtime.akka.ProcessState
+import com.ing.baker.runtime.scaladsl.ProcessState
 import com.ing.baker.runtime.akka.actor.serialization.{ProtoMap, SerializersProvider}
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.baas.protobuf
@@ -24,7 +24,7 @@ object BakeResponse {
       override def fromProto(message: protobuf.BakeResponse): Try[BakeResponse] =
         for {
           processStateProto <- versioned(message.processState, "processState")
-          processState <- ctxFromProto(processStateProto)(ProcessState.protoMap)
+          processState <- ctxFromProto(processStateProto)
         } yield BakeResponse(processState)
     }
 }

@@ -17,7 +17,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.{AllRecipes, GetAllRecipes, RecipeInformation}
 import com.ing.baker.runtime.akka.actor.serialization.Encryption
 import com.ing.baker.runtime.akka.internal.InteractionManager
-import com.ing.baker.runtime.akka.ProcessState
+import com.ing.baker.runtime.scaladsl.ProcessState
 import com.ing.baker.runtime.scaladsl.RuntimeEvent
 import com.ing.baker.types
 import com.ing.baker.types.Value

@@ -12,7 +12,7 @@ import com.ing.baker.recipe.annotations.RequiresIngredient;
 import com.ing.baker.recipe.javadsl.Interaction;
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy;
 import com.ing.baker.recipe.javadsl.Recipe;
-import com.ing.baker.runtime.akka.ProcessState;
+import com.ing.baker.runtime.javadsl.ProcessState;
 import com.ing.baker.runtime.javadsl.Baker;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;

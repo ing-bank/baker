@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.common
 
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
-import com.ing.baker.runtime.akka.ProcessState
 import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
 import com.ing.baker.types.Value
 
@@ -18,6 +17,8 @@ trait Baker[F[_]] extends LanguageApi { self =>
   type Moments <: SensoryEventMoments[F] { type Language <: self.Language }
 
   type Event <: RuntimeEvent { type Language <: self.Language }
+
+  type PState <: ProcessState { type Language <: self.Language }
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -191,7 +192,7 @@ trait Baker[F[_]] extends LanguageApi { self =>
     * @return The process state.
     */
   @throws[NoSuchProcessException]("When no process exists for the given id")
-  def getProcessState(processId: String): F[ProcessState]
+  def getProcessState(processId: String): F[PState]
 
   /**
     * Returns all provided ingredients for a given process id.

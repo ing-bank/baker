@@ -7,7 +7,7 @@ import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.JavaCompiledRecipeTest;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.akka.ProcessState;
+import com.ing.baker.runtime.javadsl.ProcessState;
 import com.ing.baker.runtime.akka.events.ProcessCreated;
 import com.ing.baker.runtime.akka.events.Subscribe;
 import com.ing.baker.runtime.common.BakerException;

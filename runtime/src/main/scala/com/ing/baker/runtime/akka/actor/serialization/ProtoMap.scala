@@ -5,7 +5,7 @@ import com.ing.baker.il
 import com.ing.baker.types
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.akka.actor.serialization.protomappings._
-import com.ing.baker.runtime.scaladsl.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.{ProcessState, RuntimeEvent}
 import scalapb.GeneratedMessageCompanion
 
 import scala.util.{Success, Try}
@@ -64,6 +64,9 @@ object ProtoMap {
 
   implicit val runtimeEventMapping: ProtoMap[RuntimeEvent, protobuf.RuntimeEvent] =
     new RuntimeEventMapping
+
+  implicit val processStateMapping: ProtoMap[ProcessState, protobuf.ProcessState] =
+    new ProcessStateMapping
 
   def identityProtoMap[A <: scalapb.GeneratedMessage with scalapb.Message[A]](companion0: GeneratedMessageCompanion[A]): ProtoMap[A, A] =
     new ProtoMap[A, A] {
