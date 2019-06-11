@@ -191,7 +191,6 @@ trait Baker[F[_]] extends LanguageApi { self =>
     * @param processId The process identifier
     * @return The process state.
     */
-  @throws[NoSuchProcessException]("When no process exists for the given id")
   def getProcessState(processId: String): F[PState]
 
   /**
