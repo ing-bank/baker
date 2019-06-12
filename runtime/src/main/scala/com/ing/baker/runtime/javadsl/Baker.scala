@@ -6,7 +6,7 @@ import java.util.concurrent.CompletableFuture
 
 import com.ing.baker.runtime.akka.AkkaBaker
 import akka.actor.{ActorSystem, Address}
-import akka.stream.Materializer
+import akka.stream.{ActorMaterializer, Materializer}
 import cats.data.NonEmptyList
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.akka._
@@ -39,6 +39,9 @@ object Baker {
 
   def akka(config: Config, actorSystem: ActorSystem, materializer: Materializer): Baker =
     new Baker(scaladsl.Baker.akka(config, actorSystem, materializer))
+
+  def akka(config: Config, actorSystem: ActorSystem): Baker =
+    new Baker(scaladsl.Baker.akka(config, actorSystem, ActorMaterializer.create(actorSystem)))
 
   def other(baker: scaladsl.Baker) =
     new Baker(baker)
@@ -265,7 +268,16 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     * @param processId The process identifier
     * @return
     */
-  def getVisualState(@Nonnull processId: String, style: RecipeVisualStyle = RecipeVisualStyle.default): CompletableFuture[String] =
+  def getVisualState(@Nonnull processId: String): CompletableFuture[String] =
+    toCompletableFuture(baker.getVisualState(processId, RecipeVisualStyle.default))
+
+  /**
+    * Returns the visual state of the recipe in dot format with a default timeout of 20 seconds
+    *
+    * @param processId The process identifier
+    * @return
+    */
+  def getVisualState(@Nonnull processId: String, style: RecipeVisualStyle): CompletableFuture[String] =
     toCompletableFuture(baker.getVisualState(processId, style))
 
   /**
