@@ -76,7 +76,7 @@ object ProcessIndexProtocol {
     * @param timeout Waiting time for an instance to produce some response to this request
     * @param reaction Expected reaction from the ProcessEventSender actor, see SensoryEventReaction
     */
-  case class ProcessEvent(processId: String, event: RuntimeEvent, correlationId: Option[String], timeout: FiniteDuration, reaction: FireSensoryEventReaction) // extends ProcessIndexMessage TODO protobuf fix
+  case class ProcessEvent(processId: String, event: RuntimeEvent, correlationId: Option[String], timeout: FiniteDuration, reaction: FireSensoryEventReaction) extends ProcessIndexMessage
 
   /**
     * Expected reactions when firing a sensory event
