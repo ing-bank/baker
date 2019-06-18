@@ -21,8 +21,8 @@ import org.scalatest.prop.Checkers
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
 import com.ing.baker.runtime.akka.actor.serialization.Encryption.{AESEncryption, NoEncryption}
-import com.ing.baker.runtime.scaladsl.ProcessState
-import com.ing.baker.runtime.scaladsl.RuntimeEvent
+import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.scaladsl.{ProcessState, RuntimeEvent, SensoryEventResult}
 import com.ing.baker.types.Value
 import com.ing.baker.{AllTypeRecipe, types}
 
@@ -91,6 +91,8 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
   checkFor("core.RuntimeEvent", SerializationSpec.Runtime.runtimeEventGen)
 
   checkFor("core.ProcessState", SerializationSpec.Runtime.processStateGen)
+
+  checkFor("core.SensoryEventResult", SerializationSpec.Runtime.sensoryEventResultGen)
 
   checkFor("ProcessIndex.GetShardIndex", SerializationSpec.ProcessIndex.getShardIndexGen)
 
@@ -221,6 +223,18 @@ object SerializationSpec {
     } yield ProcessState(processId, ingredients, eventNames)
 
     val messagesGen: Gen[AnyRef] = Gen.oneOf(runtimeEventGen, processStateGen)
+
+    val sensoryEventResultGen: Gen[SensoryEventResult] = for {
+      status <- Gen.oneOf(
+        SensoryEventStatus.AlreadyReceived,
+        SensoryEventStatus.Completed,
+        SensoryEventStatus.FiringLimitMet,
+        SensoryEventStatus.ProcessDeleted,
+        SensoryEventStatus.Received,
+        SensoryEventStatus.ReceivePeriodExpired)
+      events <- Gen.listOf(eventNameGen)
+      ingredients <- Gen.listOf(ingredientsGen)
+    } yield SensoryEventResult(status, events, ingredients.toMap)
   }
 
   object RecipeManager {

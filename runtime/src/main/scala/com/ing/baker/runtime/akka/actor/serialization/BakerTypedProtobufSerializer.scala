@@ -40,6 +40,8 @@ object BakerTypedProtobufSerializer {
         .register("core.RuntimeEvent"),
       forType[runtime.scaladsl.ProcessState]
         .register("core.ProcessState"),
+      forType[runtime.scaladsl.SensoryEventResult]
+        .register("core.SensoryEventResult"),
       forType[il.CompiledRecipe]
         .register("il.CompiledRecipe")
     )
