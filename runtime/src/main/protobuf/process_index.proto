@@ -62,6 +62,14 @@ message ProcessEvent {
     optional FireSensoryEventReaction reaction = 7;
 }
 
+message ProcessEventReceivedResponse {
+    optional SensoryEventStatus status = 1;
+}
+
+message ProcessEventCompletedResponse {
+    optional SensoryEventResult result = 1;
+}
+
 message FireSensoryEventReaction {
     oneof sealed_value {
         NotifyWhenReceived received = 1;

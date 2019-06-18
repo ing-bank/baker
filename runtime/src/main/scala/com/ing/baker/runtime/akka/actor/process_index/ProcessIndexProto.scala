@@ -8,8 +8,9 @@ import cats.syntax.traverse._
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.{NotifyBoth, NotifyWhenCompleted, NotifyWhenReceived}
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{ProcessEventReceivedResponse, _}
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
+import com.ing.baker.runtime.akka.actor.serialization.protomappings.SensoryEventStatusMappingHelper
 import com.ing.baker.runtime.akka.actor.serialization.{ProtoMap, SerializersProvider}
 
 import scala.concurrent.duration.FiniteDuration
@@ -216,6 +217,39 @@ object ProcessIndexProto {
           time = FiniteDuration(timeout, TimeUnit.MILLISECONDS)
         } yield ProcessEvent(processId, event, message.correlationId, time, reaction)
     }
+
+  implicit def processEventReceivedResponse: ProtoMap[ProcessEventReceivedResponse, protobuf.ProcessEventReceivedResponse] =
+    new ProtoMap[ProcessEventReceivedResponse, protobuf.ProcessEventReceivedResponse] {
+
+      val companion = protobuf.ProcessEventReceivedResponse
+
+      def toProto(a: ProcessEventReceivedResponse): protobuf.ProcessEventReceivedResponse =
+        protobuf.ProcessEventReceivedResponse(
+          Some(SensoryEventStatusMappingHelper.toProto(a.status))
+        )
+
+      def fromProto(message: protobuf.ProcessEventReceivedResponse): Try[ProcessEventReceivedResponse] =
+        versioned(message.status, "status").flatMap(
+          SensoryEventStatusMappingHelper.fromProto
+        ).map(ProcessEventReceivedResponse)
+    }
+
+  implicit def processEventCompletedResponse: ProtoMap[ProcessEventCompletedResponse, protobuf.ProcessEventCompletedResponse] =
+    new ProtoMap[ProcessEventCompletedResponse, protobuf.ProcessEventCompletedResponse] {
+
+      val companion = protobuf.ProcessEventCompletedResponse
+
+      def toProto(a: ProcessEventCompletedResponse): protobuf.ProcessEventCompletedResponse =
+        protobuf.ProcessEventCompletedResponse(
+          Some(ctxToProto(a.result))
+        )
+
+      def fromProto(message: protobuf.ProcessEventCompletedResponse): Try[ProcessEventCompletedResponse] =
+        versioned(message.result, "result").flatMap(
+          ctxFromProto(_)
+        ).map(ProcessEventCompletedResponse)
+    }
+
 
   implicit def retryBlockedInteractionProto: ProtoMap[RetryBlockedInteraction, protobuf.RetryBlockedInteraction] =
     new ProtoMap[RetryBlockedInteraction, protobuf.RetryBlockedInteraction] {

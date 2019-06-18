@@ -3,8 +3,9 @@ package com.ing.baker.runtime.akka.actor.process_index
 import akka.actor.ActorRef
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
-import com.ing.baker.runtime.scaladsl.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.{RuntimeEvent, SensoryEventResult}
 import com.ing.baker.runtime.akka.events.RejectReason
+import com.ing.baker.runtime.common.SensoryEventStatus
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -107,6 +108,10 @@ object ProcessIndexProtocol {
       */
     case class NotifyBoth(waitForRetries: Boolean, completeReceiver: ActorRef) extends FireSensoryEventReaction
   }
+
+  case class ProcessEventReceivedResponse(status: SensoryEventStatus) extends BakerSerializable
+
+  case class ProcessEventCompletedResponse(result: SensoryEventResult) extends BakerSerializable
 
   /**
     * Possible failures when firing a sensory event

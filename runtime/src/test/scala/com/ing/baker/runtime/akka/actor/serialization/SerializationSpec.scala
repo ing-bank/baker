@@ -92,8 +92,6 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
 
   checkFor("core.ProcessState", SerializationSpec.Runtime.processStateGen)
 
-  checkFor("core.SensoryEventResult", SerializationSpec.Runtime.sensoryEventResultGen)
-
   checkFor("ProcessIndex.GetShardIndex", SerializationSpec.ProcessIndex.getShardIndexGen)
 
   checkFor("ProcessIndex.ActorCreated", SerializationSpec.ProcessIndex.actorCreatedGen)

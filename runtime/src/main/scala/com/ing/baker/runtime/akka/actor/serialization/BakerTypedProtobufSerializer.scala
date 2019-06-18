@@ -40,8 +40,6 @@ object BakerTypedProtobufSerializer {
         .register("core.RuntimeEvent"),
       forType[runtime.scaladsl.ProcessState]
         .register("core.ProcessState"),
-      forType[runtime.scaladsl.SensoryEventResult]
-        .register("core.SensoryEventResult"),
       forType[il.CompiledRecipe]
         .register("il.CompiledRecipe")
     )
@@ -84,6 +82,10 @@ object BakerTypedProtobufSerializer {
         .register("ProcessIndexProtocol.GetCompiledRecipe"),
       forType[ProcessIndexProtocol.ProcessEvent]
         .register("ProcessIndexProtocol.ProcessEvent"),
+      forType[ProcessIndexProtocol.ProcessEventReceivedResponse]
+        .register("ProcessIndexProtocol.ProcessEventReceivedResponse"),
+      forType[ProcessIndexProtocol.ProcessEventCompletedResponse]
+        .register("ProcessIndexProtocol.ProcessEventCompletedResponse"),
       forType[ProcessIndexProtocol.FireSensoryEventRejection.ReceivePeriodExpired]
         .register("ProcessIndexProtocol.FireSensoryEventRejection.ReceivePeriodExpired"),
       forType[ProcessIndexProtocol.FireSensoryEventRejection.InvalidEvent]
