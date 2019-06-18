@@ -6,7 +6,7 @@ import akka.testkit.{TestDuration, TestKit, TestProbe}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.runtime.scaladsl.RuntimeEvent
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.{NotifyBoth, NotifyWhenCompleted, NotifyWhenReceived}
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{FireSensoryEventRejection, ProcessEvent}
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{FireSensoryEventRejection, ProcessEvent, ProcessEventCompletedResponse, ProcessEventReceivedResponse}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.common.SensoryEventStatus
@@ -51,7 +51,7 @@ class SensoryEventResponseHandlerSpec extends TestKit(ActorSystem("SensoryEventR
       handler ! TransitionFired(2, 2, None, Map.empty, Map.empty, Set.empty, event2)
       client.expectNoMessage(100.millis)
       handler ! TransitionFired(3, 3, None, Map.empty, Map.empty, Set.empty, event3)
-      client.expectMsg(SensoryEventResult(SensoryEventStatus.Completed, expectedEventNames, expectedIngredients))
+      client.expectMsg(ProcessEventCompletedResponse(SensoryEventResult(SensoryEventStatus.Completed, expectedEventNames, expectedIngredients)))
     }
 
     "return a SensoryEventStatus when processing the outcome of a sensory event with NotifyWhenReceived reaction" in {
@@ -65,7 +65,7 @@ class SensoryEventResponseHandlerSpec extends TestKit(ActorSystem("SensoryEventR
       handler ! webShopRecipe
       client.expectNoMessage(100.millis)
       handler ! TransitionFired(1, 1, None, Map.empty, Map.empty, Set(2, 3), event1)
-      client.expectMsg(SensoryEventStatus.Received)
+      client.expectMsg(ProcessEventReceivedResponse(SensoryEventStatus.Received))
       handler ! TransitionFired(2, 2, None, Map.empty, Map.empty, Set.empty, event2)
       client.expectNoMessage(100.millis)
       handler ! TransitionFired(3, 3, None, Map.empty, Map.empty, Set.empty, event3)
@@ -88,14 +88,14 @@ class SensoryEventResponseHandlerSpec extends TestKit(ActorSystem("SensoryEventR
       clientReceived.expectNoMessage(100.millis)
       clientCompleted.expectNoMessage(100.millis)
       handler ! TransitionFired(1, 1, None, Map.empty, Map.empty, Set(2, 3), event1)
-      clientReceived.expectMsg(SensoryEventStatus.Received)
+      clientReceived.expectMsg(ProcessEventReceivedResponse(SensoryEventStatus.Received))
       clientCompleted.expectNoMessage(100.millis)
       handler ! TransitionFired(2, 2, None, Map.empty, Map.empty, Set.empty, event2)
       clientReceived.expectNoMessage(100.millis)
       clientCompleted.expectNoMessage(100.millis)
       handler ! TransitionFired(3, 3, None, Map.empty, Map.empty, Set.empty, event3)
       clientReceived.expectNoMessage(100.millis)
-      clientCompleted.expectMsg(SensoryEventResult(SensoryEventStatus.Completed, expectedEventNames, expectedIngredients))
+      clientCompleted.expectMsg(ProcessEventCompletedResponse(SensoryEventResult(SensoryEventStatus.Completed, expectedEventNames, expectedIngredients)))
     }
 
     "wait for the completion of all jobs even if one fails with TransitionFailed" in {
@@ -120,7 +120,7 @@ class SensoryEventResponseHandlerSpec extends TestKit(ActorSystem("SensoryEventR
       handler ! TransitionFailed(2, 2, None, Map.empty, null, "", ProcessInstanceProtocol.ExceptionStrategy.BlockTransition)
       client.expectNoMessage(100.millis)
       handler ! TransitionFired(3, 3, None, Map.empty, Map.empty, Set.empty, event3)
-      client.expectMsg(SensoryEventResult(SensoryEventStatus.Completed, expectedEventNames, expectedIngredients))
+      client.expectMsg(ProcessEventCompletedResponse(SensoryEventResult(SensoryEventStatus.Completed, expectedEventNames, expectedIngredients)))
     }
 
     "forward rejections" in {

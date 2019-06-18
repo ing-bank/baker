@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka.actor.process_index
 import akka.actor.{Actor, ActorRef, Props, ReceiveTimeout}
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.scaladsl.RuntimeEvent
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{FireSensoryEventReaction, FireSensoryEventRejection, ProcessEvent}
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{FireSensoryEventReaction, FireSensoryEventRejection, ProcessEvent, ProcessEventCompletedResponse, ProcessEventReceivedResponse}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.events.{EventReceived, EventRejected}
@@ -48,9 +48,9 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
       case FireSensoryEventReaction.NotifyWhenCompleted(_) =>
         ()
       case FireSensoryEventReaction.NotifyWhenReceived =>
-        receiver ! SensoryEventStatus.Received
+        receiver ! ProcessEventReceivedResponse(SensoryEventStatus.Received)
       case FireSensoryEventReaction.NotifyBoth(_, _) =>
-        receiver ! SensoryEventStatus.Received
+        receiver ! ProcessEventReceivedResponse(SensoryEventStatus.Received)
     }
   }
 
@@ -68,9 +68,9 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
       case FireSensoryEventReaction.NotifyWhenReceived =>
         ()
       case FireSensoryEventReaction.NotifyWhenCompleted(_) =>
-        receiver ! result
+        receiver ! ProcessEventCompletedResponse(result)
       case FireSensoryEventReaction.NotifyBoth(_, alternativeReceiver) =>
-        alternativeReceiver ! result
+        alternativeReceiver ! ProcessEventCompletedResponse(result)
     }
     stopActor()
   }

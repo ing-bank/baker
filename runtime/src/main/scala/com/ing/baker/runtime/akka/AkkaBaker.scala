@@ -135,7 +135,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
         Future.successful(SensoryEventStatus.ReceivePeriodExpired)
       case _: FireSensoryEventRejection.ProcessDeleted =>
         Future.successful(SensoryEventStatus.ProcessDeleted)
-      case status: SensoryEventStatus =>
+      case ProcessEventReceivedResponse(status) =>
         Future.successful(status)
     }
 
@@ -159,7 +159,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
         Future.successful(SensoryEventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
       case _: FireSensoryEventRejection.ProcessDeleted =>
         Future.successful(SensoryEventResult(SensoryEventStatus.ProcessDeleted, Seq.empty, Map.empty))
-      case result: SensoryEventResult =>
+      case ProcessEventCompletedResponse(result) =>
         Future.successful(result)
     }
 
@@ -187,7 +187,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
           Future.successful(SensoryEventStatus.ReceivePeriodExpired)
         case _: FireSensoryEventRejection.ProcessDeleted =>
           Future.successful(SensoryEventStatus.ProcessDeleted)
-        case status: SensoryEventStatus =>
+        case ProcessEventReceivedResponse(status) =>
           Future.successful(status)
       }
     val futureCompleted =
@@ -204,7 +204,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
           Future.successful(SensoryEventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
         case _: FireSensoryEventRejection.ProcessDeleted =>
           Future.successful(SensoryEventResult(SensoryEventStatus.ProcessDeleted, Seq.empty, Map.empty))
-        case result: SensoryEventResult =>
+        case ProcessEventCompletedResponse(result) =>
           Future.successful(result)
       }
     SensoryEventMoments(futureReceived, futureCompleted)
