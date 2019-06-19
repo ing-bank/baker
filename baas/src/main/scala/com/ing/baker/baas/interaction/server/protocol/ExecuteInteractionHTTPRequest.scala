@@ -14,7 +14,7 @@ import scalapb.GeneratedMessageCompanion
 
 import scala.util.Try
 
-case class ExecuteInteractionHTTPRequest(input: Seq[Value]) extends BaasRequest
+case class ExecuteInteractionHTTPRequest(input: Map[String, Value]) extends BaasRequest
 
 object ExecuteInteractionHTTPRequest {
 
@@ -25,11 +25,11 @@ object ExecuteInteractionHTTPRequest {
         protobuf.ExecuteInteractionHTTPRequest
 
       override def toProto(a: ExecuteInteractionHTTPRequest): protobuf.ExecuteInteractionHTTPRequest =
-        protobuf.ExecuteInteractionHTTPRequest(a.input.map(ctxToProto(_)))
+        protobuf.ExecuteInteractionHTTPRequest(a.input.mapValues(ctxToProto(_)))
 
       override def fromProto(message: protobuf.ExecuteInteractionHTTPRequest): Try[ExecuteInteractionHTTPRequest] =
         for {
-          input <- message.values.toList.traverse(ctxFromProto(_))
-        } yield ExecuteInteractionHTTPRequest(input)
+          input <- message.values.toList.traverse { case (name, value) => ctxFromProto(value).map(name -> _) }
+        } yield ExecuteInteractionHTTPRequest(input.toMap)
     }
 }

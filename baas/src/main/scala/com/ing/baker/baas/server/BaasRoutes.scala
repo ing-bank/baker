@@ -16,6 +16,7 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
 
   implicit val timeout: FiniteDuration = 30 seconds
   implicit val ec: ExecutionContext = actorSystem.dispatcher
+  implicit val as: ActorSystem = actorSystem
 
   val defaultEventConfirm = "receive"
 
@@ -105,7 +106,7 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
             entity(as[AddInteractionHTTPRequest]) { request =>
 
               //Create a RemoteInteractionImplementation
-              val interactionImplementation = RemoteInteractionClient(request.name, request.uri, request.inputTypes)(actorSystem)
+              val interactionImplementation = RemoteInteractionClient(request.name, request.uri, request.inputTypes)
               println(s"Adding interaction called: ${request.name}")
 
               //Register it to BAAS

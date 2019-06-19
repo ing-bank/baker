@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka.internal
 import java.util.concurrent.ConcurrentHashMap
 
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.common.InteractionImplementation
+import com.ing.baker.runtime.scaladsl.InteractionImplementation
 
 import scala.compat.java8.FunctionConverters._
 
@@ -19,11 +19,24 @@ class InteractionManager(private var interactionImplementations: Seq[Interaction
     new ConcurrentHashMap[InteractionTransition, InteractionImplementation]
 
   private def isCompatibleImplementation(interaction: InteractionTransition, implementation: InteractionImplementation): Boolean = {
-    interaction.originalInteractionName == implementation.name &&
-      implementation.inputTypes.size == interaction.requiredIngredients.size &&
-      implementation.inputTypes.zip(interaction.requiredIngredients.map(_.`type`)).forall {
-        case (typeA, typeB) => typeA.isAssignableFrom(typeB)
-      }
+    val interactionNameMatches =
+      interaction.originalInteractionName == implementation.name
+    val inputSizeMatches =
+      implementation.input.size == interaction.requiredIngredients.size
+    val inputNamesAndTypesMatches =
+      interaction
+        .requiredIngredients
+        .forall { descriptor =>
+          implementation.input.exists(_._2.isAssignableFrom(descriptor.`type`))
+        }
+    /* TODO we could do something like this, where we also validate ingredientNames, except the implementations contain original names and the interaction descriptors contain any ingredient rename
+    .map(x => implementation.inputIngredients.get(x.name).map(_ -> x.`type`))
+    .forall {
+      case None => false
+      case Some((typeA, typeB)) => typeA.isAssignableFrom(typeB)
+    }
+    */
+    interactionNameMatches && inputSizeMatches && inputNamesAndTypesMatches
   }
 
   private def findInteractionImplementation(interaction: InteractionTransition): InteractionImplementation =
@@ -34,7 +47,7 @@ class InteractionManager(private var interactionImplementations: Seq[Interaction
     *
     * @param implementation
     */
-  def addImplementation(implementation: InteractionImplementation) =
+  def addImplementation(implementation: InteractionImplementation): Unit =
     interactionImplementations :+= implementation
 
   /**

@@ -90,7 +90,7 @@ object RecipeRuntime {
   /**
     * Creates the input parameters for an interaction implementation
     */
-  def createInteractionInput(interaction: InteractionTransition, state: ProcessState): Seq[Value] = {
+  def createInteractionInput(interaction: InteractionTransition, state: ProcessState): Map[String, Value] = {
 
     // the process id is a special ingredient that is always available
     val processId: (String, Value) = processIdName -> PrimitiveValue(state.processId.toString)
@@ -101,8 +101,8 @@ object RecipeRuntime {
     // arranges the ingredients in the expected order
     interaction.requiredIngredients.map {
       case IngredientDescriptor(name, _) =>
-        allIngredients.getOrElse(name, throw new FatalInteractionException(s"Missing parameter '$name'"))
-    }
+        name -> allIngredients.getOrElse(name, throw new FatalInteractionException(s"Missing parameter '$name'"))
+    }.toMap
   }
 
   // function that (optionally) transforms the output event using the event output transformers

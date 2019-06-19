@@ -6,7 +6,7 @@ object JavadslTestHelper {
 
   //Ingredients
   val initialIngredientCheck: common.Ingredient = scaladsl.Ingredient[String]("initialIngredient")
-  val ProcessIdStringCheck: common.Ingredient = scaladsl.Ingredient[String]("$ProcessId$")
+  val ProcessIdStringCheck: common.Ingredient = scaladsl.Ingredient[String]("processId")
   //Events
   val interactionProvidedEventCheck: common.Event = new scaladsl.Event("InteractionProvidedEvent", Seq.empty, None)
   val interactionProvidedEvent2Check: common.Event = new scaladsl.Event("InteractionProvidedEvent2", Seq.empty, None)

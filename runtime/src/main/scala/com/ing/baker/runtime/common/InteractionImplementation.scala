@@ -1,15 +1,14 @@
 package com.ing.baker.runtime.common
 
-import com.ing.baker.il.EventDescriptor
-import com.ing.baker.runtime.scaladsl
+import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
 import com.ing.baker.types.{Type, Value}
-
-import scala.concurrent.Future
 
 /**
   * Provides an implementation for an interaction.
   */
-trait InteractionImplementation {
+trait InteractionImplementation[F[_]] extends LanguageApi { self =>
+
+  type Event <: RuntimeEvent { type Language = self.Language }
 
   /**
     * The name of the interaction
@@ -19,18 +18,15 @@ trait InteractionImplementation {
   /**
     * The required input.
     */
-  val inputTypes: Seq[Type]
+  val input: language.Map[String, Type]
 
-  val optionalOutputEvents: Option[Set[EventDescriptor]] = None
+  /**
+   * The required output.
+   */
+  val output: language.Option[language.Map[String, language.Map[String, Type]]]
 
   /**
     * Executes the interaction.
-    *
-    * TODO input could be map instead of sequence??
-    *
-    * @param input
-    * @return
     */
-  // scaladsl.RuntimeEvent is temporary, refactoring of this class is on another PR
-  def execute(input: Seq[Value]): Future[Option[scaladsl.RuntimeEvent]]
+  def execute(input: language.Map[String, Value]): F[language.Option[Event]]
 }

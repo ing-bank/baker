@@ -7,13 +7,10 @@ import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.JavaCompiledRecipeTest;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.javadsl.ProcessState;
+import com.ing.baker.runtime.javadsl.*;
 import com.ing.baker.runtime.akka.events.ProcessCreated;
 import com.ing.baker.runtime.akka.events.Subscribe;
 import com.ing.baker.runtime.common.BakerException;
-import com.ing.baker.runtime.javadsl.Baker;
-import com.ing.baker.runtime.javadsl.SensoryEventResult;
-import com.ing.baker.runtime.javadsl.RuntimeEvent;
 import com.ing.baker.types.Converters;
 import com.ing.baker.types.Value;
 import com.typesafe.config.Config;
@@ -31,11 +28,11 @@ import static org.junit.Assert.assertEquals;
 
 public class BakerTest {
 
-    private java.util.List<Object> implementationsList = ImmutableList.of(
-            new JavaCompiledRecipeTest.InteractionOneImpl(),
-            new JavaCompiledRecipeTest.InteractionTwo(),
-            new JavaCompiledRecipeTest.InteractionThreeImpl(),
-            new JavaCompiledRecipeTest.SieveImpl());
+    private java.util.List<InteractionImplementation> implementationsList = ImmutableList.of(
+            InteractionImplementation.from(new JavaCompiledRecipeTest.InteractionOneImpl()),
+            InteractionImplementation.from(new JavaCompiledRecipeTest.InteractionTwo()),
+            InteractionImplementation.from(new JavaCompiledRecipeTest.InteractionThreeImpl()),
+            InteractionImplementation.from(new JavaCompiledRecipeTest.SieveImpl()));
 
     private static ActorSystem actorSystem = null;
     private static Materializer materializer = null;

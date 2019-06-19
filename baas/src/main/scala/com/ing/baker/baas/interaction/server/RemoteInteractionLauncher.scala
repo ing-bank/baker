@@ -11,8 +11,7 @@ import akka.http.scaladsl.model.{HttpRequest, RequestEntity}
 import akka.http.scaladsl.server.RouteResult
 import com.ing.baker.baas.server.protocol.{AddInteractionHTTPRequest, AddInteractionHTTPResponse}
 import com.ing.baker.baas.util.ClientUtils
-import com.ing.baker.runtime.common.InteractionImplementation
-import com.ing.baker.runtime.akka.internal.MethodInteractionImplementation
+import com.ing.baker.runtime.scaladsl.InteractionImplementation
 import com.ing.baker.types.Type
 import org.slf4j.LoggerFactory
 
@@ -51,14 +50,14 @@ case class RemoteInteractionLauncher(ownHost: String,
   }
 
   def addImplementation(any: AnyRef): Unit = {
-    val methodImplementation: MethodInteractionImplementation = MethodInteractionImplementation(any)
+    val methodImplementation: InteractionImplementation = InteractionImplementation.unsafeFrom(any)
     interactionImplementations = interactionImplementations.+((methodImplementation.name, methodImplementation))
-    registerRemoteImplementation(methodImplementation.name, methodImplementation.inputTypes)
+    registerRemoteImplementation(methodImplementation.name, methodImplementation.input)
   }
 
   def addImplementation(interactionImplementation: InteractionImplementation): Unit = {
     interactionImplementations = interactionImplementations.+((interactionImplementation.name, interactionImplementation))
-    registerRemoteImplementation(interactionImplementation.name, interactionImplementation.inputTypes)
+    registerRemoteImplementation(interactionImplementation.name, interactionImplementation.input)
   }
 
   //TODO change so that it not finds on name but on complete Interaction
@@ -66,8 +65,7 @@ case class RemoteInteractionLauncher(ownHost: String,
     interactionImplementations.get(name)
   }
 
-
-  private def registerRemoteImplementation(interactionName: String, inputTypes: Seq[Type]): Unit = {
+  private def registerRemoteImplementation(interactionName: String, inputTypes: Map[String, Type]): Unit = {
     //Create the request to Add the interaction implementation to Baas
     log.info("Registering remote implementation client")
     val addInteractionHTTPRequest = AddInteractionHTTPRequest(interactionName, s"http://$ownHost:$ownPort/$interactionName", inputTypes)

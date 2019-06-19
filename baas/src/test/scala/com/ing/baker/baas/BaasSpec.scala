@@ -14,7 +14,7 @@ import com.ing.baker.recipe.javadsl.InteractionFailureStrategy.RetryWithIncremen
 import com.ing.baker.recipe.scaladsl
 import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.{Baker, RuntimeEvent}
+import com.ing.baker.runtime.scaladsl.{Baker, InteractionImplementation, RuntimeEvent}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.anyString
 import org.mockito.Mockito.{mock, reset, when}
@@ -52,7 +52,7 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
   "Happy flow simple recipe BAAS" in {
     val mockOne = mock(classOf[InteractionOne])
     val mockTwo = mock(classOf[InteractionTwo])
-    val localImplementations: Seq[AnyRef] = Seq(mockOne, mockTwo)
+    val localImplementations: Seq[InteractionImplementation] = Seq(InteractionImplementation.unsafeFrom(mockOne), InteractionImplementation.unsafeFrom(mockTwo))
     Await.result(baasAPI.start(), 10 seconds)
     baasBaker.addImplementations(localImplementations)
 
@@ -87,7 +87,7 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
   "Process Event Async with http streaming" in {
     val mockOne = mock(classOf[InteractionOne])
     val mockTwo = mock(classOf[InteractionTwo])
-    val localImplementations: Seq[AnyRef] = Seq(mockOne, mockTwo)
+    val localImplementations: Seq[InteractionImplementation] = Seq(InteractionImplementation.unsafeFrom(mockOne), InteractionImplementation.unsafeFrom(mockTwo))
     Await.result(baasAPI.start(), 10 seconds)
     baasBaker.addImplementations(localImplementations)
 
