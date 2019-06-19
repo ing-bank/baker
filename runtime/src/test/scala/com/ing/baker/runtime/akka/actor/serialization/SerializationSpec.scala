@@ -212,13 +212,14 @@ object SerializationSpec {
     val runtimeEventGen: Gen[RuntimeEvent] = for {
       eventName <- eventNameGen
       ingredients <- Gen.listOf(ingredientsGen)
-    } yield RuntimeEvent(eventName, ingredients.toMap)
+      occurredOn <- Gen.posNum[Long]
+    } yield RuntimeEvent(eventName, ingredients.toMap, occurredOn)
 
     val processStateGen: Gen[ProcessState] = for {
       processId <- processIdGen
       ingredients <- Gen.mapOf(ingredientsGen)
-      eventNames <- Gen.listOf(eventNameGen)
-    } yield ProcessState(processId, ingredients, eventNames)
+      events <- Gen.listOf(runtimeEventGen)
+    } yield ProcessState(processId, ingredients, events)
 
     val messagesGen: Gen[AnyRef] = Gen.oneOf(runtimeEventGen, processStateGen)
 

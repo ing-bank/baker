@@ -49,7 +49,7 @@ object ScalaDSLRuntime {
       val providedIngredients: Map[String, Value] =
         e.providedIngredients.map(_.name).zip(values.toSeq.map(Converters.toValue)).toMap
 
-      RuntimeEvent(e.name, providedIngredients)
+      RuntimeEvent(e.name, providedIngredients, System.currentTimeMillis())
     }
   }
 

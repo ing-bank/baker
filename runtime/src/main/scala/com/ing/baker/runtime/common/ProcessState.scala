@@ -6,11 +6,13 @@ import com.ing.baker.types.Value
 /**
   * Holds the 'state' of a process instance.
   */
-trait ProcessState extends LanguageApi {
+trait ProcessState extends LanguageApi { self =>
+
+  type EventType <: RuntimeEvent { type Language <: self.Language}
 
   def processId: String
 
   def ingredients: language.Map[String, Value]
 
-  def eventNames: language.Seq[String]
+  def events: language.Seq[EventType]
 }

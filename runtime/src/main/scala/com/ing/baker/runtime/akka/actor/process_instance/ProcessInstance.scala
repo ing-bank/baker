@@ -14,9 +14,9 @@ import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrat
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.akka.actor.serialization.Encryption
-import com.ing.baker.runtime.scaladsl.ProcessState
+import com.ing.baker.runtime.scaladsl.{ProcessState, RuntimeEvent}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
-import com.ing.baker.types.PrimitiveValue
+import com.ing.baker.types.{PrimitiveValue, Value}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -82,7 +82,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
       instance.marking.marshall,
       instance.state match {
         case state: ProcessState =>
-          filterIngredients(state, settings.ingredientsFilter)
+          filterIngredientValues(state, settings.ingredientsFilter)
         case _ => instance.state
       },
       instance.jobs.mapValues(mapJobsToProtocol).map(identity))
@@ -141,14 +141,23 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
       context become running(instance, Map.empty)
   }
 
-  def filterIngredients(state: ProcessState, ingredientFilter: Seq[String]): ProcessState =
+
+  //TODO this is not optimized at all.
+  //This loops over all events and then over all ingredients they provide.
+  //This can be done much smarter
+  def filterIngredientValues(state: ProcessState, ingredientFilter: Seq[String]): ProcessState =
       state.copy(state.processId,
-        state.ingredients.map(ingredient =>
-          if (ingredientFilter.contains(ingredient._1))
-            ingredient._1 -> PrimitiveValue("")
-          else
-            ingredient
-        ), state.eventNames)
+        filterIngredientValuesFromMap(state.ingredients, ingredientFilter),
+        state.events.map(event =>
+          event.copy(providedIngredients = filterIngredientValuesFromMap(event.providedIngredients, ingredientFilter))))
+
+  def filterIngredientValuesFromMap(ingredients: Map[String, Value], ingredientFilter: Seq[String]): Map[String, Value] =
+    ingredients.map(ingredient =>
+      if (ingredientFilter.contains(ingredient._1))
+        ingredient._1 -> PrimitiveValue("")
+      else
+        ingredient)
+
 
   def running(instance: Instance[P, T, S],
               scheduledRetries: Map[Long, Cancellable]): Receive = {
@@ -170,7 +179,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
       val instanceState: InstanceState = mapStateToProtocol(instance)
       instanceState.state match {
         case state: ProcessState =>
-          sender() ! instanceState.copy(state = filterIngredients(state, settings.ingredientsFilter))
+          sender() ! instanceState.copy(state = filterIngredientValues(state, settings.ingredientsFilter))
         case _ =>
           sender() ! instanceState
       }

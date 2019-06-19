@@ -9,30 +9,38 @@ import com.ing.baker.types.Value
 
 import scala.collection.JavaConverters._
 
-case class RuntimeEvent(name: String, providedIngredients: util.Map[String, Value])
+case class RuntimeEvent(name: String,
+                        providedIngredients: util.Map[String, Value],
+                        occurredOn: Long)
   extends common.RuntimeEvent with JavaApi {
 
   def getProvidedIngredients = providedIngredients
 
   def getName = name
 
+  def getOccurredOn: Long = occurredOn
+
   def this(name0: String) =
-    this(name0, java.util.Collections.emptyMap[String, Value])
+    this(name0, java.util.Collections.emptyMap[String, Value], System.currentTimeMillis())
 
   def validate(descriptor: EventDescriptor): util.List[String] =
     asScala.validate(descriptor).asJava
 
   def asScala: scaladsl.RuntimeEvent =
-    scaladsl.RuntimeEvent(name, providedIngredients.asScala.toMap)
+    scaladsl.RuntimeEvent(name, providedIngredients.asScala.toMap, occurredOn)
 }
 
 object RuntimeEvent {
+
+  def apply(name: String,
+            providedIngredients: util.Map[String, Value]): RuntimeEvent =
+    new RuntimeEvent(name, providedIngredients, System.currentTimeMillis())
 
   def from(event: Any): RuntimeEvent =
     event match {
       case runtimeEvent: RuntimeEvent => runtimeEvent
       case obj =>
         val scalaEvent = scaladsl.RuntimeEvent.unsafeFrom(event)
-        new RuntimeEvent(scalaEvent.name, scalaEvent.providedIngredients.asJava)
+        new RuntimeEvent(scalaEvent.name, scalaEvent.providedIngredients.asJava, System.currentTimeMillis())
     }
 }

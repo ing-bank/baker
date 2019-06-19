@@ -24,10 +24,10 @@ object RecipeRuntime {
   def recipeEventSourceFn: Transition => (ProcessState => RuntimeEvent => ProcessState) =
     _ => state => {
       case null => state
-      case RuntimeEvent(name, providedIngredients) =>
+      case event: RuntimeEvent =>
         state.copy(
-          ingredients = state.ingredients ++ providedIngredients,
-          eventNames = state.eventNames :+ name)
+          ingredients = state.ingredients ++ event.providedIngredients,
+          events = state.events :+ event)
     }
 
   /**
@@ -112,7 +112,8 @@ object RecipeRuntime {
       case Some((_, eventOutputTransformer)) =>
         RuntimeEvent(
           eventOutputTransformer.newEventName,
-          runtimeEvent.providedIngredients.map { case (name, value) => eventOutputTransformer.ingredientRenames.getOrElse(name, name) -> value })
+          runtimeEvent.providedIngredients.map { case (name, value) => eventOutputTransformer.ingredientRenames.getOrElse(name, name) -> value },
+          runtimeEvent.occurredOn)
       case None => runtimeEvent
     }
   }
@@ -165,7 +166,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
             case ExceptionStrategyOutcome.BlockTransition => BlockTransition
             case ExceptionStrategyOutcome.RetryWithDelay(delay) => RetryWithDelay(delay)
             case ExceptionStrategyOutcome.Continue(eventName) => {
-              val runtimeEvent = RuntimeEvent(eventName, Map.empty)
+              val runtimeEvent = RuntimeEvent(eventName, Map.empty, System.currentTimeMillis())
               Continue(createProducedMarking(outMarking, Some(runtimeEvent)), runtimeEvent)
             }
           }

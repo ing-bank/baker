@@ -8,7 +8,9 @@ import com.ing.baker.types.{Converters, NullValue, RecordValue, Value}
 
 import scala.collection.JavaConverters._
 
-case class RuntimeEvent(name: String, providedIngredients: Map[String, Value])
+case class RuntimeEvent(name: String,
+                        providedIngredients: Map[String, Value],
+                        occurredOn: Long)
   extends common.RuntimeEvent with ScalaApi {
 
   def validate(descriptor: EventDescriptor): Seq[String] =
@@ -31,20 +33,27 @@ case class RuntimeEvent(name: String, providedIngredients: Map[String, Value])
       }
 
   def asJava: javadsl.RuntimeEvent =
-    new javadsl.RuntimeEvent(name, providedIngredients.asJava)
+    new javadsl.RuntimeEvent(name, providedIngredients.asJava, occurredOn)
 }
 
 object RuntimeEvent {
+  def apply(name: String,
+            providedIngredients: Map[String, Value]): RuntimeEvent =
+    new RuntimeEvent(name, providedIngredients, System.currentTimeMillis())
+
+  def unsafeFrom(event: Any): RuntimeEvent = {
+    unsafeFrom(event, System.currentTimeMillis())
+  }
 
   /**
     * Transforms an object into a RuntimeEvent if possible.
     */
-  def unsafeFrom(event: Any): RuntimeEvent = {
+  def unsafeFrom(event: Any, occurredOn: Long): RuntimeEvent = {
     event match {
       case runtimeEvent: RuntimeEvent => runtimeEvent
       case obj =>
         Converters.toValue(obj) match {
-          case RecordValue(entries) => new RuntimeEvent(obj.getClass.getSimpleName, entries)
+          case RecordValue(entries) => new RuntimeEvent(obj.getClass.getSimpleName, entries, occurredOn)
           case other => throw new IllegalArgumentException(s"Unexpected value: $other")
         }
     }

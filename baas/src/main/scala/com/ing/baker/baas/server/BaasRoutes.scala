@@ -45,7 +45,7 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
         path("events") {
           get {
             val processState = baker.getProcessState(requestId)
-            complete(processState.map(x => EventsResponse(x.eventNames.map(name => RuntimeEvent(name, Map.empty)))))
+            complete(processState.map(x => EventsResponse(x.eventNames.map(name => RuntimeEvent(name, Map.empty, System.currentTimeMillis())))))
           }
         } ~
         path("state") {

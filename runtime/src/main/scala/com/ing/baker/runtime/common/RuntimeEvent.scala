@@ -10,5 +10,7 @@ trait RuntimeEvent extends LanguageApi {
 
   def providedIngredients: language.Map[String, Value]
 
+  def occurredOn: Long
+
   def validate(descriptor: EventDescriptor): language.Seq[String]
 }
