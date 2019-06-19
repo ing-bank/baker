@@ -1,6 +1,8 @@
 package com.ing.baker;
 
 import akka.actor.ActorSystem;
+import akka.stream.ActorMaterializer;
+import akka.stream.Materializer;
 import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
@@ -10,14 +12,13 @@ import com.ing.baker.recipe.annotations.RequiresIngredient;
 import com.ing.baker.recipe.javadsl.Interaction;
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy;
 import com.ing.baker.recipe.javadsl.Recipe;
-import com.ing.baker.runtime.java_api.JBaker;
+import com.ing.baker.runtime.javadsl.ProcessState;
+import com.ing.baker.runtime.javadsl.Baker;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.junit.Test;
 
 import java.time.Duration;
-import java.util.UUID;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.ExecutionException;
 
 import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
 import static org.mockito.Matchers.any;
@@ -40,6 +41,7 @@ public class Webshop {
 
     public static class OrderPlaced {
         public final String order;
+
         public OrderPlaced(String order) {
             this.order = order;
         }
@@ -55,11 +57,14 @@ public class Webshop {
 
     public interface ValidateOrder extends Interaction {
 
-        interface Outcome { }
+        interface Outcome {
+        }
 
-        class Failed implements Outcome { }
+        class Failed implements Outcome {
+        }
 
-        class Valid implements Outcome { }
+        class Valid implements Outcome {
+        }
 
         @FiresEvent(oneOf = {Failed.class, Valid.class})
         Outcome apply(@ProcessId String processId, @RequiresIngredient("order") String key);
@@ -68,20 +73,22 @@ public class Webshop {
     public interface ManufactureGoods extends Interaction {
         class GoodsManufactured {
             public final String goods;
+
             public GoodsManufactured(String goods) {
                 this.goods = goods;
             }
         }
 
-        @FiresEvent(oneOf = { GoodsManufactured.class })
+        @FiresEvent(oneOf = {GoodsManufactured.class})
         GoodsManufactured apply(@RequiresIngredient("order") String order);
     }
 
     public interface SendInvoice extends Interaction {
 
-        class InvoiceWasSent { }
+        class InvoiceWasSent {
+        }
 
-        @FiresEvent(oneOf = { InvoiceWasSent.class})
+        @FiresEvent(oneOf = {InvoiceWasSent.class})
         InvoiceWasSent apply(@RequiresIngredient("customerInfo") CustomerInfo customerInfo);
     }
 
@@ -95,11 +102,12 @@ public class Webshop {
             }
         }
 
-        @FiresEvent(oneOf = { GoodsShipped.class })
+        @FiresEvent(oneOf = {GoodsShipped.class})
         GoodsShipped apply(@RequiresIngredient("goods") String goods, @RequiresIngredient("customerInfo") CustomerInfo customerInfo);
     }
 
-    public static class PaymentMade { }
+    public static class PaymentMade {
+    }
 
     public final static Recipe webshopRecipe = new Recipe("webshop")
             .withSensoryEvents(
@@ -126,8 +134,8 @@ public class Webshop {
     ValidateOrder validateOrderMock = mock(ValidateOrder.class);
 
 
-//    @Test
-    public void testWebshop() throws TimeoutException {
+    //    @Test
+    public void testWebshop() throws ExecutionException, InterruptedException {
 
         Config config = ConfigFactory.load("cassandra.conf");
 
@@ -145,11 +153,14 @@ public class Webshop {
         when(manufactureGoodsMock.apply(any())).thenReturn(new ManufactureGoods.GoodsManufactured("goods"));
         when(validateOrderMock.apply(any(), any())).thenReturn(new ValidateOrder.Valid());
 
-        JBaker baker = new JBaker(ActorSystem.apply("webshop", config));
+//        JBaker baker = new JBaker(ActorSystem.apply("webshop", config));
+        ActorSystem system = ActorSystem.create("webshop");
+        Materializer materializer = ActorMaterializer.create(system);
+        Baker baker = Baker.akka(config, system, materializer);
 
         baker.addImplementations(ImmutableList.of(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock));
 
-        String recipeId = baker.addRecipe(recipe);
+        String recipeId = baker.addRecipe(recipe).get();
 
         String processId = "56a70f82-a24d-497f-b3ac-57366adbb39c"; //UUID.randomUUID().toString();
 
@@ -164,6 +175,6 @@ public class Webshop {
 //        baker.processEvent(processId, new PaymentMade());
 
         System.out.println("ingredients: " + baker.getIngredients(processId).toString());
-        System.out.println("events: " + baker.getEvents(processId).toString());
+        System.out.println("events: " + baker.getProcessState(processId).thenApply(ProcessState::eventNames).get().toString());
     }
 }

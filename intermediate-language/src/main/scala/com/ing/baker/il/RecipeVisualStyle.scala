@@ -3,117 +3,184 @@ package com.ing.baker.il
 import com.ing.baker.il.RecipeVisualizer.log
 import com.typesafe.config.Config
 import scalax.collection.io.dot.{DotAttr, DotAttrStmt, Elem}
+
 import scala.collection.JavaConverters._
 import scalax.collection.io.dot.implicits._
 
-class RecipeVisualStyle(config: Config) {
+object RecipeVisualStyle {
 
-  val visualizationConfig = config.getConfig("baker.visualization")
-  val configuredStyle = visualizationConfig.getString("style")
+  def default: RecipeVisualStyle = RecipeVisualStyle()
 
-  val pickedStyle = if (!visualizationConfig.hasPath(s"styles.$configuredStyle")) {
-    log.warn(s"no configuration for recipe style '$configuredStyle' found, falling back to 'default' style")
-    "default"
-  } else
-    configuredStyle
+  def from(config: Config): RecipeVisualStyle = {
 
-  val styleConfig = visualizationConfig.getConfig(s"styles.$pickedStyle")
+    val visualizationConfig = config.getConfig("baker.visualization")
+    val configuredStyle = visualizationConfig.getString("style")
+    val pickedStyle = if (!visualizationConfig.hasPath(s"styles.$configuredStyle")) {
+      log.warn(s"no configuration for recipe style '$configuredStyle' found, falling back to 'default' style")
+      "default"
+    } else
+      configuredStyle
+    val styleConfig = visualizationConfig.getConfig(s"styles.$pickedStyle")
 
-  def readAttributes(keys: String*): List[DotAttr] = {
-    val values = keys.foldLeft[Map[String, AnyRef]](Map.empty) {
-      case (acc, key) =>
-        val map = styleConfig.getConfig(key)
-          .entrySet().asScala
-          .map(e => e.getKey -> e.getValue.unwrapped())
-        acc ++ map
+    def readAttributes(keys: String*): List[DotAttr] = {
+      val values = keys.foldLeft[Map[String, AnyRef]](Map.empty) {
+        case (acc, key) =>
+          val map = styleConfig.getConfig(key)
+            .entrySet().asScala
+            .map(e => e.getKey -> e.getValue.unwrapped())
+          acc ++ map
+      }
+      values
+        .-("shape") // shape is not allowed to be overriden
+        .map {
+        case (key, s: String) => Some(DotAttr(key, s))
+        case (key, n: java.lang.Integer) => Some(DotAttr(key, n.intValue()))
+        case (key, n: java.lang.Long) => Some(DotAttr(key, n.longValue()))
+        case (key, n: java.lang.Float) => Some(DotAttr(key, n.floatValue()))
+        case (key, n: java.lang.Double) => Some(DotAttr(key, n.doubleValue()))
+        case (key, other) =>
+          RecipeVisualizer.log.warn(s"unusable configuration: $key = $other");
+          None
+      }.toList.flatten
     }
 
-    values
-      .-("shape") // shape is not allowed to be overriden
-      .map {
-      case (key, s: String) => Some(DotAttr(key, s))
-      case (key, n: java.lang.Integer) => Some(DotAttr(key, n.intValue()))
-      case (key, n: java.lang.Long) => Some(DotAttr(key, n.longValue()))
-      case (key, n: java.lang.Float) => Some(DotAttr(key, n.floatValue()))
-      case (key, n: java.lang.Double) => Some(DotAttr(key, n.doubleValue()))
-      case (key, other) =>
-        RecipeVisualizer.log.warn(s"unusable configuration: $key = $other");
-        None
-    }.toList.flatten
+    RecipeVisualStyle(
+      rootAttributes = readAttributes("root"),
+      commonNodeAttributes = List(
+        DotAttrStmt(
+          Elem.node,
+          readAttributes("common")
+        )),
+      ingredientAttributes =
+        DotAttr("shape", "circle") +: readAttributes("ingredient"),
+      providedIngredientAttributes =
+        DotAttr("shape", "circle") +: readAttributes("ingredient", "fired"),
+      eventAttributes =
+        DotAttr("shape", "diamond") +: readAttributes("event"),
+      sensoryEventAttributes =
+        DotAttr("shape", "diamond") +: readAttributes("sensory-event"),
+      interactionAttributes =
+        DotAttr("shape", "rect") +: readAttributes("interaction"),
+      eventFiredAttributes =
+        DotAttr("shape", "diamond") +: readAttributes("event", "fired"),
+      firedInteractionAttributes =
+        DotAttr("shape", "rect") +: readAttributes("interaction", "fired")
+    )
   }
+}
 
-  val rootAttributes = readAttributes("root")
+case class RecipeVisualStyle(
 
-  val commonNodeAttributes = List(
+  rootAttributes: List[DotAttr] = List(
+    DotAttr("pad", 0.2)
+  ),
+
+  commonNodeAttributes: List[DotAttrStmt] = List(
     DotAttrStmt(
       Elem.node,
-      readAttributes("common")
-    ))
+      List(
+        DotAttr("fontname", "ING Me"),
+        DotAttr("fontsize", 22),
+        DotAttr("fontcolor", "white")
+      )
+    )
+  ),
 
-  val ingredientAttributes: List[DotAttr] =
-    DotAttr("shape", "circle") +: readAttributes("ingredient")
+  ingredientAttributes: List[DotAttr] = List(
+    DotAttr("shape", "circle"),
+    DotAttr("style", "filled"),
+    DotAttr("color", "\"#FF6200\"")
+  ),
 
-  val providedIngredientAttributes: List[DotAttr] =
-    DotAttr("shape", "circle") +: readAttributes("ingredient", "fired")
+  providedIngredientAttributes: List[DotAttr] = List(
+    DotAttr("shape", "circle"),
+    DotAttr("style", "filled"),
+    DotAttr("color", "\"#3b823a\"")
+  ),
 
-  val missingIngredientAttributes: List[DotAttr] = List(
+  missingIngredientAttributes: List[DotAttr] = List(
     DotAttr("shape", "circle"),
     DotAttr("style", "filled"),
     DotAttr("color", "\"#EE0000\""),
     DotAttr("penwidth", "5.0")
-  )
+  ),
 
-  val eventAttributes: List[DotAttr] =
-    DotAttr("shape", "diamond") +: readAttributes("event")
+  eventAttributes: List[DotAttr] = List(
+    DotAttr("shape", "diamond"),
+    DotAttr("style", "rounded, filled"),
+    DotAttr("color", "\"#767676\""),
+    DotAttr("margin", 0.3D)
+  ),
 
-  val sensoryEventAttributes: List[DotAttr] =
-    DotAttr("shape", "diamond") +: readAttributes("sensory-event")
+  sensoryEventAttributes: List[DotAttr] = List(
+    DotAttr("shape", "diamond"),
+    DotAttr("style", "rounded, filled"),
+    DotAttr("color", "\"#767676\""),
+    DotAttr("fillcolor", "\"#D5D5D5\""),
+    DotAttr("fontcolor", "black"),
+    DotAttr("penwidth", 2),
+    DotAttr("margin", 0.3D)
+  ),
 
-  val interactionAttributes: List[DotAttr] =
-    DotAttr("shape", "rect") +: readAttributes("interaction")
+  interactionAttributes: List[DotAttr] = List(
+    DotAttr("shape", "rect"),
+    DotAttr("style", "rounded, filled"),
+    DotAttr("color", "\"#525199\""),
+    DotAttr("penwidth", 2),
+    DotAttr("margin", 0.5D),
+  ),
 
-  val eventFiredAttributes: List[DotAttr] =
-    DotAttr("shape", "diamond") +: readAttributes("event", "fired")
+  eventFiredAttributes: List[DotAttr] = List(
+    DotAttr("shape", "diamond"),
+    DotAttr("style", "rounded, filled"),
+    DotAttr("color", "\"#3b823a\""),
+    DotAttr("margin", 0.3D)
+  ),
 
-  val firedInteractionAttributes: List[DotAttr] =
-    DotAttr("shape", "rect") +: readAttributes("interaction", "fired")
+  firedInteractionAttributes: List[DotAttr] = List(
+    DotAttr("shape", "rect"),
+    DotAttr("style", "rounded, filled"),
+    DotAttr("color", "\"#3b823a\""),
+    DotAttr("penwidth", 2),
+    DotAttr("margin", 0.5D),
+  ),
 
-  val eventMissingAttributes: List[DotAttr] = List(
+  eventMissingAttributes: List[DotAttr] = List(
     DotAttr("shape", "diamond"),
     DotAttr("margin", 0.3D),
     DotAttr("style", "rounded, filled"),
     DotAttr("color", "\"#EE0000\""),
     DotAttr("penwidth", "5.0")
-  )
+  ),
 
-  val choiceAttributes: List[DotAttr] = List(
+  choiceAttributes: List[DotAttr] = List(
     DotAttr("shape", "point"),
     DotAttr("fillcolor", "\"#D0D93C\""),
     DotAttr("width", 0.3),
     DotAttr("height", 0.3)
-  )
+  ),
 
-  val emptyEventAttributes: List[DotAttr] = List(
+  emptyEventAttributes: List[DotAttr] = List(
     DotAttr("shape", "point"),
     DotAttr("fillcolor", "\"#D0D93C\""),
     DotAttr("width", 0.1),
     DotAttr("height", 0.1)
-  )
+  ),
 
-  val preconditionORAttributes: List[DotAttr] = List(
+  preconditionORAttributes: List[DotAttr] = List(
     DotAttr("shape", "circle"),
     DotAttr("fillcolor", "\"#D0D93C\""),
     DotAttr("fontcolor", "black"),
     DotAttr("label", "OR"),
     DotAttr("style", "filled")
-  )
+  ),
 
   // this will be removed soon
-  val sieveAttributes: List[DotAttr] = List(
+  sieveAttributes: List[DotAttr] = List(
     DotAttr("shape", "rect"),
     DotAttr("margin", 0.5D),
     DotAttr("color", "\"#7594d6\""),
     DotAttr("style", "rounded, filled"),
     DotAttr("penwidth", 2)
   )
-}
+)

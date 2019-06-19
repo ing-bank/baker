@@ -4,12 +4,14 @@ import java.nio.file.Paths
 import java.util.UUID
 
 import akka.actor.ActorSystem
+import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestKit
-import com.ing.baker.recipe.TestRecipe.{fireTwoEventsInteraction, _}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.recipe.TestRecipe.{fireTwoEventsInteraction, _}
 import com.ing.baker.recipe.{CaseClassIngredient, common}
-import com.ing.baker.runtime.core.{Baker, RuntimeEvent}
+import com.ing.baker.runtime.scaladsl.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.types.{Converters, Value}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers._
@@ -17,11 +19,12 @@ import org.mockito.Mockito._
 import org.scalatest._
 import org.scalatest.mockito.MockitoSugar
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
 trait BakerRuntimeTestBase
-  extends WordSpecLike
+  extends AsyncWordSpecLike
     with Matchers
     with MockitoSugar
     with BeforeAndAfter
@@ -50,7 +53,7 @@ trait BakerRuntimeTestBase
   def ingredientMap(entries: (String, Any)*): Map[String, Value] =
     entries.map { case (name, obj) => name -> Converters.toValue(obj) }.toMap
 
-  def eventList(events: Any*): Seq[RuntimeEvent]= events.map(e => Baker.extractEvent((e)))
+  def eventList(events: Any*): Seq[RuntimeEvent] = events.map(RuntimeEvent.unsafeFrom)
 
   //Can be used to check the state after firing the initialEvent
   protected val afterInitialState = ingredientMap(
@@ -104,12 +107,9 @@ trait BakerRuntimeTestBase
       testProvidesNothingInteractionMock)
 
   def writeRecipeToSVGFile(recipe: CompiledRecipe) = {
-
     import guru.nidi.graphviz.engine.{Format, Graphviz}
     import guru.nidi.graphviz.parse.Parser
-
     val g = Parser.read(recipe.getRecipeVisualization)
-
     Graphviz.fromGraph(g).render(Format.SVG).toFile(Paths.get(recipe.name).toFile)
   }
 
@@ -126,7 +126,7 @@ trait BakerRuntimeTestBase
          |  actor {
          |    provider = "akka.actor.LocalActorRefProvider"
          |    allow-java-serialization = off
-         |    serialize-messages = on
+         |    serialize-messages = off
          |    serialize-creators = off
          |  }
          |
@@ -154,7 +154,7 @@ trait BakerRuntimeTestBase
          |  journal-initialize-timeout = $journalInitializeTimeout
          |}
          |
-       |logging.root.level = DEBUG
+         |logging.root.level = DEBUG
     """.stripMargin)
 
   protected def clusterLevelDBConfig(actorSystemName: String,
@@ -164,26 +164,28 @@ trait BakerRuntimeTestBase
                                      snapshotsPath: String = "target/snapshots"): Config =
 
     ConfigFactory.parseString(
-    s"""
-       |akka {
-       |
+      s"""
+         |akka {
+         |
        |  actor.provider = "akka.cluster.ClusterActorRefProvider"
-       |
+         |
        |  remote {
-       |    netty.tcp {
-       |      hostname = localhost
-       |      port = $port
-       |    }
-       |  }
-       |}
-       |
+         |    netty.tcp {
+         |      hostname = localhost
+         |      port = $port
+         |    }
+         |  }
+         |}
+         |
        |baker {
-       |  actor.provider = "cluster-sharded"
-       |  cluster.seed-nodes = ["akka.tcp://$actorSystemName@localhost:$port"]
-       |}
+         |  actor.provider = "cluster-sharded"
+         |  cluster.seed-nodes = ["akka.tcp://$actorSystemName@localhost:$port"]
+         |}
     """.stripMargin).withFallback(localLevelDBConfig(actorSystemName, journalInitializeTimeout, journalPath, snapshotsPath))
 
-  implicit protected val defaultActorSystem = ActorSystem(actorSystemName)
+  implicit protected val defaultActorSystem: ActorSystem = ActorSystem(actorSystemName)
+
+  implicit protected val defaultMaterializer: Materializer = ActorMaterializer.create(defaultActorSystem)
 
   override def afterAll(): Unit = {
     TestKit.shutdownActorSystem(defaultActorSystem)
@@ -199,32 +201,29 @@ trait BakerRuntimeTestBase
     * @return
     */
   protected def setupBakerWithRecipe(recipeName: String, appendUUIDToTheRecipeName: Boolean = true)
-                                    (implicit actorSystem: ActorSystem): (Baker, String) = {
+                                    (implicit actorSystem: ActorSystem, materializer: Materializer): Future[(Baker, String)] = {
     val newRecipeName = if (appendUUIDToTheRecipeName) s"$recipeName-${UUID.randomUUID().toString}" else recipeName
     val recipe = getRecipe(newRecipeName)
     setupMockResponse()
-
-    setupBakerWithRecipe(recipe, mockImplementations)(actorSystem)
+    setupBakerWithRecipe(recipe, mockImplementations)(actorSystem, materializer)
   }
 
   protected def setupBakerWithRecipe(recipe: common.Recipe, implementations: Seq[AnyRef])
-                                    (implicit actorSystem: ActorSystem): (Baker, String) = {
-
-    val baker = new Baker()(actorSystem)
-    baker.addImplementations(implementations)
-    val recipeId = baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
-    (baker, recipeId)
+                                    (implicit actorSystem: ActorSystem, materializer: Materializer): Future[(Baker, String)] = {
+    val baker = Baker.akka(ConfigFactory.load(), actorSystem, materializer)
+    baker.addImplementations(implementations).flatMap { _ =>
+      baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).map(baker -> _)(actorSystem.dispatcher)
+    }
   }
 
-  protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Baker = {
+  protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem, materializer: Materializer): Future[Baker] = {
     setupMockResponse()
-    val baker = new Baker()(actorSystem)
-    baker.addImplementations(mockImplementations)
-    baker
+    val baker = Baker.akka(ConfigFactory.load(), actorSystem, materializer)
+    baker.addImplementations(mockImplementations).map { _ => baker }
   }
 
   protected def setupMockResponse(): Unit = {
-    when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(InteractionOneSuccessful(interactionOneIngredientValue))
+    when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
     when(testInteractionTwoMock.apply(anyString())).thenReturn(interactionTwoEventValue)
     when(testInteractionThreeMock.apply(anyString(), anyString())).thenReturn(InteractionThreeSuccessful(interactionThreeIngredientValue))
     when(testInteractionFourMock.apply()).thenReturn(InteractionFourSuccessful(interactionFourIngredientValue))

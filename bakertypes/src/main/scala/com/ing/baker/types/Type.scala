@@ -69,7 +69,7 @@ case class RecordType(fields: Seq[RecordField]) extends Type
 
 case class MapType(valueType: Type) extends Type
 
-trait PrimitiveType extends Type
+sealed trait PrimitiveType extends Type
 
 /**
   * Boolean (1 bit)
