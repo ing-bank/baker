@@ -46,15 +46,6 @@ message ProcessEventRequest {
     optional RuntimeEvent runtimeEvent = 1;
 }
 
-enum SensoryEventStatus {
-    Received = 0;
-    Completed = 1;
-    FiringLimitMet = 2;
-    ReceivePeriodExpired = 3;
-    AlreadyReceived = 4;
-    ProcessDeleted = 5;
-}
-
 message ProcessEventResponse {
     optional SensoryEventStatus sensoryEventStatus = 1;
 }
