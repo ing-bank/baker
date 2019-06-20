@@ -41,6 +41,12 @@ object RuntimeEvent {
             providedIngredients: Map[String, Value]): RuntimeEvent =
     new RuntimeEvent(name, providedIngredients, System.currentTimeMillis())
 
+  def apply(name: String): RuntimeEvent =
+    new RuntimeEvent(name, Map(), System.currentTimeMillis())
+
+  /**
+    * Transforms an object into a RuntimeEvent if possible.
+    */
   def unsafeFrom(event: Any): RuntimeEvent = {
     unsafeFrom(event, System.currentTimeMillis())
   }

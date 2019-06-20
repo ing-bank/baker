@@ -36,7 +36,19 @@ object RuntimeEvent {
             providedIngredients: util.Map[String, Value]): RuntimeEvent =
     new RuntimeEvent(name, providedIngredients, System.currentTimeMillis())
 
+  def apply(name: String): RuntimeEvent =
+    new RuntimeEvent(name, Map[String, Value]().asJava, System.currentTimeMillis())
+
+  /**
+    * Transforms an object into a RuntimeEvent if possible.
+    */
   def from(event: Any): RuntimeEvent =
+    from(event, System.currentTimeMillis())
+
+  /**
+    * Transforms an object into a RuntimeEvent if possible.
+    */
+  def from(event: Any, occurredOn: Long): RuntimeEvent =
     event match {
       case runtimeEvent: RuntimeEvent => runtimeEvent
       case obj =>
