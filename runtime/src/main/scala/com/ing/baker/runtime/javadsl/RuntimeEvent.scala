@@ -28,6 +28,18 @@ case class RuntimeEvent(name: String,
 
   def asScala: scaladsl.RuntimeEvent =
     scaladsl.RuntimeEvent(name, providedIngredients.asScala.toMap, occurredOn)
+
+  def copy(name0: String): RuntimeEvent = {
+    new RuntimeEvent(name0, providedIngredients, occurredOn)
+  }
+
+  def copy(providedIngredients0: util.Map[String, Value]): RuntimeEvent = {
+    new RuntimeEvent(name, providedIngredients0, occurredOn)
+  }
+
+  def copy(occurredOn0: Long): RuntimeEvent = {
+    new RuntimeEvent(name, providedIngredients, occurredOn0)
+  }
 }
 
 object RuntimeEvent {
