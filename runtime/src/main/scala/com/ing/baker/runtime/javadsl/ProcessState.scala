@@ -18,10 +18,10 @@ import scala.collection.JavaConverters._
 class ProcessState(
     val processId: String,
     val ingredients: java.util.Map[String, Value],
-    val events: java.util.List[RuntimeEvent]
+    val events: java.util.List[EventMoment]
   ) extends common.ProcessState with JavaApi {
 
-  type EventType = RuntimeEvent
+  type EventType = EventMoment
 
   /**
     * Returns the accumulated ingredients.
@@ -35,7 +35,7 @@ class ProcessState(
     *
     * @return The events occurred so far
     */
-  def getEvents: java.util.List[RuntimeEvent] = events
+  def getEvents: java.util.List[EventMoment] = events
 
   /**
     * Returns the names of the events occurred so far.
@@ -52,5 +52,5 @@ class ProcessState(
   def getProcessId: String = processId
 
   def asScala: scaladsl.ProcessState =
-    scaladsl.ProcessState(processId, ingredients.asScala.toMap, events.asScala.map(_.asScala))
+    scaladsl.ProcessState(processId, ingredients.asScala.toMap, events.asScala.map(_.asScala()))
 }

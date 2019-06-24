@@ -137,13 +137,18 @@ message Ingredient {
 message RuntimeEvent {
     optional string name = 1;
     repeated Ingredient providedIngredients = 2;
-    optional int64 occurredOn = 3;
 }
+
+message EventMoment {
+    optional string name = 1;
+    optional int64 occurredOn = 2;
+}
+
 
 message ProcessState {
     optional string processId = 1;
     repeated Ingredient ingredients = 2;
-    repeated RuntimeEvent events = 4;
+    repeated EventMoment events = 4;
 }
 
 message SensoryEventResult {

@@ -142,22 +142,12 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
   }
 
 
-  //TODO this is not optimized at all.
-  //This loops over all events and then over all ingredients they provide.
-  //This can be done much smarter
   def filterIngredientValues(state: ProcessState, ingredientFilter: Seq[String]): ProcessState =
-      state.copy(state.processId,
-        filterIngredientValuesFromMap(state.ingredients, ingredientFilter),
-        state.events.map(event =>
-          event.copy(providedIngredients = filterIngredientValuesFromMap(event.providedIngredients, ingredientFilter))))
-
-  def filterIngredientValuesFromMap(ingredients: Map[String, Value], ingredientFilter: Seq[String]): Map[String, Value] =
-    ingredients.map(ingredient =>
-      if (ingredientFilter.contains(ingredient._1))
-        ingredient._1 -> PrimitiveValue("")
-      else
-        ingredient)
-
+      state.copy(ingredients = state.ingredients.map(ingredient =>
+        if (ingredientFilter.contains(ingredient._1))
+          ingredient._1 -> PrimitiveValue("")
+        else
+          ingredient))
 
   def running(instance: Instance[P, T, S],
               scheduledRetries: Map[Long, Cancellable]): Receive = {

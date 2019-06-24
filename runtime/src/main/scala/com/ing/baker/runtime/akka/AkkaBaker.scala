@@ -315,7 +315,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
       case InteractionCompleted(_, _, recipeName, _, processId, _, Some(event)) if processFilter(recipeName) =>
         listener.processEvent(processId, event)
       case InteractionFailed(_, _, recipeName, _, processId, _, _, _, ExceptionStrategyOutcome.Continue(eventName)) if processFilter(recipeName) =>
-        listener.processEvent(processId, RuntimeEvent(eventName, Map.empty, System.currentTimeMillis()))
+        listener.processEvent(processId, RuntimeEvent(eventName, Map.empty))
     }
   }
 

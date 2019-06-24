@@ -13,6 +13,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrat
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.events.{InteractionCompleted, InteractionFailed, InteractionStarted}
 import com.ing.baker.runtime.akka.internal.RecipeRuntime._
+import com.ing.baker.runtime.scaladsl.EventMoment
 import com.ing.baker.runtime.scaladsl.ProcessState
 import com.ing.baker.runtime.scaladsl.RuntimeEvent
 import com.ing.baker.types.{PrimitiveValue, Value}
@@ -27,7 +28,7 @@ object RecipeRuntime {
       case event: RuntimeEvent =>
         state.copy(
           ingredients = state.ingredients ++ event.providedIngredients,
-          events = state.events :+ event)
+          events = state.events :+ EventMoment(event.name, System.currentTimeMillis()))
     }
 
   /**
@@ -112,8 +113,7 @@ object RecipeRuntime {
       case Some((_, eventOutputTransformer)) =>
         RuntimeEvent(
           eventOutputTransformer.newEventName,
-          runtimeEvent.providedIngredients.map { case (name, value) => eventOutputTransformer.ingredientRenames.getOrElse(name, name) -> value },
-          runtimeEvent.occurredOn)
+          runtimeEvent.providedIngredients.map { case (name, value) => eventOutputTransformer.ingredientRenames.getOrElse(name, name) -> value })
       case None => runtimeEvent
     }
   }
@@ -166,7 +166,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
             case ExceptionStrategyOutcome.BlockTransition => BlockTransition
             case ExceptionStrategyOutcome.RetryWithDelay(delay) => RetryWithDelay(delay)
             case ExceptionStrategyOutcome.Continue(eventName) => {
-              val runtimeEvent = RuntimeEvent(eventName, Map.empty, System.currentTimeMillis())
+              val runtimeEvent = RuntimeEvent(eventName, Map.empty)
               Continue(createProducedMarking(outMarking, Some(runtimeEvent)), runtimeEvent)
             }
           }

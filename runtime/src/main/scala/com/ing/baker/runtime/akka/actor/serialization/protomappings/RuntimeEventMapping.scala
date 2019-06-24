@@ -19,13 +19,12 @@ class RuntimeEventMapping extends ProtoMap[RuntimeEvent, protobuf.RuntimeEvent] 
     val protoIngredients = a.providedIngredients.map { case (name, value) =>
       protobuf.Ingredient(Some(name), None, Some(ctxToProto(value)))
     }
-    protobuf.RuntimeEvent(Some(a.name), protoIngredients.toSeq, Some(a.occurredOn))
+    protobuf.RuntimeEvent(Some(a.name), protoIngredients.toSeq)
   }
 
   override def fromProto(message: protobuf.RuntimeEvent): Try[RuntimeEvent] =
     for {
       name <- versioned(message.name, "name")
-      occurredOn = message.occurredOn.getOrElse(0l)
       ingredients <- message.providedIngredients.toList.traverse[Try, (String, Value)] { i =>
         for {
           name <- versioned(i.name, "name")
@@ -33,5 +32,5 @@ class RuntimeEventMapping extends ProtoMap[RuntimeEvent, protobuf.RuntimeEvent] 
           value <- ctxFromProto(protoValue)
         } yield (name, value)
       }
-    } yield RuntimeEvent(name, ingredients.toMap, occurredOn)
+    } yield RuntimeEvent(name, ingredients.toMap)
 }

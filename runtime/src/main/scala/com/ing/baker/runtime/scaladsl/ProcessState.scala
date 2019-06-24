@@ -1,8 +1,7 @@
 package com.ing.baker.runtime.scaladsl
 
-import com.ing.baker.runtime.javadsl
-import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
+import com.ing.baker.runtime.{common, javadsl}
 import com.ing.baker.types.Value
 
 import scala.collection.JavaConverters._
@@ -17,13 +16,13 @@ import scala.collection.JavaConverters._
 case class ProcessState(
     processId: String,
     ingredients: Map[String, Value],
-    events: Seq[RuntimeEvent])
+    events: Seq[EventMoment])
   extends common.ProcessState with ScalaApi {
 
-  type EventType = RuntimeEvent
+  type EventType = EventMoment
 
   def eventNames: Seq[String] = events.map(_.name)
 
   def asJava: javadsl.ProcessState =
-    new javadsl.ProcessState(processId, ingredients.asJava, events.map(_.asJava).asJava)
+    new javadsl.ProcessState(processId, ingredients.asJava, events.map(_.asJava()).asJava)
 }

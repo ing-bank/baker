@@ -172,9 +172,9 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val transitions: Set[Transition] = Set(EventTransition(eventType, true, None))
       when(petrinetMock.transitions).thenReturn(transitions)
 
-      val RuntimeEvent = RuntimeEvent("Event", Map.empty)
+      val runtimeEvent = RuntimeEvent("Event", Map.empty)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, 1 seconds, NotifyWhenReceived)
+      actorIndex ! ProcessEvent(processId, runtimeEvent, None, 1 seconds, NotifyWhenReceived)
 
       expectMsg(FireSensoryEventRejection.NoSuchProcess(processId))
     }
@@ -201,9 +201,9 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       petriNetActorProbe.expectMsg(initializeMsg)
 
-      val RuntimeEvent = RuntimeEvent("Event", Map.empty)
+      val runtimeEvent = RuntimeEvent("Event", Map.empty)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, 1 seconds, NotifyWhenReceived)
+      actorIndex ! ProcessEvent(processId, runtimeEvent, None, 1 seconds, NotifyWhenReceived)
 
       expectMsg(FireSensoryEventRejection.InvalidEvent(processId ,s"No event with name 'Event' found in recipe 'name'"))
     }
@@ -233,9 +233,9 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       petriNetActorProbe.expectMsg(initializeMsg)
 
-      val RuntimeEvent = RuntimeEvent("Event", Map.empty)
+      val runtimeEvent = RuntimeEvent("Event", Map.empty)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, 1 seconds, NotifyWhenReceived)
+      actorIndex ! ProcessEvent(processId, runtimeEvent, None, 1 seconds, NotifyWhenReceived)
 
       expectMsg(FireSensoryEventRejection.InvalidEvent(processId ,s"Invalid event: no value was provided for ingredient 'ingredientName'"))
     }
@@ -266,15 +266,15 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       petriNetActorProbe.expectMsg(initializeMsg)
 
-      val RuntimeEvent = RuntimeEvent("Event", Map.empty)
+      val runtimeEvent = RuntimeEvent("Event", Map.empty)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, 1 seconds, NotifyWhenReceived)
+      actorIndex ! ProcessEvent(processId, runtimeEvent, None, 1 seconds, NotifyWhenReceived)
 
       petriNetActorProbe.expectMsgAllClassOf(classOf[FireTransition])
 
       Thread.sleep(receivePeriodTimeout.toMillis * 2)
 
-      actorIndex ! ProcessEvent(processId, RuntimeEvent, None, 1 seconds, NotifyWhenReceived)
+      actorIndex ! ProcessEvent(processId, runtimeEvent, None, 1 seconds, NotifyWhenReceived)
 
       petriNetActorProbe.expectNoMessage(noMsgExpectTimeout)
 

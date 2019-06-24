@@ -8,7 +8,7 @@ import com.ing.baker.types.Value
   */
 trait ProcessState extends LanguageApi { self =>
 
-  type EventType <: RuntimeEvent { type Language <: self.Language}
+  type EventType <: EventMoment
 
   def processId: String
 
