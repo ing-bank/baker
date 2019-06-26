@@ -9,9 +9,11 @@ import com.ing.baker.types.Value
 
 import scala.collection.JavaConverters._
 
-case class RuntimeEvent(name: String,
-                        providedIngredients: util.Map[String, Value])
+class RuntimeEvent(val name: String,
+                   val providedIngredients: util.Map[String, Value])
   extends common.RuntimeEvent with JavaApi {
+
+  this(name: String) = new RuntimeEvent(name, Map[String, Value]().asJava)
 
   def getProvidedIngredients = providedIngredients
 
@@ -36,14 +38,6 @@ case class RuntimeEvent(name: String,
 }
 
 object RuntimeEvent {
-
-  def apply(name: String,
-            providedIngredients: util.Map[String, Value]): RuntimeEvent =
-    new RuntimeEvent(name, providedIngredients)
-
-  def apply(name: String): RuntimeEvent =
-    new RuntimeEvent(name, Map[String, Value]().asJava)
-
   /**
     * Transforms an object into a RuntimeEvent if possible.
     */
