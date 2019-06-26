@@ -12,7 +12,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.internal.MethodInteractionImplementation
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.common
-import com.ing.baker.runtime.common.{InteractionImplementation, ProcessMetadata, SensoryEventStatus}
+import com.ing.baker.runtime.common.{InteractionImplementation, SensoryEventStatus}
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.types.Value
 import org.slf4j.{Logger, LoggerFactory}
@@ -248,9 +248,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     *
     * @return An index of all processes
     */
-  override def getIndex: Future[Set[ProcessMetadata]] = {
+  override def getAllProcessesMetadata: Future[Set[ProcessMetadata]] = {
     Future.successful(config.bakerActorProvider
-      .getIndex(processIndexActor)(system, config.defaultInquireTimeout)
+      .getAllProcessesMetadata(processIndexActor)(system, config.defaultInquireTimeout)
       .map(p => ProcessMetadata(p.recipeId, p.processId, p.createdDateTime)).toSet)
   }
 

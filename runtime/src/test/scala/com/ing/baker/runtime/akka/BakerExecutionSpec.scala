@@ -908,7 +908,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         (baker, recipeId) <- setupBakerWithRecipe("IndexTestCluster")(indexTestSystem, materializer)
         processIds = (0 to nrOfProcesses).map(_ => java.util.UUID.randomUUID().toString).toSet
         _ <- Future.traverse(processIds)(baker.bake(recipeId, _))
-        index <- baker.getIndex
+        index <- baker.getAllProcessesMetadata
       } yield index.map(_.processId) shouldBe processIds
     }
 
@@ -920,7 +920,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         (baker, recipeId) <- setupBakerWithRecipe("IndexTestLocal")
         processIds = (0 to nrOfProcesses).map(_ => java.util.UUID.randomUUID().toString).toSet
         _ <- Future.traverse(processIds)(baker.bake(recipeId, _))
-        index <- baker.getIndex
+        index <- baker.getAllProcessesMetadata
       } yield index.map(_.processId) shouldBe processIds
     }
 

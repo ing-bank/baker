@@ -10,7 +10,7 @@ import akka.stream.{ActorMaterializer, Materializer}
 import cats.data.NonEmptyList
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.akka.{AkkaBaker, _}
-import com.ing.baker.runtime.common.{InteractionImplementation, ProcessMetadata, RecipeInformation, SensoryEventStatus}
+import com.ing.baker.runtime.common.{InteractionImplementation, RecipeInformation, SensoryEventStatus}
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Value
@@ -57,6 +57,8 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
   override type PState = ProcessState
 
   override type BakerEventType = BakerEvent
+
+  override type ProcessMetadataType = ProcessMetadata
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -218,8 +220,11 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     *
     * @return An index of all processes
     */
-  def getIndex: CompletableFuture[util.Set[ProcessMetadata]] =
-    toCompletableFutureSet(baker.getIndex)
+  def getAllProcessesMetadata: CompletableFuture[util.Set[ProcessMetadata]] =
+    FutureConverters
+      .toJava(baker.getAllProcessesMetadata)
+      .toCompletableFuture
+      .thenApply(_.map(_.asJava).asJava)
 
   /**
     * Registers a listener to all runtime events for this baker instance.
