@@ -1,7 +1,6 @@
 package com.ing.baker.runtime.common
 
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
-import com.ing.baker.runtime.akka.events.BakerEvent
 import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
 import com.ing.baker.types.Value
 
@@ -21,6 +20,8 @@ trait Baker[F[_]] extends LanguageApi {
   type Event <: RuntimeEvent {type Language <: self.Language}
 
   type PState <: ProcessState {type Language <: self.Language}
+
+  type BakerEventType <: BakerEvent {type Language <: self.Language}
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -234,7 +235,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @return
     */
   //TODO split the BakerEvent also between java and scala interface.
-  def registerBakerEventListener(listenerFunction: language.ConsumerFunction[BakerEvent]): F[Unit]
+  def registerBakerEventListener(listenerFunction: language.ConsumerFunction[BakerEventType]): F[Unit]
 
   //TODO remove AnyRef as a valid implementation.
   //Provide a helper method to go from AnyRef to InteractionImplementation

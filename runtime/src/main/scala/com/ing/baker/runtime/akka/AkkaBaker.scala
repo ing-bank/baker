@@ -9,11 +9,10 @@ import com.ing.baker.runtime.akka.actor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.akka.events.{BakerEvent, EventReceived, InteractionCompleted, InteractionFailed}
 import com.ing.baker.runtime.akka.internal.MethodInteractionImplementation
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.common
-import com.ing.baker.runtime.common.{BakerException, InteractionImplementation, ProcessMetadata, SensoryEventStatus}
+import com.ing.baker.runtime.common.{InteractionImplementation, ProcessMetadata, SensoryEventStatus}
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.types.Value
 import org.slf4j.{Logger, LoggerFactory}

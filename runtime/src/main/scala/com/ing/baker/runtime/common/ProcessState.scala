@@ -6,9 +6,9 @@ import com.ing.baker.types.Value
 /**
   * Holds the 'state' of a process instance.
   */
-trait ProcessState extends LanguageApi {
+trait ProcessState extends LanguageApi { self =>
 
-  type EventType <: EventMoment
+  type EventType <: EventMoment { type Language <: self.Language}
 
   def processId: String
 

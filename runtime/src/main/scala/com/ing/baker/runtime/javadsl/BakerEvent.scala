@@ -1,13 +1,20 @@
-package com.ing.baker.runtime.akka.events
+package com.ing.baker.runtime.javadsl
 
 import java.util.Optional
 
-import akka.actor.NoSerializationVerificationNeeded
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
-import com.ing.baker.runtime.scaladsl.RuntimeEvent
+import com.ing.baker.runtime.common
+import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
+import com.ing.baker.runtime.common.RejectReason
 
-sealed trait BakerEvent extends NoSerializationVerificationNeeded
+sealed trait BakerEvent extends common.BakerEvent with JavaApi {
+  type Event = RuntimeEvent
+
+//  def asJava(): = this match {
+//    case EventReceived(timeStamp, recipeName, recipeId, processId, correlationId, event)
+//  }
+}
 
 /**
   * Event describing the fact that an event was received for a process.
@@ -23,8 +30,8 @@ case class EventReceived(timeStamp: Long,
                          recipeName: String,
                          recipeId: String,
                          processId: String,
-                         correlationId: Option[String],
-                         event: RuntimeEvent) extends BakerEvent
+                         correlationId: Optional[String],
+                         event: RuntimeEvent) extends BakerEvent with common.EventReceived
 
 /**
   * Event describing the fact that an event was received but rejected for a process
@@ -37,9 +44,9 @@ case class EventReceived(timeStamp: Long,
   */
 case class EventRejected(timeStamp: Long,
                          processId: String,
-                         correlationId: Option[String],
+                         correlationId: Optional[String],
                          event: RuntimeEvent,
-                         reason: RejectReason) extends BakerEvent
+                         reason: RejectReason) extends BakerEvent with common.EventRejected
 /**
   * Event describing the fact that an interaction failed during execution
   *
@@ -61,7 +68,7 @@ case class InteractionFailed(timeStamp: Long,
                              interactionName: String,
                              failureCount: Int,
                              throwable: Throwable,
-                             exceptionStrategyOutcome: ExceptionStrategyOutcome) extends BakerEvent
+                             exceptionStrategyOutcome: ExceptionStrategyOutcome) extends BakerEvent with common.InteractionFailed
 
 /**
   * Event describing the fact that an interaction has started executing
@@ -76,7 +83,7 @@ case class InteractionStarted(timeStamp: Long,
                               recipeName: String,
                               recipeId: String,
                               processId: String,
-                              interactionName: String) extends BakerEvent
+                              interactionName: String) extends BakerEvent with common.InteractionStarted
 
 /**
   * Event describing the fact that an interaction was executed successfully
@@ -96,15 +103,7 @@ case class InteractionCompleted(timeStamp: Long,
                                 recipeId: String,
                                 processId: String,
                                 interactionName: String,
-                                event: Option[RuntimeEvent]) extends BakerEvent {
-  /**
-    * Java Optional version of the event.
-    *
-    * @return The (optional) event output of the interaction.
-    */
-  def getEvent: Optional[RuntimeEvent] =
-    event.map(e => Optional.of(e)).getOrElse(Optional.empty())
-}
+                                event: Optional[RuntimeEvent]) extends BakerEvent with common.InteractionCompleted
 
 /**
   * Event describing the fact that a baker process was created
@@ -117,7 +116,7 @@ case class InteractionCompleted(timeStamp: Long,
 case class ProcessCreated(timeStamp: Long,
                           recipeId: String,
                           recipeName: String,
-                          processId: String) extends BakerEvent
+                          processId: String) extends BakerEvent with common.ProcessCreated
 
 /**
   * An event describing the fact that a recipe was added to baker.
@@ -129,5 +128,5 @@ case class ProcessCreated(timeStamp: Long,
 case class RecipeAdded(recipeName: String,
                        recipeId: String,
                        date: Long,
-                       compiledRecipe: CompiledRecipe) extends BakerEvent
+                       compiledRecipe: CompiledRecipe) extends BakerEvent with common.RecipeAdded
 

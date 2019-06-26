@@ -9,10 +9,9 @@ import akka.actor.{ActorSystem, Address}
 import akka.stream.{ActorMaterializer, Materializer}
 import cats.data.NonEmptyList
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
-import com.ing.baker.runtime.akka.events.{AnnotatedEventSubscriber, BakerEvent}
 import com.ing.baker.runtime.akka.{AkkaBaker, _}
+import com.ing.baker.runtime.common.{InteractionImplementation, ProcessMetadata, RecipeInformation, SensoryEventStatus}
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
-import com.ing.baker.runtime.common._
 import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
@@ -56,6 +55,8 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
   override type Event = RuntimeEvent
 
   override type PState = ProcessState
+
+  override type BakerEventType = BakerEvent
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -126,10 +127,10 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     fireSensoryEvent(processId, event, Optional.empty[String]())
 
   def fireSensoryEventReceived(processId: String, event: RuntimeEvent, correlationId: Optional[String]): CompletableFuture[SensoryEventStatus] =
-    toCompletableFuture(baker.fireSensoryEventReceived(processId, event.asScala))
+    toCompletableFuture(baker.fireSensoryEventReceived(processId, event.asScala, Option.apply(correlationId.orElse(null))))
 
   def fireSensoryEventCompleted(processId: String, event: RuntimeEvent, correlationId: Optional[String]): CompletableFuture[SensoryEventResult] =
-    toCompletableFuture(baker.fireSensoryEventCompleted(processId, event.asScala)).thenApply { result =>
+    toCompletableFuture(baker.fireSensoryEventCompleted(processId, event.asScala, Option.apply(correlationId.orElse(null)))).thenApply { result =>
       new SensoryEventResult(
         status = result.status,
         events = result.events.asJava,
@@ -271,7 +272,7 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     * @return
     */
   override def registerBakerEventListener(listenerFunction: Consumer[BakerEvent]): CompletableFuture[Unit] =
-    toCompletableFuture(baker.registerBakerEventListener((event: BakerEvent) => listenerFunction.accept(event)))
+    toCompletableFuture(baker.registerBakerEventListener((event: scaladsl.BakerEvent) => listenerFunction.accept(event.asJava())))
 
 
   /**

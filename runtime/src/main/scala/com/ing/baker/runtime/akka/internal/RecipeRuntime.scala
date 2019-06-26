@@ -11,7 +11,7 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceRuntime
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
-import com.ing.baker.runtime.akka.events.{InteractionCompleted, InteractionFailed, InteractionStarted}
+import com.ing.baker.runtime.scaladsl.{InteractionCompleted, InteractionFailed, InteractionStarted}
 import com.ing.baker.runtime.akka.internal.RecipeRuntime._
 import com.ing.baker.runtime.scaladsl.EventMoment
 import com.ing.baker.runtime.scaladsl.ProcessState

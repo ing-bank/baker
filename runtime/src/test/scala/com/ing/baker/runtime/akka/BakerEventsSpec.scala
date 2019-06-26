@@ -9,8 +9,8 @@ import com.ing.baker._
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.scaladsl.Recipe
-import com.ing.baker.runtime.akka.events.RejectReason._
-import com.ing.baker.runtime.akka.events._
+import com.ing.baker.runtime.common.RejectReason._
+import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.scaladsl.RuntimeEvent
 import com.ing.baker.types.PrimitiveValue
 import org.slf4j.LoggerFactory

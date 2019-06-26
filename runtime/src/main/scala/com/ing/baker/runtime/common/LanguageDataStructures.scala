@@ -1,5 +1,7 @@
 package com.ing.baker.runtime.common
 
+import java.util.Optional
+
 sealed trait LanguageDataStructures {
 
   type Map[A, B]
