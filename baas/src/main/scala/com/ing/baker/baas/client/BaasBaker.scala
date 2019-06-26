@@ -9,8 +9,7 @@ import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.{ProcessMetadata, RecipeInformation, SensoryEventStatus}
-import com.ing.baker.runtime.scaladsl.ProcessState
-import com.ing.baker.runtime.scaladsl.{Baker, RuntimeEvent, SensoryEventMoments, SensoryEventResult, InteractionImplementation}
+import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._

@@ -44,7 +44,7 @@ trait Baker[F[_]] extends LanguageApi {
 
   /**
     * Returns all recipes added to this baker instance.
-    *
+    *getIndex
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
   def getAllRecipes: F[language.Map[String, RecipeInformation]]
