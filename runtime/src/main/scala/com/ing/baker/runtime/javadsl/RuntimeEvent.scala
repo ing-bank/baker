@@ -13,8 +13,6 @@ class RuntimeEvent(val name: String,
                    val providedIngredients: util.Map[String, Value])
   extends common.RuntimeEvent with JavaApi {
 
-  this(name: String) = new RuntimeEvent(name, Map[String, Value]().asJava)
-
   def getProvidedIngredients = providedIngredients
 
   def getName = name
