@@ -8,8 +8,7 @@ import com.ing.baker.baas.interaction.server.RemoteInteractionLauncher
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
-import com.ing.baker.runtime.akka.events.BakerEvent
-import com.ing.baker.runtime.common.{EventListener, ProcessMetadata, RecipeInformation, SensoryEventStatus}
+import com.ing.baker.runtime.common.{ProcessMetadata, RecipeInformation, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.ProcessState
 import com.ing.baker.runtime.scaladsl.{Baker, RuntimeEvent, SensoryEventMoments, SensoryEventResult, InteractionImplementation}
 import com.ing.baker.types.Value
@@ -224,20 +223,6 @@ class BaasBaker(config: Config,
   override def getIndex(): Future[Set[ProcessMetadata]] = ???
 
   /**
-    * Registers a listener to all runtime events for recipes with the given name run in this baker instance.
-    *
-    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
-    */
-  override def registerEventListener(recipeName: String, listener: EventListener): Future[Unit] = ???
-
-  /**
-    * Registers a listener to all runtime events for all recipes that run in this Baker instance.
-    *
-    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
-    */
-  override def registerEventListener(listener: EventListener): Future[Unit] = ???
-
-  /**
     * Attempts to gracefully shutdown the baker system.
     */
   override def gracefulShutdown(): Future[Unit] = ???
@@ -266,10 +251,26 @@ class BaasBaker(config: Config,
   override def stopRetryingInteraction(processId: String, interactionName: String): Future[Unit] = ???
 
   /**
-    * This registers a listener function.
+    * Registers a listener to all runtime events for recipes with the given name run in this baker instance.
     *
-    * @param pf A partial function that receives the events.
+    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
+    */
+  override def registerEventListener(recipeName: String, listenerFunction: (String, RuntimeEvent) => Unit): Future[Unit] = ???
+
+  /**
+    * Registers a listener to all runtime events for all recipes that run in this Baker instance.
+    *
+    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
+    */
+  override def registerEventListener(listenerFunction: (String, RuntimeEvent) => Unit): Future[Unit] = ???
+
+  /**
+    * Registers a listener function that listens to all BakerEvents
+    *
+    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
+    *
+    * @param listener
     * @return
     */
-  override def registerEventListenerPF(pf: PartialFunction[BakerEvent, Unit]): Future[Unit] = ???
+  override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): Future[Unit] = ???
 }

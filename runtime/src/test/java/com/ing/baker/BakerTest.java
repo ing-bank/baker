@@ -8,8 +8,6 @@ import com.ing.baker.compiler.JavaCompiledRecipeTest;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.runtime.javadsl.*;
-import com.ing.baker.runtime.akka.events.ProcessCreated;
-import com.ing.baker.runtime.akka.events.Subscribe;
 import com.ing.baker.runtime.common.BakerException;
 import com.ing.baker.types.Converters;
 import com.ing.baker.types.Value;
@@ -62,16 +60,16 @@ public class BakerTest {
         String processId = UUID.randomUUID().toString();
         Baker jBaker = Baker.akka(config, actorSystem, materializer);
         java.util.Map<String, Value> ingredients = jBaker.addImplementations(implementationsList)
-            .thenCompose(x -> jBaker.addRecipe(compiledRecipe))
-            .thenCompose(recipeId -> {
-                assertEquals(compiledRecipe.getValidationErrors().size(), 0);
-                return jBaker.bake(recipeId, processId);
-            })
-            .thenCompose(x -> jBaker.fireSensoryEventCompleted(processId, RuntimeEvent.from(new JavaCompiledRecipeTest.EventOne())))
-            .thenApply(SensoryEventResult::events)
-            .thenCompose(x -> jBaker.getProcessState(processId))
-            .thenApply(ProcessState::getIngredients)
-            .get();
+                .thenCompose(x -> jBaker.addRecipe(compiledRecipe))
+                .thenCompose(recipeId -> {
+                    assertEquals(compiledRecipe.getValidationErrors().size(), 0);
+                    return jBaker.bake(recipeId, processId);
+                })
+                .thenCompose(x -> jBaker.fireSensoryEventCompleted(processId, RuntimeEvent.from(new JavaCompiledRecipeTest.EventOne())))
+                .thenApply(SensoryEventResult::events)
+                .thenCompose(x -> jBaker.getProcessState(processId))
+                .thenApply(ProcessState::getIngredients)
+                .get();
 
         assertEquals(1, ingredients.size());
         Object requestIdstringOne = ingredients.get("RequestIDStringOne");
@@ -125,13 +123,4 @@ public class BakerTest {
         jBaker.fireSensoryEventCompleted(requestId, RuntimeEvent.from(new JavaCompiledRecipeTest.EventOne())).get();
         jBaker.fireSensoryEventCompleted(requestId, RuntimeEvent.from(new JavaCompiledRecipeTest.EventTwo())).get();
     }
-
-    final static class EmptySubscriber {
-        @SuppressWarnings("unused")
-        @Subscribe
-        public void onEvent(ProcessCreated e) {
-            // intentionally left empty
-        }
-    }
-
 }

@@ -4,8 +4,7 @@ import akka.actor.ActorRef
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.scaladsl.{RuntimeEvent, SensoryEventResult}
-import com.ing.baker.runtime.akka.events.RejectReason
-import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.common.{RejectReason, SensoryEventStatus}
 
 import scala.concurrent.duration.FiniteDuration
 

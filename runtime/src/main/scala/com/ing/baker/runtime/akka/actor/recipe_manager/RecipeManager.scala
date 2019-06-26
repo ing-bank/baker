@@ -37,7 +37,7 @@ class RecipeManager extends PersistentActor with ActorLogging {
         persist(RecipeAdded(compiledRecipe, timestamp)) { _ =>
           addRecipe(compiledRecipe, timestamp)
           context.system.eventStream.publish(
-            com.ing.baker.runtime.akka.events.RecipeAdded(compiledRecipe.name, compiledRecipe.recipeId, timestamp, compiledRecipe))
+            com.ing.baker.runtime.scaladsl.RecipeAdded(compiledRecipe.name, compiledRecipe.recipeId, timestamp, compiledRecipe))
           sender() ! AddRecipeResponse(compiledRecipe.recipeId)
         }
       }

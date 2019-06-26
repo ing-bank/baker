@@ -1,6 +1,8 @@
 package com.ing.baker.runtime.common
 
-trait EventMoment {
+import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
+
+trait EventMoment extends LanguageApi {
 
   def name: String
 

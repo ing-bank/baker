@@ -6,7 +6,7 @@ import com.ing.baker.runtime.scaladsl.RuntimeEvent
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{FireSensoryEventReaction, FireSensoryEventRejection, ProcessEvent, ProcessEventCompletedResponse, ProcessEventReceivedResponse}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.akka.events.{EventReceived, EventRejected}
+import com.ing.baker.runtime.scaladsl.{EventReceived, EventRejected}
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.SensoryEventResult
 import org.slf4j.{Logger, LoggerFactory}
