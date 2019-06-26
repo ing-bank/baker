@@ -9,7 +9,7 @@ import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.akka.events.BakerEvent
-import com.ing.baker.runtime.common.{EventListener, InteractionImplementation, ProcessMetadata, RecipeInformation, SensoryEventStatus}
+import com.ing.baker.runtime.common.{InteractionImplementation, ProcessMetadata, RecipeInformation, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.ProcessState
 import com.ing.baker.runtime.scaladsl.{Baker, RuntimeEvent, SensoryEventMoments, SensoryEventResult}
 import com.ing.baker.types.Value

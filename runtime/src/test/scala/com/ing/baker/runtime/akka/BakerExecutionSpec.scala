@@ -387,8 +387,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
     }
 
     "notify a registered event listener of events" in {
-      val listenerMock = mock[com.ing.baker.runtime.scaladsl.EventListener]
-      val listenerFunction = (processId: String, runtimeEvent: RuntimeEvent) => listenerMock.processEvent(processId, runtimeEvent)
+      val listenerMock = mock[(String, RuntimeEvent) => Unit]
       when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
       val recipe =
         Recipe("EventListenerRecipe")
@@ -397,12 +396,12 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
-        _ <- baker.registerEventListener("EventListenerRecipe", listenerFunction)
+        _ <- baker.registerEventListener("EventListenerRecipe", listenerMock)
         processId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, processId)
         _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
-        _ = verify(listenerMock).processEvent(mockitoEq(processId.toString), argThat(new RuntimeEventMatcher(RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))))
-        _ = verify(listenerMock).processEvent(mockitoEq(processId.toString), argThat(new RuntimeEventMatcher(RuntimeEvent.unsafeFrom(InteractionOneSuccessful(interactionOneIngredientValue)))))
+        _ = verify(listenerMock).apply(mockitoEq(processId.toString), argThat(new RuntimeEventMatcher(RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))))
+        _ = verify(listenerMock).apply(mockitoEq(processId.toString), argThat(new RuntimeEventMatcher(RuntimeEvent.unsafeFrom(InteractionOneSuccessful(interactionOneIngredientValue)))))
       } yield succeed
     }
 
@@ -796,9 +795,8 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
 
-        listenerMock = mock[com.ing.baker.runtime.scaladsl.EventListener]
-        listenerFunction = (processId: String, runtimeEvent: RuntimeEvent) => listenerMock.processEvent(processId, runtimeEvent)
-        _ <- baker.registerEventListener("ImmediateFailureEvent", listenerFunction)
+        listenerMock = mock[(String, RuntimeEvent) => Unit]
+        _ <- baker.registerEventListener("ImmediateFailureEvent", listenerMock)
 
         processId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, processId)
@@ -808,8 +806,8 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         _ <- Future {
           Thread.sleep(50)
         }
-        _ = verify(listenerMock).processEvent(mockitoEq(processId.toString), argThat(new RuntimeEventMatcher(RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))))
-        _ = verify(listenerMock).processEvent(mockitoEq(processId.toString), argThat(new RuntimeEventMatcher(RuntimeEvent(interactionOne.retryExhaustedEventName, Map.empty))))
+        _ = verify(listenerMock).apply(mockitoEq(processId.toString), argThat(new RuntimeEventMatcher(RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))))
+        _ = verify(listenerMock).apply(mockitoEq(processId.toString), argThat(new RuntimeEventMatcher(RuntimeEvent(interactionOne.retryExhaustedEventName, Map.empty))))
 
         state <- baker.getProcessState(processId)
       } yield state.eventNames should contain(interactionOne.retryExhaustedEventName)

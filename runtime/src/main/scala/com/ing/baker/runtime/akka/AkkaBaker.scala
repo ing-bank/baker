@@ -13,7 +13,7 @@ import com.ing.baker.runtime.akka.events.{BakerEvent, EventReceived, Interaction
 import com.ing.baker.runtime.akka.internal.MethodInteractionImplementation
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.common
-import com.ing.baker.runtime.common.{BakerException, EventListener, InteractionImplementation, ProcessMetadata, SensoryEventStatus}
+import com.ing.baker.runtime.common.{BakerException, InteractionImplementation, ProcessMetadata, SensoryEventStatus}
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.types.Value
 import org.slf4j.{Logger, LoggerFactory}
