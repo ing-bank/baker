@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.akka.events;
+package com.ing.baker.runtime.common;
 
 public enum RejectReason {
     /**

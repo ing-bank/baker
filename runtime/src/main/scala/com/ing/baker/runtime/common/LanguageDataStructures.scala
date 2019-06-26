@@ -1,5 +1,7 @@
 package com.ing.baker.runtime.common
 
+import java.util.Optional
+
 sealed trait LanguageDataStructures {
 
   type Map[A, B]
@@ -9,6 +11,10 @@ sealed trait LanguageDataStructures {
   type Set[A]
 
   type Option[A]
+
+  type ConsumerFunction[A]
+
+  type BiConsumerFunction[A, B]
 }
 
 object LanguageDataStructures {
@@ -22,6 +28,10 @@ object LanguageDataStructures {
     type Set[A] = scala.collection.immutable.Set[A]
 
     type Option[A] = scala.Option[A]
+
+    type ConsumerFunction[A] = A => Unit
+
+    type BiConsumerFunction[A, B] = (A, B) => Unit
   }
 
   object Java extends LanguageDataStructures {
@@ -33,6 +43,10 @@ object LanguageDataStructures {
     type Set[A] = java.util.Set[A]
 
     type Option[A] = java.util.Optional[A]
+
+    type ConsumerFunction[A] = java.util.function.Consumer[A]
+
+    type BiConsumerFunction[A, B] = java.util.function.BiConsumer[A, B]
   }
 
   trait LanguageApi {

@@ -9,11 +9,10 @@ import com.ing.baker.runtime.akka.actor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.akka.events.{BakerEvent, EventReceived, InteractionCompleted, InteractionFailed}
 import com.ing.baker.runtime.akka.internal.MethodInteractionImplementation
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.common
-import com.ing.baker.runtime.common.{EventListener, InteractionImplementation, ProcessMetadata, SensoryEventStatus}
+import com.ing.baker.runtime.common.{InteractionImplementation, ProcessMetadata, SensoryEventStatus}
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.types.Value
 import org.slf4j.{Logger, LoggerFactory}
@@ -306,17 +305,16 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     } yield response
   }
 
-  private def doRegisterEventListener(listener: EventListener, processFilter: String => Boolean): Future[Unit] = {
-
-    registerEventListenerPF {
-
+  private def doRegisterEventListener(listenerFunction: (String, RuntimeEvent) => Unit, processFilter: String => Boolean): Future[Unit] = {
+    Future.successful(createBakerEventListenerActor {
       case EventReceived(_, recipeName, _, processId, _, event) if processFilter(recipeName) =>
-        listener.processEvent(processId, event)
+        listenerFunction.apply(processId, event)
       case InteractionCompleted(_, _, recipeName, _, processId, _, Some(event)) if processFilter(recipeName) =>
-        listener.processEvent(processId, event)
+        listenerFunction.apply(processId, event)
       case InteractionFailed(_, _, recipeName, _, processId, _, _, _, ExceptionStrategyOutcome.Continue(eventName)) if processFilter(recipeName) =>
-        listener.processEvent(processId, RuntimeEvent(eventName, Map.empty))
-    }
+        listenerFunction.apply(processId, RuntimeEvent(eventName, Map.empty))
+      case _ => ()
+    })
   }
 
   /**
@@ -324,8 +322,8 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(recipeName: String, listener: EventListener): Future[Unit] =
-    doRegisterEventListener(listener, _ == recipeName)
+  override def registerEventListener(recipeName: String, listenerFunction: (String, RuntimeEvent) => Unit): Future[Unit] =
+    doRegisterEventListener(listenerFunction, _ == recipeName)
 
   /**
     * Registers a listener to all runtime events for all recipes that run in this Baker instance.
@@ -333,29 +331,32 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
   //  @deprecated("Use event bus instead", "1.4.0")
-  override def registerEventListener(listener: EventListener): Future[Unit] =
-    doRegisterEventListener(listener, _ => true)
+  override def registerEventListener(listenerFunction: (String, RuntimeEvent) => Unit): Future[Unit] =
+    doRegisterEventListener(listenerFunction, _ => true)
 
   /**
-    * This registers a listener function.
+    * Registers a listener function that listens to all BakerEvents
     *
-    * @param pf A partial function that receives the events.
+    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
+    *
+    * @param listener
     * @return
     */
-  def registerEventListenerPF(pf: PartialFunction[BakerEvent, Unit]): Future[Unit] = {
+  override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): Future[Unit] = {
+    Future.successful(createBakerEventListenerActor(listenerFunction))
+  }
 
+  private def createBakerEventListenerActor(listenerFunction: BakerEvent => Unit): Unit = {
     val listenerActor = system.actorOf(Props(new Actor() {
       override def receive: Receive = {
         case event: BakerEvent => Try {
-          pf.applyOrElse[BakerEvent, Unit](event, _ => ())
+          listenerFunction.apply(event)
         }.failed.foreach { e =>
           log.warn(s"Listener function threw exception for event: $event", e)
         }
       }
     }))
-
     system.eventStream.subscribe(listenerActor, classOf[BakerEvent])
-    Future.successful(())
   }
 
   /**

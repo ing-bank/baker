@@ -19,7 +19,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceRuntime}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.{BakerSerializable, Encryption}
-import com.ing.baker.runtime.akka.events.ProcessCreated
+import com.ing.baker.runtime.scaladsl.ProcessCreated
 import com.ing.baker.runtime.akka.internal.{InteractionManager, RecipeRuntime}
 import com.ing.baker.runtime.akka.{namedCachedThreadPool, _}
 import com.ing.baker.runtime.scaladsl.{ProcessState, RuntimeEvent}

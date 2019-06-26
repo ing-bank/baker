@@ -3,9 +3,8 @@ package com.ing.baker.runtime.scaladsl
 import akka.actor.{ActorSystem, Address}
 import akka.stream.Materializer
 import cats.data.NonEmptyList
-import com.ing.baker.runtime.common
-import com.ing.baker.runtime.akka.events.BakerEvent
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
+import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.typesafe.config.Config
@@ -42,13 +41,7 @@ trait Baker extends common.Baker[Future] with ScalaApi {
 
   override type PState = ProcessState
 
-  /**
-    * This registers a listener function.
-    *
-    * @param pf A partial function that receives the events.
-    * @return
-    */
-  def registerEventListenerPF(pf: PartialFunction[BakerEvent, Unit]): Future[Unit]
+  override type BakerEventType = BakerEvent
 
   def fireSensoryEventReceived(processId: String, event: RuntimeEvent): Future[SensoryEventStatus] =
     fireSensoryEventReceived(processId, event, None)

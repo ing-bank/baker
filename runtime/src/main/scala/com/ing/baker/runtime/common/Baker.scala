@@ -7,18 +7,21 @@ import com.ing.baker.types.Value
 /**
   * The BakerInterface is a class we use to ensure the Scala and Java Baker classes have the same methods.
   *
-  * @tparam F   the type of Future to use in the return types
+  * @tparam F the type of Future to use in the return types
   */
-trait Baker[F[_]] extends LanguageApi { self =>
+trait Baker[F[_]] extends LanguageApi {
+  self =>
 
-  type Result <: SensoryEventResult { type Language <: self.Language }
+  type Result <: SensoryEventResult {type Language <: self.Language}
 
   // TODO rename it... Stages? Outcomes? Instances? Instants? Results?
-  type Moments <: SensoryEventMoments[F] { type Language <: self.Language }
+  type Moments <: SensoryEventMoments[F] {type Language <: self.Language}
 
-  type Event <: RuntimeEvent { type Language <: self.Language }
+  type Event <: RuntimeEvent {type Language <: self.Language}
 
-  type PState <: ProcessState { type Language <: self.Language }
+  type PState <: ProcessState {type Language <: self.Language}
+
+  type BakerEventType <: BakerEvent {type Language <: self.Language}
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -58,8 +61,8 @@ trait Baker[F[_]] extends LanguageApi { self =>
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
     *
     * Possible failures:
-    *   `NoSuchProcessException` -> When no process exists for the given id
-    *   `ProcessDeletedException` -> If the process is already deleted
+    * `NoSuchProcessException` -> When no process exists for the given id
+    * `ProcessDeletedException` -> If the process is already deleted
     *
     * @param processId The process identifier
     * @param event     The event object
@@ -70,8 +73,8 @@ trait Baker[F[_]] extends LanguageApi { self =>
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
     *
     * Possible failures:
-    *   `NoSuchProcessException` -> When no process exists for the given id
-    *   `ProcessDeletedException` -> If the process is already deleted
+    * `NoSuchProcessException` -> When no process exists for the given id
+    * `ProcessDeletedException` -> If the process is already deleted
     *
     * @param processId The process identifier
     * @param event     The event object
@@ -83,8 +86,8 @@ trait Baker[F[_]] extends LanguageApi { self =>
     * the process, and another for when the event was fully executed by the process.
     *
     * Possible failures:
-    *   `NoSuchProcessException` -> When no process exists for the given id
-    *   `ProcessDeletedException` -> If the process is already deleted
+    * `NoSuchProcessException` -> When no process exists for the given id
+    * `ProcessDeletedException` -> If the process is already deleted
     *
     * @param processId The process identifier
     * @param event     The event object
@@ -95,11 +98,11 @@ trait Baker[F[_]] extends LanguageApi { self =>
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
     *
     * Possible failures:
-    *   `NoSuchProcessException` -> When no process exists for the given id
-    *   `ProcessDeletedException` -> If the process is already deleted
+    * `NoSuchProcessException` -> When no process exists for the given id
+    * `ProcessDeletedException` -> If the process is already deleted
     *
-    * @param processId The process identifier
-    * @param event     The event object
+    * @param processId     The process identifier
+    * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
   def fireSensoryEventReceived(processId: String, event: Event, correlationId: String): F[SensoryEventStatus]
@@ -108,11 +111,11 @@ trait Baker[F[_]] extends LanguageApi { self =>
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
     *
     * Possible failures:
-    *   `NoSuchProcessException` -> When no process exists for the given id
-    *   `ProcessDeletedException` -> If the process is already deleted
+    * `NoSuchProcessException` -> When no process exists for the given id
+    * `ProcessDeletedException` -> If the process is already deleted
     *
-    * @param processId The process identifier
-    * @param event     The event object
+    * @param processId     The process identifier
+    * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
   def fireSensoryEventCompleted(processId: String, event: Event, correlationId: String): F[Result]
@@ -122,11 +125,11 @@ trait Baker[F[_]] extends LanguageApi { self =>
     * the process, and another for when the event was fully executed by the process.
     *
     * Possible failures:
-    *   `NoSuchProcessException` -> When no process exists for the given id
-    *   `ProcessDeletedException` -> If the process is already deleted
+    * `NoSuchProcessException` -> When no process exists for the given id
+    * `ProcessDeletedException` -> If the process is already deleted
     *
-    * @param processId The process identifier
-    * @param event     The event object
+    * @param processId     The process identifier
+    * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
   def fireSensoryEvent(processId: String, event: Event, correlationId: String): Moments
@@ -135,11 +138,11 @@ trait Baker[F[_]] extends LanguageApi { self =>
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
     *
     * Possible failures:
-    *   `NoSuchProcessException` -> When no process exists for the given id
-    *   `ProcessDeletedException` -> If the process is already deleted
+    * `NoSuchProcessException` -> When no process exists for the given id
+    * `ProcessDeletedException` -> If the process is already deleted
     *
-    * @param processId The process identifier
-    * @param event     The event object
+    * @param processId     The process identifier
+    * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
   def fireSensoryEventReceived(processId: String, event: Event, correlationId: language.Option[String]): F[SensoryEventStatus]
@@ -148,11 +151,11 @@ trait Baker[F[_]] extends LanguageApi { self =>
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
     *
     * Possible failures:
-    *   `NoSuchProcessException` -> When no process exists for the given id
-    *   `ProcessDeletedException` -> If the process is already deleted
+    * `NoSuchProcessException` -> When no process exists for the given id
+    * `ProcessDeletedException` -> If the process is already deleted
     *
-    * @param processId The process identifier
-    * @param event     The event object
+    * @param processId     The process identifier
+    * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
   def fireSensoryEventCompleted(processId: String, event: Event, correlationId: language.Option[String]): F[Result]
@@ -162,11 +165,11 @@ trait Baker[F[_]] extends LanguageApi { self =>
     * the process, and another for when the event was fully executed by the process.
     *
     * Possible failures:
-    *   `NoSuchProcessException` -> When no process exists for the given id
-    *   `ProcessDeletedException` -> If the process is already deleted
+    * `NoSuchProcessException` -> When no process exists for the given id
+    * `ProcessDeletedException` -> If the process is already deleted
     *
-    * @param processId The process identifier
-    * @param event     The event object
+    * @param processId     The process identifier
+    * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
   def fireSensoryEvent(processId: String, event: Event, correlationId: language.Option[String]): Moments
@@ -201,8 +204,6 @@ trait Baker[F[_]] extends LanguageApi { self =>
     */
   def getIngredients(processId: String): F[language.Map[String, Value]]
 
-  //TODO do we keep this a a future?
-  //I think its strange this is a future from user perspective
   /**
     * Returns the visual state (.dot) for a given process.
     *
@@ -216,14 +217,25 @@ trait Baker[F[_]] extends LanguageApi { self =>
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  def registerEventListener(recipeName: String, listener: EventListener): F[Unit]
+  def registerEventListener(recipeName: String, listenerFunction: language.BiConsumerFunction[String, Event]): F[Unit]
 
   /**
     * Registers a listener to all runtime events for all recipes that run in this Baker instance.
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  def registerEventListener(listener: EventListener): F[Unit]
+  def registerEventListener(listenerFunction: language.BiConsumerFunction[String, Event]): F[Unit]
+
+  /**
+    * Registers a listener function that listens to all BakerEvents
+    *
+    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
+    *
+    * @param listener
+    * @return
+    */
+  //TODO split the BakerEvent also between java and scala interface.
+  def registerBakerEventListener(listenerFunction: language.ConsumerFunction[BakerEventType]): F[Unit]
 
   //TODO remove AnyRef as a valid implementation.
   //Provide a helper method to go from AnyRef to InteractionImplementation
