@@ -22,7 +22,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
 import com.ing.baker.runtime.akka.actor.serialization.Encryption.{AESEncryption, NoEncryption}
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.{ProcessState, RuntimeEvent, SensoryEventResult}
+import com.ing.baker.runtime.scaladsl.{EventMoment, ProcessState, RuntimeEvent, SensoryEventResult}
 import com.ing.baker.types.Value
 import com.ing.baker.{AllTypeRecipe, types}
 
@@ -214,11 +214,16 @@ object SerializationSpec {
       ingredients <- Gen.listOf(ingredientsGen)
     } yield RuntimeEvent(eventName, ingredients.toMap)
 
+    val eventMomentsGen: Gen[EventMoment] = for {
+      eventName <- eventNameGen
+      occurredOn <- Gen.posNum[Long]
+    } yield EventMoment(eventName, occurredOn)
+
     val processStateGen: Gen[ProcessState] = for {
       processId <- processIdGen
       ingredients <- Gen.mapOf(ingredientsGen)
-      eventNames <- Gen.listOf(eventNameGen)
-    } yield ProcessState(processId, ingredients, eventNames)
+      events <- Gen.listOf(eventMomentsGen)
+    } yield ProcessState(processId, ingredients, events)
 
     val messagesGen: Gen[AnyRef] = Gen.oneOf(runtimeEventGen, processStateGen)
 

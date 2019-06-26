@@ -7,7 +7,7 @@ import com.ing.baker.types.Value
 import com.ing.baker.runtime.akka.actor.{protobuf => proto}
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
-import com.ing.baker.runtime.scaladsl.ProcessState
+import com.ing.baker.runtime.scaladsl.{EventMoment, ProcessState}
 
 import scala.util.Try
 
@@ -19,7 +19,7 @@ class ProcessStateMapping extends ProtoMap[ProcessState, proto.ProcessState] {
       val protoIngredients = a.ingredients.toSeq.map { case (name, value) =>
         proto.Ingredient(Some(name), None, Some(ctxToProto(value)))
       }
-      proto.ProcessState(Some(a.processId), protoIngredients, a.eventNames)
+      proto.ProcessState(Some(a.processId), protoIngredients, a.events.map(ctxToProto(_)))
     }
 
     def fromProto(message: proto.ProcessState): Try[ProcessState] =
@@ -32,5 +32,7 @@ class ProcessStateMapping extends ProtoMap[ProcessState, proto.ProcessState] {
             value <- ctxFromProto(protoValue)
           } yield (name, value)
         }
-      } yield ProcessState(processId, ingredients.toMap, message.eventNames.toList)
+        events <- message.events.toList.traverse (ctxFromProto(_))
+
+      } yield ProcessState(processId, ingredients.toMap, events)
 }
