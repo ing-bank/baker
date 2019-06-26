@@ -13,6 +13,9 @@ import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrat
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.events.{InteractionCompleted, InteractionFailed, InteractionStarted}
 import com.ing.baker.runtime.akka.internal.RecipeRuntime._
+import com.ing.baker.runtime.scaladsl.EventMoment
+import com.ing.baker.runtime.scaladsl.ProcessState
+import com.ing.baker.runtime.scaladsl.RuntimeEvent
 import com.ing.baker.runtime.scaladsl.{ProcessState, RuntimeEvent, RuntimeIngredient}
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.MDC
@@ -23,10 +26,10 @@ object RecipeRuntime {
   def recipeEventSourceFn: Transition => (ProcessState => RuntimeEvent => ProcessState) =
     _ => state => {
       case null => state
-      case RuntimeEvent(name, providedIngredients) =>
+      case event: RuntimeEvent =>
         state.copy(
-          ingredients = state.ingredients ++ providedIngredients,
-          eventNames = state.eventNames :+ name)
+          ingredients = state.ingredients ++ event.providedIngredients,
+          events = state.events :+ EventMoment(event.name, System.currentTimeMillis()))
     }
 
   /**

@@ -8,7 +8,8 @@ import com.ing.baker.types.{Converters, NullValue, RecordValue, Value}
 
 import scala.collection.JavaConverters._
 
-case class RuntimeEvent(name: String, providedIngredients: Map[String, Value])
+case class RuntimeEvent(name: String,
+                        providedIngredients: Map[String, Value])
   extends common.RuntimeEvent with ScalaApi {
 
   def validate(descriptor: EventDescriptor): Seq[String] =
@@ -35,6 +36,8 @@ case class RuntimeEvent(name: String, providedIngredients: Map[String, Value])
 }
 
 object RuntimeEvent {
+  def apply(name: String): RuntimeEvent =
+    new RuntimeEvent(name, Map())
 
   /**
     * Transforms an object into a RuntimeEvent if possible.

@@ -174,7 +174,8 @@ public class Webshop {
 //        baker.processEvent(processId, new OrderPlaced(order));
 //        baker.processEvent(processId, new PaymentMade());
 
-        System.out.println("ingredients: " + baker.getIngredients(processId).toString());
-        System.out.println("events: " + baker.getProcessState(processId).thenApply(ProcessState::eventNames).get().toString());
+//        System.out.println("ingredients: " + baker.getIngredients(processId).toString());
+//        System.out.println("events: " + baker.getProcessState(processId)
+//                .thenApply(ProcessState::events).get().toString());
     }
 }

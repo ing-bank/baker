@@ -1,8 +1,9 @@
 package com.ing.baker.runtime.javadsl
 
-import com.ing.baker.runtime.scaladsl
-import com.ing.baker.runtime.common
+import java.util.stream.Collectors
+
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
+import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Value
 
 import scala.collection.JavaConverters._
@@ -17,8 +18,10 @@ import scala.collection.JavaConverters._
 class ProcessState(
     val processId: String,
     val ingredients: java.util.Map[String, Value],
-    val eventNames: java.util.List[String]
+    val events: java.util.List[EventMoment]
   ) extends common.ProcessState with JavaApi {
+
+  type EventType = EventMoment
 
   /**
     * Returns the accumulated ingredients.
@@ -28,11 +31,18 @@ class ProcessState(
   def getIngredients: java.util.Map[String, Value] = ingredients
 
   /**
+    * Returns the RuntimeEvents
+    *
+    * @return The events occurred so far
+    */
+  def getEvents: java.util.List[EventMoment] = events
+
+  /**
     * Returns the names of the events occurred so far.
     *
     * @return The names of the events occurred so far
     */
-  def getEventNames: java.util.List[String] = eventNames
+  def getEventNames: java.util.List[String] = events.stream().map[String](_.name).collect(Collectors.toList[String])
 
   /**
     * Returns the process identifier.
@@ -42,5 +52,5 @@ class ProcessState(
   def getProcessId: String = processId
 
   def asScala: scaladsl.ProcessState =
-    scaladsl.ProcessState(processId, ingredients.asScala.toMap, eventNames.asScala)
+    scaladsl.ProcessState(processId, ingredients.asScala.toMap, events.asScala.map(_.asScala()))
 }
