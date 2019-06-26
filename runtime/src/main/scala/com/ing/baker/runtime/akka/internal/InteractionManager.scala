@@ -29,13 +29,6 @@ class InteractionManager(private var interactionImplementations: Seq[Interaction
         .forall { descriptor =>
           implementation.input.exists(_._2.isAssignableFrom(descriptor.`type`))
         }
-    /* TODO we could do something like this, where we also validate ingredientNames, except the implementations contain original names and the interaction descriptors contain any ingredient rename
-    .map(x => implementation.inputIngredients.get(x.name).map(_ -> x.`type`))
-    .forall {
-      case None => false
-      case Some((typeA, typeB)) => typeA.isAssignableFrom(typeB)
-    }
-    */
     interactionNameMatches && inputSizeMatches && inputNamesAndTypesMatches
   }
 

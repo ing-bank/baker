@@ -4,21 +4,20 @@ import java.lang.reflect.InvocationTargetException
 
 import akka.event.EventStream
 import cats.effect.IO
-import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor, processIdName}
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
+import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor, processIdName}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceRuntime
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.events.{InteractionCompleted, InteractionFailed, InteractionStarted}
 import com.ing.baker.runtime.akka.internal.RecipeRuntime._
-import com.ing.baker.runtime.scaladsl.ProcessState
-import com.ing.baker.runtime.scaladsl.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.{ProcessState, RuntimeEvent, RuntimeIngredient}
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.MDC
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 object RecipeRuntime {
   def recipeEventSourceFn: Transition => (ProcessState => RuntimeEvent => ProcessState) =
@@ -90,7 +89,7 @@ object RecipeRuntime {
   /**
     * Creates the input parameters for an interaction implementation
     */
-  def createInteractionInput(interaction: InteractionTransition, state: ProcessState): Map[String, Value] = {
+  def createInteractionInput(interaction: InteractionTransition, state: ProcessState): Seq[RuntimeIngredient] = {
 
     // the process id is a special ingredient that is always available
     val processId: (String, Value) = processIdName -> PrimitiveValue(state.processId.toString)
@@ -101,8 +100,8 @@ object RecipeRuntime {
     // arranges the ingredients in the expected order
     interaction.requiredIngredients.map {
       case IngredientDescriptor(name, _) =>
-        name -> allIngredients.getOrElse(name, throw new FatalInteractionException(s"Missing parameter '$name'"))
-    }.toMap
+        RuntimeIngredient(name, allIngredients.getOrElse(name, throw new FatalInteractionException(s"Missing parameter '$name'")))
+    }
   }
 
   // function that (optionally) transforms the output event using the event output transformers

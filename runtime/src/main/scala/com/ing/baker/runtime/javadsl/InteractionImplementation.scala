@@ -20,20 +20,22 @@ abstract class InteractionImplementation extends common.InteractionImplementatio
 
   override type Event = RuntimeEvent
 
+  override type Ingredient = RuntimeIngredient
+
   override val name: String
 
   override val input: util.Map[String, Type]
 
   override val output: Optional[util.Map[String, util.Map[String, Type]]]
 
-  override def execute(input: util.Map[String, Value]): CompletableFuture[Optional[RuntimeEvent]]
+  override def execute(input: util.List[RuntimeIngredient]): CompletableFuture[Optional[RuntimeEvent]]
 
   def asScala: scaladsl.InteractionImplementation =
     scaladsl.InteractionImplementation(
       name,
       input.asScala.toMap,
       if (output.isPresent) Some(output.get.asScala.toMap.mapValues(_.asScala.toMap)) else None,
-      input => FutureConverters.toScala(execute(input.asJava)
+      input => FutureConverters.toScala(execute(input.map(_.asJava).asJava)
         .thenApply[Option[scaladsl.RuntimeEvent]] {
         optional =>
           if (optional.isPresent) Some(optional.get().asScala)
@@ -80,12 +82,11 @@ object InteractionImplementation {
           }
         }.toMap.asJava
 
-      override def execute(input: util.Map[String, Value]): CompletableFuture[Optional[RuntimeEvent]] =  {
-        // Translate the Value objects to the expected input types
-        val inputArgs: Seq[AnyRef] = input.asScala.values.zip(method.getGenericParameterTypes).map {
-          case (value, targetType) => value.as(targetType).asInstanceOf[AnyRef]
-        }.toSeq
-        println(Console.YELLOW_B + inputArgs + Console.RESET)
+      override def execute(runtimeInput: util.List[RuntimeIngredient]): CompletableFuture[Optional[RuntimeEvent]] =  {
+        // Translate the Value objects to the expected runtimeInput types
+        val inputArgs: Seq[AnyRef] = runtimeInput.asScala.zip(method.getGenericParameterTypes).map {
+          case (value, targetType) => value.value.as(targetType).asInstanceOf[AnyRef]
+        }
         val output = method.invoke(implementation, inputArgs: _*)
         val futureClass: ClassTag[CompletableFuture[Any]] = implicitly[ClassTag[CompletableFuture[Any]]]
         Option(output) match {

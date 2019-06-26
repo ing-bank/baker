@@ -59,7 +59,7 @@ message VisualStateResponse {
 }
 
 message ExecuteInteractionHTTPRequest {
-    map<string, Value> values = 1;
+    repeated Ingredient ingredient = 1;
 }
 
 message ExecuteInteractionHTTPResponse {

@@ -13,7 +13,6 @@ trait Baker[F[_]] extends LanguageApi { self =>
 
   type Result <: SensoryEventResult { type Language <: self.Language }
 
-  // TODO rename it... Stages? Outcomes? Instances? Instants? Results?
   type Moments <: SensoryEventMoments[F] { type Language <: self.Language }
 
   type Event <: RuntimeEvent { type Language <: self.Language }

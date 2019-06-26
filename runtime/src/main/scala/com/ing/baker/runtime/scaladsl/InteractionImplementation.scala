@@ -9,7 +9,7 @@ import com.ing.baker.runtime.akka
 import com.ing.baker.runtime.javadsl
 import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
-import com.ing.baker.types.{Converters, Type, Value}
+import com.ing.baker.types.{Converters, Type}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.JavaConverters._
@@ -21,12 +21,14 @@ case class InteractionImplementation(
     name: String,
     input: Map[String, Type],
     output: Option[Map[String, Map[String, Type]]],
-    run: Map[String, Value] => Future[Option[RuntimeEvent]]
+    run: Seq[RuntimeIngredient] => Future[Option[RuntimeEvent]]
   ) extends common.InteractionImplementation[Future] with ScalaApi { self =>
 
   override type Event = RuntimeEvent
 
-  override def execute(input: Map[String, Value]): Future[Option[Event]] =
+  override type Ingredient = RuntimeIngredient
+
+  override def execute(input: Seq[RuntimeIngredient]): Future[Option[Event]] =
     run(input)
 
   def asJava: javadsl.InteractionImplementation =
@@ -40,9 +42,9 @@ case class InteractionImplementation(
           case Some(out) => Optional.of(out.mapValues(_.asJava).asJava)
           case None => Optional.empty[util.Map[String, util.Map[String, Type]]]()
         }
-      override def execute(input: util.Map[String, Value]): CompletableFuture[Optional[javadsl.RuntimeEvent]] =
+      override def execute(input: util.List[javadsl.RuntimeIngredient]): CompletableFuture[Optional[javadsl.RuntimeEvent]] =
         FutureConverters
-          .toJava(self.run(input.asScala.toMap))
+          .toJava(self.run(input.asScala.map(_.asScala)))
           .toCompletableFuture
           .thenApply(_.fold(Optional.empty[javadsl.RuntimeEvent]())(e => Optional.of(e.asJava)))
     }
@@ -84,24 +86,11 @@ object InteractionImplementation {
         }
       }.toMap
     }
-    val run: Map[String, Value] => Future[Option[RuntimeEvent]] = runtimeInput => {
+    val run: Seq[RuntimeIngredient] => Future[Option[RuntimeEvent]] = runtimeInput => {
       // Translate the Value objects to the expected runtimeInput types
-      println(runtimeInput)
-      val inputArgs: Seq[AnyRef] =
-        method.getParameters.zipWithIndex.map { case (p, index) =>
-          runtimeInput
-            .get(p.getName)
-            .orElse(input.get(p.getName).flatMap { `type` =>
-              val input = runtimeInput.toSeq(index)._2
-              if(input.isInstanceOf(`type`))
-                Some(input)
-              else
-                None
-            })
-            .get
-            .as(p.getParameterizedType)
-            .asInstanceOf[AnyRef]
-        }.toSeq
+      val inputArgs: Seq[AnyRef] = runtimeInput.zip(method.getGenericParameterTypes).map {
+        case (value, targetType) => value.value.as(targetType).asInstanceOf[AnyRef]
+      }
       val output = method.invoke(implementation, inputArgs: _*)
       val futureClass: ClassTag[Future[Any]] = implicitly[ClassTag[Future[Any]]]
       Option(output) match {

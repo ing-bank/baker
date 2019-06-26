@@ -141,8 +141,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
         }.map(_ should have('message ("No implementation provided for interaction: InteractionOne")))
       }
 
-      // TODO uncheck ignore when fixed
-      "a recipe provides an implementation for an interaction and does not comply to the Interaction" ignore {
+      "a recipe provides an implementation for an interaction and does not comply to the Interaction" in {
 
         val recipe = Recipe("WrongImplementation")
           .withInteraction(interactionOne)

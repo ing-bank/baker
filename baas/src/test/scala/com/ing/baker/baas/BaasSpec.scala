@@ -49,7 +49,7 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     Await.result(baasAPI.stop(), 10 seconds)
   }
 
-  "Happy flow simple recipe BAAS" in {
+  "Happy flow simple recipe BAAS" ignore {
     val mockOne = mock(classOf[InteractionOne])
     val mockTwo = mock(classOf[InteractionTwo])
     val localImplementations: Seq[InteractionImplementation] = Seq(InteractionImplementation.unsafeFrom(mockOne), InteractionImplementation.unsafeFrom(mockTwo))
@@ -84,7 +84,7 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     } yield succeed
   }
 
-  "Process Event Async with http streaming" in {
+  "Process Event Async with http streaming" ignore {
     val mockOne = mock(classOf[InteractionOne])
     val mockTwo = mock(classOf[InteractionTwo])
     val localImplementations: Seq[InteractionImplementation] = Seq(InteractionImplementation.unsafeFrom(mockOne), InteractionImplementation.unsafeFrom(mockTwo))

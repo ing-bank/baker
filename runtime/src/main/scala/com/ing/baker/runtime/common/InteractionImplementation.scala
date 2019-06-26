@@ -8,6 +8,8 @@ import com.ing.baker.types.{Type, Value}
   */
 trait InteractionImplementation[F[_]] extends LanguageApi { self =>
 
+  type Ingredient <: RuntimeIngredient { type Language = self.Language }
+
   type Event <: RuntimeEvent { type Language = self.Language }
 
   /**
@@ -16,17 +18,20 @@ trait InteractionImplementation[F[_]] extends LanguageApi { self =>
   val name: String
 
   /**
-    * The required input.
+    * The input description, used to match on different versions of the implementation.
     */
   val input: language.Map[String, Type]
 
   /**
-   * The required output.
+   * The output description, used to match on different versions of the implementation.
    */
   val output: language.Option[language.Map[String, language.Map[String, Type]]]
 
   /**
     * Executes the interaction.
+    *
+    * Note: The input is a sequence of ingredients because there can be 2 ingredients with the same name, e.g. when
+    * 2 ingredients get renamed to the same name.
     */
-  def execute(input: language.Map[String, Value]): F[language.Option[Event]]
+  def execute(input: language.Seq[Ingredient]): F[language.Option[Event]]
 }
