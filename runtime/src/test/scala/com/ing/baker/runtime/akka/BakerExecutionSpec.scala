@@ -22,6 +22,7 @@ import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.slf4j.LoggerFactory
+import com.ing.baker.runtime.scaladsl
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -386,7 +387,8 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
     }
 
     "notify a registered event listener of events" in {
-      val listenerMock = mock[EventListener]
+      val listenerMock = mock[com.ing.baker.runtime.scaladsl.EventListener]
+      val listenerFunction = (processId: String, runtimeEvent: RuntimeEvent) => listenerMock.processEvent(processId, runtimeEvent)
       when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
       val recipe =
         Recipe("EventListenerRecipe")
@@ -395,7 +397,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
-        _ <- baker.registerEventListener("EventListenerRecipe", listenerMock)
+        _ <- baker.registerEventListener("EventListenerRecipe", listenerFunction)
         processId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, processId)
         _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
@@ -794,8 +796,9 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
 
-        listenerMock = mock[EventListener]
-        _ <- baker.registerEventListener("ImmediateFailureEvent", listenerMock)
+        listenerMock = mock[com.ing.baker.runtime.scaladsl.EventListener]
+        listenerFunction = (processId: String, runtimeEvent: RuntimeEvent) => listenerMock.processEvent(processId, runtimeEvent)
+        _ <- baker.registerEventListener("ImmediateFailureEvent", listenerFunction)
 
         processId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, processId)

@@ -98,7 +98,8 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
         listenerProbe = TestProbe()
-        _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
+        listenerFunction = (bakerEvent: BakerEvent) => listenerProbe.ref ! bakerEvent
+        _ <- baker.registerBakerEventListener(listenerFunction)
         _ <- baker.bake(recipeId, processId)
         _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)), "someId")
         // TODO check the order of the timestamps later
@@ -126,7 +127,8 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
         listenerProbe = TestProbe()
-        _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
+        listenerFunction = (bakerEvent: BakerEvent) => listenerProbe.ref ! bakerEvent
+        _ <- baker.registerBakerEventListener(listenerFunction)
         _ <- baker.bake(recipeId, processId)
         // We used async function here because ThirdEvent is not part of the recipe and throws exception
         _ = baker.fireSensoryEventReceived(processId, RuntimeEvent.unsafeFrom(ThirdEvent()), "someId")
@@ -143,7 +145,8 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
         listenerProbe = TestProbe()
-        _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
+        listenerFunction = (bakerEvent: BakerEvent) => listenerProbe.ref ! bakerEvent
+        _ <- baker.registerBakerEventListener(listenerFunction)
         _ <- baker.bake(recipeId, processId)
         _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)), "someId")
         _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)), "someId") // Same correlationId cannot be used twice
@@ -160,7 +163,8 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
         listenerProbe = TestProbe()
-        _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
+        listenerFunction = (bakerEvent: BakerEvent) => listenerProbe.ref ! bakerEvent
+        _ <- baker.registerBakerEventListener(listenerFunction)
         _ <- baker.bake(recipeId, processId)
         _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
         _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue))) // Firing limit is set to 1 in the recipe
@@ -177,7 +181,8 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe(getRecipe(recipeName).withEventReceivePeriod(eventReceiveTimeout), mockImplementations)
         listenerProbe = TestProbe()
-        _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
+        listenerFunction = (bakerEvent: BakerEvent) => listenerProbe.ref ! bakerEvent
+        _ <- baker.registerBakerEventListener(listenerFunction)
         _ <- baker.bake(recipeId, processId)
         _ <- Future {
           Thread.sleep(eventReceiveTimeout.toMillis)
@@ -196,7 +201,8 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
       for {
         (baker, _) <- setupBakerWithRecipe(getRecipe(recipeName), mockImplementations)
         listenerProbe = TestProbe()
-        _ <- baker.registerEventListenerPF(listenerFunction(listenerProbe.ref))
+        listenerFunction = (bakerEvent: BakerEvent) => listenerProbe.ref ! bakerEvent
+        _ <- baker.registerBakerEventListener(listenerFunction)
         // Skipped baking the process here, so the process with processId does not exist
         // use a different processId and use async function because the sync version throws NoSuchProcessException
         _ = baker.fireSensoryEventReceived(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)), "someId")

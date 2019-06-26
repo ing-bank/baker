@@ -42,14 +42,6 @@ trait Baker extends common.Baker[Future] with ScalaApi {
 
   override type PState = ProcessState
 
-  /**
-    * This registers a listener function.
-    *
-    * @param pf A partial function that receives the events.
-    * @return
-    */
-  def registerEventListenerPF(pf: PartialFunction[BakerEvent, Unit]): Future[Unit]
-
   def fireSensoryEventReceived(processId: String, event: RuntimeEvent): Future[SensoryEventStatus] =
     fireSensoryEventReceived(processId, event, None)
 

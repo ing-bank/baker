@@ -1,11 +1,13 @@
 package com.ing.baker.runtime.common
 
-import com.ing.baker.runtime.scaladsl
+import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
 
 /**
   * Listener interface for events from baker.
   */
-trait EventListener {
+trait EventListener extends LanguageApi { self =>
+
+  type RuntimeEventType <: RuntimeEvent { type Language = self.Language }
 
   /**
     * Called when an event occurred.
@@ -14,6 +16,5 @@ trait EventListener {
     *
     * @param event The event.
     */
-  // TODO refactor EventLsitener to use correct RuntimeEvent
-  def processEvent(processId: String, event: scaladsl.RuntimeEvent)
+  def processEvent(processId: String, event: RuntimeEventType): Unit
 }
