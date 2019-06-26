@@ -84,11 +84,24 @@ object InteractionImplementation {
         }
       }.toMap
     }
-    val run: Map[String, Value] => Future[Option[RuntimeEvent]] = input => {
-      // Translate the Value objects to the expected input types
-      val inputArgs: Seq[AnyRef] = method.getParameters.map { p =>
-        input(p.getName).as(p.getParameterizedType).asInstanceOf[AnyRef]
-      }.toSeq
+    val run: Map[String, Value] => Future[Option[RuntimeEvent]] = runtimeInput => {
+      // Translate the Value objects to the expected runtimeInput types
+      println(runtimeInput)
+      val inputArgs: Seq[AnyRef] =
+        method.getParameters.zipWithIndex.map { case (p, index) =>
+          runtimeInput
+            .get(p.getName)
+            .orElse(input.get(p.getName).flatMap { `type` =>
+              val input = runtimeInput.toSeq(index)._2
+              if(input.isInstanceOf(`type`))
+                Some(input)
+              else
+                None
+            })
+            .get
+            .as(p.getParameterizedType)
+            .asInstanceOf[AnyRef]
+        }.toSeq
       val output = method.invoke(implementation, inputArgs: _*)
       val futureClass: ClassTag[Future[Any]] = implicitly[ClassTag[Future[Any]]]
       Option(output) match {
