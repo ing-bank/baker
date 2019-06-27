@@ -11,7 +11,7 @@ option (scalapb.options) = {
 message AddInteractionHTTPRequest {
     optional string name = 1;
     optional string uri = 2;
-    repeated Type type = 3;
+    map <string, Type> input = 3;
 }
 
 message AddInteractionHTTPResponse {
@@ -59,7 +59,7 @@ message VisualStateResponse {
 }
 
 message ExecuteInteractionHTTPRequest {
-    repeated Value values = 1;
+    repeated Ingredient ingredient = 1;
 }
 
 message ExecuteInteractionHTTPResponse {

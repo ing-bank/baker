@@ -10,8 +10,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.TestRecipe.{fireTwoEventsInteraction, _}
 import com.ing.baker.recipe.{CaseClassIngredient, common}
-import com.ing.baker.runtime.scaladsl.RuntimeEvent
-import com.ing.baker.runtime.scaladsl.Baker
+import com.ing.baker.runtime.scaladsl.{Baker, InteractionImplementation, RuntimeEvent}
 import com.ing.baker.types.{Converters, Value}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers._
@@ -89,7 +88,7 @@ trait BakerRuntimeTestBase
   protected val testOptionalIngredientInteractionMock: OptionalIngredientInteraction = mock[OptionalIngredientInteraction]
   protected val testProvidesNothingInteractionMock: ProvidesNothingInteraction = mock[ProvidesNothingInteraction]
 
-  protected val mockImplementations: Seq[AnyRef] =
+  protected val mockImplementations: Seq[InteractionImplementation] =
     Seq(
       testInteractionOneMock,
       testInteractionTwoMock,
@@ -104,7 +103,7 @@ trait BakerRuntimeTestBase
       testNonMatchingReturnTypeInteractionMock,
       testSieveInteractionMock,
       testOptionalIngredientInteractionMock,
-      testProvidesNothingInteractionMock)
+      testProvidesNothingInteractionMock).map(InteractionImplementation.unsafeFrom(_))
 
   def writeRecipeToSVGFile(recipe: CompiledRecipe) = {
     import guru.nidi.graphviz.engine.{Format, Graphviz}
@@ -208,7 +207,7 @@ trait BakerRuntimeTestBase
     setupBakerWithRecipe(recipe, mockImplementations)(actorSystem, materializer)
   }
 
-  protected def setupBakerWithRecipe(recipe: common.Recipe, implementations: Seq[AnyRef])
+  protected def setupBakerWithRecipe(recipe: common.Recipe, implementations: Seq[InteractionImplementation])
                                     (implicit actorSystem: ActorSystem, materializer: Materializer): Future[(Baker, String)] = {
     val baker = Baker.akka(ConfigFactory.load(), actorSystem, materializer)
     baker.addImplementations(implementations).flatMap { _ =>

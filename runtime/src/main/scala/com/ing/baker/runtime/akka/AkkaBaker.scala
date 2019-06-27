@@ -9,10 +9,9 @@ import com.ing.baker.runtime.akka.actor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.akka.internal.MethodInteractionImplementation
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.common
-import com.ing.baker.runtime.common.{InteractionImplementation, ProcessMetadata, SensoryEventStatus}
+import com.ing.baker.runtime.common.{ProcessMetadata, SensoryEventStatus}
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.types.Value
 import org.slf4j.{Logger, LoggerFactory}
@@ -366,24 +365,16 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     *
     * @param implementation The implementation object
     */
-  override def addImplementation(implementation: AnyRef): Future[Unit] =
-    Future.successful(config.interactionManager.addImplementation(MethodInteractionImplementation(implementation)))
+  override def addImplementation(implementation: InteractionImplementation): Future[Unit] =
+    Future.successful(config.interactionManager.addImplementation(implementation))
 
   /**
     * Adds a sequence of interaction implementation to baker.
     *
     * @param implementations The implementation object
     */
-  override def addImplementations(implementations: Seq[AnyRef]): Future[Unit] =
+  override def addImplementations(implementations: Seq[InteractionImplementation]): Future[Unit] =
     Future.successful(implementations.foreach(addImplementation))
-
-  /**
-    * Adds an interaction implementation to baker.
-    *
-    * @param implementation An InteractionImplementation instance
-    */
-  override def addImplementation(implementation: InteractionImplementation): Future[Unit] =
-    Future.successful(config.interactionManager.addImplementation(implementation))
 
   /**
     * Attempts to gracefully shutdown the baker system.

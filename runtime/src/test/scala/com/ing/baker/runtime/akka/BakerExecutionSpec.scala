@@ -15,7 +15,7 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFail
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common._
-import com.ing.baker.runtime.scaladsl.{Baker, RuntimeEvent}
+import com.ing.baker.runtime.scaladsl.{Baker, RuntimeEvent, InteractionImplementation}
 import com.typesafe.config.ConfigFactory
 import org.mockito.Matchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
@@ -290,7 +290,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         val manufactureGoodsMock: ManufactureGoods = mock[Webshop.ManufactureGoods]
         val validateOrderMock: ValidateOrder = mock[Webshop.ValidateOrder]
 
-        val implementations = Seq(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock)
+        val implementations = Seq(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock).map(InteractionImplementation.unsafeFrom(_))
 
         def createProcess(baker: Baker, recipeId: String): Future[Unit] = {
           for {
