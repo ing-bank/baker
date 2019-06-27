@@ -13,5 +13,5 @@ trait BakerActorProvider extends {
 
   def createRecipeManagerActor()(implicit actorSystem: ActorSystem, materializer: Materializer) : ActorRef
 
-  def getIndex(actorRef: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[ActorMetadata]
+  def getAllProcessesMetadata(actorRef: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[ActorMetadata]
 }

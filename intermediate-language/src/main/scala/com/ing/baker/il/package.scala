@@ -4,7 +4,7 @@ import java.security.MessageDigest
 
 package object il {
 
-  val processIdName = "$ProcessID$"
+  val processIdName = "processId"
   val exhaustedEventAppend = "RetryExhausted"
 
   def sha256HashCode(str: String): Long = {

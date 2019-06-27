@@ -85,6 +85,7 @@ trait ProcessInstanceRuntime[P, T, S, E] {
 
       IO.unit.flatMap { _ =>
         // calling transitionTask(...) could potentially throw an exception
+        // TODO I don't believe the last statement is true
         transitionTask(topology, transition)(job.consume, job.processState, job.input)
       }.map {
         case (producedMarking, out) ⇒

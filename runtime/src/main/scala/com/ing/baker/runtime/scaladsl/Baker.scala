@@ -41,7 +41,11 @@ trait Baker extends common.Baker[Future] with ScalaApi {
 
   override type PState = ProcessState
 
+  override type Interaction = InteractionImplementation
+
   override type BakerEventType = BakerEvent
+
+  override type ProcessMetadataType = ProcessMetadata
 
   def fireSensoryEventReceived(processId: String, event: RuntimeEvent): Future[SensoryEventStatus] =
     fireSensoryEventReceived(processId, event, None)

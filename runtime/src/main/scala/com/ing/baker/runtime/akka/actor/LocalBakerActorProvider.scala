@@ -36,7 +36,7 @@ class LocalBakerActorProvider(
     actorSystem.actorOf(RecipeManager.props())
   }
 
-  override def getIndex(actorRef: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[ActorMetadata] = {
+  override def getAllProcessesMetadata(actorRef: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration): Seq[ActorMetadata] = {
     import akka.pattern.ask
     import system.dispatcher
     implicit val akkaTimeout: akka.util.Timeout = timeout

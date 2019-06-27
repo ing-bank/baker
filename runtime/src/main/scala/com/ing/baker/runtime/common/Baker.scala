@@ -14,14 +14,17 @@ trait Baker[F[_]] extends LanguageApi {
 
   type Result <: SensoryEventResult {type Language <: self.Language}
 
-  // TODO rename it... Stages? Outcomes? Instances? Instants? Results?
-  type Moments <: SensoryEventMoments[F] {type Language <: self.Language}
+  type Moments <: SensoryEventMoments[F] { type Language <: self.Language }
 
   type Event <: RuntimeEvent {type Language <: self.Language}
 
   type PState <: ProcessState {type Language <: self.Language}
 
+  type Interaction <: InteractionImplementation[F] { type Language <: self.Language }
+
   type BakerEventType <: BakerEvent {type Language <: self.Language}
+
+  type ProcessMetadataType <: ProcessMetadata {type Language <: self.Language}
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -174,10 +177,8 @@ trait Baker[F[_]] extends LanguageApi {
     */
   def fireSensoryEvent(processId: String, event: Event, correlationId: language.Option[String]): Moments
 
-  //TODO why do we have this and do we want to keep this?
-  //TODO why is this named index when it return ProcessMetaData?
   /**
-    * Returns an index of all processes.
+    * Returns an index of all running processes.
     *
     * Can potentially return a partial index when baker runs in cluster mode
     * and not all shards can be reached within the given timeout.
@@ -186,7 +187,7 @@ trait Baker[F[_]] extends LanguageApi {
     *
     * @return An index of all processes
     */
-  def getIndex: F[language.Set[ProcessMetadata]]
+  def getAllProcessesMetadata: F[language.Set[ProcessMetadataType]]
 
   /**
     * Returns the process state.
@@ -231,36 +232,25 @@ trait Baker[F[_]] extends LanguageApi {
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     *
-    * @param listener
+    * @param listenerFunction
     * @return
     */
   //TODO split the BakerEvent also between java and scala interface.
   def registerBakerEventListener(listenerFunction: language.ConsumerFunction[BakerEventType]): F[Unit]
 
-  //TODO remove AnyRef as a valid implementation.
-  //Provide a helper method to go from AnyRef to InteractionImplementation
   /**
     * Adds an interaction implementation to baker.
     *
-    * This is assumed to be a an object with a method named 'apply' defined on it.
-    *
     * @param implementation The implementation object
     */
-  def addImplementation(implementation: AnyRef): F[Unit]
+  def addImplementation(implementation: Interaction): F[Unit]
 
   /**
     * Adds a sequence of interaction implementation to baker.
     *
     * @param implementations The implementation object
     */
-  def addImplementations(implementations: language.Seq[AnyRef]): F[Unit]
-
-  /**
-    * Adds an interaction implementation to baker.
-    *
-    * @param implementation An InteractionImplementation instance
-    */
-  def addImplementation(implementation: InteractionImplementation): F[Unit]
+  def addImplementations(implementations: language.Seq[Interaction]): F[Unit]
 
   /**
     * Attempts to gracefully shutdown the baker system.
