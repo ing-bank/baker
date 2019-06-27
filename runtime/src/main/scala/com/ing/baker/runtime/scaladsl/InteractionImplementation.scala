@@ -52,6 +52,10 @@ case class InteractionImplementation(
 
 object InteractionImplementation {
 
+  def unsafeFromList(implementations: List[AnyRef])(implicit ec: ExecutionContext): List[InteractionImplementation] = {
+    implementations.map(unsafeFrom(_))
+  }
+
   def unsafeFrom(implementation: AnyRef)(implicit ec: ExecutionContext): InteractionImplementation = {
     val method: Method = {
       val unmockedClass = akka.unmock(implementation.getClass)

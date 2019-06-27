@@ -46,6 +46,10 @@ abstract class InteractionImplementation extends common.InteractionImplementatio
 
 object InteractionImplementation {
 
+  def fromList(implementations: java.util.List[AnyRef]): java.util.List[InteractionImplementation] = {
+    implementations.asScala.map(from).asJava
+  }
+
   def from(implementation: AnyRef): InteractionImplementation =
     new InteractionImplementation {
 
