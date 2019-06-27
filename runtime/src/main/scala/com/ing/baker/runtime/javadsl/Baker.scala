@@ -10,8 +10,8 @@ import akka.stream.{ActorMaterializer, Materializer}
 import cats.data.NonEmptyList
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.akka.{AkkaBaker, _}
-import com.ing.baker.runtime.common.{InteractionImplementation, RecipeInformation, SensoryEventStatus}
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
+import com.ing.baker.runtime.common.{RecipeInformation, SensoryEventStatus}
 import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
@@ -56,6 +56,8 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
 
   override type PState = ProcessState
 
+  override type Interaction = InteractionImplementation
+
   override type BakerEventType = BakerEvent
 
   override type ProcessMetadataType = ProcessMetadata
@@ -76,24 +78,16 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     *
     * @param implementation The implementation that should be added.
     */
-  def addImplementation(@Nonnull implementation: AnyRef): CompletableFuture[Unit] =
-    toCompletableFuture(baker.addImplementation(implementation))
-
-  /**
-    * Adds a single interaction implementation to baker.
-    *
-    * @param implementation The implementation that should be added.
-    */
   def addImplementation(@Nonnull implementation: InteractionImplementation): CompletableFuture[Unit] =
-    toCompletableFuture(baker.addImplementation(implementation))
+    toCompletableFuture(baker.addImplementation(implementation.asScala))
 
   /**
     * Adds all the provided interaction implementations to baker.
     *
     * @param implementations An iterable of implementations that should be added.
     */
-  def addImplementations(@Nonnull implementations: java.util.List[AnyRef]): CompletableFuture[Unit] =
-    toCompletableFuture(baker.addImplementations(implementations.asScala))
+  def addImplementations(@Nonnull implementations: java.util.List[InteractionImplementation]): CompletableFuture[Unit] =
+    toCompletableFuture(baker.addImplementations(implementations.asScala.map(_.asScala)))
 
   /**
     * Attempts to gracefully shutdown the baker system.
@@ -242,7 +236,7 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     * - ...
     *
     * @param recipeName the name of all recipes this event listener should be triggered for
-    * @param listener   The listener to subscribe to events.
+    * @param listenerFunction   The listener to subscribe to events.
     */
   override def registerEventListener(@Nonnull recipeName: String, @Nonnull listenerFunction: BiConsumer[String, RuntimeEvent]): CompletableFuture[Unit] =
     toCompletableFuture(baker.registerEventListener(recipeName,
@@ -273,7 +267,7 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
   /**
     * Registers a listener that listens to all Baker events
     *
-    * @param listener
+    * @param listenerFunction
     * @return
     */
   override def registerBakerEventListener(listenerFunction: Consumer[BakerEvent]): CompletableFuture[Unit] =
