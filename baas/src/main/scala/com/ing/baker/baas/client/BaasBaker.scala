@@ -8,7 +8,7 @@ import com.ing.baker.baas.interaction.server.RemoteInteractionLauncher
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
-import com.ing.baker.runtime.common.{ProcessMetadata, RecipeInformation, SensoryEventStatus}
+import com.ing.baker.runtime.common.{RecipeInformation, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
@@ -219,7 +219,7 @@ class BaasBaker(config: Config,
     *
     * @return An index of all processes
     */
-  override def getIndex(): Future[Set[ProcessMetadata]] = ???
+  override def getAllProcessesMetadata: Future[Set[ProcessMetadata]] = ???
 
   /**
     * Attempts to gracefully shutdown the baker system.
@@ -268,7 +268,7 @@ class BaasBaker(config: Config,
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     *
-    * @param listener
+    * @param listenerFunction
     * @return
     */
   override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): Future[Unit] = ???

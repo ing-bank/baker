@@ -109,7 +109,7 @@ class ClusterBakerActorProvider(
     actorSystem.actorOf(props = singletonProxyProps, name = "RecipeManagerProxy")
   }
 
-  def getIndex(actor: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration) = {
+  def getAllProcessesMetadata(actor: ActorRef)(implicit system: ActorSystem, timeout: FiniteDuration) = {
 
     import akka.pattern.ask
     import system.dispatcher

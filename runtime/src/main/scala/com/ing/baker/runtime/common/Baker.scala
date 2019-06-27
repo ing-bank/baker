@@ -24,6 +24,8 @@ trait Baker[F[_]] extends LanguageApi {
 
   type BakerEventType <: BakerEvent {type Language <: self.Language}
 
+  type ProcessMetadataType <: ProcessMetadata {type Language <: self.Language}
+
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
     *
@@ -175,10 +177,8 @@ trait Baker[F[_]] extends LanguageApi {
     */
   def fireSensoryEvent(processId: String, event: Event, correlationId: language.Option[String]): Moments
 
-  //TODO why do we have this and do we want to keep this?
-  //TODO why is this named index when it return ProcessMetaData?
   /**
-    * Returns an index of all processes.
+    * Returns an index of all running processes.
     *
     * Can potentially return a partial index when baker runs in cluster mode
     * and not all shards can be reached within the given timeout.
@@ -187,7 +187,7 @@ trait Baker[F[_]] extends LanguageApi {
     *
     * @return An index of all processes
     */
-  def getIndex: F[language.Set[ProcessMetadata]]
+  def getAllProcessesMetadata: F[language.Set[ProcessMetadataType]]
 
   /**
     * Returns the process state.
@@ -232,7 +232,7 @@ trait Baker[F[_]] extends LanguageApi {
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     *
-    * @param listener
+    * @param listenerFunction
     * @return
     */
   //TODO split the BakerEvent also between java and scala interface.

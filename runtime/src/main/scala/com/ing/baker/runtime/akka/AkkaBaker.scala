@@ -9,10 +9,10 @@ import com.ing.baker.runtime.akka.actor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.common
-import com.ing.baker.runtime.common.{ProcessMetadata, SensoryEventStatus}
 import com.ing.baker.runtime.common.BakerException._
+import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.Value
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -247,9 +247,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     *
     * @return An index of all processes
     */
-  override def getIndex: Future[Set[ProcessMetadata]] = {
+  override def getAllProcessesMetadata: Future[Set[ProcessMetadata]] = {
     Future.successful(config.bakerActorProvider
-      .getIndex(processIndexActor)(system, config.defaultInquireTimeout)
+      .getAllProcessesMetadata(processIndexActor)(system, config.defaultInquireTimeout)
       .map(p => ProcessMetadata(p.recipeId, p.processId, p.createdDateTime)).toSet)
   }
 
@@ -338,7 +338,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     *
-    * @param listener
+    * @param listenerFunction
     * @return
     */
   override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): Future[Unit] = {
