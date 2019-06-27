@@ -245,7 +245,7 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
 
 
   /**
-    * Registers a listener to all runtime events for this baker instance.
+    * Registers a listener function to all runtime events for this baker instance.
     *
     * Note that:
     *
@@ -264,6 +264,29 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
   override def registerEventListener(listenerFunction: BiConsumer[String, RuntimeEvent]): CompletableFuture[Unit] =
     toCompletableFuture(baker.registerEventListener(
       (processId: String, event: scaladsl.RuntimeEvent) => listenerFunction.accept(processId, event.asJava)))
+
+
+  /**
+    * Registers a listener function to all runtime events for this baker instance.
+    *
+    * Note that:
+    *
+    * - The delivery guarantee is *AT MOST ONCE*. Practically this means you can miss events when the application terminates (unexpected or not).
+    * - The delivery is local (JVM) only, you will NOT receive events from other nodes when running in cluster mode.
+    *
+    * Because of these constraints you should not use an event listener for critical functionality. Valid use cases might be:
+    *
+    * - logging
+    * - metrics
+    * - unit tests
+    * - ...
+    *
+    * @param eventListener The EventListener class the processEvent will be called once these events occur
+    */
+  @deprecated(message = "Replaced with the consumer function variant", since = "3.0.0")
+  def registerEventListener(eventListener: EventListener): Future[Unit] =
+    baker.registerEventListener((processId: String, runtimeEvent: scaladsl.RuntimeEvent) => eventListener.processEvent(processId, runtimeEvent.asJava))
+
 
   /**
     * Registers a listener that listens to all Baker events
