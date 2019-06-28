@@ -11,7 +11,7 @@ import org.mockito.Mockito.when
 import scala.language.postfixOps
 import com.ing.baker.runtime.ScalaDSLRuntime._
 import com.ing.baker.runtime.common.BakerException.{ImplementationsException, RecipeValidationException}
-import com.ing.baker.runtime.scaladsl.{Baker, InteractionImplementation}
+import com.ing.baker.runtime.scaladsl.{Baker, InteractionInstance}
 import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.Future
@@ -42,7 +42,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           recipeId <- baker.addRecipe(simpleRecipe)
           processId = java.util.UUID.randomUUID().toString
           _ <- baker.bake(recipeId, processId)
-          _ <- baker.fireSensoryEventCompleted(processId, initialEvent.instance("initialIngredient"))
+          _ <- baker.fireEventAndResolveWhenCompleted(processId, initialEvent.instance("initialIngredient"))
         } yield succeed
       }
 
@@ -53,7 +53,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
       "providing an implementation with the class simplename same as the interaction" in {
         val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
-        baker.addImplementation(InteractionImplementation.unsafeFrom(new implementations.InteractionOne())).map(_ => succeed)
+        baker.addImplementation(InteractionInstance.unsafeFrom(new implementations.InteractionOne())).map(_ => succeed)
       }
 
       "providing an implementation for a renamed interaction" in {
@@ -65,7 +65,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
         val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
         for {
-          _ <- baker.addImplementation(InteractionImplementation.unsafeFrom(new implementations.InteractionOne()))
+          _ <- baker.addImplementation(InteractionInstance.unsafeFrom(new implementations.InteractionOne()))
           _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
         } yield succeed
       }
@@ -79,7 +79,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
         val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
         for {
-          _ <- baker.addImplementation(InteractionImplementation.unsafeFrom(new InteractionOneFieldName()))
+          _ <- baker.addImplementation(InteractionInstance.unsafeFrom(new InteractionOneFieldName()))
           _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
         } yield succeed
       }
@@ -93,7 +93,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
         val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
         for {
-          _ <- baker.addImplementation(InteractionImplementation.unsafeFrom(new InteractionOneInterfaceImplementation()))
+          _ <- baker.addImplementation(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation()))
           _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
         } yield succeed
       }
@@ -106,7 +106,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
         val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
         for {
-          _ <- baker.addImplementation(InteractionImplementation.unsafeFrom(mock[ComplexIngredientInteraction]))
+          _ <- baker.addImplementation(InteractionInstance.unsafeFrom(mock[ComplexIngredientInteraction]))
           _ <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
         } yield succeed
       }
@@ -149,7 +149,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
-        baker.addImplementation(InteractionImplementation.unsafeFrom(new InteractionOneWrongApply()))
+        baker.addImplementation(InteractionInstance.unsafeFrom(new InteractionOneWrongApply()))
 
         recoverToExceptionIf[ImplementationsException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))

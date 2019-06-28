@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka.actor.process_index
 import akka.actor.ActorRef
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
-import com.ing.baker.runtime.scaladsl.{RuntimeEvent, SensoryEventResult}
+import com.ing.baker.runtime.scaladsl.{EventInstance, EventResult}
 import com.ing.baker.runtime.common.{RejectReason, SensoryEventStatus}
 
 import scala.concurrent.duration.FiniteDuration
@@ -28,7 +28,7 @@ object ProcessIndexProtocol {
 
   case class StopRetryingInteraction(processId: String, interactionName: String) extends ProcessIndexMessage
 
-  case class ResolveBlockedInteraction(processId: String, interactionName: String, output: RuntimeEvent) extends ProcessIndexMessage
+  case class ResolveBlockedInteraction(processId: String, interactionName: String, output: EventInstance) extends ProcessIndexMessage
 
   /**
     * Failure when attempting to resolve a blocked interaction, the event is not of valid type according with the recipe
@@ -76,7 +76,7 @@ object ProcessIndexProtocol {
     * @param timeout Waiting time for an instance to produce some response to this request
     * @param reaction Expected reaction from the ProcessEventSender actor, see SensoryEventReaction
     */
-  case class ProcessEvent(processId: String, event: RuntimeEvent, correlationId: Option[String], timeout: FiniteDuration, reaction: FireSensoryEventReaction) extends ProcessIndexMessage
+  case class ProcessEvent(processId: String, event: EventInstance, correlationId: Option[String], timeout: FiniteDuration, reaction: FireSensoryEventReaction) extends ProcessIndexMessage
 
   /**
     * Expected reactions when firing a sensory event
@@ -110,7 +110,7 @@ object ProcessIndexProtocol {
 
   case class ProcessEventReceivedResponse(status: SensoryEventStatus) extends BakerSerializable
 
-  case class ProcessEventCompletedResponse(result: SensoryEventResult) extends BakerSerializable
+  case class ProcessEventCompletedResponse(result: EventResult) extends BakerSerializable
 
   /**
     * Possible failures when firing a sensory event

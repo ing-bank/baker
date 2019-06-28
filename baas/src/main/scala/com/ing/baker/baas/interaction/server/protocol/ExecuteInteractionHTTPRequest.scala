@@ -7,12 +7,12 @@ import com.ing.baker.baas.server.protocol.BaasRequest
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.baas.protobuf
-import com.ing.baker.runtime.scaladsl.RuntimeIngredient
+import com.ing.baker.runtime.scaladsl.IngredientInstance
 import scalapb.GeneratedMessageCompanion
 
 import scala.util.Try
 
-case class ExecuteInteractionHTTPRequest(input: Seq[RuntimeIngredient]) extends BaasRequest
+case class ExecuteInteractionHTTPRequest(input: Seq[IngredientInstance]) extends BaasRequest
 
 object ExecuteInteractionHTTPRequest {
 
@@ -32,7 +32,7 @@ object ExecuteInteractionHTTPRequest {
               name <- versioned(protoIngredient.name, "name")
               valueProto <- versioned(protoIngredient.value, "value")
               value <- ctxFromProto(valueProto)
-            } yield RuntimeIngredient(name, value)
+            } yield IngredientInstance(name, value)
           }
         } yield ExecuteInteractionHTTPRequest(input)
     }

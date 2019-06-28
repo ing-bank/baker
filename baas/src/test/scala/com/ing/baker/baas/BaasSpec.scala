@@ -14,7 +14,7 @@ import com.ing.baker.recipe.javadsl.InteractionFailureStrategy.RetryWithIncremen
 import com.ing.baker.recipe.scaladsl
 import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.{Baker, InteractionImplementation, RuntimeEvent}
+import com.ing.baker.runtime.scaladsl.{Baker, InteractionInstance, EventInstance}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.anyString
 import org.mockito.Mockito.{mock, reset, when}
@@ -52,7 +52,7 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
   "Happy flow simple recipe BAAS" ignore {
     val mockOne = mock(classOf[InteractionOne])
     val mockTwo = mock(classOf[InteractionTwo])
-    val localImplementations: Seq[InteractionImplementation] = Seq(InteractionImplementation.unsafeFrom(mockOne), InteractionImplementation.unsafeFrom(mockTwo))
+    val localImplementations: Seq[InteractionInstance] = Seq(InteractionInstance.unsafeFrom(mockOne), InteractionInstance.unsafeFrom(mockTwo))
     Await.result(baasAPI.start(), 10 seconds)
     baasBaker.addImplementations(localImplementations)
 
@@ -71,7 +71,7 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     for {
       recipeId <- baasBaker.addRecipe(compiledRecipe)
       _ <- baasBaker.bake(recipeId, requestId)
-      response <- baasBaker.fireSensoryEventCompleted(requestId, RuntimeEvent.unsafeFrom(InitialEvent("initialIngredient")))
+      response <- baasBaker.fireEventAndResolveWhenCompleted(requestId, EventInstance.unsafeFrom(InitialEvent("initialIngredient")))
       _ = response.status shouldBe SensoryEventStatus.Completed
       processState <- baasBaker.getProcessState(requestId)
 
@@ -87,7 +87,7 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
   "Process Event Async with http streaming" ignore {
     val mockOne = mock(classOf[InteractionOne])
     val mockTwo = mock(classOf[InteractionTwo])
-    val localImplementations: Seq[InteractionImplementation] = Seq(InteractionImplementation.unsafeFrom(mockOne), InteractionImplementation.unsafeFrom(mockTwo))
+    val localImplementations: Seq[InteractionInstance] = Seq(InteractionInstance.unsafeFrom(mockOne), InteractionInstance.unsafeFrom(mockTwo))
     Await.result(baasAPI.start(), 10 seconds)
     baasBaker.addImplementations(localImplementations)
 
@@ -105,7 +105,7 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     for {
       recipeId <- baasBaker.addRecipe(compiledRecipe)
       _ <- baasBaker.bake(recipeId, requestId)
-      response <- baasBaker.fireSensoryEventCompleted(requestId, RuntimeEvent.unsafeFrom(InitialEvent("initialIngredient")))
+      response <- baasBaker.fireEventAndResolveWhenCompleted(requestId, EventInstance.unsafeFrom(InitialEvent("initialIngredient")))
     } yield assert(response.events.nonEmpty)
   }
 }

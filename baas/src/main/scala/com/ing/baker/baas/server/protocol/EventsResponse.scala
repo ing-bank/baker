@@ -3,7 +3,7 @@ package com.ing.baker.baas.server.protocol
 import cats.instances.list._
 import cats.instances.try_._
 import cats.syntax.traverse._
-import com.ing.baker.runtime.scaladsl.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.runtime.akka.actor.serialization.{ProtoMap, SerializersProvider}
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.baas.protobuf
@@ -11,7 +11,7 @@ import scalapb.GeneratedMessageCompanion
 
 import scala.util.Try
 
-case class EventsResponse(events: Seq[RuntimeEvent]) extends BaasResponse
+case class EventsResponse(events: Seq[EventInstance]) extends BaasResponse
 
 object EventsResponse {
 

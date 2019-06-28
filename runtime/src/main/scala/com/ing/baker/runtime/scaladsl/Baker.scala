@@ -33,15 +33,15 @@ object Baker {
   */
 trait Baker extends common.Baker[Future] with ScalaApi {
 
-  override type SensoryEventResultType = SensoryEventResult
+  override type EventResultType = EventResult
 
-  override type SensoryEventMomentsType = SensoryEventMoments
+  override type EventResolutionsType = EventResolutions
 
-  override type RuntimeEventType = RuntimeEvent
+  override type RuntimeEventType = EventInstance
 
   override type ProcessStateType = ProcessState
 
-  override type InteractionImplementationType = InteractionImplementation
+  override type InteractionImplementationType = InteractionInstance
 
   override type BakerEventType = BakerEvent
 
@@ -49,22 +49,22 @@ trait Baker extends common.Baker[Future] with ScalaApi {
 
   override type RecipeInformationType = RecipeInformation
 
-  def fireSensoryEventReceived(processId: String, event: RuntimeEvent): Future[SensoryEventStatus] =
-    fireSensoryEventReceived(processId, event, None)
+  def fireEventAndResolveWhenReceived(processId: String, event: EventInstance): Future[SensoryEventStatus] =
+    fireEventAndResolveWhenReceived(processId, event, None)
 
-  def fireSensoryEventCompleted(processId: String, event: RuntimeEvent): Future[SensoryEventResultType] =
-    fireSensoryEventCompleted(processId, event, None)
+  def fireEventAndResolveWhenCompleted(processId: String, event: EventInstance): Future[EventResultType] =
+    fireEventAndResolveWhenCompleted(processId, event, None)
 
-  def fireSensoryEvent(processId: String, event: RuntimeEvent): SensoryEventMomentsType =
-    fireSensoryEvent(processId, event, None)
+  def fireEvent(processId: String, event: EventInstance): EventResolutionsType =
+    fireEvent(processId, event, None)
 
-  def fireSensoryEventReceived(processId: String, event: RuntimeEvent, correlationId: String): Future[SensoryEventStatus] =
-    fireSensoryEventReceived(processId, event, Some(correlationId))
+  def fireEventAndResolveWhenReceived(processId: String, event: EventInstance, correlationId: String): Future[SensoryEventStatus] =
+    fireEventAndResolveWhenReceived(processId, event, Some(correlationId))
 
-  def fireSensoryEventCompleted(processId: String, event: RuntimeEvent, correlationId: String): Future[SensoryEventResultType] =
-    fireSensoryEventCompleted(processId, event, Some(correlationId))
+  def fireEventAndResolveWhenCompleted(processId: String, event: EventInstance, correlationId: String): Future[EventResultType] =
+    fireEventAndResolveWhenCompleted(processId, event, Some(correlationId))
 
-  def fireSensoryEvent(processId: String, event: RuntimeEvent, correlationId: String): SensoryEventMomentsType =
-    fireSensoryEvent(processId, event, Some(correlationId))
+  def fireEvent(processId: String, event: EventInstance, correlationId: String): EventResolutionsType =
+    fireEvent(processId, event, Some(correlationId))
 
 }

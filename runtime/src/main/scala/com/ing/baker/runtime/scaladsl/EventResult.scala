@@ -5,8 +5,8 @@ import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.types.Value
 
-case class SensoryEventResult(
+case class EventResult(
   status: SensoryEventStatus,
   events: Seq[String],
   ingredients: Map[String, Value]
-) extends common.SensoryEventResult with ScalaApi
+) extends common.EventResult with ScalaApi

@@ -4,13 +4,13 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.testkit.{TestDuration, TestKit, TestProbe}
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.runtime.scaladsl.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.{NotifyBoth, NotifyWhenCompleted, NotifyWhenReceived}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{FireSensoryEventRejection, ProcessEvent, ProcessEventCompletedResponse, ProcessEventReceivedResponse}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.SensoryEventResult
+import com.ing.baker.runtime.scaladsl.EventResult
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.scalatest.Matchers._
 import org.scalatest.WordSpecLike
@@ -35,12 +35,12 @@ class SensoryEventResponseHandlerSpec extends TestKit(ActorSystem("SensoryEventR
 
     "return a SensoryEventResult when processing the outcome of a sensory event with NotifyWhenCompleted reaction" in {
       val client = TestProbe()
-      val sensoryEvent = RuntimeEvent(webshop.orderPlaced.name, Map.empty)
+      val sensoryEvent = EventInstance(webshop.orderPlaced.name, Map.empty)
       val cmd = ProcessEvent("", sensoryEvent, None, 1 second, NotifyWhenCompleted(waitForRetries = true))
       val handler = system.actorOf(SensoryEventResponseHandler(client.ref, cmd))
-      val event1 = RuntimeEvent("event1", Map("ingredient1" -> PrimitiveValue("value1")))
-      val event2 = RuntimeEvent("event2", Map("ingredient2" -> PrimitiveValue("value2")))
-      val event3 = RuntimeEvent("event3", Map("ingredient3" -> PrimitiveValue("value3")))
+      val event1 = EventInstance("event1", Map("ingredient1" -> PrimitiveValue("value1")))
+      val event2 = EventInstance("event2", Map("ingredient2" -> PrimitiveValue("value2")))
+      val event3 = EventInstance("event3", Map("ingredient3" -> PrimitiveValue("value3")))
       val events = List(event1, event2, event3)
       val expectedEventNames = events.map(_.name)
       val expectedIngredients = events.foldLeft(Map.empty[String, Value])(_ ++ _.providedIngredients)
@@ -51,17 +51,17 @@ class SensoryEventResponseHandlerSpec extends TestKit(ActorSystem("SensoryEventR
       handler ! TransitionFired(2, 2, None, Map.empty, Map.empty, Set.empty, event2)
       client.expectNoMessage(100.millis)
       handler ! TransitionFired(3, 3, None, Map.empty, Map.empty, Set.empty, event3)
-      client.expectMsg(ProcessEventCompletedResponse(SensoryEventResult(SensoryEventStatus.Completed, expectedEventNames, expectedIngredients)))
+      client.expectMsg(ProcessEventCompletedResponse(EventResult(SensoryEventStatus.Completed, expectedEventNames, expectedIngredients)))
     }
 
     "return a SensoryEventStatus when processing the outcome of a sensory event with NotifyWhenReceived reaction" in {
       val client = TestProbe()
-      val sensoryEvent = RuntimeEvent(webshop.orderPlaced.name, Map.empty)
+      val sensoryEvent = EventInstance(webshop.orderPlaced.name, Map.empty)
       val cmd = ProcessEvent("", sensoryEvent, None, 1 second, NotifyWhenReceived)
       val handler = system.actorOf(SensoryEventResponseHandler(client.ref, cmd))
-      val event1 = RuntimeEvent("event1", Map("ingredient1" -> PrimitiveValue("value1")))
-      val event2 = RuntimeEvent("event2", Map("ingredient2" -> PrimitiveValue("value2")))
-      val event3 = RuntimeEvent("event3", Map("ingredient3" -> PrimitiveValue("value3")))
+      val event1 = EventInstance("event1", Map("ingredient1" -> PrimitiveValue("value1")))
+      val event2 = EventInstance("event2", Map("ingredient2" -> PrimitiveValue("value2")))
+      val event3 = EventInstance("event3", Map("ingredient3" -> PrimitiveValue("value3")))
       handler ! webShopRecipe
       client.expectNoMessage(100.millis)
       handler ! TransitionFired(1, 1, None, Map.empty, Map.empty, Set(2, 3), event1)
@@ -75,12 +75,12 @@ class SensoryEventResponseHandlerSpec extends TestKit(ActorSystem("SensoryEventR
     "return a SensoryEventResult AND a SensoryEventStatus when processing the outcome of a sensory event with NotifyBoth reaction" in {
       val clientReceived = TestProbe()
       val clientCompleted = TestProbe()
-      val sensoryEvent = RuntimeEvent(webshop.orderPlaced.name, Map.empty)
+      val sensoryEvent = EventInstance(webshop.orderPlaced.name, Map.empty)
       val cmd = ProcessEvent("", sensoryEvent, None, 1 second, NotifyBoth(waitForRetries = true, clientCompleted.ref))
       val handler = system.actorOf(SensoryEventResponseHandler(clientReceived.ref, cmd))
-      val event1 = RuntimeEvent("event1", Map("ingredient1" -> PrimitiveValue("value1")))
-      val event2 = RuntimeEvent("event2", Map("ingredient2" -> PrimitiveValue("value2")))
-      val event3 = RuntimeEvent("event3", Map("ingredient3" -> PrimitiveValue("value3")))
+      val event1 = EventInstance("event1", Map("ingredient1" -> PrimitiveValue("value1")))
+      val event2 = EventInstance("event2", Map("ingredient2" -> PrimitiveValue("value2")))
+      val event3 = EventInstance("event3", Map("ingredient3" -> PrimitiveValue("value3")))
       val events = List(event1, event2, event3)
       val expectedEventNames = events.map(_.name)
       val expectedIngredients = events.foldLeft(Map.empty[String, Value])(_ ++ _.providedIngredients)
@@ -95,17 +95,17 @@ class SensoryEventResponseHandlerSpec extends TestKit(ActorSystem("SensoryEventR
       clientCompleted.expectNoMessage(100.millis)
       handler ! TransitionFired(3, 3, None, Map.empty, Map.empty, Set.empty, event3)
       clientReceived.expectNoMessage(100.millis)
-      clientCompleted.expectMsg(ProcessEventCompletedResponse(SensoryEventResult(SensoryEventStatus.Completed, expectedEventNames, expectedIngredients)))
+      clientCompleted.expectMsg(ProcessEventCompletedResponse(EventResult(SensoryEventStatus.Completed, expectedEventNames, expectedIngredients)))
     }
 
     "wait for the completion of all jobs even if one fails with TransitionFailed" in {
       val client = TestProbe()
-      val sensoryEvent = RuntimeEvent(webshop.orderPlaced.name, Map.empty)
+      val sensoryEvent = EventInstance(webshop.orderPlaced.name, Map.empty)
       val cmd = ProcessEvent("", sensoryEvent, None, 1 second, NotifyWhenCompleted(waitForRetries = true))
       val handler = system.actorOf(SensoryEventResponseHandler(client.ref, cmd))
-      val event1 = RuntimeEvent("event1", Map("ingredient1" -> PrimitiveValue("value1")))
-      val event2 = RuntimeEvent("event2", Map("ingredient2" -> PrimitiveValue("value2")))
-      val event3 = RuntimeEvent("event3", Map("ingredient3" -> PrimitiveValue("value3")))
+      val event1 = EventInstance("event1", Map("ingredient1" -> PrimitiveValue("value1")))
+      val event2 = EventInstance("event2", Map("ingredient2" -> PrimitiveValue("value2")))
+      val event3 = EventInstance("event3", Map("ingredient3" -> PrimitiveValue("value3")))
       val events = List(event1, event2, event3)
       val expectedEventNames = events
         .map(_.name)
@@ -120,7 +120,7 @@ class SensoryEventResponseHandlerSpec extends TestKit(ActorSystem("SensoryEventR
       handler ! TransitionFailed(2, 2, None, Map.empty, null, "", ProcessInstanceProtocol.ExceptionStrategy.BlockTransition)
       client.expectNoMessage(100.millis)
       handler ! TransitionFired(3, 3, None, Map.empty, Map.empty, Set.empty, event3)
-      client.expectMsg(ProcessEventCompletedResponse(SensoryEventResult(SensoryEventStatus.Completed, expectedEventNames, expectedIngredients)))
+      client.expectMsg(ProcessEventCompletedResponse(EventResult(SensoryEventStatus.Completed, expectedEventNames, expectedIngredients)))
     }
 
     "forward rejections" in {
@@ -128,7 +128,7 @@ class SensoryEventResponseHandlerSpec extends TestKit(ActorSystem("SensoryEventR
       def checkRejection(rejection: FireSensoryEventRejection): Unit = {
         val clientReceive = TestProbe()
         val clientComplete = TestProbe()
-        val sensoryEvent = RuntimeEvent(webshop.orderPlaced.name, Map.empty)
+        val sensoryEvent = EventInstance(webshop.orderPlaced.name, Map.empty)
         val cmd = ProcessEvent("", sensoryEvent, None, 1 second, NotifyBoth(waitForRetries = true, clientComplete.ref))
         val handler = system.actorOf(SensoryEventResponseHandler(clientReceive.ref, cmd))
         handler ! webShopRecipe

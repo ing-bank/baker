@@ -18,7 +18,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.{Al
 import com.ing.baker.runtime.akka.actor.serialization.Encryption
 import com.ing.baker.runtime.akka.internal.InteractionManager
 import com.ing.baker.runtime.scaladsl.ProcessState
-import com.ing.baker.runtime.scaladsl.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.types
 import com.ing.baker.types.Value
 import com.typesafe.config.{Config, ConfigFactory}
@@ -150,7 +150,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       petriNetActorProbe.expectMsg(initializeMsg)
 
-      val runtimeEvent = RuntimeEvent("Event", Map.empty)
+      val runtimeEvent = EventInstance("Event", Map.empty)
 
       actorIndex ! ProcessEvent(processId, runtimeEvent, None, 1 seconds, NotifyWhenReceived)
 
@@ -172,7 +172,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       val transitions: Set[Transition] = Set(EventTransition(eventType, true, None))
       when(petrinetMock.transitions).thenReturn(transitions)
 
-      val runtimeEvent = RuntimeEvent("Event", Map.empty)
+      val runtimeEvent = EventInstance("Event", Map.empty)
 
       actorIndex ! ProcessEvent(processId, runtimeEvent, None, 1 seconds, NotifyWhenReceived)
 
@@ -201,7 +201,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       petriNetActorProbe.expectMsg(initializeMsg)
 
-      val runtimeEvent = RuntimeEvent("Event", Map.empty)
+      val runtimeEvent = EventInstance("Event", Map.empty)
 
       actorIndex ! ProcessEvent(processId, runtimeEvent, None, 1 seconds, NotifyWhenReceived)
 
@@ -233,7 +233,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       petriNetActorProbe.expectMsg(initializeMsg)
 
-      val runtimeEvent = RuntimeEvent("Event", Map.empty)
+      val runtimeEvent = EventInstance("Event", Map.empty)
 
       actorIndex ! ProcessEvent(processId, runtimeEvent, None, 1 seconds, NotifyWhenReceived)
 
@@ -266,7 +266,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       petriNetActorProbe.expectMsg(initializeMsg)
 
-      val runtimeEvent = RuntimeEvent("Event", Map.empty)
+      val runtimeEvent = EventInstance("Event", Map.empty)
 
       actorIndex ! ProcessEvent(processId, runtimeEvent, None, 1 seconds, NotifyWhenReceived)
 

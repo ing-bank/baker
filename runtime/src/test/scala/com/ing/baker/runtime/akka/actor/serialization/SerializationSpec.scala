@@ -22,7 +22,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
 import com.ing.baker.runtime.akka.actor.serialization.Encryption.{AESEncryption, NoEncryption}
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.{EventMoment, ProcessState, RuntimeEvent, SensoryEventResult}
+import com.ing.baker.runtime.scaladsl.{EventMoment, ProcessState, EventInstance, EventResult}
 import com.ing.baker.types.Value
 import com.ing.baker.{AllTypeRecipe, types}
 
@@ -209,10 +209,10 @@ object SerializationSpec {
     val ingredientNameGen: Gen[String] = Gen.alphaStr
     val ingredientsGen: Gen[(String, Value)] = GenUtil.tuple(ingredientNameGen, Types.anyValueGen)
 
-    val runtimeEventGen: Gen[RuntimeEvent] = for {
+    val runtimeEventGen: Gen[EventInstance] = for {
       eventName <- eventNameGen
       ingredients <- Gen.listOf(ingredientsGen)
-    } yield RuntimeEvent(eventName, ingredients.toMap)
+    } yield EventInstance(eventName, ingredients.toMap)
 
     val eventMomentsGen: Gen[EventMoment] = for {
       eventName <- eventNameGen
@@ -227,7 +227,7 @@ object SerializationSpec {
 
     val messagesGen: Gen[AnyRef] = Gen.oneOf(runtimeEventGen, processStateGen)
 
-    val sensoryEventResultGen: Gen[SensoryEventResult] = for {
+    val sensoryEventResultGen: Gen[EventResult] = for {
       status <- Gen.oneOf(
         SensoryEventStatus.AlreadyReceived,
         SensoryEventStatus.Completed,
@@ -237,7 +237,7 @@ object SerializationSpec {
         SensoryEventStatus.ReceivePeriodExpired)
       events <- Gen.listOf(eventNameGen)
       ingredients <- Gen.listOf(ingredientsGen)
-    } yield SensoryEventResult(status, events, ingredients.toMap)
+    } yield EventResult(status, events, ingredients.toMap)
   }
 
   object RecipeManager {
@@ -396,7 +396,7 @@ object SerializationSpec {
     val jobIdGen: Gen[Id] = Gen.posNum[Long]
     val processStateGen: Gen[ProcessState] = Runtime.processStateGen
     val tokenDataGen: Gen[String] = Gen.alphaStr
-    val transitionInputGen: Gen[RuntimeEvent] = Runtime.runtimeEventGen
+    val transitionInputGen: Gen[EventInstance] = Runtime.runtimeEventGen
     val correlationIdGen: Gen[String] = Gen.uuid.map(_.toString)
 
     val multiSetGen: Gen[MultiSet[Any]] = Gen.nonEmptyMap[Any, Int](GenUtil.tuple(tokenDataGen, Gen.posNum[Int]))

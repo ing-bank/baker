@@ -2,7 +2,7 @@ package com.ing.baker.runtime.akka.internal
 
 import com.ing.baker.il.IngredientDescriptor
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.scaladsl.InteractionImplementation
+import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.ing.baker.types
 import com.ing.baker.types.Type
 import org.mockito.Mockito.when
@@ -13,7 +13,7 @@ class InteractionManagerSpec extends WordSpecLike with Matchers with MockitoSuga
   "getImplementation" should {
     "return Some" when {
       "interactionImplementation available" in {
-        val interactionImplementation = mock[InteractionImplementation]
+        val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
         when(interactionImplementation.input).thenReturn(Map("ingredientName" -> types.Int32))
 
@@ -27,11 +27,11 @@ class InteractionManagerSpec extends WordSpecLike with Matchers with MockitoSuga
       }
 
       "multiple interactionImplementations available" in {
-        val interactionImplementation1 = mock[InteractionImplementation]
+        val interactionImplementation1 = mock[InteractionInstance]
         when(interactionImplementation1.name).thenReturn("InteractionName")
         when(interactionImplementation1.input).thenReturn(Map("ingredientName" -> types.Int32))
 
-        val interactionImplementation2 = mock[InteractionImplementation]
+        val interactionImplementation2 = mock[InteractionInstance]
         when(interactionImplementation2.name).thenReturn("InteractionName2")
         when(interactionImplementation2.input).thenReturn(Map("ingredientName" -> types.Int32))
 
@@ -45,11 +45,11 @@ class InteractionManagerSpec extends WordSpecLike with Matchers with MockitoSuga
       }
 
       "Two implementations with the same correct name but only one has the correct input types" in {
-        val interactionImplementation1 = mock[InteractionImplementation]
+        val interactionImplementation1 = mock[InteractionInstance]
         when(interactionImplementation1.name).thenReturn("InteractionName")
         when(interactionImplementation1.input).thenReturn(Map.empty[String, Type])
 
-        val interactionImplementation2 = mock[InteractionImplementation]
+        val interactionImplementation2 = mock[InteractionInstance]
         when(interactionImplementation2.name).thenReturn("InteractionName")
         when(interactionImplementation2.input).thenReturn(Map("ingredientName" -> types.Int32))
 
@@ -65,7 +65,7 @@ class InteractionManagerSpec extends WordSpecLike with Matchers with MockitoSuga
 
     "return None" when {
       "interactionImplementation has wrong name" in {
-        val interactionImplementation = mock[InteractionImplementation]
+        val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
         when(interactionImplementation.input).thenReturn(Map("ingredientName" -> types.Int32))
 
@@ -79,7 +79,7 @@ class InteractionManagerSpec extends WordSpecLike with Matchers with MockitoSuga
       }
 
       "interactionImplementation has wrong ingredient input type" in {
-        val interactionImplementation = mock[InteractionImplementation]
+        val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
         when(interactionImplementation.input).thenReturn(Map("ingredientName" -> types.Int32))
 
@@ -93,7 +93,7 @@ class InteractionManagerSpec extends WordSpecLike with Matchers with MockitoSuga
       }
 
       "interactionImplementation has extra ingredient input types" in {
-        val interactionImplementation = mock[InteractionImplementation]
+        val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
         when(interactionImplementation.input).thenReturn(Map("ingredientName" -> types.Int32, "other" -> types.CharArray))
 
@@ -107,7 +107,7 @@ class InteractionManagerSpec extends WordSpecLike with Matchers with MockitoSuga
       }
 
       "interactionImplementation has not enough ingredient input types" in {
-        val interactionImplementation = mock[InteractionImplementation]
+        val interactionImplementation = mock[InteractionInstance]
         when(interactionImplementation.name).thenReturn("InteractionName")
         when(interactionImplementation.input).thenReturn(Map("ingredientName" -> types.Int32))
 

@@ -12,15 +12,15 @@ import com.ing.baker.types.Value
 trait Baker[F[_]] extends LanguageApi {
   self =>
 
-  type SensoryEventResultType <: SensoryEventResult {type Language <: self.Language}
+  type EventResultType <: EventResult {type Language <: self.Language}
 
-  type SensoryEventMomentsType <: SensoryEventMoments[F] { type Language <: self.Language }
+  type EventResolutionsType <: EventResolutions[F] {type Language <: self.Language}
 
-  type RuntimeEventType <: RuntimeEvent {type Language <: self.Language}
+  type RuntimeEventType <: EventInstance {type Language <: self.Language}
 
   type ProcessStateType <: ProcessState {type Language <: self.Language}
 
-  type InteractionImplementationType <: InteractionImplementation[F] { type Language <: self.Language }
+  type InteractionImplementationType <: InteractionInstance[F] {type Language <: self.Language}
 
   type BakerEventType <: BakerEvent {type Language <: self.Language}
 
@@ -72,7 +72,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEventReceived(processId: String, event: RuntimeEventType): F[SensoryEventStatus]
+  def fireEventAndResolveWhenReceived(processId: String, event: RuntimeEventType): F[SensoryEventStatus]
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -84,7 +84,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEventCompleted(processId: String, event: RuntimeEventType): F[SensoryEventResultType]
+  def fireEventAndResolveWhenCompleted(processId: String, event: RuntimeEventType): F[EventResultType]
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -97,7 +97,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEvent(processId: String, event: RuntimeEventType): SensoryEventMomentsType
+  def fireEvent(processId: String, event: RuntimeEventType): EventResolutionsType
 
   /**
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
@@ -110,7 +110,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireSensoryEventReceived(processId: String, event: RuntimeEventType, correlationId: String): F[SensoryEventStatus]
+  def fireEventAndResolveWhenReceived(processId: String, event: RuntimeEventType, correlationId: String): F[SensoryEventStatus]
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -123,7 +123,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireSensoryEventCompleted(processId: String, event: RuntimeEventType, correlationId: String): F[SensoryEventResultType]
+  def fireEventAndResolveWhenCompleted(processId: String, event: RuntimeEventType, correlationId: String): F[EventResultType]
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -137,7 +137,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireSensoryEvent(processId: String, event: RuntimeEventType, correlationId: String): SensoryEventMomentsType
+  def fireEvent(processId: String, event: RuntimeEventType, correlationId: String): EventResolutionsType
 
   /**
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
@@ -150,7 +150,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireSensoryEventReceived(processId: String, event: RuntimeEventType, correlationId: language.Option[String]): F[SensoryEventStatus]
+  def fireEventAndResolveWhenReceived(processId: String, event: RuntimeEventType, correlationId: language.Option[String]): F[SensoryEventStatus]
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -163,7 +163,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireSensoryEventCompleted(processId: String, event: RuntimeEventType, correlationId: language.Option[String]): F[SensoryEventResultType]
+  def fireEventAndResolveWhenCompleted(processId: String, event: RuntimeEventType, correlationId: language.Option[String]): F[EventResultType]
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -177,7 +177,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireSensoryEvent(processId: String, event: RuntimeEventType, correlationId: language.Option[String]): SensoryEventMomentsType
+  def fireEvent(processId: String, event: RuntimeEventType, correlationId: language.Option[String]): EventResolutionsType
 
   /**
     * Returns an index of all running processes.

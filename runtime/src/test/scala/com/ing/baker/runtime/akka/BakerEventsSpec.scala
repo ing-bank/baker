@@ -11,7 +11,7 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.common.RejectReason._
 import com.ing.baker.runtime.scaladsl._
-import com.ing.baker.runtime.scaladsl.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.types.PrimitiveValue
 import org.slf4j.LoggerFactory
 
@@ -101,21 +101,21 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         listenerFunction = (bakerEvent: BakerEvent) => listenerProbe.ref ! bakerEvent
         _ <- baker.registerBakerEventListener(listenerFunction)
         _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)), "someId")
+        _ <- baker.fireEventAndResolveWhenCompleted(processId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), "someId")
         // TODO check the order of the timestamps later
         _ = expectMsgInAnyOrderPF(listenerProbe,
           { case msg@ProcessCreated(_, `recipeId`, `recipeName`, `processId`) => msg },
-          { case msg@EventReceived(_, _, _, `processId`, Some("someId"), RuntimeEvent("InitialEvent", ingredients)) if ingredients == Map("initialIngredient" -> PrimitiveValue(`initialIngredientValue`)) => msg },
+          { case msg@EventReceived(_, _, _, `processId`, Some("someId"), EventInstance("InitialEvent", ingredients)) if ingredients == Map("initialIngredient" -> PrimitiveValue(`initialIngredientValue`)) => msg },
           { case msg@InteractionStarted(_, _, _, `processId`, "SieveInteraction") => msg },
           { case msg@InteractionStarted(_, _, _, `processId`, "InteractionOne") => msg },
           { case msg@InteractionStarted(_, _, _, `processId`, "InteractionTwo") => msg },
           { case msg@InteractionStarted(_, _, _, `processId`, "InteractionThree") => msg },
           { case msg@InteractionStarted(_, _, _, `processId`, "ProvidesNothingInteraction") => msg },
-          { case msg@InteractionCompleted(_, _, _, _, `processId`, "InteractionOne", Some(RuntimeEvent("InteractionOneSuccessful", ingredients))) if ingredients == Map("interactionOneIngredient" -> PrimitiveValue("interactionOneIngredient")) => msg },
-          { case msg@InteractionCompleted(_, _, _, _, `processId`, "InteractionTwo", Some(RuntimeEvent("EventFromInteractionTwo", ingredients))) if ingredients == Map("interactionTwoIngredient" -> PrimitiveValue("interactionTwoIngredient")) => msg },
-          { case msg@InteractionCompleted(_, _, _, _, `processId`, "InteractionThree", Some(RuntimeEvent("InteractionThreeSuccessful", ingredients))) if ingredients == Map("interactionThreeIngredient" -> PrimitiveValue("interactionThreeIngredient")) => msg },
+          { case msg@InteractionCompleted(_, _, _, _, `processId`, "InteractionOne", Some(EventInstance("InteractionOneSuccessful", ingredients))) if ingredients == Map("interactionOneIngredient" -> PrimitiveValue("interactionOneIngredient")) => msg },
+          { case msg@InteractionCompleted(_, _, _, _, `processId`, "InteractionTwo", Some(EventInstance("EventFromInteractionTwo", ingredients))) if ingredients == Map("interactionTwoIngredient" -> PrimitiveValue("interactionTwoIngredient")) => msg },
+          { case msg@InteractionCompleted(_, _, _, _, `processId`, "InteractionThree", Some(EventInstance("InteractionThreeSuccessful", ingredients))) if ingredients == Map("interactionThreeIngredient" -> PrimitiveValue("interactionThreeIngredient")) => msg },
           { case msg@InteractionCompleted(_, _, _, _, `processId`, "ProvidesNothingInteraction", None) => msg },
-          { case msg@InteractionCompleted(_, _, _, _, `processId`, "SieveInteraction", Some(RuntimeEvent("SieveInteractionSuccessful", ingredients))) if ingredients == Map("sievedIngredient" -> PrimitiveValue("sievedIngredient")) => msg }
+          { case msg@InteractionCompleted(_, _, _, _, `processId`, "SieveInteraction", Some(EventInstance("SieveInteractionSuccessful", ingredients))) if ingredients == Map("sievedIngredient" -> PrimitiveValue("sievedIngredient")) => msg }
         )
         _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
       } yield succeed
@@ -131,9 +131,9 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         _ <- baker.registerBakerEventListener(listenerFunction)
         _ <- baker.bake(recipeId, processId)
         // We used async function here because ThirdEvent is not part of the recipe and throws exception
-        _ = baker.fireSensoryEventReceived(processId, RuntimeEvent.unsafeFrom(ThirdEvent()), "someId")
+        _ = baker.fireEventAndResolveWhenReceived(processId, EventInstance.unsafeFrom(ThirdEvent()), "someId")
         _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-          case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("ThirdEvent", ingredients), InvalidEvent) if ingredients.isEmpty => msg
+          case msg@EventRejected(_, `processId`, Some("someId"), EventInstance("ThirdEvent", ingredients), InvalidEvent) if ingredients.isEmpty => msg
         }
         _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
       } yield succeed
@@ -148,10 +148,10 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         listenerFunction = (bakerEvent: BakerEvent) => listenerProbe.ref ! bakerEvent
         _ <- baker.registerBakerEventListener(listenerFunction)
         _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)), "someId")
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)), "someId") // Same correlationId cannot be used twice
+        _ <- baker.fireEventAndResolveWhenCompleted(processId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), "someId")
+        _ <- baker.fireEventAndResolveWhenCompleted(processId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), "someId") // Same correlationId cannot be used twice
         _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-          case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", ingredients), AlreadyReceived) if ingredients == Map("initialIngredient" -> PrimitiveValue(`initialIngredientValue`)) => msg
+          case msg@EventRejected(_, `processId`, Some("someId"), EventInstance("InitialEvent", ingredients), AlreadyReceived) if ingredients == Map("initialIngredient" -> PrimitiveValue(`initialIngredientValue`)) => msg
         }
         _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
       } yield succeed
@@ -166,10 +166,10 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         listenerFunction = (bakerEvent: BakerEvent) => listenerProbe.ref ! bakerEvent
         _ <- baker.registerBakerEventListener(listenerFunction)
         _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue))) // Firing limit is set to 1 in the recipe
+        _ <- baker.fireEventAndResolveWhenCompleted(processId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ <- baker.fireEventAndResolveWhenCompleted(processId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue))) // Firing limit is set to 1 in the recipe
         _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-          case msg@EventRejected(_, `processId`, None, RuntimeEvent("InitialEvent", ingredients), FiringLimitMet) if ingredients == Map("initialIngredient" -> PrimitiveValue(`initialIngredientValue`)) => msg
+          case msg@EventRejected(_, `processId`, None, EventInstance("InitialEvent", ingredients), FiringLimitMet) if ingredients == Map("initialIngredient" -> PrimitiveValue(`initialIngredientValue`)) => msg
         }
         _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
       } yield succeed
@@ -187,9 +187,9 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         _ <- Future {
           Thread.sleep(eventReceiveTimeout.toMillis)
         }
-        _ = baker.fireSensoryEventReceived(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)), "someId")
+        _ = baker.fireEventAndResolveWhenReceived(processId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), "someId")
         _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-          case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", ingredients), ReceivePeriodExpired) if ingredients == Map("initialIngredient" -> PrimitiveValue(`initialIngredientValue`)) => msg
+          case msg@EventRejected(_, `processId`, Some("someId"), EventInstance("InitialEvent", ingredients), ReceivePeriodExpired) if ingredients == Map("initialIngredient" -> PrimitiveValue(`initialIngredientValue`)) => msg
         }
         _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
       } yield succeed
@@ -205,9 +205,9 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         _ <- baker.registerBakerEventListener(listenerFunction)
         // Skipped baking the process here, so the process with processId does not exist
         // use a different processId and use async function because the sync version throws NoSuchProcessException
-        _ = baker.fireSensoryEventReceived(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)), "someId")
+        _ = baker.fireEventAndResolveWhenReceived(processId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), "someId")
         _ = listenerProbe.fishForSpecificMessage(eventReceiveTimeout) {
-          case msg@EventRejected(_, `processId`, Some("someId"), RuntimeEvent("InitialEvent", ingredients), NoSuchProcess) if ingredients == Map("initialIngredient" -> PrimitiveValue(`initialIngredientValue`)) => msg
+          case msg@EventRejected(_, `processId`, Some("someId"), EventInstance("InitialEvent", ingredients), NoSuchProcess) if ingredients == Map("initialIngredient" -> PrimitiveValue(`initialIngredientValue`)) => msg
         }
         _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
       } yield succeed

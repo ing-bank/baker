@@ -5,7 +5,7 @@ import com.ing.baker.il
 import com.ing.baker.types
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.akka.actor.serialization.protomappings._
-import com.ing.baker.runtime.scaladsl.{EventMoment, ProcessState, RuntimeEvent, SensoryEventResult}
+import com.ing.baker.runtime.scaladsl.{EventMoment, ProcessState, EventInstance, EventResult}
 import scalapb.GeneratedMessageCompanion
 
 import scala.util.{Success, Try}
@@ -62,7 +62,7 @@ object ProtoMap {
   implicit val eventOutputTransformerMapping: ProtoMap[il.EventOutputTransformer, protobuf.EventOutputTransformer] =
     new EventOutputTransformerMapping
 
-  implicit val runtimeEventMapping: ProtoMap[RuntimeEvent, protobuf.RuntimeEvent] =
+  implicit val runtimeEventMapping: ProtoMap[EventInstance, protobuf.RuntimeEvent] =
     new RuntimeEventMapping
 
   implicit val processStateMapping: ProtoMap[ProcessState, protobuf.ProcessState] =
@@ -71,7 +71,7 @@ object ProtoMap {
   implicit val eventMomentMapping: ProtoMap[EventMoment, protobuf.EventMoment] =
     new EventMomentMapping
 
-  implicit val processEventResult: ProtoMap[SensoryEventResult, protobuf.SensoryEventResult] =
+  implicit val processEventResult: ProtoMap[EventResult, protobuf.SensoryEventResult] =
     new SensoryEventResultMapping
 
   def identityProtoMap[A <: scalapb.GeneratedMessage with scalapb.Message[A]](companion0: GeneratedMessageCompanion[A]): ProtoMap[A, A] =

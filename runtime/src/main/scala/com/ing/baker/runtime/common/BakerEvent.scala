@@ -7,7 +7,7 @@ import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
 
 trait BakerEvent extends LanguageApi with NoSerializationVerificationNeeded {
   self =>
-  type Event <: RuntimeEvent {type Language <: self.Language}
+  type Event <: EventInstance {type Language <: self.Language}
 }
 
 /**

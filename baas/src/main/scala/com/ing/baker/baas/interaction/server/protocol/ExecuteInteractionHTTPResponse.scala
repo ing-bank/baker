@@ -1,6 +1,6 @@
 package com.ing.baker.baas.interaction.server.protocol
 
-import com.ing.baker.runtime.scaladsl.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.EventInstance
 
 import cats.instances.option._
 import cats.instances.try_._
@@ -15,7 +15,7 @@ import scalapb.GeneratedMessageCompanion
 
 import scala.util.Try
 
-case class ExecuteInteractionHTTPResponse(runtimeEventOptional: Option[RuntimeEvent]) extends BaasRequest
+case class ExecuteInteractionHTTPResponse(runtimeEventOptional: Option[EventInstance]) extends BaasRequest
 
 object ExecuteInteractionHTTPResponse {
 

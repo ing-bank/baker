@@ -12,5 +12,5 @@ trait EventListener {
     *
     * @param event The event.
     */
-  def processEvent(processId: String, event: RuntimeEvent)
+  def processEvent(processId: String, event: EventInstance)
 }

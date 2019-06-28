@@ -26,11 +26,11 @@ import static org.junit.Assert.assertEquals;
 
 public class BakerTest {
 
-    private java.util.List<InteractionImplementation> implementationsList = ImmutableList.of(
-            InteractionImplementation.from(new JavaCompiledRecipeTest.InteractionOneImpl()),
-            InteractionImplementation.from(new JavaCompiledRecipeTest.InteractionTwo()),
-            InteractionImplementation.from(new JavaCompiledRecipeTest.InteractionThreeImpl()),
-            InteractionImplementation.from(new JavaCompiledRecipeTest.SieveImpl()));
+    private java.util.List<InteractionInstance> implementationsList = ImmutableList.of(
+            InteractionInstance.from(new JavaCompiledRecipeTest.InteractionOneImpl()),
+            InteractionInstance.from(new JavaCompiledRecipeTest.InteractionTwo()),
+            InteractionInstance.from(new JavaCompiledRecipeTest.InteractionThreeImpl()),
+            InteractionInstance.from(new JavaCompiledRecipeTest.SieveImpl()));
 
     private static ActorSystem actorSystem = null;
     private static Materializer materializer = null;
@@ -65,8 +65,8 @@ public class BakerTest {
                     assertEquals(compiledRecipe.getValidationErrors().size(), 0);
                     return jBaker.bake(recipeId, processId);
                 })
-                .thenCompose(x -> jBaker.fireSensoryEventCompleted(processId, RuntimeEvent.from(new JavaCompiledRecipeTest.EventOne())))
-                .thenApply(SensoryEventResult::events)
+                .thenCompose(x -> jBaker.fireEventAndResolveWhenCompleted(processId, EventInstance.from(new JavaCompiledRecipeTest.EventOne())))
+                .thenApply(EventResult::events)
                 .thenCompose(x -> jBaker.getProcessState(processId))
                 .thenApply(ProcessState::getIngredients)
                 .get();
@@ -88,7 +88,7 @@ public class BakerTest {
 
         String requestId = UUID.randomUUID().toString();
         jBaker.bake(recipeId, requestId).get();
-        jBaker.fireSensoryEventCompleted(requestId, RuntimeEvent.from(new JavaCompiledRecipeTest.EventOne())).get();
+        jBaker.fireEventAndResolveWhenCompleted(requestId, EventInstance.from(new JavaCompiledRecipeTest.EventOne())).get();
         java.util.Map<String, Value> ingredients = jBaker.getProcessState(requestId).get().getIngredients();
 
         assertEquals(1, ingredients.size());
@@ -120,7 +120,7 @@ public class BakerTest {
 
         String requestId = UUID.randomUUID().toString();
         jBaker.bake(recipeId, requestId).get();
-        jBaker.fireSensoryEventCompleted(requestId, RuntimeEvent.from(new JavaCompiledRecipeTest.EventOne())).get();
-        jBaker.fireSensoryEventCompleted(requestId, RuntimeEvent.from(new JavaCompiledRecipeTest.EventTwo())).get();
+        jBaker.fireEventAndResolveWhenCompleted(requestId, EventInstance.from(new JavaCompiledRecipeTest.EventOne())).get();
+        jBaker.fireEventAndResolveWhenCompleted(requestId, EventInstance.from(new JavaCompiledRecipeTest.EventTwo())).get();
     }
 }

@@ -48,15 +48,15 @@ object Baker {
 
 class Baker private(private val baker: scaladsl.Baker) extends common.Baker[CompletableFuture] with JavaApi {
 
-  override type SensoryEventResultType = SensoryEventResult
+  override type EventResultType = EventResult
 
-  override type SensoryEventMomentsType = SensoryEventMoments
+  override type EventResolutionsType = EventResolutions
 
-  override type RuntimeEventType = RuntimeEvent
+  override type RuntimeEventType = EventInstance
 
   override type ProcessStateType = ProcessState
 
-  override type InteractionImplementationType = InteractionImplementation
+  override type InteractionImplementationType = InteractionInstance
 
   override type BakerEventType = BakerEvent
 
@@ -80,7 +80,7 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     *
     * @param implementation The implementation that should be added.
     */
-  def addImplementation(@Nonnull implementation: InteractionImplementation): CompletableFuture[Unit] =
+  def addImplementation(@Nonnull implementation: InteractionInstance): CompletableFuture[Unit] =
     toCompletableFuture(baker.addImplementation(implementation.asScala))
 
   /**
@@ -88,7 +88,7 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     *
     * @param implementations An iterable of implementations that should be added.
     */
-  def addImplementations(@Nonnull implementations: java.util.List[InteractionImplementation]): CompletableFuture[Unit] =
+  def addImplementations(@Nonnull implementations: java.util.List[InteractionInstance]): CompletableFuture[Unit] =
     toCompletableFuture(baker.addImplementations(implementations.asScala.map(_.asScala)))
 
   /**
@@ -106,42 +106,42 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
   def bake(@Nonnull recipeId: String, @Nonnull processId: String): CompletableFuture[Unit] =
     toCompletableFuture(baker.bake(recipeId, processId))
 
-  def fireSensoryEventReceived(processId: String, event: RuntimeEvent, correlationId: String): CompletableFuture[SensoryEventStatus] =
-    fireSensoryEventReceived(processId, event, Optional.of(correlationId))
+  def fireEventAndResolveWhenReceived(processId: String, event: EventInstance, correlationId: String): CompletableFuture[SensoryEventStatus] =
+    fireEventAndResolveWhenReceived(processId, event, Optional.of(correlationId))
 
-  def fireSensoryEventCompleted(processId: String, event: RuntimeEvent, correlationId: String): CompletableFuture[SensoryEventResult] =
-    fireSensoryEventCompleted(processId, event, Optional.of(correlationId))
+  def fireEventAndResolveWhenCompleted(processId: String, event: EventInstance, correlationId: String): CompletableFuture[EventResult] =
+    fireEventAndResolveWhenCompleted(processId, event, Optional.of(correlationId))
 
-  def fireSensoryEvent(processId: String, event: RuntimeEvent, correlationId: String): SensoryEventMoments =
-    fireSensoryEvent(processId, event, Optional.of(correlationId))
+  def fireEvent(processId: String, event: EventInstance, correlationId: String): EventResolutions =
+    fireEvent(processId, event, Optional.of(correlationId))
 
-  def fireSensoryEventReceived(processId: String, event: RuntimeEvent): CompletableFuture[SensoryEventStatus] =
-    fireSensoryEventReceived(processId, event, Optional.empty[String]())
+  def fireEventAndResolveWhenReceived(processId: String, event: EventInstance): CompletableFuture[SensoryEventStatus] =
+    fireEventAndResolveWhenReceived(processId, event, Optional.empty[String]())
 
-  def fireSensoryEventCompleted(processId: String, event: RuntimeEvent): CompletableFuture[SensoryEventResult] =
-    fireSensoryEventCompleted(processId, event, Optional.empty[String]())
+  def fireEventAndResolveWhenCompleted(processId: String, event: EventInstance): CompletableFuture[EventResult] =
+    fireEventAndResolveWhenCompleted(processId, event, Optional.empty[String]())
 
-  def fireSensoryEvent(processId: String, event: RuntimeEvent): SensoryEventMoments =
-    fireSensoryEvent(processId, event, Optional.empty[String]())
+  def fireEvent(processId: String, event: EventInstance): EventResolutions =
+    fireEvent(processId, event, Optional.empty[String]())
 
-  def fireSensoryEventReceived(processId: String, event: RuntimeEvent, correlationId: Optional[String]): CompletableFuture[SensoryEventStatus] =
-    toCompletableFuture(baker.fireSensoryEventReceived(processId, event.asScala, Option.apply(correlationId.orElse(null))))
+  def fireEventAndResolveWhenReceived(processId: String, event: EventInstance, correlationId: Optional[String]): CompletableFuture[SensoryEventStatus] =
+    toCompletableFuture(baker.fireEventAndResolveWhenReceived(processId, event.asScala, Option.apply(correlationId.orElse(null))))
 
-  def fireSensoryEventCompleted(processId: String, event: RuntimeEvent, correlationId: Optional[String]): CompletableFuture[SensoryEventResult] =
-    toCompletableFuture(baker.fireSensoryEventCompleted(processId, event.asScala, Option.apply(correlationId.orElse(null)))).thenApply { result =>
-      new SensoryEventResult(
+  def fireEventAndResolveWhenCompleted(processId: String, event: EventInstance, correlationId: Optional[String]): CompletableFuture[EventResult] =
+    toCompletableFuture(baker.fireEventAndResolveWhenCompleted(processId, event.asScala, Option.apply(correlationId.orElse(null)))).thenApply { result =>
+      new EventResult(
         status = result.status,
         events = result.events.asJava,
         ingredients = result.ingredients.asJava
       )
     }
 
-  def fireSensoryEvent(processId: String, event: RuntimeEvent, correlationId: Optional[String]): SensoryEventMoments = {
-    val scalaResult = baker.fireSensoryEvent(processId, event.asScala)
-    new SensoryEventMoments(
-      received = toCompletableFuture(scalaResult.received),
-      completed = toCompletableFuture(scalaResult.completed).thenApply { result =>
-        new SensoryEventResult(
+  def fireEvent(processId: String, event: EventInstance, correlationId: Optional[String]): EventResolutions = {
+    val scalaResult = baker.fireEvent(processId, event.asScala)
+    new EventResolutions(
+      resolveWhenReceived = toCompletableFuture(scalaResult.resolveWhenReceived),
+      resolveWhenCompleted = toCompletableFuture(scalaResult.resolveWhenCompleted).thenApply { result =>
+        new EventResult(
           status = result.status,
           events = result.events.asJava,
           ingredients = result.ingredients.asJava
@@ -167,7 +167,7 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     * @param event           The output of the interaction.
     * @return
     */
-  def resolveInteraction(@Nonnull processId: String, @Nonnull interactionName: String, @Nonnull event: RuntimeEvent): CompletableFuture[Unit] =
+  def resolveInteraction(@Nonnull processId: String, @Nonnull interactionName: String, @Nonnull event: EventInstance): CompletableFuture[Unit] =
     toCompletableFuture(baker.resolveInteraction(processId, interactionName, event.asScala))
 
   /**
@@ -240,9 +240,9 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     * @param recipeName the name of all recipes this event listener should be triggered for
     * @param listenerFunction   The listener to subscribe to events.
     */
-  override def registerEventListener(@Nonnull recipeName: String, @Nonnull listenerFunction: BiConsumer[String, RuntimeEvent]): CompletableFuture[Unit] =
+  override def registerEventListener(@Nonnull recipeName: String, @Nonnull listenerFunction: BiConsumer[String, EventInstance]): CompletableFuture[Unit] =
     toCompletableFuture(baker.registerEventListener(recipeName,
-      (processId: String, event: scaladsl.RuntimeEvent) => listenerFunction.accept(processId, event.asJava)))
+      (processId: String, event: scaladsl.EventInstance) => listenerFunction.accept(processId, event.asJava)))
 
 
   /**
@@ -262,9 +262,9 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     *
     * @param listenerFunction The listener function that is called once these events occur
     */
-  override def registerEventListener(listenerFunction: BiConsumer[String, RuntimeEvent]): CompletableFuture[Unit] =
+  override def registerEventListener(listenerFunction: BiConsumer[String, EventInstance]): CompletableFuture[Unit] =
     toCompletableFuture(baker.registerEventListener(
-      (processId: String, event: scaladsl.RuntimeEvent) => listenerFunction.accept(processId, event.asJava)))
+      (processId: String, event: scaladsl.EventInstance) => listenerFunction.accept(processId, event.asJava)))
 
 
   /**
@@ -286,7 +286,7 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     */
   @deprecated(message = "Replaced with the consumer function variant", since = "3.0.0")
   def registerEventListener(eventListener: EventListener): Future[Unit] =
-    baker.registerEventListener((processId: String, runtimeEvent: scaladsl.RuntimeEvent) => eventListener.processEvent(processId, runtimeEvent.asJava))
+    baker.registerEventListener((processId: String, runtimeEvent: scaladsl.EventInstance) => eventListener.processEvent(processId, runtimeEvent.asJava))
 
 
   /**

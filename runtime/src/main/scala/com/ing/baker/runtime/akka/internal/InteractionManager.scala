@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka.internal
 import java.util.concurrent.ConcurrentHashMap
 
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.scaladsl.InteractionImplementation
+import com.ing.baker.runtime.scaladsl.InteractionInstance
 
 import scala.compat.java8.FunctionConverters._
 
@@ -13,12 +13,12 @@ import scala.compat.java8.FunctionConverters._
   *
   * @param interactionImplementations All
   */
-class InteractionManager(private var interactionImplementations: Seq[InteractionImplementation] = Seq.empty) {
+class InteractionManager(private var interactionImplementations: Seq[InteractionInstance] = Seq.empty) {
 
-  private val implementationCache: ConcurrentHashMap[InteractionTransition, InteractionImplementation] =
-    new ConcurrentHashMap[InteractionTransition, InteractionImplementation]
+  private val implementationCache: ConcurrentHashMap[InteractionTransition, InteractionInstance] =
+    new ConcurrentHashMap[InteractionTransition, InteractionInstance]
 
-  private def isCompatibleImplementation(interaction: InteractionTransition, implementation: InteractionImplementation): Boolean = {
+  private def isCompatibleImplementation(interaction: InteractionTransition, implementation: InteractionInstance): Boolean = {
     val interactionNameMatches =
       interaction.originalInteractionName == implementation.name
     val inputSizeMatches =
@@ -32,7 +32,7 @@ class InteractionManager(private var interactionImplementations: Seq[Interaction
     interactionNameMatches && inputSizeMatches && inputNamesAndTypesMatches
   }
 
-  private def findInteractionImplementation(interaction: InteractionTransition): InteractionImplementation =
+  private def findInteractionImplementation(interaction: InteractionTransition): InteractionInstance =
       interactionImplementations.find(implementation => isCompatibleImplementation(interaction, implementation)).orNull
 
   /**
@@ -40,7 +40,7 @@ class InteractionManager(private var interactionImplementations: Seq[Interaction
     *
     * @param implementation
     */
-  def addImplementation(implementation: InteractionImplementation): Unit =
+  def addImplementation(implementation: InteractionInstance): Unit =
     interactionImplementations :+= implementation
 
   /**
@@ -53,6 +53,6 @@ class InteractionManager(private var interactionImplementations: Seq[Interaction
     * @param interaction The interaction to check
     * @return An option containing the implementation if available
     */
-  def getImplementation(interaction: InteractionTransition): Option[InteractionImplementation] =
+  def getImplementation(interaction: InteractionTransition): Option[InteractionInstance] =
     Option(implementationCache.computeIfAbsent(interaction, (findInteractionImplementation _).asJava))
 }

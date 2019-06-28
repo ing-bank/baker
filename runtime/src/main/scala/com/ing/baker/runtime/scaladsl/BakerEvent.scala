@@ -11,7 +11,7 @@ import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.common.RejectReason
 
 sealed trait BakerEvent extends common.BakerEvent with ScalaApi {
-  type Event = RuntimeEvent
+  type Event = EventInstance
 
   def asJava(): javadsl.BakerEvent = this match {
     case EventReceived(timeStamp, recipeName, recipeId, processId, correlationId, event) =>
@@ -46,7 +46,7 @@ case class EventReceived(timeStamp: Long,
                          recipeId: String,
                          processId: String,
                          correlationId: Option[String],
-                         event: RuntimeEvent) extends BakerEvent with common.EventReceived
+                         event: EventInstance) extends BakerEvent with common.EventReceived
 
 /**
   * Event describing the fact that an event was received but rejected for a process
@@ -60,7 +60,7 @@ case class EventReceived(timeStamp: Long,
 case class EventRejected(timeStamp: Long,
                          processId: String,
                          correlationId: Option[String],
-                         event: RuntimeEvent,
+                         event: EventInstance,
                          reason: RejectReason) extends BakerEvent with common.EventRejected
 /**
   * Event describing the fact that an interaction failed during execution
@@ -118,7 +118,7 @@ case class InteractionCompleted(timeStamp: Long,
                                 recipeId: String,
                                 processId: String,
                                 interactionName: String,
-                                event: Option[RuntimeEvent]) extends BakerEvent with common.InteractionCompleted
+                                event: Option[EventInstance]) extends BakerEvent with common.InteractionCompleted
 
 /**
   * Event describing the fact that a baker process was created

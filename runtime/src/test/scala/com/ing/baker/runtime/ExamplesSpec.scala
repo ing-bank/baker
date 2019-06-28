@@ -72,9 +72,9 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
         recipeId <- baker.addRecipe(compiledRecipe)
         processId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, orderPlaced.instance(testOrder))
-        _ <- baker.fireSensoryEventCompleted(processId, paymentMade.instance())
-        _ <- baker.fireSensoryEventCompleted(processId, customerInfoReceived.instance(testCustomerInfoData))
+        _ <- baker.fireEventAndResolveWhenCompleted(processId, orderPlaced.instance(testOrder))
+        _ <- baker.fireEventAndResolveWhenCompleted(processId, paymentMade.instance())
+        _ <- baker.fireEventAndResolveWhenCompleted(processId, customerInfoReceived.instance(testCustomerInfoData))
         expectedIngredients = IngredientMap(
           order -> testOrder,
           goods -> testGoods,

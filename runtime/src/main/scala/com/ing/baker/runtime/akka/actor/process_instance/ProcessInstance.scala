@@ -14,7 +14,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrat
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.akka.actor.serialization.Encryption
-import com.ing.baker.runtime.scaladsl.{ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.scaladsl.{ProcessState, EventInstance}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
 import com.ing.baker.types.{PrimitiveValue, Value}
 

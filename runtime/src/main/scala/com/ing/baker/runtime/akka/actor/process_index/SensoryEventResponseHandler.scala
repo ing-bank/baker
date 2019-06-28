@@ -2,13 +2,13 @@ package com.ing.baker.runtime.akka.actor.process_index
 
 import akka.actor.{Actor, ActorRef, Props, ReceiveTimeout}
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.scaladsl.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{FireSensoryEventReaction, FireSensoryEventRejection, ProcessEvent, ProcessEventCompletedResponse, ProcessEventReceivedResponse}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.scaladsl.{EventReceived, EventRejected}
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.SensoryEventResult
+import com.ing.baker.runtime.scaladsl.EventResult
 import org.slf4j.{Logger, LoggerFactory}
 
 object SensoryEventResponseHandler {
@@ -55,11 +55,11 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
   }
 
   def notifyComplete(cache: List[Any]): Unit = {
-    def runtimeEvents: List[RuntimeEvent] = cache.flatMap {
-      case fired: TransitionFired => Option(fired.output.asInstanceOf[RuntimeEvent])
+    def runtimeEvents: List[EventInstance] = cache.flatMap {
+      case fired: TransitionFired => Option(fired.output.asInstanceOf[EventInstance])
       case _ => None
     }
-    def result = SensoryEventResult(
+    def result = EventResult(
       status = SensoryEventStatus.Completed,
       events = runtimeEvents.map(_.name),
       ingredients = runtimeEvents.flatMap(_.providedIngredients).toMap

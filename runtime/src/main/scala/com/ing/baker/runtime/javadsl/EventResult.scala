@@ -5,8 +5,8 @@ import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.types.Value
 
-class SensoryEventResult(
+class EventResult(
   val status: SensoryEventStatus,
   val events: java.util.List[String],
   val ingredients: java.util.Map[String, Value]
-) extends common.SensoryEventResult with JavaApi
+) extends common.EventResult with JavaApi

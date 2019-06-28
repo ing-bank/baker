@@ -1,6 +1,6 @@
 package com.ing.baker.baas.server.protocol
 
-import com.ing.baker.runtime.scaladsl.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.EventInstance
 
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
@@ -9,7 +9,7 @@ import scalapb.GeneratedMessageCompanion
 
 import scala.util.Try
 
-case class ProcessEventRequest(event: RuntimeEvent) extends BaasRequest
+case class ProcessEventRequest(event: EventInstance) extends BaasRequest
 
 object ProcessEventRequest {
 

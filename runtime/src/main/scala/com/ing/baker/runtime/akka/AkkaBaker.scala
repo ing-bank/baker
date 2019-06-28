@@ -111,7 +111,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     }
   }
 
-  override def fireSensoryEventReceived(processId: String, event: RuntimeEvent, correlationId: Option[String]): Future[SensoryEventStatus] =
+  override def fireEventAndResolveWhenReceived(processId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] =
     processIndexActor.ask(ProcessEvent(
       processId = processId,
       event = event,
@@ -136,7 +136,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
         Future.successful(status)
     }
 
-  override def fireSensoryEventCompleted(processId: String, event: RuntimeEvent, correlationId: Option[String]): Future[SensoryEventResult] =
+  override def fireEventAndResolveWhenCompleted(processId: String, event: EventInstance, correlationId: Option[String]): Future[EventResult] =
     processIndexActor.ask(ProcessEvent(
       processId = processId,
       event = event,
@@ -149,18 +149,18 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
       case FireSensoryEventRejection.NoSuchProcess(processId0) =>
         Future.failed(new NoSuchProcessException(s"Process with id $processId0 does not exist in the index"))
       case _: FireSensoryEventRejection.FiringLimitMet =>
-        Future.successful(SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
+        Future.successful(EventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
       case _: FireSensoryEventRejection.AlreadyReceived =>
-        Future.successful(SensoryEventResult(SensoryEventStatus.AlreadyReceived, Seq.empty, Map.empty))
+        Future.successful(EventResult(SensoryEventStatus.AlreadyReceived, Seq.empty, Map.empty))
       case _: FireSensoryEventRejection.ReceivePeriodExpired =>
-        Future.successful(SensoryEventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
+        Future.successful(EventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
       case _: FireSensoryEventRejection.ProcessDeleted =>
-        Future.successful(SensoryEventResult(SensoryEventStatus.ProcessDeleted, Seq.empty, Map.empty))
+        Future.successful(EventResult(SensoryEventStatus.ProcessDeleted, Seq.empty, Map.empty))
       case ProcessEventCompletedResponse(result) =>
         Future.successful(result)
     }
 
-  override def fireSensoryEvent(processId: String, event: RuntimeEvent, correlationId: Option[String]): SensoryEventMoments = {
+  override def fireEvent(processId: String, event: EventInstance, correlationId: Option[String]): EventResolutions = {
     val futureRef = FutureRef(config.defaultProcessEventTimeout)
     val futureReceived =
       processIndexActor.ask(ProcessEvent(
@@ -194,17 +194,17 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
         case FireSensoryEventRejection.NoSuchProcess(processId0) =>
           Future.failed(new NoSuchProcessException(s"Process with id $processId0 does not exist in the index"))
         case _: FireSensoryEventRejection.FiringLimitMet =>
-          Future.successful(SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
+          Future.successful(EventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
         case _: FireSensoryEventRejection.AlreadyReceived =>
-          Future.successful(SensoryEventResult(SensoryEventStatus.AlreadyReceived, Seq.empty, Map.empty))
+          Future.successful(EventResult(SensoryEventStatus.AlreadyReceived, Seq.empty, Map.empty))
         case _: FireSensoryEventRejection.ReceivePeriodExpired =>
-          Future.successful(SensoryEventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
+          Future.successful(EventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
         case _: FireSensoryEventRejection.ProcessDeleted =>
-          Future.successful(SensoryEventResult(SensoryEventStatus.ProcessDeleted, Seq.empty, Map.empty))
+          Future.successful(EventResult(SensoryEventStatus.ProcessDeleted, Seq.empty, Map.empty))
         case ProcessEventCompletedResponse(result) =>
           Future.successful(result)
       }
-    SensoryEventMoments(futureReceived, futureCompleted)
+    EventResolutions(futureReceived, futureCompleted)
   }
 
   /**
@@ -223,7 +223,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     *
     * @return
     */
-  override def resolveInteraction(processId: String, interactionName: String, event: RuntimeEvent): Future[Unit] = {
+  override def resolveInteraction(processId: String, interactionName: String, event: EventInstance): Future[Unit] = {
     processIndexActor.ask(ResolveBlockedInteraction(processId, interactionName, event))(config.defaultProcessEventTimeout).map(_ => ())
   }
 
@@ -303,14 +303,14 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     } yield response
   }
 
-  private def doRegisterEventListener(listenerFunction: (String, RuntimeEvent) => Unit, processFilter: String => Boolean): Future[Unit] = {
+  private def doRegisterEventListener(listenerFunction: (String, EventInstance) => Unit, processFilter: String => Boolean): Future[Unit] = {
     registerBakerEventListener {
       case EventReceived(_, recipeName, _, processId, _, event) if processFilter(recipeName) =>
         listenerFunction.apply(processId, event)
       case InteractionCompleted(_, _, recipeName, _, processId, _, Some(event)) if processFilter(recipeName) =>
         listenerFunction.apply(processId, event)
       case InteractionFailed(_, _, recipeName, _, processId, _, _, _, ExceptionStrategyOutcome.Continue(eventName)) if processFilter(recipeName) =>
-        listenerFunction.apply(processId, RuntimeEvent(eventName, Map.empty))
+        listenerFunction.apply(processId, EventInstance(eventName, Map.empty))
       case _ => ()
     }
   }
@@ -320,7 +320,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(recipeName: String, listenerFunction: (String, RuntimeEvent) => Unit): Future[Unit] =
+  override def registerEventListener(recipeName: String, listenerFunction: (String, EventInstance) => Unit): Future[Unit] =
     doRegisterEventListener(listenerFunction, _ == recipeName)
 
   /**
@@ -329,7 +329,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
   //  @deprecated("Use event bus instead", "1.4.0")
-  override def registerEventListener(listenerFunction: (String, RuntimeEvent) => Unit): Future[Unit] =
+  override def registerEventListener(listenerFunction: (String, EventInstance) => Unit): Future[Unit] =
     doRegisterEventListener(listenerFunction, _ => true)
 
   /**
@@ -362,7 +362,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     *
     * @param implementation The implementation object
     */
-  override def addImplementation(implementation: InteractionImplementation): Future[Unit] =
+  override def addImplementation(implementation: InteractionInstance): Future[Unit] =
     Future.successful(config.interactionManager.addImplementation(implementation))
 
   /**
@@ -370,7 +370,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     *
     * @param implementations The implementation object
     */
-  override def addImplementations(implementations: Seq[InteractionImplementation]): Future[Unit] =
+  override def addImplementations(implementations: Seq[InteractionInstance]): Future[Unit] =
     Future.successful(implementations.foreach(addImplementation))
 
   /**

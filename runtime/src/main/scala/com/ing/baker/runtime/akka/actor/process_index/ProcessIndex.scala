@@ -22,7 +22,7 @@ import com.ing.baker.runtime.akka.actor.serialization.{BakerSerializable, Encryp
 import com.ing.baker.runtime.scaladsl.ProcessCreated
 import com.ing.baker.runtime.akka.internal.{InteractionManager, RecipeRuntime}
 import com.ing.baker.runtime.akka.{namedCachedThreadPool, _}
-import com.ing.baker.runtime.scaladsl.{ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.scaladsl.{ProcessState, EventInstance}
 import com.ing.baker.types.Value
 
 import scala.collection.mutable
@@ -124,11 +124,11 @@ class ProcessIndex(processIdleTimeout: Option[FiniteDuration],
 
   // creates a ProcessInstanceActor, does not do any validation
   def createProcessActor(processId: String, compiledRecipe: CompiledRecipe): ActorRef = {
-    val runtime: ProcessInstanceRuntime[Place, Transition, ProcessState, RuntimeEvent] =
+    val runtime: ProcessInstanceRuntime[Place, Transition, ProcessState, EventInstance] =
       new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream)
 
     val processActorProps =
-      ProcessInstance.props[Place, Transition, ProcessState, RuntimeEvent](
+      ProcessInstance.props[Place, Transition, ProcessState, EventInstance](
         compiledRecipe.name, compiledRecipe.petriNet, runtime,
         ProcessInstance.Settings(
           executionContext = bakerExecutionContext,

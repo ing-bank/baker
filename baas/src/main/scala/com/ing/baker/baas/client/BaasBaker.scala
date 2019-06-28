@@ -100,7 +100,7 @@ class BaasBaker(config: Config,
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEventReceived(processId: String, event: RuntimeEvent, correlationId: Option[String]): Future[SensoryEventStatus] = ???
+  def fireEventAndResolveWhenReceived(processId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] = ???
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -112,7 +112,7 @@ class BaasBaker(config: Config,
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEventCompleted(processId: String, event: RuntimeEvent, correlationId: Option[String]): Future[SensoryEventResult] = ???
+  def fireEventAndResolveWhenCompleted(processId: String, event: EventInstance, correlationId: Option[String]): Future[EventResult] = ???
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -125,7 +125,7 @@ class BaasBaker(config: Config,
     * @param processId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEvent(processId: String, event: RuntimeEvent, correlationId: Option[String]): SensoryEventMoments = ???
+  def fireEvent(processId: String, event: EventInstance, correlationId: Option[String]): EventResolutions = ???
 
   /**
     * Creates a stream of specific events.
@@ -189,7 +189,7 @@ class BaasBaker(config: Config,
     *
     * @param implementations The implementation object
     */
-  override def addImplementations(implementations: Seq[InteractionImplementation]): Future[Unit] = {
+  override def addImplementations(implementations: Seq[InteractionInstance]): Future[Unit] = {
     Future.successful(implementations.foreach(addImplementation))
   }
 
@@ -198,7 +198,7 @@ class BaasBaker(config: Config,
     *
     * @param implementation An InteractionImplementation instance
     */
-  override def addImplementation(implementation: InteractionImplementation): Future[Unit] = {
+  override def addImplementation(implementation: InteractionInstance): Future[Unit] = {
     Future.successful(remoteInteractionLauncher.addImplementation(implementation))
   }
 
@@ -240,7 +240,7 @@ class BaasBaker(config: Config,
     *
     * @return
     */
-  override def resolveInteraction(processId: String, interactionName: String, event: RuntimeEvent): Future[Unit] = ???
+  override def resolveInteraction(processId: String, interactionName: String, event: EventInstance): Future[Unit] = ???
 
   /**
     * Stops the retrying of an interaction.
@@ -254,14 +254,14 @@ class BaasBaker(config: Config,
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(recipeName: String, listenerFunction: (String, RuntimeEvent) => Unit): Future[Unit] = ???
+  override def registerEventListener(recipeName: String, listenerFunction: (String, EventInstance) => Unit): Future[Unit] = ???
 
   /**
     * Registers a listener to all runtime events for all recipes that run in this Baker instance.
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(listenerFunction: (String, RuntimeEvent) => Unit): Future[Unit] = ???
+  override def registerEventListener(listenerFunction: (String, EventInstance) => Unit): Future[Unit] = ???
 
   /**
     * Registers a listener function that listens to all BakerEvents

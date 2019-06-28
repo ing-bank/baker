@@ -11,7 +11,7 @@ import akka.http.scaladsl.model.{HttpRequest, RequestEntity}
 import akka.http.scaladsl.server.RouteResult
 import com.ing.baker.baas.server.protocol.{AddInteractionHTTPRequest, AddInteractionHTTPResponse}
 import com.ing.baker.baas.util.ClientUtils
-import com.ing.baker.runtime.scaladsl.InteractionImplementation
+import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.ing.baker.types.Type
 import org.slf4j.LoggerFactory
 
@@ -23,7 +23,7 @@ case class RemoteInteractionLauncher(ownHost: String,
                                      baasHost: String,
                                      baasPort: Int)(implicit val actorSystem: ActorSystem) extends ClientUtils {
 
-  private var interactionImplementations: Map[String, InteractionImplementation] = Map.empty[String, InteractionImplementation]
+  private var interactionImplementations: Map[String, InteractionInstance] = Map.empty[String, InteractionInstance]
 
   override val log = LoggerFactory.getLogger(classOf[RemoteInteractionLauncher])
 
@@ -50,18 +50,18 @@ case class RemoteInteractionLauncher(ownHost: String,
   }
 
   def addImplementation(any: AnyRef): Unit = {
-    val methodImplementation: InteractionImplementation = InteractionImplementation.unsafeFrom(any)
+    val methodImplementation: InteractionInstance = InteractionInstance.unsafeFrom(any)
     interactionImplementations = interactionImplementations.+((methodImplementation.name, methodImplementation))
     registerRemoteImplementation(methodImplementation.name, methodImplementation.input)
   }
 
-  def addImplementation(interactionImplementation: InteractionImplementation): Unit = {
+  def addImplementation(interactionImplementation: InteractionInstance): Unit = {
     interactionImplementations = interactionImplementations.+((interactionImplementation.name, interactionImplementation))
     registerRemoteImplementation(interactionImplementation.name, interactionImplementation.input)
   }
 
   //TODO change so that it not finds on name but on complete Interaction
-  def getImplementation(name: String): Option[InteractionImplementation] = {
+  def getImplementation(name: String): Option[InteractionInstance] = {
     interactionImplementations.get(name)
   }
 

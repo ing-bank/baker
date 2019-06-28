@@ -12,7 +12,7 @@ object EventList {
     * @return A new EventList.
     */
   def CreateFromStringList(events: java.util.List[String]): EventList =
-    new EventList(events.asScala.map(new RuntimeEvent(_) -> -1l))
+    new EventList(events.asScala.map(new EventInstance(_) -> -1l))
 
   /**
     * Constructor from java object events with unknown timestamps represented with negative time.
@@ -22,7 +22,7 @@ object EventList {
     * @return A new EventList.
     */
   def CreateFromObjectList(events: java.util.List[Object]): EventList =
-    new EventList(events.asScala.map(obj => new RuntimeEvent(obj.getClass.getSimpleName) -> -1l))
+    new EventList(events.asScala.map(obj => new EventInstance(obj.getClass.getSimpleName) -> -1l))
 
   /**
     * Constructor from scala `Seq` of `RuntimeEvent` with unknown timestamps represented with negative time.
@@ -31,7 +31,7 @@ object EventList {
     *
     * @return A new EventList.
     */
-  def ScalaWithNoTimestamps(events: Seq[RuntimeEvent]): EventList =
+  def ScalaWithNoTimestamps(events: Seq[EventInstance]): EventList =
     new EventList(events.map(_ -> -1l))
 
 }
@@ -39,13 +39,13 @@ object EventList {
 /**
   * Java API class wrapping a sequence of events for a process instance.
   */
-class EventList(private val eventsWithTimestamp: Seq[(RuntimeEvent, Long)]) extends java.util.AbstractList[AnyRef] {
+class EventList(private val eventsWithTimestamp: Seq[(EventInstance, Long)]) extends java.util.AbstractList[AnyRef] {
 
   def this() = this(Seq.empty)
 
-  def this(events: java.util.List[RuntimeEvent]) = this(events.asScala.map(_ -> -1l))
+  def this(events: java.util.List[EventInstance]) = this(events.asScala.map(_ -> -1l))
 
-  private val events: Seq[RuntimeEvent] = eventsWithTimestamp.map(_._1)
+  private val events: Seq[EventInstance] = eventsWithTimestamp.map(_._1)
 
   override def get(index: Int): AnyRef = events.apply(index).asInstanceOf[AnyRef]
 

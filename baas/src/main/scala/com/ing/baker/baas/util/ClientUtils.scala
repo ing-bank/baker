@@ -15,7 +15,7 @@ import com.ing.baker.baas.server.protocol._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.{RecipeInformation, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.ProcessState
-import com.ing.baker.runtime.scaladsl.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.EventInstance
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -85,8 +85,8 @@ trait ClientUtils {
   implicit val executeInteractionHTTPResponseMarshaller = akkaProtoMarshaller[ExecuteInteractionHTTPResponse]
   implicit val executeInteractionHTTPResponseUnmarshaller = akkaProtoUnmarshaller[ExecuteInteractionHTTPResponse]
 
-  implicit val eventMarshaller = akkaProtoMarshaller[RuntimeEvent]
-  implicit val eventUnmarshaller = akkaProtoUnmarshaller[RuntimeEvent]
+  implicit val eventMarshaller = akkaProtoMarshaller[EventInstance]
+  implicit val eventUnmarshaller = akkaProtoUnmarshaller[EventInstance]
 
   implicit val compiledRecipeMarshaller = akkaProtoMarshaller[CompiledRecipe]
   implicit val compiledRecipeUnmarshaller = akkaProtoUnmarshaller[CompiledRecipe]
