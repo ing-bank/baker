@@ -8,9 +8,9 @@ trait EventListener {
   /**
     * Called when an event occurred.
     *
-    * @param processId The process id for which the event occurred.
+    * @param recipeInstanceId The process id for which the event occurred.
     *
     * @param event The event.
     */
-  def processEvent(processId: String, event: EventInstance)
+  def processEvent(recipeInstanceId: String, event: EventInstance)
 }

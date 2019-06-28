@@ -16,7 +16,7 @@ trait BakerEvent extends LanguageApi with NoSerializationVerificationNeeded {
   * @param timeStamp     The time that the event was received
   * @param recipeName    The name of the recipe that interaction is part of
   * @param recipeId      The recipe id
-  * @param processId     The id of the process
+  * @param recipeInstanceId     The id of the process
   * @param correlationId The (optional) correlation id of the event
   * @param event         The event
   */
@@ -24,7 +24,7 @@ trait EventReceived extends BakerEvent {
   val timeStamp: Long
   val recipeName: String
   val recipeId: String
-  val processId: String
+  val recipeInstanceId: String
   val correlationId: language.Option[String]
   val event: Event
 }
@@ -33,14 +33,14 @@ trait EventReceived extends BakerEvent {
   * Event describing the fact that an event was received but rejected for a process
   *
   * @param timeStamp     The time that the event was received
-  * @param processId     The id of the process
+  * @param recipeInstanceId     The id of the process
   * @param correlationId The (optional) correlation id of the event
   * @param event         The event
   * @param reason        The reason that the event was rejected
   */
 trait EventRejected extends BakerEvent {
   val timeStamp: Long
-  val processId: String
+  val recipeInstanceId: String
   val correlationId: language.Option[String]
   val event: Event
   val reason: RejectReason
@@ -53,7 +53,7 @@ trait EventRejected extends BakerEvent {
   * @param duration                 The duration of the execution time
   * @param recipeName               The name of the recipe that interaction is part of
   * @param recipeId                 The recipe id
-  * @param processId                The id of the process the interaction is executed for
+  * @param recipeInstanceId                The id of the process the interaction is executed for
   * @param interactionName          The name of the interaction
   * @param failureCount             The number of times that this interaction execution failed
   * @param throwable                The exception that was thrown by the interaction
@@ -64,7 +64,7 @@ trait InteractionFailed extends BakerEvent {
   val duration: Long
   val recipeName: String
   val recipeId: String
-  val processId: String
+  val recipeInstanceId: String
   val interactionName: String
   val failureCount: Int
   val throwable: Throwable
@@ -77,14 +77,14 @@ trait InteractionFailed extends BakerEvent {
   * @param timeStamp       The time that the execution started
   * @param recipeName      The name of the recipe that interaction is part of
   * @param recipeId        The recipe id
-  * @param processId       The id of the process the interaction is executed for
+  * @param recipeInstanceId       The id of the process the interaction is executed for
   * @param interactionName The name of the interaction
   */
 trait InteractionStarted extends BakerEvent {
   val timeStamp: Long
   val recipeName: String
   val recipeId: String
-  val processId: String
+  val recipeInstanceId: String
   val interactionName: String
 }
 
@@ -95,7 +95,7 @@ trait InteractionStarted extends BakerEvent {
   * @param duration        The duration of the execution time
   * @param recipeName      The name of the recipe that interaction is part of
   * @param recipeId        The recipe id
-  * @param processId       The id of the process the interaction is executed for
+  * @param recipeInstanceId       The id of the process the interaction is executed for
   * @param interactionName The name of the interaction
   * @param event           The event that was produced as a result of the execution
   */
@@ -105,7 +105,7 @@ trait InteractionCompleted extends BakerEvent {
   val duration: Long
   val recipeName: String
   val recipeId: String
-  val processId: String
+  val recipeInstanceId: String
   val interactionName: String
   val event: language.Option[Event]
 }
@@ -116,13 +116,13 @@ trait InteractionCompleted extends BakerEvent {
   * @param timeStamp  The time the process was created
   * @param recipeId   The recipe id
   * @param recipeName The name of the recipe
-  * @param processId  The process id
+  * @param recipeInstanceId  The process id
   */
 trait ProcessCreated extends BakerEvent {
   val timeStamp: Long
   val recipeId: String
   val recipeName: String
-  val processId: String
+  val recipeInstanceId: String
 }
 
 /**

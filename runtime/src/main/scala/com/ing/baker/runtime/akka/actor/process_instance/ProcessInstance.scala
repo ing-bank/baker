@@ -34,9 +34,9 @@ object ProcessInstance {
 
   def persistenceIdPrefix(processType: String) = s"process-$processType-"
 
-  def processId2PersistenceId(processType: String, processId: String): String = persistenceIdPrefix(processType) + processId
+  def recipeInstanceId2PersistenceId(processType: String, recipeInstanceId: String): String = persistenceIdPrefix(processType) + recipeInstanceId
 
-  def persistenceId2ProcessId(processType: String, persistenceId: String): Option[String] = {
+  def persistenceId2recipeInstanceId(processType: String, persistenceId: String): Option[String] = {
     val parts = persistenceId.split(persistenceIdPrefix(processType))
     if (parts.length == 2)
       Some(parts(1))
@@ -66,11 +66,11 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
   val log: DiagnosticLoggingAdapter = Logging.getLogger(this)
 
-  val processId = context.self.path.name
+  val recipeInstanceId = context.self.path.name
 
   val executor = runtime.jobExecutor(petriNet)
 
-  override def persistenceId: String = processId2PersistenceId(processType, processId)
+  override def persistenceId: String = recipeInstanceId2PersistenceId(processType, recipeInstanceId)
 
   override def receiveCommand: Receive = uninitialized
 
@@ -125,7 +125,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
       context.stop(context.self)
 
     case _: Command ⇒
-      sender() ! Uninitialized(processId)
+      sender() ! Uninitialized(recipeInstanceId)
       context.stop(context.self)
 
   }
@@ -133,11 +133,11 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
   def waitForDeleteConfirmation(instance: Instance[P, T, S]): Receive = {
     case DeleteMessagesSuccess(toSequenceNr) =>
 
-      log.processHistoryDeletionSuccessful(processId, toSequenceNr)
+      log.processHistoryDeletionSuccessful(recipeInstanceId, toSequenceNr)
 
       context.stop(context.self)
     case DeleteMessagesFailure(cause, toSequenceNr) =>
-      log.processHistoryDeletionFailed(processId, toSequenceNr, cause)
+      log.processHistoryDeletionFailed(recipeInstanceId, toSequenceNr, cause)
       context become running(instance, Map.empty)
   }
 
@@ -162,7 +162,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
         context.stop(context.self)
 
     case IdleStop(n) if n == instance.sequenceNr && instance.activeJobs.isEmpty ⇒
-      log.idleStop(processId, settings.idleTTL.getOrElse(Duration.Zero))
+      log.idleStop(recipeInstanceId, settings.idleTTL.getOrElse(Duration.Zero))
       context.stop(context.self)
 
     case GetState ⇒
@@ -179,7 +179,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
       val transition = instance.petriNet.transitions.getById(transitionId)
 
-      log.transitionFired(processId, transition.toString, jobId, timeStarted, timeCompleted)
+      log.transitionFired(recipeInstanceId, transition.toString, jobId, timeStarted, timeCompleted)
 
       // persist the success event
       persistEvent(instance, event)(
@@ -200,12 +200,12 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
       val transition = instance.petriNet.transitions.getById(transitionId)
 
-      log.transitionFailed(processId, transition.toString, jobId, timeStarted, timeFailed, reason)
+      log.transitionFailed(recipeInstanceId, transition.toString, jobId, timeStarted, timeFailed, reason)
 
       strategy match {
         case RetryWithDelay(delay) ⇒
 
-          log.scheduleRetry(processId, transition.toString, delay)
+          log.scheduleRetry(recipeInstanceId, transition.toString, delay)
 
           val originalSender = sender()
 
@@ -260,7 +260,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
       correlationIdOption match {
         case Some(correlationId) if instance.hasReceivedCorrelationId(correlationId) =>
-            sender() ! FireSensoryEventRejection.AlreadyReceived(processId, correlationId)
+            sender() ! FireSensoryEventRejection.AlreadyReceived(recipeInstanceId, correlationId)
         case _ =>
           runtime.createJob(transition, input, correlationIdOption).run(instance).value match {
             case (updatedInstance, Right(job)) ⇒
@@ -268,14 +268,14 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
               context become running(updatedInstance, scheduledRetries)
             case (_, Left(reason)) ⇒
 
-              log.fireTransitionRejected(processId, transition.toString, reason)
+              log.fireTransitionRejected(recipeInstanceId, transition.toString, reason)
 
-              sender() ! FireSensoryEventRejection.FiringLimitMet(processId)
+              sender() ! FireSensoryEventRejection.FiringLimitMet(recipeInstanceId)
           }
       }
 
     case Initialize(_, _) ⇒
-      sender() ! AlreadyInitialized(processId)
+      sender() ! AlreadyInitialized(recipeInstanceId)
 
     case OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.RetryWithDelay(timeout)) =>
 
@@ -383,7 +383,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
 
   def executeJob(job: Job[P, T, S], originalSender: ActorRef): Unit = {
 
-    log.firingTransition(processId, job.id, job.transition.toString, System.currentTimeMillis())
+    log.firingTransition(recipeInstanceId, job.id, job.transition.toString, System.currentTimeMillis())
 
     // context.self can be potentially throw NullPointerException in non graceful shutdown situations
     Try(context.self).foreach { self =>
@@ -407,7 +407,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
           executeJob(j, sender())
           map
         } else {
-          log.scheduleRetry(processId, j.transition.toString, newDelay)
+          log.scheduleRetry(recipeInstanceId, j.transition.toString, newDelay)
           val cancellable = system.scheduler.scheduleOnce(newDelay milliseconds) { executeJob(j, sender()) }
           map + (j.id -> cancellable)
         }

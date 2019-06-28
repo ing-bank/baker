@@ -11,72 +11,72 @@ import scala.concurrent.duration.FiniteDuration
 object ProcessIndexProtocol {
 
   sealed trait ProcessIndexMessage extends BakerSerializable {
-    val processId: String
+    val recipeInstanceId: String
   }
 
   case object GetIndex extends BakerSerializable
 
   case class Index(entries: Seq[ActorMetadata]) extends BakerSerializable
 
-  case class ProcessEventResponse(processId: String) extends ProcessIndexMessage
+  case class ProcessEventResponse(recipeInstanceId: String) extends ProcessIndexMessage
 
-  case class GetProcessState(processId: String) extends ProcessIndexMessage
+  case class GetProcessState(recipeInstanceId: String) extends ProcessIndexMessage
 
-  case class GetCompiledRecipe(processId: String) extends ProcessIndexMessage
+  case class GetCompiledRecipe(recipeInstanceId: String) extends ProcessIndexMessage
 
-  case class RetryBlockedInteraction(processId: String, interactionName: String) extends ProcessIndexMessage
+  case class RetryBlockedInteraction(recipeInstanceId: String, interactionName: String) extends ProcessIndexMessage
 
-  case class StopRetryingInteraction(processId: String, interactionName: String) extends ProcessIndexMessage
+  case class StopRetryingInteraction(recipeInstanceId: String, interactionName: String) extends ProcessIndexMessage
 
-  case class ResolveBlockedInteraction(processId: String, interactionName: String, output: EventInstance) extends ProcessIndexMessage
+  case class ResolveBlockedInteraction(recipeInstanceId: String, interactionName: String, output: EventInstance) extends ProcessIndexMessage
 
   /**
     * Failure when attempting to resolve a blocked interaction, the event is not of valid type according with the recipe
     *
-    * @param processId The identifier of the processId
+    * @param recipeInstanceId The identifier of the RecipeInstanceId
     * @param msg error message for the request
     */
-  case class InvalidEventWhenResolveBlocked(processId: String, msg: String) extends ProcessIndexMessage
+  case class InvalidEventWhenResolveBlocked(recipeInstanceId: String, msg: String) extends ProcessIndexMessage
 
   /**
     * Returned if a process has been deleted
     *
-    * @param processId The identifier of the processId
+    * @param recipeInstanceId The identifier of the RecipeInstanceId
     */
-  case class ProcessDeleted(processId: String) extends ProcessIndexMessage
+  case class ProcessDeleted(recipeInstanceId: String) extends ProcessIndexMessage
 
   /**
     * Returned if the process does not exist
     *
-    * @param processId The identifier of the processId
+    * @param recipeInstanceId The identifier of the RecipeInstanceId
     */
-  case class NoSuchProcess(processId: String) extends ProcessIndexMessage
+  case class NoSuchProcess(recipeInstanceId: String) extends ProcessIndexMessage
 
   /**
     * Command requesting the creation of a new process with chosen recipe and predefined identifier
     *
     * @param recipeId Id of the recipe to use, must exist on the Recipe Manager
-    * @param processId To be used for the process, must not be previously used
+    * @param recipeInstanceId To be used for the process, must not be previously used
     */
-  case class CreateProcess(recipeId: String, processId: String) extends ProcessIndexMessage
+  case class CreateProcess(recipeId: String, recipeInstanceId: String) extends ProcessIndexMessage
 
   /**
     * Returned if there was already another process using the predefined process id
     *
-    * @param processId Process id meant to be used but already was occupied
+    * @param recipeInstanceId Process id meant to be used but already was occupied
     */
-  case class ProcessAlreadyExists(processId: String) extends ProcessIndexMessage
+  case class ProcessAlreadyExists(recipeInstanceId: String) extends ProcessIndexMessage
 
   /**
     * Command requesting the firing of a sensory event on corresponding process instance.
     *
-    * @param processId The identifier of the process instance
+    * @param recipeInstanceId The identifier of the process instance
     * @param event Sensory event to be fired
     * @param correlationId Correlation token used for ... TODO come up with a good description of correlations
     * @param timeout Waiting time for an instance to produce some response to this request
     * @param reaction Expected reaction from the ProcessEventSender actor, see SensoryEventReaction
     */
-  case class ProcessEvent(processId: String, event: EventInstance, correlationId: Option[String], timeout: FiniteDuration, reaction: FireSensoryEventReaction) extends ProcessIndexMessage
+  case class ProcessEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String], timeout: FiniteDuration, reaction: FireSensoryEventReaction) extends ProcessIndexMessage
 
   /**
     * Expected reactions when firing a sensory event
@@ -125,18 +125,18 @@ object ProcessIndexProtocol {
     /**
       * Indicates that a process can no longer receive events because the configured period has expired.
       *
-      * @param processId The identifier of the processId
+      * @param recipeInstanceId The identifier of the RecipeInstanceId
       */
-    case class ReceivePeriodExpired(processId: String) extends FireSensoryEventRejection {
+    case class ReceivePeriodExpired(recipeInstanceId: String) extends FireSensoryEventRejection {
 
       def asReason: RejectReason = RejectReason.ReceivePeriodExpired
     }
 
     /**
       * @param msg error message for the request
-      * @param processId The identifier of the processId
+      * @param recipeInstanceId The identifier of the RecipeInstanceId
       */
-    case class InvalidEvent(processId: String, msg: String) extends FireSensoryEventRejection {
+    case class InvalidEvent(recipeInstanceId: String, msg: String) extends FireSensoryEventRejection {
 
       def asReason: RejectReason = RejectReason.InvalidEvent
     }
@@ -144,9 +144,9 @@ object ProcessIndexProtocol {
     /**
       * Returned if a process has been deleted
       *
-      * @param processId The identifier of the processId
+      * @param recipeInstanceId The identifier of the RecipeInstanceId
       */
-    case class ProcessDeleted(processId: String) extends FireSensoryEventRejection {
+    case class ProcessDeleted(recipeInstanceId: String) extends FireSensoryEventRejection {
 
       def asReason: RejectReason = RejectReason.ProcessDeleted
     }
@@ -154,9 +154,9 @@ object ProcessIndexProtocol {
     /**
       * Returned if the process is uninitialized
       *
-      * @param processId The identifier of the processId
+      * @param recipeInstanceId The identifier of the RecipeInstanceId
       */
-    case class NoSuchProcess(processId: String) extends FireSensoryEventRejection {
+    case class NoSuchProcess(recipeInstanceId: String) extends FireSensoryEventRejection {
 
       def asReason: RejectReason = RejectReason.NoSuchProcess
     }
@@ -164,9 +164,9 @@ object ProcessIndexProtocol {
     /**
       * The firing limit, the number of times this event may fire, was met.
       *
-      * @param processId The identifier of the processId
+      * @param recipeInstanceId The identifier of the RecipeInstanceId
       */
-    case class FiringLimitMet(processId: String) extends FireSensoryEventRejection {
+    case class FiringLimitMet(recipeInstanceId: String) extends FireSensoryEventRejection {
 
       def asReason: RejectReason = RejectReason.FiringLimitMet
     }
@@ -174,10 +174,10 @@ object ProcessIndexProtocol {
     /**
       * An event with the same correlation id was already received.
       *
-      * @param processId The identifier of the processId
+      * @param recipeInstanceId The identifier of the RecipeInstanceId
       * @param correlationId The identifier used to secure uniqueness
       */
-    case class AlreadyReceived(processId: String, correlationId: String) extends FireSensoryEventRejection {
+    case class AlreadyReceived(recipeInstanceId: String, correlationId: String) extends FireSensoryEventRejection {
 
       def asReason: RejectReason = RejectReason.AlreadyReceived
     }

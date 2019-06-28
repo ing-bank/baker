@@ -124,23 +124,23 @@ object BaasSpec {
   val interactionOne =
     Interaction(
       name = "InteractionOne",
-      inputIngredients = Seq(processId, initialIngredient),
+      inputIngredients = Seq(recipeInstanceId, initialIngredient),
       output = Seq(Event[InteractionOneEvent]))
 
   trait InteractionOne {
     def name: String = "InteractionOne"
-    def apply(processId: String, initialIngredient: String): InteractionOneEvent
+    def apply(recipeInstanceId: String, initialIngredient: String): InteractionOneEvent
   }
 
   val interactionTwo =
     Interaction(
       name = "InteractionTwo",
-      inputIngredients = Seq(processId, initialIngredient),
+      inputIngredients = Seq(recipeInstanceId, initialIngredient),
       output = Seq(Event[InteractionTwoEvent]))
 
   trait InteractionTwo {
     def name: String = "InteractionTwo"
-    def apply(processId: String, initialIngredient: String): InteractionTwoEvent
+    def apply(recipeInstanceId: String, initialIngredient: String): InteractionTwoEvent
   }
 
   def setupSimpleRecipe(name: String): scaladsl.Recipe = {

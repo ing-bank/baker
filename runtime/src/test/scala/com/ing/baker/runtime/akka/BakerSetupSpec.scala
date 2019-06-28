@@ -40,9 +40,9 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           _ <- baker.addImplementations(mockImplementations)
           _ = when (testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful("foobar")))
           recipeId <- baker.addRecipe(simpleRecipe)
-          processId = java.util.UUID.randomUUID().toString
-          _ <- baker.bake(recipeId, processId)
-          _ <- baker.fireEventAndResolveWhenCompleted(processId, initialEvent.instance("initialIngredient"))
+          recipeInstanceId = java.util.UUID.randomUUID().toString
+          _ <- baker.bake(recipeId, recipeInstanceId)
+          _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, initialEvent.instance("initialIngredient"))
         } yield succeed
       }
 

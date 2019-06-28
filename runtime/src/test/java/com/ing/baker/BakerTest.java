@@ -57,23 +57,23 @@ public class BakerTest {
 
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupSimpleRecipe());
 
-        String processId = UUID.randomUUID().toString();
+        String recipeInstanceId = UUID.randomUUID().toString();
         Baker jBaker = Baker.akka(config, actorSystem, materializer);
         java.util.Map<String, Value> ingredients = jBaker.addImplementations(implementationsList)
                 .thenCompose(x -> jBaker.addRecipe(compiledRecipe))
                 .thenCompose(recipeId -> {
                     assertEquals(compiledRecipe.getValidationErrors().size(), 0);
-                    return jBaker.bake(recipeId, processId);
+                    return jBaker.bake(recipeId, recipeInstanceId);
                 })
-                .thenCompose(x -> jBaker.fireEventAndResolveWhenCompleted(processId, EventInstance.from(new JavaCompiledRecipeTest.EventOne())))
+                .thenCompose(x -> jBaker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.from(new JavaCompiledRecipeTest.EventOne())))
                 .thenApply(EventResult::events)
-                .thenCompose(x -> jBaker.getProcessState(processId))
+                .thenCompose(x -> jBaker.getProcessState(recipeInstanceId))
                 .thenApply(ProcessState::getIngredients)
                 .get();
 
         assertEquals(1, ingredients.size());
         Object requestIdstringOne = ingredients.get("RequestIDStringOne");
-        assertEquals(Converters.toValue(processId), requestIdstringOne);
+        assertEquals(Converters.toValue(recipeInstanceId), requestIdstringOne);
     }
 
     @Test

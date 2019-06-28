@@ -172,10 +172,10 @@ object ProcessInstanceProto {
         protobuf.Uninitialized
 
       override def toProto(a: Uninitialized): protobuf.Uninitialized =
-        protobuf.Uninitialized(Some(a.processId))
+        protobuf.Uninitialized(Some(a.recipeInstanceId))
 
       override def fromProto(message: protobuf.Uninitialized): Try[Uninitialized] =
-        versioned(message.processId, "processId").map(Uninitialized)
+        versioned(message.recipeInstanceId, "RecipeInstanceId").map(Uninitialized)
     }
 
   implicit def alreadyInitializedProto(implicit ev0: SerializersProvider): ProtoMap[AlreadyInitialized, protobuf.AlreadyInitialized] =
@@ -185,10 +185,10 @@ object ProcessInstanceProto {
         protobuf.AlreadyInitialized
 
       override def toProto(a: AlreadyInitialized): protobuf.AlreadyInitialized =
-        protobuf.AlreadyInitialized(Some(a.processId))
+        protobuf.AlreadyInitialized(Some(a.recipeInstanceId))
 
       override def fromProto(message: protobuf.AlreadyInitialized): Try[AlreadyInitialized] =
-        versioned(message.processId, "processId").map(AlreadyInitialized)
+        versioned(message.recipeInstanceId, "RecipeInstanceId").map(AlreadyInitialized)
     }
 
   implicit def fireTransitionProto(implicit ev0: SerializersProvider): ProtoMap[FireTransition, protobuf.FireTransition] =

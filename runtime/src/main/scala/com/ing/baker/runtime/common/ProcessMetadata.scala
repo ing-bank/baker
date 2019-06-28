@@ -9,7 +9,7 @@ trait ProcessMetadata extends LanguageApi {
 
   val recipeId: String
 
-  val processId: String
+  val recipeInstanceId: String
 
   val createdTime: Long
 }

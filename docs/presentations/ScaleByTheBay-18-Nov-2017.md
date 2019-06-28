@@ -236,17 +236,17 @@ val recipe = Recipe("OpenAccountRecipe")
 
 ```scala
 //for each process instance, bake the recipe
-baker.bake(processId);
+baker.bake(recipeInstanceId);
 //notify Baker when events occur
-baker.processEvent(processId, individualInformationSubmitted.instance(name, address));
-baker.processEvent(processId, termsAndConditionsAccepted.instance());
+baker.processEvent(recipeInstanceId, individualInformationSubmitted.instance(name, address));
+baker.processEvent(recipeInstanceId, termsAndConditionsAccepted.instance());
 
 //retrieve ingredients stored in the accumulated state
-assert(baker.getIngredients(processId).get("customerId").equals(customerId));
-assert(baker.getIngredients(processId).get("iban").equals(iban));
+assert(baker.getIngredients(recipeInstanceId).get("customerId").equals(customerId));
+assert(baker.getIngredients(recipeInstanceId).get("iban").equals(iban));
 
 //retrieve all events that have occurred
-baker.events(processId)
+baker.events(recipeInstanceId)
 ```
 
 ---

@@ -41,7 +41,7 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
         System.currentTimeMillis(),
         recipe.name,
         recipe.recipeId,
-        command.processId,
+        command.recipeInstanceId,
         command.correlationId,
         command.event))
     command.reaction match {
@@ -82,7 +82,7 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
     context.system.eventStream.publish(
       EventRejected(
         System.currentTimeMillis(),
-        command.processId,
+        command.recipeInstanceId,
         command.correlationId,
         command.event,
         rejection.asReason))

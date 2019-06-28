@@ -49,22 +49,22 @@ trait Baker extends common.Baker[Future] with ScalaApi {
 
   override type RecipeInformationType = RecipeInformation
 
-  def fireEventAndResolveWhenReceived(processId: String, event: EventInstance): Future[SensoryEventStatus] =
-    fireEventAndResolveWhenReceived(processId, event, None)
+  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance): Future[SensoryEventStatus] =
+    fireEventAndResolveWhenReceived(recipeInstanceId, event, None)
 
-  def fireEventAndResolveWhenCompleted(processId: String, event: EventInstance): Future[EventResultType] =
-    fireEventAndResolveWhenCompleted(processId, event, None)
+  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance): Future[EventResultType] =
+    fireEventAndResolveWhenCompleted(recipeInstanceId, event, None)
 
-  def fireEvent(processId: String, event: EventInstance): EventResolutionsType =
-    fireEvent(processId, event, None)
+  def fireEvent(recipeInstanceId: String, event: EventInstance): EventResolutionsType =
+    fireEvent(recipeInstanceId, event, None)
 
-  def fireEventAndResolveWhenReceived(processId: String, event: EventInstance, correlationId: String): Future[SensoryEventStatus] =
-    fireEventAndResolveWhenReceived(processId, event, Some(correlationId))
+  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: String): Future[SensoryEventStatus] =
+    fireEventAndResolveWhenReceived(recipeInstanceId, event, Some(correlationId))
 
-  def fireEventAndResolveWhenCompleted(processId: String, event: EventInstance, correlationId: String): Future[EventResultType] =
-    fireEventAndResolveWhenCompleted(processId, event, Some(correlationId))
+  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: String): Future[EventResultType] =
+    fireEventAndResolveWhenCompleted(recipeInstanceId, event, Some(correlationId))
 
-  def fireEvent(processId: String, event: EventInstance, correlationId: String): EventResolutionsType =
-    fireEvent(processId, event, Some(correlationId))
+  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: String): EventResolutionsType =
+    fireEvent(recipeInstanceId, event, Some(correlationId))
 
 }

@@ -29,7 +29,7 @@ You may implement this interface and register it to Baker.
 
 ``` scala tab="Scala"
 val listener: EventListener = new EventListener {
-   override def processEvent(processId: String, event: RuntimeEvent) = ???
+   override def processEvent(recipeInstanceId: String, event: RuntimeEvent) = ???
 }
 
 val baker: Baker = ??? // initialize baker
@@ -40,7 +40,7 @@ baker.registerEventListener(listener);
 ``` java tab="Java"
 EventListener listener = new EventListener() {
    @Override
-   public void processEvent(String processId, RuntimeEvent event) {
+   public void processEvent(String recipeInstanceId, RuntimeEvent event) {
       //
    }
 }

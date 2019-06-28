@@ -151,19 +151,19 @@ class HappyPath extends MultiNodeSpec(HappyPathConfig)
     Await.result(system.terminate(), 10.seconds)
   }
 
-  def runHappyFlow(baker: Baker, recipeId: String, processId: String): Unit = {
+  def runHappyFlow(baker: Baker, recipeId: String, recipeInstanceId: String): Unit = {
 
     import system.dispatcher
-    Await.result(baker.bake(recipeId, processId), 10 seconds)
+    Await.result(baker.bake(recipeId, recipeInstanceId), 10 seconds)
 
-    val sensoryEventStatus1 = baker.fireEventAndResolveWhenCompleted(processId, placeOrderRuntimeEvent)
-    Await.result(sensoryEventStatus1.flatMap(_ => baker.getProcessState(processId)), 10 seconds).eventNames
+    val sensoryEventStatus1 = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, placeOrderRuntimeEvent)
+    Await.result(sensoryEventStatus1.flatMap(_ => baker.getProcessState(recipeInstanceId)), 10 seconds).eventNames
 
-    val sensoryEventStatus2 = baker.fireEventAndResolveWhenCompleted(processId, receivedDataRuntimeEvent)
-    Await.result(sensoryEventStatus2.flatMap(_ => baker.getProcessState(processId)), 10 seconds).eventNames
+    val sensoryEventStatus2 = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, receivedDataRuntimeEvent)
+    Await.result(sensoryEventStatus2.flatMap(_ => baker.getProcessState(recipeInstanceId)), 10 seconds).eventNames
 
-    val sensoryEventStatus3 = baker.fireEventAndResolveWhenCompleted(processId, paymentMadeRuntimeEvent)
-    val events3 = Await.result(sensoryEventStatus3.flatMap(_ => baker.getProcessState(processId)), 10 seconds).eventNames
+    val sensoryEventStatus3 = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMadeRuntimeEvent)
+    val events3 = Await.result(sensoryEventStatus3.flatMap(_ => baker.getProcessState(recipeInstanceId)), 10 seconds).eventNames
 
     assert(events3 == List(
       webshop.orderPlaced.name,

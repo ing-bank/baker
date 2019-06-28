@@ -6,7 +6,7 @@ import akka.event.EventStream
 import cats.effect.IO
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
-import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor, processIdName}
+import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor, recipeInstanceIdName}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceRuntime
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
@@ -95,10 +95,10 @@ object RecipeRuntime {
   def createInteractionInput(interaction: InteractionTransition, state: ProcessState): Seq[IngredientInstance] = {
 
     // the process id is a special ingredient that is always available
-    val processId: (String, Value) = processIdName -> PrimitiveValue(state.processId.toString)
+    val recipeInstanceId: (String, Value) = recipeInstanceIdName -> PrimitiveValue(state.recipeInstanceId.toString)
 
     // a map of all ingredients
-    val allIngredients: Map[String, Value] = interaction.predefinedParameters ++ state.ingredients + processId
+    val allIngredients: Map[String, Value] = interaction.predefinedParameters ++ state.ingredients + recipeInstanceId
 
     // arranges the ingredients in the expected order
     interaction.requiredIngredients.map {
@@ -160,7 +160,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
 
           eventStream.publish(
             InteractionFailed(currentTime, currentTime - startTime, recipe.name, recipe.recipeId,
-              job.processState.processId, job.transition.label, failureCount, throwable, failureStrategyOutcome))
+              job.processState.recipeInstanceId, job.transition.label, failureCount, throwable, failureStrategyOutcome))
 
           // translates the recipe failure strategy to a petri net failure strategy
           failureStrategyOutcome match {
@@ -191,7 +191,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
     IO.fromFuture(IO {
 
       // add MDC values for logging
-      MDC.put("processId", processState.processId)
+      MDC.put("RecipeInstanceId", processState.recipeInstanceId)
       MDC.put("recipeName", recipe.name)
 
       try {
@@ -207,7 +207,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
         val timeStarted = System.currentTimeMillis()
 
         // publish the fact that we started the interaction
-        eventStream.publish(InteractionStarted(timeStarted, recipe.name, recipe.recipeId, processState.processId, interaction.interactionName))
+        eventStream.publish(InteractionStarted(timeStarted, recipe.name, recipe.recipeId, processState.recipeInstanceId, interaction.interactionName))
 
         // executes the interaction and obtain the (optional) output event
         implementation.execute(input).map { interactionOutput =>
@@ -224,7 +224,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
           val timeCompleted = System.currentTimeMillis()
 
           // publish the fact that the interaction completed
-          eventStream.publish(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, recipe.name, recipe.recipeId, processState.processId, interaction.interactionName, outputEvent))
+          eventStream.publish(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, recipe.name, recipe.recipeId, processState.recipeInstanceId, interaction.interactionName, outputEvent))
 
           // create the output marking for the petri net
           val outputMarking: Marking[Place] = RecipeRuntime.createProducedMarking(outAdjacent, outputEvent)
@@ -234,7 +234,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
 
       } finally {
         // remove the MDC values
-        MDC.remove("processId")
+        MDC.remove("RecipeInstanceId")
         MDC.remove("recipeName")
       }
 

@@ -15,13 +15,13 @@ It is now possible to continue a process instance manually from that state.
 Either force another retry:
 
 ``` java
-baker.retryInteraction(processId, interactionName);
+baker.retryInteraction(recipeInstanceId, interactionName);
 ```
 
 Or manually specify the interaction output.
 
 ``` java
-baker.resolveInteraction(processId, interactionName, event);
+baker.resolveInteraction(recipeInstanceId, interactionName, event);
 ```
 
 Note, this *ONLY* works if the interaction has become blocked.
@@ -33,7 +33,7 @@ Sometimes, perhaps because of a bug in the code, a interaction is failing with t
 You can now stop this retry from continueing unnecessarily.
 
 ``` java
-baker.stopRetryingInteraction(processId, interactionName);
+baker.stopRetryingInteraction(recipeInstanceId, interactionName);
 ```
 
 More documentation these features [here](https://ing-bank.github.io/baker/documentation/process-execution/#incident-resolving).
@@ -59,21 +59,21 @@ More documentation these features [here](https://ing-bank.github.io/baker/docume
 - [#108](https://github.com/ing-bank/baker/issues/108) Deprecated the sieve concept, only 'normal' interactions remain.
 - [#99](https://github.com/ing-bank/baker/issues/99) Added the option to get an index of all process instances.
 ``` java
-// ProcessMetaData contains 'recipeId', 'processId' and 'createdTime' fields.
+// ProcessMetaData contains 'recipeId', 'recipeInstanceId' and 'createdTime' fields.
 java.util.Set<ProcessMetadata> index = baker.getIndex();
 ```
 
 - Added a list of event names to the process state that can be retreived from memory:
 ``` java
 java.util.List<String> eventNames =
-    baker.getProcessState(processId).getEventNames();
+    baker.getProcessState(recipeInstanceId).getEventNames();
 ```
 
 - Added an optional correlation id to events to achieve idempotent event delivery
 ``` java
 String correlationId = ... //
 SensoryEventStatus status =
-    baker.processEvent(processId, event, correlationId);
+    baker.processEvent(recipeInstanceId, event, correlationId);
 
 switch (status) {
    case Received:
@@ -286,10 +286,10 @@ include "baker.conf"
         /**
           * Called when an event occurred.
           *
-          * @param processId The process id for which the event occurred.
+          * @param recipeInstanceId The process id for which the event occurred.
           * @param event     The event.
           */
-        override def processEvent(processId: String, event: RuntimeEvent): Unit = ???
+        override def processEvent(recipeInstanceId: String, event: RuntimeEvent): Unit = ???
       })
 ```
 

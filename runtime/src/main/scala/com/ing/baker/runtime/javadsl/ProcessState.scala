@@ -11,12 +11,12 @@ import scala.collection.JavaConverters._
 /**
   * Holds the 'state' of a process instance.
   *
-  * @param processId   The process identifier
+  * @param recipeInstanceId   The process identifier
   * @param ingredients The accumulated ingredients
   * @param eventNames  The names of the events occurred so far
   */
 class ProcessState(
-    val processId: String,
+    val recipeInstanceId: String,
     val ingredients: java.util.Map[String, Value],
     val events: java.util.List[EventMoment]
   ) extends common.ProcessState with JavaApi {
@@ -49,8 +49,8 @@ class ProcessState(
     *
     * @return The process identifier
     */
-  def getProcessId: String = processId
+  def getrecipeInstanceId: String = recipeInstanceId
 
   def asScala: scaladsl.ProcessState =
-    scaladsl.ProcessState(processId, ingredients.asScala.toMap, events.asScala.map(_.asScala()))
+    scaladsl.ProcessState(recipeInstanceId, ingredients.asScala.toMap, events.asScala.map(_.asScala()))
 }

@@ -73,9 +73,9 @@ object ProcessInstanceSpec {
     system.actorOf(props, name)
   }
 
-  def createProcessInstance[S, E](petriNet: PetriNet[Place, Transition], runtime: ProcessInstanceRuntime[Place, Transition, S, E], processId: String = UUID.randomUUID().toString)(implicit system: ActorSystem): ActorRef = {
+  def createProcessInstance[S, E](petriNet: PetriNet[Place, Transition], runtime: ProcessInstanceRuntime[Place, Transition, S, E], recipeInstanceId: String = UUID.randomUUID().toString)(implicit system: ActorSystem): ActorRef = {
 
-    createPetriNetActor(processInstanceProps(petriNet, runtime, instanceSettings), processId)
+    createPetriNetActor(processInstanceProps(petriNet, runtime, instanceSettings), recipeInstanceId)
   }
 }
 
@@ -505,9 +505,9 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
         transition(automated = true)(mockT2)
       )
 
-      val processId = UUID.randomUUID().toString
+      val recipeInstanceId = UUID.randomUUID().toString
 
-      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime, processId)
+      val actor = createProcessInstance[Set[Int], Event](petriNet, runtime, recipeInstanceId)
 
       actor ! Initialize(initialMarking, Set.empty)
       expectMsgClass(classOf[Initialized])
@@ -524,7 +524,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
       reset(mockT2)
 
       // create a new actor with the same persistent identifier
-      val newActor = createProcessInstance[Set[Int], Event](petriNet, runtime, processId)
+      val newActor = createProcessInstance[Set[Int], Event](petriNet, runtime, recipeInstanceId)
 
       newActor ! GetState
 

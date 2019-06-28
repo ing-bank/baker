@@ -11,5 +11,5 @@ import java.lang.annotation.*;
  * An annotation to be added to an argument of an action indicating that the process identifier should be injected
  * there.
  */
-public @interface ProcessId {
+public @interface RecipeInstanceId {
 }
