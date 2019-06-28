@@ -237,7 +237,6 @@ trait Baker[F[_]] extends LanguageApi {
     * @param listenerFunction
     * @return
     */
-  //TODO split the BakerEvent also between java and scala interface.
   def registerBakerEventListener(listenerFunction: language.ConsumerFunction[BakerEventType]): F[Unit]
 
   /**
