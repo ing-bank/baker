@@ -11,7 +11,7 @@ import cats.data.NonEmptyList
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.akka.{AkkaBaker, _}
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
-import com.ing.baker.runtime.common.{RecipeInformation, SensoryEventStatus}
+import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
@@ -48,19 +48,21 @@ object Baker {
 
 class Baker private(private val baker: scaladsl.Baker) extends common.Baker[CompletableFuture] with JavaApi {
 
-  override type Result = SensoryEventResult
+  override type SensoryEventResultType = SensoryEventResult
 
-  override type Moments = SensoryEventMoments
+  override type SensoryEventMomentsType = SensoryEventMoments
 
-  override type Event = RuntimeEvent
+  override type RuntimeEventType = RuntimeEvent
 
-  override type PState = ProcessState
+  override type ProcessStateType = ProcessState
 
-  override type Interaction = InteractionImplementation
+  override type InteractionImplementationType = InteractionImplementation
 
   override type BakerEventType = BakerEvent
 
   override type ProcessMetadataType = ProcessMetadata
+
+  override type RecipeInformationType = RecipeInformation
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -194,7 +196,7 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     * @return The JRecipeInformation recipe
     */
   def getRecipe(@Nonnull recipeId: String): CompletableFuture[RecipeInformation] =
-    toCompletableFuture(baker.getRecipe(recipeId))
+    toCompletableFuture(baker.getRecipe(recipeId)).thenApply(_.asJava)
 
   /**
     * Return alls recipes added to this Baker
@@ -202,7 +204,7 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     * @return A map with all recipes from recipeId -> JRecipeInformation
     */
   def getAllRecipes: CompletableFuture[java.util.Map[String, RecipeInformation]] =
-    toCompletableFutureMap(baker.getAllRecipes)
+    FutureConverters.toJava(baker.getAllRecipes).toCompletableFuture.thenApply(_.mapValues(_.asJava).asJava)
 
   /**
     * Returns an index of all processes.

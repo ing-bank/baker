@@ -52,10 +52,8 @@ class BakerInquireSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe("returnHealthRecipe", false)
         recipeInformation <- baker.getRecipe(recipeId)
-        _ = recipeInformation should have(
-          'recipeId (recipeId),
-          'errors (Set.empty)
-        )
+        _ = println(recipeInformation)
+        _ = assert(recipeInformation.compiledRecipe.recipeId == recipeId && recipeInformation.errors.isEmpty)
       } yield succeed
     }
 
@@ -66,17 +64,9 @@ class BakerInquireSpec extends BakerRuntimeTestBase {
         recipeInformations <- baker.getAllRecipes
         _ = recipeInformations.size shouldBe 2
         _ = recipeInformations.get(recipeId)
-          .map(_ should have(
-            'recipeId (recipeId),
-            'errors (Set.empty)
-          )
-        )
+          .foreach(r => assert(r.compiledRecipe.recipeId == recipeId && r.errors.isEmpty))
         _ = recipeInformations.get(recipeId2)
-          .map(_ should have(
-            'recipeId (recipeId2),
-            'errors (Set.empty)
-          )
-        )
+          .foreach(r => assert(r.compiledRecipe.recipeId == recipeId2 && r.errors.isEmpty))
       } yield succeed
     }
   }

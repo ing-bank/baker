@@ -8,8 +8,7 @@ import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.akka.actor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.common
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl._
@@ -56,8 +55,8 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     else if (compiledRecipe.validationErrors.nonEmpty)
       Future.failed(new RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
 
-    else recipeManager.ask(AddRecipe(compiledRecipe))(config.defaultAddRecipeTimeout) flatMap {
-      case AddRecipeResponse(recipeId) => Future.successful(recipeId)
+    else recipeManager.ask(RecipeManagerProtocol.AddRecipe(compiledRecipe))(config.defaultAddRecipeTimeout) flatMap {
+      case RecipeManagerProtocol.AddRecipeResponse(recipeId) => Future.successful(recipeId)
     }
   }
 
@@ -72,12 +71,12 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     * @param recipeId
     * @return
     */
-  override def getRecipe(recipeId: String): Future[common.RecipeInformation] = {
+  override def getRecipe(recipeId: String): Future[RecipeInformation] = {
     // here we ask the RecipeManager actor to return us the recipe for the given id
-    recipeManager.ask(GetRecipe(recipeId))(config.defaultInquireTimeout).flatMap {
-      case RecipeFound(compiledRecipe, timestamp) =>
-        Future.successful(common.RecipeInformation(compiledRecipe, timestamp, getImplementationErrors(compiledRecipe)))
-      case NoRecipeFound(_) =>
+    recipeManager.ask(RecipeManagerProtocol.GetRecipe(recipeId))(config.defaultInquireTimeout).flatMap {
+      case RecipeManagerProtocol.RecipeFound(compiledRecipe, timestamp) =>
+        Future.successful(RecipeInformation(compiledRecipe, timestamp, getImplementationErrors(compiledRecipe)))
+      case RecipeManagerProtocol.NoRecipeFound(_) =>
         Future.failed(new IllegalArgumentException(s"No recipe found for recipe with id: $recipeId"))
     }
   }
@@ -87,11 +86,11 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     *
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
-  override def getAllRecipes: Future[Map[String, common.RecipeInformation]] =
-    recipeManager.ask(GetAllRecipes)(config.defaultInquireTimeout)
-      .mapTo[AllRecipes]
+  override def getAllRecipes: Future[Map[String, RecipeInformation]] =
+    recipeManager.ask(RecipeManagerProtocol.GetAllRecipes)(config.defaultInquireTimeout)
+      .mapTo[RecipeManagerProtocol.AllRecipes]
       .map(_.recipes.map { ri =>
-        ri.compiledRecipe.recipeId -> common.RecipeInformation(ri.compiledRecipe, ri.timestamp, getImplementationErrors(ri.compiledRecipe))
+        ri.compiledRecipe.recipeId -> RecipeInformation(ri.compiledRecipe, ri.timestamp, getImplementationErrors(ri.compiledRecipe))
       }.toMap)
 
   /**
@@ -107,12 +106,12 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
         Future.successful(())
       case ProcessAlreadyExists(_) =>
         Future.failed(new IllegalArgumentException(s"Process with id '$processId' already exists."))
-      case NoRecipeFound(_) =>
+      case RecipeManagerProtocol.NoRecipeFound(_) =>
         Future.failed(new IllegalArgumentException(s"Recipe with id '$recipeId' does not exist."))
     }
   }
 
-  def fireSensoryEventReceived(processId: String, event: RuntimeEvent, correlationId: Option[String]): Future[SensoryEventStatus] =
+  override def fireSensoryEventReceived(processId: String, event: RuntimeEvent, correlationId: Option[String]): Future[SensoryEventStatus] =
     processIndexActor.ask(ProcessEvent(
       processId = processId,
       event = event,
@@ -137,7 +136,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
         Future.successful(status)
     }
 
-  def fireSensoryEventCompleted(processId: String, event: RuntimeEvent, correlationId: Option[String]): Future[SensoryEventResult] =
+  override def fireSensoryEventCompleted(processId: String, event: RuntimeEvent, correlationId: Option[String]): Future[SensoryEventResult] =
     processIndexActor.ask(ProcessEvent(
       processId = processId,
       event = event,
@@ -161,7 +160,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
         Future.successful(result)
     }
 
-  def fireSensoryEvent(processId: String, event: RuntimeEvent, correlationId: Option[String]): SensoryEventMoments = {
+  override def fireSensoryEvent(processId: String, event: RuntimeEvent, correlationId: Option[String]): SensoryEventMoments = {
     val futureRef = FutureRef(config.defaultProcessEventTimeout)
     val futureReceived =
       processIndexActor.ask(ProcessEvent(
@@ -290,7 +289,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
       getRecipeResponse <- processIndexActor.ask(GetCompiledRecipe(processId))(config.defaultInquireTimeout)
       processState <- getProcessState(processId)
       response <- getRecipeResponse match {
-        case RecipeFound(compiledRecipe, _) =>
+        case RecipeManagerProtocol.RecipeFound(compiledRecipe, _) =>
           Future.successful(RecipeVisualizer.visualizeRecipe(
             compiledRecipe,
             style,
@@ -305,7 +304,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
   }
 
   private def doRegisterEventListener(listenerFunction: (String, RuntimeEvent) => Unit, processFilter: String => Boolean): Future[Unit] = {
-    Future.successful(createBakerEventListenerActor {
+    registerBakerEventListener {
       case EventReceived(_, recipeName, _, processId, _, event) if processFilter(recipeName) =>
         listenerFunction.apply(processId, event)
       case InteractionCompleted(_, _, recipeName, _, processId, _, Some(event)) if processFilter(recipeName) =>
@@ -313,7 +312,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
       case InteractionFailed(_, _, recipeName, _, processId, _, _, _, ExceptionStrategyOutcome.Continue(eventName)) if processFilter(recipeName) =>
         listenerFunction.apply(processId, RuntimeEvent(eventName, Map.empty))
       case _ => ()
-    })
+    }
   }
 
   /**
@@ -342,20 +341,18 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     * @return
     */
   override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): Future[Unit] = {
-    Future.successful(createBakerEventListenerActor(listenerFunction))
-  }
-
-  private def createBakerEventListenerActor(listenerFunction: BakerEvent => Unit): Unit = {
-    val listenerActor = system.actorOf(Props(new Actor() {
-      override def receive: Receive = {
-        case event: BakerEvent => Try {
-          listenerFunction.apply(event)
-        }.failed.foreach { e =>
-          log.warn(s"Listener function threw exception for event: $event", e)
+    Future.successful {
+      val listenerActor = system.actorOf(Props(new Actor() {
+        override def receive: Receive = {
+          case event: BakerEvent => Try {
+            listenerFunction.apply(event)
+          }.failed.foreach { e =>
+            log.warn(s"Listener function threw exception for event: $event", e)
+          }
         }
-      }
-    }))
-    system.eventStream.subscribe(listenerActor, classOf[BakerEvent])
+      }))
+      system.eventStream.subscribe(listenerActor, classOf[BakerEvent])
+    }
   }
 
   /**

@@ -8,7 +8,7 @@ import com.ing.baker.baas.interaction.server.RemoteInteractionLauncher
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
-import com.ing.baker.runtime.common.{RecipeInformation, SensoryEventStatus}
+import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.Value
 import com.typesafe.config.Config

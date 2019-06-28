@@ -33,36 +33,38 @@ object Baker {
   */
 trait Baker extends common.Baker[Future] with ScalaApi {
 
-  override type Result = SensoryEventResult
+  override type SensoryEventResultType = SensoryEventResult
 
-  override type Moments = SensoryEventMoments
+  override type SensoryEventMomentsType = SensoryEventMoments
 
-  override type Event = RuntimeEvent
+  override type RuntimeEventType = RuntimeEvent
 
-  override type PState = ProcessState
+  override type ProcessStateType = ProcessState
 
-  override type Interaction = InteractionImplementation
+  override type InteractionImplementationType = InteractionImplementation
 
   override type BakerEventType = BakerEvent
 
   override type ProcessMetadataType = ProcessMetadata
 
+  override type RecipeInformationType = RecipeInformation
+
   def fireSensoryEventReceived(processId: String, event: RuntimeEvent): Future[SensoryEventStatus] =
     fireSensoryEventReceived(processId, event, None)
 
-  def fireSensoryEventCompleted(processId: String, event: RuntimeEvent): Future[Result] =
+  def fireSensoryEventCompleted(processId: String, event: RuntimeEvent): Future[SensoryEventResultType] =
     fireSensoryEventCompleted(processId, event, None)
 
-  def fireSensoryEvent(processId: String, event: RuntimeEvent): Moments =
+  def fireSensoryEvent(processId: String, event: RuntimeEvent): SensoryEventMomentsType =
     fireSensoryEvent(processId, event, None)
 
   def fireSensoryEventReceived(processId: String, event: RuntimeEvent, correlationId: String): Future[SensoryEventStatus] =
     fireSensoryEventReceived(processId, event, Some(correlationId))
 
-  def fireSensoryEventCompleted(processId: String, event: RuntimeEvent, correlationId: String): Future[Result] =
+  def fireSensoryEventCompleted(processId: String, event: RuntimeEvent, correlationId: String): Future[SensoryEventResultType] =
     fireSensoryEventCompleted(processId, event, Some(correlationId))
 
-  def fireSensoryEvent(processId: String, event: RuntimeEvent, correlationId: String): Moments =
+  def fireSensoryEvent(processId: String, event: RuntimeEvent, correlationId: String): SensoryEventMomentsType =
     fireSensoryEvent(processId, event, Some(correlationId))
 
 }
