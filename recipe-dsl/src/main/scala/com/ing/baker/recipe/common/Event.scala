@@ -9,9 +9,7 @@ trait Event {
 
   override def equals(obj: scala.Any): Boolean = obj match {
     case other: Event =>
-      this.name == other.name &&
-      this.providedIngredients == other.providedIngredients &&
-      this.maxFiringLimit == other.maxFiringLimit
+      this.name == other.name && this.providedIngredients == other.providedIngredients && this.maxFiringLimit == other.maxFiringLimit
     case _ =>
       false
   }
