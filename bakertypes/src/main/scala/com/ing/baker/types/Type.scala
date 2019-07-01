@@ -55,6 +55,35 @@ sealed trait Type {
   def isEnum: Boolean = isInstanceOf[EnumType]
   def isMap: Boolean = isInstanceOf[MapType]
   def isRecord: Boolean = isInstanceOf[RecordType]
+
+  override def hashCode(): Int = {
+    val p = 31
+    this match {
+      case ListType(entryType) =>
+        p * 1 + entryType.hashCode()
+      case OptionType(entryType) =>
+        p * 2 + entryType.hashCode()
+      case EnumType(options) =>
+        p * 3 + options.hashCode()
+      case RecordType(fields) =>
+        p * 5 + fields.hashCode()
+      case MapType(valueType) =>
+        p * 6 + valueType.hashCode()
+      case Bool => p * 7
+      case Byte => p * 8
+      case Char => p * 9
+      case Int16 => p * 10
+      case Int32 => p * 11
+      case Int64 => p * 12
+      case IntBig => p * 13
+      case Float32 => p * 14
+      case Float64 => p * 15
+      case FloatBig => p * 16
+      case ByteArray => p * 17
+      case CharArray => p * 18
+      case Date => p * 19
+    }
+  }
 }
 
 case class ListType(entryType: Type) extends Type {
@@ -75,6 +104,12 @@ case class EnumType(options: Set[String]) extends Type {
 case class RecordField(name: String, `type`: Type) {
 
   override def toString: String = s"$name: ${`type`}"
+
+  override def hashCode(): Int = {
+    val p = 23
+    val nameHash = p * 4 + name.hashCode()
+    p * nameHash + `type`.hashCode()
+  }
 }
 
 case class RecordType(fields: Seq[RecordField]) extends Type {
