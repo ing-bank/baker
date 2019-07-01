@@ -3,7 +3,7 @@ package com.ing.baker.recipe.javadsl
 import java.lang.annotation.Annotation
 import java.lang.reflect.{Method, Type}
 
-import com.ing.baker.recipe.annotations.RecipeInstanceId
+import com.ing.baker.recipe.annotations.{ProcessId, RecipeInstanceId}
 import com.ing.baker.recipe.{annotations, common}
 import com.thoughtworks.paranamer.AnnotationParanamer
 
@@ -30,6 +30,8 @@ object ReflectionHelpers {
       else if (annotationType.equals(classOf[javax.inject.Named]))
         annotation.asInstanceOf[javax.inject.Named].value()
       else if (annotationType.equals(classOf[RecipeInstanceId]))
+        common.recipeInstanceIdName
+      else if (annotationType.equals(classOf[ProcessId]))
         common.recipeInstanceIdName
       else annotationType.getSimpleName
     }
