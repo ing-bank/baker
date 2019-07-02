@@ -43,11 +43,11 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
     }
 
     "Generate the same id for same recipe" in {
-
+      val first = RecipeCompiler.compileRecipe(getRecipe("ValidRecipe")).recipeId
       (1 to 10)
         .map(_ => getRecipe("ValidRecipe"))
         .map(RecipeCompiler.compileRecipe(_).recipeId)
-        .foreach(_ shouldBe "1fc5d434d145c3fb")
+        .foreach(_ shouldBe first)
     }
 
     "Generate different ids for recipes with changes on transitions other than the name" in {
