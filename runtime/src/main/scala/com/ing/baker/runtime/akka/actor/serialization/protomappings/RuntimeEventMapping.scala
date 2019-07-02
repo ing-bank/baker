@@ -6,23 +6,23 @@ import cats.syntax.traverse._
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
-import com.ing.baker.runtime.scaladsl.RuntimeEvent
+import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.types.Value
 
 import scala.util.Try
 
-class RuntimeEventMapping extends ProtoMap[RuntimeEvent, protobuf.RuntimeEvent] {
+class RuntimeEventMapping extends ProtoMap[EventInstance, protobuf.RuntimeEvent] {
 
   val companion = protobuf.RuntimeEvent
 
-  override def toProto(a: RuntimeEvent): protobuf.RuntimeEvent = {
+  override def toProto(a: EventInstance): protobuf.RuntimeEvent = {
     val protoIngredients = a.providedIngredients.map { case (name, value) =>
       protobuf.Ingredient(Some(name), None, Some(ctxToProto(value)))
     }
     protobuf.RuntimeEvent(Some(a.name), protoIngredients.toSeq)
   }
 
-  override def fromProto(message: protobuf.RuntimeEvent): Try[RuntimeEvent] =
+  override def fromProto(message: protobuf.RuntimeEvent): Try[EventInstance] =
     for {
       name <- versioned(message.name, "name")
       ingredients <- message.providedIngredients.toList.traverse[Try, (String, Value)] { i =>
@@ -32,5 +32,5 @@ class RuntimeEventMapping extends ProtoMap[RuntimeEvent, protobuf.RuntimeEvent] 
           value <- ctxFromProto(protoValue)
         } yield (name, value)
       }
-    } yield RuntimeEvent(name, ingredients.toMap)
+    } yield EventInstance(name, ingredients.toMap)
 }

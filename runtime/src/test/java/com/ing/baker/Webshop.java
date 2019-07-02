@@ -7,12 +7,11 @@ import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.recipe.annotations.FiresEvent;
-import com.ing.baker.recipe.annotations.ProcessId;
+import com.ing.baker.recipe.annotations.RecipeInstanceId;
 import com.ing.baker.recipe.annotations.RequiresIngredient;
 import com.ing.baker.recipe.javadsl.Interaction;
 import com.ing.baker.recipe.javadsl.InteractionFailureStrategy;
 import com.ing.baker.recipe.javadsl.Recipe;
-import com.ing.baker.runtime.javadsl.ProcessState;
 import com.ing.baker.runtime.javadsl.Baker;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -67,7 +66,7 @@ public class Webshop {
         }
 
         @FiresEvent(oneOf = {Failed.class, Valid.class})
-        Outcome apply(@ProcessId String processId, @RequiresIngredient("order") String key);
+        Outcome apply(@RecipeInstanceId String recipeInstanceId, @RequiresIngredient("order") String key);
     }
 
     public interface ManufactureGoods extends Interaction {
@@ -162,20 +161,20 @@ public class Webshop {
 
         String recipeId = baker.addRecipe(recipe).get();
 
-        String processId = "56a70f82-a24d-497f-b3ac-57366adbb39c"; //UUID.randomUUID().toString();
+        String recipeInstanceId = "56a70f82-a24d-497f-b3ac-57366adbb39c"; //UUID.randomUUID().toString();
 
         System.out.println("recipeId: " + recipeId);
-        System.out.println("processId: " + processId);
+        System.out.println("RecipeInstanceId: " + recipeInstanceId);
 
 
-//        baker.bake(recipeId, processId);
+//        baker.bake(recipeId, RecipeInstanceId);
 //
-//        baker.processEvent(processId, new CustomerInfoReceived(customerInfo));
-//        baker.processEvent(processId, new OrderPlaced(order));
-//        baker.processEvent(processId, new PaymentMade());
+//        baker.processEvent(RecipeInstanceId, new CustomerInfoReceived(customerInfo));
+//        baker.processEvent(RecipeInstanceId, new OrderPlaced(order));
+//        baker.processEvent(RecipeInstanceId, new PaymentMade());
 
-//        System.out.println("ingredients: " + baker.getIngredients(processId).toString());
-//        System.out.println("events: " + baker.getProcessState(processId)
+//        System.out.println("ingredients: " + baker.getIngredients(RecipeInstanceId).toString());
+//        System.out.println("events: " + baker.getProcessState(RecipeInstanceId)
 //                .thenApply(ProcessState::events).get().toString());
     }
 }

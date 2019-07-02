@@ -146,7 +146,7 @@ message EventMoment {
 
 
 message ProcessState {
-    optional string processId = 1;
+    optional string recipeInstanceId = 1;
     repeated Ingredient ingredients = 2;
     repeated EventMoment events = 4;
 }

@@ -3,7 +3,7 @@ package com.ing.baker.compiler;
 import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.recipe.annotations.AsyncInteraction;
 import com.ing.baker.recipe.annotations.FiresEvent;
-import com.ing.baker.recipe.annotations.ProcessId;
+import com.ing.baker.recipe.annotations.RecipeInstanceId;
 import com.ing.baker.recipe.annotations.RequiresIngredient;
 import com.ing.baker.recipe.javadsl.Recipe;
 import com.ing.baker.runtime.common.BakerException;
@@ -157,7 +157,7 @@ public class JavaCompiledRecipeTest {
 
         @AsyncInteraction
         @FiresEvent(oneOf = { ProvidesRequestIDStringOne.class })
-        CompletableFuture<ProvidesRequestIDStringOne> apply(@ProcessId String requestId);
+        CompletableFuture<ProvidesRequestIDStringOne> apply(@RecipeInstanceId String requestId);
     }
 
     public static class InteractionOneImpl implements InteractionOne {
@@ -180,7 +180,7 @@ public class JavaCompiledRecipeTest {
         }
 
         @FiresEvent(oneOf = {ProvidesRequestIDStringTwo.class})
-        public ProvidesRequestIDStringTwo apply(@ProcessId String requestId) {
+        public ProvidesRequestIDStringTwo apply(@RecipeInstanceId String requestId) {
               return new ProvidesRequestIDStringTwo(requestId);
           }
 
@@ -212,7 +212,7 @@ public class JavaCompiledRecipeTest {
         }
 
         @FiresEvent(oneOf = { ProvidesRequestIDStringThree.class })
-        public ProvidesRequestIDStringThree apply(@ProcessId String requestId, @RequiresIngredient("RequestIDStringOne") String requestIDStringOne) {
+        public ProvidesRequestIDStringThree apply(@RecipeInstanceId String requestId, @RequiresIngredient("RequestIDStringOne") String requestIDStringOne) {
             return new ProvidesRequestIDStringThree(requestId);
         }
     }

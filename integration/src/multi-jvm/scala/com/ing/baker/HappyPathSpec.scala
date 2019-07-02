@@ -11,7 +11,7 @@ import akka.testkit.ImplicitSender
 import better.files.File
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.Examples.webshop
-import com.ing.baker.runtime.scaladsl.{Baker, RuntimeEvent}
+import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
 import com.ing.baker.types.{PrimitiveValue, RecordValue}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.mockito.MockitoSugar
@@ -76,15 +76,15 @@ object HappyPath extends MockitoSugar {
 
   object ValidateOrder {
     val name: String = webshop.validateOrder.name
-    def apply(order: String): RuntimeEvent = {
-      RuntimeEvent(webshop.valid.name, Map.empty)
+    def apply(order: String): EventInstance = {
+      EventInstance(webshop.valid.name, Map.empty)
     }
   }
 
   object ManufactureGoods {
     val name: String = webshop.manufactureGoods.name
-    def apply(order: String): RuntimeEvent = {
-      RuntimeEvent(webshop.goodsManufactured.name, Map(
+    def apply(order: String): EventInstance = {
+      EventInstance(webshop.goodsManufactured.name, Map(
         webshop.goods.name -> PrimitiveValue("Good1")
       ))
     }
@@ -92,27 +92,27 @@ object HappyPath extends MockitoSugar {
 
   object SendInvoice {
     val name: String = webshop.sendInvoice.name
-    def apply(info: webshop.CustomerInfo): RuntimeEvent = {
-      RuntimeEvent(webshop.invoiceWasSent.name, Map.empty)
+    def apply(info: webshop.CustomerInfo): EventInstance = {
+      EventInstance(webshop.invoiceWasSent.name, Map.empty)
     }
   }
 
   object ShipGoods {
     val name: String = webshop.shipGoods.name
-    def apply(goods: String, info: webshop.CustomerInfo): RuntimeEvent = {
-      RuntimeEvent(webshop.goodsShipped.name, Map(
+    def apply(goods: String, info: webshop.CustomerInfo): EventInstance = {
+      EventInstance(webshop.goodsShipped.name, Map(
         webshop.trackingId.name -> PrimitiveValue("TrackingId1")
       ))
     }
   }
 
-  def placeOrderRuntimeEvent: RuntimeEvent =
-    RuntimeEvent(webshop.orderPlaced.name, Map(
+  def placeOrderRuntimeEvent: EventInstance =
+    EventInstance(webshop.orderPlaced.name, Map(
       webshop.order.name -> PrimitiveValue("Order1")
     ))
 
-  def receivedDataRuntimeEvent: RuntimeEvent =
-    RuntimeEvent(webshop.customerInfoReceived.name, Map(
+  def receivedDataRuntimeEvent: EventInstance =
+    EventInstance(webshop.customerInfoReceived.name, Map(
       webshop.customerInfo.name -> RecordValue(Map(
         "name" -> PrimitiveValue("customer-name"),
         "address" -> PrimitiveValue("customer-address"),
@@ -120,8 +120,8 @@ object HappyPath extends MockitoSugar {
       ))
     ))
 
-  def paymentMadeRuntimeEvent: RuntimeEvent =
-    RuntimeEvent(webshop.paymentMade.name, Map.empty)
+  def paymentMadeRuntimeEvent: EventInstance =
+    EventInstance(webshop.paymentMade.name, Map.empty)
 
   def seedNodeConfig(path: ActorPath): Config =
     ConfigFactory.parseString(s"""baker.cluster.seed-nodes = ["$path"]""")
@@ -151,19 +151,19 @@ class HappyPath extends MultiNodeSpec(HappyPathConfig)
     Await.result(system.terminate(), 10.seconds)
   }
 
-  def runHappyFlow(baker: Baker, recipeId: String, processId: String): Unit = {
+  def runHappyFlow(baker: Baker, recipeId: String, recipeInstanceId: String): Unit = {
 
     import system.dispatcher
-    Await.result(baker.bake(recipeId, processId), 10 seconds)
+    Await.result(baker.bake(recipeId, recipeInstanceId), 10 seconds)
 
-    val sensoryEventStatus1 = baker.fireSensoryEventCompleted(processId, placeOrderRuntimeEvent)
-    Await.result(sensoryEventStatus1.flatMap(_ => baker.getProcessState(processId)), 10 seconds).eventNames
+    val sensoryEventStatus1 = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, placeOrderRuntimeEvent)
+    Await.result(sensoryEventStatus1.flatMap(_ => baker.getProcessState(recipeInstanceId)), 10 seconds).eventNames
 
-    val sensoryEventStatus2 = baker.fireSensoryEventCompleted(processId, receivedDataRuntimeEvent)
-    Await.result(sensoryEventStatus2.flatMap(_ => baker.getProcessState(processId)), 10 seconds).eventNames
+    val sensoryEventStatus2 = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, receivedDataRuntimeEvent)
+    Await.result(sensoryEventStatus2.flatMap(_ => baker.getProcessState(recipeInstanceId)), 10 seconds).eventNames
 
-    val sensoryEventStatus3 = baker.fireSensoryEventCompleted(processId, paymentMadeRuntimeEvent)
-    val events3 = Await.result(sensoryEventStatus3.flatMap(_ => baker.getProcessState(processId)), 10 seconds).eventNames
+    val sensoryEventStatus3 = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMadeRuntimeEvent)
+    val events3 = Await.result(sensoryEventStatus3.flatMap(_ => baker.getProcessState(recipeInstanceId)), 10 seconds).eventNames
 
     assert(events3 == List(
       webshop.orderPlaced.name,

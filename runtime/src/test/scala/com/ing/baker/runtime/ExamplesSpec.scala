@@ -70,17 +70,17 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
       for {
         _ <- Future.traverse(implementations)(baker.addImplementation)
         recipeId <- baker.addRecipe(compiledRecipe)
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, orderPlaced.instance(testOrder))
-        _ <- baker.fireSensoryEventCompleted(processId, paymentMade.instance())
-        _ <- baker.fireSensoryEventCompleted(processId, customerInfoReceived.instance(testCustomerInfoData))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, orderPlaced.instance(testOrder))
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade.instance())
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, customerInfoReceived.instance(testCustomerInfoData))
         expectedIngredients = IngredientMap(
           order -> testOrder,
           goods -> testGoods,
           customerInfo -> testCustomerInfoData,
           trackingId -> testTrackingId)
-        state <- baker.getProcessState(processId)
+        state <- baker.getProcessState(recipeInstanceId)
         // assert the that all ingredients are provided
         _ = state.ingredients shouldBe expectedIngredients
         expectedEvents = List(

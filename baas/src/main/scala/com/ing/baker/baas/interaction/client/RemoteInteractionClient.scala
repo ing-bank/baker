@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpRequest
 import com.ing.baker.baas.interaction.server.protocol.{ExecuteInteractionHTTPRequest, ExecuteInteractionHTTPResponse}
 import com.ing.baker.baas.util.ClientUtils
-import com.ing.baker.runtime.scaladsl.InteractionImplementation
+import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.ing.baker.types.Type
 
 import scala.concurrent.duration.FiniteDuration
@@ -14,11 +14,11 @@ import scala.concurrent.duration.FiniteDuration
   */
 object RemoteInteractionClient {
 
-  def apply(name: String, uri: String, inputIngredients: Map[String, Type])(implicit system: ActorSystem, duration: FiniteDuration): InteractionImplementation = {
+  def apply(name: String, uri: String, inputIngredients: Map[String, Type])(implicit system: ActorSystem, duration: FiniteDuration): InteractionInstance = {
     val utils = new ClientUtils { override implicit val actorSystem: ActorSystem = system }
     import system.dispatcher
     import utils.materializer
-    InteractionImplementation(
+    InteractionInstance(
       name = name,
       input = inputIngredients,
       output = None,

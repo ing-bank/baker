@@ -6,5 +6,5 @@ import com.ing.baker.recipe.TestRecipe.InteractionOneSuccessful
 import scala.concurrent.Future
 
 class InteractionOneInterfaceImplementation() extends TestRecipe.InteractionOne {
-  override def apply(processId: String, initialIngredient: String): Future[InteractionOneSuccessful] = Future.successful(InteractionOneSuccessful(""))
+  override def apply(recipeInstanceId: String, initialIngredient: String): Future[InteractionOneSuccessful] = Future.successful(InteractionOneSuccessful(""))
 }

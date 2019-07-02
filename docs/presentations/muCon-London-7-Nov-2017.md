@@ -113,7 +113,7 @@ public interface RegisterIndividual extends Interaction {
     @FiresEvent(oneOf = {RegisterIndividualSuccessful.class,
             RegisterIndividualFailed.class})
     RegisterIndividualOutcome apply(
-            @ProcessId String processId,
+            @recipeInstanceId String recipeInstanceId,
             @RequiresIngredient("name") String name,
             @RequiresIngredient("address") String address
     );
@@ -128,7 +128,7 @@ public interface RegisterIndividual extends Interaction {
     @FiresEvent(oneOf = {RegisterIndividualSuccessful.class,
             RegisterIndividualFailed.class})
     RegisterIndividualOutcome apply(
-            @ProcessId String processId,
+            @recipeInstanceId String recipeInstanceId,
             @RequiresIngredient("name") String name,
             @RequiresIngredient("address") String address
     );
@@ -191,18 +191,18 @@ return new Recipe("MuConf2017Demo").
 
 ```java, [.highlight: 2,4,5,8,9,13]
 //for each process instance, bake the recipe
-baker.bake(processId);
+baker.bake(recipeInstanceId);
 //notify Baker when events occur
-baker.processEvent(processId, new SensoryEvents.IndividualInformationSubmitted(name, address));
-baker.processEvent(processId, new SensoryEvents.TermsAndConditionsAccepted());
+baker.processEvent(recipeInstanceId, new SensoryEvents.IndividualInformationSubmitted(name, address));
+baker.processEvent(recipeInstanceId, new SensoryEvents.TermsAndConditionsAccepted());
 
 //retrieve ingredients stored in the accumulated state
-assert(baker.getIngredients(processId).get("customerId").equals(customerId));
-assert(baker.getIngredients(processId).get("iban").equals(iban));
+assert(baker.getIngredients(recipeInstanceId).get("customerId").equals(customerId));
+assert(baker.getIngredients(recipeInstanceId).get("iban").equals(iban));
 
 //retrieve all events that have occurred
 Set<String> occurredEvents = new HashSet<>(
-        baker.getEvents(processId).getEventNameList()
+        baker.getEvents(recipeInstanceId).getEventNameList()
 );
 ```
 

@@ -90,11 +90,11 @@ message InitializedMessage {
 }
 
 message Uninitialized {
-    optional string processId = 1;
+    optional string recipeInstanceId = 1;
 }
 
 message AlreadyInitialized {
-    optional string processId = 1;
+    optional string recipeInstanceId = 1;
 }
 
 message ExceptionState {

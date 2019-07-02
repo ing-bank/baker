@@ -6,11 +6,11 @@ import com.ing.baker.types.{Type, Value}
 /**
   * Provides an implementation for an interaction.
   */
-trait InteractionImplementation[F[_]] extends LanguageApi { self =>
+trait InteractionInstance[F[_]] extends LanguageApi { self =>
 
-  type Ingredient <: RuntimeIngredient { type Language = self.Language }
+  type Ingredient <: IngredientInstance { type Language = self.Language }
 
-  type Event <: RuntimeEvent { type Language = self.Language }
+  type Event <: EventInstance { type Language = self.Language }
 
   /**
     * The name of the interaction

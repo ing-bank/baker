@@ -24,32 +24,32 @@ object ProcessInstanceLogger {
 
   implicit class LoggingAdapterFns(log: DiagnosticLoggingAdapter) {
 
-    def processHistoryDeletionSuccessful(processId: String, toSequenceNr: Long) = {
+    def processHistoryDeletionSuccessful(recipeInstanceId: String, toSequenceNr: Long) = {
       val msg = s"Process history successfully deleted (up to event sequence $toSequenceNr), stopping the actor"
 
       val mdc = Map(
-        "processId" -> processId
+        "RecipeInstanceId" -> recipeInstanceId
       )
 
       log.logWithMDC(Logging.DebugLevel, msg, mdc)
     }
 
 
-    def processHistoryDeletionFailed(processId: String, toSequenceNr: Long, cause: Throwable) = {
+    def processHistoryDeletionFailed(recipeInstanceId: String, toSequenceNr: Long, cause: Throwable) = {
       val msg = s"Process events are requested to be deleted up to $toSequenceNr sequence number, but delete operation failed."
 
       val mdc = Map(
-        "processId" -> processId
+        "RecipeInstanceId" -> recipeInstanceId
       )
 
       log.errorWithMDC(msg, mdc, cause)
     }
 
-    def transitionFired(processId: String, transitionId: String, jobId: Long, timeStarted: Long, timeCompleted: Long) = {
+    def transitionFired(recipeInstanceId: String, transitionId: String, jobId: Long, timeStarted: Long, timeCompleted: Long) = {
 
       val mdc = Map(
         "processEvent" -> "TransitionFired",
-        "processId" -> processId,
+        "RecipeInstanceId" -> recipeInstanceId,
         "jobId" -> jobId,
         "transitionId" -> transitionId,
         "timeStarted" -> timeStarted,
@@ -62,10 +62,10 @@ object ProcessInstanceLogger {
       log.logWithMDC(Logging.DebugLevel, msg, mdc)
     }
 
-    def transitionFailed(processId: String, transitionId: String, jobId: Long, timeStarted: Long, timeFailed: Long, failureReason: String) {
+    def transitionFailed(recipeInstanceId: String, transitionId: String, jobId: Long, timeStarted: Long, timeFailed: Long, failureReason: String) {
       val mdc = Map(
         "processEvent" -> "TransitionFailed",
-        "processId" -> processId,
+        "RecipeInstanceId" -> recipeInstanceId,
         "timeStarted" -> timeStarted,
         "timeFailed" -> timeFailed,
         "duration" -> (timeFailed - timeStarted),
@@ -78,10 +78,10 @@ object ProcessInstanceLogger {
       log.logWithMDC(Logging.ErrorLevel, msg, mdc)
     }
 
-    def firingTransition(processId: String, jobId: Long, transitionId: String, timeStarted: Long): Unit = {
+    def firingTransition(recipeInstanceId: String, jobId: Long, transitionId: String, timeStarted: Long): Unit = {
       val mdc = Map(
         "processEvent" -> "FiringTransition",
-        "processId" -> processId,
+        "RecipeInstanceId" -> recipeInstanceId,
         "jobId" -> jobId,
         "transitionId" -> transitionId,
         "timeStarted" -> timeStarted
@@ -91,17 +91,17 @@ object ProcessInstanceLogger {
       log.logWithMDC(Logging.DebugLevel, msg, mdc)
     }
 
-    def idleStop(processId: String, idleTTL: FiniteDuration)  {
-      val mdc = Map("processId" -> processId)
+    def idleStop(recipeInstanceId: String, idleTTL: FiniteDuration)  {
+      val mdc = Map("RecipeInstanceId" -> recipeInstanceId)
       val msg = s"Instance was idle for $idleTTL, stopping the actor"
 
       log.logWithMDC(Logging.DebugLevel, msg, mdc)
     }
 
-    def fireTransitionRejected(processId: String, transitionId: String, rejectReason: String) {
+    def fireTransitionRejected(recipeInstanceId: String, transitionId: String, rejectReason: String) {
       val mdc = Map(
         "processEvent" -> "FireTransitionRejected",
-        "processId" -> processId,
+        "RecipeInstanceId" -> recipeInstanceId,
         "transitionId" -> transitionId,
         "rejectReason" -> rejectReason)
 
@@ -110,10 +110,10 @@ object ProcessInstanceLogger {
       log.logWithMDC(Logging.WarningLevel, msg, mdc)
     }
 
-    def scheduleRetry(processId: String, transitionId: String, delay: Long) {
+    def scheduleRetry(recipeInstanceId: String, transitionId: String, delay: Long) {
       val mdc = Map(
         "processEvent" -> "TransitionRetry",
-        "processId" -> processId,
+        "RecipeInstanceId" -> recipeInstanceId,
         "transitionId" -> transitionId)
 
       val msg = s"Scheduling a retry of transition '$transitionId' in ${durationFormatter.print(new org.joda.time.Period(delay))}"

@@ -19,7 +19,7 @@ public interface ValidateOrder {
     class Valid extends Outcome { }
 
     @FiresEvent(oneOf = {Failed.class, Valid.class})
-    Outcome apply(@ProcessId String processId,
+    Outcome apply(@recipeInstanceId String recipeInstanceId,
                   @Named("order") String key);
 }
 ```
@@ -32,7 +32,7 @@ To be used as an interaction the interface requires an `apply` method with some 
 
     `@Named` or `@RequiresIngredient` are used for ingredient data that the interaction requires, the *name* must be specfied.
 
-    `@ProcessId` is used for injecting the [process id](dictionary.md#process-id).
+    `@recipeInstanceId` is used for injecting the [process id](dictionary.md#process-id).
 
 * The output classes have the same [restrictions](recipe-dsl.md#sensory-events) as sensory events.
 

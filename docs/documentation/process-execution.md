@@ -35,10 +35,10 @@ Or in other words we can create a [process instance](dictionary.md#process-insta
 val recipe: CompiledRecipe = ???
 
 // A unique identifier ment to distinguish this process from other process instances
-val processId = "a-unique-process-id"
+val recipeInstanceId = "a-unique-process-id"
 
 // Tell Baker that we want to create a new process for a certain recipe.
-baker.bake(recipe.recipeId, processId)
+baker.bake(recipe.recipeId, recipeInstanceId)
 ```
 
 ```java tab="Java"
@@ -46,10 +46,10 @@ baker.bake(recipe.recipeId, processId)
 CompiledRecipe recipe = null; //
 
 // A unique identifier ment to distinguish this process from other process instances
-String processId = "a-unique-process-id";
+String recipeInstanceId = "a-unique-process-id";
 
 // Tell Baker that we want to create a new process for a certain recipe.
-baker.bake(recipe.recipeId(), processId);
+baker.bake(recipe.recipeId(), recipeInstanceId);
 ```
 
 ## Providing a sensory event
@@ -64,8 +64,8 @@ val customerInfo = CustomerInfo("John", "Elm. Street", "johndoe@example.com")
 val order = "123";
 
 // Lets produce the `OrderPlaced` and `CustomerInfoReceived` sensory Events.
-baker.processEvent(processId, CustomerInfoRecived(customerInfo))
-baker.processEvent(processId, OrderPlaced(order))
+baker.processEvent(recipeInstanceId, CustomerInfoRecived(customerInfo))
+baker.processEvent(recipeInstanceId, OrderPlaced(order))
 ```
 
 ```java tab="Java"
@@ -74,8 +74,8 @@ CustomerInfo customerInfo = new CustomerInfo("John", "Elm. Street", "johndoe@exa
 String order = "123";
 
 // Lets produce the `OrderPlaced` and `CustomerInfoReceived` sensory Events.
-baker.processEvent(processId, new CustomerInfoReceived(customerInfo));
-baker.processEvent(processId, new OrderPlaced(order));
+baker.processEvent(recipeInstanceId, new CustomerInfoReceived(customerInfo));
+baker.processEvent(recipeInstanceId, new OrderPlaced(order));
 ```
 
 When receiving events Baker will check which Interactions have all the required Ingredients and Events met.
@@ -97,8 +97,8 @@ This can be applied to the `OrderPlaced` event for example.
 ``` scala tab="Scala"
 val orderId = "a unique order id"
 
-val statusA: SensoryEventStatus = baker.processEvent(processId, new OrderPlaced(order), orderId)
-val statusB: SensoryEventStatus = baker.processEvent(processId, new OrderPlaced(order), orderId)
+val statusA: SensoryEventStatus = baker.processEvent(recipeInstanceId, new OrderPlaced(order), orderId)
+val statusB: SensoryEventStatus = baker.processEvent(recipeInstanceId, new OrderPlaced(order), orderId)
 
 // statusA == Received
 // statusB == AlreadyReceived
@@ -108,8 +108,8 @@ val statusB: SensoryEventStatus = baker.processEvent(processId, new OrderPlaced(
 ``` java tab="Java"
 String orderId = "a unique order id";
 
-SensoryEventStatus statusA = baker.processEvent(processId, new OrderPlaced(order), orderId);
-SensoryEventStatus statusB = baker.processEvent(processId, new OrderPlaced(order), orderId);
+SensoryEventStatus statusA = baker.processEvent(recipeInstanceId, new OrderPlaced(order), orderId);
+SensoryEventStatus statusB = baker.processEvent(recipeInstanceId, new OrderPlaced(order), orderId);
 
 // statusA == Received
 // statusB == AlreadyReceived
@@ -143,11 +143,11 @@ For example, the retry strategy for *"SendInvoice"* was exhausted after a few ho
 However, we checked and know the *"invoice"* service is up again and want to continue to process for our customer.
 
 ``` scala tab="Scala"
-baker.retryInteraction(processId, "SendInvoice")
+baker.retryInteraction(recipeInstanceId, "SendInvoice")
 ```
 
 ``` java tab="Java"
-baker.retryInteraction(processId, "SendInvoice");
+baker.retryInteraction(recipeInstanceId, "SendInvoice");
 ```
 
 ### 2. Specify the interaction output
@@ -157,11 +157,11 @@ For example, the *"ShipGoods"* backend service is not idempotent and failed with
 However, we checked and know the goods were actually shipped and want to continue the process for our customer.
 
 ``` scala tab="Scala"
-baker.resolveInteraction(processId, "ShipGoods", GoodsShipped("some goods"))
+baker.resolveInteraction(recipeInstanceId, "ShipGoods", GoodsShipped("some goods"))
 ```
 
 ``` java tab="Java"
-baker.resolveInteraction(processId, "ShipGoods", new GoodsShipped("some goods"));
+baker.resolveInteraction(recipeInstanceId, "ShipGoods", new GoodsShipped("some goods"));
 ```
 
 Note that the event provided *SHOULD NOT* include any [event or ingredient renames](recipe-dsl.md#event-renames) specified for the interaction.
@@ -177,11 +177,11 @@ During runtime it is often useful to *inquire* on the state of a process instanc
 We can use the visualizer to see what Baker has done with the given events.
 
 ```scala tab="Scala"
-val dotRepresentation: String = baker.getVisualState(processId)
+val dotRepresentation: String = baker.getVisualState(recipeInstanceId)
 ```
 
 ```java tab="Java"
-String dotRepresentation = baker.getVisualState(processId);
+String dotRepresentation = baker.getVisualState(recipeInstanceId);
 ```
 
 !!! hint "Did you know?!"
@@ -205,14 +205,14 @@ Using this list we can check if the `InvoiceWasSend` event was produced.
 
 ```scala tab="Scala"
 // Get all events that have happend for this process instance
-val events: Seq[RuntimeEvent] = baker.getEvents(processId)
+val events: Seq[RuntimeEvent] = baker.getEvents(recipeInstanceId)
 if (events.exists(_.name == "InvoiceWasSend"))
     // Yes the invoice was send!
 ```
 
 ```java tab="Java"
 // Get all events that have happend for this process instance
-EventList events = baker.getEvents(processId);
+EventList events = baker.getEvents(recipeInstanceId);
 if (events.hasEventOccurred(InvoiceWasSend.class))
     // Yes the invoice was send!
 ```
@@ -225,14 +225,14 @@ For example, you might want to know the value of the `trackingId`.
 
 ```scala tab="Scala"
 // Get all ingredients that are accumulated for a process instance
-val ingredients: Map[String, Value] = baker.getIngredients(processId)
+val ingredients: Map[String, Value] = baker.getIngredients(recipeInstanceId)
 
 val trackingId: String = ingredients("trackingId").as[String]
 ```
 
 ```java tab="Java"
 // Get all ingredients that are accumulated for a process instance
-Map<String, Value> ingredients = baker.getIngredients(processId);
+Map<String, Value> ingredients = baker.getIngredients(recipeInstanceId);
 
 String trackingId = ingredients.get("trackingId").as(String.class);
 ```

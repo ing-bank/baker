@@ -9,10 +9,10 @@ import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.common.RejectReason
 
 sealed trait BakerEvent extends common.BakerEvent with JavaApi {
-  type Event = RuntimeEvent
+  type Event = EventInstance
 
 //  def asJava(): = this match {
-//    case EventReceived(timeStamp, recipeName, recipeId, processId, correlationId, event)
+//    case EventReceived(timeStamp, recipeName, recipeId, RecipeInstanceId, correlationId, event)
 //  }
 }
 
@@ -22,30 +22,30 @@ sealed trait BakerEvent extends common.BakerEvent with JavaApi {
   * @param timeStamp The time that the event was received
   * @param recipeName The name of the recipe that interaction is part of
   * @param recipeId The recipe id
-  * @param processId The id of the process
+  * @param recipeInstanceId The id of the process
   * @param correlationId The (optional) correlation id of the event
   * @param event The event
   */
 case class EventReceived(timeStamp: Long,
                          recipeName: String,
                          recipeId: String,
-                         processId: String,
+                         recipeInstanceId: String,
                          correlationId: Optional[String],
-                         event: RuntimeEvent) extends BakerEvent with common.EventReceived
+                         event: EventInstance) extends BakerEvent with common.EventReceived
 
 /**
   * Event describing the fact that an event was received but rejected for a process
   *
   * @param timeStamp The time that the event was received
-  * @param processId The id of the process
+  * @param recipeInstanceId The id of the process
   * @param correlationId The (optional) correlation id of the event
   * @param event The event
   * @param reason The reason that the event was rejected
   */
 case class EventRejected(timeStamp: Long,
-                         processId: String,
+                         recipeInstanceId: String,
                          correlationId: Optional[String],
-                         event: RuntimeEvent,
+                         event: EventInstance,
                          reason: RejectReason) extends BakerEvent with common.EventRejected
 /**
   * Event describing the fact that an interaction failed during execution
@@ -54,7 +54,7 @@ case class EventRejected(timeStamp: Long,
   * @param duration The duration of the execution time
   * @param recipeName The name of the recipe that interaction is part of
   * @param recipeId The recipe id
-  * @param processId The id of the process the interaction is executed for
+  * @param recipeInstanceId The id of the process the interaction is executed for
   * @param interactionName The name of the interaction
   * @param failureCount The number of times that this interaction execution failed
   * @param throwable The exception that was thrown by the interaction
@@ -64,7 +64,7 @@ case class InteractionFailed(timeStamp: Long,
                              duration: Long,
                              recipeName: String,
                              recipeId: String,
-                             processId: String,
+                             recipeInstanceId: String,
                              interactionName: String,
                              failureCount: Int,
                              throwable: Throwable,
@@ -76,13 +76,13 @@ case class InteractionFailed(timeStamp: Long,
   * @param timeStamp The time that the execution started
   * @param recipeName The name of the recipe that interaction is part of
   * @param recipeId The recipe id
-  * @param processId The id of the process the interaction is executed for
+  * @param recipeInstanceId The id of the process the interaction is executed for
   * @param interactionName The name of the interaction
   */
 case class InteractionStarted(timeStamp: Long,
                               recipeName: String,
                               recipeId: String,
-                              processId: String,
+                              recipeInstanceId: String,
                               interactionName: String) extends BakerEvent with common.InteractionStarted
 
 /**
@@ -92,7 +92,7 @@ case class InteractionStarted(timeStamp: Long,
   * @param duration The duration of the execution time
   * @param recipeName The name of the recipe that interaction is part of
   * @param recipeId The recipe id
-  * @param processId The id of the process the interaction is executed for
+  * @param recipeInstanceId The id of the process the interaction is executed for
   * @param interactionName The name of the interaction
   * @param event The event that was produced as a result of the execution
   */
@@ -101,9 +101,9 @@ case class InteractionCompleted(timeStamp: Long,
                                 duration: Long,
                                 recipeName: String,
                                 recipeId: String,
-                                processId: String,
+                                recipeInstanceId: String,
                                 interactionName: String,
-                                event: Optional[RuntimeEvent]) extends BakerEvent with common.InteractionCompleted
+                                event: Optional[EventInstance]) extends BakerEvent with common.InteractionCompleted
 
 /**
   * Event describing the fact that a baker process was created
@@ -111,12 +111,12 @@ case class InteractionCompleted(timeStamp: Long,
   * @param timeStamp The time the process was created
   * @param recipeId The recipe id
   * @param recipeName The name of the recipe
-  * @param processId The process id
+  * @param recipeInstanceId The process id
   */
 case class ProcessCreated(timeStamp: Long,
                           recipeId: String,
                           recipeName: String,
-                          processId: String) extends BakerEvent with common.ProcessCreated
+                          recipeInstanceId: String) extends BakerEvent with common.ProcessCreated
 
 /**
   * An event describing the fact that a recipe was added to baker.

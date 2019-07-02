@@ -15,7 +15,7 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFail
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common._
-import com.ing.baker.runtime.scaladsl.{Baker, RuntimeEvent, InteractionImplementation}
+import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import com.typesafe.config.ConfigFactory
 import org.mockito.Matchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
@@ -79,13 +79,13 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
     "throw a NoSuchProcessException when attempting to fire an event for a non existing process" in {
       for {
         (baker, _) <- setupBakerWithRecipe("NonExistingProcessEventTest")
-        event = RuntimeEvent.unsafeFrom(InitialEvent("initialIngredient"))
-        response = baker.fireSensoryEvent(UUID.randomUUID().toString, event)
+        event = EventInstance.unsafeFrom(InitialEvent("initialIngredient"))
+        response = baker.fireEvent(UUID.randomUUID().toString, event)
         _ <- recoverToSucceededIf[NoSuchProcessException] {
-          response.received
+          response.resolveWhenReceived
         }
         _ <- recoverToSucceededIf[NoSuchProcessException] {
-          response.completed
+          response.resolveWhenCompleted
         }
       } yield succeed
     }
@@ -93,10 +93,10 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
     "throw a IllegalArgumentException if fired event is not a valid sensory event" in {
       for {
         (baker, recipeId) <- setupBakerWithRecipe("NonExistingProcessEventTest")
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
         intercepted <- recoverToExceptionIf[IllegalArgumentException] {
-          baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(SomeNotDefinedEvent("bla")))
+          baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(SomeNotDefinedEvent("bla")))
         }
         _ = intercepted.getMessage should startWith("No event with name 'SomeNotDefinedEvent' found in recipe 'NonExistingProcessEventTest")
       } yield succeed
@@ -111,11 +111,11 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue))))
-        _ = verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
-        state <- baker.getProcessState(processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue))))
+        _ = verify(testInteractionOneMock).apply(recipeInstanceId.toString, "initialIngredient")
+        state <- baker.getProcessState(recipeInstanceId)
       } yield
         state.ingredients shouldBe
           ingredientMap(
@@ -140,13 +140,13 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           .thenReturn(EventFromInteractionTwo("ingredient2"))
         _ = when(testFireTwoEventsInteractionMock.apply(anyString()))
           .thenReturn(Event1FromInteractionSeven("ingredient3"))
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue))))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue))))
         _ = verify(testInteractionTwoMock).apply(initialIngredientValue)
         _ = verify(testFireTwoEventsInteractionMock).apply(initialIngredientValue)
-        _ = verify(testInteractionOneMock).apply(processId, initialIngredientValue)
-        state <- baker.getProcessState(processId)
+        _ = verify(testInteractionOneMock).apply(recipeInstanceId, initialIngredientValue)
+        state <- baker.getProcessState(recipeInstanceId)
       } yield state.eventNames should contain allOf("InitialEvent", "Event1FromInteractionSeven", "EventFromInteractionTwo", "InteractionOneSuccessful")
     }
 
@@ -161,16 +161,16 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
 
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
 
-        response0 <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        response0 <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         _ = response0.status shouldBe SensoryEventStatus.Completed
-        _ = verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+        _ = verify(testInteractionOneMock).apply(recipeInstanceId.toString, "initialIngredient")
 
-        response1 <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        response1 <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         _ = response1.status shouldBe SensoryEventStatus.FiringLimitMet
-        _ = verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+        _ = verify(testInteractionOneMock).apply(recipeInstanceId.toString, "initialIngredient")
       } yield succeed
     }
 
@@ -185,14 +185,14 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
 
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
 
-        response0 <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)), "abc")
+        response0 <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), "abc")
         _ = response0.status shouldBe SensoryEventStatus.Completed
-        _ = verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+        _ = verify(testInteractionOneMock).apply(recipeInstanceId.toString, "initialIngredient")
 
-        response1 <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)), "abc")
+        response1 <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), "abc")
         _ = response1.status shouldBe SensoryEventStatus.AlreadyReceived
         _ = verifyNoMoreInteractions(testInteractionOneMock)
       } yield succeed
@@ -209,24 +209,24 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
 
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
 
-        response0 <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        response0 <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         _ = response0.status shouldBe SensoryEventStatus.Completed
-        _ = verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+        _ = verify(testInteractionOneMock).apply(recipeInstanceId.toString, "initialIngredient")
 
-        response1 <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        response1 <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         _ = response1.status shouldBe SensoryEventStatus.Completed
-        _ = verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
+        _ = verify(testInteractionOneMock, times(2)).apply(recipeInstanceId.toString, "initialIngredient")
 
         // This check is added to verify event list is still correct after firing the same event twice
-        state <- baker.getProcessState(processId)
+        state <- baker.getProcessState(recipeInstanceId)
         _ = state.eventNames shouldBe List("InitialEvent", "InteractionOneSuccessful", "InitialEvent", "InteractionOneSuccessful")
 
-        response2 <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        response2 <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         _ = response2.status shouldBe SensoryEventStatus.FiringLimitMet
-        _ = verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
+        _ = verify(testInteractionOneMock, times(2)).apply(recipeInstanceId.toString, "initialIngredient")
       } yield succeed
     }
 
@@ -279,7 +279,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
         // test data
         val customerInfo = new Webshop.CustomerInfo("klaas", "straat", "email")
-        val processId = "backwards-compatible-process"
+        val recipeInstanceId = "backwards-compatible-process"
         val order = "123"
         val trackingId = "trackingId"
         val goods = "some goods"
@@ -290,11 +290,11 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         val manufactureGoodsMock: ManufactureGoods = mock[Webshop.ManufactureGoods]
         val validateOrderMock: ValidateOrder = mock[Webshop.ValidateOrder]
 
-        val implementations = Seq(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock).map(InteractionImplementation.unsafeFrom(_))
+        val implementations = Seq(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock).map(InteractionInstance.unsafeFrom(_))
 
         def createProcess(baker: Baker, recipeId: String): Future[Unit] = {
           for {
-            _ <- baker.bake(recipeId, processId)
+            _ <- baker.bake(recipeId, recipeInstanceId)
             // prepare mocks
             _ = when(shipGoodsMock.apply(anyString(), any[CustomerInfo]())).thenReturn(new ShipGoods.GoodsShipped(trackingId))
             _ = when(sendInvoiceMock.apply(any[CustomerInfo]())).thenReturn(new SendInvoice.InvoiceWasSent())
@@ -302,9 +302,9 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
             _ = when(validateOrderMock.apply(anyString(), anyString())).thenReturn(new ValidateOrder.Valid())
 
             // process the events
-            _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(new CustomerInfoReceived(customerInfo)))
-            _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(new OrderPlaced(order)))
-            _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(new PaymentMade()))
+            _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(new CustomerInfoReceived(customerInfo)))
+            _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(new OrderPlaced(order)))
+            _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(new PaymentMade()))
           } yield ()
         }
 
@@ -328,7 +328,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
             new SendInvoice.InvoiceWasSent()
           )
 
-          state <- baker.getProcessState(processId)
+          state <- baker.getProcessState(recipeInstanceId)
           _ = state.ingredients shouldBe expectedIngredients
           _ = state.eventNames shouldBe expectedEvents.map(_.name)
         } yield succeed).transform(
@@ -356,13 +356,13 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         compiledRecipe = RecipeCompiler.compileRecipe(recipe)
         recipeId <- baker.addRecipe(compiledRecipe)
 
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
 
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
 
         _ = verify(testOptionalIngredientInteractionMock).apply(ingredientValue, Optional.empty(), Option.empty, Option.empty, initialIngredientValue)
-        state <- baker.getProcessState(processId)
+        state <- baker.getProcessState(recipeInstanceId)
       } yield state.ingredients shouldBe ingredientMap("initialIngredient" -> initialIngredientValue)
     }
 
@@ -376,18 +376,18 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
 
-        processId = UUID.randomUUID().toString
+        recipeInstanceId = UUID.randomUUID().toString
 
-        _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(UnboxedProviderEvent(initialIngredientValue, initialIngredientValue, initialIngredientValue)))
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(UnboxedProviderEvent(initialIngredientValue, initialIngredientValue, initialIngredientValue)))
 
         _ = verify(testOptionalIngredientInteractionMock).apply(java.util.Optional.of(initialIngredientValue), Optional.empty(), Some(initialIngredientValue), Option.empty, initialIngredientValue)
-        state <- baker.getProcessState(processId)
+        state <- baker.getProcessState(recipeInstanceId)
       } yield state.ingredients shouldBe ingredientMap("initialIngredient" -> initialIngredientValue, "missingJavaOptional" -> initialIngredientValue, "missingScalaOptional" -> initialIngredientValue)
     }
 
     "notify a registered event listener of events" in {
-      val listenerMock = mock[(String, RuntimeEvent) => Unit]
+      val listenerMock = mock[(String, EventInstance) => Unit]
       when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
       val recipe =
         Recipe("EventListenerRecipe")
@@ -397,23 +397,23 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
         _ <- baker.registerEventListener("EventListenerRecipe", listenerMock)
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
-        _ = verify(listenerMock).apply(mockitoEq(processId.toString), argThat(new RuntimeEventMatcher(RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))))
-        _ = verify(listenerMock).apply(mockitoEq(processId.toString), argThat(new RuntimeEventMatcher(RuntimeEvent.unsafeFrom(InteractionOneSuccessful(interactionOneIngredientValue)))))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ = verify(listenerMock).apply(mockitoEq(recipeInstanceId.toString), argThat(new RuntimeEventMatcher(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))))
+        _ = verify(listenerMock).apply(mockitoEq(recipeInstanceId.toString), argThat(new RuntimeEventMatcher(EventInstance.unsafeFrom(InteractionOneSuccessful(interactionOneIngredientValue)))))
       } yield succeed
     }
 
     "return a list of events that where caused by a sensory event" in {
       for {
         (baker, recipeId) <- setupBakerWithRecipe("SensoryEventDeltaRecipe")
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        response = baker.fireSensoryEvent(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
-        confirmReceived <- response.received
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        response = baker.fireEvent(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        confirmReceived <- response.resolveWhenReceived
         _ = confirmReceived shouldBe SensoryEventStatus.Received
-        confirmCompleted <- response.completed
+        confirmCompleted <- response.resolveWhenCompleted
         _ = confirmCompleted.status shouldBe SensoryEventStatus.Completed
         _ = confirmCompleted.ingredients.keys should contain only(
           "initialIngredient",
@@ -440,24 +440,24 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
-        _ = verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
-        state <- baker.getProcessState(processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ = verify(testInteractionOneMock).apply(recipeInstanceId.toString, "initialIngredient")
+        state <- baker.getProcessState(recipeInstanceId)
       } yield state.ingredients shouldBe ingredientMap("initialIngredient" -> initialIngredientValue, "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
     }
 
     "execute an interaction when both ingredients are provided (join situation)" in {
       for {
         (baker, recipeId) <- setupBakerWithRecipe("JoinRecipeForIngredients")
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
-        _ = verify(testInteractionOneMock).apply(processId.toString, initialIngredientValue)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ = verify(testInteractionOneMock).apply(recipeInstanceId.toString, initialIngredientValue)
         _ = verify(testInteractionTwoMock).apply(initialIngredientValue)
         _ = verify(testInteractionThreeMock).apply(interactionOneIngredientValue, interactionTwoIngredientValue)
-        state <- baker.getProcessState(processId)
+        state <- baker.getProcessState(recipeInstanceId)
       } yield state.ingredients shouldBe afterInitialState
     }
 
@@ -465,20 +465,20 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe("JoinRecipeForEvents")
 
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
 
-        response0 = baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent("initialIngredient")))
-        response1 = baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(SecondEvent()))
+        response0 = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient")))
+        response1 = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(SecondEvent()))
         _ <- response0
         _ <- response1
 
-        _ = verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+        _ = verify(testInteractionOneMock).apply(recipeInstanceId.toString, "initialIngredient")
         _ = verify(testInteractionTwoMock).apply("initialIngredient")
         _ = verify(testInteractionThreeMock).apply("interactionOneIngredient",
           "interactionTwoIngredient")
         _ = verify(testInteractionFourMock).apply()
-        state <- baker.getProcessState(processId)
+        state <- baker.getProcessState(recipeInstanceId)
       } yield state.ingredients shouldBe finalState
     }
 
@@ -490,16 +490,16 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
-        firstProcessId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, firstProcessId)
+        firstrecipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, firstrecipeInstanceId)
         // Fire one of the events for the first process
-        _ <- baker.fireSensoryEventCompleted(firstProcessId, RuntimeEvent.unsafeFrom(InitialEvent("initialIngredient")))
+        _ <- baker.fireEventAndResolveWhenCompleted(firstrecipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient")))
         _ = verify(testInteractionFourMock).apply()
         // reset interaction mocks and fire the other event for the second process
         _ = resetMocks()
-        secondProcessId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, secondProcessId)
-        _ <- baker.fireSensoryEventCompleted(secondProcessId, RuntimeEvent.unsafeFrom(SecondEvent()))
+        secondrecipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, secondrecipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(secondrecipeInstanceId, EventInstance.unsafeFrom(SecondEvent()))
         _ = verify(testInteractionFourMock).apply()
       } yield succeed
     }
@@ -513,12 +513,12 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
-        firstProcessId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, firstProcessId)
+        firstrecipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, firstrecipeInstanceId)
         // Fire one of the events for the first process
-        _ <- baker.fireSensoryEventCompleted(firstProcessId, RuntimeEvent.unsafeFrom(InitialEvent("initialIngredient")))
+        _ <- baker.fireEventAndResolveWhenCompleted(firstrecipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient")))
         _ = verify(testInteractionFourMock, times(0)).apply()
-        _ <- baker.fireSensoryEventCompleted(firstProcessId, RuntimeEvent.unsafeFrom(ThirdEvent()))
+        _ <- baker.fireEventAndResolveWhenCompleted(firstrecipeInstanceId, EventInstance.unsafeFrom(ThirdEvent()))
         _ = verify(testInteractionFourMock).apply()
       } yield succeed
     }
@@ -526,10 +526,10 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
     "execute two interactions which depend on same ingredient (fork situation)" in {
       for {
         (baker, recipeId) <- setupBakerWithRecipe("MultipleInteractionsFromOneIngredient")
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent("initialIngredient")))
-        _ = verify(testInteractionOneMock).apply(processId.toString, "initialIngredient")
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient")))
+        _ = verify(testInteractionOneMock).apply(recipeInstanceId.toString, "initialIngredient")
         _ = verify(testInteractionTwoMock).apply("initialIngredient")
       } yield succeed
     }
@@ -538,13 +538,13 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       for {
         (baker, recipeId) <- setupBakerWithRecipe("MultipleInteractionsFromOneIngredient")
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent("initialIngredient")))
-        _ = verify(testInteractionOneMock, times(1)).apply(processId.toString, "initialIngredient")
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient")))
+        _ = verify(testInteractionOneMock, times(1)).apply(recipeInstanceId.toString, "initialIngredient")
         _ = verify(testInteractionTwoMock, times(1)).apply("initialIngredient")
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent("initialIngredient")))
-        _ = verify(testInteractionOneMock, times(2)).apply(processId.toString, "initialIngredient")
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient")))
+        _ = verify(testInteractionOneMock, times(2)).apply(recipeInstanceId.toString, "initialIngredient")
         _ = verify(testInteractionTwoMock, times(2)).apply("initialIngredient")
       } yield succeed
     }
@@ -564,10 +564,10 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
             Thread.sleep(600)
             EventFromInteractionTwo(interactionTwoIngredientValue)
           })
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
         start = System.currentTimeMillis()
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         finish = System.currentTimeMillis()
         executingTimeInMilliseconds = finish - start
       } yield
@@ -586,13 +586,13 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       for {
         (baker, recipeId) <- setupBakerWithRecipe("UpdateTestRecipe")
-        processId = UUID.randomUUID().toString
-        _ = when(testInteractionOneMock.apply(processId.toString, firstData)).thenReturn(Future.successful(InteractionOneSuccessful(firstResponse)))
-        _ = when(testInteractionOneMock.apply(processId.toString, secondData)).thenReturn(Future.successful(InteractionOneSuccessful(secondResponse)))
-        _ <- baker.bake(recipeId, processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ = when(testInteractionOneMock.apply(recipeInstanceId.toString, firstData)).thenReturn(Future.successful(InteractionOneSuccessful(firstResponse)))
+        _ = when(testInteractionOneMock.apply(recipeInstanceId.toString, secondData)).thenReturn(Future.successful(InteractionOneSuccessful(secondResponse)))
+        _ <- baker.bake(recipeId, recipeInstanceId)
         //Fire the first event
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(firstData)))
-        state0 <- baker.getProcessState(processId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(firstData)))
+        state0 <- baker.getProcessState(recipeInstanceId)
         //Check that the first response returned
         _ = state0.ingredients shouldBe ingredientMap(
           "initialIngredient" -> firstData,
@@ -602,9 +602,9 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           "interactionThreeIngredient" -> interactionThreeIngredientValue
         )
         //Fire the second event
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(secondData)))
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(secondData)))
         //Check that the second response is given
-        state <- baker.getProcessState(processId)
+        state <- baker.getProcessState(recipeInstanceId)
       } yield state.ingredients shouldBe ingredientMap(
         "initialIngredient" -> secondData,
         "interactionOneIngredient" -> secondResponse,
@@ -628,15 +628,15 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
-        _ = verify(testInteractionOneMock).apply(processId.toString, initialIngredientValue)
-        state <- baker.getProcessState(processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ = verify(testInteractionOneMock).apply(recipeInstanceId.toString, initialIngredientValue)
+        state <- baker.getProcessState(recipeInstanceId)
         _ = state.ingredients shouldBe ingredientMap(
           "initialIngredient" -> initialIngredientValue,
           "interactionOneIngredient" -> interactionOneIngredientValue)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         _ = verifyZeroInteractions(testInteractionOneMock)
       } yield succeed
     }
@@ -646,9 +646,9 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         (baker, recipeId) <- setupBakerWithRecipe("FailingInteraction")
         _ = when(testInteractionOneMock.apply(anyString, anyString()))
           .thenThrow(new RuntimeException(errorMessage))
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
       } yield succeed
     }
 
@@ -656,36 +656,36 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe("CrashTestRecipe")
 
-        firstProcessId = UUID.randomUUID().toString
-        secondProcessId = UUID.randomUUID().toString
-        _ = when(testInteractionOneMock.apply(firstProcessId.toString, initialIngredientValue))
+        firstrecipeInstanceId = UUID.randomUUID().toString
+        secondrecipeInstanceId = UUID.randomUUID().toString
+        _ = when(testInteractionOneMock.apply(firstrecipeInstanceId.toString, initialIngredientValue))
           .thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
-        _ = when(testInteractionOneMock.apply(secondProcessId.toString, initialIngredientValue))
+        _ = when(testInteractionOneMock.apply(secondrecipeInstanceId.toString, initialIngredientValue))
           .thenThrow(new RuntimeException(errorMessage))
-        _ <- baker.bake(recipeId, firstProcessId)
-        _ <- baker.bake(recipeId, secondProcessId)
+        _ <- baker.bake(recipeId, firstrecipeInstanceId)
+        _ <- baker.bake(recipeId, secondrecipeInstanceId)
         // start the first process with firing an event
-        _ <- baker.fireSensoryEventCompleted(firstProcessId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ <- baker.fireEventAndResolveWhenCompleted(firstrecipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         // start the second process and expect a failure
-        _ <- baker.fireSensoryEventCompleted(secondProcessId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ <- baker.fireEventAndResolveWhenCompleted(secondrecipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         // fire another event for the first process
-        _ <- baker.fireSensoryEventCompleted(firstProcessId, RuntimeEvent.unsafeFrom(SecondEvent()))
+        _ <- baker.fireEventAndResolveWhenCompleted(firstrecipeInstanceId, EventInstance.unsafeFrom(SecondEvent()))
         // expect first process state is correct
-        state <- baker.getProcessState(firstProcessId)
+        state <- baker.getProcessState(firstrecipeInstanceId)
       } yield state.ingredients shouldBe finalState
     }
 
     "keep the input data in accumulated state even if the interactions dependent on this event fail to execute" in {
       for {
         (baker, recipeId) <- setupBakerWithRecipe("StatePersistentTestRecipe")
-        processId = UUID.randomUUID().toString
-        _ = when(testInteractionOneMock.apply(processId.toString, initialIngredientValue))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ = when(testInteractionOneMock.apply(recipeInstanceId.toString, initialIngredientValue))
           .thenThrow(new RuntimeException(errorMessage))
-        _ <- baker.bake(recipeId, processId)
+        _ <- baker.bake(recipeId, recipeInstanceId)
 
         // Send failing event and after that send succeeding event
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
-        state <- baker.getProcessState(processId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        state <- baker.getProcessState(recipeInstanceId)
       } yield state.ingredients shouldBe ingredientMap(
         "initialIngredient" -> initialIngredientValue,
         "sievedIngredient" -> sievedIngredientValue,
@@ -698,9 +698,9 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         _ = when(testInteractionOneMock.apply(anyString(), anyString()))
           .thenThrow(new RuntimeException(errorMessage))
 
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
 
         //Thread.sleep is needed since we need to wait for the expionental back of
         //100ms should be enough since it waits 20ms and then 40 ms
@@ -708,7 +708,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           Thread.sleep(200)
         }
         //Since it can be called up to 3 times it should have been called 3 times in the 100ms
-        _ = verify(testInteractionOneMock, times(4)).apply(processId.toString, initialIngredientValue)
+        _ = verify(testInteractionOneMock, times(4)).apply(recipeInstanceId.toString, initialIngredientValue)
       } yield succeed
     }
 
@@ -718,20 +718,20 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
        */
       for {
         (baker, recipeId) <- setupBakerWithRecipe("ShouldNotReExecute")
-        processId = UUID.randomUUID().toString
+        recipeInstanceId = UUID.randomUUID().toString
 
         _ = when(testInteractionTwoMock.apply(anyString())).thenThrow(new RuntimeException(errorMessage))
-        _ <- baker.bake(recipeId, processId)
+        _ <- baker.bake(recipeId, recipeInstanceId)
 
         // first fired event causes a failure in the action
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         _ = verify(testInteractionTwoMock, times(1)).apply(anyString())
         _ = resetMocks()
 
         // second fired, this should not re-execute InteractionOne and therefor not start InteractionThree
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(SecondEvent()))
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(SecondEvent()))
         _ = verify(testInteractionTwoMock, never()).apply(anyString())
-        state <- baker.getProcessState(processId)
+        state <- baker.getProcessState(recipeInstanceId)
       } yield state.ingredients shouldBe ingredientMap(
         "initialIngredient" -> initialIngredientValue,
         "sievedIngredient" -> sievedIngredientValue,
@@ -751,14 +751,14 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
         //Handle first event
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         _ <- Future {
           Thread.sleep(50)
         }
-        state <- baker.getProcessState(processId)
+        state <- baker.getProcessState(recipeInstanceId)
       } yield state.eventNames should contain(interactionOne.retryExhaustedEventName)
     }
 
@@ -772,15 +772,15 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
         //Handle first event
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         _ <- Future {
           Thread.sleep(50)
         }
         //Since the defaultEventExhaustedName is set the retryExhaustedEventName of interactionOne will be picked.
-        state <- baker.getProcessState(processId)
+        state <- baker.getProcessState(recipeInstanceId)
       } yield state.eventNames should not contain interactionOne.retryExhaustedEventName
     }
 
@@ -795,21 +795,21 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
 
-        listenerMock = mock[(String, RuntimeEvent) => Unit]
+        listenerMock = mock[(String, EventInstance) => Unit]
         _ <- baker.registerEventListener("ImmediateFailureEvent", listenerMock)
 
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
 
         //Handle first event
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         _ <- Future {
           Thread.sleep(50)
         }
-        _ = verify(listenerMock).apply(mockitoEq(processId.toString), argThat(new RuntimeEventMatcher(RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))))
-        _ = verify(listenerMock).apply(mockitoEq(processId.toString), argThat(new RuntimeEventMatcher(RuntimeEvent(interactionOne.retryExhaustedEventName, Map.empty))))
+        _ = verify(listenerMock).apply(mockitoEq(recipeInstanceId.toString), argThat(new RuntimeEventMatcher(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))))
+        _ = verify(listenerMock).apply(mockitoEq(recipeInstanceId.toString), argThat(new RuntimeEventMatcher(EventInstance(interactionOne.retryExhaustedEventName, Map.empty))))
 
-        state <- baker.getProcessState(processId)
+        state <- baker.getProcessState(recipeInstanceId)
       } yield state.eventNames should contain(interactionOne.retryExhaustedEventName)
     }
 
@@ -822,15 +822,15 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenThrow(new RuntimeException("Expected test failure"))
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
-        state0 <- baker.getProcessState(processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        state0 <- baker.getProcessState(recipeInstanceId)
         _ = state0.ingredients shouldBe
           ingredientMap(
             "initialIngredient" -> initialIngredientValue)
-        _ <- baker.resolveInteraction(processId, interactionOne.name, RuntimeEvent.unsafeFrom(InteractionOneSuccessful("success!")))
-        state <- baker.getProcessState(processId)
+        _ <- baker.resolveInteraction(recipeInstanceId, interactionOne.name, EventInstance.unsafeFrom(InteractionOneSuccessful("success!")))
+        state <- baker.getProcessState(recipeInstanceId)
       } yield state.ingredients shouldBe
         ingredientMap(
           "initialIngredient" -> initialIngredientValue,
@@ -848,15 +848,15 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         _ = when(testInteractionOneMock.apply(anyString(), anyString()))
           .thenThrow(new RuntimeException("Expected test failure"))
           .thenReturn(Future.successful(InteractionOneSuccessful("success!")))
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
-        state0 <- baker.getProcessState(processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        state0 <- baker.getProcessState(recipeInstanceId)
         _ = state0.ingredients shouldBe
           ingredientMap(
             "initialIngredient" -> initialIngredientValue)
-        _ <- baker.retryInteraction(processId, interactionOne.name)
-        state <- baker.getProcessState(processId)
+        _ <- baker.retryInteraction(recipeInstanceId, interactionOne.name)
+        state <- baker.getProcessState(recipeInstanceId)
       } yield state.ingredients shouldBe
         ingredientMap(
           "initialIngredient" -> initialIngredientValue,
@@ -866,12 +866,12 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
     "be able to return all occurred events" in {
       for {
         (baker, recipeId) <- setupBakerWithRecipe("CheckEventRecipe")
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
         //Handle first event
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         //Check if both the new event and the events occurred in the past are in the eventsList
-        state0 <- baker.getProcessState(processId)
+        state0 <- baker.getProcessState(recipeInstanceId)
         _ = state0.eventNames should contain only(
           "InitialEvent",
           "SieveInteractionSuccessful",
@@ -880,9 +880,9 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           "InteractionThreeSuccessful"
         )
         //Execute another event
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(SecondEvent()))
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(SecondEvent()))
         //Check if both the new event and the events occurred in the past are in the eventsList
-        state <- baker.getProcessState(processId)
+        state <- baker.getProcessState(recipeInstanceId)
       } yield state.eventNames should contain only(
         "InitialEvent",
         "EventFromInteractionTwo",
@@ -906,10 +906,10 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       for {
         (baker, recipeId) <- setupBakerWithRecipe("IndexTestCluster")(indexTestSystem, materializer)
-        processIds = (0 to nrOfProcesses).map(_ => java.util.UUID.randomUUID().toString).toSet
-        _ <- Future.traverse(processIds)(baker.bake(recipeId, _))
+        recipeInstanceIds = (0 to nrOfProcesses).map(_ => java.util.UUID.randomUUID().toString).toSet
+        _ <- Future.traverse(recipeInstanceIds)(baker.bake(recipeId, _))
         index <- baker.getAllProcessesMetadata
-      } yield index.map(_.processId) shouldBe processIds
+      } yield index.map(_.recipeInstanceId) shouldBe recipeInstanceIds
     }
 
     "be able to return an index of all processes in local/inmemory mode" in {
@@ -918,10 +918,10 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       for {
         (baker, recipeId) <- setupBakerWithRecipe("IndexTestLocal")
-        processIds = (0 to nrOfProcesses).map(_ => java.util.UUID.randomUUID().toString).toSet
-        _ <- Future.traverse(processIds)(baker.bake(recipeId, _))
+        recipeInstanceIds = (0 to nrOfProcesses).map(_ => java.util.UUID.randomUUID().toString).toSet
+        _ <- Future.traverse(recipeInstanceIds)(baker.bake(recipeId, _))
         index <- baker.getAllProcessesMetadata
-      } yield index.map(_.processId) shouldBe processIds
+      } yield index.map(_.recipeInstanceId) shouldBe recipeInstanceIds
     }
 
     //Only works if persistence actors are used (think cassandra)
@@ -929,17 +929,17 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val system1 = ActorSystem("persistenceTest1", localLevelDBConfig("persistenceTest1"))
       val mat1 = ActorMaterializer.create(system1)
       val recoveryRecipeName = "RecoveryRecipe"
-      val processId = UUID.randomUUID().toString
+      val recipeInstanceId = UUID.randomUUID().toString
 
       val compiledRecipe = RecipeCompiler.compileRecipe(getRecipe(recoveryRecipeName))
 
       val first = (for {
         baker1 <- setupBakerWithNoRecipe()(system1, mat1)
         recipeId <- baker1.addRecipe(compiledRecipe)
-        _ <- baker1.bake(recipeId, processId)
-        _ <- baker1.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
-        _ <- baker1.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(SecondEvent()))
-        state <- baker1.getProcessState(processId)
+        _ <- baker1.bake(recipeId, recipeInstanceId)
+        _ <- baker1.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ <- baker1.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(SecondEvent()))
+        state <- baker1.getProcessState(recipeInstanceId)
         _ = state.ingredients shouldBe finalState
       } yield recipeId).transform(
         { a => TestKit.shutdownActorSystem(system1); a },
@@ -952,7 +952,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         val baker2 = Baker.akka(ConfigFactory.load(), system2, mat2)
         (for {
           _ <- baker2.addImplementations(mockImplementations)
-          state <- baker2.getProcessState(processId)
+          state <- baker2.getProcessState(recipeInstanceId)
           recipe <- baker2.getRecipe(recipeId)
           recipeId0 <- baker2.addRecipe(compiledRecipe)
         } yield {
@@ -981,9 +981,9 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
             }
           }
         }
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        completed <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        completed <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
       } yield completed.status shouldBe SensoryEventStatus.Completed
     }
 
@@ -992,12 +992,12 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         (baker, recipeId) <- setupBakerWithRecipe("AcknowledgeThefirst")
         _ = when(testInteractionTwoMock.apply(anyString()))
           .thenThrow(new RuntimeException("Unknown Exception.")) // This interaction is not retried and blocks the process
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        response = baker.fireSensoryEvent(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
-        received <- response.received
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        response = baker.fireEvent(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        received <- response.resolveWhenReceived
         _ = received shouldBe SensoryEventStatus.Received
-        completed <- response.completed
+        completed <- response.resolveWhenCompleted
         // The process is completed because it is in a BLOCKED state
         _ = completed.status shouldBe SensoryEventStatus.Completed
       } yield succeed
@@ -1013,11 +1013,11 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         // It is helpful to check the recipe visualization if this test fails
         //      println(baker.compiledRecipe.getRecipeVisualization)
 
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
 
-        _ = verify(testInteractionOneMock, times(1)).apply(processId.toString, initialIngredientValue)
+        _ = verify(testInteractionOneMock, times(1)).apply(recipeInstanceId.toString, initialIngredientValue)
         _ = verify(testInteractionTwoMock, times(1)).apply(initialIngredientValue)
         _ = verifyNoMoreInteractions(testInteractionFiveMock, testInteractionSixMock)
       } yield succeed
@@ -1035,12 +1035,12 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
-        processId = UUID.randomUUID().toString
+        recipeInstanceId = UUID.randomUUID().toString
 
-        _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
 
-        _ = verify(testInteractionOneMock, times(1)).apply(processId.toString, initialIngredientValue)
+        _ = verify(testInteractionOneMock, times(1)).apply(recipeInstanceId.toString, initialIngredientValue)
         _ = verify(testInteractionThreeMock, times(1)).apply(interactionOneIngredientValue, interactionOneIngredientValue)
       } yield succeed
     }
@@ -1057,12 +1057,12 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
         _ <- Future {
           Thread.sleep(receivePeriod.toMillis + 100)
         }
-        completed <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent("")))
+        completed <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("")))
         _ = completed.status shouldBe SensoryEventStatus.ReceivePeriodExpired
       } yield succeed
     }
@@ -1079,9 +1079,9 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        completed <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent("")))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        completed <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("")))
       } yield completed.status shouldBe SensoryEventStatus.Completed
     }
 
@@ -1089,17 +1089,17 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       //This test only checks if the graphviz is different, not that the outcome is correct
       for {
         (baker, recipeId) <- setupBakerWithRecipe("CheckEventRecipe")
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        noEventsGraph = baker.getVisualState(processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        noEventsGraph = baker.getVisualState(recipeInstanceId)
         //System.out.println(noEventsGraph)
         //Handle first event
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent("initialIngredient")))
-        firstEventGraph <- baker.getVisualState(processId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent("initialIngredient")))
+        firstEventGraph <- baker.getVisualState(recipeInstanceId)
         //System.out.println(firstEventGraph)
         _ = noEventsGraph should not be firstEventGraph
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(SecondEvent()))
-        secondEventGraph <- baker.getVisualState(processId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(SecondEvent()))
+        secondEventGraph <- baker.getVisualState(recipeInstanceId)
         //System.out.println(secondEventGraph)
         _ = firstEventGraph should not be secondEventGraph
       } yield succeed
@@ -1117,16 +1117,16 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
         //Should not fail
-        _ <- baker.getProcessState(processId)
+        _ <- baker.getProcessState(recipeInstanceId)
         _ <- Future {
           Thread.sleep(FiniteDuration(retentionPeriod.toMillis + 1000, TimeUnit.MILLISECONDS).dilated.toMillis)
         }
         //Should fail
         _ <- recoverToSucceededIf[ProcessDeletedException] {
-          baker.getProcessState(processId)
+          baker.getProcessState(recipeInstanceId)
         }
       } yield succeed
     }
@@ -1140,11 +1140,11 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(null)
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
-        _ = verify(testInteractionOneMock).apply(processId, "initialIngredient")
-        state <- baker.getProcessState(processId)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
+        _ = verify(testInteractionOneMock).apply(recipeInstanceId, "initialIngredient")
+        state <- baker.getProcessState(recipeInstanceId)
         _ = state.ingredients shouldBe ingredientMap("initialIngredient" -> initialIngredientValue)
       } yield succeed
     }
@@ -1159,11 +1159,11 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
         _ = when(testInteractionTwoMock.apply(anyString())).thenReturn(EventFromInteractionTwo(null))
-        processId = UUID.randomUUID().toString
-        _ <- baker.bake(recipeId, processId)
-        _ <- baker.fireSensoryEventCompleted(processId, RuntimeEvent.unsafeFrom(InitialEvent(initialIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
         _ = verify(testInteractionTwoMock).apply("initialIngredient")
-        state <- baker.getProcessState(processId)
+        state <- baker.getProcessState(recipeInstanceId)
         _ = state.ingredients shouldBe ingredientMap("initialIngredient" -> initialIngredientValue)
       } yield succeed
     }

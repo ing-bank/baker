@@ -19,12 +19,12 @@ class ProcessStateMapping extends ProtoMap[ProcessState, proto.ProcessState] {
       val protoIngredients = a.ingredients.toSeq.map { case (name, value) =>
         proto.Ingredient(Some(name), None, Some(ctxToProto(value)))
       }
-      proto.ProcessState(Some(a.processId), protoIngredients, a.events.map(ctxToProto(_)))
+      proto.ProcessState(Some(a.recipeInstanceId), protoIngredients, a.events.map(ctxToProto(_)))
     }
 
     def fromProto(message: proto.ProcessState): Try[ProcessState] =
       for {
-        processId <- versioned(message.processId, "processId")
+        recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
         ingredients <- message.ingredients.toList.traverse[Try, (String, Value)] { i =>
           for {
             name <- versioned(i.name, "name")
@@ -34,5 +34,5 @@ class ProcessStateMapping extends ProtoMap[ProcessState, proto.ProcessState] {
         }
         events <- message.events.toList.traverse (ctxFromProto(_))
 
-      } yield ProcessState(processId, ingredients.toMap, events)
+      } yield ProcessState(recipeInstanceId, ingredients.toMap, events)
 }

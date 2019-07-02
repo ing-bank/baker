@@ -29,8 +29,8 @@ case class InteractionTransition(eventsToFire: Seq[EventDescriptor],
   override def toString: String = label
 
     /**
-    * These are the ingredients that are not pre-defined or processId
+    * These are the ingredients that are not pre-defined or recipeInstanceId
     */
   val nonProvidedIngredients: Seq[IngredientDescriptor] =
-    requiredIngredients.filterNot(i => i.name == processIdName || predefinedParameters.keySet.contains(i.name))
+    requiredIngredients.filterNot(i => i.name == recipeInstanceIdName || predefinedParameters.keySet.contains(i.name))
 }

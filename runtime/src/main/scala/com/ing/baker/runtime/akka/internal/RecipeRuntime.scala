@@ -6,7 +6,7 @@ import akka.event.EventStream
 import cats.effect.IO
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
-import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor, processIdName}
+import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor, recipeInstanceIdName}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceRuntime
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
@@ -15,18 +15,18 @@ import com.ing.baker.runtime.scaladsl.{InteractionCompleted, InteractionFailed, 
 import com.ing.baker.runtime.akka.internal.RecipeRuntime._
 import com.ing.baker.runtime.scaladsl.EventMoment
 import com.ing.baker.runtime.scaladsl.ProcessState
-import com.ing.baker.runtime.scaladsl.RuntimeEvent
-import com.ing.baker.runtime.scaladsl.{ProcessState, RuntimeEvent, RuntimeIngredient}
+import com.ing.baker.runtime.scaladsl.EventInstance
+import com.ing.baker.runtime.scaladsl.{ProcessState, EventInstance, IngredientInstance}
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.MDC
 
 import scala.concurrent.ExecutionContext
 
 object RecipeRuntime {
-  def recipeEventSourceFn: Transition => (ProcessState => RuntimeEvent => ProcessState) =
+  def recipeEventSourceFn: Transition => (ProcessState => EventInstance => ProcessState) =
     _ => state => {
       case null => state
-      case event: RuntimeEvent =>
+      case event: EventInstance =>
         state.copy(
           ingredients = state.ingredients ++ event.providedIngredients,
           events = state.events :+ EventMoment(event.name, System.currentTimeMillis()))
@@ -37,7 +37,7 @@ object RecipeRuntime {
     *
     * It fills a token in the out adjacent place of the transition with the interaction name
     */
-  def createProducedMarking(outAdjacent: MultiSet[Place], event: Option[RuntimeEvent]): Marking[Place] = {
+  def createProducedMarking(outAdjacent: MultiSet[Place], event: Option[EventInstance]): Marking[Place] = {
     outAdjacent.keys.map { place =>
 
       // use the event name as a token value, otherwise null
@@ -52,7 +52,7 @@ object RecipeRuntime {
     *
     * Returns an optional error message.
     */
-  def validateInteractionOutput(interaction: InteractionTransition, optionalEvent: Option[RuntimeEvent]): Option[String] = {
+  def validateInteractionOutput(interaction: InteractionTransition, optionalEvent: Option[EventInstance]): Option[String] = {
 
     optionalEvent match {
 
@@ -92,27 +92,27 @@ object RecipeRuntime {
   /**
     * Creates the input parameters for an interaction implementation
     */
-  def createInteractionInput(interaction: InteractionTransition, state: ProcessState): Seq[RuntimeIngredient] = {
+  def createInteractionInput(interaction: InteractionTransition, state: ProcessState): Seq[IngredientInstance] = {
 
     // the process id is a special ingredient that is always available
-    val processId: (String, Value) = processIdName -> PrimitiveValue(state.processId.toString)
+    val recipeInstanceId: (String, Value) = recipeInstanceIdName -> PrimitiveValue(state.recipeInstanceId.toString)
 
     // a map of all ingredients
-    val allIngredients: Map[String, Value] = interaction.predefinedParameters ++ state.ingredients + processId
+    val allIngredients: Map[String, Value] = interaction.predefinedParameters ++ state.ingredients + recipeInstanceId
 
     // arranges the ingredients in the expected order
     interaction.requiredIngredients.map {
       case IngredientDescriptor(name, _) =>
-        RuntimeIngredient(name, allIngredients.getOrElse(name, throw new FatalInteractionException(s"Missing parameter '$name'")))
+        IngredientInstance(name, allIngredients.getOrElse(name, throw new FatalInteractionException(s"Missing parameter '$name'")))
     }
   }
 
   // function that (optionally) transforms the output event using the event output transformers
-  def transformInteractionEvent(interaction: InteractionTransition, runtimeEvent: RuntimeEvent): RuntimeEvent = {
+  def transformInteractionEvent(interaction: InteractionTransition, runtimeEvent: EventInstance): EventInstance = {
     interaction.eventOutputTransformers
       .find { case (eventName, _) => runtimeEvent.name.equals(eventName) } match {
       case Some((_, eventOutputTransformer)) =>
-        RuntimeEvent(
+        EventInstance(
           eventOutputTransformer.newEventName,
           runtimeEvent.providedIngredients.map { case (name, value) => eventOutputTransformer.ingredientRenames.getOrElse(name, name) -> value })
       case None => runtimeEvent
@@ -120,7 +120,7 @@ object RecipeRuntime {
   }
 }
 
-class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime[Place, Transition, ProcessState, RuntimeEvent] {
+class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime[Place, Transition, ProcessState, EventInstance] {
 
   /**
     * All transitions except sensory event interactions are auto-fireable by the runtime
@@ -160,14 +160,14 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
 
           eventStream.publish(
             InteractionFailed(currentTime, currentTime - startTime, recipe.name, recipe.recipeId,
-              job.processState.processId, job.transition.label, failureCount, throwable, failureStrategyOutcome))
+              job.processState.recipeInstanceId, job.transition.label, failureCount, throwable, failureStrategyOutcome))
 
           // translates the recipe failure strategy to a petri net failure strategy
           failureStrategyOutcome match {
             case ExceptionStrategyOutcome.BlockTransition => BlockTransition
             case ExceptionStrategyOutcome.RetryWithDelay(delay) => RetryWithDelay(delay)
             case ExceptionStrategyOutcome.Continue(eventName) => {
-              val runtimeEvent = RuntimeEvent(eventName, Map.empty)
+              val runtimeEvent = EventInstance(eventName, Map.empty)
               Continue(createProducedMarking(outMarking, Some(runtimeEvent)), runtimeEvent)
             }
           }
@@ -176,22 +176,22 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
       }
   }
 
-  override def transitionTask(petriNet: PetriNet[Place, Transition], t: Transition)(marking: Marking[Place], state: ProcessState, input: Any): IO[(Marking[Place], RuntimeEvent)] =
+  override def transitionTask(petriNet: PetriNet[Place, Transition], t: Transition)(marking: Marking[Place], state: ProcessState, input: Any): IO[(Marking[Place], EventInstance)] =
     t match {
       case interaction: InteractionTransition => interactionTask(interaction, petriNet.outMarking(t), state)
-      case t: EventTransition                 => IO.pure(petriNet.outMarking(t).toMarking, input.asInstanceOf[RuntimeEvent])
-      case t                                  => IO.pure(petriNet.outMarking(t).toMarking, null.asInstanceOf[RuntimeEvent])
+      case t: EventTransition                 => IO.pure(petriNet.outMarking(t).toMarking, input.asInstanceOf[EventInstance])
+      case t                                  => IO.pure(petriNet.outMarking(t).toMarking, null.asInstanceOf[EventInstance])
     }
 
   def interactionTask(interaction: InteractionTransition,
                       outAdjacent: MultiSet[Place],
-                      processState: ProcessState): IO[(Marking[Place], RuntimeEvent)] = {
+                      processState: ProcessState): IO[(Marking[Place], EventInstance)] = {
 
     // returns a delayed task that will get executed by the process instance
     IO.fromFuture(IO {
 
       // add MDC values for logging
-      MDC.put("processId", processState.processId)
+      MDC.put("RecipeInstanceId", processState.recipeInstanceId)
       MDC.put("recipeName", recipe.name)
 
       try {
@@ -207,7 +207,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
         val timeStarted = System.currentTimeMillis()
 
         // publish the fact that we started the interaction
-        eventStream.publish(InteractionStarted(timeStarted, recipe.name, recipe.recipeId, processState.processId, interaction.interactionName))
+        eventStream.publish(InteractionStarted(timeStarted, recipe.name, recipe.recipeId, processState.recipeInstanceId, interaction.interactionName))
 
         // executes the interaction and obtain the (optional) output event
         implementation.execute(input).map { interactionOutput =>
@@ -218,13 +218,13 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
           }
 
           // transform the event if there is one
-          val outputEvent: Option[RuntimeEvent] = interactionOutput
+          val outputEvent: Option[EventInstance] = interactionOutput
             .map(e => transformInteractionEvent(interaction, e))
 
           val timeCompleted = System.currentTimeMillis()
 
           // publish the fact that the interaction completed
-          eventStream.publish(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, recipe.name, recipe.recipeId, processState.processId, interaction.interactionName, outputEvent))
+          eventStream.publish(InteractionCompleted(timeCompleted, timeCompleted - timeStarted, recipe.name, recipe.recipeId, processState.recipeInstanceId, interaction.interactionName, outputEvent))
 
           // create the output marking for the petri net
           val outputMarking: Marking[Place] = RecipeRuntime.createProducedMarking(outAdjacent, outputEvent)
@@ -234,7 +234,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
 
       } finally {
         // remove the MDC values
-        MDC.remove("processId")
+        MDC.remove("RecipeInstanceId")
         MDC.remove("recipeName")
       }
 

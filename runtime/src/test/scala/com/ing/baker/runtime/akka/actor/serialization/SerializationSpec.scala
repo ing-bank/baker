@@ -22,7 +22,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
 import com.ing.baker.runtime.akka.actor.serialization.Encryption.{AESEncryption, NoEncryption}
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.{EventMoment, ProcessState, RuntimeEvent, SensoryEventResult}
+import com.ing.baker.runtime.scaladsl.{EventMoment, ProcessState, EventInstance, EventResult}
 import com.ing.baker.types.Value
 import com.ing.baker.{AllTypeRecipe, types}
 
@@ -191,7 +191,7 @@ object SerializationSpec {
   }
 
   val recipeIdGen: Gen[String] = Gen.uuid.map(_.toString)
-  val processIdGen: Gen[String] = Gen.uuid.map(_.toString)
+  val recipeInstanceIdGen: Gen[String] = Gen.uuid.map(_.toString)
   val timestampGen: Gen[Long] = Gen.chooseNum[Long](0, Long.MaxValue)
 
   object IntermediateLanguage {
@@ -209,10 +209,10 @@ object SerializationSpec {
     val ingredientNameGen: Gen[String] = Gen.alphaStr
     val ingredientsGen: Gen[(String, Value)] = GenUtil.tuple(ingredientNameGen, Types.anyValueGen)
 
-    val runtimeEventGen: Gen[RuntimeEvent] = for {
+    val runtimeEventGen: Gen[EventInstance] = for {
       eventName <- eventNameGen
       ingredients <- Gen.listOf(ingredientsGen)
-    } yield RuntimeEvent(eventName, ingredients.toMap)
+    } yield EventInstance(eventName, ingredients.toMap)
 
     val eventMomentsGen: Gen[EventMoment] = for {
       eventName <- eventNameGen
@@ -220,14 +220,14 @@ object SerializationSpec {
     } yield EventMoment(eventName, occurredOn)
 
     val processStateGen: Gen[ProcessState] = for {
-      processId <- processIdGen
+      recipeInstanceId <- recipeInstanceIdGen
       ingredients <- Gen.mapOf(ingredientsGen)
       events <- Gen.listOf(eventMomentsGen)
-    } yield ProcessState(processId, ingredients, events)
+    } yield ProcessState(recipeInstanceId, ingredients, events)
 
     val messagesGen: Gen[AnyRef] = Gen.oneOf(runtimeEventGen, processStateGen)
 
-    val sensoryEventResultGen: Gen[SensoryEventResult] = for {
+    val sensoryEventResultGen: Gen[EventResult] = for {
       status <- Gen.oneOf(
         SensoryEventStatus.AlreadyReceived,
         SensoryEventStatus.Completed,
@@ -237,7 +237,7 @@ object SerializationSpec {
         SensoryEventStatus.ReceivePeriodExpired)
       events <- Gen.listOf(eventNameGen)
       ingredients <- Gen.listOf(ingredientsGen)
-    } yield SensoryEventResult(status, events, ingredients.toMap)
+    } yield EventResult(status, events, ingredients.toMap)
   }
 
   object RecipeManager {
@@ -287,18 +287,18 @@ object SerializationSpec {
 
     val actorMetadataGen: Gen[ActorMetadata] = for {
       recipeId <- recipeIdGen
-      processId <- processIdGen
+      recipeInstanceId <- recipeInstanceIdGen
       createdTime <- createdTimeGen
       status <- processStatusGen
-    } yield ActorMetadata(recipeId, processId, createdTime, status)
+    } yield ActorMetadata(recipeId, recipeInstanceId, createdTime, status)
 
     val getIndexGen: Gen[ProcessIndexProtocol.GetIndex.type] = Gen.const(GetIndex)
     val indexGen: Gen[Index] = Gen.listOf(actorMetadataGen).map(Index(_))
 
     val createProcessGen: Gen[CreateProcess] = for {
       recipeId <- recipeIdGen
-      processId <- processIdGen
-    } yield CreateProcess(recipeId, processId)
+      recipeInstanceId <- recipeInstanceIdGen
+    } yield CreateProcess(recipeId, recipeInstanceId)
 
     class SimpleActor extends Actor {
       override def receive: Receive = { case _ => () }
@@ -307,9 +307,9 @@ object SerializationSpec {
     val waitForRetriesGen = Gen.oneOf(true, false)
 
     def processEventGen(system: ActorSystem): Gen[ProcessEvent] = for {
-      processId <- processIdGen
+      recipeInstanceId <- recipeInstanceIdGen
       event <- Runtime.runtimeEventGen
-      correlationId <- Gen.option(processIdGen)
+      correlationId <- Gen.option(recipeInstanceIdGen)
       timeout <- Gen.posNum[Long].map(millis => FiniteDuration(millis, TimeUnit.MILLISECONDS))
       reaction <- Gen.oneOf(
         Gen.const(FireSensoryEventReaction.NotifyWhenReceived),
@@ -319,35 +319,35 @@ object SerializationSpec {
           receiver = system.actorOf(Props(new SimpleActor))
         } yield FireSensoryEventReaction.NotifyBoth(waitForRetries, receiver)
       )
-    } yield ProcessEvent(processId, event, correlationId, timeout, reaction)
+    } yield ProcessEvent(recipeInstanceId, event, correlationId, timeout, reaction)
 
-    val getProcessStateGen: Gen[GetProcessState] = processIdGen.map(GetProcessState)
-    val getCompiledRecipeGen: Gen[GetCompiledRecipe] = processIdGen.map(GetCompiledRecipe)
-    val receivePeriodExpiredGen: Gen[ReceivePeriodExpired] = processIdGen.map(ReceivePeriodExpired)
+    val getProcessStateGen: Gen[GetProcessState] = recipeInstanceIdGen.map(GetProcessState)
+    val getCompiledRecipeGen: Gen[GetCompiledRecipe] = recipeInstanceIdGen.map(GetCompiledRecipe)
+    val receivePeriodExpiredGen: Gen[ReceivePeriodExpired] = recipeInstanceIdGen.map(ReceivePeriodExpired)
     val invalidEventGen: Gen[InvalidEvent] = for {
-      processId <- processIdGen
+      recipeInstanceId <- recipeInstanceIdGen
       msg <- Gen.alphaStr
-    } yield InvalidEvent(processId, msg)
+    } yield InvalidEvent(recipeInstanceId, msg)
 
-    val processDeletedGen: Gen[ProcessDeleted] = processIdGen.map(ProcessDeleted)
-    val noSuchProcessGen: Gen[NoSuchProcess] = processIdGen.map(NoSuchProcess)
-    val processAlreadyExistsGen: Gen[ProcessAlreadyExists] = processIdGen.map(ProcessAlreadyExists)
+    val processDeletedGen: Gen[ProcessDeleted] = recipeInstanceIdGen.map(ProcessDeleted)
+    val noSuchProcessGen: Gen[NoSuchProcess] = recipeInstanceIdGen.map(NoSuchProcess)
+    val processAlreadyExistsGen: Gen[ProcessAlreadyExists] = recipeInstanceIdGen.map(ProcessAlreadyExists)
 
     val retryBlockedInteractionGen: Gen[RetryBlockedInteraction] = for {
-      processId <- processIdGen
+      recipeInstanceId <- recipeInstanceIdGen
       interactionName <- Gen.alphaStr
-    } yield RetryBlockedInteraction(processId, interactionName)
+    } yield RetryBlockedInteraction(recipeInstanceId, interactionName)
 
     val resolveBlockedInteraction: Gen[ResolveBlockedInteraction] = for {
-      processId <- processIdGen
+      recipeInstanceId <- recipeInstanceIdGen
       interactionName <- Gen.alphaStr
       event <- Runtime.runtimeEventGen
-    } yield ResolveBlockedInteraction(processId, interactionName, event)
+    } yield ResolveBlockedInteraction(recipeInstanceId, interactionName, event)
 
     val stopRetryingInteractionGen: Gen[StopRetryingInteraction] = for {
-      processId <- processIdGen
+      recipeInstanceId <- recipeInstanceIdGen
       interactionName <- Gen.alphaStr
-    } yield StopRetryingInteraction(processId, interactionName)
+    } yield StopRetryingInteraction(recipeInstanceId, interactionName)
 
     /*
     def messagesGen(system: ActorSystem): Gen[AnyRef] = Gen.oneOf(getIndexGen, indexGen, createProcessGen, processEventGen(system),
@@ -366,9 +366,9 @@ object SerializationSpec {
     val actorCreatedGen: Gen[ActorCreated] =
       for {
         recipeId <- identifierGen
-        processId <- identifierGen
+        recipeInstanceId <- identifierGen
         timestamp <- timestampGen
-      } yield ActorCreated(recipeId, processId, timestamp)
+      } yield ActorCreated(recipeId, recipeInstanceId, timestamp)
 
     val actorActivatedGen: Gen[ActorActivated] =
       identifierGen.map(ActorActivated)
@@ -382,9 +382,9 @@ object SerializationSpec {
     val resolveBlockedInteractionGen: Gen[ResolveBlockedInteraction] =
       for {
         recipeId <- identifierGen
-        processId <- identifierGen
+        recipeInstanceId <- identifierGen
         event <- Runtime.runtimeEventGen
-      } yield ResolveBlockedInteraction(recipeId, processId, event)
+      } yield ResolveBlockedInteraction(recipeId, recipeInstanceId, event)
   }
 
   object ProcessInstance {
@@ -396,7 +396,7 @@ object SerializationSpec {
     val jobIdGen: Gen[Id] = Gen.posNum[Long]
     val processStateGen: Gen[ProcessState] = Runtime.processStateGen
     val tokenDataGen: Gen[String] = Gen.alphaStr
-    val transitionInputGen: Gen[RuntimeEvent] = Runtime.runtimeEventGen
+    val transitionInputGen: Gen[EventInstance] = Runtime.runtimeEventGen
     val correlationIdGen: Gen[String] = Gen.uuid.map(_.toString)
 
     val multiSetGen: Gen[MultiSet[Any]] = Gen.nonEmptyMap[Any, Int](GenUtil.tuple(tokenDataGen, Gen.posNum[Int]))
@@ -409,8 +409,8 @@ object SerializationSpec {
       state <- processStateGen
     } yield Initialize(marking, state)
 
-    val uninitializedGen: Gen[Uninitialized] = processIdGen.map(Uninitialized)
-    val alreadyInitializedGen: Gen[AlreadyInitialized] = processIdGen.map(AlreadyInitialized)
+    val uninitializedGen: Gen[Uninitialized] = recipeInstanceIdGen.map(Uninitialized)
+    val alreadyInitializedGen: Gen[AlreadyInitialized] = recipeInstanceIdGen.map(AlreadyInitialized)
 
     val initializedGen: Gen[Initialized] = for {
       marking <- markingDataGen

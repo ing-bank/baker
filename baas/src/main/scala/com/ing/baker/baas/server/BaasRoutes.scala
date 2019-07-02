@@ -6,7 +6,7 @@ import com.ing.baker.baas.interaction.client.RemoteInteractionClient
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.runtime.akka.AkkaBaker
-import com.ing.baker.runtime.scaladsl.{ProcessState, RuntimeEvent}
+import com.ing.baker.runtime.scaladsl.{ProcessState, EventInstance}
 import com.ing.baker.types.Value
 
 import scala.concurrent.ExecutionContext
@@ -46,7 +46,7 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
         path("events") {
           get {
             val processState = baker.getProcessState(requestId)
-            complete(processState.map(x => EventsResponse(x.eventNames.map(name => RuntimeEvent(name, Map.empty)))))
+            complete(processState.map(x => EventsResponse(x.eventNames.map(name => EventInstance(name, Map.empty)))))
           }
         } ~
         path("state") {

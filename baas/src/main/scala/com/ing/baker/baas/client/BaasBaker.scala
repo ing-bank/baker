@@ -8,7 +8,7 @@ import com.ing.baker.baas.interaction.server.RemoteInteractionLauncher
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
-import com.ing.baker.runtime.common.{RecipeInformation, SensoryEventStatus}
+import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
@@ -72,17 +72,17 @@ class BaasBaker(config: Config,
   }
 
   /**
-    * Creates a process instance for the given recipeId with the given processId as identifier
+    * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier
     *
     * @param recipeId  The recipeId for the recipe to bake
-    * @param processId The identifier for the newly baked process
+    * @param recipeInstanceId The identifier for the newly baked process
     * @return
     */
-  override def bake(recipeId: String, processId: String): Future[Unit] = {
+  override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] = {
     Marshal(BakeRequest(recipeId)).to[RequestEntity]
       .map { body =>
         HttpRequest(
-          uri = s"$baseUri/$processId/bake",
+          uri = s"$baseUri/$recipeInstanceId/bake",
           method = POST,
           entity = body)
       }
@@ -97,10 +97,10 @@ class BaasBaker(config: Config,
     *   `NoSuchProcessException` -> When no process exists for the given id
     *   `ProcessDeletedException` -> If the process is already deleted
     *
-    * @param processId The process identifier
+    * @param recipeInstanceId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEventReceived(processId: String, event: RuntimeEvent, correlationId: Option[String]): Future[SensoryEventStatus] = ???
+  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] = ???
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -109,10 +109,10 @@ class BaasBaker(config: Config,
     *   `NoSuchProcessException` -> When no process exists for the given id
     *   `ProcessDeletedException` -> If the process is already deleted
     *
-    * @param processId The process identifier
+    * @param recipeInstanceId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEventCompleted(processId: String, event: RuntimeEvent, correlationId: Option[String]): Future[SensoryEventResult] = ???
+  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[EventResult] = ???
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -122,21 +122,21 @@ class BaasBaker(config: Config,
     *   `NoSuchProcessException` -> When no process exists for the given id
     *   `ProcessDeletedException` -> If the process is already deleted
     *
-    * @param processId The process identifier
+    * @param recipeInstanceId The process identifier
     * @param event     The event object
     */
-  def fireSensoryEvent(processId: String, event: RuntimeEvent, correlationId: Option[String]): SensoryEventMoments = ???
+  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): EventResolutions = ???
 
   /**
     * Creates a stream of specific events.
     */
   /*
-  def processEventStream(processId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): Future[Source[BakerResponseEventProtocol, NotUsed]] = {
+  def processEventStream(RecipeInstanceId: String, event: Any, correlationId: Option[String] = None, timeout: FiniteDuration = defaultProcessEventTimeout): Future[Source[BakerResponseEventProtocol, NotUsed]] = {
     val runtimeEvent = RuntimeEvent.unsafeFrom(event)
     Marshal(ProcessEventRequest(runtimeEvent)).to[RequestEntity]
       .flatMap { body =>
         Http().singleRequest(HttpRequest(
-          uri = s"$baseUri/$processId/event/stream",
+          uri = s"$baseUri/$RecipeInstanceId/event/stream",
           method = POST,
           entity = body))
       }.map { _.entity
@@ -151,12 +151,12 @@ class BaasBaker(config: Config,
   /**
     * Returns the process state.
     *
-    * @param processId The process identifier
+    * @param recipeInstanceId The process identifier
     * @return The process state.
     */
-  override def getProcessState(processId: String): Future[ProcessState] = {
+  override def getProcessState(recipeInstanceId: String): Future[ProcessState] = {
     val request = HttpRequest(
-      uri = s"$baseUri/$processId/state",
+      uri = s"$baseUri/$recipeInstanceId/state",
       method = GET)
     doRequestAndParseResponse[StateResponse](request).map(_.processState)
   }
@@ -164,22 +164,22 @@ class BaasBaker(config: Config,
   /**
     * Returns all provided ingredients for a given process id.
     *
-    * @param processId The process id.
+    * @param recipeInstanceId The process id.
     * @return The provided ingredients.
     */
-  override def getIngredients(processId: String): Future[Map[String, Value]] = {
-    getProcessState(processId).map(_.ingredients)
+  override def getIngredients(recipeInstanceId: String): Future[Map[String, Value]] = {
+    getProcessState(recipeInstanceId).map(_.ingredients)
   }
 
   /**
     * Returns the visual state (.dot) for a given process.
     *
-    * @param processId The process identifier.
+    * @param recipeInstanceId The process identifier.
     * @return A visual (.dot) representation of the process state.
     */
-  override def getVisualState(processId: String, style: RecipeVisualStyle = RecipeVisualStyle.default): Future[String] = {
+  override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle = RecipeVisualStyle.default): Future[String] = {
     val request = HttpRequest(
-      uri = s"$baseUri/$processId/visual_state",
+      uri = s"$baseUri/$recipeInstanceId/visual_state",
       method = GET)
     doRequestAndParseResponse[VisualStateResponse](request).map(_.visualState)
   }
@@ -189,7 +189,7 @@ class BaasBaker(config: Config,
     *
     * @param implementations The implementation object
     */
-  override def addImplementations(implementations: Seq[InteractionImplementation]): Future[Unit] = {
+  override def addImplementations(implementations: Seq[InteractionInstance]): Future[Unit] = {
     Future.successful(implementations.foreach(addImplementation))
   }
 
@@ -198,7 +198,7 @@ class BaasBaker(config: Config,
     *
     * @param implementation An InteractionImplementation instance
     */
-  override def addImplementation(implementation: InteractionImplementation): Future[Unit] = {
+  override def addImplementation(implementation: InteractionInstance): Future[Unit] = {
     Future.successful(remoteInteractionLauncher.addImplementation(implementation))
   }
 
@@ -231,7 +231,7 @@ class BaasBaker(config: Config,
     *
     * @return
     */
-  override def retryInteraction(processId: String, interactionName: String): Future[Unit] = ???
+  override def retryInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] = ???
 
   /**
     * Resolves a blocked interaction by specifying it's output.
@@ -240,28 +240,28 @@ class BaasBaker(config: Config,
     *
     * @return
     */
-  override def resolveInteraction(processId: String, interactionName: String, event: RuntimeEvent): Future[Unit] = ???
+  override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): Future[Unit] = ???
 
   /**
     * Stops the retrying of an interaction.
     *
     * @return
     */
-  override def stopRetryingInteraction(processId: String, interactionName: String): Future[Unit] = ???
+  override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] = ???
 
   /**
     * Registers a listener to all runtime events for recipes with the given name run in this baker instance.
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(recipeName: String, listenerFunction: (String, RuntimeEvent) => Unit): Future[Unit] = ???
+  override def registerEventListener(recipeName: String, listenerFunction: (String, EventInstance) => Unit): Future[Unit] = ???
 
   /**
     * Registers a listener to all runtime events for all recipes that run in this Baker instance.
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(listenerFunction: (String, RuntimeEvent) => Unit): Future[Unit] = ???
+  override def registerEventListener(listenerFunction: (String, EventInstance) => Unit): Future[Unit] = ???
 
   /**
     * Registers a listener function that listens to all BakerEvents

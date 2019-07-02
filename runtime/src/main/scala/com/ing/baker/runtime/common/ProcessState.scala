@@ -10,7 +10,7 @@ trait ProcessState extends LanguageApi { self =>
 
   type EventType <: EventMoment { type Language <: self.Language}
 
-  def processId: String
+  def recipeInstanceId: String
 
   def ingredients: language.Map[String, Value]
 

@@ -59,14 +59,14 @@ object ProcessInstanceProtocol {
   /**
    * A response send in case any other command then 'Initialize' is sent to the actor in unitialized state.
    *
-   * @param processId The identifier of the uninitialized actor.
+   * @param recipeInstanceId The identifier of the uninitialized actor.
    */
-  case class Uninitialized(processId: String) extends Response
+  case class Uninitialized(recipeInstanceId: String) extends Response
 
   /**
    * Returned in case a second Initialize is send after a first is processed
    */
-  case class AlreadyInitialized(processId: String) extends Response
+  case class AlreadyInitialized(recipeInstanceId: String) extends Response
 
   /**
     * Indicates that the received FireTransition command with a specific correlation id was already received.

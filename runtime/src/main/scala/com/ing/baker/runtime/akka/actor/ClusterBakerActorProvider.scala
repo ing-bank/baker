@@ -32,20 +32,20 @@ object ClusterBakerActorProvider {
     * So we have at most 10 manager actors created, all the petrinet actors will fall under these 10 actors
     * Note, the nrOfShards used here has to be aligned with the nrOfShards used in the shardIdExtractor
     */
-  def entityId(processId: String, nrOfShards: Int): String =
-    s"index-${Math.abs(sha256HashCode(processId) % nrOfShards)}"
+  def entityId(recipeInstanceId: String, nrOfShards: Int): String =
+    s"index-${Math.abs(sha256HashCode(recipeInstanceId) % nrOfShards)}"
 
   // extracts the actor id -> message from the incoming message
   // Entity id is the first character of the UUID
   def entityIdExtractor(nrOfShards: Int): ExtractEntityId = {
-    case msg:ProcessIndexMessage => (entityId(msg.processId, nrOfShards), msg)
+    case msg:ProcessIndexMessage => (entityId(msg.recipeInstanceId, nrOfShards), msg)
     case GetShardIndex(entityId) => (entityId, GetIndex)
     case msg => throw new IllegalArgumentException(s"Message of type ${msg.getClass} not recognized")
   }
 
   // extracts the shard id from the incoming message
   def shardIdExtractor(nrOfShards: Int): ExtractShardId = {
-    case msg:ProcessIndexMessage => Math.abs(sha256HashCode(msg.processId) % nrOfShards).toString
+    case msg:ProcessIndexMessage => Math.abs(sha256HashCode(msg.recipeInstanceId) % nrOfShards).toString
     case GetShardIndex(entityId) => entityId.split(s"index-").last
     case ShardRegion.StartEntity(entityId) => entityId.split(s"index-").last
     case msg => throw new IllegalArgumentException(s"Message of type ${msg.getClass} not recognized")

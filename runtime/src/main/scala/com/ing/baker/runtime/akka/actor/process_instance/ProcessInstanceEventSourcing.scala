@@ -86,7 +86,7 @@ object ProcessInstanceEventSourcing {
 
   def eventsForInstance[P : Identifiable, T : Identifiable, S, E](
       processTypeName: String,
-      processId: String,
+      recipeInstanceId: String,
       topology: PetriNet[P, T],
       encryption: Encryption,
       readJournal: CurrentEventsByPersistenceIdQuery,
@@ -94,7 +94,7 @@ object ProcessInstanceEventSourcing {
 
     val serializer = new ProcessInstanceSerialization[P, T, S, E](SerializersProvider(actorSystem, null, encryption))
 
-    val persistentId = ProcessInstance.processId2PersistenceId(processTypeName, processId)
+    val persistentId = ProcessInstance.recipeInstanceId2PersistenceId(processTypeName, recipeInstanceId)
     val src = readJournal.currentEventsByPersistenceId(persistentId, 0, Long.MaxValue)
     val eventSource = ProcessInstanceEventSourcing.apply[P, T, S, E](eventSourceFn)
 

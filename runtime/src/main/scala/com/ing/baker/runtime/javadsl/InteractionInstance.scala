@@ -16,11 +16,11 @@ import scala.compat.java8.FutureConverters
 import scala.reflect.ClassTag
 import scala.util.Try
 
-abstract class InteractionImplementation extends common.InteractionImplementation[CompletableFuture] with JavaApi {
+abstract class InteractionInstance extends common.InteractionInstance[CompletableFuture] with JavaApi {
 
-  override type Event = RuntimeEvent
+  override type Event = EventInstance
 
-  override type Ingredient = RuntimeIngredient
+  override type Ingredient = IngredientInstance
 
   override val name: String
 
@@ -28,15 +28,15 @@ abstract class InteractionImplementation extends common.InteractionImplementatio
 
   override val output: Optional[util.Map[String, util.Map[String, Type]]]
 
-  override def execute(input: util.List[RuntimeIngredient]): CompletableFuture[Optional[RuntimeEvent]]
+  override def execute(input: util.List[IngredientInstance]): CompletableFuture[Optional[EventInstance]]
 
-  def asScala: scaladsl.InteractionImplementation =
-    scaladsl.InteractionImplementation(
+  def asScala: scaladsl.InteractionInstance =
+    scaladsl.InteractionInstance(
       name,
       input.asScala.toMap,
       if (output.isPresent) Some(output.get.asScala.toMap.mapValues(_.asScala.toMap)) else None,
       input => FutureConverters.toScala(execute(input.map(_.asJava).asJava)
-        .thenApply[Option[scaladsl.RuntimeEvent]] {
+        .thenApply[Option[scaladsl.EventInstance]] {
         optional =>
           if (optional.isPresent) Some(optional.get().asScala)
           else None
@@ -44,14 +44,14 @@ abstract class InteractionImplementation extends common.InteractionImplementatio
     )
 }
 
-object InteractionImplementation {
+object InteractionInstance {
 
-  def fromList(implementations: java.util.List[AnyRef]): java.util.List[InteractionImplementation] = {
+  def fromList(implementations: java.util.List[AnyRef]): java.util.List[InteractionInstance] = {
     implementations.asScala.map(from).asJava
   }
 
-  def from(implementation: AnyRef): InteractionImplementation =
-    new InteractionImplementation {
+  def from(implementation: AnyRef): InteractionInstance =
+    new InteractionInstance {
 
       val method: Method = {
         val unmockedClass = akka.unmock(implementation.getClass)
@@ -86,7 +86,7 @@ object InteractionImplementation {
           }
         }.toMap.asJava
 
-      override def execute(runtimeInput: util.List[RuntimeIngredient]): CompletableFuture[Optional[RuntimeEvent]] =  {
+      override def execute(runtimeInput: util.List[IngredientInstance]): CompletableFuture[Optional[EventInstance]] =  {
         // Translate the Value objects to the expected runtimeInput types
         val inputArgs: Seq[AnyRef] = runtimeInput.asScala.zip(method.getGenericParameterTypes).map {
           case (value, targetType) => value.value.as(targetType).asInstanceOf[AnyRef]
@@ -99,13 +99,13 @@ object InteractionImplementation {
               case runtimeEventAsync if futureClass.runtimeClass.isInstance(runtimeEventAsync) =>
                 runtimeEventAsync
                   .asInstanceOf[CompletableFuture[Any]]
-                  .thenApply(event0 => Optional.of(RuntimeEvent.from(event0)))
+                  .thenApply(event0 => Optional.of(EventInstance.from(event0)))
               case other =>
                 CompletableFuture
-                  .completedFuture(Optional.of(RuntimeEvent.from(other)))
+                  .completedFuture(Optional.of(EventInstance.from(other)))
             }
           case None =>
-            CompletableFuture.completedFuture(Optional.empty[RuntimeEvent]())
+            CompletableFuture.completedFuture(Optional.empty[EventInstance]())
         }
       }
 

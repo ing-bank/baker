@@ -4,7 +4,7 @@ import com.ing.baker.recipe.javadsl.events.SensoryEventWithIngredient;
 import com.ing.baker.recipe.javadsl.events.SensoryEventWithoutIngredient;
 import com.ing.baker.recipe.javadsl.interactions.FiresTwoEventInteraction;
 import com.ing.baker.recipe.javadsl.interactions.SimpleInteraction;
-import com.ing.baker.recipe.javadsl.interactions.RequiresProcessIdStringInteraction;
+import com.ing.baker.recipe.javadsl.interactions.RequiresRecipeInstanceIdStringInteraction;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -33,7 +33,7 @@ public class RecipeTest {
     public void shouldSetupRecipeWithMultipleInteractionDescriptors() {
         Recipe recipe = new Recipe("MultipleInteractionsRecipe")
                 .withInteractions(
-                        of(RequiresProcessIdStringInteraction.class),
+                        of(RequiresRecipeInstanceIdStringInteraction.class),
                         of(FiresTwoEventInteraction.class),
                         of(SimpleInteraction.class));
         assertEquals(recipe.getEvents().size(), 0);
@@ -54,7 +54,7 @@ public class RecipeTest {
     public void shouldSetupRecipeWithMultipleSieveDescriptors() {
         Recipe recipe = new Recipe("MultipleInteractionsRecipe")
                 .withSieves(
-                        of(RequiresProcessIdStringInteraction.class),
+                        of(RequiresRecipeInstanceIdStringInteraction.class),
                         of(FiresTwoEventInteraction.class),
                         of(SimpleInteraction.class));
         assertEquals(recipe.getEvents().size(), 0);

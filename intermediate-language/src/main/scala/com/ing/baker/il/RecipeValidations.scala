@@ -16,7 +16,7 @@ object RecipeValidations {
       validationErrors += s"Interaction $interactionTransition does not have any requirements (ingredients or preconditions)! This will result in an infinite execution loop."
 
     // check if the process id argument type is correct
-    interactionTransition.requiredIngredients.filter(id => id.name.equals(processIdName)).map {
+    interactionTransition.requiredIngredients.filter(id => id.name.equals(recipeInstanceIdName)).map {
       case IngredientDescriptor(_ , types.CharArray)  =>
       case IngredientDescriptor(_ , incompatibleType) => validationErrors += s"Non supported process id type: ${incompatibleType} on interaction: '$interactionTransition'"
     }

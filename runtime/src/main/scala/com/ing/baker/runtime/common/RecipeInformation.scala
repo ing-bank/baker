@@ -1,17 +1,14 @@
 package com.ing.baker.runtime.common
 
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
 
-import scala.collection.JavaConverters._
+trait RecipeInformation extends LanguageApi {
 
-case class RecipeInformation(compiledRecipe: CompiledRecipe, recipeCreatedTime: Long, errors: Set[String]) {
+  val compiledRecipe: CompiledRecipe
 
-  def getRecipeId(): String = compiledRecipe.recipeId
+  val recipeCreatedTime: Long
 
-  def getCompiledRecipe(): CompiledRecipe = compiledRecipe
+  val errors: language.Set[String]
 
-  def getRecipeCreatedTime(): Long = recipeCreatedTime
-
-  //TODO do we keep using Set here??
-  def getErrors(): java.util.Set[String] = errors.asJava
 }

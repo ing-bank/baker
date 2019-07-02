@@ -7,10 +7,9 @@ import java.lang.annotation.*;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-@Deprecated
 /**
  * An annotation to be added to an argument of an action indicating that the process identifier should be injected
  * there.
  */
-public @interface ProcessId {
+public @interface RecipeInstanceId {
 }

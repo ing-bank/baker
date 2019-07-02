@@ -7,7 +7,7 @@ import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe, processId}
+import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe, recipeInstanceId}
 import com.ing.baker.types.{NullValue, PrimitiveValue}
 import org.scalatest.{Matchers, WordSpecLike}
 
@@ -59,19 +59,19 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
       compiledRecipe.validationErrors should contain("Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction")
     }
 
-    "give an error if the processId is required and is not of the String type" in {
-      val wrongProcessIdInteraction =
+    "give an error if the RecipeInstanceId is required and is not of the String type" in {
+      val wrongrecipeInstanceIdInteraction =
         Interaction(
-          name = "wrongProcessIdInteraction",
-          inputIngredients = Seq(new Ingredient[Int](common.processIdName), initialIngredient),
+          name = "wrongrecipeInstanceIdInteraction",
+          inputIngredients = Seq(new Ingredient[Int](common.recipeInstanceIdName), initialIngredient),
           output = Seq.empty)
 
       val recipe = Recipe("NonProvidedIngredient")
         .withSensoryEvent(initialEvent)
-        .withInteractions(wrongProcessIdInteraction)
+        .withInteractions(wrongrecipeInstanceIdInteraction)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("Non supported process id type: Int32 on interaction: 'wrongProcessIdInteraction'")
+      compiledRecipe.validationErrors should contain("Non supported process id type: Int32 on interaction: 'wrongrecipeInstanceIdInteraction'")
     }
 
     "give a list of wrong ingredients if an ingredient is of the wrong type" in {
@@ -97,7 +97,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
       val interactionOptional =
         Interaction(
           name = "InteractionWithOptional",
-          inputIngredients = Seq(processId, initialIngredientOptionalInt, initialIngredientOptionInt),
+          inputIngredients = Seq(recipeInstanceId, initialIngredientOptionalInt, initialIngredientOptionInt),
           output = Seq.empty)
 
       val recipe = Recipe("WrongTypedOptionalIngredient")
@@ -123,7 +123,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
       val interactionOptional =
         Interaction(
           name = "InteractionWithOptional",
-          inputIngredients = Seq(processId, initialIngredientInt),
+          inputIngredients = Seq(recipeInstanceId, initialIngredientInt),
           output = Seq.empty)
 
       val recipe = Recipe("CorrectTypedOptionalIngredient")

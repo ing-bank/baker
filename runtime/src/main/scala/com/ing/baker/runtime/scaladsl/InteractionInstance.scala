@@ -17,22 +17,22 @@ import scala.compat.java8.FutureConverters
 import scala.reflect.ClassTag
 import scala.util.Try
 
-case class InteractionImplementation(
+case class InteractionInstance(
     name: String,
     input: Map[String, Type],
     output: Option[Map[String, Map[String, Type]]],
-    run: Seq[RuntimeIngredient] => Future[Option[RuntimeEvent]]
-  ) extends common.InteractionImplementation[Future] with ScalaApi { self =>
+    run: Seq[IngredientInstance] => Future[Option[EventInstance]]
+  ) extends common.InteractionInstance[Future] with ScalaApi { self =>
 
-  override type Event = RuntimeEvent
+  override type Event = EventInstance
 
-  override type Ingredient = RuntimeIngredient
+  override type Ingredient = IngredientInstance
 
-  override def execute(input: Seq[RuntimeIngredient]): Future[Option[Event]] =
+  override def execute(input: Seq[IngredientInstance]): Future[Option[Event]] =
     run(input)
 
-  def asJava: javadsl.InteractionImplementation =
-    new javadsl.InteractionImplementation {
+  def asJava: javadsl.InteractionInstance =
+    new javadsl.InteractionInstance {
       override val name: String =
         self.name
       override val input: util.Map[String, Type] =
@@ -42,21 +42,21 @@ case class InteractionImplementation(
           case Some(out) => Optional.of(out.mapValues(_.asJava).asJava)
           case None => Optional.empty[util.Map[String, util.Map[String, Type]]]()
         }
-      override def execute(input: util.List[javadsl.RuntimeIngredient]): CompletableFuture[Optional[javadsl.RuntimeEvent]] =
+      override def execute(input: util.List[javadsl.IngredientInstance]): CompletableFuture[Optional[javadsl.EventInstance]] =
         FutureConverters
           .toJava(self.run(input.asScala.map(_.asScala)))
           .toCompletableFuture
-          .thenApply(_.fold(Optional.empty[javadsl.RuntimeEvent]())(e => Optional.of(e.asJava)))
+          .thenApply(_.fold(Optional.empty[javadsl.EventInstance]())(e => Optional.of(e.asJava)))
     }
 }
 
-object InteractionImplementation {
+object InteractionInstance {
 
-  def unsafeFromList(implementations: List[AnyRef])(implicit ec: ExecutionContext): List[InteractionImplementation] = {
+  def unsafeFromList(implementations: List[AnyRef])(implicit ec: ExecutionContext): List[InteractionInstance] = {
     implementations.map(unsafeFrom(_))
   }
 
-  def unsafeFrom(implementation: AnyRef)(implicit ec: ExecutionContext): InteractionImplementation = {
+  def unsafeFrom(implementation: AnyRef)(implicit ec: ExecutionContext): InteractionInstance = {
     val method: Method = {
       val unmockedClass = akka.unmock(implementation.getClass)
       unmockedClass.getMethods.count(_.getName == "apply") match {
@@ -90,7 +90,7 @@ object InteractionImplementation {
         }
       }.toMap
     }
-    val run: Seq[RuntimeIngredient] => Future[Option[RuntimeEvent]] = runtimeInput => {
+    val run: Seq[IngredientInstance] => Future[Option[EventInstance]] = runtimeInput => {
       // Translate the Value objects to the expected runtimeInput types
       val inputArgs: Seq[AnyRef] = runtimeInput.zip(method.getGenericParameterTypes).map {
         case (value, targetType) => value.value.as(targetType).asInstanceOf[AnyRef]
@@ -103,14 +103,14 @@ object InteractionImplementation {
             case runtimeEventAsync if futureClass.runtimeClass.isInstance(runtimeEventAsync) =>
               runtimeEventAsync
                 .asInstanceOf[Future[Any]]
-                .map(event0 => Some(RuntimeEvent.unsafeFrom(event0)))
+                .map(event0 => Some(EventInstance.unsafeFrom(event0)))
             case other =>
-              Future.successful(Some(RuntimeEvent.unsafeFrom(other)))
+              Future.successful(Some(EventInstance.unsafeFrom(other)))
           }
         case None =>
           Future.successful(None)
       }
     }
-    InteractionImplementation(name, input, None, run)
+    InteractionInstance(name, input, None, run)
   }
 }

@@ -38,14 +38,14 @@ object ProcessIndexProto {
       val companion = protobuf.ActorCreated
 
       def toProto(a: ActorCreated): protobuf.ActorCreated =
-        protobuf.ActorCreated(Some(a.recipeId), Some(a.processId), Some(a.createdDateTime))
+        protobuf.ActorCreated(Some(a.recipeId), Some(a.recipeInstanceId), Some(a.createdDateTime))
 
       def fromProto(message: protobuf.ActorCreated): Try[ActorCreated] =
         for {
           recipeId <- versioned(message.recipeId, "recipeId")
-          processId <- versioned(message.processId, "processId")
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
           createdDateTime <- versioned(message.dateCreated, "dateCreated")
-        } yield ActorCreated(recipeId, processId, createdDateTime)
+        } yield ActorCreated(recipeId, recipeInstanceId, createdDateTime)
     }
 
   implicit def actorDeletedProto: ProtoMap[ActorDeleted, protobuf.ActorDeleted] =
@@ -54,12 +54,12 @@ object ProcessIndexProto {
       val companion = protobuf.ActorDeleted
 
       def toProto(a: ActorDeleted): protobuf.ActorDeleted =
-        protobuf.ActorDeleted(Some(a.processId))
+        protobuf.ActorDeleted(Some(a.recipeInstanceId))
 
       def fromProto(message: protobuf.ActorDeleted): Try[ActorDeleted] =
         for {
-          processId <- versioned(message.processId, "processId")
-        } yield ActorDeleted(processId)
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+        } yield ActorDeleted(recipeInstanceId)
     }
 
   implicit def actorPassivatedProto: ProtoMap[ActorPassivated, protobuf.ActorPassivated] =
@@ -68,12 +68,12 @@ object ProcessIndexProto {
       val companion = protobuf.ActorPassivated
 
       def toProto(a: ActorPassivated): protobuf.ActorPassivated =
-        protobuf.ActorPassivated(Some(a.processId))
+        protobuf.ActorPassivated(Some(a.recipeInstanceId))
 
       def fromProto(message: protobuf.ActorPassivated): Try[ActorPassivated] =
         for {
-          processId <- versioned(message.processId, "processId")
-        } yield ActorPassivated(processId)
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+        } yield ActorPassivated(recipeInstanceId)
     }
 
   implicit def actorActivatedProto: ProtoMap[ActorActivated, protobuf.ActorActivated] =
@@ -82,12 +82,12 @@ object ProcessIndexProto {
       val companion = protobuf.ActorActivated
 
       def toProto(a: ActorActivated): protobuf.ActorActivated =
-        protobuf.ActorActivated(Some(a.processId))
+        protobuf.ActorActivated(Some(a.recipeInstanceId))
 
       def fromProto(message: protobuf.ActorActivated): Try[ActorActivated] =
         for {
-          processId <- versioned(message.processId, "processId")
-        } yield ActorActivated(processId)
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+        } yield ActorActivated(recipeInstanceId)
     }
 
   implicit def actorMetadataProto: ProtoMap[ActorMetadata, protobuf.ActorMetaData] =
@@ -98,7 +98,7 @@ object ProcessIndexProto {
       def toProto(a: ActorMetadata): protobuf.ActorMetaData =
         protobuf.ActorMetaData(
           Some(a.recipeId),
-          Some(a.processId),
+          Some(a.recipeInstanceId),
           Some(a.createdDateTime),
           Some(a.processStatus == ProcessIndex.Deleted)
         )
@@ -106,11 +106,11 @@ object ProcessIndexProto {
       def fromProto(message: protobuf.ActorMetaData): Try[ActorMetadata] =
         for {
           recipeId <- versioned(message.recipeId, "recipeId")
-          processId <- versioned(message.processId, "processId")
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
           createdDateTime <- versioned(message.createdTime, "createdTime")
           isDeleted <- versioned(message.isDeleted, "createdTime")
           processStatus = if (isDeleted) ProcessIndex.Deleted else ProcessIndex.Active
-        } yield ActorMetadata(recipeId, processId, createdDateTime, processStatus)
+        } yield ActorMetadata(recipeId, recipeInstanceId, createdDateTime, processStatus)
     }
 
   implicit def getIndexProto: ProtoMap[GetIndex.type, protobuf.GetIndex] =
@@ -134,7 +134,7 @@ object ProcessIndexProto {
         protobuf.Index(a.entries.map { e =>
           protobuf.ActorMetaData(
             Some(e.recipeId),
-            Some(e.processId),
+            Some(e.recipeInstanceId),
             Some(e.createdDateTime),
             Some(e.processStatus == ProcessIndex.Deleted)
           )
@@ -145,11 +145,11 @@ object ProcessIndexProto {
           entries <- message.entries.toList.traverse[Try, ActorMetadata] { e =>
             for {
               recipeId <- versioned(e.recipeId, "recipeId")
-              processId <- versioned(e.processId, "processId")
+              recipeInstanceId <- versioned(e.recipeInstanceId, "RecipeInstanceId")
               createdDateTime <- versioned(e.createdTime, "createdTime")
               isDeleted <- versioned(e.isDeleted, "createdTime")
               processStatus = if (isDeleted) ProcessIndex.Deleted else ProcessIndex.Active
-            } yield ActorMetadata(recipeId, processId, createdDateTime, processStatus)
+            } yield ActorMetadata(recipeId, recipeInstanceId, createdDateTime, processStatus)
           }
         } yield Index(entries)
     }
@@ -160,13 +160,13 @@ object ProcessIndexProto {
       val companion = protobuf.CreateProcess
 
       def toProto(a: CreateProcess): protobuf.CreateProcess =
-        protobuf.CreateProcess(Some(a.recipeId), Some(a.processId))
+        protobuf.CreateProcess(Some(a.recipeId), Some(a.recipeInstanceId))
 
       def fromProto(message: protobuf.CreateProcess): Try[CreateProcess] =
         for {
           recipeId <- versioned(message.recipeId, "recipeId")
-          processId <- versioned(message.processId, "processId")
-        } yield CreateProcess(recipeId, processId)
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+        } yield CreateProcess(recipeId, recipeInstanceId)
     }
 
   implicit def processEventProto(implicit provider: SerializersProvider): ProtoMap[ProcessEvent, protobuf.ProcessEvent] =
@@ -176,7 +176,7 @@ object ProcessIndexProto {
 
       def toProto(a: ProcessEvent): protobuf.ProcessEvent =
         protobuf.ProcessEvent(
-          Some(a.processId),
+          Some(a.recipeInstanceId),
           Some(ctxToProto(a.event)),
           a.correlationId,
           Some(a.timeout.toMillis),
@@ -195,7 +195,7 @@ object ProcessIndexProto {
 
       def fromProto(message: protobuf.ProcessEvent): Try[ProcessEvent] =
         for {
-          processId <- versioned(message.processId, "processId")
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
           eventProto <- versioned(message.event, "event")
           timeout <- versioned(message.timeout, "timeout")
           reactionProto <- versioned(message.reaction, "reaction")
@@ -215,7 +215,7 @@ object ProcessIndexProto {
               Failure(new IllegalStateException("Received Empty of the oneof FireSensoryEventReaction protocol message."))
           }
           time = FiniteDuration(timeout, TimeUnit.MILLISECONDS)
-        } yield ProcessEvent(processId, event, message.correlationId, time, reaction)
+        } yield ProcessEvent(recipeInstanceId, event, message.correlationId, time, reaction)
     }
 
   implicit def processEventReceivedResponse: ProtoMap[ProcessEventReceivedResponse, protobuf.ProcessEventReceivedResponse] =
@@ -257,13 +257,13 @@ object ProcessIndexProto {
       val companion = protobuf.RetryBlockedInteraction
 
       def toProto(a: RetryBlockedInteraction): protobuf.RetryBlockedInteraction =
-        protobuf.RetryBlockedInteraction(Some(a.processId), Some(a.interactionName))
+        protobuf.RetryBlockedInteraction(Some(a.recipeInstanceId), Some(a.interactionName))
 
       def fromProto(message: protobuf.RetryBlockedInteraction): Try[RetryBlockedInteraction] =
         for {
-          processId <- versioned(message.processId, "processId")
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
           interactionName <- versioned(message.interactionName, "interactionName")
-        } yield RetryBlockedInteraction(processId, interactionName)
+        } yield RetryBlockedInteraction(recipeInstanceId, interactionName)
     }
 
   implicit def resolveBlockedInteractionProto: ProtoMap[ResolveBlockedInteraction, protobuf.ResolveBlockedInteraction] =
@@ -272,15 +272,15 @@ object ProcessIndexProto {
       val companion = protobuf.ResolveBlockedInteraction
 
       def toProto(a: ResolveBlockedInteraction): protobuf.ResolveBlockedInteraction =
-        protobuf.ResolveBlockedInteraction(Some(a.processId), Some(a.interactionName), Some(ctxToProto(a.output)))
+        protobuf.ResolveBlockedInteraction(Some(a.recipeInstanceId), Some(a.interactionName), Some(ctxToProto(a.output)))
 
       def fromProto(message: protobuf.ResolveBlockedInteraction): Try[ResolveBlockedInteraction] =
         for {
-          processId <- versioned(message.processId, "processId")
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
           interactionName <- versioned(message.interactionName, "interactionName")
           eventProto <- versioned(message.event, "event")
           event <- ctxFromProto(eventProto)
-        } yield ResolveBlockedInteraction(processId, interactionName, event)
+        } yield ResolveBlockedInteraction(recipeInstanceId, interactionName, event)
     }
 
   implicit def stopRetryingInteractionProto: ProtoMap[StopRetryingInteraction, protobuf.StopRetryingInteraction] =
@@ -289,13 +289,13 @@ object ProcessIndexProto {
       val companion = protobuf.StopRetryingInteraction
 
       def toProto(a: StopRetryingInteraction): protobuf.StopRetryingInteraction =
-        protobuf.StopRetryingInteraction(Some(a.processId), Some(a.interactionName))
+        protobuf.StopRetryingInteraction(Some(a.recipeInstanceId), Some(a.interactionName))
 
       def fromProto(message: protobuf.StopRetryingInteraction): Try[StopRetryingInteraction] =
         for {
-          processId <- versioned(message.processId, "processId")
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
           interactionName <- versioned(message.interactionName, "interactionName")
-        } yield StopRetryingInteraction(processId, interactionName)
+        } yield StopRetryingInteraction(recipeInstanceId, interactionName)
     }
 
   implicit def processEventResponseProto(implicit provider: SerializersProvider): ProtoMap[ProcessEventResponse, protobuf.ProcessEventResponse] =
@@ -304,12 +304,12 @@ object ProcessIndexProto {
       val companion = protobuf.ProcessEventResponse
 
       def toProto(a: ProcessEventResponse): protobuf.ProcessEventResponse =
-        protobuf.ProcessEventResponse(Some(a.processId), None)
+        protobuf.ProcessEventResponse(Some(a.recipeInstanceId), None)
 
       def fromProto(message: protobuf.ProcessEventResponse): Try[ProcessEventResponse] =
         for {
-          processId <- versioned(message.processId, "processId")
-        } yield ProcessEventResponse(processId)
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+        } yield ProcessEventResponse(recipeInstanceId)
     }
 
   implicit def getProcessStateProto: ProtoMap[GetProcessState, protobuf.GetProcessState] =
@@ -318,12 +318,12 @@ object ProcessIndexProto {
       val companion = protobuf.GetProcessState
 
       def toProto(a: GetProcessState): protobuf.GetProcessState =
-        protobuf.GetProcessState(Some(a.processId))
+        protobuf.GetProcessState(Some(a.recipeInstanceId))
 
       def fromProto(message: protobuf.GetProcessState): Try[GetProcessState] =
         for {
-          processId <- versioned(message.processId, "processId")
-        } yield GetProcessState(processId)
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+        } yield GetProcessState(recipeInstanceId)
     }
 
   implicit def getCompiledRecipeProto: ProtoMap[GetCompiledRecipe, protobuf.GetCompiledRecipe] =
@@ -332,12 +332,12 @@ object ProcessIndexProto {
       val companion = protobuf.GetCompiledRecipe
 
       def toProto(a: GetCompiledRecipe): protobuf.GetCompiledRecipe =
-        protobuf.GetCompiledRecipe(Some(a.processId))
+        protobuf.GetCompiledRecipe(Some(a.recipeInstanceId))
 
       def fromProto(message: protobuf.GetCompiledRecipe): Try[GetCompiledRecipe] =
         for {
-          processId <- versioned(message.recipeId, "recipeId")
-        } yield GetCompiledRecipe(processId)
+          recipeInstanceId <- versioned(message.recipeId, "recipeId")
+        } yield GetCompiledRecipe(recipeInstanceId)
     }
 
   implicit def receivePeriodExpiredProtoSERejection: ProtoMap[FireSensoryEventRejection.ReceivePeriodExpired, protobuf.ReceivePeriodExpired] =
@@ -346,12 +346,12 @@ object ProcessIndexProto {
       val companion = protobuf.ReceivePeriodExpired
 
       def toProto(a: FireSensoryEventRejection.ReceivePeriodExpired): protobuf.ReceivePeriodExpired =
-        protobuf.ReceivePeriodExpired(Some(a.processId))
+        protobuf.ReceivePeriodExpired(Some(a.recipeInstanceId))
 
       def fromProto(message: protobuf.ReceivePeriodExpired): Try[FireSensoryEventRejection.ReceivePeriodExpired] =
         for {
-          processId <- versioned(message.processId, "processId")
-        } yield FireSensoryEventRejection.ReceivePeriodExpired(processId)
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+        } yield FireSensoryEventRejection.ReceivePeriodExpired(recipeInstanceId)
     }
 
   implicit def invalidEventProtoSERejection: ProtoMap[FireSensoryEventRejection.InvalidEvent, protobuf.InvalidEvent] =
@@ -360,13 +360,13 @@ object ProcessIndexProto {
       val companion = protobuf.InvalidEvent
 
       def toProto(a: FireSensoryEventRejection.InvalidEvent): protobuf.InvalidEvent =
-        protobuf.InvalidEvent(Some(a.processId), Some(a.msg))
+        protobuf.InvalidEvent(Some(a.recipeInstanceId), Some(a.msg))
 
       def fromProto(message: protobuf.InvalidEvent): Try[FireSensoryEventRejection.InvalidEvent] =
         for {
-          processId <- versioned(message.processId, "processId")
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
           msg <- versioned(message.reason, "reason")
-        } yield FireSensoryEventRejection.InvalidEvent(processId, msg)
+        } yield FireSensoryEventRejection.InvalidEvent(recipeInstanceId, msg)
     }
 
   implicit def processDeletedProto: ProtoMap[ProcessDeleted, protobuf.ProcessDeleted] =
@@ -375,12 +375,12 @@ object ProcessIndexProto {
       val companion = protobuf.ProcessDeleted
 
       def toProto(a: ProcessDeleted): protobuf.ProcessDeleted =
-        protobuf.ProcessDeleted(Some(a.processId))
+        protobuf.ProcessDeleted(Some(a.recipeInstanceId))
 
       def fromProto(message: protobuf.ProcessDeleted): Try[ProcessDeleted] =
         for {
-          processId <- versioned(message.processId, "processId")
-        } yield ProcessDeleted(processId)
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+        } yield ProcessDeleted(recipeInstanceId)
     }
 
   implicit def processDeletedProtoSERejection: ProtoMap[FireSensoryEventRejection.ProcessDeleted, protobuf.ProcessDeleted] =
@@ -389,12 +389,12 @@ object ProcessIndexProto {
       val companion = protobuf.ProcessDeleted
 
       def toProto(a: FireSensoryEventRejection.ProcessDeleted): protobuf.ProcessDeleted =
-        protobuf.ProcessDeleted(Some(a.processId))
+        protobuf.ProcessDeleted(Some(a.recipeInstanceId))
 
       def fromProto(message: protobuf.ProcessDeleted): Try[FireSensoryEventRejection.ProcessDeleted] =
         for {
-          processId <- versioned(message.processId, "processId")
-        } yield FireSensoryEventRejection.ProcessDeleted(processId)
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+        } yield FireSensoryEventRejection.ProcessDeleted(recipeInstanceId)
     }
 
   implicit def noSuchProcessProtoSERejection: ProtoMap[FireSensoryEventRejection.NoSuchProcess, protobuf.NoSuchProcess] =
@@ -403,12 +403,12 @@ object ProcessIndexProto {
       val companion = protobuf.NoSuchProcess
 
       def toProto(a: FireSensoryEventRejection.NoSuchProcess): protobuf.NoSuchProcess =
-        protobuf.NoSuchProcess(Some(a.processId))
+        protobuf.NoSuchProcess(Some(a.recipeInstanceId))
 
       def fromProto(message: protobuf.NoSuchProcess): Try[FireSensoryEventRejection.NoSuchProcess] =
         for {
-          processId <- versioned(message.processId, "processId")
-        } yield FireSensoryEventRejection.NoSuchProcess(processId)
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+        } yield FireSensoryEventRejection.NoSuchProcess(recipeInstanceId)
     }
 
   implicit def firingLimitMetProtoSERejection: ProtoMap[FireSensoryEventRejection.FiringLimitMet, protobuf.FiringLimitMet] =
@@ -417,12 +417,12 @@ object ProcessIndexProto {
       val companion = protobuf.FiringLimitMet
 
       def toProto(a: FireSensoryEventRejection.FiringLimitMet): protobuf.FiringLimitMet =
-        protobuf.FiringLimitMet(Some(a.processId))
+        protobuf.FiringLimitMet(Some(a.recipeInstanceId))
 
       def fromProto(message: protobuf.FiringLimitMet): Try[FireSensoryEventRejection.FiringLimitMet] =
         for {
-          processId <- versioned(message.processId, "processId")
-        } yield FireSensoryEventRejection.FiringLimitMet(processId)
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+        } yield FireSensoryEventRejection.FiringLimitMet(recipeInstanceId)
     }
 
 
@@ -432,13 +432,13 @@ object ProcessIndexProto {
       val companion = protobuf.SensoryEventAlreadyReceived
 
       def toProto(a: FireSensoryEventRejection.AlreadyReceived): protobuf.SensoryEventAlreadyReceived =
-        protobuf.SensoryEventAlreadyReceived(Some(a.processId), Some(a.correlationId))
+        protobuf.SensoryEventAlreadyReceived(Some(a.recipeInstanceId), Some(a.correlationId))
 
       def fromProto(message: protobuf.SensoryEventAlreadyReceived): Try[FireSensoryEventRejection.AlreadyReceived] =
         for {
-          processId <- versioned(message.processId, "processId")
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
           correlationId <- versioned(message.correlationId, "correlationId")
-        } yield FireSensoryEventRejection.AlreadyReceived(processId, correlationId)
+        } yield FireSensoryEventRejection.AlreadyReceived(recipeInstanceId, correlationId)
     }
 
 
@@ -448,12 +448,12 @@ object ProcessIndexProto {
       val companion = protobuf.NoSuchProcess
 
       def toProto(a: NoSuchProcess): protobuf.NoSuchProcess =
-        protobuf.NoSuchProcess(Some(a.processId))
+        protobuf.NoSuchProcess(Some(a.recipeInstanceId))
 
       def fromProto(message: protobuf.NoSuchProcess): Try[NoSuchProcess] =
         for {
-          processId <- versioned(message.processId, "processId")
-        } yield NoSuchProcess(processId)
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+        } yield NoSuchProcess(recipeInstanceId)
     }
 
   implicit def processAlreadyExistsProto: ProtoMap[ProcessAlreadyExists, protobuf.ProcessAlreadyExists] =
@@ -462,12 +462,12 @@ object ProcessIndexProto {
       val companion = protobuf.ProcessAlreadyExists
 
       def toProto(a: ProcessAlreadyExists): protobuf.ProcessAlreadyExists =
-        protobuf.ProcessAlreadyExists(Some(a.processId))
+        protobuf.ProcessAlreadyExists(Some(a.recipeInstanceId))
 
       def fromProto(message: protobuf.ProcessAlreadyExists): Try[ProcessAlreadyExists] =
         for {
-          processId <- versioned(message.processId, "processId")
-        } yield ProcessAlreadyExists(processId)
+          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+        } yield ProcessAlreadyExists(recipeInstanceId)
     }
 
 }

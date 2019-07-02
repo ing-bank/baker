@@ -53,8 +53,8 @@ class ProcessInstanceEventSourcingSpec extends AkkaTestBase("ProcessQuerySpec") 
       val t2 = nullTransition(id = 2, automated = true)
 
       val petriNet = createPetriNet(p1 ~> t1, t1 ~> p2, p2 ~> t2, t2 ~> p3)
-      val processId = UUID.randomUUID().toString
-      val instance = createProcessInstance[Unit, Unit](petriNet, runtime, processId)
+      val recipeInstanceId = UUID.randomUUID().toString
+      val instance = createProcessInstance[Unit, Unit](petriNet, runtime, recipeInstanceId)
 
       instance ! Initialize(p1.markWithN(1), ())
 
@@ -64,7 +64,7 @@ class ProcessInstanceEventSourcingSpec extends AkkaTestBase("ProcessQuerySpec") 
 
       ProcessInstanceEventSourcing.eventsForInstance[Place, Transition, Unit, Unit](
         "test",
-        processId,
+        recipeInstanceId,
         petriNet,
         NoEncryption,
         readJournal,

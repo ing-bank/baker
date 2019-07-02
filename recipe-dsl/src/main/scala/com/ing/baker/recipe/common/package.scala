@@ -2,6 +2,6 @@ package com.ing.baker.recipe
 
 package object common {
 
-  val processIdName = "processId"
+  val recipeInstanceIdName = "RecipeInstanceId"
   val exhaustedEventAppend = "RetryExhausted"
 }
