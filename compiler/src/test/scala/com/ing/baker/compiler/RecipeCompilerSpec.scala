@@ -8,7 +8,7 @@ import com.ing.baker.recipe.common
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe, recipeInstanceId}
-import com.ing.baker.types.{NullValue, PrimitiveValue}
+import com.ing.baker.types.{Int32, NullValue, PrimitiveValue, RecordField, RecordType}
 import org.scalatest.{Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
@@ -75,7 +75,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
     }
 
     "give a list of wrong ingredients if an ingredient is of the wrong type" in {
-      val initialIngredientInt = Ingredient[Int]("initialIngredient")
+      val initialIngredientInt = new common.Ingredient("initialIngredient", RecordType(Seq(RecordField("data", Int32))))
       val initialEventInt = Event("InitialEvent", Seq(initialIngredientInt), None)
 
       val recipe = Recipe("WrongTypedIngredient")
@@ -84,7 +84,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
         .withSensoryEvent(initialEventInt)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("Interaction 'InteractionOne' expects ingredient 'initialIngredient:CharArray', however incompatible type: 'Int32' was provided")
+      compiledRecipe.validationErrors should contain("Interaction 'InteractionOne' expects ingredient 'initialIngredient:CharArray', however incompatible type: 'Record(data: Int32)' was provided")
     }
 
     "give a list of wrong ingredients if an Optional ingredient is of the wrong Optional type" in {
@@ -106,8 +106,8 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
         .withSensoryEvents(initialEventIntOptional, initialEventIntOption)
 
       val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
-      compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionalInt:OptionType(Int32)', however incompatible type: 'OptionType(CharArray)' was provided")
-      compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionInt:OptionType(ListType(Int32))', however incompatible type: 'OptionType(ListType(CharArray))' was provided")
+      compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionalInt:Option[Int32]', however incompatible type: 'Option[CharArray]' was provided")
+      compiledRecipe.validationErrors should contain("Interaction 'InteractionWithOptional' expects ingredient 'initialIngredientOptionInt:Option[List[Int32]]', however incompatible type: 'Option[List[CharArray]]' was provided")
     }
 
     "give an validation error for an empty/non-logical recipe" in {
