@@ -57,17 +57,35 @@ sealed trait Type {
   def isRecord: Boolean = isInstanceOf[RecordType]
 }
 
-case class ListType(entryType: Type) extends Type
+case class ListType(entryType: Type) extends Type {
 
-case class OptionType(entryType: Type) extends Type
+  override def toString: String = s"List[$entryType]"
+}
 
-case class EnumType(options: Set[String]) extends Type
+case class OptionType(entryType: Type) extends Type {
 
-case class RecordField(name: String, `type`: Type)
+  override def toString: String = s"Option[$entryType]"
+}
 
-case class RecordType(fields: Seq[RecordField]) extends Type
+case class EnumType(options: Set[String]) extends Type {
 
-case class MapType(valueType: Type) extends Type
+  override def toString: String = s"Enum(${options.mkString(" | ")})"
+}
+
+case class RecordField(name: String, `type`: Type) {
+
+  override def toString: String = s"$name: ${`type`}"
+}
+
+case class RecordType(fields: Seq[RecordField]) extends Type {
+
+  override def toString: String = s"Record(${fields.mkString(", ")})"
+}
+
+case class MapType(valueType: Type) extends Type {
+
+  override def toString: String = s"Map[$valueType]"
+}
 
 sealed trait PrimitiveType extends Type
 
