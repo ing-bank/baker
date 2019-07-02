@@ -50,6 +50,16 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
         .foreach(_ shouldBe "1fc5d434d145c3fb")
     }
 
+    "Generate different ids for recipes with changes on transitions other than the name" in {
+      val input = Ingredient[Int]("ingredient")
+      val output = Event("event", Seq.empty, None)
+      val interaction = Interaction("interaction", Seq(input), Seq(output))
+      val name = "RecipeName"
+      val recipe1 = Recipe(name).withInteraction(interaction.withPredefinedIngredients(input.name -> 1))
+      val recipe2 = Recipe(name).withInteraction(interaction.withPredefinedIngredients(input.name -> 2))
+      RecipeCompiler.compileRecipe(recipe1).recipeId shouldNot be(RecipeCompiler.compileRecipe(recipe2).recipeId)
+    }
+
     "give a List of missing ingredients if an interaction has an ingredient that is not provided by any other event or interaction" in {
       val recipe = Recipe("NonProvidedIngredient")
         .withSensoryEvent(secondEvent)

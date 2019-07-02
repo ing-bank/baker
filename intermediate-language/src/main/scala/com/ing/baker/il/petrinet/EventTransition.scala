@@ -12,5 +12,4 @@ case class EventTransition(event: EventDescriptor,
 
   override val label: String = event.name
   override val id: Long = il.sha256HashCode(s"EventTransition:$label")
-  override val toString: String = label
 }
