@@ -57,31 +57,33 @@ sealed trait Type {
   def isRecord: Boolean = isInstanceOf[RecordType]
 
   override def hashCode(): Int = {
-    val p = 31
+    val p1 = 31
+    val p2 = 11
     this match {
       case ListType(entryType) =>
-        p * 1 + entryType.hashCode()
+        p1 * 1 + entryType.hashCode()
+        //p * 1 + (p * 17) == p * 6 + (p * 12)
       case OptionType(entryType) =>
-        p * 2 + entryType.hashCode()
+        p1 * 2 + entryType.hashCode()
       case EnumType(options) =>
-        p * 3 + options.hashCode()
+        p1 * 3 + options.hashCode()
       case RecordType(fields) =>
-        p * 5 + fields.hashCode()
+        p1 * 5 + fields.hashCode()
       case MapType(valueType) =>
-        p * 6 + valueType.hashCode()
-      case Bool => p * 7
-      case Byte => p * 8
-      case Char => p * 9
-      case Int16 => p * 10
-      case Int32 => p * 11
-      case Int64 => p * 12
-      case IntBig => p * 13
-      case Float32 => p * 14
-      case Float64 => p * 15
-      case FloatBig => p * 16
-      case ByteArray => p * 17
-      case CharArray => p * 18
-      case Date => p * 19
+        p1 * 6 + valueType.hashCode()
+      case Bool => p2 * 7
+      case Byte => p2 * 8
+      case Char => p2 * 9
+      case Int16 => p2 * 10
+      case Int32 => p2 * 11
+      case Int64 => p2 * 12
+      case IntBig => p2 * 13
+      case Float32 => p2 * 14
+      case Float64 => p2 * 15
+      case FloatBig => p2 * 16
+      case ByteArray => p2 * 17
+      case CharArray => p2 * 18
+      case Date => p2 * 19
     }
   }
 }
