@@ -18,7 +18,7 @@ object RecipeValidations {
     // check if the process id argument type is correct
     interactionTransition.requiredIngredients.filter(id => id.name.equals(recipeInstanceIdName)).map {
       case IngredientDescriptor(_ , types.CharArray)  =>
-      case IngredientDescriptor(_ , incompatibleType) => validationErrors += s"Non supported process id type: ${incompatibleType} on interaction: '$interactionTransition'"
+      case IngredientDescriptor(_ , incompatibleType) => validationErrors += s"Non supported process id type: ${incompatibleType} on interaction: '${interactionTransition.interactionName}'"
     }
 
     // check if the predefined ingredient is of the expected type
@@ -26,9 +26,9 @@ object RecipeValidations {
       case (name, value) =>
         interactionTransition.requiredIngredients.find(_.name == name) match {
           case None =>
-            validationErrors += s"Predefined argument '$name' is not defined on interaction: '$interactionTransition'"
+            validationErrors += s"Predefined argument '$name' is not defined on interaction: '${interactionTransition.interactionName}'"
           case Some(ingredientDescriptor) if !value.isInstanceOf(ingredientDescriptor.`type`) =>
-            validationErrors += s"Predefined argument '$name' is not of type: ${ingredientDescriptor.`type`} on interaction: '$interactionTransition'"
+            validationErrors += s"Predefined argument '$name' is not of type: ${ingredientDescriptor.`type`} on interaction: '${interactionTransition.interactionName}'"
           case _ =>
         }
     }
@@ -53,7 +53,7 @@ object RecipeValidations {
               Some(
                 s"Ingredient '$name' for interaction '${t.interactionName}' is not provided by any event or interaction")
             case Some(IngredientDescriptor(name, ingredientType)) if !expectedType.isAssignableFrom(ingredientType) =>
-              Some(s"Interaction '$t' expects ingredient '$name:$expectedType', however incompatible type: '$ingredientType' was provided")
+              Some(s"Interaction '${t.interactionName}' expects ingredient '$name:$expectedType', however incompatible type: '$ingredientType' was provided")
             case _ =>
               None
           }
@@ -71,7 +71,7 @@ object RecipeValidations {
 
     compiledRecipe.interactionTransitions filterNot { interaction =>
       rootNode.isCoverable(compiledRecipe.petriNet.inMarking(interaction))
-    } map (interaction => s"$interaction is not executable") toSeq
+    } map (interaction => s"${interaction.interactionName} is not executable") toSeq
 
   }
 

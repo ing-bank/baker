@@ -26,8 +26,6 @@ case class InteractionTransition(eventsToFire: Seq[EventDescriptor],
 
   override val id: Long = il.sha256HashCode(s"InteractionTransition:$label")
 
-  override def toString: String = label
-
     /**
     * These are the ingredients that are not pre-defined or recipeInstanceId
     */

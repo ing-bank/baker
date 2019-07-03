@@ -43,11 +43,21 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
     }
 
     "Generate the same id for same recipe" in {
-
+      val first = RecipeCompiler.compileRecipe(getRecipe("ValidRecipe")).recipeId
       (1 to 10)
         .map(_ => getRecipe("ValidRecipe"))
         .map(RecipeCompiler.compileRecipe(_).recipeId)
-        .foreach(_ shouldBe "1fc5d434d145c3fb")
+        .foreach(_ shouldBe first)
+    }
+
+    "Generate different ids for recipes with changes on transitions other than the name" in {
+      val input = Ingredient[Int]("ingredient")
+      val output = Event("event", Seq.empty, None)
+      val interaction = Interaction("interaction", Seq(input), Seq(output))
+      val name = "RecipeName"
+      val recipe1 = Recipe(name).withInteraction(interaction.withPredefinedIngredients(input.name -> 1))
+      val recipe2 = Recipe(name).withInteraction(interaction.withPredefinedIngredients(input.name -> 2))
+      RecipeCompiler.compileRecipe(recipe1).recipeId shouldNot be(RecipeCompiler.compileRecipe(recipe2).recipeId)
     }
 
     "give a List of missing ingredients if an interaction has an ingredient that is not provided by any other event or interaction" in {
