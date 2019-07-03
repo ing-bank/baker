@@ -95,7 +95,7 @@ public class RecipeTest {
         assertEquals(recipe.getInteractions().size(), 0);
         assertEquals(recipe.getSieves().size(), 0);
         assertEquals(recipe.getEvents().get(0), sensoryEventWithIngredientCheck());
-        assertEquals(recipe.getEvents().get(1), sensoryEventWithoutIngredientCheck());
+        assertEquals(recipe.getEvents().get(1), sensoryEventWithoutIngredientAndFiringLimit2Check());
         assertEquals(recipe.getEvents().get(0).maxFiringLimit().get(), new Integer(1));
         assertEquals(recipe.getEvents().get(1).maxFiringLimit().get(), new Integer(2));
     }
@@ -110,8 +110,8 @@ public class RecipeTest {
         assertEquals(recipe.getEvents().size(), 2);
         assertEquals(recipe.getInteractions().size(), 0);
         assertEquals(recipe.getSieves().size(), 0);
-        assertEquals(recipe.getEvents().get(0), sensoryEventWithIngredientCheck());
-        assertEquals(recipe.getEvents().get(1), sensoryEventWithoutIngredientCheck());
+        assertEquals(recipe.getEvents().get(0), sensoryEventWithIngredientAndNoFiringLimitCheck());
+        assertEquals(recipe.getEvents().get(1), sensoryEventWithoutIngredientAndNoFiringLimitCheck());
         assertEquals(recipe.getEvents().get(0).maxFiringLimit(), scala.Option.empty());
         assertEquals(recipe.getEvents().get(1).maxFiringLimit(), scala.Option.empty());
     }

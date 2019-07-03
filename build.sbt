@@ -177,7 +177,7 @@ lazy val recipeCompiler = project.in(file("compiler"))
   .settings(
     moduleName := "baker-compiler",
     libraryDependencies ++=
-      compileDeps(slf4jApi) ++ testDeps(scalaTest, scalaCheck, logback)
+      compileDeps(slf4jApi) ++ testDeps(scalaTest, scalaCheck, logback, junitJupiter)
   )
   .dependsOn(recipeDsl, intermediateLanguage, testScope(recipeDsl))
 

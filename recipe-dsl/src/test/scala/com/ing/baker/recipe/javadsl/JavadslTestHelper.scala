@@ -11,7 +11,10 @@ object JavadslTestHelper {
   val interactionProvidedEventCheck: common.Event = new scaladsl.Event("InteractionProvidedEvent", Seq.empty, None)
   val interactionProvidedEvent2Check: common.Event = new scaladsl.Event("InteractionProvidedEvent2", Seq.empty, None)
   val sensoryEventWithIngredientCheck: common.Event = new scaladsl.Event("SensoryEventWithIngredient", Seq(initialIngredientCheck), Some(1))
+  val sensoryEventWithIngredientAndNoFiringLimitCheck: common.Event = new scaladsl.Event("SensoryEventWithIngredient", Seq(initialIngredientCheck), None)
   val sensoryEventWithoutIngredientCheck: common.Event = new scaladsl.Event("SensoryEventWithoutIngredient", Seq.empty, Some(1))
+  val sensoryEventWithoutIngredientAndFiringLimit2Check: common.Event = new scaladsl.Event("SensoryEventWithoutIngredient", Seq.empty, Some(2))
+  val sensoryEventWithoutIngredientAndNoFiringLimitCheck: common.Event = new scaladsl.Event("SensoryEventWithoutIngredient", Seq.empty, None)
 
   //Interactions
   val requiresrecipeInstanceIdStringInteractionCheck: scaladsl.Interaction = scaladsl.Interaction("RequiresRecipeInstanceIdStringInteraction", Seq(recipeInstanceIdStringCheck, initialIngredientCheck), Seq.empty)
