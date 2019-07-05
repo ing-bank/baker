@@ -7,7 +7,7 @@ import cats.instances.try_._
 import cats.syntax.traverse._
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.{NotifyBoth, NotifyWhenCompleted, NotifyWhenReceived}
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.{NotifyBoth, NotifyOnEvent, NotifyWhenCompleted, NotifyWhenReceived}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{ProcessEventReceivedResponse, _}
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.akka.actor.serialization.protomappings.SensoryEventStatusMappingHelper
@@ -190,6 +190,9 @@ object ProcessIndexProto {
             case FireSensoryEventReaction.NotifyBoth(waitForRetries, receiver) =>
               protobuf.FireSensoryEventReaction(
                 protobuf.FireSensoryEventReaction.SealedValue.Both(protobuf.NotifyBoth(Some(waitForRetries), Some(ctxToProto(receiver)))))
+            case FireSensoryEventReaction.NotifyOnEvent(waitForRetries, onEvent) =>
+              protobuf.FireSensoryEventReaction(
+                protobuf.FireSensoryEventReaction.SealedValue.OnEvent(protobuf.NotifyOnEvent(Some(waitForRetries), Some(onEvent))))
           })
         )
 
@@ -211,6 +214,11 @@ object ProcessIndexProto {
                 receiverProto <- versioned(receiverProto, "receiver")
                 receiver <- ctxFromProto(receiverProto)
               } yield NotifyBoth(waitForRetries, receiver)
+            case protobuf.FireSensoryEventReaction.SealedValue.OnEvent(protobuf.NotifyOnEvent(waitForRetriesProto, onEventProto)) =>
+              for {
+                waitForRetries <- versioned(waitForRetriesProto, "waitForRetries")
+                onEvent <- versioned(onEventProto, "onEvent")
+              } yield NotifyOnEvent(waitForRetries, onEvent)
             case protobuf.FireSensoryEventReaction.SealedValue.Empty =>
               Failure(new IllegalStateException("Received Empty of the oneof FireSensoryEventReaction protocol message."))
           }

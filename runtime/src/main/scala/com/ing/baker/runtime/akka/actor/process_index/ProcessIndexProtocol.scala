@@ -106,6 +106,14 @@ object ProcessIndexProtocol {
       * @param completeReceiver Actor to be used to notify completion
       */
     case class NotifyBoth(waitForRetries: Boolean, completeReceiver: ActorRef) extends FireSensoryEventReaction
+
+    /**
+      * The process instance should notify when an specific event has occurred on consequence of the initial fired event
+      *
+      * @param waitForRetries Expect retires of failed transitions
+      * @param onEvent event to be waited for
+      */
+    case class NotifyOnEvent(waitForRetries: Boolean, onEvent: String) extends FireSensoryEventReaction
   }
 
   case class ProcessEventReceivedResponse(status: SensoryEventStatus) extends BakerSerializable

@@ -33,6 +33,7 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
     case FireSensoryEventReaction.NotifyWhenReceived => false
     case FireSensoryEventReaction.NotifyWhenCompleted(waitForRetries0) => waitForRetries0
     case FireSensoryEventReaction.NotifyBoth(waitForRetries0, _) => waitForRetries0
+    case FireSensoryEventReaction.NotifyOnEvent(waitForRetries0, _) => waitForRetries0
   }
 
   def notifyReceive(recipe: CompiledRecipe): Unit = {
@@ -46,6 +47,8 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
         command.event))
     command.reaction match {
       case FireSensoryEventReaction.NotifyWhenCompleted(_) =>
+        ()
+      case FireSensoryEventReaction.NotifyOnEvent(_, _) =>
         ()
       case FireSensoryEventReaction.NotifyWhenReceived =>
         receiver ! ProcessEventReceivedResponse(SensoryEventStatus.Received)
@@ -65,12 +68,10 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
       ingredients = runtimeEvents.flatMap(_.providedIngredients).toMap
     )
     command.reaction match {
-      case FireSensoryEventReaction.NotifyWhenReceived =>
-        ()
-      case FireSensoryEventReaction.NotifyWhenCompleted(_) =>
-        receiver ! ProcessEventCompletedResponse(result)
       case FireSensoryEventReaction.NotifyBoth(_, alternativeReceiver) =>
         alternativeReceiver ! ProcessEventCompletedResponse(result)
+      case _ =>
+        receiver ! ProcessEventCompletedResponse(result)
     }
     stopActor()
   }
@@ -89,6 +90,8 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
     command.reaction match {
       case FireSensoryEventReaction.NotifyBoth(_, completeReceiver) =>
         receiver ! rejection; completeReceiver ! rejection
+      case FireSensoryEventReaction.NotifyOnEvent(_, _) =>
+        receiver ! rejection
       case FireSensoryEventReaction.NotifyWhenCompleted(_) =>
         receiver ! rejection
       case FireSensoryEventReaction.NotifyWhenReceived =>
@@ -139,20 +142,35 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
     }
 
   def streaming(runningJobs: Set[Long], cache: List[Any]): Receive = {
-    if(runningJobs.isEmpty) notifyComplete(cache)
-    PartialFunction {
-      case event: TransitionFired ⇒
-        context.become(streaming(runningJobs ++ event.newJobsIds - event.jobId, cache :+ event))
-      case event: TransitionFailed if event.strategy.isRetry && waitForRetries ⇒
-        context.become(streaming(runningJobs, cache :+ event))
-      case event: TransitionFailed ⇒
-        context.become(streaming(runningJobs - event.jobId, cache :+ event))
-      case ReceiveTimeout ⇒
-        log.debug("Timeout on SensoryEventResponseHandler when streaming")
-        stopActor()
-      case message ⇒
-        log.debug(s"Unexpected message $message on SensoryEventResponseHandler when streaming")
-        stopActor()
+    command.reaction match {
+      case FireSensoryEventReaction.NotifyOnEvent(_, onEvent)
+        if Option(cache.head.asInstanceOf[TransitionFired].output.asInstanceOf[EventInstance]).exists(_.name == onEvent) =>
+        notifyComplete(cache.reverse)
+        PartialFunction { _ => () }
+
+      case FireSensoryEventReaction.NotifyWhenCompleted(_) if runningJobs.isEmpty =>
+        notifyComplete(cache.reverse)
+        PartialFunction { _ => () }
+
+      case FireSensoryEventReaction.NotifyBoth(_, _) if runningJobs.isEmpty =>
+        notifyComplete(cache.reverse)
+        PartialFunction { _ => () }
+
+      case _ =>
+        PartialFunction {
+          case event: TransitionFired ⇒
+            context.become(streaming(runningJobs ++ event.newJobsIds - event.jobId, event :: cache))
+          case event: TransitionFailed if event.strategy.isRetry && waitForRetries ⇒
+            context.become(streaming(runningJobs, event :: cache))
+          case event: TransitionFailed ⇒
+            context.become(streaming(runningJobs - event.jobId, event :: cache))
+          case ReceiveTimeout ⇒
+            log.debug("Timeout on SensoryEventResponseHandler when streaming")
+            stopActor()
+          case message ⇒
+            log.debug(s"Unexpected message $message on SensoryEventResponseHandler when streaming")
+            stopActor()
+        }
     }
   }
 }

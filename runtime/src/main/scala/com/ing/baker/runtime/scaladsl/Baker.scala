@@ -37,11 +37,11 @@ trait Baker extends common.Baker[Future] with ScalaApi {
 
   override type EventResolutionsType = EventResolutions
 
-  override type RuntimeEventType = EventInstance
+  override type EventInstanceType = EventInstance
 
   override type ProcessStateType = ProcessState
 
-  override type InteractionImplementationType = InteractionInstance
+  override type InteractionInstanceType = InteractionInstance
 
   override type BakerEventType = BakerEvent
 
@@ -49,22 +49,28 @@ trait Baker extends common.Baker[Future] with ScalaApi {
 
   override type RecipeInformationType = RecipeInformation
 
-  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance): Future[SensoryEventStatus] =
+  override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance): Future[SensoryEventStatus] =
     fireEventAndResolveWhenReceived(recipeInstanceId, event, None)
 
-  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance): Future[EventResultType] =
+  override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance): Future[EventResultType] =
     fireEventAndResolveWhenCompleted(recipeInstanceId, event, None)
 
-  def fireEvent(recipeInstanceId: String, event: EventInstance): EventResolutionsType =
+  override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String): Future[EventResult] =
+    fireEventAndResolveOnEvent(recipeInstanceId, event, onEvent, None)
+
+  override def fireEvent(recipeInstanceId: String, event: EventInstance): EventResolutionsType =
     fireEvent(recipeInstanceId, event, None)
 
-  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: String): Future[SensoryEventStatus] =
+  override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: String): Future[SensoryEventStatus] =
     fireEventAndResolveWhenReceived(recipeInstanceId, event, Some(correlationId))
 
-  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: String): Future[EventResultType] =
+  override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: String): Future[EventResultType] =
     fireEventAndResolveWhenCompleted(recipeInstanceId, event, Some(correlationId))
 
-  def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: String): EventResolutionsType =
+  override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: String): Future[EventResult] =
+    fireEventAndResolveOnEvent(recipeInstanceId, event, onEvent, Some(correlationId))
+
+  override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: String): EventResolutionsType =
     fireEvent(recipeInstanceId, event, Some(correlationId))
 
 }

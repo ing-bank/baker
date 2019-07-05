@@ -75,6 +75,7 @@ message FireSensoryEventReaction {
         NotifyWhenReceived received = 1;
         NotifyWhenCompleted completed = 2;
         NotifyBoth both = 3;
+        NotifyOnEvent onEvent = 4;
     }
 }
 
@@ -89,6 +90,11 @@ message NotifyWhenCompleted {
 message NotifyBoth {
     optional bool waitForRetries = 1;
     optional ActorRefId receiver = 6;
+}
+
+message NotifyOnEvent {
+    optional bool waitForRetries = 1;
+    optional string onEvent = 2;
 }
 
 message RetryBlockedInteraction {

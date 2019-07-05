@@ -16,11 +16,11 @@ trait Baker[F[_]] extends LanguageApi {
 
   type EventResolutionsType <: EventResolutions[F] {type Language <: self.Language}
 
-  type RuntimeEventType <: EventInstance {type Language <: self.Language}
+  type EventInstanceType <: EventInstance {type Language <: self.Language}
 
   type ProcessStateType <: ProcessState {type Language <: self.Language}
 
-  type InteractionImplementationType <: InteractionInstance[F] {type Language <: self.Language}
+  type InteractionInstanceType <: InteractionInstance[F] {type Language <: self.Language}
 
   type BakerEventType <: BakerEvent {type Language <: self.Language}
 
@@ -72,7 +72,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param recipeInstanceId The process identifier
     * @param event     The event object
     */
-  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: RuntimeEventType): F[SensoryEventStatus]
+  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstanceType): F[SensoryEventStatus]
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -84,7 +84,20 @@ trait Baker[F[_]] extends LanguageApi {
     * @param recipeInstanceId The process identifier
     * @param event     The event object
     */
-  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: RuntimeEventType): F[EventResultType]
+  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstanceType): F[EventResultType]
+
+  /**
+    * Notifies Baker that an event has happened and waits until an specific event has executed.
+    *
+    * Possible failures:
+    * `NoSuchProcessException` -> When no process exists for the given id
+    * `ProcessDeletedException` -> If the process is already deleted
+    *
+    * @param recipeInstanceId The process identifier
+    * @param event     The event object
+    * @param on        The name of the event to wait for
+    */
+  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstanceType, on: String): F[EventResultType]
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -97,7 +110,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param recipeInstanceId The process identifier
     * @param event     The event object
     */
-  def fireEvent(recipeInstanceId: String, event: RuntimeEventType): EventResolutionsType
+  def fireEvent(recipeInstanceId: String, event: EventInstanceType): EventResolutionsType
 
   /**
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
@@ -110,7 +123,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: RuntimeEventType, correlationId: String): F[SensoryEventStatus]
+  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstanceType, correlationId: String): F[SensoryEventStatus]
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -123,7 +136,21 @@ trait Baker[F[_]] extends LanguageApi {
     * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: RuntimeEventType, correlationId: String): F[EventResultType]
+  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstanceType, correlationId: String): F[EventResultType]
+
+  /**
+    * Notifies Baker that an event has happened and waits until an specific event has executed.
+    *
+    * Possible failures:
+    * `NoSuchProcessException` -> When no process exists for the given id
+    * `ProcessDeletedException` -> If the process is already deleted
+    *
+    * @param recipeInstanceId The process identifier
+    * @param event     The event object
+    * @param onEvent        The name of the event to wait for
+    * @param correlationId Id used to ensure the process instance handles unique events
+    */
+  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstanceType, onEvent: String, correlationId: String): F[EventResultType]
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -137,7 +164,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireEvent(recipeInstanceId: String, event: RuntimeEventType, correlationId: String): EventResolutionsType
+  def fireEvent(recipeInstanceId: String, event: EventInstanceType, correlationId: String): EventResolutionsType
 
   /**
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
@@ -150,7 +177,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: RuntimeEventType, correlationId: language.Option[String]): F[SensoryEventStatus]
+  def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstanceType, correlationId: language.Option[String]): F[SensoryEventStatus]
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -163,7 +190,21 @@ trait Baker[F[_]] extends LanguageApi {
     * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: RuntimeEventType, correlationId: language.Option[String]): F[EventResultType]
+  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstanceType, correlationId: language.Option[String]): F[EventResultType]
+
+  /**
+    * Notifies Baker that an event has happened and waits until an specific event has executed.
+    *
+    * Possible failures:
+    * `NoSuchProcessException` -> When no process exists for the given id
+    * `ProcessDeletedException` -> If the process is already deleted
+    *
+    * @param recipeInstanceId The process identifier
+    * @param event     The event object
+    * @param onEvent        The name of the event to wait for
+    * @param correlationId Id used to ensure the process instance handles unique events
+    */
+  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstanceType, onEvent: String, correlationId: language.Option[String]): F[EventResultType]
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -177,7 +218,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireEvent(recipeInstanceId: String, event: RuntimeEventType, correlationId: language.Option[String]): EventResolutionsType
+  def fireEvent(recipeInstanceId: String, event: EventInstanceType, correlationId: language.Option[String]): EventResolutionsType
 
   /**
     * Returns an index of all running processes.
@@ -220,14 +261,14 @@ trait Baker[F[_]] extends LanguageApi {
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  def registerEventListener(recipeName: String, listenerFunction: language.BiConsumerFunction[String, RuntimeEventType]): F[Unit]
+  def registerEventListener(recipeName: String, listenerFunction: language.BiConsumerFunction[String, EventInstanceType]): F[Unit]
 
   /**
     * Registers a listener to all runtime events for all recipes that run in this Baker instance.
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  def registerEventListener(listenerFunction: language.BiConsumerFunction[String, RuntimeEventType]): F[Unit]
+  def registerEventListener(listenerFunction: language.BiConsumerFunction[String, EventInstanceType]): F[Unit]
 
   /**
     * Registers a listener function that listens to all BakerEvents
@@ -244,14 +285,14 @@ trait Baker[F[_]] extends LanguageApi {
     *
     * @param implementation The implementation object
     */
-  def addImplementation(implementation: InteractionImplementationType): F[Unit]
+  def addImplementation(implementation: InteractionInstanceType): F[Unit]
 
   /**
     * Adds a sequence of interaction implementation to baker.
     *
     * @param implementations The implementation object
     */
-  def addImplementations(implementations: language.Seq[InteractionImplementationType]): F[Unit]
+  def addImplementations(implementations: language.Seq[InteractionInstanceType]): F[Unit]
 
   /**
     * Attempts to gracefully shutdown the baker system.
@@ -272,7 +313,7 @@ trait Baker[F[_]] extends LanguageApi {
     *
     * @return
     */
-  def resolveInteraction(recipeInstanceId: String, interactionName: String, event: RuntimeEventType): F[Unit]
+  def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstanceType): F[Unit]
 
   /**
     * Stops the retrying of an interaction.
