@@ -5,7 +5,7 @@ import akka.stream.ActorMaterializer
 import akka.testkit.{TestDuration, TestKit, TestProbe}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.runtime.scaladsl.EventInstance
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.{NotifyBoth, NotifyWhenCompleted, NotifyWhenReceived}
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.{NotifyBoth, NotifyOnEvent, NotifyWhenCompleted, NotifyWhenReceived}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{FireSensoryEventRejection, ProcessEvent, ProcessEventCompletedResponse, ProcessEventReceivedResponse}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
@@ -97,6 +97,31 @@ class SensoryEventResponseHandlerSpec extends TestKit(ActorSystem("SensoryEventR
       clientReceived.expectNoMessage(100.millis)
       clientCompleted.expectMsg(ProcessEventCompletedResponse(EventResult(SensoryEventStatus.Completed, expectedEventNames, expectedIngredients)))
     }
+
+    "return a SensoryEventResult when processing the outcome of a sensory event with NotifyOnEvent reaction" in {
+      val client = TestProbe()
+      val sensoryEvent = EventInstance(webshop.orderPlaced.name, Map.empty)
+      val cmd = ProcessEvent("", sensoryEvent, None, 1 second, NotifyOnEvent(waitForRetries = true, "event2"))
+      val handler = system.actorOf(SensoryEventResponseHandler(client.ref, cmd))
+      val event1 = EventInstance("event1", Map("ingredient1" -> PrimitiveValue("value1")))
+      val event2 = EventInstance("event2", Map("ingredient2" -> PrimitiveValue("value2")))
+      val event3 = EventInstance("event3", Map("ingredient3" -> PrimitiveValue("value3")))
+      val events = List(event1, event2, event3)
+      val expectedEventNames = events.map(_.name).filterNot(_ == event3.name)
+      val expectedIngredients = events.foldLeft(Map.empty[String, Value]) { case (acc, event) =>
+        if(event.name == event3.name) acc
+        else acc ++ event.providedIngredients
+      }
+      handler ! webShopRecipe
+      client.expectNoMessage(100.millis)
+      handler ! TransitionFired(1, 1, None, Map.empty, Map.empty, Set(2, 3), event1)
+      client.expectNoMessage(100.millis)
+      handler ! TransitionFired(2, 2, None, Map.empty, Map.empty, Set.empty, event2)
+      client.expectMsg(ProcessEventCompletedResponse(EventResult(SensoryEventStatus.Completed, expectedEventNames, expectedIngredients)))
+      handler ! TransitionFired(3, 3, None, Map.empty, Map.empty, Set.empty, event3)
+      client.expectNoMessage(100.millis)
+    }
+
 
     "wait for the completion of all jobs even if one fails with TransitionFailed" in {
       val client = TestProbe()

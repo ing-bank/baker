@@ -272,4 +272,18 @@ class BaasBaker(config: Config,
     * @return
     */
   override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): Future[Unit] = ???
+
+  /**
+    * Notifies Baker that an event has happened and waits until an specific event has executed.
+    *
+    * Possible failures:
+    * `NoSuchProcessException` -> When no process exists for the given id
+    * `ProcessDeletedException` -> If the process is already deleted
+    *
+    * @param recipeInstanceId The process identifier
+    * @param event            The event object
+    * @param onEvent          The name of the event to wait for
+    * @param correlationId    Id used to ensure the process instance handles unique events
+    */
+  override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String]): Future[EventResult] = ???
 }

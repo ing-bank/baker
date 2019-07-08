@@ -52,11 +52,11 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
 
   override type EventResolutionsType = EventResolutions
 
-  override type RuntimeEventType = EventInstance
+  override type EventInstanceType = EventInstance
 
   override type ProcessStateType = ProcessState
 
-  override type InteractionImplementationType = InteractionInstance
+  override type InteractionInstanceType = InteractionInstance
 
   override type BakerEventType = BakerEvent
 
@@ -112,6 +112,9 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
   def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: String): CompletableFuture[EventResult] =
     fireEventAndResolveWhenCompleted(recipeInstanceId, event, Optional.of(correlationId))
 
+  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: String): CompletableFuture[EventResult] =
+    fireEventAndResolveOnEvent(recipeInstanceId, event, onEvent, Optional.of(correlationId))
+
   def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: String): EventResolutions =
     fireEvent(recipeInstanceId, event, Optional.of(correlationId))
 
@@ -121,6 +124,9 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
   def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance): CompletableFuture[EventResult] =
     fireEventAndResolveWhenCompleted(recipeInstanceId, event, Optional.empty[String]())
 
+  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String): CompletableFuture[EventResult] =
+    fireEventAndResolveOnEvent(recipeInstanceId, event, onEvent, Optional.empty[String]())
+
   def fireEvent(recipeInstanceId: String, event: EventInstance): EventResolutions =
     fireEvent(recipeInstanceId, event, Optional.empty[String]())
 
@@ -129,6 +135,15 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
 
   def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Optional[String]): CompletableFuture[EventResult] =
     toCompletableFuture(baker.fireEventAndResolveWhenCompleted(recipeInstanceId, event.asScala, Option.apply(correlationId.orElse(null)))).thenApply { result =>
+      new EventResult(
+        status = result.status,
+        events = result.events.asJava,
+        ingredients = result.ingredients.asJava
+      )
+    }
+
+  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Optional[String]): CompletableFuture[EventResult] =
+    toCompletableFuture(baker.fireEventAndResolveOnEvent(recipeInstanceId, event.asScala, onEvent, Option.apply(correlationId.orElse(null)))).thenApply { result =>
       new EventResult(
         status = result.status,
         events = result.events.asJava,
