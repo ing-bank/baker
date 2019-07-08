@@ -198,11 +198,6 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           Map("ingredient-0" -> PrimitiveValue(42),
             "ingredient-1" -> PrimitiveValue("data1"),
             "ingredient-2" -> PrimitiveValue("data2"))
-        state <- baker.getProcessState(recipeInstanceId)
-        _ = state.ingredients shouldBe
-          Map("ingredient-0" -> PrimitiveValue(42),
-            "ingredient-1" -> PrimitiveValue("data1"),
-            "ingredient-2" -> PrimitiveValue("data2"))
         _ <- Future(Thread.sleep(100))
         state <- baker.getProcessState(recipeInstanceId)
         _ = state.ingredients shouldBe
