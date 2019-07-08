@@ -148,7 +148,7 @@ trait ProcessInstanceRuntime[P, T, S, E] {
       else
         enabledParameters(instance.petriNet)(instance.availableMarking).get(transition) match {
           case None ⇒
-            (instance, Left(s"Not enough consumable tokens"))
+            (instance, Left(s"Not enough consumable tokens. This might have been caused because the event has already been fired up the the firing limit but the recipe requires more instances of the event, use withSensoryEventNoFiringLimit or increase the amount of firing limit on the recipe if such behaviour is desired"))
           case Some(params) ⇒
             val job = Job[P, T, S](instance.nextJobId(), correlationId, instance.state, transition, params.head, input)
             val updatedInstance = instance.copy[P, T, S](jobs = instance.jobs + (job.id -> job))
