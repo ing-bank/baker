@@ -54,7 +54,7 @@ baker.bake(recipe.recipeId(), recipeInstanceId);
 
 ## Providing a sensory event
 
-In our [webshop example](../index.md#visual-representation) the first events that can happen are `OrderPlaced`, `PaymentMade` and `CustomerInfoReceived`.
+In our [webshop example](index.md#visual-representation) the first events that can happen are `OrderPlaced`, `PaymentMade` and `CustomerInfoReceived`.
 
 These are so called [sensory events](dictionary.md#sensory-event) since they are not the result of an interaction but must be provided by the user of Baker.
 

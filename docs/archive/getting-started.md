@@ -39,18 +39,18 @@ An explanation of the baker modules.
 
 | Module | Description |
 | --- | --- |
-| recipe-dsl | [DSL](documentation/recipe-dsl.md) to describe your recipes (process blueprints) *declaritively* |
-| runtime | [Runtime](documentation/baker-runtime.md) based on [akka](htts://www.akka.io) to manage and execute your recipes |
-| compiler | [Compiles your recipe](documentation/baker-runtime.md#compiling-your-recipe) description into a model that the runtime can execute |
+| recipe-dsl | [DSL](recipe-dsl.md) to describe your recipes (process blueprints) *declaritively* |
+| runtime | [Runtime](baker-runtime.md) based on [akka](htts://www.akka.io) to manage and execute your recipes |
+| compiler | [Compiles your recipe](baker-runtime.md#compiling-your-recipe) description into a model that the runtime can execute |
 | intermediate-language | Recipe and Petri Net model that the runtime can execute |
 
 This is the dependency graph between the modules.
 
-![](images/deps.svg)
+![](../images/deps.svg)
 
 ## Continuing from here
 
 After adding the dependencies you can continue to:
 
- - Familiarize yourself with the [concepts](documentation/concepts.md).
- - Immediately start [writing your recipes](documentation/recipe-dsl.md).
+ - Familiarize yourself with the [concepts](concepts.md).
+ - Immediately start [writing your recipes](recipe-dsl.md).

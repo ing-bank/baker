@@ -1,6 +1,6 @@
 # Recipe Visualization
 
-Here we explain how to create a visual representation of your recipe like [this one](../index.md#visual-representation)
+Here we explain how to create a visual representation of your recipe like [this one](index.md#visual-representation)
 
 ## Generate a .dot representation
 

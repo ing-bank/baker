@@ -15,19 +15,26 @@ markdown_extensions:
   - admonition
 
 nav:
-  - 'index.md'
-  - 'getting-started.md'
-  - Documentation:
-    - 'documentation/concepts.md'
-    - DSL:
-      - 'documentation/recipe-dsl.md'
-      - 'documentation/interactions.md'
-    - 'documentation/recipe-visualization.md'
-    - 'documentation/baker-runtime.md'
-    - 'documentation/process-execution.md'
-    - 'documentation/event-listener.md'
-    - 'documentation/execution-semantics.md'
-    - 'documentation/type-system.md'
-    - 'documentation/split-brain-resolver.md'
-    - 'documentation/dictionary.md'
-  - 'migration-guide.md'
+  - Home: 'index.md'
+  - 'sections/getting-started.md'
+  - Concepts:
+      - 'sections/concepts/main-abstractions.md'
+      - 'sections/concepts/baker-types-and-values.md'
+      - 'sections/concepts/dsls.md'
+      - 'sections/concepts/runtime.md'
+      - 'sections/concepts/visualization.md'
+      - 'sections/concepts/event-listener.md'
+      - 'sections/concepts/stores.md'
+  - Development Life Cycle:
+      - 'sections/development-life-cycle/design-a-recipe.md'
+      - 'sections/development-life-cycle/use-visualizations.md'
+      - 'sections/development-life-cycle/implement-interactions.md'
+      - 'sections/development-life-cycle/bake-fire-events-and-inquiry.md'
+      - 'sections/development-life-cycle/test.md'
+      - 'sections/development-life-cycle/configure.md'
+      - 'sections/development-life-cycle/deploy.md'
+      - 'sections/development-life-cycle/monitor.md'
+      - 'sections/development-life-cycle/resolve-failed-recipe-instances.md'
+  - Versions:
+      - 'sections/versions/baker-2.md'
+      - 'sections/versions/baker-3.md'

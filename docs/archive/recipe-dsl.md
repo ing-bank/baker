@@ -2,7 +2,7 @@
 
 The recipe DSL allows you to declaritively describe your process.
 
-Let's start with the [web shop](../index.md#visual-representation) recipe as an example.
+Let's start with the [web shop](index.md#visual-representation) recipe as an example.
 
 The complete code example can be found [here](https://github.com/ing-bank/baker/blob/master/runtime/src/test/java/com/ing/baker/Webshop.java).
 
