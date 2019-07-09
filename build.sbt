@@ -231,3 +231,13 @@ lazy val integration = project.in(file("integration"))
   )
   .enablePlugins(MultiJvmPlugin)
   .configs(MultiJvm)
+
+lazy val examples = project
+  .in(file("examples"))
+  .settings(commonSettings)
+  .settings(noPublishSettings)
+  .settings(
+    moduleName := "examples",
+    libraryDependencies ++= testDeps(scalaTest)
+  )
+  .dependsOn(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage)
