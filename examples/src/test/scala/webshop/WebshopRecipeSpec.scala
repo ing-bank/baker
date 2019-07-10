@@ -14,14 +14,18 @@ class WebshopRecipeSpec extends FlatSpec {
 
   val baker: Baker = Baker.akkaLocalDefault(system, materializer)
 
-  "The WebshopRecipe" should "Compiles the recipe without errors" in {
+  "The WebshopRecipe" should "compile the recipe without errors" in {
     RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
   }
 
-  it should "Visualizes the recipe" in {
+  it should "visualize the recipe" in {
     val compiled = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
     val viz: String = compiled.getRecipeVisualization
     println(Console.GREEN + s"Recipe visualization, paste this into webgraphviz.com:")
     println(viz + Console.RESET)
+  }
+
+  "The WebshopRecipeReflection" should "compile the recipe without errors" in {
+    RecipeCompiler.compileRecipe(WebshopRecipeReflection.recipe)
   }
 }
