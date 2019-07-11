@@ -28,4 +28,11 @@ class WebshopRecipeSpec extends FlatSpec {
   "The WebshopRecipeReflection" should "compile the recipe without errors" in {
     RecipeCompiler.compileRecipe(WebshopRecipeReflection.recipe)
   }
+
+  it should "visualize the recipe" in {
+    val compiled = RecipeCompiler.compileRecipe(WebshopRecipeReflection.recipe)
+    val viz: String = compiled.getRecipeVisualization
+    println(Console.GREEN + s"Recipe visualization, paste this into webgraphviz.com:")
+    println(viz + Console.RESET)
+  }
 }

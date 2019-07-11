@@ -238,6 +238,13 @@ lazy val examples = project
   .settings(noPublishSettings)
   .settings(
     moduleName := "examples",
-    libraryDependencies ++= testDeps(scalaTest)
+    libraryDependencies ++= 
+      testDeps(
+        scalaTest,
+        scalaCheck,
+        junitInterface,
+        slf4jApi,
+        logback
+      )
   )
   .dependsOn(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage)

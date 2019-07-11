@@ -1,8 +1,6 @@
 package webshop
 
-import com.ing.baker.recipe.scaladsl.{Event, Interaction, Recipe}
-
-import scala.concurrent.Future
+import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 
 object WebshopRecipeReflection {
 
@@ -14,10 +12,17 @@ object WebshopRecipeReflection {
 
   case class ItemsReserved(reservedItems: List[String]) extends ReserveItemsOutput
 
-  trait ReserveItems {
-
-    def apply(recipeInstanceId: String, orderId: String, items: List[String]): Future[ReserveItemsOutput]
-  }
+  val ReserveItems = Interaction(
+    name = "ReserveItems",
+    inputIngredients = Seq(
+      Ingredient[String]("orderId"),
+      Ingredient[List[String]]("items")
+    ),
+    output = Seq(
+      Event[OrderHadUnavailableItems],
+      Event[ItemsReserved]
+    )
+  )
 
   val recipe: Recipe = Recipe("Webshop")
     .withSensoryEvents(
@@ -26,7 +31,7 @@ object WebshopRecipeReflection {
       Event[ItemsReserved]
     )
     .withInteractions(
-      Interaction[ReserveItems]
+      ReserveItems
     )
 }
 

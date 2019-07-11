@@ -1,20 +1,8 @@
 package webshop
 
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
-import com.ing.baker.types._
 
 object WebshopRecipe {
-
-
-  PrimitiveValue(42).isInstanceOf(Int32)
-
-  RecordValue(Map(
-    "world" -> PrimitiveValue("!")
-  )).isInstanceOf(
-    RecordType(Seq(
-      RecordField("world", CharArray)
-    ))
-  )
 
   val recipe: Recipe = Recipe("Webshop")
     .withSensoryEvents(
