@@ -41,7 +41,7 @@ object Ingredients {
 object Events {
 
     val OrderPlaced: Event = Event(
-      name = "Order Placed",
+      name = "OrderPlaced",
       providedIngredients = Seq(
         Ingredients.OrderId,
         Ingredients.Items
@@ -90,7 +90,7 @@ which we need to call to reserve the items, but this might either succeed or fai
 object Interactions {
     
     val ReserveItems: Interaction = Interaction(
-          name = "Reserve Items",
+          name = "ReserveItems",
           inputIngredients = Seq(
             Ingredients.OrderId,
             Ingredients.Items,
@@ -118,7 +118,7 @@ object Events {
     // ... previous events
     
     val OrderHadUnavailableItems: Event = Event(
-      name = "Order Had Unavailable Items",
+      name = "OrderHadUnavailableItems",
       providedIngredients = Seq(
         Ingredients.UnavailableItems
       ),
@@ -126,7 +126,7 @@ object Events {
     )
 
     val ItemsReserved: Event = Event(
-      name = "Items Reserved",
+      name = "ItemsReserved",
       providedIngredients = Seq(
         Ingredients.ReservedItems
       ),

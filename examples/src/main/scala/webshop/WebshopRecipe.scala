@@ -30,7 +30,7 @@ object WebshopRecipe {
   object Events {
 
     val OrderPlaced: Event = Event(
-      name = "Order Placed",
+      name = "OrderPlaced",
       providedIngredients = Seq(
         Ingredients.OrderId,
         Ingredients.Items
@@ -39,7 +39,7 @@ object WebshopRecipe {
     )
 
     val OrderHadUnavailableItems: Event = Event(
-      name = "Order Had Unavailable Items",
+      name = "OrderHadUnavailableItems",
       providedIngredients = Seq(
         Ingredients.UnavailableItems
       ),
@@ -47,7 +47,7 @@ object WebshopRecipe {
     )
 
     val ItemsReserved: Event = Event(
-      name = "Items Reserved",
+      name = "ItemsReserved",
       providedIngredients = Seq(
         Ingredients.ReservedItems
       ),
@@ -58,7 +58,7 @@ object WebshopRecipe {
   object Interactions {
 
     val ReserveItems: Interaction = Interaction(
-      name = "Reserve Items",
+      name = "ReserveItems",
       inputIngredients = Seq(
         Ingredients.OrderId,
         Ingredients.Items,
