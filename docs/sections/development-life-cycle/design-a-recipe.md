@@ -63,9 +63,9 @@ public class JWebshopRecipe {
     public static class OrderPlaced {
 
         public final String orderId;
-        public final String[] items;
+        public final List<String> items;
 
-        public OrderPlaced(String orderId, String[] items) {
+        public OrderPlaced(String orderId, List<String> items) {
             this.orderId = orderId;
             this.items = items;
         }
@@ -151,18 +151,18 @@ public class JWebshopRecipe {
 
         class OrderHadUnavailableItems implements ReserveItemsOutcome {
 
-            public final String[] unavailableItems;
+            public final List<String> unavailableItems;
 
-            public OrderHadUnavailableItems(String[] unavailableItems) {
+            public OrderHadUnavailableItems(List<String> unavailableItems) {
                 this.unavailableItems = unavailableItems;
             }
         }
 
         class ItemsReserved implements ReserveItemsOutcome {
 
-            public final String[] reservedItems;
+            public final List<String> reservedItems;
 
-            public ItemsReserved(String[] reservedItems) {
+            public ItemsReserved(List<String> reservedItems) {
                 this.reservedItems = reservedItems;
             }
         }
@@ -171,7 +171,7 @@ public class JWebshopRecipe {
         @FiresEvent(oneOf = {OrderHadUnavailableItems.class, ItemsReserved.class})
         // The @RequiresIngredient annotation communicates the reflection API about the ingredient names that other events
         // must provide to execute this interaction.
-        ReserveItemsOutcome apply(@RequiresIngredient("orderId") String id, @RequiresIngredient("items") String[] items);
+        ReserveItemsOutcome apply(@RequiresIngredient("orderId") String id, @RequiresIngredient("items") List<String> items);
     }
     
 }
@@ -282,9 +282,9 @@ public class JWebshopRecipe {
     public static class OrderPlaced {
 
         public final String orderId;
-        public final String[] items;
+        public final List<String> items;
 
-        public OrderPlaced(String orderId, String[] items) {
+        public OrderPlaced(String orderId, List<String> items) {
             this.orderId = orderId;
             this.items = items;
         }
@@ -297,18 +297,18 @@ public class JWebshopRecipe {
 
         class OrderHadUnavailableItems implements ReserveItemsOutcome {
 
-            public final String[] unavailableItems;
+            public final List<String> unavailableItems;
 
-            public OrderHadUnavailableItems(String[] unavailableItems) {
+            public OrderHadUnavailableItems(List<String> unavailableItems) {
                 this.unavailableItems = unavailableItems;
             }
         }
 
         class ItemsReserved implements ReserveItemsOutcome {
 
-            public final String[] reservedItems;
+            public final List<String> reservedItems;
 
-            public ItemsReserved(String[] reservedItems) {
+            public ItemsReserved(List<String> reservedItems) {
                 this.reservedItems = reservedItems;
             }
         }
@@ -317,7 +317,7 @@ public class JWebshopRecipe {
         @FiresEvent(oneOf = {OrderHadUnavailableItems.class, ItemsReserved.class})
         // The @RequiresIngredient annotation communicates the reflection API about the ingredient names that other events
         // must provide to execute this interaction.
-        ReserveItemsOutcome apply(@RequiresIngredient("orderId") String id, @RequiresIngredient("items") String[] items);
+        ReserveItemsOutcome apply(@RequiresIngredient("orderId") String id, @RequiresIngredient("items") List<String> items);
     }
 
     public final static Recipe recipe = new Recipe("WebshopRecipe")
