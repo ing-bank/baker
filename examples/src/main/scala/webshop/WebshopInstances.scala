@@ -48,6 +48,7 @@ object WebshopInstances {
         ))
 
       case Right(reservedItems) =>
+        println(Console.MAGENTA + reservedItems + Console.RESET)
         Some(EventInstance(
           name = WebshopRecipe.Events.ItemsReserved.name,
           providedIngredients = Map(

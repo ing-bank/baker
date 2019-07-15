@@ -3,10 +3,15 @@ package webshop;
 import akka.actor.ActorSystem;
 import akka.stream.ActorMaterializer;
 import akka.stream.Materializer;
+import com.ing.baker.compiler.RecipeCompiler;
+import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.runtime.javadsl.Baker;
 import com.ing.baker.runtime.javadsl.EventInstance;
 import com.ing.baker.runtime.javadsl.EventResult;
+import com.ing.baker.runtime.javadsl.InteractionInstance;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class JMain {
@@ -17,11 +22,23 @@ public class JMain {
         Materializer materializer = ActorMaterializer.create(actorSystem);
         Baker baker = Baker.akkaLocalDefault(actorSystem, materializer);
 
-        String recipeInstanceId = "recipe id from previously baked recipe instance";
-        String[] items = {"item1", "item2"};
+        List<String> items = new ArrayList<>(2);
+        items.add("item1");
+        items.add("item2");
         EventInstance firstOrderPlaced =
                 EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
 
-        CompletableFuture<EventResult> result = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced);
+        InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
+        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
+
+        String recipeInstanceId = "first-instance-id";
+        CompletableFuture<List<String>> result = baker.addImplementation(reserveItemsInstance)
+            .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
+            .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
+            .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
+            .thenApply(EventResult::events);
+
+        List<String> blockedResult = result.join();
+        assert(blockedResult.contains("OrderPlaced") && blockedResult.contains("ReservedItems"));
     }
 }

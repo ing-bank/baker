@@ -1,11 +1,14 @@
 package webshop
 
-import java.util.concurrent.Future
-
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
-import com.ing.baker.runtime.common.EventResult
+import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
+
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object Main extends App {
 
@@ -15,9 +18,19 @@ object Main extends App {
     ActorMaterializer()
   val baker: Baker = Baker.akkaLocalDefault(actorSystem, materializer)
 
-  val FirstOrderPlaced: EventInstance =
-    EventInstance.unsafeFrom(WebshopRecipeReflection.OrderPlaced("order-uuid", List("item1", "item2")))
-  val recipeInstanceId: String = "recipe id from previously baked recipe instance"
+  val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
 
-  val result = Future[EventResult] = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, FirstOrderPlaced)
+  val program: Future[Unit] = for {
+    _ <- baker.addImplementation(WebshopInstances.ReserveItemsInstance)
+    recipeId <- baker.addRecipe(compiledRecipe)
+    _ <- baker.bake(recipeId, "first-instance-id")
+    firstOrderPlaced: EventInstance =
+      EventInstance.unsafeFrom(WebshopRecipeReflection.OrderPlaced("order-uuid", List("item1", "item2")))
+    result <- baker.fireEventAndResolveWhenCompleted("first-instance-id", firstOrderPlaced)
+  } yield assert(result.events == Seq(
+    WebshopRecipe.Events.OrderPlaced.name,
+    WebshopRecipe.Events.ItemsReserved.name
+  ))
+
+  Await.result(program, 5.seconds)
 }
