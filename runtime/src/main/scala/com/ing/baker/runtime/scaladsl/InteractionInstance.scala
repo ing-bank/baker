@@ -19,9 +19,9 @@ import scala.util.Try
 
 case class InteractionInstance(
     name: String,
-    input: Map[String, Type],
-    output: Option[Map[String, Map[String, Type]]],
-    run: Seq[IngredientInstance] => Future[Option[EventInstance]]
+    input: Seq[Type],
+    run: Seq[IngredientInstance] => Future[Option[EventInstance]],
+    output: Option[Map[String, Map[String, Type]]] = None
   ) extends common.InteractionInstance[Future] with ScalaApi { self =>
 
   override type Event = EventInstance
@@ -35,7 +35,7 @@ case class InteractionInstance(
     new javadsl.InteractionInstance {
       override val name: String =
         self.name
-      override val input: util.Map[String, Type] =
+      override val input: util.List[Type] =
         self.input.asJava
       override val output: Optional[util.Map[String, util.Map[String, Type]]] =
         self.output match {
@@ -82,13 +82,13 @@ object InteractionInstance {
           }.getOrElse(method.getDeclaringClass).getSimpleName
       }
     }
-    val input: Map[String, Type] = {
-      method.getGenericParameterTypes.zip(method.getParameters).map { case (typ, parameter) =>
-        try { parameter.getName -> Converters.readJavaType(typ) }
+    val input: Seq[Type] = {
+      method.getGenericParameterTypes.zip(method.getParameters).map { case (typ, _) =>
+        try { Converters.readJavaType(typ) }
         catch { case e: Exception =>
           throw new IllegalArgumentException(s"Unsupported parameter type for interaction implementation '$name'", e)
         }
-      }.toMap
+      }
     }
     val run: Seq[IngredientInstance] => Future[Option[EventInstance]] = runtimeInput => {
       // Translate the Value objects to the expected runtimeInput types
@@ -111,6 +111,6 @@ object InteractionInstance {
           Future.successful(None)
       }
     }
-    InteractionInstance(name, input, None, run)
+    InteractionInstance(name, input, run)
   }
 }

@@ -27,7 +27,7 @@ class InteractionManager(private var interactionImplementations: Seq[Interaction
       interaction
         .requiredIngredients
         .forall { descriptor =>
-          implementation.input.exists(_._2.isAssignableFrom(descriptor.`type`))
+          implementation.input.exists(_.isAssignableFrom(descriptor.`type`))
         }
     interactionNameMatches && inputSizeMatches && inputNamesAndTypesMatches
   }

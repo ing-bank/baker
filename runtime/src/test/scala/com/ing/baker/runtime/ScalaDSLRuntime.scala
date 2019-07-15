@@ -17,7 +17,7 @@ object ScalaDSLRuntime {
   def ScalaInteractionImplementation(i: Interaction, fn: Seq[IngredientInstance] => EventInstance): InteractionInstance = {
     InteractionInstance(
       name = i.name,
-      input = i.inputIngredients.map(x => x.name -> x.ingredientType).toMap,
+      input = i.inputIngredients.map(_.ingredientType),
       output = None,
       run = input => Future.successful(Some(fn(input)))
     )
