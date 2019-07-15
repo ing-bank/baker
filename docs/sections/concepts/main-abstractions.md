@@ -211,6 +211,9 @@ is used by the Baker runtime to find the correct `InteractionImplementation` to 
 
 __Note: Names of sensory `Event` and `EventInstance` must match, so that Baker can correctly execute your process flow.__
 
+__Note: For asynchronous programming, the Scala DSL `InteractionInstance` can return a `Future[A]` and the Java DSL can
+return a `CompletableFuture<A>`, and the Baker runtime will handle the async results of the instances.__
+
 ``` scala tab="Scala"
 /** Interaction */
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction}
@@ -276,6 +279,7 @@ public interface ReserveItems extends Interaction {
     // Annotations are needed for wiring ingredients and validating events.
     @FiresEvent(oneOf = {OrderHadUnavailableItems.class, ItemsReserved.class})
     // The name of the method must be "apply" for the reflection API to work.
+    // This method can also return a `CompletableFuture<ReserveItemsOutcome>` for asynchronous programming.
     ReserveItemsOutcome apply(@RequiresIngredient("orderId") String id, @RequiresIngredient("items") List<String> items);
 }
 
