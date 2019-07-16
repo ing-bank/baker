@@ -265,4 +265,7 @@ public class JMain {
 ## Inquiry
 
 As a final step on what you might want to do with Baker (without considering handling failed `RecipeInstances`),
-is that you can query the state of a `RecipeInstance` at any given moment. For this you can use the `Baker.get
+is that you can query the state of a `RecipeInstance` at any given moment. For this you can use the 
+`Baker.getInteractionInstanceState(recipeInstanceId)` API. This will return an `InteractionInstanceState` object which 
+contains all the event names with timestamps that have executed, and the current available provided ingredients waiting 
+for the next `InteractionInstances` to consume.
