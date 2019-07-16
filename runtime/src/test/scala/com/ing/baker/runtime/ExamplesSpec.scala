@@ -68,7 +68,7 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
       val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
       for {
-        _ <- Future.traverse(implementations)(baker.addImplementation)
+        _ <- Future.traverse(implementations)(baker.addInteractionInstace)
         recipeId <- baker.addRecipe(compiledRecipe)
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
@@ -80,7 +80,7 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
           goods -> testGoods,
           customerInfo -> testCustomerInfoData,
           trackingId -> testTrackingId)
-        state <- baker.getProcessState(recipeInstanceId)
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
         // assert the that all ingredients are provided
         _ = state.ingredients shouldBe expectedIngredients
         expectedEvents = List(

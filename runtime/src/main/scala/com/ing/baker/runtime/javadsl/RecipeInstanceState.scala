@@ -15,11 +15,11 @@ import scala.collection.JavaConverters._
   * @param ingredients The accumulated ingredients
   * @param eventNames  The names of the events occurred so far
   */
-class ProcessState(
+class RecipeInstanceState(
     val recipeInstanceId: String,
     val ingredients: java.util.Map[String, Value],
     val events: java.util.List[EventMoment]
-  ) extends common.ProcessState with JavaApi {
+  ) extends common.RecipeInstanceState with JavaApi {
 
   type EventType = EventMoment
 
@@ -51,6 +51,6 @@ class ProcessState(
     */
   def getrecipeInstanceId: String = recipeInstanceId
 
-  def asScala: scaladsl.ProcessState =
-    scaladsl.ProcessState(recipeInstanceId, ingredients.asScala.toMap, events.asScala.map(_.asScala()))
+  def asScala: scaladsl.RecipeInstanceState =
+    scaladsl.RecipeInstanceState(recipeInstanceId, ingredients.asScala.toMap, events.asScala.map(_.asScala()))
 }

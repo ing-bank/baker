@@ -18,7 +18,7 @@ trait Baker[F[_]] extends LanguageApi {
 
   type EventInstanceType <: EventInstance {type Language <: self.Language}
 
-  type ProcessStateType <: ProcessState {type Language <: self.Language}
+  type ProcessStateType <: RecipeInstanceState {type Language <: self.Language}
 
   type InteractionInstanceType <: InteractionInstance[F] {type Language <: self.Language}
 
@@ -230,7 +230,7 @@ trait Baker[F[_]] extends LanguageApi {
     *
     * @return An index of all processes
     */
-  def getAllProcessesMetadata: F[language.Set[ProcessMetadataType]]
+  def getAllInteractionInstancesMetadata: F[language.Set[ProcessMetadataType]]
 
   /**
     * Returns the process state.
@@ -238,7 +238,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param recipeInstanceId The process identifier
     * @return The process state.
     */
-  def getProcessState(recipeInstanceId: String): F[ProcessStateType]
+  def getRecipeInstanceState(recipeInstanceId: String): F[ProcessStateType]
 
   /**
     * Returns all provided ingredients for a given process id.
@@ -285,14 +285,14 @@ trait Baker[F[_]] extends LanguageApi {
     *
     * @param implementation The implementation object
     */
-  def addImplementation(implementation: InteractionInstanceType): F[Unit]
+  def addInteractionInstace(implementation: InteractionInstanceType): F[Unit]
 
   /**
     * Adds a sequence of interaction implementation to baker.
     *
     * @param implementations The implementation object
     */
-  def addImplementations(implementations: language.Seq[InteractionInstanceType]): F[Unit]
+  def addInteractionInstance(implementations: language.Seq[InteractionInstanceType]): F[Unit]
 
   /**
     * Attempts to gracefully shutdown the baker system.

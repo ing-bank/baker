@@ -154,7 +154,7 @@ class BaasBaker(config: Config,
     * @param recipeInstanceId The process identifier
     * @return The process state.
     */
-  override def getProcessState(recipeInstanceId: String): Future[ProcessState] = {
+  override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] = {
     val request = HttpRequest(
       uri = s"$baseUri/$recipeInstanceId/state",
       method = GET)
@@ -168,7 +168,7 @@ class BaasBaker(config: Config,
     * @return The provided ingredients.
     */
   override def getIngredients(recipeInstanceId: String): Future[Map[String, Value]] = {
-    getProcessState(recipeInstanceId).map(_.ingredients)
+    getRecipeInstanceState(recipeInstanceId).map(_.ingredients)
   }
 
   /**
@@ -189,8 +189,8 @@ class BaasBaker(config: Config,
     *
     * @param implementations The implementation object
     */
-  override def addImplementations(implementations: Seq[InteractionInstance]): Future[Unit] = {
-    Future.successful(implementations.foreach(addImplementation))
+  override def addInteractionInstance(implementations: Seq[InteractionInstance]): Future[Unit] = {
+    Future.successful(implementations.foreach(addInteractionInstace))
   }
 
   /**
@@ -198,7 +198,7 @@ class BaasBaker(config: Config,
     *
     * @param implementation An InteractionImplementation instance
     */
-  override def addImplementation(implementation: InteractionInstance): Future[Unit] = {
+  override def addInteractionInstace(implementation: InteractionInstance): Future[Unit] = {
     Future.successful(remoteInteractionLauncher.addImplementation(implementation))
   }
 
@@ -219,7 +219,7 @@ class BaasBaker(config: Config,
     *
     * @return An index of all processes
     */
-  override def getAllProcessesMetadata: Future[Set[ProcessMetadata]] = ???
+  override def getAllInteractionInstancesMetadata: Future[Set[ProcessMetadata]] = ???
 
   /**
     * Attempts to gracefully shutdown the baker system.

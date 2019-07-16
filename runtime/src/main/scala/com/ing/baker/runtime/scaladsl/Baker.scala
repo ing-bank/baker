@@ -39,7 +39,7 @@ trait Baker extends common.Baker[Future] with ScalaApi {
 
   override type EventInstanceType = EventInstance
 
-  override type ProcessStateType = ProcessState
+  override type ProcessStateType = RecipeInstanceState
 
   override type InteractionInstanceType = InteractionInstance
 

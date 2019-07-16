@@ -14,7 +14,7 @@ import com.ing.baker.baas.interaction.server.protocol.{ExecuteInteractionHTTPReq
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.{RecipeInformation, SensoryEventStatus}
-import com.ing.baker.runtime.scaladsl.ProcessState
+import com.ing.baker.runtime.scaladsl.RecipeInstanceState
 import com.ing.baker.runtime.scaladsl.EventInstance
 import org.slf4j.LoggerFactory
 
@@ -76,8 +76,8 @@ trait ClientUtils {
     serializer.serialize(obj).get
   }
 
-  implicit val processStateMarshaller = akkaProtoMarshaller[ProcessState]
-  implicit val processStateUnmarshaller = akkaProtoUnmarshaller[ProcessState]
+  implicit val processStateMarshaller = akkaProtoMarshaller[RecipeInstanceState]
+  implicit val processStateUnmarshaller = akkaProtoUnmarshaller[RecipeInstanceState]
 
   implicit val executeInteractionHTTPRequestMarshaller = akkaProtoMarshaller[ExecuteInteractionHTTPRequest]
   implicit val executeInteractionHTTPRequestUnmarshaller = akkaProtoUnmarshaller[ExecuteInteractionHTTPRequest]

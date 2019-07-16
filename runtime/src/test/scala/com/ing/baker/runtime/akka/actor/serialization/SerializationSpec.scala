@@ -22,7 +22,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
 import com.ing.baker.runtime.akka.actor.serialization.Encryption.{AESEncryption, NoEncryption}
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.{EventMoment, ProcessState, EventInstance, EventResult}
+import com.ing.baker.runtime.scaladsl.{EventMoment, RecipeInstanceState, EventInstance, EventResult}
 import com.ing.baker.types.Value
 import com.ing.baker.{AllTypeRecipe, types}
 
@@ -219,11 +219,11 @@ object SerializationSpec {
       occurredOn <- Gen.posNum[Long]
     } yield EventMoment(eventName, occurredOn)
 
-    val processStateGen: Gen[ProcessState] = for {
+    val processStateGen: Gen[RecipeInstanceState] = for {
       recipeInstanceId <- recipeInstanceIdGen
       ingredients <- Gen.mapOf(ingredientsGen)
       events <- Gen.listOf(eventMomentsGen)
-    } yield ProcessState(recipeInstanceId, ingredients, events)
+    } yield RecipeInstanceState(recipeInstanceId, ingredients, events)
 
     val messagesGen: Gen[AnyRef] = Gen.oneOf(runtimeEventGen, processStateGen)
 
@@ -394,7 +394,7 @@ object SerializationSpec {
     val transitionIdGen: Gen[Id] = Gen.posNum[Long]
     val placeIdGen: Gen[Id] = Gen.posNum[Long]
     val jobIdGen: Gen[Id] = Gen.posNum[Long]
-    val processStateGen: Gen[ProcessState] = Runtime.processStateGen
+    val processStateGen: Gen[RecipeInstanceState] = Runtime.processStateGen
     val tokenDataGen: Gen[String] = Gen.alphaStr
     val transitionInputGen: Gen[EventInstance] = Runtime.runtimeEventGen
     val correlationIdGen: Gen[String] = Gen.uuid.map(_.toString)

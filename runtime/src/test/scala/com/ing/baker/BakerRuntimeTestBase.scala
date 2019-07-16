@@ -210,7 +210,7 @@ trait BakerRuntimeTestBase
   protected def setupBakerWithRecipe(recipe: common.Recipe, implementations: Seq[InteractionInstance])
                                     (implicit actorSystem: ActorSystem, materializer: Materializer): Future[(Baker, String)] = {
     val baker = Baker.akka(ConfigFactory.load(), actorSystem, materializer)
-    baker.addImplementations(implementations).flatMap { _ =>
+    baker.addInteractionInstance(implementations).flatMap { _ =>
       baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).map(baker -> _)(actorSystem.dispatcher)
     }
   }
@@ -218,7 +218,7 @@ trait BakerRuntimeTestBase
   protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem, materializer: Materializer): Future[Baker] = {
     setupMockResponse()
     val baker = Baker.akka(ConfigFactory.load(), actorSystem, materializer)
-    baker.addImplementations(mockImplementations).map { _ => baker }
+    baker.addInteractionInstance(mockImplementations).map { _ => baker }
   }
 
   protected def setupMockResponse(): Unit = {
