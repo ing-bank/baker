@@ -21,7 +21,7 @@ object Main extends App {
   val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
 
   val program: Future[Unit] = for {
-    _ <- baker.addImplementation(WebshopInstances.ReserveItemsInstance)
+    _ <- baker.addImplementation(WebshopInstancesReflection.reserveItemsInstance)
     recipeId <- baker.addRecipe(compiledRecipe)
     _ <- baker.bake(recipeId, "first-instance-id")
     firstOrderPlaced: EventInstance =

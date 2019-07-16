@@ -85,6 +85,9 @@ information about this and other features of events please refer to [this sectio
 Then, the desired actions can be modeled as `interactions`, in our case we are told that it exists a warehouse service 
 which we need to call to reserve the items, but this might either succeed or fail.
 
+_Note: Notice that when using the reflection API, the Java interface or Scala trait that will represent your interaction
+must have a method named `apply`, this is the method that the reflection API will convert into Baker types/ingredients/events._
+
 ```scala tab="Scala"
 
 object Interactions {
@@ -136,7 +139,7 @@ object Events {
 
 ```
 
-```scala tab="Java"
+```scala tab="Java (Reflection API)"
 
 public class JWebshopRecipe {
     
@@ -171,6 +174,7 @@ public class JWebshopRecipe {
         @FiresEvent(oneOf = {OrderHadUnavailableItems.class, ItemsReserved.class})
         // The @RequiresIngredient annotation communicates the reflection API about the ingredient names that other events
         // must provide to execute this interaction.
+        // The method MUST be named `apply`
         ReserveItemsOutcome apply(@RequiresIngredient("orderId") String id, @RequiresIngredient("items") List<String> items);
     }
     
@@ -190,7 +194,6 @@ You can create also interactions which take no input ingredients but are execute
 ingredients) are fired, for this and other features please refer to the conceptual documentation found [here]().
 
 The final step is to create an object that will hold all of these descriptions into what we call a Recipe.
-
 
 ```scala tab="Scala"
 

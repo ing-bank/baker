@@ -12,24 +12,25 @@ object WebshopInstancesReflection {
     def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput]
   }
 
-  val reserveItemsInstance: InteractionInstance = InteractionInstance.unsafeFrom(
-    new ReserveItems {
+  class ReserveItemsInstance extends ReserveItems {
 
-      def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput] = {
+    override def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput] = {
 
-        // Http call to the Warehouse service
-        val response: Future[Either[List[String], List[String]]] =
-        // This is mocked for the sake of the example
-          Future.successful(Right(items))
+      // Http call to the Warehouse service
+      val response: Future[Either[List[String], List[String]]] =
+      // This is mocked for the sake of the example
+        Future.successful(Right(items))
 
-        // Build an event instance that Baker understands
-        response.map {
-          case Left(unavailableItems) =>
-            WebshopRecipeReflection.OrderHadUnavailableItems(unavailableItems)
-          case Right(reservedItems) =>
-            WebshopRecipeReflection.ItemsReserved(reservedItems)
-        }
+      // Build an event instance that Baker understands
+      response.map {
+        case Left(unavailableItems) =>
+          WebshopRecipeReflection.OrderHadUnavailableItems(unavailableItems)
+        case Right(reservedItems) =>
+          WebshopRecipeReflection.ItemsReserved(reservedItems)
       }
     }
-  )
+  }
+
+  val reserveItemsInstance: InteractionInstance =
+    InteractionInstance.unsafeFrom(new ReserveItemsInstance)
 }
