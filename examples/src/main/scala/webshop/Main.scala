@@ -27,10 +27,11 @@ object Main extends App {
     firstOrderPlaced: EventInstance =
       EventInstance.unsafeFrom(WebshopRecipeReflection.OrderPlaced("order-uuid", List("item1", "item2")))
     result <- baker.fireEventAndResolveWhenCompleted("first-instance-id", firstOrderPlaced)
-  } yield assert(result.events == Seq(
-    WebshopRecipe.Events.OrderPlaced.name,
-    WebshopRecipe.Events.ItemsReserved.name
-  ))
+    state <- baker.getProcessState("first-instance-id")
+    expectedEvents = Seq(WebshopRecipe.Events.OrderPlaced.name, WebshopRecipe.Events.ItemsReserved.name)
+    _ = assert(result.events == expectedEvents)
+    _ = assert(state.events.map(_.name) == expectedEvents)
+  } yield ()
 
   Await.result(program, 5.seconds)
 }
