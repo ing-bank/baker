@@ -149,3 +149,10 @@ case class RecipeVisualStyle(
 )
 
 ```
+
+## Recipe Instance State Visualizations
+
+Another type of visualization that can be done is the `Baker.getVisualState(recipeInstanceId)` API, this will generate the
+same GraphViz string but of the state of a currently running `ProcessInstance`, referenced by the input recipeInstanceId.
+
+![](../../images/webshop-state-1.svg)

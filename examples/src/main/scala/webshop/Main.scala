@@ -31,6 +31,8 @@ object Main extends App {
     expectedEvents = Seq(WebshopRecipe.Events.OrderPlaced.name, WebshopRecipe.Events.ItemsReserved.name)
     _ = assert(result.events == expectedEvents)
     _ = assert(state.events.map(_.name) == expectedEvents)
+    visualization <- baker.getVisualState("first-instance-id")
+    _ = println(visualization)
   } yield ()
 
   Await.result(program, 5.seconds)

@@ -264,8 +264,20 @@ public class JMain {
 
 ## Inquiry
 
+### Recipe Instance State
+
 As a final step on what you might want to do with Baker (without considering handling failed `RecipeInstances`),
 is that you can query the state of a `RecipeInstance` at any given moment. For this you can use the 
 `Baker.getInteractionInstanceState(recipeInstanceId)` API. This will return an `InteractionInstanceState` object which 
 contains all the event names with timestamps that have executed, and the current available provided ingredients waiting 
 for the next `InteractionInstances` to consume.
+
+### Recipe Instance State Visualizations
+
+Another method of fetching state is the visual representation of it. You can do that with the `Baker.getVisualState(recipeInstanceId)`
+API. This will return a GraphViz string like the [visualization api]() that you can convert into an image.
+
+Here is a visualization of the state of another webshop example, one can clearly see that the process is flowing correctly
+without failures and that it is still waiting for the payment sensory event to be fired.
+
+![](../../images/webshop-state-1.svg)
