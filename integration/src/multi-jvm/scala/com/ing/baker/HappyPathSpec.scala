@@ -157,13 +157,13 @@ class HappyPath extends MultiNodeSpec(HappyPathConfig)
     Await.result(baker.bake(recipeId, recipeInstanceId), 10 seconds)
 
     val sensoryEventStatus1 = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, placeOrderRuntimeEvent)
-    Await.result(sensoryEventStatus1.flatMap(_ => baker.getProcessState(recipeInstanceId)), 10 seconds).eventNames
+    Await.result(sensoryEventStatus1.flatMap(_ => baker.getRecipeInstanceState(recipeInstanceId)), 10 seconds).eventNames
 
     val sensoryEventStatus2 = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, receivedDataRuntimeEvent)
-    Await.result(sensoryEventStatus2.flatMap(_ => baker.getProcessState(recipeInstanceId)), 10 seconds).eventNames
+    Await.result(sensoryEventStatus2.flatMap(_ => baker.getRecipeInstanceState(recipeInstanceId)), 10 seconds).eventNames
 
     val sensoryEventStatus3 = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMadeRuntimeEvent)
-    val events3 = Await.result(sensoryEventStatus3.flatMap(_ => baker.getProcessState(recipeInstanceId)), 10 seconds).eventNames
+    val events3 = Await.result(sensoryEventStatus3.flatMap(_ => baker.getRecipeInstanceState(recipeInstanceId)), 10 seconds).eventNames
 
     assert(events3 == List(
       webshop.orderPlaced.name,
@@ -183,7 +183,7 @@ class HappyPath extends MultiNodeSpec(HappyPathConfig)
       val materializer = ActorMaterializer()
       val config = ConfigFactory.load().withFallback(seedNodeConfig(node(node1)))
       val baker = Baker.akka(config, system, materializer)
-      baker.addImplementations(HappyPath.implementations)
+      baker.addInteractionInstance(HappyPath.implementations)
       val compiled = RecipeCompiler.compileRecipe(webshop.webShopRecipe)
       val recipeId = Await.result(baker.addRecipe(compiled), 10 seconds)
 

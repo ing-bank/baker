@@ -59,7 +59,7 @@ public class BakerTest {
 
         String recipeInstanceId = UUID.randomUUID().toString();
         Baker jBaker = Baker.akka(config, actorSystem, materializer);
-        java.util.Map<String, Value> ingredients = jBaker.addImplementations(implementationsList)
+        java.util.Map<String, Value> ingredients = jBaker.addInteractionInstance(implementationsList)
                 .thenCompose(x -> jBaker.addRecipe(compiledRecipe))
                 .thenCompose(recipeId -> {
                     assertEquals(compiledRecipe.getValidationErrors().size(), 0);
@@ -67,8 +67,8 @@ public class BakerTest {
                 })
                 .thenCompose(x -> jBaker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.from(new JavaCompiledRecipeTest.EventOne())))
                 .thenApply(EventResult::events)
-                .thenCompose(x -> jBaker.getProcessState(recipeInstanceId))
-                .thenApply(ProcessState::getIngredients)
+                .thenCompose(x -> jBaker.getRecipeInstanceState(recipeInstanceId))
+                .thenApply(RecipeInstanceState::getIngredients)
                 .get();
 
         assertEquals(1, ingredients.size());
@@ -83,13 +83,13 @@ public class BakerTest {
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
 
         Baker jBaker = Baker.akka(config, actorSystem, materializer);
-        jBaker.addImplementations(implementationsList);
+        jBaker.addInteractionInstance(implementationsList);
         String recipeId = jBaker.addRecipe(compiledRecipe).get();
 
         String requestId = UUID.randomUUID().toString();
         jBaker.bake(recipeId, requestId).get();
         jBaker.fireEventAndResolveWhenCompleted(requestId, EventInstance.from(new JavaCompiledRecipeTest.EventOne())).get();
-        java.util.Map<String, Value> ingredients = jBaker.getProcessState(requestId).get().getIngredients();
+        java.util.Map<String, Value> ingredients = jBaker.getRecipeInstanceState(requestId).get().getIngredients();
 
         assertEquals(1, ingredients.size());
 
@@ -112,7 +112,7 @@ public class BakerTest {
 
         Baker jBaker = Baker.akka(config, actorSystem, materializer);
 
-        jBaker.addImplementations(implementationsList);
+        jBaker.addInteractionInstance(implementationsList);
 
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
 

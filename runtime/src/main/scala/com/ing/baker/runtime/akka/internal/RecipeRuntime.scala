@@ -14,16 +14,16 @@ import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.scaladsl.{InteractionCompleted, InteractionFailed, InteractionStarted}
 import com.ing.baker.runtime.akka.internal.RecipeRuntime._
 import com.ing.baker.runtime.scaladsl.EventMoment
-import com.ing.baker.runtime.scaladsl.ProcessState
+import com.ing.baker.runtime.scaladsl.RecipeInstanceState
 import com.ing.baker.runtime.scaladsl.EventInstance
-import com.ing.baker.runtime.scaladsl.{ProcessState, EventInstance, IngredientInstance}
+import com.ing.baker.runtime.scaladsl.{RecipeInstanceState, EventInstance, IngredientInstance}
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.MDC
 
 import scala.concurrent.ExecutionContext
 
 object RecipeRuntime {
-  def recipeEventSourceFn: Transition => (ProcessState => EventInstance => ProcessState) =
+  def recipeEventSourceFn: Transition => (RecipeInstanceState => EventInstance => RecipeInstanceState) =
     _ => state => {
       case null => state
       case event: EventInstance =>
@@ -92,7 +92,7 @@ object RecipeRuntime {
   /**
     * Creates the input parameters for an interaction implementation
     */
-  def createInteractionInput(interaction: InteractionTransition, state: ProcessState): Seq[IngredientInstance] = {
+  def createInteractionInput(interaction: InteractionTransition, state: RecipeInstanceState): Seq[IngredientInstance] = {
 
     // the process id is a special ingredient that is always available
     val recipeInstanceId: (String, Value) = recipeInstanceIdName -> PrimitiveValue(state.recipeInstanceId.toString)
@@ -120,12 +120,12 @@ object RecipeRuntime {
   }
 }
 
-class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime[Place, Transition, ProcessState, EventInstance] {
+class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime[Place, Transition, RecipeInstanceState, EventInstance] {
 
   /**
     * All transitions except sensory event interactions are auto-fireable by the runtime
     */
-  override def isAutoFireable(instance: Instance[Place, Transition, ProcessState], t: Transition): Boolean = t match {
+  override def isAutoFireable(instance: Instance[Place, Transition, RecipeInstanceState], t: Transition): Boolean = t match {
     case EventTransition(_, true, _) => false
     case _ => true
   }
@@ -144,7 +144,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
 
   override val eventSource = recipeEventSourceFn
 
-  override def handleException(job: Job[Place, Transition, ProcessState])
+  override def handleException(job: Job[Place, Transition, RecipeInstanceState])
                               (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]): ExceptionStrategy = {
 
     if (throwable.isInstanceOf[Error])
@@ -176,7 +176,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
       }
   }
 
-  override def transitionTask(petriNet: PetriNet[Place, Transition], t: Transition)(marking: Marking[Place], state: ProcessState, input: Any): IO[(Marking[Place], EventInstance)] =
+  override def transitionTask(petriNet: PetriNet[Place, Transition], t: Transition)(marking: Marking[Place], state: RecipeInstanceState, input: Any): IO[(Marking[Place], EventInstance)] =
     t match {
       case interaction: InteractionTransition => interactionTask(interaction, petriNet.outMarking(t), state)
       case t: EventTransition                 => IO.pure(petriNet.outMarking(t).toMarking, input.asInstanceOf[EventInstance])
@@ -185,7 +185,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
 
   def interactionTask(interaction: InteractionTransition,
                       outAdjacent: MultiSet[Place],
-                      processState: ProcessState): IO[(Marking[Place], EventInstance)] = {
+                      processState: RecipeInstanceState): IO[(Marking[Place], EventInstance)] = {
 
     // returns a delayed task that will get executed by the process instance
     IO.fromFuture(IO {

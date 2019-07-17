@@ -14,7 +14,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrat
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
 import com.ing.baker.runtime.akka.actor.serialization.Encryption
-import com.ing.baker.runtime.scaladsl.{ProcessState, EventInstance}
+import com.ing.baker.runtime.scaladsl.{RecipeInstanceState, EventInstance}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection
 import com.ing.baker.types.{PrimitiveValue, Value}
 
@@ -81,7 +81,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
       instance.sequenceNr,
       instance.marking.marshall,
       instance.state match {
-        case state: ProcessState =>
+        case state: RecipeInstanceState =>
           filterIngredientValues(state, settings.ingredientsFilter)
         case _ => instance.state
       },
@@ -142,7 +142,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
   }
 
 
-  def filterIngredientValues(state: ProcessState, ingredientFilter: Seq[String]): ProcessState =
+  def filterIngredientValues(state: RecipeInstanceState, ingredientFilter: Seq[String]): RecipeInstanceState =
       state.copy(ingredients = state.ingredients.map(ingredient =>
         if (ingredientFilter.contains(ingredient._1))
           ingredient._1 -> PrimitiveValue("")
@@ -168,7 +168,7 @@ class ProcessInstance[P : Identifiable, T : Identifiable, S, E](
     case GetState ⇒
       val instanceState: InstanceState = mapStateToProtocol(instance)
       instanceState.state match {
-        case state: ProcessState =>
+        case state: RecipeInstanceState =>
           sender() ! instanceState.copy(state = filterIngredientValues(state, settings.ingredientsFilter))
         case _ =>
           sender() ! instanceState

@@ -6,7 +6,7 @@ import com.ing.baker.baas.interaction.client.RemoteInteractionClient
 import com.ing.baker.baas.server.protocol._
 import com.ing.baker.baas.util.ClientUtils
 import com.ing.baker.runtime.akka.AkkaBaker
-import com.ing.baker.runtime.scaladsl.{ProcessState, EventInstance}
+import com.ing.baker.runtime.scaladsl.{RecipeInstanceState, EventInstance}
 import com.ing.baker.types.Value
 
 import scala.concurrent.ExecutionContext
@@ -45,13 +45,13 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
       } ~
         path("events") {
           get {
-            val processState = baker.getProcessState(requestId)
+            val processState = baker.getRecipeInstanceState(requestId)
             complete(processState.map(x => EventsResponse(x.eventNames.map(name => EventInstance(name, Map.empty)))))
           }
         } ~
         path("state") {
           get {
-            val events = baker.getProcessState(requestId).map(StateResponse(_))
+            val events = baker.getRecipeInstanceState(requestId).map(StateResponse(_))
             complete(events)
           }
         } ~
@@ -59,7 +59,7 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
           post {
             entity(as[BakeRequest]) { request =>
               baker.bake(request.recipeId, requestId)
-              complete(BakeResponse(new ProcessState("", Map.empty[String, Value], List.empty)))
+              complete(BakeResponse(new RecipeInstanceState("", Map.empty[String, Value], List.empty)))
             }
           }
         } ~
@@ -110,7 +110,7 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
               println(s"Adding interaction called: ${request.name}")
 
               //Register it to BAAS
-              baker.addImplementation(interactionImplementation)
+              baker.addInteractionInstace(interactionImplementation)
 
               //return response
               complete(AddInteractionHTTPResponse(

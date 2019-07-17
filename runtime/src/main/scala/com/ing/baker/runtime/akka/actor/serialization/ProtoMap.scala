@@ -5,7 +5,7 @@ import com.ing.baker.il
 import com.ing.baker.types
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.akka.actor.serialization.protomappings._
-import com.ing.baker.runtime.scaladsl.{EventMoment, ProcessState, EventInstance, EventResult}
+import com.ing.baker.runtime.scaladsl.{EventMoment, RecipeInstanceState, EventInstance, EventResult}
 import scalapb.GeneratedMessageCompanion
 
 import scala.util.{Success, Try}
@@ -65,7 +65,7 @@ object ProtoMap {
   implicit val runtimeEventMapping: ProtoMap[EventInstance, protobuf.RuntimeEvent] =
     new RuntimeEventMapping
 
-  implicit val processStateMapping: ProtoMap[ProcessState, protobuf.ProcessState] =
+  implicit val processStateMapping: ProtoMap[RecipeInstanceState, protobuf.ProcessState] =
     new ProcessStateMapping
 
   implicit val eventMomentMapping: ProtoMap[EventMoment, protobuf.EventMoment] =

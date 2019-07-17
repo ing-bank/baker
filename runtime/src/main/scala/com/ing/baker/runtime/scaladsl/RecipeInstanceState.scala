@@ -13,16 +13,16 @@ import scala.collection.JavaConverters._
   * @param ingredients The accumulated ingredients
   * @param eventNames  The names of the events occurred so far
   */
-case class ProcessState(
+case class RecipeInstanceState(
     recipeInstanceId: String,
     ingredients: Map[String, Value],
     events: Seq[EventMoment])
-  extends common.ProcessState with ScalaApi {
+  extends common.RecipeInstanceState with ScalaApi {
 
   type EventType = EventMoment
 
   def eventNames: Seq[String] = events.map(_.name)
 
-  def asJava: javadsl.ProcessState =
-    new javadsl.ProcessState(recipeInstanceId, ingredients.asJava, events.map(_.asJava()).asJava)
+  def asJava: javadsl.RecipeInstanceState =
+    new javadsl.RecipeInstanceState(recipeInstanceId, ingredients.asJava, events.map(_.asJava()).asJava)
 }

@@ -270,7 +270,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     *
     * @return An index of all processes
     */
-  override def getAllProcessesMetadata: Future[Set[ProcessMetadata]] = {
+  override def getAllInteractionInstancesMetadata: Future[Set[ProcessMetadata]] = {
     Future.successful(config.bakerActorProvider
       .getAllProcessesMetadata(processIndexActor)(system, config.defaultInquireTimeout)
       .map(p => ProcessMetadata(p.recipeId, p.recipeInstanceId, p.createdDateTime)).toSet)
@@ -282,11 +282,11 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     * @param recipeInstanceId The process identifier
     * @return The process state.
     */
-  override def getProcessState(recipeInstanceId: String): Future[ProcessState] =
+  override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] =
     processIndexActor
       .ask(GetProcessState(recipeInstanceId))(Timeout.durationToTimeout(config.defaultInquireTimeout))
       .flatMap {
-        case instance: InstanceState => Future.successful(instance.state.asInstanceOf[ProcessState])
+        case instance: InstanceState => Future.successful(instance.state.asInstanceOf[RecipeInstanceState])
         case NoSuchProcess(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
         case ProcessDeleted(id) => Future.failed(new ProcessDeletedException(s"Process $id is deleted"))
       }
@@ -298,7 +298,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     * @return The provided ingredients.
     */
   override def getIngredients(recipeInstanceId: String): Future[Map[String, Value]] =
-    getProcessState(recipeInstanceId).map(_.ingredients)
+    getRecipeInstanceState(recipeInstanceId).map(_.ingredients)
 
   /**
     * Returns the visual state (.dot) for a given process.
@@ -311,7 +311,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
   override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle = RecipeVisualStyle.default): Future[String] = {
     for {
       getRecipeResponse <- processIndexActor.ask(GetCompiledRecipe(recipeInstanceId))(config.defaultInquireTimeout)
-      processState <- getProcessState(recipeInstanceId)
+      processState <- getRecipeInstanceState(recipeInstanceId)
       response <- getRecipeResponse match {
         case RecipeManagerProtocol.RecipeFound(compiledRecipe, _) =>
           Future.successful(RecipeVisualizer.visualizeRecipe(
@@ -386,7 +386,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     *
     * @param implementation The implementation object
     */
-  override def addImplementation(implementation: InteractionInstance): Future[Unit] =
+  override def addInteractionInstace(implementation: InteractionInstance): Future[Unit] =
     Future.successful(config.interactionManager.addImplementation(implementation))
 
   /**
@@ -394,8 +394,8 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     *
     * @param implementations The implementation object
     */
-  override def addImplementations(implementations: Seq[InteractionInstance]): Future[Unit] =
-    Future.successful(implementations.foreach(addImplementation))
+  override def addInteractionInstance(implementations: Seq[InteractionInstance]): Future[Unit] =
+    Future.successful(implementations.foreach(addInteractionInstace))
 
   /**
     * Attempts to gracefully shutdown the baker system.

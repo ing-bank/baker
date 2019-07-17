@@ -54,7 +54,7 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     val mockTwo = mock(classOf[InteractionTwo])
     val localImplementations: Seq[InteractionInstance] = Seq(InteractionInstance.unsafeFrom(mockOne), InteractionInstance.unsafeFrom(mockTwo))
     Await.result(baasAPI.start(), 10 seconds)
-    baasBaker.addImplementations(localImplementations)
+    baasBaker.addInteractionInstance(localImplementations)
 
     when(mockOne.apply(anyString(), anyString()))
       .thenReturn(InteractionOneEvent("InteractionOneOutput"))
@@ -73,7 +73,7 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
       _ <- baasBaker.bake(recipeId, requestId)
       response <- baasBaker.fireEventAndResolveWhenCompleted(requestId, EventInstance.unsafeFrom(InitialEvent("initialIngredient")))
       _ = response.status shouldBe SensoryEventStatus.Completed
-      processState <- baasBaker.getProcessState(requestId)
+      processState <- baasBaker.getRecipeInstanceState(requestId)
 
       _ = processState.ingredients.keys should contain("initialIngredient")
       _ = processState.ingredients.keys should contain("interactionOneIngredient")
@@ -89,7 +89,7 @@ class BaasSpec extends TestKit(ActorSystem("BAASSpec")) with WordSpecLike with M
     val mockTwo = mock(classOf[InteractionTwo])
     val localImplementations: Seq[InteractionInstance] = Seq(InteractionInstance.unsafeFrom(mockOne), InteractionInstance.unsafeFrom(mockTwo))
     Await.result(baasAPI.start(), 10 seconds)
-    baasBaker.addImplementations(localImplementations)
+    baasBaker.addInteractionInstance(localImplementations)
 
     when(mockOne.apply(anyString(), anyString()))
       .thenReturn(InteractionOneEvent("InteractionOneOutput"))

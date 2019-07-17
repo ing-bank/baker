@@ -1,6 +1,6 @@
 package com.ing.baker.baas.server.protocol
 
-import com.ing.baker.runtime.scaladsl.ProcessState
+import com.ing.baker.runtime.scaladsl.RecipeInstanceState
 
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{versioned, ctxFromProto, ctxToProto}
@@ -9,7 +9,7 @@ import scalapb.GeneratedMessageCompanion
 
 import scala.util.Try
 
-case class StateResponse(processState: ProcessState) extends BaasResponse
+case class StateResponse(processState: RecipeInstanceState) extends BaasResponse
 
 object StateResponse {
 

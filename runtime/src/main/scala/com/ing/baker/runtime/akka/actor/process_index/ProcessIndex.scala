@@ -22,7 +22,7 @@ import com.ing.baker.runtime.akka.actor.serialization.{BakerSerializable, Encryp
 import com.ing.baker.runtime.scaladsl.ProcessCreated
 import com.ing.baker.runtime.akka.internal.{InteractionManager, RecipeRuntime}
 import com.ing.baker.runtime.akka.{namedCachedThreadPool, _}
-import com.ing.baker.runtime.scaladsl.{ProcessState, EventInstance}
+import com.ing.baker.runtime.scaladsl.{RecipeInstanceState, EventInstance}
 import com.ing.baker.types.Value
 
 import scala.collection.mutable
@@ -124,11 +124,11 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
   // creates a ProcessInstanceActor, does not do any validation
   def createProcessActor(recipeInstanceId: String, compiledRecipe: CompiledRecipe): ActorRef = {
-    val runtime: ProcessInstanceRuntime[Place, Transition, ProcessState, EventInstance] =
+    val runtime: ProcessInstanceRuntime[Place, Transition, RecipeInstanceState, EventInstance] =
       new RecipeRuntime(compiledRecipe, interactionManager, context.system.eventStream)
 
     val processActorProps =
-      ProcessInstance.props[Place, Transition, ProcessState, EventInstance](
+      ProcessInstance.props[Place, Transition, RecipeInstanceState, EventInstance](
         compiledRecipe.name, compiledRecipe.petriNet, runtime,
         ProcessInstance.Settings(
           executionContext = bakerExecutionContext,
@@ -216,7 +216,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
               persist(ActorCreated(recipeId, recipeInstanceId, createdTime)) { _ =>
 
                 // after that we actually create the ProcessInstance actor
-                val processState = ProcessState(recipeInstanceId, Map.empty[String, Value], List.empty)
+                val processState = RecipeInstanceState(recipeInstanceId, Map.empty[String, Value], List.empty)
                 val initializeCmd = Initialize(compiledRecipe.initialMarking, processState)
 
                 createProcessActor(recipeInstanceId, compiledRecipe).forward(initializeCmd)
