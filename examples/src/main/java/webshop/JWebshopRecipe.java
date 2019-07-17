@@ -2,9 +2,11 @@ package webshop;
 
 import com.ing.baker.recipe.annotations.FiresEvent;
 import com.ing.baker.recipe.annotations.RequiresIngredient;
+import com.ing.baker.recipe.javadsl.InteractionFailureStrategy.RetryWithIncrementalBackoffBuilder;
 import com.ing.baker.recipe.javadsl.Interaction;
 import com.ing.baker.recipe.javadsl.Recipe;
 
+import java.time.Duration;
 import java.util.List;
 
 import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
@@ -21,6 +23,8 @@ public class JWebshopRecipe {
             this.items = items;
         }
     }
+
+    public static class PaymentMade {}
 
     public interface ReserveItems extends Interaction {
 
@@ -50,6 +54,16 @@ public class JWebshopRecipe {
     }
 
     public final static Recipe recipe = new Recipe("WebshopRecipe")
-        .withSensoryEvents(OrderPlaced.class)
-        .withInteractions(of(ReserveItems.class));
+        .withSensoryEvents(
+            OrderPlaced.class,
+            PaymentMade.class)
+        .withInteractions(
+            of(ReserveItems.class)
+                .withRequiredEvent(PaymentMade.class))
+        .withDefaultFailureStrategy(
+            new RetryWithIncrementalBackoffBuilder()
+                .withInitialDelay(Duration.ofMillis(100))
+                .withDeadline(Duration.ofHours(24))
+                .withMaxTimeBetweenRetries(Duration.ofMinutes(10))
+                .build());
 }

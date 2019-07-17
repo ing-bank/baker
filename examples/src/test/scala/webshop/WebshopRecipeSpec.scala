@@ -20,6 +20,10 @@ class WebshopRecipeSpec extends FlatSpec with Matchers {
 
   val baker: Baker = Baker.akkaLocalDefault(system, materializer)
 
+  "The WebshopRecipeReflection" should "compile the recipe without errors" in {
+    RecipeCompiler.compileRecipe(WebshopRecipeReflection.recipe)
+  }
+
   "The WebshopRecipe" should "compile the recipe without errors" in {
     RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
   }
@@ -38,52 +42,21 @@ class WebshopRecipeSpec extends FlatSpec with Matchers {
     val orderId: String = "order-id"
     val items: List[String] = List("item1", "item2")
 
-    val program = for {
-      _ <- baker.addImplementation(WebshopInstances.ReserveItemsInstance)
-      recipeId <- baker.addRecipe(compiled)
-      _ <- baker.bake(recipeId, recipeInstanceId)
-      event = EventInstance
-        .unsafeFrom(WebshopRecipeReflection.OrderPlaced(orderId, items))
-      result <- baker.fireEventAndResolveWhenCompleted(
-        recipeInstanceId, event)
-      provided = result
-        .ingredients
-        .find(_._1 == "reservedItems")
-        .map(_._2.as[List[String]])
-        .map(_.mkString(", "))
-        .getOrElse("No reserved items")
-    } yield provided
-    val outcome = Await.result(program, 5.seconds)
-    outcome shouldBe items.mkString(", ")
-  }
-
-  "The WebshopRecipeReflection" should "compile the recipe without errors" in {
-    RecipeCompiler.compileRecipe(WebshopRecipeReflection.recipe)
-  }
-
-  it should "visualize the recipe" in {
-    val compiled = RecipeCompiler.compileRecipe(WebshopRecipeReflection.recipe)
-    val viz: String = compiled.getRecipeVisualization
-    println(Console.GREEN + s"Recipe visualization, paste this into webgraphviz.com:")
-    println(viz + Console.RESET)
-  }
-
-  it should "run the manually mocked interaction" in {
-    val compiled = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
-    val recipeInstanceId: String = UUID.randomUUID().toString
-
-    val orderId: String = "order-id"
-    val items: List[String] = List("item1", "item2")
+    val orderPlaced = EventInstance
+      .unsafeFrom(WebshopRecipeReflection.OrderPlaced(orderId, items))
+    val paymentMade = EventInstance
+      .unsafeFrom(WebshopRecipeReflection.PaymentMade())
 
     val program = for {
-      _ <- baker.addImplementation(WebshopInstancesReflection.reserveItemsInstance)
+      _ <- baker.addInteractionInstace(WebshopInstances.ReserveItemsInstance)
       recipeId <- baker.addRecipe(compiled)
       _ <- baker.bake(recipeId, recipeInstanceId)
-      event = EventInstance
-        .unsafeFrom(WebshopRecipeReflection.OrderPlaced(orderId, items))
-      result <- baker.fireEventAndResolveWhenCompleted(
-        recipeInstanceId, event)
-      provided = result
+      _ <- baker.fireEventAndResolveWhenCompleted(
+        recipeInstanceId, orderPlaced)
+      _ <- baker.fireEventAndResolveWhenCompleted(
+        recipeInstanceId, paymentMade)
+      state <- baker.getRecipeInstanceState(recipeInstanceId)
+      provided = state
         .ingredients
         .find(_._1 == "reservedItems")
         .map(_._2.as[List[String]])

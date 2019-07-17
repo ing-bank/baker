@@ -10,10 +10,7 @@ object WebshopInstances {
 
   val ReserveItemsInstance = InteractionInstance(
     name = WebshopRecipe.Interactions.ReserveItems.name,
-    input = Map(
-      "orderId" -> CharArray,
-      "items" -> ListType(CharArray)
-    ),
+    input = Seq(CharArray, ListType(CharArray)),
     run = handleReserveItems
   )
 

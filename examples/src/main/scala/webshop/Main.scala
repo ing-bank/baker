@@ -5,6 +5,7 @@ import akka.stream.{ActorMaterializer, Materializer}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
+import webshop.WebshopRecipeReflection.PaymentMade
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
@@ -18,19 +19,31 @@ object Main extends App {
     ActorMaterializer()
   val baker: Baker = Baker.akkaLocalDefault(actorSystem, materializer)
 
-  val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
+  val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipeReflection.recipe)
+
+  val firstOrderPlaced: EventInstance =
+    EventInstance.unsafeFrom(WebshopRecipeReflection.OrderPlaced("order-uuid", List("item1", "item2")))
+  val paymentMade: EventInstance =
+    EventInstance.unsafeFrom(PaymentMade())
+  val paymentMadeExpectedEvents = Seq(
+    WebshopRecipe.Events.PaymentMade.name,
+    WebshopRecipe.Events.ItemsReserved.name
+  )
+  val stateExpectedEvents = Seq(
+    WebshopRecipe.Events.OrderPlaced.name,
+    WebshopRecipe.Events.PaymentMade.name,
+    WebshopRecipe.Events.ItemsReserved.name
+  )
 
   val program: Future[Unit] = for {
-    _ <- baker.addImplementation(WebshopInstancesReflection.reserveItemsInstance)
+    _ <- baker.addInteractionInstace(WebshopInstancesReflection.reserveItemsInstance)
     recipeId <- baker.addRecipe(compiledRecipe)
     _ <- baker.bake(recipeId, "first-instance-id")
-    firstOrderPlaced: EventInstance =
-      EventInstance.unsafeFrom(WebshopRecipeReflection.OrderPlaced("order-uuid", List("item1", "item2")))
-    result <- baker.fireEventAndResolveWhenCompleted("first-instance-id", firstOrderPlaced)
-    state <- baker.getProcessState("first-instance-id")
-    expectedEvents = Seq(WebshopRecipe.Events.OrderPlaced.name, WebshopRecipe.Events.ItemsReserved.name)
-    _ = assert(result.events == expectedEvents)
-    _ = assert(state.events.map(_.name) == expectedEvents)
+    _ <- baker.fireEventAndResolveWhenCompleted("first-instance-id", firstOrderPlaced)
+    result <- baker.fireEventAndResolveWhenCompleted("first-instance-id", paymentMade)
+    state <- baker.getRecipeInstanceState("first-instance-id")
+    _ = assert(result.events == paymentMadeExpectedEvents)
+    _ = assert(state.events.map(_.name) == stateExpectedEvents)
     visualization <- baker.getVisualState("first-instance-id")
     _ = println(visualization)
   } yield ()

@@ -5,14 +5,12 @@ import akka.stream.ActorMaterializer;
 import akka.stream.Materializer;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.javadsl.Baker;
-import com.ing.baker.runtime.javadsl.EventInstance;
-import com.ing.baker.runtime.javadsl.EventResult;
-import com.ing.baker.runtime.javadsl.InteractionInstance;
+import com.ing.baker.runtime.javadsl.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class JMain {
 
@@ -25,20 +23,25 @@ public class JMain {
         List<String> items = new ArrayList<>(2);
         items.add("item1");
         items.add("item2");
+
         EventInstance firstOrderPlaced =
-                EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
+            EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
+        EventInstance paymentMade =
+            EventInstance.from(new JWebshopRecipe.PaymentMade());
 
         InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
         String recipeInstanceId = "first-instance-id";
-        CompletableFuture<List<String>> result = baker.addImplementation(reserveItemsInstance)
+        CompletableFuture<List<String>> result = baker.addInteractionInstace(reserveItemsInstance)
             .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
             .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
             .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
-            .thenApply(EventResult::events);
+            .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade))
+            .thenCompose(ignore -> baker.getRecipeInstanceState(recipeInstanceId))
+            .thenApply(x -> x.events().stream().map(EventMoment::getName).collect(Collectors.toList()));
 
         List<String> blockedResult = result.join();
-        assert(blockedResult.contains("OrderPlaced") && blockedResult.contains("ReservedItems"));
+        assert(blockedResult.contains("OrderPlaced") && blockedResult.contains("PaymentMade") && blockedResult.contains("ReservedItems"));
     }
 }

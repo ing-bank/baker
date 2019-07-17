@@ -17,8 +17,10 @@ markdown_extensions:
 nav:
   - Home: 'index.md'
   - 'sections/getting-started.md'
+  - 'sections/feature-comparison.md'
   - Concepts:
       - 'sections/concepts/main-abstractions.md'
+      - 'sections/concepts/execution-semantics.md'
       - 'sections/concepts/baker-types-and-values.md'
       - 'sections/concepts/dsls.md'
       - 'sections/concepts/runtime.md'

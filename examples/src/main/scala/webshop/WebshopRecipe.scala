@@ -1,16 +1,27 @@
 package webshop
 
+import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
+import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
+
+import scala.concurrent.duration._
 
 object WebshopRecipe {
 
   val recipe: Recipe = Recipe("Webshop")
     .withSensoryEvents(
-      Events.OrderPlaced
-    )
+      Events.OrderPlaced,
+      Events.PaymentMade)
     .withInteractions(
-      Interactions.ReserveItems,
-    )
+      Interactions.ReserveItems
+        .withRequiredEvent(Events.PaymentMade))
+    .withDefaultFailureStrategy(
+      RetryWithIncrementalBackoff
+        .builder()
+        .withInitialDelay(100 milliseconds)
+        .withUntil(Some(UntilDeadline(24 hours)))
+        .withMaxTimeBetweenRetries(Some(10 minutes))
+        .build())
 
   object Ingredients {
 
@@ -35,6 +46,12 @@ object WebshopRecipe {
         Ingredients.OrderId,
         Ingredients.Items
       ),
+      maxFiringLimit = Some(1)
+    )
+
+    val PaymentMade: Event = Event(
+      name = "PaymentMade",
+      providedIngredients = Seq.empty,
       maxFiringLimit = Some(1)
     )
 

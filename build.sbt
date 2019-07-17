@@ -244,6 +244,7 @@ lazy val examples = project
         scalaCheck,
         junitInterface,
         slf4jApi,
+        mockito,
         logback
       )
   )
