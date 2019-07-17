@@ -65,7 +65,7 @@ case class RemoteInteractionLauncher(ownHost: String,
     interactionImplementations.get(name)
   }
 
-  private def registerRemoteImplementation(interactionName: String, inputTypes: Map[String, Type]): Unit = {
+  private def registerRemoteImplementation(interactionName: String, inputTypes: Seq[Type]): Unit = {
     //Create the request to Add the interaction implementation to Baas
     log.info("Registering remote implementation client")
     val addInteractionHTTPRequest = AddInteractionHTTPRequest(interactionName, s"http://$ownHost:$ownPort/$interactionName", inputTypes)

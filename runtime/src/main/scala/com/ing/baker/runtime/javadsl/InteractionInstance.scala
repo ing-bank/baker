@@ -24,23 +24,23 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
 
   override val name: String
 
-  override val input: util.Map[String, Type]
+  override val input: util.List[Type]
 
-  override val output: Optional[util.Map[String, util.Map[String, Type]]]
+  override val output: Optional[util.Map[String, util.Map[String, Type]]] = Optional.empty()
 
   override def execute(input: util.List[IngredientInstance]): CompletableFuture[Optional[EventInstance]]
 
   def asScala: scaladsl.InteractionInstance =
     scaladsl.InteractionInstance(
       name,
-      input.asScala.toMap,
-      if (output.isPresent) Some(output.get.asScala.toMap.mapValues(_.asScala.toMap)) else None,
+      input.asScala,
       input => FutureConverters.toScala(execute(input.map(_.asJava).asJava)
         .thenApply[Option[scaladsl.EventInstance]] {
         optional =>
           if (optional.isPresent) Some(optional.get().asScala)
           else None
-      })
+      }),
+      if (output.isPresent) Some(output.get.asScala.toMap.mapValues(_.asScala.toMap)) else None
     )
 }
 
@@ -78,13 +78,13 @@ object InteractionInstance {
         }
       }
 
-      override val input: util.Map[String, Type] =
-        method.getGenericParameterTypes.zip(method.getParameters).map { case (typ, parameter) =>
-          try { parameter.getName -> Converters.readJavaType(typ) }
+      override val input: util.List[Type] =
+        method.getGenericParameterTypes.zip(method.getParameters).map { case (typ, _) =>
+          try { Converters.readJavaType(typ) }
           catch { case e: Exception =>
             throw new IllegalArgumentException(s"Unsupported parameter type for interaction implementation '$name'", e)
           }
-        }.toMap.asJava
+        }.toSeq.asJava
 
       override def execute(runtimeInput: util.List[IngredientInstance]): CompletableFuture[Optional[EventInstance]] =  {
         // Translate the Value objects to the expected runtimeInput types

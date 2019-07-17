@@ -14,7 +14,7 @@ import scala.concurrent.duration.FiniteDuration
   */
 object RemoteInteractionClient {
 
-  def apply(name: String, uri: String, inputIngredients: Map[String, Type])(implicit system: ActorSystem, duration: FiniteDuration): InteractionInstance = {
+  def apply(name: String, uri: String, inputIngredients: Seq[Type])(implicit system: ActorSystem, duration: FiniteDuration): InteractionInstance = {
     val utils = new ClientUtils { override implicit val actorSystem: ActorSystem = system }
     import system.dispatcher
     import utils.materializer

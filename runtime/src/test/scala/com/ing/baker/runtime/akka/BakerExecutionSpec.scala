@@ -166,19 +166,19 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val interactionInstances = Seq(
         InteractionInstance(
           name = "Interaction1",
-          input = Map("ingredient-0" -> Int32),
+          input = Seq(Int32),
           output = None,
           run = _ => Future.successful(Some(EventInstance("interaction-1-happened", Map("ingredient-1" -> PrimitiveValue("data1")))))
         ),
         InteractionInstance(
           name = "Interaction2",
-          input = Map("ingredient-1" -> CharArray),
+          input = Seq(CharArray),
           output = None,
           run = _ => Future.successful(Some(EventInstance("interaction-2-happened", Map("ingredient-2" -> PrimitiveValue("data2")))))
         ),
         InteractionInstance(
           name = "Interaction3",
-          input = Map("ingredient-2" -> CharArray),
+          input = Seq(CharArray),
           output = None,
           run = _ => Future.successful(Some(EventInstance("interaction-3-happened", Map("final" -> PrimitiveValue("data3")))))
         )
