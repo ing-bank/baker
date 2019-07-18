@@ -29,7 +29,7 @@ public class JMain {
         EventInstance paymentMade =
             EventInstance.from(new JWebshopRecipe.PaymentMade());
 
-        InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
+        InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItemsInstance());
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
         String recipeInstanceId = "first-instance-id";

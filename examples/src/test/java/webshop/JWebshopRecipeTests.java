@@ -16,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import com.ing.baker.runtime.javadsl.EventInstance;
+import static org.mockito.Mockito.*;
 
 public class JWebshopRecipeTests {
 
@@ -30,6 +31,14 @@ public class JWebshopRecipeTests {
         String visualization = recipe.getRecipeVisualization();
         System.out.println(Console.GREEN() + "Recipe visualization, paste this into webgraphviz.com:");
         System.out.println(visualization + Console.RESET());
+    }
+
+    static public class HappyFlowReserveItems implements JWebshopRecipe.ReserveItems {
+
+        @Override
+        public ReserveItemsOutcome apply(String id, List<String> items) {
+            return new ItemsReserved(items);
+        }
     }
 
     @Test
@@ -48,8 +57,10 @@ public class JWebshopRecipeTests {
         EventInstance paymentMade =
                 EventInstance.from(new JWebshopRecipe.PaymentMade());
 
-        InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
-        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
+        InteractionInstance reserveItemsInstance =
+                InteractionInstance.from(new HappyFlowReserveItems());
+        CompiledRecipe compiledRecipe =
+                RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
         String recipeInstanceId = "first-instance-id";
         CompletableFuture<List<String>> result = baker.addInteractionInstace(reserveItemsInstance)
@@ -61,7 +72,52 @@ public class JWebshopRecipeTests {
                 .thenApply(x -> x.events().stream().map(EventMoment::getName).collect(Collectors.toList()));
 
         List<String> blockedResult = result.join();
-        
+
+        assert(blockedResult.contains("OrderPlaced") && blockedResult.contains("PaymentMade") && blockedResult.contains("ItemsReserved"));
+    }
+
+    @Test
+    public void shouldRunSimpleInstanceMockitoSample() {
+
+        ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
+        Materializer materializer = ActorMaterializer.create(actorSystem);
+        Baker baker = Baker.akkaLocalDefault(actorSystem, materializer);
+
+        List<String> items = new ArrayList<>(2);
+        items.add("item1");
+        items.add("item2");
+
+        EventInstance firstOrderPlaced =
+                EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
+        EventInstance paymentMade =
+                EventInstance.from(new JWebshopRecipe.PaymentMade());
+
+        // The ReserveItems interaction being mocked by Mockito
+        JWebshopRecipe.ReserveItems reserveItemsMock =
+                mock(JWebshopRecipe.ReserveItems.class);
+        InteractionInstance reserveItemsInstance =
+                InteractionInstance.from(reserveItemsMock);
+        CompiledRecipe compiledRecipe =
+                RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
+
+        // Add input expectations and their returned event instances
+        when(reserveItemsMock.apply("order-uuid", items)).thenReturn(
+                new JWebshopRecipe.ReserveItems.ItemsReserved(items));
+
+        String recipeInstanceId = "first-instance-id";
+        CompletableFuture<List<String>> result = baker.addInteractionInstace(reserveItemsInstance)
+                .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
+                .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
+                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
+                .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade))
+                .thenCompose(ignore -> baker.getRecipeInstanceState(recipeInstanceId))
+                .thenApply(x -> x.events().stream().map(EventMoment::getName).collect(Collectors.toList()));
+
+        List<String> blockedResult = result.join();
+
+        // Verify that the mock was called with the expected data
+        verify(reserveItemsMock).apply("order-uuid", items);
+
         assert(blockedResult.contains("OrderPlaced") && blockedResult.contains("PaymentMade") && blockedResult.contains("ItemsReserved"));
     }
 }
