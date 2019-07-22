@@ -1,38 +1,34 @@
 # Execution Semantics
 
-### Execution loop
+## Execution loop
 
 This is a short description of the execution loop of a `RecipeInstance`
 
-1. An [event](concepts.md#event) is raised and provides ingredients.
-
-    Either given to baker as a sensory event or by an interaction.
-
-2. A check is done which interactions have all their requirements met and those are executed.
-3. An interaction completes its execution and outputs an event (`GOTO 1.`)
+1. An `EventInstance` is fired and provides ingredients, either given to baker as a sensory event or as an output 
+   of an `InteractionInstance`.
+2. Baker tries to match the currently available provided `IngredientInstances` with the input of awaiting `InteractionInstances`.
+3. `InteractionInstances` that can be called, execute and when complete they fire more `EventInstances`, repeating the
+   loop from step 1.
+4. This continues until there are no more `InteractionInstances` to execute, and the process is considered complete.
 
 ### Notes
 
-- A sensory event may be provided 1 or more times depending on its [firing limit](recipe-dsl.md#firing-limit).
-- When ingredients are provided multiple times, the latest value overrides the previous.
-- An interaction fires when all it's ingredients and required events are provided.
-    This may happen 1 or more times depending on the [maximum interaction count](recipe-dsl.md#maximum-interaction-count).
-
-To know more you will first need to understand the how a petri net works.
-
-Below is an explanation of how a recipe relates to a petri net.
+- A sensory event may be provided 1 or more times depending on its `firing limit`.
+- When `IngredientInstances` are provided multiple times, the latest value overrides the previous.
+- An `InteractionInstance` fires when all it's `IngredientInstances` and required `Events` are provided.
+    This may happen 1 or more times depending on the `maximum interaction count`.
 
 # In depth
 
-A recipe can be represented (and [visualized](recipe-visualization.md)) as a graph.
+This section explains deeply how `ProcessInstances` work, and how they execute your recipes. You DO NOT require to understand
+this part to develop with Baker, it is just extra documentation for the curious and the contributor.
 
-This graph is actually a higher level representation of a [petri net](https://en.wikipedia.org/wiki/Petri_net) (which is also a graph).
-
-The execution of a `RecipeInstance` based around this petri net.
-
-The recipe compiler takes a recipe and creates a petri net.
-
-Generally the petri net is graph more complicated with extra layers of wiring nodes.
+A recipe can be represented (and [visualized](recipe-visualization.md)) as a graph, which is actually a higher 
+level representation of a [petri net](https://en.wikipedia.org/wiki/Petri_net) (which is also a graph). When the process
+is represented as such it enables the `RecipeInstance` to execute the previously described execution loop, because Baker has
+your process state as a data structure that can be preserved as the state of the `RecipeInstance`. That is why you need
+to first use the `RecipeCompiler` and compile the recipe into a `CompiledRecipe` (petri net representation) before 
+running a `RecipeInstance` from it.
 
 ## Translation rules
 
