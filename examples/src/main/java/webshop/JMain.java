@@ -10,6 +10,7 @@ import com.ing.baker.runtime.javadsl.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 public class JMain {
@@ -31,6 +32,12 @@ public class JMain {
 
         InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItemsInstance());
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
+
+        BiConsumer<String, EventInstance> handler = (String recipeInstanceId, EventInstance event) ->
+            System.out.println("Recipe Instance " + recipeInstanceId + " processed event " + event.name());
+        baker.registerEventListener(handler);
+
+        baker.registerBakerEventListener((BakerEvent event) -> System.out.println(event));
 
         String recipeInstanceId = "first-instance-id";
         CompletableFuture<List<String>> result = baker.addInteractionInstace(reserveItemsInstance)

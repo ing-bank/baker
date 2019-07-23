@@ -268,131 +268,104 @@ CompletableFuture<BoxedUnit> result = baker.addInteractionInstace(reserveItemsIn
 
 ## EventInstance.from(object)
 
-As part of our efforts to ease the creation of 
+As part of our efforts to ease the creation of `EventInstances`, we added a function that uses Java and Scala reflection 
+to create `EventInstances` from class objects.
+
+The name of the `EventInstance` will be taken from the name of the `class` (Java) or `case class` (Scala) 
+(it must match the name of the `Event` at the `Recipe`). And the argument names and types of the constructors will be 
+translated to `IngredientInstances` with corresponding names and baker types.
+
+Notice that his function might throw an exception if the event is not correctly done (this is why in Scala the API is
+named "unsafe").
+
+```scala tab="Scala"
+import com.ing.baker.runtime.scaladsl.EventInstance
+
+case class OrderPlaced(orderId: String, items: List[String])
+
+val firstOrderPlaced: EventInstance = 
+    EventInstance.unsafeFrom(OrderPlaced("order-id", List("item1", "item2")))
+```
+
+```java tab="Java"
+import com.ing.baker.runtime.javadsl.EventInstance;
+
+class OrderPlaced {
+
+    String orderId;
+    List<String> items;
+    
+    public OrderPlaced(String orderId, List<String> items) {
+        this.orderId = orderId;
+        this.items = items;
+    }
+}
+
+EventInstance firstOrderPlaced =
+    EventInstance.from(new JWebshopRecipe.OrderPlaced("order-uuid", items));
+```
 
 ## baker.fireEvent(recipeInstanceId, eventInstance)
 
-## baker.getRecipeInstanceState(recipeInstanceId)
+After creation of a `RecipeInstance`, you use one of the variations of `baker.fireEvent(recipeInstanceId, eventInstance)`
+to fire your `EventInstances` and start/continue the process flow. There are several supported semantics for firing an 
+event which depend on the moment you want to get notified and continue your asynchronous computation, these are the 4 
+different moments:
 
-## baker.getAllInteractionInstancesMetadata()
+1. When the event got accepted by the `RecipeInstance` but has not started cascading the execution of `InteractionInstances`. 
+For this use the `Baker.fireEventAndResolveWhenReceived(recipeInstanceId, eventInstance)` API. This will return a 
+`Future[SensoryEventStatus]` enum notifying of the outcome (the event might get rejected).
 
-## baker.getVisualState(recipeInstanceId, style)
+2. When the event got accepted by the `RecipeInstance` and has finished cascading the execution of `InteractionInstances`
+up to the point that it requires more `EventInstances` (`SensoryEvents`) to continue, or the process has finished.
+For this use the `Baker.fireEventAndResolveWhenCompleted(recipeInstanceId, eventInstance)` API. This will return a 
+`Future[EventResult]` object containing a `SensoryEventStatus`, the `Event` names that got fired in consequence of this 
+`SensoryEvent`, and the current available `Ingredients` output of the `InteractionInstances` that got executed as consequence 
+of the `SensoryEvent`.
 
-## baker.registerEventListener(recipeName, listenerFunction)
+3. You want to do something on both of the previously mentioned moments, then use the 
+`Baker.fireEvent(recipeInstanceId, eventInstance)` API, which will return an `EventResolutions` object which contains both
+`Future[SensoryEventStatus]` and `Future[EventResult]` (or its `CompletableFuture<A>` equivalents in Java).
 
-## baker.registerBakerEventListener(listenerFunction)
+4. As soon as an intermediate `Event` fires from one of the `InteractionInstances` that execute as consequence of the fired
+`SensoryEvent`. For this use the `Baker.fireEventAndResolveOnEvent(recipeInstanceId, eventInstance, onEventName)` API. This will return 
+a similar `Future[EventResult` to the one returned by `Baker.fireEventAndResolveWhenCompleted` except the data will be up
+to the moment the `onEventName` was fired.
 
-## baker.retryInteraction(recipeInstanceId, interactionName)
+### correlationId
 
-## baker.resolveInteraction(recipeInstanceId, interactionName, event)
-
-## baker.stopRetryingInteraction(recipeInstanceId, interactionName)
-
-
-
-
-
-
-```scala tab="Scala"
-```
-
-```java tab="Java"
-```
-______________________________________
-
-Given a valid [recipe id](dictionary.md#recipe-id) we can now execute a Recipe.
-
-Or in other words we can create a [process instance](dictionary.md#process-instance).
-
-```scala tab="Scala"
-// Assuming you have a compiled recipe
-val recipe: CompiledRecipe = ???
-
-// A unique identifier ment to distinguish this process from other process instances
-val recipeInstanceId = "a-unique-process-id"
-
-// Tell Baker that we want to create a new process for a certain recipe.
-baker.bake(recipe.recipeId, recipeInstanceId)
-```
-
-```java tab="Java"
-// Assuming you have a compiled recipe
-CompiledRecipe recipe = null; //
-
-// A unique identifier ment to distinguish this process from other process instances
-String recipeInstanceId = "a-unique-process-id";
-
-// Tell Baker that we want to create a new process for a certain recipe.
-baker.bake(recipe.recipeId(), recipeInstanceId);
-```
-
-## Providing a sensory event
-
-In our [webshop example](index.md#visual-representation) the first events that can happen are `OrderPlaced`, `PaymentMade` and `CustomerInfoReceived`.
-
-These are so called [sensory events](dictionary.md#sensory-event) since they are not the result of an interaction but must be provided by the user of Baker.
-
-```scala tab="Scala"
-// The CustomerInfoReceived and OrderPlaced events require some data (Ingredients)
-val customerInfo = CustomerInfo("John", "Elm. Street", "johndoe@example.com")
-val order = "123";
-
-// Lets produce the `OrderPlaced` and `CustomerInfoReceived` sensory Events.
-baker.processEvent(recipeInstanceId, CustomerInfoRecived(customerInfo))
-baker.processEvent(recipeInstanceId, OrderPlaced(order))
-```
-
-```java tab="Java"
-// The CustomerInfoReceived and OrderPlaced events require some data (Ingredients)
-CustomerInfo customerInfo = new CustomerInfo("John", "Elm. Street", "johndoe@example.com");
-String order = "123";
-
-// Lets produce the `OrderPlaced` and `CustomerInfoReceived` sensory Events.
-baker.processEvent(recipeInstanceId, new CustomerInfoReceived(customerInfo));
-baker.processEvent(recipeInstanceId, new OrderPlaced(order));
-```
-
-When receiving events Baker will check which Interactions have all the required Ingredients and Events met.
-
-It will execute those interactions.
-
-Those interactions will raise more events.
-
-For more information about the exact execution sementics see [here](execution-semantics.md).
-
-### Correlation id
-
-Optionally you may provide a `correlation id` with an event. The purpose of this identifier is idempotent event delivery.
-
-When sending the same event correlation id multiple times, only the first will be processed.
+Optionally you may provide a `correlation id` when firing a `EventInstance`. The purpose of this identifier is idempotent 
+event delivery: when sending the same event correlation id multiple times, only the first will be processed.
 
 This can be applied to the `OrderPlaced` event for example.
 
 ``` scala tab="Scala"
-val orderId = "a unique order id"
+val correlationOrderId = "a unique order id"
 
-val statusA: SensoryEventStatus = baker.processEvent(recipeInstanceId, new OrderPlaced(order), orderId)
-val statusB: SensoryEventStatus = baker.processEvent(recipeInstanceId, new OrderPlaced(order), orderId)
-
-// statusA == Received
-// statusB == AlreadyReceived
-
+for {
+    statusA <- baker.processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId)
+    _ = assert(statusA == Received)
+    statusB <- baker.processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId)
+    _ = assert(statusB == AlreadyReceived)
+} yield ()
 ```
 
 ``` java tab="Java"
-String orderId = "a unique order id";
+String correlationOrderId = "a unique order id";
 
-SensoryEventStatus statusA = baker.processEvent(recipeInstanceId, new OrderPlaced(order), orderId);
-SensoryEventStatus statusB = baker.processEvent(recipeInstanceId, new OrderPlaced(order), orderId);
+SensoryEventStatus statusA = baker
+    .processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId);
+    .join();
+assert(statusA == Received);
 
-// statusA == Received
-// statusB == AlreadyReceived
+SensoryEventStatus statusB = baker
+    .processEventAndResolveWhenReceived(recipeInstanceId, orderPlacedEvent, correlationOrderId);
+    .join();
+assert(statusB == AlreadyReceived);
 
 ```
 
-## Sensory event status
-
-In response to recieving a sensory event baker returns a status code indicating how it processed it.
+### SensoryEventStatus
 
 | Status | Description |
 | --- | --- |
@@ -400,114 +373,167 @@ In response to recieving a sensory event baker returns a status code indicating 
 | `AlreadyReceived` | An event with the same correlation id was already received |
 | `ProcessDeleted` | The process instance was deleted |
 | `ReceivePeriodExpired` | The receive period for the process instance has passed |
-| `FiringLimitMet` | The [firing limit](recipe-dsl.md#firing-limit) for the event was met |
+| `FiringLimitMet` | The `firing limit` for the event was met |
 
-## Incident resolving
 
-It is possible that during execution a process instance becomes *blocked*.
+## baker.getRecipeInstanceState(recipeInstanceId)
 
-This can happen either because it is [directly blocked](recipe-dsl.md#block-interaction) by a exception or that the retry strategy was exhuasted.
+`baker.getInteractionInstanceState(recipeInstanceId)` will return an `InteractionInstanceState` object which 
+contains all the event names with timestamps that have executed, and the current available provided ingredient data.
 
-At this point it is possible to resolve the blocked interaction in 2 ways.
+```scala tab="Scala"
+import com.ing.baker.runtime.scaladsl.RecipeInstanceState
+  
+val state: Future[RecipeInstanceState] = baker.getRecipeInstanceState(recipeInstanceId)
+```
 
-### 1. Force retry
+```java tab="Java"
+import com.ing.baker.runtime.javadsl.RecipeInstanceState;
+  
+CompletableFuture<RecipeInstanceState> state = baker.getRecipeInstanceState(recipeInstanceId);
+```
 
-For example, the retry strategy for *"SendInvoice"* was exhausted after a few hours or retrying.
+## baker.getAllInteractionInstancesMetadata()
+    
+Returns the recipeId, recipeInstanceId and creation timestamp of all running `RecipeInstances`.
 
-However, we checked and know the *"invoice"* service is up again and want to continue to process for our customer.
+_Note: Can potentially return a partial result when baker runs in cluster mode because not all shards might be reached within 
+the given timeout._
+
+_Note: Does not include deleted `RecipeInstances`._
+
+## baker.getVisualState(recipeInstanceId, style)
+
+Another method of fetching state is the visual representation of it. You can do that with the `Baker.getVisualState(recipeInstanceId)`
+API. This will return a GraphViz string like the [visualization api]() that you can convert into an image.
+
+Here is a visualization of the state of another webshop example, one can clearly see that the process is flowing correctly
+without failures and that it is still waiting for the payment sensory event to be fired.
+
+```scala tab="Scala"
+val state: Future[String] = baker.getVisualState(recipeInstanceId)
+```
+
+```java tab="Java"
+CompletableFuture<String> state = baker.getVisualState(recipeInstanceId);
+```
+
+![](../../images/webshop-state-1.svg)
+
+## baker.registerEventListener(recipeName, listenerFunction)
+
+Registers a listener to all runtime events for this baker instance.
+
+Note that:
+- The delivery guarantee is *AT MOST ONCE*. Practically this means you can miss events when the application terminates (unexpected or not).
+- The delivery is local (JVM) only, you will NOT receive events from other nodes when running in cluster mode.
+
+Because of these constraints you should not use an event listener for critical functionality. Valid use cases might be:
+- logging
+- metrics
+- unit tests
+
+```scala tab="Scala"
+baker.registerEventListener((recipeInstanceId: String, event: EventInstance) => {
+  println(s"Recipe instance : $recipeInstanceId processed event ${event.name}")
+})
+```
+
+```java tab="Java"
+BiConsumer<String, EventInstance> handler = (String recipeInstanceId, EventInstance event) ->
+    System.out.println("Recipe Instance " + recipeInstanceId + " processed event " + event.name());
+    
+baker.registerEventListener(handler);
+```
+
+## baker.registerBakerEventListener(listenerFunction)
+
+Registers a listener to all runtime BAKER events, these are events that notify what Baker is doing, like `RecipeInstances`
+received `EventInstances` or `CompiledRecipes` being added to baker.
+
+Note that:
+- The delivery guarantee is *AT MOST ONCE*. Practically this means you can miss events when the application terminates (unexpected or not).
+- The delivery is local (JVM) only, you will NOT receive events from other nodes when running in cluster mode.
+
+Because of these constraints you should not use an event listener for critical functionality. Valid use cases might be:
+- logging
+- metrics
+- unit tests
+
+```scala tab="Scala"
+import com.ing.baker.runtime.scaladsl._
+
+baker.registerBakerEventListener((event: BakerEvent) => {
+  event match {
+    case e: EventReceived => println(e)
+    case e: EventRejected => println(e)
+    case e: InteractionFailed => println(e)
+    case e: InteractionStarted => println(e)
+    case e: InteractionCompleted => println(e)
+    case e: ProcessCreated => println(e)
+    case e: RecipeAdded => println(e)
+  }
+})
+```
+
+```java tab="Java"
+import com.ing.baker.runtime.javadsl.BakerEvent;
+
+baker.registerBakerEventListener((BakerEvent event) -> System.out.println(event));
+```
+
+## baker.retryInteraction(recipeInstanceId, interactionName)
+
+It is possible that during the execution of a `RecipeInstance` it becomes *blocked*, this can happen either because it 
+is `directly blocked` by an exception (and the `FailureStrategy` of the `Interaction` of the `Recipe` was set to block) 
+or that the retry strategy was exhausted. At this point it is possible to resolve the blocked interaction in 2 ways. 
+This one involves forcing another try, resulting either on a successful continued process, or again on a failed state, 
+to check this you will need to request the state of the `RecipeInstance` again.
+
+_Note: this behaviour can be automatically preconfigured by using the `RetryWithIncrementalBackoff` `FailureStrategy`
+on the `Interaction` of the `Recipe`_
 
 ``` scala tab="Scala"
-baker.retryInteraction(recipeInstanceId, "SendInvoice")
+val program: Future[Unit] = 
+    baker.retryInteraction(recipeInstanceId, "ReserveItems")
 ```
 
 ``` java tab="Java"
-baker.retryInteraction(recipeInstanceId, "SendInvoice");
+CompletableFuture<BoxedUnit> program = 
+    baker.retryInteraction(recipeInstanceId, "ReserveItems");
 ```
 
-### 2. Specify the interaction output
+## baker.resolveInteraction(recipeInstanceId, interactionName, event)
 
-For example, the *"ShipGoods"* backend service is not idempotent and failed with an exception. It is not retried but *blocked*.
+It is possible that during the execution of a `RecipeInstance` it becomes *blocked*, this can happen either because it 
+is `directly blocked` by an exception or that the retry strategy was exhausted. At this point it is possible to resolve 
+the blocked interaction in 2 ways. This one involves resolving the interaction with a chosen `EventInstance` to replace
+the one that would have had been computed by the `InteractionInstance`.
 
-However, we checked and know the goods were actually shipped and want to continue the process for our customer.
+_Note: this behaviour can be automatically preconfigured by using the `FireEventAfterFailure(eventName)` `FailureStrategy`
+on the `Interaction` of the `Recipe`_
 
 ``` scala tab="Scala"
-baker.resolveInteraction(recipeInstanceId, "ShipGoods", GoodsShipped("some goods"))
+val program: Future[Unit] = 
+    baker.resolveInteraction(recipeInstanceId, "ReserveItems", ItemsReserved(List("item1")))
 ```
 
 ``` java tab="Java"
-baker.resolveInteraction(recipeInstanceId, "ShipGoods", new GoodsShipped("some goods"));
+CompletableFuture<BoxedUnit> program = 
+    baker.resolveInteraction(recipeInstanceId, "ReserveItems", new ItemsReserved(List("item1")));
 ```
 
-Note that the event provided *SHOULD NOT* include any [event or ingredient renames](recipe-dsl.md#event-renames) specified for the interaction.
+## baker.stopRetryingInteraction(recipeInstanceId, interactionName)
 
+If an `Interaction` is configured with a `RetryWithIncrementalBackoff` `FailureStrategy` then it will not stop retrying 
+until you call this API or a successful outcome happens from the `InteractionInstance`.
 
-## State inquiry
-
-During runtime it is often useful to *inquire* on the state of a process instance.
-
-## Visualize process instance state
-
-
-We can use the visualizer to see what Baker has done with the given events.
-
-```scala tab="Scala"
-val dotRepresentation: String = baker.getVisualState(recipeInstanceId)
+``` scala tab="Scala"
+val program: Future[Unit] = 
+    baker.stopRetryingInteraction(recipeInstanceId, "ReserveItems")
 ```
 
-```java tab="Java"
-String dotRepresentation = baker.getVisualState(recipeInstanceId);
+``` java tab="Java"
+CompletableFuture<BoxedUnit> program = 
+    baker.stopRetryingInteraction(recipeInstanceId, "ReserveItems");
 ```
-
-!!! hint "Did you know?!"
-    You can ask baker for a visual representation of a certain process.
-    That way you can see which Events were provided and which Interaction were run.
-    [See the visualization page how to create a visual graph.](recipe-visualization.md)
-
-![](/images/webshop-state-1.svg)
-
-The image shows us that the `ValidateOrder` Interaction is colored green which means that the Interaction has been exucuted. Baker was able to exeucte the Interaction because all required Events and Ingredients where provided.
-The `ValidateOrder` Interaction in turn produced the `Valid` event.
-
-We can also see that the `ManufactureGoods` Interaction is still purple, meaning that it has not been executed. This is correct because `ManufactureGoods` requires an additional event called `PaymentMade`.
-
-
-### Events
-
-We can ask Baker for a list of all the events for our process.
-
-Using this list we can check if the `InvoiceWasSend` event was produced.
-
-```scala tab="Scala"
-// Get all events that have happend for this process instance
-val events: Seq[RuntimeEvent] = baker.getEvents(recipeInstanceId)
-if (events.exists(_.name == "InvoiceWasSend"))
-    // Yes the invoice was send!
-```
-
-```java tab="Java"
-// Get all events that have happend for this process instance
-EventList events = baker.getEvents(recipeInstanceId);
-if (events.hasEventOccurred(InvoiceWasSend.class))
-    // Yes the invoice was send!
-```
-
-### Ingredients
-
-Sometimes it is useful to know what the ingredient values are accumulated for a process instance.
-
-For example, you might want to know the value of the `trackingId`.
-
-```scala tab="Scala"
-// Get all ingredients that are accumulated for a process instance
-val ingredients: Map[String, Value] = baker.getIngredients(recipeInstanceId)
-
-val trackingId: String = ingredients("trackingId").as[String]
-```
-
-```java tab="Java"
-// Get all ingredients that are accumulated for a process instance
-Map<String, Value> ingredients = baker.getIngredients(recipeInstanceId);
-
-String trackingId = ingredients.get("trackingId").as(String.class);
-```
-

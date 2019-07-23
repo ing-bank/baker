@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
+import com.ing.baker.runtime.scaladsl._
 import webshop.WebshopRecipeReflection.PaymentMade
 
 import scala.concurrent.{Await, Future}
@@ -37,6 +37,18 @@ object Main extends App {
 
   val program: Future[Unit] = for {
     _ <- baker.addInteractionInstace(WebshopInstancesReflection.reserveItemsInstance)
+    _ <- baker.registerEventListener((recipeInstanceId: String, event: EventInstance) => {
+      println(s"Recipe instance : $recipeInstanceId processed event ${event.name}")
+    })
+    _ <- baker.registerBakerEventListener {
+      case e: EventReceived => println(e)
+      case e: EventRejected => println(e)
+      case e: InteractionFailed => println(e)
+      case e: InteractionStarted => println(e)
+      case e: InteractionCompleted => println(e)
+      case e: ProcessCreated => println(e)
+      case e: RecipeAdded => println(e)
+    }
     recipeId <- baker.addRecipe(compiledRecipe)
     _ <- baker.bake(recipeId, "first-instance-id")
     _ <- baker.fireEventAndResolveWhenCompleted("first-instance-id", firstOrderPlaced)

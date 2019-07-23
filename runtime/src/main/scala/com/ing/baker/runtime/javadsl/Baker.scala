@@ -231,6 +231,7 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     *
     * @return An index of all processes
     */
+  // TODO: Processmetadata must be renamed
   def getAllInteractionInstancesMetadata: CompletableFuture[util.Set[ProcessMetadata]] =
     FutureConverters
       .toJava(baker.getAllInteractionInstancesMetadata)

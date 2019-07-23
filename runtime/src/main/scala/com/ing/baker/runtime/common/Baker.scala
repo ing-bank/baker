@@ -230,6 +230,7 @@ trait Baker[F[_]] extends LanguageApi {
     *
     * @return An index of all processes
     */
+  // TODO: This should be named: getAllRecipeInstancesMetadata
   def getAllInteractionInstancesMetadata: F[language.Set[ProcessMetadataType]]
 
   /**
@@ -285,6 +286,7 @@ trait Baker[F[_]] extends LanguageApi {
     *
     * @param implementation The implementation object
     */
+  // TODO: type here
   def addInteractionInstace(implementation: InteractionInstanceType): F[Unit]
 
   /**
