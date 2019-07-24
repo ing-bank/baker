@@ -5,7 +5,7 @@ import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
 /**
   * This class holds some meta data of a baker process.
   */
-trait ProcessMetadata extends LanguageApi {
+trait RecipeInstanceMetadata extends LanguageApi {
 
   val recipeId: String
 

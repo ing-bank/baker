@@ -4,7 +4,7 @@ import com.ing.baker.runtime.scaladsl
 import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 
-class ProcessMetadata(val recipeId: String, val recipeInstanceId: String, val createdTime: Long) extends common.ProcessMetadata with JavaApi {
+class RecipeInstanceMetadata(val recipeId: String, val recipeInstanceId: String, val createdTime: Long) extends common.RecipeInstanceMetadata with JavaApi {
 
   /**
     * Returns the recipe id of the process.
@@ -30,6 +30,6 @@ class ProcessMetadata(val recipeId: String, val recipeInstanceId: String, val cr
     */
   def getCreatedTime: Long = createdTime
 
-  def asScala: scaladsl.ProcessMetadata =
-    scaladsl.ProcessMetadata(recipeId, recipeInstanceId, createdTime)
+  def asScala: scaladsl.RecipeInstanceMetadata =
+    scaladsl.RecipeInstanceMetadata(recipeId, recipeInstanceId, createdTime)
 }

@@ -118,7 +118,7 @@ trait InteractionCompleted extends BakerEvent {
   * @param recipeName The name of the recipe
   * @param recipeInstanceId  The process id
   */
-trait ProcessCreated extends BakerEvent {
+trait RecipeInstanceCreated extends BakerEvent {
   val timeStamp: Long
   val recipeId: String
   val recipeName: String

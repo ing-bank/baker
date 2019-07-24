@@ -68,7 +68,7 @@ class ExamplesSpec extends BakerRuntimeTestBase  {
       val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
       for {
-        _ <- Future.traverse(implementations)(baker.addInteractionInstace)
+        _ <- Future.traverse(implementations)(baker.addInteractionInstance)
         recipeId <- baker.addRecipe(compiledRecipe)
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)

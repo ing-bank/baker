@@ -110,7 +110,7 @@ class BaasRoutes(override val actorSystem: ActorSystem) extends Directives with 
               println(s"Adding interaction called: ${request.name}")
 
               //Register it to BAAS
-              baker.addInteractionInstace(interactionImplementation)
+              baker.addInteractionInstance(interactionImplementation)
 
               //return response
               complete(AddInteractionHTTPResponse(
