@@ -32,13 +32,15 @@ Registers a listener to all runtime BAKER events, these are events that notify w
 received `EventInstances` or `CompiledRecipes` being added to baker.
 
 Note that:
-- The delivery guarantee is *AT MOST ONCE*. Practically this means you can miss events when the application terminates (unexpected or not).
-- The delivery is local (JVM) only, you will NOT receive events from other nodes when running in cluster mode.
+
+* The delivery guarantee is *AT MOST ONCE*. Practically this means you can miss events when the application terminates (unexpected or not).
+* The delivery is local (JVM) only, you will NOT receive events from other nodes when running in cluster mode.
 
 Because of these constraints you should not use an event listener for critical functionality. Valid use cases might be:
-- logging
-- metrics
-- unit tests
+
+* logging
+* metrics
+* unit tests
 
 ```scala tab="Scala"
 import com.ing.baker.runtime.scaladsl._

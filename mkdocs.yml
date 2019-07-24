@@ -34,7 +34,6 @@ nav:
       - 'sections/development-life-cycle/bake-fire-events-and-inquiry.md'
       - 'sections/development-life-cycle/test.md'
       - 'sections/development-life-cycle/configure.md'
-      - 'sections/development-life-cycle/deploy.md'
       - 'sections/development-life-cycle/monitor.md'
       - 'sections/development-life-cycle/resolve-failed-recipe-instances.md'
   - Versions:

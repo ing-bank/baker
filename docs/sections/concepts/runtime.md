@@ -55,6 +55,18 @@ Baker baker = Baker.akkaLocalDefault(actorSystem, materializer);
 
 ```
 
+### Advantages of the Cluster Mode
+
+The capabilities gained when in cluster mode are:
+
+* Elasticity: by adding/removing nodes to the cluster.
+* Resilience: `RecipeInstances` are automatically restored in a new node when the hosting node fails. (For this you need to configure 
+a distributed data store like Cassandra)
+* Routing: You can fire `EventInstances` from anywhere on the cluster, and Baker will ensure that the corresponding `RecipeInstance`
+receives the firing event.
+
+_Note: To run on cluster mode you need to configure a distributed data store, we highly recommend using Cassandra._
+
 ## InteractionInstance.from(object) (Reflection API)
 
 As part of our efforts to ease the creation of `InteractionInstances` we created this function that uses the Scala and the
