@@ -1,4 +1,4 @@
-package webshop
+package webshop.simple
 
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
@@ -6,7 +6,7 @@ import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 
 import scala.concurrent.duration._
 
-object WebshopRecipeReflection {
+object SimpleWebshopRecipeReflection {
 
   case class OrderPlaced(orderId: String, items: List[String])
 

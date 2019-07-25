@@ -1,20 +1,20 @@
-package webshop
+package webshop.simple
 
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
-object WebshopInstancesReflection {
+object SimpleWebshopInstancesReflection {
 
   trait ReserveItems {
 
-    def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput]
+    def apply(orderId: String, items: List[String]): Future[SimpleWebshopRecipeReflection.ReserveItemsOutput]
   }
 
   class ReserveItemsInstance extends ReserveItems {
 
-    override def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput] = {
+    override def apply(orderId: String, items: List[String]): Future[SimpleWebshopRecipeReflection.ReserveItemsOutput] = {
 
       // Http call to the Warehouse service
       val response: Future[Either[List[String], List[String]]] =
@@ -24,9 +24,9 @@ object WebshopInstancesReflection {
       // Build an event instance that Baker understands
       response.map {
         case Left(unavailableItems) =>
-          WebshopRecipeReflection.OrderHadUnavailableItems(unavailableItems)
+          SimpleWebshopRecipeReflection.OrderHadUnavailableItems(unavailableItems)
         case Right(reservedItems) =>
-          WebshopRecipeReflection.ItemsReserved(reservedItems)
+          SimpleWebshopRecipeReflection.ItemsReserved(reservedItems)
       }
     }
   }

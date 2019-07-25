@@ -1,15 +1,15 @@
-package webshop
+package webshop.simple
 
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
 import com.ing.baker.types.{CharArray, ListType, ListValue, PrimitiveValue}
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
-object WebshopInstances {
+object SimpleWebshopInstances {
 
   val ReserveItemsInstance = InteractionInstance(
-    name = WebshopRecipe.Interactions.ReserveItems.name,
+    name = SimpleWebshopRecipe.Interactions.ReserveItems.name,
     input = Seq(CharArray, ListType(CharArray)),
     run = handleReserveItems
   )
@@ -37,9 +37,9 @@ object WebshopInstances {
 
       case Left(unavailableItems) =>
         Some(EventInstance(
-          name = WebshopRecipe.Events.OrderHadUnavailableItems.name,
+          name = SimpleWebshopRecipe.Events.OrderHadUnavailableItems.name,
           providedIngredients = Map(
-            WebshopRecipe.Ingredients.UnavailableItems.name ->
+            SimpleWebshopRecipe.Ingredients.UnavailableItems.name ->
               ListValue(unavailableItems.map(PrimitiveValue.apply))
           )
         ))
@@ -47,9 +47,9 @@ object WebshopInstances {
       case Right(reservedItems) =>
         println(Console.MAGENTA + reservedItems + Console.RESET)
         Some(EventInstance(
-          name = WebshopRecipe.Events.ItemsReserved.name,
+          name = SimpleWebshopRecipe.Events.ItemsReserved.name,
           providedIngredients = Map(
-            WebshopRecipe.Ingredients.ReservedItems.name ->
+            SimpleWebshopRecipe.Ingredients.ReservedItems.name ->
               ListValue(reservedItems.map(PrimitiveValue.apply))
           )
         ))

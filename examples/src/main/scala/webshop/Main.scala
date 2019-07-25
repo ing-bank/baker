@@ -2,23 +2,32 @@ package webshop
 
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
+import cats.effect.{ExitCode, IO, IOApp}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.scaladsl._
-import webshop.WebshopRecipeReflection.PaymentMade
+import com.typesafe.config.{Config, ConfigFactory}
+import webshop.simple.SimpleWebshopRecipeReflection.PaymentMade
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object Main extends App {
+object Main extends IOApp {
 
-  implicit val actorSystem: ActorSystem =
+  val actorSystem: ActorSystem =
     ActorSystem("WebshopSystem")
-  implicit val materializer: Materializer =
-    ActorMaterializer()
-  val baker: Baker = Baker.akkaLocalDefault(actorSystem, materializer)
+  val materializer: Materializer =
+    ActorMaterializer()(actorSystem)
+  val config: Config =
+    ConfigFactory.load()
+  val baker: Baker =
+    Baker.akkaLocalDefault(actorSystem, materializer)
 
+  override def run(args: List[String]): IO[ExitCode] = ???
+
+
+  /*
   val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipeReflection.recipe)
 
   val firstOrderPlaced: EventInstance =
@@ -61,4 +70,6 @@ object Main extends App {
   } yield ()
 
   Await.result(program, 5.seconds)
+  */
+
 }

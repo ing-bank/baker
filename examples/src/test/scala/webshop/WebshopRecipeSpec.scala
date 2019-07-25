@@ -9,23 +9,24 @@ import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance
 import org.scalatest.{AsyncFlatSpec, Matchers}
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
+import webshop.simple.{SimpleWebshopRecipe, SimpleWebshopRecipeReflection}
 
 import scala.concurrent.Future
 
 class WebshopRecipeSpec extends AsyncFlatSpec with Matchers with MockitoSugar {
 
   "The WebshopRecipeReflection" should "compile the recipe without errors" in {
-    RecipeCompiler.compileRecipe(WebshopRecipeReflection.recipe)
+    RecipeCompiler.compileRecipe(SimpleWebshopRecipeReflection.recipe)
     Future.successful(succeed)
   }
 
   "The WebshopRecipe" should "compile the recipe without errors" in {
-    RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
+    RecipeCompiler.compileRecipe(SimpleWebshopRecipe.recipe)
     Future.successful(succeed)
   }
 
   it should "visualize the recipe" in {
-    val compiled = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
+    val compiled = RecipeCompiler.compileRecipe(SimpleWebshopRecipe.recipe)
     val viz: String = compiled.getRecipeVisualization
     println(Console.GREEN + s"Recipe visualization, paste this into webgraphviz.com:")
     println(viz + Console.RESET)
@@ -34,12 +35,12 @@ class WebshopRecipeSpec extends AsyncFlatSpec with Matchers with MockitoSugar {
 
   trait ReserveItems {
 
-    def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput]
+    def apply(orderId: String, items: List[String]): Future[SimpleWebshopRecipeReflection.ReserveItemsOutput]
   }
 
   class ReserveItemsMock extends ReserveItems {
 
-    override def apply(orderId: String, items: List[String]): Future[WebshopRecipeReflection.ReserveItemsOutput] = {
+    override def apply(orderId: String, items: List[String]): Future[SimpleWebshopRecipeReflection.ReserveItemsOutput] = {
 
       // Http call to the Warehouse service
       val response: Future[Either[List[String], List[String]]] =
@@ -49,9 +50,9 @@ class WebshopRecipeSpec extends AsyncFlatSpec with Matchers with MockitoSugar {
       // Build an event instance that Baker understands
       response.map {
         case Left(unavailableItems) =>
-          WebshopRecipeReflection.OrderHadUnavailableItems(unavailableItems)
+          SimpleWebshopRecipeReflection.OrderHadUnavailableItems(unavailableItems)
         case Right(reservedItems) =>
-          WebshopRecipeReflection.ItemsReserved(reservedItems)
+          SimpleWebshopRecipeReflection.ItemsReserved(reservedItems)
       }
     }
   }
@@ -62,16 +63,16 @@ class WebshopRecipeSpec extends AsyncFlatSpec with Matchers with MockitoSugar {
     val materializer: Materializer = ActorMaterializer()(system)
     val baker: Baker = Baker.akkaLocalDefault(system, materializer)
 
-    val compiled = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
+    val compiled = RecipeCompiler.compileRecipe(SimpleWebshopRecipe.recipe)
     val recipeInstanceId: String = UUID.randomUUID().toString
 
     val orderId: String = "order-id"
     val items: List[String] = List("item1", "item2")
 
     val orderPlaced = EventInstance
-      .unsafeFrom(WebshopRecipeReflection.OrderPlaced(orderId, items))
+      .unsafeFrom(SimpleWebshopRecipeReflection.OrderPlaced(orderId, items))
     val paymentMade = EventInstance
-      .unsafeFrom(WebshopRecipeReflection.PaymentMade())
+      .unsafeFrom(SimpleWebshopRecipeReflection.PaymentMade())
 
     val reserveItemsInstance: InteractionInstance =
       InteractionInstance.unsafeFrom(new ReserveItemsMock)
@@ -101,16 +102,16 @@ class WebshopRecipeSpec extends AsyncFlatSpec with Matchers with MockitoSugar {
     val materializer: Materializer = ActorMaterializer()(system)
     val baker: Baker = Baker.akkaLocalDefault(system, materializer)
 
-    val compiled = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
+    val compiled = RecipeCompiler.compileRecipe(SimpleWebshopRecipe.recipe)
     val recipeInstanceId: String = UUID.randomUUID().toString
 
     val orderId: String = "order-id"
     val items: List[String] = List("item1", "item2")
 
     val orderPlaced = EventInstance
-      .unsafeFrom(WebshopRecipeReflection.OrderPlaced(orderId, items))
+      .unsafeFrom(SimpleWebshopRecipeReflection.OrderPlaced(orderId, items))
     val paymentMade = EventInstance
-      .unsafeFrom(WebshopRecipeReflection.PaymentMade())
+      .unsafeFrom(SimpleWebshopRecipeReflection.PaymentMade())
 
     // The ReserveItems interaction being mocked by Mockito
     val mockedReserveItems: ReserveItems = mock[ReserveItems]
@@ -118,7 +119,7 @@ class WebshopRecipeSpec extends AsyncFlatSpec with Matchers with MockitoSugar {
       InteractionInstance.unsafeFrom(mockedReserveItems)
 
     when(mockedReserveItems.apply(orderId, items))
-      .thenReturn(Future.successful(WebshopRecipeReflection.ItemsReserved(items)))
+      .thenReturn(Future.successful(SimpleWebshopRecipeReflection.ItemsReserved(items)))
 
     for {
       _ <- baker.addInteractionInstace(reserveItemsInstance)

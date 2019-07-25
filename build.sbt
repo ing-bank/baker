@@ -238,8 +238,13 @@ lazy val examples = project
   .settings(noPublishSettings)
   .settings(
     moduleName := "examples",
-    libraryDependencies ++= 
-      testDeps(
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
+    libraryDependencies ++=
+      compileDeps(
+        http4s
+      ) ++ testDeps(
         scalaTest,
         scalaCheck,
         junitInterface,
