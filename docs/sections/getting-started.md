@@ -52,5 +52,6 @@ This is the dependency graph between the modules.
 
 After adding the dependencies you can continue to:
 
- - Familiarize yourself with the [concepts](/sections/concepts/main-abstractions).
- - Immediately start [writing your recipes](/sections/development-life-cycle/design-a-recipe/).
+1. Understand the [high level concepts](/sections/concepts).
+2. If you like learning by doing, go through the [development life cycle section](/sections/development-life-cycle/design-a-recipe).
+3. If you like learning by description, go through the [reference section](/sections/reference/main-abstractions).

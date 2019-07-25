@@ -10,7 +10,7 @@ A *Recipe* is made out of:
 - *Ingredients* (data)
 - *Events*
 
-More about these concepts [here](../sections/concepts).
+More about these concepts [here](../sections/reference).
 
 ## Overview
 

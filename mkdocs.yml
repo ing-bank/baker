@@ -17,16 +17,7 @@ markdown_extensions:
 nav:
   - Home: 'index.md'
   - 'sections/getting-started.md'
-  - 'sections/feature-comparison.md'
-  - Concepts:
-      - 'sections/concepts/main-abstractions.md'
-      - 'sections/concepts/execution-semantics.md'
-      - 'sections/concepts/baker-types-and-values.md'
-      - 'sections/concepts/dsls.md'
-      - 'sections/concepts/runtime.md'
-      - 'sections/concepts/visualization.md'
-      - 'sections/concepts/event-listener.md'
-      - 'sections/concepts/stores.md'
+  - 'sections/concepts.md'
   - Development Life Cycle:
       - 'sections/development-life-cycle/design-a-recipe.md'
       - 'sections/development-life-cycle/use-visualizations.md'
@@ -36,6 +27,16 @@ nav:
       - 'sections/development-life-cycle/configure.md'
       - 'sections/development-life-cycle/monitor.md'
       - 'sections/development-life-cycle/resolve-failed-recipe-instances.md'
+  - Reference:
+      - 'sections/reference/main-abstractions.md'
+      - 'sections/reference/execution-semantics.md'
+      - 'sections/reference/baker-types-and-values.md'
+      - 'sections/reference/dsls.md'
+      - 'sections/reference/runtime.md'
+      - 'sections/reference/visualization.md'
+      - 'sections/reference/event-listener.md'
+      - 'sections/reference/stores.md'
   - Versions:
-      - 'sections/versions/baker-2.md'
       - 'sections/versions/baker-3.md'
+      - 'sections/versions/baker-2.md'
+  - 'sections/feature-comparison.md'
