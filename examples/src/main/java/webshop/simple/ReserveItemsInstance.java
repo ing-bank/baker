@@ -1,4 +1,4 @@
-package webshop;
+package webshop.simple;
 
 import java.util.List;
 

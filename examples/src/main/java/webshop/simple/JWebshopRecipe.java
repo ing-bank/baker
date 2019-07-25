@@ -1,4 +1,4 @@
-package webshop;
+package webshop.simple;
 
 import com.ing.baker.recipe.annotations.FiresEvent;
 import com.ing.baker.recipe.annotations.RequiresIngredient;

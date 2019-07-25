@@ -16,6 +16,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import com.ing.baker.runtime.javadsl.EventInstance;
+import webshop.simple.JWebshopRecipe;
+
 import static org.mockito.Mockito.*;
 
 public class JWebshopRecipeTests {

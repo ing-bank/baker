@@ -243,7 +243,14 @@ lazy val examples = project
     ),
     libraryDependencies ++=
       compileDeps(
-        http4s
+        slf4jApi,
+        slf4jSimple,
+        http4s,
+        http4sDsl,
+        http4sServer,
+        http4sCirce,
+        circe,
+        circeGeneric
       ) ++ testDeps(
         scalaTest,
         scalaCheck,

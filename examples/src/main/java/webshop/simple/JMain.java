@@ -1,4 +1,4 @@
-package webshop;
+package webshop.simple;
 
 import akka.actor.ActorSystem;
 import akka.stream.ActorMaterializer;
