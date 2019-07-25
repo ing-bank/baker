@@ -10,7 +10,7 @@ import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.Router
 
-object CheckoutHttp {
+object WebShopService {
 
   case class PlaceOrderRequest(items: List[String])
   case class PlaceOrderResponse(orderId: String)
@@ -21,9 +21,9 @@ object CheckoutHttp {
   case class PollPaymentStatusResponse(status: String)
 }
 
-class CheckoutHttp(webshop: WebShop)(implicit timer: Timer[IO], cs: ContextShift[IO]) {
+class WebShopService(webshop: WebShop)(implicit timer: Timer[IO], cs: ContextShift[IO]) {
 
-  import CheckoutHttp._
+  import WebShopService._
 
   implicit val placeOrderRequestDecoder: EntityDecoder[IO, PlaceOrderRequest] =
     jsonOf[IO, PlaceOrderRequest]

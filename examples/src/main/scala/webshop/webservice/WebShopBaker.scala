@@ -38,7 +38,8 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
         CheckoutFlowEvents.OrderPlaced(OrderId(orderId), items.map(Item)))
       for {
         _ <- baker.bake(checkoutRecipeId, orderId)
-        _ <- baker.fireEventAndResolveWhenReceived(orderId, event)
+        status <- baker.fireEventAndResolveWhenReceived(orderId, event)
+        _ = println(s"Order placed[$orderId]: $status")
       } yield orderId
     })
 
@@ -47,8 +48,8 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
       val event = EventInstance.unsafeFrom(
         CheckoutFlowEvents.ShippingAddressReceived(ShippingAddress(address)))
       for {
-        _ <- baker.bake(checkoutRecipeId, orderId)
-        _ <- baker.fireEventAndResolveWhenReceived(orderId, event)
+        status <- baker.fireEventAndResolveWhenReceived(orderId, event)
+        _ = println(s"Add address [$orderId]: $status")
       } yield None
     })
 
@@ -57,8 +58,8 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
       val event = EventInstance.unsafeFrom(
         CheckoutFlowEvents.PaymentInformationReceived(PaymentInformation(paymentInfo)))
       for {
-        _ <- baker.bake(checkoutRecipeId, orderId)
-        _ <- baker.fireEventAndResolveWhenReceived(orderId, event)
+        status <- baker.fireEventAndResolveWhenReceived(orderId, event)
+        _ = println(s"Add payment [$orderId]: $status")
       } yield None
     })
 
@@ -72,7 +73,12 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
         _ = println
         _ = println("INGREDIENTS")
         _ = state.ingredients.foreach(println)
-        status = OrderStatus.Complete
+        eventNames = state.events.map(_.name)
+        status = {
+          if(eventNames.contains("ShippingConfirmed")) OrderStatus.Complete
+          else if(eventNames.contains("PaymentFailed")) OrderStatus.PaymentFailed
+          else if(eventNames.contains(""))
+        }
       } yield status
     })
 }

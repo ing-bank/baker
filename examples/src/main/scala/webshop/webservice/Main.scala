@@ -24,7 +24,7 @@ object Main extends IOApp {
     for {
       checkoutRecipeId <- WebShopBaker.initRecipes(baker)
       webShopBaker = new WebShopBaker(baker, checkoutRecipeId)
-      app = new CheckoutHttp(webShopBaker)
+      app = new WebShopService(webShopBaker)
       status <- BlazeServerBuilder[IO]
         .bindHttp(8080, "localhost")
         .withHttpApp(app.buildHttpService)
