@@ -75,9 +75,20 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
         _ = state.ingredients.foreach(println)
         eventNames = state.events.map(_.name)
         status = {
-          if(eventNames.contains("ShippingConfirmed")) OrderStatus.Complete
-          else if(eventNames.contains("PaymentFailed")) OrderStatus.PaymentFailed
-          else if(eventNames.contains(""))
+          if(eventNames.contains("ShippingConfirmed"))
+            OrderStatus.Complete
+          else if(eventNames.contains("PaymentFailed"))
+            OrderStatus.PaymentFailed
+          else if(eventNames.contains("OrderHadUnavailableItems"))
+            OrderStatus.UnavailableItems(state.ingredients("unavailableItems").as[List[Item]].map(_.itemId))
+          else if(eventNames.containsSlice(List("ShippingAddressReceived", "PaymentInformationReceived")))
+            OrderStatus.ProcessingPayment
+          else if(eventNames.contains("PaymentSuccessful"))
+            OrderStatus.ShippingItems
+          else
+            OrderStatus.InfoPending(List("ShippingAddressReceived", "PaymentInformationReceived")
+              .filterNot(eventNames.contains)
+              .map(_.replace("Received", "")))
         }
       } yield status
     })
