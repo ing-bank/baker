@@ -23,8 +23,8 @@ object WebShopBaker {
         InteractionInstance.unsafeFrom(new ShipItemsInstance())
       ))
       checkoutRecipeId <- baker.addRecipe(checkoutFlowCompiledRecipe)
-      _ = println("Adding Checkout Flow Recipe: ")
-      _ = println(checkoutFlowCompiledRecipe.getRecipeVisualization)
+      //_ = println("Adding Checkout Flow Recipe: ")
+      //_ = println(checkoutFlowCompiledRecipe.getRecipeVisualization)
     } yield checkoutRecipeId))
   }
 }
@@ -39,7 +39,7 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
       for {
         _ <- baker.bake(checkoutRecipeId, orderId)
         status <- baker.fireEventAndResolveWhenReceived(orderId, event)
-        _ = println(s"Order placed[$orderId]: $status")
+        //_ = println(s"Order placed[$orderId]: $status")
       } yield orderId
     })
 
@@ -49,7 +49,7 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
         CheckoutFlowEvents.ShippingAddressReceived(ShippingAddress(address)))
       for {
         status <- baker.fireEventAndResolveWhenReceived(orderId, event)
-        _ = println(s"Add address [$orderId]: $status")
+        //_ = println(s"Add address [$orderId]: $status")
       } yield None
     })
 
@@ -59,7 +59,7 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
         CheckoutFlowEvents.PaymentInformationReceived(PaymentInformation(paymentInfo)))
       for {
         status <- baker.fireEventAndResolveWhenReceived(orderId, event)
-        _ = println(s"Add payment [$orderId]: $status")
+        //_ = println(s"Add payment [$orderId]: $status")
       } yield None
     })
 
@@ -67,12 +67,14 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
     IO.fromFuture(IO {
       for {
         state <- baker.getRecipeInstanceState(orderId)
+        /*
         _ = println
         _ = println("EVENTS")
         _ = state.events.foreach(println)
         _ = println
         _ = println("INGREDIENTS")
         _ = state.ingredients.foreach(println)
+        */
         eventNames = state.events.map(_.name)
         status = {
           if(eventNames.contains("ShippingConfirmed"))

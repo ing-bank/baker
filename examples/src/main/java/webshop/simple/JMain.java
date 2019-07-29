@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 public class JMain {
 
-    static public void main(String[] args) {
+    static public void main_ignore(String[] args) {
 
         ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
         Materializer materializer = ActorMaterializer.create(actorSystem);

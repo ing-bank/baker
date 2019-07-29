@@ -234,6 +234,7 @@ lazy val integration = project.in(file("integration"))
 
 lazy val examples = project
   .in(file("examples"))
+  .enablePlugins(UniversalPlugin, DockerPlugin)
   .settings(commonSettings)
   .settings(noPublishSettings)
   .settings(
@@ -259,5 +260,8 @@ lazy val examples = project
         mockito,
         logback
       )
+  )
+  .settings(
+    dockerExposedPorts := Seq(8080)
   )
   .dependsOn(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage)
