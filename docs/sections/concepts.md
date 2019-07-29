@@ -111,7 +111,7 @@ We distinquish 2 types of events.
 
 Recipes are analagous to process blueprints.
 
-Baker provides a [Recipe DSL](recipe-dsl.md) in which you can declaritively describe your recipe.
+Baker provides a [Recipe DSL](recipe-dsl.md) in which you can declaratively describe your recipe.
 
 A small example:
 ``` java

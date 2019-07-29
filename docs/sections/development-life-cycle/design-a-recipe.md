@@ -21,6 +21,8 @@ When developing with Baker we must first translate the requirements into our 3 e
 have ingredients as input, execute actions with other systems, and yield more events. We will do this so that the 
 baker runtime can orchestrate the execution of our process through the underlying microservices.
 
+## Ingredients and Events
+
 A recipe always starts with initial events, also called `Sensory Events`, in the case of our first requirement 
 we could model the placing of an order as an event, which will provide 2 ingredients: the order id and the list
 of items.
@@ -81,6 +83,8 @@ also the type information, for example `Ingredient[String]("order-id")` creates 
 of type "String", for more information about Baker types please refer to [this section](). As shown in the code, events might carry
 ingredients, and have a maximum about of times they are allowed to fire, the runtime will enforce this limit. For more 
 information about this and other features of events please refer to [this section]().
+
+## Interactions
 
 Then, the desired actions can be modeled as `interactions`, in our case we are told that it exists a warehouse service 
 which we need to call to reserve the items, but this might either succeed or fail.
@@ -193,7 +197,12 @@ making new interactions that require events and ingredients which are output of 
 You can create also interactions which take no input ingredients but are executed after events (with or without provided 
 ingredients) are fired, for this and other features please refer to the conceptual documentation found [here]().
 
-The final step is to create an object that will hold all of these descriptions into what we call a Recipe.
+## The Recipe
+
+The final step is to create an object that will hold all of these descriptions into what we call a Recipe, this becomes
+the "blueprint" of your process, it can define failure handling strategies, and will "auto-bind" the interactions, that 
+means it detects the composition between interactions by matching the ingredients provided by events to the input ingredients
+required by interactions.
 
 ```scala tab="Scala"
 
@@ -224,6 +233,10 @@ Let us remember that this is just a _description_ of what our program across mul
 sections we will see how to visualize it, create runtime `instances` of our recipes and their parts, what common practices
 are there for testing, everything you need to know to deploy and monitor a baker cluster, and how Baker helps you handle
 and resolve failure which is not modeled in the domain (in the recipe).
+
+As you might have realised `Ingredients`, `Events` and `Interactions` could be reused on different Recipes, giving common
+business verbs that your programs and organisation can use across teams, the same way different cooking recipes share
+same processes (simmering, boiling, cutting) you should reuse interactions across your different business recipes.
 
 As a bonus; you might have though that this API is verbose, we agree and that is why we developed an alternative 
 API which uses Java and Scala reflection.
@@ -258,13 +271,9 @@ object WebshopRecipeReflection {
 
   val recipe: Recipe = Recipe("Webshop")
     .withSensoryEvents(
-      Event[OrderPlaced],
-      Event[OrderHadUnavailableItems],
-      Event[ItemsReserved]
-    )
+      Event[OrderPlaced])
     .withInteractions(
-      ReserveItems
-    )
+      ReserveItems)
 }
 
 ```
