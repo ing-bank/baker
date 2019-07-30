@@ -2,6 +2,7 @@ package webshop.webservice
 
 import cats.data.Kleisli
 import cats.effect.{ContextShift, IO, Timer}
+import cats.implicits._
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s._
@@ -33,7 +34,14 @@ class WebShopService(webshop: WebShop)(implicit timer: Timer[IO], cs: ContextShi
     jsonOf[IO, AddPaymentRequest]
 
   def buildHttpService: Kleisli[IO, Request[IO], Response[IO]] =
+    (Router("/" -> HttpRoutes.of[IO] {
+      case GET -> Root => Ok("Ok")
+      case HEAD -> Root => Ok()
+    }) <+>
     Router("/api" -> HttpRoutes.of[IO] {
+
+      case GET -> Root =>
+        Ok("Ok")
 
       case req@POST -> Root / "order" =>
         for {
@@ -62,6 +70,6 @@ class WebShopService(webshop: WebShop)(implicit timer: Timer[IO], cs: ContextShi
           response <- Ok(PollPaymentStatusResponse(status.toString).asJson)
         } yield response
 
-    }).orNotFound
+    })).orNotFound
 
 }

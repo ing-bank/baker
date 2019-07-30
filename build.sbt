@@ -234,7 +234,7 @@ lazy val integration = project.in(file("integration"))
 
 lazy val examples = project
   .in(file("examples"))
-  .enablePlugins(UniversalPlugin, DockerPlugin)
+  .enablePlugins(JavaAppPackaging)
   .settings(commonSettings)
   .settings(noPublishSettings)
   .settings(
@@ -251,7 +251,9 @@ lazy val examples = project
         http4sServer,
         http4sCirce,
         circe,
-        circeGeneric
+        circeGeneric,
+        kamon,
+        kamonPrometheus
       ) ++ testDeps(
         scalaTest,
         scalaCheck,
@@ -262,6 +264,9 @@ lazy val examples = project
       )
   )
   .settings(
+    maintainer in Docker := "The Apollo Squad",
+    packageSummary in Docker := "A web-shop checkout service example running baker",
+    packageName in Docker := "checkout-service-baker-example",
     dockerExposedPorts := Seq(8080)
   )
   .dependsOn(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage)

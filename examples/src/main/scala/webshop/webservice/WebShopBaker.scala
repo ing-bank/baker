@@ -25,6 +25,9 @@ object WebShopBaker {
       checkoutRecipeId <- baker.addRecipe(checkoutFlowCompiledRecipe)
       //_ = println("Adding Checkout Flow Recipe: ")
       //_ = println(checkoutFlowCompiledRecipe.getRecipeVisualization)
+      _ <- baker.registerEventListener((name, event) => {
+        println(s"$name => ${event.providedIngredients}")
+      })
     } yield checkoutRecipeId))
   }
 }

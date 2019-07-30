@@ -14,7 +14,7 @@ class MakePaymentInstance(implicit timer: Timer[IO]) extends MakePayment {
     //IO(println(s"Processing payment with $payment"))
     IO.unit
       .flatMap(_ => IO.sleep(5 second))
-      //.map(_ => println("Payment successful!"))
+      .map(_ => println("Payment successful!"))
       .map(_ => CheckoutFlowEvents.PaymentSuccessful(ShippingOrder(items.items, address)))
       .unsafeToFuture()
   }

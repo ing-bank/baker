@@ -3,7 +3,7 @@ import sbt._
 //noinspection TypeAnnotation
 object Dependencies {
 
-  val akkaVersion = "2.5.22"
+  val akkaVersion = "2.5.11"
   val http4sVersion = "0.20.0"
   val circeVersion = "0.11.1"
 
@@ -45,6 +45,9 @@ object Dependencies {
   val scalaGraphDot =             "org.scala-graph"            %% "graph-dot"                          % "1.11.5"
   val graphvizJava =              "guru.nidi"                  %  "graphviz-java"                      % "0.8.0"
 
+  val kamon =                     "io.kamon"                   %% "kamon-bundle"                       % "2.0.0"
+  val kamonAkka =                 "io.kamon"                   %% "kamon-akka"                         % "2.0.0"
+  val kamonPrometheus =           "io.kamon"                   %% "kamon-prometheus"                   % "2.0.0"
   val http4s =                    "org.http4s"                 %% "http4s-core"                        % http4sVersion
   val http4sDsl =                 "org.http4s"                 %% "http4s-dsl"                         % http4sVersion
   val http4sServer =              "org.http4s"                 %% "http4s-blaze-server"                % http4sVersion
