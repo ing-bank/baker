@@ -40,11 +40,13 @@ services:
       CLUSTER_SEED_HOST: node1
       CLUSTER_SEED_PORT: 2551
   prometheus:
-    image: "prometheus-checkout-service:latest"
+    build: "./prometheus"
+    container_name: "prometheus"
     ports:
       - "9090:9090"
   grafana:
-    image: "grafana/grafana"
+    build: "./grafana"
+    container_name: "grafana"
     ports:
       - "3000:3000"
     environment:
@@ -52,7 +54,8 @@ services:
     logging:
       driver: none
   haproxy:
-    image: "haproxy-checkout-service:latest"
+    build: "./haproxy"
+    container_name: "haproxy"
     ports:
       - "8080:8080"
 
