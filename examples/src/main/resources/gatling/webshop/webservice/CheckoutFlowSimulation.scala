@@ -13,7 +13,6 @@ class CheckoutFlowSimulation extends Simulation {
 		.inferHtmlResources()
 		.acceptHeader("*/*")
 		.acceptEncodingHeader("gzip, deflate")
-		.userAgentHeader("PostmanRuntime/7.15.2")
 
 	val scn = scenario("CheckoutFlowSimulation")
 		.exec(http("Create Order")
@@ -65,5 +64,5 @@ class CheckoutFlowSimulation extends Simulation {
 			.get("/api/order/${orderId}")
   			.header(HttpHeaderNames.Accept, HttpHeaderValues.ApplicationJson))
 
-	setUp(scn.inject(rampUsers(100) during (10 seconds))).protocols(httpProtocol)
+	setUp(scn.inject(rampUsers(1000) during (10 minutes))).protocols(httpProtocol)
 }

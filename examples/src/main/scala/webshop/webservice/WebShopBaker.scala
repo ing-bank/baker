@@ -6,11 +6,14 @@ import cats.effect.{IO, Timer}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
+import org.log4s.{Logger, getLogger}
 import webshop.webservice.CheckoutFlowIngredients.{Item, OrderId, PaymentInformation, ShippingAddress}
 
 import scala.concurrent.ExecutionContext
 
 object WebShopBaker {
+
+  val logger: Logger = getLogger("webshop.webservice")
 
   val checkoutFlowCompiledRecipe: CompiledRecipe =
     RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
@@ -23,16 +26,16 @@ object WebShopBaker {
         InteractionInstance.unsafeFrom(new ShipItemsInstance())
       ))
       checkoutRecipeId <- baker.addRecipe(checkoutFlowCompiledRecipe)
-      //_ = println("Adding Checkout Flow Recipe: ")
-      //_ = println(checkoutFlowCompiledRecipe.getRecipeVisualization)
       _ <- baker.registerEventListener((name, event) => {
-        println(s"$name => ${event.providedIngredients}")
+        logger.debug(s"$name => ${event.providedIngredients}")
       })
     } yield checkoutRecipeId))
   }
 }
 
 class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: ExecutionContext) extends WebShop {
+
+  import WebShopBaker.logger
 
   override def createCheckoutOrder(items: List[String]): IO[String] =
     IO.fromFuture(IO {
@@ -42,7 +45,7 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
       for {
         _ <- baker.bake(checkoutRecipeId, orderId)
         status <- baker.fireEventAndResolveWhenReceived(orderId, event)
-        //_ = println(s"Order placed[$orderId]: $status")
+        _ = logger.info(s"${event.name}[$orderId]: $status")
       } yield orderId
     })
 
@@ -52,7 +55,7 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
         CheckoutFlowEvents.ShippingAddressReceived(ShippingAddress(address)))
       for {
         status <- baker.fireEventAndResolveWhenReceived(orderId, event)
-        //_ = println(s"Add address [$orderId]: $status")
+        _ = logger.info(s"${event.name}[$orderId]: $status")
       } yield None
     })
 
@@ -62,7 +65,7 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
         CheckoutFlowEvents.PaymentInformationReceived(PaymentInformation(paymentInfo)))
       for {
         status <- baker.fireEventAndResolveWhenReceived(orderId, event)
-        //_ = println(s"Add payment [$orderId]: $status")
+        _ = logger.info(s"${event.name}[$orderId]: $status")
       } yield None
     })
 

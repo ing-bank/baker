@@ -16,8 +16,7 @@
   "editable": true,
   "gnetId": 4469,
   "graphTooltip": 0,
-  "id": null,
-  "iteration": 1564586040481,
+  "iteration": 1564651779562,
   "links": [],
   "panels": [
     {
@@ -25,10 +24,11 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
+      "datasource": "Prometheus",
       "fill": 1,
       "gridPos": {
-        "h": 9,
-        "w": 24,
+        "h": 12,
+        "w": 12,
         "x": 0,
         "y": 0
       },
@@ -57,10 +57,25 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(akka_system_active_actors_sum{instance=~\"$instance\"}[$interval]) / rate(akka_system_active_actors_count{instance=~\"$instance\"}[$interval])",
+          "expr": "rate(akka_system_active_actors_sum{instance=~\"node1.*\"}[$interval]) / rate(akka_system_active_actors_count{instance=~\"node1.*\"}[$interval])",
           "format": "time_series",
           "intervalFactor": 1,
+          "legendFormat": "node1",
           "refId": "A"
+        },
+        {
+          "expr": "rate(akka_system_active_actors_sum{instance=~\"node2.*\"}[$interval]) / rate(akka_system_active_actors_count{instance=~\"node2.*\"}[$interval])",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "node2",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(akka_system_active_actors_sum{instance=~\"node3.*\"}[$interval]) / rate(akka_system_active_actors_count{instance=~\"node3.*\"}[$interval])",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "node3",
+          "refId": "C"
         }
       ],
       "thresholds": [],
@@ -105,12 +120,111 @@
       }
     },
     {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "fill": 1,
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 36,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {},
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "(sum(rate(jvm_memory_used_bytes_sum{instance=~\"node1.*\"}[$interval])) by (instance) / sum(rate(jvm_memory_used_bytes_count{instance=~\"node1.*\"}[$interval])) by (instance)) / 1048576",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "node1",
+          "refId": "A"
+        },
+        {
+          "expr": "(sum(rate(jvm_memory_used_bytes_sum{instance=~\"node2.*\"}[$interval])) by (instance) / sum(rate(jvm_memory_used_bytes_count{instance=~\"node2.*\"}[$interval])) by (instance)) / 1048576",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "node2",
+          "refId": "B"
+        },
+        {
+          "expr": "(sum(rate(jvm_memory_used_bytes_sum{instance=~\"node3.*\"}[$interval])) by (instance) / sum(rate(jvm_memory_used_bytes_count{instance=~\"node3.*\"}[$interval])) by (instance)) / 1048576",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "node3",
+          "refId": "C"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "JVM Memory Used",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "decmbytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 12
       },
       "id": 26,
       "panels": [],
@@ -140,7 +254,7 @@
         "h": 5,
         "w": 4,
         "x": 0,
-        "y": 10
+        "y": 13
       },
       "height": "",
       "id": 7,
@@ -226,7 +340,7 @@
         "h": 5,
         "w": 4,
         "x": 4,
-        "y": 10
+        "y": 13
       },
       "height": "",
       "id": 4,
@@ -301,7 +415,7 @@
         "h": 5,
         "w": 6,
         "x": 8,
-        "y": 10
+        "y": 13
       },
       "id": 22,
       "links": [],
@@ -368,7 +482,7 @@
         "h": 5,
         "w": 10,
         "x": 14,
-        "y": 10
+        "y": 13
       },
       "id": 8,
       "legend": {
@@ -475,7 +589,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 18
       },
       "id": 28,
       "panels": [],
@@ -494,7 +608,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 16
+        "y": 19
       },
       "id": 1,
       "legend": {
@@ -589,7 +703,7 @@
         "h": 10,
         "w": 6,
         "x": 12,
-        "y": 16
+        "y": 19
       },
       "id": 3,
       "legend": {
@@ -684,7 +798,7 @@
         "h": 10,
         "w": 6,
         "x": 18,
-        "y": 16
+        "y": 19
       },
       "id": 2,
       "legend": {
@@ -774,7 +888,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 29
       },
       "id": 29,
       "panels": [],
@@ -793,7 +907,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 27
+        "y": 30
       },
       "id": 9,
       "legend": {
@@ -887,7 +1001,7 @@
         "h": 10,
         "w": 6,
         "x": 12,
-        "y": 27
+        "y": 30
       },
       "id": 10,
       "legend": {
@@ -980,7 +1094,7 @@
         "h": 10,
         "w": 6,
         "x": 18,
-        "y": 27
+        "y": 30
       },
       "id": 11,
       "legend": {
@@ -1075,7 +1189,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 37
+        "y": 40
       },
       "id": 30,
       "panels": [],
@@ -1094,7 +1208,7 @@
         "h": 6,
         "w": 8,
         "x": 0,
-        "y": 38
+        "y": 41
       },
       "id": 18,
       "legend": {
@@ -1190,7 +1304,7 @@
         "h": 6,
         "w": 8,
         "x": 8,
-        "y": 38
+        "y": 41
       },
       "id": 19,
       "legend": {
@@ -1284,7 +1398,7 @@
         "h": 6,
         "w": 8,
         "x": 16,
-        "y": 38
+        "y": 41
       },
       "id": 20,
       "legend": {
@@ -1375,7 +1489,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 44
+        "y": 47
       },
       "id": 31,
       "panels": [],
@@ -1394,7 +1508,7 @@
         "h": 11,
         "w": 12,
         "x": 0,
-        "y": 45
+        "y": 48
       },
       "id": 13,
       "legend": {
@@ -1483,7 +1597,7 @@
         "h": 11,
         "w": 12,
         "x": 12,
-        "y": 45
+        "y": 48
       },
       "id": 14,
       "legend": {
@@ -1567,7 +1681,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 56
+        "y": 59
       },
       "id": 32,
       "panels": [],
@@ -1586,7 +1700,7 @@
         "h": 6,
         "w": 8,
         "x": 0,
-        "y": 57
+        "y": 60
       },
       "id": 15,
       "legend": {
@@ -1673,7 +1787,7 @@
         "h": 6,
         "w": 8,
         "x": 8,
-        "y": 57
+        "y": 60
       },
       "id": 16,
       "legend": {
@@ -1762,7 +1876,7 @@
         "h": 6,
         "w": 8,
         "x": 16,
-        "y": 57
+        "y": 60
       },
       "id": 17,
       "legend": {
@@ -1839,7 +1953,7 @@
       }
     }
   ],
-  "refresh": "30s",
+  "refresh": "5s",
   "schemaVersion": 18,
   "style": "dark",
   "tags": [],
@@ -1848,12 +1962,9 @@
       {
         "allValue": null,
         "current": {
-          "selected": false,
-          "tags": [],
+          "selected": true,
           "text": "All",
-          "value": [
-            "$__all"
-          ]
+          "value": "$__all"
         },
         "datasource": "Prometheus",
         "definition": "",
@@ -2008,8 +2119,8 @@
         "allValue": null,
         "current": {
           "selected": true,
-          "text": "0.95",
-          "value": "0.95"
+          "text": "0.999",
+          "value": "0.999"
         },
         "hide": 0,
         "includeAll": false,
@@ -2028,7 +2139,7 @@
             "value": "0.90"
           },
           {
-            "selected": true,
+            "selected": false,
             "text": "0.95",
             "value": "0.95"
           },
@@ -2038,7 +2149,7 @@
             "value": "0.99"
           },
           {
-            "selected": false,
+            "selected": true,
             "text": "0.999",
             "value": "0.999"
           }
@@ -2050,7 +2161,7 @@
     ]
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {

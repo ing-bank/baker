@@ -1,40 +1,61 @@
 package webshop.webservice
 
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
-import cats.effect.{ExitCode, IO, IOApp}
+import akka.cluster.Cluster
+import akka.stream.ActorMaterializer
+import cats.effect.{ExitCode, IO, IOApp, Resource}
 import cats.implicits._
 import com.ing.baker.runtime.scaladsl._
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import kamon.Kamon
 import org.http4s.server.blaze.BlazeServerBuilder
+import org.log4s.Logger
 
 object Main extends IOApp {
 
-  println("Loading Example Service...")
-  Kamon.init()
-  val actorSystem: ActorSystem =
-    ActorSystem("CheckoutService")
-  val materializer: Materializer =
-    ActorMaterializer()(actorSystem)
-  val config: Config =
-    ConfigFactory.load()
-  val baker: Baker =
-    Baker.akka(config, actorSystem, materializer)
-  import actorSystem.dispatcher
+  case class SystemResources(actorSystem: ActorSystem, baker: Baker, app: WebShopService)
+
+  val logger: Logger = org.log4s.getLogger
+
+  val system: Resource[IO, SystemResources] =
+    Resource.make(
+      for {
+        _ <- IO { Kamon.init() }
+        actorSystem <- IO { ActorSystem("CheckoutService") }
+        materializer <- IO { ActorMaterializer()(actorSystem) }
+        config <- IO { ConfigFactory.load() }
+        baker <- IO { Baker.akka(config, actorSystem, materializer) }
+        checkoutRecipeId <- WebShopBaker.initRecipes(baker)(timer, actorSystem.dispatcher)
+        webShopBaker = new WebShopBaker(baker, checkoutRecipeId)(actorSystem.dispatcher)
+        app = new WebShopService(webShopBaker)
+        resources = SystemResources(actorSystem, baker, app)
+      } yield resources
+    )(resources =>
+      IO(logger.info("Shutting down the Checkout Service...")) *>
+        terminateKamon *>
+        terminateCluster(resources) *>
+        terminateActorSystem(resources)
+    )
+
+  def terminateKamon: IO[Unit] =
+    IO.fromFuture(IO(Kamon.stopModules()))
+
+  def terminateCluster(resources: SystemResources): IO[Unit] =
+    IO {
+      val cluster = Cluster(resources.actorSystem)
+      cluster.leave(cluster.selfAddress)
+    }
+
+  def terminateActorSystem(resources: SystemResources): IO[Unit] =
+    IO.fromFuture(IO { resources.actorSystem.terminate() }).void
 
   override def run(args: List[String]): IO[ExitCode] = {
-    for {
-      checkoutRecipeId <- WebShopBaker.initRecipes(baker)
-      webShopBaker = new WebShopBaker(baker, checkoutRecipeId)
-      app = new WebShopService(webShopBaker)
-      status <- BlazeServerBuilder[IO]
+    system.flatMap { r =>
+      BlazeServerBuilder[IO]
         .bindHttp(8080, "0.0.0.0")
-        .withHttpApp(app.buildHttpService)
+        .withHttpApp(r.app.buildHttpService)
         .resource
-        .use(_ => IO.never)
-        .as(ExitCode.Success)
-    } yield status
+    }.use(_ => IO.never).as(ExitCode.Success)
   }
 
 }

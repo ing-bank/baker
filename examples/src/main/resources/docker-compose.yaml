@@ -6,8 +6,8 @@ services:
       - "8081:8080"
       - "5261:5266"
       - "9091:9095"
-    logging:
-      driver: none
+    #logging:
+      #driver: none
     environment:
       CLUSTER_HOST: node1
       CLUSTER_PORT: 2551
@@ -58,4 +58,13 @@ services:
     container_name: "haproxy"
     ports:
       - "8080:8080"
+  elk:
+    image: sebp/elk
+    ports:
+      # Kibana
+      - "5601:5601"
+      # Elastic Search
+      #- "9200:9200"
+      # Logstash Beats interface
+      #- "5044:5044"
 
