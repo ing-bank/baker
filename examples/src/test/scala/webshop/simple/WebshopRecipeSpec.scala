@@ -1,4 +1,4 @@
-package webshop
+package webshop.simple
 
 import java.util.UUID
 
@@ -6,10 +6,9 @@ import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
-import org.scalatest.{AsyncFlatSpec, Matchers}
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
-import webshop.simple.{SimpleWebshopRecipe, SimpleWebshopRecipeReflection}
+import org.scalatest.{AsyncFlatSpec, Matchers}
 
 import scala.concurrent.Future
 

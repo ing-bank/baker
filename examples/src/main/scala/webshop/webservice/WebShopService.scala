@@ -1,5 +1,8 @@
 package webshop.webservice
 
+import java.io.File
+import java.util.concurrent.Executors
+
 import cats.data.Kleisli
 import cats.effect.{ContextShift, IO, Timer}
 import cats.implicits._
@@ -10,6 +13,10 @@ import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.Router
+import fs2.io.file
+
+import java.util.UUID
+import scala.concurrent.ExecutionContext
 
 object WebShopService {
 
@@ -22,7 +29,7 @@ object WebShopService {
   case class PollPaymentStatusResponse(status: String)
 }
 
-class WebShopService(webshop: WebShop)(implicit timer: Timer[IO], cs: ContextShift[IO]) {
+class WebShopService(webshop: WebShop, memoryDumpPath: String)(implicit timer: Timer[IO], cs: ContextShift[IO]) {
 
   import WebShopService._
 
@@ -33,10 +40,27 @@ class WebShopService(webshop: WebShop)(implicit timer: Timer[IO], cs: ContextShi
   implicit val addPaymentRequestDecoder: EntityDecoder[IO, AddPaymentRequest] =
     jsonOf[IO, AddPaymentRequest]
 
+  val blockingEc = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
+
   def buildHttpService: Kleisli[IO, Request[IO], Response[IO]] =
     (Router("/" -> HttpRoutes.of[IO] {
+
       case GET -> Root => Ok("Ok")
+
       case HEAD -> Root => Ok()
+
+    }) <+>
+    Router("/admin" -> HttpRoutes.of[IO] {
+
+      case GET -> Root / "latest" / "memdump.hprof" =>
+        val path = memoryDumpPath + "-" + UUID.randomUUID().toString
+        dumpHeap(path, live = true).as(
+          Response[IO](
+            Status.Ok,
+            body = file.readAll[IO](java.nio.file.Paths.get(path), blockingEc, chunkSize = 4096),
+            headers = Headers(headers.`Content-Type`(MediaType.application.`octet-stream`, Charset.`UTF-8`).pure[List]))
+        )
+
     }) <+>
     Router("/api" -> HttpRoutes.of[IO] {
 
@@ -72,4 +96,14 @@ class WebShopService(webshop: WebShop)(implicit timer: Timer[IO], cs: ContextShi
 
     })).orNotFound
 
+  import com.sun.management.HotSpotDiagnosticMXBean
+  import java.lang.management.ManagementFactory
+
+  def dumpHeap(filePath: String, live: Boolean): IO[Unit] = IO {
+    val file = new File(filePath)
+    if (file.exists()) file.delete()
+    val server = ManagementFactory.getPlatformMBeanServer
+    val mxBean = ManagementFactory.newPlatformMXBeanProxy(server, "com.sun.management:type=HotSpotDiagnostic", classOf[HotSpotDiagnosticMXBean])
+    mxBean.dumpHeap(filePath, live)
+  }
 }

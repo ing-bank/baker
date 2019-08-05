@@ -64,5 +64,5 @@ class CheckoutFlowSimulation extends Simulation {
 			.get("/api/order/${orderId}")
   			.header(HttpHeaderNames.Accept, HttpHeaderValues.ApplicationJson))
 
-	setUp(scn.inject(rampUsers(1000) during (10 minutes))).protocols(httpProtocol)
+	setUp(scn.inject(rampUsers(4000) during (10 minutes))).protocols(httpProtocol)
 }

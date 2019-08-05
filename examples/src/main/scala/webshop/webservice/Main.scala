@@ -13,6 +13,8 @@ import org.log4s.Logger
 
 object Main extends IOApp {
 
+  Kamon.init()
+
   case class SystemResources(actorSystem: ActorSystem, baker: Baker, app: WebShopService)
 
   val logger: Logger = org.log4s.getLogger
@@ -20,14 +22,14 @@ object Main extends IOApp {
   val system: Resource[IO, SystemResources] =
     Resource.make(
       for {
-        _ <- IO { Kamon.init() }
         actorSystem <- IO { ActorSystem("CheckoutService") }
         materializer <- IO { ActorMaterializer()(actorSystem) }
         config <- IO { ConfigFactory.load() }
         baker <- IO { Baker.akka(config, actorSystem, materializer) }
         checkoutRecipeId <- WebShopBaker.initRecipes(baker)(timer, actorSystem.dispatcher)
         webShopBaker = new WebShopBaker(baker, checkoutRecipeId)(actorSystem.dispatcher)
-        app = new WebShopService(webShopBaker)
+        memoryDumpPath = config.getString("service.memory-dump-path")
+        app = new WebShopService(webShopBaker, memoryDumpPath)
         resources = SystemResources(actorSystem, baker, app)
       } yield resources
     )(resources =>

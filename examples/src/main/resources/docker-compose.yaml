@@ -58,11 +58,12 @@ services:
     container_name: "haproxy"
     ports:
       - "8080:8080"
-  elk:
-    image: sebp/elk
-    ports:
+
+  #elk:
+    #image: sebp/elk
+    #ports:
       # Kibana
-      - "5601:5601"
+      #- "5601:5601"
       # Elastic Search
       #- "9200:9200"
       # Logstash Beats interface
