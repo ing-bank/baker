@@ -163,11 +163,11 @@ class SensoryEventResponseHandlerSpec extends TestKit(ActorSystem("SensoryEventR
         clientComplete.expectMsg(rejection)
       }
 
-      checkRejection(FireSensoryEventRejection.ProcessDeleted(""))
+      checkRejection(FireSensoryEventRejection.RecipeInstanceDeleted(""))
       checkRejection(FireSensoryEventRejection.AlreadyReceived("", ""))
       checkRejection(FireSensoryEventRejection.FiringLimitMet(""))
-      checkRejection(FireSensoryEventRejection.ProcessDeleted(""))
-      checkRejection(FireSensoryEventRejection.NoSuchProcess(""))
+      checkRejection(FireSensoryEventRejection.RecipeInstanceDeleted(""))
+      checkRejection(FireSensoryEventRejection.NoSuchRecipeInstance(""))
       checkRejection(FireSensoryEventRejection.ReceivePeriodExpired(""))
     }
   }

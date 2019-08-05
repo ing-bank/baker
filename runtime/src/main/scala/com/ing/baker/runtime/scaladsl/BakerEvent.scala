@@ -24,8 +24,8 @@ sealed trait BakerEvent extends common.BakerEvent with ScalaApi {
       javadsl.InteractionStarted(timeStamp, recipeName, recipeId, recipeInstanceId, interactionName)
     case InteractionCompleted(timeStamp, duration, recipeName, recipeId, recipeInstanceId, interactionName, event) =>
       javadsl.InteractionCompleted(timeStamp, duration, recipeName, recipeId, recipeInstanceId, interactionName, Optional.of(event.map(_.asJava).orNull))
-    case ProcessCreated(timeStamp, recipeId, recipeName, recipeInstanceId) =>
-      javadsl.ProcessCreated(timeStamp, recipeId, recipeName, recipeInstanceId)
+    case RecipeInstanceCreated(timeStamp, recipeId, recipeName, recipeInstanceId) =>
+      javadsl.RecipeInstanceCreated(timeStamp, recipeId, recipeName, recipeInstanceId)
     case RecipeAdded(recipeName, recipeId, date, compiledRecipe) =>
       javadsl.RecipeAdded(recipeName, recipeId, date, compiledRecipe)
   }
@@ -128,10 +128,10 @@ case class InteractionCompleted(timeStamp: Long,
   * @param recipeName The name of the recipe
   * @param recipeInstanceId The process id
   */
-case class ProcessCreated(timeStamp: Long,
-                          recipeId: String,
-                          recipeName: String,
-                          recipeInstanceId: String) extends BakerEvent with common.ProcessCreated
+case class RecipeInstanceCreated(timeStamp: Long,
+                                 recipeId: String,
+                                 recipeName: String,
+                                 recipeInstanceId: String) extends BakerEvent with common.RecipeInstanceCreated
 
 /**
   * An event describing the fact that a recipe was added to baker.

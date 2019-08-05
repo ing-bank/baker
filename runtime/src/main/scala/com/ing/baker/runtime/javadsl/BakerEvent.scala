@@ -113,10 +113,10 @@ case class InteractionCompleted(timeStamp: Long,
   * @param recipeName The name of the recipe
   * @param recipeInstanceId The process id
   */
-case class ProcessCreated(timeStamp: Long,
-                          recipeId: String,
-                          recipeName: String,
-                          recipeInstanceId: String) extends BakerEvent with common.ProcessCreated
+case class RecipeInstanceCreated(timeStamp: Long,
+                                 recipeId: String,
+                                 recipeName: String,
+                                 recipeInstanceId: String) extends BakerEvent with common.RecipeInstanceCreated
 
 /**
   * An event describing the fact that a recipe was added to baker.

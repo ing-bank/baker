@@ -104,7 +104,7 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), "someId")
         // TODO check the order of the timestamps later
         _ = expectMsgInAnyOrderPF(listenerProbe,
-          { case msg@ProcessCreated(_, `recipeId`, `recipeName`, `recipeInstanceId`) => msg },
+          { case msg@RecipeInstanceCreated(_, `recipeId`, `recipeName`, `recipeInstanceId`) => msg },
           { case msg@EventReceived(_, _, _, `recipeInstanceId`, Some("someId"), EventInstance("InitialEvent", ingredients)) if ingredients == Map("initialIngredient" -> PrimitiveValue(`initialIngredientValue`)) => msg },
           { case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "SieveInteraction") => msg },
           { case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "InteractionOne") => msg },

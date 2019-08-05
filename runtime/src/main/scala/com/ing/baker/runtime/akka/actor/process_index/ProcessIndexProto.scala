@@ -391,32 +391,32 @@ object ProcessIndexProto {
         } yield ProcessDeleted(recipeInstanceId)
     }
 
-  implicit def processDeletedProtoSERejection: ProtoMap[FireSensoryEventRejection.ProcessDeleted, protobuf.ProcessDeleted] =
-    new ProtoMap[FireSensoryEventRejection.ProcessDeleted, protobuf.ProcessDeleted] {
+  implicit def processDeletedProtoSERejection: ProtoMap[FireSensoryEventRejection.RecipeInstanceDeleted, protobuf.ProcessDeleted] =
+    new ProtoMap[FireSensoryEventRejection.RecipeInstanceDeleted, protobuf.ProcessDeleted] {
 
       val companion = protobuf.ProcessDeleted
 
-      def toProto(a: FireSensoryEventRejection.ProcessDeleted): protobuf.ProcessDeleted =
+      def toProto(a: FireSensoryEventRejection.RecipeInstanceDeleted): protobuf.ProcessDeleted =
         protobuf.ProcessDeleted(Some(a.recipeInstanceId))
 
-      def fromProto(message: protobuf.ProcessDeleted): Try[FireSensoryEventRejection.ProcessDeleted] =
+      def fromProto(message: protobuf.ProcessDeleted): Try[FireSensoryEventRejection.RecipeInstanceDeleted] =
         for {
           recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
-        } yield FireSensoryEventRejection.ProcessDeleted(recipeInstanceId)
+        } yield FireSensoryEventRejection.RecipeInstanceDeleted(recipeInstanceId)
     }
 
-  implicit def noSuchProcessProtoSERejection: ProtoMap[FireSensoryEventRejection.NoSuchProcess, protobuf.NoSuchProcess] =
-    new ProtoMap[FireSensoryEventRejection.NoSuchProcess, protobuf.NoSuchProcess] {
+  implicit def noSuchProcessProtoSERejection: ProtoMap[FireSensoryEventRejection.NoSuchRecipeInstance, protobuf.NoSuchProcess] =
+    new ProtoMap[FireSensoryEventRejection.NoSuchRecipeInstance, protobuf.NoSuchProcess] {
 
       val companion = protobuf.NoSuchProcess
 
-      def toProto(a: FireSensoryEventRejection.NoSuchProcess): protobuf.NoSuchProcess =
+      def toProto(a: FireSensoryEventRejection.NoSuchRecipeInstance): protobuf.NoSuchProcess =
         protobuf.NoSuchProcess(Some(a.recipeInstanceId))
 
-      def fromProto(message: protobuf.NoSuchProcess): Try[FireSensoryEventRejection.NoSuchProcess] =
+      def fromProto(message: protobuf.NoSuchProcess): Try[FireSensoryEventRejection.NoSuchRecipeInstance] =
         for {
           recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
-        } yield FireSensoryEventRejection.NoSuchProcess(recipeInstanceId)
+        } yield FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId)
     }
 
   implicit def firingLimitMetProtoSERejection: ProtoMap[FireSensoryEventRejection.FiringLimitMet, protobuf.FiringLimitMet] =

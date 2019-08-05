@@ -232,7 +232,7 @@ object SerializationSpec {
         SensoryEventStatus.AlreadyReceived,
         SensoryEventStatus.Completed,
         SensoryEventStatus.FiringLimitMet,
-        SensoryEventStatus.ProcessDeleted,
+        SensoryEventStatus.RecipeInstanceDeleted,
         SensoryEventStatus.Received,
         SensoryEventStatus.ReceivePeriodExpired)
       events <- Gen.listOf(eventNameGen)

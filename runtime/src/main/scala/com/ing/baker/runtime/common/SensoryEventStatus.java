@@ -25,7 +25,7 @@ public enum SensoryEventStatus {
      */
     AlreadyReceived,
     /**
-     * The process instance was deleted.
+     * The recipe instance was deleted.
      */
-    ProcessDeleted
+    RecipeInstanceDeleted
 }

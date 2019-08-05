@@ -190,7 +190,7 @@ class BaasBaker(config: Config,
     * @param implementations The implementation object
     */
   override def addInteractionInstance(implementations: Seq[InteractionInstance]): Future[Unit] = {
-    Future.successful(implementations.foreach(addInteractionInstace))
+    Future.successful(implementations.foreach(addInteractionInstance))
   }
 
   /**
@@ -198,7 +198,7 @@ class BaasBaker(config: Config,
     *
     * @param implementation An InteractionImplementation instance
     */
-  override def addInteractionInstace(implementation: InteractionInstance): Future[Unit] = {
+  override def addInteractionInstance(implementation: InteractionInstance): Future[Unit] = {
     Future.successful(remoteInteractionLauncher.addImplementation(implementation))
   }
 
@@ -219,7 +219,7 @@ class BaasBaker(config: Config,
     *
     * @return An index of all processes
     */
-  override def getAllInteractionInstancesMetadata: Future[Set[ProcessMetadata]] = ???
+  override def getAllRecipeInstancesMetadata: Future[Set[RecipeInstanceMetadata]] = ???
 
   /**
     * Attempts to gracefully shutdown the baker system.
