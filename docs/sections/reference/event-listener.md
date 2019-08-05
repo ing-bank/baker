@@ -1,5 +1,8 @@
 # Event Listener
 
+After creating a [baker runtime](/sections/reference/runtime/#bakerakkaconfig-actorsystem-materializer) you can attach 
+functions that will be called once `EventInstances` are fired or when different baker occurrences happen:
+
 ## baker.registerEventListener(recipeName, listenerFunction)
 
 Registers a listener to all runtime events for on a baker instance.

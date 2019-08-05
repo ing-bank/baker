@@ -10,7 +10,7 @@ We present the layers of testing when using Baker, and how to write tests for su
 ## Testing Recipes for Soundness: Compiling the Recipe in a Test
 
 First, one important notice is that currently Baker does not check at compile time the soundness of your Recipe (if your
-Recipe makes any sense), but it does so when compiling it with the `RecipeCompiler.compileRecipe(recipe)` API, errors are 
+Recipe makes any sense), but it does so when compiling it with the `RecipeCompiler.compileRecipe(recipe)` API. Errors are 
 thrown in the form of exceptions describing the issue. So a simple unit test that simply compiles your `Recipe` is essential.
 
 ```scala tab="Scala"
@@ -154,7 +154,7 @@ ends on the desired state given a certain order of firing sensory events and tha
 specific data.
 
 _Note: We recommend you abstract away these scenarios with a function that will run them given different 
-interaction isntances, so that you can run the same scenario on different environments, like when you want to do a E2E
+interaction instances, so that you can run the same scenario on different environments, like when you want to do a E2E
 on a test environment._
 
 ## Mocking Interaction Implementations with Mockito

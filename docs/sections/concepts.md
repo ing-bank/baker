@@ -8,9 +8,9 @@ With these three components we can create recipes (process blue prints)
 
 Ingredients are *pure data*.
 
-This data is **immutable**, can not be changed after entering the process.
+This data is **immutable** and can not be changed after entering the process.
 
-There is **no hiërarchy** in this data. (`Animal -> Dog -> Labrador` is not possible to express)
+There is **no hierarchy** in this data. (`Animal -> Dog -> Labrador` is not possible to express)
 
 Examples:
 
@@ -25,13 +25,14 @@ The *name* points to the intended meaning of the data. ("customerData", "orderNu
 
 The *type* sets limits on the form of data that is accepted. (a number, a list of strings, ...)
 
-This type is expressed by the [baker type system](type-system.md).
+This type is expressed by the [baker type system](/sections/reference/baker-types-and-values/).
 
 ## Interaction
 
-An interaction is analagous to a function.
+An interaction is similar to a function.
 
-It requires *input* ([ingredients](#ingredient)) and provides *output* ([events](#event)).
+It requires *input* ([ingredients](/sections/reference/main-abstractions/#ingredient-and-ingredientinstance)) and 
+provides *output* ([events](/sections/reference/main-abstractions/#event-and-eventinstance)).
 
 Within this contract it may do anything. For example:
 
@@ -85,9 +86,9 @@ When no failure strategy is defined for an interaction by default the interactio
 
 An event has a *name* and can (optionally) provide ingredients.
 
-The purpose of events is therefor twofold.
+The purpose of events is therefore twofold.
 
-1. It signifies something of interest happened for a [process instance](dictionary.md#process-instance).
+1. It signifies something of interest happened for a [recipe instance](/sections/reference/main-abstractions/#recipe-and-recipeinstance).
 
     Example, *"the customer placed the order"*, *"terms and conditions were accepted"*
 
@@ -95,7 +96,7 @@ The purpose of events is therefor twofold.
 
     Example, *"OrderPlaced"* -> `<list of products>`
 
-We distinquish 2 types of events.
+We distinguish 2 conceptual types of events.
 
 1. Sensory events (*external*)
 
@@ -104,14 +105,16 @@ We distinquish 2 types of events.
 2. Interaction output (*internal*)
 
     These events are a result of an interaction being executed.
+    
+Both of these are still just instances of the `EventInstance` class, and the distinction is only used as practical terms.
 
 ## **Recipe**
 
 *Events*, *Interactions* and *Ingredients* can be composed into recipes.
 
-Recipes are analagous to process blueprints.
+Recipes are similar to process blueprints.
 
-Baker provides a [Recipe DSL](recipe-dsl.md) in which you can declaratively describe your recipe.
+Baker provides a [recipe DSL](/sections/reference/dsls/) in which you can declaratively describe your recipe.
 
 A small example:
 ``` java

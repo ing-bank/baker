@@ -1,5 +1,23 @@
 # Configure
 
+## Minimal configuration
+
+When creating a baker instance using the constructor `Baker.akka(config, actorSystem, materializer)` baker will require you
+to add the minimal baker configuration, you can do this by adding this to your `application.conf` file:
+
+```
+include "baker.conf"
+```
+
+This will add the following minimal configuration:
+
+```
+akka.cluster.sharding.state-store-mode = persistence
+akka.actor.allow-java-serialization = off
+```
+
+## reference.conf
+
 Here you will find the `reference.conf` of Baker, this represents the current default configuration of Baker.
 
 _Note: Since the Baker runtime is based on Akka, there is extra configuration that can be done, please refer to the

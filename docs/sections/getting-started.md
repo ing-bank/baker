@@ -39,9 +39,9 @@ An explanation of the baker modules.
 
 | Module | Description |
 | --- | --- |
-| recipe-dsl | [DSL](documentstion_old/recipe-dsl.md) to describe your recipes (process blueprints) *declaritively* |
-| runtime | [Runtime](documentstion_old/baker-runtime.md) based on [akka](htts://www.akka.io) to manage and execute your recipes |
-| compiler | [Compiles your recipe](documentstion_old/baker-runtime.md#compiling-your-recipe) description into a model that the runtime can execute |
+| recipe-dsl | [DSL](/sections/reference/dsls/) to describe your recipes (process blueprints) *declaritively* |
+| runtime | [Runtime](/sections/reference/runtime/) based on [akka](htts://www.akka.io) to manage and execute your recipes |
+| compiler | [Compiles your recipe](/sections/reference/runtime/#recipecompilercompilerecipe) description into a model that the runtime can execute |
 | intermediate-language | Recipe and Petri Net model that the runtime can execute |
 
 This is the dependency graph between the modules.

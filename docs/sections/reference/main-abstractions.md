@@ -23,7 +23,7 @@ They help not just to model your domain but also for Baker to identify when to e
 If you are using all of our reflection APIs then you will not use them directly, but it is good to know of their 
 existence.
 
-Full documentation about the type system can be found [here]().
+Full documentation about the type system can be found [here](/sections/reference/baker-types-and-values/).
 
 ``` scala tab="Scala"
 import com.ing.baker.types._
@@ -77,7 +77,7 @@ events that come from "outside" of your recipe and are normally used to start yo
 For a `Recipe` there exist `Events` which are a name, a set of `Ingredients` and a maximum amount of firings; the 
 `maxFiringLimit` is a property which describes the number of times an event is allowed to fire, this is later on
 enforced by the Baker runtime. To know more about firing limits and all the other configurable properties, please 
-refer to the [DSLs documentation]().
+refer to the [DSLs documentation](/sections/reference/dsls/).
 
 For a `RecipeInstance` there exist `EventInstance`s which are data structures that must match their interface equivalent
 declared as `Events` on the `Recipe`. They notify a baker `RecipeInstance` of an actual happening and may carry `Ingredient`
@@ -141,7 +141,7 @@ EventInstance order1Event = EventInstance.from(order1);
 
 To fire a `SensoryEvent` use the `bakerRuntime.fireEvent(recipeInstanceId, event)` API variations, 
 after creating the baker runtime, adding your recipe to the runtime and `baking` a `RecipeInstance`. For full 
-documentation on this please refer to the [runtime documentation]().
+documentation on this please refer to the [runtime documentation](/sections/reference/runtime/).
 
 ``` scala tab="Scala"
 import akka.actor.ActorSystem
@@ -203,7 +203,7 @@ contract it may do anything. For example:
 For a `Recipe` there exist `Interactions` which are a name, a sequence of `Ingredients` describing all the input (all of),
 and a sequence of `Events` describing the _possible_ event outputs (one of). At the recipe level there are several more 
 specifics that can be configured, like requiring events without ingredients, adding predefined ingredients, overriding
-ingredient names, or handling unexpected failure, for these please refer to the [DSLs documentation]().
+ingredient names, or handling unexpected failure, for these please refer to the [DSLs documentation](/sections/reference/dsls/).
 
 For a `RecipeInstance` there exist `InteractionInstance`s which are a name, an input type description, and an implementation
 of a method/function that will be called when the interaction is executed. The input name and the input type description 

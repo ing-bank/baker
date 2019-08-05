@@ -1,6 +1,6 @@
 # Design a Recipe
 
-_The full project examples including tests and configuration can be found [here](https://github.com/ing-bank/baker/tree/master/examples)._
+_Full project examples including tests and configuration can be found [here](https://github.com/ing-bank/baker/tree/master/examples)._
 
 The _Development Life Cycle_ section provides a "top-down"/"by-example" guide to baker, all of the concepts 
 are introduced through exemplification on hypothetical development situations.
@@ -80,9 +80,9 @@ Depending on your programming language, you might want to import the correspondi
 
 Ingredients and events are just data structures that describe your process data, carrying not just the names, but
 also the type information, for example `Ingredient[String]("order-id")` creates an ingredient of name "order-id"
-of type "String", for more information about Baker types please refer to [this section](). As shown in the code, events might carry
-ingredients, and have a maximum about of times they are allowed to fire, the runtime will enforce this limit. For more 
-information about this and other features of events please refer to [this section]().
+of type "String", for more information about Baker types please refer to [this section](/sections/reference/baker-types-and-values/). 
+As shown in the code, events might carry ingredients, and have a maximum about of times they are allowed to fire, the 
+runtime will enforce this limit. For more information about this and other features of events please refer to [this section](/sections/reference/dsls/#events).
 
 ## Interactions
 
@@ -195,7 +195,7 @@ This was a simple example, but you might have already concluded that this can be
 making new interactions that require events and ingredients which are output of previous interactions. 
 
 You can create also interactions which take no input ingredients but are executed after events (with or without provided 
-ingredients) are fired, for this and other features please refer to the conceptual documentation found [here]().
+ingredients) are fired, for this and other features please refer to the conceptual documentation found [here](/sections/reference/dsls/#events).
 
 ## The Recipe
 

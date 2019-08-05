@@ -1,4 +1,4 @@
-# Stores
+# Event Stores and Cluster Configuration
 
 Baker keeps the state of your `RecipeInstances` using a technique called event sourcing, such technique still requires
 you to save data into a data store if you want to restore state or move it around. Baker's event sourcing uses 
@@ -11,16 +11,75 @@ production grade clusters, more specifically if you are going to use Baker on cl
 for Baker to work as expected. We recommend the usage of Cassandra, since it is the store the team has tested and used on 
 production.
 
-## Configuration example of a local data store 
+## Configuration examples
 
 `application.conf`
+
+```config tab="Local Store"
+include "baker.conf"
+
+service {
+
+  actorSystemName = "CheckoutService"
+  actorSystemName = ${?ACTOR_SYSTEM_NAME}
+
+  clusterHost = "127.0.0.1"
+  clusterHost = ${?CLUSTER_HOST}
+
+  clusterPort = 2551
+  clusterPort = ${?CLUSTER_PORT}
+
+  seedHost = "127.0.0.1"
+  seedHost = ${?CLUSTER_SEED_HOST}
+
+  seedPort = 2551
+  seedPort = ${?CLUSTER_SEED_PORT}
+
+}
+
+baker {
+  actor {
+    provider = "cluster-sharded"
+  }
+
+  cluster {
+    nr-of-shards = 52
+    seed-nodes = [
+      "akka.tcp://"${service.actorSystemName}"@"${service.seedHost}":"${service.seedPort}]
+  }
+}
+
+akka {
+
+  actor {
+    provider = "cluster"
+  }
+
+  persistence {
+    journal.plugin = "inmemory-journal"
+    snapshot-store.plugin = "inmemory-snapshot-store"
+  }
+
+  remote {
+    log-remote-lifecycle-events = off
+    netty.tcp {
+      hostname = ${service.clusterHost}
+      port = ${service.clusterPort}
+    }
+  }
+
+  cluster {
+
+    seed-nodes = [
+      "akka.tcp://"${service.actorSystemName}"@"${service.seedHost}":"${service.seedPort}]
+
+    # auto downing is NOT safe for production deployments.
+    # you may want to use it during development, read more about it in the akka docs.
+    auto-down-unreachable-after = 10s
+  }
+}
 ```
 
-```
-
-## Configuration example of a distributed data store
-
-`application.conf`
-```
+```config tab="Distributed Store"
 
 ```

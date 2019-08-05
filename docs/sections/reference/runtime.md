@@ -195,7 +195,7 @@ CompletableFuture<BoxedUnit> = baker.addInteractionInstance(reserveItemsInstance
 
 ## RecipeCompiler.compile(recipe)
 
-`Recipes` once built must be converted into a data structure called `CompiledRecipe` that helps a `RecipeInstances` 
+`Recipes` once built must be converted into a data structure called `CompiledRecipe` that lets `RecipeInstances` 
 to understand, store and run your process. These can be used to create a new `RecipeInstance` from a `baker` 
 runtime that contains both a `CompiledRecipe` and the required `InteractionInstances`, or they can as well be converted
 into a [visualziation](visualization.md).
@@ -219,8 +219,8 @@ CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
 Once `Recipes` have been transformed into `CompiledRecipes` they must be added to a baker runtime. The `baker.addRecipe(compiledRecipe)`
 API will do so and return an id that you can use to reference the added recipe later on.
 
-_Note: Before doing this, baker requires you to add all related `InteractionInstance` to the runtime, because it 
-does validation regarding this to ensure that every recipe is actually runnable because it doe not lack any `InteractionInstance`._
+_Note: Before doing this, baker requires you to add all related `InteractionInstances` to the runtime, this is because baker 
+does validation to ensure that every recipe is runnable from the previously added `InteractionInstances`._
 
 ```scala tab="Scala"
 val recipeId Future[String] = baker.addRecipe(compiledRecipe)
@@ -287,7 +287,7 @@ The name of the `EventInstance` will be taken from the name of the `class` (Java
 (it must match the name of the `Event` at the `Recipe`). And the argument names and types of the constructors will be 
 translated to `IngredientInstances` with corresponding names and baker types.
 
-Notice that his function might throw an exception if the event is not correctly done (this is why in Scala the API is
+Notice that this function might throw an exception if the event is not correctly done (this is why in Scala the API is
 named "unsafe").
 
 ```scala tab="Scala"

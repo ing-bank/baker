@@ -21,11 +21,12 @@ Value dataValue = PrimitiveValue.apply(42);
 ```
 
 `Types` are specifically used to describe `Ingredients`, specifically `Ingredients` are just a relation between a name and
-a type. In a similar way that a programming language variable is just a relation between a name and a type at compile time
-and at runtime the same name will hold a value that respects such type, the baker `Ingredient` is a relation between a
-name and a Baker `Type` at "recipe time", and at runtime an `IngredientInstance` is a relation between the same name and
-a Baker `Value` that respects the `Ingredient` `Type`, and such relations are serializable through the network and preserved
-in data stores.
+a type. 
+
+In a similar way that a programming language variable is just a relation between a name and a type at compile time, the 
+baker `Ingredient` is a relation between a name and a Baker `Type` at "recipe time"; the same happens with values, in a 
+programming language values must respect types otherwise runtime exceptions are thrown, similarly in Baker, at runtime 
+the name of an ingredient will hold a value that respects the ingredient's type.
 
 Here is a complete list of `Types` and `Values` of Baker.
 

@@ -90,7 +90,7 @@ creating a `RecipeInstance`.
 _Note: In an Akka-cluster-based Baker, these `RecipeInstances` are also automatically distributed over nodes, and the 
 cluster will ensure that there is 1 `RecipeInstance` running on 1 node, and if the node dies, it will detect it and 
 restore the `RecipeInstance` in another available node, for this you need to configure an underlying distributed store;
-for more on this please refer to the [configuration section]() and the [runtime section]()._
+for more on this please refer to the [configuration section](/sections/development-life-cycle/configure/) and the [runtime section](/sections/reference/runtime/)._
 
 ```scala tab="Scala"
 import akka.actor.ActorSystem
@@ -275,7 +275,7 @@ for the next `InteractionInstances` to consume.
 ### Recipe Instance State Visualizations
 
 Another method of fetching state is the visual representation of it. You can do that with the `Baker.getVisualState(recipeInstanceId)`
-API. This will return a GraphViz string like the [visualization api]() that you can convert into an image.
+API. This will return a GraphViz string like the [visualization api](/sections/development-life-cycle/use-visualizations/) that you can convert into an image.
 
 Here is a visualization of the state of another webshop example, one can clearly see that the process is flowing correctly
 without failures and that it is still waiting for the payment sensory event to be fired.

@@ -224,7 +224,7 @@ public class JWebshopRecipe {
 
 ## Events
 
-[Events](concepts.md#event) are simple `POJO` classes. For example:
+[Events](/sections/reference/main-abstractions/#event-and-eventinstance) are simple `POJO` classes. For example:
 
 ``` scala tab="Scala"
 case class CustomerInfoReceived(customerInfo: CustomerInfo)
@@ -243,9 +243,9 @@ public class CustomerInfoReceived {
 
 The field types of the `POJO` class must be compatible with the baker type system.
 
-See the [supported types](type-system.md#default-supported-types) for more information.
+See the [supported types](/sections/reference/baker-types-and-values/#primitives) for more information.
 
-The names of the fields are obtained using java reflection.
+The names of the fields are obtained using reflection.
 
 They can be added using the `.withSensoryEvents(..)` method.
 
@@ -253,7 +253,8 @@ They can be added using the `.withSensoryEvents(..)` method.
 
 ### Firing limit
 
-A *firing limit* is a limit on the number of times a sensory event may be received by a [process instance](dictionary.md#process-instance).
+A *firing limit* is a limit on the number of times a sensory event may be received by a 
+[recipe instance](/sections/reference/main-abstractions/#recipe-and-recipeinstance).
 
 By default sensory events have a firing limit of `1` per process instance.
 
@@ -269,7 +270,7 @@ In this example the `CustomerInfoReceived` can now be received multiple times by
 
 ## Interactions
 
-Interactions are interfaces with some requirements. See [here](interactions.md) how to define them.
+Interactions are interfaces with some requirements. See [here](/sections/development-life-cycle/design-a-recipe/#interactions) how to define them.
 
 You can include interactions in your recipe using the static `of(..)` method.
 
@@ -300,7 +301,7 @@ For example, to ensure the goods are shipped only once.
 
 ### Predefining ingredients
 
-An interaction normally requires all its input ingredients to be provided from [Events](concepts.md#event).
+An interaction normally requires all its input ingredients to be provided from [Events](/sections/reference/main-abstractions/#event-and-eventinstance).
 
 Sometimes however it is useful to *predefine* (or *hard code*) the value of an ingredient.
 
@@ -381,7 +382,7 @@ When an exception is thrown from the interaction the interaction is *blocked*.
 
 This means that the interaction cannot execute again automatically.
 
-It requires [manual intervening](process-execution.md#incident-resolving) to continue the process from then on.
+It requires [manual intervening](/sections/development-life-cycle/resolve-failed-recipe-instances/) to continue the process from then on.
 
 #### Fire event
 
