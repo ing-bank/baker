@@ -7,7 +7,7 @@ services:
       - "5261:5266"
       - "9091:9095"
     #logging:
-      #driver: none
+    #  driver: none
     environment:
       CLUSTER_HOST: node1
       CLUSTER_PORT: 2551

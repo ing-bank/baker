@@ -16,13 +16,13 @@ object CheckoutFlowIngredients {
 
   case class Item(itemId: String)
 
-  case class ReservedItems(items: List[Item])
+  case class ReservedItems(items: List[Item], data: Array[Byte])
 
   case class ShippingAddress(address: String)
 
   case class PaymentInformation(info: String)
 
-  case class ShippingOrder(items: List[Item], address: ShippingAddress)
+  case class ShippingOrder(items: List[Item], data: Array[Byte], address: ShippingAddress)
 }
 
 object CheckoutFlowEvents {

@@ -52,8 +52,8 @@ class WebShopService(webshop: WebShop, memoryDumpPath: String)(implicit timer: T
     }) <+>
     Router("/admin" -> HttpRoutes.of[IO] {
 
-      case GET -> Root / "latest" / "memdump.hprof" =>
-        val path = memoryDumpPath + "-" + UUID.randomUUID().toString
+      case GET -> Root / "memdump.hprof" =>
+        val path = memoryDumpPath + "-" + UUID.randomUUID().toString + ".hprof"
         dumpHeap(path, live = true).as(
           Response[IO](
             Status.Ok,
