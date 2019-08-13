@@ -9,8 +9,8 @@ import com.ing.baker.types.Value
 
 import scala.collection.JavaConverters._
 
-class EventInstance(val name: String,
-                    val providedIngredients: util.Map[String, Value])
+case class EventInstance(name: String,
+                         providedIngredients: util.Map[String, Value])
   extends common.EventInstance with JavaApi {
 
   def getProvidedIngredients = providedIngredients
