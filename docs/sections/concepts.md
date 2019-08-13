@@ -25,7 +25,7 @@ The *name* points to the intended meaning of the data. ("customerData", "orderNu
 
 The *type* sets limits on the form of data that is accepted. (a number, a list of strings, ...)
 
-This type is expressed by the [baker type system](/sections/reference/baker-types-and-values/).
+This type is expressed by the [Baker type system](/sections/reference/baker-types-and-values/).
 
 ## Interaction
 
@@ -47,40 +47,38 @@ When finished, an interaction provides an event as its output.
 
 An interaction may fail to fulfill its intended purpose.
 
-We distinquish 2 types of failures.
+We distinquish two types of failures.
 
 1. A *technical* failure is one that could be retried and succeed. For example:
-    * Time outs because of unreliable network, packet loss
+    * Time outs because of an unreliable network or packet loss
     * External system is temporarily down or unresponsive
     * External system returned a malformed/unexpected response
 
-    These failures are unexpected and are are modeled by throwing an exception from the interaction.
+    These failures are unexpected and are modeled by throwing an exception from the interaction.
 
 2. A *functional* failure is one that cannot be retried. For example:
     * The customer is too young for the request.
     * Not enough credit to perform the transfer.
 
-    These failures are expected possible outcomes of the interaction.
-
-    They are modelled by returning an event from the interaction.
+    These failures are expected possible outcomes of the interaction. They are modelled by returning an event from the interaction.
 
 ### Failure mitigation
 
-In case of technical failures, baker offers 2 mitigation strategies:
+In case of technical failures, baker offers two mitigation strategies:
 
-1. Retry with incremental backoff
+1. Retry with incremental back-off
 
     This retries the interaction with some configurable parameters:
 
     - `initialTimeout`: The initial delay for the first retry.
-    - `backoffFactor`: The backoff factor.
+    - `backoffFactor`: The back-off factor.
     - `maximumInterval`: The maximum interval between retries.
 
 2. Continue with an event.
 
-    This is analagous to a try/catch in java code. The exception is logged but the process continues with a specified event.
+    This is analagous to a try/catch in Java code. The exception is logged but the process continues with a specified event.
 
-When no failure strategy is defined for an interaction by default the interaction is *blocked*.
+The interaction gets *blocked* when no failure strategy is defined for it.
 
 ## Event
 
@@ -88,7 +86,7 @@ An event has a *name* and can (optionally) provide ingredients.
 
 The purpose of events is therefore twofold.
 
-1. It signifies something of interest happened for a [recipe instance](/sections/reference/main-abstractions/#recipe-and-recipeinstance).
+1. It signifies that something of interest has happened for a [recipe instance](/sections/reference/main-abstractions/#recipe-and-recipeinstance).
 
     Example, *"the customer placed the order"*, *"terms and conditions were accepted"*
 
@@ -96,7 +94,7 @@ The purpose of events is therefore twofold.
 
     Example, *"OrderPlaced"* -> `<list of products>`
 
-We distinguish 2 conceptual types of events.
+We distinguish two conceptual types of events.
 
 1. Sensory events (*external*)
 
@@ -135,5 +133,5 @@ Everything is automatically linked by the *data* requirements of the interaction
 
 After adding the dependencies you can continue to:
 
-* If you like learning by doing, go through the [development life cycle section](/sections/development-life-cycle/design-a-recipe).
-* If you like learning by description, go through the [reference section](/sections/reference/main-abstractions).
+* Go through the [development life cycle section](/sections/development-life-cycle/design-a-recipe) if you like learning by doing;
+* Go through the [reference section](/sections/reference/main-abstractions) if you like learning by description.

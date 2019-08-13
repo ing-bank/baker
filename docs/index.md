@@ -2,31 +2,34 @@
 
 Baker is a library that reduces the effort to orchestrate (micro)service-based process flows.
 
-Developers declare the orchestration logic in a *Recipe* (process blueprint).
+Developers declare the orchestration logic in a `Recipe` (process blueprint).
 
-A *Recipe* is made out of:
+A `Recipe` is made out of:
 
-- *Interactions* (functions)
-- *Ingredients* (data)
-- *Events*
+- `Interactions` (functions)
+- `Ingredients` (containers for data)
+- `Events`
 
-And a Baker *runtime* runs instances of *Recipes* across a cluster of nodes in asynchronous fashion.
+The Baker runtime on the other hand runs instances of the `Recipe` across a cluster of nodes in an asynchronous fashion.
 
 ### Baker allows you to
 
-- *Declaratively* design your processes using a [recipe DSL](recipe-dsl.md).
-- [Visualize](recipe-visualization.md) your recipe allowing product owners, architects and developers to talk the same language.
-- Manage your recipes using the [baker runtime](baker-runtime.md).
-- [Create process instances](process-execution.md#create-a-process-instance) of your recipes.
-- [Fire sensory events](process-execution.md#providing-a-sensory-event).
-- [Inquire the state](process-execution.md#state-inquiry) of your recipe instances.
+- *Declaratively* design your business processes using a [recipe Domain Specific Language (DSL)](sections/reference/dsls).
+- [Visualize](sections/reference/visualization.md) your recipe allowing product owners, architects and developers to talk the same language.
+- Manage your recipes using the [Baker runtime](sections/reference/runtime.md).
+- [Create process instances](sections/development-life-cycle/bake-fire-events-and-inquiry#bake) of your recipes.
+- [Fire sensory events](sections/development-life-cycle/bake-fire-events-and-inquiry#fire-events).
+- [Inquire the state](sections/development-life-cycle/bake-fire-events-and-inquiry#inquiry) of your recipe instances.
 
 ## Why Baker
 
-Upgrading your business to an agile, adaptive and scalable microservice based architecture does bring significant advantages, 
-but also critical challenges that must be resolved, namely the coupling of business logic to service 
-technologies and the inherent complexities of distributed systems. Baker solves these challenges by providing an expressive 
-language to encode your business logic _(recipe)_, and a distributed runtime to scale _recipe instances_ with little 
+Upgrading your business to an agile, adaptive and scalable microservice-based architecture does bring significant advantages, 
+but also critical challenges that must be resolved:
+
+- the coupling of business logic to service technologies
+- and the inherent complexities of distributed systems
+
+Baker solves these challenges by providing an expressive language to encode your business logic _(recipe)_, and a distributed runtime to scale _recipe instances_ with little 
 configuration and no extra development. 
 
 **Decouple your business logic from your microservices**: When developing microservices it is easy to fall into bad practices 
@@ -41,7 +44,7 @@ models, etc. Baker eases the development by providing out-of-the-box solutions f
 are able to create and distribute _recipe instances_ between them, handle _failed interactions_ with several strategies, 
 restore the state of long-lived process and more, allowing the developer to focus on what it matters for the business.
 
-**Reason about your business without the burdens of technology**: Baker can _visualize your recipes_, enabling developers 
+**Reason about your business process without the burdens of technology**: Baker can _visualize your recipes_, enabling developers 
 and business stakeholders to better communicate and reason about the business processes.
 
 ## Example of a simple web shop recipe:
@@ -50,7 +53,7 @@ and business stakeholders to better communicate and reason about the business pr
 
 ## How to read these docs
 
-There are 2 big sections:
+There are two big sections:
 
 * The _Development Life Cycle_: works like a big tutorial of Baker, it is a "learning by making" type of documentation, it is 
 for those who like a top-down approach to learning.

@@ -20,11 +20,11 @@ This is a short description of the execution loop of a `RecipeInstance`
 
 # In depth
 
-This section explains deeply how `ProcessInstances` work, and how they execute your recipes. You DO NOT require to understand
-this part to develop with Baker, it is just extra documentation for the curious and the contributor.
+This section explains deeply how `ProcessInstances` work, and how they execute your recipes. You don't have to understand
+this part to develop with Baker. It is just extra documentation for the curious and the contributors.
 
 A recipe can be represented (and [visualized](/sections/reference/visualization/)) as a graph, which is actually a higher 
-level representation of a [petri net](https://en.wikipedia.org/wiki/Petri_net) (which is also a graph). When the process
+level representation of a [Petri net](https://en.wikipedia.org/wiki/Petri_net) (which is also a graph). When the process
 is represented as such it enables the `RecipeInstance` to execute the previously described execution loop, because Baker has
 your process state as a data structure that can be preserved as the state of the `RecipeInstance`. That is why you need
 to first use the `RecipeCompiler` and compile the recipe into a `CompiledRecipe` (petri net representation) before 
@@ -38,7 +38,7 @@ The compiler has some rules about translating recipe parts to `transitions` and 
 
 Often an ingredient will be used by multiple interactions in a recipe.
 
-Because tokens can only be consumed by 1 transition we have to add a layer to duplicate the token for all transitions.
+Because tokens can only be consumed by one transition we have to add a layer to duplicate the token for all transitions.
 
 ![](../../images/RecipeCompiler-draw.io-MultipleInteractions.svg)
 
@@ -49,7 +49,7 @@ to produce a token in a place for that interaction.
 
 ![](../../images/RecipeCompiler-draw.io-ANDPrecondition.svg)
 
-### Interaction with precodition (OR)
+### Interaction with precondition (OR)
 
 Events that are grouped in an OR combinator for an interaction output a token to the same place.
 
@@ -59,7 +59,7 @@ Therefor when one of them fires the condition for the transition to fire is met.
 
 ### Sensory event with firing limit
 
-When specifying a sensory event with a firing limit of `n` we generate a in-adjacent place with `n` tokens in the
+When specifying a sensory event with a firing limit of `n` we generate an in-adjacent place with `n` tokens in the
 initial marking.
 
 ![](../../images/RecipeCompiler-draw.io-FiringLimit.svg)

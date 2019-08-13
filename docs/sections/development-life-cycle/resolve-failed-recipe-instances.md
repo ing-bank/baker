@@ -6,15 +6,13 @@ When an interaction throws an exception there are a number of mitigation strateg
 
 ## Block interaction
 
-This is the *DEFAULT* strategy if no other is defined and no [default strategy](#default-failure-strategy) is defined.
+This is the *DEFAULT* strategy if no [default strategy](#default-failure-strategy) is defined.
 
 This option is suitable for non idempotent interactions that cannot be retried.
 
 When an exception is thrown from the interaction the interaction is *blocked*.
 
 This means that the interaction cannot execute again automatically.
-
-It requires [manual intervening](process-execution.md#incident-resolving) to continue the process from then on.
 
 ## Fire event
 
@@ -32,9 +30,9 @@ Example:
    )
 ```
 
-## Retry with incremental backoff
+## Retry with incremental back-off
 
-Incremental backoff allows you to configure a retry mechanism that takes longer for each retry.
+Incremental back-off allows you to configure a retry mechanism that takes longer for each retry.
 The idea here is that you quickly retry at first but slower over time. To not overload your system but give it time to recover.
 
 ``` java
@@ -54,7 +52,7 @@ What do these parameters mean?
 | name | meaning |
 | --- | --- |
 | `initialDelay` | The delay for the first retry. |
-| `backoffFactor` | The backoff factor for the delay (optional, `default = 2`) |
+| `backoffFactor` | The back-off factor for the delay (optional, `default = 2`) |
 | `maxTimeBetweenRetries` | The maximum interval between retries. |
 | `deadLine` | The maximum total amount of time spend delaying. |
 

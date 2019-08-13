@@ -46,7 +46,7 @@ public class CustomerInfoReceived {
 }
 ```
 
-The field types of the `POJO` class must be compatible with the baker type system.
+The field types of the `POJO` class must be compatible with the Baker type system.
 
 See the [supported types](type-system.md#default-supported-types) for more information.
 

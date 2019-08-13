@@ -118,7 +118,7 @@ SensoryEventStatus statusB = baker.processEvent(recipeInstanceId, new OrderPlace
 
 ## Sensory event status
 
-In response to recieving a sensory event baker returns a status code indicating how it processed it.
+In response to receiving a sensory event Baker returns a status code indicating how it processed it.
 
 | Status | Description |
 | --- | --- |

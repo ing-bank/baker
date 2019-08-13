@@ -10,7 +10,7 @@ Baker makes a strong division between the specification of your business process
 | `Interaction` | `InteractionInstance` |
 | `Recipe` | `RecipeInstance` |
 
-The first 4 are used to create `Recipe`s which serve as "blueprints" of your process. And in the Baker
+The first four are used to create `Recipe`s which serve as "blueprints" of your process. In the Baker
 runtime they are used within `RecipeInstance`s, which are created from a `Recipe` specification to execute the flow of 
 your process.
 
@@ -18,7 +18,7 @@ your process.
 
 Because of the distributed nature of Baker and how the runtime works, we need to have serializable types and values to 
 transfer recipes and data between nodes and to match over such data, that is why we implemented a type system on top of Scala.
-They help not just to model your domain but also for Baker to identify when to execute interactions. 
+They help not just to model your domain, but also for Baker to identify when to execute interactions. 
 
 If you are using all of our reflection APIs then you will not use them directly, but it is good to know of their 
 existence.
@@ -40,9 +40,9 @@ Value dataValue = PrimitiveValue.apply(42);
 
 ## Ingredient and IngredientInstance
 
-`Ingredients` are _pure data_, This data is **immutable**, which means that it can only be created and never 
-mutated through the process. And there is **no subtyping** or hierarchy. `Ingredients` are carried through your process 
-within `Events`, and are inputs for `Interactions`.
+`Ingredients` are containers for the data in your process. This data is **immutable**, which means that it can only be created and never 
+changes in the process. There is **no subtyping**, nor hierarchy. `Ingredients` are carried through your process 
+with `Events`, and are inputs for `Interactions`.
 
 For a `Recipe` there exist `Ingredients` which are a name and a `Type`, they are used to model the data of your process.
 

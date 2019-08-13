@@ -519,7 +519,7 @@ CompletableFuture<BoxedUnit> program =
 
 It is possible that during the execution of a `RecipeInstance` it becomes *blocked*, this can happen either because it 
 is `directly blocked` by an exception or that the retry strategy was exhausted. At this point it is possible to resolve 
-the blocked interaction in 2 ways. This one involves resolving the interaction with a chosen `EventInstance` to replace
+the blocked interaction in two ways. This one involves resolving the interaction with a chosen `EventInstance` to replace
 the one that would have had been computed by the `InteractionInstance`.
 
 _Note: this behaviour can be automatically preconfigured by using the `FireEventAfterFailure(eventName)` `FailureStrategy`

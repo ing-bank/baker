@@ -159,7 +159,7 @@ info.getRecipeCreatedTime();
   Now its just a configuration with a boolean on the RetryWithIncrementalBackoff retry strategy
 
 ## 1.1.17
-- Fixed [#72](https://github.com/ing-bank/baker/issues/72): do not join to akka cluster when there are persistence problems. `akka.cluster.seed-nodes` configuration should be renamed to `baker.cluster.seed-nodes` to support this "late cluster join" feature.
+- Fixed [#72](https://github.com/ing-bank/baker/issues/72): do not join to Akka cluster when there are persistence problems. `akka.cluster.seed-nodes` configuration should be renamed to `baker.cluster.seed-nodes` to support this "late cluster join" feature.
 
 ## 1.1.16
 - Fixed [#55](https://github.com/ing-bank/baker/issues/55): Improved readability of duration of scheduled retry log entries 
@@ -185,7 +185,7 @@ info.getRecipeCreatedTime();
 - Fixed [#53](https://github.com/ing-bank/baker/issues/53): EventListeners are now notified of retry-exhausted events.
 - Fixed [#49](https://github.com/ing-bank/baker/issues/49): improved error message when receiving invalid sensory event
 - Added a method to CompiledRecipe to obtain an SVG String: ```getVisualRecipeAsSVG```
-- Updated to akka 2.5.6
+- Updated to Akka 2.5.6
 
 ## 1.1.13
 - Fixed [#47](https://github.com/ing-bank/baker/issues/47): added writeVisualrecipeToSVGFile to write away the CompiledRecipe to a file.
@@ -250,7 +250,7 @@ instance will be stopped and all persisted messages (history) will be deleted.
 
 ## 1.0.9
 
-- Changed serialization mechanism to allow custom akka serializers for ingredients where before only kryo was used.
+- Changed serialization mechanism to allow custom Akka serializers for ingredients where before only kryo was used.
 
   You might see these messages for ingredient types without bindings:
 
@@ -263,8 +263,8 @@ instance will be stopped and all persisted messages (history) will be deleted.
 
 ## 1.0.8
 - Added the functionality that if an Ingredient of Java Optional or Scala Option is needed but not provided its provided as empty.
-- Side note (no impact for baker users): kagara library is merged into baker, therefore baker has 2 new artifacts now: petrinet-api and petrinet-akka.
-- slf4j MDC field 'kageraEvent' is renamed to 'petrinetEvent' due to new petrinet modules in baker.
+- Side note (no impact for baker users): kagera library is merged into baker, therefore Baker has two new artifacts now: petrinet-api and petrinet-akka.
+- slf4j MDC field 'kageraEvent' is renamed to 'petrinetEvent' due to new Petri-net modules in baker.
 - If io.kagera packages are used/imported in your application (maybe in logback files), you need to change them as com.ing.baker.petrinet 
 - baker.conf file disables java serialization, you don't need to have 'akka.actor.allow-java-serialization = off' setting anymore in your application.conf files
 
@@ -279,7 +279,7 @@ include "baker.conf"
 - IMPORTANT: This change is not backwards compatible, on going processing cannot be resumed after a restart
 
 ## 1.0.4
-- Migrated to akka 2.5.x
+- Migrated to Akka 2.5.x
 - A local event bus is implemented so that a listener can be registered to act on baker events. Ex:
 ```scala
       baker.registerEventListener(new EventListener {
@@ -317,7 +317,7 @@ include "baker.conf"
 - bug fix for the actor passivation logic
 
 ## 0.2.14
-- bug fixes related to akka sharding
+- bug fixes related to Akka sharding
 
 ## 0.2.13
 - Baker can now persist encrypted ingredients if enabled. This feature is disabled by default.
