@@ -28,6 +28,8 @@ trait Baker[F[_]] extends LanguageApi {
 
   type RecipeInformationType <: RecipeInformation {type Language <: self.Language}
 
+  type EventMomentType <: EventMoment { type Language <: self.Language}
+
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
     *
@@ -241,12 +243,28 @@ trait Baker[F[_]] extends LanguageApi {
   def getRecipeInstanceState(recipeInstanceId: String): F[RecipeInstanceStateType]
 
   /**
-    * Returns all provided ingredients for a given process id.
+    * Returns all provided ingredients for a given RecipeInstance id.
     *
     * @param recipeInstanceId The process id.
     * @return The provided ingredients.
     */
   def getIngredients(recipeInstanceId: String): F[language.Map[String, Value]]
+
+  /**
+    * Returns all fired events for a given RecipeInstance id.
+    *
+    * @param recipeInstanceId The process id.
+    * @return The events
+    */
+  def getEvents(recipeInstanceId: String): F[language.Seq[EventMomentType]]
+
+  /**
+    * Returns all names of fired events for a given RecipeInstance id.
+    *
+    * @param recipeInstanceId The process id.
+    * @return The event names
+    */
+  def getEventNames(recipeInstanceId: String): F[language.Seq[String]]
 
   /**
     * Returns the visual state (.dot) for a given process.
