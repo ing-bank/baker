@@ -2,19 +2,18 @@ package com.ing.baker.runtime.akka.actor.process_index
 
 import akka.actor.{Actor, ActorRef, Props, ReceiveTimeout}
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.scaladsl.EventInstance
+import com.ing.baker.runtime.scaladsl.{EventInstance, EventReceived, EventRejected, EventResult, RecipeInstanceState}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{FireSensoryEventReaction, FireSensoryEventRejection, ProcessEvent, ProcessEventCompletedResponse, ProcessEventReceivedResponse}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.scaladsl.{EventReceived, EventRejected}
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.EventResult
+import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.{Logger, LoggerFactory}
 
 object SensoryEventResponseHandler {
 
-  def apply(receiver: ActorRef, command: ProcessEvent): Props =
-    Props(new SensoryEventResponseHandler(receiver, command))
+  def apply(receiver: ActorRef, command: ProcessEvent, ingredientsFilter: Seq[String] = Seq.empty): Props =
+    Props(new SensoryEventResponseHandler(receiver, command, ingredientsFilter))
 }
 
 /**
@@ -23,7 +22,7 @@ object SensoryEventResponseHandler {
   * - Publishes events to the system event stream
   * - Does involving logging
   */
-class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) extends Actor {
+class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ingredientsFilter: Seq[String]) extends Actor {
 
   context.setReceiveTimeout(command.timeout)
 
@@ -62,11 +61,13 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
       case fired: TransitionFired => Option(fired.output.asInstanceOf[EventInstance])
       case _ => None
     }
+
     def result = EventResult(
       status = SensoryEventStatus.Completed,
       events = runtimeEvents.map(_.name),
-      ingredients = runtimeEvents.flatMap(_.providedIngredients).toMap
+      ingredients = filterIngredientValues(runtimeEvents.flatMap(_.providedIngredients).toMap)
     )
+
     command.reaction match {
       case FireSensoryEventReaction.NotifyBoth(_, alternativeReceiver) =>
         alternativeReceiver ! ProcessEventCompletedResponse(result)
@@ -75,6 +76,13 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent) ext
     }
     stopActor()
   }
+
+  private def filterIngredientValues(ingredients: Map[String, Value]): Map[String, Value] =
+    ingredients.map(ingredient =>
+      if (ingredientsFilter.contains(ingredient._1))
+        ingredient._1 -> PrimitiveValue("")
+      else
+        ingredient)
 
   def rejectWith(rejection: FireSensoryEventRejection): Unit = {
     log.debug("Stopping SensoryEventResponseHandler and rejecting request")
