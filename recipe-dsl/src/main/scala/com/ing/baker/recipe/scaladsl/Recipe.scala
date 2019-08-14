@@ -18,31 +18,29 @@ object Recipe {
   * A Recipe combines a set of interactions & events.
   */
 case class Recipe private(override val name: String,
-                          override val interactions: Seq[common.InteractionDescriptor],
-                          override val sieves: Seq[common.InteractionDescriptor],
+                          override val interactions: Seq[Interaction],
+                          override val sieves: Seq[Interaction],
                           override val sensoryEvents: Set[common.Event],
                           override val defaultFailureStrategy: InteractionFailureStrategy,
                           override val eventReceivePeriod: Option[FiniteDuration],
                           override val retentionPeriod: Option[FiniteDuration])
   extends common.Recipe {
 
-  def withInteraction(newInteraction: common.InteractionDescriptor): Recipe = copy(interactions = interactions :+ newInteraction)
+  def withInteraction(newInteraction: Interaction): Recipe = copy(interactions = interactions :+ newInteraction)
 
-  def withInteractions(newInteractions: common.InteractionDescriptor*): Recipe = copy(interactions = interactions ++ newInteractions)
-
-  @deprecated("sieves are deprecated, use interactions instead", "1.4.0")
-  def withSieve(newSieve: common.InteractionDescriptor): Recipe = copy(sieves = sieves :+ newSieve)
+  def withInteractions(newInteractions: Interaction*): Recipe = copy(interactions = interactions ++ newInteractions)
 
   @deprecated("sieves are deprecated, use interactions instead", "1.4.0")
-  def withSieves(newSieves: common.InteractionDescriptor*): Recipe = copy(sieves = sieves ++ newSieves)
+  def withSieve(newSieve: Interaction): Recipe = copy(sieves = sieves :+ newSieve)
 
-  def withSensoryEvent(newEvent: common.Event): Recipe = copy(sensoryEvents = sensoryEvents + newEvent)
+  @deprecated("sieves are deprecated, use interactions instead", "1.4.0")
+  def withSieves(newSieves: Interaction*): Recipe = copy(sieves = sieves ++ newSieves)
 
-  def withSensoryEvents(newEvents: common.Event*): Recipe = copy(sensoryEvents = sensoryEvents ++ newEvents)
+  def withSensoryEvent(newEvent: Event): Recipe = copy(sensoryEvents = sensoryEvents + newEvent)
+
+  def withSensoryEvents(newEvents: Event*): Recipe = copy(sensoryEvents = sensoryEvents ++ newEvents)
 
   def withEventReceivePeriod(duration: FiniteDuration): Recipe = copy(eventReceivePeriod = Some(duration))
 
   def withRetentionPeriod(duration: FiniteDuration): Recipe = copy(retentionPeriod = Some(duration))
-
-  def withDefaultFailureStrategy(defaultFailureStrategy: InteractionFailureStrategy) : Recipe = copy(defaultFailureStrategy = defaultFailureStrategy)
 }

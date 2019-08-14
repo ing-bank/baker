@@ -1,12 +1,9 @@
 package com.ing.baker.recipe
 
 import java.lang.reflect.Method
-import java.util.concurrent.CompletableFuture
 
 import com.ing.baker.recipe.javadsl.ReflectionHelpers._
 import com.ing.baker.types.{Converters, Type}
-
-import scala.reflect.ClassTag
 
 package object javadsl {
 
@@ -51,13 +48,8 @@ package object javadsl {
 
         outputEventClasses.foreach {
           eventClass =>
-            if (method.isAnnotationPresent(classOf[annotations.AsyncInteraction])) {
-              if (!method.getReturnType.isAssignableFrom(implicitly[ClassTag[CompletableFuture[_]]].runtimeClass))
-                throw new common.RecipeValidationException(s"Interaction $name is declared to be async, but it doesn't return a CompletableFuture")
-            } else {
-              if (!method.getReturnType.isAssignableFrom(eventClass))
-                throw new common.RecipeValidationException(s"Interaction $name provides event '${eventClass.getName}' that is incompatible with it's return type")
-            }
+            if (!method.getReturnType.isAssignableFrom(eventClass))
+              throw new common.RecipeValidationException(s"Interaction $name provides event '${eventClass.getName}' that is incompatible with it's return type")
         }
 
         outputEventClasses.map(eventClassToCommonEvent(_, None))

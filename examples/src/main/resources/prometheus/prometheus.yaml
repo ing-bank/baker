@@ -1,8 +1,0 @@
-global:
-  scrape_interval:     5s
-  evaluation_interval: 5s
-
-scrape_configs:
-  - job_name: 'prometheus'
-    static_configs:
-      - targets: ['node1:9095', 'node2:9095', 'node3:9095']

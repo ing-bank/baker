@@ -1,19 +1,17 @@
 package com.ing.baker.compiler;
 
 import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.recipe.annotations.AsyncInteraction;
 import com.ing.baker.recipe.annotations.FiresEvent;
-import com.ing.baker.recipe.annotations.RecipeInstanceId;
+import com.ing.baker.recipe.annotations.ProcessId;
 import com.ing.baker.recipe.annotations.RequiresIngredient;
 import com.ing.baker.recipe.javadsl.Recipe;
-import com.ing.baker.runtime.common.BakerException;
+import com.ing.baker.runtime.core.BakerException;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
-import java.util.concurrent.CompletableFuture;
 
 import static com.ing.baker.recipe.javadsl.InteractionDescriptor.of;
 import static org.junit.Assert.assertEquals;
@@ -155,15 +153,13 @@ public class JavaCompiledRecipeTest {
             }
         }
 
-        @AsyncInteraction
         @FiresEvent(oneOf = { ProvidesRequestIDStringOne.class })
-        CompletableFuture<ProvidesRequestIDStringOne> apply(@RecipeInstanceId String requestId);
+        ProvidesRequestIDStringOne apply(@ProcessId String requestId);
     }
 
     public static class InteractionOneImpl implements InteractionOne {
-        public CompletableFuture<ProvidesRequestIDStringOne> apply(String requestId) {
-            return CompletableFuture.completedFuture(
-                    new ProvidesRequestIDStringOne(requestId));
+        public ProvidesRequestIDStringOne apply(String requestId) {
+            return new ProvidesRequestIDStringOne(requestId);
         }
 
         public String name = "InteractionOne";
@@ -180,7 +176,7 @@ public class JavaCompiledRecipeTest {
         }
 
         @FiresEvent(oneOf = {ProvidesRequestIDStringTwo.class})
-        public ProvidesRequestIDStringTwo apply(@RecipeInstanceId String requestId) {
+        public ProvidesRequestIDStringTwo apply(@ProcessId String requestId) {
               return new ProvidesRequestIDStringTwo(requestId);
           }
 
@@ -212,7 +208,7 @@ public class JavaCompiledRecipeTest {
         }
 
         @FiresEvent(oneOf = { ProvidesRequestIDStringThree.class })
-        public ProvidesRequestIDStringThree apply(@RecipeInstanceId String requestId, @RequiresIngredient("RequestIDStringOne") String requestIDStringOne) {
+        public ProvidesRequestIDStringThree apply(@ProcessId String requestId, @RequiresIngredient("RequestIDStringOne") String requestIDStringOne) {
             return new ProvidesRequestIDStringThree(requestId);
         }
     }

@@ -4,7 +4,7 @@ import com.ing.baker.recipe.javadsl.events.SensoryEventWithIngredient;
 import com.ing.baker.recipe.javadsl.events.SensoryEventWithoutIngredient;
 import com.ing.baker.recipe.javadsl.interactions.FiresTwoEventInteraction;
 import com.ing.baker.recipe.javadsl.interactions.SimpleInteraction;
-import com.ing.baker.recipe.javadsl.interactions.RequiresRecipeInstanceIdStringInteraction;
+import com.ing.baker.recipe.javadsl.interactions.RequiresProcessIdStringInteraction;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -33,7 +33,7 @@ public class RecipeTest {
     public void shouldSetupRecipeWithMultipleInteractionDescriptors() {
         Recipe recipe = new Recipe("MultipleInteractionsRecipe")
                 .withInteractions(
-                        of(RequiresRecipeInstanceIdStringInteraction.class),
+                        of(RequiresProcessIdStringInteraction.class),
                         of(FiresTwoEventInteraction.class),
                         of(SimpleInteraction.class));
         assertEquals(recipe.getEvents().size(), 0);
@@ -54,7 +54,7 @@ public class RecipeTest {
     public void shouldSetupRecipeWithMultipleSieveDescriptors() {
         Recipe recipe = new Recipe("MultipleInteractionsRecipe")
                 .withSieves(
-                        of(RequiresRecipeInstanceIdStringInteraction.class),
+                        of(RequiresProcessIdStringInteraction.class),
                         of(FiresTwoEventInteraction.class),
                         of(SimpleInteraction.class));
         assertEquals(recipe.getEvents().size(), 0);
@@ -95,7 +95,7 @@ public class RecipeTest {
         assertEquals(recipe.getInteractions().size(), 0);
         assertEquals(recipe.getSieves().size(), 0);
         assertEquals(recipe.getEvents().get(0), sensoryEventWithIngredientCheck());
-        assertEquals(recipe.getEvents().get(1), sensoryEventWithoutIngredientAndFiringLimit2Check());
+        assertEquals(recipe.getEvents().get(1), sensoryEventWithoutIngredientCheck());
         assertEquals(recipe.getEvents().get(0).maxFiringLimit().get(), new Integer(1));
         assertEquals(recipe.getEvents().get(1).maxFiringLimit().get(), new Integer(2));
     }
@@ -110,8 +110,8 @@ public class RecipeTest {
         assertEquals(recipe.getEvents().size(), 2);
         assertEquals(recipe.getInteractions().size(), 0);
         assertEquals(recipe.getSieves().size(), 0);
-        assertEquals(recipe.getEvents().get(0), sensoryEventWithIngredientAndNoFiringLimitCheck());
-        assertEquals(recipe.getEvents().get(1), sensoryEventWithoutIngredientAndNoFiringLimitCheck());
+        assertEquals(recipe.getEvents().get(0), sensoryEventWithIngredientCheck());
+        assertEquals(recipe.getEvents().get(1), sensoryEventWithoutIngredientCheck());
         assertEquals(recipe.getEvents().get(0).maxFiringLimit(), scala.Option.empty());
         assertEquals(recipe.getEvents().get(1).maxFiringLimit(), scala.Option.empty());
     }
