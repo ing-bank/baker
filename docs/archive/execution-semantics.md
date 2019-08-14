@@ -1,15 +1,17 @@
-# Execution sementics
+# Execution Semantics
 
 ### Execution loop
 
 This is a short description of the execution loop of a process instance
 
-1. An [event](concepts.md#event) is raised and provides ingredients.
+1. A `EventInstance` is raised and provides `IngredientInstances`.
 
-    Either given to baker as a [sensory event](process-execution.md#providing-a-sensory-event) or by an interaction.
+    Either given to baker as a "SensoryEvent" (nickname for `EventInstances` that you fire using Baker APIs) 
+    or by an `InteractionInstance`.
 
-2. A check is done which [interactions](concepts.md#interaction) have all their requirements met and those are executed.
-3. An interaction completes its execution and outputs an event (`GOTO 1.`)
+2. A check is done to find the `Interactions` that have all their input `IngredientInstances` provided and those are executed.
+3. An `InteractionInstance` completes its execution and outputs an `EventInstances` which provides more `IngredientInstances` 
+   for the next `InteractionInstnaces` (repeating step 1).
 
 ### Notes
 
@@ -28,11 +30,11 @@ A recipe can be represented (and [visualized](recipe-visualization.md)) as a gra
 
 This graph is actually a higher level representation of a [petri net](https://en.wikipedia.org/wiki/Petri_net) (which is also a graph).
 
-The execution of a process instance based around this petri net.
+The execution of a process instance is based around the state of a petri net.
 
-The recipe compiler takes a recipe and creates a petri net.
+The recipe compiler takes a recipe and creates a petri net from it.
 
-Generally the petri net is graph more complicated with extra layers of wiring nodes.
+Generally the petri net graph is more complicated with extra layers of wiring nodes.
 
 ## Translation rules
 
@@ -55,9 +57,8 @@ to produce a token in a place for that interaction.
 
 ### Interaction with precodition (OR)
 
-Events that are grouped in an OR combinator for an interaction output a token to the same place.
-
-Therefor when one of them fires the condition for the transition to fire is met.
+Events that are grouped in an OR combinator for an interaction output a token to the same place, therefor when one of 
+them fires the condition for the transition to fire is met.
 
 ![](RecipeCompiler-draw.io-ORPrecondition.svg)
 

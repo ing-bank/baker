@@ -24,8 +24,8 @@ Starting N number of nodes each one reacting to some certain cluster
 events (like MemberUp, MemberUnreachable, etc).
 
 ### ClusterV3 spec
-Starting 6 processes for 3 node setup to simulate one node can receive
-unreachable/up messages of other 2 nodes concurrently, so it makes 6
+Starting six processes in a three-node setup to simulate one node can receive
+unreachable/up messages of other two nodes concurrently, so it makes six
 concurrent processes. First node starts as the leader and never changes
 in this version. Availability (At least one node is up) invariant is
 tested but due to huge state space being generated, the algorithm needs
@@ -46,7 +46,7 @@ update the state of other nodes/processes when we receive some certain
 messages. i.e. Receiving MemberRemoved(node1) message means removing
 node1 from my state, but also assuming that node1 is already left the
 cluster  or terminated, so we also update its members set as an empty
-set. Fixed lots of unrealistic corner cases found by the TLA model
+set. Fixed lots of unrealistic corner cases found by the TLA+ model
 checker in the algorithm so that it does not randomly generate states
 but knows about how the system behaves. This generates less number of
 states and we are able to improve the algorithm step by step.

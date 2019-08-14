@@ -231,3 +231,42 @@ lazy val integration = project.in(file("integration"))
   )
   .enablePlugins(MultiJvmPlugin)
   .configs(MultiJvm)
+
+lazy val examples = project
+  .in(file("examples"))
+  .enablePlugins(JavaAppPackaging)
+  .settings(commonSettings)
+  .settings(noPublishSettings)
+  .settings(
+    moduleName := "examples",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
+    libraryDependencies ++=
+      compileDeps(
+        slf4jApi,
+        slf4jSimple,
+        http4s,
+        http4sDsl,
+        http4sServer,
+        http4sCirce,
+        circe,
+        circeGeneric,
+        kamon,
+        kamonPrometheus
+      ) ++ testDeps(
+        scalaTest,
+        scalaCheck,
+        junitInterface,
+        slf4jApi,
+        mockito,
+        logback
+      )
+  )
+  .settings(
+    maintainer in Docker := "The Apollo Squad",
+    packageSummary in Docker := "A web-shop checkout service example running baker",
+    packageName in Docker := "checkout-service-baker-example",
+    dockerExposedPorts := Seq(8080)
+  )
+  .dependsOn(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage)
