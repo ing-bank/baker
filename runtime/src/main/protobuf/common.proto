@@ -2,7 +2,7 @@ syntax = "proto2";
 
 import "scalapb/scalapb.proto";
 
-option java_package = "com.ing.baker.runtime.actor.protobuf";
+option java_package = "com.ing.baker.runtime.akka.actor.protobuf";
 option (scalapb.options) = {
     flat_package: true
 };
@@ -12,6 +12,11 @@ message SerializedData {
     optional int32 serializer_id = 1;
     optional string manifest = 2;
     optional bytes data = 3;
+}
+
+// Akka
+message ActorRefId {
+    optional string identifier = 1;
 }
 
 // Baker type system messages
@@ -120,7 +125,7 @@ message List {
 // END -- Baker type system messages
 
 
-//  DATA (Runtime messages)
+// DATA (Runtime messages)
 message Ingredient {
     optional string name = 1;
     // before baker type system the data could be anything
@@ -134,10 +139,31 @@ message RuntimeEvent {
     repeated Ingredient providedIngredients = 2;
 }
 
+message EventMoment {
+    optional string name = 1;
+    optional int64 occurredOn = 2;
+}
+
+
 message ProcessState {
-    optional string processId = 1;
+    optional string recipeInstanceId = 1;
     repeated Ingredient ingredients = 2;
-    repeated string eventNames = 3;
+    repeated EventMoment events = 4;
+}
+
+message SensoryEventResult {
+    optional SensoryEventStatus status = 1;
+    repeated string events = 2;
+    map<string, Value> ingredients = 3;
+}
+
+enum SensoryEventStatus {
+    RECEIVED = 1;
+    COMPLETED = 2;
+    FIRING_LIMIT_MET = 3;
+    RECEIVE_PERIOD_EXPIRED = 4;
+    ALREADY_RECEIVED = 5;
+    PROCESS_DELETED = 6;
 }
 // END DATA
 

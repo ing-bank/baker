@@ -6,15 +6,18 @@ object JavadslTestHelper {
 
   //Ingredients
   val initialIngredientCheck: common.Ingredient = scaladsl.Ingredient[String]("initialIngredient")
-  val ProcessIdStringCheck: common.Ingredient = scaladsl.Ingredient[String]("$ProcessId$")
+  val recipeInstanceIdStringCheck: common.Ingredient = scaladsl.Ingredient[String]("RecipeInstanceId")
   //Events
   val interactionProvidedEventCheck: common.Event = new scaladsl.Event("InteractionProvidedEvent", Seq.empty, None)
   val interactionProvidedEvent2Check: common.Event = new scaladsl.Event("InteractionProvidedEvent2", Seq.empty, None)
   val sensoryEventWithIngredientCheck: common.Event = new scaladsl.Event("SensoryEventWithIngredient", Seq(initialIngredientCheck), Some(1))
+  val sensoryEventWithIngredientAndNoFiringLimitCheck: common.Event = new scaladsl.Event("SensoryEventWithIngredient", Seq(initialIngredientCheck), None)
   val sensoryEventWithoutIngredientCheck: common.Event = new scaladsl.Event("SensoryEventWithoutIngredient", Seq.empty, Some(1))
+  val sensoryEventWithoutIngredientAndFiringLimit2Check: common.Event = new scaladsl.Event("SensoryEventWithoutIngredient", Seq.empty, Some(2))
+  val sensoryEventWithoutIngredientAndNoFiringLimitCheck: common.Event = new scaladsl.Event("SensoryEventWithoutIngredient", Seq.empty, None)
 
   //Interactions
-  val requiresProcessIdStringInteractionCheck: scaladsl.Interaction = scaladsl.Interaction("RequiresProcessIdStringInteraction", Seq(ProcessIdStringCheck, initialIngredientCheck), Seq.empty)
+  val requiresrecipeInstanceIdStringInteractionCheck: scaladsl.Interaction = scaladsl.Interaction("RequiresRecipeInstanceIdStringInteraction", Seq(recipeInstanceIdStringCheck, initialIngredientCheck), Seq.empty)
   val firesEventInteractionCheck: scaladsl.Interaction = scaladsl.Interaction("FiresEventInteraction", Seq(initialIngredientCheck), Seq((interactionProvidedEventCheck)))
   val firesTwoEventInteractionCheck: scaladsl.Interaction = scaladsl.Interaction("FiresTwoEventInteraction", Seq(initialIngredientCheck), Seq(interactionProvidedEventCheck, interactionProvidedEvent2Check))
 }

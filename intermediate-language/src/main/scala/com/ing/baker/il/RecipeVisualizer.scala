@@ -118,12 +118,11 @@ object RecipeVisualizer {
   }
 
   def visualizeRecipe(recipe: CompiledRecipe,
-                      config: Config = ConfigFactory.load(),
+                      style: RecipeVisualStyle,
                       filter: String => Boolean = _ => true,
                       eventNames: Set[String] = Set.empty,
                       ingredientNames: Set[String] = Set.empty): String =
-
-    generateDot(recipe.petriNet.innerGraph, new RecipeVisualStyle(config), filter, eventNames, ingredientNames)
+    generateDot(recipe.petriNet.innerGraph, style, filter, eventNames, ingredientNames)
 
 
   def visualizePetriNet[P, T](graph: PetriNetGraph[P, T]): String = {

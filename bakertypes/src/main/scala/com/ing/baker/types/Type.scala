@@ -55,21 +55,76 @@ sealed trait Type {
   def isEnum: Boolean = isInstanceOf[EnumType]
   def isMap: Boolean = isInstanceOf[MapType]
   def isRecord: Boolean = isInstanceOf[RecordType]
+
+  override def hashCode(): Int = {
+    val p1 = 31
+    val p2 = 11
+    this match {
+      case ListType(entryType) =>
+        p1 * 1 + entryType.hashCode()
+        //p * 1 + (p * 17) == p * 6 + (p * 12)
+      case OptionType(entryType) =>
+        p1 * 2 + entryType.hashCode()
+      case EnumType(options) =>
+        p1 * 3 + options.hashCode()
+      case RecordType(fields) =>
+        p1 * 5 + fields.hashCode()
+      case MapType(valueType) =>
+        p1 * 6 + valueType.hashCode()
+      case Bool => p2 * 7
+      case Byte => p2 * 8
+      case Char => p2 * 9
+      case Int16 => p2 * 10
+      case Int32 => p2 * 11
+      case Int64 => p2 * 12
+      case IntBig => p2 * 13
+      case Float32 => p2 * 14
+      case Float64 => p2 * 15
+      case FloatBig => p2 * 16
+      case ByteArray => p2 * 17
+      case CharArray => p2 * 18
+      case Date => p2 * 19
+    }
+  }
 }
 
-case class ListType(entryType: Type) extends Type
+case class ListType(entryType: Type) extends Type {
 
-case class OptionType(entryType: Type) extends Type
+  override def toString: String = s"List[$entryType]"
+}
 
-case class EnumType(options: Set[String]) extends Type
+case class OptionType(entryType: Type) extends Type {
 
-case class RecordField(name: String, `type`: Type)
+  override def toString: String = s"Option[$entryType]"
+}
 
-case class RecordType(fields: Seq[RecordField]) extends Type
+case class EnumType(options: Set[String]) extends Type {
 
-case class MapType(valueType: Type) extends Type
+  override def toString: String = s"Enum(${options.mkString(" | ")})"
+}
 
-trait PrimitiveType extends Type
+case class RecordField(name: String, `type`: Type) {
+
+  override def toString: String = s"$name: ${`type`}"
+
+  override def hashCode(): Int = {
+    val p = 23
+    val nameHash = p * 4 + name.hashCode()
+    p * nameHash + `type`.hashCode()
+  }
+}
+
+case class RecordType(fields: Seq[RecordField]) extends Type {
+
+  override def toString: String = s"Record(${fields.mkString(", ")})"
+}
+
+case class MapType(valueType: Type) extends Type {
+
+  override def toString: String = s"Map[$valueType]"
+}
+
+sealed trait PrimitiveType extends Type
 
 /**
   * Boolean (1 bit)
