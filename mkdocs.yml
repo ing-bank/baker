@@ -15,28 +15,19 @@ markdown_extensions:
   - admonition
 
 nav:
-  - Home: 'index.md'
-  - 'sections/getting-started.md'
-  - 'sections/concepts.md'
-  - Development Life Cycle:
-      - 'sections/development-life-cycle/design-a-recipe.md'
-      - 'sections/development-life-cycle/use-visualizations.md'
-      - 'sections/development-life-cycle/implement-interactions.md'
-      - 'sections/development-life-cycle/bake-fire-events-and-inquiry.md'
-      - 'sections/development-life-cycle/test.md'
-      - 'sections/development-life-cycle/configure.md'
-      - 'sections/development-life-cycle/monitor.md'
-      - 'sections/development-life-cycle/resolve-failed-recipe-instances.md'
-  - Reference:
-      - 'sections/reference/main-abstractions.md'
-      - 'sections/reference/execution-semantics.md'
-      - 'sections/reference/baker-types-and-values.md'
-      - 'sections/reference/dsls.md'
-      - 'sections/reference/runtime.md'
-      - 'sections/reference/visualization.md'
-      - 'sections/reference/event-listener.md'
-      - 'sections/reference/stores.md'
-  - Versions:
-      - 'sections/versions/baker-3.md'
-      - 'sections/versions/baker-2.md'
-  - 'sections/feature-comparison.md'
+  - 'index.md'
+  - 'getting-started.md'
+  - Documentation:
+    - 'documentation/concepts.md'
+    - DSL:
+      - 'documentation/recipe-dsl.md'
+      - 'documentation/interactions.md'
+    - 'documentation/recipe-visualization.md'
+    - 'documentation/baker-runtime.md'
+    - 'documentation/process-execution.md'
+    - 'documentation/event-listener.md'
+    - 'documentation/execution-semantics.md'
+    - 'documentation/type-system.md'
+    - 'documentation/split-brain-resolver.md'
+    - 'documentation/dictionary.md'
+  - 'migration-guide.md'

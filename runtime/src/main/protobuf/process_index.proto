@@ -3,7 +3,7 @@ syntax = "proto2";
 import "scalapb/scalapb.proto";
 import "common.proto";
 
-option java_package = "com.ing.baker.runtime.akka.actor.process_index.protobuf";
+option java_package = "com.ing.baker.runtime.actor.process_index.protobuf";
 option (scalapb.options) = {
     flat_package: true
 };
@@ -12,27 +12,28 @@ option (scalapb.options) = {
 
 message ActorCreated {
     optional string recipeId = 1;
-    optional string recipeInstanceId = 2;
+    optional string processId = 2;
     optional int64 dateCreated = 3;
 }
 
 message ActorPassivated {
-    optional string recipeInstanceId = 1;
+    optional string processId = 1;
 }
 
 message ActorActivated {
-    optional string recipeInstanceId = 1;
+    optional string processId = 1;
 }
 
 message ActorDeleted {
-    optional string recipeInstanceId = 1;
+    optional string processId = 1;
 }
+
 
 // Protocol
 
 message ActorMetaData {
     optional string recipeId = 1;
-    optional string recipeInstanceId = 2;
+    optional string processId = 2;
     optional int64 createdTime = 3;
     optional bool isDeleted = 4;
 }
@@ -51,75 +52,40 @@ message Index {
 
 message CreateProcess {
     optional string recipeId = 1;
-    optional string recipeInstanceId = 2;
+    optional string processId = 2;
 }
 
 message ProcessEvent {
-    optional string recipeInstanceId = 1;
+    optional string processId = 1;
     optional RuntimeEvent event = 2;
     optional string correlationId = 3;
+    optional bool waitForRetries = 4;
     optional int64 timeout = 5;
-    optional FireSensoryEventReaction reaction = 7;
-}
-
-message ProcessEventReceivedResponse {
-    optional SensoryEventStatus status = 1;
-}
-
-message ProcessEventCompletedResponse {
-    optional SensoryEventResult result = 1;
-}
-
-message FireSensoryEventReaction {
-    oneof sealed_value {
-        NotifyWhenReceived received = 1;
-        NotifyWhenCompleted completed = 2;
-        NotifyBoth both = 3;
-        NotifyOnEvent onEvent = 4;
-    }
-}
-
-message NotifyWhenReceived {
-
-}
-
-message NotifyWhenCompleted {
-    optional bool waitForRetries = 1;
-}
-
-message NotifyBoth {
-    optional bool waitForRetries = 1;
-    optional ActorRefId receiver = 6;
-}
-
-message NotifyOnEvent {
-    optional bool waitForRetries = 1;
-    optional string onEvent = 2;
 }
 
 message RetryBlockedInteraction {
-    optional string recipeInstanceId = 1;
+    optional string processId = 1;
     optional string interactionName = 2;
 }
 
 message ResolveBlockedInteraction {
-    optional string recipeInstanceId = 1;
+    optional string processId = 1;
     optional string interactionName = 2;
     optional RuntimeEvent event = 3;
 }
 
 message StopRetryingInteraction {
-    optional string recipeInstanceId = 1;
+    optional string processId = 1;
     optional string interactionName = 2;
 }
 
 message ProcessEventResponse {
-    optional string recipeInstanceId = 1;
+    optional string processId = 1;
     optional SerializedData sourceRef = 2;
 }
 
 message GetProcessState {
-    optional string recipeInstanceId = 1;
+    optional string processId = 1;
 }
 
 message GetCompiledRecipe {
@@ -127,31 +93,22 @@ message GetCompiledRecipe {
 }
 
 message ReceivePeriodExpired {
-    optional string recipeInstanceId = 1;
+    optional string processId = 1;
 }
 
 message InvalidEvent {
-    optional string recipeInstanceId = 1;
+    optional string processId = 1;
     optional string reason = 2;
 }
 
-message SensoryEventAlreadyReceived {
-    optional string recipeInstanceId = 1;
-    optional string correlationId = 2;
-}
-
-message FiringLimitMet {
-    optional string recipeInstanceId = 1;
-}
-
 message ProcessDeleted {
-    optional string recipeInstanceId = 1;
+    optional string processId = 1;
 }
 
 message NoSuchProcess {
-    optional string recipeInstanceId = 1;
+    optional string processId = 1;
 }
 
 message ProcessAlreadyExists {
-    optional string recipeInstanceId = 1;
+    optional string processId = 1;
 }

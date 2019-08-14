@@ -26,9 +26,11 @@ case class InteractionTransition(eventsToFire: Seq[EventDescriptor],
 
   override val id: Long = il.sha256HashCode(s"InteractionTransition:$label")
 
+  override def toString: String = label
+
     /**
-    * These are the ingredients that are not pre-defined or recipeInstanceId
+    * These are the ingredients that are not pre-defined or processId
     */
   val nonProvidedIngredients: Seq[IngredientDescriptor] =
-    requiredIngredients.filterNot(i => i.name == recipeInstanceIdName || predefinedParameters.keySet.contains(i.name))
+    requiredIngredients.filterNot(i => i.name == processIdName || predefinedParameters.keySet.contains(i.name))
 }

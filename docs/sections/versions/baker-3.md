@@ -1,2 +1,0 @@
-# Migration Guide v3
-

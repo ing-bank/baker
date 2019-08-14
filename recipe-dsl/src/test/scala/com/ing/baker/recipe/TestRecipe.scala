@@ -5,7 +5,6 @@ import java.util.Optional
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.scaladsl._
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
 
 //By adding the javadsl Ingredient tag the object will be serialized by Kryo
@@ -93,13 +92,13 @@ object TestRecipe {
   val interactionOne =
     Interaction(
       name = "InteractionOne",
-      inputIngredients = Seq(recipeInstanceId, initialIngredient),
+      inputIngredients = Seq(processId, initialIngredient),
       output = Seq(interactionOneSuccessful))
 
   trait InteractionOne {
     def name: String = "InteractionOne"
 
-    def apply(recipeInstanceId: String, initialIngredient: String): Future[InteractionOneSuccessful]
+    def apply(processId: String, initialIngredient: String): InteractionOneSuccessful
   }
 
   val interactionTwo =
@@ -147,13 +146,13 @@ object TestRecipe {
   val interactionFive =
     Interaction(
       name = "InteractionFive",
-      inputIngredients = Seq(recipeInstanceId, initialIngredient, initialIngredientExtendedName),
+      inputIngredients = Seq(processId, initialIngredient, initialIngredientExtendedName),
       output = Seq(Event[InteractionFiveSuccessful]))
 
   trait InteractionFive {
     val name: String = "InteractionFive"
 
-    def apply(recipeInstanceId: String, initialIngredient: String, initialIngredientExtendedName: String): InteractionFiveSuccessful
+    def apply(processId: String, initialIngredient: String, initialIngredientExtendedName: String): InteractionFiveSuccessful
   }
 
   case class InteractionSixSuccessful(interactionSixIngredient: String)
@@ -223,13 +222,13 @@ object TestRecipe {
   val sieveInteraction =
     Interaction(
       name = "SieveInteraction",
-      inputIngredients = Seq(recipeInstanceId, initialIngredient),
+      inputIngredients = Seq(processId, initialIngredient),
       output = Seq(Event[SieveInteractionSuccessful]))
 
   trait SieveInteraction {
     val name: String = "SieveInteraction"
 
-    def apply(recipeInstanceId: String, initialIngredient: String): SieveInteractionSuccessful
+    def apply(processId: String, initialIngredient: String): SieveInteractionSuccessful
   }
 
   case class ComplexIngredientInteractionSuccessful(complexOjectIngredient: ComplexObjectIngredient)
