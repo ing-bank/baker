@@ -45,11 +45,11 @@ package object compiler {
           event.providedIngredients.map(ingredientToCompiledIngredient))
       }
 
-      //Replace ProcessId to ProcessIdName tag as know in compiledRecipe-
+      //Replace RecipeInstanceId to recipeInstanceIdName tag as know in compiledRecipe-
       //Replace ingredient tags with overridden tags
       val inputFields: Seq[(String, Type)] = interactionDescriptor.inputIngredients
         .map { ingredient =>
-          if (ingredient.name == common.processIdName) il.processIdName -> ingredient.ingredientType
+          if (ingredient.name == common.recipeInstanceIdName) il.recipeInstanceIdName -> ingredient.ingredientType
           else interactionDescriptor.overriddenIngredientNames.getOrElse(ingredient.name, ingredient.name) -> ingredient.ingredientType
         }
 

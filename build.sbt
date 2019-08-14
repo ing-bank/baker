@@ -90,6 +90,7 @@ lazy val runtime = project.in(file("runtime"))
         akkaActor,
         akkaPersistence,
         akkaPersistenceQuery,
+        akkaCluster,
         akkaClusterSharding,
         akkaInmemoryJournal,
         akkaSlf4j,
@@ -107,6 +108,7 @@ lazy val runtime = project.in(file("runtime"))
         slf4jApi
       ) ++ testDeps(
         akkaTestKit,
+        akkaMultiNodeTestkit,
         akkaStreamTestKit,
         akkaInmemoryJournal,
         akkaPersistenceCassandra,
@@ -122,6 +124,8 @@ lazy val runtime = project.in(file("runtime"))
         ++ providedDeps(findbugs)
   )
   .dependsOn(intermediateLanguage, testScope(recipeDsl), testScope(recipeCompiler), testScope(bakertypes))
+  .enablePlugins(MultiJvmPlugin)
+  .configs(MultiJvm)
 
 lazy val splitBrainResolver = project.in(file("split-brain-resolver"))
   .settings(defaultModuleSettings)
@@ -173,19 +177,17 @@ lazy val recipeCompiler = project.in(file("compiler"))
   .settings(
     moduleName := "baker-compiler",
     libraryDependencies ++=
-      compileDeps(slf4jApi) ++ testDeps(scalaTest, scalaCheck, logback)
+      compileDeps(slf4jApi) ++ testDeps(scalaTest, scalaCheck, logback, junitJupiter)
   )
   .dependsOn(recipeDsl, intermediateLanguage, testScope(recipeDsl))
 
 lazy val baas = project.in(file("baas"))
   .settings(defaultModuleSettings)
-  .settings(noPublishSettings)
+  .settings(scalaPBSettings)
   .settings(
     moduleName := "baker-baas",
     libraryDependencies ++=
       compileDeps(
-        kryo,
-        kryoSerializers,
         akkaHttp,
         akkaPersistenceCassandra) ++
       testDeps(
@@ -206,4 +208,65 @@ lazy val baker = project
   .in(file("."))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
-  .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver)
+  .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver, baas)
+
+lazy val integration = project.in(file("integration"))
+  .dependsOn(testScope(runtime))
+  .settings(defaultModuleSettings)
+  .settings(noPublishSettings)
+  .settings(
+    moduleName := "baker-integration",
+    // we have to exclude the sources because of a compiler bug: https://issues.scala-lang.org/browse/SI-10134
+    libraryDependencies ++=
+      compileDeps(
+        akkaActor,
+        akkaCluster,
+        akkaSlf4j
+      ) ++ testDeps(
+        akkaTestKit,
+        akkaMultiNodeTestkit,
+        betterFiles,
+        scalaTest
+      ) ++ providedDeps(findbugs)
+  )
+  .enablePlugins(MultiJvmPlugin)
+  .configs(MultiJvm)
+
+lazy val examples = project
+  .in(file("examples"))
+  .enablePlugins(JavaAppPackaging)
+  .settings(commonSettings)
+  .settings(noPublishSettings)
+  .settings(
+    moduleName := "examples",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
+    libraryDependencies ++=
+      compileDeps(
+        slf4jApi,
+        slf4jSimple,
+        http4s,
+        http4sDsl,
+        http4sServer,
+        http4sCirce,
+        circe,
+        circeGeneric,
+        kamon,
+        kamonPrometheus
+      ) ++ testDeps(
+        scalaTest,
+        scalaCheck,
+        junitInterface,
+        slf4jApi,
+        mockito,
+        logback
+      )
+  )
+  .settings(
+    maintainer in Docker := "The Apollo Squad",
+    packageSummary in Docker := "A web-shop checkout service example running baker",
+    packageName in Docker := "checkout-service-baker-example",
+    dockerExposedPorts := Seq(8080)
+  )
+  .dependsOn(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage)

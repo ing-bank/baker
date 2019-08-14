@@ -1,8 +1,21 @@
 package com.ing.baker.recipe.scaladsl
 
-import com.ing.baker.recipe.common
+import com.ing.baker.recipe.{common, javadsl}
 import com.ing.baker.recipe.common._
 import com.ing.baker.types.Converters
+
+import com.ing.baker.types.mirror
+
+import scala.language.experimental.macros
+import scala.reflect.runtime.universe.TypeTag
+
+object Interaction {
+
+  def apply[T : TypeTag]: common.InteractionDescriptor = {
+    val runtimeClass = mirror.runtimeClass(mirror.typeOf[T])
+    javadsl.interactionClassToCommonInteraction(runtimeClass, None)
+  }
+}
 
 case class Interaction private(override val name: String,
                                override val inputIngredients: Seq[common.Ingredient],

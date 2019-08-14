@@ -67,7 +67,7 @@ case class CompiledRecipe(name: String,
 
   def sensoryEvents: Set[EventDescriptor] = petriNet.transitions.collect {
     case EventTransition(eventDescriptor, true, _) => eventDescriptor
-  }.toSet
+  }
 
   def getValidationErrors: java.util.List[String] = validationErrors.toList.asJava
 
@@ -77,7 +77,15 @@ case class CompiledRecipe(name: String,
     * @return
     */
   def getRecipeVisualization: String =
-    RecipeVisualizer.visualizeRecipe(this)
+    RecipeVisualizer.visualizeRecipe(this, RecipeVisualStyle.default)
+
+  /**
+    * Visualise the compiled recipe in DOT format
+    *
+    * @return
+    */
+  def getRecipeVisualization(style: RecipeVisualStyle): String =
+    RecipeVisualizer.visualizeRecipe(this, style)
 
   /**
     * Visualise the compiled recipe in DOT format
@@ -85,8 +93,8 @@ case class CompiledRecipe(name: String,
     * @param filterFunc
     * @return
     */
-  def getFilteredRecipeVisualization(filterFunc: String => Boolean): String =
-    RecipeVisualizer.visualizeRecipe(this, filter = filterFunc)
+  def getFilteredRecipeVisualization(filterFunc: String => Boolean, style: RecipeVisualStyle = RecipeVisualStyle.default): String =
+    RecipeVisualizer.visualizeRecipe(this, style, filter = filterFunc)
 
 
   def getFilteredRecipeVisualization(filter: String): String =
