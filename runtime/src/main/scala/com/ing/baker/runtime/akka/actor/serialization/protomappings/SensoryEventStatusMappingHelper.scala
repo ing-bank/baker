@@ -14,7 +14,7 @@ object SensoryEventStatusMappingHelper {
       case SensoryEventStatus.FiringLimitMet => protobuf.SensoryEventStatus.FIRING_LIMIT_MET
       case SensoryEventStatus.ReceivePeriodExpired => protobuf.SensoryEventStatus.RECEIVE_PERIOD_EXPIRED
       case SensoryEventStatus.AlreadyReceived => protobuf.SensoryEventStatus.ALREADY_RECEIVED
-      case SensoryEventStatus.ProcessDeleted => protobuf.SensoryEventStatus.PROCESS_DELETED
+      case SensoryEventStatus.RecipeInstanceDeleted => protobuf.SensoryEventStatus.PROCESS_DELETED
     }
   }
 
@@ -25,7 +25,7 @@ object SensoryEventStatusMappingHelper {
       case protobuf.SensoryEventStatus.FIRING_LIMIT_MET => Success(SensoryEventStatus.FiringLimitMet)
       case protobuf.SensoryEventStatus.RECEIVE_PERIOD_EXPIRED => Success(SensoryEventStatus.ReceivePeriodExpired)
       case protobuf.SensoryEventStatus.ALREADY_RECEIVED => Success(SensoryEventStatus.AlreadyReceived)
-      case protobuf.SensoryEventStatus.PROCESS_DELETED => Success(SensoryEventStatus.ProcessDeleted)
+      case protobuf.SensoryEventStatus.PROCESS_DELETED => Success(SensoryEventStatus.RecipeInstanceDeleted)
       case protobuf.SensoryEventStatus.Unrecognized(value) => Failure(new IllegalStateException(s"Received illegal value '$value' for enumeration SensoryEventStatus"))
     }
   }

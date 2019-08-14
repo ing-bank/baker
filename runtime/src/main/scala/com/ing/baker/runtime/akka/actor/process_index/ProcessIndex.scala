@@ -19,7 +19,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceRuntime}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.akka.actor.serialization.{BakerSerializable, Encryption}
-import com.ing.baker.runtime.scaladsl.ProcessCreated
+import com.ing.baker.runtime.scaladsl.RecipeInstanceCreated
 import com.ing.baker.runtime.akka.internal.{InteractionManager, RecipeRuntime}
 import com.ing.baker.runtime.akka.{namedCachedThreadPool, _}
 import com.ing.baker.runtime.scaladsl.{RecipeInstanceState, EventInstance}
@@ -223,7 +223,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
                 val actorMetadata = ActorMetadata(recipeId, recipeInstanceId, createdTime, Active)
 
-                context.system.eventStream.publish(ProcessCreated(System.currentTimeMillis(), recipeId, compiledRecipe.name, recipeInstanceId))
+                context.system.eventStream.publish(RecipeInstanceCreated(System.currentTimeMillis(), recipeId, compiledRecipe.name, recipeInstanceId))
 
                 index += recipeInstanceId -> actorMetadata
               }
@@ -293,9 +293,9 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
           case Some(process) =>
             accept(process -> index(recipeInstanceId))
           case None if !index.contains(recipeInstanceId) =>
-            reject(FireSensoryEventRejection.NoSuchProcess(recipeInstanceId))
+            reject(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId))
           case None if index(recipeInstanceId).isDeleted =>
-            reject(FireSensoryEventRejection.ProcessDeleted(recipeInstanceId))
+            reject(FireSensoryEventRejection.RecipeInstanceDeleted(recipeInstanceId))
           case None =>
             async { callback =>
               persist(ActorActivated(recipeInstanceId)) { _ =>

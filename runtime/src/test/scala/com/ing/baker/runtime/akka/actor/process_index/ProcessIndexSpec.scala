@@ -176,7 +176,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
       actorIndex ! ProcessEvent(recipeInstanceId, runtimeEvent, None, 1 seconds, NotifyWhenReceived)
 
-      expectMsg(FireSensoryEventRejection.NoSuchProcess(recipeInstanceId))
+      expectMsg(FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId))
     }
 
     "reply with an InvalidEvent rejection message when attempting to fire an event that is now know in the compiledRecipe" in {

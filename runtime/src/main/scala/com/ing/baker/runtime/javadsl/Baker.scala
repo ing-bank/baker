@@ -54,13 +54,13 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
 
   override type EventInstanceType = EventInstance
 
-  override type ProcessStateType = RecipeInstanceState
+  override type RecipeInstanceStateType = RecipeInstanceState
 
   override type InteractionInstanceType = InteractionInstance
 
   override type BakerEventType = BakerEvent
 
-  override type ProcessMetadataType = ProcessMetadata
+  override type RecipeInstanceMetadataType = RecipeInstanceMetadata
 
   override type RecipeInformationType = RecipeInformation
 
@@ -80,8 +80,8 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     *
     * @param implementation The implementation that should be added.
     */
-  def addInteractionInstace(@Nonnull implementation: InteractionInstance): CompletableFuture[Unit] =
-    toCompletableFuture(baker.addInteractionInstace(implementation.asScala))
+  def addInteractionInstance(@Nonnull implementation: InteractionInstance): CompletableFuture[Unit] =
+    toCompletableFuture(baker.addInteractionInstance(implementation.asScala))
 
   /**
     * Adds all the provided interaction implementations to baker.
@@ -231,10 +231,9 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     *
     * @return An index of all processes
     */
-  // TODO: Processmetadata must be renamed
-  def getAllInteractionInstancesMetadata: CompletableFuture[util.Set[ProcessMetadata]] =
+  def getAllRecipeInstancesMetadata: CompletableFuture[util.Set[RecipeInstanceMetadata]] =
     FutureConverters
-      .toJava(baker.getAllInteractionInstancesMetadata)
+      .toJava(baker.getAllRecipeInstancesMetadata)
       .toCompletableFuture
       .thenApply(_.map(_.asJava).asJava)
 

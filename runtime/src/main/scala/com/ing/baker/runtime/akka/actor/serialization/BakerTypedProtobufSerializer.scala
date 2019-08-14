@@ -90,9 +90,9 @@ object BakerTypedProtobufSerializer {
         .register("ProcessIndexProtocol.FireSensoryEventRejection.ReceivePeriodExpired"),
       forType[ProcessIndexProtocol.FireSensoryEventRejection.InvalidEvent]
         .register("ProcessIndexProtocol.FireSensoryEventRejection.InvalidEvent"),
-      forType[ProcessIndexProtocol.FireSensoryEventRejection.ProcessDeleted]
-        .register("ProcessIndexProtocol.FireSensoryEventRejection.ProcessDeleted"),
-      forType[ProcessIndexProtocol.FireSensoryEventRejection.NoSuchProcess]
+      forType[ProcessIndexProtocol.FireSensoryEventRejection.RecipeInstanceDeleted]
+        .register("ProcessIndexProtocol.FireSensoryEventRejection.RecipeInstanceDeleted"),
+      forType[ProcessIndexProtocol.FireSensoryEventRejection.NoSuchRecipeInstance]
         .register("ProcessIndexProtocol.FireSensoryEventRejection.NoSuchProcess"),
       forType[ProcessIndexProtocol.FireSensoryEventRejection.AlreadyReceived]
         .register("ProcessIndexProtocol.FireSensoryEventRejection.AlreadyReceived"),

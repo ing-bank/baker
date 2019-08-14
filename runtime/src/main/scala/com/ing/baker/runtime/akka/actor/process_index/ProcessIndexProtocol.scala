@@ -154,7 +154,7 @@ object ProcessIndexProtocol {
       *
       * @param recipeInstanceId The identifier of the RecipeInstanceId
       */
-    case class ProcessDeleted(recipeInstanceId: String) extends FireSensoryEventRejection {
+    case class RecipeInstanceDeleted(recipeInstanceId: String) extends FireSensoryEventRejection {
 
       def asReason: RejectReason = RejectReason.ProcessDeleted
     }
@@ -164,7 +164,7 @@ object ProcessIndexProtocol {
       *
       * @param recipeInstanceId The identifier of the RecipeInstanceId
       */
-    case class NoSuchProcess(recipeInstanceId: String) extends FireSensoryEventRejection {
+    case class NoSuchRecipeInstance(recipeInstanceId: String) extends FireSensoryEventRejection {
 
       def asReason: RejectReason = RejectReason.NoSuchProcess
     }
