@@ -259,7 +259,7 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
 
       def run(program: ActorRef => FireEventIO[Unit]): Unit = {
         val responseHandler = context.actorOf(
-          SensoryEventResponseHandler(sender, command))
+          SensoryEventResponseHandler(sender, command, ingredientsFilter))
         program(responseHandler).value.unsafeRunAsync {
           case Left(exception) =>
             throw exception // TODO decide what to do, might never happen, except if we generalize it as a runtime for the actor

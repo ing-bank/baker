@@ -64,6 +64,8 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
 
   override type RecipeInformationType = RecipeInformation
 
+  override type EventMomentType = EventMoment
+
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
     *
@@ -196,6 +198,15 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     toCompletableFuture(baker.stopRetryingInteraction(recipeInstanceId, interactionName))
 
   /**
+    * Returns the state of a process instance. This includes the ingredients and names of the events.
+    *
+    * @param recipeInstanceId The process identifier
+    * @return The state of the process instance
+    */
+  def getRecipeInstanceState(@Nonnull recipeInstanceId: String): CompletableFuture[RecipeInstanceState] =
+    toCompletableFuture(baker.getRecipeInstanceState(recipeInstanceId)).thenApply(_.asJava)
+
+  /**
     * Returns all the ingredients that are accumulated for a given process.
     *
     * @param recipeInstanceId The process identifier
@@ -203,6 +214,24 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     */
   def getIngredients(@Nonnull recipeInstanceId: String): CompletableFuture[java.util.Map[String, Value]] =
     toCompletableFutureMap(baker.getIngredients(recipeInstanceId))
+
+  /**
+    * Returns all fired events for a given RecipeInstance id.
+    *
+    * @param recipeInstanceId The process id.
+    * @return The events
+    */
+  def getEvents(@Nonnull recipeInstanceId: String): CompletableFuture[java.util.List[EventMoment]] =
+    toCompletableFuture(baker.getEvents(recipeInstanceId)).thenApply(_.map(_.asJava()).asJava)
+
+  /**
+    * Returns all names of fired events for a given RecipeInstance id.
+    *
+    * @param recipeInstanceId The process id.
+    * @return The event names
+    */
+  def getEventNames(@Nonnull recipeInstanceId: String): CompletableFuture[java.util.List[String]] =
+    toCompletableFuture(baker.getEventNames(recipeInstanceId)).thenApply(_.asJava)
 
   /**
     * Returns the recipe information for the given RecipeId
@@ -331,15 +360,6 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
     */
   def getVisualState(@Nonnull recipeInstanceId: String, style: RecipeVisualStyle): CompletableFuture[String] =
     toCompletableFuture(baker.getVisualState(recipeInstanceId, style))
-
-  /**
-    * Returns the state of a process instance. This includes the ingredients and names of the events.
-    *
-    * @param recipeInstanceId The process identifier
-    * @return The state of the process instance
-    */
-  def getRecipeInstanceState(@Nonnull recipeInstanceId: String): CompletableFuture[RecipeInstanceState] =
-    toCompletableFuture(baker.getRecipeInstanceState(recipeInstanceId)).thenApply(_.asJava)
 
   private def toCompletableFuture[T](scalaFuture: Future[T]): CompletableFuture[T] =
     FutureConverters.toJava(scalaFuture).toCompletableFuture

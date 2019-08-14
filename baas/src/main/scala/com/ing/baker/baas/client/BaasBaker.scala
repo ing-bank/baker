@@ -286,4 +286,20 @@ class BaasBaker(config: Config,
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
   override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String]): Future[EventResult] = ???
+
+  /**
+    * Returns all fired events for a given RecipeInstance id.
+    *
+    * @param recipeInstanceId The process id.
+    * @return The events
+    */
+  override def getEvents(recipeInstanceId: String): Future[Seq[EventMoment]] = ???
+
+  /**
+    * Returns all names of fired events for a given RecipeInstance id.
+    *
+    * @param recipeInstanceId The process id.
+    * @return The event names
+    */
+  override def getEventNames(recipeInstanceId: String): Future[Seq[String]] = ???
 }

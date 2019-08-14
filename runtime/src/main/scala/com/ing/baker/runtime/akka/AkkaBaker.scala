@@ -301,6 +301,24 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     getRecipeInstanceState(recipeInstanceId).map(_.ingredients)
 
   /**
+    * Returns all fired events for a given RecipeInstance id.
+    *
+    * @param recipeInstanceId The process id.
+    * @return The events
+    */
+  override def getEvents(recipeInstanceId: String): Future[Seq[EventMoment]] =
+    getRecipeInstanceState(recipeInstanceId).map(_.events)
+
+  /**
+    * Returns all names of fired events for a given RecipeInstance id.
+    *
+    * @param recipeInstanceId The process id.
+    * @return The event names
+    */
+  override def getEventNames(recipeInstanceId: String): Future[Seq[String]] =
+    getRecipeInstanceState(recipeInstanceId).map(_.eventNames)
+
+  /**
     * Returns the visual state (.dot) for a given process.
     *
     * @param recipeInstanceId The process identifier.
@@ -400,6 +418,6 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
   /**
     * Attempts to gracefully shutdown the baker system.
     */
-  override def gracefulShutdown(): Future[Unit] =
+  override def gracefulShutdown: Future[Unit] =
     Future.successful(GracefulShutdown.gracefulShutdownActorSystem(system, config.defaultShutdownTimeout))
 }

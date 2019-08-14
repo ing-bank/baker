@@ -13,7 +13,7 @@ import scala.collection.JavaConverters._
   *
   * @param recipeInstanceId   The process identifier
   * @param ingredients The accumulated ingredients
-  * @param eventNames  The names of the events occurred so far
+  * @param events  The events that have occurred so far
   */
 class RecipeInstanceState(
     val recipeInstanceId: String,
