@@ -11,6 +11,8 @@ cache:
 jdk:
    - oraclejdk8
 
+dist: trusty
+
 script:
   - sbt clean coverage test coverageReport
 
