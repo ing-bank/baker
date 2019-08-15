@@ -2,16 +2,14 @@ package com.ing.baker.runtime.akka.actor.serialization
 
 import akka.actor.ExtendedActorSystem
 import akka.serialization.SerializerWithStringManifest
-import com.ing.baker.il
-import com.ing.baker.runtime
+import com.ing.baker.{il, runtime}
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
+import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
-import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
+import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
 import com.ing.baker.runtime.akka.actor.serialization.BakerTypedProtobufSerializer.BinarySerializable
 import org.slf4j.LoggerFactory
 
@@ -67,7 +65,9 @@ object BakerTypedProtobufSerializer {
       forType[ProcessIndexProtocol.NoSuchProcess]
         .register("ProcessIndex.NoSuchProcess"),
       forType[ProcessIndexProtocol.ProcessDeleted]
-        .register("ProcessIndex.NoSuchProcess"),
+        .register("ProcessIndex.ProcessDeleted"),
+      forType[ProcessIndexProtocol.ProcessAlreadyExists]
+        .register("ProcessIndex.ProcessAlreadyExists"),
       forType[ProcessIndexProtocol.RetryBlockedInteraction]
         .register("ProcessIndexProtocol.RetryBlockedInteraction"),
       forType[ProcessIndexProtocol.ResolveBlockedInteraction]

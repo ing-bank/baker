@@ -9,29 +9,26 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.petrinet.api.{Id, Marking, MultiSet}
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.GetShardIndex
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
 import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection.{InvalidEvent, ReceivePeriodExpired}
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager.RecipeAdded
-import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
+import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
 import com.ing.baker.runtime.akka.actor.serialization.Encryption.{AESEncryption, NoEncryption}
 import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto}
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.{EventMoment, RecipeInstanceState, EventInstance, SensoryEventResult}
-import com.ing.baker.types.Value
+import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanceState, SensoryEventResult}
+import com.ing.baker.types.modules.PrimitiveModuleSpec._
+import com.ing.baker.types.{Value, _}
 import com.ing.baker.{AllTypeRecipe, types}
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Test.Parameters.defaultVerbose
 import org.scalacheck._
 import org.scalatest.FunSuiteLike
 import org.scalatest.prop.Checkers
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
-
-import com.ing.baker.types._
-import com.ing.baker.types.modules.PrimitiveModuleSpec._
 
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
@@ -54,20 +51,17 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
     def run[P <: scalapb.GeneratedMessage with scalapb.Message[P]](implicit ev: ProtoMap[A, P], gen: Gen[A], typeTag: ClassTag[A]): Unit = {
       test(s"${typeTag.runtimeClass.getName} typed serialization") {
         check(forAll(gen) { m =>
-          // Check from the configured serializer
-          m === serializer.fromBinary(serializer.toBinary(m), serializer.manifest(m)) &&
-          // Check directly the protobuf serializer (mainly used to make the code coverage count these
-          ctxFromProto(ctxToProto(m)) === Success(m)
+          m === serializer.fromBinary(serializer.toBinary(m), serializer.manifest(m))
         },
-          defaultVerbose.withMinSuccessfulTests(3)
+          defaultVerbose.withMinSuccessfulTests(10)
         )
       }
     }
   }
 
+  import SerializationSpec.IntermediateLanguage._
   import SerializationSpec.ProcessIndex._
   import SerializationSpec.ProcessInstance._
-  import SerializationSpec.IntermediateLanguage._
   import SerializationSpec.RecipeManager._
   import SerializationSpec.Runtime._
   import SerializationSpec.Types._
@@ -111,6 +105,34 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
   checkFor[ProcessIndexProtocol.ResolveBlockedInteraction].run
 
   checkFor[ProcessIndexProtocol.StopRetryingInteraction].run
+
+  checkFor[ProcessIndexProtocol.ProcessEventResponse].run
+
+  checkFor[ProcessIndexProtocol.ProcessEventCompletedResponse].run
+
+  checkFor[ProcessIndexProtocol.ProcessEventReceivedResponse].run
+
+  checkFor[ProcessIndexProtocol.GetProcessState].run
+
+  checkFor[ProcessIndexProtocol.GetCompiledRecipe].run
+
+  checkFor[ProcessIndexProtocol.FireSensoryEventRejection.ReceivePeriodExpired].run
+
+  checkFor[ProcessIndexProtocol.FireSensoryEventRejection.InvalidEvent].run
+
+  checkFor[ProcessIndexProtocol.FireSensoryEventRejection.RecipeInstanceDeleted].run
+
+  checkFor[ProcessIndexProtocol.FireSensoryEventRejection.NoSuchRecipeInstance].run
+
+  checkFor[ProcessIndexProtocol.FireSensoryEventRejection.AlreadyReceived].run
+
+  checkFor[ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet].run
+
+  checkFor[ProcessIndexProtocol.ProcessDeleted].run
+
+  checkFor[ProcessIndexProtocol.NoSuchProcess].run
+
+  checkFor[ProcessIndexProtocol.ProcessAlreadyExists].run
 
   checkFor[RecipeManagerProtocol.AddRecipe].run
 
@@ -352,17 +374,16 @@ object SerializationSpec {
         for {
           waitForRetries <- waitForRetriesGen
           receiver = system.actorOf(Props(new SimpleActor))
-        } yield FireSensoryEventReaction.NotifyBoth(waitForRetries, receiver)
+        } yield FireSensoryEventReaction.NotifyBoth(waitForRetries, receiver),
+        for {
+          waitForRetries <- Gen.oneOf(true, false)
+          onEvent <- Gen.alphaStr
+        } yield FireSensoryEventReaction.NotifyOnEvent(waitForRetries, onEvent)
       )
     } yield ProcessEvent(recipeInstanceId, event, correlationId, timeout, reaction)
 
     implicit val getProcessStateGen: Gen[GetProcessState] = recipeInstanceIdGen.map(GetProcessState)
     implicit val getCompiledRecipeGen: Gen[GetCompiledRecipe] = recipeInstanceIdGen.map(GetCompiledRecipe)
-    implicit val receivePeriodExpiredGen: Gen[ReceivePeriodExpired] = recipeInstanceIdGen.map(ReceivePeriodExpired)
-    implicit val invalidEventGen: Gen[InvalidEvent] = for {
-      recipeInstanceId <- recipeInstanceIdGen
-      msg <- Gen.alphaStr
-    } yield InvalidEvent(recipeInstanceId, msg)
 
     implicit val processDeletedGen: Gen[ProcessDeleted] = recipeInstanceIdGen.map(ProcessDeleted)
     implicit val noSuchProcessGen: Gen[NoSuchProcess] = recipeInstanceIdGen.map(NoSuchProcess)
@@ -377,6 +398,33 @@ object SerializationSpec {
       recipeInstanceId <- recipeInstanceIdGen
       interactionName <- Gen.alphaStr
     } yield StopRetryingInteraction(recipeInstanceId, interactionName)
+
+    val sensoryEventStatusGen: Gen[SensoryEventStatus] = Gen.oneOf(
+      SensoryEventStatus.AlreadyReceived ,
+      SensoryEventStatus.Completed,
+      SensoryEventStatus.FiringLimitMet,
+      SensoryEventStatus.Received,
+      SensoryEventStatus.ReceivePeriodExpired,
+      SensoryEventStatus.RecipeInstanceDeleted
+    )
+
+    val eventResultGen: Gen[SensoryEventResult] = for {
+        status <- sensoryEventStatusGen
+        events <- Gen.listOf(Gen.alphaStr)
+        ingredients <- Gen.listOf(Runtime.ingredientsGen)
+    } yield SensoryEventResult(status, events, ingredients.toMap)
+
+    implicit val processEventResponse: Gen[ProcessEventResponse] = for {
+      recipeInstanceId <- Gen.alphaStr
+    } yield ProcessEventResponse(recipeInstanceId)
+
+    implicit val processEventCompletedResponse: Gen[ProcessEventCompletedResponse] = for {
+      result <- eventResultGen
+    } yield ProcessEventCompletedResponse(result)
+
+    implicit val processEventReceivedResponse: Gen[ProcessEventReceivedResponse] = for {
+      status <- sensoryEventStatusGen
+    } yield ProcessEventReceivedResponse(status)
 
     /*
     def messagesGen(system: ActorSystem): Gen[AnyRef] = Gen.oneOf(getIndexGen, indexGen, createProcessGen, processEventGen(system),
@@ -414,6 +462,39 @@ object SerializationSpec {
         recipeInstanceId <- identifierGen
         event <- Runtime.runtimeEventGen
       } yield ResolveBlockedInteraction(recipeId, recipeInstanceId, event)
+
+    implicit val receivePeriodExpiredGen: Gen[ProcessIndexProtocol.FireSensoryEventRejection.ReceivePeriodExpired] =
+      for {
+        recipeInstanceId <- Gen.alphaStr
+      } yield ProcessIndexProtocol.FireSensoryEventRejection.ReceivePeriodExpired(recipeInstanceId)
+
+    implicit val invalidEventGen: Gen[ProcessIndexProtocol.FireSensoryEventRejection.InvalidEvent] =
+      for {
+        recipeInstanceId <- Gen.alphaStr
+        message <- Gen.alphaStr
+      } yield ProcessIndexProtocol.FireSensoryEventRejection.InvalidEvent(recipeInstanceId, message)
+
+    implicit val recipeInstanceDeletedGen: Gen[ProcessIndexProtocol.FireSensoryEventRejection.RecipeInstanceDeleted] =
+      for {
+        recipeInstanceId <- Gen.alphaStr
+      } yield ProcessIndexProtocol.FireSensoryEventRejection.RecipeInstanceDeleted(recipeInstanceId)
+
+    implicit val noSuchRecipeInstanceGen: Gen[ProcessIndexProtocol.FireSensoryEventRejection.NoSuchRecipeInstance] =
+      for {
+        recipeInstanceId <- Gen.alphaStr
+      } yield ProcessIndexProtocol.FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId)
+
+    implicit val alreadyReceivedGen: Gen[ProcessIndexProtocol.FireSensoryEventRejection.AlreadyReceived] =
+      for {
+        recipeInstanceId <- Gen.alphaStr
+        correlationId <- Gen.alphaStr
+      } yield ProcessIndexProtocol.FireSensoryEventRejection.AlreadyReceived(recipeInstanceId, correlationId)
+
+    implicit val firingLimitMetGen: Gen[ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet] =
+      for {
+        recipeInstanceId <- Gen.alphaStr
+      } yield ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet(recipeInstanceId)
+
   }
 
   object ProcessInstance {
@@ -450,7 +531,8 @@ object SerializationSpec {
       correlationId <- Gen.option(correlationIdGen)
     } yield FireTransition(transitionId, input, correlationId)
 
-    implicit val alreadyReceived: Gen[AlreadyReceived] = correlationIdGen.map(AlreadyReceived)
+    implicit val alreadyReceived: Gen[ProcessInstanceProtocol.AlreadyReceived] =
+      correlationIdGen.map(ProcessInstanceProtocol.AlreadyReceived)
 
     implicit val failureStrategyGen: Gen[ExceptionStrategy] = Gen.oneOf(
       Gen.const(ExceptionStrategy.BlockTransition),
