@@ -1,0 +1,906 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+      
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.0">
+    
+    
+      
+        <title>Type system - Baker</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/application.0284f74d.css">
+      
+      
+    
+    
+      <script src="../../assets/javascripts/modernizr.74668098.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../../css/ing.css">
+    
+    
+      
+    
+    
+  </head>
+  
+    <body dir="ltr">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#type-system" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../.." title="Baker" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon"></i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Baker
+            </span>
+            <span class="md-header-nav__topic">
+              
+                Type system
+              
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="https://github.com/ing-bank/baker/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    ing-bank/baker
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../.." title="Baker" class="md-nav__button md-logo">
+      
+        <i class="md-icon"></i>
+      
+    </a>
+    Baker
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="https://github.com/ing-bank/baker/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    ing-bank/baker
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../.." title="Home" class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/getting-started/" title="Getting Started" class="md-nav__link">
+      Getting Started
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/concepts/" title="Concepts" class="md-nav__link">
+      Concepts
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
+    
+    <label class="md-nav__link" for="nav-4">
+      Development Life Cycle
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-4">
+        Development Life Cycle
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/development-life-cycle/design-a-recipe/" title="Design a Recipe" class="md-nav__link">
+      Design a Recipe
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/development-life-cycle/use-visualizations/" title="Use Visualizations" class="md-nav__link">
+      Use Visualizations
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/development-life-cycle/implement-interactions/" title="Implement Interactions" class="md-nav__link">
+      Implement Interactions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/development-life-cycle/bake-fire-events-and-inquiry/" title="Bake, Fire Events and Inquiry" class="md-nav__link">
+      Bake, Fire Events and Inquiry
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/development-life-cycle/test/" title="Test" class="md-nav__link">
+      Test
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/development-life-cycle/configure/" title="Configure" class="md-nav__link">
+      Configure
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/development-life-cycle/monitor/" title="Monitor" class="md-nav__link">
+      Monitor
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/development-life-cycle/resolve-failed-recipe-instances/" title="Resolve Failed Recipes" class="md-nav__link">
+      Resolve Failed Recipes
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5">
+    
+    <label class="md-nav__link" for="nav-5">
+      Reference
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-5">
+        Reference
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/reference/main-abstractions/" title="Main Abstractions" class="md-nav__link">
+      Main Abstractions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/reference/execution-semantics/" title="Execution Semantics" class="md-nav__link">
+      Execution Semantics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/reference/baker-types-and-values/" title="Baker Types and Values" class="md-nav__link">
+      Baker Types and Values
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/reference/dsls/" title="Recipe DSLs" class="md-nav__link">
+      Recipe DSLs
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/reference/runtime/" title="The Akka Based Runtime" class="md-nav__link">
+      The Akka Based Runtime
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/reference/visualization/" title="Visualization" class="md-nav__link">
+      Visualization
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/reference/event-listener/" title="Event Listener" class="md-nav__link">
+      Event Listener
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/reference/stores/" title="Event Stores and Cluster Configuration" class="md-nav__link">
+      Event Stores and Cluster Configuration
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-6" type="checkbox" id="nav-6">
+    
+    <label class="md-nav__link" for="nav-6">
+      Versions
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-6">
+        Versions
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/versions/baker-3/" title="Migration Guide v3" class="md-nav__link">
+      Migration Guide v3
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/versions/baker-2/" title="Migration Guide v2" class="md-nav__link">
+      Migration Guide v2
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../sections/feature-comparison/" title="Feature comparison" class="md-nav__link">
+      Feature comparison
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-not-use-the-java-type-system" title="Why not use the java type system?" class="md-nav__link">
+    Why not use the java type system?
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#types" title="Types" class="md-nav__link">
+    Types
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#primitives" title="Primitives" class="md-nav__link">
+    Primitives
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#structured-types" title="Structured types" class="md-nav__link">
+    Structured types
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#values" title="Values" class="md-nav__link">
+    Values
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interoptability-with-java-types" title="Interoptability with java types" class="md-nav__link">
+    Interoptability with java types
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#default-supported-types" title="Default supported types" class="md-nav__link">
+    Default supported types
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#java" title="java" class="md-nav__link">
+    java
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scala" title="scala" class="md-nav__link">
+    scala
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#registering-a-custom-type-adapter" title="Registering a custom type adapter" class="md-nav__link">
+    Registering a custom type adapter
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/ing-bank/baker/edit/master/docs/archive/type-system.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                <h1 id="type-system">Type system</h1>
+<p>The purpose of the type system is express the form of <a href="../concepts/#ingredient">ingredients</a> in baker.</p>
+<h3 id="why-not-use-the-java-type-system">Why not use the java type system?</h3>
+<ol>
+<li>
+<p>To garuantee that all data can be read back from persistent storage.</p>
+<p>This is for the benefit of being able to write generic analysis/data-mining tools on the persisted events.</p>
+</li>
+<li>
+<p>To run Baker As A Service, receiving new recipes at runtime.</p>
+<p>Unless opting for OSGi or similar, you cannot load new class definitions. This makes it very impractical or impossible to depend on java classes.</p>
+</li>
+</ol>
+<p>The main concepts in this type system are <em>Types</em> and <em>Values</em>.</p>
+<p>An important difference from type systems in programming languages is that <em>Values</em> do <strong>not</strong> have
+an explicit inherint type associated with them.</p>
+<p>You can argue whether you can call this a type system at all. Perhaps a schema system is more accurate.</p>
+<h2 id="types">Types</h2>
+<h3 id="primitives">Primitives</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Java parallel</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Bool</code></td>
+<td><code>boolean</code></td>
+<td><em>single</em> bit, <code>true</code> or <code>false</code>, <code>1</code> or <code>0</code></td>
+</tr>
+<tr>
+<td><code>Char</code></td>
+<td><code>char</code></td>
+<td>Unsigned <code>16</code> bit integer</td>
+</tr>
+<tr>
+<td><code>Byte</code></td>
+<td><code>byte</code></td>
+<td>Signed <code>8</code> bit integer</td>
+</tr>
+<tr>
+<td><code>Int16</code></td>
+<td><code>short</code></td>
+<td>Signed <code>16</code> bit integer</td>
+</tr>
+<tr>
+<td><code>Int32</code></td>
+<td><code>int</code></td>
+<td>Signed <code>32</code> bit integer</td>
+</tr>
+<tr>
+<td><code>Int64</code></td>
+<td><code>long</code></td>
+<td>Signed <code>64</code> bit integer</td>
+</tr>
+<tr>
+<td><code>IntBig</code></td>
+<td><code>BigInteger</code></td>
+<td>Integer of arbitrary size</td>
+</tr>
+<tr>
+<td><code>Float32</code></td>
+<td><code>float</code></td>
+<td>Signed <code>32</code> bit floating point</td>
+</tr>
+<tr>
+<td><code>Float64</code></td>
+<td><code>double</code></td>
+<td>Signed <code>64</code> bit floating point</td>
+</tr>
+<tr>
+<td><code>FloatBig</code></td>
+<td><code>BigDecimal</code></td>
+<td>Floating point of arbitrary size</td>
+</tr>
+<tr>
+<td><code>Date</code></td>
+<td><code>long</code></td>
+<td>A <em>UTC</em> date in the <em>ISO-8601</em> calendar system with <em>millisecond</em> precision</td>
+</tr>
+<tr>
+<td><code>ByteArray</code></td>
+<td><code>Array&lt;Byte&gt;</code></td>
+<td>Byte array, often used for binary data</td>
+</tr>
+<tr>
+<td><code>CharArray</code></td>
+<td><code>String</code></td>
+<td>Character array, or commmonly called <code>String</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="structured-types">Structured types</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Java parallel</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ListType&lt;T&gt;</code></td>
+<td><code>java.util.List&lt;T&gt;</code></td>
+<td>A list of values, all of the same type</td>
+</tr>
+<tr>
+<td><code>OptionType&lt;T&gt;</code></td>
+<td><code>java.util.Optional&lt;T&gt;</code></td>
+<td>Matches against <code>T</code> or <code>null</code></td>
+</tr>
+<tr>
+<td><code>EnumType</code></td>
+<td><code>enum class</code></td>
+<td>A set of predifined options (strings)</td>
+</tr>
+<tr>
+<td><code>RecordType</code></td>
+<td><code>POJO class</code></td>
+<td>A record with a specific set of fields</td>
+</tr>
+<tr>
+<td><code>MapType&lt;T&gt;</code></td>
+<td><code>java.util.Map&lt;String, T&gt;</code></td>
+<td>A record with arbitrary fields, all of the same type</td>
+</tr>
+</tbody>
+</table>
+<h2 id="values">Values</h2>
+<p>Values are pure data without any direct associated type. These very closely match the <em>JSON</em> data format.</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NullValue</code></td>
+<td>Analogues to <code>null</code>, <code>Optional.empty</code>, <code>None</code>, etc ...</td>
+</tr>
+<tr>
+<td><code>PrimitiveValue</code></td>
+<td>Wrapper for for: <br/>- A Java primitive (or boxed variant)<br/> - <code>java.lang.String</code><br/> - <code>java.math.BigInteger</code><br/> - <code>java.math.BigDecimal</code><br/> - <code>scala.math.BigInt</code><br/> - <code>Array&lt;Byte&gt;</code></td>
+</tr>
+<tr>
+<td><code>ListValue</code></td>
+<td>A list of values</td>
+</tr>
+<tr>
+<td><code>RecordValue</code></td>
+<td>A set of <code>String -&gt; Value</code> pairs</td>
+</tr>
+</tbody>
+</table>
+<h2 id="interoptability-with-java-types">Interoptability with java types</h2>
+<p>Because it is impractical to directly work with the baker types in java/scala code there is conversion system.</p>
+<h2 id="default-supported-types">Default supported types</h2>
+<h3 id="java">java</h3>
+<ul>
+<li>primitives and their boxed variants</li>
+<li>Enum types</li>
+<li>java.util.List</li>
+<li>java.util.Set</li>
+<li>java.util.Map</li>
+<li>java.math.BigInt</li>
+<li>java.math.BigDecimal</li>
+<li>java.util.Optional</li>
+<li>POJO classes</li>
+</ul>
+<h3 id="scala">scala</h3>
+<ul>
+<li>primitives and their boxed variants</li>
+<li>case classes</li>
+<li>scala.collection.immutable.List</li>
+<li>scala.collection.immutable.Set</li>
+<li>scala.collection.immutable.Map</li>
+<li>BigInt</li>
+<li>BigDecimal</li>
+<li>scala.Option</li>
+</ul>
+<h2 id="registering-a-custom-type-adapter">Registering a custom type adapter</h2>
+<p>All default type adapters are registered in the <a href="https://github.com/ing-bank/baker/blob/master/bakertypes/src/main/resources/reference.conf">reference.conf</a> of the <code>baker-types</code> module.</p>
+<p>You can add your custom type adapter by registering it in a <code>reference.conf</code>.</p>
+<div class="codehilite"><pre><span></span><span class="n">baker</span><span class="p">.</span><span class="n">types</span> <span class="err">{</span>
+
+   <span class="ss">&quot;com.example.MyCustomType&quot;</span> <span class="o">=</span> <span class="ss">&quot;com.example.MyCustomTypeAdpater&quot;</span>
+<span class="err">}</span>
+</pre></div>
+
+<p>For an example how to implement an adapter see <a href="https://github.com/ing-bank/baker/blob/adf9b2edd4fe5ebdcec2bdd7f281cd151d64afe6/bakertypes/src/main/scala/com/ing/baker/types/modules/JavaModules.scala#L93">here</a></p>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../assets/javascripts/application.245445c6.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
+      
+    
+  </body>
+</html>
