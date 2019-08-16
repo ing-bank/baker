@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.JavaCompiledRecipeTest;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
+import com.ing.baker.runtime.common.SensoryEventStatus;
 import com.ing.baker.runtime.javadsl.*;
 import com.ing.baker.runtime.common.BakerException;
 import com.ing.baker.types.Converters;
@@ -19,10 +20,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class BakerTest {
 
@@ -112,15 +116,47 @@ public class BakerTest {
 
         Baker jBaker = Baker.akka(config, actorSystem, materializer);
 
+        // Setup recipe
         jBaker.addInteractionInstances(implementationsList);
-
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
-
         String recipeId = jBaker.addRecipe(compiledRecipe).get();
+        EventInstance eventOne = EventInstance.from(new JavaCompiledRecipeTest.EventOne());
+        assertEquals(eventOne.getName(), "EventOne");
+        assert(eventOne.getProvidedIngredients().isEmpty());
 
+        // Bake and fire events
         String requestId = UUID.randomUUID().toString();
         jBaker.bake(recipeId, requestId).get();
-        jBaker.fireEventAndResolveWhenCompleted(requestId, EventInstance.from(new JavaCompiledRecipeTest.EventOne())).get();
-        jBaker.fireEventAndResolveWhenCompleted(requestId, EventInstance.from(new JavaCompiledRecipeTest.EventTwo())).get();
+        EventResolutions moments = jBaker.fireEvent(requestId, eventOne);
+        assertEquals(moments.resolveWhenReceived().get(), SensoryEventStatus.Received);
+        SensoryEventResult result = moments.resolveWhenCompleted().get();
+        assertEquals(result.getSensoryEventStatus(), SensoryEventStatus.Completed);
+        assert(result.getEventName().contains("EventOne"));
+        assertNotNull(result.ingredients().get("RequestIDStringOne"));
+
+        // Enquiry State
+        RecipeInstanceState state = jBaker.getRecipeInstanceState(requestId).get();
+        assertEquals(state.getEventNames().get(0), "EventOne");
+        assertEquals(state.getEvents().get(0).getName(), "EventOne");
+        assert(state.getEvents().get(0).getOccurredOn() > 0);
+
+        Set<RecipeInstanceMetadata> data = jBaker.getAllRecipeInstancesMetadata().get();
+        assertEquals(data.size(), 1);
+        RecipeInstanceMetadata instance1Data = data.iterator().next();
+        assert(instance1Data.getCreatedTime() > 1);
+        assertEquals(instance1Data.getRecipeId(), recipeId);
+        assertEquals(instance1Data.getRecipeInstanceId(), requestId);
+
+        Map<String, RecipeInformation> recipes = jBaker.getAllRecipes().get();
+        assertEquals(recipes.size(), 1);
+        RecipeInformation recipe1 = recipes.get(recipeId);
+        assertEquals(recipe1.getCompiledRecipe(), compiledRecipe);
+        assertEquals(recipe1.getErrors().size(), 0);
+        assert(recipe1.getRecipeCreatedTime() > 0);
+        assertEquals(recipe1.getRecipeId(), recipeId);
+
+        SensoryEventStatus status = jBaker.fireEventAndResolveWhenReceived(requestId, EventInstance.from(new JavaCompiledRecipeTest.EventTwo())).get();
+        assertEquals(status, SensoryEventStatus.Received);
+
     }
 }
