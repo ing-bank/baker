@@ -65,7 +65,7 @@ public class JWebshopRecipeTests {
                 RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
         String recipeInstanceId = "first-instance-id";
-        CompletableFuture<List<String>> result = baker.addInteractionInstace(reserveItemsInstance)
+        CompletableFuture<List<String>> result = baker.addInteractionInstance(reserveItemsInstance)
                 .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
                 .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
                 .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
@@ -107,7 +107,7 @@ public class JWebshopRecipeTests {
                 new JWebshopRecipe.ReserveItems.ItemsReserved(items));
 
         String recipeInstanceId = "first-instance-id";
-        CompletableFuture<List<String>> result = baker.addInteractionInstace(reserveItemsInstance)
+        CompletableFuture<List<String>> result = baker.addInteractionInstance(reserveItemsInstance)
                 .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
                 .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
                 .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))

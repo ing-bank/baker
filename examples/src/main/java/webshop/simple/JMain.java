@@ -40,7 +40,7 @@ public class JMain {
         baker.registerBakerEventListener((BakerEvent event) -> System.out.println(event));
 
         String recipeInstanceId = "first-instance-id";
-        CompletableFuture<List<String>> result = baker.addInteractionInstace(reserveItemsInstance)
+        CompletableFuture<List<String>> result = baker.addInteractionInstance(reserveItemsInstance)
             .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
             .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
             .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))

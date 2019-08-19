@@ -7,9 +7,9 @@ case class EventMoment(name: String,
                        occurredOn: Long)
   extends common.EventMoment with JavaApi {
 
-  def getName(): String = name
+  def getName: String = name
 
-  def getOccurredOn(): Long = occurredOn
+  def getOccurredOn: Long = occurredOn
 
-  def asScala(): scaladsl.EventMoment = scaladsl.EventMoment(name, occurredOn)
+  def asScala: scaladsl.EventMoment = scaladsl.EventMoment(name, occurredOn)
 }

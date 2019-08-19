@@ -37,7 +37,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
         val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
         for {
-          _ <- baker.addInteractionInstance(mockImplementations)
+          _ <- baker.addInteractionInstances(mockImplementations)
           _ = when (testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful("foobar")))
           recipeId <- baker.addRecipe(simpleRecipe)
           recipeInstanceId = java.util.UUID.randomUUID().toString
@@ -48,7 +48,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
       "providing implementations in a sequence" in {
         val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
-        baker.addInteractionInstance(mockImplementations).map(_ => succeed)
+        baker.addInteractionInstances(mockImplementations).map(_ => succeed)
       }
 
       "providing an implementation with the class simplename same as the interaction" in {
@@ -121,7 +121,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
 
-        baker.addInteractionInstance(mockImplementations)
+        baker.addInteractionInstances(mockImplementations)
 
         recoverToExceptionIf[RecipeValidationException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))

@@ -50,14 +50,6 @@ public class JavaCompiledRecipeTest {
     }
 
     @Test
-    public void shouldCompileRecipeWithSieve() throws BakerException {
-        Recipe recipe = setupComplexRecipe();
-        CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
-        assertEquals(compiledRecipe.getValidationErrors(), new ArrayList<String>());
-        Assert.assertTrue(recipe.getSieves().stream().anyMatch(a -> a.name().equals("SieveImpl")));
-    }
-
-    @Test
     public void shouldShowVisualRecipe() throws BakerException {
         Recipe recipe = setupComplexRecipe();
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
@@ -233,12 +225,11 @@ public class JavaCompiledRecipeTest {
                                 .withRequiredEvent(EventOne.class),
                         of(InteractionTwo.class)
                                 .withRequiredEvent(EventTwo.class),
-                        of(InteractionThree.class))
+                        of(InteractionThree.class),
+                        of(SieveImpl.class))
                 .withSensoryEvents(
                         EventOne.class,
                         EventTwo.class,
-                        EventWithoutIngredientsNorPreconditions.class)
-                .withSieve(
-                        of(SieveImpl.class));
+                        EventWithoutIngredientsNorPreconditions.class);
     }
 }

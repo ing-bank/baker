@@ -7,10 +7,9 @@ import com.ing.baker.runtime.scaladsl
 
 import scala.collection.JavaConverters._
 
-class RecipeInformation(
-                         val compiledRecipe: CompiledRecipe,
-                         val recipeCreatedTime: Long,
-                         val errors: java.util.Set[String]) extends common.RecipeInformation with JavaApi {
+case class RecipeInformation(compiledRecipe: CompiledRecipe,
+                             recipeCreatedTime: Long,
+                             errors: java.util.Set[String]) extends common.RecipeInformation with JavaApi {
 
   def getRecipeId: String = compiledRecipe.recipeId
 

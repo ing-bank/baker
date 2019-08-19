@@ -4,7 +4,7 @@ import com.ing.baker.runtime.scaladsl
 import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 
-class RecipeInstanceMetadata(val recipeId: String, val recipeInstanceId: String, val createdTime: Long) extends common.RecipeInstanceMetadata with JavaApi {
+case class RecipeInstanceMetadata(recipeId: String, recipeInstanceId: String, createdTime: Long) extends common.RecipeInstanceMetadata with JavaApi {
 
   /**
     * Returns the recipe id of the process.
@@ -18,7 +18,7 @@ class RecipeInstanceMetadata(val recipeId: String, val recipeInstanceId: String,
     *
     * @return The process identifier.
     */
-  def getrecipeInstanceId: String = recipeInstanceId
+  def getRecipeInstanceId: String = recipeInstanceId
 
   /**
     * Returns the time the process was created.
