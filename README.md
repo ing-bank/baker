@@ -19,7 +19,7 @@ An introductory presentation of Baker: [Baker talk @ Amsterdam.Scala meetup](htt
 
 A talk about Baker at the Scale By the Bay 2017 conference: [Declare, verify and execute microservices-based process flows](https://www.youtube.com/watch?v=0bWQwUmeXHU).
 
-An example web-shop recipe you can find at: [ExamplesSpec](runtime/src/test/scala/com/ing/baker/runtime/ExamplesSpec.scala) 
+An example web-shop recipe you can find at the [examples sub-project](https://github.com/ing-bank/baker/tree/master/examples/src/main/scala/webshop/webservice) 
 
 WebShop Recipe:
 ```scala
@@ -44,11 +44,7 @@ A visual representation of the WebShop recipe looks like the following, where th
 
 
 Baker consists of a DSL that allows developers to choose interactions from a catalogue and re-use them in their own recipes.
-Developers can use Java or Scala as a programming language. Each recipe is turned into a [Petri net](https://www.wikiwand.com/en/Petri_net) at runtime.
-
-Petri nets have two interesting mathematical properties that we’d like to explore in the near future:
-- **reachability** – can we deliver on a promise (recipe) at all – this will allow developers to check during compile time if the recipe they’ve created makes sense and achieves the desired end state (fulfills the customer order);
-- **liveliness** – do we have steps in a recipe that make no sense (unreachable, “dead” code) – this will allow developers to create lean and mean recipes (the less code you write, the less bugs you produce, the less you support);
+Developers can use Java or Scala as a programming language. 
 
 # A Catalogue of Reusable Interactions
 Let's look at three different products that a bank would sell to customers:
@@ -77,12 +73,16 @@ Applying Baker will only be successful if you make sure that:
 To get started with SBT, simply add the following to your build.sbt file:
 
 ```
-libraryDependencies += "com.ing.baker" %% "baker-recipe-dsl" % "2.0.3"
-libraryDependencies += "com.ing.baker" %% "baker-runtime" % "2.0.3"
-libraryDependencies += "com.ing.baker" %% "baker-compiler" % "2.0.3"
+libraryDependencies += "com.ing.baker" %% "baker-recipe-dsl" % "3.0.0-RC"
+libraryDependencies += "com.ing.baker" %% "baker-runtime" % "3.0.0-RC"
+libraryDependencies += "com.ing.baker" %% "baker-compiler" % "3.0.0-RC"
 ```
 
-As of 1.3.x we cross compile to both scala 2.11 and 2.12. Earlier releases are only available for 2.11.
+From 1.3.x to 2.0.x we cross compile to both scala 2.11 and 2.12. 
+
+Earlier releases are only available for 2.11.
+
+From 3.0.x we support only 2.12.
 
 # How to contribute?
 
@@ -93,6 +93,7 @@ $ git clone https://github.com/ing-bank/baker.git
 $ cd baker
 $ sbt
 > compile
+> test
 ```
 
 # How to visualize your recipe?
