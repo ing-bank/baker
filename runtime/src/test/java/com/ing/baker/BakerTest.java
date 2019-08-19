@@ -59,14 +59,14 @@ public class BakerTest {
 
         String recipeInstanceId = UUID.randomUUID().toString();
         Baker jBaker = Baker.akka(config, actorSystem, materializer);
-        java.util.Map<String, Value> ingredients = jBaker.addInteractionInstance(implementationsList)
+        java.util.Map<String, Value> ingredients = jBaker.addInteractionInstances(implementationsList)
                 .thenCompose(x -> jBaker.addRecipe(compiledRecipe))
                 .thenCompose(recipeId -> {
                     assertEquals(compiledRecipe.getValidationErrors().size(), 0);
                     return jBaker.bake(recipeId, recipeInstanceId);
                 })
                 .thenCompose(x -> jBaker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.from(new JavaCompiledRecipeTest.EventOne())))
-                .thenApply(EventResult::events)
+                .thenApply(SensoryEventResult::eventNames)
                 .thenCompose(x -> jBaker.getRecipeInstanceState(recipeInstanceId))
                 .thenApply(RecipeInstanceState::getIngredients)
                 .get();
@@ -83,7 +83,7 @@ public class BakerTest {
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
 
         Baker jBaker = Baker.akka(config, actorSystem, materializer);
-        jBaker.addInteractionInstance(implementationsList);
+        jBaker.addInteractionInstances(implementationsList);
         String recipeId = jBaker.addRecipe(compiledRecipe).get();
 
         String requestId = UUID.randomUUID().toString();
@@ -112,7 +112,7 @@ public class BakerTest {
 
         Baker jBaker = Baker.akka(config, actorSystem, materializer);
 
-        jBaker.addInteractionInstance(implementationsList);
+        jBaker.addInteractionInstances(implementationsList);
 
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
 

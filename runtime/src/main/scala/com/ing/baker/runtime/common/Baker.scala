@@ -12,7 +12,7 @@ import com.ing.baker.types.Value
 trait Baker[F[_]] extends LanguageApi {
   self =>
 
-  type EventResultType <: EventResult {type Language <: self.Language}
+  type SensoryEventResultType <: SensoryEventResult {type Language <: self.Language}
 
   type EventResolutionsType <: EventResolutions[F] {type Language <: self.Language}
 
@@ -86,7 +86,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param recipeInstanceId The process identifier
     * @param event     The event object
     */
-  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstanceType): F[EventResultType]
+  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstanceType): F[SensoryEventResultType]
 
   /**
     * Notifies Baker that an event has happened and waits until an specific event has executed.
@@ -99,7 +99,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param event     The event object
     * @param on        The name of the event to wait for
     */
-  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstanceType, on: String): F[EventResultType]
+  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstanceType, on: String): F[SensoryEventResultType]
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -138,7 +138,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstanceType, correlationId: String): F[EventResultType]
+  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstanceType, correlationId: String): F[SensoryEventResultType]
 
   /**
     * Notifies Baker that an event has happened and waits until an specific event has executed.
@@ -152,7 +152,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param onEvent        The name of the event to wait for
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstanceType, onEvent: String, correlationId: String): F[EventResultType]
+  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstanceType, onEvent: String, correlationId: String): F[SensoryEventResultType]
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -192,7 +192,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param event         The event object
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstanceType, correlationId: language.Option[String]): F[EventResultType]
+  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstanceType, correlationId: language.Option[String]): F[SensoryEventResultType]
 
   /**
     * Notifies Baker that an event has happened and waits until an specific event has executed.
@@ -206,7 +206,7 @@ trait Baker[F[_]] extends LanguageApi {
     * @param onEvent        The name of the event to wait for
     * @param correlationId Id used to ensure the process instance handles unique events
     */
-  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstanceType, onEvent: String, correlationId: language.Option[String]): F[EventResultType]
+  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstanceType, onEvent: String, correlationId: language.Option[String]): F[SensoryEventResultType]
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -310,7 +310,7 @@ trait Baker[F[_]] extends LanguageApi {
     *
     * @param implementations The implementation object
     */
-  def addInteractionInstance(implementations: language.Seq[InteractionInstanceType]): F[Unit]
+  def addInteractionInstances(implementations: language.Seq[InteractionInstanceType]): F[Unit]
 
   /**
     * Attempts to gracefully shutdown the baker system.

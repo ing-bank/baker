@@ -77,7 +77,7 @@ class WebshopRecipeSpec extends AsyncFlatSpec with Matchers with MockitoSugar {
       InteractionInstance.unsafeFrom(new ReserveItemsMock)
 
     for {
-      _ <- baker.addInteractionInstace(reserveItemsInstance)
+      _ <- baker.addInteractionInstance(reserveItemsInstance)
       recipeId <- baker.addRecipe(compiled)
       _ <- baker.bake(recipeId, recipeInstanceId)
       _ <- baker.fireEventAndResolveWhenCompleted(
@@ -121,7 +121,7 @@ class WebshopRecipeSpec extends AsyncFlatSpec with Matchers with MockitoSugar {
       .thenReturn(Future.successful(SimpleWebshopRecipeReflection.ItemsReserved(items)))
 
     for {
-      _ <- baker.addInteractionInstace(reserveItemsInstance)
+      _ <- baker.addInteractionInstance(reserveItemsInstance)
       recipeId <- baker.addRecipe(compiled)
       _ <- baker.bake(recipeId, recipeInstanceId)
       _ <- baker.fireEventAndResolveWhenCompleted(

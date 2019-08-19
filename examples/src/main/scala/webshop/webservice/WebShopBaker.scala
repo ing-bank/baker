@@ -20,7 +20,7 @@ object WebShopBaker {
 
   def initRecipes(baker: Baker)(implicit time: Timer[IO], ec: ExecutionContext): IO[String] = {
     IO.fromFuture(IO(for {
-      _ <- baker.addInteractionInstance(Seq(
+      _ <- baker.addInteractionInstances(Seq(
         InteractionInstance.unsafeFrom(new ReserveItemsInstance()),
         InteractionInstance.unsafeFrom(new MakePaymentInstance()),
         InteractionInstance.unsafeFrom(new ShipItemsInstance())

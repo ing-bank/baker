@@ -17,19 +17,18 @@ object Assertions {
     val errors = mutable.MutableList.empty[String]
     if (recipe.sensoryEvents.isEmpty)
       errors += "No sensory events found."
-    if (recipe.interactions.size + recipe.sieves.size == 0)
-      errors += "No interactions or sieves found."
+    if (recipe.interactions.size == 0)
+      errors += "No interactions found."
     errors
   }
 
   def preCompileAssertions(recipe: Recipe): Seq[String] = {
     assertValidNames[Recipe](_.name, Seq(recipe), "Recipe")
     assertValidNames[InteractionDescriptor](_.name, recipe.interactions, "Interaction")
-    assertValidNames[InteractionDescriptor](_.name, recipe.sieves, "Sieve Interaction")
     assertValidNames[Event](_.name, recipe.sensoryEvents, "Event")
-    val allIngredients = recipe.sensoryEvents.flatMap(_.providedIngredients) ++ recipe.interactions.flatMap(_.inputIngredients) ++ recipe.sieves.flatMap(_.inputIngredients)
+    val allIngredients = recipe.sensoryEvents.flatMap(_.providedIngredients) ++ recipe.interactions.flatMap(_.inputIngredients)
     assertValidNames[Ingredient](_.name, allIngredients, "Ingredient")
-    assertNoDuplicateElementsExist[InteractionDescriptor](_.name, recipe.interactions.toSet ++ recipe.sieves.toSet)
+    assertNoDuplicateElementsExist[InteractionDescriptor](_.name, recipe.interactions.toSet)
     assertNoDuplicateElementsExist[Event](_.name, recipe.sensoryEvents)
     assertNonEmptyRecipe(recipe)
   }

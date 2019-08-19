@@ -136,7 +136,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
         Future.successful(status)
     }
 
-  override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[EventResult] =
+  override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventResult] =
     processIndexActor.ask(ProcessEvent(
       recipeInstanceId = recipeInstanceId,
       event = event,
@@ -149,18 +149,18 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
       case FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0) =>
         Future.failed(new NoSuchProcessException(s"Process with id $recipeInstanceId0 does not exist in the index"))
       case _: FireSensoryEventRejection.FiringLimitMet =>
-        Future.successful(EventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
+        Future.successful(SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
       case _: FireSensoryEventRejection.AlreadyReceived =>
-        Future.successful(EventResult(SensoryEventStatus.AlreadyReceived, Seq.empty, Map.empty))
+        Future.successful(SensoryEventResult(SensoryEventStatus.AlreadyReceived, Seq.empty, Map.empty))
       case _: FireSensoryEventRejection.ReceivePeriodExpired =>
-        Future.successful(EventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
+        Future.successful(SensoryEventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
       case _: FireSensoryEventRejection.RecipeInstanceDeleted =>
-        Future.successful(EventResult(SensoryEventStatus.RecipeInstanceDeleted, Seq.empty, Map.empty))
+        Future.successful(SensoryEventResult(SensoryEventStatus.RecipeInstanceDeleted, Seq.empty, Map.empty))
       case ProcessEventCompletedResponse(result) =>
         Future.successful(result)
     }
 
-  override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstanceType, onEvent: String, correlationId: Option[String]): Future[EventResult] =
+  override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstanceType, onEvent: String, correlationId: Option[String]): Future[SensoryEventResult] =
     processIndexActor.ask(ProcessEvent(
       recipeInstanceId = recipeInstanceId,
       event = event,
@@ -173,13 +173,13 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
       case FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0) =>
         Future.failed(new NoSuchProcessException(s"Process with id $recipeInstanceId0 does not exist in the index"))
       case _: FireSensoryEventRejection.FiringLimitMet =>
-        Future.successful(EventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
+        Future.successful(SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
       case _: FireSensoryEventRejection.AlreadyReceived =>
-        Future.successful(EventResult(SensoryEventStatus.AlreadyReceived, Seq.empty, Map.empty))
+        Future.successful(SensoryEventResult(SensoryEventStatus.AlreadyReceived, Seq.empty, Map.empty))
       case _: FireSensoryEventRejection.ReceivePeriodExpired =>
-        Future.successful(EventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
+        Future.successful(SensoryEventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
       case _: FireSensoryEventRejection.RecipeInstanceDeleted =>
-        Future.successful(EventResult(SensoryEventStatus.RecipeInstanceDeleted, Seq.empty, Map.empty))
+        Future.successful(SensoryEventResult(SensoryEventStatus.RecipeInstanceDeleted, Seq.empty, Map.empty))
       case ProcessEventCompletedResponse(result) =>
         Future.successful(result)
     }
@@ -218,13 +218,13 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
         case FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0) =>
           Future.failed(new NoSuchProcessException(s"Process with id $recipeInstanceId0 does not exist in the index"))
         case _: FireSensoryEventRejection.FiringLimitMet =>
-          Future.successful(EventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
+          Future.successful(SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
         case _: FireSensoryEventRejection.AlreadyReceived =>
-          Future.successful(EventResult(SensoryEventStatus.AlreadyReceived, Seq.empty, Map.empty))
+          Future.successful(SensoryEventResult(SensoryEventStatus.AlreadyReceived, Seq.empty, Map.empty))
         case _: FireSensoryEventRejection.ReceivePeriodExpired =>
-          Future.successful(EventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
+          Future.successful(SensoryEventResult(SensoryEventStatus.ReceivePeriodExpired, Seq.empty, Map.empty))
         case _: FireSensoryEventRejection.RecipeInstanceDeleted =>
-          Future.successful(EventResult(SensoryEventStatus.RecipeInstanceDeleted, Seq.empty, Map.empty))
+          Future.successful(SensoryEventResult(SensoryEventStatus.RecipeInstanceDeleted, Seq.empty, Map.empty))
         case ProcessEventCompletedResponse(result) =>
           Future.successful(result)
       }
@@ -412,7 +412,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     *
     * @param implementations The implementation object
     */
-  override def addInteractionInstance(implementations: Seq[InteractionInstance]): Future[Unit] =
+  override def addInteractionInstances(implementations: Seq[InteractionInstance]): Future[Unit] =
     Future.successful(implementations.foreach(addInteractionInstance))
 
   /**

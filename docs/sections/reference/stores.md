@@ -6,16 +6,24 @@ you to save data into a data store if you want to restore state or move it aroun
 it works, we recommend understanding the implications of it, specially when it comes to configuring and choosing the underlying 
 data store. 
 
-The two main categories you have is local vs distributed, the former being used mainly for testing, and the latter for
-production grade clusters, more specifically if you are going to use Baker on cluster mode, you NEED a distributed data store
-for Baker to work as expected. We recommend the usage of Cassandra, since it is the store the team has tested and used on 
-production.
+The two main categories you have is local vs distributed, the former being used mainly for testing which require no extra 
+configuration, and the latter for production grade clusters, more specifically if you are going to use Baker on cluster 
+mode, you NEED a distributed data store for Baker to work as expected. We recommend the usage of Cassandra, since it is 
+the store the team has tested and used on production, for such you need to use a 
+[plugin like this one.](https://doc.akka.io/docs/akka-persistence-cassandra/current/index.html)
 
 ## Configuration examples
 
 `application.conf`
 
-```config tab="Local Store"
+```config tab="Local non-cluster"
+include "baker.conf"
+
+akka.cluster.sharding.state-store-mode = persistence
+akka.actor.allow-java-serialization = off
+```
+
+```config tab="Cluster with distributed store"
 include "baker.conf"
 
 service {
@@ -56,8 +64,10 @@ akka {
   }
 
   persistence {
-    journal.plugin = "inmemory-journal"
-    snapshot-store.plugin = "inmemory-snapshot-store"
+    # See https://doc.akka.io/docs/akka-persistence-cassandra/current/journal.html#configuration
+    journal.plugin = "cassandra-journal"
+    # See https://doc.akka.io/docs/akka-persistence-cassandra/current/snapshots.html#configuration
+    snapshot-store.plugin = "cassandra-snapshot-store"
   }
 
   remote {
@@ -78,8 +88,4 @@ akka {
     auto-down-unreachable-after = 10s
   }
 }
-```
-
-```config tab="Distributed Store"
-
 ```

@@ -123,7 +123,7 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
     "give an validation error for an empty/non-logical recipe" in {
       RecipeCompiler.compileRecipe(Recipe("someName")).validationErrors should contain only(
         "No sensory events found.",
-        "No interactions or sieves found."
+        "No interactions found."
       )
     }
 
@@ -316,22 +316,6 @@ class RecipeCompilerSpec extends WordSpecLike with Matchers {
             it.predefinedParameters("missingScalaOptional") shouldBe NullValue
             it.predefinedParameters("missingScalaOptional2") shouldBe NullValue
           })
-    }
-  }
-}
-
-@deprecated("marked deprecated because of -XFatal-Warnings and deprecated sieves", "1.4.0")
-class DepcratedCompilerSpec extends WordSpecLike with Matchers {
-
-  "(deprecated) The RecipeCompiler" should {
-
-    "(deprecated) fail compilation for an empty or null named sieve interaction " in {
-      List("", null) foreach { name =>
-        val invalidSieveInteraction = Interaction(name, Seq.empty, Seq())
-        val recipe = Recipe("SieveNameTest").withSieve(invalidSieveInteraction).withSensoryEvent(initialEvent)
-
-        intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Sieve Interaction with a null or empty name found"
-      }
     }
   }
 }

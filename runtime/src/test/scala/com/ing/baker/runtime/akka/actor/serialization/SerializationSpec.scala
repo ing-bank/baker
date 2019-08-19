@@ -22,7 +22,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
 import com.ing.baker.runtime.akka.actor.serialization.Encryption.{AESEncryption, NoEncryption}
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.{EventMoment, RecipeInstanceState, EventInstance, EventResult}
+import com.ing.baker.runtime.scaladsl.{EventMoment, RecipeInstanceState, EventInstance, SensoryEventResult}
 import com.ing.baker.types.Value
 import com.ing.baker.{AllTypeRecipe, types}
 
@@ -227,7 +227,7 @@ object SerializationSpec {
 
     val messagesGen: Gen[AnyRef] = Gen.oneOf(runtimeEventGen, processStateGen)
 
-    val sensoryEventResultGen: Gen[EventResult] = for {
+    val sensoryEventResultGen: Gen[SensoryEventResult] = for {
       status <- Gen.oneOf(
         SensoryEventStatus.AlreadyReceived,
         SensoryEventStatus.Completed,
@@ -237,7 +237,7 @@ object SerializationSpec {
         SensoryEventStatus.ReceivePeriodExpired)
       events <- Gen.listOf(eventNameGen)
       ingredients <- Gen.listOf(ingredientsGen)
-    } yield EventResult(status, events, ingredients.toMap)
+    } yield SensoryEventResult(status, events, ingredients.toMap)
   }
 
   object RecipeManager {

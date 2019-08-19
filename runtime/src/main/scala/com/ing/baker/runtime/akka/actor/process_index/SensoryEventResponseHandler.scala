@@ -2,7 +2,7 @@ package com.ing.baker.runtime.akka.actor.process_index
 
 import akka.actor.{Actor, ActorRef, Props, ReceiveTimeout}
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.scaladsl.{EventInstance, EventReceived, EventRejected, EventResult, RecipeInstanceState}
+import com.ing.baker.runtime.scaladsl.{EventInstance, EventReceived, EventRejected, SensoryEventResult, RecipeInstanceState}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{FireSensoryEventReaction, FireSensoryEventRejection, ProcessEvent, ProcessEventCompletedResponse, ProcessEventReceivedResponse}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
@@ -62,9 +62,9 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
       case _ => None
     }
 
-    def result = EventResult(
-      status = SensoryEventStatus.Completed,
-      events = runtimeEvents.map(_.name),
+    def result = SensoryEventResult(
+      sensoryEventStatus = SensoryEventStatus.Completed,
+      eventNames = runtimeEvents.map(_.name),
       ingredients = filterIngredientValues(runtimeEvents.flatMap(_.providedIngredients).toMap)
     )
 

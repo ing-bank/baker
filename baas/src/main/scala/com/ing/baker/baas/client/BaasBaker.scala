@@ -112,7 +112,7 @@ class BaasBaker(config: Config,
     * @param recipeInstanceId The process identifier
     * @param event     The event object
     */
-  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[EventResult] = ???
+  def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventResult] = ???
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -189,7 +189,7 @@ class BaasBaker(config: Config,
     *
     * @param implementations The implementation object
     */
-  override def addInteractionInstance(implementations: Seq[InteractionInstance]): Future[Unit] = {
+  override def addInteractionInstances(implementations: Seq[InteractionInstance]): Future[Unit] = {
     Future.successful(implementations.foreach(addInteractionInstance))
   }
 
@@ -285,7 +285,7 @@ class BaasBaker(config: Config,
     * @param onEvent          The name of the event to wait for
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
-  override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String]): Future[EventResult] = ???
+  override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String]): Future[SensoryEventResult] = ???
 
   /**
     * Returns all fired events for a given RecipeInstance id.

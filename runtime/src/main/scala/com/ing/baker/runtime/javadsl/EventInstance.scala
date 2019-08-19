@@ -13,9 +13,9 @@ case class EventInstance(name: String,
                          providedIngredients: util.Map[String, Value])
   extends common.EventInstance with JavaApi {
 
-  def getProvidedIngredients = providedIngredients
+  def getProvidedIngredients: util.Map[String, Value] = providedIngredients
 
-  def getName = name
+  def getName: String = name
 
   def this(name0: String) =
     this(name0, java.util.Collections.emptyMap[String, Value])

@@ -18,11 +18,6 @@ trait Recipe {
   val interactions: Seq[InteractionDescriptor]
 
   /**
-    * The set of sieves.
-    */
-  val sieves: Seq[InteractionDescriptor]
-
-  /**
     * The set of events.
     */
   val sensoryEvents: Set[Event]

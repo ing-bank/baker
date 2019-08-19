@@ -176,7 +176,7 @@ object RecipeCompiler {
     //All ingredient names provided by sensory events or by interactions
     val allIngredientNames: Set[String] =
       recipe.sensoryEvents.flatMap(e => e.providedIngredients.map(i => i.name)) ++
-        (recipe.interactions ++ recipe.sieves).flatMap(i => i.output.flatMap { e =>
+        recipe.interactions.flatMap(i => i.output.flatMap { e =>
             // check if the event was renamed (check if there is a transformer for this event)
             i.eventOutputTransformers.get(e) match {
               case Some(transformer) => e.providedIngredients.map(ingredient => transformer.ingredientRenames.getOrElse(ingredient.name, ingredient.name))
@@ -185,15 +185,13 @@ object RecipeCompiler {
           }
         )
 
-    val actionDescriptors: Seq[InteractionDescriptor] = recipe.interactions ++ recipe.sieves
+    val actionDescriptors: Seq[InteractionDescriptor] = recipe.interactions
 
     // For inputs for which no matching output cannot be found, we do not want to generate a place.
     // It should be provided at runtime from outside the active petri net (marking)
     val interactionTransitions = recipe.interactions.map(_.toInteractionTransition(recipe.defaultFailureStrategy, allIngredientNames))
 
-    val sieveTransitions = recipe.sieves.map(_.toInteractionTransition(recipe.defaultFailureStrategy, allIngredientNames))
-
-    val allInteractionTransitions: Seq[InteractionTransition] = sieveTransitions ++ interactionTransitions
+    val allInteractionTransitions: Seq[InteractionTransition] = interactionTransitions
 
     // events provided from outside
     val sensoryEventTransitions: Seq[EventTransition] = recipe.sensoryEvents.map {

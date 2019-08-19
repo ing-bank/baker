@@ -11,12 +11,12 @@ import akka.testkit.ImplicitSender
 import better.files.File
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.Examples.webshop
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
+import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import com.ing.baker.types.{PrimitiveValue, RecordValue}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.mockito.MockitoSugar
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
 
 
@@ -126,12 +126,12 @@ object HappyPath extends MockitoSugar {
   def seedNodeConfig(path: ActorPath): Config =
     ConfigFactory.parseString(s"""baker.cluster.seed-nodes = ["$path"]""")
 
-  val implementations: Seq[AnyRef] = Seq(
+  def implementations(implicit ec: ExecutionContext): Seq[InteractionInstance] = Seq(
     ValidateOrder,
     ManufactureGoods,
     SendInvoice,
     ShipGoods
-  )
+  ).map(InteractionInstance.unsafeFrom)
 }
 
 class HappyPath extends MultiNodeSpec(HappyPathConfig)
@@ -140,6 +140,7 @@ class HappyPath extends MultiNodeSpec(HappyPathConfig)
 
   import HappyPath._
   import HappyPathConfig._
+  import system.dispatcher
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -153,7 +154,6 @@ class HappyPath extends MultiNodeSpec(HappyPathConfig)
 
   def runHappyFlow(baker: Baker, recipeId: String, recipeInstanceId: String): Unit = {
 
-    import system.dispatcher
     Await.result(baker.bake(recipeId, recipeInstanceId), 10 seconds)
 
     val sensoryEventStatus1 = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, placeOrderRuntimeEvent)
@@ -183,7 +183,7 @@ class HappyPath extends MultiNodeSpec(HappyPathConfig)
       val materializer = ActorMaterializer()
       val config = ConfigFactory.load().withFallback(seedNodeConfig(node(node1)))
       val baker = Baker.akka(config, system, materializer)
-      baker.addInteractionInstance(HappyPath.implementations)
+      baker.addInteractionInstances(HappyPath.implementations)
       val compiled = RecipeCompiler.compileRecipe(webshop.webShopRecipe)
       val recipeId = Await.result(baker.addRecipe(compiled), 10 seconds)
 

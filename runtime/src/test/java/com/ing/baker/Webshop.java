@@ -157,7 +157,7 @@ public class Webshop {
         Materializer materializer = ActorMaterializer.create(system);
         Baker baker = Baker.akka(config, system, materializer);
 
-        baker.addInteractionInstance(ImmutableList.of(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock));
+        baker.addInteractionInstances(ImmutableList.of(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock));
 
         String recipeId = baker.addRecipe(recipe).get();
 

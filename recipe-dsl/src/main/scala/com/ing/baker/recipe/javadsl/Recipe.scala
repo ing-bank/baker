@@ -10,30 +10,26 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 case class Recipe(
                    override val name: String,
                    override val interactions: Seq[common.InteractionDescriptor],
-                   override val sieves: Seq[common.InteractionDescriptor],
                    override val sensoryEvents: Set[common.Event],
                    override val defaultFailureStrategy: common.InteractionFailureStrategy,
                    override val eventReceivePeriod: Option[FiniteDuration],
                    override val retentionPeriod: Option[FiniteDuration]) extends common.Recipe {
 
-  def this(name: String) = this(name, Seq.empty, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction(), None, None)
+  def this(name: String) = this(name, Seq.empty, Set.empty, InteractionFailureStrategy.BlockInteraction(), None, None)
 
   def getInteractions: java.util.List[common.InteractionDescriptor] = interactions.asJava
-
-  @deprecated("sieves are deprecated, use interactions instead", "1.4.0")
-  def getSieves: java.util.List[common.InteractionDescriptor] = sieves.asJava
 
   def getEvents: java.util.List[common.Event] = sensoryEvents.toList.asJava
 
   /**
-    * This adds all interactions and sieves of the recipe to this recipe
+    * This adds all interactions of the recipe to this recipe
     * Sensory Events are not added and are expected to be given by the recipe itself
     *
     * @param recipe
     * @return
     */
   def withRecipe(recipe: common.Recipe) = {
-    copy(interactions = interactions ++ recipe.interactions, sieves = sieves ++ recipe.sieves)
+    copy(interactions = interactions ++ recipe.interactions)
   }
 
   /**
@@ -57,29 +53,6 @@ case class Recipe(
   @varargs
   def withInteractions(newInteractions: common.InteractionDescriptor*): Recipe =
     copy(interactions = interactions ++ newInteractions)
-
-  /**
-    * Adds a sieve function to the recipe.
-    *
-    * @param sieveDescriptor
-    * @return
-    */
-  @deprecated("sieves are deprecated, use interactions instead", "1.4.0")
-  def withSieve(sieveDescriptor: common.InteractionDescriptor): Recipe =
-    withSieves(Seq(sieveDescriptor.asInstanceOf[InteractionDescriptor]): _*)
-
-  /**
-    * Adds a sieves function to the recipe.
-    *
-    * @param newSieves
-    * @return
-    */
-  @SafeVarargs
-  @varargs
-  @deprecated("sieves are deprecated, use interactions instead", "1.4.0")
-  def withSieves(newSieves: common.InteractionDescriptor*): Recipe = {
-    copy(sieves = sieves ++ newSieves)
-  }
 
   /**
     * Adds the sensory event to the recipe

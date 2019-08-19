@@ -4,9 +4,9 @@ import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
 
 trait EventResolutions[F[_]] extends LanguageApi { self =>
 
-  type Result <: EventResult { type Language <: self.Language}
+  type SensoryEventResultType <: SensoryEventResult { type Language <: self.Language}
 
   def resolveWhenReceived: F[SensoryEventStatus]
 
-  def resolveWhenCompleted: F[Result]
+  def resolveWhenCompleted: F[SensoryEventResultType]
 }

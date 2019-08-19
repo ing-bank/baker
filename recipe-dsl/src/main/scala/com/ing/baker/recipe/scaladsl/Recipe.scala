@@ -10,7 +10,7 @@ object Recipe {
   def apply() : Recipe = macro CommonMacros.recipeImpl
 
   def apply(name: String): Recipe = {
-    Recipe(name, Seq.empty, Seq.empty, Set.empty, new common.InteractionFailureStrategy.BlockInteraction, None, None)
+    Recipe(name, Seq.empty, Set.empty, new common.InteractionFailureStrategy.BlockInteraction, None, None)
   }
 }
 
@@ -19,7 +19,6 @@ object Recipe {
   */
 case class Recipe private(override val name: String,
                           override val interactions: Seq[common.InteractionDescriptor],
-                          override val sieves: Seq[common.InteractionDescriptor],
                           override val sensoryEvents: Set[common.Event],
                           override val defaultFailureStrategy: InteractionFailureStrategy,
                           override val eventReceivePeriod: Option[FiniteDuration],
@@ -29,12 +28,6 @@ case class Recipe private(override val name: String,
   def withInteraction(newInteraction: common.InteractionDescriptor): Recipe = copy(interactions = interactions :+ newInteraction)
 
   def withInteractions(newInteractions: common.InteractionDescriptor*): Recipe = copy(interactions = interactions ++ newInteractions)
-
-  @deprecated("sieves are deprecated, use interactions instead", "1.4.0")
-  def withSieve(newSieve: common.InteractionDescriptor): Recipe = copy(sieves = sieves :+ newSieve)
-
-  @deprecated("sieves are deprecated, use interactions instead", "1.4.0")
-  def withSieves(newSieves: common.InteractionDescriptor*): Recipe = copy(sieves = sieves ++ newSieves)
 
   def withSensoryEvent(newEvent: common.Event): Recipe = copy(sensoryEvents = sensoryEvents + newEvent)
 
