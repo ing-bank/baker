@@ -40,25 +40,6 @@ public class RecipeTest {
     }
 
     @Test
-    public void shouldSetupRecipeWithOneSieveDescriptor() {
-        Recipe recipe = new Recipe("OneSieveRecipe")
-                .withInteraction(of(SimpleInteraction.class));
-        assertEquals(recipe.getEvents().size(), 0);
-        assertEquals(recipe.getInteractions().size(), 0);
-    }
-
-    @Test
-    public void shouldSetupRecipeWithMultipleSieveDescriptors() {
-        Recipe recipe = new Recipe("MultipleInteractionsRecipe")
-                .withInteractions(
-                        of(RequiresRecipeInstanceIdStringInteraction.class),
-                        of(FiresTwoEventInteraction.class),
-                        of(SimpleInteraction.class));
-        assertEquals(recipe.getEvents().size(), 0);
-        assertEquals(recipe.getInteractions().size(), 0);
-    }
-
-    @Test
     public void shouldSetupRecipeWithOneSensoryEvent() {
         Recipe recipe = new Recipe("OneSensoryEventRecipe")
                 .withSensoryEvent(SensoryEventWithIngredient.class);
