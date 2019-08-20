@@ -7,11 +7,11 @@ import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.JavaCompiledRecipeTest;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.recipe.javadsl.Recipe;
+import com.ing.baker.runtime.common.BakerException;
 import com.ing.baker.runtime.common.SensoryEventStatus;
 import com.ing.baker.runtime.javadsl.*;
-import com.ing.baker.runtime.common.BakerException;
 import com.ing.baker.types.Converters;
+import com.ing.baker.types.PrimitiveValue;
 import com.ing.baker.types.Value;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -158,9 +158,9 @@ public class BakerTest {
         assertEquals(recipe1.getRecipeId(), recipeId);
 
         EventResolutions res = jBaker.fireEvent(requestId, EventInstance.from(new JavaCompiledRecipeTest.EventTwo()));
-        SensoryEventStatus status = res.resolveWhenReceived().get();
+        SensoryEventStatus status = res.getResolveWhenReceived().get();
         assertEquals(status, SensoryEventStatus.Received);
-        res.resolveWhenCompleted().get();
+        res.getResolveWhenCompleted().get();
 
         bakerEvents.forEach(event -> {
             System.out.println(event);
@@ -211,5 +211,9 @@ public class BakerTest {
                         "InteractionThree".equals(interactionName));
             }
         });
+
+        IngredientInstance ing = new IngredientInstance("ingredient", new PrimitiveValue("this"));
+        assertEquals("ingredient", ing.getName());
+        assertEquals("this", ing.getValue().as(String.class));
     }
 }
