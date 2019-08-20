@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.JavaCompiledRecipeTest;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
+import com.ing.baker.recipe.javadsl.Recipe;
 import com.ing.baker.runtime.common.SensoryEventStatus;
 import com.ing.baker.runtime.javadsl.*;
 import com.ing.baker.runtime.common.BakerException;
@@ -20,9 +21,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
@@ -116,6 +115,9 @@ public class BakerTest {
 
         Baker jBaker = Baker.akka(config, actorSystem, materializer);
 
+        List<BakerEvent> bakerEvents = new LinkedList<>();
+        jBaker.registerBakerEventListener(bakerEvents::add);
+
         // Setup recipe
         jBaker.addInteractionInstances(implementationsList);
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
@@ -155,8 +157,59 @@ public class BakerTest {
         assert(recipe1.getRecipeCreatedTime() > 0);
         assertEquals(recipe1.getRecipeId(), recipeId);
 
-        SensoryEventStatus status = jBaker.fireEventAndResolveWhenReceived(requestId, EventInstance.from(new JavaCompiledRecipeTest.EventTwo())).get();
+        EventResolutions res = jBaker.fireEvent(requestId, EventInstance.from(new JavaCompiledRecipeTest.EventTwo()));
+        SensoryEventStatus status = res.resolveWhenReceived().get();
         assertEquals(status, SensoryEventStatus.Received);
+        res.resolveWhenCompleted().get();
 
+        bakerEvents.forEach(event -> {
+            System.out.println(event);
+            if (event instanceof RecipeAdded) {
+                RecipeAdded event0 = (RecipeAdded) event;
+                assertEquals(compiledRecipe, event0.compiledRecipe());
+                assert(event0.date() > 0);
+                assertEquals(recipeId, event0.getRecipeId());
+                assertEquals("TestRecipe", event0.recipeName());
+                assert(event0.getData() > 0);
+            } else if (event instanceof RecipeInstanceCreated) {
+                RecipeInstanceCreated event0 = (RecipeInstanceCreated) event;
+                assertEquals(recipeId, event0.getRecipeId());
+                assertEquals(requestId, event0.getRecipeInstanceId());
+                assertEquals("TestRecipe", event0.getRecipeName());
+                assert(event0.getTimeStamp() > 0);
+            } else if (event instanceof EventReceived) {
+                EventReceived event0 = (EventReceived) event;
+                assertEquals(recipeId, event0.getRecipeId());
+                assertEquals(requestId, event0.getRecipeInstanceId());
+                assert(event0.getTimeStamp() > 0);
+                String eventName = event0.getEvent().getName();
+                assert("EventOne".equals(eventName) || "EventTwo".equals(eventName));
+                assertEquals(Optional.empty(), event0.getCorrelationId());
+            } else if (event instanceof InteractionStarted) {
+                InteractionStarted event0 = (InteractionStarted) event;
+                assertEquals(recipeId, event0.getRecipeId());
+                assertEquals(requestId, event0.getRecipeInstanceId());
+                assert(event0.getTimeStamp() > 0);
+                assertEquals("TestRecipe", event0.getRecipeName());
+                String eventName = event0.getInteractionName();
+                assert("InteractionOne".equals(eventName) ||
+                       "InteractionOneRenamed".equals(eventName) ||
+                       "InteractionTwo".equals(eventName) ||
+                       "SieveImpl".equals(eventName) ||
+                       "InteractionThree".equals(eventName));
+            } else if (event instanceof InteractionCompleted) {
+                InteractionCompleted event0 = (InteractionCompleted) event;
+                assertEquals(recipeId, event0.getRecipeId());
+                assertEquals(requestId, event0.getRecipeInstanceId());
+                assert(event0.getTimeStamp() > 0);
+                assertEquals("TestRecipe", event0.getRecipeName());
+                String interactionName = event0.getInteractionName();
+                assert("InteractionOne".equals(interactionName) ||
+                        "InteractionOneRenamed".equals(interactionName) ||
+                        "InteractionTwo".equals(interactionName) ||
+                        "SieveImpl".equals(interactionName) ||
+                        "InteractionThree".equals(interactionName));
+            }
+        });
     }
 }

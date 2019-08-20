@@ -15,15 +15,15 @@ sealed trait BakerEvent extends common.BakerEvent with ScalaApi {
 
   def asJava(): javadsl.BakerEvent = this match {
     case EventReceived(timeStamp, recipeName, recipeId, recipeInstanceId, correlationId, event) =>
-      javadsl.EventReceived(timeStamp, recipeName, recipeId, recipeInstanceId, Optional.of(correlationId.orNull), event.asJava)
+      javadsl.EventReceived(timeStamp, recipeName, recipeId, recipeInstanceId, Optional.ofNullable(correlationId.orNull), event.asJava)
     case EventRejected(timeStamp, recipeInstanceId, correlationId, event, reason) =>
-      javadsl.EventRejected(timeStamp, recipeInstanceId, Optional.of(correlationId.orNull), event.asJava, reason)
+      javadsl.EventRejected(timeStamp, recipeInstanceId, Optional.ofNullable(correlationId.orNull), event.asJava, reason)
     case InteractionFailed(timeStamp, duration, recipeName, recipeId, recipeInstanceId, interactionName, failureCount, throwable, exceptionStrategyOutcome) =>
       javadsl.InteractionFailed(timeStamp, duration, recipeName, recipeId, recipeInstanceId, interactionName, failureCount, throwable, exceptionStrategyOutcome)
     case InteractionStarted(timeStamp, recipeName, recipeId, recipeInstanceId, interactionName) =>
       javadsl.InteractionStarted(timeStamp, recipeName, recipeId, recipeInstanceId, interactionName)
     case InteractionCompleted(timeStamp, duration, recipeName, recipeId, recipeInstanceId, interactionName, event) =>
-      javadsl.InteractionCompleted(timeStamp, duration, recipeName, recipeId, recipeInstanceId, interactionName, Optional.of(event.map(_.asJava).orNull))
+      javadsl.InteractionCompleted(timeStamp, duration, recipeName, recipeId, recipeInstanceId, interactionName, Optional.ofNullable(event.map(_.asJava).orNull))
     case RecipeInstanceCreated(timeStamp, recipeId, recipeName, recipeInstanceId) =>
       javadsl.RecipeInstanceCreated(timeStamp, recipeId, recipeName, recipeInstanceId)
     case RecipeAdded(recipeName, recipeId, date, compiledRecipe) =>
