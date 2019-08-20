@@ -11,7 +11,7 @@ case class SensoryEventResult(
                                ingredients: java.util.Map[String, Value]
 ) extends common.SensoryEventResult with JavaApi {
 
-  def getSensoryEventState: SensoryEventStatus = sensoryEventStatus
+  def getSensoryEventStatus: SensoryEventStatus = sensoryEventStatus
 
   def getEventName: java.util.List[String] = eventNames
 

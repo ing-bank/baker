@@ -18,6 +18,7 @@ import org.scalatest.mockito.MockitoSugar
 
 import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 
 /**

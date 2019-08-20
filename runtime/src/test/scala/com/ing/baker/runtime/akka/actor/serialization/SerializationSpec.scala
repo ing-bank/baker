@@ -9,24 +9,30 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.petrinet.api.{Id, Marking, MultiSet}
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.GetShardIndex
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventRejection.{InvalidEvent, ReceivePeriodExpired}
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
+import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager.RecipeAdded
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
+import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
+import com.ing.baker.runtime.akka.actor.serialization.Encryption.{AESEncryption, NoEncryption}
+import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto}
+import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanceState, SensoryEventResult}
+import com.ing.baker.types.modules.PrimitiveModuleSpec._
+import com.ing.baker.types.{Value, _}
+import com.ing.baker.{AllTypeRecipe, types}
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Test.Parameters.defaultVerbose
 import org.scalacheck._
 import org.scalatest.FunSuiteLike
 import org.scalatest.prop.Checkers
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
-import com.ing.baker.runtime.akka.actor.serialization.Encryption.{AESEncryption, NoEncryption}
-import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.{EventMoment, RecipeInstanceState, EventInstance, SensoryEventResult}
-import com.ing.baker.types.Value
-import com.ing.baker.{AllTypeRecipe, types}
 
 import scala.concurrent.duration._
+import scala.reflect.ClassTag
+import scala.util.Success
 
 class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec")) with FunSuiteLike with Checkers {
 
@@ -36,15 +42,155 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
       .serializerByIdentity(101)
       .asInstanceOf[BakerTypedProtobufSerializer]
 
-  def checkFor[A <: AnyRef](name: String, gen: Gen[A]): Unit = {
-    test(s"$name typed serialization") {
-      check(forAll(gen) { m =>
-        m == serializer.fromBinary(serializer.toBinary(m), serializer.manifest(m))
-      },
-        defaultVerbose.withMinSuccessfulTests(3)
-      )
+  import serializer.serializersProvider
+
+  def checkFor[A <: AnyRef]: CheckFor[A] = new CheckFor[A]
+
+  class CheckFor[A <: AnyRef]() {
+
+    def run[P <: scalapb.GeneratedMessage with scalapb.Message[P]](implicit ev: ProtoMap[A, P], gen: Gen[A], typeTag: ClassTag[A]): Unit = {
+      test(s"${typeTag.runtimeClass.getName} typed serialization") {
+        check(forAll(gen) { m =>
+          m === serializer.fromBinary(serializer.toBinary(m), serializer.manifest(m))
+        },
+          defaultVerbose.withMinSuccessfulTests(10)
+        )
+      }
     }
   }
+
+  import SerializationSpec.IntermediateLanguage._
+  import SerializationSpec.ProcessIndex._
+  import SerializationSpec.ProcessInstance._
+  import SerializationSpec.RecipeManager._
+  import SerializationSpec.Runtime._
+  import SerializationSpec.Types._
+
+  checkFor[Value].run
+
+  checkFor[Type].run
+
+  checkFor[EventInstance].run
+
+  checkFor[RecipeInstanceState].run
+
+  checkFor[GetShardIndex].run
+
+  checkFor[ProcessIndex.ActorCreated].run
+
+  checkFor[ProcessIndex.ActorDeleted].run
+
+  checkFor[ProcessIndex.ActorPassivated].run
+
+  checkFor[ProcessIndex.ActorActivated].run
+
+  checkFor[ProcessIndex.ActorMetadata].run
+
+  test("ProcessIndexProtocol.GetIndex typed serialization") {
+    val m = ProcessIndexProtocol.GetIndex
+    val serialized = serializer.toBinary(m)
+    val deserialized = serializer.fromBinary(serialized, serializer.manifest(m))
+    deserialized === m &&
+    ctxFromProto(ctxToProto(m)) === Success(m)
+  }
+
+  checkFor[ProcessIndexProtocol.Index].run
+
+  checkFor[ProcessIndexProtocol.CreateProcess].run
+
+  checkFor[ProcessIndexProtocol.ProcessEvent].run
+
+  checkFor[ProcessIndexProtocol.RetryBlockedInteraction].run
+
+  checkFor[ProcessIndexProtocol.ResolveBlockedInteraction].run
+
+  checkFor[ProcessIndexProtocol.StopRetryingInteraction].run
+
+  checkFor[ProcessIndexProtocol.ProcessEventResponse].run
+
+  checkFor[ProcessIndexProtocol.ProcessEventCompletedResponse].run
+
+  checkFor[ProcessIndexProtocol.ProcessEventReceivedResponse].run
+
+  checkFor[ProcessIndexProtocol.GetProcessState].run
+
+  checkFor[ProcessIndexProtocol.GetCompiledRecipe].run
+
+  checkFor[ProcessIndexProtocol.FireSensoryEventRejection.ReceivePeriodExpired].run
+
+  checkFor[ProcessIndexProtocol.FireSensoryEventRejection.InvalidEvent].run
+
+  checkFor[ProcessIndexProtocol.FireSensoryEventRejection.RecipeInstanceDeleted].run
+
+  checkFor[ProcessIndexProtocol.FireSensoryEventRejection.NoSuchRecipeInstance].run
+
+  checkFor[ProcessIndexProtocol.FireSensoryEventRejection.AlreadyReceived].run
+
+  checkFor[ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet].run
+
+  checkFor[ProcessIndexProtocol.ProcessDeleted].run
+
+  checkFor[ProcessIndexProtocol.NoSuchProcess].run
+
+  checkFor[ProcessIndexProtocol.ProcessAlreadyExists].run
+
+  checkFor[RecipeManagerProtocol.AddRecipe].run
+
+  checkFor[RecipeManagerProtocol.AddRecipeResponse].run
+
+  checkFor[RecipeManagerProtocol.GetRecipe].run
+
+  checkFor[RecipeManagerProtocol.RecipeFound].run
+
+  checkFor[RecipeManagerProtocol.NoRecipeFound].run
+
+  checkFor[RecipeManagerProtocol.AllRecipes].run
+
+  test("RecipeManagerProtocol.GetAllRecipes typed serialization") {
+    val m = RecipeManagerProtocol.GetAllRecipes
+    val serialized = serializer.toBinary(m)
+    val deserialized = serializer.fromBinary(serialized, serializer.manifest(m))
+    deserialized === m &&
+      ctxFromProto(ctxToProto(m)) === Success(m)
+  }
+
+  checkFor[RecipeManager.RecipeAdded].run
+
+  checkFor[ProcessInstanceProtocol.Stop].run
+
+  test("ProcessInstanceProtocol.GetState typed serialization") {
+    val m = ProcessInstanceProtocol.GetState
+    val serialized = serializer.toBinary(m)
+    val deserialized = serializer.fromBinary(serialized, serializer.manifest(m))
+    deserialized === m &&
+      ctxFromProto(ctxToProto(m)) === Success(m)
+  }
+
+  checkFor[ProcessInstanceProtocol.InstanceState].run
+
+  checkFor[ProcessInstanceProtocol.Initialize].run
+
+  checkFor[ProcessInstanceProtocol.Initialized].run
+
+  checkFor[ProcessInstanceProtocol.Uninitialized].run
+
+  checkFor[ProcessInstanceProtocol.AlreadyInitialized].run
+
+  checkFor[ProcessInstanceProtocol.FireTransition].run
+
+  checkFor[ProcessInstanceProtocol.OverrideExceptionStrategy].run
+
+  checkFor[ProcessInstanceProtocol.InvalidCommand].run
+
+  checkFor[ProcessInstanceProtocol.AlreadyReceived].run
+
+  checkFor[ProcessInstanceProtocol.TransitionNotEnabled].run
+
+  checkFor[ProcessInstanceProtocol.TransitionFailed].run
+
+  checkFor[ProcessInstanceProtocol.TransitionFired].run
+
+  checkFor[CompiledRecipe].run
 
   test("Encryption works for the AnyRefMapping (case class)") {
 
@@ -87,95 +233,6 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
     val yNe = mapperNoEncryption.fromProto(protoNe).get.asInstanceOf[String]
     assert(yEn == yNe)
   }
-
-  checkFor("core.RuntimeEvent", SerializationSpec.Runtime.runtimeEventGen)
-
-  checkFor("core.ProcessState", SerializationSpec.Runtime.processStateGen)
-
-  checkFor("ProcessIndex.GetShardIndex", SerializationSpec.ProcessIndex.getShardIndexGen)
-
-  checkFor("ProcessIndex.ActorCreated", SerializationSpec.ProcessIndex.actorCreatedGen)
-
-  checkFor("ProcessIndex.ActorDeleted", SerializationSpec.ProcessIndex.actorDeletedGen)
-
-  checkFor("ProcessIndex.ActorPassivated", SerializationSpec.ProcessIndex.actorPassivatedGen)
-
-  checkFor("ProcessIndex.ActorActivated", SerializationSpec.ProcessIndex.actorActivatedGen)
-
-  checkFor("ProcessIndex.ActorMetadata", SerializationSpec.ProcessIndex.actorMetadataGen)
-
-  test("ProcessIndexProtocol.GetIndex typed serialization") {
-    val serialized = serializer.toBinary(ProcessIndexProtocol.GetIndex)
-    val deserialized = serializer.fromBinary(serialized, serializer.manifest(ProcessIndexProtocol.GetIndex))
-    ProcessIndexProtocol.GetIndex == deserialized
-  }
-
-  checkFor("ProcessIndexProtocol.Index", SerializationSpec.ProcessIndex.indexGen)
-
-  checkFor("ProcessIndexProtocol.CreateProcess", SerializationSpec.ProcessIndex.createProcessGen)
-
-  checkFor("ProcessIndexProtocol.ProcessEvent", SerializationSpec.ProcessIndex.processEventGen(system))
-
-  checkFor("ProcessIndexProtocol.RetryBlockedInteraction", SerializationSpec.ProcessIndex.retryBlockedInteractionGen)
-
-  checkFor("ProcessIndexProtocol.ResolveBlockedInteraction", SerializationSpec.ProcessIndex.resolveBlockedInteraction)
-
-  checkFor("ProcessIndexProtocol.StopRetryingInteraction", SerializationSpec.ProcessIndex.stopRetryingInteractionGen)
-
-  checkFor("ProcessInstance.TransitionFailed", SerializationSpec.ProcessInstance.transitionFailedGen)
-
-  checkFor("RecipeManagerProtocol.AddRecipe", SerializationSpec.RecipeManager.addRecipeGen)
-
-  checkFor("RecipeManagerProtocol.AddRecipeResponse", SerializationSpec.RecipeManager.addRecipeResponseGen)
-
-  checkFor("RecipeManagerProtocol.GetRecipe", SerializationSpec.RecipeManager.getRecipeGen)
-
-  checkFor("RecipeManagerProtocol.RecipeFound", SerializationSpec.RecipeManager.recipeFoundGen)
-
-  checkFor("RecipeManagerProtocol.NoRecipeFound", SerializationSpec.RecipeManager.noRecipeFoundGen)
-
-  checkFor("RecipeManagerProtocol.AllRecipes", SerializationSpec.RecipeManager.allRecipesGen)
-
-  test("RecipeManagerProtocol.GetAllRecipes typed serialization") {
-    val serialized = serializer.toBinary(RecipeManagerProtocol.GetAllRecipes)
-    val deserialized = serializer.fromBinary(serialized, serializer.manifest(RecipeManagerProtocol.GetAllRecipes))
-    RecipeManagerProtocol.GetAllRecipes == deserialized
-  }
-
-  checkFor("RecipeManager.RecipeAdded", SerializationSpec.RecipeManager.recipeAddedGen)
-
-  checkFor("ProcessInstanceProtocol.Stop", SerializationSpec.ProcessInstance.stopGen)
-
-  test("ProcessInstanceProtocol.GetState typed serialization") {
-    val serialized = serializer.toBinary(ProcessInstanceProtocol.GetState)
-    val deserialized = serializer.fromBinary(serialized, serializer.manifest(RecipeManagerProtocol.GetAllRecipes))
-    ProcessInstanceProtocol.GetState == deserialized
-  }
-
-  checkFor("ProcessInstanceProtocol.InstanceState", SerializationSpec.ProcessInstance.instanceStateGen)
-
-  checkFor("ProcessInstanceProtocol.Initialize", SerializationSpec.ProcessInstance.initializeGen)
-
-  checkFor("ProcessInstanceProtocol.Initialized", SerializationSpec.ProcessInstance.initializedGen)
-
-  checkFor("ProcessInstanceProtocol.Uninitialized", SerializationSpec.ProcessInstance.uninitializedGen)
-
-  checkFor("ProcessInstanceProtocol.AlreadyInitialized", SerializationSpec.ProcessInstance.alreadyInitializedGen)
-
-  checkFor("ProcessInstanceProtocol.FireTransition", SerializationSpec.ProcessInstance.fireTransitionGen)
-
-  checkFor("ProcessInstanceProtocol.OverrideExceptionStrategy", SerializationSpec.ProcessInstance.overrideFailureGen)
-
-  checkFor("ProcessInstanceProtocol.InvalidCommand", SerializationSpec.ProcessInstance.invalidCommandGen)
-
-  checkFor("ProcessInstanceProtocol.AlreadyReceived", SerializationSpec.ProcessInstance.alreadyReceived)
-
-  checkFor("ProcessInstanceProtocol.TransitionNotEnabled", SerializationSpec.ProcessInstance.transitionNotEnabledGen)
-
-  checkFor("ProcessInstanceProtocol.TransitionFailed", SerializationSpec.ProcessInstance.transitionFailedGen)
-
-  checkFor("ProcessInstanceProtocol.TransitionFired", SerializationSpec.ProcessInstance.transitionFiredGen)
-  
 }
 
 object SerializationSpec {
@@ -200,34 +257,34 @@ object SerializationSpec {
     val finiteDurationGen: Gen[FiniteDuration] = Gen.posNum[Long].map(millis => FiniteDuration(millis, TimeUnit.MILLISECONDS))
     val allTypesRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(AllTypeRecipe.recipe)
 
-    val recipeGen: Gen[CompiledRecipe] = Gen.const(allTypesRecipe)
+    implicit val recipeGen: Gen[CompiledRecipe] = Gen.const(allTypesRecipe)
   }
 
   object Runtime {
 
-    val eventNameGen: Gen[String] = Gen.alphaStr
-    val ingredientNameGen: Gen[String] = Gen.alphaStr
-    val ingredientsGen: Gen[(String, Value)] = GenUtil.tuple(ingredientNameGen, Types.anyValueGen)
+    implicit val eventNameGen: Gen[String] = Gen.alphaStr
+    implicit val ingredientNameGen: Gen[String] = Gen.alphaStr
+    implicit val ingredientsGen: Gen[(String, Value)] = GenUtil.tuple(ingredientNameGen, Types.anyValueGen)
 
-    val runtimeEventGen: Gen[EventInstance] = for {
+    implicit val runtimeEventGen: Gen[EventInstance] = for {
       eventName <- eventNameGen
       ingredients <- Gen.listOf(ingredientsGen)
     } yield EventInstance(eventName, ingredients.toMap)
 
-    val eventMomentsGen: Gen[EventMoment] = for {
+    implicit val eventMomentsGen: Gen[EventMoment] = for {
       eventName <- eventNameGen
       occurredOn <- Gen.posNum[Long]
     } yield EventMoment(eventName, occurredOn)
 
-    val processStateGen: Gen[RecipeInstanceState] = for {
+    implicit val processStateGen: Gen[RecipeInstanceState] = for {
       recipeInstanceId <- recipeInstanceIdGen
       ingredients <- Gen.mapOf(ingredientsGen)
       events <- Gen.listOf(eventMomentsGen)
     } yield RecipeInstanceState(recipeInstanceId, ingredients, events)
 
-    val messagesGen: Gen[AnyRef] = Gen.oneOf(runtimeEventGen, processStateGen)
+    implicit val messagesGen: Gen[AnyRef] = Gen.oneOf(runtimeEventGen, processStateGen)
 
-    val sensoryEventResultGen: Gen[SensoryEventResult] = for {
+    implicit val sensoryEventResultGen: Gen[SensoryEventResult] = for {
       status <- Gen.oneOf(
         SensoryEventStatus.AlreadyReceived,
         SensoryEventStatus.Completed,
@@ -245,32 +302,32 @@ object SerializationSpec {
     import IntermediateLanguage._
     import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 
-    val addRecipeGen: Gen[AddRecipe] = recipeGen.map(AddRecipe)
-    val getRecipeGen: Gen[GetRecipe] = recipeIdGen.map(GetRecipe)
-    val recipeFoundGen: Gen[RecipeFound] = for {
+    implicit val addRecipeGen: Gen[AddRecipe] = recipeGen.map(AddRecipe)
+    implicit val getRecipeGen: Gen[GetRecipe] = recipeIdGen.map(GetRecipe)
+    implicit val recipeFoundGen: Gen[RecipeFound] = for {
       compiledRecipe <- IntermediateLanguage.recipeGen
       timestamp <- timestampGen
     } yield RecipeFound(compiledRecipe, timestamp)
 
 
-    val noRecipeFoundGen: Gen[NoRecipeFound] = recipeIdGen.map(NoRecipeFound)
-    val addRecipeResponseGen: Gen[AddRecipeResponse] = recipeIdGen.map(AddRecipeResponse)
-    val getAllRecipesGen: Gen[GetAllRecipes.type] = Gen.const(GetAllRecipes)
+    implicit val noRecipeFoundGen: Gen[NoRecipeFound] = recipeIdGen.map(NoRecipeFound)
+    implicit val addRecipeResponseGen: Gen[AddRecipeResponse] = recipeIdGen.map(AddRecipeResponse)
+    implicit val getAllRecipesGen: Gen[GetAllRecipes.type] = Gen.const(GetAllRecipes)
 
-    val recipeEntriesGen: Gen[(String, CompiledRecipe)] = GenUtil.tuple(recipeIdGen, recipeGen)
+    implicit val recipeEntriesGen: Gen[(String, CompiledRecipe)] = GenUtil.tuple(recipeIdGen, recipeGen)
 
-    val recipeInformationGen: Gen[RecipeInformation] = for {
+    implicit val recipeInformationGen: Gen[RecipeInformation] = for {
       compiledRecipe <- recipeGen
       timestamp <- timestampGen
     } yield RecipeInformation(compiledRecipe, timestamp)
 
-    val allRecipesGen: Gen[AllRecipes] = Gen.listOf(recipeInformationGen).map(AllRecipes(_))
+    implicit val allRecipesGen: Gen[AllRecipes] = Gen.listOf(recipeInformationGen).map(AllRecipes(_))
 
-    val messagesGen: Gen[AnyRef] = Gen.oneOf(
+    implicit val messagesGen: Gen[AnyRef] = Gen.oneOf(
       addRecipeGen, getRecipeGen, recipeFoundGen, noRecipeFoundGen, addRecipeResponseGen, getAllRecipesGen, allRecipesGen
     )
 
-    val recipeAddedGen: Gen[RecipeAdded] =
+    implicit val recipeAddedGen: Gen[RecipeAdded] =
       for {
         timestamp <- Gen.chooseNum(0l, 20000l)
         recipe <- recipeGen
@@ -282,20 +339,20 @@ object SerializationSpec {
     import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
     import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 
-    val processStatusGen: Gen[ProcessStatus] = Gen.oneOf(Active, Deleted)
-    val createdTimeGen: Gen[Long] = Gen.chooseNum[Long](0, Long.MaxValue)
+    implicit val processStatusGen: Gen[ProcessStatus] = Gen.oneOf(Active, Deleted)
+    implicit val createdTimeGen: Gen[Long] = Gen.chooseNum[Long](0, Long.MaxValue)
 
-    val actorMetadataGen: Gen[ActorMetadata] = for {
+    implicit val actorMetadataGen: Gen[ActorMetadata] = for {
       recipeId <- recipeIdGen
       recipeInstanceId <- recipeInstanceIdGen
       createdTime <- createdTimeGen
       status <- processStatusGen
     } yield ActorMetadata(recipeId, recipeInstanceId, createdTime, status)
 
-    val getIndexGen: Gen[ProcessIndexProtocol.GetIndex.type] = Gen.const(GetIndex)
-    val indexGen: Gen[Index] = Gen.listOf(actorMetadataGen).map(Index(_))
+    implicit val getIndexGen: Gen[ProcessIndexProtocol.GetIndex.type] = Gen.const(GetIndex)
+    implicit val indexGen: Gen[Index] = Gen.listOf(actorMetadataGen).map(Index(_))
 
-    val createProcessGen: Gen[CreateProcess] = for {
+    implicit val createProcessGen: Gen[CreateProcess] = for {
       recipeId <- recipeIdGen
       recipeInstanceId <- recipeInstanceIdGen
     } yield CreateProcess(recipeId, recipeInstanceId)
@@ -306,7 +363,7 @@ object SerializationSpec {
 
     val waitForRetriesGen = Gen.oneOf(true, false)
 
-    def processEventGen(system: ActorSystem): Gen[ProcessEvent] = for {
+    implicit def processEventGen(implicit system: ActorSystem): Gen[ProcessEvent] = for {
       recipeInstanceId <- recipeInstanceIdGen
       event <- Runtime.runtimeEventGen
       correlationId <- Gen.option(recipeInstanceIdGen)
@@ -317,37 +374,57 @@ object SerializationSpec {
         for {
           waitForRetries <- waitForRetriesGen
           receiver = system.actorOf(Props(new SimpleActor))
-        } yield FireSensoryEventReaction.NotifyBoth(waitForRetries, receiver)
+        } yield FireSensoryEventReaction.NotifyBoth(waitForRetries, receiver),
+        for {
+          waitForRetries <- Gen.oneOf(true, false)
+          onEvent <- Gen.alphaStr
+        } yield FireSensoryEventReaction.NotifyOnEvent(waitForRetries, onEvent)
       )
     } yield ProcessEvent(recipeInstanceId, event, correlationId, timeout, reaction)
 
-    val getProcessStateGen: Gen[GetProcessState] = recipeInstanceIdGen.map(GetProcessState)
-    val getCompiledRecipeGen: Gen[GetCompiledRecipe] = recipeInstanceIdGen.map(GetCompiledRecipe)
-    val receivePeriodExpiredGen: Gen[ReceivePeriodExpired] = recipeInstanceIdGen.map(ReceivePeriodExpired)
-    val invalidEventGen: Gen[InvalidEvent] = for {
-      recipeInstanceId <- recipeInstanceIdGen
-      msg <- Gen.alphaStr
-    } yield InvalidEvent(recipeInstanceId, msg)
+    implicit val getProcessStateGen: Gen[GetProcessState] = recipeInstanceIdGen.map(GetProcessState)
+    implicit val getCompiledRecipeGen: Gen[GetCompiledRecipe] = recipeInstanceIdGen.map(GetCompiledRecipe)
 
-    val processDeletedGen: Gen[ProcessDeleted] = recipeInstanceIdGen.map(ProcessDeleted)
-    val noSuchProcessGen: Gen[NoSuchProcess] = recipeInstanceIdGen.map(NoSuchProcess)
-    val processAlreadyExistsGen: Gen[ProcessAlreadyExists] = recipeInstanceIdGen.map(ProcessAlreadyExists)
+    implicit val processDeletedGen: Gen[ProcessDeleted] = recipeInstanceIdGen.map(ProcessDeleted)
+    implicit val noSuchProcessGen: Gen[NoSuchProcess] = recipeInstanceIdGen.map(NoSuchProcess)
+    implicit val processAlreadyExistsGen: Gen[ProcessAlreadyExists] = recipeInstanceIdGen.map(ProcessAlreadyExists)
 
-    val retryBlockedInteractionGen: Gen[RetryBlockedInteraction] = for {
+    implicit val retryBlockedInteractionGen: Gen[RetryBlockedInteraction] = for {
       recipeInstanceId <- recipeInstanceIdGen
       interactionName <- Gen.alphaStr
     } yield RetryBlockedInteraction(recipeInstanceId, interactionName)
 
-    val resolveBlockedInteraction: Gen[ResolveBlockedInteraction] = for {
-      recipeInstanceId <- recipeInstanceIdGen
-      interactionName <- Gen.alphaStr
-      event <- Runtime.runtimeEventGen
-    } yield ResolveBlockedInteraction(recipeInstanceId, interactionName, event)
-
-    val stopRetryingInteractionGen: Gen[StopRetryingInteraction] = for {
+    implicit val stopRetryingInteractionGen: Gen[StopRetryingInteraction] = for {
       recipeInstanceId <- recipeInstanceIdGen
       interactionName <- Gen.alphaStr
     } yield StopRetryingInteraction(recipeInstanceId, interactionName)
+
+    val sensoryEventStatusGen: Gen[SensoryEventStatus] = Gen.oneOf(
+      SensoryEventStatus.AlreadyReceived ,
+      SensoryEventStatus.Completed,
+      SensoryEventStatus.FiringLimitMet,
+      SensoryEventStatus.Received,
+      SensoryEventStatus.ReceivePeriodExpired,
+      SensoryEventStatus.RecipeInstanceDeleted
+    )
+
+    val eventResultGen: Gen[SensoryEventResult] = for {
+        status <- sensoryEventStatusGen
+        events <- Gen.listOf(Gen.alphaStr)
+        ingredients <- Gen.listOf(Runtime.ingredientsGen)
+    } yield SensoryEventResult(status, events, ingredients.toMap)
+
+    implicit val processEventResponse: Gen[ProcessEventResponse] = for {
+      recipeInstanceId <- Gen.alphaStr
+    } yield ProcessEventResponse(recipeInstanceId)
+
+    implicit val processEventCompletedResponse: Gen[ProcessEventCompletedResponse] = for {
+      result <- eventResultGen
+    } yield ProcessEventCompletedResponse(result)
+
+    implicit val processEventReceivedResponse: Gen[ProcessEventReceivedResponse] = for {
+      status <- sensoryEventStatusGen
+    } yield ProcessEventReceivedResponse(status)
 
     /*
     def messagesGen(system: ActorSystem): Gen[AnyRef] = Gen.oneOf(getIndexGen, indexGen, createProcessGen, processEventGen(system),
@@ -356,76 +433,108 @@ object SerializationSpec {
      */
 
 
-    val identifierGen: Gen[String] = Gen.alphaNumStr
+    implicit val identifierGen: Gen[String] = Gen.alphaNumStr
 
-    val timestampGen: Gen[Long] = Gen.chooseNum(100000l, 1000000l)
+    implicit val timestampGen: Gen[Long] = Gen.chooseNum(100000l, 1000000l)
 
-    val getShardIndexGen: Gen[GetShardIndex] =
+    implicit val getShardIndexGen: Gen[GetShardIndex] =
       identifierGen.map(GetShardIndex)
 
-    val actorCreatedGen: Gen[ActorCreated] =
+    implicit val actorCreatedGen: Gen[ActorCreated] =
       for {
         recipeId <- identifierGen
         recipeInstanceId <- identifierGen
         timestamp <- timestampGen
       } yield ActorCreated(recipeId, recipeInstanceId, timestamp)
 
-    val actorActivatedGen: Gen[ActorActivated] =
+    implicit val actorActivatedGen: Gen[ActorActivated] =
       identifierGen.map(ActorActivated)
 
-    val actorPassivatedGen: Gen[ActorPassivated] =
+    implicit val actorPassivatedGen: Gen[ActorPassivated] =
       identifierGen.map(ActorPassivated)
 
-    val actorDeletedGen: Gen[ActorDeleted] =
+    implicit val actorDeletedGen: Gen[ActorDeleted] =
       identifierGen.map(ActorDeleted)
 
-    val resolveBlockedInteractionGen: Gen[ResolveBlockedInteraction] =
+    implicit val resolveBlockedInteractionGen: Gen[ResolveBlockedInteraction] =
       for {
         recipeId <- identifierGen
         recipeInstanceId <- identifierGen
         event <- Runtime.runtimeEventGen
       } yield ResolveBlockedInteraction(recipeId, recipeInstanceId, event)
+
+    implicit val receivePeriodExpiredGen: Gen[ProcessIndexProtocol.FireSensoryEventRejection.ReceivePeriodExpired] =
+      for {
+        recipeInstanceId <- Gen.alphaStr
+      } yield ProcessIndexProtocol.FireSensoryEventRejection.ReceivePeriodExpired(recipeInstanceId)
+
+    implicit val invalidEventGen: Gen[ProcessIndexProtocol.FireSensoryEventRejection.InvalidEvent] =
+      for {
+        recipeInstanceId <- Gen.alphaStr
+        message <- Gen.alphaStr
+      } yield ProcessIndexProtocol.FireSensoryEventRejection.InvalidEvent(recipeInstanceId, message)
+
+    implicit val recipeInstanceDeletedGen: Gen[ProcessIndexProtocol.FireSensoryEventRejection.RecipeInstanceDeleted] =
+      for {
+        recipeInstanceId <- Gen.alphaStr
+      } yield ProcessIndexProtocol.FireSensoryEventRejection.RecipeInstanceDeleted(recipeInstanceId)
+
+    implicit val noSuchRecipeInstanceGen: Gen[ProcessIndexProtocol.FireSensoryEventRejection.NoSuchRecipeInstance] =
+      for {
+        recipeInstanceId <- Gen.alphaStr
+      } yield ProcessIndexProtocol.FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId)
+
+    implicit val alreadyReceivedGen: Gen[ProcessIndexProtocol.FireSensoryEventRejection.AlreadyReceived] =
+      for {
+        recipeInstanceId <- Gen.alphaStr
+        correlationId <- Gen.alphaStr
+      } yield ProcessIndexProtocol.FireSensoryEventRejection.AlreadyReceived(recipeInstanceId, correlationId)
+
+    implicit val firingLimitMetGen: Gen[ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet] =
+      for {
+        recipeInstanceId <- Gen.alphaStr
+      } yield ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet(recipeInstanceId)
+
   }
 
   object ProcessInstance {
 
     import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 
-    val transitionIdGen: Gen[Id] = Gen.posNum[Long]
-    val placeIdGen: Gen[Id] = Gen.posNum[Long]
-    val jobIdGen: Gen[Id] = Gen.posNum[Long]
-    val processStateGen: Gen[RecipeInstanceState] = Runtime.processStateGen
-    val tokenDataGen: Gen[String] = Gen.alphaStr
-    val transitionInputGen: Gen[EventInstance] = Runtime.runtimeEventGen
-    val correlationIdGen: Gen[String] = Gen.uuid.map(_.toString)
+    implicit val transitionIdGen: Gen[Id] = Gen.posNum[Long]
+    implicit val placeIdGen: Gen[Id] = Gen.posNum[Long]
+    implicit val jobIdGen: Gen[Id] = Gen.posNum[Long]
+    implicit val tokenDataGen: Gen[String] = Gen.alphaStr
+    implicit val correlationIdGen: Gen[String] = Gen.uuid.map(_.toString)
 
-    val multiSetGen: Gen[MultiSet[Any]] = Gen.nonEmptyMap[Any, Int](GenUtil.tuple(tokenDataGen, Gen.posNum[Int]))
-    val markingDataGen: Gen[Marking[Id]] = Gen.mapOf(GenUtil.tuple(placeIdGen, multiSetGen))
+    implicit val multiSetGen: Gen[MultiSet[Any]] = Gen.nonEmptyMap[Any, Int](GenUtil.tuple(tokenDataGen, Gen.posNum[Int]))
+    implicit val markingDataGen: Gen[Marking[Id]] = Gen.mapOf(GenUtil.tuple(placeIdGen, multiSetGen))
 
-    val getStateGen: Gen[ProcessInstanceProtocol.GetState.type] = Gen.const(GetState)
-    val stopGen: Gen[Stop] = Gen.oneOf(true, false).map(Stop)
-    val initializeGen: Gen[Initialize] = for {
+    implicit val getStateGen: Gen[ProcessInstanceProtocol.GetState.type] = Gen.const(GetState)
+    implicit val stopGen: Gen[Stop] = Gen.oneOf(true, false).map(Stop)
+    implicit val initializeGen: Gen[Initialize] = for {
       marking <- markingDataGen
-      state <- processStateGen
+      state <- Runtime.processStateGen
     } yield Initialize(marking, state)
 
-    val uninitializedGen: Gen[Uninitialized] = recipeInstanceIdGen.map(Uninitialized)
-    val alreadyInitializedGen: Gen[AlreadyInitialized] = recipeInstanceIdGen.map(AlreadyInitialized)
+    implicit val uninitializedGen: Gen[Uninitialized] = recipeInstanceIdGen.map(Uninitialized)
+    implicit val alreadyInitializedGen: Gen[AlreadyInitialized] = recipeInstanceIdGen.map(AlreadyInitialized)
 
-    val initializedGen: Gen[Initialized] = for {
+    implicit val initializedGen: Gen[Initialized] = for {
       marking <- markingDataGen
-      state <- processStateGen
+      state <- Runtime.processStateGen
     } yield Initialized(marking, state)
 
-    val fireTransitionGen: Gen[FireTransition] = for {
+    implicit val fireTransitionGen: Gen[FireTransition] = for {
       transitionId <- transitionIdGen
-      input <- transitionInputGen
+      input <- Runtime.runtimeEventGen
       correlationId <- Gen.option(correlationIdGen)
     } yield FireTransition(transitionId, input, correlationId)
 
-    val alreadyReceived: Gen[AlreadyReceived] = correlationIdGen.map(AlreadyReceived)
+    implicit val alreadyReceived: Gen[ProcessInstanceProtocol.AlreadyReceived] =
+      correlationIdGen.map(ProcessInstanceProtocol.AlreadyReceived)
 
-    val failureStrategyGen: Gen[ExceptionStrategy] = Gen.oneOf(
+    implicit val failureStrategyGen: Gen[ExceptionStrategy] = Gen.oneOf(
       Gen.const(ExceptionStrategy.BlockTransition),
       Gen.posNum[Long].map(delay => ExceptionStrategy.RetryWithDelay(delay)),
       for {
@@ -434,13 +543,13 @@ object SerializationSpec {
       } yield ExceptionStrategy.Continue(marking, output)
     )
 
-    val exceptionStateGen: Gen[ExceptionState] = for {
+    implicit val exceptionStateGen: Gen[ExceptionState] = for {
       failureCount <- Gen.posNum[Int]
       failureReason <- Gen.alphaStr
       failureStrategy <- failureStrategyGen
     } yield ExceptionState(failureCount, failureReason, failureStrategy)
 
-    val jobStateGen: Gen[JobState] = for {
+    implicit val jobStateGen: Gen[JobState] = for {
       jobId <- jobIdGen
       transitionId <- transitionIdGen
       consumed <- markingDataGen
@@ -448,14 +557,14 @@ object SerializationSpec {
       exceptionState <- Gen.option(exceptionStateGen)
     } yield JobState(jobId, transitionId, consumed, input, exceptionState)
 
-    val instanceStateGen: Gen[InstanceState] = for {
+    implicit val instanceStateGen: Gen[InstanceState] = for {
       sequenceNr <- Gen.posNum[Int]
       marking <- markingDataGen
-      state <- processStateGen
+      state <- Runtime.processStateGen
       jobs <- Gen.mapOf(jobStateGen.map(job => job.id -> job))
     } yield InstanceState(sequenceNr, marking, state, jobs)
 
-    val transitionFiredGen: Gen[TransitionFired] = for {
+    implicit val transitionFiredGen: Gen[TransitionFired] = for {
       jobId <- jobIdGen
       transitionId <- transitionIdGen
       correlationId <- Gen.option(correlationIdGen)
@@ -465,7 +574,7 @@ object SerializationSpec {
       output <- Runtime.runtimeEventGen
     } yield TransitionFired(jobId, transitionId, correlationId, consumed, produced, newJobs, output)
 
-    val transitionFailedGen: Gen[TransitionFailed] = for {
+    implicit val transitionFailedGen: Gen[TransitionFailed] = for {
       jobId <- jobIdGen
       transitionId <- transitionIdGen
       correlationId <- Gen.option(correlationIdGen)
@@ -475,29 +584,26 @@ object SerializationSpec {
       strategy <- failureStrategyGen
     } yield TransitionFailed(jobId, transitionId, correlationId, consume, input, reason, strategy)
 
-    val overrideFailureGen: Gen[OverrideExceptionStrategy] = for {
+    implicit val overrideFailureGen: Gen[OverrideExceptionStrategy] = for {
       jobId <- jobIdGen
       strategy <- failureStrategyGen
     } yield OverrideExceptionStrategy(jobId, strategy)
 
-    val invalidCommandGen: Gen[InvalidCommand] = for {
+    implicit val invalidCommandGen: Gen[InvalidCommand] = for {
       reason <- Gen.alphaStr
     } yield InvalidCommand(reason)
 
-    val transitionNotEnabledGen: Gen[TransitionNotEnabled] = for {
+    implicit val transitionNotEnabledGen: Gen[TransitionNotEnabled] = for {
       transitionId <- transitionIdGen
       reason <- Gen.alphaStr
     } yield TransitionNotEnabled(transitionId, reason)
 
-    val messagesGen: Gen[AnyRef] = Gen.oneOf(getStateGen, stopGen, initializeGen, initializedGen, uninitializedGen,
+    implicit val messagesGen: Gen[AnyRef] = Gen.oneOf(getStateGen, stopGen, initializeGen, initializedGen, uninitializedGen,
       alreadyInitializedGen, fireTransitionGen, transitionFiredGen, transitionFailedGen, transitionNotEnabledGen,
       overrideFailureGen, invalidCommandGen)
   }
 
   object Types {
-
-    import com.ing.baker.types._
-    import com.ing.baker.types.modules.PrimitiveModuleSpec._
 
     val fieldNameGen: Gen[String] = Gen.alphaStr
 
@@ -515,7 +621,7 @@ object SerializationSpec {
     val mapTypeGen: Gen[MapType] = primitiveTypeGen.map(MapType)
     val optionTypeGen: Gen[OptionType] = primitiveTypeGen.map(OptionType)
 
-    val anyTypeGen: Gen[Type] = Gen.oneOf(primitiveTypeGen, recordTypeGen, listTypeGen, mapTypeGen, optionTypeGen)
+    implicit val anyTypeGen: Gen[Type] = Gen.oneOf(primitiveTypeGen, recordTypeGen, listTypeGen, mapTypeGen, optionTypeGen)
 
     val primitiveJavaObjGen: Gen[Any] = Gen.oneOf(
       intGen, langIntegerGen, longGen, langLongGen, shortGen, langShortGen, floatGen, langFloatGen,
@@ -533,9 +639,7 @@ object SerializationSpec {
 
     val recordValueGen: Gen[Value] = Gen.mapOf(recordValueEntries).map(RecordValue)
 
-    val anyValueGen: Gen[Value] = Gen.oneOf(primitiveValuesGen, listValueGen, recordValueGen, nullValueGen)
-
-    val messagesGen: Gen[AnyRef] = Gen.oneOf(anyValueGen, anyTypeGen)
+    implicit val anyValueGen: Gen[Value] = Gen.oneOf(primitiveValuesGen, listValueGen, recordValueGen, nullValueGen)
   }
 
 }

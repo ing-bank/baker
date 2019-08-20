@@ -226,7 +226,7 @@ object ProcessIndexProto {
         } yield ProcessEvent(recipeInstanceId, event, message.correlationId, time, reaction)
     }
 
-  implicit def processEventReceivedResponse: ProtoMap[ProcessEventReceivedResponse, protobuf.ProcessEventReceivedResponse] =
+  implicit def processEventReceivedResponseProto: ProtoMap[ProcessEventReceivedResponse, protobuf.ProcessEventReceivedResponse] =
     new ProtoMap[ProcessEventReceivedResponse, protobuf.ProcessEventReceivedResponse] {
 
       val companion = protobuf.ProcessEventReceivedResponse
@@ -242,7 +242,7 @@ object ProcessIndexProto {
         ).map(ProcessEventReceivedResponse)
     }
 
-  implicit def processEventCompletedResponse: ProtoMap[ProcessEventCompletedResponse, protobuf.ProcessEventCompletedResponse] =
+  implicit def processEventCompletedResponseProto: ProtoMap[ProcessEventCompletedResponse, protobuf.ProcessEventCompletedResponse] =
     new ProtoMap[ProcessEventCompletedResponse, protobuf.ProcessEventCompletedResponse] {
 
       val companion = protobuf.ProcessEventCompletedResponse
@@ -387,7 +387,7 @@ object ProcessIndexProto {
 
       def fromProto(message: protobuf.ProcessDeleted): Try[ProcessDeleted] =
         for {
-          recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
+          recipeInstanceId <- versioned(message.recipeInstanceId, "recipeInstanceId")
         } yield ProcessDeleted(recipeInstanceId)
     }
 

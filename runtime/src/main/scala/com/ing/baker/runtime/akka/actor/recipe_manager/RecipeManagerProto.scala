@@ -107,8 +107,6 @@ object RecipeManagerProto {
 
       val companion = protobuf.GetAllRecipes
 
-      def manifest: String = "RecipeManagerProtocol.GetAllRecipes"
-
       def toProto(a: GetAllRecipes.type): protobuf.GetAllRecipes =
         protobuf.GetAllRecipes()
 
@@ -136,8 +134,6 @@ object RecipeManagerProto {
     new ProtoMap[AllRecipes, protobuf.AllRecipes] {
 
       val companion = protobuf.AllRecipes
-
-      def manifest: String = "RecipeManagerProtocol.AllRecipes"
 
       def toProto(a: AllRecipes): protobuf.AllRecipes =
         protobuf.AllRecipes(a.recipes.map(ctxToProto(_)))
