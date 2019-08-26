@@ -25,14 +25,14 @@ The *name* points to the intended meaning of the data. ("customerData", "orderNu
 
 The *type* sets limits on the form of data that is accepted. (a number, a list of strings, ...)
 
-This type is expressed by the [Baker type system](/sections/reference/baker-types-and-values/).
+This type is expressed by the [Baker type system](../reference/baker-types-and-values/).
 
 ## Interaction
 
 An interaction is similar to a function.
 
-It requires *input* ([ingredients](/sections/reference/main-abstractions/#ingredient-and-ingredientinstance)) and 
-provides *output* ([events](/sections/reference/main-abstractions/#event-and-eventinstance)).
+It requires *input* ([ingredients](../reference/main-abstractions/#ingredient-and-ingredientinstance)) and
+provides *output* ([events](../reference/main-abstractions/#event-and-eventinstance)).
 
 Within this contract it may do anything. For example:
 
@@ -86,7 +86,7 @@ An event has a *name* and can (optionally) provide ingredients.
 
 The purpose of events is therefore twofold.
 
-1. It signifies that something of interest has happened for a [recipe instance](/sections/reference/main-abstractions/#recipe-and-recipeinstance).
+1. It signifies that something of interest has happened for a [recipe instance](../reference/main-abstractions/#recipe-and-recipeinstance).
 
     Example, *"the customer placed the order"*, *"terms and conditions were accepted"*
 
@@ -112,7 +112,7 @@ Both of these are still just instances of the `EventInstance` class, and the dis
 
 Recipes are similar to process blueprints.
 
-Baker provides a [recipe DSL](/sections/reference/dsls/) in which you can declaratively describe your recipe.
+Baker provides a [recipe DSL](../reference/dsls/) in which you can declaratively describe your recipe.
 
 A small example:
 ``` java
@@ -133,5 +133,5 @@ Everything is automatically linked by the *data* requirements of the interaction
 
 After adding the dependencies you can continue to:
 
-* Go through the [development life cycle section](/sections/development-life-cycle/design-a-recipe) if you like learning by doing;
-* Go through the [reference section](/sections/reference/main-abstractions) if you like learning by description.
+* Go through the [development life cycle section](../development-life-cycle/design-a-recipe) if you like learning by doing;
+* Go through the [reference section](../reference/main-abstractions) if you like learning by description.

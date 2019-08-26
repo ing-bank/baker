@@ -23,7 +23,7 @@ This is a short description of the execution loop of a `RecipeInstance`
 This section explains deeply how `ProcessInstances` work, and how they execute your recipes. You don't have to understand
 this part to develop with Baker. It is just extra documentation for the curious and the contributors.
 
-A recipe can be represented (and [visualized](/sections/reference/visualization/)) as a graph, which is actually a higher 
+A recipe can be represented (and [visualized](../../reference/visualization/)) as a graph, which is actually a higher
 level representation of a [Petri net](https://en.wikipedia.org/wiki/Petri_net) (which is also a graph). When the process
 is represented as such it enables the `RecipeInstance` to execute the previously described execution loop, because Baker has
 your process state as a data structure that can be preserved as the state of the `RecipeInstance`. That is why you need
