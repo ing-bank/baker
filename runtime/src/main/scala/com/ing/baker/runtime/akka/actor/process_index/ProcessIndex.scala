@@ -187,7 +187,12 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
     case Terminated(actorRef) =>
       val recipeInstanceId = actorRef.path.name
 
-      log.logWithMDC(Logging.DebugLevel, s"Actor terminated: $actorRef", Map("RecipeInstanceId" -> recipeInstanceId))
+      val mdc = Map(
+        "processId" -> recipeInstanceId,
+        "recipeInstanceId" -> recipeInstanceId,
+      )
+
+      log.logWithMDC(Logging.DebugLevel, s"Actor terminated: $actorRef", mdc)
 
       index.get(recipeInstanceId) match {
         case Some(meta) if shouldDelete(meta) =>
@@ -195,11 +200,11 @@ class ProcessIndex(recipeInstanceIdleTimeout: Option[FiniteDuration],
             index.update(recipeInstanceId, meta.copy(processStatus = Deleted))
           }
         case Some(meta) if meta.isDeleted =>
-          log.logWithMDC(Logging.WarningLevel, s"Received Terminated message for already deleted process: ${meta.recipeInstanceId}", Map("RecipeInstanceId" -> recipeInstanceId))
+          log.logWithMDC(Logging.WarningLevel, s"Received Terminated message for already deleted process: ${meta.recipeInstanceId}", mdc)
         case Some(_) =>
           persist(ActorPassivated(recipeInstanceId)) { _ => }
         case None =>
-          log.logWithMDC(Logging.WarningLevel, s"Received Terminated message for non indexed actor: $actorRef", Map("RecipeInstanceId" -> recipeInstanceId))
+          log.logWithMDC(Logging.WarningLevel, s"Received Terminated message for non indexed actor: $actorRef", mdc)
       }
 
     case CreateProcess(recipeId, recipeInstanceId) =>

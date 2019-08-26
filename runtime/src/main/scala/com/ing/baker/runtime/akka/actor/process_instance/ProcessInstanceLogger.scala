@@ -1,6 +1,7 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
 import akka.event.{DiagnosticLoggingAdapter, Logging}
+import com.ing.baker.il.petrinet.Transition
 
 import scala.concurrent.duration._
 import com.ing.baker.runtime.akka.actor.Util.logging._
@@ -28,10 +29,11 @@ object ProcessInstanceLogger {
       val msg = s"Process history successfully deleted (up to event sequence $toSequenceNr), stopping the actor"
 
       val mdc = Map(
-        "RecipeInstanceId" -> recipeInstanceId
+        "processId" -> recipeInstanceId,
+        "recipeInstanceId" -> recipeInstanceId
       )
 
-      log.logWithMDC(Logging.DebugLevel, msg, mdc)
+      log.logWithMDC(Logging.InfoLevel, msg, mdc)
     }
 
 
@@ -39,86 +41,93 @@ object ProcessInstanceLogger {
       val msg = s"Process events are requested to be deleted up to $toSequenceNr sequence number, but delete operation failed."
 
       val mdc = Map(
-        "RecipeInstanceId" -> recipeInstanceId
+        "processId" -> recipeInstanceId,
+        "recipeInstanceId" -> recipeInstanceId
       )
 
       log.errorWithMDC(msg, mdc, cause)
     }
 
-    def transitionFired(recipeInstanceId: String, transitionId: String, jobId: Long, timeStarted: Long, timeCompleted: Long) = {
+    def transitionFired(recipeInstanceId: String, transition: Transition, jobId: Long, timeStarted: Long, timeCompleted: Long) = {
 
       val mdc = Map(
         "processEvent" -> "TransitionFired",
-        "RecipeInstanceId" -> recipeInstanceId,
+        "processId" -> recipeInstanceId,
+        "recipeInstanceId" -> recipeInstanceId,
         "jobId" -> jobId,
-        "transitionId" -> transitionId,
+        "transitionId" -> transition.label,
         "timeStarted" -> timeStarted,
         "timeCompleted" -> timeCompleted,
         "duration" -> (timeCompleted - timeStarted)
       )
 
-      val msg = s"Transition '$transitionId' successfully fired"
-
-      log.logWithMDC(Logging.DebugLevel, msg, mdc)
+      val msg = s"Transition '${transition.label}' successfully fired"
+      log.logWithMDC(Logging.InfoLevel, msg, mdc)
     }
 
-    def transitionFailed(recipeInstanceId: String, transitionId: String, jobId: Long, timeStarted: Long, timeFailed: Long, failureReason: String) {
+    def transitionFailed(recipeInstanceId: String, transition: Transition, jobId: Long, timeStarted: Long, timeFailed: Long, failureReason: String) {
       val mdc = Map(
         "processEvent" -> "TransitionFailed",
-        "RecipeInstanceId" -> recipeInstanceId,
+        "processId" -> recipeInstanceId,
+        "recipeInstanceId" -> recipeInstanceId,
         "timeStarted" -> timeStarted,
         "timeFailed" -> timeFailed,
         "duration" -> (timeFailed - timeStarted),
-        "transitionId" -> transitionId,
+        "transitionId" -> transition.label,
         "failureReason" -> failureReason
       )
 
-      val msg = s"Transition '$transitionId' failed with: $failureReason"
-
+      val msg = s"Transition '${transition.label}' failed with: $failureReason"
       log.logWithMDC(Logging.ErrorLevel, msg, mdc)
     }
 
-    def firingTransition(recipeInstanceId: String, jobId: Long, transitionId: String, timeStarted: Long): Unit = {
+    def firingTransition(recipeInstanceId: String, jobId: Long, transition: Transition, timeStarted: Long): Unit = {
       val mdc = Map(
         "processEvent" -> "FiringTransition",
-        "RecipeInstanceId" -> recipeInstanceId,
+        "processId" -> recipeInstanceId,
+        "recipeInstanceId" -> recipeInstanceId,
         "jobId" -> jobId,
-        "transitionId" -> transitionId,
+        "transitionId" -> transition.label,
         "timeStarted" -> timeStarted
       )
-      val msg = s"Firing transition $transitionId"
-
-      log.logWithMDC(Logging.DebugLevel, msg, mdc)
+      val msg = s"Firing transition ${transition.label}"
+      log.logWithMDC(Logging.InfoLevel, msg, mdc)
     }
 
-    def idleStop(recipeInstanceId: String, idleTTL: FiniteDuration)  {
-      val mdc = Map("RecipeInstanceId" -> recipeInstanceId)
+    def idleStop(recipeInstanceId: String, idleTTL: FiniteDuration) {
+      val mdc = Map(
+        "recipeInstanceId" -> recipeInstanceId,
+        "processId" -> recipeInstanceId,
+      )
       val msg = s"Instance was idle for $idleTTL, stopping the actor"
 
-      log.logWithMDC(Logging.DebugLevel, msg, mdc)
+      log.logWithMDC(Logging.InfoLevel, msg, mdc)
     }
 
-    def fireTransitionRejected(recipeInstanceId: String, transitionId: String, rejectReason: String) {
+    def fireTransitionRejected(recipeInstanceId: String, transition: Transition, rejectReason: String) {
       val mdc = Map(
         "processEvent" -> "FireTransitionRejected",
-        "RecipeInstanceId" -> recipeInstanceId,
-        "transitionId" -> transitionId,
+        "processId" -> recipeInstanceId,
+        "recipeInstanceId" -> recipeInstanceId,
+        "transitionId" -> transition.label,
         "rejectReason" -> rejectReason)
 
-      val msg = s"Not Firing Transition '$transitionId' because: $rejectReason"
+      val msg = s"Not Firing Transition '${transition.label}' because: $rejectReason"
 
       log.logWithMDC(Logging.WarningLevel, msg, mdc)
     }
 
-    def scheduleRetry(recipeInstanceId: String, transitionId: String, delay: Long) {
+    def scheduleRetry(recipeInstanceId: String, transition: Transition, delay: Long) {
       val mdc = Map(
         "processEvent" -> "TransitionRetry",
-        "RecipeInstanceId" -> recipeInstanceId,
-        "transitionId" -> transitionId)
+        "processId" -> recipeInstanceId,
+        "recipeInstanceId" -> recipeInstanceId,
+        "transitionId" -> transition.label)
 
-      val msg = s"Scheduling a retry of transition '$transitionId' in ${durationFormatter.print(new org.joda.time.Period(delay))}"
+      val msg = s"Scheduling a retry of transition '${transition.label}' in ${durationFormatter.print(new org.joda.time.Period(delay))}"
 
       log.logWithMDC(Logging.InfoLevel, msg, mdc)
     }
   }
+
 }
