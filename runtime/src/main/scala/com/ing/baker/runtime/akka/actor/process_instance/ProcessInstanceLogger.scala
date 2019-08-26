@@ -62,13 +62,7 @@ object ProcessInstanceLogger {
       )
 
       val msg = s"Transition '${transition.label}' successfully fired"
-
       log.logWithMDC(Logging.InfoLevel, msg, mdc)
-
-      if(log.isDebugEnabled) {
-        val debugMSG = s"Transition '${transition.toString}' successfully fired"
-        log.logWithMDC(Logging.DebugLevel, debugMSG, mdc)
-      }
     }
 
     def transitionFailed(recipeInstanceId: String, transition: Transition, jobId: Long, timeStarted: Long, timeFailed: Long, failureReason: String) {
@@ -84,13 +78,7 @@ object ProcessInstanceLogger {
       )
 
       val msg = s"Transition '${transition.label}' failed with: $failureReason"
-
       log.logWithMDC(Logging.ErrorLevel, msg, mdc)
-
-      if(log.isDebugEnabled) {
-        val debugMSG = s"Transition '${transition.toString}' failed with: $failureReason"
-        log.logWithMDC(Logging.DebugLevel, debugMSG, mdc)
-      }
     }
 
     def firingTransition(recipeInstanceId: String, jobId: Long, transition: Transition, timeStarted: Long): Unit = {
@@ -103,16 +91,10 @@ object ProcessInstanceLogger {
         "timeStarted" -> timeStarted
       )
       val msg = s"Firing transition ${transition.label}"
-
       log.logWithMDC(Logging.InfoLevel, msg, mdc)
-
-      if(log.isDebugEnabled) {
-        val debugMSG = s"Firing transition ${transition.toString}"
-        log.logWithMDC(Logging.DebugLevel, debugMSG, mdc)
-      }
     }
 
-    def idleStop(recipeInstanceId: String, idleTTL: FiniteDuration)  {
+    def idleStop(recipeInstanceId: String, idleTTL: FiniteDuration) {
       val mdc = Map(
         "recipeInstanceId" -> recipeInstanceId,
         "processId" -> recipeInstanceId,
@@ -147,4 +129,5 @@ object ProcessInstanceLogger {
       log.logWithMDC(Logging.InfoLevel, msg, mdc)
     }
   }
+
 }
