@@ -1042,7 +1042,7 @@ classes or interfaces.</p>
 </pre></div></div>
 </div>
 <h2 id="events">Events</h2>
-<p><a href="/sections/reference/main-abstractions/#event-and-eventinstance">Events</a> are simple <code>POJO</code> classes. For example:</p>
+<p><a href="../../reference/main-abstractions/#event-and-eventinstance">Events</a> are simple <code>POJO</code> classes. For example:</p>
 <div class="superfences-tabs">
 <input name="__tabs_2" type="radio" id="__tab_2_0" checked="checked" />
 <label for="__tab_2_0">Scala</label>
@@ -1060,12 +1060,12 @@ classes or interfaces.</p>
 </pre></div></div>
 </div>
 <p>The field types of the <code>POJO</code> class must be compatible with the baker type system.</p>
-<p>See the <a href="/sections/reference/baker-types-and-values/#primitives">supported types</a> for more information.</p>
+<p>See the <a href="../../reference/baker-types-and-values/#primitives">supported types</a> for more information.</p>
 <p>The names of the fields are obtained using reflection.</p>
 <p>They can be added using the <code>.withSensoryEvents(..)</code> method.</p>
 <h3 id="firing-limit">Firing limit</h3>
 <p>A <em>firing limit</em> is a limit on the number of times a sensory event may be received by a 
-<a href="/sections/reference/main-abstractions/#recipe-and-recipeinstance">recipe instance</a>.</p>
+<a href="../../reference/main-abstractions/#recipe-and-recipeinstance">recipe instance</a>.</p>
 <p>By default sensory events have a firing limit of <code>1</code> per process instance.</p>
 <p>This means the event will be rejected with status <code>FiringLimitMet</code> after the first time it is received.</p>
 <p>If you want to send an event more then once you may add it like this:</p>
@@ -1074,7 +1074,7 @@ classes or interfaces.</p>
 
 <p>In this example the <code>CustomerInfoReceived</code> can now be received multiple times by a process instance.</p>
 <h2 id="interactions">Interactions</h2>
-<p>Interactions are interfaces with some requirements. See <a href="/sections/development-life-cycle/design-a-recipe/#interactions">here</a> how to define them.</p>
+<p>Interactions are interfaces with some requirements. See <a href="../../development-life-cycle/design-a-recipe/#interactions">here</a> how to define them.</p>
 <p>You can include interactions in your recipe using the static <code>of(..)</code> method.</p>
 <div class="codehilite"><pre><span></span><span class="kn">import static</span> <span class="nn">com.ing.baker.recipe.javadsl.InteractionDescriptor.of</span><span class="o">;</span>
 
@@ -1095,7 +1095,7 @@ classes or interfaces.</p>
 </pre></div>
 
 <h3 id="predefining-ingredients">Predefining ingredients</h3>
-<p>An interaction normally requires all its input ingredients to be provided from <a href="/sections/reference/main-abstractions/#event-and-eventinstance">Events</a>.</p>
+<p>An interaction normally requires all its input ingredients to be provided from <a href="../../reference/main-abstractions/#event-and-eventinstance">Events</a>.</p>
 <p>Sometimes however it is useful to <em>predefine</em> (or <em>hard code</em>) the value of an ingredient.</p>
 <p>For example:</p>
 <ul>
@@ -1148,7 +1148,7 @@ classes or interfaces.</p>
 <p>This option is suitable for non idempotent interactions that cannot be retried.</p>
 <p>When an exception is thrown from the interaction the interaction is <em>blocked</em>.</p>
 <p>This means that the interaction cannot execute again automatically.</p>
-<p>It requires <a href="/sections/development-life-cycle/resolve-failed-recipe-instances/">manual intervening</a> to continue the process from then on.</p>
+<p>It requires <a href="../../development-life-cycle/resolve-failed-recipe-instances/">manual intervening</a> to continue the process from then on.</p>
 <h4 id="fire-event">Fire event</h4>
 <p>This option is analagous to a <code>try { } catch { }</code> in code. When an exception is raised from the interaction you specify an
 event to fire. So instead of failing the process continues.</p>

@@ -743,11 +743,11 @@
 <p>An ingredient is defined by a <em>name</em> and <em>type</em>.</p>
 <p>The <em>name</em> points to the intended meaning of the data. ("customerData", "orderNumber", ...)</p>
 <p>The <em>type</em> sets limits on the form of data that is accepted. (a number, a list of strings, ...)</p>
-<p>This type is expressed by the <a href="/sections/reference/baker-types-and-values/">Baker type system</a>.</p>
+<p>This type is expressed by the <a href="../reference/baker-types-and-values/">Baker type system</a>.</p>
 <h2 id="interaction">Interaction</h2>
 <p>An interaction is similar to a function.</p>
-<p>It requires <em>input</em> (<a href="/sections/reference/main-abstractions/#ingredient-and-ingredientinstance">ingredients</a>) and 
-provides <em>output</em> (<a href="/sections/reference/main-abstractions/#event-and-eventinstance">events</a>).</p>
+<p>It requires <em>input</em> (<a href="../reference/main-abstractions/#ingredient-and-ingredientinstance">ingredients</a>) and
+provides <em>output</em> (<a href="../reference/main-abstractions/#event-and-eventinstance">events</a>).</p>
 <p>Within this contract it may do anything. For example:</p>
 <ul>
 <li>query an external system</li>
@@ -801,7 +801,7 @@ provides <em>output</em> (<a href="/sections/reference/main-abstractions/#event-
 <p>The purpose of events is therefore twofold.</p>
 <ol>
 <li>
-<p>It signifies that something of interest has happened for a <a href="/sections/reference/main-abstractions/#recipe-and-recipeinstance">recipe instance</a>.</p>
+<p>It signifies that something of interest has happened for a <a href="../reference/main-abstractions/#recipe-and-recipeinstance">recipe instance</a>.</p>
 <p>Example, <em>"the customer placed the order"</em>, <em>"terms and conditions were accepted"</em></p>
 </li>
 <li>
@@ -824,7 +824,7 @@ provides <em>output</em> (<a href="/sections/reference/main-abstractions/#event-
 <h2 id="recipe"><strong>Recipe</strong></h2>
 <p><em>Events</em>, <em>Interactions</em> and <em>Ingredients</em> can be composed into recipes.</p>
 <p>Recipes are similar to process blueprints.</p>
-<p>Baker provides a <a href="/sections/reference/dsls/">recipe DSL</a> in which you can declaratively describe your recipe.</p>
+<p>Baker provides a <a href="../reference/dsls/">recipe DSL</a> in which you can declaratively describe your recipe.</p>
 <p>A small example:
 <div class="codehilite"><pre><span></span><span class="k">new</span> <span class="n">Recipe</span><span class="o">(</span><span class="s">&quot;webshop&quot;</span><span class="o">)</span>
     <span class="o">.</span><span class="na">withSensoryEvents</span><span class="o">(</span>
@@ -839,8 +839,8 @@ provides <em>output</em> (<a href="/sections/reference/main-abstractions/#event-
 <h2 id="continuing-from-here">Continuing from here</h2>
 <p>After adding the dependencies you can continue to:</p>
 <ul>
-<li>Go through the <a href="/sections/development-life-cycle/design-a-recipe">development life cycle section</a> if you like learning by doing;</li>
-<li>Go through the <a href="/sections/reference/main-abstractions">reference section</a> if you like learning by description.</li>
+<li>Go through the <a href="../development-life-cycle/design-a-recipe">development life cycle section</a> if you like learning by doing;</li>
+<li>Go through the <a href="../reference/main-abstractions">reference section</a> if you like learning by description.</li>
 </ul>
                 
                   

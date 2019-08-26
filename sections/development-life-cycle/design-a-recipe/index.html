@@ -744,9 +744,9 @@ of items.</p>
 <p>Depending on your programming language, you might want to import the corresponding dsl, i.e. <code>scaladsl</code> vs <code>javadsl</code>.</p>
 <p>Ingredients and events are just data structures that describe your process data, carrying not just the names, but
 also the type information, for example <code>Ingredient[String]("order-id")</code> creates an ingredient of name "order-id"
-of type "String", for more information about Baker types please refer to <a href="/sections/reference/baker-types-and-values/">this section</a>. 
+of type "String", for more information about Baker types please refer to <a href="../../reference/baker-types-and-values/">this section</a>.
 As shown in the code, events might carry ingredients, and have a maximum about of times they are allowed to fire, the 
-runtime will enforce this limit. For more information about this and other features of events please refer to <a href="/sections/reference/dsls/#events">this section</a>.</p>
+runtime will enforce this limit. For more information about this and other features of events please refer to <a href="../../reference/dsls/#events">this section</a>.</p>
 <h2 id="interactions">Interactions</h2>
 <p>Then, the desired actions can be modeled as <code>interactions</code>, in our case we are told that it exists a warehouse service 
 which we need to call to reserve the items, but this might either succeed or fail.</p>
@@ -851,7 +851,7 @@ your business process in an asynchronous manner.</p>
 <p>This was a simple example, but you might have already concluded that this can be further composed into bigger processes by
 making new interactions that require events and ingredients which are output of previous interactions. </p>
 <p>You can create also interactions which take no input ingredients but are executed after events (with or without provided 
-ingredients) are fired, for this and other features please refer to the conceptual documentation found <a href="/sections/reference/dsls/#events">here</a>.</p>
+ingredients) are fired, for this and other features please refer to the conceptual documentation found <a href="../../reference/dsls/#events">here</a>.</p>
 <h2 id="the-recipe">The Recipe</h2>
 <p>The final step is to create an object that will hold all of these descriptions into what we call a Recipe, this becomes
 the "blueprint" of your process, it can define failure handling strategies, and will "auto-bind" the interactions, that 

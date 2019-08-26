@@ -729,7 +729,7 @@ transfer recipes and data between nodes and to match over such data, that is why
 They help not just to model your domain, but also for Baker to identify when to execute interactions. </p>
 <p>If you are using all of our reflection APIs then you will not use them directly, but it is good to know of their 
 existence.</p>
-<p>Full documentation about the type system can be found <a href="/sections/reference/baker-types-and-values/">here</a>.</p>
+<p>Full documentation about the type system can be found <a href="../../reference/baker-types-and-values/">here</a>.</p>
 <div class="superfences-tabs">
 <input name="__tabs_1" type="radio" id="__tab_1_0" checked="checked" />
 <label for="__tab_1_0">Scala</label>
@@ -780,7 +780,7 @@ events that come from "outside" of your recipe and are normally used to start yo
 <p>For a <code>Recipe</code> there exist <code>Events</code> which are a name, a set of <code>Ingredients</code> and a maximum amount of firings; the 
 <code>maxFiringLimit</code> is a property which describes the number of times an event is allowed to fire, this is later on
 enforced by the Baker runtime. To know more about firing limits and all the other configurable properties, please 
-refer to the <a href="/sections/reference/dsls/">DSLs documentation</a>.</p>
+refer to the <a href="../../reference/dsls/">DSLs documentation</a>.</p>
 <p>For a <code>RecipeInstance</code> there exist <code>EventInstance</code>s which are data structures that must match their interface equivalent
 declared as <code>Events</code> on the <code>Recipe</code>. They notify a baker <code>RecipeInstance</code> of an actual happening and may carry <code>Ingredient</code>
 values; the baker <code>RecipeInstance</code> will then use available <code>Ingredients</code> to execute <code>InteractionInstance</code>s.</p>
@@ -842,7 +842,7 @@ values; the baker <code>RecipeInstance</code> will then use available <code>Ingr
 </div>
 <p>To fire a <code>SensoryEvent</code> use the <code>bakerRuntime.fireEvent(recipeInstanceId, event)</code> API variations, 
 after creating the baker runtime, adding your recipe to the runtime and <code>baking</code> a <code>RecipeInstance</code>. For full 
-documentation on this please refer to the <a href="/sections/reference/runtime/">runtime documentation</a>.</p>
+documentation on this please refer to the <a href="../../reference/runtime/">runtime documentation</a>.</p>
 <div class="superfences-tabs">
 <input name="__tabs_4" type="radio" id="__tab_4_0" checked="checked" />
 <label for="__tab_4_0">Scala</label>
@@ -904,7 +904,7 @@ contract it may do anything. For example:</p>
 <p>For a <code>Recipe</code> there exist <code>Interactions</code> which are a name, a sequence of <code>Ingredients</code> describing all the input (all of),
 and a sequence of <code>Events</code> describing the <em>possible</em> event outputs (one of). At the recipe level there are several more 
 specifics that can be configured, like requiring events without ingredients, adding predefined ingredients, overriding
-ingredient names, or handling unexpected failure, for these please refer to the <a href="/sections/reference/dsls/">DSLs documentation</a>.</p>
+ingredient names, or handling unexpected failure, for these please refer to the <a href="../../reference/dsls/">DSLs documentation</a>.</p>
 <p>For a <code>RecipeInstance</code> there exist <code>InteractionInstance</code>s which are a name, an input type description, and an implementation
 of a method/function that will be called when the interaction is executed. The input name and the input type description 
 is used by the Baker runtime to find the correct <code>InteractionImplementation</code> to execute when the <code>Ingredients</code> are available.</p>

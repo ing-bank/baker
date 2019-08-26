@@ -638,15 +638,23 @@ you to save data into a data store if you want to restore state or move it aroun
 <a href="https://doc.akka.io/docs/akka/current/persistence.html">Akka's Persistence</a>, and even though you don't need to know how
 it works, we recommend understanding the implications of it, specially when it comes to configuring and choosing the underlying 
 data store. </p>
-<p>The two main categories you have is local vs distributed, the former being used mainly for testing, and the latter for
-production grade clusters, more specifically if you are going to use Baker on cluster mode, you NEED a distributed data store
-for Baker to work as expected. We recommend the usage of Cassandra, since it is the store the team has tested and used on 
-production.</p>
+<p>The two main categories you have is local vs distributed, the former being used mainly for testing which require no extra 
+configuration, and the latter for production grade clusters, more specifically if you are going to use Baker on cluster 
+mode, you NEED a distributed data store for Baker to work as expected. We recommend the usage of Cassandra, since it is 
+the store the team has tested and used on production, for such you need to use a 
+<a href="https://doc.akka.io/docs/akka-persistence-cassandra/current/index.html">plugin like this one.</a></p>
 <h2 id="configuration-examples">Configuration examples</h2>
 <p><code>application.conf</code></p>
 <div class="superfences-tabs">
 <input name="__tabs_1" type="radio" id="__tab_1_0" checked="checked" />
-<label for="__tab_1_0">Local Store</label>
+<label for="__tab_1_0">Local non-cluster</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">include</span> <span class="s2">&quot;</span><span class="s">baker.conf</span><span class="s2">&quot;</span>
+
+<span class="nv">akka</span>.<span class="nv">cluster</span>.<span class="nv">sharding</span>.<span class="nv">state</span><span class="o">-</span><span class="nv">store</span><span class="o">-</span><span class="nv">mode</span> <span class="o">=</span> <span class="nv">persistence</span>
+<span class="nv">akka</span>.<span class="nv">actor</span>.<span class="nv">allow</span><span class="o">-</span><span class="nv">java</span><span class="o">-</span><span class="nv">serialization</span> <span class="o">=</span> <span class="nv">off</span>
+</pre></div></div>
+<input name="__tabs_1" type="radio" id="__tab_1_1" />
+<label for="__tab_1_1">Cluster with distributed store</label>
 <div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">include</span> <span class="s">&quot;baker.conf&quot;</span>
 
 <span class="n">service</span> <span class="p">{</span>
@@ -687,8 +695,10 @@ production.</p>
   <span class="p">}</span>
 
   <span class="n">persistence</span> <span class="p">{</span>
-    <span class="n">journal</span><span class="p">.</span><span class="n">plugin</span> <span class="o">=</span> <span class="s">&quot;inmemory-journal&quot;</span>
-    <span class="n">snapshot</span><span class="o">-</span><span class="n">store</span><span class="p">.</span><span class="n">plugin</span> <span class="o">=</span> <span class="s">&quot;inmemory-snapshot-store&quot;</span>
+    <span class="cp"># See https:</span><span class="c1">//doc.akka.io/docs/akka-persistence-cassandra/current/journal.html#configuration</span>
+    <span class="n">journal</span><span class="p">.</span><span class="n">plugin</span> <span class="o">=</span> <span class="s">&quot;cassandra-journal&quot;</span>
+    <span class="cp"># See https:</span><span class="c1">//doc.akka.io/docs/akka-persistence-cassandra/current/snapshots.html#configuration</span>
+    <span class="n">snapshot</span><span class="o">-</span><span class="n">store</span><span class="p">.</span><span class="n">plugin</span> <span class="o">=</span> <span class="s">&quot;cassandra-snapshot-store&quot;</span>
   <span class="p">}</span>
 
   <span class="n">remote</span> <span class="p">{</span>
@@ -709,10 +719,6 @@ production.</p>
     <span class="k">auto</span><span class="o">-</span><span class="n">down</span><span class="o">-</span><span class="n">unreachable</span><span class="o">-</span><span class="n">after</span> <span class="o">=</span> <span class="mi">10</span><span class="n">s</span>
   <span class="p">}</span>
 <span class="p">}</span>
-</pre></div></div>
-<input name="__tabs_1" type="radio" id="__tab_1_1" />
-<label for="__tab_1_1">Distributed Store</label>
-<div class="superfences-content"><div class="codehilite"><pre><span></span>
 </pre></div></div>
 </div>
                 

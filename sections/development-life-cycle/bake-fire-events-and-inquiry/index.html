@@ -785,7 +785,7 @@ creating a <code>RecipeInstance</code>.</p>
 <p><em>Note: In an Akka-cluster-based Baker, these <code>RecipeInstances</code> are also automatically distributed over nodes, and the 
 cluster will ensure that there is 1 <code>RecipeInstance</code> running on 1 node, and if the node dies, it will detect it and 
 restore the <code>RecipeInstance</code> in another available node, for this you need to configure an underlying distributed store;
-for more on this please refer to the <a href="/sections/development-life-cycle/configure/">configuration section</a> and the <a href="/sections/reference/runtime/">runtime section</a>.</em></p>
+for more on this please refer to the <a href="../../development-life-cycle/configure/">configuration section</a> and the <a href="../../reference/runtime/">runtime section</a>.</em></p>
 <div class="superfences-tabs">
 <input name="__tabs_2" type="radio" id="__tab_2_0" checked="checked" />
 <label for="__tab_2_0">Scala</label>
@@ -970,7 +970,7 @@ contains all the event names with timestamps that have executed, and the current
 for the next <code>InteractionInstances</code> to consume.</p>
 <h3 id="recipe-instance-state-visualizations">Recipe Instance State Visualizations</h3>
 <p>Another method of fetching state is the visual representation of it. You can do that with the <code>Baker.getVisualState(recipeInstanceId)</code>
-API. This will return a GraphViz string like the <a href="/sections/development-life-cycle/use-visualizations/">visualization api</a> that you can convert into an image.</p>
+API. This will return a GraphViz string like the <a href="../../development-life-cycle/use-visualizations/">visualization api</a> that you can convert into an image.</p>
 <p>Here is a visualization of the state of another webshop example, one can clearly see that the process is flowing correctly
 without failures and that it is still waiting for the payment sensory event to be fired.</p>
 <p><img alt="" src="../../../images/webshop-state-1.svg" /></p>
