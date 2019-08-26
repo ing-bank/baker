@@ -15,8 +15,8 @@ The Baker runtime on the other hand runs instances of the `Recipe` across a clus
 ### Baker allows you to
 
 - *Declaratively* design your business processes using a [recipe Domain Specific Language (DSL)](sections/reference/dsls).
-- [Visualize](sections/reference/visualization.md) your recipe allowing product owners, architects and developers to talk the same language.
-- Manage your recipes using the [Baker runtime](sections/reference/runtime.md).
+- [Visualize](sections/reference/visualization) your recipe allowing product owners, architects and developers to talk the same language.
+- Manage your recipes using the [Baker runtime](sections/reference/runtime).
 - [Create process instances](sections/development-life-cycle/bake-fire-events-and-inquiry#bake) of your recipes.
 - [Fire sensory events](sections/development-life-cycle/bake-fire-events-and-inquiry#fire-events).
 - [Inquire the state](sections/development-life-cycle/bake-fire-events-and-inquiry#inquiry) of your recipe instances.

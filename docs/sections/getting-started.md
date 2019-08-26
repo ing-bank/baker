@@ -39,9 +39,9 @@ An explanation of the baker modules.
 
 | Module | Description |
 | --- | --- |
-| recipe-dsl | [DSL](/sections/reference/dsls/) to describe your recipes (process blueprints) *declaritively* |
-| runtime | [Runtime](/sections/reference/runtime/) based on [akka](htts://www.akka.io) to manage and execute your recipes |
-| compiler | [Compiles your recipe](/sections/reference/runtime/#recipecompilercompilerecipe) description into a model that the runtime can execute |
+| recipe-dsl | [DSL](../reference/dsls) to describe your recipes (process blueprints) *declaritively* |
+| runtime | [Runtime](../reference/runtime/) based on [akka](https://www.akka.io) to manage and execute your recipes |
+| compiler | [Compiles your recipe](../reference/runtime/#recipecompilercompilerecipe) description into a model that the runtime can execute |
 | intermediate-language | Recipe and Petri Net model that the runtime can execute |
 
 This is the dependency graph between the modules.
@@ -52,6 +52,6 @@ This is the dependency graph between the modules.
 
 After adding the dependencies you can continue to:
 
-1. Understand the [high level concepts](/sections/concepts).
-2. If you like learning by doing, go through the [development life cycle section](/sections/development-life-cycle/design-a-recipe).
-3. If you like learning by description, go through the [reference section](/sections/reference/main-abstractions).
+1. Understand the [high level concepts](../concepts).
+2. If you like learning by doing, go through the [development life cycle section](../development-life-cycle/design-a-recipe).
+3. If you like learning by description, go through the [reference section](../reference/main-abstractions).

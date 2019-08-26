@@ -57,4 +57,4 @@ the Webshop recipe that we designed on the last section looks like this:
 
 ![](../../images/webshop-example-1.svg)
 
-For complete documentation of how to configure the visualization, refer to [this section](/sections/reference/visualization/).
+For complete documentation of how to configure the visualization, refer to [this section](../../reference/visualization/).
