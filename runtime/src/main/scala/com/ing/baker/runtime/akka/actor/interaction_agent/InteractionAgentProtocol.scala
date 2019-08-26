@@ -4,15 +4,16 @@ import akka.remote.ContainerFormats.ActorRef
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}
 
-class InteractionAgentProtocol {
-  sealed trait ProcessIndexMessage extends BakerSerializable
+object InteractionAgentProtocol {
+
+  sealed trait InteractionAgentMessage extends BakerSerializable
 
   case class Register(interactionAgentDescriptor: InteractionAgentDescriptor,
-                      agentRef: ActorRef) extends ProcessIndexMessage
+                      agentRef: ActorRef) extends InteractionAgentMessage
 
   case class ExecuteInstance(input: Seq[IngredientInstance])
 
-  sealed trait ExecuteInstanceResponse extends BakerSerializable
+  sealed trait ExecuteInstanceResponse extends InteractionAgentMessage
 
   /**
     * Instance executed successfully
