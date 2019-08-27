@@ -3,6 +3,7 @@ package com.ing.baker.runtime.javadsl
 /**
   * Listener interface for events from baker.
   */
+@Deprecated
 trait EventListener {
 
   /**
