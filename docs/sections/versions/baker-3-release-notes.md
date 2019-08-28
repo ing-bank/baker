@@ -1,15 +1,17 @@
 # Release Notes v3
 
-The focus of release 3 of Baker is the Baker runtime.
+The theme of release 3 is the Baker runtime.
 
-The first goal of this release is to be more clear in what the Baker runtime does.
-We try to achieve this by having a clearer and more truthful interface.
+The first goal is to be clearer in what the Baker runtime does.
+We try to achieve this by having better naming and more truthful interface.
 
 The second goal is to simplify the internal logic of the runtime.
-This in turn has increased the performance of Baker for both stateful and stateless processes.
+This makes developing on Baker easier and has increased the performance of Baker.
 
 ## Clearer and more truthful runtime interface
-
+The interface of Baker has had a complete overhaul.
+Most changes are described below.
+Our documentation also has been improved considerably so please have a look into this if something is unclear.
 
 ### New approach to Java and Scala DSL for the runtime
 In the past the Baker runtime was created for Scala developers and returned Scala objects.
@@ -19,9 +21,9 @@ The problem with this approach was that the interfaces for Java and Scala develo
 In this release we have created two separate packages for Java and Scala interfaces.
 The javadsl and scaladsl packages contain the same objects but created for those users in mind.
 These objects share a common parent to ensure the Java and Scala runtime DSLs are in sync.
-The user you now just chooses the correct objects by having either the javadsl or scaladsl imported.
+As user you just chooses the correct objects by having either the javadsl or scaladsl imported.
 
-### Future and CompletableFuture
+### No more blocking! Future and CompletableFuture
 One of the things that Baker was hiding from the user is that is did a lot of blocking operations.
 It was also unneeded to block since internally everything already supported using async operations.
 
@@ -54,12 +56,14 @@ This means the following renames have been done
 This also translates to all methods on Baker.
 For example:
 
-* addImplementation(s) -> addInteractionInstance(s)
+* addImplementation -> addInteractionInstance
+* getProcessState -> getRecipeInstanceState
 
 ### Firing events into Baker
 The processEvent logic has been completely rewritten, it is now been renamed to fireEvent.
+See the [fire event section](../../development-life-cycle/bake-fire-events-and-inquiry/#fire-events) for more details.
 
-### EventInstance
+#### EventInstance
 In the old versions you could give any object ot the processEvent method and Baker would transform this to an Event.
 This made it sometimes unclear what Baker really accepts as Objects.
 Instead now you give a EventInstance to Baker.
@@ -93,7 +97,7 @@ The advantage is that Baker can optimize the resources it uses in those cases.
 This is done using the fireEventAndResolveWhenReceived and fireEventAndResolveWhenCompleted methods.
 
 ```scala tab="Scala"
-val result: Future[SensoryEventStatus] = baker.fireEventAndResolveWhenReceived("recipeInstanceId", orderPlaced)
+val result: Future[SensoryEventStatus] = baker.fireEventAndResolveWhenReceived(recipeInstanceId, orderPlaced)
 val result: Future[SensoryEventResult] = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, paymentMade)
 ```
 
@@ -107,12 +111,12 @@ A new moment you can ask Baker to notify you on is on a specific Event.
 You can use the fireEventAndResolveOnEvent method for this.
 
 ```scala tab="Scala"
-val result: Future[SensoryEventResult] = baker.fireEventAndResolveOnEvent("recipeInstanceId", orderPlaced, "eventName")
+val result: Future[SensoryEventResult] = baker.fireEventAndResolveOnEvent(recipeInstanceId, orderPlaced, "eventName")
 ```
 
 ```java tab="Java"
 CompletableFuture<SensoryEventResult> result =
-                baker.fireEventAndResolveOnEvent("recipeInstanceId", firstOrderPlaced, "eventName");
+                baker.fireEventAndResolveOnEvent(recipeInstanceId, firstOrderPlaced, "eventName");
 ```
 
 #### EventResult
@@ -144,9 +148,6 @@ case class SensoryEventResult(
 }
 ```
 
-See the [fire event section](../../development-life-cycle/bake-fire-events-and-inquiry/#fire-events) for more details.
-
-
 ### New EventListener functions
 For the EventListener we have moved away from the annotation based approach.
 In this version you can add a EventListener function instead.
@@ -154,22 +155,48 @@ See the [event listener section](http://localhost:8000/sections/reference/event-
 
 ## Improved and simplified Runtime
 ### Better performance
-Due to simplifying and refactoring the runtime we see a big increase in the load Baker can handle.
+Due to simplifying and refactoring the runtime we see a big increase in the load a Baker instance can handle.
 For our created [example project](https://github.com/ing-bank/baker/tree/master/examples/src)
 we saw the project could handle over 5 times the load when switching between version 2 and 3 of Baker.
 
 ### New journal for stateless processes
-For stateless processes we advised to use the in-memory-journal plugin.
-This journal still kept all processes in-memory until the actors where cleaned.
-For a true stateless process this is unnecessary so we crated a new journal.
-This one just dumps the messages directly without keeping it in memory.
+For stateless processes we used to advise to use the in-memory-journal plugin.
+This journal kept all processes in-memory until the actors where cleaned.
+For a true stateless process this is unnecessary so we created a new journal.
+This one just dumps the event sourcing messages.
 This should lower the memory footprint of stateless users.
-TODO add description how to use this.
 
-### Support for Async interactions
-TODO describe how to use his
+How to configure:
+```
+CONFIG
+# Custom journal plugin
+service.sink-journal {
+  # Class name of the plugin.
+  class = "com.ing.baker.runtime.akka.journal.SinkJournalWriter"
+  # Dispatcher for the plugin actor.
+  plugin-dispatcher = "akka.actor.default-dispatcher"
+}
 
-###
+service.sink-snapshot-store {
+  # Class name of the plugin.
+  class = "com.ing.baker.runtime.akka.journal.SinkSnapshotStore"
+  # Dispatcher for the plugin actor.
+  plugin-dispatcher = "akka.persistence.dispatchers.default-plugin-dispatcher"
+}
+akka.persistence {
+  journal.plugin = "service.sink-journal"
+  snapshot-store.plugin = "service.sink-snapshot-store"
+}
+```
+
+### Support for async interactions
+It is now possible to create interactions that return their events in a Future or CompletableFuture.
+When using this Baker can close threads instead of blocking a thread.
+Which in turn again improves performance.
+The downside of using async interaction that some validations cannot be done anymore due to type erasure.
+
+To use this in Scala you just return a Future of the result of your interaction.
+In Java you need to return a CompletableFuture of your result and add a AsyncInteraction annotation on top of your InteractionInstance.
 
 ## Deprecated/Removed
 ### EventListener
