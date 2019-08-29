@@ -129,7 +129,7 @@ CompletableFuture<SensoryEventResult> result =
 ```
 
 #### EventResult
-The fireEventAndResolveOnEvent and fireEventAndResolveWhenCompleted return a EventResult.
+The fireEventAndResolveOnEvent and fireEventAndResolveWhenCompleted return an EventResult.
 This EventResult object contains the SensoryEventStatus, event names and created ingredients.
 The addition of the event names and ingredients can be very useful if you need to make a decision depending on the state.
 In these cases there is no need to inquire on Baker itself anymore.
@@ -159,14 +159,14 @@ case class SensoryEventResult(
 
 ### New EventListener functions
 For the EventListener we have moved away from the annotation based approach.
-In this version you can add a EventListener function instead.
-See the [event listener section](http://localhost:8000/sections/reference/event-listener/) for more details.
+In this version you can add an EventListener function instead.
+See the [event listener section](../../reference/event-listener/) for more details.
 
 ## Improved and simplified Runtime
 ### Better performance
 Due to simplifying and refactoring the runtime we see a big increase in the load a Baker instance can handle.
 For our created [example project](https://github.com/ing-bank/baker/tree/master/examples/src)
-we saw the project could handle over 5 times the load when switching between version 2 and 3 of Baker.
+we saw the project could handle over 5 times the load when switching from version 2 to 3 of Baker.
 
 ### New journal for stateless processes
 For stateless processes we used to advise to use the in-memory-journal plugin.
@@ -202,10 +202,10 @@ akka.persistence {
 It is now possible to create interactions that return their events in a Future or CompletableFuture.
 When using this Baker can close threads instead of blocking a thread.
 Which in turn again improves performance.
-The downside of using async interaction that some validations cannot be done anymore due to type erasure.
+The downside of using async interaction is that some validations cannot be done anymore due to type erasure.
 
 To use this in Scala you just return a Future of the result of your interaction.
-In Java you need to return a CompletableFuture of your result and add a AsyncInteraction annotation on top of your InteractionInstance.
+In Java you need to return a CompletableFuture of your result and add an AsyncInteraction annotation on top of your InteractionInstance.
 
 ## Deprecated/Removed
 ### EventListener
@@ -221,4 +221,4 @@ In this release we have removed sieves completely.
 In JBaker we supported using a UUID as a processId.
 In this release this has been removed completely and we accept Strings.
 This is again in line with being clearer what Baker does.
-Internally we where just transforming this to a String.
+Internally we were just transforming this to a String.
