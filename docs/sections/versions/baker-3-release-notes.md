@@ -1,12 +1,13 @@
 # Release Notes v3
 
 The theme of release 3 is the Baker runtime.
+We have two goals with this release.
 
 The first goal is to be clearer in what the Baker runtime does.
 We try to achieve this by having better naming and more truthful interface.
 
 The second goal is to simplify the internal logic of the runtime.
-This makes developing on Baker easier and has increased the performance of Baker.
+This help when developing baker and has increased the performance of Baker.
 
 ## Clearer and more truthful runtime interface
 The interface of Baker has had a complete overhaul.
@@ -64,26 +65,29 @@ The processEvent logic has been completely rewritten, it is now been renamed to 
 See the [fire event section](../../development-life-cycle/bake-fire-events-and-inquiry/#fire-events) for more details.
 
 #### EventInstance
-In the old versions you could give any object ot the processEvent method and Baker would transform this to an Event.
-This made it sometimes unclear what Baker really accepts as Objects.
-Instead now you give a EventInstance to Baker.
-This has a helper method to create a EventInstance from any Object.
-The difference now is that its clear that Baker uses EventInstances.
+In the old versions you could give any object to the processEvent method and Baker would transform this to an Event.
+This made it sometimes unclear what Baker really accepts as a input for this method.
+In the new version of Baker you give a EventInstance to Baker.
+This is the internal object we where creating from the Object in the past.
+The EventInstance in turn can be created form an Object.
+The difference now is that its clear that Baker uses EventInstances internally.
 Another advantage is that you are now also free to create EventInstances any other way.
 
 ```scala tab="Scala"
+//From any Object
 val orderPlaced = EventInstance
       .unsafeFrom(SimpleWebshopRecipeReflection.OrderPlaced(orderId, items))
-
+//Using constructor
 val orderPlace2 =
         EventInstance.apply("OrderPlaced", Map("orderId"-> Converters.toValue(orderId), "items" -> Converters.toValue(items)))
 
 ```
 
 ```java tab="Java"
+//From any Object
 EventInstance firstOrderPlaced =
                 EventInstance.from(new JWebshopRecipe.OrderPlaced(orderId, items));
-
+//Using constructor
 EventInstance firstOrderPlaced2 =
                 EventInstance.apply("OrderPlaced", ImmutableMap.of("orderId", Converters.toValue(orderId), "items", Converters.toValue(items)));
 ```
@@ -106,9 +110,14 @@ CompletableFuture<SensoryEventStatus> result = baker.fireEventAndResolveWhenRece
 CompletableFuture<SensoryEventResult> result = baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced);
 ```
 
+The old way of firing a event where you get both the co
+
 #### Wait for a specific Event
-A new moment you can ask Baker to notify you on is on a specific Event.
+In this new release we have added a highly requested feature.
+YOu can now ask baker to notify you on a a specific event.
 You can use the fireEventAndResolveOnEvent method for this.
+
+The returned future will complete when a event with the given name is fired.
 
 ```scala tab="Scala"
 val result: Future[SensoryEventResult] = baker.fireEventAndResolveOnEvent(recipeInstanceId, orderPlaced, "eventName")
@@ -120,9 +129,9 @@ CompletableFuture<SensoryEventResult> result =
 ```
 
 #### EventResult
-When firing a event and waiting for completion stage or waiting for a specific event a EventResult object will be returned.
+The fireEventAndResolveOnEvent and fireEventAndResolveWhenCompleted return a EventResult.
 This EventResult object contains the SensoryEventStatus, event names and created ingredients.
-This can be useful if you need to make a decision depending on the state.
+The addition of the event names and ingredients can be very useful if you need to make a decision depending on the state.
 In these cases there is no need to inquire on Baker itself anymore.
 
 ```scala tab="Scala"

@@ -144,6 +144,11 @@ See the [release note](../baker-3-release-notes/#firing-events-into-baker) or [f
 * dropped .withSieves on the recipe, add these with .withInteractionInstances
 * removed support in the interface for UUID, for interaction interfaces a UUID is still supported for backwards compatability reasons.
 
+### About Artery for Akka remoting
+Akka has released a new remoting protocol called [Artery](https://doc.akka.io/docs/akka/current/remoting-artery.html)
+This is very interesting for Baker users that have Akka cluster.
+We have successfully migrated to this from the old remoting and see stability and performance gains.
+
 ### Dependency
 We have noticed that when using Baker in a maven project the dependencies are not always take over correctly.
 If you have the following dependencies in your project please upgrade them:
