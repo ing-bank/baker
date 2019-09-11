@@ -90,6 +90,8 @@ lazy val runtime = project.in(file("runtime"))
         akkaPersistence,
         akkaPersistenceQuery,
         akkaCluster,
+        akkaClusterTools,
+        akkaDistributedData,
         akkaClusterSharding,
         akkaBoostrap,
         akkaInmemoryJournal,
