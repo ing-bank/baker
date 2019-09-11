@@ -1,6 +1,8 @@
 package com.ing.baker.runtime.akka.actor.interaction_agent
 
 import akka.actor.{Actor, ActorRef, Props}
+import akka.cluster.pubsub.DistributedPubSub
+import akka.cluster.pubsub.DistributedPubSubMediator
 import akka.util.Timeout
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance}
 
@@ -9,8 +11,8 @@ import scala.util.{Failure, Success}
 
 object InteractionAgent {
 
-  def apply(instance: InteractionInstance)(implicit timeout: Timeout): Props =
-    Props(new InteractionAgent(instance))
+  def apply(recipeName: String, instance: InteractionInstance)(implicit timeout: Timeout): Props =
+    Props(new InteractionAgent(recipeName, instance))
 
   /**
     * Closes over the agent and manager actor references, just like the pipe pattern does, except it sends a more expressive
@@ -33,9 +35,13 @@ object InteractionAgent {
   }
 }
 
-class InteractionAgent(instance: InteractionInstance)(implicit timeout: Timeout) extends Actor {
+class InteractionAgent(recipeName: String, instance: InteractionInstance)(implicit timeout: Timeout) extends Actor {
 
   import context.dispatcher
+
+  val mediator = DistributedPubSub(context.system).mediator
+
+  mediator ! DistributedPubSubMediator.Subscribe(s"Compute|:|$recipeName|:|$instance|:|v0", self)
 
   // TODO: Register to manager on creation
 
