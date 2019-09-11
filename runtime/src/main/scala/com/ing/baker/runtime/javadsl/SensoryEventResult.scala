@@ -13,7 +13,7 @@ case class SensoryEventResult(
 
   def getSensoryEventStatus: SensoryEventStatus = sensoryEventStatus
 
-  def getEventName: java.util.List[String] = eventNames
+  def getEventNames: java.util.List[String] = eventNames
 
   def getIngredients: java.util.Map[String, Value] = ingredients
 }

@@ -37,6 +37,7 @@ nav:
       - 'sections/reference/event-listener.md'
       - 'sections/reference/stores.md'
   - Versions:
+      - 'sections/versions/baker-3-release-notes.md'
       - 'sections/versions/baker-3.md'
       - 'sections/versions/baker-2.md'
   - 'sections/feature-comparison.md'
