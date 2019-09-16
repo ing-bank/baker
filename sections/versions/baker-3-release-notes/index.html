@@ -1,0 +1,1233 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+      
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.0">
+    
+    
+      
+        <title>Release Notes v3 - Baker</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/application.0284f74d.css">
+      
+      
+    
+    
+      <script src="../../../assets/javascripts/modernizr.74668098.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../../../css/ing.css">
+    
+    
+      
+    
+    
+  </head>
+  
+    <body dir="ltr">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#release-notes-v3" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../../.." title="Baker" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon"></i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Baker
+            </span>
+            <span class="md-header-nav__topic">
+              
+                Release Notes v3
+              
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="https://github.com/ing-bank/baker/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    ing-bank/baker
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../../.." title="Baker" class="md-nav__button md-logo">
+      
+        <i class="md-icon"></i>
+      
+    </a>
+    Baker
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="https://github.com/ing-bank/baker/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    ing-bank/baker
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../.." title="Home" class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../getting-started/" title="Getting Started" class="md-nav__link">
+      Getting Started
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../concepts/" title="Concepts" class="md-nav__link">
+      Concepts
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
+    
+    <label class="md-nav__link" for="nav-4">
+      Development Life Cycle
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-4">
+        Development Life Cycle
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../development-life-cycle/design-a-recipe/" title="Design a Recipe" class="md-nav__link">
+      Design a Recipe
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../development-life-cycle/use-visualizations/" title="Use Visualizations" class="md-nav__link">
+      Use Visualizations
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../development-life-cycle/implement-interactions/" title="Implement Interactions" class="md-nav__link">
+      Implement Interactions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../development-life-cycle/bake-fire-events-and-inquiry/" title="Bake, Fire Events and Inquiry" class="md-nav__link">
+      Bake, Fire Events and Inquiry
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../development-life-cycle/test/" title="Test" class="md-nav__link">
+      Test
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../development-life-cycle/configure/" title="Configure" class="md-nav__link">
+      Configure
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../development-life-cycle/monitor/" title="Monitor" class="md-nav__link">
+      Monitor
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../development-life-cycle/resolve-failed-recipe-instances/" title="Resolve Failed Recipes" class="md-nav__link">
+      Resolve Failed Recipes
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5">
+    
+    <label class="md-nav__link" for="nav-5">
+      Reference
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-5">
+        Reference
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/main-abstractions/" title="Main Abstractions" class="md-nav__link">
+      Main Abstractions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/execution-semantics/" title="Execution Semantics" class="md-nav__link">
+      Execution Semantics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/baker-types-and-values/" title="Baker Types and Values" class="md-nav__link">
+      Baker Types and Values
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/dsls/" title="Recipe DSLs" class="md-nav__link">
+      Recipe DSLs
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/runtime/" title="The Akka Based Runtime" class="md-nav__link">
+      The Akka Based Runtime
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/visualization/" title="Visualization" class="md-nav__link">
+      Visualization
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/event-listener/" title="Event Listener" class="md-nav__link">
+      Event Listener
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../reference/stores/" title="Event Stores and Cluster Configuration" class="md-nav__link">
+      Event Stores and Cluster Configuration
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-6" type="checkbox" id="nav-6" checked>
+    
+    <label class="md-nav__link" for="nav-6">
+      Versions
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-6">
+        Versions
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Release Notes v3
+      </label>
+    
+    <a href="./" title="Release Notes v3" class="md-nav__link md-nav__link--active">
+      Release Notes v3
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#clearer-and-more-truthful-runtime-interface" title="Clearer and more truthful runtime interface" class="md-nav__link">
+    Clearer and more truthful runtime interface
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-approach-to-java-and-scala-dsl-for-the-runtime" title="New approach to Java and Scala DSL for the runtime" class="md-nav__link">
+    New approach to Java and Scala DSL for the runtime
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#no-more-blocking-future-and-completablefuture" title="No more blocking! Future and CompletableFuture" class="md-nav__link">
+    No more blocking! Future and CompletableFuture
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#renames-to-runtime-objects" title="Renames to runtime objects" class="md-nav__link">
+    Renames to runtime objects
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#firing-events-into-baker" title="Firing events into Baker" class="md-nav__link">
+    Firing events into Baker
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#eventinstance" title="EventInstance" class="md-nav__link">
+    EventInstance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#decide-on-what-to-be-notified-on-when-firing-the-event" title="Decide on what to be notified on when firing the event" class="md-nav__link">
+    Decide on what to be notified on when firing the event
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wait-for-a-specific-event" title="Wait for a specific Event" class="md-nav__link">
+    Wait for a specific Event
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#eventresult" title="EventResult" class="md-nav__link">
+    EventResult
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-eventlistener-functions" title="New EventListener functions" class="md-nav__link">
+    New EventListener functions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#improved-and-simplified-runtime" title="Improved and simplified Runtime" class="md-nav__link">
+    Improved and simplified Runtime
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#better-performance" title="Better performance" class="md-nav__link">
+    Better performance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-journal-for-stateless-processes" title="New journal for stateless processes" class="md-nav__link">
+    New journal for stateless processes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#support-for-async-interactions" title="Support for async interactions" class="md-nav__link">
+    Support for async interactions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deprecatedremoved" title="Deprecated/Removed" class="md-nav__link">
+    Deprecated/Removed
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#eventlistener" title="EventListener" class="md-nav__link">
+    EventListener
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sieves" title="Sieves" class="md-nav__link">
+    Sieves
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#uuid-support" title="UUID support" class="md-nav__link">
+    UUID support
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../baker-3/" title="Migration Guide v3" class="md-nav__link">
+      Migration Guide v3
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../baker-2/" title="Migration Guide v2" class="md-nav__link">
+      Migration Guide v2
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../feature-comparison/" title="Feature comparison" class="md-nav__link">
+      Feature comparison
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#clearer-and-more-truthful-runtime-interface" title="Clearer and more truthful runtime interface" class="md-nav__link">
+    Clearer and more truthful runtime interface
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-approach-to-java-and-scala-dsl-for-the-runtime" title="New approach to Java and Scala DSL for the runtime" class="md-nav__link">
+    New approach to Java and Scala DSL for the runtime
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#no-more-blocking-future-and-completablefuture" title="No more blocking! Future and CompletableFuture" class="md-nav__link">
+    No more blocking! Future and CompletableFuture
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#renames-to-runtime-objects" title="Renames to runtime objects" class="md-nav__link">
+    Renames to runtime objects
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#firing-events-into-baker" title="Firing events into Baker" class="md-nav__link">
+    Firing events into Baker
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#eventinstance" title="EventInstance" class="md-nav__link">
+    EventInstance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#decide-on-what-to-be-notified-on-when-firing-the-event" title="Decide on what to be notified on when firing the event" class="md-nav__link">
+    Decide on what to be notified on when firing the event
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wait-for-a-specific-event" title="Wait for a specific Event" class="md-nav__link">
+    Wait for a specific Event
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#eventresult" title="EventResult" class="md-nav__link">
+    EventResult
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-eventlistener-functions" title="New EventListener functions" class="md-nav__link">
+    New EventListener functions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#improved-and-simplified-runtime" title="Improved and simplified Runtime" class="md-nav__link">
+    Improved and simplified Runtime
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#better-performance" title="Better performance" class="md-nav__link">
+    Better performance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-journal-for-stateless-processes" title="New journal for stateless processes" class="md-nav__link">
+    New journal for stateless processes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#support-for-async-interactions" title="Support for async interactions" class="md-nav__link">
+    Support for async interactions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deprecatedremoved" title="Deprecated/Removed" class="md-nav__link">
+    Deprecated/Removed
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#eventlistener" title="EventListener" class="md-nav__link">
+    EventListener
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sieves" title="Sieves" class="md-nav__link">
+    Sieves
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#uuid-support" title="UUID support" class="md-nav__link">
+    UUID support
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/ing-bank/baker/edit/master/docs/sections/versions/baker-3-release-notes.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                <h1 id="release-notes-v3">Release Notes v3</h1>
+<p>The theme of release 3 is the Baker runtime.
+We have two goals with this release.</p>
+<p>The first goal is to be clearer in what the Baker runtime does.
+We try to achieve this by having better naming and more truthful interface.</p>
+<p>The second goal is to simplify the internal logic of the runtime.
+This help when developing baker and has increased the performance of Baker.</p>
+<h2 id="clearer-and-more-truthful-runtime-interface">Clearer and more truthful runtime interface</h2>
+<p>The interface of Baker has had a complete overhaul.
+Most changes are described below.
+Our documentation also has been improved considerably so please have a look into this if something is unclear.</p>
+<h3 id="new-approach-to-java-and-scala-dsl-for-the-runtime">New approach to Java and Scala DSL for the runtime</h3>
+<p>In the past the Baker runtime was created for Scala developers and returned Scala objects.
+For Java developers we create the JBaker which wrapped around the Baker and translated the objects.
+The problem with this approach was that the interfaces for Java and Scala developers was going out of sync.</p>
+<p>In this release we have created two separate packages for Java and Scala interfaces.
+The javadsl and scaladsl packages contain the same objects but created for those users in mind.
+These objects share a common parent to ensure the Java and Scala runtime DSLs are in sync.
+As user you just chooses the correct objects by having either the javadsl or scaladsl imported.</p>
+<h3 id="no-more-blocking-future-and-completablefuture">No more blocking! Future and CompletableFuture</h3>
+<p>One of the things that Baker was hiding from the user is that is did a lot of blocking operations.
+It was also unneeded to block since internally everything already supported using async operations.</p>
+<p>In this release we have adjusted almost all interfaces of Baker to return a Future (or CompletableFuture for Java).
+This way Baker does not block anymore and the user is in control.
+The user can now program with Baker in a more functional way by using these futures.
+If you as user do not want to you can wait for the result and its clear that the thread is blocked.</p>
+<h3 id="renames-to-runtime-objects">Renames to runtime objects</h3>
+<p>One of the things that was unclear is how the runtime objects map to the objects in the Recipe.
+To make this clearer we have renamed some of the runtime objects.</p>
+<p>They now map in the following fashion</p>
+<table>
+<thead>
+<tr>
+<th>Specification</th>
+<th>Runtime</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Type</code></td>
+<td><code>Value</code></td>
+</tr>
+<tr>
+<td><code>Ingredient</code></td>
+<td><code>IngredientInstance</code></td>
+</tr>
+<tr>
+<td><code>Event</code></td>
+<td><code>EventInstance</code></td>
+</tr>
+<tr>
+<td><code>Interaction</code></td>
+<td><code>InteractionInstance</code></td>
+</tr>
+<tr>
+<td><code>Recipe</code></td>
+<td><code>RecipeInstance</code></td>
+</tr>
+</tbody>
+</table>
+<p>This means the following renames have been done</p>
+<ul>
+<li>Process -&gt; RecipeInstance</li>
+<li>ProcessId -&gt; RecipeInstanceId</li>
+<li>RuntimeEvent -&gt; EventInstance</li>
+<li>InteractionImplementation/Implementation -&gt; InteractionInstance</li>
+</ul>
+<p>This also translates to all methods on Baker.
+For example:</p>
+<ul>
+<li>addImplementation -&gt; addInteractionInstance</li>
+<li>getProcessState -&gt; getRecipeInstanceState</li>
+</ul>
+<h3 id="firing-events-into-baker">Firing events into Baker</h3>
+<p>The processEvent logic has been completely rewritten, it is now been renamed to fireEvent.
+See the <a href="../../development-life-cycle/bake-fire-events-and-inquiry/#fire-events">fire event section</a> for more details.</p>
+<h4 id="eventinstance">EventInstance</h4>
+<p>In the old versions you could give any object to the processEvent method and Baker would transform this to an Event.
+This made it sometimes unclear what Baker really accepts as a input for this method.
+In the new version of Baker you give a EventInstance to Baker.
+This is the internal object we where creating from the Object in the past.
+The EventInstance in turn can be created form an Object.
+The difference now is that its clear that Baker uses EventInstances internally.
+Another advantage is that you are now also free to create EventInstances any other way.</p>
+<div class="superfences-tabs">
+<input name="__tabs_1" type="radio" id="__tab_1_0" checked="checked" />
+<label for="__tab_1_0">Scala</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="c1">//From any Object</span>
+<span class="k">val</span> <span class="n">orderPlaced</span> <span class="k">=</span> <span class="nc">EventInstance</span>
+      <span class="o">.</span><span class="n">unsafeFrom</span><span class="o">(</span><span class="nc">SimpleWebshopRecipeReflection</span><span class="o">.</span><span class="nc">OrderPlaced</span><span class="o">(</span><span class="n">orderId</span><span class="o">,</span> <span class="n">items</span><span class="o">))</span>
+<span class="c1">//Using constructor</span>
+<span class="k">val</span> <span class="n">orderPlace2</span> <span class="k">=</span>
+        <span class="nc">EventInstance</span><span class="o">.</span><span class="n">apply</span><span class="o">(</span><span class="s">&quot;OrderPlaced&quot;</span><span class="o">,</span> <span class="nc">Map</span><span class="o">(</span><span class="s">&quot;orderId&quot;</span><span class="o">-&gt;</span> <span class="nc">Converters</span><span class="o">.</span><span class="n">toValue</span><span class="o">(</span><span class="n">orderId</span><span class="o">),</span> <span class="s">&quot;items&quot;</span> <span class="o">-&gt;</span> <span class="nc">Converters</span><span class="o">.</span><span class="n">toValue</span><span class="o">(</span><span class="n">items</span><span class="o">)))</span>
+</pre></div></div>
+<input name="__tabs_1" type="radio" id="__tab_1_1" />
+<label for="__tab_1_1">Java</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="c1">//From any Object</span>
+<span class="n">EventInstance</span> <span class="n">firstOrderPlaced</span> <span class="o">=</span>
+                <span class="n">EventInstance</span><span class="o">.</span><span class="na">from</span><span class="o">(</span><span class="k">new</span> <span class="n">JWebshopRecipe</span><span class="o">.</span><span class="na">OrderPlaced</span><span class="o">(</span><span class="n">orderId</span><span class="o">,</span> <span class="n">items</span><span class="o">));</span>
+<span class="c1">//Using constructor</span>
+<span class="n">EventInstance</span> <span class="n">firstOrderPlaced2</span> <span class="o">=</span>
+                <span class="n">EventInstance</span><span class="o">.</span><span class="na">apply</span><span class="o">(</span><span class="s">&quot;OrderPlaced&quot;</span><span class="o">,</span> <span class="n">ImmutableMap</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="s">&quot;orderId&quot;</span><span class="o">,</span> <span class="n">Converters</span><span class="o">.</span><span class="na">toValue</span><span class="o">(</span><span class="n">orderId</span><span class="o">),</span> <span class="s">&quot;items&quot;</span><span class="o">,</span> <span class="n">Converters</span><span class="o">.</span><span class="na">toValue</span><span class="o">(</span><span class="n">items</span><span class="o">)));</span>
+</pre></div></div>
+</div>
+<h4 id="decide-on-what-to-be-notified-on-when-firing-the-event">Decide on what to be notified on when firing the event</h4>
+<p>Like in the old versions you can ask Baker to notify on specific moments.
+This can be when the event is received or when the processing is completed.
+New in this release is that you can now specify this when firing the event itself.
+The advantage is that Baker can optimize the resources it uses in those cases.
+This is done using the fireEventAndResolveWhenReceived and fireEventAndResolveWhenCompleted methods.</p>
+<div class="superfences-tabs">
+<input name="__tabs_2" type="radio" id="__tab_2_0" checked="checked" />
+<label for="__tab_2_0">Scala</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">result</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">SensoryEventStatus</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">fireEventAndResolveWhenReceived</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">orderPlaced</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">result</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">SensoryEventResult</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">fireEventAndResolveWhenCompleted</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">paymentMade</span><span class="o">)</span>
+</pre></div></div>
+<input name="__tabs_2" type="radio" id="__tab_2_1" />
+<label for="__tab_2_1">Java</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">SensoryEventStatus</span><span class="o">&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">baker</span><span class="o">.</span><span class="na">fireEventAndResolveWhenReceived</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">paymentMade</span><span class="o">);</span>
+<span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">SensoryEventResult</span><span class="o">&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">baker</span><span class="o">.</span><span class="na">fireEventAndResolveWhenCompleted</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">firstOrderPlaced</span><span class="o">);</span>
+</pre></div></div>
+</div>
+<p>The old way of firing a event where you get both the co</p>
+<h4 id="wait-for-a-specific-event">Wait for a specific Event</h4>
+<p>In this new release we have added a highly requested feature.
+YOu can now ask baker to notify you on a a specific event.
+You can use the fireEventAndResolveOnEvent method for this.</p>
+<p>The returned future will complete when a event with the given name is fired.</p>
+<div class="superfences-tabs">
+<input name="__tabs_3" type="radio" id="__tab_3_0" checked="checked" />
+<label for="__tab_3_0">Scala</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">result</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">SensoryEventResult</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">fireEventAndResolveOnEvent</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">orderPlaced</span><span class="o">,</span> <span class="s">&quot;eventName&quot;</span><span class="o">)</span>
+</pre></div></div>
+<input name="__tabs_3" type="radio" id="__tab_3_1" />
+<label for="__tab_3_1">Java</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">SensoryEventResult</span><span class="o">&gt;</span> <span class="n">result</span> <span class="o">=</span>
+                <span class="n">baker</span><span class="o">.</span><span class="na">fireEventAndResolveOnEvent</span><span class="o">(</span><span class="n">recipeInstanceId</span><span class="o">,</span> <span class="n">firstOrderPlaced</span><span class="o">,</span> <span class="s">&quot;eventName&quot;</span><span class="o">);</span>
+</pre></div></div>
+</div>
+<h4 id="eventresult">EventResult</h4>
+<p>The fireEventAndResolveOnEvent and fireEventAndResolveWhenCompleted return an EventResult.
+This EventResult object contains the SensoryEventStatus, event names and created ingredients.
+The addition of the event names and ingredients can be very useful if you need to make a decision depending on the state.
+In these cases there is no need to inquire on Baker itself anymore.</p>
+<div class="superfences-tabs">
+<input name="__tabs_4" type="radio" id="__tab_4_0" checked="checked" />
+<label for="__tab_4_0">Scala</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">case</span> <span class="k">class</span> <span class="nc">SensoryEventResult</span><span class="o">(</span>
+                               <span class="n">sensoryEventStatus</span><span class="k">:</span> <span class="kt">SensoryEventStatus</span><span class="o">,</span>
+                               <span class="n">eventNames</span><span class="k">:</span> <span class="kt">Seq</span><span class="o">[</span><span class="kt">String</span><span class="o">],</span>
+                               <span class="n">ingredients</span><span class="k">:</span> <span class="kt">Map</span><span class="o">[</span><span class="kt">String</span>, <span class="kt">Value</span><span class="o">]</span>
+<span class="o">)</span> <span class="k">extends</span> <span class="n">common</span><span class="o">.</span><span class="nc">SensoryEventResult</span> <span class="k">with</span> <span class="nc">ScalaApi</span>
+</pre></div></div>
+<input name="__tabs_4" type="radio" id="__tab_4_1" />
+<label for="__tab_4_1">Java</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">case</span> <span class="kd">class</span> <span class="nf">SensoryEventResult</span><span class="o">(</span>
+                               <span class="n">sensoryEventStatus</span><span class="o">:</span> <span class="n">SensoryEventStatus</span><span class="o">,</span>
+                               <span class="n">eventNames</span><span class="o">:</span> <span class="n">java</span><span class="o">.</span><span class="na">util</span><span class="o">.</span><span class="na">List</span><span class="o">[</span><span class="n">String</span><span class="o">],</span>
+                               <span class="n">ingredients</span><span class="o">:</span> <span class="n">java</span><span class="o">.</span><span class="na">util</span><span class="o">.</span><span class="na">Map</span><span class="o">[</span><span class="n">String</span><span class="o">,</span> <span class="n">Value</span><span class="o">]</span>
+<span class="o">)</span> <span class="kd">extends</span> <span class="n">common</span><span class="o">.</span><span class="na">SensoryEventResult</span> <span class="n">with</span> <span class="n">JavaApi</span> <span class="o">{</span>
+
+  <span class="n">def</span> <span class="n">getSensoryEventStatus</span><span class="o">:</span> <span class="n">SensoryEventStatus</span> <span class="o">=</span> <span class="n">sensoryEventStatus</span>
+
+  <span class="n">def</span> <span class="n">getEventName</span><span class="o">:</span> <span class="n">java</span><span class="o">.</span><span class="na">util</span><span class="o">.</span><span class="na">List</span><span class="o">[</span><span class="n">String</span><span class="o">]</span> <span class="o">=</span> <span class="n">eventNames</span>
+
+  <span class="n">def</span> <span class="n">getIngredients</span><span class="o">:</span> <span class="n">java</span><span class="o">.</span><span class="na">util</span><span class="o">.</span><span class="na">Map</span><span class="o">[</span><span class="n">String</span><span class="o">,</span> <span class="n">Value</span><span class="o">]</span> <span class="o">=</span> <span class="n">ingredients</span>
+<span class="o">}</span>
+</pre></div></div>
+</div>
+<h3 id="new-eventlistener-functions">New EventListener functions</h3>
+<p>For the EventListener we have moved away from the annotation based approach.
+In this version you can add an EventListener function instead.
+See the <a href="../../reference/event-listener/">event listener section</a> for more details.</p>
+<h2 id="improved-and-simplified-runtime">Improved and simplified Runtime</h2>
+<h3 id="better-performance">Better performance</h3>
+<p>Due to simplifying and refactoring the runtime we see a big increase in the load a Baker instance can handle.
+For our created <a href="https://github.com/ing-bank/baker/tree/master/examples/src">example project</a>
+we saw the project could handle over 5 times the load when switching from version 2 to 3 of Baker.</p>
+<h3 id="new-journal-for-stateless-processes">New journal for stateless processes</h3>
+<p>For stateless processes we used to advise to use the in-memory-journal plugin.
+This journal kept all processes in-memory until the actors where cleaned.
+For a true stateless process this is unnecessary so we created a new journal.
+This one just dumps the event sourcing messages.
+This should lower the memory footprint of stateless users.</p>
+<p>How to configure:
+<div class="codehilite"><pre><span></span><span class="nv">CONFIG</span>
+# <span class="nv">Custom</span> <span class="nv">journal</span> <span class="nv">plugin</span>
+<span class="nv">service</span>.<span class="nv">sink</span><span class="o">-</span><span class="nv">journal</span> {
+  # <span class="nv">Class</span> <span class="nv">name</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">plugin</span>.
+  <span class="nv">class</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">com.ing.baker.runtime.akka.journal.SinkJournalWriter</span><span class="s2">&quot;</span>
+  # <span class="nv">Dispatcher</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">plugin</span> <span class="nv">actor</span>.
+  <span class="nv">plugin</span><span class="o">-</span><span class="nv">dispatcher</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">akka.actor.default-dispatcher</span><span class="s2">&quot;</span>
+}
+
+<span class="nv">service</span>.<span class="nv">sink</span><span class="o">-</span><span class="nv">snapshot</span><span class="o">-</span><span class="nv">store</span> {
+  # <span class="nv">Class</span> <span class="nv">name</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">plugin</span>.
+  <span class="nv">class</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">com.ing.baker.runtime.akka.journal.SinkSnapshotStore</span><span class="s2">&quot;</span>
+  # <span class="nv">Dispatcher</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">plugin</span> <span class="nv">actor</span>.
+  <span class="nv">plugin</span><span class="o">-</span><span class="nv">dispatcher</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">akka.persistence.dispatchers.default-plugin-dispatcher</span><span class="s2">&quot;</span>
+}
+<span class="nv">akka</span>.<span class="nv">persistence</span> {
+  <span class="nv">journal</span>.<span class="nv">plugin</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">service.sink-journal</span><span class="s2">&quot;</span>
+  <span class="nv">snapshot</span><span class="o">-</span><span class="nv">store</span>.<span class="nv">plugin</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">service.sink-snapshot-store</span><span class="s2">&quot;</span>
+}
+</pre></div></p>
+<h3 id="support-for-async-interactions">Support for async interactions</h3>
+<p>It is now possible to create interactions that return their events in a Future or CompletableFuture.
+When using this Baker can close threads instead of blocking a thread.
+Which in turn again improves performance.
+The downside of using async interaction is that some validations cannot be done anymore due to type erasure.</p>
+<p>To use this in Scala you just return a Future of the result of your interaction.
+In Java you need to return a CompletableFuture of your result and add an AsyncInteraction annotation on top of your InteractionInstance.</p>
+<h2 id="deprecatedremoved">Deprecated/Removed</h2>
+<h3 id="eventlistener">EventListener</h3>
+<p>The EventListener object used in the Java runtime has been deprecated.
+We advice users to move over the logic to the registerBakerEventListener that accepts functions instead.</p>
+<h3 id="sieves">Sieves</h3>
+<p>The Sieve concept has slowly been deprecated in the last releases.
+In version 2 there was already no difference between a sieve and an interaction.
+In this release we have removed sieves completely.</p>
+<h3 id="uuid-support">UUID support</h3>
+<p>In JBaker we supported using a UUID as a processId.
+In this release this has been removed completely and we accept Strings.
+This is again in line with being clearer what Baker does.
+Internally we were just transforming this to a String.</p>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../../reference/stores/" title="Event Stores and Cluster Configuration" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Event Stores and Cluster Configuration
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../baker-3/" title="Migration Guide v3" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Migration Guide v3
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../../assets/javascripts/application.245445c6.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:"../../.."}})</script>
+      
+    
+  </body>
+</html>

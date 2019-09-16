@@ -511,6 +511,18 @@
           
           
 
+
+  <li class="md-nav__item">
+    <a href="../baker-3-release-notes/" title="Release Notes v3" class="md-nav__link">
+      Release Notes v3
+    </a>
+  </li>
+
+        
+          
+          
+          
+
   
 
 
@@ -521,9 +533,107 @@
       
     
     
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Migration Guide v3
+      </label>
+    
     <a href="./" title="Migration Guide v3" class="md-nav__link md-nav__link--active">
       Migration Guide v3
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#from-2xx-to-300" title="From 2.X.X to 3.0.0" class="md-nav__link">
+    From 2.X.X to 3.0.0
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#downtime-required-for-clusters-with-state" title="Downtime required for clusters with state" class="md-nav__link">
+    Downtime required for clusters with state
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#renamespackage-changes" title="Renames/package changes" class="md-nav__link">
+    Renames/package changes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#future-and-completablefuture" title="Future and CompletableFuture" class="md-nav__link">
+    Future and CompletableFuture
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-a-baker-instance" title="Creating a Baker instance" class="md-nav__link">
+    Creating a Baker instance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-interactions-into-baker" title="Adding Interactions into Baker" class="md-nav__link">
+    Adding Interactions into Baker
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#firing-events" title="Firing events" class="md-nav__link">
+    Firing events
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#small-changes" title="Small changes" class="md-nav__link">
+    Small changes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#about-artery-for-akka-remoting" title="About Artery for Akka remoting" class="md-nav__link">
+    About Artery for Akka remoting
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dependency" title="Dependency" class="md-nav__link">
+    Dependency
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
     
   </li>
 
@@ -574,6 +684,91 @@
     
   
   
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#from-2xx-to-300" title="From 2.X.X to 3.0.0" class="md-nav__link">
+    From 2.X.X to 3.0.0
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#downtime-required-for-clusters-with-state" title="Downtime required for clusters with state" class="md-nav__link">
+    Downtime required for clusters with state
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#renamespackage-changes" title="Renames/package changes" class="md-nav__link">
+    Renames/package changes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#future-and-completablefuture" title="Future and CompletableFuture" class="md-nav__link">
+    Future and CompletableFuture
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-a-baker-instance" title="Creating a Baker instance" class="md-nav__link">
+    Creating a Baker instance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-interactions-into-baker" title="Adding Interactions into Baker" class="md-nav__link">
+    Adding Interactions into Baker
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#firing-events" title="Firing events" class="md-nav__link">
+    Firing events
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#small-changes" title="Small changes" class="md-nav__link">
+    Small changes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#about-artery-for-akka-remoting" title="About Artery for Akka remoting" class="md-nav__link">
+    About Artery for Akka remoting
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dependency" title="Dependency" class="md-nav__link">
+    Dependency
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -588,6 +783,151 @@
                 
                 
                 <h1 id="migration-guide-v3">Migration Guide v3</h1>
+<h2 id="from-2xx-to-300">From 2.X.X to 3.0.0</h2>
+<p>This guide only describes how to migrate your existing application.
+For a full list new features see the <a href="../baker-3-release-notes">release notes</a>.</p>
+<p>Summary:</p>
+<ul>
+<li><em>ALL</em> persisted data from older baker versions <em>IS COMPATIBLE</em> and can be used with <code>3.0.0</code></li>
+<li>When running a cluster <em>DOWNTIME IS REQUIRED</em> because of binary incompatible changes in the message protocol.</li>
+<li>Code changes are needed to comply to the new Baker interface</li>
+<li>No code changes needed to the Recipe (except the removal of the sieve concept)</li>
+</ul>
+<h3 id="downtime-required-for-clusters-with-state">Downtime required for clusters with state</h3>
+<p>In <code>3.0.0</code> some binary incompatible changes where made in the message protocol.</p>
+<p>This requires you to bring down the entire cluster (<code>2.x.x</code>) and bring it up again (<code>3.0.0</code>).</p>
+<p>A rolling deploy is tested but is NOT recommended.
+During the rolling deploy messages regarding handling events will fail.
+It is safer to bring the complete cluster down.</p>
+<h3 id="renamespackage-changes">Renames/package changes</h3>
+<ul>
+<li>com.ing.baker.runtime.core -&gt; com.ing.baker.runtime.javadsl/scaladsl/common (depends per object)</li>
+<li>com.ing.baker.runtime.java_api -&gt; com.ing.baker.runtime.javadsl</li>
+<li>processId -&gt; recipeInstanceId</li>
+<li>getProcessId -&gt; GetRecipeInstanceId</li>
+<li>RuntimeEvent -&gt; EventInstance</li>
+<li>ProcessState -&gt; RecipeInstanceState</li>
+</ul>
+<h3 id="future-and-completablefuture">Future and CompletableFuture</h3>
+<p>The new Java and Scala interfaces now almost always return a Future or CompletableFuture.
+It is now up to the user to handle waiting for the completion of this future.
+This can either be by blocking directly or by 'correctly' programming with these Futures.
+We REALLY advise to invest in programming in a non blocking fashion!</p>
+<div class="superfences-tabs">
+<input name="__tabs_1" type="radio" id="__tab_1_0" checked="checked" />
+<label for="__tab_1_0">Scala</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="c1">//Blocking</span>
+<span class="k">val</span> <span class="n">futureStatus</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">SensoryEventStatus</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">fireEventAndResolveWhenReceived</span><span class="o">(</span><span class="n">orderId</span><span class="o">,</span> <span class="n">event</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">status</span><span class="k">:</span> <span class="kt">SensoryEventStatus</span> <span class="o">=</span> <span class="nc">Await</span><span class="o">.</span><span class="n">result</span><span class="o">(</span><span class="n">futureStatus</span><span class="o">,</span> <span class="mi">10</span> <span class="n">seconds</span><span class="o">)</span>
+
+<span class="c1">//Non Blocking</span>
+<span class="k">val</span> <span class="n">futureStatus</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">SensoryEventStatus</span><span class="o">]</span> <span class="k">=</span> <span class="n">baker</span><span class="o">.</span><span class="n">fireEventAndResolveWhenReceived</span><span class="o">(</span><span class="n">orderId</span><span class="o">,</span> <span class="n">event</span><span class="o">)</span>
+<span class="n">futureStatus</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">sensoryEventStatus</span> <span class="k">=&gt;</span> <span class="o">{</span>
+     <span class="c1">//Code to handle status</span>
+<span class="o">})</span>
+</pre></div></div>
+<input name="__tabs_1" type="radio" id="__tab_1_1" />
+<label for="__tab_1_1">Java</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="c1">//Blocking</span>
+<span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">SensoryEventStatus</span><span class="o">&gt;</span> <span class="n">futureStatus</span> <span class="o">=</span>
+                <span class="n">baker</span><span class="o">.</span><span class="na">fireEventAndResolveWhenReceived</span><span class="o">(</span><span class="n">uuid</span><span class="o">.</span><span class="na">toString</span><span class="o">(),</span> <span class="n">EventInstance</span><span class="o">.</span><span class="na">from</span><span class="o">(</span><span class="k">new</span> <span class="n">ExampleEvent</span><span class="o">()));</span>
+<span class="n">SensoryEventStatus</span> <span class="n">sensoryEventStatus</span> <span class="o">=</span> <span class="n">futureStatus</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+
+
+<span class="c1">//Non blocking</span>
+<span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">SensoryEventStatus</span><span class="o">&gt;</span> <span class="n">futureStatus</span> <span class="o">=</span>
+                <span class="n">baker</span><span class="o">.</span><span class="na">fireEventAndResolveWhenReceived</span><span class="o">(</span><span class="n">uuid</span><span class="o">.</span><span class="na">toString</span><span class="o">(),</span> <span class="n">eventInstance</span><span class="o">));</span>
+
+<span class="n">futureStatus</span><span class="o">.</span><span class="na">thenApply</span><span class="o">(</span><span class="n">sensoryEventStatus</span> <span class="o">-&gt;</span> <span class="o">{</span>
+      <span class="c1">//Code to handle status</span>
+<span class="o">});</span>
+</pre></div></div>
+</div>
+<p>Any Exceptions that used to be thrown by Baker are now encapsulated in the Future/CompletableFuture.
+For the CompletableFuture the original exception is wrapped in the ExecutionException.
+This is how CompletableFuture work and there is no way around it.</p>
+<div class="superfences-tabs">
+<input name="__tabs_2" type="radio" id="__tab_2_0" checked="checked" />
+<label for="__tab_2_0">Java</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="c1">//Blocking</span>
+<span class="k">try</span> <span class="o">{</span>
+    <span class="n">baker</span><span class="o">.</span><span class="na">fireEventAndResolveWhenCompleted</span><span class="o">(</span><span class="n">processId</span><span class="o">,</span> <span class="n">EventInstance</span><span class="o">.</span><span class="na">from</span><span class="o">(</span><span class="k">new</span> <span class="n">ExampleEventClass</span><span class="o">())).</span><span class="na">get</span><span class="o">();</span>
+<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">ExecutionException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">if</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getCause</span><span class="o">()</span> <span class="k">instanceof</span> <span class="n">BakerException</span><span class="o">.</span><span class="na">NoSuchProcessException</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">//Code to handle NoSuchProcessException</span>
+    <span class="o">}</span>
+    <span class="c1">//Code to handle other Exceptions</span>
+<span class="o">}</span>
+
+
+<span class="c1">//Non blocking</span>
+<span class="n">baker</span><span class="o">.</span><span class="na">fireEventAndResolveWhenCompleted</span><span class="o">(</span><span class="n">processId</span><span class="o">,</span> <span class="n">EventInstance</span><span class="o">.</span><span class="na">from</span><span class="o">(</span><span class="k">new</span> <span class="n">ExampleEventClass</span><span class="o">()))</span>
+        <span class="o">.</span><span class="na">exceptionally</span><span class="o">(</span><span class="n">exception</span> <span class="o">-&gt;</span> <span class="o">{</span>
+            <span class="k">if</span><span class="o">(</span><span class="n">exception</span><span class="o">.</span><span class="na">getCause</span><span class="o">()</span> <span class="k">instanceof</span> <span class="n">BakerException</span><span class="o">.</span><span class="na">NoSuchProcessException</span><span class="o">)</span> <span class="o">{</span>
+                <span class="c1">//Decide on what to return on NoSuchProcessException</span>
+            <span class="o">}</span>
+            <span class="c1">//Decide on what to return on other Exceptions</span>
+        <span class="o">});</span>
+</pre></div></div>
+</div>
+<h3 id="creating-a-baker-instance">Creating a Baker instance</h3>
+<p>A Baker instance is now created not with a constructor but via a static method.</p>
+<p>For Java the JBaker is gone and you now create a Baker under the javadsl package.</p>
+<div class="superfences-tabs">
+<input name="__tabs_3" type="radio" id="__tab_3_0" checked="checked" />
+<label for="__tab_3_0">Scala</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">import</span> <span class="nn">com.ing.baker.runtime.scaladsl.</span><span class="o">*;</span>
+<span class="o">......</span>
+<span class="k">val</span> <span class="n">actorSystem</span><span class="k">:</span> <span class="kt">ActorSystem</span> <span class="o">=</span> <span class="nc">ActorSystem</span><span class="o">(</span><span class="s">&quot;WebshopSystem&quot;</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">materializer</span><span class="k">:</span> <span class="kt">Materializer</span> <span class="o">=</span> <span class="nc">ActorMaterializer</span><span class="o">()</span>
+<span class="k">val</span> <span class="n">config</span><span class="k">:</span> <span class="kt">Config</span> <span class="o">=</span> <span class="nc">ConfigFactory</span><span class="o">.</span><span class="n">load</span><span class="o">()</span>
+<span class="k">val</span> <span class="n">baker</span> <span class="k">=</span> <span class="nc">Baker</span><span class="o">.</span><span class="n">akka</span><span class="o">(</span><span class="n">config</span><span class="o">,</span> <span class="n">actorSystem</span><span class="o">);</span>
+</pre></div></div>
+<input name="__tabs_3" type="radio" id="__tab_3_1" />
+<label for="__tab_3_1">Java</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="kn">import</span> <span class="nn">com.ing.baker.runtime.javadsl.*</span><span class="o">;</span>
+<span class="o">......</span>
+<span class="n">ActorSystem</span> <span class="n">actorSystem</span> <span class="o">=</span> <span class="n">ActorSystem</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="s">&quot;WebshopSystem&quot;</span><span class="o">);</span>
+<span class="n">Materializer</span> <span class="n">materializer</span> <span class="o">=</span> <span class="n">ActorMaterializer</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="n">actorSystem</span><span class="o">);</span>
+<span class="n">Config</span> <span class="n">config</span> <span class="o">=</span> <span class="n">ConfigFactory</span><span class="o">.</span><span class="na">load</span><span class="o">();</span>
+<span class="n">Baker</span> <span class="n">baker</span> <span class="o">=</span> <span class="n">Baker</span><span class="o">.</span><span class="na">akka</span><span class="o">(</span><span class="n">config</span><span class="o">,</span> <span class="n">actorSystem</span><span class="o">);</span>
+</pre></div></div>
+</div>
+<p>See the <a href="../../reference/runtime">runtime reference</a> for more details</p>
+<h3 id="adding-interactions-into-baker">Adding Interactions into Baker</h3>
+<p>When adding InteractionInstances formerly known as InteractionImplementations to Baker you now need to give a real InteractionInstance object.</p>
+<div class="superfences-tabs">
+<input name="__tabs_4" type="radio" id="__tab_4_0" checked="checked" />
+<label for="__tab_4_0">Scala</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="k">val</span> <span class="n">reserveItemsInstance</span><span class="k">:</span> <span class="kt">InteractionInstance</span> <span class="o">=</span>
+    <span class="nc">InteractionInstance</span><span class="o">.</span><span class="n">unsafeFrom</span><span class="o">(</span><span class="k">new</span> <span class="nc">ReserveItemsInstance</span><span class="o">)</span>
+<span class="n">baker</span><span class="o">.</span><span class="n">addInteractionInstance</span><span class="o">(</span><span class="n">reserveItemsInstance</span><span class="o">)</span>
+</pre></div></div>
+<input name="__tabs_4" type="radio" id="__tab_4_1" />
+<label for="__tab_4_1">Java</label>
+<div class="superfences-content"><div class="codehilite"><pre><span></span><span class="n">InteractionInstance</span> <span class="n">reserveItemsInstance</span> <span class="o">=</span>
+    <span class="n">InteractionInstance</span><span class="o">.</span><span class="na">from</span><span class="o">(</span><span class="k">new</span> <span class="n">ReserveItemsInstance</span><span class="o">());</span>
+<span class="n">baker</span><span class="o">.</span><span class="na">addInteractionInstance</span><span class="o">(</span><span class="n">reserveItemsInstance</span><span class="o">)</span>
+</pre></div></div>
+</div>
+<h3 id="firing-events">Firing events</h3>
+<p>The processEvent has been completely rewritten and is now named FireEvent.
+See the <a href="../baker-3-release-notes/#firing-events-into-baker">release note</a> or <a href="../../development-life-cycle/bake-fire-events-and-inquiry/#fire-events">fire event section</a> for more details</p>
+<h3 id="small-changes">Small changes</h3>
+<ul>
+<li>dropped .withSieves on the recipe, add these with .withInteractionInstances</li>
+<li>removed support in the interface for UUID, for interaction interfaces a UUID is still supported for backwards compatability reasons.</li>
+</ul>
+<h3 id="about-artery-for-akka-remoting">About Artery for Akka remoting</h3>
+<p>Akka has released a new remoting protocol called <a href="https://doc.akka.io/docs/akka/current/remoting-artery.html">Artery</a>
+This is very interesting for Baker users that have Akka cluster.
+We have successfully migrated to this from the old remoting and see stability and performance gains.</p>
+<h3 id="dependency">Dependency</h3>
+<p>We have noticed that when using Baker in a maven project the dependencies are not always take over correctly.
+If you have the following dependencies in your project please upgrade them:
+* org.typelevel.cats-core_2.12 1.5.0
+* org.typelevel.cats-effect_2.12 1.2.0
+* All Akka dependencies to 2.5.22 (should work with other 2.5.X versions but 2.5.22 is the one we tested).</p>
                 
                   
                 
@@ -608,7 +948,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../../reference/stores/" title="Event Stores and Cluster Configuration" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../baker-3-release-notes/" title="Release Notes v3" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -617,7 +957,7 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Event Stores and Cluster Configuration
+                Release Notes v3
               </span>
             </div>
           </a>
