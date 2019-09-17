@@ -1,15 +1,16 @@
 package com.ing.baker.runtime.akka
 
-import akka.actor.{ ActorSystem, Address, AddressFromURIString }
+import akka.actor.{ActorSystem, Address, AddressFromURIString}
 import akka.persistence.query.PersistenceQuery
-import akka.persistence.query.scaladsl.{ CurrentEventsByPersistenceIdQuery, CurrentPersistenceIdsQuery, PersistenceIdsQuery }
+import akka.persistence.query.scaladsl.{CurrentEventsByPersistenceIdQuery, CurrentPersistenceIdsQuery, PersistenceIdsQuery}
 import cats.data.NonEmptyList
 import com.ing.baker.runtime.akka.AkkaBakerConfig.BakerPersistenceQuery
 import com.ing.baker.runtime.akka.actor.serialization.Encryption
-import com.ing.baker.runtime.akka.actor.{ BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider }
-import com.ing.baker.runtime.akka.internal.InteractionManager
+import com.ing.baker.runtime.akka.actor.{BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider}
+import com.ing.baker.runtime.akka.internal.{InteractionManager, InteractionManagerDis, InteractionManagerLocal}
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
+
 import scala.concurrent.duration._
 
 case class AkkaBakerConfig(
@@ -58,7 +59,7 @@ object AkkaBakerConfig {
       defaultShutdownTimeout = 30.seconds,
       defaultAddRecipeTimeout = 10.seconds,
       bakerActorProvider = provider,
-      interactionManager = new InteractionManager(),
+      interactionManager = new InteractionManagerLocal(),
       readJournal = PersistenceQuery(actorSystem)
       .readJournalFor[BakerPersistenceQuery]("inmemory-read-journal")
     )(actorSystem)
@@ -106,7 +107,10 @@ object AkkaBakerConfig {
           case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
         }
       },
-      interactionManager = new InteractionManager,
+      interactionManager = config.as[Option[String]]("baker.interaction-manager") match {
+        case Some("remote") => new InteractionManagerDis(actorSystem, 10 seconds, 600 seconds) //TODO read timeout from config //TODO 2 remore computation timeout
+        case _ => new InteractionManagerLocal()
+      },
       readJournal = PersistenceQuery(actorSystem)
         .readJournalFor[BakerPersistenceQuery](config.as[String]("baker.actor.read-journal-plugin"))
     )(actorSystem)

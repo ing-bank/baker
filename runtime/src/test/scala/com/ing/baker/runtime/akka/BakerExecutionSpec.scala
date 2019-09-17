@@ -23,6 +23,12 @@ import org.mockito.Matchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.slf4j.{Logger, LoggerFactory}
+import com.typesafe.config.{Config, ConfigFactory}
+import org.mockito.Matchers.{eq => mockitoEq, _}
+import org.mockito.Mockito._
+import org.mockito.invocation.InvocationOnMock
+import org.mockito.stubbing.Answer
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -199,7 +205,56 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
             "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
     }
 
-    "correctly notify on event" in {
+    "execute an interaction when its ingredient is provided in cluster" in {
+      val recipe =
+        Recipe("IngredientProvidedRecipeCluster")
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent)
+
+
+      val config: Config = ConfigFactory.parseString(
+        """
+          |include "baker.conf"
+          |
+          |akka {
+          |  actor {
+          |    provider = "cluster"
+          |  }
+          |  remote {
+          |    log-remote-lifecycle-events = off
+          |    netty.tcp {
+          |      hostname = "127.0.0.1"
+          |      port = 2555
+          |    }
+          |  }
+          |
+          |  cluster {
+          |    seed-nodes = ["akka.tcp://remoteTest@127.0.0.1:2555"]
+          |    auto-down-unreachable-after = 10s
+          |  }
+          |}
+          |baker.interaction-manager = remote
+        """.stripMargin).withFallback(ConfigFactory.load())
+
+      val baker = Baker.akka(config, ActorSystem.apply("remoteTest", config))
+
+      for {
+        _ <- baker.addInteractionInstances(mockImplementations)
+        recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue))))
+        _ = verify(testInteractionOneMock).apply(recipeInstanceId.toString, "initialIngredient")
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+      } yield
+        state.ingredients shouldBe
+          ingredientMap(
+            "initialIngredient" -> initialIngredientValue,
+            "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
+    }
+
+    "Correctly notify on event" in {
 
       val sensoryEvent = Event(
         name = "sensory-event",

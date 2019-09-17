@@ -9,11 +9,11 @@ sealed trait ProtocolPushPullMatching
 
 object ProtocolPushPullMatching {
 
-  def pushTopic(recipeName: String, interactionName: String, version: String): String =
-    s"Push|:|$recipeName|:|$interactionName|:|$version"
+  def pushTopic(interactionName: String): String =
+    s"Push|:||:|$interactionName|:|"
 
-  def pullTopic(recipeName: String, interactionName: String, version: String): String =
-    s"Pull|:|$recipeName|:|$interactionName|:|$version"
+  def pullTopic(interactionName: String): String =
+    s"Pull|:||:|$interactionName|:|"
 
   case class Push(mandated: ActorRef) extends ProtocolPushPullMatching
 
