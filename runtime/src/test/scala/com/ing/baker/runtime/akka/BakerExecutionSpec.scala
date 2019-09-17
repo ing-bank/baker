@@ -18,17 +18,11 @@ import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common._
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
-import com.typesafe.config.ConfigFactory
-import org.mockito.Matchers.{eq => mockitoEq, _}
-import org.mockito.Mockito._
-import org.mockito.invocation.InvocationOnMock
-import org.slf4j.{Logger, LoggerFactory}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
-import org.mockito.stubbing.Answer
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
