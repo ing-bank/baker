@@ -2,17 +2,18 @@ package com.ing.baker.runtime.akka.actor.interaction_schedulling
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit}
+import akka.util.Timeout
+import cats.effect.{IO, Timer}
 import com.ing.baker.runtime.akka.actor.interaction_schedulling.ProtocolInteractionExecution.InstanceExecutedSuccessfully
-import com.ing.baker.runtime.scaladsl.IngredientInstance
-import com.ing.baker.runtime.scaladsl.EventInstance
-import com.ing.baker.runtime.scaladsl.InteractionInstance
+import com.ing.baker.runtime.akka.actor.interaction_schedulling.QuestMandated.Start
+import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
 import com.ing.baker.types.{CharArray, PrimitiveValue}
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Matchers, WordSpecLike}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mockito.MockitoSugar
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Matchers, WordSpecLike}
 
-import scala.concurrent.Future
+import scala.concurrent.duration._
 
 object InstanceSchedulingSpec {
 
@@ -47,37 +48,39 @@ class InstanceSchedulingSpec extends TestKit(ActorSystem("InstanceSchedulingSpec
     with MockitoSugar
     with Eventually {
 
-  import system.dispatcher
+  implicit val timer: Timer[IO] = IO.timer(system.dispatcher)
 
   val recipeName: String = "TestRecipe"
+
+  def work(str: String): IO[String] =
+    IO.sleep(1 millis).map(_ => str.toUpperCase())
 
   val interaction: InteractionInstance =
     InteractionInstance(
       "TestInstance",
       Seq(CharArray),
-      ingredients => Future (Some {
-        val computed = PrimitiveValue(ingredients.head.value.as[String].toUpperCase())
-        EventInstance("TestDone", Map("upper" -> computed))
-      })
-    )
+      ingredients =>
+        work(ingredients.head.value.as[String]).map(res => {
+          Some(EventInstance("TestDone", Map("upper" -> PrimitiveValue(res))))
+        }).unsafeToFuture()
+      )
 
   val jobs: List[String] =
-    List.fill(10000)("hello")
+    List.fill(1000)("hello")
 
   def buildAgents(): List[ActorRef] =
     List(
-      system.actorOf(InteractionAgent(recipeName, interaction)),
-      system.actorOf(InteractionAgent(recipeName, interaction))
+      system.actorOf(InteractionAgent(interaction)),
+      system.actorOf(InteractionAgent(interaction))
     )
 
   def buildMandated(job: String, manager: ActorRef): ActorRef =
-    system.actorOf(QuestMandated(manager, Seq(IngredientInstance("test-ingredient", PrimitiveValue(job))), recipeName, interaction.name))
+    system.actorOf(QuestMandated(Seq(IngredientInstance("test-ingredient", PrimitiveValue(job))), interaction.name, Timeout.durationToTimeout(10 seconds), Timeout.durationToTimeout(60 seconds)))
 
   "The Instance scheduling protocol" should {
     "simple run success" in {
       buildAgents()
-      jobs.foreach(buildMandated(_, self))
-      buildAgents()
+      jobs.foreach(buildMandated(_, self) ! Start)
       receiveN(jobs.length).foreach { job =>
         job.asInstanceOf[InstanceExecutedSuccessfully] match {
           case InstanceExecutedSuccessfully(Some(EventInstance("TestDone", map))) =>

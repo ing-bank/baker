@@ -60,7 +60,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
   }
 
   private def getImplementationErrors(compiledRecipe: CompiledRecipe): Set[String] = {
-    compiledRecipe.interactionTransitions.filterNot(config.interactionManager.getImplementation(_).isDefined)
+    compiledRecipe.interactionTransitions.filterNot(config.interactionManager.hasImplementation)
       .map(s => s"No implementation provided for interaction: ${s.originalInteractionName}")
   }
 

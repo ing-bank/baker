@@ -30,6 +30,16 @@ object ProtocolInteractionExecution {
   case class InstanceExecutionFailed() extends ProtocolInteractionExecution
 
   /**
+    * Technical failure of the interaction
+    */
+  case class InstanceExecutionTimedOut() extends ProtocolInteractionExecution
+
+  /**
+    * Technical failure of the interaction
+    */
+  case class NoInstanceFound() extends ProtocolInteractionExecution
+
+  /**
     * Invalid request, bad ingredients given
     */
   case class InvalidExecution() extends ProtocolInteractionExecution

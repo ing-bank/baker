@@ -2,33 +2,49 @@ package com.ing.baker.runtime.akka.actor.interaction_schedulling
 
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 import akka.cluster.pubsub.{DistributedPubSub, DistributedPubSubMediator}
+import akka.util.Timeout
+import com.ing.baker.runtime.akka.actor.interaction_schedulling.QuestMandated.{ComputationTimeout, PostTimeout, Start}
 import com.ing.baker.runtime.scaladsl.IngredientInstance
 
 object QuestMandated {
 
-  def apply(manager: ActorRef, ingredients: Seq[IngredientInstance], recipeName: String, interactionName: String, version: String = "v0"): Props =
-    Props(new QuestMandated(manager, ingredients, recipeName, interactionName, version))
+  case object Start
+
+  case object PostTimeout
+
+  case object ComputationTimeout
+
+  def apply(ingredients: Seq[IngredientInstance], interactionName: String, postTimeout: Timeout, computationTimeout: Timeout): Props =
+    Props(new QuestMandated(ingredients, interactionName, postTimeout, computationTimeout))
 }
 
-class QuestMandated(manager: ActorRef, ingredients: Seq[IngredientInstance], recipeName: String, interactionName: String, version: String) extends Actor {
+class QuestMandated(ingredients: Seq[IngredientInstance], interactionName: String, postTimeout: Timeout, computationTimeout: Timeout) extends Actor {
 
   val mediator: ActorRef = DistributedPubSub(context.system).mediator
 
   val pullTopic: String =
-    ProtocolPushPullMatching.pullTopic(recipeName, interactionName, version)
+    ProtocolPushPullMatching.pullTopic(interactionName)
 
   val pushTopic: String =
-    ProtocolPushPullMatching.pushTopic(recipeName, interactionName, version)
+    ProtocolPushPullMatching.pushTopic(interactionName)
 
   def push(): Unit =
     mediator ! DistributedPubSubMediator.Publish(pushTopic, ProtocolPushPullMatching.Push(self))
 
-  def start(): Unit =
-    mediator ! DistributedPubSubMediator.Subscribe(pullTopic, self); push()
+  def start(): Unit = {
+    mediator ! DistributedPubSubMediator.Subscribe(pullTopic, self)
+    push()
+    context.system.scheduler.scheduleOnce(postTimeout.duration, self, PostTimeout)(context.dispatcher, self)
+  }
 
-  start()
 
   def receive: Receive = {
+    case Start =>
+      start()
+      context.become(running(sender))
+  }
+
+  def running(manager: ActorRef): Receive = {
     case ProtocolPushPullMatching.Pull(agent) =>
       // respond with available quest
       agent ! ProtocolPushPullMatching.AvailableQuest(self)
@@ -36,10 +52,15 @@ class QuestMandated(manager: ActorRef, ingredients: Seq[IngredientInstance], rec
     case ProtocolQuestCommit.Considering(agent) =>
       // start the interaction execution protocol by responding with a commit message
       agent ! ProtocolQuestCommit.Commit(self, ProtocolInteractionExecution.ExecuteInstance(ingredients))
-      context.become(committed)
+      context.system.scheduler.scheduleOnce(computationTimeout.duration, self, ComputationTimeout)(context.dispatcher, self)
+      context.become(committed(manager))
+
+    case PostTimeout =>
+      manager ! ProtocolInteractionExecution.NoInstanceFound
+      self ! PoisonPill
   }
 
-  def committed: Receive = {
+  def committed(manager: ActorRef): Receive = {
 
     case message: ProtocolInteractionExecution =>
       // report and kill himself
@@ -48,6 +69,10 @@ class QuestMandated(manager: ActorRef, ingredients: Seq[IngredientInstance], rec
 
     case ProtocolQuestCommit.Considering(agent) =>
       agent ! ProtocolQuestCommit.QuestTaken
+
+    case ComputationTimeout =>
+      manager ! ProtocolInteractionExecution.InstanceExecutionTimedOut
+      self ! PoisonPill
   }
 
 }
