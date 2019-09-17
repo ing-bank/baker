@@ -9,8 +9,8 @@ import scala.util.{Failure, Success}
 
 object InteractionAgent {
 
-  def apply(recipeName: String, instance: InteractionInstance, version: String = "v0"): Props =
-    Props(new InteractionAgent(recipeName, instance, version))
+  def apply(instance: InteractionInstance): Props =
+    Props(new InteractionAgent(instance))
 
   /**
     * Closes over the agent actor references, just like the pipe pattern does, except it sends a more expressive
@@ -32,17 +32,17 @@ object InteractionAgent {
   }
 }
 
-class InteractionAgent(recipeName: String, interaction: InteractionInstance, version: String) extends Actor {
+class InteractionAgent(interaction: InteractionInstance) extends Actor {
 
   import context.dispatcher
 
   val mediator: ActorRef = DistributedPubSub(context.system).mediator
 
   val pullTopic: String =
-    ProtocolPushPullMatching.pullTopic(recipeName, interaction.name, version)
+    ProtocolPushPullMatching.pullTopic(interaction.name)
 
   val pushTopic: String =
-    ProtocolPushPullMatching.pushTopic(recipeName, interaction.name, version)
+    ProtocolPushPullMatching.pushTopic(interaction.name)
 
   def pull(): Unit =
     mediator ! DistributedPubSubMediator.Publish(pullTopic, ProtocolPushPullMatching.Pull(self))

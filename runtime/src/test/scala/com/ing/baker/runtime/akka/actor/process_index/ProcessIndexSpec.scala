@@ -1,31 +1,33 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
-import akka.actor.{ Actor, ActorRef, ActorSystem, Props }
-import akka.testkit.{ ImplicitSender, TestKit, TestProbe }
-import com.ing.baker.il.petrinet.{ EventTransition, Place, RecipePetriNet, Transition }
-import com.ing.baker.il.{ CompiledRecipe, EventDescriptor, IngredientDescriptor }
-import com.ing.baker.petrinet.api.{ Marking, PetriNet }
+import java.util.UUID
+
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.testkit.{ImplicitSender, TestKit, TestProbe}
+import com.ing.baker.il.petrinet.{EventTransition, Place, RecipePetriNet, Transition}
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor, IngredientDescriptor}
+import com.ing.baker.petrinet.api.{Marking, PetriNet}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.CheckForProcessesToBeDeleted
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.NotifyWhenReceived
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.{ AllRecipes, GetAllRecipes, RecipeInformation }
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.{AllRecipes, GetAllRecipes, RecipeInformation}
 import com.ing.baker.runtime.akka.actor.serialization.Encryption
-import com.ing.baker.runtime.akka.internal.InteractionManager
-import com.ing.baker.runtime.scaladsl.{ EventInstance, RecipeInstanceState }
+import com.ing.baker.runtime.akka.internal.InteractionManagerLocal
+import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
 import com.ing.baker.types
 import com.ing.baker.types.Value
-import com.typesafe.config.{ Config, ConfigFactory }
-import java.util.UUID
+import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Mockito
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mockito.MockitoSugar
-import org.scalatest.{ BeforeAndAfter, BeforeAndAfterAll, Matchers, WordSpecLike }
-import scala.concurrent.duration._
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Matchers, WordSpecLike}
 import scalax.collection.immutable.Graph
+
+import scala.concurrent.duration._
 
 object ProcessIndexSpec {
   val config: Config = ConfigFactory.parseString(
@@ -281,7 +283,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       recipeInstanceIdleTimeout = None,
       retentionCheckInterval = None,
       configuredEncryption = Encryption.NoEncryption,
-      interactionManager = new InteractionManager(),
+      interactionManager = new InteractionManagerLocal(),
       recipeManager = recipeManager,
       Seq.empty) {
       override def createProcessActor(id: String, compiledRecipe: CompiledRecipe) = petriNetActorRef

@@ -7,7 +7,7 @@ import cats.data.NonEmptyList
 import com.ing.baker.runtime.akka.AkkaBakerConfig.BakerPersistenceQuery
 import com.ing.baker.runtime.akka.actor.serialization.Encryption
 import com.ing.baker.runtime.akka.actor.{ BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider }
-import com.ing.baker.runtime.akka.internal.InteractionManager
+import com.ing.baker.runtime.akka.internal.{InteractionManager, InteractionManagerDis, IkenteractionManagerLocal}
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import scala.concurrent.duration._
@@ -58,7 +58,7 @@ object AkkaBakerConfig {
       defaultShutdownTimeout = 30.seconds,
       defaultAddRecipeTimeout = 10.seconds,
       bakerActorProvider = provider,
-      interactionManager = new InteractionManager(),
+      interactionManager = new InteractionManagerLocal(),
       readJournal = PersistenceQuery(actorSystem)
       .readJournalFor[BakerPersistenceQuery]("inmemory-read-journal")
     )(actorSystem)
@@ -105,7 +105,10 @@ object AkkaBakerConfig {
           case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
         }
       },
-      interactionManager = new InteractionManager,
+      interactionManager = config.as[Option[String]]("baker.interaction-manager") match {
+        case Some("remote") => new InteractionManagerDis(actorSystem, 10 seconds, 600 seconds) //TODO read timeout from config //TODO 2 remore computation timeout
+        case _ => new InteractionManagerLocal()
+      },
       readJournal = PersistenceQuery(actorSystem)
         .readJournalFor[BakerPersistenceQuery](config.as[String]("baker.actor.read-journal-plugin"))
     )(actorSystem)

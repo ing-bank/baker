@@ -1,26 +1,28 @@
 package com.ing.baker.runtime.akka
 
+import java.util.concurrent.TimeUnit
+import java.util.{Optional, UUID}
+
 import akka.actor.ActorSystem
-import akka.persistence.inmemory.extension.{ InMemoryJournalStorage, StorageExtension }
-import akka.testkit.{ TestDuration, TestKit, TestProbe }
+import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
+import akka.testkit.{TestDuration, TestKit, TestProbe}
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
-import com.ing.baker.recipe.scaladsl.{ Event, Ingredient, Interaction, Recipe }
+import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common._
-import com.ing.baker.runtime.scaladsl.{ Baker, EventInstance, InteractionInstance }
-import com.ing.baker.types.{ CharArray, Int32, PrimitiveValue }
-import com.typesafe.config.ConfigFactory
-import java.util.concurrent.TimeUnit
-import java.util.{ Optional, UUID }
-import org.mockito.Matchers.{ eq => mockitoEq, _ }
+import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
+import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
+import com.typesafe.config.{Config, ConfigFactory}
+import org.mockito.Matchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.slf4j.LoggerFactory
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -107,6 +109,55 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue))))
+        _ = verify(testInteractionOneMock).apply(recipeInstanceId.toString, "initialIngredient")
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+      } yield
+        state.ingredients shouldBe
+          ingredientMap(
+            "initialIngredient" -> initialIngredientValue,
+            "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
+    }
+
+    "execute an interaction when its ingredient is provided in cluster" in {
+      val recipe =
+        Recipe("IngredientProvidedRecipeCluster")
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent)
+
+
+      val config: Config = ConfigFactory.parseString(
+        """
+          |include "baker.conf"
+          |
+          |akka {
+          |  actor {
+          |    provider = "cluster"
+          |  }
+          |  remote {
+          |    log-remote-lifecycle-events = off
+          |    netty.tcp {
+          |      hostname = "127.0.0.1"
+          |      port = 2551
+          |    }
+          |  }
+          |
+          |  cluster {
+          |    seed-nodes = ["akka.tcp://remoteTest@127.0.0.1:2551"]
+          |    auto-down-unreachable-after = 10s
+          |  }
+          |}
+          |baker.interaction-manager = remote
+        """.stripMargin).withFallback(ConfigFactory.load())
+
+      val baker = Baker.akka(config, ActorSystem.apply("remoteTest", config))
+
+      for {
+        _ <- baker.addInteractionInstances(mockImplementations)
+        recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
