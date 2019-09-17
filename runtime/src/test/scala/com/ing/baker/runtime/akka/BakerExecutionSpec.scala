@@ -142,12 +142,12 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           |    log-remote-lifecycle-events = off
           |    netty.tcp {
           |      hostname = "127.0.0.1"
-          |      port = 2551
+          |      port = 2552
           |    }
           |  }
           |
           |  cluster {
-          |    seed-nodes = ["akka.tcp://remoteTest@127.0.0.1:2551"]
+          |    seed-nodes = ["akka.tcp://remoteTest@127.0.0.1:2552"]
           |    auto-down-unreachable-after = 10s
           |  }
           |}
