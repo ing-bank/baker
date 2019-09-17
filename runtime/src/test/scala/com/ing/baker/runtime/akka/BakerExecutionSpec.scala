@@ -5,7 +5,7 @@ import java.util.{Optional, UUID}
 
 import akka.actor.ActorSystem
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.{TestDuration, TestKit, TestProbe}
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
@@ -17,7 +17,7 @@ import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common._
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
@@ -110,6 +110,55 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       for {
         (baker, recipeId) <- setupBakerWithRecipe(recipe, mockImplementations)
+        _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- baker.bake(recipeId, recipeInstanceId)
+        _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue))))
+        _ = verify(testInteractionOneMock).apply(recipeInstanceId.toString, "initialIngredient")
+        state <- baker.getRecipeInstanceState(recipeInstanceId)
+      } yield
+        state.ingredients shouldBe
+          ingredientMap(
+            "initialIngredient" -> initialIngredientValue,
+            "interactionOneOriginalIngredient" -> interactionOneIngredientValue)
+    }
+
+    "execute an interaction when its ingredient is provided in cluster" in {
+      val recipe =
+        Recipe("IngredientProvidedRecipeCluster")
+          .withInteraction(interactionOne)
+          .withSensoryEvent(initialEvent)
+
+
+      val config: Config = ConfigFactory.parseString(
+        """
+          |include "baker.conf"
+          |
+          |akka {
+          |  actor {
+          |    provider = "cluster"
+          |  }
+          |  remote {
+          |    log-remote-lifecycle-events = off
+          |    netty.tcp {
+          |      hostname = "127.0.0.1"
+          |      port = 2551
+          |    }
+          |  }
+          |
+          |  cluster {
+          |    seed-nodes = ["akka.tcp://remoteTest@127.0.0.1:2551"]
+          |    auto-down-unreachable-after = 10s
+          |  }
+          |}
+          |baker.interaction-manager = remote
+        """.stripMargin).withFallback(ConfigFactory.load())
+
+      val baker = Baker.akka(config, ActorSystem.apply("remoteTest", config), ActorMaterializer())
+
+      for {
+        _ <- baker.addInteractionInstances(mockImplementations)
+        recipeId <- baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
         _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful(interactionOneIngredientValue)))
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)

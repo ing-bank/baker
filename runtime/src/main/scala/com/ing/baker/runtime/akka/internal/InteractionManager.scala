@@ -2,10 +2,57 @@ package com.ing.baker.runtime.akka.internal
 
 import java.util.concurrent.ConcurrentHashMap
 
+import akka.actor.ActorSystem
+import akka.pattern.ask
+import akka.util.Timeout
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.scaladsl.InteractionInstance
+import com.ing.baker.runtime.akka.actor.interaction_schedulling.QuestMandated.Start
+import com.ing.baker.runtime.akka.actor.interaction_schedulling.{InteractionAgent, ProtocolInteractionExecution, QuestMandated}
+import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
 
 import scala.compat.java8.FunctionConverters._
+import scala.concurrent.Future
+
+
+
+trait InteractionManager {
+  def hasImplementation(interaction: InteractionTransition): Boolean
+
+  def executeImplementation(interaction: InteractionTransition, input: Seq[IngredientInstance]): Future[Option[EventInstance]]
+
+  /**
+    * Add an implementation to the InteractionManager
+    *
+    * @param implementation
+    */
+  def addImplementation(implementation: InteractionInstance): Unit
+
+}
+
+class InteractionManagerDis(system: ActorSystem, postTimeout: Timeout, computationTimeout: Timeout) extends InteractionManager {
+
+  import system.dispatcher
+
+  override def executeImplementation(interaction: InteractionTransition, input: Seq[IngredientInstance]): Future[Option[EventInstance]] = {
+    val a = system.actorOf(QuestMandated(input, interaction.interactionName, postTimeout, computationTimeout))
+    a.ask(Start)(Timeout.durationToTimeout(postTimeout.duration + computationTimeout.duration)).flatMap {
+      case ProtocolInteractionExecution.InstanceExecutedSuccessfully(result) => Future.successful(result)
+        //What if there is no implementation available????
+      case ProtocolInteractionExecution.InstanceExecutionFailed() => Future.failed(new RuntimeException("Remote execution of interaction failed"))
+    }
+  }
+
+  /**
+    * Add an implementation to the InteractionManager
+    *
+    * @param implementation
+    */
+  override def addImplementation(implementation: InteractionInstance): Unit = {
+    system.actorOf(InteractionAgent(implementation))
+  }
+
+  override def hasImplementation(interaction: InteractionTransition): Boolean = true
+}
 
 /**
   * The InteractionManager is responsible for all implementation of interactions.
@@ -13,7 +60,7 @@ import scala.compat.java8.FunctionConverters._
   *
   * @param interactionImplementations All
   */
-class InteractionManager(private var interactionImplementations: Seq[InteractionInstance] = Seq.empty) {
+class InteractionManagerLocal(private var interactionImplementations: Seq[InteractionInstance] = Seq.empty) extends InteractionManager {
 
   private val implementationCache: ConcurrentHashMap[InteractionTransition, InteractionInstance] =
     new ConcurrentHashMap[InteractionTransition, InteractionInstance]
@@ -53,6 +100,16 @@ class InteractionManager(private var interactionImplementations: Seq[Interaction
     * @param interaction The interaction to check
     * @return An option containing the implementation if available
     */
-  def getImplementation(interaction: InteractionTransition): Option[InteractionInstance] =
+  private[internal] def getImplementation(interaction: InteractionTransition): Option[InteractionInstance] =
     Option(implementationCache.computeIfAbsent(interaction, (findInteractionImplementation _).asJava))
+
+  def hasImplementation(interaction: InteractionTransition): Boolean =
+    getImplementation(interaction).isDefined
+
+  override def executeImplementation(interaction: InteractionTransition, input: Seq[IngredientInstance]): Future[Option[EventInstance]] = {
+    this.getImplementation(interaction) match {
+      case Some(implementation) => implementation.run(input)
+      case None => Future.failed(new FatalInteractionException("No implementation available for interaction"))
+    }
+  }
 }
