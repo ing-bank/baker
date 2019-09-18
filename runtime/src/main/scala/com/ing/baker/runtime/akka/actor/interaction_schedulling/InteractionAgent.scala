@@ -1,5 +1,7 @@
 package com.ing.baker.runtime.akka.actor.interaction_schedulling
 
+import java.util.UUID
+
 import akka.actor.{Actor, ActorRef, Props}
 import akka.cluster.pubsub.{DistributedPubSub, DistributedPubSubMediator}
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance}
@@ -61,39 +63,39 @@ class InteractionAgent(interaction: InteractionInstance) extends Actor {
   pull()
 
   def receive: Receive = {
-    case ProtocolPushPullMatching.Push(mandated) =>
+    case ProtocolPushPullMatching.Push(mandated, uuid) =>
       // start Quest commit protocol
-      log.info(s"${interaction.name}: Considering quest from $mandated")
+      log.info(s"${interaction.name}:$uuid: Considering quest from $mandated")
       mandated ! ProtocolQuestCommit.Considering(self)
       unsubscribePush()
-      context.become(considering)
+      context.become(considering(uuid))
 
-    case ProtocolPushPullMatching.AvailableQuest(mandated) =>
+    case ProtocolPushPullMatching.AvailableQuest(mandated, uuid) =>
       // start Quest commit protocol
-      log.info(s"${interaction.name}: Considering quest from $mandated")
+      log.info(s"${interaction.name}:$uuid: Considering quest from $mandated")
       mandated ! ProtocolQuestCommit.Considering(self)
       unsubscribePush()
-      context.become(considering)
+      context.become(considering(uuid))
   }
 
-  def considering: Receive = {
+  def considering(uuid: UUID): Receive = {
     case ProtocolQuestCommit.Commit(mandated, executeMessage) =>
-      log.info(s"${interaction.name}: Commited to quest from $mandated")
+      log.info(s"${interaction.name}:$uuid: Commited to quest from $mandated")
       // start the execution protocol by already starting the computation and become committed
       InteractionAgent.pipeBackExecutionResponse(self)(interaction.run(executeMessage.input))
-      context.become(committed(mandated))
+      context.become(committed(mandated, uuid))
 
     case ProtocolQuestCommit.QuestTaken =>
-      log.info(s"${interaction.name}: Quest taken, starting the protocol again")
+      log.info(s"${interaction.name}:$uuid: Quest taken, starting the protocol again")
       // quest taIken, start all over again
       subscribePush()
       pull()
       context.become(receive)
   }
 
-  def committed(mandated: ActorRef): Receive = {
+  def committed(mandated: ActorRef, uuid: UUID): Receive = {
     case message: ProtocolInteractionExecution =>
-      log.info(s"${interaction.name}: Considering quest from $mandated")
+      log.info(s"${interaction.name}:$uuid: Considering quest from $mandated")
       // Forward the result
       mandated ! message
       // Start all over again
