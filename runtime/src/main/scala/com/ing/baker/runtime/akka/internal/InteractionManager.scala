@@ -38,7 +38,7 @@ class InteractionManagerDis(system: ActorSystem, postTimeout: Timeout, computati
     a.ask(Start)(Timeout.durationToTimeout(postTimeout.duration + computationTimeout.duration)).flatMap {
       case ProtocolInteractionExecution.InstanceExecutedSuccessfully(result) => Future.successful(result)
       case ProtocolInteractionExecution.InstanceExecutionFailed() => Future.failed(new RuntimeException("Remote execution of interaction failed"))
-      case ProtocolInteractionExecution.NoInstanceFound() => executeImplementation(interaction, input)
+      case ProtocolInteractionExecution.NoInstanceFound => executeImplementation(interaction, input)
       case ProtocolInteractionExecution.InstanceExecutionTimedOut() => Future.failed(new RuntimeException("Execution of interaction timed out"))
       case ProtocolInteractionExecution.InvalidExecution() => Future.failed(new RuntimeException("Execution of interaction failed because of invalid ingredient input"))
     }
