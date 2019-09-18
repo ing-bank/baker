@@ -3,6 +3,8 @@ package com.ing.baker.runtime.akka.actor.interaction_schedulling
 import akka.actor.{Actor, ActorRef, Props}
 import akka.cluster.pubsub.{DistributedPubSub, DistributedPubSubMediator}
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance}
+import org.slf4j.LoggerFactory
+import InteractionAgent._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -30,6 +32,8 @@ object InteractionAgent {
         agent.tell(ProtocolInteractionExecution.InstanceExecutionFailed(), agent)
     }
   }
+
+  private val log = LoggerFactory.getLogger(classOf[InteractionAgent])
 }
 
 class InteractionAgent(interaction: InteractionInstance) extends Actor {
@@ -59,12 +63,14 @@ class InteractionAgent(interaction: InteractionInstance) extends Actor {
   def receive: Receive = {
     case ProtocolPushPullMatching.Push(mandated) =>
       // start Quest commit protocol
+      log.info(s"${interaction.name}: Considering quest from $mandated")
       mandated ! ProtocolQuestCommit.Considering(self)
       unsubscribePush()
       context.become(considering)
 
     case ProtocolPushPullMatching.AvailableQuest(mandated) =>
       // start Quest commit protocol
+      log.info(s"${interaction.name}: Considering quest from $mandated")
       mandated ! ProtocolQuestCommit.Considering(self)
       unsubscribePush()
       context.become(considering)
@@ -72,12 +78,14 @@ class InteractionAgent(interaction: InteractionInstance) extends Actor {
 
   def considering: Receive = {
     case ProtocolQuestCommit.Commit(mandated, executeMessage) =>
+      log.info(s"${interaction.name}: Commited to quest from $mandated")
       // start the execution protocol by already starting the computation and become committed
       InteractionAgent.pipeBackExecutionResponse(self)(interaction.run(executeMessage.input))
       context.become(committed(mandated))
 
     case ProtocolQuestCommit.QuestTaken =>
-      // quest taken, start all over again
+      log.info(s"${interaction.name}: Quest taken, starting the protocol again")
+      // quest taIken, start all over again
       subscribePush()
       pull()
       context.become(receive)
@@ -85,6 +93,7 @@ class InteractionAgent(interaction: InteractionInstance) extends Actor {
 
   def committed(mandated: ActorRef): Receive = {
     case message: ProtocolInteractionExecution =>
+      log.info(s"${interaction.name}: Considering quest from $mandated")
       // Forward the result
       mandated ! message
       // Start all over again
