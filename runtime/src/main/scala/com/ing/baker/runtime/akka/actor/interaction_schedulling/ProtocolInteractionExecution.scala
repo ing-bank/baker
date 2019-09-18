@@ -37,7 +37,7 @@ object ProtocolInteractionExecution {
   /**
     * Technical failure of the interaction
     */
-  case class NoInstanceFound() extends ProtocolInteractionExecution
+  case object NoInstanceFound extends ProtocolInteractionExecution
 
   /**
     * Invalid request, bad ingredients given

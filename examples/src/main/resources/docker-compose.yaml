@@ -1,7 +1,7 @@
 version: '3'
 services:
   node1:
-    image: "checkout-service-baker-example:3.0.0-SNAPSHOT"
+    image: "checkout-service-baker-example:3.0.1-SNAPSHOT"
     ports:
       - "8081:8080"
       - "5261:5266"
@@ -14,26 +14,26 @@ services:
       CLUSTER_SEED_HOST: node1
       CLUSTER_SEED_PORT: 2551
   node2:
-    image: "checkout-service-baker-example:3.0.0-SNAPSHOT"
+    image: "checkout-service-baker-example:3.0.1-SNAPSHOT"
     ports:
       - "8082:8080"
       - "5262:5266"
       - "9092:9095"
-    logging:
-      driver: none
+    #logging:
+    #  driver: none
     environment:
       CLUSTER_HOST: node2
       CLUSTER_PORT: 2551
       CLUSTER_SEED_HOST: node1
       CLUSTER_SEED_PORT: 2551
   node3:
-    image: "checkout-service-baker-example:3.0.0-SNAPSHOT"
+    image: "checkout-service-baker-example:3.0.1-SNAPSHOT"
     ports:
       - "8083:8080"
       - "5263:526"
       - "9093:9095"
-    logging:
-      driver: none
+    #logging:
+    #  driver: none
     environment:
       CLUSTER_HOST: node3
       CLUSTER_PORT: 2551
