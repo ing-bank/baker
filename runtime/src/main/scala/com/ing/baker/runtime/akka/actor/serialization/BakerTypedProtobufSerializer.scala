@@ -2,8 +2,9 @@ package com.ing.baker.runtime.akka.actor.serialization
 
 import akka.actor.ExtendedActorSystem
 import akka.serialization.SerializerWithStringManifest
-import com.ing.baker.{il, runtime}
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider
+import com.ing.baker.runtime.akka.actor.interaction_scheduling.InteractionSchedulingProto._
+import com.ing.baker.runtime.akka.actor.interaction_scheduling.{ProtocolInteractionExecution, ProtocolPushPullMatching, ProtocolQuestCommit}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
 import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
@@ -11,6 +12,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
 import com.ing.baker.runtime.akka.actor.serialization.BakerTypedProtobufSerializer.BinarySerializable
+import com.ing.baker.{il, runtime}
 import org.slf4j.LoggerFactory
 
 import scala.reflect.ClassTag
@@ -26,7 +28,7 @@ object BakerTypedProtobufSerializer {
   val identifier = 101
 
   def entries(implicit ev0: SerializersProvider): List[BinarySerializable] =
-    commonEntries ++ processIndexEntries ++ processInstanceEntries ++ recipeManagerEntries
+    commonEntries ++ processIndexEntries ++ processInstanceEntries ++ recipeManagerEntries ++ interactionSchedulingEntries
 
   def commonEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
     List(
@@ -156,6 +158,32 @@ object BakerTypedProtobufSerializer {
         .register("RecipeManagerProtocol.AllRecipes"),
       forType[RecipeManager.RecipeAdded]
         .register("RecipeManager.RecipeAdded")
+    )
+
+  def interactionSchedulingEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
+    List(
+      forType[ProtocolInteractionExecution.InstanceExecutedSuccessfully]
+        .register("InteractionSchedulingProtocols.InstanceExecutedSuccessfully"),
+      forType[ProtocolInteractionExecution.InstanceExecutionFailed]
+        .register("InteractionSchedulingProtocols.InstanceExecutionFailed"),
+      forType[ProtocolInteractionExecution.InstanceExecutionTimedOut]
+        .register("InteractionSchedulingProtocols.InstanceExecutionTimedOut"),
+      forType[ProtocolInteractionExecution.NoInstanceFound.type]
+        .register("InteractionSchedulingProtocols.NoInstanceFound"),
+      forType[ProtocolInteractionExecution.InvalidExecution]
+        .register("InteractionSchedulingProtocols.InvalidExecution"),
+      forType[ProtocolPushPullMatching.Push]
+        .register("InteractionSchedulingProtocols.Push"),
+      forType[ProtocolPushPullMatching.Pull]
+        .register("InteractionSchedulingProtocols.Pull"),
+      forType[ProtocolPushPullMatching.AvailableQuest]
+        .register("InteractionSchedulingProtocols.AvailableQuest"),
+      forType[ProtocolQuestCommit.Considering]
+        .register("InteractionSchedulingProtocols.Considering"),
+      forType[ProtocolQuestCommit.Commit]
+        .register("InteractionSchedulingProtocols.Commit"),
+      forType[ProtocolQuestCommit.QuestTaken.type]
+        .register("InteractionSchedulingProtocols.QuestTaken")
     )
 
   def forType[A <: AnyRef](implicit tag: ClassTag[A]): RegisterFor[A] = new RegisterFor[A](tag)

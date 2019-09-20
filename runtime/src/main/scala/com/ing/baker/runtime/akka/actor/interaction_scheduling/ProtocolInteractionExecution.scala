@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.akka.actor.interaction_schedulling
+package com.ing.baker.runtime.akka.actor.interaction_scheduling
 
 import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}

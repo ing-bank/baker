@@ -1,11 +1,11 @@
-package com.ing.baker.runtime.akka.actor.interaction_schedulling
+package com.ing.baker.runtime.akka.actor.interaction_scheduling
 
 import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, PoisonPill, Props}
 import akka.cluster.pubsub.{DistributedPubSub, DistributedPubSubMediator}
 import akka.util.Timeout
-import com.ing.baker.runtime.akka.actor.interaction_schedulling.QuestMandated.{ComputationTimeout, PostTimeout, Start}
+import com.ing.baker.runtime.akka.actor.interaction_scheduling.QuestMandated.{ComputationTimeout, PostTimeout, Start}
 import com.ing.baker.runtime.scaladsl.IngredientInstance
 import org.slf4j.LoggerFactory
 import QuestMandated._
