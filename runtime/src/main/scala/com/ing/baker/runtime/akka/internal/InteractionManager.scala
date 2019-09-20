@@ -6,8 +6,8 @@ import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.util.Timeout
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.akka.actor.interaction_schedulling.QuestMandated.Start
-import com.ing.baker.runtime.akka.actor.interaction_schedulling.{InteractionAgent, ProtocolInteractionExecution, QuestMandated}
+import com.ing.baker.runtime.akka.actor.interaction_scheduling.QuestMandated.Start
+import com.ing.baker.runtime.akka.actor.interaction_scheduling.{InteractionAgent, ProtocolInteractionExecution, QuestMandated}
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
 
 import scala.compat.java8.FunctionConverters._

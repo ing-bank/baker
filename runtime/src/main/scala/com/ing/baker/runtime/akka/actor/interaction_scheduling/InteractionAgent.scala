@@ -1,10 +1,10 @@
-package com.ing.baker.runtime.akka.actor.interaction_schedulling
+package com.ing.baker.runtime.akka.actor.interaction_scheduling
 
 import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, Props}
 import akka.cluster.pubsub.{DistributedPubSub, DistributedPubSubMediator}
-import com.ing.baker.runtime.akka.actor.interaction_schedulling.InteractionAgent._
+import com.ing.baker.runtime.akka.actor.interaction_scheduling.InteractionAgent._
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance}
 import org.slf4j.LoggerFactory
 
@@ -29,7 +29,7 @@ object InteractionAgent {
     * @param result outcome of invoking the interaction instance
     * @param ec     execution context to use
     */
-  private[interaction_schedulling] def pipeBackExecutionResponse(agent: ActorRef, mandated: ActorRef)(result: Future[Option[EventInstance]])(implicit ec: ExecutionContext): Unit = {
+  private[interaction_scheduling] def pipeBackExecutionResponse(agent: ActorRef, mandated: ActorRef)(result: Future[Option[EventInstance]])(implicit ec: ExecutionContext): Unit = {
     result.onComplete {
       case Success(value) =>
         mandated.tell(ProtocolInteractionExecution.InstanceExecutedSuccessfully(value), agent)
