@@ -1,13 +1,14 @@
-package com.ing.baker.runtime.akka.actor.interaction_schedulling
+package com.ing.baker.runtime.akka.actor.interaction_scheduling
 
 import java.util.UUID
 
 import akka.actor.ActorRef
+import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 
 /**
   * Protocol done to find a possible matching between a QuestMandated and an available InteractionAgent
   */
-sealed trait ProtocolPushPullMatching
+sealed trait ProtocolPushPullMatching extends BakerSerializable
 
 object ProtocolPushPullMatching {
 

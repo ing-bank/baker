@@ -5,7 +5,7 @@ import com.ing.baker.il
 import com.ing.baker.types
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.akka.actor.serialization.protomappings._
-import com.ing.baker.runtime.scaladsl.{EventMoment, RecipeInstanceState, EventInstance, SensoryEventResult}
+import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, IngredientInstance, RecipeInstanceState, SensoryEventResult}
 import scalapb.GeneratedMessageCompanion
 
 import scala.util.{Success, Try}
@@ -49,6 +49,9 @@ object ProtoMap {
 
   implicit val ingredientDescriptorMapping: ProtoMap[il.IngredientDescriptor, protobuf.IngredientDescriptor] =
     new IngredientDescriptorMapping
+
+  implicit val ingredientInstanceMapping: ProtoMap[IngredientInstance, protobuf.Ingredient] =
+    new IngredientInstanceMapping
 
   implicit val bakerTypeMapping: ProtoMap[types.Type, protobuf.Type] =
     new BakerTypesMapping
