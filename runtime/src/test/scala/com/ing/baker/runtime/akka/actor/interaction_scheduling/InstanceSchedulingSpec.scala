@@ -1,11 +1,11 @@
-package com.ing.baker.runtime.akka.actor.interaction_schedulling
+package com.ing.baker.runtime.akka.actor.interaction_scheduling
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit}
 import akka.util.Timeout
 import cats.effect.{IO, Timer}
-import com.ing.baker.runtime.akka.actor.interaction_schedulling.ProtocolInteractionExecution.InstanceExecutedSuccessfully
-import com.ing.baker.runtime.akka.actor.interaction_schedulling.QuestMandated.Start
+import com.ing.baker.runtime.akka.actor.interaction_scheduling.ProtocolInteractionExecution.InstanceExecutedSuccessfully
+import com.ing.baker.runtime.akka.actor.interaction_scheduling.QuestMandated.Start
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
 import com.ing.baker.types.{CharArray, PrimitiveValue}
 import com.typesafe.config.{Config, ConfigFactory}
