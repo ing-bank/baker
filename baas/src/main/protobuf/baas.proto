@@ -8,13 +8,7 @@ option (scalapb.options) = {
     flat_package: true
 };
 
-message AddInteractionHTTPRequest {
-    optional string name = 1;
-    optional string uri = 2;
-    repeated Type input = 3;
-}
-
-message AddInteractionHTTPResponse {
+message BaaSRemoteFailure {
     optional string message = 1;
 }
 
@@ -24,44 +18,4 @@ message AddRecipeRequest {
 
 message AddRecipeResponse {
     optional string recipeId = 1;
-}
-
-message BakeRequest {
-    optional string recipeId= 1;
-}
-
-message BakeResponse {
-    optional ProcessState processState= 1;
-}
-
-message EventsResponse {
-    repeated RuntimeEvent runtimeEvent = 1;
-}
-
-message IngredientsResponse {
-    map<string, Value> ingredients = 1;
-}
-
-message ProcessEventRequest {
-    optional RuntimeEvent runtimeEvent = 1;
-}
-
-message ProcessEventResponse {
-    optional SensoryEventStatus sensoryEventStatus = 1;
-}
-
-message StateResponse {
-    optional ProcessState processState= 1;
-}
-
-message VisualStateResponse {
-    optional string VisualStateResponse = 1;
-}
-
-message ExecuteInteractionHTTPRequest {
-    repeated Ingredient ingredient = 1;
-}
-
-message ExecuteInteractionHTTPResponse {
-    optional RuntimeEvent runtimeEvent = 1;
 }
