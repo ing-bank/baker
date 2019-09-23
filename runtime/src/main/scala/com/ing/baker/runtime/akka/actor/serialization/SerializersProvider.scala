@@ -7,7 +7,7 @@ case class SerializersProvider(getSerializerFor: AnyRef => Serializer, serialize
 
 object SerializersProvider {
 
-  def apply(system: ActorSystem, actorRefProvider: ActorRefProvider, encryption: Encryption = Encryption.NoEncryption): SerializersProvider = {
+  def apply(system: ActorSystem, actorRefProvider: ActorRefProvider, encryption: Encryption): SerializersProvider = {
     val serialization: Serialization = SerializationExtension.get(system)
     SerializersProvider(
       serialization.findSerializerFor,
@@ -15,5 +15,17 @@ object SerializersProvider {
       encryption,
       actorRefProvider
     )
+  }
+
+  def apply(system: ActorSystem, actorRefProvider: ActorRefProvider): SerializersProvider = {
+    apply(system, actorRefProvider, Encryption.NoEncryption)
+  }
+
+  def apply(system: ActorSystem, encryption: Encryption): SerializersProvider = {
+    apply(system, null, encryption)
+  }
+
+  def apply(system: ActorSystem): SerializersProvider = {
+    apply(system, null, Encryption.NoEncryption)
   }
 }
