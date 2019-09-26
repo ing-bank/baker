@@ -7,6 +7,14 @@ option (scalapb.options) = {
     flat_package: true
 };
 
+// other
+
+message RecipeInformation {
+    optional CompiledRecipe compiledRecipe = 1;
+    optional int64 recipeCreatedTime = 2;
+    repeated string errors = 3;
+}
+
 // wrapper object for 'any' data
 message SerializedData {
     optional int32 serializer_id = 1;
@@ -144,6 +152,11 @@ message EventMoment {
     optional int64 occurredOn = 2;
 }
 
+message RecipeInstanceMetadata {
+    optional string recipeId = 1;
+    optional string recipeInstanceId = 2;
+    optional int64 createdTime = 3;
+}
 
 message ProcessState {
     optional string recipeInstanceId = 1;

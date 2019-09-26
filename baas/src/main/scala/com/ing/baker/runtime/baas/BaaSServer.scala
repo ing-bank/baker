@@ -28,11 +28,17 @@ class BaaSServer(implicit system: ActorSystem, mat: Materializer, baker: Baker, 
   implicit val serializersProvider: SerializersProvider =
     SerializersProvider(system, encryption)
 
-  def route: Route = pathPrefix("api" / "v3")(concat(addRecipe))
+  def route: Route = pathPrefix("api" / "v3")(concat(addRecipe, getRecipe))
 
   def addRecipe: Route = post(path("addRecipe") {
     entity(as[BaaSProtocol.AddRecipeRequest]) { request =>
       complete(baker.addRecipe(request.compiledRecipe).map(BaaSProtocol.AddRecipeResponse))
+    }
+  })
+
+  def getRecipe: Route = post(path("getRecipe") {
+    entity(as[BaaSProtocol.GetRecipeRequest]) { request =>
+      complete(baker.getRecipe(request.recipeId).map(BaaSProtocol.GetRecipeResponse))
     }
   })
 }
