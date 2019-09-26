@@ -13,5 +13,5 @@ case class RecipeInformation(
                               errors: Set[String]) extends common.RecipeInformation with ScalaApi {
 
   def asJava: javadsl.RecipeInformation =
-    new javadsl.RecipeInformation(compiledRecipe, recipeCreatedTime, errors.asJava)
+    javadsl.RecipeInformation(compiledRecipe, recipeCreatedTime, errors.asJava)
 }
