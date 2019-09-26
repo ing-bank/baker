@@ -19,3 +19,94 @@ message AddRecipeRequest {
 message AddRecipeResponse {
     optional string recipeId = 1;
 }
+
+message GetRecipeRequest {
+    optional string recipeId = 1;
+}
+
+message GetRecipeResponse {
+    optional RecipeInformation recipeInformation = 1;
+}
+
+message GetAllRecipesResponse {
+    map<string, RecipeInformation> mapping = 1;
+}
+
+message BakeRequest {
+    optional string recipeId = 1;
+    optional string recipeInstanceId = 2;
+}
+
+message FireEventAndResolveWhenReceivedRequest {
+    optional string recipeInstanceId = 1;
+    optional RuntimeEvent event = 2;
+    optional string correlationId = 3;
+}
+
+message FireEventAndResolveWhenReceivedResponse {
+    optional SensoryEventStatus sensoryEventStatus = 1;
+}
+
+message FireEventAndResolveWhenCompletedRequest {
+    optional string recipeInstanceId = 1;
+    optional RuntimeEvent event = 2;
+    optional string correlationId = 3;
+}
+
+message FireEventAndResolveWhenCompletedResponse {
+    optional SensoryEventResult sensoryEventResult = 1;
+}
+
+message FireEventAndResolveOnEventRequest {
+    optional string recipeInstanceId = 1;
+    optional RuntimeEvent event = 2;
+    optional string onEvent = 3;
+    optional string correlationId = 4;
+}
+
+message FireEventAndResolveOnEventResponse {
+    optional SensoryEventResult sensoryEventResult = 1;
+}
+
+message FireEventRequest {
+    optional string recipeInstanceId = 1;
+    optional RuntimeEvent event = 2;
+    optional string correlationId = 3;
+}
+
+message GetAllRecipeInstancesMetadataResponse {
+    optional RecipeInstanceMetadata set = 1;
+}
+
+message GetRecipeInstanceStateRequest {
+    optional string recipeInstanceId = 1;
+}
+
+message GetRecipeInstanceStateResponse {
+    optional ProcessState recipeInstanceState = 1;
+}
+
+message GetVisualStateRequest {
+    optional string recipeInstanceId = 1;
+}
+
+message GetVisualStateResponse {
+    optional string state = 1;
+}
+
+message RetryInteractionRequest {
+    optional string recipeInstanceId = 1;
+    optional string interactionName = 2;
+}
+
+message ResolveInteractionRequest {
+    optional string recipeInstanceId = 1;
+    optional string interactionName = 2;
+    optional RuntimeEvent event = 3;
+}
+
+message StopRetryingInteractionRequest {
+    optional string recipeInstanceId = 1;
+    optional string interactionName = 2;
+}
+

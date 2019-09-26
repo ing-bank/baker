@@ -40,7 +40,7 @@ class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(imp
   override def addRecipe(compiledRecipe: CompiledRecipe): Future[String] =
     for {
       encoded <- Marshal(BaaSProtocol.AddRecipeRequest(compiledRecipe)).to[MessageEntity]
-      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("addRecipe")), entity = encoded) //, entity = encoded.withContentType(ContentTypes.`application/octet-stream`))
+      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("addRecipe")), entity = encoded)
       response <- Http().singleRequest(request)
       decoded <- Unmarshal(response).to[BaaSProtocol.AddRecipeResponse]
     } yield decoded.recipeId
@@ -51,7 +51,13 @@ class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(imp
     * @param recipeId
     * @return
     */
-  override def getRecipe(recipeId: String): Future[RecipeInformation] = ???
+  override def getRecipe(recipeId: String): Future[RecipeInformation] =
+    for {
+      encoded <- Marshal(BaaSProtocol.GetRecipeRequest(recipeId)).to[MessageEntity]
+      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("getRecipe")), entity = encoded)
+      response <- Http().singleRequest(request)
+      decoded <- Unmarshal(response).to[BaaSProtocol.GetRecipeResponse]
+    } yield decoded.recipeInformation
 
   /**
     * Returns all recipes added to this baker instance.
