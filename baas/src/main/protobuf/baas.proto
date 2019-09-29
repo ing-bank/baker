@@ -75,7 +75,7 @@ message FireEventRequest {
 }
 
 message GetAllRecipeInstancesMetadataResponse {
-    optional RecipeInstanceMetadata set = 1;
+    repeated RecipeInstanceMetadata set = 1;
 }
 
 message GetRecipeInstanceStateRequest {

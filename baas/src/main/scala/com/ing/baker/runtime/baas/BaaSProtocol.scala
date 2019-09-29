@@ -2,7 +2,7 @@ package com.ing.baker.runtime.baas
 
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInformation, RecipeInstanceMetadata, SensoryEventResult}
+import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult}
 
 object BaaSProtocol {
 
@@ -43,11 +43,11 @@ object BaaSProtocol {
 
   //case class GetAllRecipeInstancesMetadataRequest()
 
-  case class GetAllRecipeInstancesMetadataResponse(set: RecipeInstanceMetadata)
+  case class GetAllRecipeInstancesMetadataResponse(set: Set[RecipeInstanceMetadata])
 
   case class GetRecipeInstanceStateRequest(recipeInstanceId: String)
 
-  case class GetRecipeInstanceStateResponse(recipeInstanceState)
+  case class GetRecipeInstanceStateResponse(recipeInstanceState: RecipeInstanceState)
 
   //case class GetIngredientsRequest(recipeInstanceId: String)
   //case class GetIngredientsResponse(map: Map[String, Value])
