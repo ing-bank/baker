@@ -64,7 +64,13 @@ class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(imp
     *
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
-  override def getAllRecipes: Future[Map[String, RecipeInformation]] = ???
+  override def getAllRecipes: Future[Map[String, RecipeInformation]] = {
+    val request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("getAllRecipes")))
+    for {
+      response <- Http().singleRequest(request)
+      decoded <- Unmarshal(response).to[BaaSProtocol.GetAllRecipesResponse]
+    } yield decoded.map
+  }
 
   /**
     * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier
@@ -73,7 +79,12 @@ class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(imp
     * @param recipeInstanceId The identifier for the newly baked process
     * @return
     */
-  override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] = ???
+  override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] =
+    for {
+      encoded <- Marshal(BaaSProtocol.BakeRequest(recipeId, recipeInstanceId)).to[MessageEntity]
+      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("bake")), entity = encoded)
+      _ <- Http().singleRequest(request)
+    } yield ()
 
   /**
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
@@ -86,7 +97,13 @@ class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(imp
     * @param event            The event object
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
-  override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] = ???
+  override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] =
+    for {
+      encoded <- Marshal(BaaSProtocol.FireEventAndResolveWhenReceivedRequest(recipeInstanceId, event, correlationId)).to[MessageEntity]
+      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("fireEventAndResolveWhenReceived")), entity = encoded)
+      response <- Http().singleRequest(request)
+      decoded <- Unmarshal(response).to[BaaSProtocol.FireEventAndResolveWhenReceivedResponse]
+    } yield decoded.sensoryEventStatus
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -99,7 +116,13 @@ class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(imp
     * @param event            The event object
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
-  override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventResult] = ???
+  override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventResult] =
+    for {
+      encoded <- Marshal(BaaSProtocol.FireEventAndResolveWhenCompletedRequest(recipeInstanceId, event, correlationId)).to[MessageEntity]
+      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("fireEventAndResolveWhenCompleted")), entity = encoded)
+      response <- Http().singleRequest(request)
+      decoded <- Unmarshal(response).to[BaaSProtocol.FireEventAndResolveWhenCompletedResponse]
+    } yield decoded.sensoryEventResult
 
   /**
     * Notifies Baker that an event has happened and waits until an specific event has executed.
@@ -113,7 +136,13 @@ class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(imp
     * @param onEvent          The name of the event to wait for
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
-  override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String]): Future[SensoryEventResult] = ???
+  override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String]): Future[SensoryEventResult] =
+    for {
+      encoded <- Marshal(BaaSProtocol.FireEventAndResolveOnEventRequest(recipeInstanceId, event, onEvent, correlationId)).to[MessageEntity]
+      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("fireEventAndResolveOnEvent")), entity = encoded)
+      response <- Http().singleRequest(request)
+      decoded <- Unmarshal(response).to[BaaSProtocol.FireEventAndResolveOnEventResponse]
+    } yield decoded.sensoryEventResult
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -127,7 +156,15 @@ class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(imp
     * @param event            The event object
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
-  override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): EventResolutions = ???
+  override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): EventResolutions = {
+    for {
+      encoded <- Marshal(BaaSProtocol.FireEventRequest(recipeInstanceId, event, correlationId)).to[MessageEntity]
+      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("fireEvent")), entity = encoded)
+      response <- Http().singleRequest(request)
+      //decoded <- Unmarshal(response).to[BaaSProtocol.???] TODO figure out what to do on this situation with the two futures
+    } yield () //decoded.recipeInformation
+    ???
+  }
 
   /**
     * Returns an index of all running processes.
@@ -139,7 +176,13 @@ class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(imp
     *
     * @return An index of all processes
     */
-  override def getAllRecipeInstancesMetadata: Future[Set[RecipeInstanceMetadata]] = ???
+  override def getAllRecipeInstancesMetadata: Future[Set[RecipeInstanceMetadata]] = {
+    val request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("getAllRecipeInstancesMetadata")))
+    for {
+      response <- Http().singleRequest(request)
+      decoded <- Unmarshal(response).to[BaaSProtocol.GetAllRecipeInstancesMetadataResponse]
+    } yield decoded.set
+  }
 
   /**
     * Returns the process state.
@@ -147,7 +190,13 @@ class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(imp
     * @param recipeInstanceId The process identifier
     * @return The process state.
     */
-  override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] = ???
+  override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] =
+    for {
+      encoded <- Marshal(BaaSProtocol.GetRecipeInstanceStateRequest(recipeInstanceId)).to[MessageEntity]
+      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("getRecipeInstanceState")), entity = encoded)
+      response <- Http().singleRequest(request)
+      decoded <- Unmarshal(response).to[BaaSProtocol.GetRecipeInstanceStateResponse]
+    } yield decoded.recipeInstanceState
 
   /**
     * Returns all provided ingredients for a given RecipeInstance id.
@@ -155,7 +204,8 @@ class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(imp
     * @param recipeInstanceId The process id.
     * @return The provided ingredients.
     */
-  override def getIngredients(recipeInstanceId: String): Future[Map[String, Value]] = ???
+  override def getIngredients(recipeInstanceId: String): Future[Map[String, Value]] =
+    getRecipeInstanceState(recipeInstanceId).map(_.ingredients)
 
   /**
     * Returns all fired events for a given RecipeInstance id.
@@ -163,7 +213,8 @@ class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(imp
     * @param recipeInstanceId The process id.
     * @return The events
     */
-  override def getEvents(recipeInstanceId: String): Future[Seq[EventMoment]] = ???
+  override def getEvents(recipeInstanceId: String): Future[Seq[EventMoment]] =
+    getRecipeInstanceState(recipeInstanceId).map(_.events)
 
   /**
     * Returns all names of fired events for a given RecipeInstance id.
@@ -171,7 +222,8 @@ class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(imp
     * @param recipeInstanceId The process id.
     * @return The event names
     */
-  override def getEventNames(recipeInstanceId: String): Future[Seq[String]] = ???
+  override def getEventNames(recipeInstanceId: String): Future[Seq[String]] =
+    getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name))
 
   /**
     * Returns the visual state (.dot) for a given process.
@@ -179,21 +231,29 @@ class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(imp
     * @param recipeInstanceId The process identifier.
     * @return A visual (.dot) representation of the process state.
     */
-  override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle): Future[String] = ???
+  override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle): Future[String] =
+    for {
+      encoded <- Marshal(BaaSProtocol.GetVisualStateRequest(recipeInstanceId)).to[MessageEntity]
+      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("getVisualState")), entity = encoded)
+      response <- Http().singleRequest(request)
+      decoded <- Unmarshal(response).to[BaaSProtocol.GetVisualStateResponse]
+    } yield decoded.state
 
   /**
     * Registers a listener to all runtime events for recipes with the given name run in this baker instance.
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(recipeName: String, listenerFunction: (String, EventInstance) => Unit): Future[Unit] = ???
+  override def registerEventListener(recipeName: String, listenerFunction: (String, EventInstance) => Unit): Future[Unit] =
+    throw new NotImplementedError("registerEventListener is not implemented for client bakers")
 
   /**
     * Registers a listener to all runtime events for all recipes that run in this Baker instance.
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(listenerFunction: (String, EventInstance) => Unit): Future[Unit] = ???
+  override def registerEventListener(listenerFunction: (String, EventInstance) => Unit): Future[Unit] =
+    throw new NotImplementedError("registerEventListener is not implemented for client bakers")
 
   /**
     * Registers a listener function that listens to all BakerEvents
@@ -203,33 +263,42 @@ class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(imp
     * @param listenerFunction
     * @return
     */
-  override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): Future[Unit] = ???
+  override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): Future[Unit] =
+    throw new NotImplementedError("registerBakerEventListener is not implemented for client bakers")
 
   /**
     * Adds an interaction implementation to baker.
     *
     * @param implementation The implementation object
     */
-  override def addInteractionInstance(implementation: InteractionInstance): Future[Unit] = ???
+  override def addInteractionInstance(implementation: InteractionInstance): Future[Unit] =
+    throw new NotImplementedError("addInteractionInstance is not implemented for client bakers, instances are deployed independently, please view the documentation")
 
   /**
     * Adds a sequence of interaction implementation to baker.
     *
     * @param implementations The implementation object
     */
-  override def addInteractionInstances(implementations: Seq[InteractionInstance]): Future[Unit] = ???
+  override def addInteractionInstances(implementations: Seq[InteractionInstance]): Future[Unit] =
+    throw new NotImplementedError("addInteractionInstances is not implemented for client bakers, instances are deployed independently, please view the documentation")
 
   /**
     * Attempts to gracefully shutdown the baker system.
     */
-  override def gracefulShutdown(): Future[Unit] = ???
+  override def gracefulShutdown(): Future[Unit] =
+    throw new NotImplementedError("registerBakerEventListener is not yet implemented for client bakers")
 
   /**
     * Retries a blocked interaction.
     *
     * @return
     */
-  override def retryInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] = ???
+  override def retryInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
+    for {
+      encoded <- Marshal(BaaSProtocol.RetryInteractionRequest(recipeInstanceId, interactionName)).to[MessageEntity]
+      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("retryInteraction")), entity = encoded)
+      _ <- Http().singleRequest(request)
+    } yield ()
 
   /**
     * Resolves a blocked interaction by specifying it's output.
@@ -238,12 +307,22 @@ class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(imp
     *
     * @return
     */
-  override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): Future[Unit] = ???
+  override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): Future[Unit] =
+    for {
+      encoded <- Marshal(BaaSProtocol.ResolveInteractionRequest(recipeInstanceId, interactionName, event)).to[MessageEntity]
+      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("resolveInteraction")), entity = encoded)
+      _ <- Http().singleRequest(request)
+    } yield ()
 
   /**
     * Stops the retrying of an interaction.
     *
     * @return
     */
-  override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] = ???
+  override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
+    for {
+      encoded <- Marshal(BaaSProtocol.StopRetryingInteractionRequest(recipeInstanceId, interactionName)).to[MessageEntity]
+      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("stopRetryingInteraction")), entity = encoded)
+      _ <- Http().singleRequest(request)
+    } yield ()
 }
