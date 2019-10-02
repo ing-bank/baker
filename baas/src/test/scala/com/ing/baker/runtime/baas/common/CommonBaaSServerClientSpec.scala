@@ -6,9 +6,11 @@ import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{IO, Timer}
 import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.baas.BaaSServer
-import com.ing.baker.runtime.baas.common.CheckoutFlowIngredients.ShippingAddress
-import com.ing.baker.runtime.baas.common.CommonBaaSServerClientSpec.ClientServerTest
+import com.ing.baker.runtime.baas.common.CheckoutFlowEvents.ItemsReserved
+import com.ing.baker.runtime.baas.common.CheckoutFlowIngredients.{Item, OrderId, ReservedItems, ShippingAddress}
+import com.ing.baker.runtime.baas.common.CommonBaaSServerClientSpec.{ClientServerTest, setupFailingOnceReserveItems, setupFailingWithRetryReserveItems, setupHappyPath}
 import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance, Baker => ScalaBaker}
@@ -26,11 +28,13 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
 
   val test: ClientServerTest = CommonBaaSServerClientSpec.testWith(clientBaker)
 
+  implicit val timer: Timer[IO] = IO.timer(executionContext)
+
   describe("Baker Client-Server") {
     it("Baker.addRecipe") {
       test { (client, server) =>
-        val compiledRecipe = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
         for {
+          compiledRecipe <- setupHappyPath(server)
           recipeId <- client.addRecipe(compiledRecipe)
           recipeInformation <- server.getRecipe(recipeId)
         } yield recipeInformation.compiledRecipe shouldBe compiledRecipe
@@ -38,9 +42,9 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
     }
 
     it("Baker.getRecipe") {
-      test { (client, _) =>
-        val compiledRecipe = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
+      test { (client, server) =>
         for {
+          compiledRecipe <- setupHappyPath(server)
           recipeId <- client.addRecipe(compiledRecipe)
           recipeInformation <- client.getRecipe(recipeId)
         } yield recipeInformation.compiledRecipe shouldBe compiledRecipe
@@ -48,9 +52,9 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
     }
 
     it("Baker.getAllRecipes") {
-      test { (client, _) =>
-        val compiledRecipe = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
+      test { (client, server) =>
         for {
+          compiledRecipe <- setupHappyPath(server)
           recipeId <- client.addRecipe(compiledRecipe)
           recipes <- client.getAllRecipes
         } yield recipes.get(recipeId).map(_.compiledRecipe) shouldBe Some(compiledRecipe)
@@ -59,9 +63,9 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
 
     it("Baker.bake") {
       test { (client, server) =>
-        val compiledRecipe = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
         val recipeInstanceId: String = UUID.randomUUID().toString
         for {
+          compiledRecipe <- setupHappyPath(server)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           state <- server.getRecipeInstanceState(recipeInstanceId)
@@ -71,11 +75,11 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
 
     it("Baker.fireEventAndResolveWhenReceived") {
       test { (client, server) =>
-        val compiledRecipe = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
           CheckoutFlowEvents.ShippingAddressReceived(ShippingAddress("address")))
         for {
+          compiledRecipe <- setupHappyPath(server)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           status <- client.fireEventAndResolveWhenReceived(recipeInstanceId, event)
@@ -85,21 +89,172 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
 
     it("Baker.fireEventAndResolveWhenCompleted") {
       test { (client, server) =>
-        val compiledRecipe = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
           CheckoutFlowEvents.ShippingAddressReceived(ShippingAddress("address")))
         for {
+          compiledRecipe <- setupHappyPath(server)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           result <- client.fireEventAndResolveWhenCompleted(recipeInstanceId, event)
-        } yield result.eventNames should contain("ShippingAddressReceived")
+          serverState <- server.getRecipeInstanceState(recipeInstanceId)
+        } yield {
+          result.eventNames should contain("ShippingAddressReceived")
+          serverState.events.map(_.name) should contain("ShippingAddressReceived")
+        }
+      }
+    }
+
+    it("Baker.fireEventAndResolveOnEvent") {
+      test { (client, server) =>
+        val recipeInstanceId: String = UUID.randomUUID().toString
+        val event = EventInstance.unsafeFrom(
+          CheckoutFlowEvents.ShippingAddressReceived(ShippingAddress("address")))
+        for {
+          compiledRecipe <- setupHappyPath(server)
+          recipeId <- client.addRecipe(compiledRecipe)
+          _ <- client.bake(recipeId, recipeInstanceId)
+          result <- client.fireEventAndResolveOnEvent(recipeInstanceId, event, "ShippingAddressReceived")
+          serverState <- server.getRecipeInstanceState(recipeInstanceId)
+        } yield {
+          result.eventNames should contain("ShippingAddressReceived")
+          serverState.events.map(_.name) should contain("ShippingAddressReceived")
+        }
+      }
+    }
+
+    it("Baker.getAllRecipeInstancesMetadata") {
+      test { (client, server) =>
+        val recipeInstanceId: String = UUID.randomUUID().toString
+        for {
+          compiledRecipe <- setupHappyPath(server)
+          recipeId <- client.addRecipe(compiledRecipe)
+          _ <- client.bake(recipeId, recipeInstanceId)
+          clientMetadata <- client.getAllRecipeInstancesMetadata
+          serverMetadata <- server.getAllRecipeInstancesMetadata
+        } yield clientMetadata shouldBe serverMetadata
+      }
+    }
+
+    it("Baker.getVisualState") {
+      test { (client, server) =>
+        val recipeInstanceId: String = UUID.randomUUID().toString
+        for {
+          compiledRecipe <- setupHappyPath(server)
+          recipeId <- client.addRecipe(compiledRecipe)
+          _ <- client.bake(recipeId, recipeInstanceId)
+          clientState <- client.getVisualState(recipeInstanceId)
+          serverState <- server.getVisualState(recipeInstanceId)
+        } yield clientState shouldBe serverState
+      }
+    }
+
+    it("Baker.retryInteraction") {
+      test { (client, server) =>
+        val recipeInstanceId: String = UUID.randomUUID().toString
+        val event = EventInstance.unsafeFrom(
+          CheckoutFlowEvents.OrderPlaced(orderId = OrderId("order1"), List.empty))
+        for {
+          compiledRecipe <- setupFailingOnceReserveItems(server)
+          recipeId <- client.addRecipe(compiledRecipe)
+          _ <- client.bake(recipeId, recipeInstanceId)
+          _ <- client.fireEventAndResolveWhenCompleted(recipeInstanceId, event)
+          state1 <- client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name))
+          _ <- client.retryInteraction(recipeInstanceId, "ReserveItems")
+          state2 <- client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name))
+        } yield {
+          state1 should contain("OrderPlaced")
+          state1 should not contain("ItemsReserved")
+          state2 should contain("OrderPlaced")
+          state2 should contain("ItemsReserved")
+        }
+      }
+    }
+
+    it("Baker.resolveInteraction") {
+      test { (client, server) =>
+        val recipeInstanceId: String = UUID.randomUUID().toString
+        val event = EventInstance.unsafeFrom(
+          CheckoutFlowEvents.OrderPlaced(orderId = OrderId("order1"), List.empty))
+        val resolutionEvent = EventInstance.unsafeFrom(
+          ItemsReserved(reservedItems = ReservedItems(items = List(Item("item1")), data = Array.empty))
+        )
+        for {
+          compiledRecipe <- setupFailingOnceReserveItems(server)
+          recipeId <- client.addRecipe(compiledRecipe)
+          _ <- client.bake(recipeId, recipeInstanceId)
+          _ <- client.fireEventAndResolveWhenCompleted(recipeInstanceId, event)
+          state1 <- client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name))
+          _ <- client.resolveInteraction(recipeInstanceId, "ReserveItems", resolutionEvent)
+          state2data <- client.getRecipeInstanceState(recipeInstanceId)
+          state2 = state2data.events.map(_.name)
+          eventState = state2data.ingredients.get("reservedItems").map(_.as[ReservedItems].items.head.itemId)
+        } yield {
+          state1 should contain("OrderPlaced")
+          state1 should not contain("ItemsReserved")
+          state2 should contain("OrderPlaced")
+          state2 should contain("ItemsReserved")
+          eventState shouldBe Some("item1")
+        }
+      }
+    }
+
+    it("Baker.stopRetryingInteraction") {
+      test { (client, server) =>
+        val recipeInstanceId: String = UUID.randomUUID().toString
+        val event = EventInstance.unsafeFrom(
+          CheckoutFlowEvents.OrderPlaced(orderId = OrderId("order1"), List.empty))
+        for {
+          compiledRecipe <- setupFailingWithRetryReserveItems(server)
+          recipeId <- client.addRecipe(compiledRecipe)
+          _ <- client.bake(recipeId, recipeInstanceId)
+          _ <- client.fireEventAndResolveWhenReceived(recipeInstanceId, event)
+          state1 <- client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name))
+          _ <- client.stopRetryingInteraction(recipeInstanceId, "ReserveItems")
+          state2data <- client.getRecipeInstanceState(recipeInstanceId)
+          state2 = state2data.events.map(_.name)
+        } yield {
+          state1 should contain("OrderPlaced")
+          state1 should not contain("ItemsReserved")
+          state2 should contain("OrderPlaced")
+          state2 should not contain("ItemsReserved")
+        }
       }
     }
   }
 }
 
 object CommonBaaSServerClientSpec {
+
+  def setupHappyPath(serverBaker: ScalaBaker)(implicit ec: ExecutionContext, timer: Timer[IO]): Future[CompiledRecipe] = {
+    val makePaymentInstance = InteractionInstance.unsafeFrom(new MakePaymentInstance())
+    val reserveItemsInstance = InteractionInstance.unsafeFrom(new ReserveItemsInstance())
+    val shipItemsInstance = InteractionInstance.unsafeFrom(new ShipItemsInstance())
+    val compiledRecipe = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
+    for {
+      _ <- serverBaker.addInteractionInstances(Seq(makePaymentInstance, reserveItemsInstance, shipItemsInstance))
+    } yield compiledRecipe
+  }
+
+  def setupFailingOnceReserveItems(serverBaker: ScalaBaker)(implicit ec: ExecutionContext, timer: Timer[IO]): Future[CompiledRecipe] = {
+    val makePaymentInstance = InteractionInstance.unsafeFrom(new MakePaymentInstance())
+    val reserveItemsInstance = InteractionInstance.unsafeFrom(new FailingOnceReserveItemsInstance())
+    val shipItemsInstance = InteractionInstance.unsafeFrom(new ShipItemsInstance())
+    val compiledRecipe = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipeWithBlockingStrategy)
+    for {
+      _ <- serverBaker.addInteractionInstances(Seq(makePaymentInstance, reserveItemsInstance, shipItemsInstance))
+    } yield compiledRecipe
+  }
+
+  def setupFailingWithRetryReserveItems(serverBaker: ScalaBaker)(implicit ec: ExecutionContext, timer: Timer[IO]): Future[CompiledRecipe] = {
+    val makePaymentInstance = InteractionInstance.unsafeFrom(new MakePaymentInstance())
+    val reserveItemsInstance = InteractionInstance.unsafeFrom(new FailingReserveItemsInstance())
+    val shipItemsInstance = InteractionInstance.unsafeFrom(new ShipItemsInstance())
+    val compiledRecipe = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
+    for {
+      _ <- serverBaker.addInteractionInstances(Seq(makePaymentInstance, reserveItemsInstance, shipItemsInstance))
+    } yield compiledRecipe
+  }
 
   type ClientServerTest = ((ScalaBaker, ScalaBaker) => Future[Assertion]) => Future[Assertion]
 
@@ -112,14 +267,9 @@ object CommonBaaSServerClientSpec {
     val testId: UUID = UUID.randomUUID()
     implicit val system: ActorSystem = ActorSystem("ScalaDSLBaaSServerClientSpec-" + testId)
     implicit val materializer: Materializer = ActorMaterializer()
-    implicit val timer: Timer[IO] = IO.timer(system.dispatcher)
     val host: String = "localhost"
     val serverBaker = ScalaBaker.akkaLocalDefault(system, materializer)
-    val makePaymentInstance: InteractionInstance = InteractionInstance.unsafeFrom(new MakePaymentInstance())
-    val reserveItemsInstance: InteractionInstance = InteractionInstance.unsafeFrom(new ReserveItemsInstance())
-    val shipItemsInstance: InteractionInstance = InteractionInstance.unsafeFrom(new ShipItemsInstance())
     for {
-      _ <- serverBaker.addInteractionInstances(Seq(makePaymentInstance, reserveItemsInstance, shipItemsInstance))
       (client, shutdown) <- createClientServerPair(allPorts, { port =>
         val client = clientBaker(s"http://$host:$port/", system, materializer)
         val shutdown = BaaSServer.run(serverBaker, host, port)
