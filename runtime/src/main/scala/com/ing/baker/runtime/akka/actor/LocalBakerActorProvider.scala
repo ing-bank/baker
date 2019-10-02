@@ -1,14 +1,12 @@
 package com.ing.baker.runtime.akka.actor
 
-import akka.actor.{ActorRef, ActorSystem}
-import akka.stream.Materializer
+import akka.actor.{ ActorRef, ActorSystem }
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{GetIndex, Index}
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{ GetIndex, Index }
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager
 import com.ing.baker.runtime.akka.actor.serialization.Encryption
 import com.ing.baker.runtime.akka.internal.InteractionManager
-
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
@@ -20,7 +18,7 @@ class LocalBakerActorProvider(
   ) extends BakerActorProvider {
 
   override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(
-    implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {
+    implicit actorSystem: ActorSystem): ActorRef = {
     actorSystem.actorOf(
       ProcessIndex.props(
         actorIdleTimeout,
@@ -32,7 +30,7 @@ class LocalBakerActorProvider(
       ))
   }
 
-  override def createRecipeManagerActor()(implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {
+  override def createRecipeManagerActor()(implicit actorSystem: ActorSystem): ActorRef = {
     actorSystem.actorOf(RecipeManager.props())
   }
 

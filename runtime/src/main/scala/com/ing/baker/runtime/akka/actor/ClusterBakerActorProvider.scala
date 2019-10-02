@@ -1,11 +1,10 @@
 package com.ing.baker.runtime.akka.actor
 
-import akka.actor.{ActorRef, ActorSystem, Address, PoisonPill}
+import akka.actor.{ ActorRef, ActorSystem, Address, PoisonPill }
 import akka.cluster.Cluster
 import akka.cluster.sharding.ShardRegion._
-import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
-import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
-import akka.stream.Materializer
+import akka.cluster.sharding.{ ClusterSharding, ClusterShardingSettings, ShardRegion }
+import akka.cluster.singleton.{ ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings }
 import akka.util.Timeout
 import cats.data.NonEmptyList
 import com.ing.baker.il.sha256HashCode
@@ -14,13 +13,11 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_index._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager
-import com.ing.baker.runtime.akka.actor.serialization.Encryption
-import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
+import com.ing.baker.runtime.akka.actor.serialization.{ BakerSerializable, Encryption }
 import com.ing.baker.runtime.akka.internal.InteractionManager
 import org.slf4j.LoggerFactory
-
-import scala.concurrent.{Await, TimeoutException}
 import scala.concurrent.duration._
+import scala.concurrent.{ Await, TimeoutException }
 
 object ClusterBakerActorProvider {
 
@@ -81,7 +78,7 @@ class ClusterBakerActorProvider(
   }
 
 
-  override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {
+  override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(implicit actorSystem: ActorSystem): ActorRef = {
     ClusterSharding(actorSystem).start(
       typeName = "ProcessIndexActor",
       entityProps = ProcessIndex.props(actorIdleTimeout, Some(retentionCheckInterval), configuredEncryption, interactionManager, recipeManager, ingredientsFilter),
@@ -91,7 +88,7 @@ class ClusterBakerActorProvider(
     )
   }
 
-  override def createRecipeManagerActor()(implicit actorSystem: ActorSystem, materializer: Materializer): ActorRef = {
+  override def createRecipeManagerActor()(implicit actorSystem: ActorSystem): ActorRef = {
 
     initializeCluster()
 

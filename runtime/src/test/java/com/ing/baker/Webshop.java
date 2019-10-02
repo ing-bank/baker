@@ -1,8 +1,6 @@
 package com.ing.baker;
 
 import akka.actor.ActorSystem;
-import akka.stream.ActorMaterializer;
-import akka.stream.Materializer;
 import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
@@ -152,10 +150,8 @@ public class Webshop {
         when(manufactureGoodsMock.apply(any())).thenReturn(new ManufactureGoods.GoodsManufactured("goods"));
         when(validateOrderMock.apply(any(), any())).thenReturn(new ValidateOrder.Valid());
 
-//        JBaker baker = new JBaker(ActorSystem.apply("webshop", config));
         ActorSystem system = ActorSystem.create("webshop");
-        Materializer materializer = ActorMaterializer.create(system);
-        Baker baker = Baker.akka(config, system, materializer);
+        Baker baker = Baker.akka(config, system);
 
         baker.addInteractionInstances(ImmutableList.of(shipGoodsMock, sendInvoiceMock, manufactureGoodsMock, validateOrderMock));
 

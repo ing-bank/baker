@@ -1,19 +1,16 @@
 package com.ing.baker.runtime.akka
 
-import akka.actor.{ActorSystem, Address, AddressFromURIString}
+import akka.actor.{ ActorSystem, Address, AddressFromURIString }
 import akka.persistence.query.PersistenceQuery
-import akka.persistence.query.scaladsl.{CurrentEventsByPersistenceIdQuery, CurrentPersistenceIdsQuery, PersistenceIdsQuery}
-import akka.stream.Materializer
+import akka.persistence.query.scaladsl.{ CurrentEventsByPersistenceIdQuery, CurrentPersistenceIdsQuery, PersistenceIdsQuery }
 import cats.data.NonEmptyList
 import com.ing.baker.runtime.akka.AkkaBakerConfig.BakerPersistenceQuery
-import com.ing.baker.runtime.akka.actor.{BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider}
-
-import scala.concurrent.duration._
 import com.ing.baker.runtime.akka.actor.serialization.Encryption
+import com.ing.baker.runtime.akka.actor.{ BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider }
 import com.ing.baker.runtime.akka.internal.InteractionManager
-import com.ing.baker.runtime.common.BakerException
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
+import scala.concurrent.duration._
 
 case class AkkaBakerConfig(
   defaultBakeTimeout: FiniteDuration,
@@ -24,11 +21,11 @@ case class AkkaBakerConfig(
   bakerActorProvider: BakerActorProvider,
   interactionManager: InteractionManager,
   readJournal: BakerPersistenceQuery
-)(implicit val system: ActorSystem, val materializer: Materializer)
+)(implicit val system: ActorSystem)
 
 object AkkaBakerConfig {
 
-  def localDefault(actorSystem: ActorSystem, materializer: Materializer): AkkaBakerConfig =
+  def localDefault(actorSystem: ActorSystem): AkkaBakerConfig =
     default(
       new LocalBakerActorProvider(
         retentionCheckInterval = 1.minute,
@@ -36,11 +33,10 @@ object AkkaBakerConfig {
         actorIdleTimeout = Some(5.minutes),
         configuredEncryption = Encryption.NoEncryption
       ),
-      actorSystem,
-      materializer
+      actorSystem
     )
 
-  def clusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem, materializer: Materializer): AkkaBakerConfig =
+  def clusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem): AkkaBakerConfig =
     default(
       new ClusterBakerActorProvider(
         nrOfShards = 50,
@@ -51,11 +47,10 @@ object AkkaBakerConfig {
         seedNodes = seedNodes,
         configuredEncryption = Encryption.NoEncryption
       ),
-      actorSystem,
-      materializer
+      actorSystem
     )
 
-  def default(provider: BakerActorProvider, actorSystem: ActorSystem, materializer: Materializer): AkkaBakerConfig = {
+  def default(provider: BakerActorProvider, actorSystem: ActorSystem): AkkaBakerConfig = {
     AkkaBakerConfig(
       defaultBakeTimeout = 10.seconds,
       defaultProcessEventTimeout = 10.seconds,
@@ -66,10 +61,10 @@ object AkkaBakerConfig {
       interactionManager = new InteractionManager(),
       readJournal = PersistenceQuery(actorSystem)
       .readJournalFor[BakerPersistenceQuery]("inmemory-read-journal")
-    )(actorSystem, materializer)
+    )(actorSystem)
   }
 
-  def from(config: Config, actorSystem: ActorSystem, materializer: Materializer): AkkaBakerConfig = {
+  def from(config: Config, actorSystem: ActorSystem): AkkaBakerConfig = {
     if (!config.getAs[Boolean]("baker.config-file-included").getOrElse(false))
       throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
     AkkaBakerConfig(
@@ -113,7 +108,7 @@ object AkkaBakerConfig {
       interactionManager = new InteractionManager,
       readJournal = PersistenceQuery(actorSystem)
         .readJournalFor[BakerPersistenceQuery](config.as[String]("baker.actor.read-journal-plugin"))
-    )(actorSystem, materializer)
+    )(actorSystem)
   }
 
   type BakerPersistenceQuery = CurrentEventsByPersistenceIdQuery with PersistenceIdsQuery with CurrentPersistenceIdsQuery

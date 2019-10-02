@@ -1,24 +1,20 @@
 package com.ing.baker
 
-import java.util.UUID
-
 import akka.actor.ActorPath
 import akka.cluster.MultiNodeClusterSpec
 import akka.remote.testconductor.RoleName
-import akka.remote.testkit.{MultiNodeConfig, MultiNodeSpec}
-import akka.stream.ActorMaterializer
+import akka.remote.testkit.{ MultiNodeConfig, MultiNodeSpec }
 import akka.testkit.ImplicitSender
 import better.files.File
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.scaladsl.Examples.webshop
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
-import com.ing.baker.types.{PrimitiveValue, RecordValue}
-import com.typesafe.config.{Config, ConfigFactory}
+import com.ing.baker.runtime.scaladsl.{ Baker, EventInstance, InteractionInstance }
+import com.ing.baker.types.{ PrimitiveValue, RecordValue }
+import com.typesafe.config.{ Config, ConfigFactory }
+import java.util.UUID
 import org.scalatest.mockito.MockitoSugar
-
-import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ Await, ExecutionContext }
 
 
 /**
@@ -141,7 +137,6 @@ class HappyPath extends MultiNodeSpec(HappyPathConfig)
 
   import HappyPath._
   import HappyPathConfig._
-  import system.dispatcher
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -181,9 +176,8 @@ class HappyPath extends MultiNodeSpec(HappyPathConfig)
 
     "retrieve state from a remote process actor using in-memory journals" in {
 
-      val materializer = ActorMaterializer()
       val config = ConfigFactory.load().withFallback(seedNodeConfig(node(node1)))
-      val baker = Baker.akka(config, system, materializer)
+      val baker = Baker.akka(config, system)
       baker.addInteractionInstances(HappyPath.implementations)
       val compiled = RecipeCompiler.compileRecipe(webshop.webShopRecipe)
       val recipeId = Await.result(baker.addRecipe(compiled), 10 seconds)
