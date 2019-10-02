@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.baas.common
 
-import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
+import com.ing.baker.recipe.common.InteractionFailureStrategy.{BlockInteraction, RetryWithIncrementalBackoff}
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 import CheckoutFlowIngredients._
@@ -103,7 +103,7 @@ object CheckoutFlowInteractions {
 
 object CheckoutFlowRecipe {
 
-  def recipe: Recipe = Recipe("Webshop")
+  private def recipeBase = Recipe("Webshop")
     .withSensoryEvents(
       Event[OrderPlaced],
       Event[PaymentInformationReceived],
@@ -112,11 +112,17 @@ object CheckoutFlowRecipe {
       ReserveItemsInteraction,
       MakePaymentInteraction,
       ShipItemsInteraction)
-    .withDefaultFailureStrategy(
+
+  def recipe: Recipe =
+    recipeBase.withDefaultFailureStrategy(
       RetryWithIncrementalBackoff
         .builder()
         .withInitialDelay(100 milliseconds)
         .withUntil(Some(UntilDeadline(24 hours)))
         .withMaxTimeBetweenRetries(Some(10 minutes))
         .build())
+
+  def recipeWithBlockingStrategy: Recipe =
+    recipeBase.withDefaultFailureStrategy(
+      BlockInteraction())
 }
