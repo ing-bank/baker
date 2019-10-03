@@ -18,7 +18,7 @@ import com.ing.baker.types.Value
 
 import scala.concurrent.Future
 
-class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(implicit system: ActorSystem, mat: Materializer) extends ScalaBaker {
+case class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(implicit system: ActorSystem, mat: Materializer) extends ScalaBaker {
 
   import system.dispatcher
 
