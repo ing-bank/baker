@@ -4,21 +4,24 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.Uri.Path
-import akka.http.scaladsl.model.{ContentTypes, HttpMethods, HttpRequest, HttpResponse, MessageEntity, Uri}
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.http.scaladsl.model.{HttpMethods, HttpRequest, MessageEntity, Uri}
 import akka.stream.Materializer
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.akka.actor.serialization.{Encryption, SerializersProvider}
 import com.ing.baker.runtime.baas.BaaSProto._
 import com.ing.baker.runtime.baas.BaaSProtocol
-import com.ing.baker.runtime.baas.BaaSProtocol.BaaSRemoteFailure
 import com.ing.baker.runtime.baas.MarshallingUtils._
-import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
+import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance, EventMoment, EventResolutions, InteractionInstance, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
 import com.ing.baker.types.Value
 
 import scala.concurrent.Future
-import scala.util.control.NonFatal
+
+object Baker {
+
+  def remote(hostname: String, encryption: Encryption = Encryption.NoEncryption)(implicit system: ActorSystem, mat: Materializer) =
+    Baker(Uri(hostname), encryption)
+}
 
 case class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(implicit system: ActorSystem, mat: Materializer) extends ScalaBaker {
 

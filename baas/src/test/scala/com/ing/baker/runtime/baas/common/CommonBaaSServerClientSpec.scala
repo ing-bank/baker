@@ -24,8 +24,7 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
   extends AsyncFunSpec
     with Matchers
     with BeforeAndAfterAll
-    with BeforeAndAfterEach
-    with LanguageApi {
+    with BeforeAndAfterEach {
 
   val test: ClientServerTest = CommonBaaSServerClientSpec.testWith(clientBaker)
 
@@ -75,6 +74,7 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
             .getRecipe("non-existent")
             .map(_ => None)
             .recover { case e: BakerException => Some(e) }
+          _ = println(Console.GREEN + e + Console.RESET)
         } yield e shouldBe Some(BakerException.NoSuchRecipeException("non-existent"))
       }
     }
@@ -171,6 +171,26 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
         } yield {
           result.eventNames should contain("ShippingAddressReceived")
           serverState.events.map(_.name) should contain("ShippingAddressReceived")
+        }
+      }
+    }
+
+    it("Baker.fireEventAndResolveWhenCompleted (fails with IllegalEventException)") {
+      test { (client, server) =>
+        val recipeInstanceId: String = UUID.randomUUID().toString
+        val event = EventInstance("non-existent", Map.empty)
+        for {
+          compiledRecipe <- setupHappyPath(server)
+          recipeId <- client.addRecipe(compiledRecipe)
+          _ <- client.bake(recipeId, recipeInstanceId)
+          result <- client
+              .fireEventAndResolveWhenCompleted(recipeInstanceId, event)
+              .map(_ => None)
+              .recover { case e: BakerException => Some(e) }
+          serverState <- server.getRecipeInstanceState(recipeInstanceId)
+        } yield {
+          result shouldBe Some(BakerException.IllegalEventException("No event with name 'non-existent' found in recipe 'Webshop'"))
+          serverState.events.map(_.name) should not contain("ShippingAddressReceived")
         }
       }
     }
