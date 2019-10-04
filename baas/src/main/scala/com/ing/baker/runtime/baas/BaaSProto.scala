@@ -18,10 +18,11 @@ object BaaSProto {
         protobuf.BaaSRemoteFailure
 
       override def toProto(a: BaaSRemoteFailure): protobuf.BaaSRemoteFailure =
-        protobuf.BaaSRemoteFailure(Some(a.message))
+        protobuf.BaaSRemoteFailure(Some(ctxToProto(a.error)))
 
       override def fromProto(message: protobuf.BaaSRemoteFailure): Try[BaaSRemoteFailure] =
-        versioned(message.message, "message")
+        versioned(message.failure, "failure")
+          .flatMap(ctxFromProto(_))
           .map(BaaSRemoteFailure)
     }
 

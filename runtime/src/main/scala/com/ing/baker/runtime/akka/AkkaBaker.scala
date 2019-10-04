@@ -49,10 +49,10 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     val implementationErrors = getImplementationErrors(compiledRecipe)
 
     if (implementationErrors.nonEmpty)
-      Future.failed(new ImplementationsException(implementationErrors.mkString(", ")))
+      Future.failed(ImplementationsException(implementationErrors.mkString(", ")))
 
     else if (compiledRecipe.validationErrors.nonEmpty)
-      Future.failed(new RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
+      Future.failed(RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
 
     else recipeManager.ask(RecipeManagerProtocol.AddRecipe(compiledRecipe))(config.defaultAddRecipeTimeout) flatMap {
       case RecipeManagerProtocol.AddRecipeResponse(recipeId) => Future.successful(recipeId)
@@ -76,7 +76,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
       case RecipeManagerProtocol.RecipeFound(compiledRecipe, timestamp) =>
         Future.successful(RecipeInformation(compiledRecipe, timestamp, getImplementationErrors(compiledRecipe)))
       case RecipeManagerProtocol.NoRecipeFound(_) =>
-        Future.failed(new IllegalArgumentException(s"No recipe found for recipe with id: $recipeId"))
+        Future.failed(NoSuchRecipeException(recipeId))
     }
   }
 
@@ -104,9 +104,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
       case _: Initialized =>
         Future.successful(())
       case ProcessAlreadyExists(_) =>
-        Future.failed(new IllegalArgumentException(s"Process with id '$recipeInstanceId' already exists."))
+        Future.failed(ProcessAlreadyExistsException(recipeInstanceId))
       case RecipeManagerProtocol.NoRecipeFound(_) =>
-        Future.failed(new IllegalArgumentException(s"Recipe with id '$recipeId' does not exist."))
+        Future.failed(NoSuchRecipeException(recipeId))
     }
   }
 
@@ -120,9 +120,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     ))(config.defaultProcessEventTimeout).flatMap {
       // TODO MOVE THIS TO A FUNCTION
       case FireSensoryEventRejection.InvalidEvent(_, message) =>
-        Future.failed(new IllegalArgumentException(message))
+        Future.failed(IllegalEventException(message))
       case FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0) =>
-        Future.failed(new NoSuchProcessException(s"Process with id $recipeInstanceId0 does not exist in the index"))
+        Future.failed(NoSuchProcessException(recipeInstanceId0))
       case _: FireSensoryEventRejection.FiringLimitMet =>
         Future.successful(SensoryEventStatus.FiringLimitMet)
       case _: FireSensoryEventRejection.AlreadyReceived =>
@@ -144,9 +144,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
       reaction = FireSensoryEventReaction.NotifyWhenCompleted(waitForRetries = true)
     ))(config.defaultProcessEventTimeout).flatMap {
       case FireSensoryEventRejection.InvalidEvent(_, message) =>
-        Future.failed(new IllegalArgumentException(message))
+        Future.failed(IllegalEventException(message))
       case FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0) =>
-        Future.failed(new NoSuchProcessException(s"Process with id $recipeInstanceId0 does not exist in the index"))
+        Future.failed(NoSuchProcessException(recipeInstanceId0))
       case _: FireSensoryEventRejection.FiringLimitMet =>
         Future.successful(SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
       case _: FireSensoryEventRejection.AlreadyReceived =>
@@ -168,9 +168,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
       reaction = FireSensoryEventReaction.NotifyOnEvent(waitForRetries = true, onEvent)
     ))(config.defaultProcessEventTimeout).flatMap {
       case FireSensoryEventRejection.InvalidEvent(_, message) =>
-        Future.failed(new IllegalArgumentException(message))
+        Future.failed(IllegalEventException(message))
       case FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0) =>
-        Future.failed(new NoSuchProcessException(s"Process with id $recipeInstanceId0 does not exist in the index"))
+        Future.failed(NoSuchProcessException(recipeInstanceId0))
       case _: FireSensoryEventRejection.FiringLimitMet =>
         Future.successful(SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
       case _: FireSensoryEventRejection.AlreadyReceived =>
@@ -196,9 +196,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
           completeReceiver = futureRef.ref)
       ))(config.defaultProcessEventTimeout).flatMap {
         case FireSensoryEventRejection.InvalidEvent(_, message) =>
-          Future.failed(new IllegalArgumentException(message))
+          Future.failed(IllegalEventException(message))
         case FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0) =>
-          Future.failed(new NoSuchProcessException(s"Process with id $recipeInstanceId0 does not exist in the index"))
+          Future.failed(NoSuchProcessException(recipeInstanceId0))
         case _: FireSensoryEventRejection.FiringLimitMet =>
           Future.successful(SensoryEventStatus.FiringLimitMet)
         case _: FireSensoryEventRejection.AlreadyReceived =>
@@ -213,9 +213,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     val futureCompleted =
       futureRef.future.flatMap {
         case FireSensoryEventRejection.InvalidEvent(_, message) =>
-          Future.failed(new IllegalArgumentException(message))
+          Future.failed(IllegalEventException(message))
         case FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0) =>
-          Future.failed(new NoSuchProcessException(s"Process with id $recipeInstanceId0 does not exist in the index"))
+          Future.failed(NoSuchProcessException(recipeInstanceId0))
         case _: FireSensoryEventRejection.FiringLimitMet =>
           Future.successful(SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
         case _: FireSensoryEventRejection.AlreadyReceived =>
@@ -286,8 +286,8 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
       .ask(GetProcessState(recipeInstanceId))(Timeout.durationToTimeout(config.defaultInquireTimeout))
       .flatMap {
         case instance: InstanceState => Future.successful(instance.state.asInstanceOf[RecipeInstanceState])
-        case NoSuchProcess(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
-        case ProcessDeleted(id) => Future.failed(new ProcessDeletedException(s"Process $id is deleted"))
+        case NoSuchProcess(id) => Future.failed(NoSuchProcessException(id))
+        case ProcessDeleted(id) => Future.failed(ProcessDeletedException(id))
       }
 
   /**
@@ -337,9 +337,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
             eventNames = processState.eventNames.toSet,
             ingredientNames = processState.ingredients.keySet))
         case ProcessDeleted(_) =>
-          Future.failed(new ProcessDeletedException(s"Process $recipeInstanceId is deleted"))
+          Future.failed(ProcessDeletedException(recipeInstanceId))
         case Uninitialized(_) =>
-          Future.failed(new NoSuchProcessException(s"Process $recipeInstanceId is not found"))
+          Future.failed(NoSuchProcessException(recipeInstanceId))
       }
     } yield response
   }
