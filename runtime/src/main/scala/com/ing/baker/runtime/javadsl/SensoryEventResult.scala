@@ -4,6 +4,8 @@ import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.types.Value
+import com.ing.baker.runtime.scaladsl
+import scala.collection.JavaConverters._
 
 case class SensoryEventResult(
                                sensoryEventStatus: SensoryEventStatus,
@@ -16,4 +18,7 @@ case class SensoryEventResult(
   def getEventNames: java.util.List[String] = eventNames
 
   def getIngredients: java.util.Map[String, Value] = ingredients
+
+  def asScala: scaladsl.SensoryEventResult =
+    scaladsl.SensoryEventResult(sensoryEventStatus, eventNames.asScala, ingredients.asScala.toMap)
 }
