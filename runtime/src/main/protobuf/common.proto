@@ -178,6 +178,11 @@ enum SensoryEventStatus {
     ALREADY_RECEIVED = 5;
     PROCESS_DELETED = 6;
 }
+
+message BakerException {
+    optional string message = 1;
+    optional int32 enum = 2;
+}
 // END DATA
 
 // DESCRIPTORS (Intermediate Language messages)

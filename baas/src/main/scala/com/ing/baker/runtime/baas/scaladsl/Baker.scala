@@ -4,19 +4,21 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.Uri.Path
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, MessageEntity, Uri}
+import akka.http.scaladsl.model.{ContentTypes, HttpMethods, HttpRequest, HttpResponse, MessageEntity, Uri}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.akka.actor.serialization.{Encryption, SerializersProvider}
 import com.ing.baker.runtime.baas.BaaSProto._
 import com.ing.baker.runtime.baas.BaaSProtocol
+import com.ing.baker.runtime.baas.BaaSProtocol.BaaSRemoteFailure
 import com.ing.baker.runtime.baas.MarshallingUtils._
-import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance, EventMoment, EventResolutions, InteractionInstance, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
 import com.ing.baker.types.Value
 
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 
 case class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(implicit system: ActorSystem, mat: Materializer) extends ScalaBaker {
 
@@ -42,7 +44,7 @@ case class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption
       encoded <- Marshal(BaaSProtocol.AddRecipeRequest(compiledRecipe)).to[MessageEntity]
       request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("addRecipe")), entity = encoded)
       response <- Http().singleRequest(request)
-      decoded <- Unmarshal(response).to[BaaSProtocol.AddRecipeResponse]
+      decoded <- unmarshal[BaaSProtocol.AddRecipeResponse](response).withBakerExceptions
     } yield decoded.recipeId
 
   /**
@@ -56,7 +58,7 @@ case class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption
       encoded <- Marshal(BaaSProtocol.GetRecipeRequest(recipeId)).to[MessageEntity]
       request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("getRecipe")), entity = encoded)
       response <- Http().singleRequest(request)
-      decoded <- Unmarshal(response).to[BaaSProtocol.GetRecipeResponse]
+      decoded <- unmarshal[BaaSProtocol.GetRecipeResponse](response).withBakerExceptions
     } yield decoded.recipeInformation
 
   /**
@@ -68,7 +70,7 @@ case class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption
     val request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("getAllRecipes")))
     for {
       response <- Http().singleRequest(request)
-      decoded <- Unmarshal(response).to[BaaSProtocol.GetAllRecipesResponse]
+      decoded <- unmarshal[BaaSProtocol.GetAllRecipesResponse](response).withBakerExceptions
     } yield decoded.map
   }
 
@@ -83,7 +85,8 @@ case class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption
     for {
       encoded <- Marshal(BaaSProtocol.BakeRequest(recipeId, recipeInstanceId)).to[MessageEntity]
       request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("bake")), entity = encoded)
-      _ <- Http().singleRequest(request)
+      response <- Http().singleRequest(request)
+      _ <- unmarshalBakerExceptions(response)
     } yield ()
 
   /**
@@ -102,7 +105,7 @@ case class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption
       encoded <- Marshal(BaaSProtocol.FireEventAndResolveWhenReceivedRequest(recipeInstanceId, event, correlationId)).to[MessageEntity]
       request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("fireEventAndResolveWhenReceived")), entity = encoded)
       response <- Http().singleRequest(request)
-      decoded <- Unmarshal(response).to[BaaSProtocol.FireEventAndResolveWhenReceivedResponse]
+      decoded <- unmarshal[BaaSProtocol.FireEventAndResolveWhenReceivedResponse](response).withBakerExceptions
     } yield decoded.sensoryEventStatus
 
   /**
@@ -121,7 +124,7 @@ case class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption
       encoded <- Marshal(BaaSProtocol.FireEventAndResolveWhenCompletedRequest(recipeInstanceId, event, correlationId)).to[MessageEntity]
       request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("fireEventAndResolveWhenCompleted")), entity = encoded)
       response <- Http().singleRequest(request)
-      decoded <- Unmarshal(response).to[BaaSProtocol.FireEventAndResolveWhenCompletedResponse]
+      decoded <- unmarshal[BaaSProtocol.FireEventAndResolveWhenCompletedResponse](response).withBakerExceptions
     } yield decoded.sensoryEventResult
 
   /**
@@ -141,7 +144,7 @@ case class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption
       encoded <- Marshal(BaaSProtocol.FireEventAndResolveOnEventRequest(recipeInstanceId, event, onEvent, correlationId)).to[MessageEntity]
       request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("fireEventAndResolveOnEvent")), entity = encoded)
       response <- Http().singleRequest(request)
-      decoded <- Unmarshal(response).to[BaaSProtocol.FireEventAndResolveOnEventResponse]
+      decoded <- unmarshal[BaaSProtocol.FireEventAndResolveOnEventResponse](response).withBakerExceptions
     } yield decoded.sensoryEventResult
 
   /**
@@ -161,7 +164,7 @@ case class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption
       encoded <- Marshal(BaaSProtocol.FireEventRequest(recipeInstanceId, event, correlationId)).to[MessageEntity]
       request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("fireEvent")), entity = encoded)
       response <- Http().singleRequest(request)
-      //decoded <- Unmarshal(response).to[BaaSProtocol.???] TODO figure out what to do on this situation with the two futures
+      //decoded <- unmarshal(response)[BaaSProtocol.???] TODO f.withBakerExceptionsigure out what to do on this situation with the two futures
     } yield () //decoded.recipeInformation
     ???
   }
@@ -180,7 +183,7 @@ case class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption
     val request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("getAllRecipeInstancesMetadata")))
     for {
       response <- Http().singleRequest(request)
-      decoded <- Unmarshal(response).to[BaaSProtocol.GetAllRecipeInstancesMetadataResponse]
+      decoded <- unmarshal[BaaSProtocol.GetAllRecipeInstancesMetadataResponse](response).withBakerExceptions
     } yield decoded.set
   }
 
@@ -195,7 +198,7 @@ case class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption
       encoded <- Marshal(BaaSProtocol.GetRecipeInstanceStateRequest(recipeInstanceId)).to[MessageEntity]
       request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("getRecipeInstanceState")), entity = encoded)
       response <- Http().singleRequest(request)
-      decoded <- Unmarshal(response).to[BaaSProtocol.GetRecipeInstanceStateResponse]
+      decoded <- unmarshal[BaaSProtocol.GetRecipeInstanceStateResponse](response).withBakerExceptions
     } yield decoded.recipeInstanceState
 
   /**
@@ -236,7 +239,7 @@ case class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption
       encoded <- Marshal(BaaSProtocol.GetVisualStateRequest(recipeInstanceId)).to[MessageEntity]
       request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("getVisualState")), entity = encoded)
       response <- Http().singleRequest(request)
-      decoded <- Unmarshal(response).to[BaaSProtocol.GetVisualStateResponse]
+      decoded <- unmarshal[BaaSProtocol.GetVisualStateResponse](response).withBakerExceptions
     } yield decoded.state
 
   /**
@@ -297,7 +300,8 @@ case class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption
     for {
       encoded <- Marshal(BaaSProtocol.RetryInteractionRequest(recipeInstanceId, interactionName)).to[MessageEntity]
       request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("retryInteraction")), entity = encoded)
-      _ <- Http().singleRequest(request)
+      response <- Http().singleRequest(request)
+      _ <- unmarshalBakerExceptions(response)
     } yield ()
 
   /**
@@ -311,7 +315,8 @@ case class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption
     for {
       encoded <- Marshal(BaaSProtocol.ResolveInteractionRequest(recipeInstanceId, interactionName, event)).to[MessageEntity]
       request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("resolveInteraction")), entity = encoded)
-      _ <- Http().singleRequest(request)
+      response <- Http().singleRequest(request)
+      _ <- unmarshalBakerExceptions(response)
     } yield ()
 
   /**
@@ -323,6 +328,7 @@ case class Baker(hostname: Uri, encryption: Encryption = Encryption.NoEncryption
     for {
       encoded <- Marshal(BaaSProtocol.StopRetryingInteractionRequest(recipeInstanceId, interactionName)).to[MessageEntity]
       request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("stopRetryingInteraction")), entity = encoded)
-      _ <- Http().singleRequest(request)
+      response <- Http().singleRequest(request)
+      _ <- unmarshalBakerExceptions(response)
     } yield ()
 }

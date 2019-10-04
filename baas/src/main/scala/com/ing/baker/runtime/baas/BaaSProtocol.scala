@@ -1,12 +1,12 @@
 package com.ing.baker.runtime.baas
 
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult}
 
 object BaaSProtocol {
 
-  case class BaaSRemoteFailure(message: String)
+  case class BaaSRemoteFailure(error: BakerException)
 
   case class AddRecipeRequest(compiledRecipe: CompiledRecipe)
 

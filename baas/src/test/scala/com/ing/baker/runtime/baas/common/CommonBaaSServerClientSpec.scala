@@ -7,12 +7,13 @@ import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{IO, Timer}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.baas.BaaSServer
 import com.ing.baker.runtime.baas.common.CheckoutFlowEvents.ItemsReserved
 import com.ing.baker.runtime.baas.common.CheckoutFlowIngredients.{Item, OrderId, ReservedItems, ShippingAddress}
 import com.ing.baker.runtime.baas.common.CommonBaaSServerClientSpec.{ClientServerTest, setupFailingOnceReserveItems, setupFailingWithRetryReserveItems, setupHappyPath}
 import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
-import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance, Baker => ScalaBaker}
 import org.scalatest.compatible.Assertion
 import org.scalatest.{AsyncFunSpec, BeforeAndAfterAll, BeforeAndAfterEach, Matchers}
@@ -41,6 +42,22 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
       }
     }
 
+    it("Baker.addRecipe (fail with ImplementationsException)") {
+      test { (client, _) =>
+        val badRecipe = Recipe("BadRecipe")
+          .withInteraction(CheckoutFlowInteractions.ShipItemsInteraction)
+        val expectedException =
+          BakerException.ImplementationsException("No implementation provided for interaction: ShipItems")
+        val compiledRecipe = RecipeCompiler
+          .compileRecipe(badRecipe)
+        for {
+          e <- client.addRecipe(compiledRecipe)
+              .map(_ => None)
+              .recover { case e: BakerException => Some(e) }
+        } yield e shouldBe Some(expectedException)
+      }
+    }
+
     it("Baker.getRecipe") {
       test { (client, server) =>
         for {
@@ -48,6 +65,17 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
           recipeId <- client.addRecipe(compiledRecipe)
           recipeInformation <- client.getRecipe(recipeId)
         } yield recipeInformation.compiledRecipe shouldBe compiledRecipe
+      }
+    }
+
+    it("Baker.getRecipe (fail with NoSuchRecipeException)") {
+      test { (client, _) =>
+        for {
+          e <- client
+            .getRecipe("non-existent")
+            .map(_ => None)
+            .recover { case e: BakerException => Some(e) }
+        } yield e shouldBe Some(BakerException.NoSuchRecipeException("non-existent"))
       }
     }
 
@@ -70,6 +98,48 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
           _ <- client.bake(recipeId, recipeInstanceId)
           state <- server.getRecipeInstanceState(recipeInstanceId)
         } yield state.recipeInstanceId shouldBe recipeInstanceId
+      }
+    }
+
+    it("Baker.bake (fail with ProcessAlreadyExistsException)") {
+      test { (client, server) =>
+        val recipeInstanceId: String = UUID.randomUUID().toString
+        for {
+          compiledRecipe <- setupHappyPath(server)
+          recipeId <- client.addRecipe(compiledRecipe)
+          _ <- client.bake(recipeId, recipeInstanceId)
+          e <- client
+            .bake(recipeId, recipeInstanceId)
+            .map(_ => None)
+            .recover { case e: BakerException => Some(e) }
+          state <- server.getRecipeInstanceState(recipeInstanceId)
+        } yield {
+          e shouldBe Some(BakerException.ProcessAlreadyExistsException(recipeInstanceId))
+          state.recipeInstanceId shouldBe recipeInstanceId
+        }
+      }
+    }
+
+    it("Baker.bake (fail with NoSuchRecipeException)") {
+      test { (client, _) =>
+        val recipeInstanceId: String = UUID.randomUUID().toString
+        for {
+          e <- client
+            .bake("non-existent", recipeInstanceId)
+            .map(_ => None)
+            .recover { case e: BakerException => Some(e) }
+        } yield e shouldBe Some(BakerException.NoSuchRecipeException("non-existent"))
+      }
+    }
+
+    it("Baker.getRecipeInstanceState (fails with NoSuchProcessException)") {
+      test { (_, server) =>
+        for {
+          e <- server
+            .getRecipeInstanceState("non-existent")
+            .map(_ => None)
+            .recover { case e: BakerException => Some(e) }
+        } yield e shouldBe Some(BakerException.NoSuchProcessException("non-existent"))
       }
     }
 
@@ -270,7 +340,7 @@ object CommonBaaSServerClientSpec {
     val host: String = "localhost"
     val serverBaker = ScalaBaker.akkaLocalDefault(system, materializer)
     for {
-      (client, shutdown) <- createClientServerPair(allPorts, { port =>
+      (client, shutdown) <- buildFromStream(allPorts, { port: Int =>
         val client = clientBaker(s"http://$host:$port/", system, materializer)
         val shutdown = BaaSServer.run(serverBaker, host, port)
         shutdown.map(s => (client, s))
@@ -281,10 +351,10 @@ object CommonBaaSServerClientSpec {
     } yield a
   }
 
-  private def createClientServerPair[T](ports: Stream[Int], buildServer: Int => Future[T])(implicit ec: ExecutionContext): Future[T] =
+  private def buildFromStream[S, T](ports: Stream[S], f: S => Future[T])(implicit ec: ExecutionContext): Future[T] =
     ports match {
-      case #::(port, tail) => buildServer(port).recoverWith {
-        case _: java.net.BindException => createClientServerPair(tail, buildServer)
+      case #::(port, tail) => f(port).recoverWith {
+        case _: java.net.BindException => buildFromStream(tail, f)
       }
     }
 }
