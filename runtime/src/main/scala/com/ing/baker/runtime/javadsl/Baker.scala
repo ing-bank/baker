@@ -46,7 +46,7 @@ object Baker {
     new Baker(baker)
 }
 
-class Baker private(private val baker: scaladsl.Baker) extends common.Baker[CompletableFuture] with JavaApi {
+class Baker private[runtime](private val baker: scaladsl.Baker) extends common.Baker[CompletableFuture] with JavaApi {
 
   override type SensoryEventResultType = SensoryEventResult
 
@@ -137,7 +137,7 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
 
   def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Optional[String]): CompletableFuture[SensoryEventResult] =
     toCompletableFuture(baker.fireEventAndResolveWhenCompleted(recipeInstanceId, event.asScala, Option.apply(correlationId.orElse(null)))).thenApply { result =>
-      new SensoryEventResult(
+      SensoryEventResult(
         sensoryEventStatus = result.sensoryEventStatus,
         eventNames = result.eventNames.asJava,
         ingredients = result.ingredients.asJava
@@ -146,7 +146,7 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
 
   def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Optional[String]): CompletableFuture[SensoryEventResult] =
     toCompletableFuture(baker.fireEventAndResolveOnEvent(recipeInstanceId, event.asScala, onEvent, Option.apply(correlationId.orElse(null)))).thenApply { result =>
-      new SensoryEventResult(
+      SensoryEventResult(
         sensoryEventStatus = result.sensoryEventStatus,
         eventNames = result.eventNames.asJava,
         ingredients = result.ingredients.asJava
@@ -155,10 +155,10 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
 
   def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Optional[String]): EventResolutions = {
     val scalaResult = baker.fireEvent(recipeInstanceId, event.asScala)
-    new EventResolutions(
+    EventResolutions(
       resolveWhenReceived = toCompletableFuture(scalaResult.resolveWhenReceived),
       resolveWhenCompleted = toCompletableFuture(scalaResult.resolveWhenCompleted).thenApply { result =>
-        new SensoryEventResult(
+        SensoryEventResult(
           sensoryEventStatus = result.sensoryEventStatus,
           eventNames = result.eventNames.asJava,
           ingredients = result.ingredients.asJava
@@ -363,12 +363,6 @@ class Baker private(private val baker: scaladsl.Baker) extends common.Baker[Comp
 
   private def toCompletableFuture[T](scalaFuture: Future[T]): CompletableFuture[T] =
     FutureConverters.toJava(scalaFuture).toCompletableFuture
-
-  private def toCompletableFutureSet[T](scalaFuture: Future[Set[T]]): CompletableFuture[java.util.Set[T]] =
-    FutureConverters.toJava(
-      scalaFuture)
-      .toCompletableFuture
-      .thenApply(_.asJava)
 
   private def toCompletableFutureMap[K, V](scalaFuture: Future[Map[K, V]]): CompletableFuture[java.util.Map[K, V]] =
     FutureConverters.toJava(
