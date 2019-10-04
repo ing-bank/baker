@@ -5,6 +5,7 @@ import com.ing.baker.il
 import com.ing.baker.types
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.akka.actor.serialization.protomappings._
+import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, IngredientInstance, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult}
 import scalapb.GeneratedMessageCompanion
 
@@ -46,6 +47,9 @@ object ProtoMap {
 
   implicit def recipeInformationMapping(implicit ev0: SerializersProvider): ProtoMap[RecipeInformation, protobuf.RecipeInformation] =
     new RecipeInformationMapping()
+
+  implicit val bakerExceptionMapping: ProtoMap[BakerException, protobuf.BakerException] =
+    new BakerExceptionMapping
 
   implicit val eventDescriptorMapping: ProtoMap[il.EventDescriptor, protobuf.EventDescriptor] =
     new EventDescriptorMapping

@@ -9,7 +9,7 @@ option (scalapb.options) = {
 };
 
 message BaaSRemoteFailure {
-    optional string message = 1;
+    optional BakerException failure = 1;
 }
 
 message AddRecipeRequest {
