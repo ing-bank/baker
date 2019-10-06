@@ -13,21 +13,21 @@ dependencies += "com.ing.baker" %% "baker-runtime" % "3.0.0"
 ```
 
 ``` maven tab="Maven"
-<dependencies>
+<dependency>
    <groupId>com.ing.baker</groupId>
    <artifactId>baker-recipe-dsl_2.12</artifactId>
    <version>3.0.0</version>
-</dependencies>
-<dependencies>
+</dependency>
+<dependency>
    <groupId>com.ing.baker</groupId>
    <artifactId>baker-compiler_2.12</artifactId>
    <version>3.0.0</version>
-</dependencies>
-<dependencies>
+</dependency>
+<dependency>
    <groupId>com.ing.baker</groupId>
    <artifactId>baker-runtime_2.12</artifactId>
    <version>3.0.0</version>
-</dependencies>
+</dependency>
 
 ```
 
