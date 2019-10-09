@@ -27,7 +27,7 @@ object Converters {
   private def tryExtractPair(entry: java.util.Map.Entry[String, ConfigValue]): Option[(Class[_], TypeModule)] = {
     def stripQuotes(str: String) = str.stripPrefix("\"").stripSuffix("\"")
 
-    Try {
+    val tried = Try {
       val moduleClassName = stripQuotes(entry.getValue.unwrapped.asInstanceOf[String])
       val className = stripQuotes(entry.getKey)
 
@@ -36,7 +36,11 @@ object Converters {
       val module = moduleClass.newInstance().asInstanceOf[TypeModule]
 
       (clazz, module)
-    }.toOption
+    }
+
+    if (tried.isFailure) log.error(s"Failed to load type module ${entry.getKey}")
+
+    tried.toOption
   }
 
   def readJavaType[T : TypeTag]: Type = readJavaType(createJavaType(mirror.typeOf[T]))
