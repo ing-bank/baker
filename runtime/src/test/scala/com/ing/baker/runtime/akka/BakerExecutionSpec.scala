@@ -56,12 +56,12 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       } yield succeed
     }
 
-    "throw an IllegalArgumentException if a baking a process with the same identifier twice" in {
+    "throw an ProcessAlreadyExistsException if a baking a process with the same identifier twice" in {
       for {
         (baker, recipeId) <- setupBakerWithRecipe("DuplicateIdentifierRecipe")
         id = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, id)
-        _ <- recoverToSucceededIf[IllegalArgumentException] {
+        _ <- recoverToSucceededIf[ProcessAlreadyExistsException] {
           baker.bake(recipeId, id)
         }
       } yield succeed
@@ -95,7 +95,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         (baker, recipeId) <- setupBakerWithRecipe("NonExistingProcessEventTest")
         recipeInstanceId = UUID.randomUUID().toString
         _ <- baker.bake(recipeId, recipeInstanceId)
-        intercepted <- recoverToExceptionIf[IllegalArgumentException] {
+        intercepted <- recoverToExceptionIf[InvalidEventException] {
           baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(SomeNotDefinedEvent("bla")))
         }
         _ = intercepted.getMessage should startWith("No event with name 'SomeNotDefinedEvent' found in recipe 'NonExistingProcessEventTest")

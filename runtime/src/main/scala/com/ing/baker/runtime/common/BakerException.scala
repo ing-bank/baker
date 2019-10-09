@@ -5,11 +5,17 @@ sealed abstract class BakerException(message: String = "An exception occurred at
 
 object BakerException {
 
-  class NoSuchProcessException(message: String) extends BakerException(message)
+  case class NoSuchProcessException(message: String) extends BakerException(message)
 
-  class ProcessDeletedException(message: String) extends BakerException(message)
+  case class ProcessDeletedException(message: String) extends BakerException(message)
 
-  class RecipeValidationException(message: String) extends BakerException(message)
+  case class RecipeValidationException(message: String) extends BakerException(message)
 
-  class ImplementationsException(message: String) extends BakerException(message)
+  case class ImplementationsException(message: String) extends BakerException(message)
+
+  case class RecipeNotFoundException(message: String) extends BakerException(message)
+
+  case class ProcessAlreadyExistsException(message: String) extends BakerException(message)
+
+  case class InvalidEventException(message: String) extends BakerException(message)
 }
