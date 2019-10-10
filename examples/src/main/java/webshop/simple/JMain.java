@@ -1,8 +1,6 @@
 package webshop.simple;
 
 import akka.actor.ActorSystem;
-import akka.stream.ActorMaterializer;
-import akka.stream.Materializer;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.runtime.javadsl.*;
@@ -18,8 +16,7 @@ public class JMain {
     static public void main_ignore(String[] args) {
 
         ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-        Materializer materializer = ActorMaterializer.create(actorSystem);
-        Baker baker = Baker.akkaLocalDefault(actorSystem, materializer);
+        Baker baker = Baker.akkaLocalDefault(actorSystem);
 
         List<String> items = new ArrayList<>(2);
         items.add("item1");

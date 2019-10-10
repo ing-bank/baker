@@ -25,7 +25,7 @@ import scala.util.Try
  */
 class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker with LazyLogging {
 
-  import config.{ materializer, system }
+  import config.system
 
   val recipeManager: ActorRef =
     config.bakerActorProvider.createRecipeManagerActor()

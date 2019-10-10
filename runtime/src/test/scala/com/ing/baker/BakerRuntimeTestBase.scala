@@ -1,23 +1,20 @@
 package com.ing.baker
 
-import java.nio.file.Paths
-import java.util.UUID
-
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestKit
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.recipe.TestRecipe.{fireTwoEventsInteraction, _}
-import com.ing.baker.recipe.{CaseClassIngredient, common}
-import com.ing.baker.runtime.scaladsl.{Baker, InteractionInstance, EventInstance}
-import com.ing.baker.types.{Converters, Value}
-import com.typesafe.config.{Config, ConfigFactory}
+import com.ing.baker.recipe.TestRecipe.{ fireTwoEventsInteraction, _ }
+import com.ing.baker.recipe.{ CaseClassIngredient, common }
+import com.ing.baker.runtime.scaladsl.{ Baker, EventInstance, InteractionInstance }
+import com.ing.baker.types.{ Converters, Value }
+import com.typesafe.config.{ Config, ConfigFactory }
+import java.nio.file.Paths
+import java.util.UUID
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest._
 import org.scalatest.mockito.MockitoSugar
-
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -106,7 +103,7 @@ trait BakerRuntimeTestBase
       testProvidesNothingInteractionMock).map(InteractionInstance.unsafeFrom(_))
 
   def writeRecipeToSVGFile(recipe: CompiledRecipe) = {
-    import guru.nidi.graphviz.engine.{Format, Graphviz}
+    import guru.nidi.graphviz.engine.{ Format, Graphviz }
     import guru.nidi.graphviz.parse.Parser
     val g = Parser.read(recipe.getRecipeVisualization)
     Graphviz.fromGraph(g).render(Format.SVG).toFile(Paths.get(recipe.name).toFile)
@@ -184,8 +181,6 @@ trait BakerRuntimeTestBase
 
   implicit protected val defaultActorSystem: ActorSystem = ActorSystem(actorSystemName)
 
-  implicit protected val defaultMaterializer: Materializer = ActorMaterializer.create(defaultActorSystem)
-
   override def afterAll(): Unit = {
     TestKit.shutdownActorSystem(defaultActorSystem)
   }
@@ -200,24 +195,24 @@ trait BakerRuntimeTestBase
     * @return
     */
   protected def setupBakerWithRecipe(recipeName: String, appendUUIDToTheRecipeName: Boolean = true)
-                                    (implicit actorSystem: ActorSystem, materializer: Materializer): Future[(Baker, String)] = {
+                                    (implicit actorSystem: ActorSystem): Future[(Baker, String)] = {
     val newRecipeName = if (appendUUIDToTheRecipeName) s"$recipeName-${UUID.randomUUID().toString}" else recipeName
     val recipe = getRecipe(newRecipeName)
     setupMockResponse()
-    setupBakerWithRecipe(recipe, mockImplementations)(actorSystem, materializer)
+    setupBakerWithRecipe(recipe, mockImplementations)(actorSystem)
   }
 
   protected def setupBakerWithRecipe(recipe: common.Recipe, implementations: Seq[InteractionInstance])
-                                    (implicit actorSystem: ActorSystem, materializer: Materializer): Future[(Baker, String)] = {
-    val baker = Baker.akka(ConfigFactory.load(), actorSystem, materializer)
+                                    (implicit actorSystem: ActorSystem): Future[(Baker, String)] = {
+    val baker = Baker.akka(ConfigFactory.load(), actorSystem)
     baker.addInteractionInstances(implementations).flatMap { _ =>
       baker.addRecipe(RecipeCompiler.compileRecipe(recipe)).map(baker -> _)(actorSystem.dispatcher)
     }
   }
 
-  protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem, materializer: Materializer): Future[Baker] = {
+  protected def setupBakerWithNoRecipe()(implicit actorSystem: ActorSystem): Future[Baker] = {
     setupMockResponse()
-    val baker = Baker.akka(ConfigFactory.load(), actorSystem, materializer)
+    val baker = Baker.akka(ConfigFactory.load(), actorSystem)
     baker.addInteractionInstances(mockImplementations).map { _ => baker }
   }
 

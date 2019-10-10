@@ -1,9 +1,9 @@
 package com.ing.baker.runtime.akka
 
 import akka.actor.ActorSystem
-import akka.persistence.inmemory.extension.{ InMemoryJournalStorage, StorageExtension }
+import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.stream.ActorMaterializer
-import akka.testkit.{ TestDuration, TestKit, TestProbe }
+import akka.testkit.{TestDuration, TestKit, TestProbe}
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe._
@@ -323,12 +323,12 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         import better.files._
 
         /**
-          * This is the path where the original messages where persisted
-          *
-          * For the test they are copied to a temporary directory in /target
-          *
-          * !!! If you want to create a new test case the following flag to true
-          */
+         * This is the path where the original messages where persisted
+         *
+         * For the test they are copied to a temporary directory in /target
+         *
+         * !!! If you want to create a new test case the following flag to true
+         */
         val createNewCase: Boolean = false
 
         val journalPath = "src/test/resources/persisted-messages" + (if (isWindows) "-windows" else "")
@@ -351,7 +351,6 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           s"$testPath/snapshots")
 
         val actorSystem = ActorSystem("backwardsCompatibilityOfEvents", config)
-        val materializer = ActorMaterializer.create(actorSystem)
 
         import com.ing.baker.Webshop._
 
@@ -389,7 +388,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         }
 
         (for {
-          (baker, recipeId) <- setupBakerWithRecipe(recipe, implementations)(actorSystem, materializer)
+          (baker, recipeId) <- setupBakerWithRecipe(recipe, implementations)(actorSystem)
           _ <- if (createNewCase) createProcess(baker, recipeId) else Future.unit
 
           expectedIngredients = ingredientMap(
@@ -412,8 +411,8 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           _ = state.ingredients shouldBe expectedIngredients
           _ = state.eventNames shouldBe expectedEvents.map(_.name)
         } yield succeed).transform(
-          { e => TestKit.shutdownActorSystem(actorSystem); e },
-          { a => TestKit.shutdownActorSystem(actorSystem); a }
+        {e => TestKit.shutdownActorSystem(actorSystem); e},
+        {a => TestKit.shutdownActorSystem(actorSystem); a}
         )
       }
     }
@@ -428,7 +427,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
               .withPredefinedIngredients(("missingJavaOptional", ingredientValue)))
           .withSensoryEvent(initialEvent)
 
-      val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem, defaultMaterializer)
+      val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem)
 
       for {
         _ <- baker.addInteractionInstances(mockImplementations)
@@ -981,11 +980,10 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         port = 3005,
         journalPath = s"target/journal-$journalId",
         snapshotsPath = s"target/snapshots-$journalId"))
-      val materializer = ActorMaterializer.create(indexTestSystem)
       val nrOfProcesses = 200
 
       for {
-        (baker, recipeId) <- setupBakerWithRecipe("IndexTestCluster")(indexTestSystem, materializer)
+        (baker, recipeId) <- setupBakerWithRecipe("IndexTestCluster")(indexTestSystem)
         recipeInstanceIds = (0 to nrOfProcesses).map(_ => java.util.UUID.randomUUID().toString).toSet
         _ <- Future.traverse(recipeInstanceIds)(baker.bake(recipeId, _))
         index <- baker.getAllRecipeInstancesMetadata
@@ -1007,14 +1005,13 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
     //Only works if persistence actors are used (think cassandra)
     "recover the state of a process from a persistence store" in {
       val system1 = ActorSystem("persistenceTest1", localLevelDBConfig("persistenceTest1"))
-      val mat1 = ActorMaterializer.create(system1)
       val recoveryRecipeName = "RecoveryRecipe"
       val recipeInstanceId = UUID.randomUUID().toString
 
       val compiledRecipe = RecipeCompiler.compileRecipe(getRecipe(recoveryRecipeName))
 
       val first = (for {
-        baker1 <- setupBakerWithNoRecipe()(system1, mat1)
+        baker1 <- setupBakerWithNoRecipe()(system1)
         recipeId <- baker1.addRecipe(compiledRecipe)
         _ <- baker1.bake(recipeId, recipeInstanceId)
         _ <- baker1.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
@@ -1022,14 +1019,13 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         state <- baker1.getRecipeInstanceState(recipeInstanceId)
         _ = state.ingredients shouldBe finalState
       } yield recipeId).transform(
-        { a => TestKit.shutdownActorSystem(system1); a },
-        { a => TestKit.shutdownActorSystem(system1); a }
+      {a => TestKit.shutdownActorSystem(system1); a},
+      {a => TestKit.shutdownActorSystem(system1); a}
       )
 
       def second(recipeId: String) = {
         val system2 = ActorSystem("persistenceTest2", localLevelDBConfig("persistenceTest2"))
-        val mat2 = ActorMaterializer.create(system2)
-        val baker2 = Baker.akka(ConfigFactory.load(), system2, mat2)
+        val baker2 = Baker.akka(ConfigFactory.load(), system2)
         (for {
           _ <- baker2.addInteractionInstances(mockImplementations)
           state <- baker2.getRecipeInstanceState(recipeInstanceId)
@@ -1040,8 +1036,8 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           recipe.compiledRecipe shouldBe compiledRecipe
           recipeId0 shouldBe recipeId
         }).transform(
-          { a => TestKit.shutdownActorSystem(system2); a },
-          { a => TestKit.shutdownActorSystem(system2); a }
+        {a => TestKit.shutdownActorSystem(system2); a},
+        {a => TestKit.shutdownActorSystem(system2); a}
         )
       }
 

@@ -1,6 +1,6 @@
 # The Akka Based Runtime
 
-## Baker.akka(config, actorSystem, materializer)
+## Baker.akka(config, actorSystem)
 
 Baker provider several constructors to build a runtime to run your Recipes on. The current implementations are o
 [Akka](https://akka.io/) based, one in local mode, and another in cluster mode. 
@@ -9,32 +9,27 @@ _Note: We recommend reviewing also Akka configuration._
 
 ```scala tab="Scala"
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
 import com.ing.baker.runtime.scaladsl.Baker
 import com.typesafe.config.{Config, ConfigFactory}
 
 
 val actorSystem: ActorSystem = ActorSystem("WebshopSystem")
-val materializer: Materializer = ActorMaterializer()
 val config: Config = ConfigFactory.load()
 
-val baker: Baker = Baker.akka(config, actorSystem, materializer)
+val baker: Baker = Baker.akka(config, actorSystem)
 ```
 
 ```java tab="Java"
 import akka.actor.ActorSystem;
-import akka.stream.ActorMaterializer;
-import akka.stream.Materializer;
 import com.ing.baker.runtime.javadsl.Baker;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
 
 ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-Materializer materializer = ActorMaterializer.create(actorSystem);
 Config config = ConfigFactory.load();
 
-Baker baker = Baker.akka(config, actorSystem, materializer);
+Baker baker = Baker.akka(config, actorSystem);
 ```
 
 This last code snippet will build a Baker runtime and load all configuration from your default `application.conf` located 
@@ -45,13 +40,13 @@ is recommended for tests.
 
 ```scala tab="Scala"
 
-val baker: Baker = Baker.akkaLocalDefault(actorSystem, materializer)
+val baker: Baker = Baker.akkaLocalDefault(actorSystem)
 
 ```
 
 ```java tab="Java"
 
-Baker baker = Baker.akkaLocalDefault(actorSystem, materializer);
+Baker baker = Baker.akkaLocalDefault(actorSystem);
 
 ```
 
@@ -175,7 +170,7 @@ except it comes in a `CompletableFuture` that will help you handle async program
 
 ```scala tab="Scala"
 
-val baker: Baker = Baker.akkaLocalDefault(actorSystem, materializer)
+val baker: Baker = Baker.akkaLocalDefault(actorSystem)
 
 val reserveItemsInstance: InteractionInstance = InteractionInstance.unsafeFrom(new ReserveItems())
 
@@ -185,7 +180,7 @@ val result: Future[Unit] = baker.addInteractionInstance(reserveItemsInstance)
 
 ```java tab="Java"
 
-Baker baker = Baker.akkaLocalDefault(actorSystem, materializer);
+Baker baker = Baker.akkaLocalDefault(actorSystem);
 
 InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
 
