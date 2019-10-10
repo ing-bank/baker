@@ -1,15 +1,12 @@
 package webshop.simple
 
-import java.util.UUID
-
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
+import com.ing.baker.runtime.scaladsl.{ Baker, EventInstance, InteractionInstance }
+import java.util.UUID
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
-import org.scalatest.{AsyncFlatSpec, Matchers}
-
+import org.scalatest.{ AsyncFlatSpec, Matchers }
 import scala.concurrent.Future
 
 class WebshopRecipeSpec extends AsyncFlatSpec with Matchers with MockitoSugar {
@@ -59,8 +56,7 @@ class WebshopRecipeSpec extends AsyncFlatSpec with Matchers with MockitoSugar {
   it should "reserve items in happy conditions" in {
 
     val system: ActorSystem = ActorSystem("baker-webshop-system")
-    val materializer: Materializer = ActorMaterializer()(system)
-    val baker: Baker = Baker.akkaLocalDefault(system, materializer)
+    val baker: Baker = Baker.akkaLocalDefault(system)
 
     val compiled = RecipeCompiler.compileRecipe(SimpleWebshopRecipe.recipe)
     val recipeInstanceId: String = UUID.randomUUID().toString
@@ -98,8 +94,7 @@ class WebshopRecipeSpec extends AsyncFlatSpec with Matchers with MockitoSugar {
   it should "reserve items in happy conditions (mockito)" in {
 
     val system: ActorSystem = ActorSystem("baker-webshop-system")
-    val materializer: Materializer = ActorMaterializer()(system)
-    val baker: Baker = Baker.akkaLocalDefault(system, materializer)
+    val baker: Baker = Baker.akkaLocalDefault(system)
 
     val compiled = RecipeCompiler.compileRecipe(SimpleWebshopRecipe.recipe)
     val recipeInstanceId: String = UUID.randomUUID().toString

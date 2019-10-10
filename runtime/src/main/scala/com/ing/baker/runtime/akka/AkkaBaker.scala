@@ -1,20 +1,19 @@
 package com.ing.baker.runtime.akka
 
-import akka.actor.{Actor, ActorRef, Props}
-import akka.pattern.{FutureRef, ask}
+import akka.actor.{ Actor, ActorRef, Props }
+import akka.pattern.{ FutureRef, ask }
 import akka.util.Timeout
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.akka.actor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{ Initialized, InstanceState, Uninitialized }
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.Value
-import org.slf4j.{Logger, LoggerFactory}
-
+import org.slf4j.{ Logger, LoggerFactory }
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.postfixOps
@@ -26,7 +25,7 @@ import scala.util.Try
   */
 class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
 
-  import config.{materializer, system}
+  import config.system
 
   private val log: Logger = LoggerFactory.getLogger(classOf[AkkaBaker])
 
