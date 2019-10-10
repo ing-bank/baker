@@ -2,8 +2,7 @@ package webshop.webservice
 
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
-import akka.stream.ActorMaterializer
-import cats.effect.{ExitCode, IO, IOApp, Resource}
+import cats.effect.{ ExitCode, IO, IOApp, Resource }
 import cats.implicits._
 import com.ing.baker.runtime.scaladsl._
 import com.typesafe.config.ConfigFactory
@@ -23,9 +22,8 @@ object Main extends IOApp {
     Resource.make(
       for {
         actorSystem <- IO { ActorSystem("CheckoutService") }
-        materializer <- IO { ActorMaterializer()(actorSystem) }
         config <- IO { ConfigFactory.load() }
-        baker <- IO { Baker.akka(config, actorSystem, materializer) }
+        baker <- IO { Baker.akka(config, actorSystem) }
         checkoutRecipeId <- WebShopBaker.initRecipes(baker)(timer, actorSystem.dispatcher)
         webShopBaker = new WebShopBaker(baker, checkoutRecipeId)(actorSystem.dispatcher)
         memoryDumpPath = config.getString("service.memory-dump-path")

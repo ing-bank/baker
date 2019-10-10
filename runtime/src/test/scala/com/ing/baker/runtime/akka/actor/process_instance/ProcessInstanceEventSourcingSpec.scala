@@ -1,8 +1,6 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
-import java.util.UUID
-
-import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
+import akka.persistence.inmemory.extension.{ InMemoryJournalStorage, StorageExtension }
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
 import akka.stream.ActorMaterializer
@@ -10,15 +8,15 @@ import akka.stream.testkit.scaladsl.TestSink
 import akka.testkit.TestProbe
 import akka.util.Timeout
 import com.ing.baker.petrinet.api._
+import com.ing.baker.runtime.akka.actor.AkkaTestBase
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceSpec._
 import com.ing.baker.runtime.akka.actor.process_instance.dsl._
 import com.ing.baker.runtime.akka.actor.serialization.Encryption.NoEncryption
-import com.ing.baker.runtime.akka.actor.AkkaTestBase
+import java.util.UUID
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Matchers._
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
@@ -59,8 +57,8 @@ class ProcessInstanceEventSourcingSpec extends AkkaTestBase("ProcessQuerySpec") 
       instance ! Initialize(p1.markWithN(1), ())
 
       expectMsg(Initialized(p1.markWithN(1), ()))
-      expectMsgPF(timeOut) { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
-      expectMsgPF(timeOut) { case TransitionFired(_, 2, _, _, _, _, _) ⇒ }
+      expectMsgPF(timeOut) {case TransitionFired(_, 1, _, _, _, _, _) ⇒}
+      expectMsgPF(timeOut) {case TransitionFired(_, 2, _, _, _, _, _) ⇒}
 
       ProcessInstanceEventSourcing.eventsForInstance[Place, Transition, Unit, Unit](
         "test",

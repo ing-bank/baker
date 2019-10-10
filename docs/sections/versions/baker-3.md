@@ -103,7 +103,6 @@ For Java the JBaker is gone and you now create a Baker under the javadsl package
 import com.ing.baker.runtime.scaladsl.*;
 ......
 val actorSystem: ActorSystem = ActorSystem("WebshopSystem")
-val materializer: Materializer = ActorMaterializer()
 val config: Config = ConfigFactory.load()
 val baker = Baker.akka(config, actorSystem);
 
@@ -113,7 +112,6 @@ val baker = Baker.akka(config, actorSystem);
 import com.ing.baker.runtime.javadsl.*;
 ......
 ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-Materializer materializer = ActorMaterializer.create(actorSystem);
 Config config = ConfigFactory.load();
 Baker baker = Baker.akka(config, actorSystem);
 ```

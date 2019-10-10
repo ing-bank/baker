@@ -145,7 +145,6 @@ documentation on this please refer to the [runtime documentation](../../referenc
 
 ``` scala tab="Scala"
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
 import com.ing.baker.runtime.common.EventResult
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
 
@@ -153,9 +152,7 @@ import scala.concurrent.Future
 
 implicit val actorSystem: ActorSystem =
     ActorSystem("WebshopSystem")
-implicit val materializer: Materializer =
-    ActorMaterializer()
-val baker: Baker = Baker.akkaLocalDefault(actorSystem, materializer)
+val baker: Baker = Baker.akkaLocalDefault(actorSystem)
 
 // This example is using the reflection API `EventInstance.unsafeFrom`
 val FirstOrderPlaced: EventInstance = EventInstance
@@ -167,8 +164,6 @@ val result: Future[EventResult] = baker.fireEventAndResolveWhenCompleted(recipeI
 
 ``` java tab="Java"
 import akka.actor.ActorSystem;
-import akka.stream.ActorMaterializer;
-import akka.stream.Materializer;
 import com.ing.baker.runtime.javadsl.Baker;
 import com.ing.baker.runtime.javadsl.EventInstance;
 import com.ing.baker.runtime.javadsl.EventResult;
@@ -176,8 +171,7 @@ import com.ing.baker.runtime.javadsl.EventResult;
 import java.util.concurrent.CompletableFuture;
 
 ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-Materializer materializer = ActorMaterializer.create(actorSystem);
-Baker baker = Baker.akkaLocalDefault(actorSystem, materializer);
+Baker baker = Baker.akkaLocalDefault(actorSystem);
 
 String recipeInstanceId = "recipe id from previously baked recipe instance";
 List<String> items = new ArrayList<>(2);
@@ -330,7 +324,6 @@ of your `Recipe` and call them when needed.
 
 ``` scala tab="Scala"
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
 import com.ing.baker.runtime.scaladsl.Baker
 
 import scala.concurrent.Future
@@ -340,16 +333,13 @@ val done: Future[Unit] = baker.addImplementation(reserveItemsInstance)
 
 ``` java tab="Java"
 import akka.actor.ActorSystem;
-import akka.stream.ActorMaterializer;
-import akka.stream.Materializer;
 import com.ing.baker.runtime.javadsl.Baker;
 
 import scala.runtime.BoxedUnit;
 import java.util.concurrent.CompletableFuture;
 
 ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-Materializer materializer = ActorMaterializer.create(actorSystem);
-Baker baker = Baker.akkaLocalDefault(actorSystem, materializer);
+Baker baker = Baker.akkaLocalDefault(actorSystem);
 
 CompletableFuture<BoxedUnit> done = baker.addImplementation(reserveItemsInstance);
 ```
@@ -489,16 +479,13 @@ the `Interaction`
 
 ```scala tab="Scala"
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
 
 implicit val actorSystem: ActorSystem =
     ActorSystem("WebshopSystem")
-implicit val materializer: Materializer =
-    ActorMaterializer()
-val baker: Baker = Baker.akkaLocalDefault(actorSystem, materializer)
+val baker: Baker = Baker.akkaLocalDefault(actorSystem)
 
 val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
 
@@ -517,8 +504,6 @@ val program: Future[Unit] = for {
 
 ```java tab="Java"
 import akka.actor.ActorSystem;
-import akka.stream.ActorMaterializer;
-import akka.stream.Materializer;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
 import com.ing.baker.runtime.javadsl.Baker;
@@ -532,8 +517,7 @@ import java.util.concurrent.CompletableFuture;
 
 
 ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-Materializer materializer = ActorMaterializer.create(actorSystem);
-Baker baker = Baker.akkaLocalDefault(actorSystem, materializer);
+Baker baker = Baker.akkaLocalDefault(actorSystem);
 
 List<String> items = new ArrayList<>(2);
 items.add("item1");

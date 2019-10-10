@@ -1,46 +1,40 @@
 package com.ing.baker.runtime.javadsl
 
+import akka.actor.{ ActorSystem, Address }
+import cats.data.NonEmptyList
+import com.ing.baker.il.{ CompiledRecipe, RecipeVisualStyle }
+import com.ing.baker.runtime.akka.{ AkkaBaker, _ }
+import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
+import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.{ common, scaladsl }
+import com.ing.baker.types.Value
+import com.typesafe.config.Config
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
-import java.util.function.{BiConsumer, Consumer}
-
-import akka.actor.{ActorSystem, Address}
-import akka.stream.{ActorMaterializer, Materializer}
-import cats.data.NonEmptyList
-import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
-import com.ing.baker.runtime.akka.{AkkaBaker, _}
-import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
-import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.{common, scaladsl}
-import com.ing.baker.types.Value
-import com.typesafe.config.Config
+import java.util.function.{ BiConsumer, Consumer }
 import javax.annotation.Nonnull
-
 import scala.collection.JavaConverters._
 import scala.compat.java8.FutureConverters
 import scala.concurrent.Future
 
 object Baker {
 
-  def akkaLocalDefault(actorSystem: ActorSystem, materializer: Materializer): Baker =
-    new Baker(new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem, materializer)))
+  def akkaLocalDefault(actorSystem: ActorSystem): Baker =
+    new Baker(new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem)))
 
-  def akkaClusterDefault(seedNodes: java.util.List[Address], actorSystem: ActorSystem, materializer: Materializer): Baker = {
+  def akkaClusterDefault(seedNodes: java.util.List[Address], actorSystem: ActorSystem): Baker = {
     val nodes =
       if (seedNodes.isEmpty) throw new IllegalStateException("Baker cluster configuration without baker.cluster.seed-nodes")
       else NonEmptyList.fromListUnsafe(seedNodes.asScala.toList)
-    new Baker(new AkkaBaker(AkkaBakerConfig.clusterDefault(nodes, actorSystem, materializer)))
+    new Baker(new AkkaBaker(AkkaBakerConfig.clusterDefault(nodes, actorSystem)))
   }
 
   def akka(config: AkkaBakerConfig): Baker =
     new Baker(scaladsl.Baker.akka(config))
 
-  def akka(config: Config, actorSystem: ActorSystem, materializer: Materializer): Baker =
-    new Baker(scaladsl.Baker.akka(config, actorSystem, materializer))
-
   def akka(config: Config, actorSystem: ActorSystem): Baker =
-    new Baker(scaladsl.Baker.akka(config, actorSystem, ActorMaterializer.create(actorSystem)))
+    new Baker(scaladsl.Baker.akka(config, actorSystem))
 
   def other(baker: scaladsl.Baker) =
     new Baker(baker)
