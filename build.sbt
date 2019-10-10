@@ -35,7 +35,6 @@ val dependencyOverrideSettings = Seq(
   dependencyOverrides ++= Seq(
     catsCore,
     akkaActor,
-    akkaStream,
     "com.github.jnr" % "jnr-constants" % "0.9.9"
   )
 )
@@ -94,7 +93,6 @@ lazy val runtime = project.in(file("runtime"))
         akkaClusterSharding,
         akkaInmemoryJournal,
         akkaSlf4j,
-        akkaStream,
         ficusConfig,
         catsCore,
         catsEffect,
@@ -107,6 +105,7 @@ lazy val runtime = project.in(file("runtime"))
         kryoSerializers,
         slf4jApi
       ) ++ testDeps(
+        akkaStream,
         akkaTestKit,
         akkaMultiNodeTestkit,
         akkaStreamTestKit,

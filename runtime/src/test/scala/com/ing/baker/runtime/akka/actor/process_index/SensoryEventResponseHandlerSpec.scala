@@ -1,26 +1,22 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import akka.testkit.{TestDuration, TestKit, TestProbe}
+import akka.testkit.{ TestDuration, TestKit, TestProbe }
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.runtime.scaladsl.EventInstance
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.{NotifyBoth, NotifyOnEvent, NotifyWhenCompleted, NotifyWhenReceived}
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{FireSensoryEventRejection, ProcessEvent, ProcessEventCompletedResponse, ProcessEventReceivedResponse}
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.{ NotifyBoth, NotifyOnEvent, NotifyWhenCompleted, NotifyWhenReceived }
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{ FireSensoryEventRejection, ProcessEvent, ProcessEventCompletedResponse, ProcessEventReceivedResponse }
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.SensoryEventResult
-import com.ing.baker.types.{PrimitiveValue, Value}
+import com.ing.baker.runtime.scaladsl.{ EventInstance, SensoryEventResult }
+import com.ing.baker.types.{ PrimitiveValue, Value }
 import org.scalatest.Matchers._
 import org.scalatest.WordSpecLike
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 class SensoryEventResponseHandlerSpec extends TestKit(ActorSystem("SensoryEventResponseHandlerSpec")) with WordSpecLike {
 
-  implicit val materializer = ActorMaterializer()
   implicit val ec: ExecutionContext = system.dispatcher
 
   // Using dilated timeout to take into account the akka.test.timefactor config

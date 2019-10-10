@@ -2,7 +2,7 @@
 
 ## Minimal configuration
 
-When creating a baker instance using the constructor `Baker.akka(config, actorSystem, materializer)` baker will require you
+When creating a baker instance using the constructor `Baker.akka(config, actorSystem)` baker will require you
 to add the minimal baker configuration, you can do this by adding this to your `application.conf` file:
 
 ```

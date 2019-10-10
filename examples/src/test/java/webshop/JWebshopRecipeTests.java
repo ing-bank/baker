@@ -1,22 +1,20 @@
 package webshop;
 
-import org.junit.Test;
-import scala.Console;
-
 import akka.actor.ActorSystem;
-import akka.stream.ActorMaterializer;
-import akka.stream.Materializer;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.javadsl.*;
+import com.ing.baker.runtime.javadsl.Baker;
+import com.ing.baker.runtime.javadsl.EventInstance;
+import com.ing.baker.runtime.javadsl.EventMoment;
+import com.ing.baker.runtime.javadsl.InteractionInstance;
+import org.junit.Test;
+import scala.Console;
+import webshop.simple.JWebshopRecipe;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-
-import com.ing.baker.runtime.javadsl.EventInstance;
-import webshop.simple.JWebshopRecipe;
 
 import static org.mockito.Mockito.*;
 
@@ -47,8 +45,7 @@ public class JWebshopRecipeTests {
     public void shouldRunSimpleInstance() {
 
         ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-        Materializer materializer = ActorMaterializer.create(actorSystem);
-        Baker baker = Baker.akkaLocalDefault(actorSystem, materializer);
+        Baker baker = Baker.akkaLocalDefault(actorSystem);
 
         List<String> items = new ArrayList<>(2);
         items.add("item1");
@@ -82,8 +79,7 @@ public class JWebshopRecipeTests {
     public void shouldRunSimpleInstanceMockitoSample() {
 
         ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-        Materializer materializer = ActorMaterializer.create(actorSystem);
-        Baker baker = Baker.akkaLocalDefault(actorSystem, materializer);
+        Baker baker = Baker.akkaLocalDefault(actorSystem);
 
         List<String> items = new ArrayList<>(2);
         items.add("item1");
