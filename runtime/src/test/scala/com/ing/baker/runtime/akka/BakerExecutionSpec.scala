@@ -1,29 +1,26 @@
 package com.ing.baker.runtime.akka
 
-import java.util.concurrent.TimeUnit
-import java.util.{Optional, UUID}
-
 import akka.actor.ActorSystem
-import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
+import akka.persistence.inmemory.extension.{ InMemoryJournalStorage, StorageExtension }
 import akka.stream.ActorMaterializer
-import akka.testkit.{TestDuration, TestKit, TestProbe}
+import akka.testkit.{ TestDuration, TestKit, TestProbe }
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.FireEventAfterFailure
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
+import com.ing.baker.recipe.scaladsl.{ Event, Ingredient, Interaction, Recipe }
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common._
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
-import com.ing.baker.types.{CharArray, Int32, PrimitiveValue}
+import com.ing.baker.runtime.scaladsl.{ Baker, EventInstance, InteractionInstance }
+import com.ing.baker.types.{ CharArray, Int32, PrimitiveValue }
 import com.typesafe.config.ConfigFactory
-import org.mockito.Matchers.{eq => mockitoEq, _}
+import java.util.concurrent.TimeUnit
+import java.util.{ Optional, UUID }
+import org.mockito.Matchers.{ eq => mockitoEq, _ }
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
-import org.slf4j.LoggerFactory
-
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -33,8 +30,6 @@ case class SomeNotDefinedEvent(name: String)
 class BakerExecutionSpec extends BakerRuntimeTestBase {
 
   override def actorSystemName = "BakerExecutionSpec"
-
-  val log = LoggerFactory.getLogger(classOf[BakerExecutionSpec])
 
   before {
     resetMocks

@@ -5,17 +5,18 @@ import akka.cluster.Cluster
 import akka.pattern.ask
 import akka.util.Timeout
 import com.ing.baker.runtime.akka.actor.GracefulShutdownShardRegions.InitiateGracefulShutdown
+import com.typesafe.scalalogging.Logger
 import org.slf4j.LoggerFactory
-
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Await, Promise, TimeoutException}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ Await, Promise, TimeoutException }
+import scala.util.{ Failure, Success, Try }
 
 object GracefulShutdown {
 
-  val log = LoggerFactory.getLogger("com.ing.baker.runtime.core.actor.GracefulShutdown")
+  @transient
+  lazy val logger: Logger = Logger(LoggerFactory.getLogger(getClass.getName))
 
-  def gracefulShutdownActorSystem(actorSystem: ActorSystem, timeout: FiniteDuration) = {
+  def gracefulShutdownActorSystem(actorSystem: ActorSystem, timeout: FiniteDuration): Any = {
 
     Try {
       Cluster.get(actorSystem)
@@ -26,12 +27,12 @@ object GracefulShutdown {
         gracefulShutdownShards(Seq("ProcessIndexActor"))(Timeout(timeout), actorSystem)
 
         // then leave the cluster
-        log.warn("Leaving the akka cluster")
+        logger.warn("Leaving the akka cluster")
 
         val promise: Promise[Boolean] = Promise()
 
         cluster.registerOnMemberRemoved {
-          log.warn("Successfully left the akka cluster, terminating the actor system")
+          logger.warn("Successfully left the akka cluster, terminating the actor system")
           promise.success(true)
           actorSystem.terminate()
         }
@@ -41,10 +42,10 @@ object GracefulShutdown {
         Await.result(promise.future, timeout)
 
       case Success(_) =>
-        log.warn("Not a member of a cluster, terminating the actor system")
+        logger.warn("Not a member of a cluster, terminating the actor system")
         actorSystem.terminate()
       case Failure(exception) =>
-        log.warn("Cluster not available for actor system", exception)
+        logger.warn("Cluster not available for actor system", exception)
         actorSystem.terminate()
     }
   }
@@ -57,7 +58,7 @@ object GracefulShutdown {
       Await.result(actor.ask(InitiateGracefulShutdown), timeout.duration)
     } catch {
       case _: TimeoutException =>
-        log.warn(s"Graceful shutdown of shards timed out after $timeout")
+        logger.warn(s"Graceful shutdown of shards timed out after $timeout")
     }
   }
 }

@@ -1,10 +1,8 @@
 package com.ing.baker.runtime.akka.actor
 
 import akka.actor._
-import akka.cluster.sharding.{ClusterSharding, ShardRegion}
-import com.ing.baker.runtime.akka.actor.GracefulShutdownShardRegions.{GracefulShutdownSuccessful, GracefulShutdownTimedOut, InitiateGracefulShutdown}
-import com.typesafe.config.Config
-
+import akka.cluster.sharding.{ ClusterSharding, ShardRegion }
+import com.ing.baker.runtime.akka.actor.GracefulShutdownShardRegions.{ GracefulShutdownSuccessful, GracefulShutdownTimedOut, InitiateGracefulShutdown }
 import scala.collection._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -13,7 +11,9 @@ import scala.language.postfixOps
 object GracefulShutdownShardRegions {
 
   case object InitiateGracefulShutdown
+
   case object GracefulShutdownTimedOut
+
   case object GracefulShutdownSuccessful
 
   def props(shardHandOverTimeout: FiniteDuration, typeNames: Seq[String]): Props =
@@ -21,23 +21,21 @@ object GracefulShutdownShardRegions {
 }
 
 class GracefulShutdownShardRegions(shardHandOverTimeout: FiniteDuration, typeNames: Seq[String]) extends Actor
-  with ActorLogging  {
+  with ActorLogging {
 
-  val system = context.system
+  private val system = context.system
 
   // all the shard region actor refs
-  val shardRegionsRefs = typeNames.map(name => ClusterSharding(system).shardRegion(name)).toSet
+  private val shardRegionsRefs = typeNames.map(name => ClusterSharding(system).shardRegion(name)).toSet
 
-  implicit val ec: ExecutionContext = system.dispatcher
+  private implicit val ec: ExecutionContext = system.dispatcher
 
-  val config: Config = system.settings.config
-
-  override def receive = waitForLeaveCommand(shardRegionsRefs)
+  override def receive: Receive = waitForLeaveCommand(shardRegionsRefs)
 
   def waitForLeaveCommand(regions: Set[ActorRef]): Receive = {
     case InitiateGracefulShutdown =>
-      GracefulShutdown.log.warn(s"Initiating graceful shut down of shard regions: ${typeNames.mkString(",")}")
-      regions.foreach { region =>
+      GracefulShutdown.logger.warn(s"Initiating graceful shut down of shard regions: ${typeNames.mkString(",")}")
+      regions.foreach {region =>
         context watch region
         region ! ShardRegion.GracefulShutdown
       }
@@ -46,16 +44,17 @@ class GracefulShutdownShardRegions(shardHandOverTimeout: FiniteDuration, typeNam
   }
 
   def waitingForTermination(regions: Set[ActorRef], initiator: ActorRef): Receive = {
-    case GracefulShutdownTimedOut      =>
-      GracefulShutdown.log.warn(s"Graceful shutdown of shard regions timed out after $shardHandOverTimeout")
+    case GracefulShutdownTimedOut =>
+      GracefulShutdown.logger.warn(s"Graceful shutdown of shard regions timed out after $shardHandOverTimeout")
       context.stop(self)
     case Terminated(region) =>
       val newRegions = regions - region
       if (newRegions.isEmpty) {
-        GracefulShutdown.log.warn("Graceful shutdown of shard regions successful")
+        GracefulShutdown.logger.warn("Graceful shutdown of shard regions successful")
         initiator ! GracefulShutdownSuccessful
         context.stop(self)
-      } else
+      } else {
         context.become(waitingForTermination(newRegions, initiator))
+      }
   }
 }

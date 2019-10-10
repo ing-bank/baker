@@ -2,27 +2,24 @@ package com.ing.baker.runtime.akka.actor.serialization
 
 import akka.actor.ExtendedActorSystem
 import akka.serialization.SerializerWithStringManifest
-import com.ing.baker.{il, runtime}
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
-import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
+import com.ing.baker.runtime.akka.actor.process_index.{ ProcessIndex, ProcessIndexProtocol }
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
-import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
+import com.ing.baker.runtime.akka.actor.recipe_manager.{ RecipeManager, RecipeManagerProtocol }
 import com.ing.baker.runtime.akka.actor.serialization.BakerTypedProtobufSerializer.BinarySerializable
-import org.slf4j.LoggerFactory
-
+import com.ing.baker.{ il, runtime }
+import com.typesafe.scalalogging.LazyLogging
 import scala.reflect.ClassTag
 import scala.util.Try
 
 object BakerTypedProtobufSerializer {
 
-  private val log = LoggerFactory.getLogger(classOf[BakerTypedProtobufSerializer])
-
   /** Hardcoded serializerId for this serializer. This should not conflict with other serializers.
-    * Values from 0 to 40 are reserved for Akka internal usage.
-    */
+   * Values from 0 to 40 are reserved for Akka internal usage.
+   */
   val identifier = 101
 
   def entries(implicit ev0: SerializersProvider): List[BinarySerializable] =
@@ -43,7 +40,7 @@ object BakerTypedProtobufSerializer {
     )
 
   def processIndexEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
-    List (
+    List(
       forType[ClusterBakerActorProvider.GetShardIndex]
         .register("ProcessIndex.GetShardIndex"),
       forType[ProcessIndex.ActorCreated]
@@ -100,8 +97,8 @@ object BakerTypedProtobufSerializer {
         .register("ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet")
     )
 
-    def processInstanceEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
-      List(
+  def processInstanceEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
+    List(
       forType[ProcessInstanceProtocol.Stop]
         .register("ProcessInstanceProtocol.Stop"),
       forType[ProcessInstanceProtocol.GetState.type]
@@ -195,7 +192,7 @@ object BakerTypedProtobufSerializer {
     def toBinary(a: Type): Array[Byte]
 
     // The actor resolver is commented for future Akka Typed implementation
-    def fromBinary(binary: Array[Byte]/*, resolver: ActorRefResolver*/): Try[Type]
+    def fromBinary(binary: Array[Byte] /*, resolver: ActorRefResolver*/): Try[Type]
 
     def isInstance(o: AnyRef): Boolean =
       tag.isInstance(o)
@@ -204,13 +201,14 @@ object BakerTypedProtobufSerializer {
       toBinary(a.asInstanceOf[Type])
 
     // The actor resolver is commented for future Akka Typed implementation
-    def fromBinaryAnyRef(binary: Array[Byte]/*, resolver: ActorRefResolver*/): Try[AnyRef] =
+    def fromBinaryAnyRef(binary: Array[Byte] /*, resolver: ActorRefResolver*/): Try[AnyRef] =
       fromBinary(binary)
 
   }
+
 }
 
-class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
+class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest with LazyLogging {
 
   implicit def serializersProvider: SerializersProvider = SerializersProvider(system, system.provider)
 
@@ -238,8 +236,8 @@ class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends Serializ
       .map(_.fromBinaryAnyRef(bytes))
       .getOrElse(throw new IllegalStateException(s"Unsupported object with manifest $manifest"))
       .fold(
-        { e => BakerTypedProtobufSerializer.log.error(s"Failed to deserialize bytes with manifest $manifest", e); throw e },
-        identity
+      {e => logger.error(s"Failed to deserialize bytes with manifest $manifest", e); throw e},
+      identity
       )
 }
 

@@ -60,7 +60,8 @@ lazy val bakertypes = project.in(file("bakertypes"))
       objenisis,
       scalapbRuntime,
       jodaTime,
-      scalaReflect(scalaVersion.value)
+      scalaReflect(scalaVersion.value),
+      scalaLogging
     ) ++ testDeps(scalaTest, scalaCheck, logback, scalaCheck)
   )
 
@@ -73,7 +74,8 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
       slf4jApi,
       scalaGraphDot,
       objenisis,
-      typeSafeConfig
+      typeSafeConfig,
+      scalaLogging
     ) ++ testDeps(scalaTest, scalaCheck, logback)
   ).dependsOn(bakertypes)
 
@@ -105,7 +107,8 @@ lazy val runtime = project.in(file("runtime"))
         protobufJava,
         kryo,
         kryoSerializers,
-        slf4jApi
+        slf4jApi,
+        scalaLogging
       ) ++ testDeps(
         akkaTestKit,
         akkaMultiNodeTestkit,
@@ -138,7 +141,8 @@ lazy val splitBrainResolver = project.in(file("split-brain-resolver"))
         akkaActor,
         akkaCluster,
         akkaSlf4j,
-        ficusConfig
+        ficusConfig,
+        scalaLogging
       ) ++ testDeps(
         akkaTestKit,
         akkaMultiNodeTestkit,

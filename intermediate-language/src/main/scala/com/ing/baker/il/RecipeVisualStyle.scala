@@ -1,13 +1,12 @@
 package com.ing.baker.il
 
-import com.ing.baker.il.RecipeVisualizer.log
 import com.typesafe.config.Config
-import scalax.collection.io.dot.{DotAttr, DotAttrStmt, Elem}
-
+import com.typesafe.scalalogging.LazyLogging
 import scala.collection.JavaConverters._
 import scalax.collection.io.dot.implicits._
+import scalax.collection.io.dot.{ DotAttr, DotAttrStmt, Elem }
 
-object RecipeVisualStyle {
+object RecipeVisualStyle extends LazyLogging {
 
   def default: RecipeVisualStyle = RecipeVisualStyle()
 
@@ -16,7 +15,7 @@ object RecipeVisualStyle {
     val visualizationConfig = config.getConfig("baker.visualization")
     val configuredStyle = visualizationConfig.getString("style")
     val pickedStyle = if (!visualizationConfig.hasPath(s"styles.$configuredStyle")) {
-      log.warn(s"no configuration for recipe style '$configuredStyle' found, falling back to 'default' style")
+      logger.warn(s"no configuration for recipe style '$configuredStyle' found, falling back to 'default' style")
       "default"
     } else
       configuredStyle
@@ -33,15 +32,15 @@ object RecipeVisualStyle {
       values
         .-("shape") // shape is not allowed to be overriden
         .map {
-        case (key, s: String) => Some(DotAttr(key, s))
-        case (key, n: java.lang.Integer) => Some(DotAttr(key, n.intValue()))
-        case (key, n: java.lang.Long) => Some(DotAttr(key, n.longValue()))
-        case (key, n: java.lang.Float) => Some(DotAttr(key, n.floatValue()))
-        case (key, n: java.lang.Double) => Some(DotAttr(key, n.doubleValue()))
-        case (key, other) =>
-          RecipeVisualizer.log.warn(s"unusable configuration: $key = $other");
-          None
-      }.toList.flatten
+          case (key, s: String) => Some(DotAttr(key, s))
+          case (key, n: java.lang.Integer) => Some(DotAttr(key, n.intValue()))
+          case (key, n: java.lang.Long) => Some(DotAttr(key, n.longValue()))
+          case (key, n: java.lang.Float) => Some(DotAttr(key, n.floatValue()))
+          case (key, n: java.lang.Double) => Some(DotAttr(key, n.doubleValue()))
+          case (key, other) =>
+            RecipeVisualizer.logger.warn(s"unusable configuration: $key = $other")
+            None
+        }.toList.flatten
     }
 
     RecipeVisualStyle(
