@@ -74,7 +74,6 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
             .getRecipe("non-existent")
             .map(_ => None)
             .recover { case e: BakerException => Some(e) }
-          _ = println(Console.GREEN + e + Console.RESET)
         } yield e shouldBe Some(BakerException.NoSuchRecipeException("non-existent"))
       }
     }
