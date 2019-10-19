@@ -6,9 +6,10 @@ import akka.actor.ActorRef
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.testkit.TestProbe
 import com.ing.baker._
+import com.ing.baker.recipe.TestRecipe
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
-import com.ing.baker.recipe.scaladsl.Recipe
+import com.ing.baker.recipe.scaladsl.{Event, Recipe}
 import com.ing.baker.runtime.common.RejectReason._
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.scaladsl.EventInstance
@@ -44,29 +45,16 @@ object BakerEventsSpec {
     }
   }
 
-  // TODO this is a copy of TestRecipe.getRecipe(..) with 1 difference, there is a limit on the initialEvent, why?
-  protected def getRecipe(recipeName: String): Recipe =
-    Recipe(recipeName)
-      .withInteractions(
-        interactionOne
-          .withEventOutputTransformer(interactionOneSuccessful, Map("interactionOneOriginalIngredient" -> "interactionOneIngredient"))
-          .withFailureStrategy(InteractionFailureStrategy.RetryWithIncrementalBackoff(initialDelay = 10 millisecond, maximumRetries = 3)),
-        interactionTwo
-          .withOverriddenIngredientName("initialIngredientOld", "initialIngredient"),
-        interactionThree
-          .withMaximumInteractionCount(1),
-        interactionFour
-          .withRequiredEvents(secondEvent, eventFromInteractionTwo),
-        interactionFive,
-        interactionSix,
-        providesNothingInteraction,
-        sieveInteraction
-      )
-      .withSensoryEvents(
-        initialEvent.withMaxFiringLimit(1),
-        initialEventExtendedName,
-        secondEvent,
-        notUsedSensoryEvent)
+  protected def getRecipe(recipeName: String): Recipe = {
+    val rec = TestRecipe.getRecipe(recipeName)
+    val sensoryEvents = rec.sensoryEvents.map(event =>
+      event.name match {
+        case "InitialEvent" => initialEvent.withMaxFiringLimit(1)
+        case _ => event
+      }
+    )
+    rec.copy(sensoryEvents = sensoryEvents)
+  }
 
 }
 
