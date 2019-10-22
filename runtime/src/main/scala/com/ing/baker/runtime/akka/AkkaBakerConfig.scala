@@ -7,7 +7,7 @@ import cats.data.NonEmptyList
 import com.ing.baker.runtime.akka.AkkaBakerConfig.BakerPersistenceQuery
 import com.ing.baker.runtime.akka.actor.serialization.Encryption
 import com.ing.baker.runtime.akka.actor.{ BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider }
-import com.ing.baker.runtime.akka.internal.{InteractionManager, InteractionManagerDis, IkenteractionManagerLocal}
+import com.ing.baker.runtime.akka.internal.{InteractionManager, InteractionManagerDis, InteractionManagerLocal}
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import scala.concurrent.duration._
