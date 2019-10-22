@@ -357,7 +357,7 @@ object CommonBaaSServerClientSpec {
     implicit val system: ActorSystem = ActorSystem("ScalaDSLBaaSServerClientSpec-" + testId)
     implicit val materializer: Materializer = ActorMaterializer()
     val host: String = "localhost"
-    val serverBaker = ScalaBaker.akkaLocalDefault(system, materializer)
+    val serverBaker = ScalaBaker.akkaLocalDefault(system)
     for {
       (client, shutdown) <- buildFromStream(allPorts, { port: Int =>
         val client = clientBaker(s"http://$host:$port/", system, materializer)
