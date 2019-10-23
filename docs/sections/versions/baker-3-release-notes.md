@@ -139,7 +139,7 @@ case class SensoryEventResult(
                                sensoryEventStatus: SensoryEventStatus,
                                eventNames: Seq[String],
                                ingredients: Map[String, Value]
-) extends common.SensoryEventResult with ScalaApi
+) extends com.ing.baker.runtime.common.SensoryEventResult with ScalaApi
 ```
 
 ```java tab="Java"
@@ -147,7 +147,7 @@ case class SensoryEventResult(
                                sensoryEventStatus: SensoryEventStatus,
                                eventNames: java.util.List[String],
                                ingredients: java.util.Map[String, Value]
-) extends common.SensoryEventResult with JavaApi {
+) extends com.ing.baker.runtime.common.SensoryEventResult with JavaApi {
 
   def getSensoryEventStatus: SensoryEventStatus = sensoryEventStatus
 

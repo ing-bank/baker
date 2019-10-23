@@ -1,10 +1,10 @@
 package com.ing.baker.runtime.javadsl
 
-import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
+import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Value
-import com.ing.baker.runtime.scaladsl
+
 import scala.collection.JavaConverters._
 
 case class SensoryEventResult(

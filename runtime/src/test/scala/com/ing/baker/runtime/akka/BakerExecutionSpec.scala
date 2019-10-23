@@ -153,7 +153,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           |baker.interaction-manager = remote
         """.stripMargin).withFallback(ConfigFactory.load())
 
-      val baker = Baker.akka(config, ActorSystem.apply("remoteTest", config))
+      val baker = AkkaBaker(config, ActorSystem.apply("remoteTest", config))
 
       for {
         _ <- baker.addInteractionInstances(mockImplementations)
@@ -480,7 +480,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
               .withPredefinedIngredients(("missingJavaOptional", ingredientValue)))
           .withSensoryEvent(initialEvent)
 
-      val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem)
+      val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem)
 
       for {
         _ <- baker.addInteractionInstances(mockImplementations)
@@ -1078,7 +1078,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
       def second(recipeId: String) = {
         val system2 = ActorSystem("persistenceTest2", localLevelDBConfig("persistenceTest2"))
-        val baker2 = Baker.akka(ConfigFactory.load(), system2)
+        val baker2 = AkkaBaker(ConfigFactory.load(), system2)
         (for {
           _ <- baker2.addInteractionInstances(mockImplementations)
           state <- baker2.getRecipeInstanceState(recipeInstanceId)

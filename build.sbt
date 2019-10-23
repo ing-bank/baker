@@ -76,6 +76,16 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
     ) ++ testDeps(scalaTest, scalaCheck, logback)
   ).dependsOn(bakertypes)
 
+lazy val interface = project.in(file("baker-interface"))
+  .settings(defaultModuleSettings)
+  .settings(noPublishSettings)
+  .settings(
+    moduleName := "baker-interface",
+    libraryDependencies ++= Seq(
+      scalaJava8Compat
+    ) ++ providedDeps(findbugs)
+  )
+  .dependsOn(intermediateLanguage)
 
 lazy val runtime = project.in(file("runtime"))
   .settings(defaultModuleSettings)
@@ -124,7 +134,7 @@ lazy val runtime = project.in(file("runtime"))
         logback)
         ++ providedDeps(findbugs)
   )
-  .dependsOn(intermediateLanguage, testScope(recipeDsl), testScope(recipeCompiler), testScope(bakertypes))
+  .dependsOn(intermediateLanguage, interface, testScope(recipeDsl), testScope(recipeCompiler), testScope(bakertypes))
   .enablePlugins(MultiJvmPlugin)
   .configs(MultiJvm)
 

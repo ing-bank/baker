@@ -1,12 +1,11 @@
 package com.ing.baker.runtime.common
 
-import akka.actor.NoSerializationVerificationNeeded
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
 
 // TODO: rename subtypes of BakerEvent to resamble the new names
-trait BakerEvent extends LanguageApi with NoSerializationVerificationNeeded {
+trait BakerEvent extends LanguageApi {
   self =>
   type Event <: EventInstance {type Language <: self.Language}
 }

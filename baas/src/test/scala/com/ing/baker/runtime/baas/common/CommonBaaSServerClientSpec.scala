@@ -8,6 +8,7 @@ import cats.effect.{IO, Timer}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.scaladsl.Recipe
+import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.baas.BaaSServer
 import com.ing.baker.runtime.baas.common.CheckoutFlowEvents.ItemsReserved
 import com.ing.baker.runtime.baas.common.CheckoutFlowIngredients.{Item, OrderId, ReservedItems, ShippingAddress}
@@ -357,7 +358,7 @@ object CommonBaaSServerClientSpec {
     implicit val system: ActorSystem = ActorSystem("ScalaDSLBaaSServerClientSpec-" + testId)
     implicit val materializer: Materializer = ActorMaterializer()
     val host: String = "localhost"
-    val serverBaker = ScalaBaker.akkaLocalDefault(system)
+    val serverBaker = AkkaBaker.localDefault(system)
     for {
       (client, shutdown) <- buildFromStream(allPorts, { port: Int =>
         val client = clientBaker(s"http://$host:$port/", system, materializer)
