@@ -24,7 +24,7 @@ It is safer to bring the complete cluster down.
 
 ### Renames/package changes
 
-* com.ing.baker.runtime.core -> com.ing.baker.runtime.javadsl/scaladsl/common (depends per object)
+* com.ing.baker.runtime.core -> com.ing.baker.runtime.javadsl/scaladsl/com.ing.baker.runtime.common (depends per object)
 * com.ing.baker.runtime.java_api -> com.ing.baker.runtime.javadsl
 * processId -> recipeInstanceId
 * getProcessId -> GetRecipeInstanceId

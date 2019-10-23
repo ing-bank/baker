@@ -5,15 +5,12 @@ import java.util
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 
-import com.ing.baker.runtime.akka
-import com.ing.baker.runtime.javadsl
-import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
+import com.ing.baker.runtime.{common, javadsl}
 import com.ing.baker.types.{Converters, Type}
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.JavaConverters._
-import scala.compat.java8.FutureConverters
+import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.Try
 

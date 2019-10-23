@@ -21,7 +21,7 @@ The problem with this approach was that the interfaces for Java and Scala develo
 
 In this release we have created two separate packages for Java and Scala interfaces.
 The javadsl and scaladsl packages contain the same objects but created for those users in mind.
-These objects share a common parent to ensure the Java and Scala runtime DSLs are in sync.
+These objects share a com.ing.baker.runtime.common parent to ensure the Java and Scala runtime DSLs are in sync.
 As user you just chooses the correct objects by having either the javadsl or scaladsl imported.
 
 ### No more blocking! Future and CompletableFuture
@@ -139,7 +139,7 @@ case class SensoryEventResult(
                                sensoryEventStatus: SensoryEventStatus,
                                eventNames: Seq[String],
                                ingredients: Map[String, Value]
-) extends common.SensoryEventResult with ScalaApi
+) extends com.ing.baker.runtime.common.SensoryEventResult with ScalaApi
 ```
 
 ```java tab="Java"
@@ -147,7 +147,7 @@ case class SensoryEventResult(
                                sensoryEventStatus: SensoryEventStatus,
                                eventNames: java.util.List[String],
                                ingredients: java.util.Map[String, Value]
-) extends common.SensoryEventResult with JavaApi {
+) extends com.ing.baker.runtime.common.SensoryEventResult with JavaApi {
 
   def getSensoryEventStatus: SensoryEventStatus = sensoryEventStatus
 

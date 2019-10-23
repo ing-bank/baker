@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.scaladsl
 
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
-import com.ing.baker.runtime.{common, javadsl}
+import com.ing.baker.runtime.javadsl
 import com.ing.baker.types.Value
 
 import scala.collection.JavaConverters._
@@ -17,7 +17,7 @@ case class RecipeInstanceState(
     recipeInstanceId: String,
     ingredients: Map[String, Value],
     events: Seq[EventMoment])
-  extends common.RecipeInstanceState with ScalaApi {
+  extends com.ing.baker.runtime.common.RecipeInstanceState with ScalaApi {
 
   type EventType = EventMoment
 

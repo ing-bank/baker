@@ -1,29 +1,69 @@
 package com.ing.baker.runtime.akka
 
-import akka.actor.{ Actor, ActorRef, Props }
-import akka.pattern.{ FutureRef, ask }
+import akka.actor.{Actor, ActorRef, ActorSystem, Address, Props}
+import akka.pattern.{FutureRef, ask}
 import akka.util.Timeout
+import cats.data.NonEmptyList
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.akka.actor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{ Initialized, InstanceState, Uninitialized }
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.javadsl.Baker
+import com.ing.baker.runtime.scaladsl
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.Value
-import org.slf4j.{ Logger, LoggerFactory }
+import com.typesafe.config.Config
+import org.slf4j.{Logger, LoggerFactory}
+
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.postfixOps
 import scala.util.Try
 
+object AkkaBaker {
+
+  def apply(config: AkkaBakerConfig): AkkaBaker =
+    new AkkaBaker(config)
+
+  def apply(config: Config, actorSystem: ActorSystem): AkkaBaker =
+    new AkkaBaker(AkkaBakerConfig.from(config, actorSystem))
+
+  def localDefault(actorSystem: ActorSystem): AkkaBaker =
+    new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem))
+
+  def clusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem): AkkaBaker =
+    new AkkaBaker(AkkaBakerConfig.clusterDefault(seedNodes, actorSystem))
+
+  def java(config: AkkaBakerConfig): Baker =
+    new Baker(apply(config))
+
+  def java(config: Config, actorSystem: ActorSystem): Baker =
+    new Baker(apply(config, actorSystem))
+
+  def javaLocalDefault(actorSystem: ActorSystem): Baker =
+    new Baker(new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem)))
+
+  def javaClusterDefault(seedNodes: java.util.List[Address], actorSystem: ActorSystem): Baker = {
+    val nodes =
+      if (seedNodes.isEmpty) throw new IllegalStateException("Baker cluster configuration without baker.cluster.seed-nodes")
+      else NonEmptyList.fromListUnsafe(seedNodes.asScala.toList)
+    new Baker(new AkkaBaker(AkkaBakerConfig.clusterDefault(nodes, actorSystem)))
+  }
+
+  def javaOther(baker: scaladsl.Baker) =
+    new Baker(baker)
+}
+
 /**
   * The Baker is the component of the Baker library that runs one or multiples recipes.
   * For each recipe a new instance can be baked, sensory events can be send and state can be inquired upon
   */
-class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
+class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker {
 
   import config.system
 
