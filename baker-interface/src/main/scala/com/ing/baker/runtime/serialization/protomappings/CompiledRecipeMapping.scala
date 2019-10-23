@@ -9,7 +9,7 @@ import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.il.petrinet.{Node, Place, RecipePetriNet, Transition}
 import com.ing.baker.petrinet.api.Marking
-import com.ing.baker.runtime.serialization.ProtoMap
+import com.ing.baker.runtime.serialization.{ProtoMap, TokenIdentifier}
 import com.ing.baker.types.Value
 import scalax.collection.GraphEdge
 import scalax.collection.edge.WLDiEdge
@@ -123,7 +123,7 @@ class CompiledRecipeMapping(anyMapping: ProtoMap[AnyRef, protobuf.SerializedData
       case (place, tokens) ⇒ tokens.toSeq.map {
         case (value, count) ⇒ protobuf.ProducedToken(
           placeId = Option(place.id),
-          tokenId = Option(tokenIdentifier(value)),
+          tokenId = Option(TokenIdentifier(value)),
           count = Option(count),
           tokenData = Option(anyMapping.toProto(value.asInstanceOf[AnyRef]))
         )

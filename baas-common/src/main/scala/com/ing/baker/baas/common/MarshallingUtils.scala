@@ -7,6 +7,8 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshal, Unmarshaller}
 import akka.stream.Materializer
 import com.ing.baker.runtime.common.BakerException
+import com.ing.baker.runtime.serialization.ProtoMap
+import BaaSProto._
 
 import scala.concurrent.{ExecutionContext, Future}
 

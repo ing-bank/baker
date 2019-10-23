@@ -76,7 +76,7 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
     ) ++ testDeps(scalaTest, scalaCheck, logback)
   ).dependsOn(bakertypes)
 
-lazy val interface = project.in(file("baker-interface"))
+lazy val `baker-interface` = project.in(file("baker-interface"))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
   .settings(scalaPBSettings)
@@ -138,7 +138,7 @@ lazy val runtime = project.in(file("runtime"))
         logback)
         ++ providedDeps(findbugs)
   )
-  .dependsOn(intermediateLanguage, interface, testScope(recipeDsl), testScope(recipeCompiler), testScope(bakertypes))
+  .dependsOn(intermediateLanguage, `baker-interface`, testScope(recipeDsl), testScope(recipeCompiler), testScope(bakertypes))
   .enablePlugins(MultiJvmPlugin)
   .configs(MultiJvm)
 
@@ -206,7 +206,7 @@ lazy val `baas-common` = project.in(file("baas-common"))
       akkaHttp
     )
   )
-  .dependsOn(interface)
+  .dependsOn(`baker-interface`)
 
 lazy val `baas-client` = project.in(file("baas-client"))
   .settings(defaultModuleSettings)
@@ -216,7 +216,7 @@ lazy val `baas-client` = project.in(file("baas-client"))
       akkaHttp
     )
   )
-  .dependsOn(interface, `baas-common`)
+  .dependsOn(`baker-interface`, `baas-common`)
 
 lazy val `baas-state` = project.in(file("baas-state"))
   .settings(defaultModuleSettings)
@@ -264,13 +264,10 @@ lazy val `baas-tests` = project.in(file("baas-tests"))
         scalaCheck
       )
   )
-  .dependsOn(`baas-client`, `baas-state`, `baas-remote-interaction`)
+  .dependsOn(`baas-client`, `baas-state`, `baas-remote-interaction`, `baas-remote-event-listener`, recipeCompiler)
+  .aggregate(`baas-client`, `baas-state`, `baas-remote-interaction`, `baas-remote-event-listener`)
 
-//lazy val baas = project
-
-
-lazy val baker = project
-  .in(file("."))
+lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
   .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver)

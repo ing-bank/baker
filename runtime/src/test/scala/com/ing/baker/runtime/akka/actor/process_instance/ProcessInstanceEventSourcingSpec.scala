@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
-import akka.persistence.inmemory.extension.{ InMemoryJournalStorage, StorageExtension }
+import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl._
 import akka.stream.ActorMaterializer
@@ -13,10 +13,12 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSou
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceSpec._
 import com.ing.baker.runtime.akka.actor.process_instance.dsl._
-import com.ing.baker.runtime.akka.actor.serialization.Encryption.NoEncryption
 import java.util.UUID
+
+import com.ing.baker.runtime.serialization.Encryption.NoEncryption
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Matchers._
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
