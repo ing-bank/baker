@@ -1,9 +1,9 @@
-package com.ing.baker.runtime.baas.common
+package com.ing.baker.baas.recipe
 
 import cats.effect.{IO, Timer}
-import com.ing.baker.runtime.baas.common.CheckoutFlowEvents.MakePaymentOutput
-import com.ing.baker.runtime.baas.common.CheckoutFlowIngredients.{PaymentInformation, ReservedItems, ShippingAddress, ShippingOrder}
-import com.ing.baker.runtime.baas.common.CheckoutFlowInteractions.MakePayment
+import com.ing.baker.baas.recipe.CheckoutFlowEvents.MakePaymentOutput
+import com.ing.baker.baas.recipe.CheckoutFlowIngredients.{PaymentInformation, ReservedItems, ShippingAddress, ShippingOrder}
+import com.ing.baker.baas.recipe.CheckoutFlowInteractions.MakePayment
 
 import scala.concurrent.Future
 import scala.concurrent.duration._

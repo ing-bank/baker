@@ -15,8 +15,9 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_index._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager
-import com.ing.baker.runtime.akka.actor.serialization.{BakerSerializable, Encryption}
+import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.InteractionManager
+import com.ing.baker.runtime.serialization.Encryption
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration._

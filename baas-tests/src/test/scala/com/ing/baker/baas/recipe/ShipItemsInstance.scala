@@ -1,10 +1,10 @@
-package com.ing.baker.runtime.baas.common
+package com.ing.baker.baas.recipe
 
 import cats.effect.{IO, Timer}
 import cats.implicits._
-import com.ing.baker.runtime.baas.common.CheckoutFlowEvents.ShippingConfirmed
-import com.ing.baker.runtime.baas.common.CheckoutFlowIngredients.ShippingOrder
-import com.ing.baker.runtime.baas.common.CheckoutFlowInteractions.ShipItems
+import com.ing.baker.baas.recipe.CheckoutFlowEvents.ShippingConfirmed
+import com.ing.baker.baas.recipe.CheckoutFlowIngredients.ShippingOrder
+import com.ing.baker.baas.recipe.CheckoutFlowInteractions.ShipItems
 
 import scala.concurrent.Future
 import scala.concurrent.duration._

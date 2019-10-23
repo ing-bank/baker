@@ -1,11 +1,6 @@
-package com.ing.baker.runtime.baas
+package com.ing.baker.baas.common
 
-import cats.implicits._
-import BaaSProtocol._
-import com.ing.baker.runtime.akka.actor.serialization.protomappings.SensoryEventStatusMappingHelper
-import com.ing.baker.runtime.akka.actor.serialization.{ProtoMap, SerializersProvider}
-import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
-import scalapb.GeneratedMessageCompanion
+import com.ing.baker.baas.common.BaaSProtocol._
 
 import scala.util.Try
 
