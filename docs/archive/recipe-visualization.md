@@ -96,4 +96,4 @@ For an overview on what is possible to configure check out the [graphviz](https:
 
 It is not possible to alter the `shape` attribute, it is hard coded (fixed) for all elements in the graph.
 
-This is done to garuantee a common visual language for all recipes.
+This is done to garuantee a com.ing.baker.runtime.common visual language for all recipes.

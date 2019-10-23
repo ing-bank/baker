@@ -4,14 +4,13 @@ import java.util
 
 import com.ing.baker.il.EventDescriptor
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
-import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Value
 
 import scala.collection.JavaConverters._
 
 case class EventInstance(name: String,
                          providedIngredients: util.Map[String, Value])
-  extends common.EventInstance with JavaApi {
+  extends com.ing.baker.runtime.common.EventInstance with JavaApi {
 
   def getProvidedIngredients: util.Map[String, Value] = providedIngredients
 

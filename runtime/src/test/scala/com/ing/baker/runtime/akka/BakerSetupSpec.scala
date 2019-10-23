@@ -32,7 +32,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent))
 
-        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem)
+        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem)
 
         for {
           _ <- baker.addInteractionInstances(mockImplementations)
@@ -45,12 +45,12 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
       }
 
       "providing implementations in a sequence" in {
-        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem)
+        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem)
         baker.addInteractionInstances(mockImplementations).map(_ => succeed)
       }
 
       "providing an implementation with the class simplename same as the interaction" in {
-        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem)
+        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem)
         baker.addInteractionInstance(InteractionInstance.unsafeFrom(new implementations.InteractionOne())).map(_ => succeed)
       }
 
@@ -60,7 +60,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne.withName("interactionOneRenamed"))
           .withSensoryEvent(initialEvent)
 
-        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem)
+        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem)
 
         for {
           _ <- baker.addInteractionInstance(InteractionInstance.unsafeFrom(new implementations.InteractionOne()))
@@ -74,7 +74,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem)
+        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem)
 
         for {
           _ <- baker.addInteractionInstance(InteractionInstance.unsafeFrom(new InteractionOneFieldName()))
@@ -88,7 +88,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem)
+        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem)
 
         for {
           _ <- baker.addInteractionInstance(InteractionInstance.unsafeFrom(new InteractionOneInterfaceImplementation()))
@@ -101,7 +101,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(complexIngredientInteraction)
           .withSensoryEvent(initialEvent)
 
-        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem)
+        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem)
 
         for {
           _ <- baker.addInteractionInstance(InteractionInstance.unsafeFrom(mock[ComplexIngredientInteraction]))
@@ -117,7 +117,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(secondEvent)
 
-        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem)
+        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem)
 
         baker.addInteractionInstances(mockImplementations)
 
@@ -132,7 +132,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem)
+        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem)
 
         recoverToExceptionIf[ImplementationsException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
@@ -145,7 +145,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent)
 
-        val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem)
+        val baker = AkkaBaker(ConfigFactory.load(), defaultActorSystem)
 
         baker.addInteractionInstance(InteractionInstance.unsafeFrom(new InteractionOneWrongApply()))
 

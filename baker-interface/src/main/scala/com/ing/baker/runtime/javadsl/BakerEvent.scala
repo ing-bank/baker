@@ -6,7 +6,6 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
-import com.ing.baker.runtime.common.RejectReason
 
 sealed trait BakerEvent extends common.BakerEvent with JavaApi {
   type Event = EventInstance
