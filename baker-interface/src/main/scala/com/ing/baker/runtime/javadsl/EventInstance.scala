@@ -2,6 +2,7 @@ package com.ing.baker.runtime.javadsl
 
 import java.util
 
+import com.ing.baker.runtime.scaladsl
 import com.ing.baker.il.EventDescriptor
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.types.Value

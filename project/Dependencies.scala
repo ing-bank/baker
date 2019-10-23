@@ -18,6 +18,7 @@ object Dependencies {
       .exclude("com.typesafe.akka", "akka-persistence-query")
       .exclude("com.typesafe.akka", "akka-stream")
 
+  val scalaJava8Compat =          "org.scala-lang.modules"     %% "scala-java8-compat"                 % "0.8.0"
   val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.0.5"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"

@@ -82,7 +82,7 @@ lazy val interface = project.in(file("baker-interface"))
   .settings(
     moduleName := "baker-interface",
     libraryDependencies ++= Seq(
-      objenisis
+      scalaJava8Compat
     ) ++ providedDeps(findbugs)
   )
   .dependsOn(intermediateLanguage)

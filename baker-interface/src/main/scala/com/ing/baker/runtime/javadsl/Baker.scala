@@ -12,6 +12,7 @@ import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Value
 
+import scala.compat.java8.FutureConverters
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
 
