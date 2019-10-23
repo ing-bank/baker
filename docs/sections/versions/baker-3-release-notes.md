@@ -21,7 +21,7 @@ The problem with this approach was that the interfaces for Java and Scala develo
 
 In this release we have created two separate packages for Java and Scala interfaces.
 The javadsl and scaladsl packages contain the same objects but created for those users in mind.
-These objects share a com.ing.baker.runtime.common parent to ensure the Java and Scala runtime DSLs are in sync.
+These objects share a common parent to ensure the Java and Scala runtime DSLs are in sync.
 As user you just chooses the correct objects by having either the javadsl or scaladsl imported.
 
 ### No more blocking! Future and CompletableFuture

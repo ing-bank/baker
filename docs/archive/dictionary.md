@@ -1,6 +1,6 @@
 # Dictionary
 
-Here we define some com.ing.baker.runtime.common used lanuage that is used in this documentation.
+Here we define some common used lanuage that is used in this documentation.
 
 | Name | Description |
 | --- | --- |
