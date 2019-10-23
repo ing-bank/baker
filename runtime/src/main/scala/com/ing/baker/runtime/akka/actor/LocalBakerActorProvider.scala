@@ -1,12 +1,13 @@
 package com.ing.baker.runtime.akka.actor
 
-import akka.actor.{ ActorRef, ActorSystem }
+import akka.actor.{ActorRef, ActorSystem}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{ GetIndex, Index }
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{GetIndex, Index}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager
-import com.ing.baker.runtime.akka.actor.serialization.Encryption
 import com.ing.baker.runtime.akka.internal.InteractionManager
+import com.ing.baker.runtime.serialization.Encryption
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
 

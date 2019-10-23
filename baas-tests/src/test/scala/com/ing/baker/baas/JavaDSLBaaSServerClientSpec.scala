@@ -1,13 +1,10 @@
-package com.ing.baker.baas.scaladsl
+package com.ing.baker.baas
 
 import java.util.Optional
 
+import com.ing.baker.baas.JavaDSLBaaSServerClientSpec.optionToJava
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
-import com.ing.baker.runtime.baas.common.CommonBaaSServerClientSpec
-import com.ing.baker.baas.javadsl
-import com.ing.baker.baas.scaladsl.JavaDSLBaaSServerClientSpec.optionToJava
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.Value
 
@@ -18,8 +15,8 @@ import scala.concurrent.Future
 class JavaDSLBaaSServerClientSpec extends CommonBaaSServerClientSpec(
   (host, as, mat) => {
     import as.dispatcher
-    val javaBaker = javadsl.Baker.remote(host, as, mat)
-    new scaladsl.Baker {
+    val javaBaker = javadsl.BakerClient.build(host, as, mat)
+    new com.ing.baker.runtime.scaladsl.Baker {
       override def addRecipe(compiledRecipe: CompiledRecipe): Future[String] =
         FutureConverters.toScala(javaBaker.addRecipe(compiledRecipe))
           .recoverWith {
@@ -57,7 +54,7 @@ class JavaDSLBaaSServerClientSpec extends CommonBaaSServerClientSpec(
           }
       override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): EventResolutions = {
         val res = javaBaker.fireEvent(recipeInstanceId, event.asJava, optionToJava(correlationId))
-        scaladsl.EventResolutions(
+        com.ing.baker.runtime.scaladsl.EventResolutions(
           FutureConverters.toScala(res.resolveWhenReceived)
             .recoverWith {
               case e: java.util.concurrent.CompletionException => Future.failed(e.getCause)

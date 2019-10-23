@@ -1,9 +1,9 @@
-package com.ing.baker.baas.scaladsl
+package com.ing.baker.baas
 
-import com.ing.baker.runtime.akka.actor.serialization.Encryption
-import com.ing.baker.runtime.baas.common.CommonBaaSServerClientSpec
+import com.ing.baker.baas.scaladsl.BakerClient
+import com.ing.baker.runtime.serialization.Encryption
 
 class ScalaDSLBaaSServerClientSpec extends CommonBaaSServerClientSpec(
-  (host, as, mat) => Baker.remote(host, Encryption.NoEncryption)(as, mat)
+  (host, as, mat) => BakerClient.build(host, Encryption.NoEncryption)(as, mat)
 )
 

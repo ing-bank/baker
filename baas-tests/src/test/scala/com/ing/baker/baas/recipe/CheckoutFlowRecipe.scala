@@ -1,11 +1,11 @@
-package com.ing.baker.runtime.baas.common
+package com.ing.baker.baas.recipe
 
-import com.ing.baker.recipe.common.InteractionFailureStrategy.{BlockInteraction, RetryWithIncrementalBackoff}
+import com.ing.baker.baas.recipe.CheckoutFlowEvents._
+import com.ing.baker.baas.recipe.CheckoutFlowIngredients._
+import com.ing.baker.baas.recipe.CheckoutFlowInteractions._
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
+import com.ing.baker.recipe.common.InteractionFailureStrategy.{BlockInteraction, RetryWithIncrementalBackoff}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
-import CheckoutFlowIngredients._
-import CheckoutFlowEvents._
-import CheckoutFlowInteractions._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._

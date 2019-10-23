@@ -1,17 +1,15 @@
-package com.ing.baker.runtime.baas
+package com.ing.baker.baas.state
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{RequestContext, Route}
+import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
-import com.ing.baker.runtime.akka.actor.serialization.{Encryption, SerializersProvider}
-import com.ing.baker.runtime.baas.BaaSProto._
-import com.ing.baker.runtime.baas.BaaSProtocol.BaaSRemoteFailure
-import com.ing.baker.runtime.baas.MarshallingUtils._
-import com.ing.baker.runtime.common.BakerException
+import com.ing.baker.baas.common.BaaSProtocol
+import com.ing.baker.baas.common.MarshallingUtils._
+import com.ing.baker.runtime.akka.actor.serialization.SerializersProvider
 import com.ing.baker.runtime.scaladsl.Baker
+import com.ing.baker.runtime.serialization.{Encryption, SerializersProvider}
 
 import scala.concurrent.Future
 

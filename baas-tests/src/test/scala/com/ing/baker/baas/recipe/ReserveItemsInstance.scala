@@ -1,10 +1,10 @@
-package com.ing.baker.runtime.baas.common
+package com.ing.baker.baas.recipe
 
 import cats.effect.{IO, Timer}
 import cats.implicits._
-import com.ing.baker.runtime.baas.common.CheckoutFlowEvents.ReserveItemsOutput
-import com.ing.baker.runtime.baas.common.CheckoutFlowIngredients.{Item, OrderId, ReservedItems}
-import com.ing.baker.runtime.baas.common.CheckoutFlowInteractions.ReserveItems
+import com.ing.baker.baas.recipe.CheckoutFlowEvents.ReserveItemsOutput
+import com.ing.baker.baas.recipe.CheckoutFlowIngredients.{Item, OrderId, ReservedItems}
+import com.ing.baker.baas.recipe.CheckoutFlowInteractions.ReserveItems
 
 import scala.concurrent.Future
 import scala.concurrent.duration._

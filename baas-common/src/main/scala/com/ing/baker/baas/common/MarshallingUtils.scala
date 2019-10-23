@@ -1,14 +1,12 @@
-package com.ing.baker.runtime.baas
+package com.ing.baker.baas.common
 
 import akka.http.scaladsl.marshalling.{Marshaller, ToEntityMarshaller}
 import akka.http.scaladsl.model.{ContentTypes, HttpResponse, MediaTypes, StatusCodes}
-import akka.http.scaladsl.server.{Route, StandardRoute}
 import akka.http.scaladsl.server.Directives.{complete, onSuccess}
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshal, Unmarshaller}
-import com.ing.baker.runtime.akka.actor.serialization.ProtoMap
-import com.ing.baker.runtime.common.BakerException
-import BaaSProto._
 import akka.stream.Materializer
+import com.ing.baker.runtime.common.BakerException
 
 import scala.concurrent.{ExecutionContext, Future}
 

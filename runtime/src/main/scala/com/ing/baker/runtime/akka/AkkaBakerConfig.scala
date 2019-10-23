@@ -1,15 +1,16 @@
 package com.ing.baker.runtime.akka
 
-import akka.actor.{ ActorSystem, Address, AddressFromURIString }
+import akka.actor.{ActorSystem, Address, AddressFromURIString}
 import akka.persistence.query.PersistenceQuery
-import akka.persistence.query.scaladsl.{ CurrentEventsByPersistenceIdQuery, CurrentPersistenceIdsQuery, PersistenceIdsQuery }
+import akka.persistence.query.scaladsl.{CurrentEventsByPersistenceIdQuery, CurrentPersistenceIdsQuery, PersistenceIdsQuery}
 import cats.data.NonEmptyList
 import com.ing.baker.runtime.akka.AkkaBakerConfig.BakerPersistenceQuery
-import com.ing.baker.runtime.akka.actor.serialization.Encryption
-import com.ing.baker.runtime.akka.actor.{ BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider }
+import com.ing.baker.runtime.akka.actor.{BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider}
 import com.ing.baker.runtime.akka.internal.{InteractionManager, InteractionManagerDis, InteractionManagerLocal}
+import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
+
 import scala.concurrent.duration._
 
 case class AkkaBakerConfig(
