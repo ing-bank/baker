@@ -1,29 +1,10 @@
 package com.ing.baker.runtime.scaladsl
 
-import akka.actor.{ ActorSystem, Address }
-import cats.data.NonEmptyList
-import com.ing.baker.runtime.akka.{ AkkaBaker, AkkaBakerConfig }
 import com.ing.baker.runtime.common
-import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.typesafe.config.Config
+import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
+
 import scala.concurrent.Future
-
-object Baker {
-
-  def akkaLocalDefault(actorSystem: ActorSystem): AkkaBaker =
-    new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem))
-
-  def akkaClusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem): AkkaBaker =
-    new AkkaBaker(AkkaBakerConfig.clusterDefault(seedNodes, actorSystem))
-
-  def akka(config: AkkaBakerConfig): AkkaBaker =
-    new AkkaBaker(config)
-
-  def akka(config: Config, actorSystem: ActorSystem): AkkaBaker =
-    new AkkaBaker(AkkaBakerConfig.from(config, actorSystem))
-
-}
 
 /**
   * The Baker is the component of the Baker library that runs one or multiples recipes.

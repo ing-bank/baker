@@ -1,11 +1,10 @@
 package com.ing.baker.runtime.javadsl
 
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
-import com.ing.baker.runtime.{common, scaladsl}
 
 case class EventMoment(name: String,
                        occurredOn: Long)
-  extends common.EventMoment with JavaApi {
+  extends com.ing.baker.runtime.common.EventMoment with JavaApi {
 
   def getName: String = name
 

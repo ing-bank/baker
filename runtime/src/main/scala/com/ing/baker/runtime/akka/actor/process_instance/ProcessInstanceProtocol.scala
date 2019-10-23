@@ -9,7 +9,7 @@ import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 object ProcessInstanceProtocol {
 
   /**
-   * A common trait for all commands to a petri net instance.
+   * A com.ing.baker.runtime.common trait for all commands to a petri net instance.
    */
   sealed trait Command extends BakerSerializable
 
@@ -52,7 +52,7 @@ object ProcessInstanceProtocol {
   case class OverrideExceptionStrategy(jobId: Long, failureStrategy: ExceptionStrategy) extends Command
 
   /**
-   * A common trait for all responses coming from a petri net instance.
+   * A com.ing.baker.runtime.common trait for all responses coming from a petri net instance.
    */
   sealed trait Response extends BakerSerializable
 

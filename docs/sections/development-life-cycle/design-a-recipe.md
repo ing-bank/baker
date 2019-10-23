@@ -230,11 +230,11 @@ public class JWebshopRecipe {
 ```
 
 Let us remember that this is just a _description_ of what our program across multiple services should do, on the next 
-sections we will see how to visualize it, create runtime `instances` of our recipes and their parts, what common practices
+sections we will see how to visualize it, create runtime `instances` of our recipes and their parts, what com.ing.baker.runtime.common practices
 are there for testing, everything you need to know to deploy and monitor a baker cluster, and how Baker helps you handle
 and resolve failure which is not modeled in the domain (in the recipe).
 
-As you might have realised `Ingredients`, `Events` and `Interactions` could be reused on different Recipes, giving common
+As you might have realised `Ingredients`, `Events` and `Interactions` could be reused on different Recipes, giving com.ing.baker.runtime.common
 business verbs that your programs and organisation can use across teams, the same way different cooking recipes share
 same processes (simmering, boiling, cutting) you should reuse interactions across your different business recipes.
 
