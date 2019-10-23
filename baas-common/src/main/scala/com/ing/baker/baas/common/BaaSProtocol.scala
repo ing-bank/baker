@@ -1,8 +1,8 @@
-package com.ing.baker.runtime.baas
+package com.ing.baker.baas.common
 
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
-import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult}
+import com.ing.baker.runtime.scaladsl._
 
 object BaaSProtocol {
 

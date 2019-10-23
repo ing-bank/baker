@@ -9,9 +9,10 @@ import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.{NotifyBoth, NotifyOnEvent, NotifyWhenCompleted, NotifyWhenReceived}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{ProcessEventReceivedResponse, _}
-import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
-import com.ing.baker.runtime.akka.actor.serialization.protomappings.SensoryEventStatusMappingHelper
-import com.ing.baker.runtime.akka.actor.serialization.{ProtoMap, SerializersProvider}
+import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
+import com.ing.baker.runtime.serialization.protomappings.SensoryEventStatusMappingHelper
+import com.ing.baker.runtime.akka.actor.serialization.SerializersProvider
+import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success, Try}

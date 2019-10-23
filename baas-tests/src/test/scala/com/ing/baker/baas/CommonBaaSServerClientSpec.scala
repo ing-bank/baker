@@ -1,23 +1,23 @@
-package com.ing.baker.runtime.baas.common
+package com.ing.baker.baas
 
 import java.util.UUID
 
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{IO, Timer}
+import com.ing.baker.baas.CommonBaaSServerClientSpec._
+import com.ing.baker.baas.recipe.CheckoutFlowEvents.ItemsReserved
+import com.ing.baker.baas.recipe.CheckoutFlowIngredients.{Item, OrderId, ReservedItems, ShippingAddress}
+import com.ing.baker.baas.recipe._
+import com.ing.baker.baas.state.BaaSServer
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.akka.AkkaBaker
-import com.ing.baker.runtime.baas.BaaSServer
-import com.ing.baker.runtime.baas.common.CheckoutFlowEvents.ItemsReserved
-import com.ing.baker.runtime.baas.common.CheckoutFlowIngredients.{Item, OrderId, ReservedItems, ShippingAddress}
-import com.ing.baker.runtime.baas.common.CommonBaaSServerClientSpec.{ClientServerTest, setupFailingOnceReserveItems, setupFailingWithRetryReserveItems, setupHappyPath}
 import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance, Baker => ScalaBaker}
-import org.scalatest.compatible.Assertion
-import org.scalatest.{AsyncFunSpec, BeforeAndAfterAll, BeforeAndAfterEach, Matchers}
+import org.scalatest._
 
 import scala.concurrent.{ExecutionContext, Future}
 
