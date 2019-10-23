@@ -9,7 +9,7 @@ import scala.concurrent.Future
 case class EventResolutions(
                              resolveWhenReceived: Future[SensoryEventStatus],
                              resolveWhenCompleted: Future[SensoryEventResult]
-) extends com.ing.baker.runtime.common.EventResolutions[Future] with ScalaApi {
+) extends common.EventResolutions[Future] with ScalaApi {
 
   type SensoryEventResultType = SensoryEventResult
 }

@@ -1,8 +1,8 @@
 package com.ing.baker.runtime.scaladsl
 
 import com.ing.baker.runtime.common
-import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
+import com.ing.baker.runtime.common.SensoryEventStatus
 
 import scala.concurrent.Future
 
