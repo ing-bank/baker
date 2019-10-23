@@ -12,8 +12,8 @@ we provide an API that uses Java and Scala reflection to generate most of the da
 classes or interfaces.
 
 ```scala tab="Scala"
-import com.ing.baker.recipe.com.ing.baker.runtime.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
-import com.ing.baker.recipe.com.ing.baker.runtime.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
+import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
+import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 
 import scala.concurrent.duration._
@@ -103,8 +103,8 @@ object WebshopRecipe {
 
 ```scala tab="Scala (Reflection API)"
 
-import com.ing.baker.recipe.com.ing.baker.runtime.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
-import com.ing.baker.recipe.com.ing.baker.runtime.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
+import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
+import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 
 import scala.concurrent.duration._
