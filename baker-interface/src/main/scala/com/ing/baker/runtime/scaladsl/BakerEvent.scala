@@ -45,7 +45,7 @@ case class EventReceived(timeStamp: Long,
                          recipeId: String,
                          recipeInstanceId: String,
                          correlationId: Option[String],
-                         event: EventInstance) extends BakerEvent with com.ing.baker.runtime.common.EventReceived
+                         event: EventInstance) extends BakerEvent with common.EventReceived
 
 /**
   * Event describing the fact that an event was received but rejected for a process
@@ -82,7 +82,7 @@ case class InteractionFailed(timeStamp: Long,
                              interactionName: String,
                              failureCount: Int,
                              throwable: Throwable,
-                             exceptionStrategyOutcome: ExceptionStrategyOutcome) extends BakerEvent with com.ing.baker.runtime.common.InteractionFailed
+                             exceptionStrategyOutcome: ExceptionStrategyOutcome) extends BakerEvent with common.InteractionFailed
 
 /**
   * Event describing the fact that an interaction has started executing
@@ -117,7 +117,7 @@ case class InteractionCompleted(timeStamp: Long,
                                 recipeId: String,
                                 recipeInstanceId: String,
                                 interactionName: String,
-                                event: Option[EventInstance]) extends BakerEvent with com.ing.baker.runtime.common.InteractionCompleted
+                                event: Option[EventInstance]) extends BakerEvent with common.InteractionCompleted
 
 /**
   * Event describing the fact that a baker process was created
@@ -130,7 +130,7 @@ case class InteractionCompleted(timeStamp: Long,
 case class RecipeInstanceCreated(timeStamp: Long,
                                  recipeId: String,
                                  recipeName: String,
-                                 recipeInstanceId: String) extends BakerEvent with com.ing.baker.runtime.common.RecipeInstanceCreated
+                                 recipeInstanceId: String) extends BakerEvent with common.RecipeInstanceCreated
 
 /**
   * An event describing the fact that a recipe was added to baker.
