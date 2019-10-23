@@ -8,7 +8,7 @@ import com.ing.baker.petrinet.api.{Id, Marking, MultiSet}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.protobuf.FailureStrategyMessage.StrategyTypeMessage
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
-import com.ing.baker.runtime.akka.actor.serialization.SerializersProvider
+import com.ing.baker.runtime.serialization.SerializersProvider
 import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider}
 import scalapb.GeneratedMessageCompanion
 
