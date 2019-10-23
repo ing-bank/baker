@@ -1,39 +1,16 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
-import java.security.MessageDigest
-
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceSerialization._
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal.Instance
 import com.ing.baker.runtime.akka.actor.process_instance.protobuf.FailureStrategy.StrategyType
 import com.ing.baker.runtime.akka.actor.process_instance.protobuf._
 import com.ing.baker.runtime.akka.actor.protobuf.{ProducedToken, SerializedData}
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto}
-import com.ing.baker.runtime.serialization.SerializersProvider
+import com.ing.baker.runtime.serialization.{SerializersProvider, TokenIdentifier}
 
 import scala.util.{Failure, Success}
-
-object ProcessInstanceSerialization {
-
-  /**
-    * TODO:
-    *
-    * This approach is fragile, the identifier function cannot change ever or recovery breaks
-    * a more robust alternative is to generate the ids and persist them
-    */
-  def tokenIdentifier(tokenValue: Any): Long = tokenValue match {
-    case null        => -1
-    case str: String => sha256(str)
-    case obj         => obj.hashCode()
-  }
-
-  def sha256(str: String) = {
-    val sha256Digest: MessageDigest = MessageDigest.getInstance("SHA-256")
-    BigInt(1, sha256Digest.digest(str.getBytes("UTF-8"))).toLong
-  }
-}
 
 /**
   * This class is responsible for translating the EventSourcing.Event to and from the protobuf.Event
@@ -93,7 +70,7 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](pro
       case (placeId, tokens) ⇒ tokens.toSeq.map {
         case (value, count) ⇒ ProducedToken(
           placeId = Some(placeId),
-          tokenId = Some(tokenIdentifier(value)),
+          tokenId = Some(TokenIdentifier(value)),
           count = Some(count),
           tokenData = serializeObject(value)
         )
@@ -106,7 +83,7 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](pro
       case (placeId, tokens) ⇒ tokens.toSeq.map {
         case (value, count) ⇒ protobuf.ConsumedToken(
           placeId = Some(placeId),
-          tokenId = Some(tokenIdentifier(value)),
+          tokenId = Some(TokenIdentifier(value)),
           count = Some(count)
         )
       }
@@ -117,8 +94,8 @@ class ProcessInstanceSerialization[P : Identifiable, T : Identifiable, S, E](pro
       case (accumulated, protobuf.ConsumedToken(Some(placeId), Some(tokenId), Some(count))) ⇒
         val place = instance.petriNet.places.getById(placeId, "place in the petrinet")
         val keySet = instance.marking(place).keySet
-        val value = keySet.find(e ⇒ tokenIdentifier(e) == tokenId).getOrElse(
-          throw new IllegalStateException(s"Missing token with id $tokenId, keySet = ${keySet.map(tokenIdentifier)}")
+        val value = keySet.find(e ⇒ TokenIdentifier(e) == tokenId).getOrElse(
+          throw new IllegalStateException(s"Missing token with id $tokenId, keySet = ${keySet.map(TokenIdentifier(_))}")
         )
         accumulated.add(placeId, value, count)
       case _ ⇒ throw new IllegalStateException("Missing data in persisted ConsumedToken")

@@ -11,7 +11,7 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireS
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{ProcessEventReceivedResponse, _}
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.serialization.protomappings.SensoryEventStatusMappingHelper
-import com.ing.baker.runtime.akka.actor.serialization.SerializersProvider
+import com.ing.baker.runtime.serialization.SerializersProvider
 import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider}
 
 import scala.concurrent.duration.FiniteDuration

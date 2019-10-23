@@ -7,12 +7,12 @@ import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, MessageEntity, Uri}
 import akka.stream.Materializer
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
-import com.ing.baker.runtime.akka.actor.serialization.{Encryption, SerializersProvider}
 import com.ing.baker.baas.common.BaaSProto._
 import com.ing.baker.baas.common.BaaSProtocol
-import com.ing.baker.runtime.baas.MarshallingUtils._
+import com.ing.baker.baas.common.MarshallingUtils._
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance, EventMoment, EventResolutions, InteractionInstance, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
+import com.ing.baker.runtime.serialization.{Encryption, SerializersProvider}
 import com.ing.baker.types.Value
 
 import scala.concurrent.Future

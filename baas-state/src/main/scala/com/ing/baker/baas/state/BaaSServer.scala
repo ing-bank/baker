@@ -5,9 +5,9 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
+import com.ing.baker.baas.common.BaaSProto._
 import com.ing.baker.baas.common.BaaSProtocol
 import com.ing.baker.baas.common.MarshallingUtils._
-import com.ing.baker.runtime.akka.actor.serialization.SerializersProvider
 import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.runtime.serialization.{Encryption, SerializersProvider}
 

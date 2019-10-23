@@ -17,7 +17,7 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager.RecipeAdded
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
 import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
-import com.ing.baker.runtime.akka.actor.serialization.Encryption.{AESEncryption, NoEncryption}
+import com.ing.baker.runtime.serialization.Encryption.{AESEncryption, NoEncryption}
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto}
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanceState, SensoryEventResult}
