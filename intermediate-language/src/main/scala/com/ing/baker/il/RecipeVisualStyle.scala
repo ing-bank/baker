@@ -49,7 +49,7 @@ object RecipeVisualStyle {
       commonNodeAttributes = List(
         DotAttrStmt(
           Elem.node,
-          readAttributes("com.ing.baker.runtime.common")
+          readAttributes("common")
         )),
       ingredientAttributes =
         DotAttr("shape", "circle") +: readAttributes("ingredient"),

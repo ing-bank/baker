@@ -9,7 +9,7 @@ import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 object ProcessInstanceProtocol {
 
   /**
-   * A com.ing.baker.runtime.common trait for all commands to a petri net instance.
+   * A common trait for all commands to a petri net instance.
    */
   sealed trait Command extends BakerSerializable
 
