@@ -27,11 +27,11 @@ import scala.util.Try
 
 object AkkaBaker {
 
-  def apply(config: AkkaBakerConfig): AkkaBaker =
-    new AkkaBaker(config)
-
   def apply(config: Config, actorSystem: ActorSystem): AkkaBaker =
     new AkkaBaker(AkkaBakerConfig.from(config, actorSystem))
+
+  def withConfig(config: AkkaBakerConfig): AkkaBaker =
+    new AkkaBaker(config)
 
   def localDefault(actorSystem: ActorSystem): AkkaBaker =
     new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem))
@@ -39,21 +39,14 @@ object AkkaBaker {
   def clusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem): AkkaBaker =
     new AkkaBaker(AkkaBakerConfig.clusterDefault(seedNodes, actorSystem))
 
-  def java(config: AkkaBakerConfig): Baker =
-    new Baker(apply(config))
+  def javaWithConfig(config: AkkaBakerConfig): Baker =
+    new Baker(withConfig(config))
 
   def java(config: Config, actorSystem: ActorSystem): Baker =
     new Baker(apply(config, actorSystem))
 
   def javaLocalDefault(actorSystem: ActorSystem): Baker =
     new Baker(new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem)))
-
-  def javaClusterDefault(seedNodes: java.util.List[Address], actorSystem: ActorSystem): Baker = {
-    val nodes =
-      if (seedNodes.isEmpty) throw new IllegalStateException("Baker cluster configuration without baker.cluster.seed-nodes")
-      else NonEmptyList.fromListUnsafe(seedNodes.asScala.toList)
-    new Baker(new AkkaBaker(AkkaBakerConfig.clusterDefault(nodes, actorSystem)))
-  }
 
   def javaOther(baker: scaladsl.Baker) =
     new Baker(baker)

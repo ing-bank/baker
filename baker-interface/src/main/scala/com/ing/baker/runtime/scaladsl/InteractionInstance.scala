@@ -10,6 +10,7 @@ import com.ing.baker.runtime.{common, javadsl}
 import com.ing.baker.types.{Converters, Type}
 
 import scala.collection.JavaConverters._
+import scala.compat.java8.FutureConverters
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -55,7 +56,7 @@ object InteractionInstance {
 
   def unsafeFrom(implementation: AnyRef)(implicit ec: ExecutionContext): InteractionInstance = {
     val method: Method = {
-      val unmockedClass = akka.unmock(implementation.getClass)
+      val unmockedClass = common.unmock(implementation.getClass)
       unmockedClass.getMethods.count(_.getName == "apply") match {
         case 0          => throw new IllegalArgumentException("Implementation does not have a apply function")
         case n if n > 1 => throw new IllegalArgumentException("Implementation has multiple apply functions")

@@ -1,9 +1,9 @@
 package com.ing.baker.runtime.javadsl
 
-import com.ing.baker.runtime.scaladsl
+import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 
-case class RecipeInstanceMetadata(recipeId: String, recipeInstanceId: String, createdTime: Long) extends com.ing.baker.runtime.common.RecipeInstanceMetadata with JavaApi {
+case class RecipeInstanceMetadata(recipeId: String, recipeInstanceId: String, createdTime: Long) extends common.RecipeInstanceMetadata with JavaApi {
 
   /**
     * Returns the recipe id of the process.
