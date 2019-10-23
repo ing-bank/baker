@@ -5,12 +5,12 @@ import java.util
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 
-import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
+import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.{Converters, Type}
 
-import scala.compat.java8.FutureConverters
 import scala.collection.JavaConverters._
+import scala.compat.java8.FutureConverters
 import scala.reflect.ClassTag
 import scala.util.Try
 
