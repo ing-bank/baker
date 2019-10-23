@@ -52,7 +52,7 @@ object ProcessInstanceProtocol {
   case class OverrideExceptionStrategy(jobId: Long, failureStrategy: ExceptionStrategy) extends Command
 
   /**
-   * A com.ing.baker.runtime.common trait for all responses coming from a petri net instance.
+   * A common trait for all responses coming from a petri net instance.
    */
   sealed trait Response extends BakerSerializable
 
