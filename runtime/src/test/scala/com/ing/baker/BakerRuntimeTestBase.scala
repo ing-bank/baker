@@ -12,6 +12,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import java.nio.file.Paths
 import java.util.UUID
 
+import com.ing.baker.recipe.common.Recipe
 import com.ing.baker.runtime.akka.AkkaBaker
 import org.mockito.Matchers._
 import org.mockito.Mockito._
@@ -205,7 +206,7 @@ trait BakerRuntimeTestBase
     setupBakerWithRecipe(recipe, mockImplementations)(actorSystem)
   }
 
-  protected def setupBakerWithRecipe(recipe: com.ing.baker.runtime.common.Recipe, implementations: Seq[InteractionInstance])
+  protected def setupBakerWithRecipe(recipe: Recipe, implementations: Seq[InteractionInstance])
                                     (implicit actorSystem: ActorSystem): Future[(Baker, String)] = {
     val baker = AkkaBaker(ConfigFactory.load(), actorSystem)
     baker.addInteractionInstances(implementations).flatMap { _ =>

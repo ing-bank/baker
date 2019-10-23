@@ -2,7 +2,7 @@ package com.ing.baker.runtime.javadsl
 
 import java.util.stream.Collectors
 
-import com.ing.baker.runtime.scaladsl
+import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.types.Value
 
@@ -19,7 +19,7 @@ case class RecipeInstanceState(
     recipeInstanceId: String,
     ingredients: java.util.Map[String, Value],
     events: java.util.List[EventMoment]
-  ) extends com.ing.baker.runtime.common.RecipeInstanceState with JavaApi {
+  ) extends common.RecipeInstanceState with JavaApi {
 
   type EventType = EventMoment
 
