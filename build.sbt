@@ -76,12 +76,15 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
     ) ++ testDeps(scalaTest, scalaCheck, logback)
   ).dependsOn(bakertypes)
 
-lazy val interface = project.in(file("baker-interface"))
+lazy val `baker-interface` = project.in(file("baker-interface"))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
+  .settings(scalaPBSettings)
   .settings(
     moduleName := "baker-interface",
     libraryDependencies ++= Seq(
+      akkaActor,
+      catsCore,
       scalaJava8Compat
     ) ++ providedDeps(findbugs)
   )
@@ -134,7 +137,7 @@ lazy val runtime = project.in(file("runtime"))
         logback)
         ++ providedDeps(findbugs)
   )
-  .dependsOn(intermediateLanguage, interface, testScope(recipeDsl), testScope(recipeCompiler), testScope(bakertypes))
+  .dependsOn(intermediateLanguage, `baker-interface`, testScope(recipeDsl), testScope(recipeCompiler), testScope(bakertypes))
   .enablePlugins(MultiJvmPlugin)
   .configs(MultiJvm)
 
@@ -192,20 +195,67 @@ lazy val recipeCompiler = project.in(file("compiler"))
   )
   .dependsOn(recipeDsl, intermediateLanguage, testScope(recipeDsl))
 
-lazy val baas = project.in(file("baas"))
+lazy val `baas-common` = project.in(file("baas-common"))
   .settings(defaultModuleSettings)
+  .settings(noPublishSettings)
   .settings(scalaPBSettings)
   .settings(
-    moduleName := "baker-baas",
-    libraryDependencies ++=
-      compileDeps(
-        akkaHttp,
-        akkaPersistenceCassandra) ++
+    moduleName := "baas-common",
+    libraryDependencies ++= Seq(
+      akkaHttp
+    )
+  )
+  .dependsOn(`baker-interface`)
+
+lazy val `baas-client` = project.in(file("baas-client"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "baas-client",
+    libraryDependencies ++= Seq(
+      akkaHttp
+    )
+  )
+  .dependsOn(`baker-interface`, `baas-common`)
+
+lazy val `baas-state` = project.in(file("baas-state"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "baas-state",
+    libraryDependencies ++= Seq(
+      akkaHttp,
+      akkaPersistenceCassandra
+    )
+  )
+  .dependsOn(runtime, `baas-common`, `baas-remote-interaction`)
+
+lazy val `baas-remote-interaction` = project.in(file("baas-remote-interaction"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "baas-remote-interaction",
+    libraryDependencies ++= Seq(
+      akkaCluster
+    )
+  )
+
+lazy val `baas-remote-event-listener` = project.in(file("baas-remote-event-listener"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "baas-remote-event-listener",
+    libraryDependencies ++= Seq(
+      akkaCluster
+    )
+  )
+
+lazy val `baas-tests` = project.in(file("baas-tests"))
+  .settings(defaultModuleSettings)
+  .settings(noPublishSettings)
+  .settings(
+    moduleName := "baas-tests",
+    libraryDependencies ++= Seq() ++
       testDeps(
         akkaSlf4j,
         akkaTestKit,
         logback,
-        mockito,
         scalaTest,
         junitInterface,
         levelDB,
@@ -213,13 +263,13 @@ lazy val baas = project.in(file("baas"))
         scalaCheck
       )
   )
-  .dependsOn(recipeDsl, recipeCompiler, intermediateLanguage, runtime, testScope(runtime))
+  .dependsOn(`baas-client`, `baas-state`, `baas-remote-interaction`, `baas-remote-event-listener`, recipeCompiler)
+  .aggregate(`baas-client`, `baas-state`, `baas-remote-interaction`, `baas-remote-event-listener`)
 
-lazy val baker = project
-  .in(file("."))
+lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
-  .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver, baas)
+  .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver)
 
 lazy val integration = project.in(file("integration"))
   .dependsOn(testScope(runtime))

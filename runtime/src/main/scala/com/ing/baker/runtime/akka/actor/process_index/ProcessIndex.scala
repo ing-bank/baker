@@ -1,31 +1,33 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
-import akka.actor.{ ActorRef, NoSerializationVerificationNeeded, Props, Terminated }
-import akka.event.{ DiagnosticLoggingAdapter, Logging }
+import akka.actor.{ActorRef, NoSerializationVerificationNeeded, Props, Terminated}
+import akka.event.{DiagnosticLoggingAdapter, Logging}
 import akka.pattern.ask
-import akka.persistence.{ PersistentActor, RecoveryCompleted }
-import cats.data.{ EitherT, OptionT }
+import akka.persistence.{PersistentActor, RecoveryCompleted}
+import cats.data.{EitherT, OptionT}
 import cats.effect.IO
 import cats.instances.future._
-import com.ing.baker.il.petrinet.{ InteractionTransition, Place, Transition }
-import com.ing.baker.il.{ CompiledRecipe, EventDescriptor }
+import com.ing.baker.il.petrinet.{InteractionTransition, Place, Transition}
+import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.Util.logging._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{ BlockTransition, Continue, RetryWithDelay }
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
-import com.ing.baker.runtime.akka.actor.process_instance.{ ProcessInstance, ProcessInstanceRuntime }
+import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceRuntime}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.akka.actor.serialization.{ BakerSerializable, Encryption }
-import com.ing.baker.runtime.akka.internal.{ InteractionManager, RecipeRuntime }
-import com.ing.baker.runtime.akka.{ namedCachedThreadPool, _ }
-import com.ing.baker.runtime.scaladsl.{ EventInstance, RecipeInstanceCreated, RecipeInstanceState }
+import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
+import com.ing.baker.runtime.akka.internal.{InteractionManager, RecipeRuntime}
+import com.ing.baker.runtime.akka.{namedCachedThreadPool, _}
+import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceCreated, RecipeInstanceState}
+import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.Value
+
 import scala.collection.mutable
 import scala.concurrent.duration._
-import scala.concurrent.{ Await, ExecutionContext, Future }
-import scala.util.{ Failure, Success }
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 object ProcessIndex {
 

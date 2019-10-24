@@ -15,8 +15,8 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
-import com.ing.baker.runtime.akka.actor.serialization.Encryption
 import com.ing.baker.runtime.scaladsl.RecipeInstanceState
+import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.PrimitiveValue
 
 import scala.concurrent.ExecutionContext

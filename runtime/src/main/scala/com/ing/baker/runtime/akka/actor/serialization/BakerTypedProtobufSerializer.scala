@@ -12,6 +12,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
 import com.ing.baker.runtime.akka.actor.serialization.BakerTypedProtobufSerializer.BinarySerializable
+import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider}
 import com.ing.baker.{il, runtime}
 import org.slf4j.LoggerFactory
 
