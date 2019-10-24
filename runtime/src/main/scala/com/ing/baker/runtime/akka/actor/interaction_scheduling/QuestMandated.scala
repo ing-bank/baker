@@ -9,6 +9,7 @@ import com.ing.baker.runtime.akka.actor.interaction_scheduling.QuestMandated.{Co
 import com.ing.baker.runtime.scaladsl.IngredientInstance
 import org.slf4j.LoggerFactory
 import QuestMandated._
+import com.ing.baker.baas.protocol.{ProtocolInteractionExecution, ProtocolPushPullMatching, ProtocolQuestCommit}
 
 object QuestMandated {
 

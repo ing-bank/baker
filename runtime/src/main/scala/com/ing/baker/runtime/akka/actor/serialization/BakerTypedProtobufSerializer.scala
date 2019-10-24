@@ -1,35 +1,26 @@
 package com.ing.baker.runtime.akka.actor.serialization
 
 import akka.actor.ExtendedActorSystem
-import akka.serialization.SerializerWithStringManifest
+import com.ing.baker.baas.protocol.{ProtocolInteractionExecution, ProtocolPushPullMatching, ProtocolQuestCommit}
+import com.ing.baker.baas.protocol.InteractionSchedulingProto._
+import com.ing.baker.il
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider
-import com.ing.baker.runtime.akka.actor.interaction_scheduling.InteractionSchedulingProto._
-import com.ing.baker.runtime.akka.actor.interaction_scheduling.{ProtocolInteractionExecution, ProtocolPushPullMatching, ProtocolQuestCommit}
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
 import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
-import com.ing.baker.runtime.akka.actor.serialization.BakerTypedProtobufSerializer.BinarySerializable
-import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider}
-import com.ing.baker.{il, runtime}
-import org.slf4j.LoggerFactory
-
-import scala.reflect.ClassTag
-import scala.util.Try
+import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
+import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider, TypedProtobufSerializer}
+import com.ing.baker.runtime.serialization.TypedProtobufSerializer.{BinarySerializable, forType}
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 
 object BakerTypedProtobufSerializer {
 
-  private val log = LoggerFactory.getLogger(classOf[BakerTypedProtobufSerializer])
-
-  /** Hardcoded serializerId for this serializer. This should not conflict with other serializers.
-    * Values from 0 to 40 are reserved for Akka internal usage.
-    */
-  val identifier = 101
-
-  def entries(implicit ev0: SerializersProvider): List[BinarySerializable] =
+  def entries(ev0: SerializersProvider): List[BinarySerializable] = {
+    implicit val ev = ev0
     commonEntries ++ processIndexEntries ++ processInstanceEntries ++ recipeManagerEntries ++ interactionSchedulingEntries
+  }
 
   def commonEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
     List(
@@ -37,9 +28,9 @@ object BakerTypedProtobufSerializer {
         .register("baker.types.Value"),
       forType[com.ing.baker.types.Type]
         .register("baker.types.Type"),
-      forType[runtime.scaladsl.EventInstance]
+      forType[EventInstance]
         .register("core.RuntimeEvent"),
-      forType[runtime.scaladsl.RecipeInstanceState]
+      forType[RecipeInstanceState]
         .register("core.ProcessState"),
       forType[il.CompiledRecipe]
         .register("il.CompiledRecipe")
@@ -133,12 +124,12 @@ object BakerTypedProtobufSerializer {
         .register("ProcessInstanceProtocol.TransitionFailed"),
       forType[ProcessInstanceProtocol.TransitionFired]
         .register("ProcessInstanceProtocol.TransitionFired"),
-      forType[runtime.akka.actor.process_instance.protobuf.TransitionFired]
-        .register("TransitionFired")(ProtoMap.identityProtoMap(runtime.akka.actor.process_instance.protobuf.TransitionFired)),
-      forType[runtime.akka.actor.process_instance.protobuf.TransitionFailed]
-        .register("TransitionFailed")(ProtoMap.identityProtoMap(runtime.akka.actor.process_instance.protobuf.TransitionFailed)),
-      forType[runtime.akka.actor.process_instance.protobuf.Initialized]
-        .register("Initialized")(ProtoMap.identityProtoMap(runtime.akka.actor.process_instance.protobuf.Initialized))
+      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFired]
+        .register("TransitionFired")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFired)),
+      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailed]
+        .register("TransitionFailed")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.TransitionFailed)),
+      forType[com.ing.baker.runtime.akka.actor.process_instance.protobuf.Initialized]
+        .register("Initialized")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.Initialized))
     )
 
   def recipeManagerEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
@@ -186,89 +177,6 @@ object BakerTypedProtobufSerializer {
       forType[ProtocolQuestCommit.QuestTaken.type]
         .register("InteractionSchedulingProtocols.QuestTaken")
     )
-
-  def forType[A <: AnyRef](implicit tag: ClassTag[A]): RegisterFor[A] = new RegisterFor[A](tag)
-
-  class RegisterFor[A <: AnyRef](classTag: ClassTag[A]) {
-
-    def register[P <: scalapb.GeneratedMessage with scalapb.Message[P]](implicit protoMap: ProtoMap[A, P]): BinarySerializable =
-      register[P](None)
-
-    def register[P <: scalapb.GeneratedMessage with scalapb.Message[P]](overrideName: String)(implicit protoMap: ProtoMap[A, P]): BinarySerializable =
-      register[P](Some(overrideName))
-
-    def register[P <: scalapb.GeneratedMessage with scalapb.Message[P]](overrideName: Option[String])(implicit protoMap: ProtoMap[A, P]): BinarySerializable = {
-      new BinarySerializable {
-
-        override type Type = A
-
-        override val tag: Class[_] = classTag.runtimeClass
-
-        override val manifest: String = overrideName.getOrElse(classTag.runtimeClass.getName)
-
-        override def toBinary(a: Type): Array[Byte] = protoMap.toByteArray(a)
-
-        override def fromBinary(binary: Array[Byte]): Try[Type] = protoMap.fromByteArray(binary)
-      }
-    }
-  }
-
-  trait BinarySerializable {
-
-    type Type <: AnyRef
-
-    val tag: Class[_]
-
-    def manifest: String
-
-    def toBinary(a: Type): Array[Byte]
-
-    // The actor resolver is commented for future Akka Typed implementation
-    def fromBinary(binary: Array[Byte]/*, resolver: ActorRefResolver*/): Try[Type]
-
-    def isInstance(o: AnyRef): Boolean =
-      tag.isInstance(o)
-
-    def unsafeToBinary(a: AnyRef): Array[Byte] =
-      toBinary(a.asInstanceOf[Type])
-
-    // The actor resolver is commented for future Akka Typed implementation
-    def fromBinaryAnyRef(binary: Array[Byte]/*, resolver: ActorRefResolver*/): Try[AnyRef] =
-      fromBinary(binary)
-
-  }
 }
 
-class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends SerializerWithStringManifest {
-
-  implicit def serializersProvider: SerializersProvider = SerializersProvider(system, system.provider)
-
-  lazy val entriesMem: List[BinarySerializable] = BakerTypedProtobufSerializer.entries
-
-  override def identifier: Int =
-    BakerTypedProtobufSerializer.identifier
-
-  override def manifest(o: AnyRef): String = {
-    entriesMem
-      .find(_.isInstance(o))
-      .map(_.manifest)
-      .getOrElse(throw new IllegalStateException(s"Unsupported object of type: ${o.getClass}"))
-  }
-
-  override def toBinary(o: AnyRef): Array[Byte] =
-    entriesMem
-      .find(_.isInstance(o))
-      .map(_.unsafeToBinary(o))
-      .getOrElse(throw new IllegalStateException(s"Unsupported object of type: ${o.getClass}"))
-
-  override def fromBinary(bytes: Array[Byte], manifest: String): AnyRef =
-    entriesMem
-      .find(_.manifest == manifest)
-      .map(_.fromBinaryAnyRef(bytes))
-      .getOrElse(throw new IllegalStateException(s"Unsupported object with manifest $manifest"))
-      .fold(
-        { e => BakerTypedProtobufSerializer.log.error(s"Failed to deserialize bytes with manifest $manifest", e); throw e },
-        identity
-      )
-}
-
+class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends TypedProtobufSerializer(system, BakerTypedProtobufSerializer.entries)

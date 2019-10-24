@@ -137,7 +137,7 @@ lazy val runtime = project.in(file("runtime"))
         logback)
         ++ providedDeps(findbugs)
   )
-  .dependsOn(intermediateLanguage, `baker-interface`, testScope(recipeDsl), testScope(recipeCompiler), testScope(bakertypes))
+  .dependsOn(intermediateLanguage, `baker-interface`, `baas-protocol-interaction-scheduling`, testScope(recipeDsl), testScope(recipeCompiler), testScope(bakertypes))
   .enablePlugins(MultiJvmPlugin)
   .configs(MultiJvm)
 
@@ -195,52 +195,64 @@ lazy val recipeCompiler = project.in(file("compiler"))
   )
   .dependsOn(recipeDsl, intermediateLanguage, testScope(recipeDsl))
 
-lazy val `baas-common` = project.in(file("baas-common"))
+lazy val `baas-protocol-baker` = project.in(file("baas-protocol-baker"))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
   .settings(scalaPBSettings)
   .settings(
-    moduleName := "baas-common",
+    moduleName := "baas-protocol-baker",
     libraryDependencies ++= Seq(
       akkaHttp
     )
   )
   .dependsOn(`baker-interface`)
 
-lazy val `baas-client` = project.in(file("baas-client"))
+lazy val `baas-protocol-interaction-scheduling` = project.in(file("baas-protocol-interaction-scheduling"))
+  .settings(defaultModuleSettings)
+  .settings(noPublishSettings)
+  .settings(scalaPBSettings)
+  .settings(
+    moduleName := "baas-protocol-interaction-scheduling"
+  )
+  .dependsOn(`baker-interface`)
+
+lazy val `baas-node-client` = project.in(file("baas-node-client"))
   .settings(defaultModuleSettings)
   .settings(
-    moduleName := "baas-client",
+    moduleName := "baas-node-client",
     libraryDependencies ++= Seq(
       akkaHttp
     )
   )
-  .dependsOn(`baker-interface`, `baas-common`)
+  .dependsOn(`baker-interface`, `baas-protocol-baker`)
 
-lazy val `baas-state` = project.in(file("baas-state"))
+lazy val `baas-node-state` = project.in(file("baas-node-state"))
   .settings(defaultModuleSettings)
   .settings(
-    moduleName := "baas-state",
+    moduleName := "baas-node-state",
     libraryDependencies ++= Seq(
       akkaHttp,
       akkaPersistenceCassandra
     )
   )
-  .dependsOn(runtime, `baas-common`, `baas-remote-interaction`)
+  .dependsOn(runtime, `baas-protocol-baker`, `baas-protocol-interaction-scheduling`)
 
-lazy val `baas-remote-interaction` = project.in(file("baas-remote-interaction"))
+lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
   .settings(defaultModuleSettings)
   .settings(
-    moduleName := "baas-remote-interaction",
+    moduleName := "baas-node-interaction",
     libraryDependencies ++= Seq(
-      akkaCluster
+      akkaCluster,
+      akkaClusterTools,
+      slf4jApi
     )
   )
+  .dependsOn(`baas-protocol-interaction-scheduling`, `baker-interface`)
 
-lazy val `baas-remote-event-listener` = project.in(file("baas-remote-event-listener"))
+lazy val `baas-node-event-listener` = project.in(file("baas-node-event-listener"))
   .settings(defaultModuleSettings)
   .settings(
-    moduleName := "baas-remote-event-listener",
+    moduleName := "baas-node-event-listener",
     libraryDependencies ++= Seq(
       akkaCluster
     )
@@ -263,8 +275,8 @@ lazy val `baas-tests` = project.in(file("baas-tests"))
         scalaCheck
       )
   )
-  .dependsOn(`baas-client`, `baas-state`, `baas-remote-interaction`, `baas-remote-event-listener`, recipeCompiler)
-  .aggregate(`baas-client`, `baas-state`, `baas-remote-interaction`, `baas-remote-event-listener`)
+  .dependsOn(`baas-node-client`, `baas-node-state`, `baas-node-interaction`, `baas-node-event-listener`, recipeCompiler)
+  .aggregate(`baas-node-client`, `baas-node-state`, `baas-node-interaction`, `baas-node-event-listener`)
 
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)

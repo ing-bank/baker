@@ -1,13 +1,13 @@
-package com.ing.baker.runtime.akka.actor.interaction_scheduling
+package com.ing.baker.baas.protocol
 
 import java.util.UUID
 
 import cats.implicits._
-import com.ing.baker.runtime.akka.actor.interaction_scheduling.ProtocolInteractionExecution._
-import com.ing.baker.runtime.akka.actor.interaction_scheduling.ProtocolPushPullMatching.{AvailableQuest, Pull, Push}
-import com.ing.baker.runtime.akka.actor.interaction_scheduling.ProtocolQuestCommit.{Commit, Considering, QuestTaken}
-import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
+import com.ing.baker.baas.protocol.ProtocolInteractionExecution._
+import com.ing.baker.baas.protocol.ProtocolPushPullMatching._
+import com.ing.baker.baas.protocol.ProtocolQuestCommit._
 import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider}
+import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 
 import scala.util.{Success, Try}
 
