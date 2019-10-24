@@ -1,7 +1,7 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
 import com.ing.baker.petrinet.api._
-import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
+import com.ing.baker.runtime.serialization.BakerSerializable
 
 /**
  * Describes the messages to and from a PetriNetInstance actor.

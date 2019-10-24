@@ -21,7 +21,7 @@ import com.ing.baker.runtime.serialization.Encryption.{AESEncryption, NoEncrypti
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto}
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanceState, SensoryEventResult}
-import com.ing.baker.runtime.serialization.ProtoMap
+import com.ing.baker.runtime.serialization.{BakerTypedProtobufSerializer, ProtoMap}
 import com.ing.baker.types.modules.PrimitiveModuleSpec._
 import com.ing.baker.types.{Value, _}
 import com.ing.baker.{AllTypeRecipe, types}

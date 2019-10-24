@@ -1,16 +1,17 @@
-package com.ing.baker.runtime.akka.actor.interaction_scheduling
+package com.ing.baker.baas.akka
 
 import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, Props}
 import akka.cluster.pubsub.{DistributedPubSub, DistributedPubSubMediator}
-import com.ing.baker.runtime.akka.actor.interaction_scheduling.InteractionAgent._
+import com.ing.baker.baas.akka.InteractionAgent.{CommitTimeout, log}
+import com.ing.baker.baas.protocol.{ProtocolInteractionExecution, ProtocolPushPullMatching, ProtocolQuestCommit}
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance}
 import org.slf4j.LoggerFactory
 
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
-import scala.concurrent.duration._
 
 object InteractionAgent {
 

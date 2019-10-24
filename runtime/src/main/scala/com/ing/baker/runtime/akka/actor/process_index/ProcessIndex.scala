@@ -17,11 +17,10 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstance, ProcessInstanceRuntime}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.akka.internal.{InteractionManager, RecipeRuntime}
 import com.ing.baker.runtime.akka.{namedCachedThreadPool, _}
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceCreated, RecipeInstanceState}
-import com.ing.baker.runtime.serialization.Encryption
+import com.ing.baker.runtime.serialization.{BakerSerializable, Encryption}
 import com.ing.baker.types.Value
 
 import scala.collection.mutable
