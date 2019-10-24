@@ -7,7 +7,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.akka.actor.interaction_scheduling.QuestMandated.Start
-import com.ing.baker.runtime.akka.actor.interaction_scheduling.{InteractionAgent, ProtocolInteractionExecution, QuestMandated}
+import com.ing.baker.runtime.akka.actor.interaction_scheduling.QuestMandated
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
 
 import scala.compat.java8.FunctionConverters._
@@ -19,13 +19,6 @@ trait InteractionManager {
   def hasImplementation(interaction: InteractionTransition): Boolean
 
   def executeImplementation(interaction: InteractionTransition, input: Seq[IngredientInstance]): Future[Option[EventInstance]]
-
-  /**
-    * Add an implementation to the InteractionManager
-    *
-    * @param implementation
-    */
-  def addImplementation(implementation: InteractionInstance): Unit
 
 }
 
@@ -42,15 +35,6 @@ class InteractionManagerDis(system: ActorSystem, postTimeout: Timeout, computati
       case ProtocolInteractionExecution.InstanceExecutionTimedOut() => Future.failed(new RuntimeException("Execution of interaction timed out"))
       case ProtocolInteractionExecution.InvalidExecution() => Future.failed(new RuntimeException("Execution of interaction failed because of invalid ingredient input"))
     }
-  }
-
-  /**
-    * Add an implementation to the InteractionManager
-    *
-    * @param implementation
-    */
-  override def addImplementation(implementation: InteractionInstance): Unit = {
-    system.actorOf(InteractionAgent(implementation))
   }
 
   override def hasImplementation(interaction: InteractionTransition): Boolean = true

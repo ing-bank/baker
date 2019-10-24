@@ -1,6 +1,5 @@
-package com.ing.baker.runtime.akka.actor.interaction_scheduling
+package com.ing.baker.baas.protocol
 
-import com.ing.baker.runtime.akka.actor.serialization.BakerSerializable
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}
 
 /**
@@ -12,7 +11,7 @@ import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}
   * InstanceExecutionFailed or InvalidExecution
   *
   */
-sealed trait ProtocolInteractionExecution extends BakerSerializable
+sealed trait ProtocolInteractionExecution //extends BakerSerializable
 
 object ProtocolInteractionExecution {
 
