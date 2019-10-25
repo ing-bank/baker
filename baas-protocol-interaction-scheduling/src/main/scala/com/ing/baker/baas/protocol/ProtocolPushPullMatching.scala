@@ -3,11 +3,12 @@ package com.ing.baker.baas.protocol
 import java.util.UUID
 
 import akka.actor.ActorRef
+import com.ing.baker.runtime.serialization.BakerSerializable
 
 /**
   * Protocol done to find a possible matching between a QuestMandated and an available InteractionAgent
   */
-sealed trait ProtocolPushPullMatching //extends BakerSerializable
+sealed trait ProtocolPushPullMatching extends BakerSerializable
 
 object ProtocolPushPullMatching {
 

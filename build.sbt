@@ -138,7 +138,14 @@ lazy val runtime = project.in(file("runtime"))
         logback)
         ++ providedDeps(findbugs)
   )
-  .dependsOn(intermediateLanguage, `baker-interface`, `baas-protocol-interaction-scheduling`, testScope(recipeDsl), testScope(recipeCompiler), testScope(bakertypes))
+  .dependsOn(
+    intermediateLanguage,
+    `baker-interface`,
+    `baas-protocol-interaction-scheduling`,
+    `baas-protocol-recipe-event-publishing`,
+    testScope(recipeDsl),
+    testScope(recipeCompiler),
+    testScope(bakertypes))
   .enablePlugins(MultiJvmPlugin)
   .configs(MultiJvm)
 
@@ -217,6 +224,15 @@ lazy val `baas-protocol-interaction-scheduling` = project.in(file("baas-protocol
   )
   .dependsOn(`baker-interface`)
 
+lazy val `baas-protocol-recipe-event-publishing` = project.in(file("baas-protocol-recipe-event-publishing"))
+  .settings(defaultModuleSettings)
+  .settings(noPublishSettings)
+  .settings(scalaPBSettings)
+  .settings(
+    moduleName := "baas-protocol-recipe-event-publishing"
+  )
+  .dependsOn(`baker-interface`)
+
 lazy val `baas-node-client` = project.in(file("baas-node-client"))
   .settings(defaultModuleSettings)
   .settings(
@@ -255,9 +271,12 @@ lazy val `baas-node-event-listener` = project.in(file("baas-node-event-listener"
   .settings(
     moduleName := "baas-node-event-listener",
     libraryDependencies ++= Seq(
-      akkaCluster
+      akkaCluster,
+      akkaClusterTools,
+      slf4jApi
     )
   )
+  .dependsOn(`baas-protocol-recipe-event-publishing`, `baker-interface`)
 
 lazy val `baas-tests` = project.in(file("baas-tests"))
   .settings(defaultModuleSettings)
