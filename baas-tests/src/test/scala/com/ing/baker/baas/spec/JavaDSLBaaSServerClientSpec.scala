@@ -1,8 +1,9 @@
-package com.ing.baker.baas
+package com.ing.baker.baas.spec
 
 import java.util.Optional
 
-import com.ing.baker.baas.JavaDSLBaaSServerClientSpec.optionToJava
+import com.ing.baker.baas.javadsl
+import com.ing.baker.baas.spec.JavaDSLBaaSServerClientSpec.optionToJava
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl._

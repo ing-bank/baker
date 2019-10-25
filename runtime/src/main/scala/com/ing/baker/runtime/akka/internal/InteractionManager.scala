@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentHashMap
 import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.util.Timeout
+import com.ing.baker.baas.protocol.ProtocolInteractionExecution
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.akka.actor.interaction_scheduling.QuestMandated.Start
 import com.ing.baker.runtime.akka.actor.interaction_scheduling.QuestMandated
@@ -20,6 +21,7 @@ trait InteractionManager {
 
   def executeImplementation(interaction: InteractionTransition, input: Seq[IngredientInstance]): Future[Option[EventInstance]]
 
+  def addImplementation(interaction: InteractionInstance): Unit
 }
 
 class InteractionManagerDis(system: ActorSystem, postTimeout: Timeout, computationTimeout: Timeout) extends InteractionManager {
@@ -38,6 +40,9 @@ class InteractionManagerDis(system: ActorSystem, postTimeout: Timeout, computati
   }
 
   override def hasImplementation(interaction: InteractionTransition): Boolean = true
+
+  override def addImplementation(interaction: InteractionInstance): Unit =
+    throw new NotImplementedError("addImplementation is not implemented for the distributed interaction manager, please deploy interactions using the baas-node-interaction library")
 }
 
 /**
