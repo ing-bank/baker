@@ -8,7 +8,7 @@ import akka.stream.Materializer
 import com.ing.baker.baas.common.BaaSProto._
 import com.ing.baker.baas.common.BaaSProtocol
 import com.ing.baker.baas.common.MarshallingUtils._
-import com.ing.baker.runtime.scaladsl.Baker
+import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
 import com.ing.baker.runtime.serialization.{Encryption, SerializersProvider}
 
 import scala.concurrent.Future
@@ -18,6 +18,13 @@ object BaaSServer {
   def run(baker: Baker, host: String, port: Int)(implicit system: ActorSystem, mat: Materializer): Future[Http.ServerBinding] = {
     val encryption = Encryption.NoEncryption
     val server = new BaaSServer()(system, mat, baker, encryption)
+    /*
+    baker.registerEventListener((instanceId: String, event: EventInstance) => {
+      // Publish an Event() message to the DistributedPublishSubscribe mediator
+      // We need the recipe id here D:
+      //event.
+    })
+     */
     Http().bindAndHandle(server.route, host, port)
   }
 }
