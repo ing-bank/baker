@@ -1,4 +1,4 @@
-package com.ing.baker.baas
+package com.ing.baker.baas.spec
 
 import com.ing.baker.baas.scaladsl.BakerClient
 import com.ing.baker.runtime.serialization.Encryption
