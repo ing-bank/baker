@@ -71,7 +71,7 @@ object TypedProtobufSerializer {
 
 abstract class TypedProtobufSerializer(system: ExtendedActorSystem, entries: SerializersProvider => List[BinarySerializable]) extends SerializerWithStringManifest {
 
-  def serializersProvider: SerializersProvider =
+  implicit def serializersProvider: SerializersProvider =
     SerializersProvider(system, system.provider)
 
   lazy val entriesMem: List[BinarySerializable] =
