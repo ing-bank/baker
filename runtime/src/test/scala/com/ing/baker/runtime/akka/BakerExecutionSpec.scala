@@ -150,7 +150,6 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
           |    auto-down-unreachable-after = 10s
           |  }
           |}
-          |baker.interaction-manager = remote
         """.stripMargin).withFallback(ConfigFactory.load())
 
       val baker = AkkaBaker(config, ActorSystem.apply("remoteTest", config))
