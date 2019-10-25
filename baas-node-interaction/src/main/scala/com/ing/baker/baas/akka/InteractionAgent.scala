@@ -30,7 +30,7 @@ object InteractionAgent {
     * @param result outcome of invoking the interaction instance
     * @param ec     execution context to use
     */
-  private[interaction_scheduling] def pipeBackExecutionResponse(agent: ActorRef, mandated: ActorRef)(result: Future[Option[EventInstance]])(implicit ec: ExecutionContext): Unit = {
+  def pipeBackExecutionResponse(agent: ActorRef, mandated: ActorRef)(result: Future[Option[EventInstance]])(implicit ec: ExecutionContext): Unit = {
     result.onComplete {
       case Success(value) =>
         mandated.tell(ProtocolInteractionExecution.InstanceExecutedSuccessfully(value), agent)

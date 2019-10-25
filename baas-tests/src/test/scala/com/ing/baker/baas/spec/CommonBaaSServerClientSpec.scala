@@ -1,14 +1,14 @@
-package com.ing.baker.baas
+package com.ing.baker.baas.spec
 
 import java.util.UUID
 
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{IO, Timer}
-import com.ing.baker.baas.CommonBaaSServerClientSpec._
 import com.ing.baker.baas.recipe.CheckoutFlowEvents.ItemsReserved
 import com.ing.baker.baas.recipe.CheckoutFlowIngredients.{Item, OrderId, ReservedItems, ShippingAddress}
 import com.ing.baker.baas.recipe._
+import com.ing.baker.baas.spec.CommonBaaSServerClientSpec._
 import com.ing.baker.baas.state.BaaSServer
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
