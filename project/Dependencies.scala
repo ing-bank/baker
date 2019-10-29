@@ -75,7 +75,7 @@ object Dependencies {
 
   val betterFiles =               "com.github.pathikrit"       %% "better-files"                       % "3.6.0"
 
-  val kryoSerializers =           "de.javakaffee"              %  "kryo-serializers"                   % "0.41"
+  val kryoSerializers =           "de.javakaffee"              %  "kryo-serializers"                   % "0.45"
   val objenisis =                 "org.objenesis"              %  "objenesis"                          % "2.5.1"
 
   val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.9.9"
