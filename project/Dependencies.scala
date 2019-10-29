@@ -35,7 +35,7 @@ object Dependencies {
   val akkaStreamTestKit =         "com.typesafe.akka"          %% "akka-stream-testkit"                % akkaVersion
   val akkaMultiNodeTestkit =      "com.typesafe.akka"          %% "akka-multi-node-testkit"            % akkaVersion
   val akkaHttp =                  "com.typesafe.akka"          %% "akka-http"                          % "10.0.10"
-  val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.7"
+  val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.12"
   val levelDBJni =                "org.fusesource.leveldbjni"  %  "leveldbjni-all"                     % "1.8"
 
   val logback =                   "ch.qos.logback"             %  "logback-classic"                    % "1.2.2"
