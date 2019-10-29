@@ -10,7 +10,7 @@ object Dependencies {
   val jvmV = "1.8"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
 
-  val typeSafeConfig =            "com.typesafe"               %  "config"                             % "1.3.1"
+  val typeSafeConfig =            "com.typesafe"               %  "config"                             % "1.3.4"
 
   val akkaInmemoryJournal =      ("com.github.dnvriend"        %% "akka-persistence-inmemory"          % "2.5.1.1")
       .exclude("com.typesafe.akka", "akka-actor")
