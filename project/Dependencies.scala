@@ -12,7 +12,7 @@ object Dependencies {
 
   val typeSafeConfig =            "com.typesafe"               %  "config"                             % "1.3.1"
 
-  val akkaInmemoryJournal =      ("com.github.dnvriend"        %% "akka-persistence-inmemory"          % "2.5.1.1")
+  val akkaInmemoryJournal =      ("com.github.dnvriend"        %% "akka-persistence-inmemory"          % "2.5.15.2")
       .exclude("com.typesafe.akka", "akka-actor")
       .exclude("com.typesafe.akka", "akka-persistence")
       .exclude("com.typesafe.akka", "akka-persistence-query")
