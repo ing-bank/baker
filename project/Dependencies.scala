@@ -55,7 +55,7 @@ object Dependencies {
   val http4sCirce =               "org.http4s"                 %% "http4s-circe"                       % http4sVersion
   val circe =                     "io.circe"                   %% "circe-core"                         % circeVersion
   val circeGeneric =              "io.circe"                   %% "circe-generic"                      % circeVersion
-  val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "1.2.0"
+  val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "1.4.0"
   val catsCore =                  "org.typelevel"              %% "cats-core"                          % "1.5.0"
 
   def scalaReflect(scalaV: String): ModuleID = "org.scala-lang"%  "scala-reflect"                      % scalaV
