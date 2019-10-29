@@ -63,7 +63,7 @@ object Dependencies {
 
   val paranamer =                 "com.thoughtworks.paranamer" %  "paranamer"                          % "2.8"
   val guava =                     "com.google.guava"           %  "guava"                              % "19.0"
-  val findbugs =                  "com.google.code.findbugs"   %  "jsr305"                             % "1.3.9"
+  val findbugs =                  "com.google.code.findbugs"   %  "jsr305"                             % "3.0.2"
 
   val scalapbRuntime =            "com.thesamet.scalapb"       %% "scalapb-runtime"                    % scalapbVersion % "protobuf"
   val chill =                    ("com.twitter"                %% "chill-akka"                         % "0.9.2")
