@@ -69,7 +69,7 @@ object Dependencies {
   val chill =                    ("com.twitter"                %% "chill-akka"                         % "0.9.2")
     .exclude("com.typesafe.akka", "akka-actor")
 
-  val kryo =                      "com.esotericsoftware"       % "kryo"                                % "4.0.0"
+  val kryo =                      "com.esotericsoftware"       % "kryo"                                % "4.0.2"
 
   val protobufJava =              "com.google.protobuf"        % "protobuf-java"                       % "3.5.1"
 
