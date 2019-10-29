@@ -41,7 +41,7 @@ object Dependencies {
   val logback =                   "ch.qos.logback"             %  "logback-classic"                    % "1.2.2"
   val ficusConfig =               "com.iheart"                 %% "ficus"                              % "1.4.0"
 
-  val scalaGraph  =               "org.scala-graph"            %% "graph-core"                         % "1.11.5"
+  val scalaGraph  =               "org.scala-graph"            %% "graph-core"                         % "1.13.0"
   val scalaGraphDot =             "org.scala-graph"            %% "graph-dot"                          % "1.11.5"
   val graphvizJava =              "guru.nidi"                  %  "graphviz-java"                      % "0.8.0"
 
