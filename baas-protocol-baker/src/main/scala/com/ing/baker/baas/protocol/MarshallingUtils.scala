@@ -1,4 +1,4 @@
-package com.ing.baker.baas.common
+package com.ing.baker.baas.protocol
 
 import akka.http.scaladsl.marshalling.{Marshaller, ToEntityMarshaller}
 import akka.http.scaladsl.model.{ContentTypes, HttpResponse, MediaTypes, StatusCodes}

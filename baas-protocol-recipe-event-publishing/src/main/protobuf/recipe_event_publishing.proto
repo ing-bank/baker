@@ -9,6 +9,6 @@ option (scalapb.options) = {
 };
 
 message Event {
-    optional string recipeInstanceId = 1;
+    optional RecipeEventMetadata recipeEventMetadata = 1;
     optional RuntimeEvent event = 2;
 }
