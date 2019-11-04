@@ -30,6 +30,8 @@ trait Baker extends common.Baker[Future] with ScalaApi {
 
   override type EventMomentType = EventMoment
 
+  override type RecipeMetadataType = RecipeEventMetadata
+
   override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance): Future[SensoryEventStatus] =
     fireEventAndResolveWhenReceived(recipeInstanceId, event, None)
 

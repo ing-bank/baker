@@ -30,6 +30,8 @@ trait Baker[F[_]] extends LanguageApi {
 
   type EventMomentType <: EventMoment { type Language <: self.Language}
 
+  type RecipeMetadataType <: RecipeEventMetadata { type Language <: self.Language }
+
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
     *
@@ -279,14 +281,14 @@ trait Baker[F[_]] extends LanguageApi {
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  def registerEventListener(recipeName: String, listenerFunction: language.BiConsumerFunction[String, EventInstanceType]): F[Unit]
+  def registerEventListener(recipeName: String, listenerFunction: language.BiConsumerFunction[RecipeMetadataType, EventInstanceType]): F[Unit]
 
   /**
     * Registers a listener to all runtime events for all recipes that run in this Baker instance.
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  def registerEventListener(listenerFunction: language.BiConsumerFunction[String, EventInstanceType]): F[Unit]
+  def registerEventListener(listenerFunction: language.BiConsumerFunction[RecipeMetadataType, EventInstanceType]): F[Unit]
 
   /**
     * Registers a listener function that listens to all BakerEvents

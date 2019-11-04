@@ -96,9 +96,9 @@ class JavaDSLBaaSServerClientSpec extends CommonBaaSServerClientSpec(
           .recoverWith {
             case e: java.util.concurrent.CompletionException => Future.failed(e.getCause)
           }
-      override def registerEventListener(recipeName: String, listenerFunction: (String, EventInstance) => Unit): Future[Unit] =
+      override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): Future[Unit] =
         ???
-      override def registerEventListener(listenerFunction: (String, EventInstance) => Unit): Future[Unit] =
+      override def registerEventListener(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): Future[Unit] =
         ???
       override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): Future[Unit] =
         ???
