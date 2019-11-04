@@ -3,12 +3,16 @@ package com.ing.baker.baas.spec
 import java.util.UUID
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
 import akka.stream.{ActorMaterializer, Materializer}
+import cats.data.StateT
 import cats.effect.{IO, Timer}
+import cats.implicits._
 import com.ing.baker.baas.recipe.CheckoutFlowEvents.ItemsReserved
 import com.ing.baker.baas.recipe.CheckoutFlowIngredients.{Item, OrderId, ReservedItems, ShippingAddress}
 import com.ing.baker.baas.recipe._
-import com.ing.baker.baas.spec.CommonBaaSServerClientSpec._
+import com.ing.baker.baas.scaladsl.{BaaSInteractionInstance, BakerClient}
+import com.ing.baker.baas.spec.BaaSIntegrationSpec._
 import com.ing.baker.baas.state.BaaSServer
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
@@ -17,51 +21,38 @@ import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance, Baker => ScalaBaker}
+import com.ing.baker.runtime.serialization.Encryption
+import com.typesafe.config.{Config, ConfigFactory}
+import org.jboss.netty.channel.ChannelException
 import org.scalatest._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Materializer) => ScalaBaker)
+class BaaSIntegrationSpec
   extends AsyncFunSpec
     with Matchers
     with BeforeAndAfterAll
     with BeforeAndAfterEach {
 
-  val test: ClientServerTest = CommonBaaSServerClientSpec.testWith(clientBaker)
+  val test: IntegrationTest = BaaSIntegrationSpec.testWith
 
   implicit val timer: Timer[IO] = IO.timer(executionContext)
 
   describe("Baker Client-Server") {
     it("Baker.addRecipe") {
-      test { (client, server) =>
+      test { (client, server, interactionNode) =>
         for {
-          compiledRecipe <- setupHappyPath(server)
+          compiledRecipe <- setupHappyPath(interactionNode)
           recipeId <- client.addRecipe(compiledRecipe)
           recipeInformation <- server.getRecipe(recipeId)
         } yield recipeInformation.compiledRecipe shouldBe compiledRecipe
       }
     }
 
-    it("Baker.addRecipe (fail with ImplementationsException)") {
-      test { (client, _) =>
-        val badRecipe = Recipe("BadRecipe")
-          .withInteraction(CheckoutFlowInteractions.ShipItemsInteraction)
-        val expectedException =
-          BakerException.ImplementationsException("No implementation provided for interaction: ShipItems")
-        val compiledRecipe = RecipeCompiler
-          .compileRecipe(badRecipe)
-        for {
-          e <- client.addRecipe(compiledRecipe)
-              .map(_ => None)
-              .recover { case e: BakerException => Some(e) }
-        } yield e shouldBe Some(expectedException)
-      }
-    }
-
     it("Baker.getRecipe") {
-      test { (client, server) =>
+      test { (client, _, interactionNode) =>
         for {
-          compiledRecipe <- setupHappyPath(server)
+          compiledRecipe <- setupHappyPath(interactionNode)
           recipeId <- client.addRecipe(compiledRecipe)
           recipeInformation <- client.getRecipe(recipeId)
         } yield recipeInformation.compiledRecipe shouldBe compiledRecipe
@@ -69,7 +60,7 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
     }
 
     it("Baker.getRecipe (fail with NoSuchRecipeException)") {
-      test { (client, _) =>
+      test { (client, _, _) =>
         for {
           e <- client
             .getRecipe("non-existent")
@@ -80,9 +71,9 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
     }
 
     it("Baker.getAllRecipes") {
-      test { (client, server) =>
+      test { (client, server, interactionNode) =>
         for {
-          compiledRecipe <- setupHappyPath(server)
+          compiledRecipe <- setupHappyPath(interactionNode)
           recipeId <- client.addRecipe(compiledRecipe)
           recipes <- client.getAllRecipes
         } yield recipes.get(recipeId).map(_.compiledRecipe) shouldBe Some(compiledRecipe)
@@ -90,10 +81,10 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
     }
 
     it("Baker.bake") {
-      test { (client, server) =>
+      test { (client, server, interactionNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         for {
-          compiledRecipe <- setupHappyPath(server)
+          compiledRecipe <- setupHappyPath(interactionNode)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           state <- server.getRecipeInstanceState(recipeInstanceId)
@@ -102,10 +93,10 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
     }
 
     it("Baker.bake (fail with ProcessAlreadyExistsException)") {
-      test { (client, server) =>
+      test { (client, server, interactionNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         for {
-          compiledRecipe <- setupHappyPath(server)
+          compiledRecipe <- setupHappyPath(interactionNode)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           e <- client
@@ -121,7 +112,7 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
     }
 
     it("Baker.bake (fail with NoSuchRecipeException)") {
-      test { (client, _) =>
+      test { (client, _, _) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         for {
           e <- client
@@ -133,7 +124,7 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
     }
 
     it("Baker.getRecipeInstanceState (fails with NoSuchProcessException)") {
-      test { (_, server) =>
+      test { (_, server, _) =>
         for {
           e <- server
             .getRecipeInstanceState("non-existent")
@@ -144,12 +135,12 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
     }
 
     it("Baker.fireEventAndResolveWhenReceived") {
-      test { (client, server) =>
+      test { (client, server, interactionNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
           CheckoutFlowEvents.ShippingAddressReceived(ShippingAddress("address")))
         for {
-          compiledRecipe <- setupHappyPath(server)
+          compiledRecipe <- setupHappyPath(interactionNode)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           status <- client.fireEventAndResolveWhenReceived(recipeInstanceId, event)
@@ -158,12 +149,12 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
     }
 
     it("Baker.fireEventAndResolveWhenCompleted") {
-      test { (client, server) =>
+      test { (client, server, interactionNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
           CheckoutFlowEvents.ShippingAddressReceived(ShippingAddress("address")))
         for {
-          compiledRecipe <- setupHappyPath(server)
+          compiledRecipe <- setupHappyPath(interactionNode)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           result <- client.fireEventAndResolveWhenCompleted(recipeInstanceId, event)
@@ -176,11 +167,11 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
     }
 
     it("Baker.fireEventAndResolveWhenCompleted (fails with IllegalEventException)") {
-      test { (client, server) =>
+      test { (client, server, interactionNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance("non-existent", Map.empty)
         for {
-          compiledRecipe <- setupHappyPath(server)
+          compiledRecipe <- setupHappyPath(interactionNode)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           result <- client
@@ -196,12 +187,12 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
     }
 
     it("Baker.fireEventAndResolveOnEvent") {
-      test { (client, server) =>
+      test { (client, server, interactionNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
           CheckoutFlowEvents.ShippingAddressReceived(ShippingAddress("address")))
         for {
-          compiledRecipe <- setupHappyPath(server)
+          compiledRecipe <- setupHappyPath(interactionNode)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           result <- client.fireEventAndResolveOnEvent(recipeInstanceId, event, "ShippingAddressReceived")
@@ -214,10 +205,10 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
     }
 
     it("Baker.getAllRecipeInstancesMetadata") {
-      test { (client, server) =>
+      test { (client, server, interactionNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         for {
-          compiledRecipe <- setupHappyPath(server)
+          compiledRecipe <- setupHappyPath(interactionNode)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           clientMetadata <- client.getAllRecipeInstancesMetadata
@@ -227,10 +218,10 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
     }
 
     it("Baker.getVisualState") {
-      test { (client, server) =>
+      test { (client, server, interactionNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         for {
-          compiledRecipe <- setupHappyPath(server)
+          compiledRecipe <- setupHappyPath(interactionNode)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           clientState <- client.getVisualState(recipeInstanceId)
@@ -240,12 +231,12 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
     }
 
     it("Baker.retryInteraction") {
-      test { (client, server) =>
+      test { (client, _, interactionNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
           CheckoutFlowEvents.OrderPlaced(orderId = OrderId("order1"), List.empty))
         for {
-          compiledRecipe <- setupFailingOnceReserveItems(server)
+          compiledRecipe <- setupFailingOnceReserveItems(interactionNode)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           _ <- client.fireEventAndResolveWhenCompleted(recipeInstanceId, event)
@@ -262,7 +253,7 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
     }
 
     it("Baker.resolveInteraction") {
-      test { (client, server) =>
+      test { (client, _, interactionNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
           CheckoutFlowEvents.OrderPlaced(orderId = OrderId("order1"), List.empty))
@@ -270,7 +261,7 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
           ItemsReserved(reservedItems = ReservedItems(items = List(Item("item1")), data = Array.empty))
         )
         for {
-          compiledRecipe <- setupFailingOnceReserveItems(server)
+          compiledRecipe <- setupFailingOnceReserveItems(interactionNode)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           _ <- client.fireEventAndResolveWhenCompleted(recipeInstanceId, event)
@@ -290,12 +281,12 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
     }
 
     it("Baker.stopRetryingInteraction") {
-      test { (client, server) =>
+      test { (client, _, interactionNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
           CheckoutFlowEvents.OrderPlaced(orderId = OrderId("order1"), List.empty))
         for {
-          compiledRecipe <- setupFailingWithRetryReserveItems(server)
+          compiledRecipe <- setupFailingWithRetryReserveItems(interactionNode)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           _ <- client.fireEventAndResolveWhenReceived(recipeInstanceId, event)
@@ -314,67 +305,131 @@ abstract class CommonBaaSServerClientSpec(clientBaker: (String, ActorSystem, Mat
   }
 }
 
-object CommonBaaSServerClientSpec {
+object BaaSIntegrationSpec {
 
-  def setupHappyPath(serverBaker: ScalaBaker)(implicit ec: ExecutionContext, timer: Timer[IO]): Future[CompiledRecipe] = {
+  def setupHappyPath(serverBaker: BaaSInteractionInstance)(implicit ec: ExecutionContext, timer: Timer[IO]): Future[CompiledRecipe] = {
     val makePaymentInstance = InteractionInstance.unsafeFrom(new MakePaymentInstance())
     val reserveItemsInstance = InteractionInstance.unsafeFrom(new ReserveItemsInstance())
     val shipItemsInstance = InteractionInstance.unsafeFrom(new ShipItemsInstance())
     val compiledRecipe = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
     for {
-      _ <- serverBaker.addInteractionInstances(Seq(makePaymentInstance, reserveItemsInstance, shipItemsInstance))
+      _ <- Future { serverBaker.load(makePaymentInstance, reserveItemsInstance, shipItemsInstance) }
     } yield compiledRecipe
   }
 
-  def setupFailingOnceReserveItems(serverBaker: ScalaBaker)(implicit ec: ExecutionContext, timer: Timer[IO]): Future[CompiledRecipe] = {
+  def setupFailingOnceReserveItems(serverBaker: BaaSInteractionInstance)(implicit ec: ExecutionContext, timer: Timer[IO]): Future[CompiledRecipe] = {
     val makePaymentInstance = InteractionInstance.unsafeFrom(new MakePaymentInstance())
     val reserveItemsInstance = InteractionInstance.unsafeFrom(new FailingOnceReserveItemsInstance())
     val shipItemsInstance = InteractionInstance.unsafeFrom(new ShipItemsInstance())
     val compiledRecipe = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipeWithBlockingStrategy)
     for {
-      _ <- serverBaker.addInteractionInstances(Seq(makePaymentInstance, reserveItemsInstance, shipItemsInstance))
+      _ <- Future { serverBaker.load(makePaymentInstance, reserveItemsInstance, shipItemsInstance) }
     } yield compiledRecipe
   }
 
-  def setupFailingWithRetryReserveItems(serverBaker: ScalaBaker)(implicit ec: ExecutionContext, timer: Timer[IO]): Future[CompiledRecipe] = {
+  def setupFailingWithRetryReserveItems(serverBaker: BaaSInteractionInstance)(implicit ec: ExecutionContext, timer: Timer[IO]): Future[CompiledRecipe] = {
     val makePaymentInstance = InteractionInstance.unsafeFrom(new MakePaymentInstance())
     val reserveItemsInstance = InteractionInstance.unsafeFrom(new FailingReserveItemsInstance())
     val shipItemsInstance = InteractionInstance.unsafeFrom(new ShipItemsInstance())
     val compiledRecipe = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
     for {
-      _ <- serverBaker.addInteractionInstances(Seq(makePaymentInstance, reserveItemsInstance, shipItemsInstance))
+      _ <- Future { serverBaker.load(makePaymentInstance, reserveItemsInstance, shipItemsInstance) }
     } yield compiledRecipe
   }
 
-  type ClientServerTest = ((ScalaBaker, ScalaBaker) => Future[Assertion]) => Future[Assertion]
+  type IntegrationTest = ((ScalaBaker, ScalaBaker, BaaSInteractionInstance) => Future[Assertion]) => Future[Assertion]
 
-  val allPorts: Stream[Int] = Stream.from(50000, 1)
+  type WithOpenPort[A] = StateT[Future, Stream[Int], A]
 
   def testWith[F[_], Lang <: LanguageApi]
-      (clientBaker: (String, ActorSystem, Materializer) => ScalaBaker)
-      (t: (ScalaBaker, ScalaBaker) => Future[Assertion])
+      (test: (ScalaBaker, ScalaBaker, BaaSInteractionInstance) => Future[Assertion])
       (implicit ec: ExecutionContext): Future[Assertion] = {
     val testId: UUID = UUID.randomUUID()
-    implicit val system: ActorSystem = ActorSystem("ScalaDSLBaaSServerClientSpec-" + testId)
-    implicit val materializer: Materializer = ActorMaterializer()
-    val host: String = "localhost"
-    val serverBaker = AkkaBaker.localDefault(system)
-    for {
-      (client, shutdown) <- buildFromStream(allPorts, { port: Int =>
-        val client = clientBaker(s"http://$host:$port/", system, materializer)
-        val shutdown = BaaSServer.run(serverBaker, host, port)
-        shutdown.map(s => (client, s))
-      })
-      a <- t(client, serverBaker)
-      _ <- shutdown.unbind()
-      _ <- serverBaker.gracefulShutdown()
+    val systemName: String = "ScalaDSLBaaSServerClientSpec-" + testId
+    val allPorts: Stream[Int] = Stream.from(50000, 1)
+    val program = for {
+      clientServerQuadruple <- buildBaaSClientServer(systemName)
+      (clientBaker, stateNodeBaker, stateNodePort, httpServerBinding) = clientServerQuadruple
+      interactionNodeTriplet <- buildClusterActorSystem(systemName, seedPortCandidate = stateNodePort)
+      (interactionNodeSystem, _, _) = interactionNodeTriplet
+      interactionNode = BaaSInteractionInstance(interactionNodeSystem)
+      a <- liftF(test(clientBaker, stateNodeBaker, interactionNode))
+      _ <- liftF(interactionNodeSystem.terminate())
+      _ <- liftF(httpServerBinding.unbind())
+      _ <- liftF(stateNodeBaker.gracefulShutdown())
     } yield a
+    program.run(allPorts).map(_._2)
   }
 
-  private def buildFromStream[S, T](ports: Stream[S], f: S => Future[T])(implicit ec: ExecutionContext): Future[T] =
-    ports match {
-      case #::(port, tail) => f(port).recoverWith {
-        case _: java.net.BindException => buildFromStream(tail, f)
-      }
+  private def buildBaaSClientServer
+      (systemName: String)
+      (implicit ec: ExecutionContext): WithOpenPort[(ScalaBaker, ScalaBaker, Int, Http.ServerBinding)] = {
+    for {
+      clusterTriplet <- buildClusterActorSystem(systemName, seedPortCandidate = 0)
+      (stateNodeSystem, serverConfig, stateNodePort) = clusterTriplet
+      materializer = ActorMaterializer()(stateNodeSystem)
+      stateNodeBaker = AkkaBaker(serverConfig, stateNodeSystem)
+      httpPortAndBinding <- runStateNodeHttpServer(stateNodeBaker, stateNodeSystem, materializer)
+      (httpPort, httpServerBinding) = httpPortAndBinding
+      clientBaker = BakerClient.build(s"http://localhost:$httpPort/", Encryption.NoEncryption)(stateNodeSystem, materializer)
+    } yield (clientBaker, stateNodeBaker, stateNodePort, httpServerBinding)
+  }
+
+  private def buildClusterActorSystem(systemName: String, seedPortCandidate: Int)(implicit ec: ExecutionContext): WithOpenPort[(ActorSystem, Config, Int)] =
+    withOpenPort { port =>
+      val config = genClusterConfig(systemName, port, seedPortCandidate)
+      Future { (ActorSystem(systemName, config), config, port) }
     }
+
+  private def runStateNodeHttpServer(stateNodeBaker: ScalaBaker, stateNodeSystem: ActorSystem, materializer: Materializer)(implicit ec: ExecutionContext): WithOpenPort[(Int, Http.ServerBinding)] =
+    withOpenPort(port => BaaSServer.run(stateNodeBaker, "localhost", port)(stateNodeSystem, materializer).map(port -> _))
+
+  private def withOpenPort[T](f: Int => Future[T])(implicit ec: ExecutionContext): WithOpenPort[T] = {
+    def search(ports: Stream[Int]): Future[(Stream[Int], T)] =
+      ports match {
+        case #::(port, tail) => f(port).map(tail -> _).recoverWith {
+          case _: java.net.BindException => search(tail)
+          case _: ChannelException => search(tail)
+          case other => println("REVIEW withOpenPort function implementation, uncaught exception: " + Console.RED + other + Console.RESET); Future.failed(other)
+        }
+      }
+    StateT(search)
+  }
+
+  private def liftF[A](fa: Future[A])(implicit ec: ExecutionContext): WithOpenPort[A] =
+    StateT.liftF[Future, Stream[Int], A](fa)
+
+  private def genClusterConfig(systemName: String, port: Int, seedPortCandidate: Int): Config = {
+    val seedPort: Int = if(seedPortCandidate == 0) port else seedPortCandidate
+    ConfigFactory.parseString(
+      s"""
+        |baker {
+        |  cluster {
+        |    seed-nodes = [
+        |      "akka.tcp://"$systemName"@localhost:"$seedPort]
+        |  }
+        |}
+        |
+        |akka {
+        |
+        |  remote {
+        |    log-remote-lifecycle-events = off
+        |    netty.tcp {
+        |      hostname = "localhost"
+        |      port = $port
+        |    }
+        |  }
+        |
+        |  cluster {
+        |
+        |    seed-nodes = [
+        |      "akka.tcp://"$systemName"@localhost:"$seedPort]
+        |
+        |    # auto downing is NOT safe for production deployments.
+        |    # you may want to use it during development, read more about it in the akka docs.
+        |    auto-down-unreachable-after = 10s
+        |  }
+        |}
+        |""".stripMargin).withFallback(ConfigFactory.load())
+  }
 }

@@ -8,7 +8,7 @@ import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider
 import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
-import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
+import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider, TypedProtobufSerializer}
 import com.ing.baker.runtime.serialization.TypedProtobufSerializer.{BinarySerializable, forType}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
@@ -32,6 +32,8 @@ object BakerTypedProtobufSerializer {
         .register("core.RuntimeEvent"),
       forType[RecipeInstanceState]
         .register("core.ProcessState"),
+      forType[RecipeEventMetadata]
+        .register("core.RecipeEventMetadata"),
       forType[il.CompiledRecipe]
         .register("il.CompiledRecipe")
     )

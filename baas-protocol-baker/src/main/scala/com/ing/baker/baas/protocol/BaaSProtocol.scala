@@ -1,4 +1,4 @@
-package com.ing.baker.baas.common
+package com.ing.baker.baas.protocol
 
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
