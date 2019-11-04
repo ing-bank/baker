@@ -1,4 +1,4 @@
-package com.ing.baker.baas.common
+package com.ing.baker.baas.protocol
 
 import com.ing.baker.runtime.common.InteractionInstance
 import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi

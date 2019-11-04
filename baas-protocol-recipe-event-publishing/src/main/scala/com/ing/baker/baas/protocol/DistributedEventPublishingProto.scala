@@ -14,14 +14,15 @@ object DistributedEventPublishingProto {
       val companion = protobuf.Event
 
       def toProto(a: Event): protobuf.Event =
-        protobuf.Event(Some(a.recipeInstanceId), Some(ctxToProto(a.event)))
+        protobuf.Event(Some(ctxToProto(a.recipeEventMetadata)), Some(ctxToProto(a.event)))
 
       def fromProto(message: protobuf.Event): Try[Event] =
         for {
-          recipeInstanceId <- versioned(message.recipeInstanceId, "recipeInstanceId")
+          recipeEventMetadataProto <- versioned(message.recipeEventMetadata, "recipeEventMetadata")
+          recipeEventMetadata <- ctxFromProto(recipeEventMetadataProto)
           eventProto <- versioned(message.event, "event")
           event <- ctxFromProto(eventProto)
-        } yield Event(recipeInstanceId, event)
+        } yield Event(recipeEventMetadata, event)
     }
 
 }

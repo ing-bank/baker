@@ -1,32 +1,44 @@
 package com.ing.baker.baas.state
 
 import akka.actor.ActorSystem
+import akka.cluster.pubsub.{DistributedPubSub, DistributedPubSubMediator}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
-import com.ing.baker.baas.common.BaaSProto._
-import com.ing.baker.baas.common.BaaSProtocol
-import com.ing.baker.baas.common.MarshallingUtils._
+import com.ing.baker.baas.protocol.BaaSProto._
+import com.ing.baker.baas.protocol.BaaSProtocol
+import com.ing.baker.baas.protocol.MarshallingUtils._
+import com.ing.baker.baas.protocol.ProtocolDistributedEventPublishing
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
 import com.ing.baker.runtime.serialization.{Encryption, SerializersProvider}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 object BaaSServer {
 
   def run(baker: Baker, host: String, port: Int)(implicit system: ActorSystem, mat: Materializer): Future[Http.ServerBinding] = {
+    import system.dispatcher
     val encryption = Encryption.NoEncryption
     val server = new BaaSServer()(system, mat, baker, encryption)
-    /*
-    baker.registerEventListener((instanceId: String, event: EventInstance) => {
-      // Publish an Event() message to the DistributedPublishSubscribe mediator
-      // We need the recipe id here D:
-      //event.
-    })
-     */
-    Http().bindAndHandle(server.route, host, port)
+    for {
+      _ <- initializeEventListeners(baker, system)
+      binding <- Http().bindAndHandle(server.route, host, port)
+    } yield binding
   }
+
+  private[state] def registerEventListenerForRemote(recipeName: String, baker: Baker, system: ActorSystem): Future[Unit] =
+    baker.registerEventListener(recipeName, (metadata, event) => {
+      val eventsTopic: String =
+        ProtocolDistributedEventPublishing.eventsTopic(recipeName)
+      DistributedPubSub(system).mediator ! DistributedPubSubMediator.Publish(eventsTopic, ProtocolDistributedEventPublishing.Event(metadata, event))
+    })
+
+  private[state] def initializeEventListeners(baker: Baker, system: ActorSystem)(implicit ec: ExecutionContext): Future[Unit] =
+    for {
+      recipes <- baker.getAllRecipes
+      _ <- Future.traverse(recipes.toList) { case (_, recipe) => registerEventListenerForRemote(recipe.compiledRecipe.name, baker, system) }
+    } yield ()
 }
 
 class BaaSServer(implicit system: ActorSystem, mat: Materializer, baker: Baker, encryption: Encryption) {
@@ -44,7 +56,11 @@ class BaaSServer(implicit system: ActorSystem, mat: Materializer, baker: Baker, 
 
   private def addRecipe: Route = post(path("addRecipe") {
     entity(as[BaaSProtocol.AddRecipeRequest]) { request =>
-      completeWithBakerFailures(baker.addRecipe(request.compiledRecipe).map(BaaSProtocol.AddRecipeResponse))
+      val result = for {
+        recipeId <- baker.addRecipe(request.compiledRecipe)
+        _ <- BaaSServer.registerEventListenerForRemote(request.compiledRecipe.name, baker, system)
+      } yield BaaSProtocol.AddRecipeResponse(recipeId)
+      completeWithBakerFailures(result)
     }
   })
 

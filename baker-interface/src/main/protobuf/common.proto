@@ -170,6 +170,12 @@ message SensoryEventResult {
     map<string, Value> ingredients = 3;
 }
 
+message RecipeEventMetadata {
+    optional string recipeId = 1;
+    optional string recipeName = 2;
+    optional string recipeInstanceId = 3;
+}
+
 enum SensoryEventStatus {
     RECEIVED = 1;
     COMPLETED = 2;

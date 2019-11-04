@@ -80,6 +80,9 @@ object ProtoMap {
   implicit val processStateMapping: ProtoMap[RecipeInstanceState, protobuf.ProcessState] =
     new ProcessStateMapping
 
+  implicit val recipeEventMetadataMapping: ProtoMap[RecipeEventMetadata, protobuf.RecipeEventMetadata] =
+    new RecipeEventMetadataMapping
+
   implicit val eventMomentMapping: ProtoMap[EventMoment, protobuf.EventMoment] =
     new EventMomentMapping
 
