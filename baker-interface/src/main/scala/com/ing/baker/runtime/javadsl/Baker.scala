@@ -36,6 +36,8 @@ class Baker private[baker](private val baker: scaladsl.Baker) extends common.Bak
 
   override type EventMomentType = EventMoment
 
+  override type RecipeMetadataType = RecipeEventMetadata
+
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
     *
@@ -254,10 +256,9 @@ class Baker private[baker](private val baker: scaladsl.Baker) extends common.Bak
     * @param recipeName the name of all recipes this event listener should be triggered for
     * @param listenerFunction   The listener to subscribe to events.
     */
-  override def registerEventListener(@Nonnull recipeName: String, @Nonnull listenerFunction: BiConsumer[String, EventInstance]): CompletableFuture[Unit] =
+  override def registerEventListener(@Nonnull recipeName: String, @Nonnull listenerFunction: BiConsumer[RecipeEventMetadata, EventInstance]): CompletableFuture[Unit] =
     toCompletableFuture(baker.registerEventListener(recipeName,
-      (recipeInstanceId: String, event: scaladsl.EventInstance) => listenerFunction.accept(recipeInstanceId, event.asJava)))
-
+      (recipeEventMetadata: scaladsl.RecipeEventMetadata, event: scaladsl.EventInstance) => listenerFunction.accept(recipeEventMetadata.asJava, event.asJava)))
 
   /**
     * Registers a listener function to all runtime events for this baker instance.
@@ -276,10 +277,9 @@ class Baker private[baker](private val baker: scaladsl.Baker) extends common.Bak
     *
     * @param listenerFunction The listener function that is called once these events occur
     */
-  override def registerEventListener(@Nonnull listenerFunction: BiConsumer[String, EventInstance]): CompletableFuture[Unit] =
+  override def registerEventListener(@Nonnull listenerFunction: BiConsumer[RecipeEventMetadata, EventInstance]): CompletableFuture[Unit] =
     toCompletableFuture(baker.registerEventListener(
-      (recipeInstanceId: String, event: scaladsl.EventInstance) => listenerFunction.accept(recipeInstanceId, event.asJava)))
-
+      (recipeEventMetadata: scaladsl.RecipeEventMetadata, event: scaladsl.EventInstance) => listenerFunction.accept(recipeEventMetadata.asJava, event.asJava)))
 
   /**
     * Registers a listener function to all runtime events for this baker instance.
@@ -300,8 +300,7 @@ class Baker private[baker](private val baker: scaladsl.Baker) extends common.Bak
     */
   @deprecated(message = "Replaced with the consumer function variant", since = "3.0.0")
   def registerEventListener(@Nonnull eventListener: EventListener): Future[Unit] =
-    baker.registerEventListener((recipeInstanceId: String, runtimeEvent: scaladsl.EventInstance) => eventListener.processEvent(recipeInstanceId, runtimeEvent.asJava))
-
+    baker.registerEventListener((recipeEventMetadata: scaladsl.RecipeEventMetadata, runtimeEvent: scaladsl.EventInstance) => eventListener.processEvent(recipeEventMetadata.recipeInstanceId, runtimeEvent.asJava))
 
   /**
     * Registers a listener that listens to all Baker events

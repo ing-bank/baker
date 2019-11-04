@@ -11,7 +11,7 @@ import com.ing.baker.baas.common.BaaSProto._
 import com.ing.baker.baas.common.BaaSProtocol
 import com.ing.baker.baas.common.MarshallingUtils._
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance, EventMoment, EventResolutions, InteractionInstance, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
+import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance, EventMoment, EventResolutions, InteractionInstance, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
 import com.ing.baker.runtime.serialization.{Encryption, SerializersProvider}
 import com.ing.baker.types.Value
 
@@ -250,7 +250,7 @@ case class BakerClient(hostname: Uri, encryption: Encryption = Encryption.NoEncr
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(recipeName: String, listenerFunction: (String, EventInstance) => Unit): Future[Unit] =
+  override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): Future[Unit] =
     throw new NotImplementedError("registerEventListener is not implemented for client bakers")
 
   /**
@@ -258,7 +258,7 @@ case class BakerClient(hostname: Uri, encryption: Encryption = Encryption.NoEncr
     *
     * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
     */
-  override def registerEventListener(listenerFunction: (String, EventInstance) => Unit): Future[Unit] =
+  override def registerEventListener(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): Future[Unit] =
     throw new NotImplementedError("registerEventListener is not implemented for client bakers")
 
   /**
