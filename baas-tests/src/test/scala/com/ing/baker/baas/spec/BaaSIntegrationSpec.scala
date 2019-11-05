@@ -11,7 +11,7 @@ import cats.implicits._
 import com.ing.baker.baas.recipe.CheckoutFlowEvents.ItemsReserved
 import com.ing.baker.baas.recipe.CheckoutFlowIngredients.{Item, OrderId, ReservedItems, ShippingAddress}
 import com.ing.baker.baas.recipe._
-import com.ing.baker.baas.scaladsl.{BaaSInteractionInstance, BakerClient}
+import com.ing.baker.baas.scaladsl.{BaaSEventListener, BaaSInteractionInstance, BakerClient}
 import com.ing.baker.baas.spec.BaaSIntegrationSpec._
 import com.ing.baker.baas.state.BaaSServer
 import com.ing.baker.compiler.RecipeCompiler
@@ -25,6 +25,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.jboss.netty.channel.ChannelException
 import org.scalatest._
 
+import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 
 class BaaSIntegrationSpec
@@ -39,7 +40,7 @@ class BaaSIntegrationSpec
 
   describe("Baker Client-Server") {
     it("Baker.addRecipe") {
-      test { (client, stateNode, interactionNode) =>
+      test { (client, stateNode, interactionNode, _) =>
         for {
           compiledRecipe <- setupHappyPath(interactionNode)
           recipeId <- client.addRecipe(compiledRecipe)
@@ -49,7 +50,7 @@ class BaaSIntegrationSpec
     }
 
     it("Baker.getRecipe") {
-      test { (client, _, interactionNode) =>
+      test { (client, _, interactionNode, _) =>
         for {
           compiledRecipe <- setupHappyPath(interactionNode)
           recipeId <- client.addRecipe(compiledRecipe)
@@ -59,7 +60,7 @@ class BaaSIntegrationSpec
     }
 
     it("Baker.getRecipe (fail with NoSuchRecipeException)") {
-      test { (client, _, _) =>
+      test { (client, _, _, _) =>
         for {
           e <- client
             .getRecipe("non-existent")
@@ -70,7 +71,7 @@ class BaaSIntegrationSpec
     }
 
     it("Baker.getAllRecipes") {
-      test { (client, stateNode, interactionNode) =>
+      test { (client, stateNode, interactionNode, _) =>
         for {
           compiledRecipe <- setupHappyPath(interactionNode)
           recipeId <- client.addRecipe(compiledRecipe)
@@ -80,19 +81,23 @@ class BaaSIntegrationSpec
     }
 
     it("Baker.bake") {
-      test { (client, stateNode, interactionNode) =>
+      test { (client, stateNode, interactionNode, eventListenerNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         for {
           compiledRecipe <- setupHappyPath(interactionNode)
+          events <- setupEventListener(compiledRecipe, eventListenerNode)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           state <- stateNode.getRecipeInstanceState(recipeInstanceId)
-        } yield state.recipeInstanceId shouldBe recipeInstanceId
+        } yield {
+          events.toList shouldBe List.empty
+          state.recipeInstanceId shouldBe recipeInstanceId
+        }
       }
     }
 
     it("Baker.bake (fail with ProcessAlreadyExistsException)") {
-      test { (client, stateNode, interactionNode) =>
+      test { (client, stateNode, interactionNode, _) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         for {
           compiledRecipe <- setupHappyPath(interactionNode)
@@ -111,7 +116,7 @@ class BaaSIntegrationSpec
     }
 
     it("Baker.bake (fail with NoSuchRecipeException)") {
-      test { (client, _, _) =>
+      test { (client, _, _, _) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         for {
           e <- client
@@ -123,7 +128,7 @@ class BaaSIntegrationSpec
     }
 
     it("Baker.getRecipeInstanceState (fails with NoSuchProcessException)") {
-      test { (_, stateNode, _) =>
+      test { (_, stateNode, _, _) =>
         for {
           e <- stateNode
             .getRecipeInstanceState("non-existent")
@@ -134,7 +139,7 @@ class BaaSIntegrationSpec
     }
 
     it("Baker.fireEventAndResolveWhenReceived") {
-      test { (client, _, interactionNode) =>
+      test { (client, _, interactionNode, _) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
           CheckoutFlowEvents.ShippingAddressReceived(ShippingAddress("address")))
@@ -148,12 +153,13 @@ class BaaSIntegrationSpec
     }
 
     it("Baker.fireEventAndResolveWhenCompleted") {
-      test { (client, stateNode, interactionNode) =>
+      test { (client, stateNode, interactionNode, eventListenerNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
           CheckoutFlowEvents.ShippingAddressReceived(ShippingAddress("address")))
         for {
           compiledRecipe <- setupHappyPath(interactionNode)
+          events <- setupEventListener(compiledRecipe, eventListenerNode)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           result <- client.fireEventAndResolveWhenCompleted(recipeInstanceId, event)
@@ -161,12 +167,13 @@ class BaaSIntegrationSpec
         } yield {
           result.eventNames should contain("ShippingAddressReceived")
           serverState.events.map(_.name) should contain("ShippingAddressReceived")
+          events.toList.map(_.name) should contain("ShippingAddressReceived")
         }
       }
     }
 
     it("Baker.fireEventAndResolveWhenCompleted (fails with IllegalEventException)") {
-      test { (client, stateNode, interactionNode) =>
+      test { (client, stateNode, interactionNode, _) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance("non-existent", Map.empty)
         for {
@@ -186,12 +193,13 @@ class BaaSIntegrationSpec
     }
 
     it("Baker.fireEventAndResolveOnEvent") {
-      test { (client, stateNode, interactionNode) =>
+      test { (client, stateNode, interactionNode, eventListenerNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
           CheckoutFlowEvents.ShippingAddressReceived(ShippingAddress("address")))
         for {
           compiledRecipe <- setupHappyPath(interactionNode)
+          events <- setupEventListener(compiledRecipe, eventListenerNode)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           result <- client.fireEventAndResolveOnEvent(recipeInstanceId, event, "ShippingAddressReceived")
@@ -199,12 +207,13 @@ class BaaSIntegrationSpec
         } yield {
           result.eventNames should contain("ShippingAddressReceived")
           serverState.events.map(_.name) should contain("ShippingAddressReceived")
+          events.toList.map(_.name) should contain("ShippingAddressReceived")
         }
       }
     }
 
     it("Baker.getAllRecipeInstancesMetadata") {
-      test { (client, stateNode, interactionNode) =>
+      test { (client, stateNode, interactionNode, _) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         for {
           compiledRecipe <- setupHappyPath(interactionNode)
@@ -217,7 +226,7 @@ class BaaSIntegrationSpec
     }
 
     it("Baker.getVisualState") {
-      test { (client, stateNode, interactionNode) =>
+      test { (client, stateNode, interactionNode, _) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         for {
           compiledRecipe <- setupHappyPath(interactionNode)
@@ -230,12 +239,13 @@ class BaaSIntegrationSpec
     }
 
     it("Baker.retryInteraction") {
-      test { (client, _, interactionNode) =>
+      test { (client, _, interactionNode, eventListenerNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
           CheckoutFlowEvents.OrderPlaced(orderId = OrderId("order1"), List.empty))
         for {
           compiledRecipe <- setupFailingOnceReserveItems(interactionNode)
+          events <- setupEventListener(compiledRecipe, eventListenerNode)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           _ <- client.fireEventAndResolveWhenCompleted(recipeInstanceId, event)
@@ -247,12 +257,14 @@ class BaaSIntegrationSpec
           state1 should not contain("ItemsReserved")
           state2 should contain("OrderPlaced")
           state2 should contain("ItemsReserved")
+          events.toList.map(_.name) should contain("OrderPlaced")
+          events.toList.map(_.name) should contain("ItemsReserved")
         }
       }
     }
 
     it("Baker.resolveInteraction") {
-      test { (client, _, interactionNode) =>
+      test { (client, _, interactionNode, eventListenerNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
           CheckoutFlowEvents.OrderPlaced(orderId = OrderId("order1"), List.empty))
@@ -261,6 +273,7 @@ class BaaSIntegrationSpec
         )
         for {
           compiledRecipe <- setupFailingOnceReserveItems(interactionNode)
+          events <- setupEventListener(compiledRecipe, eventListenerNode)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           _ <- client.fireEventAndResolveWhenCompleted(recipeInstanceId, event)
@@ -275,17 +288,20 @@ class BaaSIntegrationSpec
           state2 should contain("OrderPlaced")
           state2 should contain("ItemsReserved")
           eventState shouldBe Some("item1")
+          events.toList.map(_.name) should contain("OrderPlaced")
+          events.toList.map(_.name) should not contain("ItemsReserved") // Manually resolving an interaction does not fire the event to the listeners?
         }
       }
     }
 
     it("Baker.stopRetryingInteraction") {
-      test { (client, _, interactionNode) =>
+      test { (client, _, interactionNode, eventListenerNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
           CheckoutFlowEvents.OrderPlaced(orderId = OrderId("order1"), List.empty))
         for {
           compiledRecipe <- setupFailingWithRetryReserveItems(interactionNode)
+          events <- setupEventListener(compiledRecipe, eventListenerNode)
           recipeId <- client.addRecipe(compiledRecipe)
           _ <- client.bake(recipeId, recipeInstanceId)
           _ <- client.fireEventAndResolveWhenReceived(recipeInstanceId, event)
@@ -298,6 +314,8 @@ class BaaSIntegrationSpec
           state1 should not contain("ItemsReserved")
           state2 should contain("OrderPlaced")
           state2 should not contain("ItemsReserved")
+          events.toList.map(_.name) should contain("OrderPlaced")
+          events.toList.map(_.name) should not contain("ItemsReserved")
         }
       }
     }
@@ -336,15 +354,22 @@ object BaaSIntegrationSpec {
     } yield compiledRecipe
   }
 
-  type IntegrationTest = ((ScalaBaker, ScalaBaker, BaaSInteractionInstance) => Future[Assertion]) => Future[Assertion]
+  def setupEventListener(recipe: CompiledRecipe, eventListenerNode: BaaSEventListener)(implicit ec: ExecutionContext): Future[mutable.MutableList[EventInstance]] = {
+    val buffer = mutable.MutableList.empty[EventInstance]
+    eventListenerNode.registerEventListener(recipe.name, (_, event) => {
+      buffer.+=(event)
+    }).map(_ => buffer)
+  }
+
+  type IntegrationTest = ((ScalaBaker, ScalaBaker, BaaSInteractionInstance, BaaSEventListener) => Future[Assertion]) => Future[Assertion]
 
   type WithOpenPort[A] = StateT[Future, Stream[Int], A]
 
   def testWith[F[_], Lang <: LanguageApi]
-      (test: (ScalaBaker, ScalaBaker, BaaSInteractionInstance) => Future[Assertion])
+      (test: (ScalaBaker, ScalaBaker, BaaSInteractionInstance, BaaSEventListener) => Future[Assertion])
       (implicit ec: ExecutionContext): Future[Assertion] = {
     val testId: UUID = UUID.randomUUID()
-    val systemName: String = "ScalaDSLBaaSServerClientSpec-" + testId
+    val systemName: String = "BaaSIntegrationSpec-" + testId
     val allPorts: Stream[Int] = Stream.from(50000, 1)
     val program = for {
       clusterTuple <- buildClusterActorSystem(systemName, seedPortCandidate = 0)
@@ -355,7 +380,8 @@ object BaaSIntegrationSpec {
       (httpPort, httpServerBinding) = httpPortAndBinding
       clientBaker = BakerClient.build(s"http://localhost:$httpPort/", Encryption.NoEncryption)(stateNodeSystem, materializer)
       interactionNode = BaaSInteractionInstance(stateNodeSystem)
-      a <- liftF(test(clientBaker, stateNodeBaker, interactionNode))
+      eventListenerNode = BaaSEventListener(stateNodeSystem)
+      a <- liftF(test(clientBaker, stateNodeBaker, interactionNode, eventListenerNode))
       _ <- liftF(httpServerBinding.unbind())
       _ <- liftF(stateNodeBaker.gracefulShutdown())
     } yield a
