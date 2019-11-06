@@ -38,8 +38,8 @@ object Dependencies {
   val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.7"
   val levelDBJni =                "org.fusesource.leveldbjni"  %  "leveldbjni-all"                     % "1.8"
 
-  val logback =                   "ch.qos.logback"             %  "logback-classic"                    % "1.2.2"
-  val ficusConfig =               "com.iheart"                 %% "ficus"                              % "1.4.0"
+  val logback =                   "ch.qos.logback"             %  "logback-classic"                    % "1.2.3"
+  val ficusConfig =               "com.iheart"                 %% "ficus"                              % "1.4.7"
 
   val scalaGraph  =               "org.scala-graph"            %% "graph-core"                         % "1.11.5"
   val scalaGraphDot =             "org.scala-graph"            %% "graph-dot"                          % "1.12.1"
