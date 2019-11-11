@@ -112,11 +112,4 @@ object CheckoutFlowRecipe {
       ReserveItemsInteraction,
       MakePaymentInteraction,
       ShipItemsInteraction)
-    .withDefaultFailureStrategy(
-      RetryWithIncrementalBackoff
-        .builder()
-        .withInitialDelay(100 milliseconds)
-        .withUntil(Some(UntilDeadline(24 hours)))
-        .withMaxTimeBetweenRetries(Some(10 minutes))
-        .build())
 }
