@@ -21,12 +21,13 @@ object RecipeManagerProto {
       def toProto(a: RecipeAdded): protobuf.RecipeAdded =
         protobuf.RecipeAdded(None, Option(ctxToProto(a.compiledRecipe)), Option(a.timeStamp))
 
-      def fromProto(message: protobuf.RecipeAdded): Try[RecipeAdded] =
+      def fromProto(message: protobuf.RecipeAdded): Try[RecipeAdded] = {
+        val timestamp = message.timeStamp.getOrElse(0l)
         for {
           compiledRecipeProto <- versioned(message.compiledRecipe, "compiledRecipe")
-          timestamp <- versioned(message.timeStamp, "timestamp")
           compiledRecipe <- ctxFromProto(compiledRecipeProto)
         } yield RecipeAdded(compiledRecipe, timestamp)
+      }
     }
 
   implicit def addRecipeProto(implicit provider: SerializersProvider): ProtoMap[AddRecipe, protobuf.AddRecipe] =
