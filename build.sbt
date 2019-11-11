@@ -252,7 +252,9 @@ lazy val examples = project
         circe,
         circeGeneric,
         kamon,
-        kamonPrometheus
+        kamonPrometheus,
+        akkaPersistenceCassandra,
+        akkaPersistenceQuery
       ) ++ testDeps(
         scalaTest,
         scalaCheck,
