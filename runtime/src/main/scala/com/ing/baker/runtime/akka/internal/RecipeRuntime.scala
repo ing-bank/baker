@@ -4,9 +4,10 @@ import java.lang.reflect.InvocationTargetException
 
 import akka.event.EventStream
 import cats.effect.IO
+import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
-import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor, recipeInstanceIdName}
+import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceRuntime
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
@@ -14,9 +15,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.internal._
 import com.ing.baker.runtime.scaladsl.{InteractionCompleted, InteractionFailed, InteractionStarted}
 import com.ing.baker.runtime.akka.internal.RecipeRuntime._
 import com.ing.baker.runtime.scaladsl.EventMoment
-import com.ing.baker.runtime.scaladsl.RecipeInstanceState
-import com.ing.baker.runtime.scaladsl.EventInstance
-import com.ing.baker.runtime.scaladsl.{RecipeInstanceState, EventInstance, IngredientInstance}
+import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, RecipeInstanceState}
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.MDC
 
@@ -95,10 +94,11 @@ object RecipeRuntime {
   def createInteractionInput(interaction: InteractionTransition, state: RecipeInstanceState): Seq[IngredientInstance] = {
 
     // the process id is a special ingredient that is always available
-    val recipeInstanceId: (String, Value) = recipeInstanceIdName -> PrimitiveValue(state.recipeInstanceId.toString)
+    val recipeInstanceId: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(state.recipeInstanceId.toString)
+    val processId: (String, Value) = il.processId -> PrimitiveValue(state.recipeInstanceId.toString)
 
     // a map of all ingredients
-    val allIngredients: Map[String, Value] = interaction.predefinedParameters ++ state.ingredients + recipeInstanceId
+    val allIngredients: Map[String, Value] = interaction.predefinedParameters ++ state.ingredients + recipeInstanceId + processId
 
     // arranges the ingredients in the expected order
     interaction.requiredIngredients.map {
