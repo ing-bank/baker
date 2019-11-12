@@ -33,7 +33,7 @@ object ProtoMap {
   def ctxFromProto[A, P <: scalapb.GeneratedMessage with scalapb.Message[P]](proto: P)(implicit ev: ProtoMap[A, P]): Try[A] = ev.fromProto(proto)
 
   def versioned[A](a: Option[A], name: String): Try[A] =
-    Try(a.getOrElse(throw new IllegalStateException(s"Missing field '$name' from protobuf message, probably we recieved a different version of the message")))
+    Try(a.getOrElse(throw new IllegalStateException(s"Missing field '$name' from protobuf message, probably we received a different version of the message")))
 
   implicit def anyRefMapping(implicit ev0: SerializersProvider): ProtoMap[AnyRef, protobuf.SerializedData] =
     new AnyRefMapping(ev0)
