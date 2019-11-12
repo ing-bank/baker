@@ -5,7 +5,7 @@ import java.security.MessageDigest
 package object il {
 
   val recipeInstanceIdName = "recipeInstanceId"
-  val processId = "$ProcessID$" //Needed for backwards compatible reasons
+  val processIdName = "$ProcessID$" //needed for backwards compatibility with V1 and V2
   val exhaustedEventAppend = "RetryExhausted"
 
   def sha256HashCode(str: String): Long = {
@@ -27,6 +27,6 @@ package object il {
     val hex = bigInt.toString(16)
 
     // add zero padding
-    (List.fill(64 - hex.length)("0")).mkString + hex
+    List.fill(64 - hex.length)("0").mkString + hex
   }
 }
