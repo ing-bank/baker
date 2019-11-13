@@ -69,12 +69,13 @@ object CheckoutFlowInteractions {
 
   trait MakePayment {
 
-    def apply(items: ReservedItems, address: ShippingAddress, payment: PaymentInformation): Future[MakePaymentOutput]
+    def apply(processId: String, items: ReservedItems, address: ShippingAddress, payment: PaymentInformation): Future[MakePaymentOutput]
   }
 
   def MakePaymentInteraction = Interaction(
     name = "MakePayment",
     inputIngredients = Seq(
+      com.ing.baker.recipe.scaladsl.recipeInstanceId,
       Ingredient[ReservedItems]("reservedItems"),
       Ingredient[ShippingAddress]("shippingAddress"),
       Ingredient[PaymentInformation]("paymentInformation")
