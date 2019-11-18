@@ -25,7 +25,6 @@ object Main extends IOApp {
         actorSystem <- IO { ActorSystem("CheckoutService") }
         config <- IO { ConfigFactory.load() }
         baker <- IO { Baker.akka(config, actorSystem) }
-        _ <- sleepAndTick(5)
         checkoutRecipeId <- WebShopBaker.initRecipes(baker)(timer, actorSystem.dispatcher)
         sd <- Ref.of[IO, Boolean](false)
         webShopBaker = new WebShopBaker(baker, checkoutRecipeId)(actorSystem.dispatcher)
@@ -39,9 +38,6 @@ object Main extends IOApp {
         terminateCluster(resources) *>
         terminateActorSystem(resources)
     )
-
-  def sleepAndTick(seconds: Int): IO[Unit] =
-    if(seconds <= 0) IO.unit else IO.sleep(1 second) *> IO { println(Console.MAGENTA + s"TICK $seconds" + Console.RESET)} *> sleepAndTick(seconds - 1)
 
   def terminateKamon: IO[Unit] =
     IO.fromFuture(IO(Kamon.stopModules()))
