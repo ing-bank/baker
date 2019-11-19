@@ -7,10 +7,9 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
 import com.ing.baker.baas.protocol.BaaSProto._
-import com.ing.baker.baas.protocol.BaaSProtocol
 import com.ing.baker.baas.protocol.MarshallingUtils._
-import com.ing.baker.baas.protocol.ProtocolDistributedEventPublishing
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
+import com.ing.baker.baas.protocol.{BaaSProtocol, ProtocolDistributedEventPublishing}
+import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.runtime.serialization.{Encryption, SerializersProvider}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -48,11 +47,13 @@ class BaaSServer(implicit system: ActorSystem, mat: Materializer, baker: Baker, 
   implicit private val serializersProvider: SerializersProvider =
     SerializersProvider(system, encryption)
 
-  def route: Route = pathPrefix("api" / "v3")(concat(addRecipe, getRecipe, getAllRecipes, bake,
+  def route: Route = pathPrefix("api" / "v3")(concat(health, addRecipe, getRecipe, getAllRecipes, bake,
     fireEventAndResolveWhenReceived, fireEventAndResolveWhenCompleted, fireEventAndResolveOnEvent, fireEvent,
     getAllRecipeInstancesMetadata, getRecipeInstanceState, getVisualState, retryInteraction, resolveInteraction,
     stopRetryingInteraction
   ))
+
+  private def health: Route = get(complete("Ok"))
 
   private def addRecipe: Route = post(path("addRecipe") {
     entity(as[BaaSProtocol.AddRecipeRequest]) { request =>

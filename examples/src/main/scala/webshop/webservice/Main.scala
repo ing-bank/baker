@@ -5,6 +5,7 @@ import akka.cluster.Cluster
 import cats.effect.concurrent.Ref
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import cats.implicits._
+import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.scaladsl._
 import com.typesafe.config.ConfigFactory
 import kamon.Kamon
@@ -24,7 +25,7 @@ object Main extends IOApp {
       for {
         actorSystem <- IO { ActorSystem("CheckoutService") }
         config <- IO { ConfigFactory.load() }
-        baker <- IO { Baker.akka(config, actorSystem) }
+        baker <- IO { AkkaBaker(config, actorSystem) }
         checkoutRecipeId <- WebShopBaker.initRecipes(baker)(timer, actorSystem.dispatcher)
         sd <- Ref.of[IO, Boolean](false)
         webShopBaker = new WebShopBaker(baker, checkoutRecipeId)(actorSystem.dispatcher)
