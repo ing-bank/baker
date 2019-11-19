@@ -78,7 +78,6 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
 
 lazy val `baker-interface` = project.in(file("baker-interface"))
   .settings(defaultModuleSettings)
-  .settings(noPublishSettings)
   .settings(scalaPBSettings)
   .settings(
     moduleName := "baker-interface",
@@ -204,7 +203,6 @@ lazy val recipeCompiler = project.in(file("compiler"))
 
 lazy val `baas-protocol-baker` = project.in(file("baas-protocol-baker"))
   .settings(defaultModuleSettings)
-  .settings(noPublishSettings)
   .settings(scalaPBSettings)
   .settings(
     moduleName := "baas-protocol-baker",
@@ -216,7 +214,6 @@ lazy val `baas-protocol-baker` = project.in(file("baas-protocol-baker"))
 
 lazy val `baas-protocol-interaction-scheduling` = project.in(file("baas-protocol-interaction-scheduling"))
   .settings(defaultModuleSettings)
-  .settings(noPublishSettings)
   .settings(scalaPBSettings)
   .settings(
     moduleName := "baas-protocol-interaction-scheduling"
@@ -225,7 +222,6 @@ lazy val `baas-protocol-interaction-scheduling` = project.in(file("baas-protocol
 
 lazy val `baas-protocol-recipe-event-publishing` = project.in(file("baas-protocol-recipe-event-publishing"))
   .settings(defaultModuleSettings)
-  .settings(noPublishSettings)
   .settings(scalaPBSettings)
   .settings(
     moduleName := "baas-protocol-recipe-event-publishing"
@@ -243,13 +239,23 @@ lazy val `baas-node-client` = project.in(file("baas-node-client"))
   .dependsOn(`baker-interface`, `baas-protocol-baker`)
 
 lazy val `baas-node-state` = project.in(file("baas-node-state"))
-  .settings(defaultModuleSettings)
+  .enablePlugins(JavaAppPackaging)
+  .settings(commonSettings)
   .settings(
     moduleName := "baas-node-state",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
     libraryDependencies ++= Seq(
       akkaHttp,
       akkaPersistenceCassandra
     )
+  )
+  .settings(
+    maintainer in Docker := "The Apollo Squad",
+    packageSummary in Docker := "The core node",
+    packageName in Docker := "apollo.docker.ing.net/baas-node-state",
+    dockerExposedPorts := Seq(8080)
   )
   .dependsOn(runtime, `baas-protocol-baker`, `baas-protocol-interaction-scheduling`)
 
@@ -323,6 +329,34 @@ lazy val integration = project.in(file("integration"))
   )
   .enablePlugins(MultiJvmPlugin)
   .configs(MultiJvm)
+
+lazy val playground = project
+  .in(file("playground"))
+  .settings(
+    name := "baker-playground",
+    version := "0.1.0",
+    organization := "com.ing.baker",
+    scalaVersion := "2.12.4",
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-effect" % "2.0.0",
+      "dev.profunktor" %% "console4cats" % "0.8.0",
+      "org.scalatest" %% "scalatest" % "3.0.8" % "test",
+      "org.scalacheck" %% "scalacheck" % "1.14.1" % "test"
+    ),
+    scalacOptions := Seq(
+      "-unchecked",
+      "-deprecation",
+      "-feature",
+      "-Ywarn-dead-code",
+      "-language:higherKinds",
+      "-language:existentials",
+      "-language:implicitConversions",
+      "-language:postfixOps",
+      "-encoding", "utf8",
+      s"-target:jvm-$jvmV",
+      "-Xfatal-warnings"
+    )
+  )
 
 lazy val examples = project
   .in(file("examples"))

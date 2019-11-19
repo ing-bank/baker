@@ -3,7 +3,9 @@ package webshop.simple;
 import akka.actor.ActorSystem;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
+import com.ing.baker.runtime.akka.AkkaBaker;
 import com.ing.baker.runtime.javadsl.*;
+import com.typesafe.config.ConfigFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +18,7 @@ public class JMain {
     static public void main_ignore(String[] args) {
 
         ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-        Baker baker = Baker.akkaLocalDefault(actorSystem);
+        Baker baker = AkkaBaker.java(ConfigFactory.load(), actorSystem);
 
         List<String> items = new ArrayList<>(2);
         items.add("item1");
