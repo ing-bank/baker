@@ -16,7 +16,9 @@ object Command {
   val commands: List[Command] =
     List(
       Help,
-      RunCassandra
+      RunCassandra,
+      RunBaaSStateNode,
+      StartBaaS
     )
 
   case object Help extends Command {
@@ -31,6 +33,20 @@ object Command {
     override def raw: String = "run-cassandra"
 
     override def help: String = "Runs Cassandra on default ports within the playground network"
+  }
+
+  case object RunBaaSStateNode extends Command {
+
+    override def raw: String = "run-baas-state-node"
+
+    override def help: String = "Runs a single BaaS state node (the one with the http server and state of the recipe instance) within the playground network"
+  }
+
+  case object StartBaaS extends Command {
+
+    override def raw: String = "start-baas"
+
+    override def help: String = "Starts Cassandra, Haproxy and a cluster of 3 baas state nodes"
   }
 
   def execPrint(process: ProcessBuilder, prompt: String): IO[Unit] = {
