@@ -359,7 +359,7 @@ lazy val playground = project
   )
 
 lazy val examples = project
-  .in(file("examples"))
+  .in(file("examples/baker-example"))
   .enablePlugins(JavaAppPackaging)
   .settings(commonSettings)
   .settings(noPublishSettings)

@@ -3,6 +3,7 @@ package com.ing.baker.baas.state
 import akka.actor.ActorSystem
 import akka.cluster.pubsub.{DistributedPubSub, DistributedPubSubMediator}
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
@@ -47,11 +48,13 @@ class BaaSServer(implicit system: ActorSystem, mat: Materializer, baker: Baker, 
   implicit private val serializersProvider: SerializersProvider =
     SerializersProvider(system, encryption)
 
-  def route: Route = pathPrefix("api" / "v3")(concat(health, addRecipe, getRecipe, getAllRecipes, bake,
+  def route: Route = concat(haproxyCheck, pathPrefix("api" / "v3")(concat(health, addRecipe, getRecipe, getAllRecipes, bake,
     fireEventAndResolveWhenReceived, fireEventAndResolveWhenCompleted, fireEventAndResolveOnEvent, fireEvent,
     getAllRecipeInstancesMetadata, getRecipeInstanceState, getVisualState, retryInteraction, resolveInteraction,
     stopRetryingInteraction
-  ))
+  )))
+
+  private def haproxyCheck: Route = pathSingleSlash(get(complete(StatusCodes.OK)))
 
   private def health: Route = get(complete("Ok"))
 

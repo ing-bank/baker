@@ -3,6 +3,7 @@ package com.ing.baker.playground
 import cats.implicits._
 import cats.effect.IO
 import Command._
+import AppMonad._
 
 import scala.sys.process._
 import scala.util.matching.Regex
@@ -23,15 +24,22 @@ object DockerCommands {
     }
   }
 
-  def terminate(name: String): IO[Unit] =
-    execPrint(Process(s"docker kill $name"), s"Terminate $name").attempt.void *>
-      execBlock(Process(s"docker rm $name")).attempt.void
+  def terminateAllImages: App[Unit] =
+    for {
+      env <- getState
+      _ <- env.runningImages.traverse(terminate)
+      _ <- modify(_.copy(runningImages = List.empty))
+    } yield ()
 
-  def createDockerNetwork: IO[Unit] =
-    execPrint(Process(s"docker network create $networkName"), "Docker Network").attempt.void
+  def terminate(name: String): App[Unit] =
+    (execPrint(Process(s"docker kill $name"), s"Terminate $name").attempt.void *>
+      execBlock(Process(s"docker rm $name")).attempt.void).app
 
-  def deleteDockerNetwork: IO[Unit] =
-    execPrint(Process(s"docker network rm $networkName"), "Remove Docker Network")
+  def createDockerNetwork: App[Unit] =
+    execPrint(Process(s"docker network create $networkName"), "Docker Network").attempt.void.app
+
+  def deleteDockerNetwork: App[Unit] =
+    execPrint(Process(s"docker network rm $networkName"), "Remove Docker Network").attempt.void.app
 
   def dockerPull(image: String): IO[Unit] =
     execPrint(Process(s"docker pull $image"), s"Pull $image Image").void
