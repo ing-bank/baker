@@ -292,7 +292,7 @@ case class BakerClient(hostname: Uri, encryption: Encryption = Encryption.NoEncr
     * Attempts to gracefully shutdown the baker system.
     */
   override def gracefulShutdown(): Future[Unit] =
-    throw new NotImplementedError("registerBakerEventListener is not yet implemented for client bakers")
+    system.terminate().map(_ => ())
 
   /**
     * Retries a blocked interaction.

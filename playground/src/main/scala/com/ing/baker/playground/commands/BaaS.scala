@@ -1,22 +1,20 @@
-package com.ing.baker.playground
+package com.ing.baker.playground.commands
 
-import scala.sys.process._
-import DockerCommands._
-import Command._
-import AppMonad._
+import com.ing.baker.playground.AppUtils._
+import Docker.{createDockerNetwork, networkName}
 
-object BaaSCommands {
+object BaaS {
 
   val baasStateNodeVersion = "3.0.2-SNAPSHOT"
 
   def startBaaS: App[Unit] =
     for {
       _ <- createDockerNetwork
-      _ <- EnvironmentCommands.runCassandra
+      _ <- EnvSystems.runCassandra
       node1 <- runStateNode(baasStateNodeVersion, 1, "self")
-      node2 <- runStateNode(baasStateNodeVersion, 2, node1)
-      node3 <- runStateNode(baasStateNodeVersion, 3, node1)
-      _ <- EnvironmentCommands.runHaproxy
+      _ <- runStateNode(baasStateNodeVersion, 2, node1)
+      _ <- runStateNode(baasStateNodeVersion, 3, node1)
+      _ <- EnvSystems.runHaproxy
     } yield ()
 
   def runStateNode(version: String, node: Int, seedHost: String): App[String] = {
@@ -30,16 +28,15 @@ object BaaSCommands {
       .map { case (env, value) => s"-e $env=$value"}
       .mkString(" ")
     val cmd = s"docker run --name $containerName --network $networkName $envVars apollo.docker.ing.net/baas-node-state:$version"
-    val runNode = execPrintAndWaitForMatch(
-      process = Process(cmd),
-      prompt = s"state-node:$version:$node",
-      condition = _.contains(s"State Node started...")
-    ).map(_ => containerName)
     for {
-      nodeName <- runNode.app
-      _ <- printLn(s"Node: $nodeName successfully started")
-      _ <- addRunningImage(nodeName)
-    } yield nodeName
+      _ <- Terminal.execAndWait(
+        command = cmd,
+        prompt = s"state-node:$version:$node",
+        condition = _.contains(s"State Node started...")
+      )
+      _ <- printLn(s"Node: $containerName successfully started")
+      _ <- addRunningImage(containerName)
+    } yield containerName
   }
 
 }
