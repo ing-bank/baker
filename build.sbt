@@ -358,13 +358,13 @@ lazy val playground = project
     )
   )
 
-lazy val examples = project
+lazy val `baker-example` = project
   .in(file("examples/baker-example"))
   .enablePlugins(JavaAppPackaging)
   .settings(commonSettings)
   .settings(noPublishSettings)
   .settings(
-    moduleName := "examples",
+    moduleName := "baker-example",
     scalacOptions ++= Seq(
       "-Ypartial-unification"
     ),
@@ -398,3 +398,92 @@ lazy val examples = project
     dockerExposedPorts := Seq(8080)
   )
   .dependsOn(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage)
+
+lazy val `baas-client-example` = project
+  .in(file("examples/baas-client-example"))
+  .enablePlugins(JavaAppPackaging)
+  .settings(commonSettings)
+  .settings(noPublishSettings)
+  .settings(
+    moduleName := "baas-client-example",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
+    libraryDependencies ++=
+      compileDeps(
+        slf4jApi,
+        slf4jSimple,
+        http4s,
+        http4sDsl,
+        http4sServer,
+        http4sCirce,
+        circe,
+        circeGeneric
+      ) ++ testDeps(
+        scalaTest,
+        scalaCheck
+      )
+  )
+  .settings(
+    maintainer in Docker := "The Apollo Squad",
+    packageSummary in Docker := "A web-shop checkout service example running on baas",
+    packageName in Docker := "apollo.docker.ing.net/baas-client-example",
+    dockerExposedPorts := Seq(8080)
+  )
+  .dependsOn(bakertypes, `baas-node-client`, recipeCompiler, recipeDsl)
+
+lazy val `baas-interactions-example` = project
+  .in(file("examples/baas-interactions-example"))
+  .enablePlugins(JavaAppPackaging)
+  .settings(commonSettings)
+  .settings(noPublishSettings)
+  .settings(
+    moduleName := "baas-interactions-example",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
+    libraryDependencies ++=
+      compileDeps(
+        slf4jApi,
+        slf4jSimple,
+        catsEffect
+      ) ++ testDeps(
+        scalaTest,
+        scalaCheck
+      )
+  )
+  .settings(
+    maintainer in Docker := "The Apollo Squad",
+    packageSummary in Docker := "A web-shop checkout service interaction instances example running on baas",
+    packageName in Docker := "apollo.docker.ing.net/baas-interactions-example",
+    dockerExposedPorts := Seq(2551)
+  )
+  .dependsOn(`baas-node-interaction`)
+
+lazy val `baas-event-listener-example` = project
+  .in(file("examples/baas-event-listener-example"))
+  .enablePlugins(JavaAppPackaging)
+  .settings(commonSettings)
+  .settings(noPublishSettings)
+  .settings(
+    moduleName := "baas-event-listener-example",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
+    libraryDependencies ++=
+      compileDeps(
+        slf4jApi,
+        slf4jSimple,
+        catsEffect
+      ) ++ testDeps(
+        scalaTest,
+        scalaCheck
+      )
+  )
+  .settings(
+    maintainer in Docker := "The Apollo Squad",
+    packageSummary in Docker := "A web-shop checkout service interaction instances example running on baas",
+    packageName in Docker := "apollo.docker.ing.net/baas-event-listener-example",
+    dockerExposedPorts := Seq(2551)
+  )
+  .dependsOn(`baas-node-event-listener`)

@@ -1,7 +1,9 @@
 package com.ing.baker.playground
 
 import cats.implicits._
-import AppMonad._
+import com.ing.baker.playground.AppUtils._
+import com.ing.baker.playground.Command.RunCommand
+import com.ing.baker.playground.commands.Docker
 
 object PlaygroundApp {
 
@@ -14,30 +16,19 @@ object PlaygroundApp {
     } yield ()
 
   def exec(raw: String): App[Unit] =
-    if (raw == Command.Help.raw)
-      commandHelp
-    else if (raw == Command.RunCassandra.raw)
-      EnvironmentCommands.runCassandra
-    else if (raw == Command.RunBaaSStateNode.raw)
-      BaaSCommands.runStateNode("3.0.2-SNAPSHOT", 1, "self").void
-    else if (raw == Command.StartBaaS.raw)
-      BaaSCommands.startBaaS
-    else if (raw == "exit")
-      cleanup *> printLn("Bye bye! I hope you had fun :D")
-    else if (raw == "")
-      doNothing
-    else
-      printLn(s"Unknown command '$raw'")
+    tryOneCommand.applyOrElse(raw, other => printLn(s"Unknown command '$other'"))
 
-  def commandHelp: App[Unit] =
-    printLn("") *>
-    Command.commands.traverse { command =>
-      val spaces = List.fill(20 - command.raw.length)(".").mkString
-      printLn(command.raw + " " + spaces + " " + command.help)
-    } *>
-    printLn("")
+  def tryOneCommand: RunCommand =
+    Command.commands.foldRight({
+      case "exit" =>
+        cleanup *> printLn("Bye bye! I hope you had fun :D")
+      case "clean" =>
+        cleanup *> printLn("Clean")
+      case "" =>
+        doNothing
+    })(_.run.orElse(_))
 
   def cleanup: App[Unit] =
-    DockerCommands.terminateAllImages *>
-    DockerCommands.deleteDockerNetwork
+    Docker.terminateAllImages *>
+    Docker.deleteDockerNetwork
 }
