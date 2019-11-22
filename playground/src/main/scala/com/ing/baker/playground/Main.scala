@@ -6,7 +6,7 @@ object Main extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] = {
     PlaygroundApp.loop
-      .run(AppUtils.Environment(List.empty))
+      .run(AppUtils.Environment.empty)
       .map { case (finalState, _) =>
           println(s"Finishing with final state $finalState")
           ExitCode.Success

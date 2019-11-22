@@ -1,11 +1,14 @@
 package com.ing.baker.playground.commands
 
+import cats.implicits._
 import com.ing.baker.playground.AppUtils._
 import Docker.{createDockerNetwork, networkName}
 
 object BaaS {
 
   val baasStateNodeVersion = "3.0.2-SNAPSHOT"
+
+  val haproxyStateNodesImage = "apollo.docker.ing.net/playground-haproxy-state-nodes:latest"
 
   def startBaaS: App[Unit] =
     for {
@@ -39,4 +42,9 @@ object BaaS {
     } yield containerName
   }
 
+  def buildStateNodesHAProxyImage: App[Unit] =
+    Terminal.moveToBakerLocation *> Docker.buildImage(
+      "./playground/src/main/resources/haproxy-state-nodes",
+      haproxyStateNodesImage
+    )
 }
