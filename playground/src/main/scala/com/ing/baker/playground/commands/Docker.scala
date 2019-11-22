@@ -9,6 +9,9 @@ object Docker {
 
   def networkName: String = "baker-playground-network"
 
+  def buildImage(path: String, tag: String): App[Unit] =
+    Terminal.exec(s"docker build $path -t $tag", s"Build $tag")
+
   def checkForDockerVersion: App[Unit] = {
     val DockerVersionReg: Regex = """Docker version (\d\d).*, build .+""".r
     val requiredVersion: Int = 19

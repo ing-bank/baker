@@ -16,10 +16,16 @@ object PlaygroundApp {
     } yield ()
 
   def exec(raw: String): App[Unit] =
-    tryOneCommand.applyOrElse(raw, other => printLn(s"Unknown command '$other'"))
+    tryOneCommand
+      .applyOrElse(raw, (other: String) => printLn(s"Unknown command '$other'"))
+      .attempt
+      .flatMap {
+        case Left(e) => printLn(e.getMessage)
+        case Right(_) => doNothing
+      }
 
   def tryOneCommand: RunCommand =
-    Command.commands.foldRight({
+    Command.commands.foldRight[RunCommand]({
       case "exit" =>
         cleanup *> printLn("Bye bye! I hope you had fun :D")
       case "clean" =>

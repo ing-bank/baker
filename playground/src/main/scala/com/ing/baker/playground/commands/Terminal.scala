@@ -1,11 +1,51 @@
 package com.ing.baker.playground.commands
 
+import cats.implicits._
 import cats.effect.IO
 
 import scala.sys.process._
 import com.ing.baker.playground.AppUtils._
 
 object Terminal {
+
+  def moveToBakerLocation: App[Unit] = {
+    for {
+      state <- getState
+      location <- state.bakerLocation match {
+        case None => confirmBakerProjectLocation
+        case Some(location0) => pure(location0)
+      }
+      _ <- cd(location)
+    } yield ()
+  }
+
+  private def confirmBakerProjectLocation: App[String] = {
+    def confirm(path: String): App[String] =
+      for {
+        answer <- query(s"Is $path the baker project location? input yes or the correct absolute path")
+        realPath <- answer match {
+          case "yes" | "y" | "ye" =>
+            pure(path)
+          case path0 =>
+            confirm(path0)
+        }
+      } yield realPath
+    pwd >>= confirm
+  }
+
+  def pwd: App[String] =
+    execBlock("pwd")
+
+  def cd(location: String): App[Unit] =
+    execBlock(s"cd $location").attempt.flatMap {
+      case Left(e) =>
+        fail(s"Could not move to directory $location... reason: ${e.getMessage}")
+      case Right(_) =>
+        doNothing
+    }
+
+  def query(question: String): App[String] =
+    printLn(question + ": ") *> readLn
 
   def exec(command: String, prompt: String): App[Unit] = {
     val p = prompt.randomColor
@@ -21,7 +61,7 @@ object Terminal {
 
   def execAndWait(command: String, prompt: String, condition: String => Boolean): App[Process] = {
     val process = Process(command)
-    IO.async { callback =>
+    IO.async[Process] { callback =>
       val p = prompt.randomColor
       var running: Process = null
       var matched: Boolean = false

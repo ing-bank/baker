@@ -3,7 +3,7 @@ package com.ing.baker.playground
 import cats.implicits._
 import com.ing.baker.playground.AppUtils._
 import com.ing.baker.playground.Command.RunCommand
-import com.ing.baker.playground.commands.BaaS
+import com.ing.baker.playground.commands.{BaaS, Terminal}
 
 trait Command {
   def name: String
@@ -18,7 +18,8 @@ object Command {
   val commands: List[Command] =
     List(
       Help,
-      StartBaaS
+      StartBaaS,
+      BuildImage
     )
 
   case object Help extends Command {
@@ -45,5 +46,16 @@ object Command {
     override def help: String = "Starts Cassandra, Haproxy and a cluster of 3 baas state nodes"
 
     override def run: RunCommand = { case "start-baas" => BaaS.startBaaS }
+  }
+
+  case object BuildImage extends Command {
+
+    override def name: String = "build"
+
+    override def help: String = "Builds all playground required images from the baker repository"
+
+    override def run: RunCommand = {
+      case "build" => Terminal.cd("/") *> Terminal.pwd >>= printLn //BaaS.buildStateNodesHAProxyImage
+    }
   }
 }

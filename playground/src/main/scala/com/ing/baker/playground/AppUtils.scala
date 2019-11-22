@@ -10,7 +10,12 @@ import scala.util.Random
 
 object AppUtils {
 
-  case class Environment(runningImages: List[String])
+  case class Environment(runningImages: List[String], bakerLocation: Option[String])
+
+  object Environment {
+
+    def empty: Environment = Environment(List.empty, None)
+  }
 
   type App[A] = StateT[IO, Environment, A]
 
@@ -32,7 +37,7 @@ object AppUtils {
   def fail[A](e: String): App[A] = IO.raiseError(new Exception(e)).app
 
   def tryForget[A](program: App[A]): App[Unit] =
-    StateT { state => program.run(state).attempt.map(_ => state -> ()) }
+    StateT { state => program.run(state).attempt.map(_ => (state, ())) }
 
   def modify(f: Environment => Environment): App[Unit] =
     StateT.modify[IO, Environment](f)
@@ -42,6 +47,9 @@ object AppUtils {
 
   def addRunningImage(imageName: String): App[Unit] =
     modify(state => state.copy(runningImages = imageName :: state.runningImages))
+
+  def addBakerLocation(location: String): App[Unit] =
+    modify(state => state.copy(bakerLocation = Some(location)))
 
   def doNothing: App[Unit] =
     StateT.pure[IO, Environment, Unit](())
