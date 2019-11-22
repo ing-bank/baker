@@ -1,13 +1,12 @@
 package com.ing.baker.baas.akka
 
 import akka.actor.ExtendedActorSystem
-import com.ing.baker.baas.protocol.ProtocolDistributedEventPublishing
-import com.ing.baker.runtime.serialization.TypedProtobufSerializer.BinarySerializable
-import com.ing.baker.runtime.serialization.{SerializersProvider, TypedProtobufSerializer}
-import com.ing.baker.runtime.serialization.TypedProtobufSerializer.forType
 import com.ing.baker.baas.protocol.DistributedEventPublishingProto._
+import com.ing.baker.baas.protocol.ProtocolDistributedEventPublishing
+import com.ing.baker.runtime.serialization.TypedProtobufSerializer.{BinarySerializable, forType}
+import com.ing.baker.runtime.serialization.{SerializersProvider, TypedProtobufSerializer}
 
-object ProtobufSerializer {
+object ProtocolDistributedEventPublishingSerializer {
 
   def entries(ev0: SerializersProvider): List[BinarySerializable] = {
     implicit val ev = ev0
@@ -18,4 +17,4 @@ object ProtobufSerializer {
   }
 }
 
-class ProtobufSerializer(system: ExtendedActorSystem) extends TypedProtobufSerializer(system, ProtobufSerializer.entries)
+class ProtocolDistributedEventPublishingSerializer(system: ExtendedActorSystem) extends TypedProtobufSerializer(system, ProtocolDistributedEventPublishingSerializer.entries)

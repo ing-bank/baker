@@ -31,7 +31,7 @@ object WebShopService {
   case class PollPaymentStatusResponse(status: String)
 }
 
-class WebShopService(webshop: WebShop, memoryDumpPath: String)(implicit timer: Timer[IO], cs: ContextShift[IO]) {
+class WebShopService(webshop: WebShop)(implicit timer: Timer[IO], cs: ContextShift[IO]) {
 
   import WebShopService._
 
@@ -67,6 +67,7 @@ class WebShopService(webshop: WebShop, memoryDumpPath: String)(implicit timer: T
           response <- Ok("down")
         } yield response
 
+        /*
       case GET -> Root / "memdump.hprof" =>
         val path = memoryDumpPath + "-" + UUID.randomUUID().toString + ".hprof"
         dumpHeap(path, live = true).as(
@@ -75,6 +76,7 @@ class WebShopService(webshop: WebShop, memoryDumpPath: String)(implicit timer: T
             body = file.readAll[IO](java.nio.file.Paths.get(path), blockingEc, chunkSize = 4096),
             headers = Headers(headers.`Content-Type`(MediaType.application.`octet-stream`, Charset.`UTF-8`).pure[List]))
         )
+         */
 
     }) <+>
     Router("/api" -> HttpRoutes.of[IO] {

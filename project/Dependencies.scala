@@ -3,7 +3,7 @@ import sbt._
 //noinspection TypeAnnotation
 object Dependencies {
 
-  val akkaVersion = "2.5.22"
+  val akkaVersion = "2.5.23"
   val http4sVersion = "0.20.0"
   val circeVersion = "0.11.1"
 
@@ -37,7 +37,7 @@ object Dependencies {
   val akkaTestKit =               "com.typesafe.akka"          %% "akka-testkit"                       % akkaVersion
   val akkaStreamTestKit =         "com.typesafe.akka"          %% "akka-stream-testkit"                % akkaVersion
   val akkaMultiNodeTestkit =      "com.typesafe.akka"          %% "akka-multi-node-testkit"            % akkaVersion
-  val akkaHttp =                  "com.typesafe.akka"          %% "akka-http"                          % "10.0.10"
+  val akkaHttp =                  "com.typesafe.akka"          %% "akka-http"                          % "10.1.10"
   val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.7"
   val levelDBJni =                "org.fusesource.leveldbjni"  %  "leveldbjni-all"                     % "1.8"
 

@@ -28,6 +28,7 @@ class EventListenerAgent(recipeName: String, listenerFunction: (RecipeEventMetad
     mediator ! DistributedPubSubMediator.Unsubscribe(eventsTopic, self)
 
   subscribeToEvents()
+  println(Console.YELLOW + "Subscribing for: " + recipeName + Console.RESET)
 
   def receive: Receive = {
     case ProtocolDistributedEventPublishing.Event(recipeEventMetadata, event) =>

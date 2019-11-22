@@ -1,7 +1,6 @@
 package com.ing.baker.baas.protocol
 
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}
-import com.ing.baker.runtime.serialization.BakerSerializable
 
 /**
   * Protocol executed after a match between a QuestMandate and InteractionAgent has been made and after both
@@ -12,7 +11,7 @@ import com.ing.baker.runtime.serialization.BakerSerializable
   * InstanceExecutionFailed or InvalidExecution
   *
   */
-sealed trait ProtocolInteractionExecution extends BakerSerializable
+sealed trait ProtocolInteractionExecution
 
 object ProtocolInteractionExecution {
 

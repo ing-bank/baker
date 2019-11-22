@@ -29,9 +29,8 @@ object Main extends IOApp {
         checkoutRecipeId <- WebShopBaker.initRecipes(baker)(timer, actorSystem.dispatcher)
         sd <- Ref.of[IO, Boolean](false)
         webShopBaker = new WebShopBaker(baker, checkoutRecipeId)(actorSystem.dispatcher)
-        memoryDumpPath = config.getString("service.memory-dump-path")
         httpPort = config.getInt("service.httpServerPort")
-        app = new WebShopService(webShopBaker, memoryDumpPath)
+        app = new WebShopService(webShopBaker)
         resources = SystemResources(actorSystem, baker, app, httpPort, sd)
       } yield resources
     )(resources =>
@@ -45,7 +44,7 @@ object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
     system.flatMap { r =>
 
-      println(Console.GREEN + "Example client app started...")
+      println(Console.GREEN + "Example client app started..." + Console.RESET)
       sys.addShutdownHook(r.baker.gracefulShutdown())
 
       BlazeServerBuilder[IO]

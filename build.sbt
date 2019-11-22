@@ -207,6 +207,7 @@ lazy val `baas-protocol-baker` = project.in(file("baas-protocol-baker"))
   .settings(
     moduleName := "baas-protocol-baker",
     libraryDependencies ++= Seq(
+      akkaStream,
       akkaHttp
     )
   )
@@ -233,6 +234,7 @@ lazy val `baas-node-client` = project.in(file("baas-node-client"))
   .settings(
     moduleName := "baas-node-client",
     libraryDependencies ++= Seq(
+      akkaStream,
       akkaHttp
     )
   )

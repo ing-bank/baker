@@ -27,12 +27,14 @@ object BaaSServer {
     } yield binding
   }
 
-  private[state] def registerEventListenerForRemote(recipeName: String, baker: Baker, system: ActorSystem): Future[Unit] =
+  private[state] def registerEventListenerForRemote(recipeName: String, baker: Baker, system: ActorSystem): Future[Unit] = {
+    println(Console.YELLOW + s"Event listener for: $recipeName" + Console.RESET)
     baker.registerEventListener(recipeName, (metadata, event) => {
       val eventsTopic: String =
         ProtocolDistributedEventPublishing.eventsTopic(recipeName)
       DistributedPubSub(system).mediator ! DistributedPubSubMediator.Publish(eventsTopic, ProtocolDistributedEventPublishing.Event(metadata, event))
     })
+  }
 
   private[state] def initializeEventListeners(baker: Baker, system: ActorSystem)(implicit ec: ExecutionContext): Future[Unit] =
     for {
