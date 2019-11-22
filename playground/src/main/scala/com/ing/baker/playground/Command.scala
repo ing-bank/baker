@@ -55,7 +55,7 @@ object Command {
     override def help: String = "Builds all playground required images from the baker repository"
 
     override def run: RunCommand = {
-      case "build" => Terminal.cd("/") *> Terminal.pwd >>= printLn //BaaS.buildStateNodesHAProxyImage
+      case "build" => BaaS.buildStateNodesHAProxyImage
     }
   }
 }

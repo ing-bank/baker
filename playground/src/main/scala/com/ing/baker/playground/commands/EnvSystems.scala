@@ -20,7 +20,7 @@ object EnvSystems {
 
   def runHaproxy: App[Unit] =
     Terminal.execAndWait(
-      command = s"docker run --name $haproxyName --network $networkName -p 8080:8080 baker-haproxy:latest",
+      command = s"docker run --name $haproxyName --network $networkName ${BaaS.haproxyStateNodesImage}",
       prompt = "HAProxy",
       condition = _ => true
     ) *>

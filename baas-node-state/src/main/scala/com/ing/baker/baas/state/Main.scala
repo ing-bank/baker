@@ -21,9 +21,9 @@ object Main extends App {
 
   import stateNodeSystem.dispatcher
 
-  BaaSServer.run(stateNodeBaker, "0.0.0.0", httpServerPort)(stateNodeSystem, materializer).map { hook =>
+  Await.result(BaaSServer.run(stateNodeBaker, "0.0.0.0", httpServerPort)(stateNodeSystem, materializer).map { hook =>
     println(Console.GREEN + "State Node started..." + Console.RESET)
     println(hook.localAddress)
     sys.addShutdownHook(Await.result(hook.unbind(), 20.seconds))
-  }
+  }, 20.seconds)
 }

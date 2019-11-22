@@ -1,9 +1,8 @@
 package com.ing.baker.baas.protocol
 
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata}
-import com.ing.baker.runtime.serialization.BakerSerializable
 
-sealed trait ProtocolDistributedEventPublishing extends BakerSerializable
+sealed trait ProtocolDistributedEventPublishing
 
 object ProtocolDistributedEventPublishing {
 
