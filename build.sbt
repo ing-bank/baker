@@ -251,7 +251,10 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
     ),
     libraryDependencies ++= Seq(
       akkaHttp,
-      akkaPersistenceCassandra
+      akkaPersistenceCassandra,
+      akkaManagementHttp,
+      akkaClusterBoostrap,
+      akkaDiscoveryKube
     )
   )
   .settings(
