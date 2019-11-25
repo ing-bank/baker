@@ -7,6 +7,8 @@ import com.ing.baker.baas.protocol.InteractionSchedulingProto._
 
 object InteractionSchedulingProtocolsSerializer {
 
+  val identifier: Int = 102
+
   def entries(ev0: SerializersProvider): List[BinarySerializable] = {
     implicit val ev = ev0
     List(
@@ -37,4 +39,5 @@ object InteractionSchedulingProtocolsSerializer {
     )
   }
 }
-class InteractionSchedulingProtocolsSerializer(system: ExtendedActorSystem) extends TypedProtobufSerializer(system, InteractionSchedulingProtocolsSerializer.entries)
+
+class InteractionSchedulingProtocolsSerializer(system: ExtendedActorSystem) extends TypedProtobufSerializer(system, InteractionSchedulingProtocolsSerializer.identifier ,InteractionSchedulingProtocolsSerializer.entries)

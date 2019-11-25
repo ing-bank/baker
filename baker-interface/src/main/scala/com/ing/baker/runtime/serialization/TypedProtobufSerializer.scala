@@ -12,11 +12,6 @@ object TypedProtobufSerializer {
 
   private val log = LoggerFactory.getLogger(classOf[TypedProtobufSerializer])
 
-  /** Hardcoded serializerId for this serializer. This should not conflict with other serializers.
-    * Values from 0 to 40 are reserved for Akka internal usage.
-    */
-  val identifier = 101
-
   def forType[A <: AnyRef](implicit tag: ClassTag[A]): RegisterFor[A] = new RegisterFor[A](tag)
 
   class RegisterFor[A <: AnyRef](classTag: ClassTag[A]) {
@@ -69,7 +64,7 @@ object TypedProtobufSerializer {
   }
 }
 
-abstract class TypedProtobufSerializer(system: ExtendedActorSystem, entries: SerializersProvider => List[BinarySerializable]) extends SerializerWithStringManifest {
+abstract class TypedProtobufSerializer(system: ExtendedActorSystem, _indentifier: Int, entries: SerializersProvider => List[BinarySerializable]) extends SerializerWithStringManifest {
 
   implicit def serializersProvider: SerializersProvider =
     SerializersProvider(system, system.provider)
@@ -78,7 +73,7 @@ abstract class TypedProtobufSerializer(system: ExtendedActorSystem, entries: Ser
     entries(serializersProvider)
 
   override def identifier: Int =
-    TypedProtobufSerializer.identifier
+    _indentifier
 
   override def manifest(o: AnyRef): String = {
     entriesMem

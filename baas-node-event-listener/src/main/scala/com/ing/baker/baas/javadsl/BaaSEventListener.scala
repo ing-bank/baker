@@ -4,14 +4,14 @@ import java.util.concurrent.CompletableFuture
 import java.util.function.BiConsumer
 
 import akka.actor.ActorSystem
-import com.ing.baker.baas.protocol
+import com.ing.baker.baas.common
 import com.ing.baker.baas.scaladsl
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.javadsl.{EventInstance, RecipeEventMetadata}
 
 import scala.compat.java8.FutureConverters
 
-class BaaSEventListener(actorSystem: ActorSystem) extends protocol.BaaSEventListener[CompletableFuture] with JavaApi {
+class BaaSEventListener(actorSystem: ActorSystem) extends common.BaaSEventListener[CompletableFuture] with JavaApi {
 
   override type EventInstanceType = EventInstance
 
