@@ -10,8 +10,9 @@ import scala.concurrent.duration._
 
 class MakePaymentInstance(implicit timer: Timer[IO]) extends MakePayment {
 
-  override def apply(items: ReservedItems, address: ShippingAddress, payment: PaymentInformation): Future[MakePaymentOutput] = {
+  override def apply(processId: String, items: ReservedItems, address: ShippingAddress, payment: PaymentInformation): Future[MakePaymentOutput] = {
       IO.sleep(5 second)
+        .map(_ => println(Console.GREEN + processId + Console.RESET))
         .map(_ => CheckoutFlowEvents.PaymentSuccessful(ShippingOrder(items.items, items.data, address)))
         .unsafeToFuture()
   }

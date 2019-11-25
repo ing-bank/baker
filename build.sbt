@@ -252,7 +252,9 @@ lazy val examples = project
         circe,
         circeGeneric,
         kamon,
-        kamonPrometheus
+        kamonPrometheus,
+        akkaPersistenceCassandra,
+        akkaPersistenceQuery
       ) ++ testDeps(
         scalaTest,
         scalaCheck,
@@ -265,7 +267,7 @@ lazy val examples = project
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "A web-shop checkout service example running baker",
-    packageName in Docker := "checkout-service-baker-example",
+    packageName in Docker := "apollo.docker.ing.net/baker-example-app",
     dockerExposedPorts := Seq(8080)
   )
   .dependsOn(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage)
