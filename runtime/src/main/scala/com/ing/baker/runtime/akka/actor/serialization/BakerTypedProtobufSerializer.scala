@@ -1,8 +1,6 @@
 package com.ing.baker.runtime.akka.actor.serialization
 
 import akka.actor.ExtendedActorSystem
-import com.ing.baker.baas.protocol.{ProtocolInteractionExecution, ProtocolPushPullMatching, ProtocolQuestCommit}
-import com.ing.baker.baas.protocol.InteractionSchedulingProto._
 import com.ing.baker.il
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider
 import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
@@ -19,8 +17,13 @@ object BakerTypedProtobufSerializer {
 
   def entries(ev0: SerializersProvider): List[BinarySerializable] = {
     implicit val ev = ev0
-    commonEntries ++ processIndexEntries ++ processInstanceEntries ++ recipeManagerEntries ++ interactionSchedulingEntries
+    commonEntries ++ processIndexEntries ++ processInstanceEntries ++ recipeManagerEntries
   }
+
+  /** Hardcoded serializerId for this serializer. This should not conflict with other serializers.
+    * Values from 0 to 40 are reserved for Akka internal usage.
+    */
+  val identifier = 101
 
   def commonEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
     List(
@@ -153,32 +156,6 @@ object BakerTypedProtobufSerializer {
       forType[RecipeManager.RecipeAdded]
         .register("RecipeManager.RecipeAdded")
     )
-
-  def interactionSchedulingEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
-    List(
-      forType[ProtocolInteractionExecution.InstanceExecutedSuccessfully]
-        .register("InteractionSchedulingProtocols.InstanceExecutedSuccessfully"),
-      forType[ProtocolInteractionExecution.InstanceExecutionFailed]
-        .register("InteractionSchedulingProtocols.InstanceExecutionFailed"),
-      forType[ProtocolInteractionExecution.InstanceExecutionTimedOut]
-        .register("InteractionSchedulingProtocols.InstanceExecutionTimedOut"),
-      forType[ProtocolInteractionExecution.NoInstanceFound.type]
-        .register("InteractionSchedulingProtocols.NoInstanceFound"),
-      forType[ProtocolInteractionExecution.InvalidExecution]
-        .register("InteractionSchedulingProtocols.InvalidExecution"),
-      forType[ProtocolPushPullMatching.Push]
-        .register("InteractionSchedulingProtocols.Push"),
-      forType[ProtocolPushPullMatching.Pull]
-        .register("InteractionSchedulingProtocols.Pull"),
-      forType[ProtocolPushPullMatching.AvailableQuest]
-        .register("InteractionSchedulingProtocols.AvailableQuest"),
-      forType[ProtocolQuestCommit.Considering]
-        .register("InteractionSchedulingProtocols.Considering"),
-      forType[ProtocolQuestCommit.Commit]
-        .register("InteractionSchedulingProtocols.Commit"),
-      forType[ProtocolQuestCommit.QuestTaken.type]
-        .register("InteractionSchedulingProtocols.QuestTaken")
-    )
 }
 
-class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends TypedProtobufSerializer(system, BakerTypedProtobufSerializer.entries)
+class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends TypedProtobufSerializer(system, BakerTypedProtobufSerializer.identifier, BakerTypedProtobufSerializer.entries)

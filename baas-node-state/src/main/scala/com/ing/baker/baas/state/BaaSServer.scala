@@ -7,9 +7,9 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
+import com.ing.baker.baas.protocol.{BaaSProtocol, ProtocolDistributedEventPublishing}
 import com.ing.baker.baas.protocol.BaaSProto._
 import com.ing.baker.baas.protocol.MarshallingUtils._
-import com.ing.baker.baas.protocol.{BaaSProtocol, ProtocolDistributedEventPublishing}
 import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.runtime.serialization.{Encryption, SerializersProvider}
 

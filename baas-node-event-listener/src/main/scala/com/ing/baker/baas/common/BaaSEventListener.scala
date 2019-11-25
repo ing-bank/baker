@@ -1,4 +1,4 @@
-package com.ing.baker.baas.protocol
+package com.ing.baker.baas.common
 
 import com.ing.baker.runtime.common.{EventInstance, InteractionInstance, RecipeEventMetadata}
 import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi

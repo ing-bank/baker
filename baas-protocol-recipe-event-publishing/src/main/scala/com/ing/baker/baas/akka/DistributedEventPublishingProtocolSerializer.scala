@@ -6,7 +6,9 @@ import com.ing.baker.baas.protocol.ProtocolDistributedEventPublishing
 import com.ing.baker.runtime.serialization.TypedProtobufSerializer.{BinarySerializable, forType}
 import com.ing.baker.runtime.serialization.{SerializersProvider, TypedProtobufSerializer}
 
-object ProtocolDistributedEventPublishingSerializer {
+object DistributedEventPublishingProtocolSerializer {
+
+  val identifier: Int = 103
 
   def entries(ev0: SerializersProvider): List[BinarySerializable] = {
     implicit val ev = ev0
@@ -17,4 +19,8 @@ object ProtocolDistributedEventPublishingSerializer {
   }
 }
 
-class ProtocolDistributedEventPublishingSerializer(system: ExtendedActorSystem) extends TypedProtobufSerializer(system, ProtocolDistributedEventPublishingSerializer.entries)
+class DistributedEventPublishingProtocolSerializer(system: ExtendedActorSystem) extends TypedProtobufSerializer(
+  system,
+  DistributedEventPublishingProtocolSerializer.identifier,
+  DistributedEventPublishingProtocolSerializer.entries
+)
