@@ -73,9 +73,9 @@ Applying Baker will only be successful if you make sure that:
 To get started with SBT, simply add the following to your build.sbt file:
 
 ```
-libraryDependencies += "com.ing.baker" %% "baker-recipe-dsl" % "3.0.0-RC"
-libraryDependencies += "com.ing.baker" %% "baker-runtime" % "3.0.0-RC"
-libraryDependencies += "com.ing.baker" %% "baker-compiler" % "3.0.0-RC"
+libraryDependencies += "com.ing.baker" %% "baker-recipe-dsl" % "3.0.1"
+libraryDependencies += "com.ing.baker" %% "baker-runtime" % "3.0.1"
+libraryDependencies += "com.ing.baker" %% "baker-compiler" % "3.0.1"
 ```
 
 From 1.3.x to 2.0.x we cross compile to both scala 2.11 and 2.12. 
