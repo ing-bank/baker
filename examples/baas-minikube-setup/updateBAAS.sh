@@ -51,8 +51,6 @@ docker rmi $app_name_lower --force || echo "Ignoring docker proxy error"
 
 log "Build new image"
 # make sure minikube can access registry run : minikube delete  && minikube start --insecure-registry=registry-all.docker.ing.net
-docker build -t $app_name_lower -f Dockerfile .
-
 
 # Build baas example images
 # Assuming current working directory is: ../baker/examples/baas-minikube-setup
