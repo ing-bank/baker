@@ -1,0 +1,8 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: baas-akka-demo-ingress
+spec:
+  backend:
+    serviceName: baas-akka-demo-service
+    servicePort: 8443

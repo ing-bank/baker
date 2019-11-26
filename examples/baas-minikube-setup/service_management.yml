@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: baas-akka-demo-service-management
+  labels:
+    run: baas-akka-demo-service-management
+spec:
+  ports:
+    - port: 8558
+      protocol: TCP
+  selector:
+    app: baas-akka-demo
