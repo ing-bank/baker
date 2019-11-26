@@ -62,10 +62,9 @@ sbt baas-client-example/docker:publish
 sbt baas-interactions-example/docker:publish
 sbt baas-event-listener-example/docker:publish
 
-#TODO configmaps
+cd examples/baas-minikube-setup
 
-
-#TODO namespace
+kubectl apply -f akka-cluster.yml
 
 
 

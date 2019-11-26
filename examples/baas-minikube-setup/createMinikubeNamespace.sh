@@ -31,4 +31,4 @@ minikube stop
 
 minikube --vm-driver virtualbox --memory 8192 --cpus 4 start --insecure-registry=registry-all.docker.ing.net ${dockerVars}
 
-kubectl apply -f akka-cluster.yml
+kubectl api-resources
