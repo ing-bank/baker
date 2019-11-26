@@ -6,6 +6,7 @@ import akka.cluster.sharding.ShardRegion._
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
 import akka.management.cluster.bootstrap.ClusterBootstrap
+import akka.management.scaladsl.AkkaManagement
 import akka.util.Timeout
 import cats.data.NonEmptyList
 import com.ing.baker.il.sha256HashCode
@@ -83,8 +84,11 @@ class ClusterBakerActorProvider(
     // join the cluster
     log.info("PersistenceInit actor started successfully, joining cluster seed nodes {}", seedNodes)
     seedNodes match {
-      case SeedNodesList(nel) => Cluster.get(actorSystem).joinSeedNodes(nel.toList)
-      case ServiceDiscovery => ClusterBootstrap(actorSystem).start()
+      case SeedNodesList(nel) =>
+        Cluster.get(actorSystem).joinSeedNodes(nel.toList)
+      case ServiceDiscovery =>
+        AkkaManagement(actorSystem).start()
+        ClusterBootstrap(actorSystem).start()
     }
   }
 
