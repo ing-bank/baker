@@ -58,9 +58,9 @@ log "Build new image"
 # Assuming current working directory is: ../baker/examples/baas-minikube-setup
 cd ../..
 sbt baas-node-state-kube/docker:publishLocal
-sbt baas-client-example/docker:publishLocal
-sbt baas-interactions-example/docker:publishLocal
-sbt baas-event-listener-example/docker:publishLocal
+#sbt baas-client-example/docker:publishLocal
+#sbt baas-interactions-example/docker:publishLocal
+#sbt baas-event-listener-example/docker:publishLocal
 
 cd examples/baas-minikube-setup
 

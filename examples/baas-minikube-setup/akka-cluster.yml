@@ -5,7 +5,7 @@ metadata:
     app: baas-akka-demo
   name: baas-akka-demo
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: baas-akka-demo
@@ -21,10 +21,11 @@ spec:
           imagePullPolicy: Never
           readinessProbe:
             httpGet:
-              path: /api/v3
+              path: /health
               port: 8080
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /health
               port: 8080
           ports:
             # akka remoting
