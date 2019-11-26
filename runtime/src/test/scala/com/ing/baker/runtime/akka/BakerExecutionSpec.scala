@@ -1,9 +1,11 @@
 package com.ing.baker.runtime.akka
 
+import java.net.MalformedURLException
 import java.util.concurrent.TimeUnit
 import java.util.{Optional, UUID}
 
 import akka.actor.ActorSystem
+import akka.cluster.Cluster
 import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
 import akka.testkit.{TestDuration, TestKit, TestProbe}
 import com.ing.baker._
@@ -42,6 +44,80 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
     val tp = TestProbe()
     tp.send(StorageExtension(defaultActorSystem).journalStorage, InMemoryJournalStorage.ClearJournal)
     tp.expectMsg(akka.actor.Status.Success(""))
+  }
+
+  "The baker setup" should {
+    "use akka service discovery" in {
+      val config = ConfigFactory.parseString(
+        """
+          |include "baker.conf"
+          |
+          |akka.actor.provider = "cluster"
+          |
+          |baker.actor.provider = "cluster-sharded"
+          |
+          |akka.management {
+          |  cluster.bootstrap {
+          |    contact-point-discovery {
+          |      # For the kubernetes API this value is substributed into the %s in pod-label-selector
+          |      service-name = "baker"
+          |
+          |      # pick the discovery method you'd like to use:
+          |      discovery-method = kubernetes-api
+          |    }
+          |  }
+          |}
+          |""".stripMargin).withFallback(ConfigFactory.load())
+      val setupActorSystem = ActorSystem("setup-actor-system", config)
+      for {
+        exception <- Future.successful {
+          intercept[IllegalArgumentException] {
+            Baker.akka(config, setupActorSystem)
+          }
+        }
+        _ <- setupActorSystem.terminate()
+      } yield assert(exception.getMessage contains "akka.discovery.kubernetes-api.class must contain field `class` that is a FQN of a `akka.discovery.ServiceDiscovery` implementation")
+    }
+
+    "use akka seed node list" in {
+      val config = ConfigFactory.parseString(
+        """
+          |include "baker.conf"
+          |
+          |akka.actor.provider = "cluster"
+          |
+          |baker.actor.provider = "cluster-sharded"
+          |
+          |baker.cluster.seed-nodes = ["wrong-address"]
+          |
+          |""".stripMargin).withFallback(ConfigFactory.load())
+      val setupActorSystem = ActorSystem("setup-actor-system", config)
+      for {
+        exception <- Future.successful {
+          intercept[MalformedURLException](Baker.akka(config, setupActorSystem))
+        }
+        _ <- setupActorSystem.terminate()
+      } yield assert(exception.getMessage contains "wrong-address")
+    }
+
+    "fail when no seed nodes or boostrap cluster configuration is set" in {
+      val config = ConfigFactory.parseString(
+        """
+          |include "baker.conf"
+          |
+          |akka.actor.provider = "cluster"
+          |
+          |baker.actor.provider = "cluster-sharded"
+          |
+          |""".stripMargin).withFallback(ConfigFactory.load())
+      val setupActorSystem = ActorSystem("setup-actor-system", config)
+      for {
+        exception <- Future.successful {
+          intercept[IllegalArgumentException](Baker.akka(config, setupActorSystem))
+        }
+        _ <- setupActorSystem.terminate()
+      } yield assert(exception.getMessage contains "No default service discovery implementation configured in `akka.discovery.method`")
+    }
   }
 
   "The Baker execution engine" should {
