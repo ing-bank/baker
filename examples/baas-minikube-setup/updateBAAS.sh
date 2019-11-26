@@ -1,3 +1,5 @@
+#!/bin/bash
+
 set -eo pipefail
 set -o nounset
 #set -o xtrace
@@ -5,8 +7,8 @@ set -o nounset
 projectRoot=`pwd`
 
 # clean up first
-app_name=baas
-app_context=baas
+app_name=baas-akka-demo
+app_context=baas-akka-demo
 app_name_lower=`echo $app_name | awk '{print tolower($0)}'`
 image_name=apollo.docker.ing.net/${app_name_lower}
 namespace_name=default
@@ -55,10 +57,10 @@ log "Build new image"
 # Build baas example images
 # Assuming current working directory is: ../baker/examples/baas-minikube-setup
 cd ../..
-sbt baas-node-state/docker:publish
-sbt baas-client-example/docker:publish
-sbt baas-interactions-example/docker:publish
-sbt baas-event-listener-example/docker:publish
+sbt baas-node-state-kube/docker:publishLocal
+sbt baas-client-example/docker:publishLocal
+sbt baas-interactions-example/docker:publishLocal
+sbt baas-event-listener-example/docker:publishLocal
 
 cd examples/baas-minikube-setup
 

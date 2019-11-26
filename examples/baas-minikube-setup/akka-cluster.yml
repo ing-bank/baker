@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: baas-akka-demo
-          image: apollo.docker.ing.net/baas-node-state-kube:latest
+          image: apollo.docker.ing.net/baas-node-state-kube:3.0.2-SNAPSHOT
           imagePullPolicy: Never
           readinessProbe:
             httpGet:
@@ -36,7 +36,7 @@ spec:
               containerPort: 8558
               protocol: TCP
             - name: webaccess
-              containerPort: 8443
+              containerPort: 8080
               protocol: TCP
           #namespace
           env:
