@@ -265,6 +265,25 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
   )
   .dependsOn(runtime, `baas-protocol-baker`, `baas-protocol-interaction-scheduling`)
 
+lazy val `baas-node-state-kube` = project.in(file("examples/baas-node-state-kube"))
+  .enablePlugins(JavaAppPackaging)
+  .settings(commonSettings)
+  .settings(
+    moduleName := "baas-node-state-kube",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
+    javaOptions in Universal ++= Seq("-Dconfig.resource=kubernetes.conf"),
+    mainClass in Compile := Some("com.ing.baker.baas.state.Main")
+  )
+  .settings(
+    maintainer in Docker := "The Apollo Squad",
+    packageSummary in Docker := "The core node",
+    packageName in Docker := "apollo.docker.ing.net/baas-node-state-kube",
+    dockerExposedPorts := Seq(8080)
+  )
+  .dependsOn(`baas-node-state`)
+
 lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
   .settings(defaultModuleSettings)
   .settings(
