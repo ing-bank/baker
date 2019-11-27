@@ -265,25 +265,6 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
   )
   .dependsOn(runtime, `baas-protocol-baker`, `baas-protocol-interaction-scheduling`)
 
-lazy val `baas-node-state-kube` = project.in(file("examples/baas-node-state-kube"))
-  .enablePlugins(JavaAppPackaging)
-  .settings(commonSettings)
-  .settings(
-    moduleName := "baas-node-state-kube",
-    scalacOptions ++= Seq(
-      "-Ypartial-unification"
-    ),
-    javaOptions in Universal ++= Seq("-Dconfig.resource=kubernetes.conf"),
-    mainClass in Compile := Some("com.ing.baker.baas.state.Main")
-  )
-  .settings(
-    maintainer in Docker := "The Apollo Squad",
-    packageSummary in Docker := "The core node",
-    packageName in Docker := "apollo.docker.ing.net/baas-node-state-kube",
-    dockerExposedPorts := Seq(8080)
-  )
-  .dependsOn(`baas-node-state`)
-
 lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
   .settings(defaultModuleSettings)
   .settings(
@@ -512,3 +493,80 @@ lazy val `baas-event-listener-example` = project
     dockerExposedPorts := Seq(2551)
   )
   .dependsOn(`baas-node-event-listener`)
+
+lazy val `baas-minikube-state` = project.in(file("examples/baas-minikube-setup/baas-minikube-state"))
+  .enablePlugins(JavaAppPackaging)
+  .settings(commonSettings)
+  .settings(
+    moduleName := "baas-minikube-state",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
+    javaOptions in Universal ++= Seq("-Dconfig.resource=kubernetes.conf"),
+    mainClass in Compile := Some("com.ing.baker.baas.state.Main")
+  )
+  .settings(
+    maintainer in Docker := "The Apollo Squad",
+    packageSummary in Docker := "The core node",
+    packageName in Docker := "apollo.docker.ing.net/baas-minikube-state",
+    dockerExposedPorts := Seq(8080)
+  )
+  .dependsOn(`baas-node-state`)
+
+lazy val `baas-minikube-event-listener` = project.in(file("examples/baas-minikube-setup/baas-minikube-event-listener"))
+  .enablePlugins(JavaAppPackaging)
+  .settings(commonSettings)
+  .settings(
+    moduleName := "baas-minikube-event-listener",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
+    libraryDependencies ++=
+      compileDeps(
+        slf4jApi,
+        slf4jSimple,
+        catsEffect,
+        akkaManagementHttp,
+        akkaClusterBoostrap,
+        akkaDiscoveryKube
+      ) ++ testDeps(
+        scalaTest,
+        scalaCheck
+      )
+  )
+  .settings(
+    maintainer in Docker := "The Apollo Squad",
+    packageSummary in Docker := "The event listener node",
+    packageName in Docker := "apollo.docker.ing.net/baas-minikube-event-listener",
+    dockerExposedPorts := Seq()
+  )
+  .dependsOn(`baas-node-event-listener`)
+
+lazy val `baas-minikube-interactions` = project.in(file("examples/baas-minikube-setup/baas-minikube-interactions"))
+  .enablePlugins(JavaAppPackaging)
+  .settings(commonSettings)
+  .settings(
+    moduleName := "baas-minikube-interactions",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
+    libraryDependencies ++=
+      compileDeps(
+        slf4jApi,
+        slf4jSimple,
+        catsEffect,
+        akkaManagementHttp,
+        akkaClusterBoostrap,
+        akkaDiscoveryKube
+      ) ++ testDeps(
+        scalaTest,
+        scalaCheck
+      )
+  )
+  .settings(
+    maintainer in Docker := "The Apollo Squad",
+    packageSummary in Docker := "The interactions node",
+    packageName in Docker := "apollo.docker.ing.net/baas-minikube-interactions",
+    dockerExposedPorts := Seq()
+  )
+  .dependsOn(`baas-node-interaction`)

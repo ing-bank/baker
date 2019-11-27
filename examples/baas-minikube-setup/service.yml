@@ -1,12 +1,16 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: baas-akka-demo-service
+  name: baas-state-service
   labels:
-    run: baas-akka-demo-service
+    run: baas-state-service
 spec:
+  selector:
+    app: baas-state
   ports:
     - port: 8080
       protocol: TCP
-  selector:
-    app: baas-akka-demo
+  type: LoadBalancer
+
+# Run this command to expose the service to minikube
+# minikube service baas-state-service

@@ -2,31 +2,31 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: baas-akka-demo
-  name: baas-akka-demo
+    app: baas-state
+  name: baas-state
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
-      app: baas-akka-demo
+      app: baas-state
   template:
     metadata:
       labels:
-        app: baas-akka-demo
-        actorSystemName: baas
+        app: baas-state
+        actorSystemName: BaaS
     spec:
       containers:
-        - name: baas-akka-demo
-          image: apollo.docker.ing.net/baas-node-state-kube:3.0.2-SNAPSHOT
+        - name: baas-state
+          image: apollo.docker.ing.net/baas-minikube-state:3.0.2-SNAPSHOT
           imagePullPolicy: Never
           readinessProbe:
             httpGet:
-              path: /health
-              port: 8080
+              path: /health/ready
+              port: 8558
           livenessProbe:
             httpGet:
-              path: /health
-              port: 8080
+              path: /health/alive
+              port: 8558
           ports:
             # akka remoting
             - name: remoting
@@ -45,9 +45,100 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-          #namespace
-
 ---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: baas-interactions
+  name: baas-interactions
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: baas-interactions
+  template:
+    metadata:
+      labels:
+        app: baas-interactions
+        actorSystemName: BaaS
+    spec:
+      containers:
+        - name: baas-interactions
+          image: apollo.docker.ing.net/baas-minikube-interactions:3.0.2-SNAPSHOT
+          imagePullPolicy: Never
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8558
+          livenessProbe:
+            httpGet:
+              path: /health/alive
+              port: 8558
+          ports:
+            # akka remoting
+            - name: remoting
+              containerPort: 2552
+              protocol: TCP
+            # akka-management and bootstrap
+            - name: management
+              containerPort: 8558
+              protocol: TCP
+          #namespace
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: baas-event-listener
+  name: baas-event-listener
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: baas-event-listener
+  template:
+    metadata:
+      labels:
+        app: baas-event-listener
+        actorSystemName: BaaS
+    spec:
+      containers:
+        - name: baas-event-listener
+          image: apollo.docker.ing.net/baas-minikube-event-listener:3.0.2-SNAPSHOT
+          imagePullPolicy: Never
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8558
+          livenessProbe:
+            httpGet:
+              path: /health/alive
+              port: 8558
+          ports:
+            # akka remoting
+            - name: remoting
+              containerPort: 2552
+              protocol: TCP
+            # akka-management and bootstrap
+            - name: management
+              containerPort: 8558
+              protocol: TCP
+          #namespace
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+---
+
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -70,3 +161,21 @@ roleRef:
   kind: Role
   name: pod-reader
   apiGroup: rbac.authorization.k8s.io
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: baas-state-service
+  labels:
+    run: baas-state-service
+spec:
+  selector:
+    app: baas-state
+  ports:
+    - port: 8080
+      protocol: TCP
+  type: LoadBalancer
+
+# Run this command to expose the service to minikube
+# minikube service baas-state-service
