@@ -6,7 +6,7 @@ metadata:
     run: baas-akka-demo-service
 spec:
   ports:
-    - port: 8443
+    - port: 8080
       protocol: TCP
   selector:
     app: baas-akka-demo

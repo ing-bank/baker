@@ -2,7 +2,7 @@
 
 set -eo pipefail
 set -o nounset
-#set -o xtrace
+set -o xtrace
 
 projectRoot=`pwd`
 
@@ -65,7 +65,4 @@ sbt baas-node-state-kube/docker:publishLocal
 cd examples/baas-minikube-setup
 
 kubectl apply -f akka-cluster.yml
-
-
-
-
+kubectl apply -f service.yml
