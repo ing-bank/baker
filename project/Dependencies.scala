@@ -64,8 +64,6 @@ object Dependencies {
   val findbugs =                  "com.google.code.findbugs"   %  "jsr305"                             % "1.3.9"
 
   val scalapbRuntime =            "com.thesamet.scalapb"       %% "scalapb-runtime"                    % scalapbVersion % "protobuf"
-  val chill =                    ("com.twitter"                %% "chill-akka"                         % "0.9.4")
-    .exclude("com.typesafe.akka", "akka-actor")
 
   val protobufJava =              "com.google.protobuf"        % "protobuf-java"                       % "3.5.1"
 
