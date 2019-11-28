@@ -9,7 +9,7 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.typesafe.config.{Config, ConfigFactory}
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 
 object RecipeManagerSpec {
   val config: Config = ConfigFactory.parseString(
@@ -20,16 +20,16 @@ object RecipeManagerSpec {
     """.stripMargin)
 }
 
-class RecipeManagerSpec  extends BakerRuntimeTestBase {
+class RecipeManagerSpec extends BakerRuntimeTestBase {
 
   override def actorSystemName = "RecipeManagerSpec"
 
-  val log = LoggerFactory.getLogger(classOf[RecipeManagerSpec])
+  val log: Logger = LoggerFactory.getLogger(classOf[RecipeManagerSpec])
 
-  "The RecipeManagerSpec" should {
-    "Add a recipe to the list when a AddRecipe message is received" in {
+  "The recipe manager" should {
+    "add a recipe to the list when an AddRecipe message is received" in {
       val compiledRecipe = RecipeCompiler.compileRecipe(TestRecipe.getRecipe("AddRecipeRecipe"))
-      val recipeManager: ActorRef = defaultActorSystem.actorOf(RecipeManager.props(),  s"recipeManager-${UUID.randomUUID().toString}")
+      val recipeManager: ActorRef = defaultActorSystem.actorOf(RecipeManager.props(), s"recipeManager-${UUID.randomUUID().toString}")
 
       for {
         futureAddResult <- recipeManager.ask(AddRecipe(compiledRecipe))(timeout)
@@ -46,5 +46,4 @@ class RecipeManagerSpec  extends BakerRuntimeTestBase {
       } yield succeed
     }
   }
-
 }
