@@ -1,7 +1,7 @@
 import Dependencies.{scalaGraph, _}
 import sbt.Keys._
 
-def testScope(project: ProjectReference) = project % "test->test;test->compile"
+def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = project % "test->test;test->compile"
 
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
@@ -55,10 +55,10 @@ lazy val bakertypes = project.in(file("bakertypes"))
     moduleName := "baker-types",
     libraryDependencies ++= compileDeps(
       slf4jApi,
-      ficusConfig,
       objenisis,
       scalapbRuntime,
       jodaTime,
+      typeSafeConfig,
       scalaReflect(scalaVersion.value)
     ) ++ testDeps(scalaTest, scalaCheck, logback, scalaCheck)
   )
@@ -71,7 +71,6 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
       scalaGraph,
       slf4jApi,
       scalaGraphDot,
-      objenisis,
       typeSafeConfig
     ) ++ testDeps(scalaTest, scalaCheck, logback)
   ).dependsOn(bakertypes)
@@ -89,21 +88,14 @@ lazy val runtime = project.in(file("runtime"))
         akkaActor,
         akkaPersistence,
         akkaPersistenceQuery,
-        akkaCluster,
         akkaClusterSharding,
         akkaBoostrap,
-        akkaInmemoryJournal,
         akkaSlf4j,
         ficusConfig,
         catsCore,
         catsEffect,
-        guava,
-        chill,
-        objenisis,
         scalapbRuntime,
         protobufJava,
-        kryo,
-        kryoSerializers,
         slf4jApi
       ) ++ testDeps(
         akkaStream,
@@ -137,13 +129,13 @@ lazy val splitBrainResolver = project.in(file("split-brain-resolver"))
       compileDeps(
         akkaActor,
         akkaCluster,
-        akkaSlf4j,
-        ficusConfig
+        ficusConfig,
+        slf4jApi
       ) ++ testDeps(
         akkaTestKit,
         akkaMultiNodeTestkit,
         scalaTest
-      ) ++ providedDeps(findbugs)
+      )
   )
   .enablePlugins(MultiJvmPlugin)
   .configs(MultiJvm)
@@ -177,7 +169,7 @@ lazy val recipeCompiler = project.in(file("compiler"))
   .settings(
     moduleName := "baker-compiler",
     libraryDependencies ++=
-      compileDeps(slf4jApi) ++ testDeps(scalaTest, scalaCheck, logback, junitJupiter)
+      testDeps(scalaTest, scalaCheck, logback, junitJupiter)
   )
   .dependsOn(recipeDsl, intermediateLanguage, testScope(recipeDsl))
 
@@ -187,9 +179,6 @@ lazy val baas = project.in(file("baas"))
   .settings(
     moduleName := "baker-baas",
     libraryDependencies ++=
-      compileDeps(
-        akkaHttp,
-        akkaPersistenceCassandra) ++
       testDeps(
         akkaSlf4j,
         akkaTestKit,
