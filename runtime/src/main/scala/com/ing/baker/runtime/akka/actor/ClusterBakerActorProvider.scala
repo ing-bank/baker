@@ -1,10 +1,12 @@
 package com.ing.baker.runtime.akka.actor
 
-import akka.actor.{ ActorRef, ActorSystem, Address, PoisonPill }
+import akka.actor.{ActorRef, ActorSystem, Address, PoisonPill}
 import akka.cluster.Cluster
 import akka.cluster.sharding.ShardRegion._
-import akka.cluster.sharding.{ ClusterSharding, ClusterShardingSettings, ShardRegion }
-import akka.cluster.singleton.{ ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings }
+import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
+import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
+import akka.management.cluster.bootstrap.ClusterBootstrap
+import akka.management.scaladsl.AkkaManagement
 import akka.util.Timeout
 import cats.data.NonEmptyList
 import com.ing.baker.il.sha256HashCode
@@ -13,15 +15,22 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_index._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager
-import com.ing.baker.runtime.akka.actor.serialization.{ BakerSerializable, Encryption }
+import com.ing.baker.runtime.akka.actor.serialization.{BakerSerializable, Encryption}
 import com.ing.baker.runtime.akka.internal.InteractionManager
 import org.slf4j.LoggerFactory
+
 import scala.concurrent.duration._
-import scala.concurrent.{ Await, TimeoutException }
+import scala.concurrent.{Await, TimeoutException}
 
 object ClusterBakerActorProvider {
 
   case class GetShardIndex(entityId: String) extends BakerSerializable
+
+  sealed trait ClusterBootstrapMode
+
+  case class SeedNodesList(nel: NonEmptyList[Address]) extends ClusterBootstrapMode
+
+  case object ServiceDiscovery extends ClusterBootstrapMode
 
   /**
     * This function calculates the names of the ActorIndex actors
@@ -56,14 +65,14 @@ class ClusterBakerActorProvider(
     retentionCheckInterval: FiniteDuration,
     actorIdleTimeout: Option[FiniteDuration],
     journalInitializeTimeout: FiniteDuration,
-    seedNodes: NonEmptyList[Address],
+    seedNodes: ClusterBootstrapMode,
     ingredientsFilter: List[String],
     configuredEncryption: Encryption
   ) extends BakerActorProvider {
 
   private val log = LoggerFactory.getLogger(classOf[ClusterBakerActorProvider])
 
-  private def initializeCluster()(implicit actorSystem: ActorSystem) = {
+  private def initializeCluster()(implicit actorSystem: ActorSystem): Unit = {
     /**
       * Join cluster after waiting for the persistenceInit actor, otherwise terminate here.
       */
@@ -74,7 +83,13 @@ class ClusterBakerActorProvider(
     }
     // join the cluster
     log.info("PersistenceInit actor started successfully, joining cluster seed nodes {}", seedNodes)
-    Cluster.get(actorSystem).joinSeedNodes(seedNodes.toList)
+    seedNodes match {
+      case SeedNodesList(nel) =>
+        Cluster.get(actorSystem).joinSeedNodes(nel.toList)
+      case ServiceDiscovery =>
+        AkkaManagement(actorSystem).start()
+        ClusterBootstrap(actorSystem).start()
+    }
   }
 
 
