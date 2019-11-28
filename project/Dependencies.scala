@@ -10,7 +10,7 @@ object Dependencies {
   val jvmV = "1.8"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
 
-  val akkaInmemoryJournal =      ("com.github.dnvriend"        %% "akka-persistence-inmemory"          % "2.5.1.1")
+  val akkaInmemoryJournal =      ("com.github.dnvriend"        %% "akka-persistence-inmemory"          % "2.5.15.2")
       .exclude("com.typesafe.akka", "akka-actor")
       .exclude("com.typesafe.akka", "akka-persistence")
       .exclude("com.typesafe.akka", "akka-persistence-query")
@@ -65,7 +65,7 @@ object Dependencies {
 
   val scalapbRuntime =            "com.thesamet.scalapb"       %% "scalapb-runtime"                    % scalapbVersion % "protobuf"
 
-  val protobufJava =              "com.google.protobuf"        % "protobuf-java"                       % "3.5.1"
+  val protobufJava =              "com.google.protobuf"        % "protobuf-java"                       % "3.11.0"
 
   val betterFiles =               "com.github.pathikrit"       %% "better-files"                       % "3.6.0"
 
