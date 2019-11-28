@@ -69,12 +69,13 @@ object CheckoutFlowInteractions {
 
   trait MakePayment {
 
-    def apply(items: ReservedItems, address: ShippingAddress, payment: PaymentInformation): Future[MakePaymentOutput]
+    def apply(processId: String, items: ReservedItems, address: ShippingAddress, payment: PaymentInformation): Future[MakePaymentOutput]
   }
 
   def MakePaymentInteraction = Interaction(
     name = "MakePayment",
     inputIngredients = Seq(
+      com.ing.baker.recipe.scaladsl.recipeInstanceId,
       Ingredient[ReservedItems]("reservedItems"),
       Ingredient[ShippingAddress]("shippingAddress"),
       Ingredient[PaymentInformation]("paymentInformation")
@@ -112,11 +113,4 @@ object CheckoutFlowRecipe {
       ReserveItemsInteraction,
       MakePaymentInteraction,
       ShipItemsInteraction)
-    .withDefaultFailureStrategy(
-      RetryWithIncrementalBackoff
-        .builder()
-        .withInitialDelay(100 milliseconds)
-        .withUntil(Some(UntilDeadline(24 hours)))
-        .withMaxTimeBetweenRetries(Some(10 minutes))
-        .build())
 }
