@@ -35,6 +35,7 @@ object Dependencies {
   val akkaStreamTestKit =         "com.typesafe.akka"          %% "akka-stream-testkit"                % akkaVersion
   val akkaMultiNodeTestkit =      "com.typesafe.akka"          %% "akka-multi-node-testkit"            % akkaVersion
   val akkaHttp =                  "com.typesafe.akka"          %% "akka-http"                          % "10.0.10"
+  val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.5"
   val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.7"
   val levelDBJni =                "org.fusesource.leveldbjni"  %  "leveldbjni-all"                     % "1.8"
 
@@ -66,12 +67,12 @@ object Dependencies {
   val findbugs =                  "com.google.code.findbugs"   %  "jsr305"                             % "1.3.9"
 
   val scalapbRuntime =            "com.thesamet.scalapb"       %% "scalapb-runtime"                    % scalapbVersion % "protobuf"
-  val chill =                    ("com.twitter"                %% "chill-akka"                         % "0.9.2")
+  val chill =                    ("com.twitter"                %% "chill-akka"                         % "0.9.4")
     .exclude("com.typesafe.akka", "akka-actor")
 
   val kryo =                      "com.esotericsoftware"       % "kryo"                                % "4.0.0"
 
-  val protobufJava =              "com.google.protobuf"        % "protobuf-java"                       % "3.5.1"
+  val protobufJava =              "com.google.protobuf"        % "protobuf-java"                       % "3.11.0"
 
   val betterFiles =               "com.github.pathikrit"       %% "better-files"                       % "3.6.0"
 
