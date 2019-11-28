@@ -72,7 +72,7 @@ object Dependencies {
 
   val kryo =                      "com.esotericsoftware"       % "kryo"                                % "4.0.0"
 
-  val protobufJava =              "com.google.protobuf"        % "protobuf-java"                       % "3.5.1"
+  val protobufJava =              "com.google.protobuf"        % "protobuf-java"                       % "3.11.0"
 
   val betterFiles =               "com.github.pathikrit"       %% "better-files"                       % "3.6.0"
 
