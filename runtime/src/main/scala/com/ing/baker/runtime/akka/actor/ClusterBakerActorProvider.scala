@@ -1,11 +1,12 @@
 package com.ing.baker.runtime.akka.actor
 
-import akka.actor.{ ActorRef, ActorSystem, Address, PoisonPill }
+import akka.actor.{ActorRef, ActorSystem, Address, PoisonPill}
 import akka.cluster.Cluster
 import akka.cluster.sharding.ShardRegion._
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings, ShardRegion}
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
-import akka.stream.Materializer
+import akka.management.cluster.bootstrap.ClusterBootstrap
+import akka.management.scaladsl.AkkaManagement
 import akka.util.Timeout
 import cats.data.NonEmptyList
 import com.ing.baker.il.sha256HashCode
@@ -14,15 +15,21 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_index._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager
-import com.ing.baker.runtime.akka.actor.serialization.{ BakerSerializable, Encryption }
+import com.ing.baker.runtime.akka.actor.serialization.{BakerSerializable, Encryption}
 import com.ing.baker.runtime.akka.internal.InteractionManager
 import com.typesafe.scalalogging.LazyLogging
 import scala.concurrent.duration._
-import scala.concurrent.{ Await, TimeoutException }
+import scala.concurrent.{Await, TimeoutException}
 
 object ClusterBakerActorProvider {
 
   case class GetShardIndex(entityId: String) extends BakerSerializable
+
+  sealed trait ClusterBootstrapMode
+
+  case class SeedNodesList(nel: NonEmptyList[Address]) extends ClusterBootstrapMode
+
+  case object ServiceDiscovery extends ClusterBootstrapMode
 
   /**
    * This function calculates the names of the ActorIndex actors
@@ -53,14 +60,14 @@ object ClusterBakerActorProvider {
 }
 
 class ClusterBakerActorProvider(
-  nrOfShards: Int,
-  retentionCheckInterval: FiniteDuration,
-  actorIdleTimeout: Option[FiniteDuration],
-  journalInitializeTimeout: FiniteDuration,
-  seedNodes: NonEmptyList[Address],
-  ingredientsFilter: List[String],
-  configuredEncryption: Encryption
-) extends BakerActorProvider with LazyLogging {
+    nrOfShards: Int,
+    retentionCheckInterval: FiniteDuration,
+    actorIdleTimeout: Option[FiniteDuration],
+    journalInitializeTimeout: FiniteDuration,
+    seedNodes: ClusterBootstrapMode,
+    ingredientsFilter: List[String],
+    configuredEncryption: Encryption
+  ) extends BakerActorProvider with LazyLogging {
 
   private def initializeCluster()(implicit actorSystem: ActorSystem): Unit = {
     /**
@@ -73,7 +80,13 @@ class ClusterBakerActorProvider(
     }
     // join the cluster
     logger.info("PersistenceInit actor started successfully, joining cluster seed nodes {}", seedNodes)
-    Cluster.get(actorSystem).joinSeedNodes(seedNodes.toList)
+    seedNodes match {
+      case SeedNodesList(nel) =>
+        Cluster.get(actorSystem).joinSeedNodes(nel.toList)
+      case ServiceDiscovery =>
+        AkkaManagement(actorSystem).start()
+        ClusterBootstrap(actorSystem).start()
+    }
   }
 
 

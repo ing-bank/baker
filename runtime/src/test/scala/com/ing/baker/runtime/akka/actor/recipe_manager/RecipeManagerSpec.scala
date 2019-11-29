@@ -1,13 +1,14 @@
 package com.ing.baker.runtime.akka.actor.recipe_manager
 
+import java.util.UUID
+
 import akka.actor.ActorRef
 import akka.pattern.ask
 import com.ing.baker.BakerRuntimeTestBase
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
-import com.typesafe.config.{ Config, ConfigFactory }
-import java.util.UUID
+import com.typesafe.config.{Config, ConfigFactory}
 
 object RecipeManagerSpec {
   val config: Config = ConfigFactory.parseString(
@@ -22,8 +23,8 @@ class RecipeManagerSpec extends BakerRuntimeTestBase {
 
   override def actorSystemName = "RecipeManagerSpec"
 
-  "The RecipeManagerSpec" should {
-    "Add a recipe to the list when a AddRecipe message is received" in {
+  "The recipe manager" should {
+    "add a recipe to the list when an AddRecipe message is received" in {
       val compiledRecipe = RecipeCompiler.compileRecipe(TestRecipe.getRecipe("AddRecipeRecipe"))
       val recipeManager: ActorRef = defaultActorSystem.actorOf(RecipeManager.props(), s"recipeManager-${UUID.randomUUID().toString}")
 
@@ -42,5 +43,4 @@ class RecipeManagerSpec extends BakerRuntimeTestBase {
       } yield succeed
     }
   }
-
 }

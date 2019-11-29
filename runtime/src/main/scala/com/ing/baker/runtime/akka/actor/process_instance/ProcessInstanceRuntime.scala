@@ -1,30 +1,34 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
+import java.io.{PrintWriter, StringWriter}
+
 import cats.data.State
 import cats.effect.IO
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing._
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.BlockTransition
-import com.ing.baker.runtime.akka.actor.process_instance.internal.{ ExceptionStrategy, Instance, Job }
+import com.ing.baker.runtime.akka.actor.process_instance.internal.{ExceptionStrategy, Instance, Job}
 import com.typesafe.scalalogging.LazyLogging
-import java.io.{ PrintWriter, StringWriter }
+import org.slf4j.{Logger, LoggerFactory}
 
 /**
- * Encapsulates all components required to 'run' a petri net instance
- *
- * @tparam P The place type
- * @tparam T The transition type
- * @tparam S The state type
- * @tparam E The event type
- */
+  * Encapsulates all components required to 'run' a Petri net instance
+  *
+  * @tparam P The place type
+  * @tparam T The transition type
+  * @tparam S The state type
+  * @tparam E The event type
+  */
 trait ProcessInstanceRuntime[P, T, S, E] extends LazyLogging {
 
+  val log: Logger = LoggerFactory.getLogger("com.ing.baker.runtime.core.actor.process_instance.ProcessInstanceRuntime")
+
   /**
-   * The event source function for the state associated with a process instance.
-   *
-   * By default the identity function is used.
-   */
+    * The event source function for the state associated with a process instance.
+    *
+    * By default the identity function is used.
+    */
   val eventSource: T ⇒ S ⇒ E ⇒ S = _ ⇒ s ⇒ _ ⇒ s
 
   /**
@@ -40,11 +44,11 @@ trait ProcessInstanceRuntime[P, T, S, E] extends LazyLogging {
   def transitionTask(petriNet: PetriNet[P, T], t: T)(marking: Marking[P], state: S, input: Any): IO[(Marking[P], E)]
 
   /**
-   * Checks if a transition is automatically 'fireable' by the runtime (not triggered by some outside input).
-   *
-   * By default, cold transitions (without in adjacent places) are not auto fireable.
-   */
-  def isAutoFireable(instance: Instance[P, T, S], t: T): Boolean = instance.petriNet.incomingPlaces(t).nonEmpty
+    * Checks if a transition can be fired automatically by the runtime (not triggered by some outside input).
+    *
+    * By default, cold transitions (without in adjacent places) are not fired automatically
+    */
+  def canBeFiredAutomatically(instance: Instance[P, T, S], t: T): Boolean = instance.petriNet.incomingPlaces(t).nonEmpty
 
   /**
    * Defines which tokens from a marking for a particular place are consumable by a transition.
@@ -154,11 +158,11 @@ trait ProcessInstanceRuntime[P, T, S, E] extends LazyLogging {
     }
 
   /**
-   * Finds the (optional) first transition that is enabled & automatically fireable
-   */
-  def firstEnabledJob: State[Instance[P, T, S], Option[Job[P, T, S]]] = State {instance ⇒
+    * Finds the (optional) first transition that is enabled and can be fired automatically
+    */
+  def firstEnabledJob: State[Instance[P, T, S], Option[Job[P, T, S]]] = State { instance ⇒
     enabledParameters(instance.petriNet)(instance.availableMarking).find {
-      case (t, _) ⇒ !instance.isBlocked(t) && isAutoFireable(instance, t)
+      case (t, _) ⇒ !instance.isBlocked(t) && canBeFiredAutomatically(instance, t)
     }.map {
       case (t, markings) ⇒
         val job = Job[P, T, S](instance.nextJobId(), None, instance.state, t, markings.head, null)

@@ -1,7 +1,7 @@
 import Dependencies.{scalaGraph, _}
 import sbt.Keys._
 
-def testScope(project: ProjectReference) = project % "test->test;test->compile"
+def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = project % "test->test;test->compile"
 
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
@@ -45,7 +45,7 @@ lazy val noPublishSettings = Seq(
   publishArtifact := false
 )
 
-lazy val defaultModuleSettings = commonSettings ++ dependencyOverrideSettings ++ Revolver.settings ++ SonatypePublish.settings
+lazy val defaultModuleSettings = commonSettings ++ dependencyOverrideSettings ++ SonatypePublish.settings
 
 lazy val scalaPBSettings = Seq(PB.targets in Compile := Seq(scalapb.gen() -> (sourceManaged in Compile).value))
 
@@ -55,10 +55,10 @@ lazy val bakertypes = project.in(file("bakertypes"))
     moduleName := "baker-types",
     libraryDependencies ++= compileDeps(
       slf4jApi,
-      ficusConfig,
       objenisis,
       scalapbRuntime,
       jodaTime,
+      typeSafeConfig,
       scalaReflect(scalaVersion.value),
       scalaLogging
     ) ++ testDeps(scalaTest, scalaCheck, logback, scalaCheck)
@@ -72,7 +72,6 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
       scalaGraph,
       slf4jApi,
       scalaGraphDot,
-      objenisis,
       typeSafeConfig,
       scalaLogging
     ) ++ testDeps(scalaTest, scalaCheck, logback)
@@ -91,20 +90,14 @@ lazy val runtime = project.in(file("runtime"))
         akkaActor,
         akkaPersistence,
         akkaPersistenceQuery,
-        akkaCluster,
         akkaClusterSharding,
-        akkaInmemoryJournal,
+        akkaBoostrap,
         akkaSlf4j,
         ficusConfig,
         catsCore,
         catsEffect,
-        guava,
-        chill,
-        objenisis,
         scalapbRuntime,
         protobufJava,
-        kryo,
-        kryoSerializers,
         slf4jApi,
         scalaLogging
       ) ++ testDeps(
@@ -139,14 +132,14 @@ lazy val splitBrainResolver = project.in(file("split-brain-resolver"))
       compileDeps(
         akkaActor,
         akkaCluster,
-        akkaSlf4j,
         ficusConfig,
+        slf4jApi,
         scalaLogging
       ) ++ testDeps(
         akkaTestKit,
         akkaMultiNodeTestkit,
         scalaTest
-      ) ++ providedDeps(findbugs)
+      )
   )
   .enablePlugins(MultiJvmPlugin)
   .configs(MultiJvm)
@@ -180,7 +173,7 @@ lazy val recipeCompiler = project.in(file("compiler"))
   .settings(
     moduleName := "baker-compiler",
     libraryDependencies ++=
-      compileDeps(slf4jApi) ++ testDeps(scalaTest, scalaCheck, logback, junitJupiter)
+      testDeps(scalaTest, scalaCheck, logback, junitJupiter)
   )
   .dependsOn(recipeDsl, intermediateLanguage, testScope(recipeDsl))
 
@@ -190,9 +183,6 @@ lazy val baas = project.in(file("baas"))
   .settings(
     moduleName := "baker-baas",
     libraryDependencies ++=
-      compileDeps(
-        akkaHttp,
-        akkaPersistenceCassandra) ++
       testDeps(
         akkaSlf4j,
         akkaTestKit,
@@ -256,7 +246,9 @@ lazy val examples = project
         circe,
         circeGeneric,
         kamon,
-        kamonPrometheus
+        kamonPrometheus,
+        akkaPersistenceCassandra,
+        akkaPersistenceQuery
       ) ++ testDeps(
         scalaTest,
         scalaCheck,
@@ -269,7 +261,7 @@ lazy val examples = project
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "A web-shop checkout service example running baker",
-    packageName in Docker := "checkout-service-baker-example",
+    packageName in Docker := "apollo.docker.ing.net/baker-example-app",
     dockerExposedPorts := Seq(8080)
   )
   .dependsOn(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage)
