@@ -11,5 +11,7 @@ trait WebShop {
   def addCheckoutPaymentInfo(orderId: String, paymentInfo: String): IO[Option[String]]
 
   def pollOrderStatus(orderId: String): IO[OrderStatus]
+
+  def gracefulShutdown: IO[Unit]
 }
 
