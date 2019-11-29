@@ -44,7 +44,7 @@ object AkkaBakerConfig {
         actorIdleTimeout = Some(5.minutes),
         ingredientsFilter = List.empty,
         journalInitializeTimeout = 30.seconds,
-        seedNodes = seedNodes,
+        seedNodes = ClusterBakerActorProvider.SeedNodesList(seedNodes),
         configuredEncryption = Encryption.NoEncryption
       ),
       actorSystem
@@ -94,11 +94,12 @@ object AkkaBakerConfig {
               actorIdleTimeout = config.as[Option[FiniteDuration]]("baker.actor.idle-timeout"),
               ingredientsFilter = config.as[List[String]]("baker.filtered-ingredient-values"),
               journalInitializeTimeout = config.as[FiniteDuration]("baker.journal-initialize-timeout"),
-              seedNodes = config.as[Option[List[String]]]("baker.cluster.seed-nodes") match {
-                case Some(_seedNodes) if _seedNodes.nonEmpty =>
-                  NonEmptyList.fromListUnsafe(_seedNodes.map(AddressFromURIString.parse))
-                case None =>
-                  throw new IllegalStateException("Baker cluster configuration without baker.cluster.seed-nodes")
+              seedNodes = {
+                val seedList = config.as[Option[List[String]]]("baker.cluster.seed-nodes")
+                if (seedList.isDefined)
+                  ClusterBakerActorProvider.SeedNodesList(NonEmptyList.fromListUnsafe(seedList.get.map(AddressFromURIString.parse)))
+                else
+                  ClusterBakerActorProvider.ServiceDiscovery
               },
               configuredEncryption = encryption
             )
