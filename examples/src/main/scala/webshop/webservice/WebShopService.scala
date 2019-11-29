@@ -14,8 +14,10 @@ import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.Router
 import fs2.io.file
-
 import java.util.UUID
+
+import cats.effect.concurrent.{MVar, Ref}
+
 import scala.concurrent.ExecutionContext
 
 object WebShopService {
@@ -42,15 +44,28 @@ class WebShopService(webshop: WebShop, memoryDumpPath: String)(implicit timer: T
 
   val blockingEc = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(4))
 
-  def buildHttpService: Kleisli[IO, Request[IO], Response[IO]] =
+  def buildHttpService(shuttingDown: Ref[IO, Boolean]): Kleisli[IO, Request[IO], Response[IO]] =
     (Router("/" -> HttpRoutes.of[IO] {
 
       case GET -> Root => Ok("Ok")
 
-      case HEAD -> Root => Ok()
+      case HEAD -> Root =>
+        shuttingDown.get.flatMap {
+          case true => NotFound()
+          case false => Ok()
+        }
 
     }) <+>
     Router("/admin" -> HttpRoutes.of[IO] {
+
+      case GET -> Root / "shutdown" =>
+        println(Console.GREEN + "SHUTTING DOWN" + Console.RESET)
+        println(Console.GREEN + "====================" + Console.RESET)
+        for {
+          _ <- shuttingDown.modify(_ => (true, ()))
+          _ <- webshop.gracefulShutdown
+          response <- Ok("down")
+        } yield response
 
       case GET -> Root / "memdump.hprof" =>
         val path = memoryDumpPath + "-" + UUID.randomUUID().toString + ".hprof"
