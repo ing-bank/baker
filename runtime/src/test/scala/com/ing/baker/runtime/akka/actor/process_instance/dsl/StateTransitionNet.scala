@@ -13,22 +13,25 @@ trait StateTransitionNet[S, E] {
   def eventSourceFunction: S ⇒ E ⇒ S
 
   val runtime: ProcessInstanceRuntime[Place, Transition, S, E] = new ProcessInstanceRuntime[Place, Transition, S, E] {
-    override val eventSource: (Transition) ⇒ (S) ⇒ (E) ⇒ S = _ ⇒ eventSourceFunction
+    override val eventSource: Transition ⇒ S ⇒ E ⇒ S = _ ⇒ eventSourceFunction
+
     override def transitionTask(petriNet: PetriNet[Place, Transition], t: Transition)
                                (marking: Marking[Place], state: S, input: Any): IO[(Marking[Place], E)] = {
       val eventTask = t.asInstanceOf[StateTransition[S, E]].produceEvent(state)
       val produceMarking: Marking[Place] = petriNet.outMarking(t).toMarking
       eventTask.map(e ⇒ (produceMarking, e))
     }
+
     override def handleException(job: Job[Place, Transition, S])
-                                (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]) =
+                                (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]): ExceptionStrategy =
       job.transition.exceptionStrategy(throwable, failureCount, outMarking)
-    override def isAutoFireable(instance: Instance[Place, Transition, S], t: Transition): Boolean =
+
+    override def canBeFiredAutomatically(instance: Instance[Place, Transition, S], t: Transition): Boolean =
       t.isAutomated && !instance.isBlocked(t)
   }
 
   def stateTransition(id: Long = Math.abs(Random.nextLong), label: Option[String] = None, automated: Boolean = false,
-    exceptionStrategy: TransitionExceptionHandler[Place] = (_, _, _) ⇒ BlockTransition)(fn: S ⇒ E): Transition =
+                      exceptionStrategy: TransitionExceptionHandler[Place] = (_, _, _) ⇒ BlockTransition)(fn: S ⇒ E): Transition =
     StateTransition(id, label.getOrElse(s"t$id"), automated, exceptionStrategy, (s: S) ⇒ IO.pure(fn(s)))
 
   def constantTransition[I, O](id: Long, label: Option[String] = None, automated: Boolean = false, constant: O): StateTransition[I, O] =
