@@ -16,27 +16,27 @@ case class CaseClassIngredient(a: Int, b: String)
 object TestRecipe {
 
   //inputIngredients = Seq as used in the recipe
-  val initialIngredientOld = Ingredient[String]("initialIngredientOld")
-  val initialIngredient = Ingredient[String]("initialIngredient")
-  val interactionOneOriginalIngredient = Ingredient[String]("interactionOneOriginalIngredient")
-  val initialIngredientExtendedName = Ingredient[String]("initialIngredientExtendedName")
-  val interactionOneIngredient = Ingredient[String]("interactionOneIngredient")
-  val interactionTwoIngredient = Ingredient[String]("interactionTwoIngredient")
-  val interactionThreeIngredient = Ingredient[String]("interactionThreeIngredient")
-  val interactionFourIngredient = Ingredient[String]("interactionFourIngredient")
-  val interactionFiveIngredient = Ingredient[String]("interactionFiveIngredient")
-  val interactionSixIngredient = Ingredient[String]("interactionSixIngredient")
-  val interactionSevenIngredient1 = Ingredient[String]("interactionSevenIngredient1")
-  val interactionSevenIngredient2 = Ingredient[String]("interactionSevenIngredient2")
-  val sievedIngredient = Ingredient[String]("sievedIngredient")
-  val complexObjectIngredient = Ingredient[ComplexObjectIngredient]("complexOjectIngredient")
-  val caseClassIngredient = Ingredient[CaseClassIngredient]("caseClassIngredient")
+  val initialIngredientOld: Ingredient[String] = Ingredient[String]("initialIngredientOld")
+  val initialIngredient: Ingredient[String] = Ingredient[String]("initialIngredient")
+  val interactionOneOriginalIngredient: Ingredient[String] = Ingredient[String]("interactionOneOriginalIngredient")
+  val initialIngredientExtendedName: Ingredient[String] = Ingredient[String]("initialIngredientExtendedName")
+  val interactionOneIngredient: Ingredient[String] = Ingredient[String]("interactionOneIngredient")
+  val interactionTwoIngredient: Ingredient[String] = Ingredient[String]("interactionTwoIngredient")
+  val interactionThreeIngredient: Ingredient[String] = Ingredient[String]("interactionThreeIngredient")
+  val interactionFourIngredient: Ingredient[String] = Ingredient[String]("interactionFourIngredient")
+  val interactionFiveIngredient: Ingredient[String] = Ingredient[String]("interactionFiveIngredient")
+  val interactionSixIngredient: Ingredient[String] = Ingredient[String]("interactionSixIngredient")
+  val interactionSevenIngredient1: Ingredient[String] = Ingredient[String]("interactionSevenIngredient1")
+  val interactionSevenIngredient2: Ingredient[String] = Ingredient[String]("interactionSevenIngredient2")
+  val sievedIngredient: Ingredient[String] = Ingredient[String]("sievedIngredient")
+  val complexObjectIngredient: Ingredient[ComplexObjectIngredient] = Ingredient[ComplexObjectIngredient]("complexObjectIngredient")
+  val caseClassIngredient: Ingredient[CaseClassIngredient] = Ingredient[CaseClassIngredient]("caseClassIngredient")
   val missingJavaOptional: Ingredient[Optional[String]] = Ingredient[Optional[String]]("missingJavaOptional")
   val missingJavaOptionalDirectString: Ingredient[String] = Ingredient[String]("missingJavaOptional")
   val missingJavaOptional2: Ingredient[Optional[Int]] = Ingredient[Optional[Int]]("missingJavaOptional2")
-  val missingScalaOptional: Ingredient[Option[String]] = Ingredient[Option[String]]("missingScalaOptional")
-  val missingScalaOptionalDirectString: Ingredient[String] = Ingredient[String]("missingScalaOptional")
-  val missingScalaOptional2: Ingredient[Option[Int]] = Ingredient[Option[Int]]("missingScalaOptional2")
+  val missingScalaOption: Ingredient[Option[String]] = Ingredient[Option[String]]("missingScalaOption")
+  val missingScalaOptionDirectString: Ingredient[String] = Ingredient[String]("missingScalaOption")
+  val missingScalaOption2: Ingredient[Option[Int]] = Ingredient[Option[Int]]("missingScalaOption2")
 
   //Events as used in the recipe & objects used in runtime
   val initialEvent = Event("InitialEvent", Seq(initialIngredient), maxFiringLimit = None)
@@ -81,9 +81,9 @@ object TestRecipe {
 
   val exhaustedEvent = Event("RetryExhausted")
 
-  val unboxedProviderEvent = Event("UnboxedProviderEvent", missingJavaOptionalDirectString, initialIngredient, missingScalaOptionalDirectString)
+  val unboxedProviderEvent = Event("UnboxedProviderEvent", missingJavaOptionalDirectString, initialIngredient, missingScalaOptionDirectString)
 
-  case class UnboxedProviderEvent(missingJavaOptional: String, initialIngredient: String, missingScalaOptional: String)
+  case class UnboxedProviderEvent(missingJavaOptional: String, initialIngredient: String, missingScalaOption: String)
 
   case class InteractionOneSuccessful(interactionOneOriginalIngredient: String)
 
@@ -232,9 +232,9 @@ object TestRecipe {
     def apply(recipeInstanceId: String, initialIngredient: String): SieveInteractionSuccessful
   }
 
-  case class ComplexIngredientInteractionSuccessful(complexOjectIngredient: ComplexObjectIngredient)
+  case class ComplexIngredientInteractionSuccessful(complexObjectIngredient: ComplexObjectIngredient)
 
-  val complexIngredientInteraction =
+  val interactionWithAComplexIngredient =
     Interaction(
       name = "ComplexIngredientInteraction",
       inputIngredients = Seq(initialIngredient),
@@ -274,7 +274,7 @@ object TestRecipe {
 
   val NonMatchingReturnTypeInteraction =
     Interaction(
-      name="NonMatchingReturnTypeInteraction",
+      name = "NonMatchingReturnTypeInteraction",
       inputIngredients = Seq(initialIngredient),
       output = Seq(eventFromInteractionTwo))
 
@@ -284,14 +284,14 @@ object TestRecipe {
     def apply(initialIngredient: String): EventFromInteractionTwo
   }
 
-  val optionalIngredientInteraction =
+  val interactionWithOptionalIngredients =
     Interaction(
       name = "OptionalIngredientInteraction",
       inputIngredients = Seq(
         missingJavaOptional,
         missingJavaOptional2,
-        missingScalaOptional,
-        missingScalaOptional2,
+        missingScalaOption,
+        missingScalaOption2,
         initialIngredient),
       output = Seq.empty)
 
@@ -300,8 +300,8 @@ object TestRecipe {
 
     def apply(missingJavaOptional: Optional[String],
               missingJavaOptional2: Optional[Integer],
-              missingScalaOptional: Option[String],
-              missingScalaOptional2: Option[Integer],
+              missingScalaOption: Option[String],
+              missingScalaOption2: Option[Integer],
               initialIngredient: String)
   }
 
