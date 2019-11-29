@@ -5,12 +5,13 @@ import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.scaladsl.Recipe
 import com.ing.baker.runtime.ScalaDSLRuntime._
-import com.ing.baker.runtime.akka.implementations.{ InteractionOneFieldName, InteractionOneInterfaceImplementation, InteractionOneWrongApply }
-import com.ing.baker.runtime.common.BakerException.{ ImplementationsException, RecipeValidationException }
-import com.ing.baker.runtime.scaladsl.{ Baker, InteractionInstance }
+import com.ing.baker.runtime.akka.implementations.{InteractionOneFieldName, InteractionOneInterfaceImplementation, InteractionOneWrongApply}
+import com.ing.baker.runtime.common.BakerException.{ImplementationsException, RecipeValidationException}
+import com.ing.baker.runtime.scaladsl.{Baker, InteractionInstance}
 import com.typesafe.config.ConfigFactory
 import org.mockito.Matchers.anyString
 import org.mockito.Mockito.when
+
 import scala.concurrent.Future
 import scala.language.postfixOps
 
@@ -27,7 +28,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
     "bootstrap correctly without throwing an error if provided a correct recipe and correct implementations" when {
 
-      "correcly load extensions when specified in the configuration" in {
+      "correctly load extensions when specified in the configuration" in {
         val simpleRecipe = RecipeCompiler.compileRecipe(Recipe("SimpleRecipe")
           .withInteraction(interactionOne)
           .withSensoryEvent(initialEvent))
@@ -36,7 +37,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         for {
           _ <- baker.addInteractionInstances(mockImplementations)
-          _ = when (testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful("foobar")))
+          _ = when(testInteractionOneMock.apply(anyString(), anyString())).thenReturn(Future.successful(InteractionOneSuccessful("foobar")))
           recipeId <- baker.addRecipe(simpleRecipe)
           recipeInstanceId = java.util.UUID.randomUUID().toString
           _ <- baker.bake(recipeId, recipeInstanceId)
@@ -98,7 +99,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
       "the recipe contains complex ingredients that are serializable" in {
         val recipe = Recipe("complexIngredientInteractionRecipe")
-          .withInteraction(complexIngredientInteraction)
+          .withInteraction(interactionWithAComplexIngredient)
           .withSensoryEvent(initialEvent)
 
         val baker = Baker.akka(ConfigFactory.load(), defaultActorSystem)
@@ -123,7 +124,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         recoverToExceptionIf[RecipeValidationException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
-        }.map(_ should have('message ("Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction")))
+        }.map(_ should have('message("Ingredient 'initialIngredient' for interaction 'InteractionOne' is not provided by any event or interaction")))
       }
 
       "a recipe does not provide an implementation for an interaction" in {
@@ -136,7 +137,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         recoverToExceptionIf[ImplementationsException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
-        }.map(_ should have('message ("No implementation provided for interaction: InteractionOne")))
+        }.map(_ should have('message("No implementation provided for interaction: InteractionOne")))
       }
 
       "a recipe provides an implementation for an interaction and does not comply to the Interaction" in {
@@ -151,7 +152,7 @@ class BakerSetupSpec extends BakerRuntimeTestBase {
 
         recoverToExceptionIf[ImplementationsException] {
           baker.addRecipe(RecipeCompiler.compileRecipe(recipe))
-        }.map(_ should have('message ("No implementation provided for interaction: InteractionOne")))
+        }.map(_ should have('message("No implementation provided for interaction: InteractionOne")))
       }
     }
   }
