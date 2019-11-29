@@ -19,7 +19,7 @@ object Dependencies {
   val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.0.5"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
-  val junitJupiter =              "org.junit.jupiter"          %  "junit-jupiter-engine"               % "5.0.0"
+  val junitJupiter =              "org.junit.jupiter"          %  "junit-jupiter-engine"               % "5.0.3"
 
   val akkaActor =                 "com.typesafe.akka"          %% "akka-actor"                         % akkaVersion
   val akkaStream =                "com.typesafe.akka"          %% "akka-stream"                        % akkaVersion
@@ -36,7 +36,8 @@ object Dependencies {
   val akkaHttp =                  "com.typesafe.akka"          %% "akka-http"                          % "10.0.15"
   val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.5"
   
-  val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.7"
+  val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.12"
+
   val levelDBJni =                "org.fusesource.leveldbjni"  %  "leveldbjni-all"                     % "1.8"
 
   val logback =                   "ch.qos.logback"             %  "logback-classic"                    % "1.2.3"
@@ -44,7 +45,7 @@ object Dependencies {
 
   val scalaGraph  =               "org.scala-graph"            %% "graph-core"                         % "1.11.5"
   val scalaGraphDot =             "org.scala-graph"            %% "graph-dot"                          % "1.11.5"
-  val graphvizJava =              "guru.nidi"                  %  "graphviz-java"                      % "0.8.0"
+  val graphvizJava =              "guru.nidi"                  %  "graphviz-java"                      % "0.8.10"
 
   val kamon =                     "io.kamon"                   %% "kamon-bundle"                       % "2.0.0"
   val kamonAkka =                 "io.kamon"                   %% "kamon-akka"                         % "2.0.0"
@@ -56,8 +57,9 @@ object Dependencies {
   val http4sCirce =               "org.http4s"                 %% "http4s-circe"                       % http4sVersion
   val circe =                     "io.circe"                   %% "circe-core"                         % circeVersion
   val circeGeneric =              "io.circe"                   %% "circe-generic"                      % circeVersion
-  val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "1.2.0"
-  val catsCore =                  "org.typelevel"              %% "cats-core"                          % "1.5.0"
+
+  val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "1.4.0"
+  val catsCore =                  "org.typelevel"              %% "cats-core"                          % "1.6.1"
 
   def scalaReflect(scalaV: String): ModuleID = "org.scala-lang"%  "scala-reflect"                      % scalaV
   val javaxInject =               "javax.inject"               %  "javax.inject"                       % "1"
@@ -73,12 +75,13 @@ object Dependencies {
 
   val typeSafeConfig =            "com.typesafe"               % "config"                              % "1.4.0"
 
-  val objenisis =                 "org.objenesis"              %  "objenesis"                          % "2.5.1"
+  val objenisis =                 "org.objenesis"              %  "objenesis"                          % "2.6"
+  
+  val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.10.5"
+  val slf4jApi =                  "org.slf4j"                  %  "slf4j-api"                          % "1.7.29"
 
-  val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.9.9"
-  val slf4jApi =                  "org.slf4j"                  %  "slf4j-api"                          % "1.7.25"
   val slf4jSimple =               "org.slf4j"                  % "slf4j-simple"                        % "1.7.5"
-  val scalaCheck =                "org.scalacheck"             %% "scalacheck"                         % "1.13.4"
+  val scalaCheck =                "org.scalacheck"             %% "scalacheck"                         % "1.13.5"
 
   def scopeDeps(scope: String, modules: Seq[ModuleID]) =  modules.map(m => m % scope)
   def compileDeps(modules: ModuleID*) = modules.toSeq
