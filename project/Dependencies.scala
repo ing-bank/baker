@@ -36,7 +36,8 @@ object Dependencies {
   val akkaHttp =                  "com.typesafe.akka"          %% "akka-http"                          % "10.0.15"
   val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.5"
   
-  val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.7"
+  val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.12"
+
   val levelDBJni =                "org.fusesource.leveldbjni"  %  "leveldbjni-all"                     % "1.8"
 
   val logback =                   "ch.qos.logback"             %  "logback-classic"                    % "1.2.3"
