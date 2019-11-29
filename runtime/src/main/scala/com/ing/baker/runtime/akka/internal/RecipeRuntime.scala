@@ -4,26 +4,23 @@ import java.lang.reflect.InvocationTargetException
 
 import akka.event.EventStream
 import cats.effect.IO
+import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
-import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor, recipeInstanceIdName}
+import com.ing.baker.il.{CompiledRecipe, IngredientDescriptor}
 import com.ing.baker.petrinet.api._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceRuntime
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.{BlockTransition, Continue, RetryWithDelay}
 import com.ing.baker.runtime.akka.actor.process_instance.internal._
-import com.ing.baker.runtime.scaladsl.{InteractionCompleted, InteractionFailed, InteractionStarted}
 import com.ing.baker.runtime.akka.internal.RecipeRuntime._
-import com.ing.baker.runtime.scaladsl.EventMoment
-import com.ing.baker.runtime.scaladsl.RecipeInstanceState
-import com.ing.baker.runtime.scaladsl.EventInstance
-import com.ing.baker.runtime.scaladsl.{RecipeInstanceState, EventInstance, IngredientInstance}
+import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.{PrimitiveValue, Value}
 import org.slf4j.MDC
 
 import scala.concurrent.ExecutionContext
 
 object RecipeRuntime {
-  def recipeEventSourceFn: Transition => (RecipeInstanceState => EventInstance => RecipeInstanceState) =
+  def recipeEventSourceFn: Transition => RecipeInstanceState => EventInstance => RecipeInstanceState =
     _ => state => {
       case null => state
       case event: EventInstance =>
@@ -41,7 +38,7 @@ object RecipeRuntime {
     outAdjacent.keys.map { place =>
 
       // use the event name as a token value, otherwise null
-      val value: Any = event.map(_.name).getOrElse(null)
+      val value: Any = event.map(_.name).orNull
 
       place -> MultiSet.copyOff(Seq(value))
     }.toMarking
@@ -58,7 +55,7 @@ object RecipeRuntime {
 
       // an event was expected but none was provided
       case None =>
-        if (!interaction.eventsToFire.isEmpty)
+        if (interaction.eventsToFire.nonEmpty)
           Some(s"Interaction '${interaction.interactionName}' did not provide any output, expected one of: ${interaction.eventsToFire.map(_.name).mkString(",")}")
         else
           None
@@ -70,21 +67,21 @@ object RecipeRuntime {
         }
 
         // null values for ingredients are NOT allowed
-        if(nullIngredientNames.nonEmpty)
+        if (nullIngredientNames.nonEmpty)
           Some(s"Interaction '${interaction.interactionName}' returned null for the following ingredients: ${nullIngredientNames.mkString(",")}")
         else
         // the event name must match an event name from the interaction output
-        interaction.originalEvents.find(_.name == event.name) match {
-          case None =>
-            Some(s"Interaction '${interaction.interactionName}' returned unknown event '${event.name}, expected one of: ${interaction.eventsToFire.map(_.name).mkString(",")}")
-          case Some(eventType) =>
-            val errors = event.validate(eventType)
+          interaction.originalEvents.find(_.name == event.name) match {
+            case None =>
+              Some(s"Interaction '${interaction.interactionName}' returned unknown event '${event.name}, expected one of: ${interaction.eventsToFire.map(_.name).mkString(",")}")
+            case Some(eventType) =>
+              val errors = event.validate(eventType)
 
-            if (errors.nonEmpty)
-              Some(s"Event '${event.name}' does not match the expected type: ${errors.mkString}")
-            else
-              None
-        }
+              if (errors.nonEmpty)
+                Some(s"Event '${event.name}' does not match the expected type: ${errors.mkString}")
+              else
+                None
+          }
     }
   }
 
@@ -95,10 +92,11 @@ object RecipeRuntime {
   def createInteractionInput(interaction: InteractionTransition, state: RecipeInstanceState): Seq[IngredientInstance] = {
 
     // the process id is a special ingredient that is always available
-    val recipeInstanceId: (String, Value) = recipeInstanceIdName -> PrimitiveValue(state.recipeInstanceId.toString)
+    val recipeInstanceId: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(state.recipeInstanceId.toString)
+    val processId: (String, Value) = il.processIdName -> PrimitiveValue(state.recipeInstanceId.toString)
 
     // a map of all ingredients
-    val allIngredients: Map[String, Value] = interaction.predefinedParameters ++ state.ingredients + recipeInstanceId
+    val allIngredients: Map[String, Value] = interaction.predefinedParameters ++ state.ingredients + recipeInstanceId + processId
 
     // arranges the ingredients in the expected order
     interaction.requiredIngredients.map {
@@ -125,7 +123,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
   /**
     * All transitions except sensory event interactions are auto-fireable by the runtime
     */
-  override def isAutoFireable(instance: Instance[Place, Transition, RecipeInstanceState], t: Transition): Boolean = t match {
+  override def canBeFiredAutomatically(instance: Instance[Place, Transition, RecipeInstanceState], t: Transition): Boolean = t match {
     case EventTransition(_, true, _) => false
     case _ => true
   }
@@ -137,12 +135,12 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
     val edge = petriNet.findPTEdge(p, t).map(_.asInstanceOf[Edge]).get
 
     marking.get(p) match {
-      case None         ⇒ MultiSet.empty
+      case None ⇒ MultiSet.empty
       case Some(tokens) ⇒ tokens.filter { case (e, _) ⇒ edge.isAllowed(e) }
     }
   }
 
-  override val eventSource = recipeEventSourceFn
+  override val eventSource: Transition => RecipeInstanceState => EventInstance => RecipeInstanceState = recipeEventSourceFn
 
   override def handleException(job: Job[Place, Transition, RecipeInstanceState])
                               (throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[Place]): ExceptionStrategy = {
@@ -166,10 +164,9 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
           failureStrategyOutcome match {
             case ExceptionStrategyOutcome.BlockTransition => BlockTransition
             case ExceptionStrategyOutcome.RetryWithDelay(delay) => RetryWithDelay(delay)
-            case ExceptionStrategyOutcome.Continue(eventName) => {
+            case ExceptionStrategyOutcome.Continue(eventName) =>
               val runtimeEvent = EventInstance(eventName, Map.empty)
               Continue(createProducedMarking(outMarking, Some(runtimeEvent)), runtimeEvent)
-            }
           }
 
         case _ => BlockTransition
@@ -179,8 +176,8 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
   override def transitionTask(petriNet: PetriNet[Place, Transition], t: Transition)(marking: Marking[Place], state: RecipeInstanceState, input: Any): IO[(Marking[Place], EventInstance)] =
     t match {
       case interaction: InteractionTransition => interactionTask(interaction, petriNet.outMarking(t), state)
-      case t: EventTransition                 => IO.pure(petriNet.outMarking(t).toMarking, input.asInstanceOf[EventInstance])
-      case t                                  => IO.pure(petriNet.outMarking(t).toMarking, null.asInstanceOf[EventInstance])
+      case t: EventTransition => IO.pure(petriNet.outMarking(t).toMarking, input.asInstanceOf[EventInstance])
+      case t => IO.pure(petriNet.outMarking(t).toMarking, null.asInstanceOf[EventInstance])
     }
 
   def interactionTask(interaction: InteractionTransition,
@@ -240,7 +237,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
 
     }).handleErrorWith {
       case e: InvocationTargetException => IO.raiseError(e.getCause)
-      case e: Throwable                 => IO.raiseError(e)
+      case e: Throwable => IO.raiseError(e)
     }
   }
 }

@@ -26,8 +26,9 @@ object WebShopBaker {
         InteractionInstance.unsafeFrom(new ShipItemsInstance())
       ))
       checkoutRecipeId <- baker.addRecipe(checkoutFlowCompiledRecipe)
+      _ = println(Console.GREEN + "V3 Checkout Recipe ID :: " + checkoutRecipeId + Console.RESET)
       _ <- baker.registerEventListener((name, event) => {
-        logger.debug(s"$name => ${event.providedIngredients}")
+        logger.info(s"$name => ${event.providedIngredients}")
       })
     } yield checkoutRecipeId))
   }
@@ -100,4 +101,7 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
         }
       } yield status
     })
+
+  override def gracefulShutdown: IO[Unit] =
+    IO { baker.gracefulShutdown() }
 }
