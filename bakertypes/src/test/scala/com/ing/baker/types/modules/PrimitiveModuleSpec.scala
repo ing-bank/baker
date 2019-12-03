@@ -9,7 +9,7 @@ import com.ing.baker.types.modules.PrimitiveModuleSpec._
 import org.scalacheck.Gen
 import org.scalacheck.Prop.{BooleanOperators, forAll}
 import org.scalacheck.Test.Parameters.defaultVerbose
-import org.scalatest.prop.Checkers
+import org.scalatestplus.scalacheck.Checkers
 import org.scalatest.{Matchers, WordSpecLike}
 
 import scala.reflect.runtime.universe.TypeTag
@@ -17,15 +17,15 @@ import scala.reflect.runtime.universe.TypeTag
 object PrimitiveModuleSpec {
 
   val intGen: Gen[Int] = Gen.chooseNum[Int](Integer.MIN_VALUE, Integer.MAX_VALUE)
-  val langIntegerGen: Gen[lang.Integer] = intGen.map(Int.box(_))
+  val langIntegerGen: Gen[lang.Integer] = intGen.map(Int.box)
   val longGen: Gen[Long] = Gen.chooseNum[Long](Long.MinValue, Long.MaxValue)
-  val langLongGen: Gen[lang.Long] = Gen.chooseNum[Long](Long.MinValue, Long.MaxValue).map(Long.box(_))
+  val langLongGen: Gen[lang.Long] = Gen.chooseNum[Long](Long.MinValue, Long.MaxValue).map(Long.box)
   val shortGen: Gen[Short] = Gen.chooseNum[Short](Short.MinValue, Short.MaxValue)
-  val langShortGen: Gen[lang.Short] = shortGen.map(Short.box(_))
+  val langShortGen: Gen[lang.Short] = shortGen.map(Short.box)
   val floatGen: Gen[Float] = Gen.chooseNum(Float.MinValue, Float.MaxValue)
-  val langFloatGen: Gen[lang.Float] = floatGen.map(Float.box(_))
+  val langFloatGen: Gen[lang.Float] = floatGen.map(Float.box)
   val doubleGen: Gen[Double] = Gen.chooseNum[Double](Double.MinValue, Double.MaxValue)
-  val langDoubleGen: Gen[lang.Double] = doubleGen.map(Double.box(_))
+  val langDoubleGen: Gen[lang.Double] = doubleGen.map(Double.box)
   val stringGen: Gen[String] = Gen.alphaStr
   val bigIntGen: Gen[BigInt] = longGen.map(BigInt(_))
   val javaBigIntGen: Gen[java.math.BigInteger] = bigIntGen.map(_.bigInteger)
