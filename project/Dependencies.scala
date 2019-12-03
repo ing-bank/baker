@@ -19,7 +19,7 @@ object Dependencies {
   val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.0.5"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
-  val junitJupiter =              "org.junit.jupiter"          %  "junit-jupiter-engine"               % "5.0.3"
+  val junitJupiter =              "org.junit.jupiter"          %  "junit-jupiter-engine"               % "5.5.2"
 
   val akkaActor =                 "com.typesafe.akka"          %% "akka-actor"                         % akkaVersion
   val akkaStream =                "com.typesafe.akka"          %% "akka-stream"                        % akkaVersion
@@ -59,7 +59,7 @@ object Dependencies {
   val circeGeneric =              "io.circe"                   %% "circe-generic"                      % circeVersion
 
   val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "2.0.0"
-  val catsCore =                  "org.typelevel"              %% "cats-core"                          % "1.6.1"
+  val catsCore =                  "org.typelevel"              %% "cats-core"                          % "2.0.0"
 
   def scalaReflect(scalaV: String): ModuleID = "org.scala-lang"%  "scala-reflect"                      % scalaV
   val javaxInject =               "javax.inject"               %  "javax.inject"                       % "1"
@@ -75,7 +75,7 @@ object Dependencies {
 
   val typeSafeConfig =            "com.typesafe"               % "config"                              % "1.4.0"
 
-  val objenisis =                 "org.objenesis"              %  "objenesis"                          % "2.6"
+  val objenisis =                 "org.objenesis"              %  "objenesis"                          % "3.1"
   
   val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.10.5"
   val slf4jApi =                  "org.slf4j"                  %  "slf4j-api"                          % "1.7.29"
