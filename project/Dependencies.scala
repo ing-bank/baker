@@ -19,7 +19,7 @@ object Dependencies {
   val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.0.5"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
-  val junitJupiter =              "org.junit.jupiter"          %  "junit-jupiter-engine"               % "5.0.3"
+  val junitJupiter =              "org.junit.jupiter"          %  "junit-jupiter-engine"               % "5.5.2"
 
   val akkaActor =                 "com.typesafe.akka"          %% "akka-actor"                         % akkaVersion
   val akkaStream =                "com.typesafe.akka"          %% "akka-stream"                        % akkaVersion
@@ -75,7 +75,7 @@ object Dependencies {
 
   val typeSafeConfig =            "com.typesafe"               % "config"                              % "1.4.0"
 
-  val objenisis =                 "org.objenesis"              %  "objenesis"                          % "2.6"
+  val objenisis =                 "org.objenesis"              %  "objenesis"                          % "3.1"
   
   val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.10.5"
   val slf4jApi =                  "org.slf4j"                  %  "slf4j-api"                          % "1.7.29"
