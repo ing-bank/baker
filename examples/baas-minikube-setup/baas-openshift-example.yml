@@ -20,6 +20,8 @@ spec:
         - name: baas-state
           image: apollo.docker.ing.net/baas-minikube-state:3.0.2-SNAPSHOT
           imagePullPolicy: Always
+          imagePullSecrets:
+            - name: apollo
           readinessProbe:
             httpGet:
               path: /health/ready
@@ -45,8 +47,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-      imagePullSecrets:
-        - name: apollo
           #namespace
 ---
 
@@ -72,6 +72,8 @@ spec:
         - name: baas-interactions
           image: apollo.docker.ing.net/baas-minikube-interactions:3.0.2-SNAPSHOT
           imagePullPolicy: Always
+          imagePullSecrets:
+            - name: apollo
           readinessProbe:
             httpGet:
               path: /health/ready
@@ -119,6 +121,8 @@ spec:
         - name: baas-event-listener
           image: apollo.docker.ing.net/baas-minikube-event-listener:3.0.2-SNAPSHOT
           imagePullPolicy: Always
+          imagePullSecrets:
+            - name: apollo
           readinessProbe:
             httpGet:
               path: /health/ready
@@ -164,7 +168,9 @@ spec:
       containers:
         - name: client-app
           image: apollo.docker.ing.net/baas-client-example:3.0.2-SNAPSHOT
-          imagePullPolicy: Never
+          imagePullPolicy: Always
+          imagePullSecrets:
+            - name: apollo
           readinessProbe:
             httpGet:
               path: /api
