@@ -24,10 +24,12 @@ spec:
             httpGet:
               path: /health/ready
               port: 8558
+            periodSeconds: 120
           livenessProbe:
             httpGet:
               path: /health/alive
               port: 8558
+            periodSeconds: 120
           ports:
             # akka remoting
             - name: remoting
@@ -76,10 +78,12 @@ spec:
             httpGet:
               path: /health/ready
               port: 8558
+            periodSeconds: 120
           livenessProbe:
             httpGet:
               path: /health/alive
               port: 8558
+            periodSeconds: 120
           ports:
             # akka remoting
             - name: remoting
@@ -123,10 +127,12 @@ spec:
             httpGet:
               path: /health/ready
               port: 8558
+            periodSeconds: 120
           livenessProbe:
             httpGet:
               path: /health/alive
               port: 8558
+            periodSeconds: 120
           ports:
             # akka remoting
             - name: remoting
@@ -169,10 +175,12 @@ spec:
             httpGet:
               path: /api
               port: 8080
+            periodSeconds: 120
           livenessProbe:
             httpGet:
               path: /api
               port: 8080
+            periodSeconds: 120
           ports:
             - name: http
               containerPort: 8080
