@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: baas-state
-          image: apollo.docker.ing.net/baas-minikube-state:3.0.2-SNAPSHOT
+          image: baas-minikube-state:3.0.2-SNAPSHOT
           imagePullPolicy: Never
           readinessProbe:
             httpGet:
@@ -66,7 +66,7 @@ spec:
     spec:
       containers:
         - name: baas-interactions
-          image: apollo.docker.ing.net/baas-minikube-interactions:3.0.2-SNAPSHOT
+          image: baas-minikube-interactions:3.0.2-SNAPSHOT
           imagePullPolicy: Never
           readinessProbe:
             httpGet:
@@ -112,7 +112,7 @@ spec:
     spec:
       containers:
         - name: baas-event-listener
-          image: apollo.docker.ing.net/baas-minikube-event-listener:3.0.2-SNAPSHOT
+          image: baas-minikube-event-listener:3.0.2-SNAPSHOT
           imagePullPolicy: Never
           readinessProbe:
             httpGet:
@@ -157,7 +157,7 @@ spec:
     spec:
       containers:
         - name: client-app
-          image: apollo.docker.ing.net/baas-client-example:3.0.2-SNAPSHOT
+          image: baas-client-example:3.0.2-SNAPSHOT
           imagePullPolicy: Never
           readinessProbe:
             httpGet:

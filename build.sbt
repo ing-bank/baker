@@ -260,7 +260,7 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "The core node",
-    packageName in Docker := "apollo.docker.ing.net/baas-node-state",
+    packageName in Docker := "baas-node-state",
     dockerExposedPorts := Seq(8080)
   )
   .dependsOn(runtime, `baas-protocol-baker`, `baas-protocol-interaction-scheduling`)
@@ -400,7 +400,7 @@ lazy val `baker-example` = project
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "A web-shop checkout service example running baker",
-    packageName in Docker := "apollo.docker.ing.net/baker-example-app",
+    packageName in Docker := "baker-example-app",
     dockerExposedPorts := Seq(8080)
   )
   .dependsOn(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage)
@@ -433,7 +433,7 @@ lazy val `baas-client-example` = project
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "A web-shop checkout service example running on baas",
-    packageName in Docker := "apollo.docker.ing.net/baas-client-example",
+    packageName in Docker := "baas-client-example",
     dockerExposedPorts := Seq(8080)
   )
   .dependsOn(bakertypes, `baas-node-client`, recipeCompiler, recipeDsl)
@@ -461,7 +461,7 @@ lazy val `baas-interactions-example` = project
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "A web-shop checkout service interaction instances example running on baas",
-    packageName in Docker := "apollo.docker.ing.net/baas-interactions-example",
+    packageName in Docker := "baas-interactions-example",
     dockerExposedPorts := Seq(2551)
   )
   .dependsOn(`baas-node-interaction`)
@@ -489,7 +489,7 @@ lazy val `baas-event-listener-example` = project
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "A web-shop checkout service interaction instances example running on baas",
-    packageName in Docker := "apollo.docker.ing.net/baas-event-listener-example",
+    packageName in Docker := "baas-event-listener-example",
     dockerExposedPorts := Seq(2551)
   )
   .dependsOn(`baas-node-event-listener`)
@@ -508,7 +508,7 @@ lazy val `baas-minikube-state` = project.in(file("examples/baas-minikube-setup/b
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "The core node",
-    packageName in Docker := "apollo.docker.ing.net/baas-minikube-state",
+    packageName in Docker := "baas-minikube-state",
     dockerExposedPorts := Seq(8080)
   )
   .dependsOn(`baas-node-state`)
@@ -537,7 +537,7 @@ lazy val `baas-minikube-event-listener` = project.in(file("examples/baas-minikub
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "The event listener node",
-    packageName in Docker := "apollo.docker.ing.net/baas-minikube-event-listener",
+    packageName in Docker := "baas-minikube-event-listener",
     dockerExposedPorts := Seq()
   )
   .dependsOn(`baas-node-event-listener`)
@@ -566,7 +566,7 @@ lazy val `baas-minikube-interactions` = project.in(file("examples/baas-minikube-
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "The interactions node",
-    packageName in Docker := "apollo.docker.ing.net/baas-minikube-interactions",
+    packageName in Docker := "baas-minikube-interactions",
     dockerExposedPorts := Seq()
   )
   .dependsOn(`baas-node-interaction`)
