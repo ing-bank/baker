@@ -16,22 +16,22 @@ spec:
         actorSystemName: BaaS
     spec:
       serviceAccountName: hyperloop
+      imagePullSecrets:
+        - name: apollo
       containers:
         - name: baas-state
           image: apollo.docker.ing.net/baas-minikube-state:3.0.2-SNAPSHOT
           imagePullPolicy: Always
-          imagePullSecrets:
-            - name: apollo
           readinessProbe:
             httpGet:
               path: /health/ready
               port: 8558
-            periodSeconds: 120
+            periodSeconds: 600
           livenessProbe:
             httpGet:
               path: /health/alive
               port: 8558
-            periodSeconds: 120
+            periodSeconds: 600
           ports:
             # akka remoting
             - name: remoting
@@ -70,22 +70,22 @@ spec:
         actorSystemName: BaaS
     spec:
       serviceAccountName: hyperloop
+      imagePullSecrets:
+        - name: apollo
       containers:
         - name: baas-interactions
           image: apollo.docker.ing.net/baas-minikube-interactions:3.0.2-SNAPSHOT
           imagePullPolicy: Always
-          imagePullSecrets:
-            - name: apollo
           readinessProbe:
             httpGet:
               path: /health/ready
               port: 8558
-            periodSeconds: 120
+            periodSeconds: 600
           livenessProbe:
             httpGet:
               path: /health/alive
               port: 8558
-            periodSeconds: 120
+            periodSeconds: 600
           ports:
             # akka remoting
             - name: remoting
@@ -121,22 +121,22 @@ spec:
         actorSystemName: BaaS
     spec:
       serviceAccountName: hyperloop
+      imagePullSecrets:
+        - name: apollo
       containers:
         - name: baas-event-listener
           image: apollo.docker.ing.net/baas-minikube-event-listener:3.0.2-SNAPSHOT
           imagePullPolicy: Always
-          imagePullSecrets:
-            - name: apollo
           readinessProbe:
             httpGet:
               path: /health/ready
               port: 8558
-            periodSeconds: 120
+            periodSeconds: 600
           livenessProbe:
             httpGet:
               path: /health/alive
               port: 8558
-            periodSeconds: 120
+            periodSeconds: 600
           ports:
             # akka remoting
             - name: remoting
@@ -171,22 +171,22 @@ spec:
         app: client-app
     spec:
       serviceAccountName: hyperloop
+      imagePullSecrets:
+        - name: apollo
       containers:
         - name: client-app
           image: apollo.docker.ing.net/baas-client-example:3.0.2-SNAPSHOT
           imagePullPolicy: Always
-          imagePullSecrets:
-            - name: apollo
           readinessProbe:
             httpGet:
               path: /api
               port: 8080
-            periodSeconds: 120
+            periodSeconds: 600
           livenessProbe:
             httpGet:
               path: /api
               port: 8080
-            periodSeconds: 120
+            periodSeconds: 600
           ports:
             - name: http
               containerPort: 8080
