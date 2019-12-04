@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 ###########################################################################
-#Script Name	: createMinikubeNamespace.sh
+#Script Name	: create-minikube-example.sh
 #Description	: Creates and runs new minikube instance using preproxy
 #Args         : Not supported
 #Bash Version : GNU bash, version 3.x.XX

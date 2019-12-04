@@ -139,6 +139,43 @@ spec:
                   fieldPath: metadata.namespace
 ---
 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: client-app
+  name: client-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client-app
+  template:
+    metadata:
+      labels:
+        app: client-app
+    spec:
+      containers:
+        - name: client-app
+          image: apollo.docker.ing.net/baas-client-example:3.0.2-SNAPSHOT
+          imagePullPolicy: Never
+          readinessProbe:
+            httpGet:
+              path: /api
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /api
+              port: 8080
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: BAAS_HOSTNAME
+              value: http://baas-state-service:8080/
+---
+
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -172,6 +209,21 @@ metadata:
 spec:
   selector:
     app: baas-state
+  ports:
+    - port: 8080
+      protocol: TCP
+  type: LoadBalancer
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: client-app-service
+  labels:
+    run: client-app-service
+spec:
+  selector:
+    app: client-app
   ports:
     - port: 8080
       protocol: TCP

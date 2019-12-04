@@ -12,7 +12,7 @@ function log () {
 
 log "Delete current deployments"
 set +e
-kubectl delete -f akka-cluster.yml | echo "Ignoring delete resources declared on akka-cluster.yml"
+#kubectl delete -f baas-kubernetes-example.yml | echo "Ignoring delete resources declared on baas-kubernetes-example.yml"
 set -e
 
 log "Check status of Minikube & start if stopped"
@@ -22,7 +22,7 @@ mini_running=$(minikube status | grep 'host:' | awk '{print $2}')
 echo $mini_running
 
 if [[ $mini_running == "Stopped" ]]; then
-  sh ./createMinikubeNamespace.sh
+  sh ./create-minikube-namespace.sh
   echo "Started minikube"
 fi
 
@@ -36,11 +36,11 @@ log "Build new image"
 
 # Assuming current working directory is: ../baker/examples/baas-minikube-setup
 cd ../..
-sbt baas-minikube-state/docker:publishLocal
-sbt baas-minikube-interactions/docker:publishLocal
-sbt baas-minikube-event-listener/docker:publishLocal
+#sbt baas-minikube-state/docker:publishLocal
+#sbt baas-minikube-interactions/docker:publishLocal
+#sbt baas-minikube-event-listener/docker:publishLocal
+#sbt baas-client-example/docker:publishLocal
 
 cd examples/baas-minikube-setup
 
-kubectl apply -f akka-cluster.yml
-kubectl apply -f service.yml
+#kubectl apply -f baas-kubernetes-example.yml

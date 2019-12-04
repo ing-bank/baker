@@ -94,10 +94,16 @@ class ClusterBakerActorProvider(
 
 
   override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(implicit actorSystem: ActorSystem): ActorRef = {
+    val roles = Cluster(actorSystem).selfRoles
     ClusterSharding(actorSystem).start(
       typeName = "ProcessIndexActor",
       entityProps = ProcessIndex.props(actorIdleTimeout, Some(retentionCheckInterval), configuredEncryption, interactionManager, recipeManager, ingredientsFilter),
-      settings = ClusterShardingSettings.create(actorSystem),
+      settings = {
+        if(roles.contains("state-node"))
+          ClusterShardingSettings(actorSystem).withRole("state-node")
+        else
+          ClusterShardingSettings(actorSystem)
+      },
       extractEntityId = ClusterBakerActorProvider.entityIdExtractor(nrOfShards),
       extractShardId = ClusterBakerActorProvider.shardIdExtractor(nrOfShards)
     )
@@ -111,12 +117,18 @@ class ClusterBakerActorProvider(
       RecipeManager.props(),
       terminationMessage = PoisonPill,
       settings = ClusterSingletonManagerSettings(actorSystem))
+    val roles = Cluster(actorSystem).selfRoles
 
     actorSystem.actorOf(props = singletonManagerProps, name = recipeManagerName)
 
     val singletonProxyProps = ClusterSingletonProxy.props(
       singletonManagerPath = s"/user/$recipeManagerName",
-      settings = ClusterSingletonProxySettings(actorSystem))
+      settings = {
+        if (roles.contains("state-node"))
+          ClusterSingletonProxySettings(actorSystem).withRole("state-node")
+        else
+          ClusterSingletonProxySettings(actorSystem)
+      })
 
     actorSystem.actorOf(props = singletonProxyProps, name = "RecipeManagerProxy")
   }
