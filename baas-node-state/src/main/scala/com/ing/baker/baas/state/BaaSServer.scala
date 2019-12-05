@@ -50,13 +50,11 @@ class BaaSServer(implicit system: ActorSystem, mat: Materializer, baker: Baker, 
   implicit private val serializersProvider: SerializersProvider =
     SerializersProvider(system, encryption)
 
-  def route: Route = concat(haproxyCheck, health, pathPrefix("api" / "v3")(concat(health, addRecipe, getRecipe, getAllRecipes, bake,
+  def route: Route = concat(pathPrefix("api" / "v3")(concat(health, addRecipe, getRecipe, getAllRecipes, bake,
     fireEventAndResolveWhenReceived, fireEventAndResolveWhenCompleted, fireEventAndResolveOnEvent, fireEvent,
     getAllRecipeInstancesMetadata, getRecipeInstanceState, getVisualState, retryInteraction, resolveInteraction,
     stopRetryingInteraction
   )))
-
-  private def haproxyCheck: Route = pathSingleSlash(get(complete(StatusCodes.OK)))
 
   private def health: Route = pathPrefix("health")(get(complete(StatusCodes.OK)))
 

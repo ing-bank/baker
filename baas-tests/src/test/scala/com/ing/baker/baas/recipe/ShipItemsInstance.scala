@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 class ShipItemsInstance(implicit timer: Timer[IO]) extends ShipItems {
 
   override def apply(order: ShippingOrder): Future[ShippingConfirmed] = {
-      IO.sleep(500 millis)
+      IO.sleep(500.millis)
         .as(ShippingConfirmed())
         .unsafeToFuture()
   }
