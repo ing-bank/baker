@@ -34,7 +34,7 @@ class InteractionFailureStrategySpec extends WordSpecLike with Matchers {
     "derive the correct parameters when deadline is specified2" in {
 
       val deadline = 16 seconds
-      val initialDelay = 1 seconds
+      val initialDelay = 1.seconds
       val backoffFactor: Double = 2.0
 
       val actual = RetryWithIncrementalBackoff.builder()
@@ -55,7 +55,7 @@ class InteractionFailureStrategySpec extends WordSpecLike with Matchers {
     "derive the correct parameters when deadline is specified and max time between retries set" in {
 
       val deadline = 22 seconds
-      val initialDelay = 1 seconds
+      val initialDelay = 1.seconds
       val backoffFactor: Double = 2.0
       val maxDurationBetweenRetries = 4 seconds
 
@@ -78,7 +78,7 @@ class InteractionFailureStrategySpec extends WordSpecLike with Matchers {
 
     "verify that deadline is greater than initial delay" in {
 
-      val deadline = 1 seconds
+      val deadline = 1.seconds
       val initialDelay = 2 seconds
 
       intercept[IllegalArgumentException] {

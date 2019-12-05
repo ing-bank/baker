@@ -8,7 +8,7 @@ object BaaS {
 
   val baasVersion = "3.0.2-SNAPSHOT"
 
-  val haproxyStateNodesImage = "apollo.docker.ing.net/playground-haproxy-state-nodes:latest"
+  val haproxyStateNodesImage = "playground-haproxy-state-nodes:latest"
 
   def startBaaS: App[Unit] =
     for {
@@ -33,7 +33,7 @@ object BaaS {
     )
       .map { case (env, value) => s"-e $env=$value"}
       .mkString(" ")
-    val cmd = s"docker run --name $containerName --network $networkName $envVars apollo.docker.ing.net/baas-node-state:$version"
+    val cmd = s"docker run --name $containerName --network $networkName $envVars baas-node-state:$version"
     for {
       _ <- Terminal.execAndWait(
         command = cmd,
@@ -54,7 +54,7 @@ object BaaS {
     )
       .map { case (env, value) => s"-e $env=$value"}
       .mkString(" ")
-    val cmd = s"docker run --name $containerName --network $networkName $envVars apollo.docker.ing.net/baas-interactions-example:$version"
+    val cmd = s"docker run --name $containerName --network $networkName $envVars baas-interactions-example:$version"
     for {
       _ <- Terminal.execAndWait(
         command = cmd,
@@ -74,7 +74,7 @@ object BaaS {
     )
       .map { case (env, value) => s"-e $env=$value"}
       .mkString(" ")
-    val cmd = s"docker run --name $containerName --network $networkName $envVars apollo.docker.ing.net/baas-event-listener-example:$version"
+    val cmd = s"docker run --name $containerName --network $networkName $envVars baas-event-listener-example:$version"
     for {
       _ <- Terminal.execAndWait(
         command = cmd,
@@ -92,7 +92,7 @@ object BaaS {
     )
       .map { case (env, value) => s"-e $env=$value"}
       .mkString(" ")
-    val cmd = s"docker run --name $containerName --network $networkName $envVars -p 8080:8080 apollo.docker.ing.net/baas-client-example:$version"
+    val cmd = s"docker run --name $containerName --network $networkName $envVars -p 8080:8080 baas-client-example:$version"
     for {
       _ <- Terminal.execAndWait(
         command = cmd,

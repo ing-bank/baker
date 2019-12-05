@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 class ReserveItemsInstance(implicit timer: Timer[IO]) extends ReserveItems {
 
   override def apply(orderId: OrderId, items: List[Item]): Future[ReserveItemsOutput] = {
-      IO.sleep(1 second)
+      IO.sleep(1.second)
         .as(CheckoutFlowEvents.ItemsReserved(ReservedItems(items, Array.fill(1000)(Byte.MaxValue))))
         .unsafeToFuture()
   }

@@ -72,7 +72,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       for {
         exception <- Future.successful {
           intercept[IllegalArgumentException] {
-            Baker.akka(config, setupActorSystem)
+            AkkaBaker(config, setupActorSystem)
           }
         }
         _ <- setupActorSystem.terminate()
@@ -94,7 +94,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val setupActorSystem = ActorSystem("setup-actor-system", config)
       for {
         exception <- Future.successful {
-          intercept[MalformedURLException](Baker.akka(config, setupActorSystem))
+          intercept[MalformedURLException](AkkaBaker(config, setupActorSystem))
         }
         _ <- setupActorSystem.terminate()
       } yield assert(exception.getMessage contains "wrong-address")
@@ -113,7 +113,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
       val setupActorSystem = ActorSystem("setup-actor-system", config)
       for {
         exception <- Future.successful {
-          intercept[IllegalArgumentException](Baker.akka(config, setupActorSystem))
+          intercept[IllegalArgumentException](AkkaBaker(config, setupActorSystem))
         }
         _ <- setupActorSystem.terminate()
       } yield assert(exception.getMessage contains "No default service discovery implementation configured in `akka.discovery.method`")
