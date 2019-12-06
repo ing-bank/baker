@@ -8,8 +8,8 @@ import com.ing.baker.runtime.scaladsl.RecipeInstanceState
 import com.ing.baker.types.Value
 import com.ing.baker.{il, types}
 import org.mockito.Mockito._
-import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatestplus.mockito.MockitoSugar
 
 class RecipeRuntimeSpec extends WordSpecLike with Matchers with MockitoSugar {
   "The recipe runtime" should {

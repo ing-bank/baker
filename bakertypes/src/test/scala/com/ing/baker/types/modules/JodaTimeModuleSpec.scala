@@ -1,24 +1,24 @@
 package com.ing.baker.types.modules
 
 import com.ing.baker.types
-import com.ing.baker.types.{Converters, Int64}
+import com.ing.baker.types.Converters
 import org.joda.time.{DateTime, LocalDate, LocalDateTime}
 import org.scalacheck.Gen
 import org.scalacheck.Test.Parameters.defaultVerbose
-import org.scalatest.prop.Checkers
 import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatestplus.scalacheck.Checkers
 
 
 class JodaTimeModuleSpec extends WordSpecLike with Matchers with Checkers {
 
-  val minSuccessfulTests = 100
+  private val minSuccessfulTests = 100
 
   // Long.MaxValue is not supported by joda time for local dates, resulting in a integer overflow
   // This shifts the long max value 1 bit to the right (divides by 2)
   // This translates to the date: Fri Apr 24 17:36:27 CEST 146140482
-  val maxMillis = Long.MaxValue >> 1
+  private val maxMillis = Long.MaxValue >> 1
 
-  val numGen: Gen[Long] = Gen.chooseNum[Long](
+  private val numGen: Gen[Long] = Gen.chooseNum[Long](
     0L, maxMillis, 0, maxMillis
   )
 
