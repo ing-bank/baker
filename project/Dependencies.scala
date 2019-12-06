@@ -25,7 +25,7 @@ object Dependencies {
   val akkaStream =                "com.typesafe.akka"          %% "akka-stream"                        % akkaVersion
   val akkaPersistence =           "com.typesafe.akka"          %% "akka-persistence"                   % akkaVersion
   val akkaPersistenceQuery =      "com.typesafe.akka"          %% "akka-persistence-query"             % akkaVersion
-  val akkaPersistenceCassandra =  "com.typesafe.akka"          %% "akka-persistence-cassandra"         % "0.100"
+  val akkaPersistenceCassandra =  "com.typesafe.akka"          %% "akka-persistence-cassandra"         % "0.101"
   val akkaCluster =               "com.typesafe.akka"          %% "akka-cluster"                       % akkaVersion
   val akkaClusterSharding =       "com.typesafe.akka"          %% "akka-cluster-sharding"              % akkaVersion
   val akkaSlf4j =                 "com.typesafe.akka"          %% "akka-slf4j"                         % akkaVersion
