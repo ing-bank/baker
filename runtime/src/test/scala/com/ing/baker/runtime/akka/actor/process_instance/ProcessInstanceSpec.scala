@@ -26,8 +26,8 @@ import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.scalatest.Matchers
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import org.scalatest.time.{Milliseconds, Span}
+import org.scalatestplus.mockito.MockitoSugar
 
 import scala.concurrent.Promise
 import scala.concurrent.duration._
