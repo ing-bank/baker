@@ -3,18 +3,18 @@ package com.ing.baker.il
 import com.ing.baker.il.petrinet.Place._
 import com.ing.baker.il.petrinet._
 import com.ing.baker.petrinet.api._
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.scalalogging.{ LazyLogging, Logger }
 import org.slf4j.LoggerFactory
+import scala.language.higherKinds
 import scalax.collection.Graph
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.io.dot.implicits._
-import scalax.collection.io.dot.{DotAttr, _}
-
-import scala.language.higherKinds
+import scalax.collection.io.dot.{ DotAttr, _ }
 
 object RecipeVisualizer {
 
-  val log = LoggerFactory.getLogger("com.ing.baker.il.RecipeVisualizer")
+  @transient
+  lazy val logger: Logger = Logger(LoggerFactory.getLogger(getClass.getName))
 
   type RecipePetriNetGraph = Graph[Either[Place, Transition], WLDiEdge]
 
@@ -23,7 +23,7 @@ object RecipeVisualizer {
     def compactNode(node: RecipePetriNetGraph#NodeT): RecipePetriNetGraph = {
 
       // create direct edges from all incoming to outgoing nodes
-      val newEdges = node.incomingNodes.flatMap { incomingNode =>
+      val newEdges = node.incomingNodes.flatMap {incomingNode =>
         node.outgoingNodes.map(n => WLDiEdge[Node, String](incomingNode, n)(0, ""))
       }
 
@@ -34,13 +34,13 @@ object RecipeVisualizer {
     def compactAllNodes(fn: RecipePetriNetGraph#NodeT => Boolean): RecipePetriNetGraph =
       graph.nodes.foldLeft(graph) {
         case (acc, node) if fn(node) => acc.compactNode(node)
-        case (acc, _)                => acc
+        case (acc, _) => acc
       }
   }
 
   /**
-    * Returns the label for a node.
-    */
+   * Returns the label for a node.
+   */
   private def nodeLabelFn: Either[Place, Transition] ⇒ String = {
     case Left(Place(label, EmptyEventIngredientPlace)) ⇒ s"empty:${label}"
     case Left(place) ⇒ place.label
@@ -49,8 +49,8 @@ object RecipeVisualizer {
   }
 
   /**
-    * Returns the style attributes for a node.
-    */
+   * Returns the style attributes for a node.
+   */
   private def nodeDotAttrFn(style: RecipeVisualStyle): (RecipePetriNetGraph#NodeT, Set[String], Set[String]) => List[DotAttr] =
     (node: RecipePetriNetGraph#NodeT, eventNames: Set[String], ingredientNames: Set[String]) ⇒
       node.value match {
@@ -90,10 +90,10 @@ object RecipeVisualizer {
 
     // specifies which places to compact (remove)
     val placesToCompact = (node: RecipePetriNetGraph#NodeT) => node.value match {
-      case Left(Place(_, IngredientPlace))           => false
+      case Left(Place(_, IngredientPlace)) => false
       case Left(Place(_, EmptyEventIngredientPlace)) => false
-      case Left(Place(_, EventOrPreconditionPlace))  => false
-      case Left(Place(_, _))  => true
+      case Left(Place(_, EventOrPreconditionPlace)) => false
+      case Left(Place(_, _)) => true
       case _ => false
     }
 
@@ -118,22 +118,22 @@ object RecipeVisualizer {
   }
 
   def visualizeRecipe(recipe: CompiledRecipe,
-                      style: RecipeVisualStyle,
-                      filter: String => Boolean = _ => true,
-                      eventNames: Set[String] = Set.empty,
-                      ingredientNames: Set[String] = Set.empty): String =
+    style: RecipeVisualStyle,
+    filter: String => Boolean = _ => true,
+    eventNames: Set[String] = Set.empty,
+    ingredientNames: Set[String] = Set.empty): String =
     generateDot(recipe.petriNet.innerGraph, style, filter, eventNames, ingredientNames)
 
 
   def visualizePetriNet[P, T](graph: PetriNetGraph[P, T]): String = {
 
     val nodeLabelFn: Either[P, T] ⇒ String = node ⇒ node match {
-      case Left(p)  ⇒ p.toString
+      case Left(p) ⇒ p.toString
       case Right(t) ⇒ t.toString
     }
 
     val nodeDotAttrFn: Either[P, T] => List[DotAttr] = node ⇒ node match {
-      case Left(_)  ⇒ List(DotAttr("shape", "circle"))
+      case Left(_) ⇒ List(DotAttr("shape", "circle"))
       case Right(_) ⇒ List(DotAttr("shape", "square"))
     }
 

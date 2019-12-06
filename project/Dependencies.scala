@@ -35,7 +35,7 @@ object Dependencies {
 
   val akkaHttp =                  "com.typesafe.akka"          %% "akka-http"                          % "10.0.15"
   val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.5"
-  
+
   val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.12"
 
   val levelDBJni =                "org.fusesource.leveldbjni"  %  "leveldbjni-all"                     % "1.8"
@@ -76,12 +76,14 @@ object Dependencies {
   val typeSafeConfig =            "com.typesafe"               % "config"                              % "1.4.0"
 
   val objenisis =                 "org.objenesis"              %  "objenesis"                          % "3.1"
-  
+
   val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.10.5"
   val slf4jApi =                  "org.slf4j"                  %  "slf4j-api"                          % "1.7.29"
 
   val slf4jSimple =               "org.slf4j"                  % "slf4j-simple"                        % "1.7.5"
   val scalaCheck =                "org.scalacheck"             %% "scalacheck"                         % "1.13.5"
+
+  val scalaLogging =              "com.typesafe.scala-logging" %% "scala-logging"                      % "3.9.2"
 
   def scopeDeps(scope: String, modules: Seq[ModuleID]) =  modules.map(m => m % scope)
   def compileDeps(modules: ModuleID*) = modules.toSeq

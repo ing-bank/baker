@@ -1,15 +1,14 @@
 package com.ing.baker.types
 
 import com.typesafe.config.{ ConfigFactory, ConfigValue }
-import org.slf4j.{ Logger, LoggerFactory }
+import com.typesafe.scalalogging.LazyLogging
 import scala.collection.JavaConverters._
 import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe.TypeTag
 import scala.util.Try
 
-object Converters {
+object Converters extends LazyLogging{
 
-  private val log: Logger = LoggerFactory.getLogger("com.ing.baker.types")
 
   private val configPathPrefix: String = "baker.types"
   private val defaultTypeConverter: TypeAdapter = new TypeAdapter(loadDefaultModulesFromConfig())
@@ -38,7 +37,7 @@ object Converters {
       (clazz, module)
     }
 
-    if (tried.isFailure) log.error(s"Failed to load type module ${entry.getKey}")
+    if (tried.isFailure) logger.error(s"Failed to load type module ${entry.getKey}")
 
     tried.toOption
   }
