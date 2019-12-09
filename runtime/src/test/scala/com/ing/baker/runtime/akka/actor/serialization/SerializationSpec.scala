@@ -29,7 +29,7 @@ import org.scalacheck.Prop.forAll
 import org.scalacheck.Test.Parameters.defaultVerbose
 import org.scalacheck._
 import org.scalatest.FunSuiteLike
-import org.scalatest.prop.Checkers
+import org.scalatestplus.scalacheck.Checkers
 
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
@@ -92,7 +92,7 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
     val serialized = serializer.toBinary(m)
     val deserialized = serializer.fromBinary(serialized, serializer.manifest(m))
     deserialized === m &&
-    ctxFromProto(ctxToProto(m)) === Success(m)
+      ctxFromProto(ctxToProto(m)) === Success(m)
   }
 
   checkFor[ProcessIndexProtocol.Index].run
@@ -359,7 +359,9 @@ object SerializationSpec {
     } yield CreateProcess(recipeId, recipeInstanceId)
 
     class SimpleActor extends Actor {
-      override def receive: Receive = { case _ => () }
+      override def receive: Receive = {
+        case _ => ()
+      }
     }
 
     val waitForRetriesGen = Gen.oneOf(true, false)
@@ -401,7 +403,7 @@ object SerializationSpec {
     } yield StopRetryingInteraction(recipeInstanceId, interactionName)
 
     val sensoryEventStatusGen: Gen[SensoryEventStatus] = Gen.oneOf(
-      SensoryEventStatus.AlreadyReceived ,
+      SensoryEventStatus.AlreadyReceived,
       SensoryEventStatus.Completed,
       SensoryEventStatus.FiringLimitMet,
       SensoryEventStatus.Received,
@@ -410,9 +412,9 @@ object SerializationSpec {
     )
 
     val eventResultGen: Gen[SensoryEventResult] = for {
-        status <- sensoryEventStatusGen
-        events <- Gen.listOf(Gen.alphaStr)
-        ingredients <- Gen.listOf(Runtime.ingredientsGen)
+      status <- sensoryEventStatusGen
+      events <- Gen.listOf(Gen.alphaStr)
+      ingredients <- Gen.listOf(Runtime.ingredientsGen)
     } yield SensoryEventResult(status, events, ingredients.toMap)
 
     implicit val processEventResponse: Gen[ProcessEventResponse] = for {

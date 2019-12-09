@@ -1,14 +1,13 @@
 package com.ing.baker.runtime.akka.actor.process_index
 
-import akka.actor.{Actor, ActorRef, Props, ReceiveTimeout}
+import akka.actor.{ Actor, ActorLogging, ActorRef, Props, ReceiveTimeout }
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.scaladsl.{EventInstance, EventReceived, EventRejected, SensoryEventResult, RecipeInstanceState}
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{FireSensoryEventReaction, FireSensoryEventRejection, ProcessEvent, ProcessEventCompletedResponse, ProcessEventReceivedResponse}
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.common.SensoryEventStatus
-import com.ing.baker.types.{PrimitiveValue, Value}
-import org.slf4j.{Logger, LoggerFactory}
+import com.ing.baker.runtime.scaladsl.{ EventInstance, EventReceived, EventRejected, SensoryEventResult }
+import com.ing.baker.types.{ PrimitiveValue, Value }
 
 object SensoryEventResponseHandler {
 
@@ -17,16 +16,15 @@ object SensoryEventResponseHandler {
 }
 
 /**
-  * An actor which builds the response to fireSensoryEvent* requests
-  * - Obtains the data from the process instance (by accumulating transition firing outcomes)
-  * - Publishes events to the system event stream
-  * - Does involving logging
-  */
-class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ingredientsFilter: Seq[String]) extends Actor {
+ * An actor which builds the response to fireSensoryEvent* requests
+ * - Obtains the data from the process instance (by accumulating transition firing outcomes)
+ * - Publishes events to the system event stream
+ * - Does involving logging
+ */
+class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ingredientsFilter: Seq[String])
+  extends Actor with ActorLogging {
 
   context.setReceiveTimeout(command.timeout)
-
-  val log: Logger = LoggerFactory.getLogger(classOf[SensoryEventResponseHandler])
 
   val waitForRetries: Boolean = command.reaction match {
     case FireSensoryEventReaction.NotifyWhenReceived => false
@@ -154,15 +152,15 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
       case FireSensoryEventReaction.NotifyOnEvent(_, onEvent)
         if Option(cache.head.asInstanceOf[TransitionFired].output.asInstanceOf[EventInstance]).exists(_.name == onEvent) =>
         notifyComplete(cache.reverse)
-        PartialFunction { _ => () }
+        PartialFunction {_ => ()}
 
       case FireSensoryEventReaction.NotifyWhenCompleted(_) if runningJobs.isEmpty =>
         notifyComplete(cache.reverse)
-        PartialFunction { _ => () }
+        PartialFunction {_ => ()}
 
       case FireSensoryEventReaction.NotifyBoth(_, _) if runningJobs.isEmpty =>
         notifyComplete(cache.reverse)
-        PartialFunction { _ => () }
+        PartialFunction {_ => ()}
 
       case _ =>
         PartialFunction {

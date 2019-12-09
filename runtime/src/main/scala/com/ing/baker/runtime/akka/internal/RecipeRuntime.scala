@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka.internal
 import java.lang.reflect.InvocationTargetException
 
 import akka.event.EventStream
-import cats.effect.IO
+import cats.effect.{ContextShift, IO}
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
@@ -120,6 +120,7 @@ object RecipeRuntime {
 
 class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime[Place, Transition, RecipeInstanceState, EventInstance] {
 
+  protected implicit lazy val contextShift: ContextShift[IO] = IO.contextShift(ec)
   /**
     * All transitions except sensory event interactions are auto-fireable by the runtime
     */

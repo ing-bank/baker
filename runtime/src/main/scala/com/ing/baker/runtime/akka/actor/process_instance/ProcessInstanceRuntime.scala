@@ -9,6 +9,7 @@ import com.ing.baker.runtime.akka._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceEventSourcing._
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.BlockTransition
 import com.ing.baker.runtime.akka.actor.process_instance.internal.{ExceptionStrategy, Instance, Job}
+import com.typesafe.scalalogging.LazyLogging
 import org.slf4j.{Logger, LoggerFactory}
 
 /**
@@ -19,7 +20,7 @@ import org.slf4j.{Logger, LoggerFactory}
   * @tparam S The state type
   * @tparam E The event type
   */
-trait ProcessInstanceRuntime[P, T, S, E] {
+trait ProcessInstanceRuntime[P, T, S, E] extends LazyLogging {
 
   val log: Logger = LoggerFactory.getLogger("com.ing.baker.runtime.core.actor.process_instance.ProcessInstanceRuntime")
 
@@ -31,15 +32,15 @@ trait ProcessInstanceRuntime[P, T, S, E] {
   val eventSource: T ⇒ S ⇒ E ⇒ S = _ ⇒ s ⇒ _ ⇒ s
 
   /**
-    * This function is called when a transition throws an exception.
-    *
-    * By default the transition is blocked.
-    */
+   * This function is called when a transition throws an exception.
+   *
+   * By default the transition is blocked.
+   */
   def handleException(job: Job[P, T, S])(throwable: Throwable, failureCount: Int, startTime: Long, outMarking: MultiSet[P]): ExceptionStrategy = BlockTransition
 
   /**
-    * Returns the task that should be executed for a transition.
-    */
+   * Returns the task that should be executed for a transition.
+   */
   def transitionTask(petriNet: PetriNet[P, T], t: T)(marking: Marking[P], state: S, input: Any): IO[(Marking[P], E)]
 
   /**
@@ -50,25 +51,25 @@ trait ProcessInstanceRuntime[P, T, S, E] {
   def canBeFiredAutomatically(instance: Instance[P, T, S], t: T): Boolean = instance.petriNet.incomingPlaces(t).nonEmpty
 
   /**
-    * Defines which tokens from a marking for a particular place are consumable by a transition.
-    *
-    * By default ALL tokens from that place are consumable.
-    *
-    * You can override this for example in case you use a colored (data) petri net model with filter rules on the edges.
-    */
+   * Defines which tokens from a marking for a particular place are consumable by a transition.
+   *
+   * By default ALL tokens from that place are consumable.
+   *
+   * You can override this for example in case you use a colored (data) petri net model with filter rules on the edges.
+   */
   def consumableTokens(petriNet: PetriNet[P, T])(marking: Marking[P], p: P, t: T): MultiSet[Any] = marking.getOrElse(p, MultiSet.empty)
 
   /**
-    * Takes a Job specification, executes it and returns a TransitionEvent (asychronously using cats.effect.IO)
-    *
-    * TODO
-    *
-    * The use of cats.effect.IO is not really necessary at this point. It was mainly chosen to support cancellation in
-    * the future: https://typelevel.org/cats-effect/datatypes/io.html#cancelable-processes
-    *
-    * However, since that is not used this can be refactored to a simple function: Job -> TransitionEvent
-    *
-    */
+   * Takes a Job specification, executes it and returns a TransitionEvent (asychronously using cats.effect.IO)
+   *
+   * TODO
+   *
+   * The use of cats.effect.IO is not really necessary at this point. It was mainly chosen to support cancellation in
+   * the future: https://typelevel.org/cats-effect/datatypes/io.html#cancelable-processes
+   *
+   * However, since that is not used this can be refactored to a simple function: Job -> TransitionEvent
+   *
+   */
   def jobExecutor(topology: PetriNet[P, T])(implicit transitionIdentifier: Identifiable[T], placeIdentifier: Identifiable[P]): Job[P, T, S] ⇒ IO[TransitionEvent] = {
 
     def exceptionStackTrace(e: Throwable): String = {
@@ -83,7 +84,7 @@ trait ProcessInstanceRuntime[P, T, S, E] {
       val transition = job.transition
       val consumed: Marking[Id] = job.consume.marshall
 
-      IO.unit.flatMap { _ =>
+      IO.unit.flatMap {_ =>
         // calling transitionTask(...) could potentially throw an exception
         // TODO I don't believe the last statement is true
         transitionTask(topology, transition)(job.consume, job.processState, job.input)
@@ -99,7 +100,7 @@ trait ProcessInstanceRuntime[P, T, S, E] {
       }.handleException {
         // If an exception was thrown while computing the failure strategy we block the interaction from firing
         case e: Throwable =>
-          log.error(s"Exception while handling transition failure", e)
+          logger.error(s"Exception while handling transition failure", e)
           TransitionFailedEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, job.input, exceptionStackTrace(e), ExceptionStrategy.BlockTransition)
       }
     }
@@ -115,7 +116,7 @@ trait ProcessInstanceRuntime[P, T, S, E] {
     }
 
     // check if any any places have an insufficient number of tokens
-    if (consumable.exists { case (_, count, tokens) ⇒ tokens.multisetSize < count })
+    if (consumable.exists {case (_, count, tokens) ⇒ tokens.multisetSize < count})
       Seq.empty
     else {
       val consume = consumable.map {
@@ -128,21 +129,21 @@ trait ProcessInstanceRuntime[P, T, S, E] {
   }
 
   /**
-    * Checks whether a transition is 'enabled' in a marking.
-    */
+   * Checks whether a transition is 'enabled' in a marking.
+   */
   def isEnabled(petriNet: PetriNet[P, T])(marking: Marking[P], t: T): Boolean = consumableMarkings(petriNet)(marking, t).nonEmpty
 
   /**
-    * Returns all enabled transitions for a marking.
-    */
+   * Returns all enabled transitions for a marking.
+   */
   def enabledTransitions(petriNet: PetriNet[P, T])(marking: Marking[P]): Iterable[T] =
     petriNet.transitions.filter(t ⇒ consumableMarkings(petriNet)(marking, t).nonEmpty)
 
   /**
-    * Creates a job for a specific transition with input, computes the marking it should consume
-    */
+   * Creates a job for a specific transition with input, computes the marking it should consume
+   */
   def createJob(transition: T, input: Any, correlationId: Option[String] = None): State[Instance[P, T, S], Either[String, Job[P, T, S]]] =
-    State { instance ⇒
+    State {instance ⇒
       if (instance.isBlocked(transition))
         (instance, Left("Transition is blocked by a previous failure"))
       else
@@ -170,8 +171,8 @@ trait ProcessInstanceRuntime[P, T, S, E] {
   }
 
   /**
-    * Finds all automated enabled transitions.
-    */
+   * Finds all automated enabled transitions.
+   */
   def allEnabledJobs: State[Instance[P, T, S], Set[Job[P, T, S]]] =
     firstEnabledJob.flatMap {
       case None ⇒ State.pure(Set.empty)

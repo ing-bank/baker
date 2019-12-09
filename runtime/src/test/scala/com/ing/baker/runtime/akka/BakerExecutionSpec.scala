@@ -22,8 +22,8 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers.{eq => mockitoEq, _}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
-import org.slf4j.{Logger, LoggerFactory}
-
+import org.mockito.stubbing.Answer
+import org.slf4j.LoggerFactory
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -33,8 +33,6 @@ case class SomeNotDefinedEvent(name: String)
 class BakerExecutionSpec extends BakerRuntimeTestBase {
 
   override def actorSystemName = "BakerExecutionSpec"
-
-  val log: Logger = LoggerFactory.getLogger(classOf[BakerExecutionSpec])
 
   before {
     resetMocks()

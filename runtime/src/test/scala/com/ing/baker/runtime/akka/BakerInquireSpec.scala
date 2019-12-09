@@ -1,22 +1,15 @@
 package com.ing.baker.runtime.akka
 
-import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
+import akka.persistence.inmemory.extension.{ InMemoryJournalStorage, StorageExtension }
 import akka.testkit.TestProbe
 import com.ing.baker._
 import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.TestRecipe.getRecipe
-import com.ing.baker.runtime.common.RecipeInformation
-import org.slf4j.LoggerFactory
-
 import scala.language.postfixOps
 
 class BakerInquireSpec extends BakerRuntimeTestBase {
 
   override def actorSystemName = "BakerInquireSpec"
-
-  val log = LoggerFactory.getLogger(classOf[BakerInquireSpec])
-
 
   before {
     resetMocks

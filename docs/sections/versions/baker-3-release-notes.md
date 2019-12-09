@@ -222,3 +222,11 @@ In JBaker we supported using a UUID as a processId.
 In this release this has been removed completely and we accept Strings.
 This is again in line with being clearer what Baker does.
 Internally we were just transforming this to a String.
+
+### Accesss to RuntimeEvents
+Version 2 would provided undocumented public interfaces returning RuntimeEvent instances.
+In version 3, the possibility to get Ingredients provided by a specific Event is gone.
+Users should not care where ingredients are provided from.
+This could be from an SensoryEvent or as output of a Event from an Interaction.
+This should not matter, only if the ingredient is available should matter.
+This allow users to flexibly recipes without impacting client code.

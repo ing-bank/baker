@@ -3,15 +3,15 @@ package com.ing.baker.runtime.akka.actor.serialization
 import akka.actor.ExtendedActorSystem
 import com.ing.baker.il
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider
+import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
 import com.ing.baker.runtime.akka.actor.process_index.{ProcessIndex, ProcessIndexProtocol}
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
+import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata, RecipeInstanceState}
-import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider, TypedProtobufSerializer}
 import com.ing.baker.runtime.serialization.TypedProtobufSerializer.{BinarySerializable, forType}
-import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProto._
-import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
+import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider, TypedProtobufSerializer}
 
 object BakerTypedProtobufSerializer {
 
@@ -21,8 +21,8 @@ object BakerTypedProtobufSerializer {
   }
 
   /** Hardcoded serializerId for this serializer. This should not conflict with other serializers.
-    * Values from 0 to 40 are reserved for Akka internal usage.
-    */
+   * Values from 0 to 40 are reserved for Akka internal usage.
+   */
   val identifier = 101
 
   def commonEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
@@ -42,7 +42,7 @@ object BakerTypedProtobufSerializer {
     )
 
   def processIndexEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
-    List (
+    List(
       forType[ClusterBakerActorProvider.GetShardIndex]
         .register("ProcessIndex.GetShardIndex"),
       forType[ProcessIndex.ActorCreated]
@@ -99,8 +99,8 @@ object BakerTypedProtobufSerializer {
         .register("ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet")
     )
 
-    def processInstanceEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
-      List(
+  def processInstanceEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
+    List(
       forType[ProcessInstanceProtocol.Stop]
         .register("ProcessInstanceProtocol.Stop"),
       forType[ProcessInstanceProtocol.GetState.type]

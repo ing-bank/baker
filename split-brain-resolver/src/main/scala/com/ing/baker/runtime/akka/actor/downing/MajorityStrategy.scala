@@ -1,17 +1,15 @@
 package com.ing.baker.runtime.akka.actor.downing
 
 import akka.cluster.UniqueAddress
-import org.slf4j.LoggerFactory
+import com.typesafe.scalalogging.LazyLogging
 
-class MajorityStrategy extends Strategy {
-
-  private val log = LoggerFactory.getLogger(classOf[MajorityStrategy])
+class MajorityStrategy extends Strategy with LazyLogging {
 
   override def sbrDecision(clusterHelper: ClusterHelper): Unit = {
     if (clusterHelper.amIMember && clusterHelper.amILeader && clusterHelper.unreachables.nonEmpty) {
       val nodesToDown = this.nodesToDown(clusterHelper)
 
-      log.info(s"SplitBrainResolver: ${clusterHelper.myUniqueAddress} downing these nodes $nodesToDown")
+      logger.info(s"SplitBrainResolver: ${clusterHelper.myUniqueAddress} downing these nodes $nodesToDown")
       if (nodesToDown contains clusterHelper.myUniqueAddress) {
         // leader going down
         clusterHelper.downSelf()

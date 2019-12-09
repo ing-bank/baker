@@ -4,8 +4,8 @@ import org.scalacheck.Gen._
 import org.scalacheck.Prop.forAll
 import org.scalacheck._
 import org.scalatest.FunSuite
-import org.scalatest.prop.Checkers
 import com.ing.baker.runtime.serialization.Encryption._
+import org.scalatestplus.scalacheck.Checkers
 
 class EncryptionPropertiesSpec extends FunSuite with Checkers {
 

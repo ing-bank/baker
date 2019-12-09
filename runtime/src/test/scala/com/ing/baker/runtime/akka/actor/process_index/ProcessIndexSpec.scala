@@ -23,8 +23,9 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Mockito
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.Eventually
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Matchers, WordSpecLike}
+import org.scalatestplus.mockito.MockitoSugar
 import scalax.collection.immutable.Graph
 
 import scala.concurrent.duration._
