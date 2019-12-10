@@ -4,11 +4,9 @@ import akka.actor.ActorSystem
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
 import com.ing.baker.baas.scaladsl.BaaSEventListener
-import org.slf4j.LoggerFactory
+import com.typesafe.scalalogging.LazyLogging
 
-object Main extends App {
-
-  val log = LoggerFactory.getLogger("EventListener")
+object Main extends App with LazyLogging {
 
   val actorSystem = ActorSystem("BaaS") // This should be done by the BaaSInteractionInstance ecosystem to ease the configuration and improve the UX
   AkkaManagement(actorSystem).start()
@@ -16,6 +14,6 @@ object Main extends App {
   val ecosystem = BaaSEventListener(actorSystem)
 
   ecosystem.registerEventListener("Webshop", (metadata, event) => {
-    log.info(metadata.recipeName + " [" + metadata.recipeInstanceId + "] " + event.name)
+    logger.info(metadata.recipeName + " [" + metadata.recipeInstanceId + "] " + event.name)
   })
 }
