@@ -24,12 +24,12 @@ import scala.concurrent.duration._
 
 class ProcessInstanceEventSourcingSpec extends AkkaTestBase("ProcessQuerySpec") with BeforeAndAfterEach {
 
-  implicit val akkaTimout = Timeout(2 seconds)
-  val timeOut: Duration = akkaTimout.duration
+  private implicit val akkaTimout: Timeout = Timeout(2 seconds)
+  private val timeOut: Duration = akkaTimout.duration
 
-  implicit def materializer = ActorMaterializer()
+  private implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  implicit def ec: ExecutionContext = system.dispatcher
+  private implicit val ec: ExecutionContext = system.dispatcher
 
   override protected def beforeEach(): Unit = {
     // Clean the journal before each test
@@ -59,16 +59,16 @@ class ProcessInstanceEventSourcingSpec extends AkkaTestBase("ProcessQuerySpec") 
       instance ! Initialize(p1.markWithN(1), ())
 
       expectMsg(Initialized(p1.markWithN(1), ()))
-      expectMsgPF(timeOut) {case TransitionFired(_, 1, _, _, _, _, _) ⇒}
-      expectMsgPF(timeOut) {case TransitionFired(_, 2, _, _, _, _, _) ⇒}
+      expectMsgPF(timeOut) { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
+      expectMsgPF(timeOut) { case TransitionFired(_, 2, _, _, _, _, _) ⇒ }
 
       ProcessInstanceEventSourcing.eventsForInstance[Place, Transition, Unit, Unit](
-        "test",
-        recipeInstanceId,
-        petriNet,
-        NoEncryption,
-        readJournal,
-        t ⇒ eventSourceFunction)
+        processTypeName = "test",
+        recipeInstanceId = recipeInstanceId,
+        topology = petriNet,
+        encryption = NoEncryption,
+        readJournal = readJournal,
+        eventSourceFn = t ⇒ eventSourceFunction)
         .map(_._2) // Get the event from the tuple
         .runWith(TestSink.probe)
         .request(3)
@@ -82,7 +82,6 @@ class ProcessInstanceEventSourcingSpec extends AkkaTestBase("ProcessQuerySpec") 
           consumed shouldBe p2.markWithN(1).marshall
           produced shouldBe p3.markWithN(1).marshall
       }
-
     }
   }
 }
