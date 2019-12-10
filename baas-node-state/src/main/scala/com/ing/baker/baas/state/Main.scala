@@ -5,10 +5,11 @@ import akka.stream.ActorMaterializer
 import com.ing.baker.runtime.akka.AkkaBaker
 import com.typesafe.config.ConfigFactory
 
-import scala.concurrent.duration._
 import scala.concurrent.Await
+import scala.concurrent.duration._
 
 object Main extends App {
+  private val timeout: FiniteDuration = 20.seconds
 
   println(Console.YELLOW + "Starting State Node..." + Console.RESET)
 
@@ -24,6 +25,6 @@ object Main extends App {
   Await.result(BaaSServer.run(stateNodeBaker, "0.0.0.0", httpServerPort)(stateNodeSystem, materializer).map { hook =>
     println(Console.GREEN + "State Node started..." + Console.RESET)
     println(hook.localAddress)
-    sys.addShutdownHook(Await.result(hook.unbind(), 20.seconds))
-  }, 20.seconds)
+    sys.addShutdownHook(Await.result(hook.unbind(), timeout))
+  }, timeout)
 }
