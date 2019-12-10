@@ -5,15 +5,13 @@ import java.util.UUID
 import cats.effect.{IO, Timer}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
-import org.log4s.{Logger, getLogger}
+import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
+import com.typesafe.scalalogging.LazyLogging
 import webshop.webservice.CheckoutFlowIngredients.{Item, OrderId, PaymentInformation, ShippingAddress}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
-object WebShopBaker {
-
-  val logger: Logger = getLogger("webshop.webservice")
+object WebShopBaker extends LazyLogging {
 
   val checkoutFlowCompiledRecipe: CompiledRecipe =
     RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
@@ -44,47 +42,38 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
 
   override def addCheckoutAddressInfo(orderId: String, address: String): IO[Option[String]] =
     IO.fromFuture(IO {
-      val event = EventInstance.unsafeFrom(
-        CheckoutFlowEvents.ShippingAddressReceived(ShippingAddress(address)))
-      for {
-        status <- baker.fireEventAndResolveWhenReceived(orderId, event)
-        _ = logger.info(s"${event.name}[$orderId]: $status")
-      } yield None
+      fireAndInformEvent(orderId, EventInstance.unsafeFrom(
+        CheckoutFlowEvents.ShippingAddressReceived(ShippingAddress(address))))
     })
 
   override def addCheckoutPaymentInfo(orderId: String, paymentInfo: String): IO[Option[String]] =
     IO.fromFuture(IO {
-      val event = EventInstance.unsafeFrom(
-        CheckoutFlowEvents.PaymentInformationReceived(PaymentInformation(paymentInfo)))
-      for {
-        status <- baker.fireEventAndResolveWhenReceived(orderId, event)
-        _ = logger.info(s"${event.name}[$orderId]: $status")
-      } yield None
+      fireAndInformEvent(orderId, EventInstance.unsafeFrom(
+        CheckoutFlowEvents.PaymentInformationReceived(PaymentInformation(paymentInfo))))
     })
+
+  private def fireAndInformEvent(orderId: String, event: EventInstance): Future[Option[String]] = {
+    for {
+      status <- baker.fireEventAndResolveWhenReceived(orderId, event)
+      _ = logger.info(s"${event.name}[$orderId]: $status")
+    } yield None
+  }
 
   override def pollOrderStatus(orderId: String): IO[OrderStatus] =
     IO.fromFuture(IO {
       for {
         state <- baker.getRecipeInstanceState(orderId)
-        /*
-        _ = println
-        _ = println("EVENTS")
-        _ = state.events.foreach(println)
-        _ = println
-        _ = println("INGREDIENTS")
-        _ = state.ingredients.foreach(println)
-        */
         eventNames = state.events.map(_.name)
         status = {
-          if(eventNames.contains("ShippingConfirmed"))
+          if (eventNames.contains("ShippingConfirmed"))
             OrderStatus.Complete
-          else if(eventNames.contains("PaymentFailed"))
+          else if (eventNames.contains("PaymentFailed"))
             OrderStatus.PaymentFailed
-          else if(eventNames.contains("OrderHadUnavailableItems"))
+          else if (eventNames.contains("OrderHadUnavailableItems"))
             OrderStatus.UnavailableItems(state.ingredients("unavailableItems").as[List[Item]].map(_.itemId))
-          else if(eventNames.containsSlice(List("ShippingAddressReceived", "PaymentInformationReceived")))
+          else if (eventNames.containsSlice(List("ShippingAddressReceived", "PaymentInformationReceived")))
             OrderStatus.ProcessingPayment
-          else if(eventNames.contains("PaymentSuccessful"))
+          else if (eventNames.contains("PaymentSuccessful"))
             OrderStatus.ShippingItems
           else
             OrderStatus.InfoPending(List("ShippingAddressReceived", "PaymentInformationReceived")
@@ -95,5 +84,7 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
     })
 
   override def gracefulShutdown: IO[Unit] =
-    IO { baker.gracefulShutdown() }
+    IO {
+      baker.gracefulShutdown()
+    }
 }
