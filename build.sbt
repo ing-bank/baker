@@ -23,6 +23,7 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     s"-target:jvm-$jvmV",
     "-Xfatal-warnings"
   ),
+  coverageExcludedPackages := "<empty>;.*.javadsl;.*.scaladsl;.*.common;.*.protobuf",
   packageOptions in (Compile, packageBin) +=
     Package.ManifestAttributes(
       "Build-Time" -> new java.util.Date().toString,
