@@ -66,13 +66,15 @@ class InteractionAgent(interaction: InteractionInstance) extends Actor {
   subscribePush()
   pull()
 
+  private val timeout: FiniteDuration = 10.seconds
+
   def receive: Receive = {
     case ProtocolPushPullMatching.Push(mandated, uuid) =>
       // start Quest commit protocol
       log.info(s"${interaction.name}:$uuid: Considering quest from $mandated")
       mandated ! ProtocolQuestCommit.Considering(self)
       unsubscribePush()
-      context.system.scheduler.scheduleOnce(10 seconds, self, CommitTimeout)(context.dispatcher, self)
+      context.system.scheduler.scheduleOnce(timeout, self, CommitTimeout)(context.dispatcher, self)
       context.become(considering(uuid))
 
     case ProtocolPushPullMatching.AvailableQuest(mandated, uuid) =>
@@ -80,7 +82,7 @@ class InteractionAgent(interaction: InteractionInstance) extends Actor {
       log.info(s"${interaction.name}:$uuid: Considering quest from $mandated")
       mandated ! ProtocolQuestCommit.Considering(self)
       unsubscribePush()
-      context.system.scheduler.scheduleOnce(10 seconds, self, CommitTimeout)(context.dispatcher, self)
+      context.system.scheduler.scheduleOnce(timeout, self, CommitTimeout)(context.dispatcher, self)
       context.become(considering(uuid))
   }
 
@@ -92,7 +94,6 @@ class InteractionAgent(interaction: InteractionInstance) extends Actor {
       subscribePush()
       pull()
       context.become(receive)
-    //      context.become(committed(mandated, uuid))
 
     case ProtocolQuestCommit.QuestTaken =>
       log.info(s"${interaction.name}:$uuid: Quest taken, starting the protocol again")
@@ -108,15 +109,4 @@ class InteractionAgent(interaction: InteractionInstance) extends Actor {
       context.become(receive)
 
   }
-
-//  def committed(mandated: ActorRef, uuid: UUID): Receive = {
-//    case message: ProtocolInteractionExecution =>
-//      log.info(s"${interaction.name}:$uuid: Considering quest from $mandated")
-//      // Forward the result
-//      mandated ! message
-//      // Start all over again
-//      subscribePush()
-//      pull()
-//      context.become(receive)
-//  }
 }
