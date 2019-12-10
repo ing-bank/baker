@@ -23,6 +23,7 @@ object CheckoutFlowIngredients {
   case class PaymentInformation(info: String)
 
   case class ShippingOrder(items: List[Item], data: Array[Byte], address: ShippingAddress)
+
 }
 
 object CheckoutFlowEvents {
@@ -46,6 +47,7 @@ object CheckoutFlowEvents {
   case class PaymentFailed() extends MakePaymentOutput
 
   case class ShippingConfirmed()
+
 }
 
 object CheckoutFlowInteractions {
@@ -55,7 +57,7 @@ object CheckoutFlowInteractions {
     def apply(orderId: OrderId, items: List[Item]): Future[ReserveItemsOutput]
   }
 
-  def ReserveItemsInteraction = Interaction(
+  def ReserveItemsInteraction: Interaction = Interaction(
     name = "ReserveItems",
     inputIngredients = Seq(
       Ingredient[OrderId]("orderId"),
@@ -72,7 +74,7 @@ object CheckoutFlowInteractions {
     def apply(items: ReservedItems, address: ShippingAddress, payment: PaymentInformation): Future[MakePaymentOutput]
   }
 
-  def MakePaymentInteraction = Interaction(
+  def MakePaymentInteraction: Interaction = Interaction(
     name = "MakePayment",
     inputIngredients = Seq(
       Ingredient[ReservedItems]("reservedItems"),
@@ -90,7 +92,7 @@ object CheckoutFlowInteractions {
     def apply(order: ShippingOrder): Future[ShippingConfirmed]
   }
 
-  def ShipItemsInteraction = Interaction(
+  def ShipItemsInteraction: Interaction = Interaction(
     name = "ShipItems",
     inputIngredients = Seq(
       Ingredient[ShippingOrder]("shippingOrder")
@@ -117,9 +119,9 @@ object CheckoutFlowRecipe {
     recipeBase.withDefaultFailureStrategy(
       RetryWithIncrementalBackoff
         .builder()
-        .withInitialDelay(100 milliseconds)
-        .withUntil(Some(UntilDeadline(24 hours)))
-        .withMaxTimeBetweenRetries(Some(10 minutes))
+        .withInitialDelay(100.milliseconds)
+        .withUntil(Some(UntilDeadline(24.hours)))
+        .withMaxTimeBetweenRetries(Some(10.minutes))
         .build())
 
   def recipeWithBlockingStrategy: Recipe =
