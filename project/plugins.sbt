@@ -15,6 +15,3 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-multi-jvm" % "0.4.0")
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.5.1")
 
 libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.29"
-
-// For the example application
-//addSbtPlugin("io.kamon" % "sbt-kanela-runner" % "2.0.1")
