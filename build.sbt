@@ -32,11 +32,10 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
 )
 
 val dependencyOverrideSettings = Seq(
-  // note that this does NOT add the dependencies, just forces the version
   dependencyOverrides ++= Seq(
     catsCore,
     akkaActor,
-    "com.github.jnr" % "jnr-constants" % "0.9.9"
+    jnrConstants
   )
 )
 
@@ -343,10 +342,11 @@ lazy val playground = project
     organization := "com.ing.baker",
     scalaVersion := "2.12.4",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-effect" % "2.0.0",
-      "dev.profunktor" %% "console4cats" % "0.8.0",
-      "org.scalatest" %% "scalatest" % "3.0.8" % "test",
-      "org.scalacheck" %% "scalacheck" % "1.14.1" % "test"
+      catsEffect,
+      console4Cats,
+      scalaTest,
+      scalaCheck,
+      scalaLogging
     ),
     scalacOptions := Seq(
       "-unchecked",

@@ -15,8 +15,6 @@ object BaaS {
       _ <- createDockerNetwork
       _ <- EnvSystems.runCassandra
       node1 <- runStateNode(baasVersion, 1, "self")
-      //_ <- runStateNode(baasVersion, 2, node1)
-      //_ <- runStateNode(baasVersion, 3, node1)
       _ <- EnvSystems.runHaproxy
       _ <- runInteractionNode(baasVersion, 1, node1)
       _ <- runEventListenerNode(baasVersion, 1, node1)
