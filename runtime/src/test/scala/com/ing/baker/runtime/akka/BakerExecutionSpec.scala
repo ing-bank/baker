@@ -968,9 +968,6 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         _ <- baker.bake(recipeId, recipeInstanceId)
         //Handle first event
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
-        _ <- Future {
-          Thread.sleep(50)
-        }
         state <- baker.getRecipeInstanceState(recipeInstanceId)
       } yield state.eventNames should contain(interactionOne.retryExhaustedEventName)
     }
@@ -989,9 +986,6 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
         _ <- baker.bake(recipeId, recipeInstanceId)
         //Handle first event
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
-        _ <- Future {
-          Thread.sleep(50)
-        }
         //Since the defaultEventExhaustedName is set the retryExhaustedEventName of interactionOne will be picked.
         state <- baker.getRecipeInstanceState(recipeInstanceId)
       } yield state.eventNames should not contain interactionOne.retryExhaustedEventName
@@ -1016,9 +1010,6 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
         //Handle first event
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))
-        _ <- Future {
-          Thread.sleep(50)
-        }
         _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), argThat(new RuntimeEventMatcher(EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)))))
         _ = verify(listenerMock).apply(mockitoEq(RecipeEventMetadata(recipeId, recipe.name, recipeInstanceId.toString)), argThat(new RuntimeEventMatcher(EventInstance(interactionOne.retryExhaustedEventName, Map.empty))))
 
