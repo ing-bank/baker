@@ -98,6 +98,7 @@ object ProcessInstanceEventSourcing {
     val src = readJournal.currentEventsByPersistenceId(persistentId, 0, Long.MaxValue)
     val eventSource = ProcessInstanceEventSourcing.apply[P, T, S, E](eventSourceFn)
 
+    // TODO: remove null value
     src.scan[(Instance[P, T, S], Event)]((Instance.uninitialized[P, T, S](topology), null.asInstanceOf[Event])) {
       case ((instance, _), e) ⇒
         val serializedEvent = e.event.asInstanceOf[AnyRef]
@@ -113,9 +114,10 @@ abstract class ProcessInstanceEventSourcing[P : Identifiable, T : Identifiable, 
     encryption: Encryption,
     eventSourceFn: T => (S => E => S)) extends PersistentActor {
 
-  implicit val system = context.system
+  protected implicit val system: ActorSystem = context.system
 
-  val eventSource = ProcessInstanceEventSourcing.apply[P, T, S, E](eventSourceFn)
+  protected val eventSource: Instance[P, T, S] => Event => Instance[P, T, S] =
+    ProcessInstanceEventSourcing.apply[P, T, S, E](eventSourceFn)
 
   private val serializer = new ProcessInstanceSerialization[P, T, S, E](SerializersProvider(system, encryption))
 
@@ -128,7 +130,7 @@ abstract class ProcessInstanceEventSourcing[P : Identifiable, T : Identifiable, 
 
   private var recoveringState: Instance[P, T, S] = Instance.uninitialized[P, T, S](petriNet)
 
-  private def applyToRecoveringState(e: AnyRef) = {
+  private def applyToRecoveringState(e: AnyRef): Unit = {
     val deserializedEvent = serializer.deserializeEvent(e)(recoveringState)
     recoveringState = eventSource(recoveringState)(deserializedEvent)
   }
