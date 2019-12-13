@@ -15,8 +15,8 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex.ActorMetadata
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
 import com.ing.baker.runtime.akka.actor.process_index._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager
-import com.ing.baker.runtime.akka.actor.serialization.{BakerSerializable, Encryption}
 import com.ing.baker.runtime.akka.internal.InteractionManager
+import com.ing.baker.runtime.serialization.{BakerSerializable, Encryption}
 import com.typesafe.scalalogging.LazyLogging
 import scala.concurrent.duration._
 import scala.concurrent.{Await, TimeoutException}
@@ -91,10 +91,16 @@ class ClusterBakerActorProvider(
 
 
   override def createProcessIndexActor(interactionManager: InteractionManager, recipeManager: ActorRef)(implicit actorSystem: ActorSystem): ActorRef = {
+    val roles = Cluster(actorSystem).selfRoles
     ClusterSharding(actorSystem).start(
       typeName = "ProcessIndexActor",
       entityProps = ProcessIndex.props(actorIdleTimeout, Some(retentionCheckInterval), configuredEncryption, interactionManager, recipeManager, ingredientsFilter),
-      settings = ClusterShardingSettings.create(actorSystem),
+      settings = {
+        if(roles.contains("state-node"))
+          ClusterShardingSettings(actorSystem).withRole("state-node")
+        else
+          ClusterShardingSettings(actorSystem)
+      },
       extractEntityId = ClusterBakerActorProvider.entityIdExtractor(nrOfShards),
       extractShardId = ClusterBakerActorProvider.shardIdExtractor(nrOfShards)
     )
@@ -108,12 +114,18 @@ class ClusterBakerActorProvider(
       RecipeManager.props(),
       terminationMessage = PoisonPill,
       settings = ClusterSingletonManagerSettings(actorSystem))
+    val roles = Cluster(actorSystem).selfRoles
 
     actorSystem.actorOf(props = singletonManagerProps, name = recipeManagerName)
 
     val singletonProxyProps = ClusterSingletonProxy.props(
       singletonManagerPath = s"/user/$recipeManagerName",
-      settings = ClusterSingletonProxySettings(actorSystem))
+      settings = {
+        if (roles.contains("state-node"))
+          ClusterSingletonProxySettings(actorSystem).withRole("state-node")
+        else
+          ClusterSingletonProxySettings(actorSystem)
+      })
 
     actorSystem.actorOf(props = singletonProxyProps, name = "RecipeManagerProxy")
   }

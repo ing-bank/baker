@@ -3,7 +3,7 @@ import sbt._
 //noinspection TypeAnnotation
 object Dependencies {
 
-  val akkaVersion = "2.5.26"
+  val akkaVersion = "2.5.27"
   val http4sVersion = "0.20.0"
   val circeVersion = "0.11.1"
 
@@ -16,7 +16,8 @@ object Dependencies {
       .exclude("com.typesafe.akka", "akka-persistence-query")
       .exclude("com.typesafe.akka", "akka-stream")
 
-  val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.1.0"
+  val scalaJava8Compat =          "org.scala-lang.modules"     %% "scala-java8-compat"                 % "0.8.0"
+  val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.0.8"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
   val junitJupiter =              "org.junit.jupiter"          %  "junit-jupiter-engine"               % "5.5.2"
@@ -25,15 +26,19 @@ object Dependencies {
   val akkaStream =                "com.typesafe.akka"          %% "akka-stream"                        % akkaVersion
   val akkaPersistence =           "com.typesafe.akka"          %% "akka-persistence"                   % akkaVersion
   val akkaPersistenceQuery =      "com.typesafe.akka"          %% "akka-persistence-query"             % akkaVersion
-  val akkaPersistenceCassandra =  "com.typesafe.akka"          %% "akka-persistence-cassandra"         % "0.100"
+  val akkaPersistenceCassandra =  "com.typesafe.akka"          %% "akka-persistence-cassandra"         % "0.101"
   val akkaCluster =               "com.typesafe.akka"          %% "akka-cluster"                       % akkaVersion
   val akkaClusterSharding =       "com.typesafe.akka"          %% "akka-cluster-sharding"              % akkaVersion
+  val akkaDistributedData =       "com.typesafe.akka"          %% "akka-distributed-data"              % akkaVersion
+  val akkaClusterTools =          "com.typesafe.akka"          %% "akka-cluster-tools"                 % akkaVersion
   val akkaSlf4j =                 "com.typesafe.akka"          %% "akka-slf4j"                         % akkaVersion
   val akkaTestKit =               "com.typesafe.akka"          %% "akka-testkit"                       % akkaVersion
   val akkaStreamTestKit =         "com.typesafe.akka"          %% "akka-stream-testkit"                % akkaVersion
   val akkaMultiNodeTestkit =      "com.typesafe.akka"          %% "akka-multi-node-testkit"            % akkaVersion
-
-  val akkaHttp =                  "com.typesafe.akka"          %% "akka-http"                          % "10.0.15"
+  val akkaManagementHttp =        "com.lightbend.akka.management" %% "akka-management-cluster-http"      % "1.0.5"
+  val akkaClusterBoostrap =       "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.5"
+  val akkaDiscoveryKube =         "com.lightbend.akka.discovery"  %% "akka-discovery-kubernetes-api"     % "1.0.5"
+  val akkaHttp =                  "com.typesafe.akka"          %% "akka-http"                          % "10.1.11"
   val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.5"
 
   val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.12"
@@ -60,6 +65,9 @@ object Dependencies {
 
   val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "2.0.0"
   val catsCore =                  "org.typelevel"              %% "cats-core"                          % "2.0.0"
+  val console4Cats =              "dev.profunktor"             %% "console4cats"                       % "0.8.0"
+
+  val jnrConstants =              "com.github.jnr"             % "jnr-constants"                       % "0.9.9"
 
   def scalaReflect(scalaV: String): ModuleID = "org.scala-lang"%  "scala-reflect"                      % scalaV
   val javaxInject =               "javax.inject"               %  "javax.inject"                       % "1"

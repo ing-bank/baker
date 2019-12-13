@@ -5,9 +5,9 @@ import cats.instances.try_._
 import cats.syntax.traverse._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager.RecipeAdded
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
-import com.ing.baker.runtime.akka.actor.serialization.ProtoMap
-import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{versioned, ctxFromProto, ctxToProto}
-import com.ing.baker.runtime.akka.actor.serialization.SerializersProvider
+import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
+import com.ing.baker.runtime.serialization.SerializersProvider
+import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider}
 
 import scala.util.Try
 

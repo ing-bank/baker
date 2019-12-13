@@ -49,7 +49,7 @@ abstract class SplitBrainResolverWithNetworkSplitSpec(splitBrainResolverConfig: 
         awaitAssert(
           clusterView.isTerminated should be(true),
           20 seconds,
-          1 second
+          1.second
         )
 
       }
@@ -85,7 +85,7 @@ abstract class SplitBrainResolverWithNetworkSplitSpec(splitBrainResolverConfig: 
         awaitAssert(
           clusterView.isTerminated should be(true),
           20 seconds,
-          1 second
+          1.second
         )
       }
 
@@ -124,7 +124,7 @@ abstract class SplitBrainResolverWithNetworkSplitSpec(splitBrainResolverConfig: 
         awaitAssert(
           clusterView.isTerminated should be(true),
           20 seconds,
-          1 second
+          1.second
         )
         enterBarrier("unreachable-fourth-node")
       }
@@ -158,7 +158,7 @@ abstract class SplitBrainResolverWithNetworkSplitSpec(splitBrainResolverConfig: 
         awaitAssert(
           clusterView.isTerminated should be(true),
           20 seconds,
-          1 second
+          1.second
         )
         enterBarrier("split-between-remaining-nodes")
       }
