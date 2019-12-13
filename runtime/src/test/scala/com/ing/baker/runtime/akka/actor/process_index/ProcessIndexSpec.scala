@@ -14,15 +14,16 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.{AllRecipes, GetAllRecipes, RecipeInformation}
-import com.ing.baker.runtime.akka.actor.serialization.Encryption
-import com.ing.baker.runtime.akka.internal.InteractionManager
+import com.ing.baker.runtime.akka.internal.InteractionManagerLocal
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeInstanceState}
+import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types
 import com.ing.baker.types.Value
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Mockito
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.Eventually
+import org.scalatestplus.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Matchers, WordSpecLike}
 import org.scalatestplus.mockito.MockitoSugar
 import scalax.collection.immutable.Graph
@@ -102,7 +103,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
     }
 
     "delete a process if a retention period is defined, stop command is received" in {
-      val recipeRetentionPeriod = 500 milliseconds
+      val recipeRetentionPeriod = 500.milliseconds
       val processProbe = TestProbe()
       val recipeManagerProbe = TestProbe()
       val actorIndex = createActorIndex(processProbe.ref, recipeManagerProbe.ref)
@@ -118,7 +119,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       Thread.sleep(recipeRetentionPeriod.toMillis)
       // inform the index to check for processes to be cleaned up
       actorIndex ! CheckForProcessesToBeDeleted
-      processProbe.expectMsg(15 seconds, Stop(delete = true))
+      processProbe.expectMsg(15.seconds, Stop(delete = true))
     }
 
     "Forward the FireTransition command when a valid HandleEvent is sent" in {
@@ -177,7 +178,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
     "reply with an InvalidEvent rejection message when attempting to fire an event that is now know in the compiledRecipe" in {
 
-      val receivePeriodTimeout = 500 milliseconds
+      val receivePeriodTimeout = 500.milliseconds
       val petriNetActorProbe = TestProbe("petrinet-probe")
       val recipeManagerProbe = TestProbe("recipe-manager-probe")
 
@@ -206,7 +207,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
 
     "reply with an InvalidEvent rejection message when attempting to fire an event that does not comply to the recipe" in {
 
-      val receivePeriodTimeout = 500 milliseconds
+      val receivePeriodTimeout = 500.milliseconds
       val petriNetActorProbe = TestProbe("petrinet-probe")
       val recipeManagerProbe = TestProbe("recipe-manager-probe")
 
@@ -283,7 +284,7 @@ class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIn
       recipeInstanceIdleTimeout = None,
       retentionCheckInterval = None,
       configuredEncryption = Encryption.NoEncryption,
-      interactionManager = new InteractionManager(),
+      interactionManager = new InteractionManagerLocal(),
       recipeManager = recipeManager,
       Seq.empty) {
       override def createProcessActor(id: String, compiledRecipe: CompiledRecipe) = petriNetActorRef

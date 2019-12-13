@@ -123,7 +123,7 @@ object HappyPath extends MockitoSugar {
   def seedNodeConfig(path: ActorPath): Config =
     ConfigFactory.parseString(s"""baker.cluster.seed-nodes = ["$path"]""")
 
-  def implementations(implicit ec: ExecutionContext): Seq[InteractionInstance] = Seq(
+  def implementations: Seq[InteractionInstance] = Seq(
     ValidateOrder,
     ManufactureGoods,
     SendInvoice,
