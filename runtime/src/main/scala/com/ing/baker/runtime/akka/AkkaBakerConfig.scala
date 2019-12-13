@@ -108,10 +108,12 @@ object AkkaBakerConfig {
         }
       },
       interactionManager = config.as[Option[String]]("baker.interaction-manager") match {
-        case Some("remote") => new InteractionManagerDis(actorSystem, 10.seconds, 600.seconds)
-        // TODO read timeout from config
-        // TODO 2 remove computation timeout
-        case _ => new InteractionManagerLocal()
+        case Some("remote") =>
+          val postTimeout = config.as[FiniteDuration]("baker.remote-interaction-manager.post-timeout")
+          val computationTimeout = config.as[FiniteDuration]("baker.remote-interaction-manager.computation-timeout")
+          new InteractionManagerDis(actorSystem, postTimeout, computationTimeout)
+        case _ =>
+          new InteractionManagerLocal()
       },
       readJournal = PersistenceQuery(actorSystem)
         .readJournalFor[BakerPersistenceQuery](config.as[String]("baker.actor.read-journal-plugin"))
