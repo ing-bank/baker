@@ -194,10 +194,6 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
 
       try {
 
-        // obtain the interaction implementation
-        val implementation = interactionManager.getImplementation(interaction).getOrElse {
-          throw new FatalInteractionException("No implementation available for interaction")
-        }
 
         // create the interaction input
         val input = createInteractionInput(interaction, processState)
@@ -208,7 +204,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
         eventStream.publish(InteractionStarted(timeStarted, recipe.name, recipe.recipeId, processState.recipeInstanceId, interaction.interactionName))
 
         // executes the interaction and obtain the (optional) output event
-        implementation.execute(input).map { interactionOutput =>
+        interactionManager.executeImplementation(interaction, input).map { interactionOutput =>
 
           // validates the event, throws a FatalInteraction exception if invalid
           RecipeRuntime.validateInteractionOutput(interaction, interactionOutput).foreach { validationError =>

@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.ing.baker.compiler.JavaCompiledRecipeTest;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
+import com.ing.baker.runtime.akka.AkkaBaker;
 import com.ing.baker.runtime.common.BakerException;
 import com.ing.baker.runtime.common.SensoryEventStatus;
 import com.ing.baker.runtime.javadsl.*;
@@ -56,7 +57,7 @@ public class BakerTest {
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupSimpleRecipe());
 
         String recipeInstanceId = UUID.randomUUID().toString();
-        Baker jBaker = Baker.akka(config, actorSystem);
+        Baker jBaker = AkkaBaker.java(config, actorSystem);
         java.util.Map<String, Value> ingredients = jBaker.addInteractionInstances(implementationsList)
                 .thenCompose(x -> jBaker.addRecipe(compiledRecipe))
                 .thenCompose(recipeId -> {
@@ -80,7 +81,7 @@ public class BakerTest {
 
         assertEquals(compiledRecipe.getValidationErrors().size(), 0);
 
-        Baker jBaker = Baker.akka(config, actorSystem);
+        Baker jBaker = AkkaBaker.java(config, actorSystem);
         jBaker.addInteractionInstances(implementationsList);
         String recipeId = jBaker.addRecipe(compiledRecipe).get();
 
@@ -100,7 +101,7 @@ public class BakerTest {
 
         exception.expect(ExecutionException.class);
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JavaCompiledRecipeTest.setupComplexRecipe());
-        Baker jBaker = Baker.akka(config, actorSystem);
+        Baker jBaker = AkkaBaker.java(config, actorSystem);
 
         jBaker.addRecipe(compiledRecipe).get();
     }
@@ -108,7 +109,7 @@ public class BakerTest {
     @Test
     public void shouldExecuteCompleteFlow() throws BakerException, ExecutionException, InterruptedException {
 
-        Baker jBaker = Baker.akka(config, actorSystem);
+        Baker jBaker = AkkaBaker.java(config, actorSystem);
 
         List<BakerEvent> bakerEvents = new LinkedList<>();
         jBaker.registerBakerEventListener(bakerEvents::add);

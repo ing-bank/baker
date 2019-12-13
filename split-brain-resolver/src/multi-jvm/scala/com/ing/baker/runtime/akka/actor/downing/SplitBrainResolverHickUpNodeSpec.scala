@@ -45,8 +45,8 @@ abstract class SplitBrainResolverHickUpNodeSpec(splitBrainResolverConfig: SplitB
       enterBarrier("cluster-is-up")
 
       runOn(nodeA) {
-        scheduleReachable = Some(system.scheduler.schedule(0 seconds, 2 second, () => statusNodeE(reachable = true)))
-        scheduleUnreachable = Some(system.scheduler.schedule(1 seconds, 2 second, () => statusNodeE(reachable = false)))
+        scheduleReachable = Some(system.scheduler.schedule(0.seconds, 2 second, () => statusNodeE(reachable = true)))
+        scheduleUnreachable = Some(system.scheduler.schedule(1.seconds, 2 second, () => statusNodeE(reachable = false)))
       }
 
       Thread.sleep(10 * 1000)
@@ -66,8 +66,8 @@ abstract class SplitBrainResolverHickUpNodeSpec(splitBrainResolverConfig: SplitB
       runOn(nodeD) {
         awaitAssert(
           clusterView.isTerminated should be(true),
-          20 seconds,
-          1 second
+          20.seconds,
+          1.second
         )
         enterBarrier("fourth-node-down")
       }

@@ -18,7 +18,7 @@ class UtilSpec extends AkkaTestBase("UtilSpec") {
 
       val futures = fastFutures :+ slowFuture
 
-      val collected = Util.collectFuturesWithin(futures, 1 second, system.scheduler)
+      val collected = Util.collectFuturesWithin(futures, 1.second, system.scheduler)
 
       val expectedResult = List.fill(5)(true)
 

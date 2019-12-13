@@ -18,7 +18,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceSpec._
 import com.ing.baker.runtime.akka.actor.process_instance.dsl._
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.RetryWithDelay
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
-import com.ing.baker.runtime.akka.actor.serialization.Encryption.NoEncryption
+import com.ing.baker.runtime.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.akka.namedCachedThreadPool
 import org.mockito.Matchers._
 import org.mockito.Mockito._

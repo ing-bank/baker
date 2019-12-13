@@ -102,7 +102,7 @@ abstract class SplitBrainResolverNodeCrashSpec(splitBrainResolverConfig: SplitBr
         awaitAssert(
           clusterView.isTerminated should be(true),
           20 seconds,
-          1 second
+          1.second
         )
       }
 
@@ -112,7 +112,7 @@ abstract class SplitBrainResolverNodeCrashSpec(splitBrainResolverConfig: SplitBr
         awaitAssert(
           clusterView.isTerminated should be(true),
           20 seconds,
-          1 second
+          1.second
         )
       }
 
