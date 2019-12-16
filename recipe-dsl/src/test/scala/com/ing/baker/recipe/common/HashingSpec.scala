@@ -7,7 +7,7 @@ import org.scalacheck.Prop.forAll
 import org.scalacheck.Test.Parameters.defaultVerbose
 import org.scalacheck.{Arbitrary, Gen, Test}
 import org.scalatest.FunSuiteLike
-import org.scalatest.prop.Checkers
+import org.scalatestplus.scalacheck.Checkers
 
 class HashingSpec extends FunSuiteLike with Checkers {
 
@@ -16,7 +16,7 @@ class HashingSpec extends FunSuiteLike with Checkers {
 
   def hashingLaw[A: Arbitrary](): Unit = {
     check(forAll { (x: A, y: A) =>
-      if(x == y) x.hashCode() == y.hashCode()
+      if (x == y) x.hashCode() == y.hashCode()
       else x.hashCode() != y.hashCode()
     }, config)
   }
@@ -82,5 +82,4 @@ object HashingSpec {
 
   def optionTypeGen: Gen[OptionType] =
     primitiveTypeGen.map(OptionType)
-
 }

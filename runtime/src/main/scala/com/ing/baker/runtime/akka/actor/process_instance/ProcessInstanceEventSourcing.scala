@@ -8,8 +8,8 @@ import akka.NotUsed
 import akka.actor.{ActorSystem, NoSerializationVerificationNeeded}
 import akka.persistence.query.scaladsl.CurrentEventsByPersistenceIdQuery
 import akka.stream.scaladsl.Source
-import com.ing.baker.runtime.akka.actor.serialization.Encryption
-import com.ing.baker.runtime.akka.actor.serialization.SerializersProvider
+import com.ing.baker.runtime.serialization.SerializersProvider
+import com.ing.baker.runtime.serialization.Encryption
 
 object ProcessInstanceEventSourcing {
 
@@ -92,12 +92,13 @@ object ProcessInstanceEventSourcing {
       readJournal: CurrentEventsByPersistenceIdQuery,
       eventSourceFn: T ⇒ (S ⇒ E ⇒ S))(implicit actorSystem: ActorSystem): Source[(Instance[P, T, S], Event), NotUsed] = {
 
-    val serializer = new ProcessInstanceSerialization[P, T, S, E](SerializersProvider(actorSystem, null, encryption))
+    val serializer = new ProcessInstanceSerialization[P, T, S, E](SerializersProvider(actorSystem, encryption))
 
     val persistentId = ProcessInstance.recipeInstanceId2PersistenceId(processTypeName, recipeInstanceId)
     val src = readJournal.currentEventsByPersistenceId(persistentId, 0, Long.MaxValue)
     val eventSource = ProcessInstanceEventSourcing.apply[P, T, S, E](eventSourceFn)
 
+    // TODO: remove null value
     src.scan[(Instance[P, T, S], Event)]((Instance.uninitialized[P, T, S](topology), null.asInstanceOf[Event])) {
       case ((instance, _), e) ⇒
         val serializedEvent = e.event.asInstanceOf[AnyRef]
@@ -113,11 +114,12 @@ abstract class ProcessInstanceEventSourcing[P : Identifiable, T : Identifiable, 
     encryption: Encryption,
     eventSourceFn: T => (S => E => S)) extends PersistentActor {
 
-  implicit val system = context.system
+  protected implicit val system: ActorSystem = context.system
 
-  val eventSource = ProcessInstanceEventSourcing.apply[P, T, S, E](eventSourceFn)
+  protected val eventSource: Instance[P, T, S] => Event => Instance[P, T, S] =
+    ProcessInstanceEventSourcing.apply[P, T, S, E](eventSourceFn)
 
-  private val serializer = new ProcessInstanceSerialization[P, T, S, E](SerializersProvider(system, null, encryption))
+  private val serializer = new ProcessInstanceSerialization[P, T, S, E](SerializersProvider(system, encryption))
 
   def onRecoveryCompleted(state: Instance[P, T, S])
 
@@ -128,7 +130,7 @@ abstract class ProcessInstanceEventSourcing[P : Identifiable, T : Identifiable, 
 
   private var recoveringState: Instance[P, T, S] = Instance.uninitialized[P, T, S](petriNet)
 
-  private def applyToRecoveringState(e: AnyRef) = {
+  private def applyToRecoveringState(e: AnyRef): Unit = {
     val deserializedEvent = serializer.deserializeEvent(e)(recoveringState)
     recoveringState = eventSource(recoveringState)(deserializedEvent)
   }

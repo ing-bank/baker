@@ -17,10 +17,11 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager.RecipeAdded
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
 import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
-import com.ing.baker.runtime.akka.actor.serialization.Encryption.{AESEncryption, NoEncryption}
-import com.ing.baker.runtime.akka.actor.serialization.ProtoMap.{ctxFromProto, ctxToProto}
+import com.ing.baker.runtime.serialization.Encryption.{AESEncryption, NoEncryption}
+import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto}
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanceState, SensoryEventResult}
+import com.ing.baker.runtime.serialization.ProtoMap
 import com.ing.baker.types.modules.PrimitiveModuleSpec._
 import com.ing.baker.types.{Value, _}
 import com.ing.baker.{AllTypeRecipe, types}
@@ -28,7 +29,7 @@ import org.scalacheck.Prop.forAll
 import org.scalacheck.Test.Parameters.defaultVerbose
 import org.scalacheck._
 import org.scalatest.FunSuiteLike
-import org.scalatest.prop.Checkers
+import org.scalatestplus.scalacheck.Checkers
 
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
@@ -91,7 +92,7 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
     val serialized = serializer.toBinary(m)
     val deserialized = serializer.fromBinary(serialized, serializer.manifest(m))
     deserialized === m &&
-    ctxFromProto(ctxToProto(m)) === Success(m)
+      ctxFromProto(ctxToProto(m)) === Success(m)
   }
 
   checkFor[ProcessIndexProtocol.Index].run
@@ -358,7 +359,9 @@ object SerializationSpec {
     } yield CreateProcess(recipeId, recipeInstanceId)
 
     class SimpleActor extends Actor {
-      override def receive: Receive = { case _ => () }
+      override def receive: Receive = {
+        case _ => ()
+      }
     }
 
     val waitForRetriesGen = Gen.oneOf(true, false)
@@ -400,7 +403,7 @@ object SerializationSpec {
     } yield StopRetryingInteraction(recipeInstanceId, interactionName)
 
     val sensoryEventStatusGen: Gen[SensoryEventStatus] = Gen.oneOf(
-      SensoryEventStatus.AlreadyReceived ,
+      SensoryEventStatus.AlreadyReceived,
       SensoryEventStatus.Completed,
       SensoryEventStatus.FiringLimitMet,
       SensoryEventStatus.Received,
@@ -409,9 +412,9 @@ object SerializationSpec {
     )
 
     val eventResultGen: Gen[SensoryEventResult] = for {
-        status <- sensoryEventStatusGen
-        events <- Gen.listOf(Gen.alphaStr)
-        ingredients <- Gen.listOf(Runtime.ingredientsGen)
+      status <- sensoryEventStatusGen
+      events <- Gen.listOf(Gen.alphaStr)
+      ingredients <- Gen.listOf(Runtime.ingredientsGen)
     } yield SensoryEventResult(status, events, ingredients.toMap)
 
     implicit val processEventResponse: Gen[ProcessEventResponse] = for {

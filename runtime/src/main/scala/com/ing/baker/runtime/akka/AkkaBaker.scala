@@ -1,33 +1,62 @@
 package com.ing.baker.runtime.akka
 
-import akka.actor.{ Actor, ActorRef, Props }
-import akka.pattern.{ FutureRef, ask }
+import akka.actor.{Actor, ActorRef, ActorSystem, Address, Props}
+import akka.pattern.{FutureRef, ask}
 import akka.util.Timeout
+import cats.data.NonEmptyList
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.akka.actor._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol._
-import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{ Initialized, InstanceState, Uninitialized }
+import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol.{Initialized, InstanceState, Uninitialized}
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol
 import com.ing.baker.runtime.common.BakerException._
 import com.ing.baker.runtime.common.SensoryEventStatus
+import com.ing.baker.runtime.{javadsl, scaladsl}
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.Value
-import org.slf4j.{ Logger, LoggerFactory }
+import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.postfixOps
 import scala.util.Try
 
+object AkkaBaker {
+
+  def apply(config: Config, actorSystem: ActorSystem): scaladsl.Baker =
+    new AkkaBaker(AkkaBakerConfig.from(config, actorSystem))
+
+  def withConfig(config: AkkaBakerConfig): scaladsl.Baker =
+    new AkkaBaker(config)
+
+  def localDefault(actorSystem: ActorSystem): scaladsl.Baker =
+    new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem))
+
+  def clusterDefault(seedNodes: NonEmptyList[Address], actorSystem: ActorSystem): scaladsl.Baker =
+    new AkkaBaker(AkkaBakerConfig.clusterDefault(seedNodes, actorSystem))
+
+  def javaWithConfig(config: AkkaBakerConfig): javadsl.Baker =
+    new javadsl.Baker(withConfig(config))
+
+  def java(config: Config, actorSystem: ActorSystem): javadsl.Baker =
+    new javadsl.Baker(apply(config, actorSystem))
+
+  def javaLocalDefault(actorSystem: ActorSystem): javadsl.Baker =
+    new javadsl.Baker(new AkkaBaker(AkkaBakerConfig.localDefault(actorSystem)))
+
+  def javaOther(baker: scaladsl.Baker): javadsl.Baker =
+    new javadsl.Baker(baker)
+}
+
 /**
-  * The Baker is the component of the Baker library that runs one or multiples recipes.
-  * For each recipe a new instance can be baked, sensory events can be send and state can be inquired upon
-  */
-class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
+ * The Baker is the component of the Baker library that runs one or multiples recipes.
+ * For each recipe a new instance can be baked, sensory events can be send and state can be inquired upon
+ */
+class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker with LazyLogging {
 
   import config.system
-
-  private val log: Logger = LoggerFactory.getLogger(classOf[AkkaBaker])
 
   val recipeManager: ActorRef =
     config.bakerActorProvider.createRecipeManagerActor()
@@ -36,23 +65,23 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     config.bakerActorProvider.createProcessIndexActor(config.interactionManager, recipeManager)
 
   /**
-    * Adds a recipe to baker and returns a recipeId for the recipe.
-    *
-    * This function is idempotent, if the same (equal) recipe was added earlier this will return the same recipeId
-    *
-    * @param compiledRecipe The compiled recipe.
-    * @return A recipeId
-    */
+   * Adds a recipe to baker and returns a recipeId for the recipe.
+   *
+   * This function is idempotent, if the same (equal) recipe was added earlier this will return the same recipeId
+   *
+   * @param compiledRecipe The compiled recipe.
+   * @return A recipeId
+   */
   override def addRecipe(compiledRecipe: CompiledRecipe): Future[String] = {
 
     // check if every interaction has an implementation
     val implementationErrors = getImplementationErrors(compiledRecipe)
 
     if (implementationErrors.nonEmpty)
-      Future.failed(new ImplementationsException(implementationErrors.mkString(", ")))
+      Future.failed(ImplementationsException(implementationErrors.mkString(", ")))
 
     else if (compiledRecipe.validationErrors.nonEmpty)
-      Future.failed(new RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
+      Future.failed(RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
 
     else recipeManager.ask(RecipeManagerProtocol.AddRecipe(compiledRecipe))(config.defaultAddRecipeTimeout) flatMap {
       case RecipeManagerProtocol.AddRecipeResponse(recipeId) => Future.successful(recipeId)
@@ -60,53 +89,53 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
   }
 
   private def getImplementationErrors(compiledRecipe: CompiledRecipe): Set[String] = {
-    compiledRecipe.interactionTransitions.filterNot(config.interactionManager.getImplementation(_).isDefined)
+    compiledRecipe.interactionTransitions.filterNot(config.interactionManager.hasImplementation)
       .map(s => s"No implementation provided for interaction: ${s.originalInteractionName}")
   }
 
   /**
-    * Returns the recipe information for the given RecipeId
-    *
-    * @param recipeId
-    * @return
-    */
+   * Returns the recipe information for the given RecipeId
+   *
+   * @param recipeId
+   * @return
+   */
   override def getRecipe(recipeId: String): Future[RecipeInformation] = {
     // here we ask the RecipeManager actor to return us the recipe for the given id
     recipeManager.ask(RecipeManagerProtocol.GetRecipe(recipeId))(config.defaultInquireTimeout).flatMap {
       case RecipeManagerProtocol.RecipeFound(compiledRecipe, timestamp) =>
         Future.successful(RecipeInformation(compiledRecipe, timestamp, getImplementationErrors(compiledRecipe)))
       case RecipeManagerProtocol.NoRecipeFound(_) =>
-        Future.failed(new IllegalArgumentException(s"No recipe found for recipe with id: $recipeId"))
+        Future.failed(NoSuchRecipeException(recipeId))
     }
   }
 
   /**
-    * Returns all recipes added to this baker instance.
-    *
-    * @return All recipes in the form of map of recipeId -> CompiledRecipe
-    */
+   * Returns all recipes added to this baker instance.
+   *
+   * @return All recipes in the form of map of recipeId -> CompiledRecipe
+   */
   override def getAllRecipes: Future[Map[String, RecipeInformation]] =
     recipeManager.ask(RecipeManagerProtocol.GetAllRecipes)(config.defaultInquireTimeout)
       .mapTo[RecipeManagerProtocol.AllRecipes]
-      .map(_.recipes.map { ri =>
+      .map(_.recipes.map {ri =>
         ri.compiledRecipe.recipeId -> RecipeInformation(ri.compiledRecipe, ri.timestamp, getImplementationErrors(ri.compiledRecipe))
       }.toMap)
 
   /**
-    * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier
-    *
-    * @param recipeId  The recipeId for the recipe to bake
-    * @param recipeInstanceId The identifier for the newly baked process
-    * @return
-    */
+   * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier
+   *
+   * @param recipeId         The recipeId for the recipe to bake
+   * @param recipeInstanceId The identifier for the newly baked process
+   * @return
+   */
   override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] = {
     processIndexActor.ask(CreateProcess(recipeId, recipeInstanceId))(config.defaultBakeTimeout).flatMap {
       case _: Initialized =>
         Future.successful(())
       case ProcessAlreadyExists(_) =>
-        Future.failed(new IllegalArgumentException(s"Process with id '$recipeInstanceId' already exists."))
+        Future.failed(ProcessAlreadyExistsException(recipeInstanceId))
       case RecipeManagerProtocol.NoRecipeFound(_) =>
-        Future.failed(new IllegalArgumentException(s"Recipe with id '$recipeId' does not exist."))
+        Future.failed(NoSuchRecipeException(recipeId))
     }
   }
 
@@ -120,9 +149,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     ))(config.defaultProcessEventTimeout).flatMap {
       // TODO MOVE THIS TO A FUNCTION
       case FireSensoryEventRejection.InvalidEvent(_, message) =>
-        Future.failed(new IllegalArgumentException(message))
+        Future.failed(IllegalEventException(message))
       case FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0) =>
-        Future.failed(new NoSuchProcessException(s"Process with id $recipeInstanceId0 does not exist in the index"))
+        Future.failed(NoSuchProcessException(recipeInstanceId0))
       case _: FireSensoryEventRejection.FiringLimitMet =>
         Future.successful(SensoryEventStatus.FiringLimitMet)
       case _: FireSensoryEventRejection.AlreadyReceived =>
@@ -144,9 +173,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
       reaction = FireSensoryEventReaction.NotifyWhenCompleted(waitForRetries = true)
     ))(config.defaultProcessEventTimeout).flatMap {
       case FireSensoryEventRejection.InvalidEvent(_, message) =>
-        Future.failed(new IllegalArgumentException(message))
+        Future.failed(IllegalEventException(message))
       case FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0) =>
-        Future.failed(new NoSuchProcessException(s"Process with id $recipeInstanceId0 does not exist in the index"))
+        Future.failed(NoSuchProcessException(recipeInstanceId0))
       case _: FireSensoryEventRejection.FiringLimitMet =>
         Future.successful(SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
       case _: FireSensoryEventRejection.AlreadyReceived =>
@@ -168,9 +197,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
       reaction = FireSensoryEventReaction.NotifyOnEvent(waitForRetries = true, onEvent)
     ))(config.defaultProcessEventTimeout).flatMap {
       case FireSensoryEventRejection.InvalidEvent(_, message) =>
-        Future.failed(new IllegalArgumentException(message))
+        Future.failed(IllegalEventException(message))
       case FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0) =>
-        Future.failed(new NoSuchProcessException(s"Process with id $recipeInstanceId0 does not exist in the index"))
+        Future.failed(NoSuchProcessException(recipeInstanceId0))
       case _: FireSensoryEventRejection.FiringLimitMet =>
         Future.successful(SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
       case _: FireSensoryEventRejection.AlreadyReceived =>
@@ -196,9 +225,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
           completeReceiver = futureRef.ref)
       ))(config.defaultProcessEventTimeout).flatMap {
         case FireSensoryEventRejection.InvalidEvent(_, message) =>
-          Future.failed(new IllegalArgumentException(message))
+          Future.failed(IllegalEventException(message))
         case FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0) =>
-          Future.failed(new NoSuchProcessException(s"Process with id $recipeInstanceId0 does not exist in the index"))
+          Future.failed(NoSuchProcessException(recipeInstanceId0))
         case _: FireSensoryEventRejection.FiringLimitMet =>
           Future.successful(SensoryEventStatus.FiringLimitMet)
         case _: FireSensoryEventRejection.AlreadyReceived =>
@@ -213,9 +242,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
     val futureCompleted =
       futureRef.future.flatMap {
         case FireSensoryEventRejection.InvalidEvent(_, message) =>
-          Future.failed(new IllegalArgumentException(message))
+          Future.failed(IllegalEventException(message))
         case FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0) =>
-          Future.failed(new NoSuchProcessException(s"Process with id $recipeInstanceId0 does not exist in the index"))
+          Future.failed(NoSuchProcessException(recipeInstanceId0))
         case _: FireSensoryEventRejection.FiringLimitMet =>
           Future.successful(SensoryEventResult(SensoryEventStatus.FiringLimitMet, Seq.empty, Map.empty))
         case _: FireSensoryEventRejection.AlreadyReceived =>
@@ -231,44 +260,44 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
   }
 
   /**
-    * Retries a blocked interaction.
-    *
-    * @return
-    */
+   * Retries a blocked interaction.
+   *
+   * @return
+   */
   override def retryInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] = {
     processIndexActor.ask(RetryBlockedInteraction(recipeInstanceId, interactionName))(config.defaultProcessEventTimeout).map(_ => ())
   }
 
   /**
-    * Resolves a blocked interaction by specifying it's output.
-    *
-    * !!! You should provide an event of the original interaction. Event / ingredient renames are done by Baker.
-    *
-    * @return
-    */
+   * Resolves a blocked interaction by specifying it's output.
+   *
+   * !!! You should provide an event of the original interaction. Event / ingredient renames are done by Baker.
+   *
+   * @return
+   */
   override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): Future[Unit] = {
     processIndexActor.ask(ResolveBlockedInteraction(recipeInstanceId, interactionName, event))(config.defaultProcessEventTimeout).map(_ => ())
   }
 
   /**
-    * Stops the retrying of an interaction.
-    *
-    * @return
-    */
+   * Stops the retrying of an interaction.
+   *
+   * @return
+   */
   override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] = {
     processIndexActor.ask(StopRetryingInteraction(recipeInstanceId, interactionName))(config.defaultProcessEventTimeout).map(_ => ())
   }
 
   /**
-    * Returns an index of all processes.
-    *
-    * Can potentially return a partial index when baker runs in cluster mode
-    * and not all shards can be reached within the given timeout.
-    *
-    * Does not include deleted processes.
-    *
-    * @return An index of all processes
-    */
+   * Returns an index of all processes.
+   *
+   * Can potentially return a partial index when baker runs in cluster mode
+   * and not all shards can be reached within the given timeout.
+   *
+   * Does not include deleted processes.
+   *
+   * @return An index of all processes
+   */
   override def getAllRecipeInstancesMetadata: Future[Set[RecipeInstanceMetadata]] = {
     Future.successful(config.bakerActorProvider
       .getAllProcessesMetadata(processIndexActor)(system, config.defaultInquireTimeout)
@@ -276,53 +305,53 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
   }
 
   /**
-    * Returns the process state.
-    *
-    * @param recipeInstanceId The process identifier
-    * @return The process state.
-    */
+   * Returns the process state.
+   *
+   * @param recipeInstanceId The process identifier
+   * @return The process state.
+   */
   override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] =
     processIndexActor
       .ask(GetProcessState(recipeInstanceId))(Timeout.durationToTimeout(config.defaultInquireTimeout))
       .flatMap {
         case instance: InstanceState => Future.successful(instance.state.asInstanceOf[RecipeInstanceState])
-        case NoSuchProcess(id) => Future.failed(new NoSuchProcessException(s"No such process with: $id"))
-        case ProcessDeleted(id) => Future.failed(new ProcessDeletedException(s"Process $id is deleted"))
+        case NoSuchProcess(id) => Future.failed(NoSuchProcessException(id))
+        case ProcessDeleted(id) => Future.failed(ProcessDeletedException(id))
       }
 
   /**
-    * Returns all provided ingredients for a given process id.
-    *
-    * @param recipeInstanceId The process id.
-    * @return The provided ingredients.
-    */
+   * Returns all provided ingredients for a given process id.
+   *
+   * @param recipeInstanceId The process id.
+   * @return The provided ingredients.
+   */
   override def getIngredients(recipeInstanceId: String): Future[Map[String, Value]] =
     getRecipeInstanceState(recipeInstanceId).map(_.ingredients)
 
   /**
-    * Returns all fired events for a given RecipeInstance id.
-    *
-    * @param recipeInstanceId The process id.
-    * @return The events
-    */
+   * Returns all fired events for a given RecipeInstance id.
+   *
+   * @param recipeInstanceId The process id.
+   * @return The events
+   */
   override def getEvents(recipeInstanceId: String): Future[Seq[EventMoment]] =
     getRecipeInstanceState(recipeInstanceId).map(_.events)
 
   /**
-    * Returns all names of fired events for a given RecipeInstance id.
-    *
-    * @param recipeInstanceId The process id.
-    * @return The event names
-    */
+   * Returns all names of fired events for a given RecipeInstance id.
+   *
+   * @param recipeInstanceId The process id.
+   * @return The event names
+   */
   override def getEventNames(recipeInstanceId: String): Future[Seq[String]] =
     getRecipeInstanceState(recipeInstanceId).map(_.eventNames)
 
   /**
-    * Returns the visual state (.dot) for a given process.
-    *
-    * @param recipeInstanceId The process identifier.
-    * @return A visual (.dot) representation of the process state.
-    */
+   * Returns the visual state (.dot) for a given process.
+   *
+   * @param recipeInstanceId The process identifier.
+   * @return A visual (.dot) representation of the process state.
+   */
   @throws[ProcessDeletedException]("If the process is already deleted")
   @throws[NoSuchProcessException]("If the process is not found")
   override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle = RecipeVisualStyle.default): Future[String] = {
@@ -337,58 +366,58 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
             eventNames = processState.eventNames.toSet,
             ingredientNames = processState.ingredients.keySet))
         case ProcessDeleted(_) =>
-          Future.failed(new ProcessDeletedException(s"Process $recipeInstanceId is deleted"))
+          Future.failed(ProcessDeletedException(recipeInstanceId))
         case Uninitialized(_) =>
-          Future.failed(new NoSuchProcessException(s"Process $recipeInstanceId is not found"))
+          Future.failed(NoSuchProcessException(recipeInstanceId))
       }
     } yield response
   }
 
-  private def doRegisterEventListener(listenerFunction: (String, EventInstance) => Unit, processFilter: String => Boolean): Future[Unit] = {
+  private def doRegisterEventListener(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit, processFilter: String => Boolean): Future[Unit] = {
     registerBakerEventListener {
-      case EventReceived(_, recipeName, _, recipeInstanceId, _, event) if processFilter(recipeName) =>
-        listenerFunction.apply(recipeInstanceId, event)
-      case InteractionCompleted(_, _, recipeName, _, recipeInstanceId, _, Some(event)) if processFilter(recipeName) =>
-        listenerFunction.apply(recipeInstanceId, event)
-      case InteractionFailed(_, _, recipeName, _, recipeInstanceId, _, _, _, ExceptionStrategyOutcome.Continue(eventName)) if processFilter(recipeName) =>
-        listenerFunction.apply(recipeInstanceId, EventInstance(eventName, Map.empty))
+      case EventReceived(_, recipeName, recipeId, recipeInstanceId, _, event) if processFilter(recipeName) =>
+        listenerFunction.apply(RecipeEventMetadata(recipeId = recipeId, recipeName = recipeName, recipeInstanceId = recipeInstanceId), event)
+      case InteractionCompleted(_, _, recipeName, recipeId, recipeInstanceId, _, Some(event)) if processFilter(recipeName) =>
+        listenerFunction.apply(RecipeEventMetadata(recipeId = recipeId, recipeName = recipeName, recipeInstanceId = recipeInstanceId), event)
+      case InteractionFailed(_, _, recipeName, recipeId, recipeInstanceId, _, _, _, ExceptionStrategyOutcome.Continue(eventName)) if processFilter(recipeName) =>
+        listenerFunction.apply(RecipeEventMetadata(recipeId = recipeId, recipeName = recipeName, recipeInstanceId = recipeInstanceId), EventInstance(eventName, Map.empty))
       case _ => ()
     }
   }
 
   /**
-    * Registers a listener to all runtime events for recipes with the given name run in this baker instance.
-    *
-    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
-    */
-  override def registerEventListener(recipeName: String, listenerFunction: (String, EventInstance) => Unit): Future[Unit] =
+   * Registers a listener to all runtime events for recipes with the given name run in this baker instance.
+   *
+   * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
+   */
+  override def registerEventListener(recipeName: String, listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): Future[Unit] =
     doRegisterEventListener(listenerFunction, _ == recipeName)
 
   /**
-    * Registers a listener to all runtime events for all recipes that run in this Baker instance.
-    *
-    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
-    */
+   * Registers a listener to all runtime events for all recipes that run in this Baker instance.
+   *
+   * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
+   */
   //  @deprecated("Use event bus instead", "1.4.0")
-  override def registerEventListener(listenerFunction: (String, EventInstance) => Unit): Future[Unit] =
+  override def registerEventListener(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): Future[Unit] =
     doRegisterEventListener(listenerFunction, _ => true)
 
   /**
-    * Registers a listener function that listens to all BakerEvents
-    *
-    * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
-    *
-    * @param listenerFunction
-    * @return
-    */
+   * Registers a listener function that listens to all BakerEvents
+   *
+   * Note that the delivery guarantee is *AT MOST ONCE*. Do not use it for critical functionality
+   *
+   * @param listenerFunction
+   * @return
+   */
   override def registerBakerEventListener(listenerFunction: BakerEvent => Unit): Future[Unit] = {
     Future.successful {
       val listenerActor = system.actorOf(Props(new Actor() {
         override def receive: Receive = {
           case event: BakerEvent => Try {
             listenerFunction.apply(event)
-          }.failed.foreach { e =>
-            log.warn(s"Listener function threw exception for event: $event", e)
+          }.failed.foreach {e =>
+            logger.warn(s"Listener function threw exception for event: $event", e)
           }
         }
       }))
@@ -397,26 +426,26 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends Baker {
   }
 
   /**
-    * Adds an interaction implementation to baker.
-    *
-    * This is assumed to be a an object with a method named 'apply' defined on it.
-    *
-    * @param implementation The implementation object
-    */
+   * Adds an interaction implementation to baker.
+   *
+   * This is assumed to be a an object with a method named 'apply' defined on it.
+   *
+   * @param implementation The implementation object
+   */
   override def addInteractionInstance(implementation: InteractionInstance): Future[Unit] =
     Future.successful(config.interactionManager.addImplementation(implementation))
 
   /**
-    * Adds a sequence of interaction implementation to baker.
-    *
-    * @param implementations The implementation object
-    */
+   * Adds a sequence of interaction implementation to baker.
+   *
+   * @param implementations The implementation object
+   */
   override def addInteractionInstances(implementations: Seq[InteractionInstance]): Future[Unit] =
     Future.successful(implementations.foreach(addInteractionInstance))
 
   /**
-    * Attempts to gracefully shutdown the baker system.
-    */
+   * Attempts to gracefully shutdown the baker system.
+   */
   override def gracefulShutdown: Future[Unit] =
     Future.successful(GracefulShutdown.gracefulShutdownActorSystem(system, config.defaultShutdownTimeout))
 }

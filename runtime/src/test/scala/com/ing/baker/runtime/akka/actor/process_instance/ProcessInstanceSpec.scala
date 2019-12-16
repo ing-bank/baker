@@ -18,7 +18,7 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceSpec._
 import com.ing.baker.runtime.akka.actor.process_instance.dsl._
 import com.ing.baker.runtime.akka.actor.process_instance.internal.ExceptionStrategy.RetryWithDelay
 import com.ing.baker.runtime.akka.actor.process_instance.{ProcessInstanceProtocol => protocol}
-import com.ing.baker.runtime.akka.actor.serialization.Encryption.NoEncryption
+import com.ing.baker.runtime.serialization.Encryption.NoEncryption
 import com.ing.baker.runtime.akka.namedCachedThreadPool
 import org.mockito.Matchers._
 import org.mockito.Mockito._
@@ -26,8 +26,8 @@ import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.scalatest.Matchers
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import org.scalatest.time.{Milliseconds, Span}
+import org.scalatestplus.mockito.MockitoSugar
 
 import scala.concurrent.Promise
 import scala.concurrent.duration._

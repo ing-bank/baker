@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka.internal
 import java.lang.reflect.InvocationTargetException
 
 import akka.event.EventStream
-import cats.effect.IO
+import cats.effect.{ContextShift, IO}
 import com.ing.baker.il
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.il.petrinet._
@@ -120,6 +120,7 @@ object RecipeRuntime {
 
 class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManager, eventStream: EventStream)(implicit ec: ExecutionContext) extends ProcessInstanceRuntime[Place, Transition, RecipeInstanceState, EventInstance] {
 
+  protected implicit lazy val contextShift: ContextShift[IO] = IO.contextShift(ec)
   /**
     * All transitions except sensory event interactions are auto-fireable by the runtime
     */
@@ -193,10 +194,6 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
 
       try {
 
-        // obtain the interaction implementation
-        val implementation = interactionManager.getImplementation(interaction).getOrElse {
-          throw new FatalInteractionException("No implementation available for interaction")
-        }
 
         // create the interaction input
         val input = createInteractionInput(interaction, processState)
@@ -207,7 +204,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
         eventStream.publish(InteractionStarted(timeStarted, recipe.name, recipe.recipeId, processState.recipeInstanceId, interaction.interactionName))
 
         // executes the interaction and obtain the (optional) output event
-        implementation.execute(input).map { interactionOutput =>
+        interactionManager.executeImplementation(interaction, input).map { interactionOutput =>
 
           // validates the event, throws a FatalInteraction exception if invalid
           RecipeRuntime.validateInteractionOutput(interaction, interactionOutput).foreach { validationError =>

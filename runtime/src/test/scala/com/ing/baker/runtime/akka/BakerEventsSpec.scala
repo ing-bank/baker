@@ -1,9 +1,7 @@
 package com.ing.baker.runtime.akka
 
-import java.util.UUID
-
 import akka.actor.ActorRef
-import akka.persistence.inmemory.extension.{InMemoryJournalStorage, StorageExtension}
+import akka.persistence.inmemory.extension.{ InMemoryJournalStorage, StorageExtension }
 import akka.testkit.TestProbe
 import com.ing.baker._
 import com.ing.baker.recipe.TestRecipe
@@ -11,24 +9,21 @@ import com.ing.baker.recipe.TestRecipe._
 import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.scaladsl.{Event, Recipe}
 import com.ing.baker.runtime.common.RejectReason._
-import com.ing.baker.runtime.scaladsl._
-import com.ing.baker.runtime.scaladsl.EventInstance
+import com.ing.baker.runtime.scaladsl.{ EventInstance, _ }
 import com.ing.baker.types.PrimitiveValue
-import org.slf4j.LoggerFactory
-
+import com.typesafe.scalalogging.LazyLogging
+import java.util.UUID
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
 
-object BakerEventsSpec {
-
-  val log = LoggerFactory.getLogger(classOf[BakerEventsSpec])
+object BakerEventsSpec extends LazyLogging {
 
   def listenerFunction(probe: ActorRef, logEvents: Boolean = false): PartialFunction[BakerEvent, Unit] = {
     case event: BakerEvent =>
       if (logEvents) {
-        log.info("Listener consumed event {}", event)
+        logger.info("Listener consumed event {}", event)
       }
       probe ! event
   }
@@ -64,9 +59,7 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
 
   override def actorSystemName = "BakerEventsSpec"
 
-  val log = LoggerFactory.getLogger(classOf[BakerEventsSpec])
-
-  val eventReceiveTimeout = 1 seconds
+  private val eventReceiveTimeout = 1 seconds
 
   before {
     resetMocks
@@ -92,18 +85,18 @@ class BakerEventsSpec extends BakerRuntimeTestBase {
         _ <- baker.fireEventAndResolveWhenCompleted(recipeInstanceId, EventInstance.unsafeFrom(InitialEvent(initialIngredientValue)), "someId")
         // TODO check the order of the timestamps later
         _ = expectMsgInAnyOrderPF(listenerProbe,
-          { case msg@RecipeInstanceCreated(_, `recipeId`, `recipeName`, `recipeInstanceId`) => msg },
-          { case msg@EventReceived(_, _, _, `recipeInstanceId`, Some("someId"), EventInstance("InitialEvent", ingredients)) if ingredients == Map("initialIngredient" -> PrimitiveValue(`initialIngredientValue`)) => msg },
-          { case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "SieveInteraction") => msg },
-          { case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "InteractionOne") => msg },
-          { case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "InteractionTwo") => msg },
-          { case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "InteractionThree") => msg },
-          { case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "ProvidesNothingInteraction") => msg },
-          { case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "InteractionOne", Some(EventInstance("InteractionOneSuccessful", ingredients))) if ingredients == Map("interactionOneIngredient" -> PrimitiveValue("interactionOneIngredient")) => msg },
-          { case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "InteractionTwo", Some(EventInstance("EventFromInteractionTwo", ingredients))) if ingredients == Map("interactionTwoIngredient" -> PrimitiveValue("interactionTwoIngredient")) => msg },
-          { case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "InteractionThree", Some(EventInstance("InteractionThreeSuccessful", ingredients))) if ingredients == Map("interactionThreeIngredient" -> PrimitiveValue("interactionThreeIngredient")) => msg },
-          { case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "ProvidesNothingInteraction", None) => msg },
-          { case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "SieveInteraction", Some(EventInstance("SieveInteractionSuccessful", ingredients))) if ingredients == Map("sievedIngredient" -> PrimitiveValue("sievedIngredient")) => msg }
+        {case msg@RecipeInstanceCreated(_, `recipeId`, `recipeName`, `recipeInstanceId`) => msg},
+        {case msg@EventReceived(_, _, _, `recipeInstanceId`, Some("someId"), EventInstance("InitialEvent", ingredients)) if ingredients == Map("initialIngredient" -> PrimitiveValue(`initialIngredientValue`)) => msg},
+        {case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "SieveInteraction") => msg},
+        {case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "InteractionOne") => msg},
+        {case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "InteractionTwo") => msg},
+        {case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "InteractionThree") => msg},
+        {case msg@InteractionStarted(_, _, _, `recipeInstanceId`, "ProvidesNothingInteraction") => msg},
+        {case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "InteractionOne", Some(EventInstance("InteractionOneSuccessful", ingredients))) if ingredients == Map("interactionOneIngredient" -> PrimitiveValue("interactionOneIngredient")) => msg},
+        {case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "InteractionTwo", Some(EventInstance("EventFromInteractionTwo", ingredients))) if ingredients == Map("interactionTwoIngredient" -> PrimitiveValue("interactionTwoIngredient")) => msg},
+        {case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "InteractionThree", Some(EventInstance("InteractionThreeSuccessful", ingredients))) if ingredients == Map("interactionThreeIngredient" -> PrimitiveValue("interactionThreeIngredient")) => msg},
+        {case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "ProvidesNothingInteraction", None) => msg},
+        {case msg@InteractionCompleted(_, _, _, _, `recipeInstanceId`, "SieveInteraction", Some(EventInstance("SieveInteractionSuccessful", ingredients))) if ingredients == Map("sievedIngredient" -> PrimitiveValue("sievedIngredient")) => msg}
         )
         _ = listenerProbe.expectNoMessage(eventReceiveTimeout)
       } yield succeed
