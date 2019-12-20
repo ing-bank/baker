@@ -49,7 +49,7 @@ object Dependencies {
   val ficusConfig =               "com.iheart"                 %% "ficus"                              % "1.4.7"
 
   val scalaGraph  =               "org.scala-graph"            %% "graph-core"                         % "1.11.5"
-  val scalaGraphDot =             "org.scala-graph"            %% "graph-dot"                          % "1.11.5"
+  val scalaGraphDot =             "org.scala-graph"            %% "graph-dot"                          % "1.13.0"
   val graphvizJava =              "guru.nidi"                  %  "graphviz-java"                      % "0.8.10"
 
   val kamon =                     "io.kamon"                   %% "kamon-bundle"                       % "2.0.0"
