@@ -37,10 +37,12 @@ spec:
               containerPort: 8558
               protocol: TCP
             - name: webaccess
-              containerPort: 8080
+              containerPort: 8081
               protocol: TCP
           #namespace
           env:
+            - name: HTTP_SERVER_PORT
+              value: "8081"
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
@@ -173,7 +175,7 @@ spec:
               protocol: TCP
           env:
             - name: BAAS_HOSTNAME
-              value: http://baas-state-service:8080/
+              value: http://baas-state-service:8081/
 ---
 
 kind: Role
@@ -210,7 +212,7 @@ spec:
   selector:
     app: baas-state
   ports:
-    - port: 8080
+    - port: 8081
       protocol: TCP
   type: LoadBalancer
 ---

@@ -108,6 +108,7 @@ lazy val runtime = project.in(file("runtime"))
         akkaClusterSharding,
         akkaBoostrap,
         akkaSlf4j,
+        akkaInmemoryJournal,
         ficusConfig,
         catsCore,
         catsEffect,
@@ -120,7 +121,6 @@ lazy val runtime = project.in(file("runtime"))
         akkaTestKit,
         akkaMultiNodeTestkit,
         akkaStreamTestKit,
-        akkaInmemoryJournal,
         akkaPersistenceCassandra,
         levelDB,
         levelDBJni,
@@ -508,7 +508,7 @@ lazy val `baas-minikube-state` = project.in(file("examples/baas-minikube-setup/b
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "The core node",
     packageName in Docker := "baas-minikube-state",
-    dockerExposedPorts := Seq(8080)
+    dockerExposedPorts := Seq(8081)
   )
   .dependsOn(`baas-node-state`)
 

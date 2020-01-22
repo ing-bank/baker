@@ -16,6 +16,7 @@ object Main extends App {
   val config = ConfigFactory.load()
   val systemName = config.getString("service.actorSystemName")
   val httpServerPort = config.getInt("service.httpServerPort")
+  println(Console.YELLOW + httpServerPort + Console.RESET)
   val stateNodeSystem = ActorSystem(systemName)
   val stateNodeBaker = AkkaBaker(config, stateNodeSystem)
   val materializer = ActorMaterializer()(stateNodeSystem)
