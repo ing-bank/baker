@@ -54,8 +54,8 @@ class RemoteInteractionHttp(interaction: InteractionInstance)(implicit system: A
 
   private def health: Route = pathPrefix("health")(get(complete(StatusCodes.OK)))
 
-  private def interface: Route = post(path("interface") {
-    ???
+  private def interface: Route = get(path("interface") {
+    complete(ProtocolInteractionExecution.InstanceInterface(interaction.name, interaction.input))
   })
 
   private def apply: Route = post(path("apply") {

@@ -11,7 +11,7 @@ import com.ing.baker.baas.scaladsl.RemoteInteraction
 import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
 import com.ing.baker.runtime.serialization.Encryption
-import com.ing.baker.types.{CharArray, Int64, PrimitiveValue}
+import com.ing.baker.types.{CharArray, Int64, PrimitiveValue, Type}
 import org.jboss.netty.channel.ChannelException
 import org.scalatest.AsyncFlatSpec
 import org.scalatest.compatible.Assertion
@@ -28,6 +28,15 @@ class RemoteInteractionSpec extends AsyncFlatSpec {
       for {
         result0 <- client(Seq(ingredient0, ingredient1))
       } yield assert(result0 === Some(result("A", 1)))
+    })
+  }
+
+  it should "publish its interface" in {
+    testWith(implementation, { client =>
+      for {
+        result <- client.interface
+        (name: String, input: Seq[Type]) = result
+      } yield assert(name == implementation.name && input === implementation.input)
     })
   }
 }

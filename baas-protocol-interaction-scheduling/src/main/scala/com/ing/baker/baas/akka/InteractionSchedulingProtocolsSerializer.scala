@@ -18,6 +18,8 @@ object InteractionSchedulingProtocolsSerializer {
         .register("com.ing.baker.baas.protocol.ProtocolInteractionExecution.InstanceExecutedSuccessfully"),
       forType[com.ing.baker.baas.protocol.ProtocolInteractionExecution.InstanceExecutionFailed]
         .register("com.ing.baker.baas.protocol.ProtocolInteractionExecution.InstanceExecutionFailed"),
+      forType[com.ing.baker.baas.protocol.ProtocolInteractionExecution.InstanceInterface]
+        .register("com.ing.baker.baas.protocol.ProtocolInteractionExecution.InstanceInterface"),
       forType[com.ing.baker.baas.protocol.ProtocolInteractionExecution.InstanceExecutionTimedOut]
         .register("com.ing.baker.baas.protocol.ProtocolInteractionExecution.InstanceExecutionTimedOut"),
       forType[com.ing.baker.baas.protocol.ProtocolInteractionExecution.NoInstanceFound.type]

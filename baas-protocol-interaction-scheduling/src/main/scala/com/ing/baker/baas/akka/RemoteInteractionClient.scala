@@ -11,6 +11,7 @@ import akka.stream.Materializer
 import com.ing.baker.baas.protocol.ProtocolInteractionExecution
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}
 import com.ing.baker.baas.protocol.InteractionSchedulingProto._
+import com.ing.baker.types.Type
 
 import scala.concurrent.Future
 
@@ -49,6 +50,14 @@ class RemoteInteractionClient(hostname: Uri)(implicit system: ActorSystem, mat: 
   private val root: Path = Path./("api")./("v3")
 
   private def withPath(path: Path): Uri = hostname.withPath(path)
+
+  def interface: Future[(String, Seq[Type])] = {
+    val request = HttpRequest(method = HttpMethods.GET, uri = withPath(root./("interface")))
+    for {
+      response <- Http().singleRequest(request)
+      decoded <- Unmarshal(response).to[ProtocolInteractionExecution.InstanceInterface]
+    } yield (decoded.name, decoded.input)
+  }
 
   def apply(input: Seq[IngredientInstance]): Future[Option[EventInstance]] =
     for {
