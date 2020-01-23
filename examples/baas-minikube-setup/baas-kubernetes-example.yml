@@ -65,6 +65,7 @@ spec:
       labels:
         app: baas-interactions
         actorSystemName: BaaS
+        baas-component: remote-interaction
     spec:
       containers:
         - name: baas-interactions

@@ -251,7 +251,10 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
       akkaPersistenceCassandra,
       akkaManagementHttp,
       akkaClusterBoostrap,
-      akkaDiscoveryKube
+      akkaDiscoveryKube,
+      kubernetesJavaClient
+    ) ++ testDeps(
+      scalaTest
     )
   )
   .settings(
@@ -270,6 +273,9 @@ lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
       akkaCluster,
       akkaClusterTools,
       slf4jApi
+    ) ++ testDeps(
+      scalaTest,
+      scalaCheck
     )
   )
   .dependsOn(`baas-protocol-interaction-scheduling`, `baker-interface`)
