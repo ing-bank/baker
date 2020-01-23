@@ -47,10 +47,29 @@ object InteractionSchedulingProto {
       val companion = protobuf.InstanceExecutionFailed
 
       def toProto(a: InstanceExecutionFailed): protobuf.InstanceExecutionFailed =
-        protobuf.InstanceExecutionFailed()
+        protobuf.InstanceExecutionFailed(Some(a.message))
 
-      def fromProto(message: protobuf.InstanceExecutionFailed): Try[InstanceExecutionFailed] =
-        Success(InstanceExecutionFailed())
+      def fromProto(message: protobuf.InstanceExecutionFailed): Try[InstanceExecutionFailed] = {
+        for {
+          message <- versioned(message.message, "message")
+        } yield InstanceExecutionFailed(message)
+      }
+    }
+
+  implicit def instanceInterfaceProto: ProtoMap[InstanceInterface, protobuf.InstanceInterface] =
+    new ProtoMap[InstanceInterface, protobuf.InstanceInterface] {
+
+      val companion = protobuf.InstanceInterface
+
+      def toProto(a: InstanceInterface): protobuf.InstanceInterface =
+        protobuf.InstanceInterface(Some(a.name), a.input.map(ctxToProto(_)))
+
+      def fromProto(message: protobuf.InstanceInterface): Try[InstanceInterface] = {
+        for {
+          name <- versioned(message.name, "name")
+          input <- message.input.toList.traverse(ctxFromProto(_))
+        } yield InstanceInterface(name, input)
+      }
     }
 
   implicit def instanceExecutionTimedOutProto: ProtoMap[InstanceExecutionTimedOut, protobuf.InstanceExecutionTimedOut] =

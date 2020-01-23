@@ -2,13 +2,13 @@ package webshop.webservice
 
 import akka.actor.ActorSystem
 import cats.effect.IO
-import com.ing.baker.baas.scaladsl.BaaSInteractionInstance
+import com.ing.baker.baas.scaladsl.RemoteInteraction
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 
 object Main extends App {
 
   val actorSystem = ActorSystem("BaaS") // This should be done by the BaaSInteractionInstance ecosystem to ease the configuration and improve the UX
-  val ecosystem = BaaSInteractionInstance(actorSystem)
+  val ecosystem = RemoteInteraction(actorSystem)
   val timer = IO.timer(actorSystem.dispatcher)
 
   import actorSystem.dispatcher

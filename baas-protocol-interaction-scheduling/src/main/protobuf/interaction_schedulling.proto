@@ -17,7 +17,12 @@ message InstanceExecutedSuccessfully {
 }
 
 message InstanceExecutionFailed {
+    optional string message = 1;
+}
 
+message InstanceInterface {
+    optional string name = 1;
+    repeated Type input = 2;
 }
 
 message InstanceExecutionTimedOut {
