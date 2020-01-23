@@ -35,7 +35,7 @@ object InteractionAgent {
       case Success(value) =>
         mandated.tell(ProtocolInteractionExecution.InstanceExecutedSuccessfully(value), agent)
       case Failure(exception) =>
-        mandated.tell(ProtocolInteractionExecution.InstanceExecutionFailed(), agent)
+        mandated.tell(ProtocolInteractionExecution.InstanceExecutionFailed(""), agent)
     }
   }
 

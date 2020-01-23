@@ -26,7 +26,7 @@ object ProtocolInteractionExecution {
   /**
     * Technical failure of the interaction
     */
-  case class InstanceExecutionFailed() extends ProtocolInteractionExecution
+  case class InstanceExecutionFailed(message: String) extends ProtocolInteractionExecution
 
   /**
     * Technical failure of the interaction

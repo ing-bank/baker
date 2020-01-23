@@ -215,7 +215,11 @@ lazy val `baas-protocol-interaction-scheduling` = project.in(file("baas-protocol
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
   .settings(
-    moduleName := "baas-protocol-interaction-scheduling"
+    moduleName := "baas-protocol-interaction-scheduling",
+    libraryDependencies ++= Seq(
+      akkaStream,
+      akkaHttp
+    )
   )
   .dependsOn(`baker-interface`)
 
@@ -269,7 +273,14 @@ lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
     libraryDependencies ++= Seq(
       akkaCluster,
       akkaClusterTools,
+      akkaHttp,
       slf4jApi
+    ) ++ testDeps(
+      akkaSlf4j,
+      logback,
+      scalaTest,
+      junitInterface,
+      scalaCheck
     )
   )
   .dependsOn(`baas-protocol-interaction-scheduling`, `baker-interface`)

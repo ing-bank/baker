@@ -17,7 +17,7 @@ message InstanceExecutedSuccessfully {
 }
 
 message InstanceExecutionFailed {
-
+    optional string message = 1;
 }
 
 message InstanceExecutionTimedOut {
