@@ -6,9 +6,10 @@ import akka.persistence.query.scaladsl.{CurrentEventsByPersistenceIdQuery, Curre
 import cats.data.NonEmptyList
 import com.ing.baker.runtime.akka.AkkaBakerConfig.BakerPersistenceQuery
 import com.ing.baker.runtime.akka.actor.{BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider}
-import com.ing.baker.runtime.akka.internal.{InteractionManager, InteractionManagerDis, InteractionManagerLocal}
+import com.ing.baker.runtime.akka.internal.{InteractionManager, InteractionManagerLocal, InteractionManagerProvider}
 import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 
 import scala.concurrent.duration._
@@ -24,7 +25,7 @@ case class AkkaBakerConfig(
   readJournal: BakerPersistenceQuery
 )(implicit val system: ActorSystem)
 
-object AkkaBakerConfig {
+object AkkaBakerConfig extends LazyLogging {
 
   def localDefault(actorSystem: ActorSystem): AkkaBakerConfig =
     default(
@@ -107,11 +108,19 @@ object AkkaBakerConfig {
           case Some(other) => throw new IllegalArgumentException(s"Unsupported actor provider: $other")
         }
       },
-      interactionManager = config.as[Option[String]]("baker.interaction-manager") match {
-        case Some("remote") =>
-          val postTimeout = config.as[FiniteDuration]("baker.remote-interaction-manager.post-timeout")
-          val computationTimeout = config.as[FiniteDuration]("baker.remote-interaction-manager.computation-timeout")
-          new InteractionManagerDis(actorSystem, postTimeout, computationTimeout)
+      interactionManager = config.as[Option[String]]("baker.interaction-manager.provider") match {
+        case Some(classPath: String) =>
+          try {
+            logger.info(s"Loading InteractionManagerProvider from: $classPath")
+            Class.forName(classPath).newInstance().asInstanceOf[InteractionManagerProvider]
+              .get(config.getConfig("baker.interaction-manager"))
+          }
+          catch {
+              case e: Exception => {
+                logger.error(e.getMessage)
+                throw new IllegalArgumentException(s"Could not load InteractionManager from provider from: $classPath")
+              }
+          }
         case _ =>
           new InteractionManagerLocal()
       },
