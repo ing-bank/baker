@@ -1,6 +1,7 @@
-package com.ing.baker.runtime.akka.internal
+package com.ing.baker.baas.interaction
 
 import akka.actor.ActorSystem
+import com.ing.baker.runtime.akka.internal.{InteractionManager, InteractionManagerProvider}
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 

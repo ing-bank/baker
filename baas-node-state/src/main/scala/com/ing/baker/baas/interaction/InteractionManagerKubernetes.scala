@@ -1,4 +1,4 @@
-package com.ing.baker.runtime.akka.internal
+package com.ing.baker.baas.interaction
 
 import akka.actor.ActorSystem
 import akka.pattern.ask
@@ -7,6 +7,7 @@ import com.ing.baker.baas.protocol.ProtocolInteractionExecution
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.akka.actor.interaction_scheduling.QuestMandated
 import com.ing.baker.runtime.akka.actor.interaction_scheduling.QuestMandated.Start
+import com.ing.baker.runtime.akka.internal.InteractionManager
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
 
 import scala.concurrent.Future
