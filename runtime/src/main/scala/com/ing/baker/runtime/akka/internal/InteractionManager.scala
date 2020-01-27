@@ -6,9 +6,9 @@ import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, Intera
 import scala.concurrent.Future
 
 trait InteractionManager {
-  def hasImplementation(interaction: InteractionTransition): Boolean
+  def hasImplementation(interaction: InteractionTransition): Future[Boolean]
 
   def executeImplementation(interaction: InteractionTransition, input: Seq[IngredientInstance]): Future[Option[EventInstance]]
 
-  def addImplementation(interaction: InteractionInstance): Unit
+  def addImplementation(interaction: InteractionInstance): Future[Unit]
 }

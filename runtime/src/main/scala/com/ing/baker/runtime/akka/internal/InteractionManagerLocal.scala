@@ -41,8 +41,8 @@ class InteractionManagerLocal(private var interactionImplementations: Seq[Intera
     *
     * @param implementation
     */
-  def addImplementation(implementation: InteractionInstance): Unit =
-    interactionImplementations :+= implementation
+  def addImplementation(implementation: InteractionInstance): Future[Unit] =
+    Future.successful(interactionImplementations :+= implementation)
 
   /**
     * Gets an implementation is available for the given interaction.
@@ -57,8 +57,8 @@ class InteractionManagerLocal(private var interactionImplementations: Seq[Intera
   private[internal] def getImplementation(interaction: InteractionTransition): Option[InteractionInstance] =
     Option(implementationCache.computeIfAbsent(interaction, (findInteractionImplementation _).asJava))
 
-  def hasImplementation(interaction: InteractionTransition): Boolean =
-    getImplementation(interaction).isDefined
+  def hasImplementation(interaction: InteractionTransition): Future[Boolean] =
+    Future.successful(getImplementation(interaction).isDefined)
 
   override def executeImplementation(interaction: InteractionTransition, input: Seq[IngredientInstance]): Future[Option[EventInstance]] = {
     this.getImplementation(interaction) match {

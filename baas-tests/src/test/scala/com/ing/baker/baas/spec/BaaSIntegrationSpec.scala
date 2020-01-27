@@ -8,10 +8,11 @@ import akka.stream.{ActorMaterializer, Materializer}
 import cats.data.StateT
 import cats.effect.{IO, Timer}
 import cats.implicits._
+import com.ing.baker.baas.common.RemoteInteraction
 import com.ing.baker.baas.recipe.CheckoutFlowEvents.ItemsReserved
 import com.ing.baker.baas.recipe.CheckoutFlowIngredients.{Item, OrderId, ReservedItems, ShippingAddress}
 import com.ing.baker.baas.recipe._
-import com.ing.baker.baas.scaladsl.{BaaSEventListener, RemoteInteraction, BakerClient}
+import com.ing.baker.baas.scaladsl.{BaaSEventListener, BakerClient, RemoteInteraction}
 import com.ing.baker.baas.spec.BaaSIntegrationSpec._
 import com.ing.baker.baas.state.BaaSServer
 import com.ing.baker.compiler.RecipeCompiler

@@ -17,6 +17,7 @@ import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import cats.implicits._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -75,22 +76,27 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   override def addRecipe(compiledRecipe: CompiledRecipe): Future[String] = {
 
     // check if every interaction has an implementation
-    val implementationErrors = getImplementationErrors(compiledRecipe)
-
-    if (implementationErrors.nonEmpty)
-      Future.failed(ImplementationsException(implementationErrors.mkString(", ")))
+    getImplementationErrors(compiledRecipe).flatMap { implementationErrors =>
+      if (implementationErrors.nonEmpty)
+        Future.failed(ImplementationsException(implementationErrors.mkString(", ")))
 
     else if (compiledRecipe.validationErrors.nonEmpty)
       Future.failed(RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
 
-    else recipeManager.ask(RecipeManagerProtocol.AddRecipe(compiledRecipe))(config.defaultAddRecipeTimeout) flatMap {
-      case RecipeManagerProtocol.AddRecipeResponse(recipeId) => Future.successful(recipeId)
+      else recipeManager.ask(RecipeManagerProtocol.AddRecipe(compiledRecipe))(config.defaultAddRecipeTimeout) map {
+        case RecipeManagerProtocol.AddRecipeResponse(recipeId) => recipeId
+      }
     }
   }
 
-  private def getImplementationErrors(compiledRecipe: CompiledRecipe): Set[String] = {
-    compiledRecipe.interactionTransitions.filterNot(config.interactionManager.hasImplementation)
-      .map(s => s"No implementation provided for interaction: ${s.originalInteractionName}")
+  private def getImplementationErrors(compiledRecipe: CompiledRecipe): Future[Set[String]] = {
+    //TODO optimize so that we do not have to much traffic if its a remote InteractionManager
+    compiledRecipe.interactionTransitions.toList
+      .traverse(x => config.interactionManager.hasImplementation(x).map(has => (has, x.originalInteractionName)))
+      .map(_
+        .filterNot(_._1)
+        .map(x => s"No implementation provided for interaction: ${x._2}")
+        .toSet)
   }
 
   /**
@@ -103,7 +109,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     // here we ask the RecipeManager actor to return us the recipe for the given id
     recipeManager.ask(RecipeManagerProtocol.GetRecipe(recipeId))(config.defaultInquireTimeout).flatMap {
       case RecipeManagerProtocol.RecipeFound(compiledRecipe, timestamp) =>
-        Future.successful(RecipeInformation(compiledRecipe, timestamp, getImplementationErrors(compiledRecipe)))
+        getImplementationErrors(compiledRecipe).map(RecipeInformation(compiledRecipe, timestamp, _))
       case RecipeManagerProtocol.NoRecipeFound(_) =>
         Future.failed(NoSuchRecipeException(recipeId))
     }
@@ -117,9 +123,12 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   override def getAllRecipes: Future[Map[String, RecipeInformation]] =
     recipeManager.ask(RecipeManagerProtocol.GetAllRecipes)(config.defaultInquireTimeout)
       .mapTo[RecipeManagerProtocol.AllRecipes]
-      .map(_.recipes.map {ri =>
-        ri.compiledRecipe.recipeId -> RecipeInformation(ri.compiledRecipe, ri.timestamp, getImplementationErrors(ri.compiledRecipe))
-      }.toMap)
+      .flatMap(_.recipes
+          .toList
+          .traverse(ri => getImplementationErrors(ri.compiledRecipe)
+            .map(errors => ri.compiledRecipe.recipeId -> RecipeInformation(ri.compiledRecipe, ri.timestamp, errors))
+          ).map(_.toMap)
+      )
 
   /**
    * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier

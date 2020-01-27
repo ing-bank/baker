@@ -27,8 +27,8 @@ class InteractionManagerKubernetes(system: ActorSystem, postTimeout: Timeout, co
     }
   }
 
-  override def hasImplementation(interaction: InteractionTransition): Boolean = true
+  override def hasImplementation(interaction: InteractionTransition): Future[Boolean] = Future.successful(true)
 
-  override def addImplementation(interaction: InteractionInstance): Unit =
-    throw new NotImplementedError("addImplementation is not implemented for the distributed interaction manager, please deploy interactions using the baas-node-interaction library")
+  override def addImplementation(interaction: InteractionInstance): Future[Unit] =
+    Future.failed(new NotImplementedError("addImplementation is not implemented for the distributed interaction manager, please deploy interactions using the baas-node-interaction library"))
 }
