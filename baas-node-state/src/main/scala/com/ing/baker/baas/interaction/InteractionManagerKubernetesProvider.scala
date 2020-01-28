@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import com.ing.baker.runtime.akka.internal.{InteractionManager, InteractionManagerProvider}
 import com.ing.baker.runtime.serialization.Encryption
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigFactory}
 import net.ceedubs.ficus.Ficus._
 
 import scala.concurrent.duration.FiniteDuration
@@ -15,7 +15,9 @@ class InteractionManagerKubernetesProvider extends InteractionManagerProvider {
     val postTimeout = config.as[FiniteDuration]("post-timeout")
     val computationTimeout = config.as[FiniteDuration]("computation-timeout")
 
-    val actorSystem: ActorSystem = ActorSystem("InteractionManagerKubernetesSystem")
+    val akkaConfig = ConfigFactory.empty()
+
+    val actorSystem: ActorSystem = ActorSystem("InteractionManagerKubernetesSystem", akkaConfig)
     val mat: Materializer = ActorMaterializer()(actorSystem)
     val encryption: Encryption = {
       val encryptionEnabled = config.getAs[Boolean]("encryption.enabled").getOrElse(false)

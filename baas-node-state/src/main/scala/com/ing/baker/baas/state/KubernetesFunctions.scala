@@ -12,10 +12,13 @@ object KubernetesFunctions {
 
   def getInteractionServices(): mutable.Seq[V1Service] = {
     api.listNamespacedService("default", null, null, null, null, null, null, null, null, null)
-      .getItems.asScala
+      .getItems
+      .asScala
+      .filter(_.getMetadata.getLabels.getOrDefault("baas-component", "Wrong")
+        .equals("remote-interaction"))
   }
 
   def getInteractionAddresses(): Seq[String] = {
-    getInteractionServices().map(_.getMetadata.getName)
+    getInteractionServices().map("http://" + _.getMetadata.getName + ":8080")
   }
 }

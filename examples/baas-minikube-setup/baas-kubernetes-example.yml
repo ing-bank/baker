@@ -5,7 +5,7 @@ metadata:
     app: baas-state
   name: baas-state
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: baas-state
@@ -53,40 +53,34 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: baas-interactions
-  name: baas-interactions
+    app: reserve-items
+  name: reserve-items
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: baas-interactions
+      app: reserve-items
   template:
     metadata:
       labels:
-        app: baas-interactions
-        actorSystemName: BaaS
-        baas-component: remote-interaction
+        app: reserve-items
     spec:
       containers:
         - name: baas-interactions
-          image: baas-minikube-interactions:3.0.2-SNAPSHOT
+          image: reserve-items:3.0.2-SNAPSHOT
           imagePullPolicy: Never
           readinessProbe:
             httpGet:
-              path: /health/ready
-              port: 8558
+              path: /api/v3/health
+              port: 8080
           livenessProbe:
             httpGet:
-              path: /health/alive
-              port: 8558
+              path: /api/v3/health
+              port: 8080
           ports:
             # akka remoting
-            - name: remoting
-              containerPort: 2552
-              protocol: TCP
-            # akka-management and bootstrap
-            - name: management
-              containerPort: 8558
+            - name: http
+              containerPort: 8080
               protocol: TCP
           #namespace
           env:
@@ -94,6 +88,139 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: reserve-items-interaction-service
+  labels:
+    baas-component: remote-interaction
+    run: reserve-items-interaction-service
+spec:
+  selector:
+    app: reserve-items
+  ports:
+    - port: 8080
+      protocol: TCP
+  type: LoadBalancer
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ship-items
+  name: ship-items
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ship-items
+  template:
+    metadata:
+      labels:
+        app: ship-items
+    spec:
+      containers:
+        - name: baas-interactions
+          image: ship-items:3.0.2-SNAPSHOT
+          imagePullPolicy: Never
+          readinessProbe:
+            httpGet:
+              path: /api/v3/health
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /api/v3/health
+              port: 8080
+          ports:
+            # akka remoting
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          #namespace
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ship-items-interaction-service
+  labels:
+    baas-component: remote-interaction
+    run: ship-items-interaction-service
+spec:
+  selector:
+    app: ship-items
+  ports:
+    - port: 8080
+      protocol: TCP
+  type: LoadBalancer
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: make-payment
+  name: make-payment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: make-payment
+  template:
+    metadata:
+      labels:
+        app: make-payment
+    spec:
+      containers:
+        - name: baas-interactions
+          image: make-payment:3.0.2-SNAPSHOT
+          imagePullPolicy: Never
+          readinessProbe:
+            httpGet:
+              path: /api/v3/health
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /api/v3/health
+              port: 8080
+          ports:
+            # akka remoting
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          #namespace
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: make-payment-interaction-service
+  labels:
+    baas-component: remote-interaction
+    run: make-payment-interaction-service
+spec:
+  selector:
+    app: make-payment
+  ports:
+    - port: 8080
+      protocol: TCP
+  type: LoadBalancer
+
 ---
 
 apiVersion: apps/v1
@@ -165,18 +292,20 @@ spec:
           readinessProbe:
             httpGet:
               path: /api
-              port: 8080
+              port: 8082
           livenessProbe:
             httpGet:
               path: /api
-              port: 8080
+              port: 8082
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: 8082
               protocol: TCP
           env:
             - name: BAAS_HOSTNAME
               value: http://baas-state-service:8081/
+            - name: HTTP_PORT
+              value: "8082"
 ---
 
 kind: Role
@@ -228,7 +357,7 @@ spec:
   selector:
     app: client-app
   ports:
-    - port: 8080
+    - port: 8082
       protocol: TCP
   type: LoadBalancer
 

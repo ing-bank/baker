@@ -5,18 +5,26 @@ import java.util.concurrent.ConcurrentHashMap
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.util.Timeout
+import cats.implicits._
 import com.ing.baker.baas.akka.RemoteInteractionClient
 import com.ing.baker.baas.state.KubernetesFunctions
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.akka.internal.{FatalInteractionException, InteractionManager}
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
 import com.ing.baker.runtime.serialization.Encryption
+import com.typesafe.scalalogging.LazyLogging
 
-import scala.concurrent.Future
-import cats.implicits._
 import scala.compat.java8.FunctionConverters._
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
-class InteractionManagerKubernetes(postTimeout: Timeout, computationTimeout: Timeout)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption) extends InteractionManager {
+class InteractionManagerKubernetes(postTimeout: Timeout, computationTimeout: Timeout)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption)
+  extends InteractionManager with LazyLogging {
+
+  private var interactionImplementations: Seq[InteractionInstance] = Seq.empty
+
+  private val implementationCache: ConcurrentHashMap[InteractionTransition, InteractionInstance] =
+    new ConcurrentHashMap[InteractionTransition, InteractionInstance]
 
   //TODO changes this to an Actor
 
@@ -28,21 +36,31 @@ class InteractionManagerKubernetes(postTimeout: Timeout, computationTimeout: Tim
       .map(RemoteInteractionClient(_))
       .toList
       .traverse(client => client.interface.map {
-        case (name, types) => InteractionInstance(
+        case (name, types) => Some(InteractionInstance(
           name = name,
           input = types,
           run = client.apply
-        )
+        ))
+      }.recover({ case e: Exception =>
+        println("Recovered from exception: " + e.getMessage)
+        None
       })
+      ).map(_.flatten)
   }
 
-  private var interactionImplementations: Seq[InteractionInstance] = Seq.empty
+  def updateInteractions: Runnable = () => {
+    logger.info("Updating the InteractionManager")
+    loadInteractions.map(_.foreach(instance => {
+      if (!interactionImplementations.contains(instance))
+        interactionImplementations :+= instance
+    }))
+  }
 
-  private val implementationCache: ConcurrentHashMap[InteractionTransition, InteractionInstance] =
-    new ConcurrentHashMap[InteractionTransition, InteractionInstance]
+  system.scheduler.schedule(30 seconds, 10 seconds, updateInteractions)
 
+  private def isCompatibleImplementation(interaction: InteractionTransition, implementation: InteractionInstance): Boolean
 
-  private def isCompatibleImplementation(interaction: InteractionTransition, implementation: InteractionInstance): Boolean = {
+  = {
     val interactionNameMatches =
       interaction.originalInteractionName == implementation.name
     val inputSizeMatches =
@@ -56,10 +74,14 @@ class InteractionManagerKubernetes(postTimeout: Timeout, computationTimeout: Tim
     interactionNameMatches && inputSizeMatches && inputNamesAndTypesMatches
   }
 
-  private def findInteractionImplementation(interaction: InteractionTransition): InteractionInstance =
+  private def findInteractionImplementation(interaction: InteractionTransition): InteractionInstance
+
+  =
     interactionImplementations.find(implementation => isCompatibleImplementation(interaction, implementation)).orNull
 
-  override def executeImplementation(interaction: InteractionTransition, input: Seq[IngredientInstance]): Future[Option[EventInstance]] = {
+  override def executeImplementation(interaction: InteractionTransition, input: Seq[IngredientInstance]): Future[Option[EventInstance]]
+
+  = {
     this.getImplementation(interaction) match {
       case Some(implementation) => implementation.run(input)
       case None => Future.failed(new FatalInteractionException("No implementation available for interaction"))
@@ -76,13 +98,17 @@ class InteractionManagerKubernetes(postTimeout: Timeout, computationTimeout: Tim
     * @param interaction The interaction to check
     * @return An option containing the implementation if available
     */
-  private[interaction] def getImplementation(interaction: InteractionTransition): Option[InteractionInstance] =
+  private[interaction] def getImplementation(interaction: InteractionTransition): Option[InteractionInstance]
+
+  =
     Option(implementationCache.computeIfAbsent(interaction, (findInteractionImplementation _).asJava))
 
   def hasImplementation(interaction: InteractionTransition): Future[Boolean] =
     Future.successful(getImplementation(interaction).isDefined)
 
-  override def addImplementation(interaction: InteractionInstance): Future[Unit] =
+  override def addImplementation(interaction: InteractionInstance): Future[Unit]
+
+  =
     Future.failed(new IllegalStateException("Adding implmentation instances is not supported on a BaaS cluster"))
 
 }

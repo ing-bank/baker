@@ -555,11 +555,11 @@ lazy val `baas-minikube-event-listener` = project.in(file("examples/baas-minikub
   )
   .dependsOn(`baas-node-event-listener`)
 
-lazy val `baas-minikube-interactions` = project.in(file("examples/baas-minikube-setup/baas-minikube-interactions"))
+lazy val `reserve-items` = project.in(file("examples/baas-minikube-setup/interactions/reserve-items"))
   .enablePlugins(JavaAppPackaging)
   .settings(commonSettings)
   .settings(
-    moduleName := "baas-minikube-interactions",
+    moduleName := "reserve-items",
     scalacOptions ++= Seq(
       "-Ypartial-unification"
     ),
@@ -578,8 +578,66 @@ lazy val `baas-minikube-interactions` = project.in(file("examples/baas-minikube-
   )
   .settings(
     maintainer in Docker := "The Apollo Squad",
-    packageSummary in Docker := "The interactions node",
-    packageName in Docker := "baas-minikube-interactions",
+    packageSummary in Docker := "The reserve-items interaction",
+    packageName in Docker := "reserve-items",
+    dockerExposedPorts := Seq()
+  )
+  .dependsOn(`baas-node-interaction`)
+
+lazy val `ship-items` = project.in(file("examples/baas-minikube-setup/interactions/ship-items"))
+  .enablePlugins(JavaAppPackaging)
+  .settings(commonSettings)
+  .settings(
+    moduleName := "ship-items",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
+    libraryDependencies ++=
+      compileDeps(
+        slf4jApi,
+        slf4jSimple,
+        catsEffect,
+        akkaManagementHttp,
+        akkaClusterBoostrap,
+        akkaDiscoveryKube
+      ) ++ testDeps(
+        scalaTest,
+        scalaCheck
+      )
+  )
+  .settings(
+    maintainer in Docker := "The Apollo Squad",
+    packageSummary in Docker := "The Ship-items interaction",
+    packageName in Docker := "ship-items",
+    dockerExposedPorts := Seq()
+  )
+  .dependsOn(`baas-node-interaction`)
+
+lazy val `make-payment` = project.in(file("examples/baas-minikube-setup/interactions/make-payment"))
+  .enablePlugins(JavaAppPackaging)
+  .settings(commonSettings)
+  .settings(
+    moduleName := "make-payment",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
+    libraryDependencies ++=
+      compileDeps(
+        slf4jApi,
+        slf4jSimple,
+        catsEffect,
+        akkaManagementHttp,
+        akkaClusterBoostrap,
+        akkaDiscoveryKube
+      ) ++ testDeps(
+        scalaTest,
+        scalaCheck
+      )
+  )
+  .settings(
+    maintainer in Docker := "The Apollo Squad",
+    packageSummary in Docker := "The Make-payment interaction",
+    packageName in Docker := "make-payment",
     dockerExposedPorts := Seq()
   )
   .dependsOn(`baas-node-interaction`)

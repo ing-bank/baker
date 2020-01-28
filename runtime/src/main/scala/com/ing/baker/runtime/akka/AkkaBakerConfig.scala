@@ -111,12 +111,14 @@ object AkkaBakerConfig extends LazyLogging {
       interactionManager = config.as[Option[String]]("baker.interaction-manager.provider") match {
         case Some(classPath: String) =>
           try {
+            println(Console.YELLOW + s"Loading InteractionManagerProvider from: $classPath" + Console.RESET)
             logger.info(s"Loading InteractionManagerProvider from: $classPath")
             Class.forName(classPath).newInstance().asInstanceOf[InteractionManagerProvider]
               .get(config.getConfig("baker.interaction-manager"))
           }
           catch {
               case e: Exception => {
+                println(Console.YELLOW + e.getMessage + Console.RESET)
                 logger.error(e.getMessage)
                 throw new IllegalArgumentException(s"Could not load InteractionManager from provider from: $classPath")
               }
