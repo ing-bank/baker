@@ -36,31 +36,3 @@ message NoInstanceFound {
 message InvalidExecution {
 
 }
-
-message Push {
-    optional ActorRefId mandated = 1;
-    optional string uuid = 2;
-}
-
-message Pull {
-    optional ActorRefId agent = 1;
-}
-
-message AvailableQuest {
-    optional ActorRefId mandated = 1;
-    optional string uuid = 2;
-}
-
-message Considering {
-    optional ActorRefId agent = 1;
-}
-
-message Commit {
-    optional ActorRefId mandated = 1;
-    optional ExecuteInstance execute = 2;
-}
-
-message QuestTaken {
-
-}
-
