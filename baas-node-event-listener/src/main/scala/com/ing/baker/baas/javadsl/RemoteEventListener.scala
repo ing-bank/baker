@@ -17,6 +17,6 @@ object RemoteEventListener extends common.RemoteEventListener[CompletableFuture]
 
   override type RecipeEventMetadataType = RecipeEventMetadata
 
-  override def registerEventListener(recipeName: String, listenerFunction: BiConsumer[RecipeEventMetadata, EventInstance]): CompletableFuture[Unit] =
-    FutureConverters.toJava(scaladsl.RemoteEventListener(actorSystem).registerEventListener(recipeName, (metadata, event) => listenerFunction.accept(metadata.asJava, event.asJava))).toCompletableFuture
+  override def load(listenerFunction: BiConsumer[RecipeEventMetadata, EventInstance]): Unit =
+    scaladsl.RemoteEventListener.load((metadata, event) => listenerFunction.accept(metadata.asJava, event.asJava))
 }

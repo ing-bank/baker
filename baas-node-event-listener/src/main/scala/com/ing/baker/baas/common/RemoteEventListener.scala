@@ -9,6 +9,6 @@ trait RemoteEventListener[F[_]] extends LanguageApi { self =>
 
   type RecipeEventMetadataType <: RecipeEventMetadata { type Language <: self.Language }
 
-  def registerEventListener(recipeName: String, listenerFunction: language.BiConsumerFunction[RecipeEventMetadataType, EventInstanceType]): F[Unit]
+  def load(listenerFunction: language.BiConsumerFunction[RecipeEventMetadataType, EventInstanceType]): Unit
 
 }

@@ -227,7 +227,11 @@ lazy val `baas-protocol-recipe-event-publishing` = project.in(file("baas-protoco
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
   .settings(
-    moduleName := "baas-protocol-recipe-event-publishing"
+    moduleName := "baas-protocol-recipe-event-publishing",
+    libraryDependencies ++= Seq(
+      akkaStream,
+      akkaHttp
+    )
   )
   .dependsOn(`baker-interface`)
 

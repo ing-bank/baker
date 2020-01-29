@@ -36,12 +36,6 @@ class RemoteEventListenerHttp(listenerFunction: (RecipeEventMetadata, EventInsta
   private implicit def protoUnmarshaller[A, P <: ProtoMessage[P]](implicit mapping: ProtoMap[A, P]): FromEntityUnmarshaller[A] =
     Unmarshaller.byteArrayUnmarshaller.map(mapping.fromByteArray(_).get)
 
-  private implicit def protoEitherMarshaller[A, P0 <: ProtoMessage[P0], B, P1 <: ProtoMessage[P1]](implicit m1: ProtoMap[A, P0], m2: ProtoMap[B, P1]): ToEntityMarshaller[Either[A, B]] =
-    Marshaller.ByteArrayMarshaller.wrap(MediaTypes.`application/octet-stream`) {
-      case Left(a) => m1.toByteArray(a)
-      case Right(b) => m2.toByteArray(b)
-    }
-
   private implicit def protoEitherUnmarshaller[A, P0 <: ProtoMessage[P0], B, P1 <: ProtoMessage[P1]](implicit m1: ProtoMap[A, P0], m2: ProtoMap[B, P1]): FromEntityUnmarshaller[Either[A, B]] =
     Unmarshaller.byteArrayUnmarshaller.map { byteArray =>
       m1.fromByteArray(byteArray).map(Left(_)).orElse(m2.fromByteArray(byteArray).map(Right(_))).get
