@@ -295,7 +295,14 @@ lazy val `baas-node-event-listener` = project.in(file("baas-node-event-listener"
     libraryDependencies ++= Seq(
       akkaCluster,
       akkaClusterTools,
+      akkaHttp,
       slf4jApi
+    ) ++ testDeps(
+      akkaSlf4j,
+      logback,
+      scalaTest,
+      junitInterface,
+      scalaCheck
     )
   )
   .dependsOn(`baas-protocol-recipe-event-publishing`, `baker-interface`)

@@ -3,7 +3,7 @@ package com.ing.baker.baas.common
 import com.ing.baker.runtime.common.{EventInstance, InteractionInstance, RecipeEventMetadata}
 import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
 
-trait BaaSEventListener[F[_]] extends LanguageApi { self =>
+trait RemoteEventListener[F[_]] extends LanguageApi { self =>
 
   type EventInstanceType <: EventInstance { type Language <: self.Language }
 

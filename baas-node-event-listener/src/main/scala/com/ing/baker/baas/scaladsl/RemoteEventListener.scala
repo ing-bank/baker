@@ -8,7 +8,7 @@ import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata}
 
 import scala.concurrent.Future
 
-case class BaaSEventListener(actorSystem: ActorSystem) extends common.BaaSEventListener[Future] with ScalaApi {
+case class RemoteEventListener(actorSystem: ActorSystem) extends common.RemoteEventListener[Future] with ScalaApi {
 
   override type EventInstanceType = EventInstance
 
