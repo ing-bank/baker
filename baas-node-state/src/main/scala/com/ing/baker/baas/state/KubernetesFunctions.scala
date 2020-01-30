@@ -21,4 +21,19 @@ object KubernetesFunctions {
   def getInteractionAddresses(): Seq[String] = {
     getInteractionServices().map("http://" + _.getMetadata.getName + ":8080")
   }
+
+  def getEventListenerServices(): mutable.Seq[V1Service] = {
+    api.listNamespacedService("default", null, null, null, null, null, null, null, null, null)
+      .getItems
+      .asScala
+      .filter(_.getMetadata.getLabels.getOrDefault("baas-component", "Wrong")
+        .equals("remote-event-listener"))
+  }
+
+  def getEventListenersAddresses(): Seq[(String, String)] = {
+    getEventListenerServices().map { service =>
+      (service.getMetadata.getLabels.getOrDefault("baker-recipe", "Wrong"), "http://" + service.getMetadata.getName + ":8080")
+    }
+  }
+
 }

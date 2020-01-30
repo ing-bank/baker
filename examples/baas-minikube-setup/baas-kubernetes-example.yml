@@ -1,53 +1,3 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  labels:
-    app: baas-state
-  name: baas-state
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: baas-state
-  template:
-    metadata:
-      labels:
-        app: baas-state
-        actorSystemName: BaaS
-    spec:
-      containers:
-        - name: baas-state
-          image: baas-minikube-state:3.0.2-SNAPSHOT
-          imagePullPolicy: Never
-          readinessProbe:
-            httpGet:
-              path: /health/ready
-              port: 8558
-          livenessProbe:
-            httpGet:
-              path: /health/alive
-              port: 8558
-          ports:
-            # akka remoting
-            - name: remoting
-              containerPort: 2552
-              protocol: TCP
-            # akka-management and bootstrap
-            - name: management
-              containerPort: 8558
-              protocol: TCP
-            - name: webaccess
-              containerPort: 8081
-              protocol: TCP
-          #namespace
-          env:
-            - name: HTTP_SERVER_PORT
-              value: "8081"
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
----
 
 apiVersion: apps/v1
 kind: Deployment
@@ -238,7 +188,6 @@ spec:
     metadata:
       labels:
         app: baas-event-listener
-        actorSystemName: BaaS
     spec:
       containers:
         - name: baas-event-listener
@@ -246,20 +195,16 @@ spec:
           imagePullPolicy: Never
           readinessProbe:
             httpGet:
-              path: /health/ready
-              port: 8558
+              path: /api/v3/health
+              port: 8080
           livenessProbe:
             httpGet:
-              path: /health/alive
-              port: 8558
+              path: /api/v3/health
+              port: 8080
           ports:
             # akka remoting
-            - name: remoting
-              containerPort: 2552
-              protocol: TCP
-            # akka-management and bootstrap
-            - name: management
-              containerPort: 8558
+            - name: http
+              containerPort: 8080
               protocol: TCP
           #namespace
           env:
@@ -267,6 +212,23 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: baas-event-listener-service
+  labels:
+    baas-component: remote-event-listener
+    baker-recipe: "Webshop"
+spec:
+  selector:
+    app: baas-event-listener
+  ports:
+    - port: 8080
+      protocol: TCP
+  type: LoadBalancer
+
 ---
 
 apiVersion: apps/v1
@@ -332,6 +294,58 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ---
 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: baas-state
+  name: baas-state
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: baas-state
+  template:
+    metadata:
+      labels:
+        app: baas-state
+        actorSystemName: BaaS
+    spec:
+      containers:
+        - name: baas-state
+          image: baas-minikube-state:3.0.2-SNAPSHOT
+          imagePullPolicy: Never
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8558
+          livenessProbe:
+            httpGet:
+              path: /health/alive
+              port: 8558
+          ports:
+            # akka remoting
+            - name: remoting
+              containerPort: 2552
+              protocol: TCP
+            # akka-management and bootstrap
+            - name: management
+              containerPort: 8558
+              protocol: TCP
+            - name: webaccess
+              containerPort: 8081
+              protocol: TCP
+          #namespace
+          env:
+            - name: HTTP_SERVER_PORT
+              value: "8081"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+
+---
+
 apiVersion: v1
 kind: Service
 metadata:
@@ -345,6 +359,7 @@ spec:
     - port: 8081
       protocol: TCP
   type: LoadBalancer
+
 ---
 
 apiVersion: v1
