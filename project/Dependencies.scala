@@ -20,13 +20,13 @@ object Dependencies {
   val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.0.8"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
-  val junitJupiter =              "org.junit.jupiter"          %  "junit-jupiter-engine"               % "5.5.2"
+  val junitJupiter =              "org.junit.jupiter"          %  "junit-jupiter-engine"               % "5.6.0"
 
   val akkaActor =                 "com.typesafe.akka"          %% "akka-actor"                         % akkaVersion
   val akkaStream =                "com.typesafe.akka"          %% "akka-stream"                        % akkaVersion
   val akkaPersistence =           "com.typesafe.akka"          %% "akka-persistence"                   % akkaVersion
   val akkaPersistenceQuery =      "com.typesafe.akka"          %% "akka-persistence-query"             % akkaVersion
-  val akkaPersistenceCassandra =  "com.typesafe.akka"          %% "akka-persistence-cassandra"         % "0.101"
+  val akkaPersistenceCassandra =  "com.typesafe.akka"          %% "akka-persistence-cassandra"         % "0.102"
   val akkaCluster =               "com.typesafe.akka"          %% "akka-cluster"                       % akkaVersion
   val akkaClusterSharding =       "com.typesafe.akka"          %% "akka-cluster-sharding"              % akkaVersion
   val akkaDistributedData =       "com.typesafe.akka"          %% "akka-distributed-data"              % akkaVersion
@@ -64,7 +64,7 @@ object Dependencies {
   val circeGeneric =              "io.circe"                   %% "circe-generic"                      % circeVersion
 
   val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "2.0.0"
-  val catsCore =                  "org.typelevel"              %% "cats-core"                          % "2.0.0"
+  val catsCore =                  "org.typelevel"              %% "cats-core"                          % "2.1.0"
   val console4Cats =              "dev.profunktor"             %% "console4cats"                       % "0.8.0"
 
   val jnrConstants =              "com.github.jnr"             % "jnr-constants"                       % "0.9.9"
