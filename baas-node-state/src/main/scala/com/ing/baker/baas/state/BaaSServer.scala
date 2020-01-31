@@ -21,10 +21,10 @@ object BaaSServer {
     import system.dispatcher
     // TODO get this from config
     val encryption: Encryption = Encryption.NoEncryption
-    val listeners = new EventListenersKubernetes()(system, mat, encryption)
+    val listeners = new EventListenersKubernetes(baker)(system, mat, encryption)
     val server = new BaaSServer(listeners)(system, mat, baker, encryption)
     for {
-      _ <- listeners.initializeEventListeners(baker)
+      _ <- listeners.initializeEventListeners
       binding <- Http().bindAndHandle(server.route, host, port)
     } yield binding
   }
@@ -49,7 +49,7 @@ class BaaSServer(listeners: EventListenersKubernetes)(implicit system: ActorSyst
     entity(as[BaaSProtocol.AddRecipeRequest]) { request =>
       val result = for {
         recipeId <- baker.addRecipe(request.compiledRecipe)
-        _ <- listeners.registerEventListenerForRemote(request.compiledRecipe.name, baker)
+        _ <- listeners.registerEventListenerForRemote(request.compiledRecipe.name)
       } yield BaaSProtocol.AddRecipeResponse(recipeId)
       completeWithBakerFailures(result)
     }

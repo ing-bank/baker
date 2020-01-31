@@ -32,7 +32,7 @@ object KubernetesFunctions {
 
   def getEventListenersAddresses(): Seq[(String, String)] = {
     getEventListenerServices().map { service =>
-      (service.getMetadata.getLabels.getOrDefault("baker-recipe", "Wrong"), "http://" + service.getMetadata.getName + ":8080")
+      (service.getMetadata.getLabels.getOrDefault("baker-recipe", "All-Recipes"), "http://" + service.getMetadata.getName + ":8080")
     }
   }
 

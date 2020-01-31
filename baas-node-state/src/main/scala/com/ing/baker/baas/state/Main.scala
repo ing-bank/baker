@@ -1,6 +1,7 @@
 package com.ing.baker.baas.state
 
 import akka.actor.ActorSystem
+import akka.cluster.Cluster
 import akka.stream.ActorMaterializer
 import com.ing.baker.runtime.akka.AkkaBaker
 import com.typesafe.config.ConfigFactory
@@ -16,16 +17,20 @@ object Main extends App {
   val config = ConfigFactory.load()
   val systemName = config.getString("service.actorSystemName")
   val httpServerPort = config.getInt("service.httpServerPort")
-  println(Console.YELLOW + httpServerPort + Console.RESET)
   val stateNodeSystem = ActorSystem(systemName)
   val stateNodeBaker = AkkaBaker(config, stateNodeSystem)
   val materializer = ActorMaterializer()(stateNodeSystem)
 
   import stateNodeSystem.dispatcher
 
-  Await.result(BaaSServer.run(stateNodeBaker, "0.0.0.0", httpServerPort)(stateNodeSystem, materializer).map { hook =>
-    println(Console.GREEN + "State Node started..." + Console.RESET)
-    println(hook.localAddress)
-    sys.addShutdownHook(Await.result(hook.unbind(), timeout))
-  }, timeout)
+  Cluster(stateNodeSystem).registerOnMemberUp {
+
+    println(Console.YELLOW + httpServerPort + Console.RESET)
+
+    BaaSServer.run(stateNodeBaker, "0.0.0.0", httpServerPort)(stateNodeSystem, materializer).foreach { hook =>
+      println(Console.GREEN + "State Node started..." + Console.RESET)
+      sys.addShutdownHook(Await.result(hook.unbind(), timeout))
+    }
+  }
+
 }

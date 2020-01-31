@@ -1,4 +1,22 @@
 
+apiVersion: v1
+kind: Service
+metadata:
+  name: reserve-items-interaction-service
+  labels:
+    baas-component: remote-interaction
+    run: reserve-items-interaction-service
+spec:
+  selector:
+    app: reserve-items
+  ports:
+    - name: http-api
+      port: 8080
+      targetPort: http-api
+      protocol: TCP
+
+---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,32 +46,27 @@ spec:
               path: /api/v3/health
               port: 8080
           ports:
-            # akka remoting
-            - name: http
+            - name: http-api
               containerPort: 8080
               protocol: TCP
-          #namespace
-          env:
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  name: reserve-items-interaction-service
+  name: ship-items-interaction-service
   labels:
     baas-component: remote-interaction
-    run: reserve-items-interaction-service
+    run: ship-items-interaction-service
 spec:
   selector:
-    app: reserve-items
+    app: ship-items
   ports:
-    - port: 8080
+    - name: http-api
+      port: 8080
+      targetPort: http-api
       protocol: TCP
-  type: LoadBalancer
 
 ---
 
@@ -86,32 +99,27 @@ spec:
               path: /api/v3/health
               port: 8080
           ports:
-            # akka remoting
-            - name: http
+            - name: http-api
               containerPort: 8080
               protocol: TCP
-          #namespace
-          env:
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  name: ship-items-interaction-service
+  name: make-payment-interaction-service
   labels:
     baas-component: remote-interaction
-    run: ship-items-interaction-service
+    run: make-payment-interaction-service
 spec:
   selector:
-    app: ship-items
+    app: make-payment
   ports:
-    - port: 8080
+    - name: http-api
+      port: 8080
+      targetPort: http-api
       protocol: TCP
-  type: LoadBalancer
 
 ---
 
@@ -144,32 +152,27 @@ spec:
               path: /api/v3/health
               port: 8080
           ports:
-            # akka remoting
-            - name: http
+            - name: http-api
               containerPort: 8080
               protocol: TCP
-          #namespace
-          env:
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  name: make-payment-interaction-service
+  name: baas-event-listener-service
   labels:
-    baas-component: remote-interaction
-    run: make-payment-interaction-service
+    baas-component: remote-event-listener
+    baker-recipe: "Webshop"
 spec:
   selector:
-    app: make-payment
+    app: baas-event-listener
   ports:
-    - port: 8080
+    - name: http-api
+      port: 8080
+      targetPort: http-api
       protocol: TCP
-  type: LoadBalancer
 
 ---
 
@@ -202,30 +205,122 @@ spec:
               path: /api/v3/health
               port: 8080
           ports:
-            # akka remoting
-            - name: http
+            - name: http-api
               containerPort: 8080
               protocol: TCP
-          #namespace
-          env:
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+
+---
+
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pod-reader
+rules:
+  - apiGroups: [""] # "" indicates the core API group
+    resources: ["pods"]
+    verbs: ["get", "watch", "list"]
+
+---
+
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: read-pods
+subjects:
+  # Note the `name` line below. The first default refers to the namespace. The second refers to the service account name.
+  # For instance, `name: system:serviceaccount:myns:default` would refer to the default service account in namespace `myns`
+  - kind: User
+    name: system:serviceaccount:default:default
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io
+
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  name: baas-event-listener-service
+  name: baas-state-service
   labels:
-    baas-component: remote-event-listener
-    baker-recipe: "Webshop"
+    run: baas-state-service
 spec:
   selector:
-    app: baas-event-listener
+    app: baas-state
   ports:
-    - port: 8080
+    - name: http-api
+      port: 8081
+      targetPort: http-api
+      protocol: TCP
+  type: LoadBalancer
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: baas-state
+  name: baas-state
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: baas-state
+  template:
+    metadata:
+      labels:
+        app: baas-state
+        actorSystemName: BaaS
+    spec:
+      containers:
+        - name: baas-state
+          image: baas-minikube-state:3.0.2-SNAPSHOT
+          imagePullPolicy: Never
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8558
+          livenessProbe:
+            httpGet:
+              path: /health/alive
+              port: 8558
+          ports:
+            # akka remoting
+            - name: remoting
+              containerPort: 2552
+              protocol: TCP
+            # akka-management and bootstrap
+            - name: management
+              containerPort: 8558
+              protocol: TCP
+            - name: http-api
+              containerPort: 8081
+              protocol: TCP
+          env:
+            - name: HTTP_SERVER_PORT
+              value: "8081"
+            #namespace needed for akka discovery
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: client-app-service
+  labels:
+    run: client-app-service
+spec:
+  selector:
+    app: client-app
+  ports:
+    - name: http-api
+      port: 8082
+      targetPort: http-api
       protocol: TCP
   type: LoadBalancer
 
@@ -260,7 +355,7 @@ spec:
               path: /api
               port: 8082
           ports:
-            - name: http
+            - name: http-api
               containerPort: 8082
               protocol: TCP
           env:
@@ -268,113 +363,3 @@ spec:
               value: http://baas-state-service:8081/
             - name: HTTP_PORT
               value: "8082"
----
-
-kind: Role
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: pod-reader
-rules:
-  - apiGroups: [""] # "" indicates the core API group
-    resources: ["pods"]
-    verbs: ["get", "watch", "list"]
----
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: read-pods
-subjects:
-  # Note the `name` line below. The first default refers to the namespace. The second refers to the service account name.
-  # For instance, `name: system:serviceaccount:myns:default` would refer to the default service account in namespace `myns`
-  - kind: User
-    name: system:serviceaccount:default:default
-roleRef:
-  kind: Role
-  name: pod-reader
-  apiGroup: rbac.authorization.k8s.io
----
-
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  labels:
-    app: baas-state
-  name: baas-state
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: baas-state
-  template:
-    metadata:
-      labels:
-        app: baas-state
-        actorSystemName: BaaS
-    spec:
-      containers:
-        - name: baas-state
-          image: baas-minikube-state:3.0.2-SNAPSHOT
-          imagePullPolicy: Never
-          readinessProbe:
-            httpGet:
-              path: /health/ready
-              port: 8558
-          livenessProbe:
-            httpGet:
-              path: /health/alive
-              port: 8558
-          ports:
-            # akka remoting
-            - name: remoting
-              containerPort: 2552
-              protocol: TCP
-            # akka-management and bootstrap
-            - name: management
-              containerPort: 8558
-              protocol: TCP
-            - name: webaccess
-              containerPort: 8081
-              protocol: TCP
-          #namespace
-          env:
-            - name: HTTP_SERVER_PORT
-              value: "8081"
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
-
----
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: baas-state-service
-  labels:
-    run: baas-state-service
-spec:
-  selector:
-    app: baas-state
-  ports:
-    - port: 8081
-      protocol: TCP
-  type: LoadBalancer
-
----
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: client-app-service
-  labels:
-    run: client-app-service
-spec:
-  selector:
-    app: client-app
-  ports:
-    - port: 8082
-      protocol: TCP
-  type: LoadBalancer
-
-# Run this command to expose the service to minikube
-# minikube service baas-state-service

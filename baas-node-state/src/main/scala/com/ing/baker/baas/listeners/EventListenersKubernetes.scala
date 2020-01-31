@@ -11,8 +11,18 @@ import com.typesafe.scalalogging.LazyLogging
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-// TODO make this more efficient and thread safe
-class EventListenersKubernetes()(implicit system: ActorSystem, mat: Materializer, encryption: Encryption) extends LazyLogging {
+
+/** TODO 1 make this more efficient and thread safe (making it an actor is fine)
+  * TODO 2 as it is right now, registering remote event listeners does not happen on all nodes when:
+  *   1 - cluster inits and node1 and node2 call initializeEventListeners with 0 returned recipes
+  *   2 - client adds recipe on node1 and node1 calls registerEventListenerForRemote, the recipe is
+  *       in the RecipeManager but node2 never calls registerEventListenerForRemote for such recipe
+  *   3 - if a process of the recipe is baked on node2, the remote event listener is never called
+  *   POSSIBLE SOLUTION: Make a RecipeManager callback or event listener when a node adds a recipe,
+  *                      so to call registerEventListenerForRemote on each added recipe
+  *
+  */
+class EventListenersKubernetes(baker: Baker)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption) extends LazyLogging {
 
   import system.dispatcher
 
@@ -37,16 +47,16 @@ class EventListenersKubernetes()(implicit system: ActorSystem, mat: Materializer
 
   system.scheduler.schedule(30.seconds, 10.seconds, updateInteractions)
 
-  def registerEventListenerForRemote(recipeName: String, baker: Baker): Future[Unit] = {
-    println(Console.YELLOW + s"Event listener for: $recipeName" + Console.RESET)
+  def registerEventListenerForRemote(recipeName: String): Future[Unit] = {
     baker.registerEventListener(recipeName, (metadata, event) => {
       listenersCache.get(recipeName).foreach(_.foreach(_.apply(metadata, event)))
+      listenersCache.get("All-Recipes").foreach(_.foreach(_.apply(metadata, event)))
     })
   }
 
-  def initializeEventListeners(baker: Baker): Future[Unit] =
+  def initializeEventListeners: Future[Unit] =
     for {
       recipes <- baker.getAllRecipes
-      _ <- Future.traverse(recipes.toList) { case (_, recipe) => registerEventListenerForRemote(recipe.compiledRecipe.name, baker) }
+      _ <- Future.traverse(recipes.toList) { case (_, recipe) => registerEventListenerForRemote(recipe.compiledRecipe.name) }
     } yield ()
 }

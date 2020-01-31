@@ -58,9 +58,7 @@ class InteractionManagerKubernetes(postTimeout: Timeout, computationTimeout: Tim
 
   system.scheduler.schedule(30 seconds, 10 seconds, updateInteractions)
 
-  private def isCompatibleImplementation(interaction: InteractionTransition, implementation: InteractionInstance): Boolean
-
-  = {
+  private def isCompatibleImplementation(interaction: InteractionTransition, implementation: InteractionInstance): Boolean = {
     val interactionNameMatches =
       interaction.originalInteractionName == implementation.name
     val inputSizeMatches =
@@ -74,14 +72,10 @@ class InteractionManagerKubernetes(postTimeout: Timeout, computationTimeout: Tim
     interactionNameMatches && inputSizeMatches && inputNamesAndTypesMatches
   }
 
-  private def findInteractionImplementation(interaction: InteractionTransition): InteractionInstance
-
-  =
+  private def findInteractionImplementation(interaction: InteractionTransition): InteractionInstance =
     interactionImplementations.find(implementation => isCompatibleImplementation(interaction, implementation)).orNull
 
-  override def executeImplementation(interaction: InteractionTransition, input: Seq[IngredientInstance]): Future[Option[EventInstance]]
-
-  = {
+  override def executeImplementation(interaction: InteractionTransition, input: Seq[IngredientInstance]): Future[Option[EventInstance]] = {
     this.getImplementation(interaction) match {
       case Some(implementation) => implementation.run(input)
       case None => Future.failed(new FatalInteractionException("No implementation available for interaction"))
@@ -98,17 +92,13 @@ class InteractionManagerKubernetes(postTimeout: Timeout, computationTimeout: Tim
     * @param interaction The interaction to check
     * @return An option containing the implementation if available
     */
-  private[interaction] def getImplementation(interaction: InteractionTransition): Option[InteractionInstance]
-
-  =
+  private[interaction] def getImplementation(interaction: InteractionTransition): Option[InteractionInstance] =
     Option(implementationCache.computeIfAbsent(interaction, (findInteractionImplementation _).asJava))
 
   def hasImplementation(interaction: InteractionTransition): Future[Boolean] =
     Future.successful(getImplementation(interaction).isDefined)
 
-  override def addImplementation(interaction: InteractionInstance): Future[Unit]
-
-  =
+  override def addImplementation(interaction: InteractionInstance): Future[Unit] =
     Future.failed(new IllegalStateException("Adding implmentation instances is not supported on a BaaS cluster"))
 
 }
