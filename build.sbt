@@ -335,58 +335,7 @@ lazy val `baas-tests` = project.in(file("baas-tests"))
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
-  .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver, `baas-tests`)
-
-lazy val integration = project.in(file("integration"))
-  .dependsOn(testScope(runtime))
-  .settings(defaultModuleSettings)
-  .settings(noPublishSettings)
-  .settings(
-    moduleName := "baker-integration",
-    // we have to exclude the sources because of a compiler bug: https://issues.scala-lang.org/browse/SI-10134
-    libraryDependencies ++=
-      compileDeps(
-        akkaActor,
-        akkaCluster,
-        akkaSlf4j
-      ) ++ testDeps(
-        akkaTestKit,
-        akkaMultiNodeTestkit,
-        betterFiles,
-        scalaTest
-      ) ++ providedDeps(findbugs)
-  )
-  .enablePlugins(MultiJvmPlugin)
-  .configs(MultiJvm)
-
-lazy val playground = project
-  .in(file("playground"))
-  .settings(
-    name := "baker-playground",
-    version := "0.1.0",
-    organization := "com.ing.baker",
-    scalaVersion := "2.12.4",
-    libraryDependencies ++= Seq(
-      catsEffect,
-      console4Cats,
-      scalaTest,
-      scalaCheck,
-      scalaLogging
-    ),
-    scalacOptions := Seq(
-      "-unchecked",
-      "-deprecation",
-      "-feature",
-      "-Ywarn-dead-code",
-      "-language:higherKinds",
-      "-language:existentials",
-      "-language:implicitConversions",
-      "-language:postfixOps",
-      "-encoding", "utf8",
-      s"-target:jvm-$jvmV",
-      "-Xfatal-warnings"
-    )
-  )
+  .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver)
 
 lazy val `baker-example` = project
   .in(file("examples/baker-example"))
@@ -457,38 +406,9 @@ lazy val `baas-client-example` = project
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "A web-shop checkout service example running on baas",
-    packageName in Docker := "baas-client-example",
-    dockerExposedPorts := Seq(8080)
+    packageName in Docker := "baas-client-example"
   )
   .dependsOn(bakertypes, `baas-node-client`, recipeCompiler, recipeDsl)
-
-lazy val `baas-interactions-example` = project
-  .in(file("examples/baas-interactions-example"))
-  .enablePlugins(JavaAppPackaging)
-  .settings(commonSettings)
-  .settings(noPublishSettings)
-  .settings(
-    moduleName := "baas-interactions-example",
-    scalacOptions ++= Seq(
-      "-Ypartial-unification"
-    ),
-    libraryDependencies ++=
-      compileDeps(
-        slf4jApi,
-        slf4jSimple,
-        catsEffect
-      ) ++ testDeps(
-        scalaTest,
-        scalaCheck
-      )
-  )
-  .settings(
-    maintainer in Docker := "The Apollo Squad",
-    packageSummary in Docker := "A web-shop checkout service interaction instances example running on baas",
-    packageName in Docker := "baas-interactions-example",
-    dockerExposedPorts := Seq(2551)
-  )
-  .dependsOn(`baas-node-interaction`)
 
 lazy val `baas-event-listener-example` = project
   .in(file("examples/baas-event-listener-example"))
@@ -513,35 +433,15 @@ lazy val `baas-event-listener-example` = project
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "A web-shop checkout service interaction instances example running on baas",
-    packageName in Docker := "baas-event-listener-example",
-    dockerExposedPorts := Seq(2551)
+    packageName in Docker := "baas-event-listener-example"
   )
   .dependsOn(`baas-node-event-listener`)
 
-lazy val `baas-minikube-state` = project.in(file("examples/baas-minikube-setup/baas-minikube-state"))
+lazy val `baas-interaction-example-reserve-items` = project.in(file("examples/baas-interaction-examples/reserve-items"))
   .enablePlugins(JavaAppPackaging)
   .settings(commonSettings)
   .settings(
-    moduleName := "baas-minikube-state",
-    scalacOptions ++= Seq(
-      "-Ypartial-unification"
-    ),
-    javaOptions in Universal ++= Seq("-Dconfig.resource=kubernetes.conf"),
-    mainClass in Compile := Some("com.ing.baker.baas.state.Main")
-  )
-  .settings(
-    maintainer in Docker := "The Apollo Squad",
-    packageSummary in Docker := "The core node",
-    packageName in Docker := "baas-minikube-state",
-    dockerExposedPorts := Seq(8081)
-  )
-  .dependsOn(`baas-node-state`)
-
-lazy val `baas-minikube-event-listener` = project.in(file("examples/baas-minikube-setup/baas-minikube-event-listener"))
-  .enablePlugins(JavaAppPackaging)
-  .settings(commonSettings)
-  .settings(
-    moduleName := "baas-minikube-event-listener",
+    moduleName := "baas-interaction-example-reserve-items",
     scalacOptions ++= Seq(
       "-Ypartial-unification"
     ),
@@ -549,39 +449,7 @@ lazy val `baas-minikube-event-listener` = project.in(file("examples/baas-minikub
       compileDeps(
         slf4jApi,
         slf4jSimple,
-        catsEffect,
-        akkaManagementHttp,
-        akkaClusterBoostrap,
-        akkaDiscoveryKube
-      ) ++ testDeps(
-        scalaTest,
-        scalaCheck
-      )
-  )
-  .settings(
-    maintainer in Docker := "The Apollo Squad",
-    packageSummary in Docker := "The event listener node",
-    packageName in Docker := "baas-minikube-event-listener",
-    dockerExposedPorts := Seq()
-  )
-  .dependsOn(`baas-node-event-listener`)
-
-lazy val `reserve-items` = project.in(file("examples/baas-minikube-setup/interactions/reserve-items"))
-  .enablePlugins(JavaAppPackaging)
-  .settings(commonSettings)
-  .settings(
-    moduleName := "reserve-items",
-    scalacOptions ++= Seq(
-      "-Ypartial-unification"
-    ),
-    libraryDependencies ++=
-      compileDeps(
-        slf4jApi,
-        slf4jSimple,
-        catsEffect,
-        akkaManagementHttp,
-        akkaClusterBoostrap,
-        akkaDiscoveryKube
+        catsEffect
       ) ++ testDeps(
         scalaTest,
         scalaCheck
@@ -590,16 +458,15 @@ lazy val `reserve-items` = project.in(file("examples/baas-minikube-setup/interac
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "The reserve-items interaction",
-    packageName in Docker := "reserve-items",
-    dockerExposedPorts := Seq()
+    packageName in Docker := "baas-interaction-example-reserve-items"
   )
   .dependsOn(`baas-node-interaction`)
 
-lazy val `ship-items` = project.in(file("examples/baas-minikube-setup/interactions/ship-items"))
+lazy val `baas-interaction-example-ship-items` = project.in(file("examples/baas-interaction-examples/ship-items"))
   .enablePlugins(JavaAppPackaging)
   .settings(commonSettings)
   .settings(
-    moduleName := "ship-items",
+    moduleName := "baas-interaction-example-ship-items",
     scalacOptions ++= Seq(
       "-Ypartial-unification"
     ),
@@ -607,10 +474,7 @@ lazy val `ship-items` = project.in(file("examples/baas-minikube-setup/interactio
       compileDeps(
         slf4jApi,
         slf4jSimple,
-        catsEffect,
-        akkaManagementHttp,
-        akkaClusterBoostrap,
-        akkaDiscoveryKube
+        catsEffect
       ) ++ testDeps(
         scalaTest,
         scalaCheck
@@ -619,16 +483,15 @@ lazy val `ship-items` = project.in(file("examples/baas-minikube-setup/interactio
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "The Ship-items interaction",
-    packageName in Docker := "ship-items",
-    dockerExposedPorts := Seq()
+    packageName in Docker := "baas-interaction-example-ship-items"
   )
   .dependsOn(`baas-node-interaction`)
 
-lazy val `make-payment` = project.in(file("examples/baas-minikube-setup/interactions/make-payment"))
+lazy val `baas-interaction-example-make-payment` = project.in(file("examples/baas-interaction-examples/make-payment"))
   .enablePlugins(JavaAppPackaging)
   .settings(commonSettings)
   .settings(
-    moduleName := "make-payment",
+    moduleName := "baas-interaction-example-make-payment",
     scalacOptions ++= Seq(
       "-Ypartial-unification"
     ),
@@ -636,10 +499,7 @@ lazy val `make-payment` = project.in(file("examples/baas-minikube-setup/interact
       compileDeps(
         slf4jApi,
         slf4jSimple,
-        catsEffect,
-        akkaManagementHttp,
-        akkaClusterBoostrap,
-        akkaDiscoveryKube
+        catsEffect
       ) ++ testDeps(
         scalaTest,
         scalaCheck
@@ -648,7 +508,6 @@ lazy val `make-payment` = project.in(file("examples/baas-minikube-setup/interact
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "The Make-payment interaction",
-    packageName in Docker := "make-payment",
-    dockerExposedPorts := Seq()
+    packageName in Docker := "baas-interaction-example-make-payment"
   )
   .dependsOn(`baas-node-interaction`)

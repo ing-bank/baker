@@ -36,9 +36,8 @@ object RemoteEventListener extends common.RemoteEventListener[Future] with Scala
   override def load(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit): Unit = {
     val timeout: FiniteDuration = 20.seconds
     val config = ConfigFactory.load()
-    val systemName = config.getString("service.actorSystemName")
-    val port = config.getInt("service.httpServerPort")
-    implicit val system: ActorSystem = ActorSystem(systemName)
+    val port = config.getInt("baas-component.http-api-port")
+    implicit val system: ActorSystem = ActorSystem("RemoteEventListenerSystem")
     implicit val materializer: Materializer = ActorMaterializer()(system)
     // TODO load correct encryption from config
     implicit val encryption: Encryption = Encryption.NoEncryption
