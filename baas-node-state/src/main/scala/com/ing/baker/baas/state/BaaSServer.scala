@@ -44,10 +44,7 @@ class BaaSServer(listeners: EventListenersKubernetes)(implicit system: ActorSyst
 
   private def addRecipe: Route = post(path("addRecipe") {
     entity(as[BaaSProtocol.AddRecipeRequest]) { request =>
-      val result = for {
-        recipeId <- baker.addRecipe(request.compiledRecipe)
-        _ <- listeners.registerEventListenerForRemote(request.compiledRecipe.name)
-      } yield BaaSProtocol.AddRecipeResponse(recipeId)
+      val result = baker.addRecipe(request.compiledRecipe).map(BaaSProtocol.AddRecipeResponse)
       completeWithBakerFailures(result)
     }
   })
