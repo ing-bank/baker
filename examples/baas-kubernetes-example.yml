@@ -476,3 +476,61 @@ spec:
               value: http://baas-state-service:8080/
             - name: BAAS_COMPONENT_HTTP_API_PORT
               value: "8082"
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard
+  labels:
+    run: dashboard
+spec:
+  selector:
+    app: dashboard
+  ports:
+    - name: http-api
+      port: 8083
+      targetPort: http-api
+      protocol: TCP
+  type: LoadBalancer
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: dashboard
+  name: dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dashboard
+  template:
+    metadata:
+      labels:
+        app: dashboard
+    spec:
+      containers:
+        - name: dashboard
+          image: baas-dashboard-server:3.0.2-SNAPSHOT
+          #imagePullPolicy: Always
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+          ports:
+            - name: http-api
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: BAAS_STATE_NODE_HOSTNAME
+              value: http://baas-state-service:8080/
+            - name: BAAS_COMPONENT_HTTP_API_PORT
+              value: "8080"

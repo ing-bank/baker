@@ -31,6 +31,7 @@ class RecipeManager extends PersistentActor with ActorLogging {
 
   override def receiveCommand: Receive = {
     case AddRecipe(compiledRecipe) =>
+      println("this" + compiledRecipe)
       val foundRecipe = hasCompiledRecipe(compiledRecipe)
       if (foundRecipe.isEmpty) {
         val timestamp = System.currentTimeMillis()

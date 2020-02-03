@@ -354,6 +354,36 @@ lazy val `baas-node-baker-event-listener` = project.in(file("baas-node-baker-eve
   )
   .dependsOn(`baas-protocol-baker-event-publishing`, `baker-interface`)
 
+lazy val `baas-dashboard-server` = project.in(file("baas-dashboard-server"))
+  .enablePlugins(JavaAppPackaging)
+  .settings(commonSettings)
+  .settings(
+    moduleName := "baas-dashboard-server",
+    libraryDependencies ++= Seq(
+      akkaHttpCirce,
+      circe,
+      circeGeneric
+    ) ++
+      testDeps(
+        akkaSlf4j,
+        akkaTestKit,
+        akkaInmemoryJournal,
+        logback,
+        scalaTest,
+        junitInterface,
+        levelDB,
+        levelDBJni,
+        scalaCheck
+      )
+  )
+  .settings(
+    maintainer in Docker := "The Apollo Squad",
+    packageSummary in Docker := "Dashboard server of the BaaS platform",
+    packageName in Docker := "baas-dashboard-server",
+    dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
+  )
+  .dependsOn(`baas-node-client`, `baas-node-event-listener`, runtime, recipeCompiler, recipeDsl, intermediateLanguage)
+
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
