@@ -84,7 +84,7 @@ object Dependencies {
   val typeSafeConfig =            "com.typesafe"               % "config"                              % "1.4.0"
 
   val objenisis =                 "org.objenesis"              %  "objenesis"                          % "3.1"
-
+  val kubernetesJavaClient =      "io.kubernetes"              %  "client-java"                        % "7.0.0"
   val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.10.5"
   val slf4jApi =                  "org.slf4j"                  %  "slf4j-api"                          % "1.7.29"
 

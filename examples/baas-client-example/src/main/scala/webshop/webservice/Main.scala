@@ -24,12 +24,12 @@ object Main extends IOApp {
         actorSystem <- IO { ActorSystem("CheckoutService") }
         config <- IO { ConfigFactory.load() }
         materializer = ActorMaterializer()(actorSystem)
-        baasHostname = config.getString("baas.hostname")
+        baasHostname = config.getString("baas.state-node-hostname")
         baker <- IO { BakerClient(Uri.parseAbsolute(baasHostname))(actorSystem, materializer) }
         checkoutRecipeId <- WebShopBaker.initRecipes(baker)(timer, actorSystem.dispatcher)
         sd <- Ref.of[IO, Boolean](false)
         webShopBaker = new WebShopBaker(baker, checkoutRecipeId)(actorSystem.dispatcher)
-        httpPort = config.getInt("service.httpServerPort")
+        httpPort = config.getInt("baas-component.http-api-port")
         app = new WebShopService(webShopBaker)
         resources = SystemResources(actorSystem, baker, app, httpPort, sd)
       } yield resources

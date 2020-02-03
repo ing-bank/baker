@@ -1,0 +1,363 @@
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: reserve-items-interaction-service
+  labels:
+    baas-component: remote-interaction
+    run: reserve-items-interaction-service
+spec:
+  selector:
+    app: reserve-items
+  ports:
+    - name: http-api
+      port: 8080
+      targetPort: http-api
+      protocol: TCP
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: reserve-items
+  name: reserve-items
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reserve-items
+  template:
+    metadata:
+      labels:
+        app: reserve-items
+    spec:
+      containers:
+        - name: baas-interaction
+          image: baas-interaction-example-reserve-items:3.0.2-SNAPSHOT
+          imagePullPolicy: Never
+          readinessProbe:
+            httpGet:
+              path: /api/v3/health
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /api/v3/health
+              port: 8080
+          ports:
+            - name: http-api
+              containerPort: 8080
+              protocol: TCP
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ship-items-interaction-service
+  labels:
+    baas-component: remote-interaction
+    run: ship-items-interaction-service
+spec:
+  selector:
+    app: ship-items
+  ports:
+    - name: http-api
+      port: 8080
+      targetPort: http-api
+      protocol: TCP
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ship-items
+  name: ship-items
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ship-items
+  template:
+    metadata:
+      labels:
+        app: ship-items
+    spec:
+      containers:
+        - name: baas-interaction
+          image: baas-interaction-example-ship-items:3.0.2-SNAPSHOT
+          imagePullPolicy: Never
+          readinessProbe:
+            httpGet:
+              path: /api/v3/health
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /api/v3/health
+              port: 8080
+          ports:
+            - name: http-api
+              containerPort: 8080
+              protocol: TCP
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: make-payment-interaction-service
+  labels:
+    baas-component: remote-interaction
+    run: make-payment-interaction-service
+spec:
+  selector:
+    app: make-payment
+  ports:
+    - name: http-api
+      port: 8080
+      targetPort: http-api
+      protocol: TCP
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: make-payment
+  name: make-payment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: make-payment
+  template:
+    metadata:
+      labels:
+        app: make-payment
+    spec:
+      containers:
+        - name: baas-interaction
+          image: baas-interaction-example-make-payment:3.0.2-SNAPSHOT
+          imagePullPolicy: Never
+          readinessProbe:
+            httpGet:
+              path: /api/v3/health
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /api/v3/health
+              port: 8080
+          ports:
+            - name: http-api
+              containerPort: 8080
+              protocol: TCP
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: baas-event-listener-service
+  labels:
+    baas-component: remote-event-listener
+    baker-recipe: "Webshop"
+spec:
+  selector:
+    app: baas-event-listener
+  ports:
+    - name: http-api
+      port: 8080
+      targetPort: http-api
+      protocol: TCP
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: baas-event-listener
+  name: baas-event-listener
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: baas-event-listener
+  template:
+    metadata:
+      labels:
+        app: baas-event-listener
+    spec:
+      containers:
+        - name: baas-event-listener-example
+          image: baas-event-listener-example:3.0.2-SNAPSHOT
+          imagePullPolicy: Never
+          readinessProbe:
+            httpGet:
+              path: /api/v3/health
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /api/v3/health
+              port: 8080
+          ports:
+            - name: http-api
+              containerPort: 8080
+              protocol: TCP
+
+---
+
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pod-reader
+rules:
+  - apiGroups: [""] # "" indicates the core API group
+    resources: ["pods"]
+    verbs: ["get", "watch", "list"]
+
+---
+
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: read-pods
+subjects:
+  # Note the `name` line below. The first default refers to the namespace. The second refers to the service account name.
+  # For instance, `name: system:serviceaccount:myns:default` would refer to the default service account in namespace `myns`
+  - kind: User
+    name: system:serviceaccount:default:default
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: baas-state-service
+  labels:
+    baas-component: state
+    run: baas-state-service
+spec:
+  selector:
+    app: baas-state
+  ports:
+    - name: http-api
+      port: 8080
+      targetPort: http-api
+      protocol: TCP
+  type: LoadBalancer
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: baas-state
+  name: baas-state
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: baas-state
+  template:
+    metadata:
+      labels:
+        app: baas-state
+    spec:
+      containers:
+        - name: baas-state
+          image: baas-node-state:3.0.2-SNAPSHOT
+          imagePullPolicy: Never
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8558
+          livenessProbe:
+            httpGet:
+              path: /health/alive
+              port: 8558
+          ports:
+            # akka remoting
+            - name: remoting
+              containerPort: 2552
+              protocol: TCP
+            # akka-management and bootstrap
+            - name: management
+              containerPort: 8558
+              protocol: TCP
+            - name: http-api
+              containerPort: 8080
+              protocol: TCP
+          env:
+            #namespace needed for akka discovery
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: client-app-service
+  labels:
+    run: client-app-service
+spec:
+  selector:
+    app: client-app
+  ports:
+    - name: http-api
+      port: 8082
+      targetPort: http-api
+      protocol: TCP
+  type: LoadBalancer
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: client-app
+  name: client-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client-app
+  template:
+    metadata:
+      labels:
+        app: client-app
+    spec:
+      containers:
+        - name: client-app
+          image: baas-client-example:3.0.2-SNAPSHOT
+          imagePullPolicy: Never
+          readinessProbe:
+            httpGet:
+              path: /api
+              port: 8082
+          livenessProbe:
+            httpGet:
+              path: /api
+              port: 8082
+          ports:
+            - name: http-api
+              containerPort: 8082
+              protocol: TCP
+          env:
+            - name: BAAS_STATE_NODE_HOSTNAME
+              value: http://baas-state-service:8080/
+            - name: BAAS_COMPONENT_HTTP_API_PORT
+              value: "8082"

@@ -8,10 +8,11 @@ import akka.stream.{ActorMaterializer, Materializer}
 import cats.data.StateT
 import cats.effect.{IO, Timer}
 import cats.implicits._
+import com.ing.baker.baas.common.RemoteInteraction
 import com.ing.baker.baas.recipe.CheckoutFlowEvents.ItemsReserved
 import com.ing.baker.baas.recipe.CheckoutFlowIngredients.{Item, OrderId, ReservedItems, ShippingAddress}
 import com.ing.baker.baas.recipe._
-import com.ing.baker.baas.scaladsl.{BaaSEventListener, BaaSInteractionInstance, BakerClient}
+import com.ing.baker.baas.scaladsl.{RemoteEventListener, BakerClient, RemoteInteraction}
 import com.ing.baker.baas.spec.BaaSIntegrationSpec._
 import com.ing.baker.baas.state.BaaSServer
 import com.ing.baker.compiler.RecipeCompiler
@@ -324,7 +325,7 @@ class BaaSIntegrationSpec
 
 object BaaSIntegrationSpec {
 
-  def setupHappyPath(interactionNode: BaaSInteractionInstance)(implicit ec: ExecutionContext, timer: Timer[IO]): Future[CompiledRecipe] = {
+  def setupHappyPath(interactionNode: RemoteInteraction)(implicit ec: ExecutionContext, timer: Timer[IO]): Future[CompiledRecipe] = {
     val makePaymentInstance = InteractionInstance.unsafeFrom(new MakePaymentInstance())
     val reserveItemsInstance = InteractionInstance.unsafeFrom(new ReserveItemsInstance())
     val shipItemsInstance = InteractionInstance.unsafeFrom(new ShipItemsInstance())
@@ -334,7 +335,7 @@ object BaaSIntegrationSpec {
     } yield compiledRecipe
   }
 
-  def setupFailingOnceReserveItems(interactionNode: BaaSInteractionInstance)(implicit ec: ExecutionContext, timer: Timer[IO]): Future[CompiledRecipe] = {
+  def setupFailingOnceReserveItems(interactionNode: RemoteInteraction)(implicit ec: ExecutionContext, timer: Timer[IO]): Future[CompiledRecipe] = {
     val makePaymentInstance = InteractionInstance.unsafeFrom(new MakePaymentInstance())
     val reserveItemsInstance = InteractionInstance.unsafeFrom(new FailingOnceReserveItemsInstance())
     val shipItemsInstance = InteractionInstance.unsafeFrom(new ShipItemsInstance())
@@ -344,7 +345,7 @@ object BaaSIntegrationSpec {
     } yield compiledRecipe
   }
 
-  def setupFailingWithRetryReserveItems(interactionNode: BaaSInteractionInstance)(implicit ec: ExecutionContext, timer: Timer[IO]): Future[CompiledRecipe] = {
+  def setupFailingWithRetryReserveItems(interactionNode: RemoteInteraction)(implicit ec: ExecutionContext, timer: Timer[IO]): Future[CompiledRecipe] = {
     val makePaymentInstance = InteractionInstance.unsafeFrom(new MakePaymentInstance())
     val reserveItemsInstance = InteractionInstance.unsafeFrom(new FailingReserveItemsInstance())
     val shipItemsInstance = InteractionInstance.unsafeFrom(new ShipItemsInstance())
@@ -354,19 +355,19 @@ object BaaSIntegrationSpec {
     } yield compiledRecipe
   }
 
-  def setupEventListener(recipe: CompiledRecipe, eventListenerNode: BaaSEventListener)(implicit ec: ExecutionContext): Future[mutable.MutableList[EventInstance]] = {
+  def setupEventListener(recipe: CompiledRecipe, eventListenerNode: RemoteEventListener)(implicit ec: ExecutionContext): Future[mutable.MutableList[EventInstance]] = {
     val buffer = mutable.MutableList.empty[EventInstance]
     eventListenerNode.registerEventListener(recipe.name, (_, event) => {
       buffer.+=(event)
     }).map(_ => buffer)
   }
 
-  type IntegrationTest = ((ScalaBaker, ScalaBaker, BaaSInteractionInstance, BaaSEventListener) => Future[Assertion]) => Future[Assertion]
+  type IntegrationTest = ((ScalaBaker, ScalaBaker, RemoteInteraction, RemoteEventListener) => Future[Assertion]) => Future[Assertion]
 
   type WithOpenPort[A] = StateT[Future, Stream[Int], A]
 
   def testWith[F[_], Lang <: LanguageApi]
-      (test: (ScalaBaker, ScalaBaker, BaaSInteractionInstance, BaaSEventListener) => Future[Assertion])
+      (test: (ScalaBaker, ScalaBaker, RemoteInteraction, RemoteEventListener) => Future[Assertion])
       (implicit ec: ExecutionContext): Future[Assertion] = {
     val testId: UUID = UUID.randomUUID()
     val systemName: String = "BaaSIntegrationSpec-" + testId
@@ -379,8 +380,8 @@ object BaaSIntegrationSpec {
       httpPortAndBinding <- runStateNodeHttpServer(stateNodeBaker, stateNodeSystem, materializer)
       (httpPort, httpServerBinding) = httpPortAndBinding
       clientBaker = BakerClient.build(s"http://localhost:$httpPort/", Encryption.NoEncryption)(stateNodeSystem, materializer)
-      interactionNode = BaaSInteractionInstance(stateNodeSystem)
-      eventListenerNode = BaaSEventListener(stateNodeSystem)
+      interactionNode = RemoteInteraction(stateNodeSystem)
+      eventListenerNode = RemoteEventListener(stateNodeSystem)
       a <- liftF(test(clientBaker, stateNodeBaker, interactionNode, eventListenerNode))
       _ <- liftF(httpServerBinding.unbind())
       _ <- liftF(stateNodeBaker.gracefulShutdown())
