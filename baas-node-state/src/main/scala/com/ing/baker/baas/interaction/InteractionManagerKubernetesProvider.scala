@@ -2,6 +2,7 @@ package com.ing.baker.baas.interaction
 
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
+import com.ing.baker.baas.state.KubernetesFunctions
 import com.ing.baker.runtime.akka.internal.{InteractionManager, InteractionManagerProvider}
 import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.config.{Config, ConfigFactory}
@@ -14,7 +15,9 @@ class InteractionManagerKubernetesProvider extends InteractionManagerProvider {
   def get(config: Config): InteractionManager = {
     val postTimeout = config.as[FiniteDuration]("post-timeout")
     val computationTimeout = config.as[FiniteDuration]("computation-timeout")
+    val namespace = config.as[String]("kube-namespace")
 
+    val kube = new KubernetesFunctions(namespace)
     val akkaConfig = ConfigFactory.empty()
 
     val actorSystem: ActorSystem = ActorSystem("InteractionManagerKubernetesSystem", akkaConfig)
@@ -25,6 +28,6 @@ class InteractionManagerKubernetesProvider extends InteractionManagerProvider {
       else Encryption.NoEncryption
     }
 
-    new InteractionManagerKubernetes(postTimeout, computationTimeout)(actorSystem, mat, encryption)
+    new InteractionManagerKubernetes(kube, postTimeout, computationTimeout)(actorSystem, mat, encryption)
   }
 }

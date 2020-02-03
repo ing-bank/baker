@@ -22,7 +22,7 @@ import scala.concurrent.duration._
   *                      so to call registerEventListenerForRemote on each added recipe
   *
   */
-class EventListenersKubernetes(baker: Baker)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption) extends LazyLogging {
+class EventListenersKubernetes(kube: KubernetesFunctions, baker: Baker)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption) extends LazyLogging {
 
   import system.dispatcher
 
@@ -31,7 +31,7 @@ class EventListenersKubernetes(baker: Baker)(implicit system: ActorSystem, mat: 
   private var listenersCache: Map[RecipeName, List[RemoteEventListenerClient]] = Map.empty
 
   def loadListeners: Map[RecipeName, List[RemoteEventListenerClient]] = {
-    KubernetesFunctions
+    kube
       .getEventListenersAddresses()
       .map { case (recipe, address) => (recipe, RemoteEventListenerClient(address)) }
       .toList

@@ -7,11 +7,12 @@ import io.kubernetes.client.util.ClientBuilder
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-object KubernetesFunctions {
+// TODO Make this an interface
+class KubernetesFunctions(namespace: String) {
   val api = new CoreV1Api(ClientBuilder.cluster.build)
 
   def getInteractionServices(): mutable.Seq[V1Service] = {
-    api.listNamespacedService("default", null, null, null, null, null, null, null, null, null)
+    api.listNamespacedService(namespace, null, null, null, null, null, null, null, null, null)
       .getItems
       .asScala
       .filter(_.getMetadata.getLabels.getOrDefault("baas-component", "Wrong")
@@ -23,7 +24,7 @@ object KubernetesFunctions {
   }
 
   def getEventListenerServices(): mutable.Seq[V1Service] = {
-    api.listNamespacedService("default", null, null, null, null, null, null, null, null, null)
+    api.listNamespacedService(namespace, null, null, null, null, null, null, null, null, null)
       .getItems
       .asScala
       .filter(_.getMetadata.getLabels.getOrDefault("baas-component", "Wrong")

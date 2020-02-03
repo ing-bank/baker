@@ -269,7 +269,7 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "The core node",
     packageName in Docker := "baas-node-state",
-    dockerExposedPorts := Seq(8080)
+    dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
   )
   .dependsOn(runtime, `baas-protocol-baker`, `baas-protocol-interaction-scheduling`)
 
@@ -406,7 +406,8 @@ lazy val `baas-client-example` = project
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "A web-shop checkout service example running on baas",
-    packageName in Docker := "baas-client-example"
+    packageName in Docker := "baas-client-example",
+    dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
   )
   .dependsOn(bakertypes, `baas-node-client`, recipeCompiler, recipeDsl)
 
@@ -433,7 +434,8 @@ lazy val `baas-event-listener-example` = project
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "A web-shop checkout service interaction instances example running on baas",
-    packageName in Docker := "baas-event-listener-example"
+    packageName in Docker := "baas-event-listener-example",
+    dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
   )
   .dependsOn(`baas-node-event-listener`)
 
@@ -458,7 +460,8 @@ lazy val `baas-interaction-example-reserve-items` = project.in(file("examples/ba
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "The reserve-items interaction",
-    packageName in Docker := "baas-interaction-example-reserve-items"
+    packageName in Docker := "baas-interaction-example-reserve-items",
+    dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
   )
   .dependsOn(`baas-node-interaction`)
 
@@ -483,7 +486,8 @@ lazy val `baas-interaction-example-ship-items` = project.in(file("examples/baas-
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "The Ship-items interaction",
-    packageName in Docker := "baas-interaction-example-ship-items"
+    packageName in Docker := "baas-interaction-example-ship-items",
+    dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
   )
   .dependsOn(`baas-node-interaction`)
 
@@ -508,6 +512,7 @@ lazy val `baas-interaction-example-make-payment` = project.in(file("examples/baa
   .settings(
     maintainer in Docker := "The Apollo Squad",
     packageSummary in Docker := "The Make-payment interaction",
-    packageName in Docker := "baas-interaction-example-make-payment"
+    packageName in Docker := "baas-interaction-example-make-payment",
+    dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
   )
   .dependsOn(`baas-node-interaction`)

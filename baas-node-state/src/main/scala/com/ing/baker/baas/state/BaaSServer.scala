@@ -17,11 +17,8 @@ import scala.concurrent.Future
 
 object BaaSServer {
 
-  def run(baker: Baker, host: String, port: Int)(implicit system: ActorSystem, mat: Materializer): Future[Http.ServerBinding] = {
+  def run(listeners: EventListenersKubernetes, baker: Baker, host: String, port: Int)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption): Future[Http.ServerBinding] = {
     import system.dispatcher
-    // TODO get this from config
-    val encryption: Encryption = Encryption.NoEncryption
-    val listeners = new EventListenersKubernetes(baker)(system, mat, encryption)
     val server = new BaaSServer(listeners)(system, mat, baker, encryption)
     for {
       _ <- listeners.initializeEventListeners

@@ -18,7 +18,7 @@ import scala.compat.java8.FunctionConverters._
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class InteractionManagerKubernetes(postTimeout: Timeout, computationTimeout: Timeout)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption)
+class InteractionManagerKubernetes(kube: KubernetesFunctions, postTimeout: Timeout, computationTimeout: Timeout)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption)
   extends InteractionManager with LazyLogging {
 
   private var interactionImplementations: Seq[InteractionInstance] = Seq.empty
@@ -31,7 +31,7 @@ class InteractionManagerKubernetes(postTimeout: Timeout, computationTimeout: Tim
   import system.dispatcher
 
   def loadInteractions: Future[List[InteractionInstance]] = {
-    KubernetesFunctions
+    kube
       .getInteractionAddresses()
       .map(RemoteInteractionClient(_))
       .toList
