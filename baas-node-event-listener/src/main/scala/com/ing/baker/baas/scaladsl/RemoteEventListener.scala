@@ -39,8 +39,7 @@ object RemoteEventListener extends common.RemoteEventListener[Future] with Scala
     val port = config.getInt("baas-component.http-api-port")
     implicit val system: ActorSystem = ActorSystem("RemoteEventListenerSystem")
     implicit val materializer: Materializer = ActorMaterializer()(system)
-    // TODO load correct encryption from config
-    implicit val encryption: Encryption = Encryption.NoEncryption
+    implicit val encryption: Encryption = Encryption.from(config)
     Await.result(runWith(listenerFunction, port, timeout), timeout)
   }
 }

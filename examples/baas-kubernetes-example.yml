@@ -1,3 +1,11 @@
+apiVersion: v1
+data:
+  encryption-secret: c2VjcmV0
+kind: Secret
+metadata:
+  name: ingredient-encryption-secret
+
+---
 
 apiVersion: v1
 kind: Service
@@ -37,6 +45,14 @@ spec:
         - name: baas-interaction
           image: baas-interaction-example-reserve-items:3.0.2-SNAPSHOT
           imagePullPolicy: Never
+          env:
+            - name: BAAS_INGREDIENT_ENCRYPTION_ENABLED
+              value: "true"
+            - name: BAAS_INGREDIENT_ENCRYPTION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ingredient-encryption-secret
+                  key: encryption-secret
           readinessProbe:
             httpGet:
               path: /api/v3/health
@@ -90,6 +106,14 @@ spec:
         - name: baas-interaction
           image: baas-interaction-example-ship-items:3.0.2-SNAPSHOT
           imagePullPolicy: Never
+          env:
+            - name: BAAS_INGREDIENT_ENCRYPTION_ENABLED
+              value: "true"
+            - name: BAAS_INGREDIENT_ENCRYPTION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ingredient-encryption-secret
+                  key: encryption-secret
           readinessProbe:
             httpGet:
               path: /api/v3/health
@@ -143,6 +167,14 @@ spec:
         - name: baas-interaction
           image: baas-interaction-example-make-payment:3.0.2-SNAPSHOT
           imagePullPolicy: Never
+          env:
+            - name: BAAS_INGREDIENT_ENCRYPTION_ENABLED
+              value: "true"
+            - name: BAAS_INGREDIENT_ENCRYPTION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ingredient-encryption-secret
+                  key: encryption-secret
           readinessProbe:
             httpGet:
               path: /api/v3/health
@@ -196,6 +228,14 @@ spec:
         - name: baas-event-listener-example
           image: baas-event-listener-example:3.0.2-SNAPSHOT
           imagePullPolicy: Never
+          env:
+            - name: BAAS_INGREDIENT_ENCRYPTION_ENABLED
+              value: "true"
+            - name: BAAS_INGREDIENT_ENCRYPTION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ingredient-encryption-secret
+                  key: encryption-secret
           readinessProbe:
             httpGet:
               path: /api/v3/health
@@ -298,6 +338,13 @@ spec:
               containerPort: 8080
               protocol: TCP
           env:
+            - name: BAAS_INGREDIENT_ENCRYPTION_ENABLED
+              value: "true"
+            - name: BAAS_INGREDIENT_ENCRYPTION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ingredient-encryption-secret
+                  key: encryption-secret
             #namespace needed for akka discovery
             - name: NAMESPACE
               valueFrom:
@@ -357,6 +404,13 @@ spec:
               containerPort: 8082
               protocol: TCP
           env:
+            - name: BAAS_INGREDIENT_ENCRYPTION_ENABLED
+              value: "true"
+            - name: BAAS_INGREDIENT_ENCRYPTION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ingredient-encryption-secret
+                  key: encryption-secret
             - name: BAAS_STATE_NODE_HOSTNAME
               value: http://baas-state-service:8080/
             - name: BAAS_COMPONENT_HTTP_API_PORT

@@ -19,11 +19,11 @@ import scala.concurrent.Future
 
 object BakerClient {
 
-  def build(hostname: String, encryption: Encryption = Encryption.NoEncryption)(implicit system: ActorSystem, mat: Materializer) =
-    BakerClient(Uri(hostname), encryption)
+  def build(hostname: String)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption) =
+    BakerClient(Uri(hostname))
 }
 
-case class BakerClient(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(implicit system: ActorSystem, mat: Materializer) extends ScalaBaker {
+case class BakerClient(hostname: Uri)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption) extends ScalaBaker {
 
   import system.dispatcher
 
