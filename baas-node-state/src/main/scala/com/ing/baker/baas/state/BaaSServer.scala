@@ -6,7 +6,6 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
-import com.ing.baker.baas.listeners.EventListenersKubernetes
 import com.ing.baker.baas.protocol.BaaSProto._
 import com.ing.baker.baas.protocol.BaaSProtocol
 import com.ing.baker.baas.protocol.MarshallingUtils._
@@ -17,17 +16,16 @@ import scala.concurrent.Future
 
 object BaaSServer {
 
-  def run(listeners: EventListenersKubernetes, baker: Baker, host: String, port: Int)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption): Future[Http.ServerBinding] = {
+  def run(listeners: EventListenersServiceDiscovery, baker: Baker, host: String, port: Int)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption): Future[Http.ServerBinding] = {
     import system.dispatcher
-    val server = new BaaSServer(listeners)(system, mat, baker, encryption)
     for {
       _ <- listeners.initializeEventListeners
-      binding <- Http().bindAndHandle(server.route, host, port)
+      binding <- Http().bindAndHandle(new BaaSServer(listeners, baker).route, host, port)
     } yield binding
   }
 }
 
-class BaaSServer(listeners: EventListenersKubernetes)(implicit system: ActorSystem, mat: Materializer, baker: Baker, encryption: Encryption) {
+class BaaSServer(listeners: EventListenersServiceDiscovery, baker: Baker)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption) {
 
   import system.dispatcher
 

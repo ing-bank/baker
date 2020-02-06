@@ -6,12 +6,23 @@ import io.kubernetes.client.util.ClientBuilder
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.concurrent.Future
 
-// TODO Make this an interface
-class KubernetesFunctions(namespace: String) {
-  val api = new CoreV1Api(ClientBuilder.cluster.build)
+class ServiceDiscoveryKubernetes(namespace: String) extends  ServiceDiscovery {
 
-  def getInteractionServices(): mutable.Seq[V1Service] = {
+  private val api = new CoreV1Api(ClientBuilder.cluster.build)
+
+  def getInteractionAddresses: Future[Seq[String]] = {
+    Future.successful(getInteractionServices().map("http://" + _.getMetadata.getName + ":8080"))
+  }
+
+  def getEventListenersAddresses: Future[Seq[(String, String)]] = {
+    Future.successful(getEventListenerServices().map { service =>
+      (service.getMetadata.getLabels.getOrDefault("baker-recipe", "All-Recipes"), "http://" + service.getMetadata.getName + ":8080")
+    })
+  }
+
+  private def getInteractionServices(): mutable.Seq[V1Service] = {
     api.listNamespacedService(namespace, null, null, null, null, null, null, null, null, null)
       .getItems
       .asScala
@@ -19,22 +30,12 @@ class KubernetesFunctions(namespace: String) {
         .equals("remote-interaction"))
   }
 
-  def getInteractionAddresses(): Seq[String] = {
-    getInteractionServices().map("http://" + _.getMetadata.getName + ":8080")
-  }
-
-  def getEventListenerServices(): mutable.Seq[V1Service] = {
+  private def getEventListenerServices(): mutable.Seq[V1Service] = {
     api.listNamespacedService(namespace, null, null, null, null, null, null, null, null, null)
       .getItems
       .asScala
       .filter(_.getMetadata.getLabels.getOrDefault("baas-component", "Wrong")
         .equals("remote-event-listener"))
   }
-
-  def getEventListenersAddresses(): Seq[(String, String)] = {
-    getEventListenerServices().map { service =>
-      (service.getMetadata.getLabels.getOrDefault("baker-recipe", "All-Recipes"), "http://" + service.getMetadata.getName + ":8080")
-    }
-  }
-
 }
+

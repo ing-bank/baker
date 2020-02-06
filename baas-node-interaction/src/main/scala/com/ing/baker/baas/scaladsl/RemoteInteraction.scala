@@ -37,8 +37,7 @@ object RemoteInteraction extends common.RemoteInteraction[Future] with ScalaApi 
     val port = config.getInt("baas-component.http-api-port")
     implicit val system: ActorSystem = ActorSystem("RemoteInteractionSystem")
     implicit val materializer: Materializer = ActorMaterializer()(system)
-    // TODO load correct encryption from config
-    implicit val encryption: Encryption = Encryption.NoEncryption
+    implicit val encryption: Encryption = Encryption.from(config)
     Await.result(runWith(implementation, port, timeout), timeout)
   }
 }
