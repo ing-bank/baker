@@ -46,13 +46,13 @@ You can add them like this:
 ``` scala tab="Scala"
 val validateOrderImpl = new ValidateOrderImpl()
 
-baker.addImplementation(validateOrderImpl)
+baker.addInteractionInstance(validateOrderImpl)
 ```
 
 ``` java tab="Java"
 ValidateOrderImpl validateOrderImpl = new ValidateOrderImpl();
 
-baker.addImplementation(validateOrderImpl);
+baker.addInteractionInstance(validateOrderImpl);
 ```
 
 ## Compiling your Recipe
@@ -103,7 +103,7 @@ CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(recipe);
 JBaker baker = new JBaker();
 
 // Add the Implementations
-baker.addImplementations(validateOrderImpl, manufactureGoodsImpl);
+baker.addInteractionInstances(validateOrderImpl, manufactureGoodsImpl);
 
 // Add the Compiled Recipe
 String recipeId = baker.addRecipe(compiledRecipe);
