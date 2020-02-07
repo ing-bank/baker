@@ -38,7 +38,7 @@ object Main extends App {
 
   // Server init
   Cluster(system).registerOnMemberUp {
-    BaaSServer.run(eventListeners, stateNodeBaker, "0.0.0.0", httpServerPort).foreach { hook =>
+    StateNodeHttp.run(eventListeners, stateNodeBaker, "0.0.0.0", httpServerPort).foreach { hook =>
       sys.addShutdownHook(Await.result(hook.unbind(), 20.seconds))
     }
   }

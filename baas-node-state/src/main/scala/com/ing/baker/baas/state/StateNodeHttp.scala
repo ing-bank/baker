@@ -14,18 +14,18 @@ import com.ing.baker.runtime.serialization.{Encryption, SerializersProvider}
 
 import scala.concurrent.Future
 
-object BaaSServer {
+object StateNodeHttp {
 
   def run(listeners: EventListenersServiceDiscovery, baker: Baker, host: String, port: Int)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption): Future[Http.ServerBinding] = {
     import system.dispatcher
     for {
       _ <- listeners.initializeEventListeners
-      binding <- Http().bindAndHandle(new BaaSServer(listeners, baker).route, host, port)
+      binding <- Http().bindAndHandle(new StateNodeHttp(listeners, baker).route, host, port)
     } yield binding
   }
 }
 
-class BaaSServer(listeners: EventListenersServiceDiscovery, baker: Baker)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption) {
+class StateNodeHttp(listeners: EventListenersServiceDiscovery, baker: Baker)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption) {
 
   import system.dispatcher
 

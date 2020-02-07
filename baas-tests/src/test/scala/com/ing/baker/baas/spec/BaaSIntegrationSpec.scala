@@ -14,7 +14,7 @@ import com.ing.baker.baas.recipe.CheckoutFlowIngredients.{Item, OrderId, Reserve
 import com.ing.baker.baas.recipe._
 import com.ing.baker.baas.scaladsl.{RemoteEventListener, BakerClient, RemoteInteraction}
 import com.ing.baker.baas.spec.BaaSIntegrationSpec._
-import com.ing.baker.baas.state.BaaSServer
+import com.ing.baker.baas.state.StateNodeHttp
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.AkkaBaker
@@ -396,7 +396,7 @@ object BaaSIntegrationSpec {
     }
 
   private def runStateNodeHttpServer(stateNodeBaker: ScalaBaker, stateNodeSystem: ActorSystem, materializer: Materializer)(implicit ec: ExecutionContext): WithOpenPort[(Int, Http.ServerBinding)] =
-    withOpenPort(port => BaaSServer.run(stateNodeBaker, "localhost", port)(stateNodeSystem, materializer).map(port -> _))
+    withOpenPort(port => StateNodeHttp.run(stateNodeBaker, "localhost", port)(stateNodeSystem, materializer).map(port -> _))
 
   private def withOpenPort[T](f: Int => Future[T])(implicit ec: ExecutionContext): WithOpenPort[T] = {
     def search(ports: Stream[Int]): Future[(Stream[Int], T)] =

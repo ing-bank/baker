@@ -265,6 +265,8 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
       "-Ypartial-unification"
     ),
     libraryDependencies ++= Seq(
+      slf4jApi,
+      slf4jSimple,
       akkaHttp,
       akkaPersistenceCassandra,
       akkaManagementHttp,
@@ -272,7 +274,11 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
       akkaDiscoveryKube,
       kubernetesJavaClient
     ) ++ testDeps(
-      scalaTest
+      scalaTest,
+      mockServer,
+      akkaHttpCirce,
+      circe,
+      circeGeneric
     )
   )
   .settings(
@@ -283,10 +289,13 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
   )
   .dependsOn(
     runtime,
+    `baas-node-client`,
     `baas-protocol-baker`,
     `baas-protocol-interaction-scheduling`,
     `baas-protocol-recipe-event-publishing`,
-    `baas-protocol-baker-event-publishing`)
+    `baas-protocol-baker-event-publishing`,
+    recipeCompiler, recipeDsl, intermediateLanguage
+  )
 
 lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
   .settings(defaultModuleSettings)

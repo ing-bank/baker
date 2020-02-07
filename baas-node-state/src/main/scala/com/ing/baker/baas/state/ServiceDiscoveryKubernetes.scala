@@ -1,5 +1,6 @@
 package com.ing.baker.baas.state
 
+import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.openapi.apis.CoreV1Api
 import io.kubernetes.client.openapi.models.V1Service
 import io.kubernetes.client.util.ClientBuilder
@@ -8,17 +9,17 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.concurrent.Future
 
-class ServiceDiscoveryKubernetes(namespace: String) extends ServiceDiscovery {
+class ServiceDiscoveryKubernetes(namespace: String, client: ApiClient = ClientBuilder.cluster.build) extends  ServiceDiscovery {
 
-  private val api = new CoreV1Api(ClientBuilder.cluster.build)
+  private val api = new CoreV1Api(client)
 
   def getInteractionAddresses: Future[Seq[String]] = {
-    Future.successful(getInteractionServices().map("http://" + _.getMetadata.getName + ":8080"))
+    Future.successful(getInteractionServices().map(service => "http://" + service.getMetadata.getName + ":" + service.getSpec.getPorts.asScala.head.getPort))
   }
 
   def getEventListenersAddresses: Future[Seq[(String, String)]] = {
     Future.successful(getEventListenerServices().map { service =>
-      (service.getMetadata.getLabels.getOrDefault("baker-recipe", "All-Recipes"), "http://" + service.getMetadata.getName + ":8080")
+      (service.getMetadata.getLabels.getOrDefault("baker-recipe", "All-Recipes"), "http://" + service.getMetadata.getName + ":" +  + service.getSpec.getPorts.asScala.head.getPort)
     })
   }
 
