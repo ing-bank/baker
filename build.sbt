@@ -136,8 +136,6 @@ lazy val runtime = project.in(file("runtime"))
   .dependsOn(
     intermediateLanguage,
     `baker-interface`,
-    `baas-protocol-interaction-scheduling`,
-    `baas-protocol-recipe-event-publishing`,
     testScope(recipeDsl),
     testScope(recipeCompiler),
     testScope(bakertypes))
@@ -283,7 +281,12 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
     packageName in Docker := "baas-node-state",
     dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
   )
-  .dependsOn(runtime, `baas-protocol-baker`, `baas-protocol-interaction-scheduling`)
+  .dependsOn(
+    runtime,
+    `baas-protocol-baker`,
+    `baas-protocol-interaction-scheduling`,
+    `baas-protocol-recipe-event-publishing`,
+    `baas-protocol-baker-event-publishing`)
 
 lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
   .settings(defaultModuleSettings)
@@ -451,20 +454,40 @@ lazy val `baas-event-listener-example` = project
     libraryDependencies ++=
       compileDeps(
         slf4jApi,
-        slf4jSimple,
-        catsEffect
-      ) ++ testDeps(
-        scalaTest,
-        scalaCheck
-      )
+        slf4jSimple
+      ) ++ testDeps()
   )
   .settings(
     maintainer in Docker := "The Apollo Squad",
-    packageSummary in Docker := "A web-shop checkout service interaction instances example running on baas",
+    packageSummary in Docker := "A web-shop checkout service example running on baas",
     packageName in Docker := "baas-event-listener-example",
     dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
   )
   .dependsOn(`baas-node-event-listener`)
+
+lazy val `baas-baker-event-listener-example` = project
+  .in(file("examples/baas-baker-event-listener-example"))
+  .enablePlugins(JavaAppPackaging)
+  .settings(commonSettings)
+  .settings(noPublishSettings)
+  .settings(
+    moduleName := "baas-baker-event-listener-example",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
+    libraryDependencies ++=
+      compileDeps(
+        slf4jApi,
+        slf4jSimple
+      ) ++ testDeps()
+  )
+  .settings(
+    maintainer in Docker := "The Apollo Squad",
+    packageSummary in Docker := "A web-shop checkout service example running on baas",
+    packageName in Docker := "baas-baker-event-listener-example",
+    dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
+  )
+  .dependsOn(`baas-node-baker-event-listener`)
 
 lazy val `baas-interaction-example-reserve-items` = project.in(file("examples/baas-interaction-examples/reserve-items"))
   .enablePlugins(JavaAppPackaging)
