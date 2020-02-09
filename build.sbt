@@ -235,6 +235,18 @@ lazy val `baas-protocol-recipe-event-publishing` = project.in(file("baas-protoco
   )
   .dependsOn(`baker-interface`)
 
+lazy val `baas-protocol-baker-event-publishing` = project.in(file("baas-protocol-baker-event-publishing"))
+  .settings(defaultModuleSettings)
+  .settings(scalaPBSettings)
+  .settings(
+    moduleName := "baas-protocol-baker-event-publishing",
+    libraryDependencies ++= Seq(
+      akkaStream,
+      akkaHttp
+    )
+  )
+  .dependsOn(`baker-interface`)
+
 lazy val `baas-node-client` = project.in(file("baas-node-client"))
   .settings(defaultModuleSettings)
   .settings(
@@ -297,12 +309,10 @@ lazy val `baas-node-event-listener` = project.in(file("baas-node-event-listener"
   .settings(
     moduleName := "baas-node-event-listener",
     libraryDependencies ++= Seq(
-      akkaCluster,
-      akkaClusterTools,
       akkaHttp,
-      slf4jApi
+      slf4jApi,
+      slf4jSimple
     ) ++ testDeps(
-      akkaSlf4j,
       logback,
       scalaTest,
       junitInterface,
@@ -310,6 +320,23 @@ lazy val `baas-node-event-listener` = project.in(file("baas-node-event-listener"
     )
   )
   .dependsOn(`baas-protocol-recipe-event-publishing`, `baker-interface`)
+
+lazy val `baas-node-baker-event-listener` = project.in(file("baas-node-baker-event-listener"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "baas-node-baker-event-listener",
+    libraryDependencies ++= Seq(
+      akkaHttp,
+      slf4jApi,
+      slf4jSimple
+    ) ++ testDeps(
+      logback,
+      scalaTest,
+      junitInterface,
+      scalaCheck
+    )
+  )
+  .dependsOn(`baas-protocol-baker-event-publishing`, `baker-interface`)
 
 lazy val `baas-tests` = project.in(file("baas-tests"))
   .settings(defaultModuleSettings)

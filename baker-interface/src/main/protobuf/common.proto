@@ -320,3 +320,93 @@ message InteractionTransition {
 }
 
 // END PETRINET
+
+// BAKER EVENTS
+enum RejectReason {
+    NO_SUCH_PROCESS_REASON = 1;
+    PROCESS_DELETED_REASON = 2;
+    ALREADY_RECEIVED_REASON = 3;
+    RECEIVE_PERIOD_EXPIRED_REASON = 4;
+    FIRING_LIMIT_MET_REASON = 5;
+    INVALID_EVENT_REASON = 6;
+}
+
+// Since the simplicity of these outcomes, we chose this format, please see the ProtoMap instance logic
+message ExceptionStrategyOutcome {
+    optional string eventName = 1;
+    optional int64 delay = 2;
+}
+
+message EventReceived {
+    optional int64 timeStamp = 1;
+    optional string recipeName = 2;
+    optional string recipeId = 3;
+    optional string recipeInstanceId = 4;
+    optional string correlationId = 5;
+    optional RuntimeEvent event = 6;
+}
+
+message EventRejected {
+    optional int64 timeStamp = 1;
+    optional string recipeInstanceId = 2;
+    optional string correlationId = 3;
+    optional RuntimeEvent event = 4;
+    optional RejectReason reason = 5;
+}
+
+message InteractionFailed {
+    optional int64 timeStamp = 1;
+    optional int64 duration = 2;
+    optional string recipeName = 3;
+    optional string recipeId = 4;
+    optional string recipeInstanceId = 5;
+    optional string interactionName = 6;
+    optional int32 failureCount = 7;
+    optional string throwable = 8;
+    optional ExceptionStrategyOutcome exceptionStrategyOutcome = 9;
+}
+
+message InteractionStarted {
+    optional int64 timeStamp = 1;
+    optional string recipeName = 2;
+    optional string recipeId = 3;
+    optional string recipeInstanceId = 4;
+    optional string interactionName = 5;
+}
+
+message InteractionCompleted {
+    optional int64 timeStamp = 1;
+    optional int64 duration = 2;
+    optional string recipeName = 3;
+    optional string recipeId = 4;
+    optional string recipeInstanceId = 5;
+    optional string interactionName = 6;
+    optional RuntimeEvent event = 7;
+}
+
+message RecipeInstanceCreated {
+    optional int64 timeStamp = 1;
+    optional string recipeId = 2;
+    optional string recipeName = 3;
+    optional string recipeInstanceId = 4;
+}
+
+message RecipeAdded {
+    optional string recipeName = 1;
+    optional string recipeId = 2;
+    optional int64 date = 3;
+    optional CompiledRecipe compiledRecipe = 4;
+}
+
+message BakerEvent {
+    oneof oneof_baker_event {
+        EventReceived eventReceived = 1;
+        EventRejected eventRejected = 2;
+        InteractionFailed interactionFailed = 3;
+        InteractionStarted interactionStarted = 4;
+        InteractionCompleted interactionCompleted = 5;
+        RecipeInstanceCreated recipeInstanceCreated = 6;
+        RecipeAdded recipeAdded = 7;
+    }
+}
+//END BAKER EVENTS
