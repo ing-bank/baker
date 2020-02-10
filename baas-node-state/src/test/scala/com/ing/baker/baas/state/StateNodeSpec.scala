@@ -3,173 +3,135 @@ package com.ing.baker.baas.state
 import java.util.UUID
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, Uri}
-import akka.http.scaladsl.model.Uri.Path
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.http.scaladsl.model.Uri
 import akka.stream.{ActorMaterializer, Materializer}
 import cats.data.StateT
 import cats.implicits._
+import com.ing.baker.baas.kubeapi
+import com.ing.baker.baas.protocol.InteractionSchedulingProto._
+import com.ing.baker.baas.protocol.ProtocolInteractionExecution
+import com.ing.baker.baas.recipe.{Interactions, ItemReservationRecipe}
 import com.ing.baker.baas.scaladsl.BakerClient
+import com.ing.baker.baas.state.StateNodeSpec._
+import com.ing.baker.recipe.scaladsl.Interaction
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
-import com.ing.baker.runtime.serialization.Encryption
-import com.typesafe.config.ConfigFactory
-import de.heikoseeberger.akkahttpcirce.ErrorAccumulatingCirceSupport
-import io.circe.Json
-import io.circe.generic.auto._
+import com.ing.baker.runtime.serialization.{Encryption, ProtoMap, SerializersProvider}
 import io.kubernetes.client.openapi.ApiClient
 import org.jboss.netty.channel.ChannelException
-import org.mockserver.client.MockServerClient
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.integration.ClientAndServer.startClientAndServer
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
-import org.mockserver.model.Header.header
-import org.mockserver.model.BodyWithContentType
 import org.scalatest.compatible.Assertion
 import org.scalatest.{AsyncFlatSpec, BeforeAndAfterAll, Matchers}
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future}
-import StateNodeSpec._
-import com.ing.baker.baas.recipe.CheckoutFlowRecipe
-import com.ing.baker.compiler.RecipeCompiler
-import com.ing.baker.il.CompiledRecipe
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.Success
 
 class StateNodeSpec extends AsyncFlatSpec with BeforeAndAfterAll with Matchers {
 
-  val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
-
   "The State Node" should "add a recipe" in {
-    test { implicit mock => client =>
+    test ( context =>
       for {
-        _ <- setup
-        recipeId <- client.addRecipe(compiledRecipe)
+        _ <- context.kubeApiServer.willRespondWithInteractionServices
+        _ <- context.remoteInteraction.willPublishItsInterface
+      } yield ()
+    )( ( context, client ) =>
+      for {
+        recipeId <- client.addRecipe(ItemReservationRecipe.compiledRecipe)
         recipeInformation <- client.getRecipe(recipeId)
-      } yield recipeInformation.compiledRecipe shouldBe compiledRecipe
-    }
-
-    /*
-    case class Hello(hello: String)
-
-    for {
-      mock <- mockF
-      _ = println(mock.getLocalPort)
-      r = HttpRequest(method = HttpMethods.GET, uri = Uri(s"http://localhost:${mock.getLocalPort}/").withPath(Path./("test-path")))//, entity = encoded)
-      //encoded <- Marshal(ProtocolDistributedEventPublishing.Event(recipeEventMetadata, event)).to[MessageEntity]
-      response <- Http().singleRequest(r)
-      decoded <- Unmarshal(response).to[Hello]
-      _ = println(decoded)
-    } yield succeed
-     */
+      } yield recipeInformation.compiledRecipe shouldBe ItemReservationRecipe.compiledRecipe
+    )
   }
 
   it should "other" in {
-    ???
+    succeed
   }
 }
 
 object StateNodeSpec {
 
-  private def getServicesResponse(implicit mock: ClientAndServer): String =
-    s"""
-      |{
-      |  "kind": "ServiceList",
-      |  "apiVersion": "v1",
-      |  "metadata": {
-      |    "selfLink": "/api/v1/namespaces/default/services",
-      |    "resourceVersion": "67072"
-      |  },
-      |  "items": [
-      |    {
-      |      "metadata": {
-      |        "name": "localhost",
-      |        "namespace": "default",
-      |        "selfLink": "/api/v1/namespaces/default/services/baas-event-listener-service",
-      |        "uid": "1a4aeac2-e7ad-4318-8918-241b2a43512b",
-      |        "resourceVersion": "35012",
-      |        "creationTimestamp": "2020-02-04T15:09:09Z",
-      |        "labels": {
-      |          "baas-component": "remote-event-listener",
-      |          "baker-recipe": "Webshop"
-      |        }
-      |      },
-      |      "spec": {
-      |        "ports": [
-      |          {
-      |            "name": "http-api",
-      |            "protocol": "TCP",
-      |            "port": ${mock.getLocalPort},
-      |            "targetPort": "http-api"
-      |          }
-      |        ],
-      |        "selector": {
-      |          "app": "baas-event-listener"
-      |        },
-      |        "clusterIP": "10.110.209.3",
-      |        "type": "ClusterIP",
-      |        "sessionAffinity": "None"
-      |      },
-      |      "status": {
-      |        "loadBalancer": {
-      |
-      |        }
-      |      }
-      |    },
-      |    {
-      |      "metadata": {
-      |        "name": "localhost",
-      |        "namespace": "default",
-      |        "selfLink": "/api/v1/namespaces/default/services/reserve-items-interaction-service",
-      |        "uid": "0470cdc2-f0aa-43b1-b9cd-b28017794001",
-      |        "resourceVersion": "34969",
-      |        "creationTimestamp": "2020-02-04T15:09:09Z",
-      |        "labels": {
-      |          "baas-component": "remote-interaction",
-      |          "run": "reserve-items-interaction-service"
-      |        }
-      |      },
-      |      "spec": {
-      |        "ports": [
-      |          {
-      |            "name": "http-api",
-      |            "protocol": "TCP",
-      |            "port": ${mock.getLocalPort},
-      |            "targetPort": "http-api"
-      |          }
-      |        ],
-      |        "selector": {
-      |          "app": "reserve-items"
-      |        },
-      |        "clusterIP": "10.109.106.112",
-      |        "type": "ClusterIP",
-      |        "sessionAffinity": "None"
-      |      },
-      |      "status": {
-      |        "loadBalancer": {
-      |
-      |        }
-      |      }
-      |    }
-      |  ]
-      |}
-      |""".stripMargin
+  private type ProtoMessage[A] = scalapb.GeneratedMessage with scalapb.Message[A]
 
-  def setup(implicit mock: ClientAndServer, ec: ExecutionContext): Future[Unit] = Future {
-    mock.when(
-      request()
-        .withMethod("GET")
-        .withPath("/api/v1/namespaces/default/services")
-    ).respond(
-      response()
-        .withStatusCode(200)
-        .withBody(getServicesResponse, MediaType.APPLICATION_JSON)
-    )
+  private def serialize[A, P <: ProtoMessage[P]](message: A)(implicit mapping: ProtoMap[A, P]): Array[Byte] =
+    mapping.toByteArray(message)
+
+  private implicit def serializersProvider(implicit system: ActorSystem, encryption: Encryption): SerializersProvider =
+    SerializersProvider(system, encryption)
+
+  class KubeApiServer()(implicit mock: ClientAndServer, ec: ExecutionContext) {
+
+    def willRespondWithInteractionServices: Future[Unit] = Future {
+      mock.when(
+        request()
+          .withMethod("GET")
+          .withPath("/api/v1/namespaces/default/services")
+      ).respond(
+        response()
+          .withStatusCode(200)
+          .withBody(interactionServices.mock, MediaType.APPLICATION_JSON)
+      )
+    }
+
+    private def interactionServices: kubeapi.Services =
+      kubeapi.Services(List(
+        kubeapi.Service(
+          metadata_name = "localhost",
+          metadata_labels = Map("baas-component" -> "remote-interaction"),
+          spec_ports = List(
+            kubeapi.PodPort(
+              name = "http-api",
+              port = mock.getLocalPort,
+              targetPort = Left(mock.getLocalPort)
+            )
+          )
+        )
+      ))
+  }
+
+  class RemoteInteraction(interaction: Interaction)(implicit mock: ClientAndServer, system: ActorSystem, encryption: Encryption) {
+
+    import system.dispatcher
+
+    def willPublishItsInterface: Future[Unit] = Future {
+      mock.when(
+        request()
+          .withMethod("GET")
+          .withPath("/api/v3/interface")
+      ).respond(
+        response()
+          .withStatusCode(200)
+          .withBody(serialize(ProtocolInteractionExecution.InstanceInterface(interaction.name, interaction.inputIngredients.map(_.ingredientType))))
+      )
+    }
+  }
+
+  case class TestContext(
+    remoteInteraction: RemoteInteraction,
+    kubeApiServer: KubeApiServer,
+    system: ActorSystem
+  ) {
+
+    import system.dispatcher
+
+    def wait(time: FiniteDuration): Future[Unit] = {
+      val promise: Promise[Unit] = Promise()
+      system.scheduler.scheduleOnce(time)(promise.complete(Success(())))
+      promise.future
+    }
+
+    def withRetries[A](times: Int, delay: FiniteDuration, future: => Future[A]): Future[A] =
+      future.recoverWith { case e =>
+        if(times < 1) Future.failed(e)
+        else wait(delay).flatMap(_ => withRetries(times - 1, delay, future))
+      }
   }
 
   // Core dependencies
-  def test(runTest: ClientAndServer => BakerClient => Future[Assertion])(implicit ec: ExecutionContext): Future[Assertion] = {
+  def test(setup: TestContext => Future[Unit])(runTest: (TestContext, BakerClient) => Future[Assertion])(implicit ec: ExecutionContext): Future[Assertion] = {
+
     val testId: UUID = UUID.randomUUID()
     val systemName: String = "baas-node-interaction-test-" + testId
     implicit val system: ActorSystem = ActorSystem(systemName)
@@ -177,15 +139,37 @@ object StateNodeSpec {
     implicit val encryption: Encryption = Encryption.NoEncryption
 
     for {
-      (mock, mocksPort) <- withOpenPort(5000, port => Future.successful(startClientAndServer(port)))
+      // Build mocks
+      (mock, mocksPort) <- withOpenPort(5000, port => Future(startClientAndServer(port)))
+      testContext = TestContext(
+        remoteInteraction =
+          new RemoteInteraction(Interactions.ReserveItemsInteraction)(mock, system, encryption),
+        kubeApiServer =
+          new KubeApiServer()(mock, system.dispatcher),
+        system =
+          system
+      )
+
+      // Setup context
+      _ <- setup(testContext)
+
+      // Build the state node
       kubernetes = new ServiceDiscoveryKubernetes("default", new ApiClient().setBasePath(s"http://localhost:$mocksPort"))
       interactionManager = new InteractionsServiceDiscovery(kubernetes)
       stateNodeBaker = AkkaBaker.withConfig(AkkaBakerConfig.localDefault(system).copy(interactionManager = interactionManager))
       eventListeners = new EventListenersServiceDiscovery(kubernetes, stateNodeBaker)
       (binding, serverPort) <- withOpenPort(5010, port => StateNodeHttp.run(eventListeners, stateNodeBaker, "0.0.0.0", port))
-      assertion <- runTest(mock)(BakerClient(Uri(s"http://localhost:$serverPort")))
+      bakerClient = BakerClient(Uri(s"http://localhost:$serverPort"))
+
+      // Run the test
+      assertionOrError <- runTest(testContext, bakerClient).transform(Success(_))
+
+      // Clean
       _ <- binding.unbind()
+      _ <- system.terminate()
+      _ <- system.whenTerminated
       _ = mock.stop()
+      assertion <- Future.fromTry(assertionOrError)
     } yield assertion
   }
 

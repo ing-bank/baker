@@ -9,8 +9,8 @@ import cats.data.StateT
 import cats.effect.{IO, Timer}
 import cats.implicits._
 import com.ing.baker.baas.common.RemoteInteraction
-import com.ing.baker.baas.recipe.CheckoutFlowEvents.ItemsReserved
-import com.ing.baker.baas.recipe.CheckoutFlowIngredients.{Item, OrderId, ReservedItems, ShippingAddress}
+import com.ing.baker.baas.recipe.Events.ItemsReserved
+import com.ing.baker.baas.recipe.Ingredients.{Item, OrderId, ReservedItems, ShippingAddress}
 import com.ing.baker.baas.recipe._
 import com.ing.baker.baas.scaladsl.{RemoteEventListener, BakerClient, RemoteInteraction}
 import com.ing.baker.baas.spec.BaaSIntegrationSpec._
@@ -143,7 +143,7 @@ class BaaSIntegrationSpec
       test { (client, _, interactionNode, _) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
-          CheckoutFlowEvents.ShippingAddressReceived(ShippingAddress("address")))
+          Events.ShippingAddressReceived(ShippingAddress("address")))
         for {
           compiledRecipe <- setupHappyPath(interactionNode)
           recipeId <- client.addRecipe(compiledRecipe)
@@ -157,7 +157,7 @@ class BaaSIntegrationSpec
       test { (client, stateNode, interactionNode, eventListenerNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
-          CheckoutFlowEvents.ShippingAddressReceived(ShippingAddress("address")))
+          Events.ShippingAddressReceived(ShippingAddress("address")))
         for {
           compiledRecipe <- setupHappyPath(interactionNode)
           events <- setupEventListener(compiledRecipe, eventListenerNode)
@@ -197,7 +197,7 @@ class BaaSIntegrationSpec
       test { (client, stateNode, interactionNode, eventListenerNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
-          CheckoutFlowEvents.ShippingAddressReceived(ShippingAddress("address")))
+          Events.ShippingAddressReceived(ShippingAddress("address")))
         for {
           compiledRecipe <- setupHappyPath(interactionNode)
           events <- setupEventListener(compiledRecipe, eventListenerNode)
@@ -243,7 +243,7 @@ class BaaSIntegrationSpec
       test { (client, _, interactionNode, eventListenerNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
-          CheckoutFlowEvents.OrderPlaced(orderId = OrderId("order1"), List.empty))
+          Events.OrderPlaced(orderId = OrderId("order1"), List.empty))
         for {
           compiledRecipe <- setupFailingOnceReserveItems(interactionNode)
           events <- setupEventListener(compiledRecipe, eventListenerNode)
@@ -268,7 +268,7 @@ class BaaSIntegrationSpec
       test { (client, _, interactionNode, eventListenerNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
-          CheckoutFlowEvents.OrderPlaced(orderId = OrderId("order1"), List.empty))
+          Events.OrderPlaced(orderId = OrderId("order1"), List.empty))
         val resolutionEvent = EventInstance.unsafeFrom(
           ItemsReserved(reservedItems = ReservedItems(items = List(Item("item1")), data = Array.empty))
         )
@@ -299,7 +299,7 @@ class BaaSIntegrationSpec
       test { (client, _, interactionNode, eventListenerNode) =>
         val recipeInstanceId: String = UUID.randomUUID().toString
         val event = EventInstance.unsafeFrom(
-          CheckoutFlowEvents.OrderPlaced(orderId = OrderId("order1"), List.empty))
+          Events.OrderPlaced(orderId = OrderId("order1"), List.empty))
         for {
           compiledRecipe <- setupFailingWithRetryReserveItems(interactionNode)
           events <- setupEventListener(compiledRecipe, eventListenerNode)
@@ -329,7 +329,7 @@ object BaaSIntegrationSpec {
     val makePaymentInstance = InteractionInstance.unsafeFrom(new MakePaymentInstance())
     val reserveItemsInstance = InteractionInstance.unsafeFrom(new ReserveItemsInstance())
     val shipItemsInstance = InteractionInstance.unsafeFrom(new ShipItemsInstance())
-    val compiledRecipe = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
+    val compiledRecipe = RecipeCompiler.compileRecipe(ItemReservationRecipe.recipe)
     for {
       _ <- Future { interactionNode.load(makePaymentInstance, reserveItemsInstance, shipItemsInstance) }
     } yield compiledRecipe
@@ -339,7 +339,7 @@ object BaaSIntegrationSpec {
     val makePaymentInstance = InteractionInstance.unsafeFrom(new MakePaymentInstance())
     val reserveItemsInstance = InteractionInstance.unsafeFrom(new FailingOnceReserveItemsInstance())
     val shipItemsInstance = InteractionInstance.unsafeFrom(new ShipItemsInstance())
-    val compiledRecipe = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipeWithBlockingStrategy)
+    val compiledRecipe = RecipeCompiler.compileRecipe(ItemReservationRecipe.recipeWithBlockingStrategy)
     for {
       _ <- Future { interactionNode.load(makePaymentInstance, reserveItemsInstance, shipItemsInstance) }
     } yield compiledRecipe
@@ -349,7 +349,7 @@ object BaaSIntegrationSpec {
     val makePaymentInstance = InteractionInstance.unsafeFrom(new MakePaymentInstance())
     val reserveItemsInstance = InteractionInstance.unsafeFrom(new FailingReserveItemsInstance())
     val shipItemsInstance = InteractionInstance.unsafeFrom(new ShipItemsInstance())
-    val compiledRecipe = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
+    val compiledRecipe = RecipeCompiler.compileRecipe(ItemReservationRecipe.recipe)
     for {
       _ <- Future { interactionNode.load(makePaymentInstance, reserveItemsInstance, shipItemsInstance) }
     } yield compiledRecipe
