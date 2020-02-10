@@ -1,8 +1,8 @@
 package com.ing.baker.baas.recipe
 
-import com.ing.baker.baas.recipe.Events._
-import com.ing.baker.baas.recipe.Ingredients._
-import com.ing.baker.baas.recipe.Interactions._
+import com.ing.baker.baas.recipe.CheckoutFlowEvents._
+import com.ing.baker.baas.recipe.CheckoutFlowIngredients._
+import com.ing.baker.baas.recipe.CheckoutFlowInteractions._
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
 import com.ing.baker.recipe.common.InteractionFailureStrategy.{BlockInteraction, RetryWithIncrementalBackoff}
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}

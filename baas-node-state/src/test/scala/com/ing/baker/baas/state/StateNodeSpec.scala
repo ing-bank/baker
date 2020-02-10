@@ -10,11 +10,15 @@ import cats.implicits._
 import com.ing.baker.baas.kubeapi
 import com.ing.baker.baas.protocol.InteractionSchedulingProto._
 import com.ing.baker.baas.protocol.ProtocolInteractionExecution
+import com.ing.baker.baas.recipe.Events.{ItemsReserved, OrderPlaced}
+import com.ing.baker.baas.recipe.Ingredients.{Item, OrderId, ReservedItems}
 import com.ing.baker.baas.recipe.{Interactions, ItemReservationRecipe}
 import com.ing.baker.baas.scaladsl.BakerClient
 import com.ing.baker.baas.state.StateNodeSpec._
 import com.ing.baker.recipe.scaladsl.Interaction
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
+import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
+import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.runtime.serialization.{Encryption, ProtoMap, SerializersProvider}
 import io.kubernetes.client.openapi.ApiClient
 import org.jboss.netty.channel.ChannelException
@@ -22,7 +26,7 @@ import org.mockserver.integration.ClientAndServer
 import org.mockserver.integration.ClientAndServer.startClientAndServer
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
-import org.mockserver.model.MediaType
+import org.mockserver.model.{HttpRequest, MediaType}
 import org.scalatest.compatible.Assertion
 import org.scalatest.{AsyncFlatSpec, BeforeAndAfterAll, Matchers}
 
@@ -32,7 +36,7 @@ import scala.util.Success
 
 class StateNodeSpec extends AsyncFlatSpec with BeforeAndAfterAll with Matchers {
 
-  "The State Node" should "add a recipe" in {
+  "The State Node" should "do recipe management" in {
     test ( context =>
       for {
         _ <- context.kubeApiServer.willRespondWithInteractionServices
@@ -42,12 +46,106 @@ class StateNodeSpec extends AsyncFlatSpec with BeforeAndAfterAll with Matchers {
       for {
         recipeId <- client.addRecipe(ItemReservationRecipe.compiledRecipe)
         recipeInformation <- client.getRecipe(recipeId)
-      } yield recipeInformation.compiledRecipe shouldBe ItemReservationRecipe.compiledRecipe
+        noSuchRecipeError <- client
+          .getRecipe("non-existent")
+          .map(_ => None)
+          .recover { case e: BakerException => Some(e) }
+        allRecipes <- client.getAllRecipes
+      } yield {
+        recipeInformation.compiledRecipe shouldBe ItemReservationRecipe.compiledRecipe
+        noSuchRecipeError shouldBe Some(BakerException.NoSuchRecipeException("non-existent"))
+        allRecipes.get(recipeId).map(_.compiledRecipe) shouldBe Some(ItemReservationRecipe.compiledRecipe)
+      }
     )
   }
 
-  it should "other" in {
-    succeed
+  /***
+   * TODO FIX THIS
+   *
+   * [MockServer-EventLog660] INFO org.mockserver.log.MockServerEventLog - request sequence not found, expected:
+   *
+   * [{
+   * "method" : "GET",
+   * "path" : "/api/v3/apply",
+   * "headers" : {
+   * "X-Bakery-Intent" : [ "Remote-Event-Listener:Webshop" ]
+   * }
+   * }]
+   *
+   * but was:
+   *
+   * [{
+   * "method" : "GET",
+   * "path" : "/api/v1/namespaces/default/services",
+   * "headers" : {
+   * "Accept" : [ "application/json" ],
+   * "Content-Type" : [ "application/json" ],
+   * "User-Agent" : [ "OpenAPI-Generator/1.0-SNAPSHOT/java" ],
+   * "Host" : [ "localhost:5000" ],
+   * "Connection" : [ "Keep-Alive" ],
+   * "Accept-Encoding" : [ "gzip" ],
+   * "content-length" : [ "0" ]
+   * },
+   * "keepAlive" : true,
+   * "secure" : false
+   * }, {
+   * "method" : "GET",
+   * "path" : "/api/v3/interface",
+   * "headers" : {
+   * "Host" : [ "localhost:5000" ],
+   * "X-Bakery-Intent" : [ "Remote-Interaction:localhost" ],
+   * "User-Agent" : [ "akka-http/10.1.11" ],
+   * "content-length" : [ "0" ]
+   * },
+   * "keepAlive" : true,
+   * "secure" : false
+   * }, {
+   * "method" : "POST",
+   * "path" : "/api/v3/apply",
+   * "headers" : {
+   * "Host" : [ "localhost:5000" ],
+   * "X-Bakery-Intent" : [ "Remote-Interaction:localhost" ],
+   * "User-Agent" : [ "akka-http/10.1.11" ],
+   * "Content-Type" : [ "application/octet-stream" ],
+   * "Content-Length" : [ "77" ]
+   * },
+   * "keepAlive" : true,
+   * "secure" : false,
+   * "body" : {
+   * "contentType" : "application/octet-stream",
+   * "type" : "BINARY",
+   * "base64Bytes" : "CiQKB29yZGVySWQaGZIDFgoUCgdvcmRlcklkEglSB29yZGVyLTEKJQoFaXRlbXMaHJoDGQoXkgMUChIKBml0ZW1JZBIIUgZpdGVtLTE="
+   * }
+   * }]
+   */
+  it should "bake" in {
+    test ( context =>
+      for {
+        _ <- context.kubeApiServer.willRespondWithInteractionAndEventListenerServices
+        _ <- context.remoteInteraction.willPublishItsInterface
+      } yield ()
+    )( ( context, client ) =>
+      for {
+        recipeId <- client.addRecipe(ItemReservationRecipe.compiledRecipe)
+
+        event = OrderPlaced(orderId = OrderId("order-1"), items = List(Item("item-1")))
+        eventInstance = EventInstance.unsafeFrom(event)
+        recipeInstanceId = UUID.randomUUID().toString
+        _ <- context.remoteInteraction.willCallApply(event.items)
+        _ <- context.remoteEventListener.willReceiveEvents
+
+        _ <- client.bake(recipeId, recipeInstanceId)
+        state <- client.getRecipeInstanceState(recipeInstanceId)
+        _ = state.recipeInstanceId shouldBe recipeInstanceId
+
+        status <- client.fireEventAndResolveWhenCompleted(recipeInstanceId, eventInstance)
+        _ = status.sensoryEventStatus shouldBe SensoryEventStatus.Completed
+        _ = status.eventNames should contain("OrderPlaced")
+        _ = status.eventNames should contain("ItemsReserved")
+
+        _ <- context.withRetry(times = 4, delay = 100.millis, context.remoteEventListener.verifyEventReceived)
+      } yield succeed
+    )
   }
 }
 
@@ -63,7 +161,13 @@ object StateNodeSpec {
 
   class KubeApiServer()(implicit mock: ClientAndServer, ec: ExecutionContext) {
 
-    def willRespondWithInteractionServices: Future[Unit] = Future {
+    def willRespondWithInteractionServices: Future[Unit] =
+      willRespondWith(interactionServices)
+
+    def willRespondWithInteractionAndEventListenerServices: Future[Unit] =
+      willRespondWith(interactionAndEventListenersServices)
+
+    def willRespondWith(services: kubeapi.Services): Future[Unit] = Future {
       mock.when(
         request()
           .withMethod("GET")
@@ -71,23 +175,33 @@ object StateNodeSpec {
       ).respond(
         response()
           .withStatusCode(200)
-          .withBody(interactionServices.mock, MediaType.APPLICATION_JSON)
+          .withBody(services.mock, MediaType.APPLICATION_JSON)
       )
     }
+
+    private def mockPort: kubeapi.PodPort =
+      kubeapi.PodPort(
+        name = "http-api",
+        port = mock.getLocalPort,
+        targetPort = Left(mock.getLocalPort))
 
     private def interactionServices: kubeapi.Services =
       kubeapi.Services(List(
         kubeapi.Service(
           metadata_name = "localhost",
           metadata_labels = Map("baas-component" -> "remote-interaction"),
-          spec_ports = List(
-            kubeapi.PodPort(
-              name = "http-api",
-              port = mock.getLocalPort,
-              targetPort = Left(mock.getLocalPort)
-            )
-          )
+          spec_ports = List(mockPort))
         )
+      )
+
+    private def interactionAndEventListenersServices: kubeapi.Services =
+      interactionServices.++(kubeapi.Service(
+        metadata_name = "localhost",
+        metadata_labels = Map(
+          "baas-component" -> "remote-event-listener",
+          "baker-recipe" -> ItemReservationRecipe.compiledRecipe.name
+        ),
+        spec_ports = List(mockPort)
       ))
   }
 
@@ -100,16 +214,55 @@ object StateNodeSpec {
         request()
           .withMethod("GET")
           .withPath("/api/v3/interface")
+          .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost")
       ).respond(
         response()
           .withStatusCode(200)
           .withBody(serialize(ProtocolInteractionExecution.InstanceInterface(interaction.name, interaction.inputIngredients.map(_.ingredientType))))
       )
     }
+
+    def willCallApply(items: List[Item]): Future[Unit] = Future {
+      val event =
+        EventInstance.unsafeFrom(ItemsReserved(ReservedItems(items, Array.fill(1)(Byte.MaxValue))))
+      mock.when(
+        request()
+          .withMethod("POST")
+          .withPath("/api/v3/apply")
+          .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost")
+      ).respond(
+        response()
+          .withStatusCode(200)
+          .withBody(serialize(ProtocolInteractionExecution.InstanceExecutedSuccessfully(Some(event))))
+      )
+    }
+  }
+
+  class RemoteEventListener(ofRecipe: String)(implicit mock: ClientAndServer, system: ActorSystem, encryption: Encryption) {
+
+    import system.dispatcher
+
+    val eventApply: HttpRequest =
+      request()
+        .withMethod("GET")
+        .withPath("/api/v3/apply")
+        .withHeader("X-Bakery-Intent", s"Remote-Event-Listener:$ofRecipe")
+
+    def willReceiveEvents: Future[Unit] = Future {
+      mock.when(eventApply).respond(
+        response()
+          .withStatusCode(200)
+      )
+    }
+
+    def verifyEventReceived: Future[Unit] = Future {
+      mock.verify(eventApply)
+    }
   }
 
   case class TestContext(
     remoteInteraction: RemoteInteraction,
+    remoteEventListener: RemoteEventListener,
     kubeApiServer: KubeApiServer,
     system: ActorSystem
   ) {
@@ -122,10 +275,10 @@ object StateNodeSpec {
       promise.future
     }
 
-    def withRetries[A](times: Int, delay: FiniteDuration, future: => Future[A]): Future[A] =
+    def withRetry[A](times: Int, delay: FiniteDuration, future: => Future[A]): Future[A] =
       future.recoverWith { case e =>
         if(times < 1) Future.failed(e)
-        else wait(delay).flatMap(_ => withRetries(times - 1, delay, future))
+        else wait(delay).flatMap(_ => withRetry(times - 1, delay, future))
       }
   }
 
@@ -144,6 +297,8 @@ object StateNodeSpec {
       testContext = TestContext(
         remoteInteraction =
           new RemoteInteraction(Interactions.ReserveItemsInteraction)(mock, system, encryption),
+        remoteEventListener =
+          new RemoteEventListener(ItemReservationRecipe.compiledRecipe.name)(mock, system, encryption),
         kubeApiServer =
           new KubeApiServer()(mock, system.dispatcher),
         system =

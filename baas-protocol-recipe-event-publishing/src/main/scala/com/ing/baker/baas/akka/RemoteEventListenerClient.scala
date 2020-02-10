@@ -5,6 +5,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.{Marshal, Marshaller, ToEntityMarshaller}
 import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.stream.Materializer
 import com.ing.baker.baas.protocol.DistributedEventPublishingProto._
@@ -49,6 +50,7 @@ class RemoteEventListenerClient(hostname: Uri)(implicit system: ActorSystem, mat
     for {
       encoded <- Marshal(ProtocolDistributedEventPublishing.Event(recipeEventMetadata, event)).to[MessageEntity]
       request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("apply")), entity = encoded)
+        .withHeaders(RawHeader("X-Bakery-Intent", s"Remote-Event-Listener:${recipeEventMetadata.recipeName}"))
       _ <- Http().singleRequest(request)
     } yield ()
 }

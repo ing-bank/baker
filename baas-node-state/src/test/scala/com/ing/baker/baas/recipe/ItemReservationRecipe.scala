@@ -54,7 +54,7 @@ object Interactions {
 
 object ItemReservationRecipe {
 
-  private def recipeBase = Recipe("Webshop")
+  private def recipeBase = Recipe("ItemReservation")
     .withSensoryEvents(
       Event[OrderPlaced])
     .withInteractions(

@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.{Marshal, Marshaller, ToEntityMarshaller}
 import akka.http.scaladsl.model.Uri.Path
+import akka.http.scaladsl.model.headers.RawHeader
 import com.ing.baker.runtime.serialization.{Encryption, ProtoMap, SerializersProvider}
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, MediaTypes, MessageEntity, Uri}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshal, Unmarshaller}
@@ -24,6 +25,8 @@ object RemoteInteractionClient {
 class RemoteInteractionClient(hostname: Uri)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption) {
 
   import system.dispatcher
+
+  val intendedInteraction: String = hostname.authority.host.toString()
 
   private type ProtoMessage[A] = scalapb.GeneratedMessage with scalapb.Message[A]
 
@@ -54,6 +57,7 @@ class RemoteInteractionClient(hostname: Uri)(implicit system: ActorSystem, mat: 
   def interface: Future[(String, Seq[Type])] = {
     println("Path: " + withPath(root./("interface")))
     val request = HttpRequest(method = HttpMethods.GET, uri = withPath(root./("interface")))
+      .withHeaders(RawHeader("X-Bakery-Intent", s"Remote-Interaction:$intendedInteraction"))
     for {
       response <- Http().singleRequest(request)
       decoded <- Unmarshal(response).to[ProtocolInteractionExecution.InstanceInterface]
@@ -64,6 +68,7 @@ class RemoteInteractionClient(hostname: Uri)(implicit system: ActorSystem, mat: 
     for {
       encoded <- Marshal(ProtocolInteractionExecution.ExecuteInstance(input)).to[MessageEntity]
       request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("apply")), entity = encoded)
+          .withHeaders(RawHeader("X-Bakery-Intent", s"Remote-Interaction:$intendedInteraction"))
       response <- Http().singleRequest(request)
       decoded <- Unmarshal(response).to[Either[
         ProtocolInteractionExecution.InstanceExecutedSuccessfully,
