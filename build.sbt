@@ -360,6 +360,7 @@ lazy val `baas-dashboard-server` = project.in(file("baas-dashboard-server"))
   .settings(
     moduleName := "baas-dashboard-server",
     libraryDependencies ++= Seq(
+      fs2,
       akkaHttpCirce,
       circe,
       circeGeneric
@@ -382,7 +383,15 @@ lazy val `baas-dashboard-server` = project.in(file("baas-dashboard-server"))
     packageName in Docker := "baas-dashboard-server",
     dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
   )
-  .dependsOn(`baas-node-client`, `baas-node-event-listener`, runtime, recipeCompiler, recipeDsl, intermediateLanguage)
+  .dependsOn(
+    `baas-node-client`,
+    `baas-node-event-listener`,
+    `baas-node-baker-event-listener`,
+    runtime,
+    recipeCompiler,
+    recipeDsl,
+    intermediateLanguage
+  )
 
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)

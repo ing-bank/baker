@@ -16,7 +16,8 @@ object Main extends App {
   val config = ConfigFactory.load()
 
   val port = config.getInt("baas-component.http-api-port")
-  val baasHostname = config.getString("baas.state-node-hostname")
+  val bakerEventListenerPort = config.getString("baas-component.baker-event-listener-port")
+  val stateNodeHostname = config.getString("baas.state-node-hostname")
 
   implicit val system: ActorSystem = ActorSystem("RemoteEventListenerSystem", config)
   implicit val materializer: Materializer = ActorMaterializer()
@@ -24,7 +25,7 @@ object Main extends App {
   implicit val encryption: Encryption = Encryption.NoEncryption
   import system.dispatcher
 
-  val baker = BakerClient(Uri.parseAbsolute(baasHostname))
+  val baker = BakerClient(Uri.parseAbsolute(stateNodeHostname))
 
   DashboardHttp.run(baker)( "0.0.0.0", port).foreach { hook =>
     sys.addShutdownHook(Await.result(hook.unbind(), 20.seconds))

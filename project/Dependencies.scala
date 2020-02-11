@@ -67,6 +67,7 @@ object Dependencies {
 
   val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "2.1.1"
   val catsCore =                  "org.typelevel"              %% "cats-core"                          % "2.1.0"
+  val fs2 =                       "co.fs2"                     %% "fs2-core"                           % "2.2.1"
   val console4Cats =              "dev.profunktor"             %% "console4cats"                       % "0.8.0"
 
   val jnrConstants =              "com.github.jnr"             % "jnr-constants"                       % "0.9.9"
