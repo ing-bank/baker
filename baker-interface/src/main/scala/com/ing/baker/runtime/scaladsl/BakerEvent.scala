@@ -12,7 +12,7 @@ import com.ing.baker.runtime.{common, javadsl}
 sealed trait BakerEvent extends common.BakerEvent with ScalaApi {
   type Event = EventInstance
 
-  def asJava(): javadsl.BakerEvent = this match {
+  def asJava: javadsl.BakerEvent = this match {
     case EventReceived(timeStamp, recipeName, recipeId, recipeInstanceId, correlationId, event) =>
       javadsl.EventReceived(timeStamp, recipeName, recipeId, recipeInstanceId, Optional.ofNullable(correlationId.orNull), event.asJava)
     case EventRejected(timeStamp, recipeInstanceId, correlationId, event, reason) =>
