@@ -9,7 +9,6 @@ import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, v
 import com.ing.baker.runtime.serialization.protomappings.BakerEventMapping._
 import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider}
 import scalapb.GeneratedMessageCompanion
-import BakerEventMapping._
 
 import scala.util.{Failure, Success, Try}
 
@@ -43,12 +42,12 @@ class BakerEventMapping(implicit ev0: SerializersProvider) extends ProtoMap[Bake
 
 object BakerEventMapping {
 
-  object EventReceivedMapping extends ProtoMap[EventReceived, protobuf.EventReceived] {
+  object EventReceivedMapping extends ProtoMap[EventReceived, protobuf.EventReceivedBakerEvent] {
 
-    override def companion: GeneratedMessageCompanion[protobuf.EventReceived] = protobuf.EventReceived
+    override def companion: GeneratedMessageCompanion[protobuf.EventReceivedBakerEvent] = protobuf.EventReceivedBakerEvent
 
-    override def toProto(a: EventReceived): protobuf.EventReceived =
-      protobuf.EventReceived(
+    override def toProto(a: EventReceived): protobuf.EventReceivedBakerEvent =
+      protobuf.EventReceivedBakerEvent(
         timeStamp = Some(a.timeStamp),
         recipeName = Some(a.recipeName),
         recipeId = Some(a.recipeId),
@@ -57,7 +56,7 @@ object BakerEventMapping {
         event = Some(ctxToProto(a.event))
       )
 
-    override def fromProto(message: protobuf.EventReceived): Try[EventReceived] =
+    override def fromProto(message: protobuf.EventReceivedBakerEvent): Try[EventReceived] =
       for {
         timeStamp <- versioned(message.timeStamp, "timeStamp")
         recipeName <- versioned(message.recipeName, "recipeName")
@@ -76,12 +75,12 @@ object BakerEventMapping {
       )
   }
 
-  object EventRejectedMapping extends ProtoMap[EventRejected, protobuf.EventRejected] {
+  object EventRejectedMapping extends ProtoMap[EventRejected, protobuf.EventRejectedBakerEvent] {
 
-    override def companion: GeneratedMessageCompanion[protobuf.EventRejected] = protobuf.EventRejected
+    override def companion: GeneratedMessageCompanion[protobuf.EventRejectedBakerEvent] = protobuf.EventRejectedBakerEvent
 
-    override def toProto(a: EventRejected): protobuf.EventRejected =
-      protobuf.EventRejected(
+    override def toProto(a: EventRejected): protobuf.EventRejectedBakerEvent =
+      protobuf.EventRejectedBakerEvent(
         timeStamp = Some(a.timeStamp),
         recipeInstanceId = Some(a.recipeInstanceId),
         correlationId = a.correlationId,
@@ -96,7 +95,7 @@ object BakerEventMapping {
         })
       )
 
-    override def fromProto(message: protobuf.EventRejected): Try[EventRejected] =
+    override def fromProto(message: protobuf.EventRejectedBakerEvent): Try[EventRejected] =
       for {
         timeStamp <- versioned(message.timeStamp, "timeStamp")
         recipeInstanceId <- versioned(message.recipeInstanceId, "recipeInstanceId")
@@ -122,12 +121,12 @@ object BakerEventMapping {
       )
   }
 
-  object InteractionFailedMapping extends ProtoMap[InteractionFailed, protobuf.InteractionFailed] {
+  object InteractionFailedMapping extends ProtoMap[InteractionFailed, protobuf.InteractionFailedBakerEvent] {
 
-    override def companion: GeneratedMessageCompanion[protobuf.InteractionFailed] = protobuf.InteractionFailed
+    override def companion: GeneratedMessageCompanion[protobuf.InteractionFailedBakerEvent] = protobuf.InteractionFailedBakerEvent
 
-    override def toProto(a: InteractionFailed): protobuf.InteractionFailed =
-      protobuf.InteractionFailed(
+    override def toProto(a: InteractionFailed): protobuf.InteractionFailedBakerEvent =
+      protobuf.InteractionFailedBakerEvent(
         timeStamp = Some(a.timeStamp),
         duration = Some(a.duration),
         recipeName = Some(a.recipeName),
@@ -143,7 +142,7 @@ object BakerEventMapping {
         })
       )
 
-    override def fromProto(message: protobuf.InteractionFailed): Try[InteractionFailed] =
+    override def fromProto(message: protobuf.InteractionFailedBakerEvent): Try[InteractionFailed] =
       for {
         timeStamp <- versioned(message.timeStamp, "timeStamp")
         duration <- versioned(message.duration, "duration")
@@ -171,12 +170,12 @@ object BakerEventMapping {
       )
   }
 
-  object InteractionStartedMapping extends ProtoMap[InteractionStarted, protobuf.InteractionStarted] {
+  object InteractionStartedMapping extends ProtoMap[InteractionStarted, protobuf.InteractionStartedBakerEvent] {
 
-    override def companion: GeneratedMessageCompanion[protobuf.InteractionStarted] = protobuf.InteractionStarted
+    override def companion: GeneratedMessageCompanion[protobuf.InteractionStartedBakerEvent] = protobuf.InteractionStartedBakerEvent
 
-    override def toProto(a: InteractionStarted): protobuf.InteractionStarted =
-      protobuf.InteractionStarted(
+    override def toProto(a: InteractionStarted): protobuf.InteractionStartedBakerEvent =
+      protobuf.InteractionStartedBakerEvent(
         timeStamp = Some(a.timeStamp),
         recipeName = Some(a.recipeName),
         recipeId = Some(a.recipeId),
@@ -184,7 +183,7 @@ object BakerEventMapping {
         interactionName = Some(a.interactionName)
       )
 
-    override def fromProto(message: protobuf.InteractionStarted): Try[InteractionStarted] =
+    override def fromProto(message: protobuf.InteractionStartedBakerEvent): Try[InteractionStarted] =
       for {
         timeStamp <- versioned(message.timeStamp, "timeStamp")
         recipeName <- versioned(message.recipeName, "recipeName")
@@ -200,12 +199,12 @@ object BakerEventMapping {
       )
   }
 
-  object InteractionCompletedMapping extends ProtoMap[InteractionCompleted, protobuf.InteractionCompleted] {
+  object InteractionCompletedMapping extends ProtoMap[InteractionCompleted, protobuf.InteractionCompletedBakerEvent] {
 
-    override def companion: GeneratedMessageCompanion[protobuf.InteractionCompleted] = protobuf.InteractionCompleted
+    override def companion: GeneratedMessageCompanion[protobuf.InteractionCompletedBakerEvent] = protobuf.InteractionCompletedBakerEvent
 
-    override def toProto(a: InteractionCompleted): protobuf.InteractionCompleted =
-      protobuf.InteractionCompleted(
+    override def toProto(a: InteractionCompleted): protobuf.InteractionCompletedBakerEvent =
+      protobuf.InteractionCompletedBakerEvent(
         timeStamp = Some(a.timeStamp),
         duration = Some(a.duration),
         recipeName = Some(a.recipeName),
@@ -215,7 +214,7 @@ object BakerEventMapping {
         event = a.event.map(ctxToProto(_))
       )
 
-    override def fromProto(message: protobuf.InteractionCompleted): Try[InteractionCompleted] =
+    override def fromProto(message: protobuf.InteractionCompletedBakerEvent): Try[InteractionCompleted] =
       for {
         timeStamp <- versioned(message.timeStamp, "timeStamp")
         duration <- versioned(message.duration, "duration")
@@ -235,19 +234,19 @@ object BakerEventMapping {
       )
   }
 
-  object RecipeInstanceCreatedMapping extends ProtoMap[RecipeInstanceCreated, protobuf.RecipeInstanceCreated] {
+  object RecipeInstanceCreatedMapping extends ProtoMap[RecipeInstanceCreated, protobuf.RecipeInstanceCreatedBakerEvent] {
 
-    override def companion: GeneratedMessageCompanion[protobuf.RecipeInstanceCreated] = protobuf.RecipeInstanceCreated
+    override def companion: GeneratedMessageCompanion[protobuf.RecipeInstanceCreatedBakerEvent] = protobuf.RecipeInstanceCreatedBakerEvent
 
-    override def toProto(a: RecipeInstanceCreated): protobuf.RecipeInstanceCreated =
-      protobuf.RecipeInstanceCreated(
+    override def toProto(a: RecipeInstanceCreated): protobuf.RecipeInstanceCreatedBakerEvent =
+      protobuf.RecipeInstanceCreatedBakerEvent(
         timeStamp = Some(a.timeStamp),
         recipeName = Some(a.recipeName),
         recipeId = Some(a.recipeId),
         recipeInstanceId = Some(a.recipeInstanceId)
       )
 
-    override def fromProto(message: protobuf.RecipeInstanceCreated): Try[RecipeInstanceCreated] =
+    override def fromProto(message: protobuf.RecipeInstanceCreatedBakerEvent): Try[RecipeInstanceCreated] =
       for {
         timeStamp <- versioned(message.timeStamp, "timeStamp")
         recipeName <- versioned(message.recipeName, "recipeName")
@@ -261,20 +260,20 @@ object BakerEventMapping {
       )
   }
 
-  def RecipeAddedMapping(implicit ev0: SerializersProvider): ProtoMap[RecipeAdded, protobuf.RecipeAdded] =
-    new ProtoMap[RecipeAdded, protobuf.RecipeAdded] {
+  def RecipeAddedMapping(implicit ev0: SerializersProvider): ProtoMap[RecipeAdded, protobuf.RecipeAddedBakerEvent] =
+    new ProtoMap[RecipeAdded, protobuf.RecipeAddedBakerEvent] {
 
-      override def companion: GeneratedMessageCompanion[protobuf.RecipeAdded] = protobuf.RecipeAdded
+      override def companion: GeneratedMessageCompanion[protobuf.RecipeAddedBakerEvent] = protobuf.RecipeAddedBakerEvent
 
-      override def toProto(a: RecipeAdded): protobuf.RecipeAdded =
-        protobuf.RecipeAdded(
+      override def toProto(a: RecipeAdded): protobuf.RecipeAddedBakerEvent =
+        protobuf.RecipeAddedBakerEvent(
           date = Some(a.date),
           recipeName = Some(a.recipeName),
           recipeId = Some(a.recipeId),
           compiledRecipe = Some(ctxToProto(a.compiledRecipe))
         )
 
-      override def fromProto(message: protobuf.RecipeAdded): Try[RecipeAdded] =
+      override def fromProto(message: protobuf.RecipeAddedBakerEvent): Try[RecipeAdded] =
         for {
           date <- versioned(message.date, "date")
           recipeName <- versioned(message.recipeName, "recipeName")

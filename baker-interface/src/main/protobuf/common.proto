@@ -337,7 +337,7 @@ message ExceptionStrategyOutcome {
     optional int64 delay = 2;
 }
 
-message EventReceived {
+message EventReceivedBakerEvent {
     optional int64 timeStamp = 1;
     optional string recipeName = 2;
     optional string recipeId = 3;
@@ -346,7 +346,7 @@ message EventReceived {
     optional RuntimeEvent event = 6;
 }
 
-message EventRejected {
+message EventRejectedBakerEvent {
     optional int64 timeStamp = 1;
     optional string recipeInstanceId = 2;
     optional string correlationId = 3;
@@ -354,7 +354,7 @@ message EventRejected {
     optional RejectReason reason = 5;
 }
 
-message InteractionFailed {
+message InteractionFailedBakerEvent {
     optional int64 timeStamp = 1;
     optional int64 duration = 2;
     optional string recipeName = 3;
@@ -366,7 +366,7 @@ message InteractionFailed {
     optional ExceptionStrategyOutcome exceptionStrategyOutcome = 9;
 }
 
-message InteractionStarted {
+message InteractionStartedBakerEvent {
     optional int64 timeStamp = 1;
     optional string recipeName = 2;
     optional string recipeId = 3;
@@ -374,7 +374,7 @@ message InteractionStarted {
     optional string interactionName = 5;
 }
 
-message InteractionCompleted {
+message InteractionCompletedBakerEvent {
     optional int64 timeStamp = 1;
     optional int64 duration = 2;
     optional string recipeName = 3;
@@ -384,14 +384,14 @@ message InteractionCompleted {
     optional RuntimeEvent event = 7;
 }
 
-message RecipeInstanceCreated {
+message RecipeInstanceCreatedBakerEvent {
     optional int64 timeStamp = 1;
     optional string recipeId = 2;
     optional string recipeName = 3;
     optional string recipeInstanceId = 4;
 }
 
-message RecipeAdded {
+message RecipeAddedBakerEvent {
     optional string recipeName = 1;
     optional string recipeId = 2;
     optional int64 date = 3;
@@ -400,13 +400,13 @@ message RecipeAdded {
 
 message BakerEvent {
     oneof oneof_baker_event {
-        EventReceived eventReceived = 1;
-        EventRejected eventRejected = 2;
-        InteractionFailed interactionFailed = 3;
-        InteractionStarted interactionStarted = 4;
-        InteractionCompleted interactionCompleted = 5;
-        RecipeInstanceCreated recipeInstanceCreated = 6;
-        RecipeAdded recipeAdded = 7;
+        EventReceivedBakerEvent eventReceived = 1;
+        EventRejectedBakerEvent eventRejected = 2;
+        InteractionFailedBakerEvent interactionFailed = 3;
+        InteractionStartedBakerEvent interactionStarted = 4;
+        InteractionCompletedBakerEvent interactionCompleted = 5;
+        RecipeInstanceCreatedBakerEvent recipeInstanceCreated = 6;
+        RecipeAddedBakerEvent recipeAdded = 7;
     }
 }
 //END BAKER EVENTS
