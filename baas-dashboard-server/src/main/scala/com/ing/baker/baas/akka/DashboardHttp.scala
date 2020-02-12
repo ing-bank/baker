@@ -4,29 +4,30 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.{Route, StandardRoute}
 import akka.stream.Materializer
-import com.ing.baker.runtime.scaladsl.Baker
-import de.heikoseeberger.akkahttpcirce.{BaseCirceSupport, ErrorAccumulatingCirceSupport}
-import io.circe.generic.auto._
+import cats.effect.IO
+import com.ing.baker.baas.dashboard.BakeryApi
+import de.heikoseeberger.akkahttpcirce.ErrorAccumulatingCirceSupport
+import io.circe.syntax._
+import io.circe.{Encoder, JsonObject}
 
 import scala.concurrent.Future
 
 object DashboardHttp {
 
-  def run(baker: Baker)(host: String, port: Int)(implicit system: ActorSystem, mat: Materializer): Future[Http.ServerBinding] = {
+  def run(bakeryApi: BakeryApi)(host: String, port: Int)(implicit system: ActorSystem, mat: Materializer): Future[Http.ServerBinding] = {
     import system.dispatcher
-    val server = new DashboardHttp(baker)
+    val server = new DashboardHttp(bakeryApi)
     println(port)
     Http().bindAndHandle(server.route, host, port)
   }
 }
 
-class DashboardHttp(baker: Baker)(implicit system: ActorSystem, mat: Materializer) extends BaseCirceSupport with ErrorAccumulatingCirceSupport {
+class DashboardHttp(bakeryApi: BakeryApi)(implicit system: ActorSystem, mat: Materializer) extends ErrorAccumulatingCirceSupport {
 
-  import system.dispatcher
-
-  private def route: Route = concat(pathPrefix("api" )(concat(health, listRecipes)), public)
+  private def route: Route = concat(pathPrefix("api" / "v3")(concat(health, listRecipes, getRecipe, listInstances,
+    getRecipeInstance, listInstanceEvents)), public)
 
   private def health: Route = pathPrefix("health")(get(complete(StatusCodes.OK)))
 
@@ -34,13 +35,30 @@ class DashboardHttp(baker: Baker)(implicit system: ActorSystem, mat: Materialize
 
   case class ListRecipesResponse(recipes: List[RecipeInfo])
 
-  private def listRecipes: Route = pathPrefix("recipes")(get(complete(baker.getAllRecipes.map { recipes =>
-    ListRecipesResponse(recipes.values.map { info =>
-      RecipeInfo(info.compiledRecipe.name, info.compiledRecipe.recipeId, info.recipeCreatedTime)
-    }.toList)
-  })))
+  def completeJson[A](a: IO[A])(implicit encoder: Encoder[A]): StandardRoute =
+    complete(a.map(x => JsonObject("data" -> x.asJson).asJson).unsafeToFuture())
 
-  // /recipes/{recipe-id}/visualize
+  private def listRecipes: Route = get(pathPrefix("recipes")(completeJson(bakeryApi.listRecipes)))
+
+  private def getRecipe: Route = get(pathPrefix("recipes" / Segment) { recipeId =>
+    completeJson(bakeryApi.getRecipe(recipeId))
+  })
+
+  private def listInstances: Route = get(path("recipes" / Segment) { recipeId =>
+    path("instances")(completeJson(bakeryApi.listInstances(recipeId)))
+  })
+
+  private def getRecipeInstance: Route = get(path("recipes" / Segment) { recipeId =>
+    path("instances" / Segment) { recipeInstanceId =>
+      completeJson(bakeryApi.getRecipeInstance(recipeId, recipeInstanceId))
+    }
+  })
+
+  private def listInstanceEvents: Route = get(path("recipes" / Segment) { recipeId =>
+    path("instances" / Segment) { recipeInstanceId =>
+      path("events")(completeJson(bakeryApi.listEvents(recipeId, recipeInstanceId)))
+    }
+  })
 
   private def public: Route = pathPrefix("dashboard") {
     concat(

@@ -4,49 +4,52 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO}
-import com.ing.baker.baas.dashboard.BakeryApi.BakeryStateCache
+import com.ing.baker.baas.dashboard.BakeryApi.{ BakeryStateCache, CacheRecipeMetadata, CacheRecipeInstanceMetadata }
 import com.ing.baker.baas.scaladsl.RemoteBakerEventListener
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.serialization.Encryption
 import fs2.concurrent.Queue
 import io.circe.Json
-import io.circe.generic.auto._
 import io.circe.syntax._
+import BakerEventEncoders._
 
 import scala.concurrent.duration._
 
 object BakeryApi {
 
-  case class RecipeMetadata(recipeId: String, recipeName: String, knownProcesses: Int, created: Long)
+  case class CacheRecipeMetadata(recipeId: String, recipeName: String, knownProcesses: Int, created: Long)
 
-  case class RecipeInstanceMetadata(recipeId: String, recipeInstanceId: String, created: Long)
+  case class CacheRecipeInstanceMetadata(recipeId: String, recipeInstanceId: String, created: Long)
 
-  case class BakeryStateCache(inner: Map[String, (RecipeAdded, Map[String, (RecipeInstanceCreated, List[Json])])]) extends AnyVal {
+  case class BakeryStateCache(inner: Map[String, (RecipeAdded, Map[String, (RecipeInstanceCreated, List[Json])])]) {
 
-    def handleEvent(event: BakerEvent): BakeryStateCache = event match {
-      case event: EventReceived =>
-        recipeInstanceEvent(event.recipeId, event.recipeInstanceId, event.asJson)
-      case event: EventRejected =>
-        copy()
+    def handleEvent(event: BakerEvent): BakeryStateCache = {
+      event match {
+        case event: EventReceived =>
+          recipeInstanceEvent(event.recipeId, event.recipeInstanceId, event.asJson)
+        case event: EventRejected =>
+          copy()
+        // TODO MISSING RECIPE ID FROM THIS EVENT!!!
         //recipeInstanceEvent(event.recipeId, event.recipeInstanceId, event.asJson)
-      case event: InteractionFailed =>
-        recipeInstanceEvent(event.recipeId, event.recipeInstanceId, event.asJson)
-      case event: InteractionStarted =>
-        recipeInstanceEvent(event.recipeId, event.recipeInstanceId, event.asJson)
-      case event: InteractionCompleted =>
-        recipeInstanceEvent(event.recipeId, event.recipeInstanceId, event.asJson)
-      case event: RecipeInstanceCreated =>
-        recipeInstanceCreated(event)
-      case event: RecipeAdded =>
-        recipeAdded(event)
+        case event: InteractionFailed =>
+          recipeInstanceEvent(event.recipeId, event.recipeInstanceId, event.asJson)
+        case event: InteractionStarted =>
+          recipeInstanceEvent(event.recipeId, event.recipeInstanceId, event.asJson)
+        case event: InteractionCompleted =>
+          recipeInstanceEvent(event.recipeId, event.recipeInstanceId, event.asJson)
+        case event: RecipeInstanceCreated =>
+          recipeInstanceCreated(event)
+        case event: RecipeAdded =>
+          recipeAdded(event)
+      }
     }
 
     def recipeAdded(event: RecipeAdded): BakeryStateCache =
       copy(inner = inner + (event.recipeId -> (event, Map.empty)))
 
     def recipeInstanceCreated(event: RecipeInstanceCreated): BakeryStateCache = {
-      val newInstance = event.recipeInstanceId -> (event, List.empty)
       val (recipeAddedEvent, instancesMap) = inner(event.recipeId)
+      val newInstance = event.recipeInstanceId -> (event, List(recipeAddedEvent.asJson, event.asJson))
       copy(inner = inner + (event.recipeId -> (recipeAddedEvent -> (instancesMap + newInstance))))
     }
 
@@ -57,27 +60,39 @@ object BakeryApi {
       copy(inner = inner + (recipeId -> (recipeAddedEvent -> (instancesMap + newInstance))))
     }
 
-    def listRecipes: List[RecipeMetadata] =
+    def listRecipes: List[CacheRecipeMetadata] =
       inner.map { case (recipeId, (recipeAddedEvent, instances)) =>
-        RecipeMetadata(recipeId, recipeAddedEvent.recipeName, instances.size, recipeAddedEvent.date)
+        CacheRecipeMetadata(recipeId, recipeAddedEvent.recipeName, instances.size, recipeAddedEvent.date)
       }.toList
 
-    def listInstances(recipeId: String): List[RecipeInstanceMetadata] =
+    def listInstances(recipeId: String): List[CacheRecipeInstanceMetadata] =
       inner.get(recipeId) match {
         case None =>
           List.empty
         case Some((_, instances)) =>
           instances.map { case (recipeInstanceId, (recipeInstanceCreatedEvent, _)) =>
-            RecipeInstanceMetadata(recipeId, recipeInstanceId, recipeInstanceCreatedEvent.timeStamp)
+            CacheRecipeInstanceMetadata(recipeId, recipeInstanceId, recipeInstanceCreatedEvent.timeStamp)
           }.toList
       }
 
-    def getEvents(recipeId: String, recipeInstanceId: String): List[Json] =
+    def listEvents(recipeId: String, recipeInstanceId: String): List[Json] =
       inner
         .get(recipeId)
         .flatMap(_._2.get(recipeInstanceId))
         .map(_._2)
         .getOrElse(List.empty)
+
+    def getRecipe(recipeId: String): Option[RecipeAdded] =
+      inner
+        .get(recipeId)
+        .map(_._1)
+
+    def getRecipeInstance(recipeId: String, recipeInstanceId: String): Option[(RecipeAdded, RecipeInstanceCreated)] =
+      inner
+        .get(recipeId)
+        .flatMap { case (recipeAdded, instances) =>
+            instances.get(recipeInstanceId).map(recipeAdded -> _._1)
+        }
   }
 
   object BakeryStateCache {
@@ -100,11 +115,13 @@ object BakeryApi {
           listenerPort,
           10.seconds
         ))
-      _ <- bakerEventListener
+      _ <- IO(bakerEventListener
         .dequeue
-        .evalMap(event => cache.update(_.handleEvent(event)))
+        .evalMap { event => cache.update(_.handleEvent(event)) }
         .compile
         .drain
+        .unsafeRunAsyncAndForget()
+      )
       //stateClient <- IO(BakerClient(stateServiceHostname))
     } yield new BakeryApi(/*stateClient,*/ cache)
   }
@@ -112,13 +129,25 @@ object BakeryApi {
 
 class BakeryApi(/*stateClient: Baker,*/ cache: Ref[IO, BakeryStateCache])(implicit cs: ContextShift[IO]) {
 
-  val ec = scala.concurrent.ExecutionContext.Implicits.global
+  def listRecipes: IO[List[CacheRecipeMetadata]] =
+    cache.get.map(_.listRecipes)
 
-  def logEvents: Unit = {
-    def print(color: String) = cache.get.map(state => println(color + state + Console.RESET))
-    print(Console.BLUE).flatMap(_ => IO.sleep(1.second)(IO.timer(ec))).unsafeRunAsyncAndForget()
-    print(Console.RED).unsafeRunAsyncAndForget()
+  def listInstances(recipeId: String): IO[List[CacheRecipeInstanceMetadata]] =
+    cache.get.map(_.listInstances(recipeId))
+
+  def listEvents(recipeId: String, recipeInstanceId: String): IO[List[Json]] =
+    cache.get.map(_.listEvents(recipeId, recipeInstanceId))
+
+  def getRecipe(recipeId: String): IO[Option[RecipeAdded]] =
+    cache.get.map(_.getRecipe(recipeId))
+
+  def getRecipeInstance(recipeId: String, recipeInstanceId: String): IO[Option[(RecipeAdded, RecipeInstanceCreated)]] =
+    cache.get.map(_.getRecipeInstance(recipeId, recipeInstanceId))
+
+  def logEvents(): Unit = {
+    cache
+      .get
+      .map(state => println(state))
+      .unsafeRunSync()
   }
-
-  //def getAllRecipes: Future[]
 }

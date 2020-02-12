@@ -134,7 +134,7 @@ object BakerEventMapping {
         recipeInstanceId = Some(a.recipeInstanceId),
         interactionName = Some(a.interactionName),
         failureCount = Some(a.failureCount),
-        throwable = Some(a.throwable.getMessage + "\n\n" + a.throwable.getStackTrace.toString),
+        throwable = Some(a.throwable.getMessage),
         exceptionStrategyOutcome = Some(a.exceptionStrategyOutcome match {
           case ExceptionStrategyOutcome.BlockTransition => protobuf.ExceptionStrategyOutcome(eventName = None, delay = None)
           case ExceptionStrategyOutcome.Continue(eventName) => protobuf.ExceptionStrategyOutcome(eventName = Some(eventName), delay = None)
