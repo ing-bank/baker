@@ -47,6 +47,9 @@ object ProtoMap {
   implicit def recipeInformationMapping(implicit ev0: SerializersProvider): ProtoMap[RecipeInformation, protobuf.RecipeInformation] =
     new RecipeInformationMapping()
 
+  implicit def bakerEventMapping(implicit ev0: SerializersProvider): ProtoMap[BakerEvent, protobuf.BakerEvent] =
+    new BakerEventMapping()
+
   implicit val bakerExceptionMapping: ProtoMap[BakerException, protobuf.BakerException] =
     new BakerExceptionMapping
 

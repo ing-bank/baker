@@ -309,7 +309,7 @@ class Baker private[baker](private val baker: scaladsl.Baker) extends common.Bak
     * @return
     */
   override def registerBakerEventListener(@Nonnull listenerFunction: Consumer[BakerEvent]): CompletableFuture[Unit] =
-    toCompletableFuture(baker.registerBakerEventListener((event: scaladsl.BakerEvent) => listenerFunction.accept(event.asJava())))
+    toCompletableFuture(baker.registerBakerEventListener((event: scaladsl.BakerEvent) => listenerFunction.accept(event.asJava)))
 
 
   /**

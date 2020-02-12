@@ -4,7 +4,7 @@ import akka.actor.{ActorSystem, Address, AddressFromURIString}
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl.{CurrentEventsByPersistenceIdQuery, CurrentPersistenceIdsQuery, PersistenceIdsQuery}
 import cats.data.NonEmptyList
-import com.ing.baker.runtime.akka.AkkaBakerConfig.BakerPersistenceQuery
+import com.ing.baker.runtime.akka.AkkaBakerConfig.{BakerPersistenceQuery, BakerValidationSettings}
 import com.ing.baker.runtime.akka.actor.{BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider}
 import com.ing.baker.runtime.akka.internal.{InteractionManager, InteractionManagerLocal}
 import com.ing.baker.runtime.serialization.Encryption
@@ -15,13 +15,23 @@ import net.ceedubs.ficus.Ficus._
 import scala.concurrent.duration._
 
 case class AkkaBakerConfig(
-  bakerActorProvider: BakerActorProvider,
-  interactionManager: InteractionManager,
-  readJournal: BakerPersistenceQuery,
-  timeouts: AkkaBakerConfig.Timeouts
-)(implicit val system: ActorSystem)
+                            bakerActorProvider: BakerActorProvider,
+                            interactionManager: InteractionManager,
+                            readJournal: BakerPersistenceQuery,
+                            timeouts: AkkaBakerConfig.Timeouts,
+                            bakerValidationSettings: BakerValidationSettings
+                          )(implicit val system: ActorSystem)
 
 object AkkaBakerConfig extends LazyLogging {
+
+  case class BakerValidationSettings(allowAddingRecipeWithoutRequiringInstances: Boolean)
+
+  object BakerValidationSettings {
+    def default: BakerValidationSettings = BakerValidationSettings(false)
+
+    def from(config: Config): BakerValidationSettings =
+      BakerValidationSettings(config.getOrElse[Boolean]("allow-adding-recipe-without-requiring-instances", false))
+  }
 
   case class Timeouts(
                        defaultBakeTimeout: FiniteDuration,
@@ -62,6 +72,7 @@ object AkkaBakerConfig extends LazyLogging {
       )
     AkkaBakerConfig(
       timeouts = Timeouts.default,
+      bakerValidationSettings = BakerValidationSettings.default,
       bakerActorProvider = localProvider,
       interactionManager = new InteractionManagerLocal(),
       readJournal = PersistenceQuery(actorSystem)
@@ -82,6 +93,7 @@ object AkkaBakerConfig extends LazyLogging {
       )
     AkkaBakerConfig(
       timeouts = Timeouts.default,
+      bakerValidationSettings = BakerValidationSettings.default,
       bakerActorProvider = clusterProvider,
       interactionManager = new InteractionManagerLocal(),
       readJournal = PersistenceQuery(actorSystem)
@@ -94,6 +106,7 @@ object AkkaBakerConfig extends LazyLogging {
       throw new IllegalStateException("You must 'include baker.conf' in your application.conf")
     AkkaBakerConfig(
       timeouts = Timeouts.from(config),
+      bakerValidationSettings = BakerValidationSettings.from(config),
       bakerActorProvider = bakerProviderFrom(config),
       interactionManager = interactionManagerFrom(config),
       readJournal = persistenceQueryFrom(config, actorSystem)
