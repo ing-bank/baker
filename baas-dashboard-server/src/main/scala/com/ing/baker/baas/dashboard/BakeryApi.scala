@@ -24,6 +24,7 @@ object BakeryApi {
   case class BakeryStateCache(inner: Map[String, (RecipeAdded, Map[String, (RecipeInstanceCreated, List[Json])])]) {
 
     def handleEvent(event: BakerEvent): BakeryStateCache = {
+      println(Console.MAGENTA + event + Console.RESET)
       event match {
         case event: EventReceived =>
           recipeInstanceEvent(event.recipeId, event.recipeInstanceId, event.asJson)

@@ -2,26 +2,27 @@ package com.ing.baker.baas.dashboard
 
 import java.util.UUID
 
-import cats.implicits._
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import cats.data.StateT
 import cats.effect.{ContextShift, IO, Timer}
-import com.ing.baker.baas.akka.RemoteBakerEventListenerClient
+import cats.implicits._
+import com.ing.baker.baas.akka.{DashboardClient, DashboardHttp, RemoteBakerEventListenerClient}
+import com.ing.baker.baas.dashboard.BakerEventEncoders._
 import com.ing.baker.baas.dashboard.BakeryApi.{CacheRecipeInstanceMetadata, CacheRecipeMetadata}
-import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
-import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance, EventReceived, InteractionFailed, InteractionStarted, RecipeAdded, RecipeInstanceCreated}
-import com.ing.baker.runtime.serialization.Encryption
-import org.scalatest.{AsyncFlatSpec, ConfigMap, Matchers, fixture}
-import org.scalatest.compatible.Assertion
 import com.ing.baker.baas.dashboard.DashboardHttpSpec.test
 import com.ing.baker.baas.test.{CheckoutFlowEvents, CheckoutFlowIngredients, CheckoutFlowRecipe}
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
-import BakerEventEncoders._
+import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
+import com.ing.baker.runtime.scaladsl._
+import com.ing.baker.runtime.serialization.Encryption
 import io.circe.syntax._
+import io.circe.generic.auto._
+import org.scalatest.compatible.Assertion
+import org.scalatest.{Matchers, fixture}
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
 class DashboardHttpSpec extends fixture.AsyncFlatSpec with Matchers {
@@ -64,7 +65,7 @@ class DashboardHttpSpec extends fixture.AsyncFlatSpec with Matchers {
           _ <- context.fireBakerEvent(eventReceived)
           _ <- context.fireBakerEvent(interactionStarted)
           _ <- context.fireBakerEvent(interactionFailed)
-          _ <- IO.never
+          _ <- IO.sleep(3.minutes).unsafeToFuture()
         } yield succeed
       }
     else Future.successful(succeed)
@@ -80,19 +81,27 @@ class DashboardHttpSpec extends fixture.AsyncFlatSpec with Matchers {
         _ <- context.fireBakerEvent(interactionFailed)
         _ <- context.within(2.seconds) {
           for {
-            recipeMetadata <- context.bakeryApi.listRecipes
-            recipeInstances <- context.bakeryApi.listInstances(recipe.recipeId)
-            allEvents <- context.bakeryApi.listEvents(recipe.recipeId, recipeInstanceId)
+            recipeAddedR <- context.dashboardClient.getRecipe(recipe.recipeId)
+            recipeInstanceCreated <- context.dashboardClient.getRecipeInstance(recipe.recipeId, recipeInstanceId)
+            recipeMetadata <- context.dashboardClient.listRecipes
+            recipeInstances <- context.dashboardClient.listInstances(recipe.recipeId)
+            allEvents <- context.dashboardClient.listRecipeInstanceEvents(recipe.recipeId, recipeInstanceId)
           } yield {
-            recipeMetadata shouldBe List(CacheRecipeMetadata(recipe.recipeId, recipe.name, 1, 0))
-            recipeInstances shouldBe List(CacheRecipeInstanceMetadata(recipe.recipeId, recipeInstanceId, 0))
-            allEvents shouldBe List(
+            val expectedRecipeAdded = RecipeAdded(recipe.name, recipe.recipeId, 0, recipe)
+            val expectedRecipeInstanceCreated = RecipeInstanceCreated(0, recipe.recipeId, recipe.name, recipeInstanceId)
+            recipeAddedR shouldBe DashboardHttp.encodeResponseJson(expectedRecipeAdded)
+            recipeInstanceCreated shouldBe DashboardHttp.encodeResponseJson(expectedRecipeAdded -> expectedRecipeInstanceCreated)
+            recipeMetadata shouldBe DashboardHttp.encodeResponseJson(List(
+              CacheRecipeMetadata(recipe.recipeId, recipe.name, 1, 0)))
+            recipeInstances shouldBe DashboardHttp.encodeResponseJson(List(
+              CacheRecipeInstanceMetadata(recipe.recipeId, recipeInstanceId, 0)))
+            allEvents shouldBe DashboardHttp.encodeResponseJson(List(
               recipeAdded.asJson,
               instanceCreated.asJson,
               eventReceived.asJson,
               interactionStarted.asJson,
               interactionFailed.asJson
-            )
+            ))
           }
         }
       } yield succeed
@@ -103,23 +112,23 @@ class DashboardHttpSpec extends fixture.AsyncFlatSpec with Matchers {
 object DashboardHttpSpec {
 
   case class TestContext(
-    bakeryApi: BakeryApi,
-    fireBakerEvent: BakerEvent => IO[Unit]
+    dashboardClient: DashboardClient,
+    fireBakerEvent: BakerEvent => Future[Unit]
   ) {
 
-    def within[A](time: FiniteDuration)(f: IO[A])(implicit timer: Timer[IO]): IO[A] = {
-      def inner(count: Int, times: FiniteDuration): IO[A] =
-        if (count < 1) f else f.attempt.flatMap {
-          case Left(_) => IO.sleep(times) *> inner(count - 1, times)
+    def within[A](time: FiniteDuration)(f: => Future[A])(implicit timer: Timer[IO], cs: ContextShift[IO]): Future[A] = {
+      def inner(count: Int, times: FiniteDuration, fio: IO[A]): IO[A] =
+        if (count < 1) fio else fio.attempt.flatMap {
+          case Left(_) => IO.sleep(times) *> inner(count - 1, times, fio)
           case Right(a) => IO(a)
         }
       val split = 5
-      inner(split, time / split)
+      inner(split, time / split, IO.fromFuture(IO(f))).unsafeToFuture()
     }
   }
 
   def test[F[_], Lang <: LanguageApi]
-  (runTest: TestContext => IO[Assertion])
+  (runTest: TestContext => Future[Assertion])
   (implicit ec: ExecutionContext, timer: Timer[IO], cs: ContextShift[IO]): Future[Assertion] = {
     val testId: UUID = UUID.randomUUID()
     val systemName: String = "baas-node-interaction-test-" + testId
@@ -127,21 +136,28 @@ object DashboardHttpSpec {
     implicit val materializer: Materializer = ActorMaterializer()
     implicit val encryption: Encryption = Encryption.NoEncryption
     for {
-      (bakeryApi, (_, bakerEventListenerPort)) <- withOpenPorts(5000, (port1, port2) =>
-        BakeryApi.runWith("http://localhost:MOCK_SERVER_PORT", port2).unsafeToFuture())
+      (bakeryApi, bakerEventListenerPort) <- withOpenPort(5000,
+        BakeryApi.runWith("http://localhost:MOCK_SERVER_PORT", _).unsafeToFuture())
+      (dashboardApiBinding, dashboardApiPort) <- withOpenPort(5005,
+        DashboardHttp.run(bakeryApi)( "0.0.0.0", _))
+
       bakerEventListenerClient = RemoteBakerEventListenerClient(s"http://localhost:$bakerEventListenerPort")
-      context = TestContext(bakeryApi, event => IO.fromFuture(IO(bakerEventListenerClient(event))))
-      assertionTry <- runTest(context).unsafeToFuture().transform(Success(_))
+      dashboardApiClient = DashboardClient(s"http://localhost:$dashboardApiPort")
+
+      context = TestContext(dashboardApiClient, bakerEventListenerClient.apply)
+
+      assertionTry <- runTest(context).transform(Success(_))
+      _ <- dashboardApiBinding.unbind()
       _ <- system.terminate()
       _ <- system.whenTerminated
       assertion <- Future.fromTry(assertionTry)
     } yield assertion
   }
 
-  private def withOpenPorts[T](from: Int, f: (Int, Int) => Future[T])(implicit ec: ExecutionContext): Future[(T, (Int, Int))] = {
-    def search(ports: Stream[Int]): Future[(Stream[Int], (T, (Int, Int)))] =
+  private def withOpenPort[T](from: Int, f: Int => Future[T])(implicit ec: ExecutionContext): Future[(T, Int)] = {
+    def search(ports: Stream[Int]): Future[(Stream[Int], (T, Int))] =
       ports match {
-        case #::(port1, #::(port2, tail)) => f(port1, port2).map(tail -> (_, (port1, port2))).recoverWith {
+        case #::(port1, tail) => f(port1).map(tail -> (_, port1)).recoverWith {
           case _: java.net.BindException => search(tail)
           case other => println("REVIEW withOpenPort function implementation, uncaught exception: " + Console.RED + other + Console.RESET); Future.failed(other)
         }

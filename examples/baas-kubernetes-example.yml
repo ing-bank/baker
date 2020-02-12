@@ -497,6 +497,23 @@ spec:
 
 ---
 
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard-baker-event-listener-service
+  labels:
+    baas-component: remote-baker-event-listener
+spec:
+  selector:
+    app: dashboard
+  ports:
+    - name: http-api
+      port: 8080
+      targetPort: event-listener
+      protocol: TCP
+
+---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -519,18 +536,23 @@ spec:
           #imagePullPolicy: Always
           readinessProbe:
             httpGet:
-              path: /api/health
+              path: /api/v3/health
               port: 8080
           livenessProbe:
             httpGet:
-              path: /api/health
+              path: /api/v3/health
               port: 8080
           ports:
             - name: http-api
               containerPort: 8080
               protocol: TCP
+            - name: event-listener
+              containerPort: 8081
+              protocol: TCP
           env:
+            - name: BAKERY_COMPONENT_BAKER_EVENT_LISTENER_PORT
+              value: "8081"
             - name: BAAS_STATE_NODE_HOSTNAME
-              value: http://baas-state-service:8080/
-            - name: BAAS_COMPONENT_HTTP_API_PORT
+              value: "http://baas-state-service:8080/"
+            - name: BAKERY_COMPONENT_DASHBOARD_PORT
               value: "8080"
