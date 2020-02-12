@@ -8,11 +8,12 @@ import akka.stream.{ActorMaterializer, Materializer}
 import cats.data.StateT
 import com.ing.baker.baas.akka.RemoteBakerEventListenerClient
 import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
-import com.ing.baker.runtime.scaladsl.{BakerEvent, RecipeInstanceCreated}
+import com.ing.baker.runtime.scaladsl.{BakerEvent, EventReceived, RecipeAdded, RecipeInstanceCreated}
 import com.ing.baker.runtime.serialization.Encryption
 import org.scalatest.AsyncFlatSpec
 import org.scalatest.compatible.Assertion
 import com.ing.baker.baas.dashboard.DashboardHttpSpec.test
+import com.ing.baker.baas.test.CheckoutFlowRecipe
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration._
@@ -20,18 +21,24 @@ import scala.util.Success
 
 class DashboardHttpSpec extends AsyncFlatSpec {
 
-  val testEvent = RecipeInstanceCreated(1, "recipe-id", "recipe-name", "recipe-instance-id")
+
+  val recipe = CheckoutFlowRecipe.compiledRecipe
+
+  val recipeInstanceId = "instance-id"
+
+  val recipeAdded = RecipeAdded(recipe.name, recipe.recipeId, 0, recipe)
+
+  val instanceCreated = RecipeInstanceCreated(0, recipe.recipeId, recipe.name, recipeInstanceId)
+
+  val eventReceived = EventReceived(0, recipe.name, recipe.recipeId, recipeInstanceId, None, null)
 
   "Dashboard Server" should "test" in {
     test { context =>
       for {
-        _ <- context.fireBakerEvent(testEvent)
-        _ <- context.wait(1.second)
-        _ = println(Console.MAGENTA + "FIRST" + Console.RESET)
-        _ = context.bakeryApi.logEvents.unsafeRunAsyncAndForget()
-        _ = println(Console.MAGENTA + "SECOND" + Console.RESET)
-        _ <- context.fireBakerEvent(testEvent)
-        _ <- context.wait(3 seconds)
+        _ <- context.fireBakerEvent(recipeAdded)
+        _ <- context.fireBakerEvent(instanceCreated)
+        _ <- context.fireBakerEvent(eventReceived)
+        _ = context.bakeryApi.logEvents
       } yield succeed
     }
   }

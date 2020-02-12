@@ -5,6 +5,8 @@ import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 import CheckoutFlowIngredients._
 import CheckoutFlowEvents._
 import CheckoutFlowInteractions._
+import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilMaximumRetries
 
 import scala.concurrent.Future
@@ -103,6 +105,8 @@ object CheckoutFlowInteractions {
 }
 
 object CheckoutFlowRecipe {
+
+  def compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(recipe)
 
   def recipe: Recipe = Recipe("Webshop")
     .withSensoryEvents(
