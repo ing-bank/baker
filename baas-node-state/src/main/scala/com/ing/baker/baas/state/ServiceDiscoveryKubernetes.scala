@@ -8,7 +8,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.concurrent.Future
 
-class ServiceDiscoveryKubernetes(namespace: String) extends  ServiceDiscovery {
+class ServiceDiscoveryKubernetes(namespace: String) extends ServiceDiscovery {
 
   private val api = new CoreV1Api(ClientBuilder.cluster.build)
 
@@ -19,6 +19,12 @@ class ServiceDiscoveryKubernetes(namespace: String) extends  ServiceDiscovery {
   def getEventListenersAddresses: Future[Seq[(String, String)]] = {
     Future.successful(getEventListenerServices().map { service =>
       (service.getMetadata.getLabels.getOrDefault("baker-recipe", "All-Recipes"), "http://" + service.getMetadata.getName + ":8080")
+    })
+  }
+
+  override def getBakerEventListenersAddresses: Future[Seq[String]] = {
+    Future.successful(getBakerEventListenerServices().map { service =>
+      "http://" + service.getMetadata.getName + ":8080"
     })
   }
 
@@ -36,6 +42,14 @@ class ServiceDiscoveryKubernetes(namespace: String) extends  ServiceDiscovery {
       .asScala
       .filter(_.getMetadata.getLabels.getOrDefault("baas-component", "Wrong")
         .equals("remote-event-listener"))
+  }
+
+  private def getBakerEventListenerServices(): mutable.Seq[V1Service] = {
+    api.listNamespacedService(namespace, null, null, null, null, null, null, null, null, null)
+      .getItems
+      .asScala
+      .filter(_.getMetadata.getLabels.getOrDefault("baas-component", "Wrong")
+        .equals("remote-baker-event-listener"))
   }
 }
 

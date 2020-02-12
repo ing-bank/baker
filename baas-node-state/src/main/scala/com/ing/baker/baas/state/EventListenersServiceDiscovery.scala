@@ -2,7 +2,7 @@ package com.ing.baker.baas.state
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import com.ing.baker.baas.akka.RemoteEventListenerClient
+import com.ing.baker.baas.akka.{RemoteBakerEventListenerClient, RemoteEventListenerClient}
 import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.scalalogging.LazyLogging
@@ -17,12 +17,13 @@ class EventListenersServiceDiscovery(discovery: ServiceDiscovery, baker: Baker)(
 
   type RecipeName = String
 
-  private var listenersCache: Map[RecipeName, List[RemoteEventListenerClient]] = Map.empty
+  private var recipeListenersCache: Map[RecipeName, List[RemoteEventListenerClient]] = Map.empty
+  private var bakerListenersCache: List[RemoteBakerEventListenerClient] = List.empty
 
   private def loadListeners: Future[Map[RecipeName, List[RemoteEventListenerClient]]] = {
     discovery
       .getEventListenersAddresses
-      .map( _
+      .map(_
         .map { case (recipe, address) => (recipe, RemoteEventListenerClient(address)) }
         .toList
         .foldLeft(Map.empty[RecipeName, List[RemoteEventListenerClient]]) { case (acc, (recipeName, client)) =>
@@ -30,18 +31,32 @@ class EventListenersServiceDiscovery(discovery: ServiceDiscovery, baker: Baker)(
         })
   }
 
+  private def loadBakerListeners: Future[List[RemoteBakerEventListenerClient]] = {
+    discovery
+      .getBakerEventListenersAddresses
+      .map(_
+        .map(RemoteBakerEventListenerClient(_))
+        .toList)
+  }
+
   private def updateCache: Runnable = () => {
     loadListeners.foreach { listeners =>
-      logger.info("Updating the InteractionManager")
-      listenersCache = listeners
+      recipeListenersCache = listeners
+    }
+    loadBakerListeners.foreach { listeners =>
+      bakerListenersCache = listeners
     }
   }
 
   system.scheduler.schedule(30.seconds, 10.seconds, updateCache)
 
-  def initializeEventListeners: Future[Unit] =
+  def initializeEventListeners: Future[Unit] = {
     baker.registerEventListener((metadata, event) => {
-      listenersCache.get(metadata.recipeName).foreach(_.foreach(_.apply(metadata, event)))
-      listenersCache.get("All-Recipes").foreach(_.foreach(_.apply(metadata, event)))
+      recipeListenersCache.get(metadata.recipeName).foreach(_.foreach(_.apply(metadata, event)))
+      recipeListenersCache.get("All-Recipes").foreach(_.foreach(_.apply(metadata, event)))
     })
+    baker.registerBakerEventListener(event => {
+      bakerListenersCache.foreach(_.apply(event))
+    })
+  }
 }

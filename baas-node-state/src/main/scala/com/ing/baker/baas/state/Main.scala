@@ -29,7 +29,8 @@ object Main extends App {
     interactionManager = interactionManager,
     bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
     readJournal = AkkaBakerConfig.persistenceQueryFrom(config, system),
-    timeouts = AkkaBakerConfig.Timeouts.from(config)
+    timeouts = AkkaBakerConfig.Timeouts.from(config),
+    bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config)
   )(system))
   val eventListeners = new EventListenersServiceDiscovery(kubernetes, stateNodeBaker)
 
