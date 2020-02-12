@@ -8,6 +8,7 @@ import cats.effect.{ExitCode, IO, IOApp, Resource}
 import cats.implicits._
 import com.ing.baker.baas.scaladsl.BakerClient
 import com.ing.baker.runtime.scaladsl._
+import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.config.ConfigFactory
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.log4s.Logger
@@ -25,7 +26,8 @@ object Main extends IOApp {
         config <- IO { ConfigFactory.load() }
         materializer = ActorMaterializer()(actorSystem)
         baasHostname = config.getString("baas.state-node-hostname")
-        baker <- IO { BakerClient(Uri.parseAbsolute(baasHostname))(actorSystem, materializer) }
+        encryption = Encryption.from(config)
+        baker <- IO { BakerClient(Uri.parseAbsolute(baasHostname))(actorSystem, materializer, encryption) }
         checkoutRecipeId <- WebShopBaker.initRecipes(baker)(timer, actorSystem.dispatcher)
         sd <- Ref.of[IO, Boolean](false)
         webShopBaker = new WebShopBaker(baker, checkoutRecipeId)(actorSystem.dispatcher)

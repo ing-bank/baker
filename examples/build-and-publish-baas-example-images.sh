@@ -8,3 +8,4 @@ sbt baas-interaction-example-make-payment/docker:publishLocal
 sbt baas-interaction-example-reserve-items/docker:publishLocal
 sbt baas-interaction-example-ship-items/docker:publishLocal
 sbt baas-event-listener-example/docker:publishLocal
+sbt baas-baker-event-listener-example/docker:publishLocal

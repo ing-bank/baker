@@ -1,13 +1,11 @@
-package com.ing.baker.baas.interaction
+package com.ing.baker.baas.state
 
 import java.util.concurrent.ConcurrentHashMap
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import akka.util.Timeout
 import cats.implicits._
 import com.ing.baker.baas.akka.RemoteInteractionClient
-import com.ing.baker.baas.state.KubernetesFunctions
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.akka.internal.{FatalInteractionException, InteractionManager}
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
@@ -18,7 +16,7 @@ import scala.compat.java8.FunctionConverters._
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class InteractionManagerKubernetes(kube: KubernetesFunctions, postTimeout: Timeout, computationTimeout: Timeout)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption)
+class InteractionsServiceDiscovery(discovery: ServiceDiscovery)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption)
   extends InteractionManager with LazyLogging {
 
   private var interactionImplementations: Seq[InteractionInstance] = Seq.empty
@@ -31,20 +29,20 @@ class InteractionManagerKubernetes(kube: KubernetesFunctions, postTimeout: Timeo
   import system.dispatcher
 
   def loadInteractions: Future[List[InteractionInstance]] = {
-    kube
-      .getInteractionAddresses()
-      .map(RemoteInteractionClient(_))
-      .toList
-      .traverse(client => client.interface.map {
-        case (name, types) => Some(InteractionInstance(
-          name = name,
-          input = types,
-          run = client.apply
-        ))
-      }.recover({ case e: Exception =>
-        println("Recovered from exception: " + e.getMessage)
-        None
-      })
+    discovery
+      .getInteractionAddresses
+      .flatMap(_.map(RemoteInteractionClient(_))
+        .toList
+        .traverse(client => client.interface.map {
+          case (name, types) => Some(InteractionInstance(
+            name = name,
+            input = types,
+            run = client.apply
+          ))
+        }.recover({ case e: Exception =>
+          println("Recovered from exception: " + e.getMessage)
+          None
+        }))
       ).map(_.flatten)
   }
 
@@ -92,7 +90,7 @@ class InteractionManagerKubernetes(kube: KubernetesFunctions, postTimeout: Timeo
     * @param interaction The interaction to check
     * @return An option containing the implementation if available
     */
-  private[interaction] def getImplementation(interaction: InteractionTransition): Option[InteractionInstance] =
+  private def getImplementation(interaction: InteractionTransition): Option[InteractionInstance] =
     Option(implementationCache.computeIfAbsent(interaction, (findInteractionImplementation _).asJava))
 
   def hasImplementation(interaction: InteractionTransition): Future[Boolean] =
