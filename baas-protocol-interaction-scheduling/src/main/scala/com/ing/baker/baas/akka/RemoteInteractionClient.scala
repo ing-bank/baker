@@ -26,7 +26,7 @@ class RemoteInteractionClient(hostname: Uri)(implicit system: ActorSystem, mat: 
 
   import system.dispatcher
 
-  val intendedInteraction: String = hostname.authority.host.toString()
+  val intendedHost: String = hostname.authority.host.toString()
 
   private type ProtoMessage[A] = scalapb.GeneratedMessage with scalapb.Message[A]
 
@@ -57,7 +57,7 @@ class RemoteInteractionClient(hostname: Uri)(implicit system: ActorSystem, mat: 
   def interface: Future[(String, Seq[Type])] = {
     println("Path: " + withPath(root./("interface")))
     val request = HttpRequest(method = HttpMethods.GET, uri = withPath(root./("interface")))
-      .withHeaders(RawHeader("X-Bakery-Intent", s"Remote-Interaction:$intendedInteraction"))
+      .withHeaders(RawHeader("X-Bakery-Intent", s"Remote-Interaction:$intendedHost"))
     for {
       response <- Http().singleRequest(request)
       decoded <- Unmarshal(response).to[ProtocolInteractionExecution.InstanceInterface]
@@ -68,7 +68,7 @@ class RemoteInteractionClient(hostname: Uri)(implicit system: ActorSystem, mat: 
     for {
       encoded <- Marshal(ProtocolInteractionExecution.ExecuteInstance(input)).to[MessageEntity]
       request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("apply")), entity = encoded)
-          .withHeaders(RawHeader("X-Bakery-Intent", s"Remote-Interaction:$intendedInteraction"))
+          .withHeaders(RawHeader("X-Bakery-Intent", s"Remote-Interaction:$intendedHost"))
       response <- Http().singleRequest(request)
       decoded <- Unmarshal(response).to[Either[
         ProtocolInteractionExecution.InstanceExecutedSuccessfully,

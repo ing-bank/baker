@@ -2,49 +2,38 @@ package com.ing.baker.baas.state
 
 import java.util.UUID
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.Uri
-import akka.stream.{ActorMaterializer, Materializer}
-import cats.data.StateT
-import cats.implicits._
-import com.ing.baker.baas.kubeapi
-import com.ing.baker.baas.protocol.InteractionSchedulingProto._
-import com.ing.baker.baas.protocol.ProtocolInteractionExecution
 import com.ing.baker.baas.recipe.Events.{ItemsReserved, OrderPlaced}
 import com.ing.baker.baas.recipe.Ingredients.{Item, OrderId, ReservedItems}
-import com.ing.baker.baas.recipe.{Interactions, ItemReservationRecipe}
-import com.ing.baker.baas.scaladsl.BakerClient
-import com.ing.baker.baas.state.StateNodeSpec._
-import com.ing.baker.recipe.scaladsl.Interaction
-import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
+import com.ing.baker.baas.recipe.ItemReservationRecipe
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.EventInstance
-import com.ing.baker.runtime.serialization.{Encryption, ProtoMap, SerializersProvider}
-import io.kubernetes.client.openapi.ApiClient
-import org.jboss.netty.channel.ChannelException
-import org.mockserver.integration.ClientAndServer
-import org.mockserver.integration.ClientAndServer.startClientAndServer
-import org.mockserver.model.HttpRequest.request
-import org.mockserver.model.HttpResponse.response
-import org.mockserver.model.{HttpRequest, MediaType}
-import org.scalatest.compatible.Assertion
-import org.scalatest.{AsyncFlatSpec, BeforeAndAfterAll, Matchers}
+import org.scalatest.Matchers
 
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.Success
+class StateNodeSpec extends BakeryFunSpec with Matchers {
 
-class StateNodeSpec extends AsyncFlatSpec with BeforeAndAfterAll with Matchers {
+  val recipe: CompiledRecipe =
+    ItemReservationRecipe.compiledRecipe
 
-  "The State Node" should "do recipe management" in {
-    test ( context =>
+  val OrderPlacedEvent: EventInstance =
+    EventInstance.unsafeFrom(
+      OrderPlaced(OrderId("order-1"), List(Item("item-1"))
+    ))
+
+  val ItemsReservedEvent: EventInstance =
+    EventInstance.unsafeFrom(
+      ItemsReserved(ReservedItems(
+        List(Item("item-1")),
+        Array.fill(1)(Byte.MaxValue)
+      )))
+
+  describe("Bakery State Node") {
+
+    test("Recipe management") { context =>
       for {
-        _ <- context.kubeApiServer.willRespondWithInteractionServices
-        _ <- context.remoteInteraction.willPublishItsInterface
-      } yield ()
-    )( ( context, client ) =>
-      for {
-        recipeId <- client.addRecipe(ItemReservationRecipe.compiledRecipe)
+        _ <- context.remoteComponents.registerToTheCluster
+        client <- context.bakeryBoots()
+        recipeId <- client.addRecipe(recipe)
         recipeInformation <- client.getRecipe(recipeId)
         noSuchRecipeError <- client
           .getRecipe("non-existent")
@@ -52,291 +41,242 @@ class StateNodeSpec extends AsyncFlatSpec with BeforeAndAfterAll with Matchers {
           .recover { case e: BakerException => Some(e) }
         allRecipes <- client.getAllRecipes
       } yield {
-        recipeInformation.compiledRecipe shouldBe ItemReservationRecipe.compiledRecipe
+        recipeInformation.compiledRecipe shouldBe recipe
         noSuchRecipeError shouldBe Some(BakerException.NoSuchRecipeException("non-existent"))
-        allRecipes.get(recipeId).map(_.compiledRecipe) shouldBe Some(ItemReservationRecipe.compiledRecipe)
+        allRecipes.get(recipeId).map(_.compiledRecipe) shouldBe Some(recipe)
       }
-    )
-  }
+    }
 
-  /***
-   * TODO FIX THIS
-   *
-   * [MockServer-EventLog660] INFO org.mockserver.log.MockServerEventLog - request sequence not found, expected:
-   *
-   * [{
-   * "method" : "GET",
-   * "path" : "/api/v3/apply",
-   * "headers" : {
-   * "X-Bakery-Intent" : [ "Remote-Event-Listener:Webshop" ]
-   * }
-   * }]
-   *
-   * but was:
-   *
-   * [{
-   * "method" : "GET",
-   * "path" : "/api/v1/namespaces/default/services",
-   * "headers" : {
-   * "Accept" : [ "application/json" ],
-   * "Content-Type" : [ "application/json" ],
-   * "User-Agent" : [ "OpenAPI-Generator/1.0-SNAPSHOT/java" ],
-   * "Host" : [ "localhost:5000" ],
-   * "Connection" : [ "Keep-Alive" ],
-   * "Accept-Encoding" : [ "gzip" ],
-   * "content-length" : [ "0" ]
-   * },
-   * "keepAlive" : true,
-   * "secure" : false
-   * }, {
-   * "method" : "GET",
-   * "path" : "/api/v3/interface",
-   * "headers" : {
-   * "Host" : [ "localhost:5000" ],
-   * "X-Bakery-Intent" : [ "Remote-Interaction:localhost" ],
-   * "User-Agent" : [ "akka-http/10.1.11" ],
-   * "content-length" : [ "0" ]
-   * },
-   * "keepAlive" : true,
-   * "secure" : false
-   * }, {
-   * "method" : "POST",
-   * "path" : "/api/v3/apply",
-   * "headers" : {
-   * "Host" : [ "localhost:5000" ],
-   * "X-Bakery-Intent" : [ "Remote-Interaction:localhost" ],
-   * "User-Agent" : [ "akka-http/10.1.11" ],
-   * "Content-Type" : [ "application/octet-stream" ],
-   * "Content-Length" : [ "77" ]
-   * },
-   * "keepAlive" : true,
-   * "secure" : false,
-   * "body" : {
-   * "contentType" : "application/octet-stream",
-   * "type" : "BINARY",
-   * "base64Bytes" : "CiQKB29yZGVySWQaGZIDFgoUCgdvcmRlcklkEglSB29yZGVyLTEKJQoFaXRlbXMaHJoDGQoXkgMUChIKBml0ZW1JZBIIUgZpdGVtLTE="
-   * }
-   * }]
-   */
-  it should "bake" in {
-    test ( context =>
+    test("Baker.bake") { context =>
+      val recipeInstanceId: String = UUID.randomUUID().toString
       for {
-        _ <- context.kubeApiServer.willRespondWithInteractionAndEventListenerServices
-        _ <- context.remoteInteraction.willPublishItsInterface
-      } yield ()
-    )( ( context, client ) =>
-      for {
-        recipeId <- client.addRecipe(ItemReservationRecipe.compiledRecipe)
-
-        event = OrderPlaced(orderId = OrderId("order-1"), items = List(Item("item-1")))
-        eventInstance = EventInstance.unsafeFrom(event)
-        recipeInstanceId = UUID.randomUUID().toString
-        _ <- context.remoteInteraction.willCallApply(event.items)
-        _ <- context.remoteEventListener.willReceiveEvents
-
+        _ <- context.remoteComponents.registerToTheCluster
+        client <- context.bakeryBoots()
+        _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
+        recipeId <- client.addRecipe(recipe)
         _ <- client.bake(recipeId, recipeInstanceId)
         state <- client.getRecipeInstanceState(recipeInstanceId)
-        _ = state.recipeInstanceId shouldBe recipeInstanceId
-
-        status <- client.fireEventAndResolveWhenCompleted(recipeInstanceId, eventInstance)
-        _ = status.sensoryEventStatus shouldBe SensoryEventStatus.Completed
-        _ = status.eventNames should contain("OrderPlaced")
-        _ = status.eventNames should contain("ItemsReserved")
-
-        _ <- context.withRetry(times = 4, delay = 100.millis, context.remoteEventListener.verifyEventReceived)
-      } yield succeed
-    )
-  }
-}
-
-object StateNodeSpec {
-
-  private type ProtoMessage[A] = scalapb.GeneratedMessage with scalapb.Message[A]
-
-  private def serialize[A, P <: ProtoMessage[P]](message: A)(implicit mapping: ProtoMap[A, P]): Array[Byte] =
-    mapping.toByteArray(message)
-
-  private implicit def serializersProvider(implicit system: ActorSystem, encryption: Encryption): SerializersProvider =
-    SerializersProvider(system, encryption)
-
-  class KubeApiServer()(implicit mock: ClientAndServer, ec: ExecutionContext) {
-
-    def willRespondWithInteractionServices: Future[Unit] =
-      willRespondWith(interactionServices)
-
-    def willRespondWithInteractionAndEventListenerServices: Future[Unit] =
-      willRespondWith(interactionAndEventListenersServices)
-
-    def willRespondWith(services: kubeapi.Services): Future[Unit] = Future {
-      mock.when(
-        request()
-          .withMethod("GET")
-          .withPath("/api/v1/namespaces/default/services")
-      ).respond(
-        response()
-          .withStatusCode(200)
-          .withBody(services.mock, MediaType.APPLICATION_JSON)
-      )
-    }
-
-    private def mockPort: kubeapi.PodPort =
-      kubeapi.PodPort(
-        name = "http-api",
-        port = mock.getLocalPort,
-        targetPort = Left(mock.getLocalPort))
-
-    private def interactionServices: kubeapi.Services =
-      kubeapi.Services(List(
-        kubeapi.Service(
-          metadata_name = "localhost",
-          metadata_labels = Map("baas-component" -> "remote-interaction"),
-          spec_ports = List(mockPort))
-        )
-      )
-
-    private def interactionAndEventListenersServices: kubeapi.Services =
-      interactionServices.++(kubeapi.Service(
-        metadata_name = "localhost",
-        metadata_labels = Map(
-          "baas-component" -> "remote-event-listener",
-          "baker-recipe" -> ItemReservationRecipe.compiledRecipe.name
-        ),
-        spec_ports = List(mockPort)
-      ))
-  }
-
-  class RemoteInteraction(interaction: Interaction)(implicit mock: ClientAndServer, system: ActorSystem, encryption: Encryption) {
-
-    import system.dispatcher
-
-    def willPublishItsInterface: Future[Unit] = Future {
-      mock.when(
-        request()
-          .withMethod("GET")
-          .withPath("/api/v3/interface")
-          .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost")
-      ).respond(
-        response()
-          .withStatusCode(200)
-          .withBody(serialize(ProtocolInteractionExecution.InstanceInterface(interaction.name, interaction.inputIngredients.map(_.ingredientType))))
-      )
-    }
-
-    def willCallApply(items: List[Item]): Future[Unit] = Future {
-      val event =
-        EventInstance.unsafeFrom(ItemsReserved(ReservedItems(items, Array.fill(1)(Byte.MaxValue))))
-      mock.when(
-        request()
-          .withMethod("POST")
-          .withPath("/api/v3/apply")
-          .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost")
-      ).respond(
-        response()
-          .withStatusCode(200)
-          .withBody(serialize(ProtocolInteractionExecution.InstanceExecutedSuccessfully(Some(event))))
-      )
-    }
-  }
-
-  class RemoteEventListener(ofRecipe: String)(implicit mock: ClientAndServer, system: ActorSystem, encryption: Encryption) {
-
-    import system.dispatcher
-
-    val eventApply: HttpRequest =
-      request()
-        .withMethod("GET")
-        .withPath("/api/v3/apply")
-        .withHeader("X-Bakery-Intent", s"Remote-Event-Listener:$ofRecipe")
-
-    def willReceiveEvents: Future[Unit] = Future {
-      mock.when(eventApply).respond(
-        response()
-          .withStatusCode(200)
-      )
-    }
-
-    def verifyEventReceived: Future[Unit] = Future {
-      mock.verify(eventApply)
-    }
-  }
-
-  case class TestContext(
-    remoteInteraction: RemoteInteraction,
-    remoteEventListener: RemoteEventListener,
-    kubeApiServer: KubeApiServer,
-    system: ActorSystem
-  ) {
-
-    import system.dispatcher
-
-    def wait(time: FiniteDuration): Future[Unit] = {
-      val promise: Promise[Unit] = Promise()
-      system.scheduler.scheduleOnce(time)(promise.complete(Success(())))
-      promise.future
-    }
-
-    def withRetry[A](times: Int, delay: FiniteDuration, future: => Future[A]): Future[A] =
-      future.recoverWith { case e =>
-        if(times < 1) Future.failed(e)
-        else wait(delay).flatMap(_ => withRetry(times - 1, delay, future))
+        _ <- context.remoteEventListener.verifyNoEventsArrived
+      } yield {
+        state.recipeInstanceId shouldBe recipeInstanceId
       }
-  }
+    }
 
-  // Core dependencies
-  def test(setup: TestContext => Future[Unit])(runTest: (TestContext, BakerClient) => Future[Assertion])(implicit ec: ExecutionContext): Future[Assertion] = {
+    test("Baker.bake (fail with ProcessAlreadyExistsException)") { context =>
+      val recipeInstanceId: String = UUID.randomUUID().toString
+      for {
+        _ <- context.remoteComponents.registerToTheCluster
+        client <- context.bakeryBoots()
+        _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
+        recipeId <- client.addRecipe(recipe)
+        _ <- client.bake(recipeId, recipeInstanceId)
+        e <- client
+          .bake(recipeId, recipeInstanceId)
+          .map(_ => None)
+          .recover { case e: BakerException => Some(e) }
+        state <- client.getRecipeInstanceState(recipeInstanceId)
+      } yield {
+        e shouldBe Some(BakerException.ProcessAlreadyExistsException(recipeInstanceId))
+        state.recipeInstanceId shouldBe recipeInstanceId
+      }
+    }
 
-    val testId: UUID = UUID.randomUUID()
-    val systemName: String = "baas-node-interaction-test-" + testId
-    implicit val system: ActorSystem = ActorSystem(systemName)
-    implicit val materializer: Materializer = ActorMaterializer()
-    implicit val encryption: Encryption = Encryption.NoEncryption
+    test("Baker.bake (fail with NoSuchRecipeException)") { context =>
+      val recipeInstanceId: String = UUID.randomUUID().toString
+      for {
+        _ <- context.remoteComponents.registerToTheCluster
+        client <- context.bakeryBoots()
+        e <- client
+          .bake("non-existent", recipeInstanceId)
+          .map(_ => None)
+          .recover { case e: BakerException => Some(e) }
+      } yield e shouldBe Some(BakerException.NoSuchRecipeException("non-existent"))
+    }
 
-    for {
-      // Build mocks
-      (mock, mocksPort) <- withOpenPort(5000, port => Future(startClientAndServer(port)))
-      testContext = TestContext(
-        remoteInteraction =
-          new RemoteInteraction(Interactions.ReserveItemsInteraction)(mock, system, encryption),
-        remoteEventListener =
-          new RemoteEventListener(ItemReservationRecipe.compiledRecipe.name)(mock, system, encryption),
-        kubeApiServer =
-          new KubeApiServer()(mock, system.dispatcher),
-        system =
-          system
-      )
+    test("Baker.getRecipeInstanceState (fails with NoSuchProcessException)") { context =>
+      for {
+        _ <- context.remoteComponents.registerToTheCluster
+        client <- context.bakeryBoots()
+        e <- client
+          .getRecipeInstanceState("non-existent")
+          .map(_ => None)
+          .recover { case e: BakerException => Some(e) }
+      } yield e shouldBe Some(BakerException.NoSuchProcessException("non-existent"))
+    }
 
-      // Setup context
-      _ <- setup(testContext)
+    test("Baker.fireEventAndResolveWhenReceived") { context =>
+      val recipeInstanceId: String = UUID.randomUUID().toString
+      for {
+        _ <- context.remoteComponents.registerToTheCluster
+        client <- context.bakeryBoots()
+        recipeId <- client.addRecipe(recipe)
+        _ <- client.bake(recipeId, recipeInstanceId)
+        _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
+        status <- client.fireEventAndResolveWhenReceived(recipeInstanceId, OrderPlacedEvent)
+      } yield status shouldBe SensoryEventStatus.Received
+    }
 
-      // Build the state node
-      kubernetes = new ServiceDiscoveryKubernetes("default", new ApiClient().setBasePath(s"http://localhost:$mocksPort"))
-      interactionManager = new InteractionsServiceDiscovery(kubernetes)
-      stateNodeBaker = AkkaBaker.withConfig(AkkaBakerConfig.localDefault(system).copy(interactionManager = interactionManager))
-      eventListeners = new EventListenersServiceDiscovery(kubernetes, stateNodeBaker)
-      (binding, serverPort) <- withOpenPort(5010, port => StateNodeHttp.run(eventListeners, stateNodeBaker, "0.0.0.0", port))
-      bakerClient = BakerClient(Uri(s"http://localhost:$serverPort"))
+    test("Baker.fireEventAndResolveWhenCompleted") { context =>
+      val recipeInstanceId: String = UUID.randomUUID().toString
+      for {
+        _ <- context.remoteComponents.registerToTheCluster
+        client <- context.bakeryBoots()
+        _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
+        recipeId <- client.addRecipe(recipe)
+        _ <- client.bake(recipeId, recipeInstanceId)
+        result <- client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent)
+        serverState <- client.getRecipeInstanceState(recipeInstanceId)
+        _ <- context.remoteEventListener.verifyEventsReceived(1)
+      } yield {
+        result.eventNames should contain("OrderPlaced")
+        serverState.events.map(_.name) should contain("OrderPlaced")
+      }
+    }
 
-      // Run the test
-      assertionOrError <- runTest(testContext, bakerClient).transform(Success(_))
 
-      // Clean
-      _ <- binding.unbind()
-      _ <- system.terminate()
-      _ <- system.whenTerminated
-      _ = mock.stop()
-      assertion <- Future.fromTry(assertionOrError)
-    } yield assertion
-  }
+    test("Baker.fireEventAndResolveWhenCompleted (fails with IllegalEventException)") { context =>
+      val recipeInstanceId: String = UUID.randomUUID().toString
+      val event = EventInstance("non-existent", Map.empty)
+      for {
+        _ <- context.remoteComponents.registerToTheCluster
+        client <- context.bakeryBoots()
+        _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
+        recipeId <- client.addRecipe(recipe)
+        _ <- client.bake(recipeId, recipeInstanceId)
+        result <- client
+          .fireEventAndResolveWhenCompleted(recipeInstanceId, event)
+          .map(_ => None)
+          .recover { case e: BakerException => Some(e) }
+        serverState <- client.getRecipeInstanceState(recipeInstanceId)
+      } yield {
+        result shouldBe Some(BakerException.IllegalEventException("No event with name 'non-existent' found in recipe 'Webshop'"))
+        serverState.events.map(_.name) should not contain("OrderPlaced")
+      }
+    }
 
-  private def withOpenPort[T](from: Int, f: Int => Future[T])(implicit ec: ExecutionContext): Future[(T, Int)] = {
-    def search(ports: Stream[Int]): Future[(Stream[Int], (T, Int))] =
-      ports match {
-        case #::(port, tail) => f(port).map(tail -> (_, port)).recoverWith {
-          case _: java.net.BindException => search(tail)
-          case _: ChannelException => search(tail)
-          case other => println("REVIEW withOpenPort function implementation, uncaught exception: " + Console.RED + other + Console.RESET); Future.failed(other)
+    test("Baker.fireEventAndResolveOnEvent") { context =>
+      val recipeInstanceId: String = UUID.randomUUID().toString
+      for {
+        _ <- context.remoteComponents.registerToTheCluster
+        client <- context.bakeryBoots()
+        _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
+        recipeId <- client.addRecipe(recipe)
+        _ <- client.bake(recipeId, recipeInstanceId)
+        result <- client.fireEventAndResolveOnEvent(recipeInstanceId, OrderPlacedEvent, "OrderPlaced")
+        serverState <- client.getRecipeInstanceState(recipeInstanceId)
+        _ <- context.remoteEventListener.verifyEventsReceived(1)
+      } yield {
+        result.eventNames should contain("OrderPlaced")
+        serverState.events.map(_.name) should contain("OrderPlaced")
+      }
+    }
+
+    test("Baker.getAllRecipeInstancesMetadata") { context =>
+      val recipeInstanceId: String = UUID.randomUUID().toString
+      for {
+        _ <- context.remoteComponents.registerToTheCluster
+        client <- context.bakeryBoots()
+        _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
+        recipeId <- client.addRecipe(recipe)
+        _ <- client.bake(recipeId, recipeInstanceId)
+        clientMetadata <- client.getAllRecipeInstancesMetadata
+        serverMetadata <- client.getAllRecipeInstancesMetadata
+      } yield clientMetadata shouldBe serverMetadata
+    }
+
+    test("Baker.getVisualState") { context =>
+      val recipeInstanceId: String = UUID.randomUUID().toString
+      for {
+        _ <- context.remoteComponents.registerToTheCluster
+        client <- context.bakeryBoots()
+        _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
+        recipeId <- client.addRecipe(recipe)
+        _ <- client.bake(recipeId, recipeInstanceId)
+        _ <- client.getVisualState(recipeInstanceId)
+      } yield succeed
+    }
+
+    /*
+    test("Baker.retryInteraction") { context =>
+      val recipeInstanceId: String = UUID.randomUUID().toString
+      for {
+        _ <- context.remoteComponents.registerToTheCluster
+        client <- context.bakeryBoots()
+        compiledRecipe <- setupFailingOnceReserveItems(interactionNode)
+        recipeId <- client.addRecipe(recipe)
+        _ <- client.bake(recipeId, recipeInstanceId)
+        _ <- client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent)
+        state1 <- client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name))
+        _ <- client.retryInteraction(recipeInstanceId, "ReserveItems")
+        state2 <- client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name))
+        _ <- context.remoteEventListener.verifyEventsReceived(1)
+      } yield {
+        state1 should contain("OrderPlaced")
+        state1 should not contain("ItemsReserved")
+        state2 should contain("OrderPlaced")
+        state2 should contain("ItemsReserved")
+        events.toList.map(_.name) should contain("OrderPlaced")
+        events.toList.map(_.name) should contain("ItemsReserved")
+      }
+    }
+
+    test("Baker.resolveInteraction") { context =>
+        val recipeInstanceId: String = UUID.randomUUID().toString
+        val event = EventInstance.unsafeFrom(
+          Events.OrderPlaced(orderId = OrderId("order1"), List.empty))
+        val resolutionEvent = EventInstance.unsafeFrom(
+          ItemsReserved(reservedItems = ReservedItems(items = List(Item("item1")), data = Array.empty))
+        )
+        for {
+      _ <- context.remoteComponents.registerToTheCluster
+      client <- context.bakeryBoots()
+          compiledRecipe <- setupFailingOnceReserveItems(interactionNode)
+          recipeId <- client.addRecipe(recipe)
+          _ <- client.bake(recipeId, recipeInstanceId)
+          _ <- client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent)
+          state1 <- client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name))
+          _ <- client.resolveInteraction(recipeInstanceId, "ReserveItems", resolutionEvent)
+          state2data <- client.getRecipeInstanceState(recipeInstanceId)
+          state2 = state2data.events.map(_.name)
+          eventState = state2data.ingredients.get("reservedItems").map(_.as[ReservedItems].items.head.itemId)
+        } yield {
+          state1 should contain("OrderPlaced")
+          state1 should not contain("ItemsReserved")
+          state2 should contain("OrderPlaced")
+          state2 should contain("ItemsReserved")
+          eventState shouldBe Some("item1")
+          events.toList.map(_.name) should contain("OrderPlaced")
+          events.toList.map(_.name) should not contain("ItemsReserved") // Manually resolving an interaction does not fire the event to the listeners?
         }
       }
-    StateT(search).run(Stream.from(from, 1)).map(_._2)
+
+    test("Baker.stopRetryingInteraction") { context =>
+        val recipeInstanceId: String = UUID.randomUUID().toString
+        val event = EventInstance.unsafeFrom(
+          Events.OrderPlaced(orderId = OrderId("order1"), List.empty))
+        for {
+      _ <- context.remoteComponents.registerToTheCluster
+      client <- context.bakeryBoots()
+          compiledRecipe <- setupFailingWithRetryReserveItems(interactionNode)
+          recipeId <- client.addRecipe(recipe)
+          _ <- client.bake(recipeId, recipeInstanceId)
+          _ <- client.fireEventAndResolveWhenReceived(recipeInstanceId, OrderPlacedEvent)
+          state1 <- client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name))
+          _ <- client.stopRetryingInteraction(recipeInstanceId, "ReserveItems")
+          state2data <- client.getRecipeInstanceState(recipeInstanceId)
+          state2 = state2data.events.map(_.name)
+        } yield {
+          state1 should contain("OrderPlaced")
+          state1 should not contain("ItemsReserved")
+          state2 should contain("OrderPlaced")
+          state2 should not contain("ItemsReserved")
+          events.toList.map(_.name) should contain("OrderPlaced")
+          events.toList.map(_.name) should not contain("ItemsReserved")
+        }
+      }
+    }
+     */
+
   }
 }
+

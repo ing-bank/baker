@@ -25,6 +25,8 @@ class RemoteEventListenerClient(hostname: Uri)(implicit system: ActorSystem, mat
 
   import system.dispatcher
 
+  val intendedHost: String = hostname.authority.host.toString()
+
   private type ProtoMessage[A] = scalapb.GeneratedMessage with scalapb.Message[A]
 
   private implicit def protoMarshaller[A, P <: ProtoMessage[P]](implicit mapping: ProtoMap[A, P]): ToEntityMarshaller[A] =
@@ -50,7 +52,9 @@ class RemoteEventListenerClient(hostname: Uri)(implicit system: ActorSystem, mat
     for {
       encoded <- Marshal(ProtocolDistributedEventPublishing.Event(recipeEventMetadata, event)).to[MessageEntity]
       request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("apply")), entity = encoded)
-        .withHeaders(RawHeader("X-Bakery-Intent", s"Remote-Event-Listener:${recipeEventMetadata.recipeName}"))
-      _ <- Http().singleRequest(request)
+        .withHeaders(RawHeader("X-Bakery-Intent", s"Remote-Event-Listener:$intendedHost"))
+      _ = println(Console.GREEN + request + Console.RESET)
+      response <- Http().singleRequest(request)
+      _ = println(Console.GREEN + response + Console.RESET)
     } yield ()
 }

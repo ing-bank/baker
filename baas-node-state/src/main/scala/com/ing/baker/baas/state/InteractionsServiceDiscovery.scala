@@ -40,7 +40,6 @@ class InteractionsServiceDiscovery(discovery: ServiceDiscovery)(implicit system:
             run = client.apply
           ))
         }.recover({ case e: Exception =>
-          println("Recovered from exception: " + e.getMessage)
           None
         }))
       ).map(_.flatten)

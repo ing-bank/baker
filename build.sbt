@@ -274,6 +274,8 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
       akkaDiscoveryKube,
       kubernetesJavaClient
     ) ++ testDeps(
+      slf4jApi,
+      slf4jSimple,
       scalaTest,
       mockServer,
       akkaHttpCirce,
