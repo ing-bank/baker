@@ -15,6 +15,9 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
   val recipe: CompiledRecipe =
     ItemReservationRecipe.compiledRecipe
 
+  val recipeWithBlockingStrategy: CompiledRecipe =
+    ItemReservationRecipe.compiledRecipeWithBlockingStrategy
+
   val OrderPlacedEvent: EventInstance =
     EventInstance.unsafeFrom(
       OrderPlaced(OrderId("order-1"), List(Item("item-1"))
@@ -128,12 +131,10 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
         serverState <- client.getRecipeInstanceState(recipeInstanceId)
         _ <- context.remoteEventListener.verifyEventsReceived(2)
       } yield {
-        println(Console.YELLOW + result.eventNames + Console.RESET)
-        result.eventNames should contain("OrderPlaced")
-        serverState.events.map(_.name) should contain("OrderPlaced")
+        result.eventNames shouldBe Seq("OrderPlaced", "ItemsReserved")
+        serverState.events.map(_.name) shouldBe Seq("OrderPlaced", "ItemsReserved")
       }
     }
-
 
     test("Baker.fireEventAndResolveWhenCompleted (fails with IllegalEventException)") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
@@ -141,7 +142,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       for {
         _ <- context.remoteComponents.registerToTheCluster
         client <- context.bakeryBoots()
-        _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         recipeId <- client.addRecipe(recipe)
         _ <- client.bake(recipeId, recipeInstanceId)
         result <- client
@@ -149,8 +149,9 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
           .map(_ => None)
           .recover { case e: BakerException => Some(e) }
         serverState <- client.getRecipeInstanceState(recipeInstanceId)
+        _ <- context.remoteInteraction.didNothing
       } yield {
-        result shouldBe Some(BakerException.IllegalEventException("No event with name 'non-existent' found in recipe 'Webshop'"))
+        result shouldBe Some(BakerException.IllegalEventException("No event with name 'non-existent' found in recipe 'ItemReservation'"))
         serverState.events.map(_.name) should not contain("OrderPlaced")
       }
     }
@@ -165,10 +166,10 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
         _ <- client.bake(recipeId, recipeInstanceId)
         result <- client.fireEventAndResolveOnEvent(recipeInstanceId, OrderPlacedEvent, "OrderPlaced")
         serverState <- client.getRecipeInstanceState(recipeInstanceId)
-        _ <- context.remoteEventListener.verifyEventsReceived(1)
+        _ <- context.remoteEventListener.verifyEventsReceived(2)
       } yield {
-        result.eventNames should contain("OrderPlaced")
-        serverState.events.map(_.name) should contain("OrderPlaced")
+        result.eventNames shouldBe Seq("OrderPlaced")
+        serverState.events.map(_.name) shouldBe Seq("OrderPlaced", "ItemsReserved")
       }
     }
 
@@ -197,87 +198,77 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       } yield succeed
     }
 
-    /*
     test("Baker.retryInteraction") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
         _ <- context.remoteComponents.registerToTheCluster
         client <- context.bakeryBoots()
-        compiledRecipe <- setupFailingOnceReserveItems(interactionNode)
-        recipeId <- client.addRecipe(recipe)
+        recipeId <- client.addRecipe(recipeWithBlockingStrategy)
         _ <- client.bake(recipeId, recipeInstanceId)
+        _ <- context.remoteInteraction.processesWithFailure(new RuntimeException("functional failure"))
         _ <- client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent)
         state1 <- client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name))
+        _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         _ <- client.retryInteraction(recipeInstanceId, "ReserveItems")
         state2 <- client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name))
-        _ <- context.remoteEventListener.verifyEventsReceived(1)
+        _ <- context.remoteEventListener.verifyEventsReceived(2)
       } yield {
         state1 should contain("OrderPlaced")
         state1 should not contain("ItemsReserved")
         state2 should contain("OrderPlaced")
         state2 should contain("ItemsReserved")
-        events.toList.map(_.name) should contain("OrderPlaced")
-        events.toList.map(_.name) should contain("ItemsReserved")
       }
     }
 
     test("Baker.resolveInteraction") { context =>
         val recipeInstanceId: String = UUID.randomUUID().toString
-        val event = EventInstance.unsafeFrom(
-          Events.OrderPlaced(orderId = OrderId("order1"), List.empty))
         val resolutionEvent = EventInstance.unsafeFrom(
-          ItemsReserved(reservedItems = ReservedItems(items = List(Item("item1")), data = Array.empty))
+          ItemsReserved(reservedItems = ReservedItems(items = List(Item("resolution-item")), data = Array.empty))
         )
         for {
-      _ <- context.remoteComponents.registerToTheCluster
-      client <- context.bakeryBoots()
-          compiledRecipe <- setupFailingOnceReserveItems(interactionNode)
-          recipeId <- client.addRecipe(recipe)
+          _ <- context.remoteComponents.registerToTheCluster
+          client <- context.bakeryBoots()
+          recipeId <- client.addRecipe(recipeWithBlockingStrategy)
           _ <- client.bake(recipeId, recipeInstanceId)
+          _ <- context.remoteInteraction.processesWithFailure(new RuntimeException("functional failure"))
           _ <- client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent)
           state1 <- client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name))
           _ <- client.resolveInteraction(recipeInstanceId, "ReserveItems", resolutionEvent)
           state2data <- client.getRecipeInstanceState(recipeInstanceId)
           state2 = state2data.events.map(_.name)
           eventState = state2data.ingredients.get("reservedItems").map(_.as[ReservedItems].items.head.itemId)
+          // TODO Currently the event listener receives the OrderPlaced... shouldn't also receive the resolved event?
+          _ <- context.remoteEventListener.verifyEventsReceived(1)
         } yield {
           state1 should contain("OrderPlaced")
           state1 should not contain("ItemsReserved")
           state2 should contain("OrderPlaced")
           state2 should contain("ItemsReserved")
-          eventState shouldBe Some("item1")
-          events.toList.map(_.name) should contain("OrderPlaced")
-          events.toList.map(_.name) should not contain("ItemsReserved") // Manually resolving an interaction does not fire the event to the listeners?
+          eventState shouldBe Some("resolution-item")
         }
-      }
+    }
 
     test("Baker.stopRetryingInteraction") { context =>
-        val recipeInstanceId: String = UUID.randomUUID().toString
-        val event = EventInstance.unsafeFrom(
-          Events.OrderPlaced(orderId = OrderId("order1"), List.empty))
-        for {
-      _ <- context.remoteComponents.registerToTheCluster
-      client <- context.bakeryBoots()
-          compiledRecipe <- setupFailingWithRetryReserveItems(interactionNode)
-          recipeId <- client.addRecipe(recipe)
-          _ <- client.bake(recipeId, recipeInstanceId)
-          _ <- client.fireEventAndResolveWhenReceived(recipeInstanceId, OrderPlacedEvent)
-          state1 <- client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name))
-          _ <- client.stopRetryingInteraction(recipeInstanceId, "ReserveItems")
-          state2data <- client.getRecipeInstanceState(recipeInstanceId)
-          state2 = state2data.events.map(_.name)
-        } yield {
-          state1 should contain("OrderPlaced")
-          state1 should not contain("ItemsReserved")
-          state2 should contain("OrderPlaced")
-          state2 should not contain("ItemsReserved")
-          events.toList.map(_.name) should contain("OrderPlaced")
-          events.toList.map(_.name) should not contain("ItemsReserved")
-        }
+      val recipeInstanceId: String = UUID.randomUUID().toString
+      for {
+        _ <- context.remoteComponents.registerToTheCluster
+        client <- context.bakeryBoots()
+        recipeId <- client.addRecipe(recipe)
+        _ <- client.bake(recipeId, recipeInstanceId)
+        _ <- context.remoteInteraction.processesWithFailure(new RuntimeException("functional failure"))
+        _ <- client.fireEventAndResolveWhenReceived(recipeInstanceId, OrderPlacedEvent)
+        state1 <- client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name))
+        _ <- client.stopRetryingInteraction(recipeInstanceId, "ReserveItems")
+        state2data <- client.getRecipeInstanceState(recipeInstanceId)
+        state2 = state2data.events.map(_.name)
+        _ <- context.remoteEventListener.verifyEventsReceived(1)
+      } yield {
+        state1 should contain("OrderPlaced")
+        state1 should not contain("ItemsReserved")
+        state2 should contain("OrderPlaced")
+        state2 should not contain("ItemsReserved")
       }
     }
-     */
-
   }
 }
 

@@ -1,15 +1,14 @@
 package com.ing.baker.baas.mocks
 
 import akka.actor.ActorSystem
+import com.ing.baker.baas.mocks.Utils._
 import com.ing.baker.baas.protocol.InteractionSchedulingProto._
 import com.ing.baker.baas.protocol.ProtocolInteractionExecution
-import com.ing.baker.baas.recipe.Events.ItemsReserved
-import com.ing.baker.baas.recipe.Ingredients.{Item, ReservedItems}
-import com.ing.baker.baas.mocks.Utils._
 import com.ing.baker.recipe.scaladsl.Interaction
 import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.runtime.serialization.Encryption
 import org.mockserver.integration.ClientAndServer
+import org.mockserver.matchers.Times
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.verify.VerificationTimes
@@ -34,11 +33,29 @@ class RemoteInteraction(mock: ClientAndServer, interaction: Interaction)(implici
   }
 
   def processesSuccessfullyAndFires(event: EventInstance): Future[Unit] = Future {
-    mock.when(applyMatch).respond(
+    mock.when(
+      applyMatch,
+      Times.exactly(1)
+    ).respond(
       response()
         .withStatusCode(200)
-        .withBody(serialize(ProtocolInteractionExecution.InstanceExecutedSuccessfully(Some(event))))
+        .withBody(serialize(ProtocolInteractionExecution.InstanceExecutedSuccessfully(Some(event)))),
     )
+  }
+
+  def processesWithFailure(e: Throwable): Future[Unit] = Future {
+    mock.when(
+      applyMatch,
+      Times.exactly(1)
+    ).respond(
+      response()
+        .withStatusCode(200)
+        .withBody(serialize(ProtocolInteractionExecution.InstanceExecutionFailed(e.getMessage)))
+    )
+  }
+
+  def didNothing: Future[Unit] = Future {
+    mock.verify(applyMatch, VerificationTimes.exactly(0))
   }
 
   def receivedEvent(event: EventInstance): Future[Unit] = Future {
