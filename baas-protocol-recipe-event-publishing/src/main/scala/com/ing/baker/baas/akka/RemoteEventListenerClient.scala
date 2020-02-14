@@ -53,8 +53,6 @@ class RemoteEventListenerClient(hostname: Uri)(implicit system: ActorSystem, mat
       encoded <- Marshal(ProtocolDistributedEventPublishing.Event(recipeEventMetadata, event)).to[MessageEntity]
       request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("apply")), entity = encoded)
         .withHeaders(RawHeader("X-Bakery-Intent", s"Remote-Event-Listener:$intendedHost"))
-      _ = println(Console.GREEN + request + Console.RESET)
       response <- Http().singleRequest(request)
-      _ = println(Console.GREEN + response + Console.RESET)
     } yield ()
 }

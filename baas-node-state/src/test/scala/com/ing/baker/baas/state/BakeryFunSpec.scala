@@ -3,11 +3,12 @@ package com.ing.baker.baas.state
 import java.util.UUID
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.Http.ServerBinding
 import akka.http.scaladsl.model.Uri
 import akka.stream.{ActorMaterializer, Materializer}
-import cats.implicits._
 import cats.data.StateT
 import cats.effect.{ContextShift, IO, Timer}
+import cats.implicits._
 import com.ing.baker.baas.mocks.{KubeApiServer, RemoteComponents, RemoteEventListener, RemoteInteraction}
 import com.ing.baker.baas.recipe.Interactions
 import com.ing.baker.baas.scaladsl.BakerClient
@@ -19,12 +20,11 @@ import io.kubernetes.client.openapi.ApiClient
 import org.jboss.netty.channel.ChannelException
 import org.mockserver.integration.ClientAndServer.startClientAndServer
 import org.scalactic.source
-import org.scalatest.{AsyncFunSpecLike, Tag}
 import org.scalatest.compatible.Assertion
+import org.scalatest.{AsyncFunSpecLike, Tag}
 
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.{Future, Promise}
 import scala.util.Success
 
 abstract class BakeryFunSpec extends AsyncFunSpecLike {
@@ -40,7 +40,7 @@ abstract class BakeryFunSpec extends AsyncFunSpecLike {
 
   def within[A](time: FiniteDuration)(f: => Future[A]): Future[A] = {
     def inner(count: Int, times: FiniteDuration, fio: IO[A]): IO[A] = {
-      if (count < 1) fio else fio.attempt.map { x => println(Console.GREEN + "OUTCOME: " + x + Console.RESET); x}.flatMap {
+      if (count < 1) fio else fio.attempt.flatMap {
         case Left(_) => IO.sleep(times) *> inner(count - 1, times, fio)
         case Right(a) => IO(a)
       }
@@ -50,11 +50,11 @@ abstract class BakeryFunSpec extends AsyncFunSpecLike {
   }
 
   case class TestContext(
-                          bakeryBoots: () => Future[Baker],
-                          remoteComponents: RemoteComponents,
-                          remoteInteraction: RemoteInteraction,
-                          remoteEventListener: RemoteEventListener,
-                          kubeApiServer: KubeApiServer
+    bakeryBoots: () => Future[Baker],
+    remoteComponents: RemoteComponents,
+    remoteInteraction: RemoteInteraction,
+    remoteEventListener: RemoteEventListener,
+    kubeApiServer: KubeApiServer
   )
 
   // Core dependencies
@@ -71,14 +71,13 @@ abstract class BakeryFunSpec extends AsyncFunSpecLike {
       for {
         // Build mocks
         (mock, mocksPort) <- withOpenPort(5000, port => Future(startClientAndServer(port)))
-        remoteInteraction =
-        new RemoteInteraction(mock, Interactions.ReserveItemsInteraction)
-        remoteEventListener =
-        new RemoteEventListener(mock)
-        kubeApiServer =
-        new KubeApiServer(mock)
+        remoteInteraction = new RemoteInteraction(mock, Interactions.ReserveItemsInteraction)
+        remoteEventListener = new RemoteEventListener(mock)
+        kubeApiServer = new KubeApiServer(mock)
+        remoteComponents = new RemoteComponents(kubeApiServer, remoteInteraction, remoteEventListener)
 
         // Build the bakery ecosystem
+        serverBindingPromise: Promise[ServerBinding] = Promise()
         startBakery = () => {
           val kubernetesApi = new ApiClient().setBasePath(s"http://localhost:$mocksPort")
           val kubernetes = new ServiceDiscoveryKubernetes("default", kubernetesApi)
@@ -86,20 +85,24 @@ abstract class BakeryFunSpec extends AsyncFunSpecLike {
           val stateNodeBaker = AkkaBaker.withConfig(AkkaBakerConfig.localDefault(system).copy(interactionManager = interactionManager))
           val eventListeners = new EventListenersServiceDiscovery(kubernetes, stateNodeBaker)
           withOpenPort(5010, port => StateNodeHttp.run(eventListeners, stateNodeBaker, "0.0.0.0", port)).map {
-            case (_, serverPort) => BakerClient(Uri(s"http://localhost:$serverPort"))
+            case (serverBinding, serverPort) =>
+              serverBindingPromise.complete(Success(serverBinding))
+              BakerClient(Uri(s"http://localhost:$serverPort"))
           }
         }
 
         // Run the test
         assertionOrError <- runTest(TestContext(
           startBakery,
-          new RemoteComponents(kubeApiServer, remoteInteraction, remoteEventListener),
+          remoteComponents,
           remoteInteraction,
           remoteEventListener,
           kubeApiServer
         )).transform(Success(_))
 
         // Clean
+        serverBinding <- serverBindingPromise.future
+        _ <- serverBinding.unbind()
         _ <- system.terminate()
         _ <- system.whenTerminated
         _ = mock.stop()

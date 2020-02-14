@@ -126,8 +126,9 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
         _ <- client.bake(recipeId, recipeInstanceId)
         result <- client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent)
         serverState <- client.getRecipeInstanceState(recipeInstanceId)
-        _ <- context.remoteEventListener.verifyEventsReceived(1)
+        _ <- context.remoteEventListener.verifyEventsReceived(2)
       } yield {
+        println(Console.YELLOW + result.eventNames + Console.RESET)
         result.eventNames should contain("OrderPlaced")
         serverState.events.map(_.name) should contain("OrderPlaced")
       }

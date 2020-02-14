@@ -267,6 +267,7 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
     libraryDependencies ++= Seq(
       slf4jApi,
       slf4jSimple,
+      logback,
       akkaHttp,
       akkaPersistenceCassandra,
       akkaManagementHttp,
@@ -276,6 +277,7 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
     ) ++ testDeps(
       slf4jApi,
       slf4jSimple,
+      logback,
       scalaTest,
       mockServer,
       akkaHttpCirce,
