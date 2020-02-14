@@ -55,7 +55,6 @@ class RemoteInteractionClient(hostname: Uri)(implicit system: ActorSystem, mat: 
   private def withPath(path: Path): Uri = hostname.withPath(path)
 
   def interface: Future[(String, Seq[Type])] = {
-    println("Path: " + withPath(root./("interface")))
     val request = HttpRequest(method = HttpMethods.GET, uri = withPath(root./("interface")))
       .withHeaders(RawHeader("X-Bakery-Intent", s"Remote-Interaction:$intendedHost"))
     for {

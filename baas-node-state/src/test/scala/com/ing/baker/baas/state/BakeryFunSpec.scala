@@ -62,7 +62,7 @@ abstract class BakeryFunSpec extends AsyncFunSpecLike {
 
     val testId: UUID = UUID.randomUUID()
     val systemName: String = "baas-node-interaction-test-" + testId
-    implicit val system: ActorSystem = ActorSystem(systemName, ConfigFactory.empty())
+    implicit val system: ActorSystem = ActorSystem(systemName, ConfigFactory.parseString("""akka.loglevel = "OFF" """))
     implicit val materializer: Materializer = ActorMaterializer()
     implicit val encryption: Encryption = Encryption.NoEncryption
 
