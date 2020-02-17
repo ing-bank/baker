@@ -37,7 +37,7 @@ val baker: Baker = Baker.akkaLocalDefault(actorSystem)
 val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
 
 val program: Future[Unit] = for {
-  _ <- baker.addImplementation(WebshopInstancesReflection.reserveItemsInstance)
+  _ <- baker.addInteractionInstance(WebshopInstancesReflection.reserveItemsInstance)
   recipeId <- baker.addRecipe(compiledRecipe)
 } yield ()
 
@@ -62,7 +62,7 @@ public class JMain {
         InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
-        CompletableFuture<String> asyncRecipeId = baker.addImplementation(reserveItemsInstance)
+        CompletableFuture<String> asyncRecipeId = baker.addInteractionInstance(reserveItemsInstance)
             .thenCompose(ignore -> baker.addRecipe(compiledRecipe));
 
         // Blocks, not recommended but useful for testing or trying things out
@@ -105,7 +105,7 @@ val baker: Baker = Baker.akkaLocalDefault(actorSystem)
 val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
 
 val program: Future[Unit] = for {
-  _ <- baker.addImplementation(WebshopInstancesReflection.reserveItemsInstance)
+  _ <- baker.addInteractionInstance(WebshopInstancesReflection.reserveItemsInstance)
   recipeId <- baker.addRecipe(compiledRecipe)
   _ <- baker.bake(recipeId, "first-instance-id")
 } yield ()
@@ -136,7 +136,7 @@ public class JMain {
         InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
-        CompletableFuture<BoxedUnit> asyncRecipeId = baker.addImplementation(reserveItemsInstance)
+        CompletableFuture<BoxedUnit> asyncRecipeId = baker.addInteractionInstance(reserveItemsInstance)
             .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
             .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId));
     }
@@ -189,7 +189,7 @@ val baker: Baker = Baker.akkaLocalDefault(actorSystem)
 val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
 
 val program: Future[Unit] = for {
-  _ <- baker.addImplementation(WebshopInstancesReflection.reserveItemsInstance)
+  _ <- baker.addInteractionInstance(WebshopInstancesReflection.reserveItemsInstance)
   recipeId <- baker.addRecipe(compiledRecipe)
   _ <- baker.bake(recipeId, "first-instance-id")
   firstOrderPlaced: EventInstance =
@@ -233,7 +233,7 @@ public class JMain {
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
         String recipeInstanceId = "first-instance-id";
-        CompletableFuture<List<String>> result = baker.addImplementation(reserveItemsInstance)
+        CompletableFuture<List<String>> result = baker.addInteractionInstance(reserveItemsInstance)
             .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
             .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
             .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))

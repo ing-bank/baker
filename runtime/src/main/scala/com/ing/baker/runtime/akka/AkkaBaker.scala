@@ -17,6 +17,7 @@ import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types.Value
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import cats.implicits._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -74,23 +75,36 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
    */
   override def addRecipe(compiledRecipe: CompiledRecipe): Future[String] = {
 
-    // check if every interaction has an implementation
-    val implementationErrors = getImplementationErrors(compiledRecipe)
+    if(config.bakerValidationSettings.allowAddingRecipeWithoutRequiringInstances)
+      recipeManager.ask(RecipeManagerProtocol.AddRecipe(compiledRecipe))(config.timeouts.defaultAddRecipeTimeout) map {
+        case RecipeManagerProtocol.AddRecipeResponse(recipeId) => recipeId
+      }
 
-    if (implementationErrors.nonEmpty)
-      Future.failed(ImplementationsException(implementationErrors.mkString(", ")))
+    else {
+      // check if every interaction has an implementation
+      getImplementationErrors(compiledRecipe).flatMap { implementationErrors =>
+        if (implementationErrors.nonEmpty)
+          Future.failed(ImplementationsException(implementationErrors.mkString(", ")))
 
-    else if (compiledRecipe.validationErrors.nonEmpty)
-      Future.failed(RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
+        else if (compiledRecipe.validationErrors.nonEmpty)
+          Future.failed(RecipeValidationException(compiledRecipe.validationErrors.mkString(", ")))
 
-    else recipeManager.ask(RecipeManagerProtocol.AddRecipe(compiledRecipe))(config.defaultAddRecipeTimeout) flatMap {
-      case RecipeManagerProtocol.AddRecipeResponse(recipeId) => Future.successful(recipeId)
+        else
+          recipeManager.ask(RecipeManagerProtocol.AddRecipe(compiledRecipe))(config.timeouts.defaultAddRecipeTimeout) map {
+            case RecipeManagerProtocol.AddRecipeResponse(recipeId) => recipeId
+          }
+      }
     }
   }
 
-  private def getImplementationErrors(compiledRecipe: CompiledRecipe): Set[String] = {
-    compiledRecipe.interactionTransitions.filterNot(config.interactionManager.hasImplementation)
-      .map(s => s"No implementation provided for interaction: ${s.originalInteractionName}")
+  private def getImplementationErrors(compiledRecipe: CompiledRecipe): Future[Set[String]] = {
+    //TODO optimize so that we do not have to much traffic if its a remote InteractionManager
+    compiledRecipe.interactionTransitions.toList
+      .traverse(x => config.interactionManager.hasImplementation(x).map(has => (has, x.originalInteractionName)))
+      .map(_
+        .filterNot(_._1)
+        .map(x => s"No implementation provided for interaction: ${x._2}")
+        .toSet)
   }
 
   /**
@@ -101,9 +115,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
    */
   override def getRecipe(recipeId: String): Future[RecipeInformation] = {
     // here we ask the RecipeManager actor to return us the recipe for the given id
-    recipeManager.ask(RecipeManagerProtocol.GetRecipe(recipeId))(config.defaultInquireTimeout).flatMap {
+    recipeManager.ask(RecipeManagerProtocol.GetRecipe(recipeId))(config.timeouts.defaultInquireTimeout).flatMap {
       case RecipeManagerProtocol.RecipeFound(compiledRecipe, timestamp) =>
-        Future.successful(RecipeInformation(compiledRecipe, timestamp, getImplementationErrors(compiledRecipe)))
+        getImplementationErrors(compiledRecipe).map(RecipeInformation(compiledRecipe, timestamp, _))
       case RecipeManagerProtocol.NoRecipeFound(_) =>
         Future.failed(NoSuchRecipeException(recipeId))
     }
@@ -115,11 +129,14 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
    * @return All recipes in the form of map of recipeId -> CompiledRecipe
    */
   override def getAllRecipes: Future[Map[String, RecipeInformation]] =
-    recipeManager.ask(RecipeManagerProtocol.GetAllRecipes)(config.defaultInquireTimeout)
+    recipeManager.ask(RecipeManagerProtocol.GetAllRecipes)(config.timeouts.defaultInquireTimeout)
       .mapTo[RecipeManagerProtocol.AllRecipes]
-      .map(_.recipes.map {ri =>
-        ri.compiledRecipe.recipeId -> RecipeInformation(ri.compiledRecipe, ri.timestamp, getImplementationErrors(ri.compiledRecipe))
-      }.toMap)
+      .flatMap(_.recipes
+          .toList
+          .traverse(ri => getImplementationErrors(ri.compiledRecipe)
+            .map(errors => ri.compiledRecipe.recipeId -> RecipeInformation(ri.compiledRecipe, ri.timestamp, errors))
+          ).map(_.toMap)
+      )
 
   /**
    * Creates a process instance for the given recipeId with the given RecipeInstanceId as identifier
@@ -129,7 +146,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
    * @return
    */
   override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] = {
-    processIndexActor.ask(CreateProcess(recipeId, recipeInstanceId))(config.defaultBakeTimeout).flatMap {
+    processIndexActor.ask(CreateProcess(recipeId, recipeInstanceId))(config.timeouts.defaultBakeTimeout).flatMap {
       case _: Initialized =>
         Future.successful(())
       case ProcessAlreadyExists(_) =>
@@ -144,9 +161,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
       recipeInstanceId = recipeInstanceId,
       event = event,
       correlationId = correlationId,
-      timeout = config.defaultProcessEventTimeout,
+      timeout = config.timeouts.defaultProcessEventTimeout,
       reaction = FireSensoryEventReaction.NotifyWhenReceived
-    ))(config.defaultProcessEventTimeout).flatMap {
+    ))(config.timeouts.defaultProcessEventTimeout).flatMap {
       // TODO MOVE THIS TO A FUNCTION
       case FireSensoryEventRejection.InvalidEvent(_, message) =>
         Future.failed(IllegalEventException(message))
@@ -169,9 +186,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
       recipeInstanceId = recipeInstanceId,
       event = event,
       correlationId = correlationId,
-      timeout = config.defaultProcessEventTimeout,
+      timeout = config.timeouts.defaultProcessEventTimeout,
       reaction = FireSensoryEventReaction.NotifyWhenCompleted(waitForRetries = true)
-    ))(config.defaultProcessEventTimeout).flatMap {
+    ))(config.timeouts.defaultProcessEventTimeout).flatMap {
       case FireSensoryEventRejection.InvalidEvent(_, message) =>
         Future.failed(IllegalEventException(message))
       case FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0) =>
@@ -193,9 +210,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
       recipeInstanceId = recipeInstanceId,
       event = event,
       correlationId = correlationId,
-      timeout = config.defaultProcessEventTimeout,
+      timeout = config.timeouts.defaultProcessEventTimeout,
       reaction = FireSensoryEventReaction.NotifyOnEvent(waitForRetries = true, onEvent)
-    ))(config.defaultProcessEventTimeout).flatMap {
+    ))(config.timeouts.defaultProcessEventTimeout).flatMap {
       case FireSensoryEventRejection.InvalidEvent(_, message) =>
         Future.failed(IllegalEventException(message))
       case FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0) =>
@@ -213,17 +230,17 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     }
 
   override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): EventResolutions = {
-    val futureRef = FutureRef(config.defaultProcessEventTimeout)
+    val futureRef = FutureRef(config.timeouts.defaultProcessEventTimeout)
     val futureReceived =
       processIndexActor.ask(ProcessEvent(
         recipeInstanceId = recipeInstanceId,
         event = event,
         correlationId = correlationId,
-        timeout = config.defaultProcessEventTimeout,
+        timeout = config.timeouts.defaultProcessEventTimeout,
         reaction = FireSensoryEventReaction.NotifyBoth(
           waitForRetries = true,
           completeReceiver = futureRef.ref)
-      ))(config.defaultProcessEventTimeout).flatMap {
+      ))(config.timeouts.defaultProcessEventTimeout).flatMap {
         case FireSensoryEventRejection.InvalidEvent(_, message) =>
           Future.failed(IllegalEventException(message))
         case FireSensoryEventRejection.NoSuchRecipeInstance(recipeInstanceId0) =>
@@ -265,7 +282,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
    * @return
    */
   override def retryInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] = {
-    processIndexActor.ask(RetryBlockedInteraction(recipeInstanceId, interactionName))(config.defaultProcessEventTimeout).map(_ => ())
+    processIndexActor.ask(RetryBlockedInteraction(recipeInstanceId, interactionName))(config.timeouts.defaultProcessEventTimeout).map(_ => ())
   }
 
   /**
@@ -276,7 +293,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
    * @return
    */
   override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): Future[Unit] = {
-    processIndexActor.ask(ResolveBlockedInteraction(recipeInstanceId, interactionName, event))(config.defaultProcessEventTimeout).map(_ => ())
+    processIndexActor.ask(ResolveBlockedInteraction(recipeInstanceId, interactionName, event))(config.timeouts.defaultProcessEventTimeout).map(_ => ())
   }
 
   /**
@@ -285,7 +302,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
    * @return
    */
   override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] = {
-    processIndexActor.ask(StopRetryingInteraction(recipeInstanceId, interactionName))(config.defaultProcessEventTimeout).map(_ => ())
+    processIndexActor.ask(StopRetryingInteraction(recipeInstanceId, interactionName))(config.timeouts.defaultProcessEventTimeout).map(_ => ())
   }
 
   /**
@@ -300,7 +317,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
    */
   override def getAllRecipeInstancesMetadata: Future[Set[RecipeInstanceMetadata]] = {
     Future.successful(config.bakerActorProvider
-      .getAllProcessesMetadata(processIndexActor)(system, config.defaultInquireTimeout)
+      .getAllProcessesMetadata(processIndexActor)(system, config.timeouts.defaultInquireTimeout)
       .map(p => RecipeInstanceMetadata(p.recipeId, p.recipeInstanceId, p.createdDateTime)).toSet)
   }
 
@@ -312,7 +329,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
    */
   override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] =
     processIndexActor
-      .ask(GetProcessState(recipeInstanceId))(Timeout.durationToTimeout(config.defaultInquireTimeout))
+      .ask(GetProcessState(recipeInstanceId))(Timeout.durationToTimeout(config.timeouts.defaultInquireTimeout))
       .flatMap {
         case instance: InstanceState => Future.successful(instance.state.asInstanceOf[RecipeInstanceState])
         case NoSuchProcess(id) => Future.failed(NoSuchProcessException(id))
@@ -356,7 +373,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   @throws[NoSuchProcessException]("If the process is not found")
   override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle = RecipeVisualStyle.default): Future[String] = {
     for {
-      getRecipeResponse <- processIndexActor.ask(GetCompiledRecipe(recipeInstanceId))(config.defaultInquireTimeout)
+      getRecipeResponse <- processIndexActor.ask(GetCompiledRecipe(recipeInstanceId))(config.timeouts.defaultInquireTimeout)
       processState <- getRecipeInstanceState(recipeInstanceId)
       response <- getRecipeResponse match {
         case RecipeManagerProtocol.RecipeFound(compiledRecipe, _) =>
@@ -447,5 +464,5 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
    * Attempts to gracefully shutdown the baker system.
    */
   override def gracefulShutdown: Future[Unit] =
-    Future.successful(GracefulShutdown.gracefulShutdownActorSystem(system, config.defaultShutdownTimeout))
+    Future.successful(GracefulShutdown.gracefulShutdownActorSystem(system, config.timeouts.defaultShutdownTimeout))
 }

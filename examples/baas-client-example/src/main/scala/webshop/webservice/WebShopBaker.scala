@@ -11,7 +11,7 @@ import webshop.webservice.CheckoutFlowIngredients.{Item, OrderId, PaymentInforma
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object WebShopBaker extends LazyLogging {
+object WebShopBaker {
 
   val checkoutFlowCompiledRecipe: CompiledRecipe =
     RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
@@ -24,9 +24,7 @@ object WebShopBaker extends LazyLogging {
   }
 }
 
-class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: ExecutionContext) extends WebShop {
-
-  import WebShopBaker.logger
+class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: ExecutionContext) extends WebShop with LazyLogging {
 
   override def createCheckoutOrder(items: List[String]): IO[String] =
     IO.fromFuture(IO {

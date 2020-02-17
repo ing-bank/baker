@@ -5,7 +5,7 @@ object Dependencies {
 
   val akkaVersion = "2.5.27"
   val http4sVersion = "0.20.0"
-  val circeVersion = "0.11.1"
+  val circeVersion = "0.12.3"
 
   val jvmV = "1.8"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
@@ -19,14 +19,15 @@ object Dependencies {
   val scalaJava8Compat =          "org.scala-lang.modules"     %% "scala-java8-compat"                 % "0.8.0"
   val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.0.8"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
+  val mockServer =                "org.mock-server"            %  "mockserver-netty"                   % "5.9.0"
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
-  val junitJupiter =              "org.junit.jupiter"          %  "junit-jupiter-engine"               % "5.5.2"
+  val junitJupiter =              "org.junit.jupiter"          %  "junit-jupiter-engine"               % "5.6.0"
 
   val akkaActor =                 "com.typesafe.akka"          %% "akka-actor"                         % akkaVersion
   val akkaStream =                "com.typesafe.akka"          %% "akka-stream"                        % akkaVersion
   val akkaPersistence =           "com.typesafe.akka"          %% "akka-persistence"                   % akkaVersion
   val akkaPersistenceQuery =      "com.typesafe.akka"          %% "akka-persistence-query"             % akkaVersion
-  val akkaPersistenceCassandra =  "com.typesafe.akka"          %% "akka-persistence-cassandra"         % "0.101"
+  val akkaPersistenceCassandra =  "com.typesafe.akka"          %% "akka-persistence-cassandra"         % "0.102"
   val akkaCluster =               "com.typesafe.akka"          %% "akka-cluster"                       % akkaVersion
   val akkaClusterSharding =       "com.typesafe.akka"          %% "akka-cluster-sharding"              % akkaVersion
   val akkaDistributedData =       "com.typesafe.akka"          %% "akka-distributed-data"              % akkaVersion
@@ -39,6 +40,7 @@ object Dependencies {
   val akkaClusterBoostrap =       "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.5"
   val akkaDiscoveryKube =         "com.lightbend.akka.discovery"  %% "akka-discovery-kubernetes-api"     % "1.0.5"
   val akkaHttp =                  "com.typesafe.akka"          %% "akka-http"                          % "10.1.11"
+  val akkaHttpCirce =             "de.heikoseeberger"          %% "akka-http-circe"                    % "1.28.0"
   val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.5"
 
   val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.12"
@@ -63,8 +65,8 @@ object Dependencies {
   val circe =                     "io.circe"                   %% "circe-core"                         % circeVersion
   val circeGeneric =              "io.circe"                   %% "circe-generic"                      % circeVersion
 
-  val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "2.0.0"
-  val catsCore =                  "org.typelevel"              %% "cats-core"                          % "2.0.0"
+  val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "2.1.1"
+  val catsCore =                  "org.typelevel"              %% "cats-core"                          % "2.1.0"
   val console4Cats =              "dev.profunktor"             %% "console4cats"                       % "0.8.0"
 
   val jnrConstants =              "com.github.jnr"             % "jnr-constants"                       % "0.9.9"
@@ -84,12 +86,12 @@ object Dependencies {
   val typeSafeConfig =            "com.typesafe"               % "config"                              % "1.4.0"
 
   val objenisis =                 "org.objenesis"              %  "objenesis"                          % "3.1"
-
+  val kubernetesJavaClient =      "io.kubernetes"              %  "client-java"                        % "7.0.0"
   val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.10.5"
   val slf4jApi =                  "org.slf4j"                  %  "slf4j-api"                          % "1.7.29"
 
-  val slf4jSimple =               "org.slf4j"                  % "slf4j-simple"                        % "1.7.5"
-  val scalaCheck =                "org.scalacheck"             %% "scalacheck"                         % "1.14.3"
+  val slf4jSimple =               "org.slf4j"                  % "slf4j-simple"                        % "1.7.30"
+  val scalaCheck =                "org.scalacheck"             %% "scalacheck"                         % "1.13.5"
 
   val scalaLogging =              "com.typesafe.scala-logging" %% "scala-logging"                      % "3.9.2"
 

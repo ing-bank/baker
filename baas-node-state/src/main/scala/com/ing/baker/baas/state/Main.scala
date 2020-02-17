@@ -1,30 +1,46 @@
 package com.ing.baker.baas.state
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import com.ing.baker.runtime.akka.AkkaBaker
+import akka.cluster.Cluster
+import akka.stream.{ActorMaterializer, Materializer}
+import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
+import com.ing.baker.runtime.serialization.Encryption
 import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
 object Main extends App {
-  private val timeout: FiniteDuration = 20.seconds
 
-  println(Console.YELLOW + "Starting State Node..." + Console.RESET)
-
+  // Config
   val config = ConfigFactory.load()
-  val systemName = config.getString("service.actorSystemName")
-  val httpServerPort = config.getInt("service.httpServerPort")
-  val stateNodeSystem = ActorSystem(systemName)
-  val stateNodeBaker = AkkaBaker(config, stateNodeSystem)
-  val materializer = ActorMaterializer()(stateNodeSystem)
+  val httpServerPort = config.getInt("baas-component.http-api-port")
+  val namespace = config.getString("baas-component.kubernetes-namespace")
 
-  import stateNodeSystem.dispatcher
+  // Core dependencies
+  implicit val system: ActorSystem = ActorSystem("BaaSStateNodeSystem")
+  implicit val materializer: Materializer = ActorMaterializer()
+  implicit val encryption: Encryption = Encryption.from(config)
 
-  Await.result(BaaSServer.run(stateNodeBaker, "0.0.0.0", httpServerPort)(stateNodeSystem, materializer).map { hook =>
-    println(Console.GREEN + "State Node started..." + Console.RESET)
-    println(hook.localAddress)
-    sys.addShutdownHook(Await.result(hook.unbind(), timeout))
-  }, timeout)
+  // Dependencies
+  val kubernetes = new ServiceDiscoveryKubernetes(namespace)
+  val interactionManager = new InteractionsServiceDiscovery(kubernetes)
+  val stateNodeBaker = AkkaBaker.withConfig(AkkaBakerConfig(
+    interactionManager = interactionManager,
+    bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
+    readJournal = AkkaBakerConfig.persistenceQueryFrom(config, system),
+    timeouts = AkkaBakerConfig.Timeouts.from(config),
+    bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config)
+  )(system))
+  val eventListeners = new EventListenersServiceDiscovery(kubernetes, stateNodeBaker)
+
+  import system.dispatcher
+
+  // Server init
+  Cluster(system).registerOnMemberUp {
+    StateNodeHttp.run(eventListeners, stateNodeBaker, "0.0.0.0", httpServerPort).foreach { hook =>
+      sys.addShutdownHook(Await.result(hook.unbind(), 20.seconds))
+    }
+  }
+
 }
