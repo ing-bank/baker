@@ -5,7 +5,7 @@ object Dependencies {
 
   val akkaVersion = "2.5.27"
   val http4sVersion = "0.20.0"
-  val circeVersion = "0.12.3"
+  val circeVersion = "0.13.0"
 
   val jvmV = "1.8"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
