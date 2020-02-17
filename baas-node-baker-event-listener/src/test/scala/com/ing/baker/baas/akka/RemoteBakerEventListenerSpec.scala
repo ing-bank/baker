@@ -11,6 +11,7 @@ import com.ing.baker.baas.scaladsl.RemoteBakerEventListener
 import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
 import com.ing.baker.runtime.scaladsl.{BakerEvent, RecipeInstanceCreated}
 import com.ing.baker.runtime.serialization.Encryption
+import com.typesafe.config.ConfigFactory
 import org.scalatest.AsyncFlatSpec
 import org.scalatest.compatible.Assertion
 
@@ -48,7 +49,7 @@ object RemoteBakerEventListenerSpec {
   (implicit ec: ExecutionContext): Future[Assertion] = {
     val testId: UUID = UUID.randomUUID()
     val systemName: String = "baas-node-interaction-test-" + testId
-    implicit val system: ActorSystem = ActorSystem(systemName)
+    implicit val system: ActorSystem = ActorSystem(systemName, ConfigFactory.parseString("""akka.loglevel = "OFF" """))
     implicit val materializer: Materializer = ActorMaterializer()
     implicit val encryption: Encryption = Encryption.NoEncryption
     for {

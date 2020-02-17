@@ -48,7 +48,7 @@ class EventListenersServiceDiscovery(discovery: ServiceDiscovery, baker: Baker)(
     }
   }
 
-  system.scheduler.schedule(30.seconds, 10.seconds, updateCache)
+  system.scheduler.schedule(0.seconds, 10.seconds, updateCache)
 
   def initializeEventListeners: Future[Unit] = {
     baker.registerEventListener((metadata, event) => {
