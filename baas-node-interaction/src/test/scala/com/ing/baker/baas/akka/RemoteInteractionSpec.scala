@@ -12,6 +12,7 @@ import com.ing.baker.runtime.common.LanguageDataStructures.LanguageApi
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
 import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.{CharArray, Int64, PrimitiveValue, Type}
+import com.typesafe.config.ConfigFactory
 import org.jboss.netty.channel.ChannelException
 import org.scalatest.AsyncFlatSpec
 import org.scalatest.compatible.Assertion
@@ -61,7 +62,7 @@ object RemoteInteractionSpec {
   (implicit ec: ExecutionContext): Future[Assertion] = {
     val testId: UUID = UUID.randomUUID()
     val systemName: String = "baas-node-interaction-test-" + testId
-    implicit val system: ActorSystem = ActorSystem(systemName)
+    implicit val system: ActorSystem = ActorSystem(systemName, ConfigFactory.parseString("""akka.loglevel = "OFF" """))
     implicit val materializer: Materializer = ActorMaterializer()
     implicit val encryption: Encryption = Encryption.NoEncryption
     for {

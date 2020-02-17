@@ -40,7 +40,6 @@ class InteractionsServiceDiscovery(discovery: ServiceDiscovery)(implicit system:
             run = client.apply
           ))
         }.recover({ case e: Exception =>
-          println("Recovered from exception: " + e.getMessage)
           None
         }))
       ).map(_.flatten)
@@ -54,7 +53,7 @@ class InteractionsServiceDiscovery(discovery: ServiceDiscovery)(implicit system:
     }))
   }
 
-  system.scheduler.schedule(30 seconds, 10 seconds, updateInteractions)
+  system.scheduler.schedule(0 seconds, 10 seconds, updateInteractions)
 
   private def isCompatibleImplementation(interaction: InteractionTransition, implementation: InteractionInstance): Boolean = {
     val interactionNameMatches =
