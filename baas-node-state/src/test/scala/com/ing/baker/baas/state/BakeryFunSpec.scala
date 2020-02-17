@@ -82,7 +82,11 @@ abstract class BakeryFunSpec extends AsyncFunSpecLike {
           val kubernetesApi = new ApiClient().setBasePath(s"http://localhost:$mocksPort")
           val kubernetes = new ServiceDiscoveryKubernetes("default", kubernetesApi)
           val interactionManager = new InteractionsServiceDiscovery(kubernetes)
-          val stateNodeBaker = AkkaBaker.withConfig(AkkaBakerConfig.localDefault(system).copy(interactionManager = interactionManager))
+          val stateNodeBaker = AkkaBaker.withConfig(
+            AkkaBakerConfig.localDefault(system).copy(
+              interactionManager = interactionManager,
+              bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings(
+                allowAddingRecipeWithoutRequiringInstances = true)))
           val eventListeners = new EventListenersServiceDiscovery(kubernetes, stateNodeBaker)
           withOpenPort(5010, port => StateNodeHttp.run(eventListeners, stateNodeBaker, "0.0.0.0", port)).map {
             case (serverBinding, serverPort) =>
