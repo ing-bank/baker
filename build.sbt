@@ -559,3 +559,28 @@ lazy val `baas-interaction-example-make-payment` = project.in(file("examples/baa
     dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
   )
   .dependsOn(`baas-node-interaction`)
+
+lazy val `baas-example-setup` = project
+  .aggregate(`baas-node-client`, `baas-node-state`, `baas-node-interaction`, `baas-node-event-listener`,
+    `baas-client-example`, `baas-event-listener-example`, `baas-baker-event-listener-example`,
+    `baas-interaction-example-reserve-items`, `baas-interaction-example-make-payment`, `baas-interaction-example-ship-items`)
+
+lazy val `baas-smoke-tests` = project.in(file("baas-smoke-tests"))
+  .settings(defaultModuleSettings)
+  .settings(noPublishSettings)
+  .settings(
+    moduleName := "baas-smoke-tests",
+    libraryDependencies ++= Seq() ++
+      testDeps(
+        http4sDsl,
+        http4sClient,
+        circe,
+        slf4jApi,
+        slf4jSimple,
+        logback,
+        scalaTest,
+        scalaCheck
+      )
+  )
+  .dependsOn(`baas-node-client`, `baas-client-example`)
+
