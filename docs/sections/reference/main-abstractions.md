@@ -328,7 +328,7 @@ import com.ing.baker.runtime.scaladsl.Baker
 
 import scala.concurrent.Future
 
-val done: Future[Unit] = baker.addImplementation(reserveItemsInstance)
+val done: Future[Unit] = baker.addInteractionInstance(reserveItemsInstance)
 ```
 
 ``` java tab="Java"
@@ -341,7 +341,7 @@ import java.util.concurrent.CompletableFuture;
 ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
 Baker baker = Baker.akkaLocalDefault(actorSystem);
 
-CompletableFuture<BoxedUnit> done = baker.addImplementation(reserveItemsInstance);
+CompletableFuture<BoxedUnit> done = baker.addInteractionInstance(reserveItemsInstance);
 ```
 
 ## Recipe and RecipeInstance
@@ -490,7 +490,7 @@ val baker: Baker = Baker.akkaLocalDefault(actorSystem)
 val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
 
 val program: Future[Unit] = for {
-    _ <- baker.addImplementation(WebshopInstances.ReserveItemsInstance)
+    _ <- baker.addInteractionInstance(WebshopInstances.ReserveItemsInstance)
     recipeId <- baker.addRecipe(compiledRecipe)
     _ <- baker.bake(recipeId, "first-instance-id")
     firstOrderPlaced: EventInstance =
@@ -529,7 +529,7 @@ InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveI
 CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
 String recipeInstanceId = "first-instance-id";
-CompletableFuture<List<String>> result = baker.addImplementation(reserveItemsInstance)
+CompletableFuture<List<String>> result = baker.addInteractionInstance(reserveItemsInstance)
     .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
     .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
     .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
