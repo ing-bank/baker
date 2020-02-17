@@ -265,6 +265,9 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
       "-Ypartial-unification"
     ),
     libraryDependencies ++= Seq(
+      slf4jApi,
+      slf4jSimple,
+      logback,
       akkaHttp,
       akkaPersistenceCassandra,
       akkaManagementHttp,
@@ -272,7 +275,14 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
       akkaDiscoveryKube,
       kubernetesJavaClient
     ) ++ testDeps(
-      scalaTest
+      slf4jApi,
+      slf4jSimple,
+      logback,
+      scalaTest,
+      mockServer,
+      akkaHttpCirce,
+      circe,
+      circeGeneric
     )
   )
   .settings(
@@ -283,10 +293,13 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
   )
   .dependsOn(
     runtime,
+    `baas-node-client`,
     `baas-protocol-baker`,
     `baas-protocol-interaction-scheduling`,
     `baas-protocol-recipe-event-publishing`,
-    `baas-protocol-baker-event-publishing`)
+    `baas-protocol-baker-event-publishing`,
+    recipeCompiler, recipeDsl, intermediateLanguage
+  )
 
 lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
   .settings(defaultModuleSettings)
@@ -341,31 +354,11 @@ lazy val `baas-node-baker-event-listener` = project.in(file("baas-node-baker-eve
   )
   .dependsOn(`baas-protocol-baker-event-publishing`, `baker-interface`)
 
-lazy val `baas-tests` = project.in(file("baas-tests"))
-  .settings(defaultModuleSettings)
-  .settings(noPublishSettings)
-  .settings(
-    moduleName := "baas-tests",
-    libraryDependencies ++= Seq() ++
-      testDeps(
-        akkaSlf4j,
-        akkaTestKit,
-        akkaInmemoryJournal,
-        logback,
-        scalaTest,
-        junitInterface,
-        levelDB,
-        levelDBJni,
-        scalaCheck
-      )
-  )
-  .dependsOn(`baas-node-client`, `baas-node-state`, `baas-node-interaction`, `baas-node-event-listener`, recipeCompiler)
-  .aggregate(`baas-node-client`, `baas-node-state`, `baas-node-interaction`, `baas-node-event-listener`)
-
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
-  .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver)
+  .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver,
+    `baas-node-client`, `baas-node-state`, `baas-node-interaction`, `baas-node-event-listener`, `baas-node-baker-event-listener`)
 
 lazy val `baker-example` = project
   .in(file("examples/baker-example"))
