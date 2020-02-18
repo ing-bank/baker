@@ -1,10 +1,19 @@
 package com.ing.baker.runtime.serialization
 
+import com.typesafe.config.Config
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 
 // Taken from: https://gist.github.com/mumoshu/1587327
 object Encryption {
+
+  def from(config: Config): Encryption = {
+    if(config.hasPath("encryption")) {
+      val encryptionEnabled = config.getBoolean("encryption.enabled")
+      if (encryptionEnabled) new Encryption.AESEncryption(config.getString("encryption.secret"))
+      else NoEncryption
+    } else NoEncryption
+  }
 
   object NoEncryption extends Encryption {
 

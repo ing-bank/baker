@@ -7,18 +7,10 @@ import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.recipe.CaseClassIngredient
 import com.ing.baker.recipe.TestRecipe.{fireTwoEventsInteraction, _}
-import com.ing.baker.recipe.{CaseClassIngredient, common}
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
-import com.ing.baker.types.{Converters, Value}
-import com.typesafe.config.{Config, ConfigFactory}
-import java.nio.file.Paths
-import java.util.UUID
-
 import com.ing.baker.recipe.common.Recipe
 import com.ing.baker.runtime.akka.AkkaBaker
-import com.ing.baker.recipe.TestRecipe.{fireTwoEventsInteraction, _}
-import com.ing.baker.recipe.{CaseClassIngredient, common}
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import com.ing.baker.types.{Converters, Value}
 import com.typesafe.config.{Config, ConfigFactory}
@@ -26,6 +18,7 @@ import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest._
 import org.scalatestplus.mockito.MockitoSugar
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -197,14 +190,14 @@ trait BakerRuntimeTestBase
   }
 
   /**
-   * Returns a Baker instance that contains a simple recipe that can be used in tests
-   * It als sets mocks that return happy flow responses for the interactions
-   *
-   * This recipe contains: See TestRecipe.png for a visualization
-   *
-   * @param recipeName A unique name that is needed for the recipe to insure that the tests do not interfere with each other
-   * @return
-   */
+    * Returns a Baker instance that contains a simple recipe that can be used in tests
+    * It als sets mocks that return happy flow responses for the interactions
+    *
+    * This recipe contains: See TestRecipe.png for a visualization
+    *
+    * @param recipeName A unique name that is needed for the recipe to insure that the tests do not interfere with each other
+    * @return
+    */
   protected def setupBakerWithRecipe(recipeName: String, appendUUIDToTheRecipeName: Boolean = true)
                                     (implicit actorSystem: ActorSystem): Future[(Baker, String)] = {
     val newRecipeName = if (appendUUIDToTheRecipeName) s"$recipeName-${UUID.randomUUID().toString}" else recipeName
