@@ -2,7 +2,7 @@ package webshop.webservice
 
 import webshop.webservice.OrderStatus._
 
-trait OrderStatus {
+sealed trait OrderStatus {
 
   override def toString: String = this match {
     case InfoPending(pending) => "info-pending:" + pending.mkString(",")
