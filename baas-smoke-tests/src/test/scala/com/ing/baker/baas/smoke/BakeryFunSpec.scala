@@ -1,6 +1,7 @@
 package com.ing.baker.baas.smoke
 
-import scala.sys.process._
+import java.util.UUID
+
 import cats.effect.{ContextShift, IO, Timer}
 import cats.implicits._
 import org.http4s.Uri
@@ -10,6 +11,7 @@ import org.scalatest.compatible.Assertion
 import org.scalatest.{FutureOutcome, Tag, fixture}
 
 import scala.concurrent.duration._
+import scala.sys.process._
 
 abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
 
@@ -34,16 +36,18 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
   }
 
   case class TestContext(
-    clientApp: ExampleAppClient
+    clientApp: ExampleAppClient,
+    recipeEventListener: EventListenerClient,
+    bakerEventListener: EventListenerClient
   )
 
   case class TestArguments(
-                            clientAppHostname: Uri,
-                            stateServiceHostname: Uri,
-                            eventListenerHostname: Uri,
-                            bakerEventListenerHostname:Uri,
-                            skipSetup: Boolean,
-                            skipCleanup: Boolean
+    clientAppHostname: Uri,
+    stateServiceHostname: Uri,
+    eventListenerHostname: Uri,
+    bakerEventListenerHostname:Uri,
+    skipSetup: Boolean,
+    skipCleanup: Boolean
   )
 
   override type FixtureParam = TestArguments
@@ -77,39 +81,96 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
 
   def test(specText: String, testTags: Tag*)(runTest: TestContext => IO[Assertion])(implicit pos: source.Position): Unit = {
 
-    val processLogger = ProcessLogger(println(_))
-
-    def exec(command: String): IO[Either[Throwable, String]] =
-      IO(command.!!(processLogger)).attempt
-
-    val deleteEnvironment: IO[Either[Throwable, String]] =
-      exec(s"kubectl delete -f ${getClass.getResource("/kubernetes").getPath}")
-
-    val createEnvironment: IO[Either[Throwable, String]] =
-      exec(s"kubectl apply -f ${getClass.getResource("/kubernetes").getPath}")
-
     it(specText, testTags: _*) { args =>
 
-      def setup[A](f: IO[A]): IO[Unit] =
-        if(args.skipSetup) IO.unit else f.void
+      def setup[A](f: IO[A]): IO[Option[A]] =
+        if(args.skipSetup) IO.pure(None) else f.map(Some(_))
 
       def cleanup[A](f: IO[A]): IO[Unit] =
         if(args.skipCleanup) IO.unit else f.void
 
+      def processLogger(prefix: String) = ProcessLogger(
+        line => println(prefix + " " + line),
+        err => stderr.println(Console.RED + err + Console.RESET))
+
+      def exec(prefix: String, command: String): IO[Int] =
+        IO(command.!(processLogger(prefix)))
+
+      val kubernetesAvailable: IO[Boolean] =
+        IO("kubectl --help".!(ProcessLogger(_ => ())) == 0)
+
+      def deleteEnvironment(namespaceOpt: Option[String]): IO[Int] = {
+        namespaceOpt match {
+          case Some(namespace) =>
+            val prefix = s"[${Console.CYAN}cleaning env $namespace${Console.RESET}]"
+            exec(
+              prefix = prefix,
+              command = s"kubectl delete -f ${getClass.getResource("/kubernetes").getPath} -n $namespace"
+            ) *> exec(
+              prefix = prefix,
+              command = s"kubectl delete namespace $namespace"
+            )
+          case None =>
+            IO(println(Console.YELLOW + "### Skipping cleanup because we skipped startup" + Console.RESET)) *> IO.pure(0)
+        }
+      }
+
+      val createEnvironment: IO[String] = {
+        for {
+          testUUID <- IO( UUID.randomUUID().toString )
+          kubernetesConfigPath = getClass.getResource("/kubernetes").getPath
+          prefix = s"[${Console.GREEN}creating env $testUUID${Console.RESET}]"
+          _ <- exec(prefix, command = s"kubectl create namespace $testUUID")
+          _ <- exec(prefix, command = s"kubectl apply -f $kubernetesConfigPath -n $testUUID")
+          _ = if(args.skipCleanup) {
+            println(Console.YELLOW + s"### Will skip cleanup after the test, to manually clean the environment run: " + Console.RESET)
+            println(s"\n\tkubectl delete -f $kubernetesConfigPath -n $testUUID\n")
+          }
+        } yield testUUID
+      }
+
+      def getPods(namespaceOpt: Option[String]): IO[Int] =
+        namespaceOpt match {
+          case Some(namespace) =>
+            exec(
+              prefix = s"[${Console.GREEN}pods${Console.RESET}]",
+              command = s"kubectl get pods -n $namespace")
+          case None =>
+            IO( println(Console.GREEN + "Skipped startup, will run the tests immediately" + Console.RESET)) *> IO.pure(0)
+        }
+
       val clientResource = BlazeClientBuilder[IO](executionContext).resource
       val exampleAppClient = new ExampleAppClient(clientResource, args.clientAppHostname)
+      val recipeEventsClient = new EventListenerClient(clientResource, args.eventListenerHostname)
+      val bakerEventsClient = new EventListenerClient(clientResource, args.bakerEventListenerHostname)
+
+      val setupWaitTime = 1.minute
+      val setupWaitSplit = 3
+
+      def dontSkipTest: IO[Assertion] =
+        for {
+          namespace <- setup(createEnvironment)
+          _ <- within(setupWaitTime, setupWaitSplit)(for {
+            _ <- IO ( println(Console.GREEN + s"\nWaiting for environment (20s)..." + Console.RESET) )
+            _ <- getPods(namespace)
+            status <- exampleAppClient.ping
+          } yield assert(status.code == 200))
+          attempt <- runTest(TestContext(
+            clientApp = exampleAppClient,
+            recipeEventListener = recipeEventsClient,
+            bakerEventListener = bakerEventsClient
+          )).attempt
+          _ <- cleanup(deleteEnvironment(namespace))
+          outcome <- IO.fromEither(attempt)
+        } yield outcome
+
+      def skipTest: IO[Assertion] =
+        IO(println(Console.YELLOW + "Skipping the smoke test because 'kubectl' command not available..." + Console.RESET)) *> IO.pure(succeed)
 
       (for {
-        _ <- cleanup(setup(deleteEnvironment))
-        _ <- setup(createEnvironment.flatMap(IO.fromEither))
-        _ <- within(1.minute, split = 60)(exampleAppClient.ping.map(status => assert(status.code == 200)))
-        attempt <- runTest(TestContext(
-          clientApp = exampleAppClient
-        )).attempt
-        _ <- cleanup(setup(deleteEnvironment))
-        outcome <- IO.fromEither(attempt)
-      } yield outcome)
-        .unsafeToFuture()
+        canRun <- kubernetesAvailable
+        outcome <- if (canRun) dontSkipTest else skipTest
+      } yield outcome).unsafeToFuture()
     }
   }
 }

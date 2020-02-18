@@ -415,6 +415,7 @@ lazy val `baas-client-example` = project
       compileDeps(
         slf4jApi,
         slf4jSimple,
+        logback,
         http4s,
         http4sDsl,
         http4sServer,
@@ -447,7 +448,11 @@ lazy val `baas-event-listener-example` = project
     libraryDependencies ++=
       compileDeps(
         slf4jApi,
-        slf4jSimple
+        slf4jSimple,
+        logback,
+        http4s,
+        http4sDsl,
+        http4sServer,
       ) ++ testDeps()
   )
   .settings(
@@ -471,7 +476,11 @@ lazy val `baas-baker-event-listener-example` = project
     libraryDependencies ++=
       compileDeps(
         slf4jApi,
-        slf4jSimple
+        slf4jSimple,
+        logback,
+        http4s,
+        http4sDsl,
+        http4sServer,
       ) ++ testDeps()
   )
   .settings(
@@ -560,7 +569,7 @@ lazy val `baas-interaction-example-make-payment` = project.in(file("examples/baa
   )
   .dependsOn(`baas-node-interaction`)
 
-lazy val `baas-example-setup` = project
+lazy val `baas-example-setup` = project.in(file("examples/baas-example-setup"))
   .aggregate(`baas-node-client`, `baas-node-state`, `baas-node-interaction`, `baas-node-event-listener`,
     `baas-client-example`, `baas-event-listener-example`, `baas-baker-event-listener-example`,
     `baas-interaction-example-reserve-items`, `baas-interaction-example-make-payment`, `baas-interaction-example-ship-items`)
