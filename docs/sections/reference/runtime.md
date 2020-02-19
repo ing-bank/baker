@@ -40,13 +40,13 @@ is recommended for tests.
 
 ```scala tab="Scala"
 
-val baker: Baker = Baker.akkaLocalDefault(actorSystem)
+val baker: Baker = AkkaBaker.localDefault(actorSystem)
 
 ```
 
 ```java tab="Java"
 
-Baker baker = Baker.akkaLocalDefault(actorSystem);
+Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
 
 ```
 
@@ -170,7 +170,7 @@ except it comes in a `CompletableFuture` that will help you handle async program
 
 ```scala tab="Scala"
 
-val baker: Baker = Baker.akkaLocalDefault(actorSystem)
+val baker: Baker = AkkaBaker.localDefault(actorSystem)
 
 val reserveItemsInstance: InteractionInstance = InteractionInstance.unsafeFrom(new ReserveItems())
 
@@ -180,7 +180,7 @@ val result: Future[Unit] = baker.addInteractionInstance(reserveItemsInstance)
 
 ```java tab="Java"
 
-Baker baker = Baker.akkaLocalDefault(actorSystem);
+Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
 
 InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
 

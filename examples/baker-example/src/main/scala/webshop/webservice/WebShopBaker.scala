@@ -2,7 +2,7 @@ package webshop.webservice
 
 import java.util.UUID
 
-import cats.effect.{IO, Timer}
+import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
@@ -19,6 +19,8 @@ object WebShopBaker {
     RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
 
   def initRecipes(baker: Baker)(implicit time: Timer[IO], ec: ExecutionContext): IO[String] = {
+    implicit val cs = IO.contextShift(ec)
+
     IO.fromFuture(IO(for {
       _ <- baker.addInteractionInstances(Seq(
         InteractionInstance.unsafeFrom(new ReserveItemsInstance()),
@@ -37,8 +39,9 @@ object WebShopBaker {
 class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: ExecutionContext) extends WebShop {
 
   import WebShopBaker.logger
+  private implicit val cs: ContextShift[IO] = IO.contextShift(ec)
 
-  override def createCheckoutOrder(items: List[String]): IO[String] =
+  override def createCheckoutOrder(items: List[String]): IO[String] = {
     IO.fromFuture(IO {
       val orderId: String = UUID.randomUUID().toString
       val event = EventInstance.unsafeFrom(
@@ -49,6 +52,7 @@ class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit ec: Executio
         _ = logger.info(s"${event.name}[$orderId]: $status")
       } yield orderId
     })
+  }
 
   override def addCheckoutAddressInfo(orderId: String, address: String): IO[Option[String]] =
     IO.fromFuture(IO {
