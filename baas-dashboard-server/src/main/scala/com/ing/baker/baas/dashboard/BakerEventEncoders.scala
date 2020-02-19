@@ -1,12 +1,12 @@
 package com.ing.baker.baas.dashboard
 
-import com.ing.baker.runtime.scaladsl.{EventReceived, EventRejected, InteractionCompleted, InteractionFailed, InteractionStarted, RecipeAdded, RecipeInstanceCreated}
+import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.types
-import io.circe.{Decoder, DecodingFailure, Encoder, Json, JsonObject, KeyDecoder, KeyEncoder}
-import io.circe.Encoder._
 import io.circe.Decoder._
-import io.circe.syntax._
+import io.circe.Encoder._
 import io.circe.generic.auto._
+import io.circe.syntax._
+import io.circe._
 
 object BakerEventEncoders {
 

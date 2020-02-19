@@ -360,21 +360,22 @@ lazy val `baas-dashboard-server` = project.in(file("baas-dashboard-server"))
   .settings(
     moduleName := "baas-dashboard-server",
     libraryDependencies ++= Seq(
-      fs2,
-      akkaHttpCirce,
+      slf4jApi,
+      slf4jSimple,
+      logback,
+      http4s,
+      http4sDsl,
+      http4sClient,
+      http4sServer,
+      http4sCirce,
       circe,
       circeGeneric
     ) ++
       testDeps(
-        akkaSlf4j,
-        akkaTestKit,
-        akkaInmemoryJournal,
+        slf4jApi,
+        slf4jSimple,
         logback,
-        scalaTest,
-        junitInterface,
-        levelDB,
-        levelDBJni,
-        scalaCheck
+        scalaTest
       )
   )
   .settings(

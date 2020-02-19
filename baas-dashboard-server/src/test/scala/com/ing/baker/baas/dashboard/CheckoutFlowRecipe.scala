@@ -1,13 +1,13 @@
-package com.ing.baker.baas.test
+package com.ing.baker.baas.dashboard
 
-import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
-import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
-import CheckoutFlowIngredients._
-import CheckoutFlowEvents._
-import CheckoutFlowInteractions._
+import com.ing.baker.baas.dashboard.CheckoutFlowEvents._
+import com.ing.baker.baas.dashboard.CheckoutFlowIngredients._
+import com.ing.baker.baas.dashboard.CheckoutFlowInteractions._
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilMaximumRetries
+import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
