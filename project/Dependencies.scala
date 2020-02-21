@@ -18,7 +18,7 @@ object Dependencies {
       .exclude("com.typesafe.akka", "akka-stream")
 
   val scalaJava8Compat =          "org.scala-lang.modules"     %% "scala-java8-compat"                 % "0.8.0"
-  val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.0.8"
+  val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.1.1"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
   val mockServer =                "org.mock-server"            %  "mockserver-netty"                   % "5.9.0"
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
