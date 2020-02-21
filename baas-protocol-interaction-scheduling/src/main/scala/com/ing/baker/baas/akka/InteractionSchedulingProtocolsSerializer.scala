@@ -1,7 +1,7 @@
 package com.ing.baker.baas.akka
 
 import akka.actor.ExtendedActorSystem
-import com.ing.baker.runtime.serialization.{SerializersProvider, TypedProtobufSerializer}
+import com.ing.baker.runtime.serialization.{AkkaSerializerProvider, TypedProtobufSerializer}
 import com.ing.baker.runtime.serialization.TypedProtobufSerializer.{BinarySerializable, forType}
 import com.ing.baker.baas.protocol.InteractionSchedulingProto._
 
@@ -9,7 +9,7 @@ object InteractionSchedulingProtocolsSerializer {
 
   val identifier: Int = 102
 
-  def entries(ev0: SerializersProvider): List[BinarySerializable] = {
+  def entries(ev0: AkkaSerializerProvider): List[BinarySerializable] = {
     implicit val ev = ev0
     List(
       forType[com.ing.baker.baas.protocol.ProtocolInteractionExecution.ExecuteInstance]

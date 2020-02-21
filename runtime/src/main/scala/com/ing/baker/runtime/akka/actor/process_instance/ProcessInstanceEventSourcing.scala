@@ -8,7 +8,7 @@ import akka.NotUsed
 import akka.actor.{ActorSystem, NoSerializationVerificationNeeded}
 import akka.persistence.query.scaladsl.CurrentEventsByPersistenceIdQuery
 import akka.stream.scaladsl.Source
-import com.ing.baker.runtime.serialization.SerializersProvider
+import com.ing.baker.runtime.serialization.AkkaSerializerProvider
 import com.ing.baker.runtime.serialization.Encryption
 
 object ProcessInstanceEventSourcing {
@@ -92,7 +92,7 @@ object ProcessInstanceEventSourcing {
       readJournal: CurrentEventsByPersistenceIdQuery,
       eventSourceFn: T ⇒ (S ⇒ E ⇒ S))(implicit actorSystem: ActorSystem): Source[(Instance[P, T, S], Event), NotUsed] = {
 
-    val serializer = new ProcessInstanceSerialization[P, T, S, E](SerializersProvider(actorSystem, encryption))
+    val serializer = new ProcessInstanceSerialization[P, T, S, E](AkkaSerializerProvider(actorSystem, encryption))
 
     val persistentId = ProcessInstance.recipeInstanceId2PersistenceId(processTypeName, recipeInstanceId)
     val src = readJournal.currentEventsByPersistenceId(persistentId, 0, Long.MaxValue)
@@ -119,7 +119,7 @@ abstract class ProcessInstanceEventSourcing[P : Identifiable, T : Identifiable, 
   protected val eventSource: Instance[P, T, S] => Event => Instance[P, T, S] =
     ProcessInstanceEventSourcing.apply[P, T, S, E](eventSourceFn)
 
-  private val serializer = new ProcessInstanceSerialization[P, T, S, E](SerializersProvider(system, encryption))
+  private val serializer = new ProcessInstanceSerialization[P, T, S, E](AkkaSerializerProvider(system, encryption))
 
   def onRecoveryCompleted(state: Instance[P, T, S])
 

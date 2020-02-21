@@ -5,7 +5,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.{Marshal, Marshaller, ToEntityMarshaller}
 import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.model.headers.RawHeader
-import com.ing.baker.runtime.serialization.{Encryption, ProtoMap, SerializersProvider}
+import com.ing.baker.runtime.serialization.{Encryption, ProtoMap, AkkaSerializerProvider}
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, MediaTypes, MessageEntity, Uri}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshal, Unmarshaller}
 import akka.stream.Materializer
@@ -47,8 +47,8 @@ class RemoteInteractionClient(hostname: Uri)(implicit system: ActorSystem, mat: 
       m1.fromByteArray(byteArray).map(Left(_)).orElse(m2.fromByteArray(byteArray).map(Right(_))).get
     }
 
-  private implicit val serializersProvider: SerializersProvider =
-    SerializersProvider(system, encryption)
+  private implicit val serializersProvider: AkkaSerializerProvider =
+    AkkaSerializerProvider(system, encryption)
 
   private val root: Path = Path./("api")./("v3")
 

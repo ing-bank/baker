@@ -49,7 +49,7 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
 
   class CheckFor[A <: AnyRef]() {
 
-    def run[P <: scalapb.GeneratedMessage with scalapb.Message[P]](implicit ev: ProtoMap[A, P], gen: Gen[A], typeTag: ClassTag[A]): Unit = {
+    def run(implicit gen: Gen[A], typeTag: ClassTag[A]): Unit = {
       test(s"${typeTag.runtimeClass.getName} typed serialization") {
         check(forAll(gen) { m =>
           m === serializer.fromBinary(serializer.toBinary(m), serializer.manifest(m))

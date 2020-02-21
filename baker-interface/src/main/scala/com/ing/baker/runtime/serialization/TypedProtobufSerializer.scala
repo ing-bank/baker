@@ -3,6 +3,7 @@ package com.ing.baker.runtime.serialization
 import akka.actor.ExtendedActorSystem
 import akka.serialization.SerializerWithStringManifest
 import com.ing.baker.runtime.serialization.TypedProtobufSerializer.BinarySerializable
+import com.typesafe.config.ConfigFactory
 import org.slf4j.LoggerFactory
 
 import scala.reflect.ClassTag
@@ -64,10 +65,10 @@ object TypedProtobufSerializer {
   }
 }
 
-abstract class TypedProtobufSerializer(system: ExtendedActorSystem, _indentifier: Int, entries: SerializersProvider => List[BinarySerializable]) extends SerializerWithStringManifest {
+abstract class TypedProtobufSerializer(system: ExtendedActorSystem, _indentifier: Int, entries: AkkaSerializerProvider => List[BinarySerializable]) extends SerializerWithStringManifest {
 
-  implicit def serializersProvider: SerializersProvider =
-    SerializersProvider(system, system.provider)
+  implicit def serializersProvider: AkkaSerializerProvider =
+    AkkaSerializerProvider(system, Encryption.from(ConfigFactory.load()))
 
   lazy val entriesMem: List[BinarySerializable] =
     entries(serializersProvider)
@@ -85,6 +86,10 @@ abstract class TypedProtobufSerializer(system: ExtendedActorSystem, _indentifier
   override def toBinary(o: AnyRef): Array[Byte] =
     entriesMem
       .find(_.isInstance(o))
+    .map(x => {
+      println(Console.MAGENTA + x.manifest + " > " + identifier + Console.RESET)
+      x
+    })
       .map(_.unsafeToBinary(o))
       .getOrElse(throw new IllegalStateException(s"Unsupported object of type: ${o.getClass}"))
 
@@ -98,4 +103,3 @@ abstract class TypedProtobufSerializer(system: ExtendedActorSystem, _indentifier
         identity
       )
 }
-

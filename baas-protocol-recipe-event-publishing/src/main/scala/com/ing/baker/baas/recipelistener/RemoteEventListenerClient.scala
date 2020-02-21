@@ -10,7 +10,7 @@ import org.http4s.{DecodeFailure, EntityDecoder, EntityEncoder, MalformedMessage
 import com.ing.baker.baas.protocol.DistributedEventPublishingProto._
 import com.ing.baker.baas.protocol.ProtocolDistributedEventPublishing
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata}
-import com.ing.baker.runtime.serialization.{Encryption, ProtoMap, SerializersProvider}
+import com.ing.baker.runtime.serialization.{Encryption, ProtoMap, AkkaSerializerProvider}
 import org.http4s.EntityDecoder.collectBinary
 
 import scala.util.{Failure, Success}
@@ -38,10 +38,10 @@ class RemoteEventListenerClient(client: Resource[IO, Client[IO]], hostname: Uri)
 
   val intendedHost: String = hostname.authority.map(_.host.value).getOrElse("unknown")
 
+  /*
   private implicit val serializersProvider: SerializersProvider =
     SerializersProvider(system, encryption)
 
-  /*
   private val root: Path = Path./("api")./("v3")
 
   private def withPath(path: Path): Uri = hostname.withPath(path)

@@ -12,7 +12,7 @@ import com.ing.baker.baas.protocol.MarshallingUtils._
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance, EventMoment, EventResolutions, InteractionInstance, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
-import com.ing.baker.runtime.serialization.{Encryption, SerializersProvider}
+import com.ing.baker.runtime.serialization.{Encryption, AkkaSerializerProvider}
 import com.ing.baker.types.Value
 
 import scala.concurrent.Future
@@ -27,8 +27,8 @@ case class BakerClient(hostname: Uri)(implicit system: ActorSystem, mat: Materia
 
   import system.dispatcher
 
-  implicit val serializersProvider: SerializersProvider =
-    SerializersProvider(system, encryption)
+  implicit val serializersProvider: AkkaSerializerProvider =
+    AkkaSerializerProvider(system, encryption)
 
   val root: Path = Path./("api")./("v3")
 

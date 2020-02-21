@@ -1,6 +1,6 @@
 package com.ing.baker.runtime.akka.actor.serialization
 
-import akka.actor.ExtendedActorSystem
+import akka.actor.{ActorRefProvider, ExtendedActorSystem}
 import com.ing.baker.il
 import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProto._
@@ -11,12 +11,13 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata, RecipeInstanceState}
 import com.ing.baker.runtime.serialization.TypedProtobufSerializer.{BinarySerializable, forType}
-import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider, TypedProtobufSerializer}
+import com.ing.baker.runtime.serialization.{AkkaSerializerProvider, ProtoMap, TypedProtobufSerializer}
 
 object BakerTypedProtobufSerializer {
 
-  def entries(ev0: SerializersProvider): List[BinarySerializable] = {
-    implicit val ev = ev0
+  def entries(actorRefProvider: ActorRefProvider)(serializersProvider: AkkaSerializerProvider): List[BinarySerializable] = {
+    implicit val ev0 = serializersProvider
+    implicit val ev1 = actorRefProvider
     commonEntries ++ processIndexEntries ++ processInstanceEntries ++ recipeManagerEntries
   }
 
@@ -25,7 +26,7 @@ object BakerTypedProtobufSerializer {
    */
   val identifier = 101
 
-  def commonEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
+  def commonEntries(implicit ev0: AkkaSerializerProvider): List[BinarySerializable] =
     List(
       forType[com.ing.baker.types.Value]
         .register("baker.types.Value"),
@@ -41,7 +42,7 @@ object BakerTypedProtobufSerializer {
         .register("il.CompiledRecipe")
     )
 
-  def processIndexEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
+  def processIndexEntries(implicit ev0: AkkaSerializerProvider, actorRefProvider: ActorRefProvider): List[BinarySerializable] =
     List(
       forType[ClusterBakerActorProvider.GetShardIndex]
         .register("ProcessIndex.GetShardIndex"),
@@ -99,7 +100,7 @@ object BakerTypedProtobufSerializer {
         .register("ProcessIndexProtocol.FireSensoryEventRejection.FiringLimitMet")
     )
 
-  def processInstanceEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
+  def processInstanceEntries(implicit ev0: AkkaSerializerProvider): List[BinarySerializable] =
     List(
       forType[ProcessInstanceProtocol.Stop]
         .register("ProcessInstanceProtocol.Stop"),
@@ -137,7 +138,7 @@ object BakerTypedProtobufSerializer {
         .register("Initialized")(ProtoMap.identityProtoMap(com.ing.baker.runtime.akka.actor.process_instance.protobuf.Initialized))
     )
 
-  def recipeManagerEntries(implicit ev0: SerializersProvider): List[BinarySerializable] =
+  def recipeManagerEntries(implicit ev0: AkkaSerializerProvider): List[BinarySerializable] =
     List(
       forType[RecipeManagerProtocol.AddRecipe]
         .register("RecipeManagerProtocol.AddRecipe"),
@@ -158,4 +159,4 @@ object BakerTypedProtobufSerializer {
     )
 }
 
-class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends TypedProtobufSerializer(system, BakerTypedProtobufSerializer.identifier, BakerTypedProtobufSerializer.entries)
+class BakerTypedProtobufSerializer(system: ExtendedActorSystem) extends TypedProtobufSerializer(system, BakerTypedProtobufSerializer.identifier, BakerTypedProtobufSerializer.entries(system.provider))

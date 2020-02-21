@@ -10,7 +10,7 @@ import com.ing.baker.baas.protocol.BaaSProto._
 import com.ing.baker.baas.protocol.BaaSProtocol
 import com.ing.baker.baas.protocol.MarshallingUtils._
 import com.ing.baker.runtime.scaladsl.Baker
-import com.ing.baker.runtime.serialization.{Encryption, SerializersProvider}
+import com.ing.baker.runtime.serialization.{Encryption, AkkaSerializerProvider}
 
 import scala.concurrent.Future
 
@@ -29,8 +29,8 @@ class StateNodeHttp(listeners: EventListenersServiceDiscovery, baker: Baker)(imp
 
   import system.dispatcher
 
-  implicit private val serializersProvider: SerializersProvider =
-    SerializersProvider(system, encryption)
+  implicit private val serializersProvider: AkkaSerializerProvider =
+    AkkaSerializerProvider(system, encryption)
 
   def route: Route = concat(pathPrefix("api" / "v3")(concat(health, addRecipe, getRecipe, getAllRecipes, bake,
     fireEventAndResolveWhenReceived, fireEventAndResolveWhenCompleted, fireEventAndResolveOnEvent, fireEvent,

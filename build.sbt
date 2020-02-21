@@ -227,6 +227,8 @@ lazy val `baas-protocol-recipe-event-publishing` = project.in(file("baas-protoco
   .settings(
     moduleName := "baas-protocol-recipe-event-publishing",
     libraryDependencies ++= Seq(
+      akkaHttp,
+      akkaStream,
       slf4jApi,
       slf4jSimple,
       logback,

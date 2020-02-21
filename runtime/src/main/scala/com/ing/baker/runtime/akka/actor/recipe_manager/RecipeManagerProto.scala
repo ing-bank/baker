@@ -6,14 +6,14 @@ import cats.syntax.traverse._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager.RecipeAdded
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol._
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
-import com.ing.baker.runtime.serialization.SerializersProvider
-import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider}
+import com.ing.baker.runtime.serialization.AkkaSerializerProvider
+import com.ing.baker.runtime.serialization.{ProtoMap, AkkaSerializerProvider}
 
 import scala.util.Try
 
 object RecipeManagerProto {
 
-  implicit def recipeAddedProto(implicit provider: SerializersProvider): ProtoMap[RecipeAdded, protobuf.RecipeAdded] =
+  implicit def recipeAddedProto(implicit provider: AkkaSerializerProvider): ProtoMap[RecipeAdded, protobuf.RecipeAdded] =
     new ProtoMap[RecipeAdded, protobuf.RecipeAdded] {
 
       val companion = protobuf.RecipeAdded
@@ -30,7 +30,7 @@ object RecipeManagerProto {
       }
     }
 
-  implicit def addRecipeProto(implicit provider: SerializersProvider): ProtoMap[AddRecipe, protobuf.AddRecipe] =
+  implicit def addRecipeProto(implicit provider: AkkaSerializerProvider): ProtoMap[AddRecipe, protobuf.AddRecipe] =
     new ProtoMap[AddRecipe, protobuf.AddRecipe] {
 
       val companion = protobuf.AddRecipe
@@ -73,7 +73,7 @@ object RecipeManagerProto {
         } yield GetRecipe(recipeId)
     }
 
-  implicit def recipeFoundProto(implicit provider: SerializersProvider): ProtoMap[RecipeFound, protobuf.RecipeFound] =
+  implicit def recipeFoundProto(implicit provider: AkkaSerializerProvider): ProtoMap[RecipeFound, protobuf.RecipeFound] =
     new ProtoMap[RecipeFound, protobuf.RecipeFound] {
 
       val companion = protobuf.RecipeFound
@@ -115,7 +115,7 @@ object RecipeManagerProto {
         Try(GetAllRecipes)
     }
 
-  implicit def recipeInformationProto(implicit provider: SerializersProvider): ProtoMap[RecipeInformation, protobuf.RecipeEntry] =
+  implicit def recipeInformationProto(implicit provider: AkkaSerializerProvider): ProtoMap[RecipeInformation, protobuf.RecipeEntry] =
     new ProtoMap[RecipeInformation, protobuf.RecipeEntry] {
 
       val companion = protobuf.RecipeEntry
@@ -131,7 +131,7 @@ object RecipeManagerProto {
         } yield RecipeInformation(compiledRecipe, timestamp)
     }
 
-  implicit def allRecipesProto(implicit provider: SerializersProvider): ProtoMap[AllRecipes, protobuf.AllRecipes] =
+  implicit def allRecipesProto(implicit provider: AkkaSerializerProvider): ProtoMap[AllRecipes, protobuf.AllRecipes] =
     new ProtoMap[AllRecipes, protobuf.AllRecipes] {
 
       val companion = protobuf.AllRecipes

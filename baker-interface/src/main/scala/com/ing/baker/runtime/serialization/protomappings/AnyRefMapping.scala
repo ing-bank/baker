@@ -4,16 +4,17 @@ import akka.serialization.{Serializer, SerializerWithStringManifest}
 import com.google.protobuf.ByteString
 import com.ing.baker.runtime.serialization.ProtoMap.versioned
 import com.ing.baker.runtime.akka.actor.protobuf
-import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider}
+import com.ing.baker.runtime.serialization.{ProtoMap, AkkaSerializerProvider}
 
 import scala.util.{Failure, Success, Try}
 
-class AnyRefMapping(provider: SerializersProvider) extends ProtoMap[AnyRef, protobuf.SerializedData] {
+class AnyRefMapping(provider: AkkaSerializerProvider) extends ProtoMap[AnyRef, protobuf.SerializedData] {
 
   val companion = protobuf.SerializedData
 
   override def toProto(obj: AnyRef): protobuf.SerializedData = {
     val serializer: Serializer = provider.getSerializerFor(obj)
+    println(Console.YELLOW + serializer.identifier + " < " + obj + Console.RESET)
     val bytes = provider.encryption.encrypt(serializer.toBinary(obj))
     val manifest = serializer match {
       case s: SerializerWithStringManifest ⇒ s.manifest(obj)
