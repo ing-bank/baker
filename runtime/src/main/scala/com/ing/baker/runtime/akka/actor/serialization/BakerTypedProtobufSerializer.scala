@@ -10,8 +10,9 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata, RecipeInstanceState}
-import com.ing.baker.runtime.serialization.TypedProtobufSerializer.{BinarySerializable, forType}
-import com.ing.baker.runtime.serialization.{AkkaSerializerProvider, ProtoMap, TypedProtobufSerializer}
+import com.ing.baker.runtime.serialization.ProtoMap
+import SerializedDataProto._
+import com.ing.baker.runtime.akka.actor.serialization.TypedProtobufSerializer.{BinarySerializable, forType}
 
 object BakerTypedProtobufSerializer {
 

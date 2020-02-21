@@ -12,7 +12,7 @@ import scalapb.GeneratedMessageCompanion
 
 import scala.util.{Failure, Success, Try}
 
-class BakerEventMapping(implicit ev0: ProtoMap[AnyRef, protobuf.SerializedData]) extends ProtoMap[BakerEvent, protobuf.BakerEvent] {
+class BakerEventMapping extends ProtoMap[BakerEvent, protobuf.BakerEvent] {
 
   override def companion: GeneratedMessageCompanion[protobuf.BakerEvent] = protobuf.BakerEvent
 
@@ -260,7 +260,7 @@ object BakerEventMapping {
       )
   }
 
-  def RecipeAddedMapping(implicit ev0: ProtoMap[AnyRef, protobuf.SerializedData]): ProtoMap[RecipeAdded, protobuf.RecipeAddedBakerEvent] =
+  def RecipeAddedMapping: ProtoMap[RecipeAdded, protobuf.RecipeAddedBakerEvent] =
     new ProtoMap[RecipeAdded, protobuf.RecipeAddedBakerEvent] {
 
       override def companion: GeneratedMessageCompanion[protobuf.RecipeAddedBakerEvent] = protobuf.RecipeAddedBakerEvent

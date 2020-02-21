@@ -7,7 +7,7 @@ import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, v
 
 import scala.util.Try
 
-class RecipeInformationMapping(implicit ev0: ProtoMap[AnyRef, proto.SerializedData]) extends ProtoMap[RecipeInformation, proto.RecipeInformation] {
+class RecipeInformationMapping extends ProtoMap[RecipeInformation, proto.RecipeInformation] {
 
   val companion = proto.RecipeInformation
 

@@ -1,11 +1,11 @@
 package com.ing.baker.runtime.serialization
 
+import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl._
 import com.ing.baker.runtime.serialization.protomappings._
 import com.ing.baker.{il, types}
 import scalapb.GeneratedMessageCompanion
-import com.ing.baker.runtime.akka.actor.protobuf
 
 import scala.util.{Success, Try}
 
@@ -34,16 +34,15 @@ object ProtoMap {
   def versioned[A](a: Option[A], name: String): Try[A] =
     Try(a.getOrElse(throw new IllegalStateException(s"Missing field '$name' from protobuf message, probably we received a different version of the message")))
 
-  implicit def anyRefMapping(implicit ev0: AkkaSerializerProvider): ProtoMap[AnyRef, protobuf.SerializedData] =
-    new AnyRefMapping(ev0)
+  type AnyRefMapping = ProtoMap[AnyRef, protobuf.SerializedData]
 
-  implicit def compiledRecipeMapping(implicit ev0: ProtoMap[AnyRef, protobuf.SerializedData]): ProtoMap[il.CompiledRecipe, protobuf.CompiledRecipe] =
-    new CompiledRecipeMapping(ev0)
+  implicit def compiledRecipeMapping: ProtoMap[il.CompiledRecipe, protobuf.CompiledRecipe] =
+    new CompiledRecipeMapping()
 
-  implicit def recipeInformationMapping(implicit ev0: ProtoMap[AnyRef, protobuf.SerializedData]): ProtoMap[RecipeInformation, protobuf.RecipeInformation] =
+  implicit def recipeInformationMapping: ProtoMap[RecipeInformation, protobuf.RecipeInformation] =
     new RecipeInformationMapping()
 
-  implicit def bakerEventMapping(implicit ev0: ProtoMap[AnyRef, protobuf.SerializedData]): ProtoMap[BakerEvent, protobuf.BakerEvent] =
+  implicit def bakerEventMapping: ProtoMap[BakerEvent, protobuf.BakerEvent] =
     new BakerEventMapping()
 
   implicit val bakerExceptionMapping: ProtoMap[BakerException, protobuf.BakerException] =

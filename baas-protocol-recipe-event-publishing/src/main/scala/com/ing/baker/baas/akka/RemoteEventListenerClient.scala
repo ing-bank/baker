@@ -10,7 +10,7 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.ing.baker.baas.protocol.DistributedEventPublishingProto._
 import com.ing.baker.baas.protocol.ProtocolDistributedEventPublishing
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata}
-import com.ing.baker.runtime.serialization.{Encryption, ProtoMap, AkkaSerializerProvider}
+import com.ing.baker.runtime.serialization.{Encryption, ProtoMap}
 
 import scala.concurrent.Future
 
@@ -39,9 +39,6 @@ class RemoteEventListenerClient(hostname: Uri)(implicit system: ActorSystem, enc
       case Left(a) => m1.toByteArray(a)
       case Right(b) => m2.toByteArray(b)
     }
-
-  private implicit val serializersProvider: AkkaSerializerProvider =
-    AkkaSerializerProvider(system, encryption)
 
   private val root: Path = Path./("api")./("v3")
 

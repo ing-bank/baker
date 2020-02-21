@@ -9,7 +9,7 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.stream.Materializer
 import com.ing.baker.runtime.scaladsl.BakerEvent
-import com.ing.baker.runtime.serialization.{Encryption, ProtoMap, AkkaSerializerProvider}
+import com.ing.baker.runtime.serialization.{Encryption, ProtoMap}
 
 import scala.concurrent.Future
 
@@ -33,9 +33,6 @@ class RemoteBakerEventListenerHttp(listenerFunction: BakerEvent => Unit)(implici
 
   private implicit def protoUnmarshaller[A, P <: ProtoMessage[P]](implicit mapping: ProtoMap[A, P]): FromEntityUnmarshaller[A] =
     Unmarshaller.byteArrayUnmarshaller.map(mapping.fromByteArray(_).get)
-
-  private implicit val serializersProvider: AkkaSerializerProvider =
-    AkkaSerializerProvider(system, encryption)
 
   private def route: Route = concat(pathPrefix("api" / "v3")(concat(health, apply)))
 

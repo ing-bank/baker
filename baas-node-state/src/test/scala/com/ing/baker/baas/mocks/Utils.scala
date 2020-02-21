@@ -1,7 +1,8 @@
 package com.ing.baker.baas.mocks
 
 import akka.actor.ActorSystem
-import com.ing.baker.runtime.serialization.{Encryption, ProtoMap, AkkaSerializerProvider}
+import com.ing.baker.runtime.akka.actor.serialization.AkkaSerializerProvider
+import com.ing.baker.runtime.serialization.{Encryption, ProtoMap}
 
 object Utils {
 

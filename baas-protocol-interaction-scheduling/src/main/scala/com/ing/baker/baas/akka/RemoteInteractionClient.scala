@@ -5,13 +5,13 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshalling.{Marshal, Marshaller, ToEntityMarshaller}
 import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.model.headers.RawHeader
-import com.ing.baker.runtime.serialization.{Encryption, ProtoMap, AkkaSerializerProvider}
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, MediaTypes, MessageEntity, Uri}
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshal, Unmarshaller}
 import akka.stream.Materializer
+import com.ing.baker.baas.protocol.InteractionSchedulingProto._
 import com.ing.baker.baas.protocol.ProtocolInteractionExecution
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}
-import com.ing.baker.baas.protocol.InteractionSchedulingProto._
+import com.ing.baker.runtime.serialization.{Encryption, ProtoMap}
 import com.ing.baker.types.Type
 
 import scala.concurrent.Future
@@ -46,9 +46,6 @@ class RemoteInteractionClient(hostname: Uri)(implicit system: ActorSystem, mat: 
     Unmarshaller.byteArrayUnmarshaller.map { byteArray =>
       m1.fromByteArray(byteArray).map(Left(_)).orElse(m2.fromByteArray(byteArray).map(Right(_))).get
     }
-
-  private implicit val serializersProvider: AkkaSerializerProvider =
-    AkkaSerializerProvider(system, encryption)
 
   private val root: Path = Path./("api")./("v3")
 

@@ -9,8 +9,9 @@ import akka.stream.Materializer
 import com.ing.baker.baas.protocol.BaaSProto._
 import com.ing.baker.baas.protocol.BaaSProtocol
 import com.ing.baker.baas.protocol.MarshallingUtils._
+import com.ing.baker.runtime.akka.actor.serialization.AkkaSerializerProvider
 import com.ing.baker.runtime.scaladsl.Baker
-import com.ing.baker.runtime.serialization.{Encryption, AkkaSerializerProvider}
+import com.ing.baker.runtime.serialization.Encryption
 
 import scala.concurrent.Future
 

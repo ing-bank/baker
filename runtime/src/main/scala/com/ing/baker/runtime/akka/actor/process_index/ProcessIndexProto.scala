@@ -11,9 +11,10 @@ import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.{NotifyBoth, NotifyOnEvent, NotifyWhenCompleted, NotifyWhenReceived}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{ProcessEventReceivedResponse, _}
 import com.ing.baker.runtime.akka.actor.process_index.protobuf.ActorRefId
+import com.ing.baker.runtime.akka.actor.serialization.AkkaSerializerProvider
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.serialization.protomappings.SensoryEventStatusMappingHelper
-import com.ing.baker.runtime.serialization.{AkkaSerializerProvider, ProtoMap}
+import com.ing.baker.runtime.serialization.ProtoMap
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success, Try}
@@ -186,7 +187,7 @@ object ProcessIndexProto {
         } yield CreateProcess(recipeId, recipeInstanceId)
     }
 
-  implicit def processEventProto(implicit provider: AkkaSerializerProvider, actorRefProvider: ActorRefProvider): ProtoMap[ProcessEvent, protobuf.ProcessEvent] =
+  implicit def processEventProto(implicit actorRefProvider: ActorRefProvider): ProtoMap[ProcessEvent, protobuf.ProcessEvent] =
     new ProtoMap[ProcessEvent, protobuf.ProcessEvent] {
 
       val companion = protobuf.ProcessEvent

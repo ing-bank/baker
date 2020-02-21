@@ -10,7 +10,7 @@ import org.http4s.{DecodeFailure, EntityDecoder, EntityEncoder, MalformedMessage
 import com.ing.baker.baas.protocol.DistributedEventPublishingProto._
 import com.ing.baker.baas.protocol.ProtocolDistributedEventPublishing
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata}
-import com.ing.baker.runtime.serialization.{Encryption, ProtoMap, AkkaSerializerProvider}
+import com.ing.baker.runtime.serialization.{Encryption, ProtoMap}
 import org.http4s.EntityDecoder.collectBinary
 
 import scala.util.{Failure, Success}

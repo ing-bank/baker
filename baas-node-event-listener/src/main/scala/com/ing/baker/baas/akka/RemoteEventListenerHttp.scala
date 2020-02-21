@@ -11,7 +11,7 @@ import akka.stream.Materializer
 import com.ing.baker.baas.protocol
 import com.ing.baker.baas.protocol.DistributedEventPublishingProto._
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata}
-import com.ing.baker.runtime.serialization.{Encryption, ProtoMap, AkkaSerializerProvider}
+import com.ing.baker.runtime.serialization.{Encryption, ProtoMap}
 
 import scala.concurrent.Future
 
@@ -40,9 +40,6 @@ class RemoteEventListenerHttp(listenerFunction: (RecipeEventMetadata, EventInsta
     Unmarshaller.byteArrayUnmarshaller.map { byteArray =>
       m1.fromByteArray(byteArray).map(Left(_)).orElse(m2.fromByteArray(byteArray).map(Right(_))).get
     }
-
-  private implicit val serializersProvider: AkkaSerializerProvider =
-    AkkaSerializerProvider(system, encryption)
 
   private def route: Route = concat(pathPrefix("api" / "v3")(concat(health, apply)))
 

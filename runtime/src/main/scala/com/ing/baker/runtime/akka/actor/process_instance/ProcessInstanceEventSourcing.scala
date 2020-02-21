@@ -8,7 +8,7 @@ import akka.NotUsed
 import akka.actor.{ActorSystem, NoSerializationVerificationNeeded}
 import akka.persistence.query.scaladsl.CurrentEventsByPersistenceIdQuery
 import akka.stream.scaladsl.Source
-import com.ing.baker.runtime.serialization.AkkaSerializerProvider
+import com.ing.baker.runtime.akka.actor.serialization.AkkaSerializerProvider
 import com.ing.baker.runtime.serialization.Encryption
 
 object ProcessInstanceEventSourcing {
