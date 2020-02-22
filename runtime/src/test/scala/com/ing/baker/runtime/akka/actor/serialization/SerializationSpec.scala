@@ -190,6 +190,48 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
   checkFor[ProcessInstanceProtocol.TransitionFired].run
 
   checkFor[CompiledRecipe].run
+
+  test("Encryption works for the AnyRefMapping (case class)") {
+
+    val data = GetRecipe("test")
+    val encryption = new AESEncryption(List.fill(16)("0").mkString)
+    val withEncryption = serializer.serializersProvider.copy(encryption = encryption)
+    val withoutEncryption = serializer.serializersProvider.copy(encryption = NoEncryption)
+    val mapperEncryption = SerializedDataProto.akkaAnyRefMapping(withEncryption)
+    val mapperNoEncryption = SerializedDataProto.akkaAnyRefMapping(withoutEncryption)
+
+    val protoEn = mapperEncryption.toProto(data)
+    val protoNe = mapperNoEncryption.toProto(data)
+
+    val xEn = protoEn.data.get
+    val xNe = protoNe.data.get
+    assert(xEn != xNe)
+
+    val yEn = mapperEncryption.fromProto(protoEn).get.asInstanceOf[GetRecipe]
+    val yNe = mapperNoEncryption.fromProto(protoNe).get.asInstanceOf[GetRecipe]
+    assert(yEn == yNe)
+  }
+
+  test("Encryption works for the AnyRefMapping (primitive value)") {
+
+    val data = "test"
+    val encryption = new AESEncryption(List.fill(16)("0").mkString)
+    val withEncryption = serializer.serializersProvider.copy(encryption = encryption)
+    val withoutEncryption = serializer.serializersProvider.copy(encryption = NoEncryption)
+    val mapperEncryption = SerializedDataProto.akkaAnyRefMapping(withEncryption)
+    val mapperNoEncryption = SerializedDataProto.akkaAnyRefMapping(withoutEncryption)
+
+    val protoEn = mapperEncryption.toProto(data)
+    val protoNe = mapperNoEncryption.toProto(data)
+
+    val xEn = protoEn.data.get
+    val xNe = protoNe.data.get
+    assert(xEn != xNe)
+
+    val yEn = mapperEncryption.fromProto(protoEn).get.asInstanceOf[String]
+    val yNe = mapperNoEncryption.fromProto(protoNe).get.asInstanceOf[String]
+    assert(yEn == yNe)
+  }
 }
 
 object SerializationSpec {

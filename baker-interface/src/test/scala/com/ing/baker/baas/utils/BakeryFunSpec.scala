@@ -1,12 +1,10 @@
-package com.ing.baker.baas.recipelistener
+package com.ing.baker.baas.utils
 
-import java.net.{InetAddress, InetSocketAddress}
-
+import cats.syntax.apply._
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import cats.implicits._
-import org.scalactic.source
 import org.scalatest.compatible.Assertion
 import org.scalatest.{ConfigMap, FutureOutcome, Tag, fixture}
+import org.scalactic.source
 
 import scala.concurrent.duration._
 

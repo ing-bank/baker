@@ -84,9 +84,11 @@ lazy val `baker-interface` = project.in(file("baker-interface"))
     moduleName := "baker-interface",
     libraryDependencies ++= Seq(
       akkaActor,
-      catsCore,
+      catsEffect,
       scalaJava8Compat
-    ) ++ providedDeps(findbugs)
+    ) ++ providedDeps(findbugs) ++ testDeps(
+      scalaTest
+    )
   )
   .dependsOn(intermediateLanguage)
 
