@@ -4,8 +4,9 @@ import sbt._
 object Dependencies {
 
   val akkaVersion = "2.5.27"
-  val http4sVersion = "0.20.0"
-  val circeVersion = "0.12.3"
+  
+  val http4sVersion = "0.21.1"
+  val circeVersion = "0.13.0"
 
   val jvmV = "1.8"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
@@ -90,7 +91,7 @@ object Dependencies {
   val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.10.5"
   val slf4jApi =                  "org.slf4j"                  %  "slf4j-api"                          % "1.7.29"
 
-  val slf4jSimple =               "org.slf4j"                  % "slf4j-simple"                        % "1.7.5"
+  val slf4jSimple =               "org.slf4j"                  % "slf4j-simple"                        % "1.7.30"
   val scalaCheck =                "org.scalacheck"             %% "scalacheck"                         % "1.13.5"
 
   val scalaLogging =              "com.typesafe.scala-logging" %% "scala-logging"                      % "3.9.2"

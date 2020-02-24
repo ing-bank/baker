@@ -67,7 +67,7 @@ class ReserveItemsMock extends ReserveItems {
 "The Webshop Recipe" should "reserve items in happy conditions" in {
 
   val system: ActorSystem = ActorSystem("baker-webshop-system")
-  val baker: Baker = Baker.akkaLocalDefault(system)
+  val baker: Baker =  AkkaBaker.localDefaul(system)
 
   val compiled = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
   val recipeInstanceId: String = UUID.randomUUID().toString
@@ -115,7 +115,7 @@ static public class HappyFlowReserveItems implements JWebshopRecipe.ReserveItems
 public void shouldRunSimpleInstance() {
 
     ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-    Baker baker = Baker.akkaLocalDefault(actorSystem);
+    Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
 
     List<String> items = new ArrayList<>(2);
     items.add("item1");
@@ -171,7 +171,7 @@ trait ReserveItems {
 "The Webshop Recipe" should "reserve items in happy conditions (mockito)" in {
 
   val system: ActorSystem = ActorSystem("baker-webshop-system")
-  val baker: Baker = Baker.akkaLocalDefault(system)
+  val baker: Baker = AkkaBaker.localDefault(system)
 
   val compiled = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
   val recipeInstanceId: String = UUID.randomUUID().toString
@@ -221,7 +221,7 @@ import static org.mockito.Mockito.*;
 public void shouldRunSimpleInstanceMockitoSample() {
 
     ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-    Baker baker = Baker.akkaLocalDefault(actorSystem);
+    Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
 
     List<String> items = new ArrayList<>(2);
     items.add("item1");
