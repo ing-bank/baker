@@ -3,6 +3,22 @@ import sbt.Keys._
 
 def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = project % "test->test;test->compile"
 
+lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocker")({
+  state =>
+    val extracted = Project.extract(state)
+    val currentVersion = extracted.get(version in ThisBuild)
+
+    "baas-node-state/docker:publishLocal" ::
+      "baas-client-example/docker:publishLocal" ::
+      "baas-event-listener-example/docker:publishLocal" ::
+      "baas-baker-event-listener-example/docker:publishLocal" ::
+      s"baas-interaction-example-make-payment/publishLocal; project baas-image-builder; buildInteractionDockerImage docker:publishLocal com.ing.baker:baas-interaction-example-make-payment_2.12:${currentVersion} webshop.webservice.MakePaymentInstance" ::
+      s"baas-interaction-example-ship-items/publishLocal; project baas-image-builder; buildInteractionDockerImage docker:publishLocal com.ing.baker:baas-interaction-example-ship-items_2.12:${currentVersion} webshop.webservice.ShipItemsInstance" ::
+      s"baas-interaction-example-reserve-items/publishLocal; project baas-image-builder; buildInteractionDockerImage docker:publishLocal com.ing.baker:baas-interaction-example-reserve-items_2.12:${currentVersion} webshop.webservice.ReserveItemsInstance" ::
+      "project baker" ::
+      state
+})
+
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
   scalaVersion := "2.12.4",
@@ -24,7 +40,7 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     "-Xfatal-warnings"
   ),
   coverageExcludedPackages := "<empty>;.*.javadsl;.*.scaladsl;.*.common;.*.protobuf",
-  packageOptions in (Compile, packageBin) +=
+  packageOptions in(Compile, packageBin) +=
     Package.ManifestAttributes(
       "Build-Time" -> new java.util.Date().toString,
       "Build-Commit" -> git.gitHeadCommit.value.getOrElse("No Git Revision Found")
@@ -61,7 +77,7 @@ lazy val bakertypes = project.in(file("bakertypes"))
       typeSafeConfig,
       scalaReflect(scalaVersion.value),
       scalaLogging
-    ) ++ testDeps(scalaTest, scalaCheck, logback, scalaCheck)
+    ) ++ testDeps(scalaTest, scalaCheck, scalaCheck)
   )
 
 lazy val intermediateLanguage = project.in(file("intermediate-language"))
@@ -74,7 +90,7 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
       scalaGraphDot,
       typeSafeConfig,
       scalaLogging
-    ) ++ testDeps(scalaTest, scalaCheck, logback)
+    ) ++ testDeps(scalaTest, scalaCheck)
   ).dependsOn(bakertypes)
 
 lazy val `baker-interface` = project.in(file("baker-interface"))
@@ -96,7 +112,7 @@ lazy val runtime = project.in(file("runtime"))
   .settings(
     moduleName := "baker-runtime",
     // we have to exclude the sources because of a compiler bug: https://issues.scala-lang.org/browse/SI-10134
-    sources in (Compile, doc) := Seq.empty,
+    sources in(Compile, doc) := Seq.empty,
     libraryDependencies ++=
       compileDeps(
         akkaActor,
@@ -129,8 +145,7 @@ lazy val runtime = project.in(file("runtime"))
         junitInterface,
         scalaTest,
         scalaCheck,
-        mockito,
-        logback)
+        mockito)
         ++ providedDeps(findbugs)
   )
   .dependsOn(
@@ -147,7 +162,7 @@ lazy val splitBrainResolver = project.in(file("split-brain-resolver"))
   .settings(
     moduleName := "baker-split-brain-resolver",
     // we have to exclude the sources because of a compiler bug: https://issues.scala-lang.org/browse/SI-10134
-    sources in (Compile, doc) := Seq.empty,
+    sources in(Compile, doc) := Seq.empty,
     libraryDependencies ++=
       compileDeps(
         akkaActor,
@@ -164,7 +179,7 @@ lazy val splitBrainResolver = project.in(file("split-brain-resolver"))
   .enablePlugins(MultiJvmPlugin)
   .configs(MultiJvm)
   .settings(
-//    logLevel := Level.Debug
+    //    logLevel := Level.Debug
   )
 
 lazy val recipeDsl = project.in(file("recipe-dsl"))
@@ -172,7 +187,7 @@ lazy val recipeDsl = project.in(file("recipe-dsl"))
   .settings(
     moduleName := "baker-recipe-dsl",
     // we have to exclude the sources because of a compiler bug: https://issues.scala-lang.org/browse/SI-10134
-    sources in (Compile, doc) := Seq.empty,
+    sources in(Compile, doc) := Seq.empty,
     libraryDependencies ++=
       compileDeps(
         javaxInject,
@@ -183,8 +198,7 @@ lazy val recipeDsl = project.in(file("recipe-dsl"))
           scalaTest,
           scalaCheck,
           junitInterface,
-          slf4jApi,
-          logback
+          slf4jApi
         )
   ).dependsOn(bakertypes)
 
@@ -193,7 +207,7 @@ lazy val recipeCompiler = project.in(file("compiler"))
   .settings(
     moduleName := "baker-compiler",
     libraryDependencies ++=
-      testDeps(scalaTest, scalaCheck, logback, junitJupiter)
+      testDeps(scalaTest, scalaCheck, junitJupiter)
   )
   .dependsOn(recipeDsl, intermediateLanguage, testScope(recipeDsl))
 
@@ -256,6 +270,16 @@ lazy val `baas-node-client` = project.in(file("baas-node-client"))
   )
   .dependsOn(`baker-interface`, `baas-protocol-baker`)
 
+lazy val `baas-image-builder` = project.in(file("baas-image-builder"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "baas-image-builder",
+    libraryDependencies ++= Seq(
+    )
+  )
+  .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
+  .dependsOn(`baas-node-interaction`)
+
 lazy val `baas-node-state` = project.in(file("baas-node-state"))
   .enablePlugins(JavaAppPackaging)
   .settings(commonSettings)
@@ -267,7 +291,6 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
     libraryDependencies ++= Seq(
       slf4jApi,
       slf4jSimple,
-      logback,
       akkaHttp,
       akkaPersistenceCassandra,
       akkaManagementHttp,
@@ -277,7 +300,6 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
     ) ++ testDeps(
       slf4jApi,
       slf4jSimple,
-      logback,
       scalaTest,
       mockServer,
       akkaHttpCirce,
@@ -312,7 +334,6 @@ lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
       slf4jApi
     ) ++ testDeps(
       akkaSlf4j,
-      logback,
       scalaTest,
       junitInterface,
       scalaCheck
@@ -326,10 +347,10 @@ lazy val `baas-node-event-listener` = project.in(file("baas-node-event-listener"
     moduleName := "baas-node-event-listener",
     libraryDependencies ++= Seq(
       akkaHttp,
+      akkaCluster,
       slf4jApi,
       slf4jSimple
     ) ++ testDeps(
-      logback,
       scalaTest,
       junitInterface,
       scalaCheck
@@ -346,7 +367,6 @@ lazy val `baas-node-baker-event-listener` = project.in(file("baas-node-baker-eve
       slf4jApi,
       slf4jSimple
     ) ++ testDeps(
-      logback,
       scalaTest,
       junitInterface,
       scalaCheck
@@ -357,8 +377,8 @@ lazy val `baas-node-baker-event-listener` = project.in(file("baas-node-baker-eve
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
-  .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver,
-    `baas-node-client`, `baas-node-state`, `baas-node-interaction`, `baas-node-event-listener`, `baas-node-baker-event-listener`)
+  .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver, `baas-image-builder`,
+    `baas-node-client`, `baas-node-state`, `baas-node-interaction`, `baas-node-event-listener`, `baas-node-baker-event-listener`, `sbt-baas-docker-generate`)
 
 lazy val `baker-example` = project
   .in(file("examples/baker-example"))
@@ -389,8 +409,7 @@ lazy val `baker-example` = project
         scalaCheck,
         junitInterface,
         slf4jApi,
-        mockito,
-        logback
+        mockito
       )
   )
   .settings(
@@ -415,7 +434,6 @@ lazy val `baas-client-example` = project
       compileDeps(
         slf4jApi,
         slf4jSimple,
-        logback,
         http4s,
         http4sDsl,
         http4sServer,
@@ -449,7 +467,6 @@ lazy val `baas-event-listener-example` = project
       compileDeps(
         slf4jApi,
         slf4jSimple,
-        logback,
         http4s,
         http4sDsl,
         http4sServer,
@@ -477,7 +494,6 @@ lazy val `baas-baker-event-listener-example` = project
       compileDeps(
         slf4jApi,
         slf4jSimple,
-        logback,
         http4s,
         http4sDsl,
         http4sServer,
@@ -579,6 +595,7 @@ lazy val `baas-smoke-tests` = project.in(file("baas-smoke-tests"))
   .settings(noPublishSettings)
   .settings(
     moduleName := "baas-smoke-tests",
+    commands += buildExampleDockerCommand,
     libraryDependencies ++= Seq() ++
       testDeps(
         http4sDsl,
@@ -586,10 +603,26 @@ lazy val `baas-smoke-tests` = project.in(file("baas-smoke-tests"))
         circe,
         slf4jApi,
         slf4jSimple,
-        logback,
         scalaTest,
         scalaCheck
       )
   )
-  .dependsOn(`baas-node-client`, `baas-client-example`)
+  .dependsOn(
+    `baas-node-client`,
+    `baas-client-example`,
+    `baas-interaction-example-make-payment`,
+    `baas-interaction-example-reserve-items`,
+    `baas-interaction-example-ship-items`)
 
+lazy val `sbt-baas-docker-generate` = project.in(file("sbt-baas-docker-generate"))
+  .settings(defaultModuleSettings)
+  .settings(
+    sourceGenerators in Compile += Def.task {
+      val file = (sourceManaged in Compile).value / "baas" / "sbt" / "BuildInteractionDockerImageSBTPlugin.scala"
+      val sourceFile = IO.readBytes(baseDirectory.value.getParentFile / "project" / "BuildInteractionDockerImageSBTPlugin.scala")
+      IO.write(file, sourceFile)
+      Seq(file)
+    }.taskValue,
+    addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.6.0")
+  )
+  .enablePlugins(SbtPlugin)
