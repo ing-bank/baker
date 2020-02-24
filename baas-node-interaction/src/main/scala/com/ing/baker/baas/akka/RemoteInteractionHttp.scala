@@ -11,7 +11,7 @@ import akka.stream.Materializer
 import com.ing.baker.baas.protocol.InteractionSchedulingProto._
 import com.ing.baker.baas.protocol.ProtocolInteractionExecution
 import com.ing.baker.runtime.scaladsl.InteractionInstance
-import com.ing.baker.runtime.serialization.{Encryption, ProtoMap, SerializersProvider}
+import com.ing.baker.runtime.serialization.{Encryption, ProtoMap}
 
 import scala.concurrent.Future
 
@@ -46,9 +46,6 @@ class RemoteInteractionHttp(interaction: InteractionInstance)(implicit system: A
     Unmarshaller.byteArrayUnmarshaller.map { byteArray =>
       m1.fromByteArray(byteArray).map(Left(_)).orElse(m2.fromByteArray(byteArray).map(Right(_))).get
     }
-
-  private implicit val serializersProvider: SerializersProvider =
-    SerializersProvider(system, encryption)
 
   private def route: Route = concat(pathPrefix("api" / "v3")(concat(health, interface, apply)))
 
