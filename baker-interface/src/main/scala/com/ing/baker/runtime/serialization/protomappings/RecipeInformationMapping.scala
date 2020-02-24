@@ -1,13 +1,13 @@
 package com.ing.baker.runtime.serialization.protomappings
 
-import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.akka.actor.{protobuf => proto}
 import com.ing.baker.runtime.scaladsl.RecipeInformation
-import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider}
+import com.ing.baker.runtime.serialization.ProtoMap
+import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 
 import scala.util.Try
 
-class RecipeInformationMapping(implicit ev0: SerializersProvider) extends ProtoMap[RecipeInformation, proto.RecipeInformation] {
+class RecipeInformationMapping extends ProtoMap[RecipeInformation, proto.RecipeInformation] {
 
   val companion = proto.RecipeInformation
 

@@ -6,29 +6,26 @@ import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, MessageEntity, Uri}
 import akka.stream.Materializer
-import com.ing.baker.baas.protocol.BaaSProtocol
 import com.ing.baker.baas.protocol.BaaSProto._
+import com.ing.baker.baas.protocol.BaaSProtocol
 import com.ing.baker.baas.protocol.MarshallingUtils._
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance, EventMoment, EventResolutions, InteractionInstance, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
-import com.ing.baker.runtime.serialization.{Encryption, SerializersProvider}
+import com.ing.baker.runtime.serialization.Encryption
 import com.ing.baker.types.Value
 
 import scala.concurrent.Future
 
 object BakerClient {
 
-  def build(hostname: String, encryption: Encryption = Encryption.NoEncryption)(implicit system: ActorSystem, mat: Materializer) =
-    BakerClient(Uri(hostname), encryption)
+  def build(hostname: String)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption) =
+    BakerClient(Uri(hostname))
 }
 
-case class BakerClient(hostname: Uri, encryption: Encryption = Encryption.NoEncryption)(implicit system: ActorSystem, mat: Materializer) extends ScalaBaker {
+case class BakerClient(hostname: Uri)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption) extends ScalaBaker {
 
   import system.dispatcher
-
-  implicit val serializersProvider: SerializersProvider =
-    SerializersProvider(system, encryption)
 
   val root: Path = Path./("api")./("v3")
 
