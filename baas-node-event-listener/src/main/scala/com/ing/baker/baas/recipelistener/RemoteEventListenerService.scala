@@ -16,7 +16,7 @@ import org.http4s.server.blaze.BlazeServerBuilder
 
 object RemoteEventListenerService {
 
-  def resource(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit)(address: InetSocketAddress)(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] =
+  def resource(listenerFunction: (RecipeEventMetadata, EventInstance) => Unit, address: InetSocketAddress)(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] =
     BlazeServerBuilder[IO]
       .bindSocketAddress(address)
       .withHttpApp(new RemoteEventListenerService(listenerFunction).build)
