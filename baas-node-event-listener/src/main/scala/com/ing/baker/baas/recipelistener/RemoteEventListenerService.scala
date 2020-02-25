@@ -3,7 +3,6 @@ package com.ing.baker.baas.recipelistener
 import java.net.InetSocketAddress
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import cats.implicits._
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
@@ -33,7 +32,7 @@ final class RemoteEventListenerService(listenerFunction: (RecipeEventMetadata, E
     case GET -> Root / "health" =>
       Ok("Ok")
 
-    case req@POST -> Root / "apply" =>
+    case req@POST -> Root / "recipe-event" =>
       for {
         event <- req.as[protocol.ProtocolDistributedEventPublishing.Event]
         _ <- IO(listenerFunction(event.recipeEventMetadata, event.event))

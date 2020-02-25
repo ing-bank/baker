@@ -17,7 +17,7 @@ class RemoteEventListener(mock: ClientAndServer)(implicit system: ActorSystem, e
   private val eventApply: HttpRequest =
     request()
       .withMethod("POST")
-      .withPath("/api/v3/apply")
+      .withPath("/api/v3/recipe-event")
       .withHeader("X-Bakery-Intent", s"Remote-Event-Listener:localhost")
 
   def listensToEvents: Future[Unit] = Future {

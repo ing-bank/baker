@@ -30,7 +30,7 @@ final class RemoteEventListenerClient(client: Client[IO], hostname: Uri)(implici
   def apply(recipeEventMetadata: RecipeEventMetadata, event: EventInstance): IO[Status] = {
     val request = POST(
       ProtocolDistributedEventPublishing.Event(recipeEventMetadata, event),
-      hostname / "api" / "v3" / "apply",
+      hostname / "api" / "v3" / "recipe-event",
       `X-Bakery-Intent`(hostname)
     )
     client.status(request)
