@@ -26,9 +26,6 @@ object BakeryHttp {
           }
         }
 
-    implicit def protoEitherDecoder[A, P0 <: ProtoMessage[P0], B, P1 <: ProtoMessage[P1]](implicit m1: ProtoMap[A, P0], m2: ProtoMap[B, P1]): EntityDecoder[IO, Either[A, B]] =
-      protoDecoder[A, P0].map(Left(_)).orElse(protoDecoder[B, P1].map(Right(_)))
-
     implicit def protoEncoder[A, P <: ProtoMessage[P]](implicit protoMap: ProtoMap[A, P]): EntityEncoder[IO, A] =
       EntityEncoder.byteArrayEncoder[IO].contramap(protoMap.toByteArray)
   }

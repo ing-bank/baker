@@ -1,11 +1,11 @@
-package com.ing.baker.baas.bakerlistener
+package com.ing.baker.baas.protocol
 
 import cats.data.EitherT
 import cats.effect.IO
 import com.ing.baker.runtime.serialization.ProtoMap
 import org.http4s.EntityDecoder.collectBinary
 import org.http4s.util.CaseInsensitiveString
-import org.http4s.{EntityDecoder, EntityEncoder, Header, MalformedMessageBodyFailure, MediaType, Uri}
+import org.http4s._
 
 import scala.util.{Failure, Success}
 

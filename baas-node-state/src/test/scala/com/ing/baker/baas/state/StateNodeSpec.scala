@@ -1,14 +1,25 @@
 package com.ing.baker.baas.state
 
+import java.net.InetSocketAddress
 import java.util.UUID
 
+import akka.actor.ActorSystem
+import cats.effect.{IO, Resource}
+import com.ing.baker.baas.mocks.{KubeApiServer, RemoteComponents, RemoteEventListener, RemoteInteraction}
 import com.ing.baker.baas.recipe.Events.{ItemsReserved, OrderPlaced}
 import com.ing.baker.baas.recipe.Ingredients.{Item, OrderId, ReservedItems}
-import com.ing.baker.baas.recipe.ItemReservationRecipe
+import com.ing.baker.baas.recipe.{Interactions, ItemReservationRecipe}
+import com.ing.baker.baas.scaladsl.BakerClient
+import com.ing.baker.baas.testing.BakeryFunSpec
+import org.mockserver.integration.ClientAndServer
 import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
-import com.ing.baker.runtime.scaladsl.EventInstance
-import org.scalatest.Matchers
+import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
+import io.kubernetes.client.openapi.ApiClient
+import org.scalatest.{ConfigMap, Matchers}
+
+import scala.concurrent.{Future, Promise}
 
 class StateNodeSpec extends BakeryFunSpec with Matchers {
 
@@ -271,5 +282,69 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       }
     }
   }
+
+  case class Context(
+    bakeryBoots: () => Future[Baker],
+    remoteComponents: RemoteComponents,
+    remoteInteraction: RemoteInteraction,
+    remoteEventListener: RemoteEventListener,
+    kubeApiServer: KubeApiServer
+  )
+
+  /** Represents the "sealed resources context" that each test can use. */
+  type TestContext = Context
+
+  /** Represents external arguments to the test context builder. */
+  type TestArguments = Unit
+
+  /** Creates a `Resource` which allocates and liberates the expensive resources each test can use.
+   * For example web servers, network connection, database mocks.
+   *
+   * The objective of this function is to provide "sealed resources context" to each test, that means context
+   * that other tests simply cannot touch.
+   *
+   * @param testArguments arguments built by the `argumentsBuilder` function.
+   * @return the resources each test can use
+   */
+  def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] = {
+    val mockServerAddres = new InetSocketAddress("localhost", 0)
+    for {
+      mockServer <- Resource.make(IO(ClientAndServer.startClientAndServer(mockServerAddres.getPort)))(s => IO(s.stop()))
+      remoteInteraction = new RemoteInteraction(mockServer, Interactions.ReserveItemsInteraction)
+      remoteEventListener = new RemoteEventListener(mockServer)
+      kubeApiServer = new KubeApiServer(mockServer)
+      remoteComponents = new RemoteComponents(kubeApiServer, remoteInteraction, remoteEventListener)
+
+      startBakery = () => {
+        val kubernetesApi = new ApiClient().setBasePath(s"http://localhost:${mockServerAddres.getPort}")
+        val kubernetes = new ServiceDiscoveryKubernetes("default", kubernetesApi)
+        val interactionManager = new InteractionsServiceDiscovery(kubernetes)
+        val stateNodeBaker = AkkaBaker.withConfig(
+          AkkaBakerConfig.localDefault(ActorSystem(UUID.randomUUID().toString)).copy(
+            interactionManager = interactionManager,
+            bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings(
+              allowAddingRecipeWithoutRequiringInstances = true)))
+        val eventListeners = new EventListenersServiceDiscovery(kubernetes, stateNodeBaker)
+        for {
+          server <- StateNodeService.resource(eventListeners, stateNodeBaker, InetSocketAddress.createUnresolved("0.0.0.0", 0))
+          client <- BakerClient.resource(server.baseUri, executionContext)
+        } yield  client
+      }
+    } yield TestContext(
+      startBakery,
+      remoteComponents,
+      remoteInteraction,
+      remoteEventListener,
+      kubeApiServer
+    )
+  }
+
+  /** Refines the `ConfigMap` populated with the -Dkey=value arguments coming from the "sbt testOnly" command.
+   *
+   * @param config map populated with the -Dkey=value arguments.
+   * @return the data structure used by the `contextBuilder` function.
+   */
+  def argumentsBuilder(config: ConfigMap): TestArguments = ()
+
 }
 

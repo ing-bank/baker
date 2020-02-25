@@ -216,7 +216,9 @@ lazy val `baas-protocol-baker` = project.in(file("baas-protocol-baker"))
     moduleName := "baas-protocol-baker",
     libraryDependencies ++= Seq(
       akkaStream,
-      akkaHttp
+      akkaHttp,
+      http4s,
+      http4sDsl
     )
   )
   .dependsOn(`baker-interface`)
@@ -282,12 +284,14 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
     libraryDependencies ++= Seq(
       slf4jApi,
       slf4jSimple,
-      akkaHttp,
       akkaPersistenceCassandra,
       akkaManagementHttp,
       akkaClusterBoostrap,
       akkaDiscoveryKube,
-      kubernetesJavaClient
+      kubernetesJavaClient,
+      http4s,
+      http4sDsl,
+      http4sServer
     ) ++ testDeps(
       slf4jApi,
       slf4jSimple,

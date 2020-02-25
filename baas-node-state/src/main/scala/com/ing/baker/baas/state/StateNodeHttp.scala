@@ -54,7 +54,7 @@ class StateNodeHttp(listeners: EventListenersServiceDiscovery, baker: Baker)(imp
     }
   })
 
-  private def getAllRecipes: Route = post(path("getAllRecipes") {
+  private def getAllRecipes: Route = get(path("getAllRecipes") {
       completeWithBakerFailures(baker.getAllRecipes.map(BaaSProtocol.GetAllRecipesResponse))
   })
 
@@ -92,7 +92,7 @@ class StateNodeHttp(listeners: EventListenersServiceDiscovery, baker: Baker)(imp
     }
   })
 
-  private def getAllRecipeInstancesMetadata: Route = post(path("getAllRecipeInstancesMetadata") {
+  private def getAllRecipeInstancesMetadata: Route = get(path("getAllRecipeInstancesMetadata") {
       completeWithBakerFailures(baker.getAllRecipeInstancesMetadata
         .map(BaaSProtocol.GetAllRecipeInstancesMetadataResponse))
   })

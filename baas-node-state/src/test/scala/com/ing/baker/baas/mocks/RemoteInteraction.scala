@@ -1,25 +1,20 @@
 package com.ing.baker.baas.mocks
 
-import akka.actor.ActorSystem
+import cats.effect.IO
 import com.ing.baker.baas.mocks.Utils._
 import com.ing.baker.baas.protocol.InteractionSchedulingProto._
 import com.ing.baker.baas.protocol.ProtocolInteractionExecution
 import com.ing.baker.recipe.scaladsl.Interaction
 import com.ing.baker.runtime.scaladsl.EventInstance
-import com.ing.baker.runtime.serialization.Encryption
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.matchers.Times
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.verify.VerificationTimes
 
-import scala.concurrent.Future
+class RemoteInteraction(mock: ClientAndServer, interaction: Interaction) {
 
-class RemoteInteraction(mock: ClientAndServer, interaction: Interaction)(implicit system: ActorSystem, encryption: Encryption) {
-
-  import system.dispatcher
-
-  def publishesItsInterface: Future[Unit] = Future {
+  def publishesItsInterface: IO[Unit] = IO {
     mock.when(
       request()
         .withMethod("GET")
@@ -32,7 +27,7 @@ class RemoteInteraction(mock: ClientAndServer, interaction: Interaction)(implici
     )
   }
 
-  def processesSuccessfullyAndFires(event: EventInstance): Future[Unit] = Future {
+  def processesSuccessfullyAndFires(event: EventInstance): IO[Unit] = IO {
     mock.when(
       applyMatch,
       Times.exactly(1)
@@ -43,7 +38,7 @@ class RemoteInteraction(mock: ClientAndServer, interaction: Interaction)(implici
     )
   }
 
-  def processesWithFailure(e: Throwable): Future[Unit] = Future {
+  def processesWithFailure(e: Throwable): IO[Unit] = IO {
     mock.when(
       applyMatch,
       Times.exactly(1)
@@ -54,11 +49,11 @@ class RemoteInteraction(mock: ClientAndServer, interaction: Interaction)(implici
     )
   }
 
-  def didNothing: Future[Unit] = Future {
+  def didNothing: IO[Unit] = IO {
     mock.verify(applyMatch, VerificationTimes.exactly(0))
   }
 
-  def receivedEvent(event: EventInstance): Future[Unit] = Future {
+  def receivedEvent(event: EventInstance): IO[Unit] = IO {
     mock.verify(applyMatch, VerificationTimes.exactly(1))
   }
 

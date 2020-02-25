@@ -1,35 +1,46 @@
 package com.ing.baker.baas.scaladsl
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.Uri.Path
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, MessageEntity, Uri}
-import akka.stream.Materializer
+import java.net.InetSocketAddress
+
+import cats.effect.{ContextShift, IO, Resource, Timer}
+import com.ing.baker.baas.protocol.BakeryHttp.ProtoEntityEncoders._
 import com.ing.baker.baas.protocol.BaaSProto._
 import com.ing.baker.baas.protocol.BaaSProtocol
-import com.ing.baker.baas.protocol.MarshallingUtils._
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance, EventMoment, EventResolutions, InteractionInstance, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
-import com.ing.baker.runtime.serialization.Encryption
+import com.ing.baker.runtime.serialization.ProtoMap
 import com.ing.baker.types.Value
+import org.http4s.Method._
+import org.http4s.client.Client
+import org.http4s.client.blaze.BlazeClientBuilder
+import org.http4s.client.dsl.io._
+import org.http4s.{EntityDecoder, MediaType, Request, Uri}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 object BakerClient {
 
-  def build(hostname: String)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption) =
-    BakerClient(Uri(hostname))
+  /** Uses the global execution context, which is limited to the amount of available cores in the machine. */
+  def bounded(hostname: String): IO[BakerClient] = {
+    val ec = ExecutionContext.Implicits.global
+    resource(Uri.unsafeFromString(hostname), ec)(IO.contextShift(ec), IO.timer(ec)).use(IO.pure)
+  }
+
+  /** use method `use` of the Resource, the client will be acquired and shut down automatically each time
+   * the resulting `IO` is run, each time using the common connection pool.
+   */
+  def resource(hostname: Uri, pool: ExecutionContext)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, BakerClient] = {
+    implicit val ev0 = pool
+    BlazeClientBuilder[IO](pool)
+      .resource
+      .map(new BakerClient(_, hostname))
+  }
 }
 
-case class BakerClient(hostname: Uri)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption) extends ScalaBaker {
+final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: ExecutionContext) extends ScalaBaker {
 
-  import system.dispatcher
-
-  val root: Path = Path./("api")./("v3")
-
-  def withPath(path: Path): Uri = hostname.withPath(path)
+  val Root = hostname / "api" / "v3"
 
   /**
     * Adds a recipe to baker and returns a recipeId for the recipe.
@@ -39,13 +50,13 @@ case class BakerClient(hostname: Uri)(implicit system: ActorSystem, mat: Materia
     * @param compiledRecipe The compiled recipe.
     * @return A recipeId
     */
-  override def addRecipe(compiledRecipe: CompiledRecipe): Future[String] =
-    for {
-      encoded <- Marshal(BaaSProtocol.AddRecipeRequest(compiledRecipe)).to[MessageEntity]
-      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("addRecipe")), entity = encoded)
-      response <- Http().singleRequest(request)
-      decoded <- unmarshal[BaaSProtocol.AddRecipeResponse](response).withBakerExceptions
-    } yield decoded.recipeId
+  override def addRecipe(compiledRecipe: CompiledRecipe): Future[String] = {
+    val request = POST(
+      BaaSProtocol.AddRecipeRequest(compiledRecipe),
+      Root / "addRecipe"
+    )
+    handleBakerResponse[BaaSProtocol.AddRecipeResponse, String](request)(_.recipeId)
+  }
 
   /**
     * Returns the recipe information for the given RecipeId
@@ -53,13 +64,13 @@ case class BakerClient(hostname: Uri)(implicit system: ActorSystem, mat: Materia
     * @param recipeId
     * @return
     */
-  override def getRecipe(recipeId: String): Future[RecipeInformation] =
-    for {
-      encoded <- Marshal(BaaSProtocol.GetRecipeRequest(recipeId)).to[MessageEntity]
-      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("getRecipe")), entity = encoded)
-      response <- Http().singleRequest(request)
-      decoded <- unmarshal[BaaSProtocol.GetRecipeResponse](response).withBakerExceptions
-    } yield decoded.recipeInformation
+  override def getRecipe(recipeId: String): Future[RecipeInformation] = {
+    val request = POST(
+      BaaSProtocol.GetRecipeRequest(recipeId),
+      Root / "getRecipe"
+    )
+    handleBakerResponse[BaaSProtocol.GetRecipeResponse, RecipeInformation](request)(_.recipeInformation)
+  }
 
   /**
     * Returns all recipes added to this baker instance.
@@ -67,11 +78,10 @@ case class BakerClient(hostname: Uri)(implicit system: ActorSystem, mat: Materia
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
   override def getAllRecipes: Future[Map[String, RecipeInformation]] = {
-    val request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("getAllRecipes")))
-    for {
-      response <- Http().singleRequest(request)
-      decoded <- unmarshal[BaaSProtocol.GetAllRecipesResponse](response).withBakerExceptions
-    } yield decoded.map
+    val request = POST(
+      Root / "getAllRecipes"
+    )
+    handleBakerResponse[BaaSProtocol.GetAllRecipesResponse, Map[String, RecipeInformation]](request)(_.map)
   }
 
   /**
@@ -81,13 +91,13 @@ case class BakerClient(hostname: Uri)(implicit system: ActorSystem, mat: Materia
     * @param recipeInstanceId The identifier for the newly baked process
     * @return
     */
-  override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] =
-    for {
-      encoded <- Marshal(BaaSProtocol.BakeRequest(recipeId, recipeInstanceId)).to[MessageEntity]
-      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("bake")), entity = encoded)
-      response <- Http().singleRequest(request)
-      _ <- unmarshalBakerExceptions(response)
-    } yield ()
+  override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] = {
+    val request = POST(
+      BaaSProtocol.BakeRequest(recipeId, recipeInstanceId),
+      Root / "bake"
+    )
+    handleBakerFailure(request)
+  }
 
   /**
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
@@ -100,13 +110,13 @@ case class BakerClient(hostname: Uri)(implicit system: ActorSystem, mat: Materia
     * @param event            The event object
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
-  override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] =
-    for {
-      encoded <- Marshal(BaaSProtocol.FireEventAndResolveWhenReceivedRequest(recipeInstanceId, event, correlationId)).to[MessageEntity]
-      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("fireEventAndResolveWhenReceived")), entity = encoded)
-      response <- Http().singleRequest(request)
-      decoded <- unmarshal[BaaSProtocol.FireEventAndResolveWhenReceivedResponse](response).withBakerExceptions
-    } yield decoded.sensoryEventStatus
+  override def fireEventAndResolveWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventStatus] = {
+    val request = POST(
+      BaaSProtocol.FireEventAndResolveWhenReceivedRequest(recipeInstanceId, event, correlationId),
+      Root / "fireEventAndResolveWhenReceived"
+    )
+    handleBakerResponse[BaaSProtocol.FireEventAndResolveWhenReceivedResponse, SensoryEventStatus](request)(_.sensoryEventStatus)
+  }
 
   /**
     * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -119,13 +129,13 @@ case class BakerClient(hostname: Uri)(implicit system: ActorSystem, mat: Materia
     * @param event            The event object
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
-  override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventResult] =
-    for {
-      encoded <- Marshal(BaaSProtocol.FireEventAndResolveWhenCompletedRequest(recipeInstanceId, event, correlationId)).to[MessageEntity]
-      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("fireEventAndResolveWhenCompleted")), entity = encoded)
-      response <- Http().singleRequest(request)
-      decoded <- unmarshal[BaaSProtocol.FireEventAndResolveWhenCompletedResponse](response).withBakerExceptions
-    } yield decoded.sensoryEventResult
+  override def fireEventAndResolveWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): Future[SensoryEventResult] = {
+    val request = POST(
+      BaaSProtocol.FireEventAndResolveWhenCompletedRequest(recipeInstanceId, event, correlationId),
+      Root / "fireEventAndResolveWhenCompleted"
+    )
+    handleBakerResponse[BaaSProtocol.FireEventAndResolveWhenCompletedResponse, SensoryEventResult](request)(_.sensoryEventResult)
+  }
 
   /**
     * Notifies Baker that an event has happened and waits until an specific event has executed.
@@ -139,13 +149,13 @@ case class BakerClient(hostname: Uri)(implicit system: ActorSystem, mat: Materia
     * @param onEvent          The name of the event to wait for
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
-  override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String]): Future[SensoryEventResult] =
-    for {
-      encoded <- Marshal(BaaSProtocol.FireEventAndResolveOnEventRequest(recipeInstanceId, event, onEvent, correlationId)).to[MessageEntity]
-      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("fireEventAndResolveOnEvent")), entity = encoded)
-      response <- Http().singleRequest(request)
-      decoded <- unmarshal[BaaSProtocol.FireEventAndResolveOnEventResponse](response).withBakerExceptions
-    } yield decoded.sensoryEventResult
+  override def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, onEvent: String, correlationId: Option[String]): Future[SensoryEventResult] = {
+    val request = POST(
+      BaaSProtocol.FireEventAndResolveOnEventRequest(recipeInstanceId, event, onEvent, correlationId),
+      Root / "fireEventAndResolveOnEvent"
+    )
+    handleBakerResponse[BaaSProtocol.FireEventAndResolveOnEventResponse, SensoryEventResult](request)(_.sensoryEventResult)
+  }
 
   /**
     * Notifies Baker that an event has happened and provides 2 async handlers, one for when the event was accepted by
@@ -160,12 +170,6 @@ case class BakerClient(hostname: Uri)(implicit system: ActorSystem, mat: Materia
     * @param correlationId    Id used to ensure the process instance handles unique events
     */
   override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): EventResolutions = {
-    for {
-      encoded <- Marshal(BaaSProtocol.FireEventRequest(recipeInstanceId, event, correlationId)).to[MessageEntity]
-      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("fireEvent")), entity = encoded)
-      response <- Http().singleRequest(request)
-      //decoded <- unmarshal(response)[BaaSProtocol.???] TODO f.withBakerExceptionsigure out what to do on this situation with the two futures
-    } yield () //decoded.recipeInformation
     ???
   }
 
@@ -180,11 +184,10 @@ case class BakerClient(hostname: Uri)(implicit system: ActorSystem, mat: Materia
     * @return An index of all processes
     */
   override def getAllRecipeInstancesMetadata: Future[Set[RecipeInstanceMetadata]] = {
-    val request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("getAllRecipeInstancesMetadata")))
-    for {
-      response <- Http().singleRequest(request)
-      decoded <- unmarshal[BaaSProtocol.GetAllRecipeInstancesMetadataResponse](response).withBakerExceptions
-    } yield decoded.set
+    val request = GET(
+      Root / "getAllRecipeInstancesMetadata"
+    )
+    handleBakerResponse[BaaSProtocol.GetAllRecipeInstancesMetadataResponse, Set[RecipeInstanceMetadata]](request)(_.set)
   }
 
   /**
@@ -193,13 +196,13 @@ case class BakerClient(hostname: Uri)(implicit system: ActorSystem, mat: Materia
     * @param recipeInstanceId The process identifier
     * @return The process state.
     */
-  override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] =
-    for {
-      encoded <- Marshal(BaaSProtocol.GetRecipeInstanceStateRequest(recipeInstanceId)).to[MessageEntity]
-      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("getRecipeInstanceState")), entity = encoded)
-      response <- Http().singleRequest(request)
-      decoded <- unmarshal[BaaSProtocol.GetRecipeInstanceStateResponse](response).withBakerExceptions
-    } yield decoded.recipeInstanceState
+  override def getRecipeInstanceState(recipeInstanceId: String): Future[RecipeInstanceState] = {
+    val request = POST(
+      BaaSProtocol.GetRecipeInstanceStateRequest(recipeInstanceId),
+      Root / "getRecipeInstanceState"
+    )
+    handleBakerResponse[BaaSProtocol.GetRecipeInstanceStateResponse, RecipeInstanceState](request)(_.recipeInstanceState)
+  }
 
   /**
     * Returns all provided ingredients for a given RecipeInstance id.
@@ -234,13 +237,13 @@ case class BakerClient(hostname: Uri)(implicit system: ActorSystem, mat: Materia
     * @param recipeInstanceId The process identifier.
     * @return A visual (.dot) representation of the process state.
     */
-  override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle): Future[String] =
-    for {
-      encoded <- Marshal(BaaSProtocol.GetVisualStateRequest(recipeInstanceId)).to[MessageEntity]
-      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("getVisualState")), entity = encoded)
-      response <- Http().singleRequest(request)
-      decoded <- unmarshal[BaaSProtocol.GetVisualStateResponse](response).withBakerExceptions
-    } yield decoded.state
+  override def getVisualState(recipeInstanceId: String, style: RecipeVisualStyle): Future[String] = {
+    val request = POST(
+      BaaSProtocol.GetVisualStateRequest(recipeInstanceId),
+      Root / "getVisualState"
+    )
+    handleBakerResponse[BaaSProtocol.GetVisualStateResponse, String](request)(_.state)
+  }
 
   /**
     * Registers a listener to all runtime events for recipes with the given name run in this baker instance.
@@ -289,20 +292,20 @@ case class BakerClient(hostname: Uri)(implicit system: ActorSystem, mat: Materia
     * Attempts to gracefully shutdown the baker system.
     */
   override def gracefulShutdown(): Future[Unit] =
-    system.terminate().map(_ => ())
+    throw new NotImplementedError("Use the cats.effect.Resource mechanisms for this, you probably don't need to do anything, safe to ignore")
 
   /**
     * Retries a blocked interaction.
     *
     * @return
     */
-  override def retryInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
-    for {
-      encoded <- Marshal(BaaSProtocol.RetryInteractionRequest(recipeInstanceId, interactionName)).to[MessageEntity]
-      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("retryInteraction")), entity = encoded)
-      response <- Http().singleRequest(request)
-      _ <- unmarshalBakerExceptions(response)
-    } yield ()
+  override def retryInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] = {
+    val request = POST(
+      BaaSProtocol.RetryInteractionRequest(recipeInstanceId, interactionName),
+      Root / "retryInteraction"
+    )
+    handleBakerFailure(request)
+  }
 
   /**
     * Resolves a blocked interaction by specifying it's output.
@@ -311,24 +314,49 @@ case class BakerClient(hostname: Uri)(implicit system: ActorSystem, mat: Materia
     *
     * @return
     */
-  override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): Future[Unit] =
-    for {
-      encoded <- Marshal(BaaSProtocol.ResolveInteractionRequest(recipeInstanceId, interactionName, event)).to[MessageEntity]
-      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("resolveInteraction")), entity = encoded)
-      response <- Http().singleRequest(request)
-      _ <- unmarshalBakerExceptions(response)
-    } yield ()
+  override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): Future[Unit] = {
+    val request = POST(
+      BaaSProtocol.ResolveInteractionRequest(recipeInstanceId, interactionName, event),
+      Root / "resolveInteraction"
+    )
+    handleBakerFailure(request)
+  }
 
   /**
     * Stops the retrying of an interaction.
     *
     * @return
     */
-  override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
-    for {
-      encoded <- Marshal(BaaSProtocol.StopRetryingInteractionRequest(recipeInstanceId, interactionName)).to[MessageEntity]
-      request = HttpRequest(method = HttpMethods.POST, uri = withPath(root./("stopRetryingInteraction")), entity = encoded)
-      response <- Http().singleRequest(request)
-      _ <- unmarshalBakerExceptions(response)
-    } yield ()
+  override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] = {
+    val request = POST(
+      BaaSProtocol.StopRetryingInteractionRequest(recipeInstanceId, interactionName),
+      Root / "stopRetryingInteraction"
+    )
+    handleBakerFailure(request)
+  }
+
+  private type WithBakerException[A] = Either[BaaSProtocol.BaaSRemoteFailure, A]
+
+  private implicit def withBakerExeptionEntityDecoder[A, P <: ProtoMessage[P]](implicit protoMap: ProtoMap[A, P]): EntityDecoder[IO, WithBakerException[A]] =
+    protoDecoder(baaSRemoteFailureProto).map(Left(_)).orElse(protoDecoder[A, P].map(Right(_)))
+
+  private def liftRemoteFailure[A](either: Either[BaaSProtocol.BaaSRemoteFailure, A]): IO[A] =
+    either.fold(failure => IO.raiseError(failure.error), IO.pure)
+
+  private def handleBakerResponse[A, R](request: IO[Request[IO]])(f: A => R)(implicit decoder: EntityDecoder[IO, A]): Future[R] =
+    client
+      .expect[WithBakerException[A]](request)
+      .flatMap(liftRemoteFailure)
+      .map(f)
+      .unsafeToFuture()
+
+  private def handleBakerFailure(request: IO[Request[IO]]): Future[Unit] =
+    request.flatMap(client.run(_).use(response => response.contentType match {
+      case Some(contentType) if contentType.mediaType == MediaType.application.`octet-stream` =>
+        EntityDecoder[IO, BaaSProtocol.BaaSRemoteFailure]
+          .decode(response, true)
+          .value
+          .flatMap(_.fold(IO.raiseError(_), e => IO.raiseError(e.error)))
+      case _ => IO.unit
+    })).unsafeToFuture()
 }
