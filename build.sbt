@@ -99,7 +99,6 @@ lazy val `baker-interface` = project.in(file("baker-interface"))
   .settings(
     moduleName := "baker-interface",
     libraryDependencies ++= Seq(
-      akkaActor,
       catsEffect,
       scalaJava8Compat
     ) ++ providedDeps(findbugs) ++ testDeps(
@@ -240,10 +239,6 @@ lazy val `baas-protocol-recipe-event-publishing` = project.in(file("baas-protoco
   .settings(
     moduleName := "baas-protocol-recipe-event-publishing",
     libraryDependencies ++= Seq(
-      akkaHttp,
-      akkaStream,
-      slf4jApi,
-      slf4jSimple,
       http4s,
       http4sDsl,
       http4sClient
@@ -257,8 +252,9 @@ lazy val `baas-protocol-baker-event-publishing` = project.in(file("baas-protocol
   .settings(
     moduleName := "baas-protocol-baker-event-publishing",
     libraryDependencies ++= Seq(
-      akkaStream,
-      akkaHttp
+      http4s,
+      http4sDsl,
+      http4sClient
     )
   )
   .dependsOn(`baker-interface`)
@@ -268,8 +264,9 @@ lazy val `baas-node-client` = project.in(file("baas-node-client"))
   .settings(
     moduleName := "baas-node-client",
     libraryDependencies ++= Seq(
-      akkaStream,
-      akkaHttp
+      http4s,
+      http4sDsl,
+      http4sClient
     )
   )
   .dependsOn(`baker-interface`, `baas-protocol-baker`)
@@ -355,13 +352,13 @@ lazy val `baas-node-baker-event-listener` = project.in(file("baas-node-baker-eve
   .settings(
     moduleName := "baas-node-baker-event-listener",
     libraryDependencies ++= Seq(
-      akkaHttp,
       slf4jApi,
-      slf4jSimple
+      slf4jSimple,
+      http4s,
+      http4sDsl,
+      http4sServer
     ) ++ testDeps(
-      scalaTest,
-      junitInterface,
-      scalaCheck
+      scalaTest
     )
   )
   .dependsOn(`baas-protocol-baker-event-publishing`, `baker-interface`)

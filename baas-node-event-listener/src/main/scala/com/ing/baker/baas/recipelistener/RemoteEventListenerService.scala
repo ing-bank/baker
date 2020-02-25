@@ -35,7 +35,7 @@ final class RemoteEventListenerService(listenerFunction: (RecipeEventMetadata, E
     case req@POST -> Root / "recipe-event" =>
       for {
         event <- req.as[protocol.ProtocolDistributedEventPublishing.Event]
-        _ <- IO(listenerFunction(event.recipeEventMetadata, event.event))
+        _ <- IO.pure(IO(listenerFunction(event.recipeEventMetadata, event.event)).unsafeRunAsyncAndForget())
         response <- Ok()
       } yield response
   })

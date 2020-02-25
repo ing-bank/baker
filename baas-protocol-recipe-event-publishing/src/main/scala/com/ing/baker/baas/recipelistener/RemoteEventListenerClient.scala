@@ -4,6 +4,7 @@ import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.baas.protocol.DistributedEventPublishingProto._
 import com.ing.baker.baas.protocol.ProtocolDistributedEventPublishing
 import com.ing.baker.baas.recipelistener.BakeryHttp.Headers.`X-Bakery-Intent`
+import com.ing.baker.baas.recipelistener.BakeryHttp.Headers.Intent
 import com.ing.baker.baas.recipelistener.BakeryHttp.ProtoEntityEncoders._
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata}
 import org.http4s.Method._
@@ -31,7 +32,7 @@ final class RemoteEventListenerClient(client: Client[IO], hostname: Uri)(implici
     val request = POST(
       ProtocolDistributedEventPublishing.Event(recipeEventMetadata, event),
       hostname / "api" / "v3" / "recipe-event",
-      `X-Bakery-Intent`(hostname)
+      `X-Bakery-Intent`(Intent.`Remote-Event-Listener`, hostname)
     )
     client.status(request)
   }

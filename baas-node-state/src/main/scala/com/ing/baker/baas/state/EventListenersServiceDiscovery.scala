@@ -3,7 +3,7 @@ package com.ing.baker.baas.state
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import com.ing.baker.baas.akka.RemoteBakerEventListenerClient
+import com.ing.baker.baas.bakerlistener.RemoteBakerEventListenerClient
 import com.ing.baker.baas.recipelistener.RemoteEventListenerClient
 import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.runtime.serialization.Encryption
@@ -22,13 +22,15 @@ class EventListenersServiceDiscovery(discovery: ServiceDiscovery, baker: Baker)(
 
   type RecipeListener = Resource[IO, RemoteEventListenerClient]
 
+  type BakerListener = Resource[IO, RemoteBakerEventListenerClient]
+
   implicit val contextShift: ContextShift[IO] = IO.contextShift(system.dispatcher)
 
   implicit val timer: Timer[IO] = IO.timer(system.dispatcher)
 
   private var recipeListenersCache: Map[RecipeName, List[RecipeListener]] = Map.empty
 
-  private var bakerListenersCache: List[RemoteBakerEventListenerClient] = List.empty
+  private var bakerListenersCache: List[BakerListener] = List.empty
 
   private def loadListeners: Future[Map[RecipeName, List[RecipeListener]]] = {
     discovery
@@ -41,11 +43,11 @@ class EventListenersServiceDiscovery(discovery: ServiceDiscovery, baker: Baker)(
         })
   }
 
-  private def loadBakerListeners: Future[List[RemoteBakerEventListenerClient]] = {
+  private def loadBakerListeners: Future[List[BakerListener]] = {
     discovery
       .getBakerEventListenersAddresses
       .map(_
-        .map(RemoteBakerEventListenerClient(_))
+        .map( address => RemoteBakerEventListenerClient.resource(Uri.unsafeFromString(address), system.dispatcher))
         .toList)
   }
 
@@ -66,7 +68,7 @@ class EventListenersServiceDiscovery(discovery: ServiceDiscovery, baker: Baker)(
       recipeListenersCache.get("All-Recipes").foreach(_.foreach(_.use(_.apply(metadata, event)).unsafeRunAsyncAndForget()))
     })
     baker.registerBakerEventListener(event => {
-      bakerListenersCache.foreach(_.apply(event))
+      bakerListenersCache.foreach(_.use(_.apply(event)).unsafeRunAsyncAndForget())
     })
   }
 }

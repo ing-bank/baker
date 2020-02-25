@@ -1,4 +1,4 @@
-package com.ing.baker.baas.recipelistener
+package com.ing.baker.baas.bakerlistener
 
 import cats.data.EitherT
 import cats.effect.IO
