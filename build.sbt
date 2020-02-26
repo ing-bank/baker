@@ -609,6 +609,7 @@ lazy val `baas-smoke-tests` = project.in(file("baas-smoke-tests"))
 lazy val `sbt-baas-docker-generate` = project.in(file("sbt-baas-docker-generate"))
   .settings(defaultModuleSettings)
   .settings(
+    // workaround to let plugin be used in the same project without publishing it
     sourceGenerators in Compile += Def.task {
       val file = (sourceManaged in Compile).value / "baas" / "sbt" / "BuildInteractionDockerImageSBTPlugin.scala"
       val sourceFile = IO.readBytes(baseDirectory.value.getParentFile / "project" / "BuildInteractionDockerImageSBTPlugin.scala")
