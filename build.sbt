@@ -100,9 +100,11 @@ lazy val `baker-interface` = project.in(file("baker-interface"))
     moduleName := "baker-interface",
     libraryDependencies ++= Seq(
       akkaActor,
-      catsCore,
+      catsEffect,
       scalaJava8Compat
-    ) ++ providedDeps(findbugs)
+    ) ++ providedDeps(findbugs) ++ testDeps(
+      scalaTest
+    )
   )
   .dependsOn(intermediateLanguage)
 
@@ -238,8 +240,14 @@ lazy val `baas-protocol-recipe-event-publishing` = project.in(file("baas-protoco
   .settings(
     moduleName := "baas-protocol-recipe-event-publishing",
     libraryDependencies ++= Seq(
+      akkaHttp,
       akkaStream,
-      akkaHttp
+      slf4jApi,
+      slf4jSimple,
+      logback,
+      http4s,
+      http4sDsl,
+      http4sClient
     )
   )
   .dependsOn(`baker-interface`)
@@ -332,15 +340,15 @@ lazy val `baas-node-event-listener` = project.in(file("baas-node-event-listener"
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "baas-node-event-listener",
-    libraryDependencies ++= Seq(
-      akkaHttp,
-      akkaCluster,
+    libraryDepe
       slf4jApi,
-      slf4jSimple
+      slf4jSimple,
+      logback,
+      http4s,
+      http4sDsl,
+      http4sServer
     ) ++ testDeps(
-      scalaTest,
-      junitInterface,
-      scalaCheck
+      scalaTest
     )
   )
   .dependsOn(`baas-protocol-recipe-event-publishing`, `baker-interface`)

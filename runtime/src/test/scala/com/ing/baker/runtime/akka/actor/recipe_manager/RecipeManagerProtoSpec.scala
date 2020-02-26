@@ -2,9 +2,10 @@ package com.ing.baker.runtime.akka.actor.recipe_manager
 
 import com.ing.baker.BakerRuntimeTestBase
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager.RecipeAdded
-import com.ing.baker.runtime.akka.actor.serialization.SerializationSpec
-import com.ing.baker.runtime.serialization.{Encryption, SerializersProvider}
+import com.ing.baker.runtime.akka.actor.serialization.{AkkaSerializerProvider, SerializationSpec}
+import com.ing.baker.runtime.serialization.Encryption
 import org.scalatest.TryValues._
+import com.ing.baker.runtime.akka.actor.serialization.SerializedDataProto._
 
 class RecipeManagerProtoSpec extends BakerRuntimeTestBase {
 
@@ -13,8 +14,8 @@ class RecipeManagerProtoSpec extends BakerRuntimeTestBase {
   //This test was added to ensure backwards compatibility with V1 of Baker
   "The RecipeAdded message" should {
     "allow for an empty timestamp and default it to 0" in {
-      val serializersProvider = SerializersProvider.apply(defaultActorSystem, null, Encryption.NoEncryption)
-      val recipeAddedProto = RecipeManagerProto.recipeAddedProto(serializersProvider)
+      implicit val serializersProvider: AkkaSerializerProvider = AkkaSerializerProvider(defaultActorSystem, Encryption.NoEncryption)
+      val recipeAddedProto = RecipeManagerProto.recipeAddedProto
 
       val recipeAddedMessage = recipeAddedProto
         .toProto(RecipeAdded(SerializationSpec.IntermediateLanguage.recipeGen.sample.get, 99L))

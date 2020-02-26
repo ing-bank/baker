@@ -8,6 +8,11 @@ option (scalapb.options) = {
     flat_package: true
 };
 
+// Akka
+message ActorRefId {
+    optional string identifier = 1;
+}
+
 // Events
 
 message ActorCreated {

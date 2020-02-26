@@ -2,6 +2,7 @@ package com.ing.baker.runtime.akka.actor.process_index
 
 import java.util.concurrent.TimeUnit
 
+import akka.actor.{ActorRef, ActorRefProvider}
 import cats.instances.list._
 import cats.instances.try_._
 import cats.syntax.traverse._
@@ -9,15 +10,31 @@ import com.ing.baker.runtime.akka.actor.ClusterBakerActorProvider.GetShardIndex
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndex._
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.FireSensoryEventReaction.{NotifyBoth, NotifyOnEvent, NotifyWhenCompleted, NotifyWhenReceived}
 import com.ing.baker.runtime.akka.actor.process_index.ProcessIndexProtocol.{ProcessEventReceivedResponse, _}
+import com.ing.baker.runtime.akka.actor.process_index.protobuf.ActorRefId
+import com.ing.baker.runtime.akka.actor.serialization.AkkaSerializerProvider
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.serialization.protomappings.SensoryEventStatusMappingHelper
-import com.ing.baker.runtime.serialization.SerializersProvider
-import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider}
+import com.ing.baker.runtime.serialization.ProtoMap
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success, Try}
 
 object ProcessIndexProto {
+
+  implicit def akkaActorRefMapping(implicit ev0: ActorRefProvider): ProtoMap[ActorRef, protobuf.ActorRefId] =
+    new ProtoMap[ActorRef, protobuf.ActorRefId] {
+
+      val companion = protobuf.ActorRefId
+
+      override def toProto(a: ActorRef): protobuf.ActorRefId =
+      protobuf.ActorRefId(Some(akka.serialization.Serialization.serializedActorPath(a)))
+
+      override def fromProto(message: ActorRefId): Try[ActorRef] =
+      for {
+        identifier <- versioned(message.identifier, "identifier")
+        actorRef <- Try(ev0.resolveActorRef(identifier))
+      } yield actorRef
+    }
 
   implicit def getShardIndexProto: ProtoMap[GetShardIndex, protobuf.GetShardIndex] =
     new ProtoMap[GetShardIndex, protobuf.GetShardIndex] {
@@ -170,7 +187,7 @@ object ProcessIndexProto {
         } yield CreateProcess(recipeId, recipeInstanceId)
     }
 
-  implicit def processEventProto(implicit provider: SerializersProvider): ProtoMap[ProcessEvent, protobuf.ProcessEvent] =
+  implicit def processEventProto(implicit actorRefProvider: ActorRefProvider): ProtoMap[ProcessEvent, protobuf.ProcessEvent] =
     new ProtoMap[ProcessEvent, protobuf.ProcessEvent] {
 
       val companion = protobuf.ProcessEvent
@@ -307,7 +324,7 @@ object ProcessIndexProto {
         } yield StopRetryingInteraction(recipeInstanceId, interactionName)
     }
 
-  implicit def processEventResponseProto(implicit provider: SerializersProvider): ProtoMap[ProcessEventResponse, protobuf.ProcessEventResponse] =
+  implicit def processEventResponseProto(implicit provider: AkkaSerializerProvider): ProtoMap[ProcessEventResponse, protobuf.ProcessEventResponse] =
     new ProtoMap[ProcessEventResponse, protobuf.ProcessEventResponse] {
 
       val companion = protobuf.ProcessEventResponse

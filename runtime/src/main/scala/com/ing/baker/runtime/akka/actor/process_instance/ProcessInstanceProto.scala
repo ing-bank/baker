@@ -1,15 +1,14 @@
 package com.ing.baker.runtime.akka.actor.process_instance
 
 import cats.instances.list._
-import cats.instances.try_._
 import cats.instances.option._
+import cats.instances.try_._
 import cats.syntax.traverse._
 import com.ing.baker.petrinet.api.{Id, Marking, MultiSet}
 import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol._
 import com.ing.baker.runtime.akka.actor.process_instance.protobuf.FailureStrategyMessage.StrategyTypeMessage
-import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
-import com.ing.baker.runtime.serialization.SerializersProvider
-import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider}
+import com.ing.baker.runtime.serialization.ProtoMap
+import com.ing.baker.runtime.serialization.ProtoMap.{AnyRefMapping, ctxFromProto, ctxToProto, versioned}
 import scalapb.GeneratedMessageCompanion
 
 import scala.util.{Failure, Success, Try}
@@ -42,7 +41,7 @@ object ProcessInstanceProto {
         Success(GetState)
     }
 
-  implicit def exceptionStrategyProto(implicit ev0: SerializersProvider): ProtoMap[ExceptionStrategy, protobuf.FailureStrategyMessage] =
+  implicit def exceptionStrategyProto(implicit ev0: AnyRefMapping): ProtoMap[ExceptionStrategy, protobuf.FailureStrategyMessage] =
     new ProtoMap[ExceptionStrategy, protobuf.FailureStrategyMessage] {
 
       val companion: GeneratedMessageCompanion[protobuf.FailureStrategyMessage] =
@@ -71,7 +70,7 @@ object ProcessInstanceProto {
         }
     }
 
-  implicit def exceptionStateProto(implicit ev0: SerializersProvider): ProtoMap[ExceptionState, protobuf.ExceptionState] =
+  implicit def exceptionStateProto(implicit ev0: AnyRefMapping): ProtoMap[ExceptionState, protobuf.ExceptionState] =
     new ProtoMap[ExceptionState, protobuf.ExceptionState] {
 
       val companion: GeneratedMessageCompanion[protobuf.ExceptionState] =
@@ -89,7 +88,7 @@ object ProcessInstanceProto {
         } yield ExceptionState(failureCount, failureReason, exceptionStrategy)
     }
 
-  implicit def jobStateProto(implicit ev0: SerializersProvider): ProtoMap[JobState, protobuf.JobState] =
+  implicit def jobStateProto(implicit ev0: AnyRefMapping): ProtoMap[JobState, protobuf.JobState] =
     new ProtoMap[JobState, protobuf.JobState] {
 
       val companion: GeneratedMessageCompanion[protobuf.JobState] =
@@ -110,7 +109,7 @@ object ProcessInstanceProto {
         } yield JobState(jobId, transitionId, consumed, input, exceptionState)
     }
 
-  implicit def instanceStateProto(implicit ev0: SerializersProvider): ProtoMap[InstanceState, protobuf.InstanceState] =
+  implicit def instanceStateProto(implicit ev0: AnyRefMapping): ProtoMap[InstanceState, protobuf.InstanceState] =
     new ProtoMap[InstanceState, protobuf.InstanceState] {
 
       val companion = protobuf.InstanceState
@@ -131,7 +130,7 @@ object ProcessInstanceProto {
         } yield InstanceState(sequenceNr, marking, state, jobMap)
     }
 
-  implicit def initializeProto(implicit ev0: SerializersProvider): ProtoMap[Initialize, protobuf.Initialize] =
+  implicit def initializeProto(implicit ev0: AnyRefMapping): ProtoMap[Initialize, protobuf.Initialize] =
     new ProtoMap[Initialize, protobuf.Initialize] {
 
       val companion: GeneratedMessageCompanion[protobuf.Initialize] =
@@ -148,7 +147,7 @@ object ProcessInstanceProto {
         } yield Initialize(marking, state)
     }
 
-   implicit def initializedProto(implicit ev0: SerializersProvider): ProtoMap[Initialized, protobuf.InitializedMessage] =
+   implicit def initializedProto(implicit ev0: AnyRefMapping): ProtoMap[Initialized, protobuf.InitializedMessage] =
     new ProtoMap[Initialized, protobuf.InitializedMessage] {
 
       val companion: GeneratedMessageCompanion[protobuf.InitializedMessage] =
@@ -165,7 +164,7 @@ object ProcessInstanceProto {
         } yield Initialized(marking, state)
     }
 
-  implicit def uninitializedProto(implicit ev0: SerializersProvider): ProtoMap[Uninitialized, protobuf.Uninitialized] =
+  implicit def uninitializedProto: ProtoMap[Uninitialized, protobuf.Uninitialized] =
     new ProtoMap[Uninitialized, protobuf.Uninitialized] {
 
       val companion: GeneratedMessageCompanion[protobuf.Uninitialized] =
@@ -178,7 +177,7 @@ object ProcessInstanceProto {
         versioned(message.recipeInstanceId, "RecipeInstanceId").map(Uninitialized)
     }
 
-  implicit def alreadyInitializedProto(implicit ev0: SerializersProvider): ProtoMap[AlreadyInitialized, protobuf.AlreadyInitialized] =
+  implicit def alreadyInitializedProto: ProtoMap[AlreadyInitialized, protobuf.AlreadyInitialized] =
     new ProtoMap[AlreadyInitialized, protobuf.AlreadyInitialized] {
 
       val companion: GeneratedMessageCompanion[protobuf.AlreadyInitialized] =
@@ -191,7 +190,7 @@ object ProcessInstanceProto {
         versioned(message.recipeInstanceId, "RecipeInstanceId").map(AlreadyInitialized)
     }
 
-  implicit def fireTransitionProto(implicit ev0: SerializersProvider): ProtoMap[FireTransition, protobuf.FireTransition] =
+  implicit def fireTransitionProto(implicit ev0: AnyRefMapping): ProtoMap[FireTransition, protobuf.FireTransition] =
     new ProtoMap[FireTransition, protobuf.FireTransition] {
 
       val companion: GeneratedMessageCompanion[protobuf.FireTransition] =
@@ -208,7 +207,7 @@ object ProcessInstanceProto {
         } yield FireTransition(transitionId, input, message.correlationId)
     }
 
-  implicit def overrideExceptionStrategyProto(implicit ev0: SerializersProvider): ProtoMap[OverrideExceptionStrategy, protobuf.OverrideExceptionStrategy] =
+  implicit def overrideExceptionStrategyProto(implicit ev0: AnyRefMapping): ProtoMap[OverrideExceptionStrategy, protobuf.OverrideExceptionStrategy] =
     new ProtoMap[OverrideExceptionStrategy, protobuf.OverrideExceptionStrategy] {
 
       val companion: GeneratedMessageCompanion[protobuf.OverrideExceptionStrategy] =
@@ -267,7 +266,7 @@ object ProcessInstanceProto {
         } yield  TransitionNotEnabled(transitionId, reason)
     }
 
-  implicit def transitionFailedProto(implicit ev0: SerializersProvider): ProtoMap[TransitionFailed, protobuf.TransitionFailedMessage] =
+  implicit def transitionFailedProto(implicit ev0: AnyRefMapping): ProtoMap[TransitionFailed, protobuf.TransitionFailedMessage] =
     new ProtoMap[TransitionFailed, protobuf.TransitionFailedMessage] {
 
       val companion: GeneratedMessageCompanion[protobuf.TransitionFailedMessage] =
@@ -290,7 +289,7 @@ object ProcessInstanceProto {
         } yield  TransitionFailed(jobId, transitionId, message.correlationId, consume, input, reason, strategy)
     }
 
-  implicit def transitionFiredProto(implicit ev0: SerializersProvider): ProtoMap[TransitionFired, protobuf.TransitionFiredMessage] =
+  implicit def transitionFiredProto(implicit ev0: AnyRefMapping): ProtoMap[TransitionFired, protobuf.TransitionFiredMessage] =
     new ProtoMap[TransitionFired, protobuf.TransitionFiredMessage] {
 
       val companion: GeneratedMessageCompanion[protobuf.TransitionFiredMessage] =
@@ -311,7 +310,7 @@ object ProcessInstanceProto {
         } yield  TransitionFired(jobId, transitionId, message.correlationId, consumed, produced, message.newJobsIds.toSet, output)
     }
 
-  private def toDomainMarking(markingData: Seq[protobuf.MarkingData])(implicit ev0: SerializersProvider): Try[Marking[Id]] = {
+  private def toDomainMarking(markingData: Seq[protobuf.MarkingData])(implicit ev0: AnyRefMapping): Try[Marking[Id]] = {
     markingData.foldLeft[Try[Marking[Id]]](Success(Map.empty)) {
       case (accTry, protobuf.MarkingData(Some(placeId), Some(data), Some(count))) =>
         for {
@@ -324,7 +323,7 @@ object ProcessInstanceProto {
     }
   }
 
-  private def toProtoMarking(markingData: Marking[Id])(implicit ev0: SerializersProvider): Seq[protobuf.MarkingData] = {
+  private def toProtoMarking(markingData: Marking[Id])(implicit ev0: AnyRefMapping): Seq[protobuf.MarkingData] = {
     markingData.flatMap { case (placeId, multiSet) =>
       if (multiSet.isEmpty)
         throw new IllegalArgumentException(s"Empty marking encoutered for place id: $placeId")
