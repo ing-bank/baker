@@ -89,7 +89,7 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
       def cleanup[A](f: IO[A]): IO[Unit] =
         if(args.skipCleanup) IO.unit else f.void
 
-      def processLogger(prefix: String) = ProcessLogger(
+      def processLogger(prefix: String): ProcessLogger = ProcessLogger(
         line => println(prefix + " " + line),
         err => stderr.println(Console.RED + err + Console.RESET))
 
