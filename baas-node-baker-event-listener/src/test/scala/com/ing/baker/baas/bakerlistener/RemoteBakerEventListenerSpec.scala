@@ -68,7 +68,7 @@ class RemoteBakerEventListenerSpec extends BakeryFunSpec {
       client <- RemoteBakerEventListenerClient.resource(server.baseUri, executionContext)
     } yield Context(
       withEventListener = listener => IO(eventListenerPromise.complete(Success(listener))),
-      clientFiresEvent = client.apply
+      clientFiresEvent = client.fireEvent
     )
   }
 

@@ -6,8 +6,8 @@ class RemoteComponents(kubeApiServer: KubeApiServer, remoteInteraction: RemoteIn
 
   def registerToTheCluster: IO[Unit] =
     for {
-      _ <- kubeApiServer.registersRemoteComponents
       _ <- remoteInteraction.publishesItsInterface
       _ <- remoteEventListener.listensToEvents
+      _ <- kubeApiServer.registersRemoteComponents
     } yield ()
 }

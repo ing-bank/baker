@@ -28,7 +28,7 @@ object RemoteEventListenerClient {
 
 final class RemoteEventListenerClient(client: Client[IO], hostname: Uri)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
 
-  def apply(recipeEventMetadata: RecipeEventMetadata, event: EventInstance): IO[Status] = {
+  def fireEvent(recipeEventMetadata: RecipeEventMetadata, event: EventInstance): IO[Status] = {
     val request = POST(
       ProtocolDistributedEventPublishing.Event(recipeEventMetadata, event),
       hostname / "api" / "v3" / "recipe-event",

@@ -25,7 +25,7 @@ object RemoteBakerEventListenerClient {
 
 final class RemoteBakerEventListenerClient(client: Client[IO], hostname: Uri) {
 
-  def apply(event: BakerEvent): IO[Status] = {
+  def fireEvent(event: BakerEvent): IO[Status] = {
     val request = POST(
       event,
       hostname / "api" / "v3" / "baker-event",

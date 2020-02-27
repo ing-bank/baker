@@ -1,11 +1,9 @@
 package com.ing.baker.baas.scaladsl
 
-import java.net.InetSocketAddress
-
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import com.ing.baker.baas.protocol.BakeryHttp.ProtoEntityEncoders._
 import com.ing.baker.baas.protocol.BaaSProto._
 import com.ing.baker.baas.protocol.BaaSProtocol
+import com.ing.baker.baas.protocol.BakeryHttp.ProtoEntityEncoders._
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance, EventMoment, EventResolutions, InteractionInstance, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
@@ -343,12 +341,16 @@ final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: Executio
   private def liftRemoteFailure[A](either: Either[BaaSProtocol.BaaSRemoteFailure, A]): IO[A] =
     either.fold(failure => IO.raiseError(failure.error), IO.pure)
 
-  private def handleBakerResponse[A, R](request: IO[Request[IO]])(f: A => R)(implicit decoder: EntityDecoder[IO, A]): Future[R] =
-    client
-      .expect[WithBakerException[A]](request)
-      .flatMap(liftRemoteFailure)
-      .map(f)
-      .unsafeToFuture()
+  final class HandleBakerResponsePartial[A, R] {
+    def apply[P <: ProtoMessage[P]](request: IO[Request[IO]])(f: A => R)(implicit protoMap: ProtoMap[A, P]): Future[R] =
+      client
+        .expect[WithBakerException[A]](request)
+        .flatMap(liftRemoteFailure _)
+        .map(f)
+        .unsafeToFuture()
+  }
+
+  private def handleBakerResponse[A, R]: HandleBakerResponsePartial[A, R] = new HandleBakerResponsePartial[A, R]
 
   private def handleBakerFailure(request: IO[Request[IO]]): Future[Unit] =
     request.flatMap(client.run(_).use(response => response.contentType match {

@@ -2,33 +2,33 @@ package com.ing.baker.baas.state
 
 import java.net.InetSocketAddress
 
+import cats.effect.{ContextShift, IO, Resource, Timer}
+import com.ing.baker.baas.protocol.BaaSProto._
+import com.ing.baker.baas.protocol.BaaSProtocol
+import com.ing.baker.baas.protocol.BakeryHttp.ProtoEntityEncoders._
+import com.ing.baker.runtime.common.BakerException
+import com.ing.baker.runtime.scaladsl.Baker
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.{Router, Server}
-import cats.effect.{ContextShift, IO, Resource, Timer}
-import com.ing.baker.baas.protocol.BaaSProtocol
-import com.ing.baker.baas.protocol.BaaSProto._
-import com.ing.baker.baas.protocol.BakeryHttp.ProtoEntityEncoders._
-import com.ing.baker.runtime.common.BakerException
-import com.ing.baker.runtime.scaladsl.Baker
 
 import scala.concurrent.Future
 
 object StateNodeService {
 
-  def resource(listeners: EventListenersServiceDiscovery, baker: Baker, hostname: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
+  def resource(baker: Baker, hostname: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
     for {
-      _ <- Resource.liftF(IO.fromFuture(IO(listeners.initializeEventListeners))) // TODO for when refactoring of Kubernetes Api
       binding <- BlazeServerBuilder[IO]
-          .bindSocketAddress(hostname)
-          .withHttpApp(new StateNodeService(listeners, baker).build)
-          .resource
+        .bindSocketAddress(hostname)
+        .withHttpApp(new StateNodeService(baker).build)
+        .resource
     } yield binding
   }
 }
-class StateNodeService(listeners: EventListenersServiceDiscovery, baker: Baker)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
+
+final class StateNodeService private(baker: Baker)(implicit cs: ContextShift[IO]) {
 
   def build: HttpApp[IO] =
     api.orNotFound
@@ -36,6 +36,7 @@ class StateNodeService(listeners: EventListenersServiceDiscovery, baker: Baker)(
   def completeWithBakerFailures[A, R](result: IO[Future[A]])(f: A => R)(implicit decoder: EntityEncoder[IO, R]): IO[Response[IO]] =
     IO.fromFuture(result).attempt.flatMap {
       case Left(e: BakerException) => Ok(BaaSProtocol.BaaSRemoteFailure(e))
+      case Left(e) => IO.raiseError(new IllegalStateException("No other exception but BakerExceptions should be thrown here.", e))
       case Right(a) => Ok(f(a))
     }
 
@@ -54,7 +55,7 @@ class StateNodeService(listeners: EventListenersServiceDiscovery, baker: Baker)(
         .map(r => IO(baker.getRecipe(r.recipeId)))
         .flatMap(completeWithBakerFailures(_)(BaaSProtocol.GetRecipeResponse))
 
-    case req@GET -> Root / "getAllRecipes" =>
+    case GET -> Root / "getAllRecipes" =>
       completeWithBakerFailures(IO(baker.getAllRecipes))(BaaSProtocol.GetAllRecipesResponse)
 
     case req@POST -> Root / "bake" =>
