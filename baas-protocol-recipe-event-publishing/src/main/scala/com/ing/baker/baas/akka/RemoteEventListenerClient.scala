@@ -7,21 +7,20 @@ import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
-import akka.stream.Materializer
 import com.ing.baker.baas.protocol.DistributedEventPublishingProto._
 import com.ing.baker.baas.protocol.ProtocolDistributedEventPublishing
 import com.ing.baker.runtime.scaladsl.{EventInstance, RecipeEventMetadata}
-import com.ing.baker.runtime.serialization.{Encryption, ProtoMap, SerializersProvider}
+import com.ing.baker.runtime.serialization.{Encryption, ProtoMap}
 
 import scala.concurrent.Future
 
 object RemoteEventListenerClient {
 
-  def apply(hostname: String)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption) =
+  def apply(hostname: String)(implicit system: ActorSystem, encryption: Encryption) =
     new RemoteEventListenerClient(Uri(hostname))
 }
 
-class RemoteEventListenerClient(hostname: Uri)(implicit system: ActorSystem, mat: Materializer, encryption: Encryption) {
+class RemoteEventListenerClient(hostname: Uri)(implicit system: ActorSystem, encryption: Encryption) {
 
   import system.dispatcher
 
@@ -40,9 +39,6 @@ class RemoteEventListenerClient(hostname: Uri)(implicit system: ActorSystem, mat
       case Left(a) => m1.toByteArray(a)
       case Right(b) => m2.toByteArray(b)
     }
-
-  private implicit val serializersProvider: SerializersProvider =
-    SerializersProvider(system, encryption)
 
   private val root: Path = Path./("api")./("v3")
 

@@ -21,3 +21,4 @@ native/
 /**/*.pdf
 /**/.DS_Store
 site/
+/.sbtopts
