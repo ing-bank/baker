@@ -22,7 +22,8 @@ to block and do normal synchronous/blocking programming._
 import akka.actor.ActorSystem
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
+import com.ing.baker.runtime.scaladsl.EventInstance
+import com.ing.baker.runtime.akka.AkkaBaker
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
@@ -32,7 +33,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 implicit val actorSystem: ActorSystem =
   ActorSystem("WebshopSystem")
 
-val baker: Baker = Baker.akkaLocalDefault(actorSystem)
+val baker: Baker = AkkaBaker.akkaLocalDefault(actorSystem)
 
 val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
 
@@ -47,7 +48,7 @@ val program: Future[Unit] = for {
 import akka.actor.ActorSystem;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.javadsl.Baker;
+import com.ing.baker.runtime.akka.AkkaBaker;
 import com.ing.baker.runtime.javadsl.InteractionInstance;
 
 import java.util.concurrent.CompletableFuture;
@@ -57,7 +58,7 @@ public class JMain {
     static public void main(String[] args) {
 
         ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-        Baker baker = Baker.akkaLocalDefault(actorSystem);
+        Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
 
         InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
@@ -91,7 +92,8 @@ for more on this please refer to the [configuration section](../../development-l
 import akka.actor.ActorSystem
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
+import com.ing.baker.runtime.scaladsl.EventInstance
+import com.ing.baker.runtime.akka.AkkaBaker
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
@@ -100,7 +102,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 implicit val actorSystem: ActorSystem =
   ActorSystem("WebshopSystem")
-val baker: Baker = Baker.akkaLocalDefault(actorSystem)
+val baker: Baker = AkkaBaker.localDefault(actorSystem)
 
 val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
 
@@ -116,7 +118,7 @@ val program: Future[Unit] = for {
 import akka.actor.ActorSystem;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.javadsl.Baker;
+import com.ing.baker.runtime.akka.AkkaBaker;
 import com.ing.baker.runtime.javadsl.InteractionInstance;
 
 import java.util.concurrent.CompletableFuture;
@@ -131,7 +133,7 @@ public class JMain {
     static public void main(String[] args) {
 
         ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-        Baker baker = Baker.akkaLocalDefault(actorSystem);
+        Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
 
         InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveItems());
         CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
@@ -175,7 +177,8 @@ to the moment the `onEventName` was fired.
 import akka.actor.ActorSystem
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
+import com.ing.baker.runtime.scaladsl.EventInstance
+import com.ing.baker.runtime.akka.AkkaBaker
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
@@ -184,7 +187,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 implicit val actorSystem: ActorSystem =
   ActorSystem("WebshopSystem")
-val baker: Baker = Baker.akkaLocalDefault(actorSystem)
+val baker: Baker = AkkaBaker.localDefault(actorSystem)
 
 val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
 
@@ -207,7 +210,7 @@ val program: Future[Unit] = for {
 import akka.actor.ActorSystem;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.javadsl.Baker;
+import com.ing.baker.runtime.akka.AkkaBaker;
 import com.ing.baker.runtime.javadsl.EventInstance;
 import com.ing.baker.runtime.javadsl.EventResult;
 import com.ing.baker.runtime.javadsl.InteractionInstance;
@@ -221,7 +224,7 @@ public class JMain {
     static public void main(String[] args) {
 
         ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-        Baker baker = Baker.akkaLocalDefault(actorSystem);
+        Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
 
         List<String> items = new ArrayList<>(2);
         items.add("item1");

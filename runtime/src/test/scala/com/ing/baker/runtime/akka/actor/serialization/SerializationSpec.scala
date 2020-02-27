@@ -17,11 +17,11 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManager.RecipeAdded
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProto._
 import com.ing.baker.runtime.akka.actor.recipe_manager.RecipeManagerProtocol.GetRecipe
 import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeManagerProtocol}
-import com.ing.baker.runtime.serialization.Encryption.{AESEncryption, NoEncryption}
-import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto}
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanceState, SensoryEventResult}
+import com.ing.baker.runtime.serialization.Encryption.{AESEncryption, NoEncryption}
 import com.ing.baker.runtime.serialization.ProtoMap
+import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto}
 import com.ing.baker.types.modules.PrimitiveModuleSpec._
 import com.ing.baker.types.{Value, _}
 import com.ing.baker.{AllTypeRecipe, types}
@@ -43,13 +43,11 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
       .serializerByIdentity(101)
       .asInstanceOf[BakerTypedProtobufSerializer]
 
-  import serializer.serializersProvider
-
   def checkFor[A <: AnyRef]: CheckFor[A] = new CheckFor[A]
 
   class CheckFor[A <: AnyRef]() {
 
-    def run[P <: scalapb.GeneratedMessage with scalapb.Message[P]](implicit ev: ProtoMap[A, P], gen: Gen[A], typeTag: ClassTag[A]): Unit = {
+    def run(implicit gen: Gen[A], typeTag: ClassTag[A]): Unit = {
       test(s"${typeTag.runtimeClass.getName} typed serialization") {
         check(forAll(gen) { m =>
           m === serializer.fromBinary(serializer.toBinary(m), serializer.manifest(m))
@@ -199,8 +197,8 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
     val encryption = new AESEncryption(List.fill(16)("0").mkString)
     val withEncryption = serializer.serializersProvider.copy(encryption = encryption)
     val withoutEncryption = serializer.serializersProvider.copy(encryption = NoEncryption)
-    val mapperEncryption = ProtoMap.anyRefMapping(withEncryption)
-    val mapperNoEncryption = ProtoMap.anyRefMapping(withoutEncryption)
+    val mapperEncryption = SerializedDataProto.akkaAnyRefMapping(withEncryption)
+    val mapperNoEncryption = SerializedDataProto.akkaAnyRefMapping(withoutEncryption)
 
     val protoEn = mapperEncryption.toProto(data)
     val protoNe = mapperNoEncryption.toProto(data)
@@ -220,8 +218,8 @@ class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec
     val encryption = new AESEncryption(List.fill(16)("0").mkString)
     val withEncryption = serializer.serializersProvider.copy(encryption = encryption)
     val withoutEncryption = serializer.serializersProvider.copy(encryption = NoEncryption)
-    val mapperEncryption = ProtoMap.anyRefMapping(withEncryption)
-    val mapperNoEncryption = ProtoMap.anyRefMapping(withoutEncryption)
+    val mapperEncryption = SerializedDataProto.akkaAnyRefMapping(withEncryption)
+    val mapperNoEncryption = SerializedDataProto.akkaAnyRefMapping(withoutEncryption)
 
     val protoEn = mapperEncryption.toProto(data)
     val protoNe = mapperNoEncryption.toProto(data)

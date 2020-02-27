@@ -18,7 +18,7 @@ import scalax.collection.immutable.Graph
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
-class CompiledRecipeMapping(anyMapping: ProtoMap[AnyRef, protobuf.SerializedData]) extends ProtoMap[il.CompiledRecipe, protobuf.CompiledRecipe] {
+class CompiledRecipeMapping extends ProtoMap[il.CompiledRecipe, protobuf.CompiledRecipe] {
 
   val companion = protobuf.CompiledRecipe
 
@@ -48,6 +48,7 @@ class CompiledRecipeMapping(anyMapping: ProtoMap[AnyRef, protobuf.SerializedData
         case (accumulated, protobuf.ProducedToken(Some(placeId), Some(_), Some(count), _)) ⇒ // Option[SerializedData] is always None, and we don't use it here.
           val place = petriNet.places.getById(placeId, "place in petrinet")
           val value = null // Values are not serialized (not interested in) in the serialized recipe
+                           // Only the ProcessInstanceSerialization serializer uses this field
           accumulated.add(place, value, count)
         case _ ⇒ throw new IllegalStateException("Missing data in persisted ProducedToken")
       })
@@ -125,7 +126,7 @@ class CompiledRecipeMapping(anyMapping: ProtoMap[AnyRef, protobuf.SerializedData
           placeId = Option(place.id),
           tokenId = Option(TokenIdentifier(value)),
           count = Option(count),
-          tokenData = Option(anyMapping.toProto(value.asInstanceOf[AnyRef]))
+          tokenData = None // Only the ProcessInstanceSerialization serializer uses this field
         )
       }
     }
