@@ -5,14 +5,14 @@ import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.common.RejectReason
 import com.ing.baker.runtime.scaladsl._
+import com.ing.baker.runtime.serialization.ProtoMap
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.serialization.protomappings.BakerEventMapping._
-import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider}
 import scalapb.GeneratedMessageCompanion
 
 import scala.util.{Failure, Success, Try}
 
-class BakerEventMapping(implicit ev0: SerializersProvider) extends ProtoMap[BakerEvent, protobuf.BakerEvent] {
+class BakerEventMapping extends ProtoMap[BakerEvent, protobuf.BakerEvent] {
 
   override def companion: GeneratedMessageCompanion[protobuf.BakerEvent] = protobuf.BakerEvent
 
@@ -260,7 +260,7 @@ object BakerEventMapping {
       )
   }
 
-  def RecipeAddedMapping(implicit ev0: SerializersProvider): ProtoMap[RecipeAdded, protobuf.RecipeAddedBakerEvent] =
+  def RecipeAddedMapping: ProtoMap[RecipeAdded, protobuf.RecipeAddedBakerEvent] =
     new ProtoMap[RecipeAdded, protobuf.RecipeAddedBakerEvent] {
 
       override def companion: GeneratedMessageCompanion[protobuf.RecipeAddedBakerEvent] = protobuf.RecipeAddedBakerEvent
