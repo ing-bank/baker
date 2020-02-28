@@ -1,5 +1,6 @@
 package com.ing.baker.baas.scaladsl
 
+import cats.data.EitherT
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.baas.protocol.BaaSProto._
 import com.ing.baker.baas.protocol.BaaSProtocol
@@ -9,13 +10,15 @@ import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance, EventMoment, EventResolutions, InteractionInstance, RecipeEventMetadata, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult, Baker => ScalaBaker}
 import com.ing.baker.runtime.serialization.ProtoMap
 import com.ing.baker.types.Value
+import org.http4s.EntityDecoder.collectBinary
 import org.http4s.Method._
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.client.dsl.io._
-import org.http4s.{EntityDecoder, MediaType, Request, Uri}
+import org.http4s._
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 object BakerClient {
 
@@ -76,7 +79,7 @@ final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: Executio
     * @return All recipes in the form of map of recipeId -> CompiledRecipe
     */
   override def getAllRecipes: Future[Map[String, RecipeInformation]] = {
-    val request = POST(
+    val request = GET(
       Root / "getAllRecipes"
     )
     handleBakerResponse[BaaSProtocol.GetAllRecipesResponse, Map[String, RecipeInformation]](request)(_.map)
@@ -336,16 +339,24 @@ final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: Executio
   private type WithBakerException[A] = Either[BaaSProtocol.BaaSRemoteFailure, A]
 
   private implicit def withBakerExeptionEntityDecoder[A, P <: ProtoMessage[P]](implicit protoMap: ProtoMap[A, P]): EntityDecoder[IO, WithBakerException[A]] =
-    protoDecoder(baaSRemoteFailureProto).map(Left(_)).orElse(protoDecoder[A, P].map(Right(_)))
-
-  private def liftRemoteFailure[A](either: Either[BaaSProtocol.BaaSRemoteFailure, A]): IO[A] =
-    either.fold(failure => IO.raiseError(failure.error), IO.pure)
+    EntityDecoder.decodeBy(MediaType.application.`octet-stream`)(collectBinary[IO]).map(_.toArray)
+      .flatMapR { bytes =>
+        val eitherTry: Try[WithBakerException[A]] =
+          baaSRemoteFailureProto.fromByteArray(bytes).map[WithBakerException[A]](Left(_))
+            .orElse(protoMap.fromByteArray(bytes).map[WithBakerException[A]](Right(_)))
+        eitherTry match {
+          case Success(a) =>
+            EitherT.fromEither[IO](Right(a))
+          case Failure(exception) =>
+            EitherT.fromEither[IO](Left(MalformedMessageBodyFailure(exception.getMessage, Some(exception))))
+        }
+      }
 
   final class HandleBakerResponsePartial[A, R] {
     def apply[P <: ProtoMessage[P]](request: IO[Request[IO]])(f: A => R)(implicit protoMap: ProtoMap[A, P]): Future[R] =
       client
         .expect[WithBakerException[A]](request)
-        .flatMap(liftRemoteFailure _)
+        .flatMap(_.fold(failure => IO.raiseError(failure.error), IO.pure))
         .map(f)
         .unsafeToFuture()
   }
@@ -356,7 +367,7 @@ final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: Executio
     request.flatMap(client.run(_).use(response => response.contentType match {
       case Some(contentType) if contentType.mediaType == MediaType.application.`octet-stream` =>
         EntityDecoder[IO, BaaSProtocol.BaaSRemoteFailure]
-          .decode(response, true)
+          .decode(response, strict = true)
           .value
           .flatMap(_.fold(IO.raiseError(_), e => IO.raiseError(e.error)))
       case _ => IO.unit

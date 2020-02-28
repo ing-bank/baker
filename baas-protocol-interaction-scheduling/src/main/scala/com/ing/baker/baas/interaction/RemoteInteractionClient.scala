@@ -1,18 +1,17 @@
 package com.ing.baker.baas.interaction
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
+import com.ing.baker.baas.interaction.BakeryHttp.Headers.{Intent, `X-Bakery-Intent`}
+import com.ing.baker.baas.interaction.BakeryHttp.ProtoEntityEncoders._
 import com.ing.baker.baas.protocol.InteractionSchedulingProto._
 import com.ing.baker.baas.protocol.ProtocolInteractionExecution
-import com.ing.baker.baas.interaction.BakeryHttp.Headers.`X-Bakery-Intent`
-import com.ing.baker.baas.interaction.BakeryHttp.Headers.Intent
-import com.ing.baker.baas.interaction.BakeryHttp.ProtoEntityEncoders._
-import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, RecipeEventMetadata}
+import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}
 import com.ing.baker.types.Type
 import org.http4s.Method._
+import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.client.dsl.io._
-import org.http4s.{Status, Uri}
 
 import scala.concurrent.ExecutionContext
 

@@ -215,8 +215,6 @@ lazy val `baas-protocol-baker` = project.in(file("baas-protocol-baker"))
   .settings(
     moduleName := "baas-protocol-baker",
     libraryDependencies ++= Seq(
-      akkaStream,
-      akkaHttp,
       http4s,
       http4sDsl
     )
@@ -298,7 +296,6 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
       slf4jSimple,
       scalaTest,
       mockServer,
-      akkaHttpCirce,
       circe,
       circeGeneric
     )

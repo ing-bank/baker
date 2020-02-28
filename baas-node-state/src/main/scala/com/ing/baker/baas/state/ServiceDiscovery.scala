@@ -10,6 +10,7 @@ import com.ing.baker.baas.state.ServiceDiscovery.{BakerListener, RecipeListener,
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.akka.internal.InteractionManager
 import com.ing.baker.runtime.scaladsl.{Baker, InteractionInstance}
+import com.typesafe.scalalogging.LazyLogging
 import fs2.Stream
 import io.kubernetes.client.openapi.ApiClient
 import io.kubernetes.client.openapi.apis.CoreV1Api
@@ -21,7 +22,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-object ServiceDiscovery {
+object ServiceDiscovery extends LazyLogging {
 
   private[state] type RecipeName = String
 
@@ -33,7 +34,7 @@ object ServiceDiscovery {
     * ServiceDiscovery module to give corresponding InteractionInstances and clients to the event listeners.
     * When the resource is released the polling to the Kubernetes API stops.
     *
-    * Current hard coded polling periods: 5 seconds
+    * Current hard coded polling periods: 2 seconds
     *
     * @param connectionPool to be used for client connections
     * @param namespace Kubernetes namespace to be queried
@@ -46,15 +47,19 @@ object ServiceDiscovery {
   def resource(connectionPool: ExecutionContext, namespace: String, client: ApiClient = ClientBuilder.cluster.build)(implicit contextShift: ContextShift[IO], timer: Timer[IO], blockingEC: ExecutionContext): Resource[IO, ServiceDiscovery] = {
     val api = new CoreV1Api(client)
 
-    val cacheIO = Ref.of[IO, List[V1Service]](List.empty)
-
     def fetchServices(namespace: String, api: CoreV1Api)(implicit contextShift: ContextShift[IO], blockingEC: ExecutionContext): IO[List[V1Service]] =
       contextShift.evalOn(blockingEC)(IO {
         api.listNamespacedService(namespace, null, null, null, null, null, null, null, null, null)
           .getItems
           .asScala
           .toList
-      })
+      }).attempt.flatMap {
+        case Right(services) =>
+          IO.pure(services)
+        case Left(e) =>
+          IO(logger.warn("Failed to communicate with the Kubernetes service: " + e.getMessage))
+          IO.pure(List.empty)
+      }
 
     def getInteractionAddresses(currentServices: List[V1Service]): List[Uri] =
       currentServices
@@ -83,20 +88,23 @@ object ServiceDiscovery {
     def buildInteractions(currentServices: List[V1Service]): IO[List[InteractionInstance]] =
       getInteractionAddresses(currentServices)
         .map(RemoteInteractionClient.resource(_, connectionPool))
-        .parTraverse[IO, Option[InteractionInstance]](_.use { client =>
-          for {
-            interface <- client.interface.attempt
-            interactionsOpt = interface match {
-              case Right((name, types)) => Some(InteractionInstance(
-                name = name,
-                input = types,
-                run = client.runInteraction(_).unsafeToFuture()
-              ))
-              case Left(_) => None
-            }
-          } yield interactionsOpt
-        })
+        .parTraverse[IO, Option[InteractionInstance]](buildInteractionInstance)
         .map(_.flatten)
+
+    def buildInteractionInstance(resource: Resource[IO, RemoteInteractionClient]): IO[Option[InteractionInstance]] =
+      resource.use { client =>
+        for {
+          interface <- client.interface.attempt
+          interactionsOpt = interface match {
+            case Right((name, types)) => Some(InteractionInstance(
+              name = name,
+              input = types,
+              run = input => resource.use(_.runInteraction(input)).unsafeToFuture()
+            ))
+            case Left(_) => None
+          }
+        } yield interactionsOpt
+      }
 
     def buildRecipeListeners(currentServices: List[V1Service]): Map[RecipeName, List[RecipeListener]] =
       getEventListenersAddresses(currentServices)
@@ -114,17 +122,16 @@ object ServiceDiscovery {
       cacheRecipeListeners <- Stream.eval(Ref.of[IO, Map[RecipeName, List[RecipeListener]]](Map.empty))
       cacheBakerListeners <- Stream.eval(Ref.of[IO, List[BakerListener]](List.empty))
       service = new ServiceDiscovery(cacheInteractions, cacheRecipeListeners, cacheBakerListeners)
-      updater = Stream
-        .fixedRate(5.seconds)
-        .evalMap(_ => fetchServices(namespace, api))
-        .evalMap { currentServices =>
+      updateServices = fetchServices(namespace, api)
+        .flatMap { currentServices =>
           List(
             buildInteractions(currentServices).flatMap(cacheInteractions.set),
             cacheRecipeListeners.set(buildRecipeListeners(currentServices)),
             cacheBakerListeners.set(buildBakerListeners(currentServices))
           ).parSequence
         }
-      _ <- Stream.emit(service).concurrently(updater)
+      updater = Stream.fixedRate(5.seconds).evalMap(_ => updateServices)
+      _ <- Stream.eval(updateServices).concurrently(updater)
     } yield service
 
     stream.compile.resource.lastOrError

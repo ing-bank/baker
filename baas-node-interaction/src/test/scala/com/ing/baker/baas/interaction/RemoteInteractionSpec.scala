@@ -38,7 +38,7 @@ class RemoteInteractionSpec extends BakeryFunSpec {
         .flatMap(server => RemoteInteractionClient.resource(server.baseUri, executionContext))
         .use(runTest)
     })
-    Resource.pure(context)
+    Resource.pure[IO, Context](context)
   }
 
   /** Refines the `ConfigMap` populated with the -Dkey=value arguments coming from the "sbt testOnly" command.

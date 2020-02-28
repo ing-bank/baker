@@ -60,7 +60,7 @@ class RemoteInteraction(mock: ClientAndServer, interaction: Interaction) {
   private def applyMatch =
     request()
       .withMethod("POST")
-      .withPath("/api/v3/apply")
+      .withPath("/api/v3/run-interaction")
       .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost")
 
 }

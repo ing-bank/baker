@@ -6,7 +6,7 @@ import java.util.concurrent.Executors
 import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import akka.stream.{ActorMaterializer, Materializer}
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.{ExitCode, IO, IOApp, Resource}
 import cats.implicits._
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.scaladsl.Baker
@@ -43,6 +43,7 @@ object Main extends IOApp {
           timeouts = AkkaBakerConfig.Timeouts.from(config),
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config)
         )(system))
+      _ <- Resource.liftF(serviceDiscovery.plugBakerEventListeners(baker))
       _ <- StateNodeService.resource(baker, hostname)
     } yield ()
 

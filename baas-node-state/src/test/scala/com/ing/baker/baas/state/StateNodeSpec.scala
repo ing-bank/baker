@@ -3,10 +3,9 @@ package com.ing.baker.baas.state
 import java.net.InetSocketAddress
 import java.util.UUID
 
-import cats.implicits._
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{IO, Resource}
+import cats.implicits._
 import com.ing.baker.baas.mocks.{KubeApiServer, RemoteComponents, RemoteEventListener, RemoteInteraction}
 import com.ing.baker.baas.recipe.Events.{ItemsReserved, OrderPlaced}
 import com.ing.baker.baas.recipe.Ingredients.{Item, OrderId, ReservedItems}
@@ -51,7 +50,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
 
     test("Recipe management") { context =>
       for {
-        _ <- context.remoteComponents.registerToTheCluster
         recipeId <- io(context.client.addRecipe(recipe))
         recipeInformation <- io(context.client.getRecipe(recipeId))
         noSuchRecipeError <- io(context.client
@@ -69,7 +67,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.bake") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
-        _ <- context.remoteComponents.registerToTheCluster
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         recipeId <- io(context.client.addRecipe(recipe))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
@@ -83,7 +80,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.bake (fail with ProcessAlreadyExistsException)") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
-        _ <- context.remoteComponents.registerToTheCluster
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         recipeId <- io(context.client.addRecipe(recipe))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
@@ -101,7 +97,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.bake (fail with NoSuchRecipeException)") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
-        _ <- context.remoteComponents.registerToTheCluster
         e <- io(context.client
           .bake("non-existent", recipeInstanceId)
           .map(_ => None)
@@ -111,7 +106,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
 
     test("Baker.getRecipeInstanceState (fails with NoSuchProcessException)") { context =>
       for {
-        _ <- context.remoteComponents.registerToTheCluster
         e <- io(context.client
           .getRecipeInstanceState("non-existent")
           .map(_ => None)
@@ -122,7 +116,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.fireEventAndResolveWhenReceived") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
-        _ <- context.remoteComponents.registerToTheCluster
         recipeId <- io(context.client.addRecipe(recipe))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
@@ -133,13 +126,12 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.fireEventAndResolveWhenCompleted") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
-        _ <- context.remoteComponents.registerToTheCluster
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         recipeId <- io(context.client.addRecipe(recipe))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         result <- io(context.client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent))
         serverState <- io(context.client.getRecipeInstanceState(recipeInstanceId))
-        _ <- eventually(context.remoteEventListener.verifyEventsReceived(2))
+        _ <- eventually(eventually(context.remoteEventListener.verifyEventsReceived(2)))
       } yield {
         result.eventNames shouldBe Seq("OrderPlaced", "ItemsReserved")
         serverState.events.map(_.name) shouldBe Seq("OrderPlaced", "ItemsReserved")
@@ -150,7 +142,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       val recipeInstanceId: String = UUID.randomUUID().toString
       val event = EventInstance("non-existent", Map.empty)
       for {
-        _ <- context.remoteComponents.registerToTheCluster
         recipeId <- io(context.client.addRecipe(recipe))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         result <- io(context.client
@@ -168,7 +159,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.fireEventAndResolveOnEvent") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
-        _ <- context.remoteComponents.registerToTheCluster
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         recipeId <- io(context.client.addRecipe(recipe))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
@@ -176,7 +166,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
         _ <- eventually {
           for {
             serverState <- io(context.client.getRecipeInstanceState(recipeInstanceId))
-            _ <- context.remoteEventListener.verifyEventsReceived(2)
+            _ <- eventually(context.remoteEventListener.verifyEventsReceived(2))
           } yield serverState.events.map(_.name) shouldBe Seq("OrderPlaced", "ItemsReserved")
         }
       } yield result.eventNames shouldBe Seq("OrderPlaced")
@@ -185,7 +175,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.getAllRecipeInstancesMetadata") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
-        _ <- context.remoteComponents.registerToTheCluster
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         recipeId <- io(context.client.addRecipe(recipe))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
@@ -197,7 +186,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.getVisualState") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
-        _ <- context.remoteComponents.registerToTheCluster
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         recipeId <- io(context.client.addRecipe(recipe))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
@@ -208,7 +196,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.retryInteraction") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
-        _ <- context.remoteComponents.registerToTheCluster
         recipeId <- io(context.client.addRecipe(recipeWithBlockingStrategy))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         _ <- context.remoteInteraction.processesWithFailure(new RuntimeException("functional failure"))
@@ -217,7 +204,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         _ <- io(context.client.retryInteraction(recipeInstanceId, "ReserveItems"))
         state2 <- io(context.client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name)))
-        _ <- context.remoteEventListener.verifyEventsReceived(2)
+        _ <- eventually(context.remoteEventListener.verifyEventsReceived(2))
       } yield {
         state1 should contain("OrderPlaced")
         state1 should not contain("ItemsReserved")
@@ -232,7 +219,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
           ItemsReserved(reservedItems = ReservedItems(items = List(Item("resolution-item")), data = Array.empty))
         )
         for {
-          _ <- context.remoteComponents.registerToTheCluster
           recipeId <- io(context.client.addRecipe(recipeWithBlockingStrategy))
           _ <- io(context.client.bake(recipeId, recipeInstanceId))
           _ <- context.remoteInteraction.processesWithFailure(new RuntimeException("functional failure"))
@@ -243,7 +229,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
           state2 = state2data.events.map(_.name)
           eventState = state2data.ingredients.get("reservedItems").map(_.as[ReservedItems].items.head.itemId)
           // TODO Currently the event listener receives the OrderPlaced... shouldn't also receive the resolved event?
-          _ <- context.remoteEventListener.verifyEventsReceived(1)
+          _ <- eventually(context.remoteEventListener.verifyEventsReceived(1))
         } yield {
           state1 should contain("OrderPlaced")
           state1 should not contain("ItemsReserved")
@@ -256,7 +242,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.stopRetryingInteraction") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
-        _ <- context.remoteComponents.registerToTheCluster
         recipeId <- io(context.client.addRecipe(recipe))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         _ <- context.remoteInteraction.processesWithFailure(new RuntimeException("functional failure"))
@@ -265,7 +250,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
         _ <- io(context.client.stopRetryingInteraction(recipeInstanceId, "ReserveItems"))
         state2data <- io(context.client.getRecipeInstanceState(recipeInstanceId))
         state2 = state2data.events.map(_.name)
-        _ <- context.remoteEventListener.verifyEventsReceived(1)
+        _ <- eventually(eventually(context.remoteEventListener.verifyEventsReceived(1)))
       } yield {
         state1 should contain("OrderPlaced")
         state1 should not contain("ItemsReserved")
@@ -299,26 +284,35 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
    * @return the resources each test can use
    */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] = {
-    val mockServerAddress = new InetSocketAddress("localhost", 0)
     for {
       // Mock server
-      mockServer <- Resource.make(IO(ClientAndServer.startClientAndServer(mockServerAddress.getPort)))(s => IO(s.stop()))
+      mockServer <- Resource.make(IO(ClientAndServer.startClientAndServer(0)))(s => IO(s.stop()))
       remoteInteraction = new RemoteInteraction(mockServer, Interactions.ReserveItemsInteraction)
       remoteEventListener = new RemoteEventListener(mockServer)
       kubeApiServer = new KubeApiServer(mockServer)
       remoteComponents = new RemoteComponents(kubeApiServer, remoteInteraction, remoteEventListener)
+      _ <- Resource.liftF(remoteComponents.registerToTheCluster)
 
-      system <- Resource.make(IO(ActorSystem(UUID.randomUUID().toString, ConfigFactory.empty())))(
-        system => IO.fromFuture(IO(system.terminate().flatMap(_ => system.whenTerminated))).void)
-      materializer: Materializer = ActorMaterializer()(system)
+      makeActorSystem = IO {
+        ActorSystem(UUID.randomUUID().toString, ConfigFactory.parseString(
+          """
+            |akka {
+            |  stdout-loglevel = "OFF"
+            |  loglevel = "OFF"
+            |}
+            |""".stripMargin)) }
+      stopActorSystem = (system: ActorSystem) => IO.fromFuture(IO {
+        system.terminate().flatMap(_ => system.whenTerminated) }).void
+      system <- Resource.make(makeActorSystem)(stopActorSystem)
 
-      kubernetesApi = new ApiClient().setBasePath(s"http://localhost:${mockServerAddress.getPort}")
+      kubernetesApi = new ApiClient().setBasePath(s"http://localhost:${mockServer.getLocalPort}")
       serviceDiscovery <- ServiceDiscovery.resource(executionContext, "default", kubernetesApi)
       baker = AkkaBaker.withConfig(
-        AkkaBakerConfig.localDefault(ActorSystem(UUID.randomUUID().toString)).copy(
+        AkkaBakerConfig.localDefault(system).copy(
           interactionManager = serviceDiscovery.buildInteractionManager,
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings(
             allowAddingRecipeWithoutRequiringInstances = true))(system))
+      _ <- Resource.liftF(serviceDiscovery.plugBakerEventListeners(baker))
       server <- StateNodeService.resource(baker, InetSocketAddress.createUnresolved("0.0.0.0", 0))
       client <- BakerClient.resource(server.baseUri, executionContext)
     } yield Context(

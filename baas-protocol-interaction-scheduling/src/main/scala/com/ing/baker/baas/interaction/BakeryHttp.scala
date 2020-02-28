@@ -7,7 +7,7 @@ import org.http4s.EntityDecoder.collectBinary
 import org.http4s.util.CaseInsensitiveString
 import org.http4s._
 
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 object BakeryHttp {
 
@@ -30,7 +30,18 @@ object BakeryHttp {
       EntityEncoder.byteArrayEncoder[IO].contramap(protoMap.toByteArray)
 
     implicit def protoEitherDecoder[A, P0 <: ProtoMessage[P0], B, P1 <: ProtoMessage[P1]](implicit p1: ProtoMap[A, P0], p2: ProtoMap[B, P1]): EntityDecoder[IO, Either[A, B]] =
-      protoDecoder[A, P0].map(Left(_)).orElse(protoDecoder[B, P1].map(Right(_)))
+      EntityDecoder.decodeBy(MediaType.application.`octet-stream`)(collectBinary[IO]).map(_.toArray)
+        .flatMapR { bytes =>
+          val eitherTry: Try[Either[A, B]] =
+            p1.fromByteArray(bytes).map[Either[A, B]](Left(_))
+              .orElse(p2.fromByteArray(bytes).map[Either[A, B]](Right(_)))
+          eitherTry match {
+            case Success(a) =>
+              EitherT.fromEither[IO](Right(a))
+            case Failure(exception) =>
+              EitherT.fromEither[IO](Left(MalformedMessageBodyFailure(exception.getMessage, Some(exception))))
+          }
+        }
   }
 
   object Headers {
