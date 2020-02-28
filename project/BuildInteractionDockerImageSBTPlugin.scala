@@ -7,12 +7,15 @@ import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
 import com.typesafe.sbt.packager.docker.DockerPlugin
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport._
 import com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport._
+import kubeyml.deployment.NoProbe
+import kubeyml.deployment.plugin.Keys._
+import kubeyml.deployment.plugin.KubeDeploymentPlugin
 import sbt.Keys._
 import sbt._
 
 
 object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
-  override def requires: Plugins = DockerPlugin && JavaAppPackaging
+  override def requires: Plugins = DockerPlugin && JavaAppPackaging && KubeDeploymentPlugin
 
   override def trigger: PluginTrigger = allRequirements
 
@@ -49,6 +52,7 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
           libraryDependencies ++= moduleID.toSeq,
           packageName in Docker := s"interaction-${entryPointClassName.toLowerCase()}",
           javaOptions in Universal += entryPointClassName,
+          livenessProbe in kube := NoProbe,
           sourceGenerators in Compile += Def.task {
             val mainClassName =
               (mainClass in Compile).value.getOrElse(throw new MessageOnlyException("mainClass in Compile is required"))
@@ -67,7 +71,8 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
           }.taskValue
         ), state)
 
-      Command.process(commandName, stateWithNewDependency)
+      val updatedState = Command.process(commandName, stateWithNewDependency)
+      Command.process("kubeyml:gen", updatedState)
 
       state
     }
