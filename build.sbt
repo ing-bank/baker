@@ -323,7 +323,6 @@ lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
     libraryDependencies ++= Seq(
       slf4jApi,
       slf4jSimple,
-      logback,
       http4s,
       http4sDsl,
       http4sServer
