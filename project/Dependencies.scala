@@ -52,7 +52,7 @@ object Dependencies {
 
   val scalaGraph  =               "org.scala-graph"            %% "graph-core"                         % "1.11.5"
   val scalaGraphDot =             "org.scala-graph"            %% "graph-dot"                          % "1.11.5"
-  val graphvizJava =              "guru.nidi"                  %  "graphviz-java"                      % "0.8.10"
+  val graphvizJava =              "guru.nidi"                  %  "graphviz-java"                      % "0.15.0"
 
   val kamon =                     "io.kamon"                   %% "kamon-bundle"                       % "2.0.0"
   val kamonAkka =                 "io.kamon"                   %% "kamon-akka"                         % "2.0.0"
