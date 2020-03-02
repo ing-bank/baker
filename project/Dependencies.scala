@@ -63,7 +63,7 @@ object Dependencies {
   val circe =                     "io.circe"                   %% "circe-core"                         % circeVersion
   val circeGeneric =              "io.circe"                   %% "circe-generic"                      % circeVersion
 
-  val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "2.1.1"
+  val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "2.1.2"
   val catsCore =                  "org.typelevel"              %% "cats-core"                          % "2.1.1"
   val console4Cats =              "dev.profunktor"             %% "console4cats"                       % "0.8.0"
 
