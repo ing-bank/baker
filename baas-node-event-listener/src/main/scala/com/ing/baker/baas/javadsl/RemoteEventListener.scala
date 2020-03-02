@@ -3,13 +3,9 @@ package com.ing.baker.baas.javadsl
 import java.util.concurrent.CompletableFuture
 import java.util.function.BiConsumer
 
-import akka.actor.ActorSystem
-import com.ing.baker.baas.common
-import com.ing.baker.baas.scaladsl
+import com.ing.baker.baas.{common, scaladsl}
 import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.javadsl.{EventInstance, RecipeEventMetadata}
-
-import scala.compat.java8.FutureConverters
 
 object RemoteEventListener extends common.RemoteEventListener[CompletableFuture] with JavaApi {
 

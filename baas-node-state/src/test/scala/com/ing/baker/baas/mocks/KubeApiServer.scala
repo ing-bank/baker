@@ -1,5 +1,6 @@
 package com.ing.baker.baas.mocks
 
+import cats.effect.IO
 import com.ing.baker.baas.kubeapi
 import com.ing.baker.baas.recipe.ItemReservationRecipe
 import org.mockserver.integration.ClientAndServer
@@ -7,14 +8,12 @@ import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
 
-import scala.concurrent.{ExecutionContext, Future}
+class KubeApiServer(mock: ClientAndServer) {
 
-class KubeApiServer(mock: ClientAndServer)(implicit ec: ExecutionContext) {
-
-  def registersRemoteComponents: Future[Unit] =
+  def registersRemoteComponents: IO[Unit] =
     willRespondWith(interactionAndEventListenersServices)
 
-  private def willRespondWith(services: kubeapi.Services): Future[Unit] = Future {
+  private def willRespondWith(services: kubeapi.Services): IO[Unit] = IO {
     mock.when(
       request()
         .withMethod("GET")
