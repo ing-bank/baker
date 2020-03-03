@@ -43,12 +43,15 @@ object Main extends IOApp {
           timeouts = AkkaBakerConfig.Timeouts.from(config),
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config)
         )(system))
+      _ <- Resource.liftF(IO.async[Unit] { callback =>
+        Cluster(system).registerOnMemberUp {
+          callback(Right(()))
+        }
+      })
       _ <- Resource.liftF(serviceDiscovery.plugBakerEventListeners(baker))
       _ <- StateNodeService.resource(baker, hostname)
     } yield ()
 
-    IO(Cluster(system).registerOnMemberUp {
-      mainResource.use(_ => IO.never).unsafeRunAsyncAndForget()
-    }).as(ExitCode.Success)
+    mainResource.use(_ => IO.never).as(ExitCode.Success)
   }
 }

@@ -124,7 +124,7 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
           _ <- exec(prefix, command = s"kubectl apply -f $kubernetesConfigPath -n $testUUID")
           _ = if(args.skipCleanup) {
             println(Console.YELLOW + s"### Will skip cleanup after the test, to manually clean the environment run: " + Console.RESET)
-            println(s"\n\tkubectl delete -f $kubernetesConfigPath -n $testUUID\n")
+            println(s"\n\tkubectl delete -f $kubernetesConfigPath -n $testUUID && kubectl delete namespace $testUUID\n")
           }
         } yield testUUID
       }
@@ -139,29 +139,32 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
             IO( println(Console.GREEN + "Skipped startup, will run the tests immediately" + Console.RESET)) *> IO.pure(0)
         }
 
-      val clientResource = BlazeClientBuilder[IO](executionContext).resource
-      val exampleAppClient = new ExampleAppClient(clientResource, args.clientAppHostname)
-      val recipeEventsClient = new EventListenerClient(clientResource, args.eventListenerHostname)
-      val bakerEventsClient = new EventListenerClient(clientResource, args.bakerEventListenerHostname)
 
-      val setupWaitTime = 1.minute
-      val setupWaitSplit = 3
+      val setupWaitTime = 5.minute
+      val setupWaitSplit = 60
 
       def dontSkipTest: IO[Assertion] =
         for {
           namespace <- setup(createEnvironment)
-          _ <- within(setupWaitTime, setupWaitSplit)(for {
-            _ <- IO ( println(Console.GREEN + s"\nWaiting for environment (20s)..." + Console.RESET) )
-            _ <- getPods(namespace)
-            status <- exampleAppClient.ping
-          } yield assert(status.code == 200))
-          attempt <- runTest(TestContext(
-            clientApp = exampleAppClient,
-            recipeEventListener = recipeEventsClient,
-            bakerEventListener = bakerEventsClient
-          )).attempt
-          _ <- cleanup(deleteEnvironment(namespace))
-          outcome <- IO.fromEither(attempt)
+          outcome <- BlazeClientBuilder[IO](executionContext).resource.use { client =>
+            val exampleAppClient = new ExampleAppClient(client, args.clientAppHostname)
+            val recipeEventsClient = new EventListenerClient(client, args.eventListenerHostname)
+            val bakerEventsClient = new EventListenerClient(client, args.bakerEventListenerHostname)
+            for {
+              _ <- within(setupWaitTime, setupWaitSplit)(for {
+                _ <- IO ( println(Console.GREEN + s"\nWaiting for environment (5s)..." + Console.RESET) )
+                _ <- getPods(namespace)
+                status <- exampleAppClient.ping
+              } yield assert(status.code == 200))
+              attempt <- runTest(TestContext(
+                clientApp = exampleAppClient,
+                recipeEventListener = recipeEventsClient,
+                bakerEventListener = bakerEventsClient
+              )).attempt
+              _ <- cleanup(deleteEnvironment(namespace))
+              outcome <- IO.fromEither(attempt)
+            } yield outcome
+          }
         } yield outcome
 
       def skipTest: IO[Assertion] =
