@@ -1,13 +1,13 @@
 package com.ing.baker.baas.mocks
 
-import scala.concurrent.{ExecutionContext, Future}
+import cats.effect.IO
 
-class RemoteComponents(kubeApiServer: KubeApiServer, remoteInteraction: RemoteInteraction, remoteEventListener: RemoteEventListener)(implicit ec: ExecutionContext) {
+class RemoteComponents(kubeApiServer: KubeApiServer, remoteInteraction: RemoteInteraction, remoteEventListener: RemoteEventListener) {
 
-  def registerToTheCluster: Future[Unit] =
+  def registerToTheCluster: IO[Unit] =
     for {
-      _ <- kubeApiServer.registersRemoteComponents
       _ <- remoteInteraction.publishesItsInterface
       _ <- remoteEventListener.listensToEvents
+      _ <- kubeApiServer.registersRemoteComponents
     } yield ()
 }
