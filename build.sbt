@@ -12,9 +12,12 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
       "baas-client-example/docker:publishLocal" ::
       "baas-event-listener-example/docker:publishLocal" ::
       "baas-baker-event-listener-example/docker:publishLocal" ::
-      s"baas-interaction-example-make-payment buildInteractionDockerImage docker:publishLocal webshop.webservice.MakePaymentInstance" ::
-      s"baas-interaction-example-ship-items buildInteractionDockerImage docker:publishLocal webshop.webservice.ShipItemsInstance" ::
-      s"baas-interaction-example-reserve-items buildInteractionDockerImage docker:publishLocal webshop.webservice.ReserveItemsInstance" ::
+      "project baas-interaction-example-make-payment" ::
+      "buildInteractionDockerImage docker:publishLocal webshop.webservice.MakePaymentInstance" ::
+      "project baas-interaction-example-ship-items" ::
+      "buildInteractionDockerImage docker:publishLocal webshop.webservice.ShipItemsInstance" ::
+      "project baas-interaction-example-reserve-items" ::
+      "buildInteractionDockerImage docker:publishLocal webshop.webservice.ReserveItemsInstance" ::
       "project baker" ::
       state
 })
@@ -99,7 +102,6 @@ lazy val `baker-interface` = project.in(file("baker-interface"))
   .settings(
     moduleName := "baker-interface",
     libraryDependencies ++= Seq(
-      akkaActor,
       catsEffect,
       scalaJava8Compat
     ) ++ providedDeps(findbugs) ++ testDeps(
@@ -216,8 +218,8 @@ lazy val `baas-protocol-baker` = project.in(file("baas-protocol-baker"))
   .settings(
     moduleName := "baas-protocol-baker",
     libraryDependencies ++= Seq(
-      akkaStream,
-      akkaHttp
+      http4s,
+      http4sDsl
     )
   )
   .dependsOn(`baker-interface`)
@@ -228,8 +230,9 @@ lazy val `baas-protocol-interaction-scheduling` = project.in(file("baas-protocol
   .settings(
     moduleName := "baas-protocol-interaction-scheduling",
     libraryDependencies ++= Seq(
-      akkaStream,
-      akkaHttp
+      http4s,
+      http4sDsl,
+      http4sClient
     )
   )
   .dependsOn(`baker-interface`)
@@ -240,10 +243,6 @@ lazy val `baas-protocol-recipe-event-publishing` = project.in(file("baas-protoco
   .settings(
     moduleName := "baas-protocol-recipe-event-publishing",
     libraryDependencies ++= Seq(
-      akkaHttp,
-      akkaStream,
-      slf4jApi,
-      slf4jSimple,
       http4s,
       http4sDsl,
       http4sClient
@@ -257,8 +256,9 @@ lazy val `baas-protocol-baker-event-publishing` = project.in(file("baas-protocol
   .settings(
     moduleName := "baas-protocol-baker-event-publishing",
     libraryDependencies ++= Seq(
-      akkaStream,
-      akkaHttp
+      http4s,
+      http4sDsl,
+      http4sClient
     )
   )
   .dependsOn(`baker-interface`)
@@ -268,8 +268,9 @@ lazy val `baas-node-client` = project.in(file("baas-node-client"))
   .settings(
     moduleName := "baas-node-client",
     libraryDependencies ++= Seq(
-      akkaStream,
-      akkaHttp
+      http4s,
+      http4sDsl,
+      http4sClient
     )
   )
   .dependsOn(`baker-interface`, `baas-protocol-baker`)
@@ -285,18 +286,19 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
     libraryDependencies ++= Seq(
       slf4jApi,
       slf4jSimple,
-      akkaHttp,
       akkaPersistenceCassandra,
       akkaManagementHttp,
       akkaClusterBoostrap,
       akkaDiscoveryKube,
-      kubernetesJavaClient
+      kubernetesJavaClient,
+      http4s,
+      http4sDsl,
+      http4sServer
     ) ++ testDeps(
       slf4jApi,
       slf4jSimple,
       scalaTest,
       mockServer,
-      akkaHttpCirce,
       circe,
       circeGeneric
     )
@@ -322,15 +324,13 @@ lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
   .settings(
     moduleName := "baas-node-interaction",
     libraryDependencies ++= Seq(
-      akkaCluster,
-      akkaClusterTools,
-      akkaHttp,
-      slf4jApi
+      slf4jApi,
+      slf4jSimple,
+      http4s,
+      http4sDsl,
+      http4sServer
     ) ++ testDeps(
-      akkaSlf4j,
-      scalaTest,
-      junitInterface,
-      scalaCheck
+      scalaTest
     )
   )
   .dependsOn(`baas-protocol-interaction-scheduling`, `baker-interface`)
@@ -355,13 +355,13 @@ lazy val `baas-node-baker-event-listener` = project.in(file("baas-node-baker-eve
   .settings(
     moduleName := "baas-node-baker-event-listener",
     libraryDependencies ++= Seq(
-      akkaHttp,
       slf4jApi,
-      slf4jSimple
+      slf4jSimple,
+      http4s,
+      http4sDsl,
+      http4sServer
     ) ++ testDeps(
-      scalaTest,
-      junitInterface,
-      scalaCheck
+      scalaTest
     )
   )
   .dependsOn(`baas-protocol-baker-event-publishing`, `baker-interface`)

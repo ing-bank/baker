@@ -40,8 +40,6 @@ object Dependencies {
   val akkaManagementHttp =        "com.lightbend.akka.management" %% "akka-management-cluster-http"      % "1.0.5"
   val akkaClusterBoostrap =       "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.5"
   val akkaDiscoveryKube =         "com.lightbend.akka.discovery"  %% "akka-discovery-kubernetes-api"     % "1.0.5"
-  val akkaHttp =                  "com.typesafe.akka"          %% "akka-http"                          % "10.1.11"
-  val akkaHttpCirce =             "de.heikoseeberger"          %% "akka-http-circe"                    % "1.28.0"
   val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.5"
 
   val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.12"
