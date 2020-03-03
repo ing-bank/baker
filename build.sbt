@@ -18,7 +18,7 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
       "buildInteractionDockerImage docker:publishLocal webshop.webservice.ShipItemsInstance" ::
       "project baas-interaction-example-reserve-items" ::
       "buildInteractionDockerImage docker:publishLocal webshop.webservice.ReserveItemsInstance" ::
-      "project baker" ::
+      "project baas-smoke-tests" ::
       state
 })
 
@@ -304,7 +304,7 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
     )
   )
   .settings(
-    maintainer in Docker := "The Apollo Squad",
+    maintainer in Docker := "The Bakery Team",
     packageSummary in Docker := "The core node",
     packageName in Docker := "baas-node-state",
     dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
@@ -407,7 +407,7 @@ lazy val `baker-example` = project
       )
   )
   .settings(
-    maintainer in Docker := "The Apollo Squad",
+    maintainer in Docker := "The Bakery Team",
     packageSummary in Docker := "A web-shop checkout service example running baker",
     packageName in Docker := "baker-example-app",
     dockerExposedPorts := Seq(8080)
@@ -440,7 +440,7 @@ lazy val `baas-client-example` = project
       )
   )
   .settings(
-    maintainer in Docker := "The Apollo Squad",
+    maintainer in Docker := "The Bakery Team",
     packageSummary in Docker := "A web-shop checkout service example running on baas",
     packageName in Docker := "baas-client-example",
     dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
@@ -467,7 +467,7 @@ lazy val `baas-event-listener-example` = project
       ) ++ testDeps()
   )
   .settings(
-    maintainer in Docker := "The Apollo Squad",
+    maintainer in Docker := "The Bakery Team",
     packageSummary in Docker := "A web-shop checkout service example running on baas",
     packageName in Docker := "baas-event-listener-example",
     dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
@@ -494,7 +494,7 @@ lazy val `baas-baker-event-listener-example` = project
       ) ++ testDeps()
   )
   .settings(
-    maintainer in Docker := "The Apollo Squad",
+    maintainer in Docker := "The Bakery Team",
     packageSummary in Docker := "A web-shop checkout service example running on baas",
     packageName in Docker := "baas-baker-event-listener-example",
     dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
@@ -503,6 +503,7 @@ lazy val `baas-baker-event-listener-example` = project
 
 lazy val `baas-interaction-example-reserve-items` = project.in(file("examples/baas-interaction-examples/reserve-items"))
   .enablePlugins(JavaAppPackaging)
+  .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
   .settings(commonSettings)
   .settings(
     moduleName := "baas-interaction-example-reserve-items",
@@ -519,17 +520,11 @@ lazy val `baas-interaction-example-reserve-items` = project.in(file("examples/ba
         scalaCheck
       )
   )
-  .settings(
-    maintainer in Docker := "The Apollo Squad",
-    packageSummary in Docker := "The reserve-items interaction",
-    packageName in Docker := "baas-interaction-example-reserve-items",
-    dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
-  )
   .dependsOn(`baas-node-interaction`)
-  .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
 
 lazy val `baas-interaction-example-ship-items` = project.in(file("examples/baas-interaction-examples/ship-items"))
   .enablePlugins(JavaAppPackaging)
+  .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
   .settings(commonSettings)
   .settings(
     moduleName := "baas-interaction-example-ship-items",
@@ -546,17 +541,11 @@ lazy val `baas-interaction-example-ship-items` = project.in(file("examples/baas-
         scalaCheck
       )
   )
-  .settings(
-    maintainer in Docker := "The Apollo Squad",
-    packageSummary in Docker := "The Ship-items interaction",
-    packageName in Docker := "baas-interaction-example-ship-items",
-    dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
-  )
   .dependsOn(`baas-node-interaction`)
-  .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
 
 lazy val `baas-interaction-example-make-payment` = project.in(file("examples/baas-interaction-examples/make-payment"))
   .enablePlugins(JavaAppPackaging)
+  .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
   .settings(commonSettings)
   .settings(
     moduleName := "baas-interaction-example-make-payment",
@@ -573,19 +562,7 @@ lazy val `baas-interaction-example-make-payment` = project.in(file("examples/baa
         scalaCheck
       )
   )
-  .settings(
-    maintainer in Docker := "The Apollo Squad",
-    packageSummary in Docker := "The Make-payment interaction",
-    packageName in Docker := "baas-interaction-example-make-payment",
-    dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
-  )
   .dependsOn(`baas-node-interaction`)
-  .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
-
-lazy val `baas-example-setup` = project.in(file("examples/baas-example-setup"))
-  .aggregate(`baas-node-client`, `baas-node-state`, `baas-node-interaction`, `baas-node-event-listener`,
-    `baas-client-example`, `baas-event-listener-example`, `baas-baker-event-listener-example`,
-    `baas-interaction-example-reserve-items`, `baas-interaction-example-make-payment`, `baas-interaction-example-ship-items`)
 
 lazy val `baas-smoke-tests` = project.in(file("baas-smoke-tests"))
   .settings(defaultModuleSettings)
