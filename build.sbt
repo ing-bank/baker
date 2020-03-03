@@ -621,6 +621,7 @@ lazy val `sbt-baas-docker-generate` = project.in(file("sbt-baas-docker-generate"
       IO.write(file, sourceFile)
       Seq(file)
     }.taskValue,
-    addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.6.0")
+    addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.6.0"),
+    addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.3.1")
   )
   .enablePlugins(SbtPlugin)
