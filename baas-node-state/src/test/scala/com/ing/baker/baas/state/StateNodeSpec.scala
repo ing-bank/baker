@@ -4,6 +4,7 @@ import java.net.InetSocketAddress
 import java.util.UUID
 
 import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
 import cats.effect.{IO, Resource}
 import cats.implicits._
 import com.ing.baker.baas.mocks.{KubeApiServer, RemoteComponents, RemoteEventListener, RemoteInteraction}
@@ -17,9 +18,9 @@ import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
 import com.typesafe.config.ConfigFactory
-import io.kubernetes.client.openapi.ApiClient
 import org.mockserver.integration.ClientAndServer
 import org.scalatest.{ConfigMap, Matchers}
+import skuber.api.client.KubernetesClient
 
 import scala.concurrent.Future
 
@@ -304,9 +305,10 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       stopActorSystem = (system: ActorSystem) => IO.fromFuture(IO {
         system.terminate().flatMap(_ => system.whenTerminated) }).void
       system <- Resource.make(makeActorSystem)(stopActorSystem)
+      materializer = ActorMaterializer()(system)
 
-      kubernetesApi = new ApiClient().setBasePath(s"http://localhost:${mockServer.getLocalPort}")
-      serviceDiscovery <- ServiceDiscovery.resource(executionContext, "default", kubernetesApi)
+      k8s: KubernetesClient = skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))(system, materializer)
+      serviceDiscovery <- ServiceDiscovery.resource(executionContext, k8s)(contextShift, timer, system, materializer)
       baker = AkkaBaker.withConfig(
         AkkaBakerConfig.localDefault(system).copy(
           interactionManager = serviceDiscovery.buildInteractionManager,

@@ -55,6 +55,8 @@ object Dependencies {
   val kamon =                     "io.kamon"                   %% "kamon-bundle"                       % "2.0.0"
   val kamonAkka =                 "io.kamon"                   %% "kamon-akka"                         % "2.0.0"
   val kamonPrometheus =           "io.kamon"                   %% "kamon-prometheus"                   % "2.0.0"
+
+  val skuber =                    "io.skuber"                  %% "skuber"                             % "2.4.0"
   val http4s =                    "org.http4s"                 %% "http4s-core"                        % http4sVersion
   val http4sDsl =                 "org.http4s"                 %% "http4s-dsl"                         % http4sVersion
   val http4sServer =              "org.http4s"                 %% "http4s-blaze-server"                % http4sVersion
@@ -84,7 +86,6 @@ object Dependencies {
   val typeSafeConfig =            "com.typesafe"               % "config"                              % "1.4.0"
 
   val objenisis =                 "org.objenesis"              %  "objenesis"                          % "3.1"
-  val kubernetesJavaClient =      "io.kubernetes"              %  "client-java"                        % "7.0.0"
   val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.10.5"
   val slf4jApi =                  "org.slf4j"                  %  "slf4j-api"                          % "1.7.30"
 

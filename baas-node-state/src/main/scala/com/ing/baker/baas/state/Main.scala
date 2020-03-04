@@ -11,6 +11,7 @@ import cats.implicits._
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.scaladsl.Baker
 import com.typesafe.config.ConfigFactory
+import skuber.api.client.KubernetesClient
 
 import scala.concurrent.ExecutionContext
 
@@ -27,15 +28,14 @@ object Main extends IOApp {
       ActorSystem("BaaSStateNodeSystem")
     implicit val materializer: Materializer =
       ActorMaterializer()
-    implicit val blockingEC: ExecutionContext =
-      ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
     val connectionPool: ExecutionContext =
       ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
     val hostname: InetSocketAddress =
       InetSocketAddress.createUnresolved("0.0.0.0", httpServerPort)
+    val k8s: KubernetesClient = skuber.k8sInit
 
     val mainResource = for {
-      serviceDiscovery <- ServiceDiscovery.resource(connectionPool, namespace)
+      serviceDiscovery <- ServiceDiscovery.resource(connectionPool, k8s)
       baker: Baker = AkkaBaker.withConfig(AkkaBakerConfig(
           interactionManager = serviceDiscovery.buildInteractionManager,
           bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),

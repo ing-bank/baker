@@ -290,7 +290,7 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
       akkaManagementHttp,
       akkaClusterBoostrap,
       akkaDiscoveryKube,
-      kubernetesJavaClient,
+      skuber,
       http4s,
       http4sDsl,
       http4sServer
