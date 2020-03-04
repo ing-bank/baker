@@ -86,6 +86,7 @@ object ServiceDiscovery extends LazyLogging {
       resource.use { client =>
         for {
           interface <- client.interface.attempt
+          _ = println(Console.CYAN + interface + Console.RESET)
           interactionsOpt = interface match {
             case Right((name, types)) => Some(InteractionInstance(
               name = name,
@@ -114,9 +115,6 @@ object ServiceDiscovery extends LazyLogging {
       cacheRecipeListeners: Ref[IO, Map[RecipeName, List[RecipeListener]]],
       cacheBakerListeners: Ref[IO, List[BakerListener]]
     )(event: K8SWatchEvent[Service]): IO[Unit] = {
-      println(Console.MAGENTA + event._type + Console.RESET)
-      println(Console.MAGENTA + event._object + Console.RESET)
-      println()
       for {
         services <- event._type match {
           case EventType.ADDED =>
@@ -124,7 +122,7 @@ object ServiceDiscovery extends LazyLogging {
           case EventType.DELETED =>
             currentServices.updateAndGet(_.filterNot(_ == event._object))
           case EventType.MODIFIED =>
-            currentServices.updateAndGet(_.map(service => if (service == event._object) event._object else service))
+            currentServices.updateAndGet(_.map(service => if (service.metadata.uid == event._object.metadata.uid) event._object else service))
           case EventType.ERROR =>
             IO(logger.error(s"Event type ERROR on service watch for service ${event._object}")) *> currentServices.get
         }
@@ -142,9 +140,9 @@ object ServiceDiscovery extends LazyLogging {
       cacheRecipeListeners <- Ref.of[IO, Map[RecipeName, List[RecipeListener]]](Map.empty)
       cacheBakerListeners <- Ref.of[IO, List[BakerListener]](List.empty)
       service = new ServiceDiscovery(cacheInteractions, cacheRecipeListeners, cacheBakerListeners)
-      updateServices = updateServicesWith(currentServices, cacheInteractions, cacheRecipeListeners, cacheBakerListeners)
+      updateServices = updateServicesWith(currentServices, cacheInteractions, cacheRecipeListeners, cacheBakerListeners) _
       killSwitch <- IO {
-        k8s.watchContinuously[Service]("service")
+        k8s.watchAllContinuously[Service]()
           .viaMat(KillSwitches.single)(Keep.right)
           .toMat(Sink.foreach(updateServices(_).unsafeRunAsyncAndForget()))(Keep.left)
           .run()
@@ -180,6 +178,9 @@ final class ServiceDiscovery private(
       override def addImplementation(interaction: InteractionInstance): Future[Unit] =
         Future.failed(new IllegalStateException("Adding implmentation instances is not supported on a Bakery cluster."))
       override def getImplementation(interaction: InteractionTransition): Future[Option[InteractionInstance]] =
-        cacheInteractions.get.map(_.find(isCompatibleImplementation(interaction, _))).unsafeToFuture()
+        cacheInteractions.get.map(_.find(isCompatibleImplementation(interaction, _))).map{ x =>
+          println(Console.MAGENTA + x + Console.RESET)
+          x
+        }.unsafeToFuture()
     }
 }
