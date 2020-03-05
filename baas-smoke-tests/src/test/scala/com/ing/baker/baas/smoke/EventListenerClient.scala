@@ -1,14 +1,14 @@
 package com.ing.baker.baas.smoke
 
-import cats.effect.{ContextShift, IO, Resource, Timer}
-import org.http4s.{Status, Uri}
+import cats.effect.{ContextShift, IO, Timer}
 import org.http4s.client.Client
+import org.http4s.{Status, Uri}
 
-class EventListenerClient(client: Resource[IO, Client[IO]], hostname: Uri)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
+class EventListenerClient(client: Client[IO], hostname: Uri)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
 
   def ping: IO[Status] =
-    client.use(_.statusFromUri(hostname / "api"))
+    client.statusFromUri(hostname / "api")
 
   def events: IO[List[String]] =
-    client.use(_.expect[String](hostname / "api" / "events")).map(_.split(", ").toList)
+    client.expect[String](hostname / "api" / "events").map(_.split(", ").toList)
 }

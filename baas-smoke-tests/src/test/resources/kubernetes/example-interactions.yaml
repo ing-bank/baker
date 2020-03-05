@@ -34,16 +34,8 @@ spec:
     spec:
       containers:
         - name: baas-interaction
-          image: baas-interaction-example-reserve-items:3.0.2-SNAPSHOT
+          image: interaction-webshop.webservice.reserveitemsinstance:3.0.2-SNAPSHOT
           imagePullPolicy: Never
-          env:
-            - name: BAAS_INGREDIENT_ENCRYPTION_ENABLED
-              value: "true"
-            - name: BAAS_INGREDIENT_ENCRYPTION_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: ingredient-encryption-secret
-                  key: encryption-secret
           readinessProbe:
             httpGet:
               path: /api/v3/health
@@ -95,16 +87,8 @@ spec:
     spec:
       containers:
         - name: baas-interaction
-          image: baas-interaction-example-ship-items:3.0.2-SNAPSHOT
+          image: interaction-webshop.webservice.shipitemsinstance:3.0.2-SNAPSHOT
           imagePullPolicy: Never
-          env:
-            - name: BAAS_INGREDIENT_ENCRYPTION_ENABLED
-              value: "true"
-            - name: BAAS_INGREDIENT_ENCRYPTION_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: ingredient-encryption-secret
-                  key: encryption-secret
           readinessProbe:
             httpGet:
               path: /api/v3/health
@@ -156,16 +140,8 @@ spec:
     spec:
       containers:
         - name: baas-interaction
-          image: baas-interaction-example-make-payment:3.0.2-SNAPSHOT
+          image: interaction-webshop.webservice.makepaymentinstance:3.0.2-SNAPSHOT
           imagePullPolicy: Never
-          env:
-            - name: BAAS_INGREDIENT_ENCRYPTION_ENABLED
-              value: "true"
-            - name: BAAS_INGREDIENT_ENCRYPTION_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: ingredient-encryption-secret
-                  key: encryption-secret
           readinessProbe:
             httpGet:
               path: /api/v3/health
