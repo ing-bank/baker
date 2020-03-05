@@ -88,8 +88,8 @@ object Dependencies {
   val objenisis =                 "org.objenesis"              %  "objenesis"                          % "3.1"
   val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.10.5"
   val slf4jApi =                  "org.slf4j"                  %  "slf4j-api"                          % "1.7.30"
-
   val slf4jSimple =               "org.slf4j"                  % "slf4j-simple"                        % "1.7.30"
+  val logback =                   "ch.qos.logback"             % "logback-classic"                     % "1.2.3"
   val scalaCheck =                "org.scalacheck"             %% "scalacheck"                         % "1.13.5"
 
   val scalaLogging =              "com.typesafe.scala-logging" %% "scala-logging"                      % "3.9.2"
