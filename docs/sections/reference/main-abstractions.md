@@ -152,7 +152,7 @@ import scala.concurrent.Future
 
 implicit val actorSystem: ActorSystem =
     ActorSystem("WebshopSystem")
-val baker: Baker = Baker.akkaLocalDefault(actorSystem)
+val baker: Baker = AkkaBaker.localDefault(actorSystem)
 
 // This example is using the reflection API `EventInstance.unsafeFrom`
 val FirstOrderPlaced: EventInstance = EventInstance
@@ -164,14 +164,14 @@ val result: Future[EventResult] = baker.fireEventAndResolveWhenCompleted(recipeI
 
 ``` java tab="Java"
 import akka.actor.ActorSystem;
-import com.ing.baker.runtime.javadsl.Baker;
+import com.ing.baker.runtime.akka.AkkaBaker;
 import com.ing.baker.runtime.javadsl.EventInstance;
 import com.ing.baker.runtime.javadsl.EventResult;
 
 import java.util.concurrent.CompletableFuture;
 
 ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-Baker baker = Baker.akkaLocalDefault(actorSystem);
+Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
 
 String recipeInstanceId = "recipe id from previously baked recipe instance";
 List<String> items = new ArrayList<>(2);
@@ -328,20 +328,20 @@ import com.ing.baker.runtime.scaladsl.Baker
 
 import scala.concurrent.Future
 
-val done: Future[Unit] = baker.addImplementation(reserveItemsInstance)
+val done: Future[Unit] = baker.addInteractionInstance(reserveItemsInstance)
 ```
 
 ``` java tab="Java"
 import akka.actor.ActorSystem;
-import com.ing.baker.runtime.javadsl.Baker;
+import com.ing.baker.runtime.akka.AkkaBaker;
 
 import scala.runtime.BoxedUnit;
 import java.util.concurrent.CompletableFuture;
 
 ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-Baker baker = Baker.akkaLocalDefault(actorSystem);
+Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
 
-CompletableFuture<BoxedUnit> done = baker.addImplementation(reserveItemsInstance);
+CompletableFuture<BoxedUnit> done = baker.addInteractionInstance(reserveItemsInstance);
 ```
 
 ## Recipe and RecipeInstance
@@ -481,16 +481,17 @@ the `Interaction`
 import akka.actor.ActorSystem
 import com.ing.baker.compiler.RecipeCompiler
 import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
+import com.ing.baker.runtime.scaladsl.EventInstance
+import com.ing.baker.runtime.akka.AkkaBaker
 
 implicit val actorSystem: ActorSystem =
     ActorSystem("WebshopSystem")
-val baker: Baker = Baker.akkaLocalDefault(actorSystem)
+val baker: Baker = AkkaBaker.localDefault(actorSystem)
 
 val compiledRecipe: CompiledRecipe = RecipeCompiler.compileRecipe(WebshopRecipe.recipe)
 
 val program: Future[Unit] = for {
-    _ <- baker.addImplementation(WebshopInstances.ReserveItemsInstance)
+    _ <- baker.addInteractionInstance(WebshopInstances.ReserveItemsInstance)
     recipeId <- baker.addRecipe(compiledRecipe)
     _ <- baker.bake(recipeId, "first-instance-id")
     firstOrderPlaced: EventInstance =
@@ -506,7 +507,7 @@ val program: Future[Unit] = for {
 import akka.actor.ActorSystem;
 import com.ing.baker.compiler.RecipeCompiler;
 import com.ing.baker.il.CompiledRecipe;
-import com.ing.baker.runtime.javadsl.Baker;
+import com.ing.baker.runtime.akka.AkkaBaker;
 import com.ing.baker.runtime.javadsl.EventInstance;
 import com.ing.baker.runtime.javadsl.EventResult;
 import com.ing.baker.runtime.javadsl.InteractionInstance;
@@ -517,7 +518,7 @@ import java.util.concurrent.CompletableFuture;
 
 
 ActorSystem actorSystem = ActorSystem.create("WebshopSystem");
-Baker baker = Baker.akkaLocalDefault(actorSystem);
+Baker baker = AkkaBaker.javaLocalDefault(actorSystem);
 
 List<String> items = new ArrayList<>(2);
 items.add("item1");
@@ -529,7 +530,7 @@ InteractionInstance reserveItemsInstance = InteractionInstance.from(new ReserveI
 CompiledRecipe compiledRecipe = RecipeCompiler.compileRecipe(JWebshopRecipe.recipe);
 
 String recipeInstanceId = "first-instance-id";
-CompletableFuture<List<String>> result = baker.addImplementation(reserveItemsInstance)
+CompletableFuture<List<String>> result = baker.addInteractionInstance(reserveItemsInstance)
     .thenCompose(ignore -> baker.addRecipe(compiledRecipe))
     .thenCompose(recipeId -> baker.bake(recipeId, recipeInstanceId))
     .thenCompose(ignore -> baker.fireEventAndResolveWhenCompleted(recipeInstanceId, firstOrderPlaced))
