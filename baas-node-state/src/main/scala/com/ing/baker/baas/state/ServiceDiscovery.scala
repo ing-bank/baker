@@ -86,7 +86,6 @@ object ServiceDiscovery extends LazyLogging {
       resource.use { client =>
         for {
           interface <- client.interface.attempt
-          _ = println(Console.CYAN + interface + Console.RESET)
           interactionsOpt = interface match {
             case Right((name, types)) => Some(InteractionInstance(
               name = name,
@@ -178,9 +177,6 @@ final class ServiceDiscovery private(
       override def addImplementation(interaction: InteractionInstance): Future[Unit] =
         Future.failed(new IllegalStateException("Adding implmentation instances is not supported on a Bakery cluster."))
       override def getImplementation(interaction: InteractionTransition): Future[Option[InteractionInstance]] =
-        cacheInteractions.get.map(_.find(isCompatibleImplementation(interaction, _))).map{ x =>
-          println(Console.MAGENTA + x + Console.RESET)
-          x
-        }.unsafeToFuture()
+        cacheInteractions.get.map(_.find(isCompatibleImplementation(interaction, _))).unsafeToFuture()
     }
 }

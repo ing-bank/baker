@@ -1,9 +1,12 @@
 package com.ing.baker.baas.mocks
 
 import cats.effect.IO
+import cats.syntax.apply._
 import com.ing.baker.baas.kubeapi
+import com.ing.baker.baas.kubeapi.{Service, Services}
 import com.ing.baker.baas.recipe.ItemReservationRecipe
 import org.mockserver.integration.ClientAndServer
+import org.mockserver.matchers.Times
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
@@ -11,17 +14,32 @@ import org.mockserver.model.MediaType
 class KubeApiServer(mock: ClientAndServer) {
 
   def registersRemoteComponents: IO[Unit] =
-    willRespondWith(interactionAndEventListenersServices)
+    respondWithEvents(interactionAndEventListenersServices) *> respondWithEmpty
 
-  private def willRespondWith(services: kubeapi.Services): IO[Unit] = IO {
+  private def respondWithEvents(templates: Services): IO[Unit] = IO {
     mock.when(
       request()
         .withMethod("GET")
         .withPath("/api/v1/namespaces/default/services")
+        .withQueryStringParameter("watch", "true"),
+      Times.exactly(1)
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody(services.mock, MediaType.APPLICATION_JSON)
+        .withBody(templates.mock.mkString("\n"), MediaType.APPLICATION_JSON)
+    )
+  }
+
+  private def respondWithEmpty: IO[Unit] = IO {
+    mock.when(
+      request()
+        .withMethod("GET")
+        .withPath("/api/v1/namespaces/default/services")
+        .withQueryStringParameter("watch", "true")
+    ).respond(
+      response()
+        .withStatusCode(200)
+        .withBody("{}", MediaType.APPLICATION_JSON)
     )
   }
 
