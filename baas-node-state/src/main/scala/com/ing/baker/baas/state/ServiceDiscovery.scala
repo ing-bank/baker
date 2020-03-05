@@ -1,8 +1,8 @@
 package com.ing.baker.baas.state
 
 import akka.actor.ActorSystem
-import akka.stream.{KillSwitches, Materializer}
 import akka.stream.scaladsl.{Keep, Sink}
+import akka.stream.{KillSwitches, Materializer}
 import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
@@ -14,14 +14,11 @@ import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.akka.internal.InteractionManager
 import com.ing.baker.runtime.scaladsl.{Baker, InteractionInstance}
 import com.typesafe.scalalogging.LazyLogging
-import fs2.Stream
 import org.http4s.Uri
 import skuber._
-import skuber.json.format._
 import skuber.api.client.{EventType, KubernetesClient}
+import skuber.json.format._
 
-import scala.collection.JavaConverters._
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 object ServiceDiscovery extends LazyLogging {
