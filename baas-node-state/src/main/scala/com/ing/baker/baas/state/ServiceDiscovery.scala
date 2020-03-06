@@ -130,6 +130,8 @@ object ServiceDiscovery extends LazyLogging {
       } yield ()
     }
 
+    val paralellism = math.max(2, Runtime.getRuntime.availableProcessors())
+    
     val createServiceDiscovery = for {
       currentServices <- Ref.of[IO, List[Service]](List.empty)
       cacheInteractions <- Ref.of[IO, List[InteractionInstance]](List.empty)
@@ -140,7 +142,7 @@ object ServiceDiscovery extends LazyLogging {
       killSwitch <- IO {
         k8s.watchAllContinuously[Service]()
           .viaMat(KillSwitches.single)(Keep.right)
-          .toMat(Sink.foreach(updateServices(_).unsafeRunAsyncAndForget()))(Keep.left)
+          .toMat(Sink.foreachAsync(paralellism)(updateServices(_).unsafeToFuture()))(Keep.left)
           .run()
       }
     } yield (service, killSwitch)
