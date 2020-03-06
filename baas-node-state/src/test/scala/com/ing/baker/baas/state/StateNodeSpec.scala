@@ -314,7 +314,13 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
           interactionManager = serviceDiscovery.buildInteractionManager,
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings(
             allowAddingRecipeWithoutRequiringInstances = true))(system))
+
       _ <- Resource.liftF(serviceDiscovery.plugBakerEventListeners(baker))
+      _ <- Resource.liftF(eventually(serviceDiscovery.cacheRecipeListeners.get.map(data =>
+        assert(data.get(ItemReservationRecipe.compiledRecipe.name).map(_.length).contains(1)))))
+      _ <- Resource.liftF(eventually(serviceDiscovery.cacheInteractions.get.map(data =>
+        assert(data.headOption.map(_.name).contains(Interactions.ReserveItemsInteraction.name)))))
+
       server <- StateNodeService.resource(baker, InetSocketAddress.createUnresolved("0.0.0.0", 0))
       client <- BakerClient.resource(server.baseUri, executionContext)
     } yield Context(

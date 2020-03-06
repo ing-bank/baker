@@ -149,7 +149,7 @@ object ServiceDiscovery extends LazyLogging {
   }
 }
 
-final class ServiceDiscovery private(
+case class ServiceDiscovery private(
   cacheInteractions: Ref[IO, List[InteractionInstance]],
   cacheRecipeListeners: Ref[IO, Map[RecipeName, List[RecipeListener]]],
   cacheBakerListeners: Ref[IO, List[BakerListener]]
