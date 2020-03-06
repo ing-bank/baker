@@ -316,6 +316,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
             allowAddingRecipeWithoutRequiringInstances = true))(system))
 
       _ <- Resource.liftF(serviceDiscovery.plugBakerEventListeners(baker))
+      // Liveness checks on event discovery
       _ <- Resource.liftF(eventually(serviceDiscovery.cacheRecipeListeners.get.map(data =>
         assert(data.get(ItemReservationRecipe.compiledRecipe.name).map(_.length).contains(1)))))
       _ <- Resource.liftF(eventually(serviceDiscovery.cacheInteractions.get.map(data =>
