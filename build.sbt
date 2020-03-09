@@ -370,6 +370,33 @@ lazy val `baas-node-baker-event-listener` = project.in(file("baas-node-baker-eve
   )
   .dependsOn(`baas-protocol-baker-event-publishing`, `baker-interface`)
 
+lazy val `bakery-controller` = project.in(file("bakery-controller"))
+  .settings(defaultModuleSettings)
+  .enablePlugins(JavaAppPackaging)
+  .settings(
+    maintainer in Docker := "The Bakery Team",
+    packageSummary in Docker := "The bakery controller",
+    packageName in Docker := "bakery-controller",
+    dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
+  )
+  .settings(
+    moduleName := "bakery-controller",
+    libraryDependencies ++= Seq(
+      slf4jApi,
+      slf4jSimple,
+      scalaLogging,
+      skuber,
+      http4s,
+      http4sDsl,
+      http4sServer
+    ) ++ testDeps(
+      scalaTest,
+      logback
+    )
+  )
+  .dependsOn(bakertypes, recipeCompiler, recipeDsl, intermediateLanguage, `baas-node-client`)
+  .aggregate(bakertypes, recipeCompiler, recipeDsl, intermediateLanguage, `baas-node-client`)
+
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
