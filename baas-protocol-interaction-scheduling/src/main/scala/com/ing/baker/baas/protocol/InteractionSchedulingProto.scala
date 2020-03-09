@@ -2,7 +2,7 @@ package com.ing.baker.baas.protocol
 
 import cats.implicits._
 import com.ing.baker.baas.protocol.ProtocolInteractionExecution._
-import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider}
+import com.ing.baker.runtime.serialization.ProtoMap
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 
 import scala.util.{Success, Try}

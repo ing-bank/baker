@@ -1,0 +1,154 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: baas-event-listener-service
+  labels:
+    app: baas-event-listener
+    baas-component: remote-event-listener
+    baker-recipe: "Webshop"
+spec:
+  selector:
+    app: baas-event-listener
+  ports:
+    - name: http-api
+      port: 8080
+      targetPort: http-api
+      protocol: TCP
+  type: ClusterIP
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: baas-event-listener-expose
+  labels:
+    app: baas-event-listener
+spec:
+  selector:
+    app: baas-event-listener
+  ports:
+    - name: event-expose
+      port: 8082
+      targetPort: event-expose
+      protocol: TCP
+  type: LoadBalancer
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: baas-event-listener
+  name: baas-event-listener
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: baas-event-listener
+  template:
+    metadata:
+      labels:
+        app: baas-event-listener
+    spec:
+      containers:
+        - name: baas-event-listener-example
+          image: baas-event-listener-example:3.0.2-SNAPSHOT
+          imagePullPolicy: Never
+          env:
+            - name: EXPOSE_EVENTS_PORT
+              value: "8081"
+          readinessProbe:
+            httpGet:
+              path: /api/v3/health
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /api/v3/health
+              port: 8080
+          ports:
+            - name: http-api
+              containerPort: 8080
+              protocol: TCP
+            - name: event-expose
+              containerPort: 8081
+              protocol: TCP
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: baas-baker-event-listener-service
+  labels:
+    baas-component: remote-baker-event-listener
+spec:
+  selector:
+    app: baas-baker-event-listener
+  ports:
+    - name: http-api
+      port: 8080
+      targetPort: http-api
+      protocol: TCP
+  type: ClusterIP
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: baas-baker-event-listener-expose
+  labels:
+    app: baas-baker-event-listener
+spec:
+  selector:
+    app: baas-baker-event-listener
+  ports:
+    - name: event-expose
+      port: 8083
+      targetPort: event-expose
+      protocol: TCP
+  type: LoadBalancer
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: baas-baker-event-listener
+  name: baas-baker-event-listener
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: baas-baker-event-listener
+  template:
+    metadata:
+      labels:
+        app: baas-baker-event-listener
+    spec:
+      containers:
+        - name: baas-baker-event-listener-example
+          image: baas-baker-event-listener-example:3.0.2-SNAPSHOT
+          imagePullPolicy: Never
+          env:
+            - name: EXPOSE_EVENTS_PORT
+              value: "8081"
+          readinessProbe:
+            httpGet:
+              path: /api/v3/health
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /api/v3/health
+              port: 8080
+          ports:
+            - name: http-api
+              containerPort: 8080
+              protocol: TCP
+            - name: event-expose
+              containerPort: 8081
+              protocol: TCP
+

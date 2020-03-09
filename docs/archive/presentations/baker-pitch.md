@@ -13,9 +13,11 @@
 
 ---
 
-## Rapid Time to Market
-## Less Incidents
-## Business and IT Speak the Same Language
+## Added Value
+
+### Reuse of Code -> Rapid Time to Market
+### Visualization -> Business and IT Speak the Same Language
+### Data-driven Refactoring -> Robust Software
 
 ---
 
