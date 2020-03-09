@@ -1,30 +1,57 @@
 package com.ing.baker.baas.state
 
+import java.net.InetSocketAddress
+import java.util.concurrent.Executors
+
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import com.ing.baker.runtime.akka.AkkaBaker
+import akka.cluster.Cluster
+import akka.stream.{ActorMaterializer, Materializer}
+import cats.effect.{ExitCode, IO, IOApp, Resource}
+import cats.implicits._
+import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
+import com.ing.baker.runtime.scaladsl.Baker
 import com.typesafe.config.ConfigFactory
+import skuber.api.client.KubernetesClient
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
 
-object Main extends App {
-  private val timeout: FiniteDuration = 20.seconds
+object Main extends IOApp {
 
-  println(Console.YELLOW + "Starting State Node..." + Console.RESET)
+  override def run(args: List[String]): IO[ExitCode] = {
+    // Config
+    val config = ConfigFactory.load()
+    val httpServerPort = config.getInt("baas-component.http-api-port")
+    val namespace = config.getString("baas-component.kubernetes-namespace")
 
-  val config = ConfigFactory.load()
-  val systemName = config.getString("service.actorSystemName")
-  val httpServerPort = config.getInt("service.httpServerPort")
-  val stateNodeSystem = ActorSystem(systemName)
-  val stateNodeBaker = AkkaBaker(config, stateNodeSystem)
-  val materializer = ActorMaterializer()(stateNodeSystem)
+    // Core dependencies
+    implicit val system: ActorSystem =
+      ActorSystem("BaaSStateNodeSystem")
+    implicit val materializer: Materializer =
+      ActorMaterializer()
+    val connectionPool: ExecutionContext =
+      ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
+    val hostname: InetSocketAddress =
+      InetSocketAddress.createUnresolved("0.0.0.0", httpServerPort)
+    val k8s: KubernetesClient = skuber.k8sInit
 
-  import stateNodeSystem.dispatcher
+    val mainResource = for {
+      serviceDiscovery <- ServiceDiscovery.resource(connectionPool, k8s)
+      baker: Baker = AkkaBaker.withConfig(AkkaBakerConfig(
+          interactionManager = serviceDiscovery.buildInteractionManager,
+          bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
+          readJournal = AkkaBakerConfig.persistenceQueryFrom(config, system),
+          timeouts = AkkaBakerConfig.Timeouts.from(config),
+          bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config)
+        )(system))
+      _ <- Resource.liftF(IO.async[Unit] { callback =>
+        Cluster(system).registerOnMemberUp {
+          callback(Right(()))
+        }
+      })
+      _ <- Resource.liftF(serviceDiscovery.plugBakerEventListeners(baker))
+      _ <- StateNodeService.resource(baker, hostname)
+    } yield ()
 
-  Await.result(BaaSServer.run(stateNodeBaker, "0.0.0.0", httpServerPort)(stateNodeSystem, materializer).map { hook =>
-    println(Console.GREEN + "State Node started..." + Console.RESET)
-    println(hook.localAddress)
-    sys.addShutdownHook(Await.result(hook.unbind(), timeout))
-  }, timeout)
+    mainResource.use(_ => IO.never).as(ExitCode.Success)
+  }
 }

@@ -1,62 +1,49 @@
 package com.ing.baker.runtime.akka.internal
 
-import java.util.concurrent.ConcurrentHashMap
-
-import akka.actor.ActorSystem
-import akka.pattern.ask
-import akka.util.Timeout
-import com.ing.baker.baas.protocol.ProtocolInteractionExecution
 import com.ing.baker.il.petrinet.InteractionTransition
-import com.ing.baker.runtime.akka.actor.interaction_scheduling.QuestMandated.Start
-import com.ing.baker.runtime.akka.actor.interaction_scheduling.QuestMandated
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
 
-import scala.compat.java8.FunctionConverters._
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-
-
+/** The InteractionManager is responsible for all implementation of interactions.
+  * It knows all available implementations and gives the correct implementation for an Interaction
+  */
 trait InteractionManager {
-  def hasImplementation(interaction: InteractionTransition): Boolean
 
-  def executeImplementation(interaction: InteractionTransition, input: Seq[IngredientInstance]): Future[Option[EventInstance]]
+  /** Adds an interaction instance to the manager.
+    *
+    * @param interaction to be added
+    * @return async writing process
+    */
+  def addImplementation(interaction: InteractionInstance): Future[Unit]
 
-  def addImplementation(interaction: InteractionInstance): Unit
-}
+  /** Gets an implementation is available for the given interaction.
+    * It checks:
+    *   1. Name
+    *   2. Input variable sizes
+    *   3. Input variable types
+    *
+    * @param interaction The interaction to check
+    * @return An option containing the implementation if available
+    */
+  def getImplementation(interaction: InteractionTransition): Future[Option[InteractionInstance]]
 
-class InteractionManagerDis(system: ActorSystem, postTimeout: Timeout, computationTimeout: Timeout) extends InteractionManager {
+  /** Checks if an InteractionInstance in the manager matches the transition. */
+  def hasImplementation(interaction: InteractionTransition)(implicit ec: ExecutionContext): Future[Boolean] =
+    getImplementation(interaction).map(_.isDefined)
 
-  import system.dispatcher
-
-  override def executeImplementation(interaction: InteractionTransition, input: Seq[IngredientInstance]): Future[Option[EventInstance]] = {
-    val a = system.actorOf(QuestMandated(input, interaction.originalInteractionName, postTimeout, computationTimeout))
-    a.ask(Start)(Timeout.durationToTimeout(postTimeout.duration + computationTimeout.duration)).flatMap {
-      case ProtocolInteractionExecution.InstanceExecutedSuccessfully(result) => Future.successful(result)
-      case ProtocolInteractionExecution.InstanceExecutionFailed() => Future.failed(new RuntimeException("Remote execution of interaction failed"))
-      case ProtocolInteractionExecution.NoInstanceFound => executeImplementation(interaction, input)
-      case ProtocolInteractionExecution.InstanceExecutionTimedOut() => Future.failed(new RuntimeException("Execution of interaction timed out"))
-      case ProtocolInteractionExecution.InvalidExecution() => Future.failed(new RuntimeException("Execution of interaction failed because of invalid ingredient input"))
+  /** Tries to find InteractionInstance that can run the given transition with provided input. */
+  def executeImplementation(interaction: InteractionTransition, input: Seq[IngredientInstance])(implicit ec: ExecutionContext): Future[Option[EventInstance]] = {
+    getImplementation(interaction).flatMap {
+      case Some(implementation) => implementation.run(input)
+      case None => Future.failed(new FatalInteractionException("No implementation available for interaction"))
     }
   }
 
-  override def hasImplementation(interaction: InteractionTransition): Boolean = true
-
-  override def addImplementation(interaction: InteractionInstance): Unit =
-    throw new NotImplementedError("addImplementation is not implemented for the distributed interaction manager, please deploy interactions using the baas-node-interaction library")
-}
-
-/**
-  * The InteractionManager is responsible for all implementation of interactions.
-  * It knows all available implementations and gives the correct implementation for an Interaction
-  *
-  * @param interactionImplementations All
-  */
-class InteractionManagerLocal(private var interactionImplementations: Seq[InteractionInstance] = Seq.empty) extends InteractionManager {
-
-  private val implementationCache: ConcurrentHashMap[InteractionTransition, InteractionInstance] =
-    new ConcurrentHashMap[InteractionTransition, InteractionInstance]
-
-  private def isCompatibleImplementation(interaction: InteractionTransition, implementation: InteractionInstance): Boolean = {
+  /** Helper function for implementations of the InteractionManager, this is the core logic for the binding of
+    * InteractionInstances.
+    */
+  protected def isCompatibleImplementation(interaction: InteractionTransition, implementation: InteractionInstance): Boolean = {
     val interactionNameMatches =
       interaction.originalInteractionName == implementation.name
     val inputSizeMatches =
@@ -68,39 +55,5 @@ class InteractionManagerLocal(private var interactionImplementations: Seq[Intera
           implementation.input.exists(_.isAssignableFrom(descriptor.`type`))
         }
     interactionNameMatches && inputSizeMatches && inputNamesAndTypesMatches
-  }
-
-  private def findInteractionImplementation(interaction: InteractionTransition): InteractionInstance =
-      interactionImplementations.find(implementation => isCompatibleImplementation(interaction, implementation)).orNull
-
-  /**
-    * Add an implementation to the InteractionManager
-    *
-    * @param implementation
-    */
-  def addImplementation(implementation: InteractionInstance): Unit =
-    interactionImplementations :+= implementation
-
-  /**
-    * Gets an implementation is available for the given interaction.
-    * It checks:
-    *   1. Name
-    *   2. Input variable sizes
-    *   3. Input variable types
-    *
-    * @param interaction The interaction to check
-    * @return An option containing the implementation if available
-    */
-  private[internal] def getImplementation(interaction: InteractionTransition): Option[InteractionInstance] =
-    Option(implementationCache.computeIfAbsent(interaction, (findInteractionImplementation _).asJava))
-
-  def hasImplementation(interaction: InteractionTransition): Boolean =
-    getImplementation(interaction).isDefined
-
-  override def executeImplementation(interaction: InteractionTransition, input: Seq[IngredientInstance]): Future[Option[EventInstance]] = {
-    this.getImplementation(interaction) match {
-      case Some(implementation) => implementation.run(input)
-      case None => Future.failed(new FatalInteractionException("No implementation available for interaction"))
-    }
   }
 }

@@ -2,7 +2,7 @@ package com.ing.baker.baas.protocol
 
 import cats.implicits._
 import com.ing.baker.baas.protocol.BaaSProtocol._
-import com.ing.baker.runtime.serialization.{ProtoMap, SerializersProvider}
+import com.ing.baker.runtime.serialization.ProtoMap
 import scalapb.GeneratedMessageCompanion
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto, versioned}
 import com.ing.baker.runtime.serialization.protomappings.SensoryEventStatusMappingHelper
@@ -26,7 +26,7 @@ object BaaSProto {
           .map(BaaSRemoteFailure)
     }
 
-  implicit def addRecipeRequestProto(implicit ev0: SerializersProvider): ProtoMap[AddRecipeRequest, protobuf.AddRecipeRequest] =
+  implicit def addRecipeRequestProto: ProtoMap[AddRecipeRequest, protobuf.AddRecipeRequest] =
     new ProtoMap[AddRecipeRequest, protobuf.AddRecipeRequest] {
 
       override def companion: GeneratedMessageCompanion[protobuf.AddRecipeRequest] =
@@ -69,7 +69,7 @@ object BaaSProto {
           .map(GetRecipeRequest)
     }
 
-  implicit def getRecipeResponseProto(implicit ev0: SerializersProvider): ProtoMap[GetRecipeResponse, protobuf.GetRecipeResponse] =
+  implicit def getRecipeResponseProto: ProtoMap[GetRecipeResponse, protobuf.GetRecipeResponse] =
     new ProtoMap[GetRecipeResponse, protobuf.GetRecipeResponse] {
 
       override def companion: GeneratedMessageCompanion[protobuf.GetRecipeResponse] =
@@ -85,7 +85,7 @@ object BaaSProto {
         } yield GetRecipeResponse(recipeInformation)
     }
 
-  implicit def getAllRecipesResponseProto(implicit ev0: SerializersProvider): ProtoMap[GetAllRecipesResponse, protobuf.GetAllRecipesResponse] =
+  implicit def getAllRecipesResponseProto: ProtoMap[GetAllRecipesResponse, protobuf.GetAllRecipesResponse] =
     new ProtoMap[GetAllRecipesResponse, protobuf.GetAllRecipesResponse] {
 
       override def companion: GeneratedMessageCompanion[protobuf.GetAllRecipesResponse] =

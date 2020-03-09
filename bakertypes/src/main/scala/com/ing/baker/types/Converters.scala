@@ -30,9 +30,9 @@ object Converters extends LazyLogging{
       val moduleClassName = stripQuotes(entry.getValue.unwrapped.asInstanceOf[String])
       val className = stripQuotes(entry.getKey)
 
-      val clazz = classOf[Value].getClassLoader().loadClass(className)
-      val moduleClass = classOf[Value].getClassLoader().loadClass(moduleClassName)
-      val module = moduleClass.newInstance().asInstanceOf[TypeModule]
+      val clazz = classOf[Value].getClassLoader.loadClass(className)
+      val moduleClass = classOf[Value].getClassLoader.loadClass(moduleClassName)
+      val module = moduleClass.getDeclaredConstructor().newInstance().asInstanceOf[TypeModule]
 
       (clazz, module)
     }

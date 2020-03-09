@@ -1,6 +1,7 @@
 package com.ing.baker.baas.protocol
 
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}
+import com.ing.baker.types.Type
 
 /**
   * Protocol executed after a match between a QuestMandate and InteractionAgent has been made and after both
@@ -26,7 +27,12 @@ object ProtocolInteractionExecution {
   /**
     * Technical failure of the interaction
     */
-  case class InstanceExecutionFailed() extends ProtocolInteractionExecution
+  case class InstanceExecutionFailed(message: String) extends ProtocolInteractionExecution
+
+  /**
+    * Communicates the interaction interface
+    */
+  case class InstanceInterface(name: String, input: Seq[Type]) extends ProtocolInteractionExecution
 
   /**
     * Technical failure of the interaction

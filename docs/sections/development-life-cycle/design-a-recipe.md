@@ -103,7 +103,7 @@ object Interactions {
             Ingredients.Items,
           ),
           output = Seq(
-            Events.OrderHadMissingItems,
+            Events.OrderHadUnavailableItems,
             Events.ItemsReserved
           )
         )

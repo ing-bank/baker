@@ -408,7 +408,7 @@ The idea here is that you quickly retry at first but slower over time. To not ov
 ``` java
   .withInteractions(
     of(ValidateOrder.class)
-      .withFailureStrategy(new RetryWithIncrementalBackoffBuilder()
+      .withDefaultFailureStrategy(new RetryWithIncrementalBackoffBuilder()
         .withInitialDelay(Duration.ofMillis(100))
         .withBackoffFactor(2.0)
         .withMaxTimeBetweenRetries(Duration.ofSeconds(100))
@@ -455,7 +455,7 @@ Either the interaction becomes [blocked(#blocked-interaction).
 Or if you configure so, the process continues with a predefined event:
 
 ```
-.withFailureStrategy(new RetryWithIncrementalBackoffBuilder()
+.withDefaultFailureStrategy(new RetryWithIncrementalBackoffBuilder()
   .withFireRetryExhaustedEvent(SomeEvent.class))
 
 ```
