@@ -45,7 +45,6 @@ class BakerInquireSpec extends BakerRuntimeTestBase {
       for {
         (baker, recipeId) <- setupBakerWithRecipe("returnHealthRecipe", false)
         recipeInformation <- baker.getRecipe(recipeId)
-        _ = println(recipeInformation)
         _ = assert(recipeInformation.compiledRecipe.recipeId == recipeId && recipeInformation.errors.isEmpty)
       } yield succeed
     }

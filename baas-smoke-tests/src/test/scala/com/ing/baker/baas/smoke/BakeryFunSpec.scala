@@ -121,12 +121,17 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
           kubernetesConfigPath = getClass.getResource("/kubernetes").getPath
           prefix = s"[${Console.GREEN}creating env $testUUID${Console.RESET}]"
           _ <- exec(prefix, command = s"kubectl create namespace $testUUID")
-          _ <- exec(prefix, command = s"kubectl apply -f $kubernetesConfigPath -n $testUUID")
           _ = if(args.skipCleanup) {
             println(Console.YELLOW + s"### Will skip cleanup after the test, to manually clean the environment run: " + Console.RESET)
             println(s"\n\tkubectl delete -f $kubernetesConfigPath -n $testUUID && kubectl delete namespace $testUUID\n")
           }
         } yield testUUID
+      }
+
+      def applyFile(name: String, namespace: String): IO[Unit] = {
+        val kubernetesConfigPath = getClass.getResource("/kubernetes").getPath
+        val prefix = s"[${Console.GREEN}applying file $name $namespace${Console.RESET}]"
+        exec(prefix, command = s"kubectl apply -f $kubernetesConfigPath/$name -n $namespace").void
       }
 
       def getPods(namespaceOpt: Option[String]): IO[Int] =
@@ -151,8 +156,17 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
             val recipeEventsClient = new EventListenerClient(client, args.eventListenerHostname)
             val bakerEventsClient = new EventListenerClient(client, args.bakerEventListenerHostname)
             for {
+              _ <- setup(applyFile("example-interactions.yaml", namespace.getOrElse("default")))
+              _ <- setup(applyFile("example-listeners.yaml", namespace.getOrElse("default")))
+              _ <- setup(applyFile("bakery-cluster.yaml", namespace.getOrElse("default")))
               _ <- within(setupWaitTime, setupWaitSplit)(for {
-                _ <- IO ( println(Console.GREEN + s"\nWaiting for environment (5s)..." + Console.RESET) )
+                _ <- IO ( println(Console.GREEN + s"\nWaiting for bakery cluster (5s)..." + Console.RESET) )
+                _ <- getPods(namespace)
+                status <- client.statusFromUri(args.stateServiceHostname / "api" / "v3" / "getAllRecipes")
+              } yield assert(status.code == 200))
+              _ <- setup(applyFile("example-client-app.yaml", namespace.getOrElse("default")))
+              _ <- within(setupWaitTime, setupWaitSplit)(for {
+                _ <- IO ( println(Console.GREEN + s"\nWaiting for client app (5s)..." + Console.RESET) )
                 _ <- getPods(namespace)
                 status <- exampleAppClient.ping
               } yield assert(status.code == 200))

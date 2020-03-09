@@ -1,5 +1,8 @@
 package com.ing.baker.baas.state
 
+import akka.actor.ActorSystem
+import akka.stream.scaladsl.{Keep, Sink}
+import akka.stream.{KillSwitches, Materializer}
 import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
@@ -11,15 +14,11 @@ import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.akka.internal.InteractionManager
 import com.ing.baker.runtime.scaladsl.{Baker, InteractionInstance}
 import com.typesafe.scalalogging.LazyLogging
-import fs2.Stream
-import io.kubernetes.client.openapi.ApiClient
-import io.kubernetes.client.openapi.apis.CoreV1Api
-import io.kubernetes.client.openapi.models.V1Service
-import io.kubernetes.client.util.ClientBuilder
 import org.http4s.Uri
+import skuber._
+import skuber.api.client.{EventType, KubernetesClient}
+import skuber.json.format._
 
-import scala.collection.JavaConverters._
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 object ServiceDiscovery extends LazyLogging {
@@ -37,55 +36,44 @@ object ServiceDiscovery extends LazyLogging {
     * Current hard coded polling periods: 2 seconds
     *
     * @param connectionPool to be used for client connections
-    * @param namespace Kubernetes namespace to be queried
-    * @param client Kubernetes java client to be used
     * @param contextShift to be used by the streams
     * @param timer to be used by the streams
-    * @param blockingEC pool used for the blocking operation of the java library
     * @return
     */
-  def resource(connectionPool: ExecutionContext, namespace: String, client: ApiClient = ClientBuilder.cluster.build)(implicit contextShift: ContextShift[IO], timer: Timer[IO], blockingEC: ExecutionContext): Resource[IO, ServiceDiscovery] = {
-    val api = new CoreV1Api(client)
+  def resource(connectionPool: ExecutionContext, k8s: KubernetesClient)(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem, materializer: Materializer): Resource[IO, ServiceDiscovery] = {
 
-    def fetchServices(namespace: String, api: CoreV1Api)(implicit contextShift: ContextShift[IO], blockingEC: ExecutionContext): IO[List[V1Service]] =
-      contextShift.evalOn(blockingEC)(IO {
-        api.listNamespacedService(namespace, null, null, null, null, null, null, null, null, null)
-          .getItems
-          .asScala
-          .toList
-      }).attempt.flatMap {
-        case Right(services) =>
-          IO.pure(services)
-        case Left(e) =>
-          IO(logger.warn("Failed to communicate with the Kubernetes service: " + e.getMessage))
-          IO.pure(List.empty)
-      }
+    def getHttpServicePortOrDefault(service: Service): String = {
+      for {
+        spec <- service.spec
+        portNumber <- spec.ports.find(_.name == "http-api")
+      } yield portNumber.port.toString
+    }.getOrElse("8080")
 
-    def getInteractionAddresses(currentServices: List[V1Service]): List[Uri] =
+    def getInteractionAddresses(currentServices: List[Service]): List[Uri] =
       currentServices
-        .filter(_.getMetadata.getLabels.getOrDefault("baas-component", "Wrong")
+        .filter(_.metadata.labels.getOrElse("baas-component", "Wrong")
           .equals("remote-interaction"))
-        .map(service => "http://" + service.getMetadata.getName + ":" + service.getSpec.getPorts.asScala.head.getPort)
+        .map(service => "http://" + service.metadata.name + ":" + getHttpServicePortOrDefault(service))
         .map(Uri.unsafeFromString)
 
-    def getEventListenersAddresses(currentServices: List[V1Service]): List[(String, Uri)] =
+    def getEventListenersAddresses(currentServices: List[Service]): List[(String, Uri)] =
       currentServices
-        .filter(_.getMetadata.getLabels.getOrDefault("baas-component", "Wrong")
+        .filter(_.metadata.labels.getOrElse("baas-component", "Wrong")
           .equals("remote-event-listener"))
         .map { service =>
-          val recipe = service.getMetadata.getLabels.getOrDefault("baker-recipe", "All-Recipes")
-          val address = Uri.unsafeFromString("http://" + service.getMetadata.getName + ":" +  + service.getSpec.getPorts.asScala.head.getPort)
+          val recipe = service.metadata.labels.getOrElse("baker-recipe", "All-Recipes")
+          val address = Uri.unsafeFromString("http://" + service.metadata.name + ":" + getHttpServicePortOrDefault(service))
           recipe -> address
         }
 
-    def getBakerEventListenersAddresses(currentServices: List[V1Service]): List[Uri] =
+    def getBakerEventListenersAddresses(currentServices: List[Service]): List[Uri] =
       currentServices
-        .filter(_.getMetadata.getLabels.getOrDefault("baas-component", "Wrong")
+        .filter(_.metadata.labels.getOrElse("baas-component", "Wrong")
           .equals("remote-baker-event-listener"))
-        .map(service => "http://" + service.getMetadata.getName + ":" + service.getSpec.getPorts.asScala.head.getPort)
+        .map(service => "http://" + service.metadata.name + ":" + getHttpServicePortOrDefault(service))
         .map(Uri.unsafeFromString)
 
-    def buildInteractions(currentServices: List[V1Service]): IO[List[InteractionInstance]] =
+    def buildInteractions(currentServices: List[Service]): IO[List[InteractionInstance]] =
       getInteractionAddresses(currentServices)
         .map(RemoteInteractionClient.resource(_, connectionPool))
         .parTraverse[IO, Option[InteractionInstance]](buildInteractionInstance)
@@ -106,39 +94,64 @@ object ServiceDiscovery extends LazyLogging {
         } yield interactionsOpt
       }
 
-    def buildRecipeListeners(currentServices: List[V1Service]): Map[RecipeName, List[RecipeListener]] =
+    def buildRecipeListeners(currentServices: List[Service]): Map[RecipeName, List[RecipeListener]] =
       getEventListenersAddresses(currentServices)
         .map { case (recipe, address) => (recipe, RemoteEventListenerClient.resource(address, connectionPool)) }
         .foldLeft(Map.empty[RecipeName, List[RecipeListener]]) { case (acc, (recipeName, client)) =>
           acc + (recipeName -> (client :: acc.getOrElse(recipeName, List.empty)))
         }
 
-    def buildBakerListeners(currentServices: List[V1Service]): List[BakerListener] =
+    def buildBakerListeners(currentServices: List[Service]): List[BakerListener] =
       getBakerEventListenersAddresses(currentServices)
         .map(RemoteBakerEventListenerClient.resource(_, connectionPool))
 
-    val stream = for {
-      cacheInteractions <- Stream.eval(Ref.of[IO, List[InteractionInstance]](List.empty))
-      cacheRecipeListeners <- Stream.eval(Ref.of[IO, Map[RecipeName, List[RecipeListener]]](Map.empty))
-      cacheBakerListeners <- Stream.eval(Ref.of[IO, List[BakerListener]](List.empty))
-      service = new ServiceDiscovery(cacheInteractions, cacheRecipeListeners, cacheBakerListeners)
-      updateServices = fetchServices(namespace, api)
-        .flatMap { currentServices =>
-          List(
-            buildInteractions(currentServices).flatMap(cacheInteractions.set),
-            cacheRecipeListeners.set(buildRecipeListeners(currentServices)),
-            cacheBakerListeners.set(buildBakerListeners(currentServices))
-          ).parSequence
+    def updateServicesWith(
+      currentServices: Ref[IO, List[Service]],
+      cacheInteractions: Ref[IO, List[InteractionInstance]],
+      cacheRecipeListeners: Ref[IO, Map[RecipeName, List[RecipeListener]]],
+      cacheBakerListeners: Ref[IO, List[BakerListener]]
+    )(event: K8SWatchEvent[Service]): IO[Unit] = {
+      for {
+        services <- event._type match {
+          case EventType.ADDED =>
+            currentServices.updateAndGet(event._object :: _)
+          case EventType.DELETED =>
+            currentServices.updateAndGet(_.filterNot(_ == event._object))
+          case EventType.MODIFIED =>
+            currentServices.updateAndGet(_.map(service => if (service.metadata.uid == event._object.metadata.uid) event._object else service))
+          case EventType.ERROR =>
+            IO(logger.error(s"Event type ERROR on service watch for service ${event._object}")) *> currentServices.get
         }
-      updater = Stream.fixedRate(5.seconds).evalMap(_ => updateServices)
-      _ <- Stream.eval(updateServices).concurrently(updater)
-    } yield service
+        _ <- List(
+          buildInteractions(services).flatMap(cacheInteractions.set),
+          cacheRecipeListeners.set(buildRecipeListeners(services)),
+          cacheBakerListeners.set(buildBakerListeners(services))
+        ).parSequence
+      } yield ()
+    }
 
-    stream.compile.resource.lastOrError
+    val paralellism = math.max(2, Runtime.getRuntime.availableProcessors())
+    
+    val createServiceDiscovery = for {
+      currentServices <- Ref.of[IO, List[Service]](List.empty)
+      cacheInteractions <- Ref.of[IO, List[InteractionInstance]](List.empty)
+      cacheRecipeListeners <- Ref.of[IO, Map[RecipeName, List[RecipeListener]]](Map.empty)
+      cacheBakerListeners <- Ref.of[IO, List[BakerListener]](List.empty)
+      service = new ServiceDiscovery(cacheInteractions, cacheRecipeListeners, cacheBakerListeners)
+      updateServices = updateServicesWith(currentServices, cacheInteractions, cacheRecipeListeners, cacheBakerListeners) _
+      killSwitch <- IO {
+        k8s.watchAllContinuously[Service]()
+          .viaMat(KillSwitches.single)(Keep.right)
+          .toMat(Sink.foreachAsync(paralellism)(updateServices(_).unsafeToFuture()))(Keep.left)
+          .run()
+      }
+    } yield (service, killSwitch)
+
+    Resource.make(createServiceDiscovery)(s => IO(s._2.shutdown())).map(_._1)
   }
 }
 
-final class ServiceDiscovery private(
+case class ServiceDiscovery private(
   cacheInteractions: Ref[IO, List[InteractionInstance]],
   cacheRecipeListeners: Ref[IO, Map[RecipeName, List[RecipeListener]]],
   cacheBakerListeners: Ref[IO, List[BakerListener]]

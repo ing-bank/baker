@@ -290,13 +290,14 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
       akkaManagementHttp,
       akkaClusterBoostrap,
       akkaDiscoveryKube,
-      kubernetesJavaClient,
+      skuber,
       http4s,
       http4sDsl,
       http4sServer
     ) ++ testDeps(
       slf4jApi,
       slf4jSimple,
+      logback,
       scalaTest,
       mockServer,
       circe,
@@ -330,7 +331,8 @@ lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
       http4sDsl,
       http4sServer
     ) ++ testDeps(
-      scalaTest
+      scalaTest,
+      logback
     )
   )
   .dependsOn(`baas-protocol-interaction-scheduling`, `baker-interface`)
@@ -346,7 +348,8 @@ lazy val `baas-node-event-listener` = project.in(file("baas-node-event-listener"
       http4sDsl,
       http4sServer
     ) ++ testDeps(
-      scalaTest
+      scalaTest,
+      logback
     ))
   .dependsOn(`baas-protocol-recipe-event-publishing`, `baker-interface`)
 
@@ -361,7 +364,8 @@ lazy val `baas-node-baker-event-listener` = project.in(file("baas-node-baker-eve
       http4sDsl,
       http4sServer
     ) ++ testDeps(
-      scalaTest
+      scalaTest,
+      logback
     )
   )
   .dependsOn(`baas-protocol-baker-event-publishing`, `baker-interface`)

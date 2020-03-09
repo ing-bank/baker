@@ -4,6 +4,7 @@ import java.net.InetSocketAddress
 import java.util.UUID
 
 import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
 import cats.effect.{IO, Resource}
 import cats.implicits._
 import com.ing.baker.baas.mocks.{KubeApiServer, RemoteComponents, RemoteEventListener, RemoteInteraction}
@@ -17,9 +18,9 @@ import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
 import com.typesafe.config.ConfigFactory
-import io.kubernetes.client.openapi.ApiClient
 import org.mockserver.integration.ClientAndServer
 import org.scalatest.{ConfigMap, Matchers}
+import skuber.api.client.KubernetesClient
 
 import scala.concurrent.Future
 
@@ -304,15 +305,23 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       stopActorSystem = (system: ActorSystem) => IO.fromFuture(IO {
         system.terminate().flatMap(_ => system.whenTerminated) }).void
       system <- Resource.make(makeActorSystem)(stopActorSystem)
+      materializer = ActorMaterializer()(system)
 
-      kubernetesApi = new ApiClient().setBasePath(s"http://localhost:${mockServer.getLocalPort}")
-      serviceDiscovery <- ServiceDiscovery.resource(executionContext, "default", kubernetesApi)
+      k8s: KubernetesClient = skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))(system, materializer)
+      serviceDiscovery <- ServiceDiscovery.resource(executionContext, k8s)(contextShift, timer, system, materializer)
       baker = AkkaBaker.withConfig(
         AkkaBakerConfig.localDefault(system).copy(
           interactionManager = serviceDiscovery.buildInteractionManager,
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings(
             allowAddingRecipeWithoutRequiringInstances = true))(system))
+
       _ <- Resource.liftF(serviceDiscovery.plugBakerEventListeners(baker))
+      // Liveness checks on event discovery
+      _ <- Resource.liftF(eventually(serviceDiscovery.cacheRecipeListeners.get.map(data =>
+        assert(data.get(ItemReservationRecipe.compiledRecipe.name).map(_.length).contains(1)))))
+      _ <- Resource.liftF(eventually(serviceDiscovery.cacheInteractions.get.map(data =>
+        assert(data.headOption.map(_.name).contains(Interactions.ReserveItemsInteraction.name)))))
+
       server <- StateNodeService.resource(baker, InetSocketAddress.createUnresolved("0.0.0.0", 0))
       client <- BakerClient.resource(server.baseUri, executionContext)
     } yield Context(
