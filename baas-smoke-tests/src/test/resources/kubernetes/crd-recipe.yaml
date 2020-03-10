@@ -20,6 +20,8 @@ spec:
             spec:
               type: object
               properties:
+                bakeryVersion:
+                  type: string
                 replicas:
                   type: integer
                 recipe:

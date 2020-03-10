@@ -1,5 +1,6 @@
 package com.ing.bakery.clustercontroller
 
+import cats.effect.IO
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.serialization.ProtoMap
@@ -10,8 +11,6 @@ import skuber.ResourceSpecification.{Names, Scope}
 import skuber.json.format.objFormat
 import skuber.{NonCoreResourceSpecification, ObjectMeta, ObjectResource, ResourceDefinition}
 
-import scala.util.Try // reuse some core formatters
-
 case class RecipeResource(
     kind: String = "Recipe",
     apiVersion: String = "ing-bank.github.io/v1",
@@ -19,12 +18,12 @@ case class RecipeResource(
     spec:  RecipeResource.Spec)
   extends ObjectResource {
 
-  def decodeRecipe: Try[CompiledRecipe] = {
+  def decodeRecipe: IO[CompiledRecipe] = {
     val decode64 = Base64.decodeBase64(spec.recipe)
-    for {
+    IO.fromTry(for {
       protoRecipe <- protobuf.CompiledRecipe.validate(decode64)
       recipe <- ProtoMap.ctxFromProto(protoRecipe)
-    } yield recipe
+    } yield recipe)
   }
 }
 
@@ -37,7 +36,8 @@ object RecipeResource {
   }
 
   case class Spec(
-    replicas: Int = 1,
+    bakeryVersion: String,
+    replicas: Int,
     recipe: String
   )
 
@@ -58,6 +58,7 @@ object RecipeResource {
     new ResourceDefinition[RecipeResource] { def spec: NonCoreResourceSpecification = specification }
 
   implicit val recipeResourceSpecFmt: Format[Spec] = (
+    (JsPath \ "bakeryVersion").format[String] and
     (JsPath \ "replicas").formatWithDefault[Int](1) and
     (JsPath \ "recipe").format[String]
   )(Spec.apply, unlift(Spec.unapply))
