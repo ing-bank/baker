@@ -157,7 +157,7 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
         }
 
 
-      val setupWaitTime = 5.minute
+      val setupWaitTime = 1.minute
       val setupWaitSplit = 60
 
       def dontSkipTest: IO[Assertion] =

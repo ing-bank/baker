@@ -31,7 +31,7 @@ object Main extends IOApp {
     val connectionPool: ExecutionContext =
       ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
     val hostname: InetSocketAddress =
-      InetSocketAddress.createUnresolved("127.0.0.1", httpServerPort)
+      InetSocketAddress.createUnresolved("0.0.0.0", httpServerPort)
     val k8s: KubernetesClient = skuber.k8sInit
 
     val mainResource = for {
