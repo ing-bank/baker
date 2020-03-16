@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bakery-controller
+spec:
+  containers:
+    - name: bakery-controller
+      image: bakery-controller:3.0.2-SNAPSHOT

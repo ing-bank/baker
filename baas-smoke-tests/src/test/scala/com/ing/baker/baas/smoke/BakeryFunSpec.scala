@@ -170,7 +170,12 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
             for {
               _ <- setup(applyFile("example-interactions.yaml", namespace.getOrElse("default")))
               _ <- setup(applyFile("example-listeners.yaml", namespace.getOrElse("default")))
-              _ <- setup(applyFile("bakery-cluster.yaml", namespace.getOrElse("default")))
+              _ <- setup(applyFile("crd-recipe.yaml", namespace.getOrElse("default")))
+              _ <- setup(applyFile("bakery-controller.yaml", namespace.getOrElse("default")))
+
+              _ <- IO.sleep(3.second)
+              _ <- setup(applyFile("recipe-webshop.yaml", namespace.getOrElse("default")))
+
               _ <- within(setupWaitTime, setupWaitSplit)(for {
                 _ <- IO ( println(Console.GREEN + s"\nWaiting for bakery cluster (5s)..." + Console.RESET) )
                 _ <- getPods(namespace)

@@ -12,6 +12,7 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
       "baas-client-example/docker:publishLocal" ::
       "baas-event-listener-example/docker:publishLocal" ::
       "baas-baker-event-listener-example/docker:publishLocal" ::
+      "bakery-controller/docker:publishLocal" ::
       "project baas-interaction-example-make-payment" ::
       "buildInteractionDockerImage docker:publishLocal webshop.webservice.MakePaymentInstance" ::
       "project baas-interaction-example-ship-items" ::

@@ -45,7 +45,7 @@ object RecipeOps {
 
       val baasStateServiceName: String = "baas-state-service"
 
-      val baasStateServicePort: Int = 8080
+      val baasStateServicePort: Int = 8081
 
       def eventually[A](f: IO[A]): IO[A] =
         within(30.seconds, 30)(f)
@@ -123,6 +123,7 @@ object RecipeOps {
 
             service <- IO.fromFuture {
               val service = Service(baasStateServiceName)
+                .withLoadBalancerType
                 .addLabel("baas-component", "state")
                 .addLabel("app", "baas-state-service")
                 .withSelector(stateNodeLabel)
