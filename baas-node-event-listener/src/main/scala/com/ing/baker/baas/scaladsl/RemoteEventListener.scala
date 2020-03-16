@@ -21,7 +21,7 @@ object RemoteEventListener extends common.RemoteEventListener[Future] with Scala
     val config = ConfigFactory.load()
     val port = config.getInt("baas-component.http-api-port")
 
-    val address = InetSocketAddress.createUnresolved("0.0.0.0", port)
+    val address = InetSocketAddress.createUnresolved("127.0.0.1", port)
 
     implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.Implicits.global)
     implicit val timer: Timer[IO] = IO.timer(ExecutionContext.Implicits.global)
