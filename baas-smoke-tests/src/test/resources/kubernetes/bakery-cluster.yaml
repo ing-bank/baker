@@ -67,7 +67,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /health/ready
-              port: 8558
+              port: management
           livenessProbe:
             httpGet:
               path: /health/alive

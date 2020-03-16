@@ -32,7 +32,10 @@ object RecipeResource {
   def apply(recipe: CompiledRecipe, replicas: Int): RecipeResource = {
     val protoRecipe: Array[Byte] = ProtoMap.ctxToProto(recipe).toByteArray
     val encode64 = Base64.encodeBase64(protoRecipe)
-    RecipeResource(spec = Spec(replicas = replicas, recipe = new String(encode64)))
+    RecipeResource( spec = Spec(
+      bakeryVersion = "3.0.2-SNAPSHOT", // TODO parametrize this and get the default version from the current sbt version
+      replicas = replicas,
+      recipe = new String(encode64)))
   }
 
   case class Spec(
@@ -43,8 +46,8 @@ object RecipeResource {
 
   val specification: NonCoreResourceSpecification =
     NonCoreResourceSpecification (
-      apiGroup="ing-bank.github.io",
-      version="v1",
+      apiGroup = "ing-bank.github.io",
+      version = "v1",
       scope = Scope.Namespaced,
       names=Names(
         plural = "recipes",
