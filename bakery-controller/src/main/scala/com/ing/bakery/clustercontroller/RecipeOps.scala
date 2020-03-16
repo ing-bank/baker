@@ -3,9 +3,13 @@ package com.ing.bakery.clustercontroller
 import cats.syntax.apply._
 import cats.data.Kleisli
 import cats.effect.{ContextShift, IO, Timer}
+import com.ing.baker.baas.scaladsl.BakerClient
+import org.http4s.Uri
 import skuber.{Container, Pod, Protocol}
 import skuber.api.client.KubernetesClient
 import skuber.ext.Deployment
+import skuber.Service
+import skuber.json.format._
 import skuber.json.ext.format._
 
 import scala.concurrent.duration._
@@ -38,6 +42,10 @@ object RecipeOps {
       val namespace: String = "default"
 
       val baasStateName: String = "baas-state"
+
+      val baasStateServiceName: String = "baas-state-service"
+
+      val baasStateServicePort: Int = 8080
 
       def eventually[A](f: IO[A]): IO[A] =
         within(30.seconds, 30)(f)
@@ -112,7 +120,29 @@ object RecipeOps {
 
               IO(k8s.create(deployment))
             }
-            _ = println(Console.MAGENTA + deployment + Console.RESET)
+
+            service <- IO.fromFuture {
+              val service = Service(baasStateServiceName)
+                .addLabel("baas-component", "state")
+                .addLabel("app", "baas-state-service")
+                .withSelector(stateNodeLabel)
+                .setPort(Service.Port(
+                  name = "http-api",
+                  port = baasStateServicePort,
+                  targetPort = Some(Right("http-api"))
+                ))
+
+              IO(k8s.create(service))
+            }
+
+            recipes <- BakerClient.resource(Uri.unsafeFromString(s"http://${service.metadata.name}:${baasStateServicePort}"), scala.concurrent.ExecutionContext.global).use { client => // TODO parametrise a pool for connections
+              for {
+                _ <- eventually(IO.fromFuture(IO(client.addRecipe(compiledRecipe))))
+                recipes <- IO.fromFuture(IO(client.getAllRecipes))
+              } yield recipes
+            }
+            _ = println(Console.MAGENTA + recipes + Console.RESET)
+
             // Create state node
             // Create client
             // Ping server

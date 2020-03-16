@@ -15,7 +15,6 @@ object RecipeController extends LazyLogging {
     val paralellism = math.max(2, Runtime.getRuntime.availableProcessors())
 
     def handleEvent(event: K8SWatchEvent[RecipeResource]): IO[Unit] = {
-      println(Console.YELLOW + event + Console.RESET)
       event._type match {
         case EventType.ADDED => RecipeOps.k8s.createBakeryCluster.run(event._object, k8s)
         case EventType.DELETED => RecipeOps.k8s.terminateBakeryCluster.run(event._object, k8s)
