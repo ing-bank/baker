@@ -30,6 +30,7 @@ object RecipeController extends LazyLogging {
           .toMat(Sink.foreachAsync(paralellism)(handleEvent(_).unsafeToFuture()))(Keep.left)
           .run()
       }
+      _ = sys.addShutdownHook(killSwitch.shutdown())
     } yield IO(killSwitch.shutdown())
 
     Resource.make(create)(identity).map(_ => ())

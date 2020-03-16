@@ -131,7 +131,6 @@ object RecipeOps {
                   port = baasStateServicePort,
                   targetPort = Some(Right("http-api"))
                 ))
-
               IO(k8s.create(service))
             }
 
@@ -141,7 +140,6 @@ object RecipeOps {
                 recipes <- IO.fromFuture(IO(client.getAllRecipes))
               } yield recipes
             }
-            _ = println(Console.MAGENTA + recipes + Console.RESET)
 
             // Create state node
             // Create client
