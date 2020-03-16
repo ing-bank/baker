@@ -21,6 +21,16 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
   implicit val timer: Timer[IO] =
     IO.timer(executionContext)
 
+  val isWindows: Boolean = System.getProperty("os.name").toLowerCase.contains("windows")
+
+  def getPathSafe(resourcePath: String): String = {
+    val safePath = getClass.getResource(resourcePath).getPath
+    if(isWindows)
+      safePath.tail
+    else
+      safePath
+  }
+
   def eventually[A](f: IO[A]): IO[A] =
     within(20.seconds, 20)(f)
 
@@ -105,7 +115,7 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
             val prefix = s"[${Console.CYAN}cleaning env $namespace${Console.RESET}]"
             exec(
               prefix = prefix,
-              command = s"kubectl delete -f ${getClass.getResource("/kubernetes").getPath} -n $namespace"
+              command = s"kubectl delete -f ${getPathSafe("/kubernetes")} -n $namespace"
             ) *> exec(
               prefix = prefix,
               command = s"kubectl delete namespace $namespace"
@@ -117,8 +127,10 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
 
       val createEnvironment: IO[String] = {
         for {
+
           testUUID <- IO( UUID.randomUUID().toString )
-          kubernetesConfigPath = getClass.getResource("/kubernetes").getPath
+          kubernetesConfigPath = getPathSafe("/kubernetes")
+
           prefix = s"[${Console.GREEN}creating env $testUUID${Console.RESET}]"
           _ <- exec(prefix, command = s"kubectl create namespace $testUUID")
           _ = if(args.skipCleanup) {
@@ -129,7 +141,7 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
       }
 
       def applyFile(name: String, namespace: String): IO[Unit] = {
-        val kubernetesConfigPath = getClass.getResource("/kubernetes").getPath
+        val kubernetesConfigPath = getPathSafe("/kubernetes")
         val prefix = s"[${Console.GREEN}applying file $name $namespace${Console.RESET}]"
         exec(prefix, command = s"kubectl apply -f $kubernetesConfigPath/$name -n $namespace").void
       }
@@ -145,7 +157,7 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
         }
 
 
-      val setupWaitTime = 5.minute
+      val setupWaitTime = 1.minute
       val setupWaitSplit = 60
 
       def dontSkipTest: IO[Assertion] =
