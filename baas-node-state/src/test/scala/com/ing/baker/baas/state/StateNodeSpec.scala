@@ -322,7 +322,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       _ <- Resource.liftF(eventually(serviceDiscovery.cacheInteractions.get.map(data =>
         assert(data.headOption.map(_.name).contains(Interactions.ReserveItemsInteraction.name)))))
 
-      server <- StateNodeService.resource(baker, InetSocketAddress.createUnresolved("0.0.0.0", 0))
+      server <- StateNodeService.resource(baker, InetSocketAddress.createUnresolved("127.0.0.1", 0))
       client <- BakerClient.resource(server.baseUri, executionContext)
     } yield Context(
       client,
