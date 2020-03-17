@@ -1,6 +1,9 @@
 package com.ing.baker.baas.smoke
 
-import org.scalatest.Matchers
+import cats.effect.{IO, Resource}
+import com.ing.baker.baas.testing.BakeryFunSpec
+import org.http4s.Uri
+import org.scalatest.{ConfigMap, Matchers}
 import webshop.webservice.OrderStatus
 
 class BakerySmokeTests extends BakeryFunSpec with Matchers {
@@ -60,4 +63,45 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
       } yield succeed
     }
   }
+
+  /** Represents the "sealed resources context" that each test can use. */
+  type TestContext = BakeryEnvironment.Context
+
+  /** Represents external arguments to the test context builder. */
+  type TestArguments = BakeryEnvironment.Arguments
+
+  /** Creates a `Resource` which allocates and liberates the expensive resources each test can use.
+    * For example web servers, network connection, database mocks.
+    *
+    * The objective of this function is to provide "sealed resources context" to each test, that means context
+    * that other tests simply cannot touch.
+    *
+    * @param testArguments arguments built by the `argumentsBuilder` function.
+    * @return the resources each test can use
+    */
+  def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] =
+    BakeryEnvironment.resource(testArguments)
+
+  /** Refines the `ConfigMap` populated with the -Dkey=value arguments coming from the "sbt testOnly" command.
+    *
+    * @param config map populated with the -Dkey=value arguments.
+    * @return the data structure used by the `contextBuilder` function.
+    */
+  def argumentsBuilder(config: ConfigMap): TestArguments = {
+    val clientAppHostname = Uri.unsafeFromString(
+      config.getOptional[String]("client-app").getOrElse("http://localhost:8080"))
+    val stateServiceHostname = Uri.unsafeFromString(
+      config.getOptional[String]("state-service").getOrElse("http://localhost:8081"))
+    val eventListenerHostname = Uri.unsafeFromString(
+      config.getOptional[String]("event-listener").getOrElse("http://localhost:8082"))
+    val bakerEventListenerHostname = Uri.unsafeFromString(
+      config.getOptional[String]("baker-event-listener").getOrElse("http://localhost:8083"))
+    BakeryEnvironment.Arguments(
+      clientAppHostname = clientAppHostname,
+      stateServiceHostname = stateServiceHostname,
+      eventListenerHostname = eventListenerHostname,
+      bakerEventListenerHostname = bakerEventListenerHostname
+    )
+  }
+
 }
