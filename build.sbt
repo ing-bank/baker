@@ -592,6 +592,24 @@ lazy val `baas-smoke-tests` = project.in(file("baas-smoke-tests"))
     `baas-interaction-example-reserve-items`,
     `baas-interaction-example-ship-items`)
 
+val pnmlVersion = "2.2.12"
+val emfVersion = "2.18.0"
+lazy val `pnml-export` = project.in(file("pnml-export"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "fr.lip6.pnml" % "fr.lip6.pnml.framework.utils" % pnmlVersion,
+      "fr.lip6.pnml" % "fr.lip6.pnml.framework.coremodel" % pnmlVersion,
+      "fr.lip6.pnml" % "fr.lip6.pnml.framework.ptnet" % pnmlVersion,
+      "fr.lip6.pnml" % "fr.lip6.pnml.framework.symmetricnet" % pnmlVersion,
+      "fr.lip6.pnml" % "fr.lip6.pnml.framework.hlpn" % pnmlVersion,
+      "fr.lip6.pnml" % "fr.lip6.pnml.framework.pthlpng" % pnmlVersion,
+      "org.eclipse.emf" % "org.eclipse.emf.common" % emfVersion,
+      "org.eclipse.emf" % "org.eclipse.emf.ecore" % emfVersion
+    )
+  )
+  .dependsOn(intermediateLanguage)
+  .dependsOn(bakertypes, runtime, recipeCompiler, recipeDsl)
+
 lazy val `sbt-baas-docker-generate` = project.in(file("sbt-baas-docker-generate"))
   .settings(defaultModuleSettings)
   .settings(
