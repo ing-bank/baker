@@ -94,10 +94,21 @@ object BakeryEnvironment {
 
   private def deleteNamespace(namespace: String): IO[Unit] = {
     val prefix = s"[${Console.CYAN}cleaning env $namespace${Console.RESET}]"
-    exec(
-      prefix = prefix,
-      command = s"kubectl delete namespace $namespace"
-    ).void
+    for {
+      pods <- IO(s"kubectl get pods -n $namespace".!!)
+      services <- IO(s"kubectl get services -n $namespace".!!)
+      deployments <- IO(s"kubectl get deployments -n $namespace".!!)
+      replicasets <- IO(s"kubectl get replicasets -n $namespace".!!)
+      _= assert(!pods.contains("Running"), "There were still running pods while deleting namespace")
+      _= assert(services == "", "Services where still up while deleting namespace")
+      _= assert(deployments == "", "Deployments where still up while deleting namespace")
+      _= assert(replicasets == "", "replica sets where still up while deleting namespace")
+      _ <- exec(
+        prefix = prefix,
+        command = s"kubectl delete namespace $namespace"
+      )
+    } yield Unit
+
   }
 
   case class DefinitionFile(path: String, namespace: Option[String])
