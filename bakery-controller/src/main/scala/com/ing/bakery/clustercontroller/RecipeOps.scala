@@ -8,7 +8,7 @@ import org.http4s.Uri
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.{Container, LabelSelector, ObjectMeta, Pod, PodList, Protocol, Service, ServiceList}
 import skuber.api.client.KubernetesClient
-import skuber.ext.{Deployment, DeploymentList}
+import skuber.ext.{Deployment, DeploymentList, ReplicaSetList}
 import skuber.json.format._
 import skuber.json.ext.format._
 
@@ -159,6 +159,9 @@ object RecipeOps {
             (key, value) = recipeLabel(recipeId)
             _ <- IO.fromFuture {
               IO(k8s.delete[skuber.ext.Deployment](name = baasStateName(recipeId)))
+            }
+            _ <- IO.fromFuture {
+              IO(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(key, value))))
             }
             _ <- IO.fromFuture {
               IO(k8s.deleteAllSelected[PodList](LabelSelector(IsEqualRequirement(key, value))))

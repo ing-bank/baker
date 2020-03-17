@@ -94,11 +94,10 @@ object BakeryEnvironment {
 
   private def deleteNamespace(namespace: String): IO[Unit] = {
     val prefix = s"[${Console.CYAN}cleaning env $namespace${Console.RESET}]"
-//    exec(
-//      prefix = prefix,
-//      command = s"kubectl delete namespace $namespace"
-//    ).void
-    IO.unit
+    exec(
+      prefix = prefix,
+      command = s"kubectl delete namespace $namespace"
+    ).void
   }
 
   case class DefinitionFile(path: String, namespace: Option[String])
@@ -121,12 +120,9 @@ object BakeryEnvironment {
     }
 
     private def deleteFileResource(definitionFile: DefinitionFile)(implicit timer: Timer[IO]): IO[Unit] = {
-
       val kubernetesConfigPath = getPathSafe("/kubernetes")
       val prefix = s"[${Console.CYAN}deleting file ${definitionFile.path} ${definitionFile.namespace}${Console.RESET}]"
-      exec(prefix, command = s"kubectl delete -f $kubernetesConfigPath/${definitionFile.path} ${definitionFile.namespace.fold("")(ns => "-n " + ns)}")
-        .flatMap(_ => IO.sleep(3.second))
-
+      exec(prefix, command = s"kubectl delete -f $kubernetesConfigPath/${definitionFile.path} ${definitionFile.namespace.fold("")(ns => "-n " + ns)}").void
     }
   }
 
