@@ -21,7 +21,7 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
   implicit val timer: Timer[IO] =
     IO.timer(executionContext)
 
-  val isWindows: Boolean = System.getProperty("os.name").toLowerCase.contains("windows")
+  val isWindows: Boolean = sys.props.get("os.name").exists(_.toLowerCase().contains("windows"))
 
   def getPathSafe(resourcePath: String): String = {
     val safePath = getClass.getResource(resourcePath).getPath
