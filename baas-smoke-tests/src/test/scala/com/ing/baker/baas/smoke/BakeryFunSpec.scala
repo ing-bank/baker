@@ -2,7 +2,7 @@ package com.ing.baker.baas.smoke
 
 import java.util.UUID
 
-import cats.effect.{ContextShift, IO, Timer}
+import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
 import org.http4s.Uri
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -25,7 +25,7 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
 
   def getPathSafe(resourcePath: String): String = {
     val safePath = getClass.getResource(resourcePath).getPath
-    if(isWindows)
+    if (isWindows)
       safePath.tail
     else
       safePath
@@ -46,19 +46,19 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
   }
 
   case class TestContext(
-    clientApp: ExampleAppClient,
-    recipeEventListener: EventListenerClient,
-    bakerEventListener: EventListenerClient
-  )
+                          clientApp: ExampleAppClient,
+                          recipeEventListener: EventListenerClient,
+                          bakerEventListener: EventListenerClient
+                        )
 
   case class TestArguments(
-    clientAppHostname: Uri,
-    stateServiceHostname: Uri,
-    eventListenerHostname: Uri,
-    bakerEventListenerHostname:Uri,
-    skipSetup: Boolean,
-    skipCleanup: Boolean
-  )
+                            clientAppHostname: Uri,
+                            stateServiceHostname: Uri,
+                            eventListenerHostname: Uri,
+                            bakerEventListenerHostname: Uri,
+                            skipSetup: Boolean,
+                            skipCleanup: Boolean
+                          )
 
   override type FixtureParam = TestArguments
 
@@ -75,9 +75,9 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
       val skip = test.configMap.getOptional[String]("skip-setup").getOrElse("false")
       skip == "true" || skip == "t" || skip == "1" || skip == "yes"
     }
-    val  skipCleanup= {
-      val  skipCleanup= test.configMap.getOptional[String]("skip-cleanup").getOrElse("false")
-       skipCleanup== "true" ||  skipCleanup== "t" ||  skipCleanup== "1" ||  skipCleanup== "yes"
+    val skipCleanup = {
+      val skipCleanup = test.configMap.getOptional[String]("skip-cleanup").getOrElse("false")
+      skipCleanup == "true" || skipCleanup == "t" || skipCleanup == "1" || skipCleanup == "yes"
     }
     test.apply(TestArguments(
       clientAppHostname = clientAppHostname,
@@ -94,10 +94,10 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
     it(specText, testTags: _*) { args =>
 
       def setup[A](f: IO[A]): IO[Option[A]] =
-        if(args.skipSetup) IO.pure(None) else f.map(Some(_))
+        if (args.skipSetup) IO.pure(None) else f.map(Some(_))
 
       def cleanup[A](f: IO[A]): IO[Unit] =
-        if(args.skipCleanup) IO.unit else f.void
+        if (args.skipCleanup) IO.unit else f.void
 
       def processLogger(prefix: String): ProcessLogger = ProcessLogger(
         line => println(prefix + " " + line),
@@ -109,31 +109,27 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
       val kubernetesAvailable: IO[Boolean] =
         IO("kubectl --help".!(ProcessLogger(_ => ())) == 0)
 
-      def deleteEnvironment(namespaceOpt: Option[String]): IO[Int] = {
-        namespaceOpt match {
-          case Some(namespace) =>
-            val prefix = s"[${Console.CYAN}cleaning env $namespace${Console.RESET}]"
-            exec(
-              prefix = prefix,
-              command = s"kubectl delete -f ${getPathSafe("/kubernetes")} -n $namespace"
-            ) *> exec(
-              prefix = prefix,
-              command = s"kubectl delete namespace $namespace"
-            )
-          case None =>
-            IO(println(Console.YELLOW + "### Skipping cleanup because we skipped startup" + Console.RESET)) *> IO.pure(0)
-        }
+      def deleteEnvironment(namespace: String): IO[Unit] = {
+        val prefix = s"[${Console.CYAN}cleaning env $namespace${Console.RESET}]"
+        exec(
+          prefix = prefix,
+          command = s"kubectl delete -f ${getPathSafe("/kubernetes")} -n $namespace"
+        ) *> exec(
+          prefix = prefix,
+          command = s"kubectl delete namespace $namespace"
+        ).void
       }
+
 
       val createEnvironment: IO[String] = {
         for {
 
-          testUUID <- IO( UUID.randomUUID().toString )
+          testUUID <- IO(UUID.randomUUID().toString)
           kubernetesConfigPath = getPathSafe("/kubernetes")
 
           prefix = s"[${Console.GREEN}creating env $testUUID${Console.RESET}]"
           _ <- exec(prefix, command = s"kubectl create namespace $testUUID")
-          _ = if(args.skipCleanup) {
+          _ = if (args.skipCleanup) {
             println(Console.YELLOW + s"### Will skip cleanup after the test, to manually clean the environment run: " + Console.RESET)
             println(s"\n\tkubectl delete -f $kubernetesConfigPath -n $testUUID && kubectl delete namespace $testUUID\n")
           }
@@ -144,7 +140,34 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
         val kubernetesConfigPath = getPathSafe("/kubernetes")
         val prefix = s"[${Console.GREEN}applying file $name $namespace${Console.RESET}]"
         exec(prefix, command = s"kubectl apply -f $kubernetesConfigPath/$name -n $namespace").void
+
       }
+
+      case class DefinitionFile(path: String,
+                                namespace: Option[String])
+      object DefinitionFile {
+        def resource(path: String, namespace: String): Resource[IO, DefinitionFile] = {
+          Resource.make(applyFileResource(path, Some(namespace)))(deleteFileResource)
+        }
+
+        def resource(path: String): Resource[IO, DefinitionFile] = {
+          Resource.make(applyFileResource(path, None))(deleteFileResource)
+        }
+
+        private def applyFileResource(path: String, namespace: Option[String]): IO[DefinitionFile] = {
+          val kubernetesConfigPath = getPathSafe("/kubernetes")
+          val prefix = s"[${Console.GREEN}applying file $path $namespace${Console.RESET}]"
+          exec(prefix, command = s"kubectl apply -f $kubernetesConfigPath/$path ${namespace.fold("")(ns => "-n " + ns)}")
+            .map(_ => DefinitionFile(path, namespace))
+        }
+
+        private def deleteFileResource(definitionFile: DefinitionFile): IO[Unit] = {
+          val kubernetesConfigPath = getPathSafe("/kubernetes")
+          val prefix = s"[${Console.CYAN}deleting file ${definitionFile.path} ${definitionFile.namespace}${Console.RESET}]"
+          exec(prefix, command = s"kubectl delete -f $kubernetesConfigPath/${definitionFile.path} ${definitionFile.namespace.fold("")(ns => "-n " + ns)}").void
+        }
+      }
+
 
       def getPods(namespaceOpt: Option[String]): IO[Int] =
         namespaceOpt match {
@@ -153,37 +176,48 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
               prefix = s"[${Console.GREEN}pods${Console.RESET}]",
               command = s"kubectl get pods -n $namespace")
           case None =>
-            IO( println(Console.GREEN + "Skipped startup, will run the tests immediately" + Console.RESET)) *> IO.pure(0)
+            IO(println(Console.GREEN + "Skipped startup, will run the tests immediately" + Console.RESET)) *> IO.pure(0)
         }
 
 
       val setupWaitTime = 1.minute
       val setupWaitSplit = 60
 
+      val masterResource = for {
+        namespace <- Resource.make(createEnvironment)(deleteEnvironment)
+        _ <- DefinitionFile.resource("crd-recipe.yaml")
+        client <- BlazeClientBuilder[IO](executionContext).resource
+      } yield client
+
+
       def dontSkipTest: IO[Assertion] =
+
         for {
           namespace <- setup(createEnvironment)
           outcome <- BlazeClientBuilder[IO](executionContext).resource.use { client =>
             val exampleAppClient = new ExampleAppClient(client, args.clientAppHostname)
             val recipeEventsClient = new EventListenerClient(client, args.eventListenerHostname)
             val bakerEventsClient = new EventListenerClient(client, args.bakerEventListenerHostname)
+
             for {
-              _ <- setup(applyFile("example-interactions.yaml", namespace.getOrElse("default")))
-              _ <- setup(applyFile("example-listeners.yaml", namespace.getOrElse("default")))
+              _ <- IO(println(Console.GREEN + s"\nSetting up Bakery environment" + Console.RESET))
               _ <- setup(applyFile("crd-recipe.yaml", namespace.getOrElse("default")))
               _ <- setup(applyFile("bakery-controller.yaml", namespace.getOrElse("default")))
-
               _ <- IO.sleep(3.second)
+
+              _ <- IO(println(Console.GREEN + s"\nAdding custom resources: interactions, listeners, recipe" + Console.RESET))
+              _ <- setup(applyFile("example-interactions.yaml", namespace.getOrElse("default")))
+              _ <- setup(applyFile("example-listeners.yaml", namespace.getOrElse("default")))
               _ <- setup(applyFile("recipe-webshop.yaml", namespace.getOrElse("default")))
 
               _ <- within(setupWaitTime, setupWaitSplit)(for {
-                _ <- IO ( println(Console.GREEN + s"\nWaiting for bakery cluster (5s)..." + Console.RESET) )
+                _ <- IO(println(Console.GREEN + s"\nWaiting for bakery cluster (5s)..." + Console.RESET))
                 _ <- getPods(namespace)
                 status <- client.statusFromUri(args.stateServiceHostname / "api" / "v3" / "getAllRecipes")
               } yield assert(status.code == 200))
               _ <- setup(applyFile("example-client-app.yaml", namespace.getOrElse("default")))
               _ <- within(setupWaitTime, setupWaitSplit)(for {
-                _ <- IO ( println(Console.GREEN + s"\nWaiting for client app (5s)..." + Console.RESET) )
+                _ <- IO(println(Console.GREEN + s"\nWaiting for client app (5s)..." + Console.RESET))
                 _ <- getPods(namespace)
                 status <- exampleAppClient.ping
               } yield assert(status.code == 200))
