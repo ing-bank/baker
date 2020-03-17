@@ -21,7 +21,6 @@ object Main extends IOApp {
     // Config
     val config = ConfigFactory.load()
     val httpServerPort = config.getInt("baas-component.http-api-port")
-    val namespace = config.getString("baas-component.kubernetes-namespace")
 
     // Core dependencies
     implicit val system: ActorSystem =

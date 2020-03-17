@@ -5,10 +5,9 @@ import cats.data.Kleisli
 import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.baas.scaladsl.BakerClient
 import org.http4s.Uri
-import skuber.{Container, Pod, Protocol}
+import skuber.{Container, ObjectMeta, Pod, Protocol, Service}
 import skuber.api.client.KubernetesClient
 import skuber.ext.Deployment
-import skuber.Service
 import skuber.json.format._
 import skuber.json.ext.format._
 
@@ -39,11 +38,15 @@ object RecipeOps {
 
       val stateNodeLabel: (String, String) = "app" -> "baas-state"
 
+      def recipeLabel(recipeId: String): (String, String) = "recipe" -> recipeId
+
+      def akkaClusterLabel(selector: String): (String, String) = "akka-cluster" -> selector
+
       val namespace: String = "default"
 
-      val baasStateName: String = "baas-state"
+      def baasStateName(recipeId: String): String = "baas-state-" + recipeId
 
-      val baasStateServiceName: String = "baas-state-service"
+      def baasStateServiceName(recipeId: String): String = "baas-state-service-" + recipeId
 
       val baasStateServicePort: Int = 8081
 
@@ -72,7 +75,7 @@ object RecipeOps {
           for {
             compiledRecipe <- resource.decodeRecipe
             recipeId = compiledRecipe.recipeId
-            deployment <- IO.fromFuture {
+            _ <- IO.fromFuture {
 
               val managementPort = Container.Port(
                 name = "management",
@@ -81,7 +84,7 @@ object RecipeOps {
               )
 
               val stateNodeContainer = Container(
-                name = baasStateName,
+                name = baasStateName(recipeId),
                 image = "baas-node-state:" + resource.spec.bakeryVersion
               )
                 .exposePort(Container.Port(
@@ -107,14 +110,19 @@ object RecipeOps {
                     path = "/health/alive"
                   )
                 ))
-                .setEnvVar("NAMESPACE", namespace)
+                .setEnvVar("STATE_CLUSTER_SELECTOR", recipeId)
 
               val podTemplate = Pod.Template.Spec
-                .named(baasStateName)
+                .named(baasStateName(recipeId))
                 .addContainer(stateNodeContainer)
                 .addLabel(stateNodeLabel)
+                .addLabel(recipeLabel(recipeId))
+                .addLabel(akkaClusterLabel(recipeId))
 
-              val deployment = Deployment(baasStateName)
+              val deployment = new Deployment(metadata = ObjectMeta(
+                name = baasStateName(recipeId),
+                labels = Map(stateNodeLabel, recipeLabel(recipeId))
+              ))
                 .withReplicas(resource.spec.replicas)
                 .withTemplate(podTemplate)
 
@@ -122,10 +130,11 @@ object RecipeOps {
             }
 
             service <- IO.fromFuture {
-              val service = Service(baasStateServiceName)
+              val service = Service(baasStateServiceName(recipeId))
                 .withLoadBalancerType
                 .addLabel("baas-component", "state")
                 .addLabel("app", "baas-state-service")
+                .addLabel(recipeLabel(recipeId))
                 .withSelector(stateNodeLabel)
                 .setPort(Service.Port(
                   name = "http-api",
@@ -135,23 +144,17 @@ object RecipeOps {
               IO(k8s.create(service))
             }
 
-            recipes <- BakerClient.resource(Uri.unsafeFromString(s"http://${service.metadata.name}:${baasStateServicePort}"), scala.concurrent.ExecutionContext.global).use { client => // TODO parametrise a pool for connections
-              for {
-                _ <- eventually(IO.fromFuture(IO(client.addRecipe(compiledRecipe))))
-                recipes <- IO.fromFuture(IO(client.getAllRecipes))
-              } yield recipes
+            _ <- BakerClient.resource(Uri.unsafeFromString(s"http://${service.metadata.name}:$baasStateServicePort"), scala.concurrent.ExecutionContext.global).use { client => // TODO parametrise a pool for connections
+              eventually(IO.fromFuture(IO(client.addRecipe(compiledRecipe))))
             }
-
-            // Create state node
-            // Create client
-            // Ping server
-            // Add recipe
           } yield ()
         }
 
       def terminateBakeryCluster: RecipeK8sOperation[Unit] =
         context { (resource, k8s) =>
-          IO.unit
+          for {
+            _ <- IO.unit
+          } yield ()
         }
 
       def upgradeBakeryCluster: RecipeK8sOperation[Unit] =
