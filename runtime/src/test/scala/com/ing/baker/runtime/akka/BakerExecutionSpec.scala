@@ -444,7 +444,7 @@ class BakerExecutionSpec extends BakerRuntimeTestBase {
 
     "backwards compatibility in serialization of case class ingredients, THIS TEST IS BROKEN FIX ME!" ignore {
 
-      val isWindows: Boolean = System.getProperty("os.name").toLowerCase.contains("windows")
+      val isWindows: Boolean = sys.props.get("os.name").exists(_.toLowerCase().contains("windows"))
 
       // This tests are broken on windows, requires some investigation
       // Still broken, cause unknown, might be that we stopped being backwards compatible or data got corrupted
