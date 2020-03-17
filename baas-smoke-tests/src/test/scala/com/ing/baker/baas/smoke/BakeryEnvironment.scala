@@ -40,6 +40,7 @@ object BakeryEnvironment {
     _ <- DefinitionFile.resource("example-interactions.yaml", namespace)
     _ <- DefinitionFile.resource("example-listeners.yaml", namespace)
     _ <- DefinitionFile.resource("recipe-webshop.yaml", namespace)
+    _ <- DefinitionFile.resource("recipe-reservation.yaml", namespace)
 
     client <- BlazeClientBuilder[IO](connectionPool).resource
     _ <- Resource.liftF(awaitForStateNodes(client, namespace, args))
@@ -93,21 +94,22 @@ object BakeryEnvironment {
 
   private def deleteNamespace(namespace: String): IO[Unit] = {
     val prefix = s"[${Console.CYAN}cleaning env $namespace${Console.RESET}]"
-    exec(
-      prefix = prefix,
-      command = s"kubectl delete namespace $namespace"
-    ).void
+//    exec(
+//      prefix = prefix,
+//      command = s"kubectl delete namespace $namespace"
+//    ).void
+    IO.unit
   }
 
   case class DefinitionFile(path: String, namespace: Option[String])
 
   object DefinitionFile {
 
-    def resource(path: String, namespace: String): Resource[IO, DefinitionFile] = {
+    def resource(path: String, namespace: String)(implicit timer: Timer[IO]): Resource[IO, DefinitionFile] = {
       Resource.make(applyFileResource(path, Some(namespace)))(deleteFileResource)
     }
 
-    def resource(path: String): Resource[IO, DefinitionFile] = {
+    def resource(path: String)(implicit timer: Timer[IO]): Resource[IO, DefinitionFile] = {
       Resource.make(applyFileResource(path, None))(deleteFileResource)
     }
 
@@ -118,10 +120,13 @@ object BakeryEnvironment {
         .map(_ => DefinitionFile(path, namespace))
     }
 
-    private def deleteFileResource(definitionFile: DefinitionFile): IO[Unit] = {
+    private def deleteFileResource(definitionFile: DefinitionFile)(implicit timer: Timer[IO]): IO[Unit] = {
+
       val kubernetesConfigPath = getPathSafe("/kubernetes")
       val prefix = s"[${Console.CYAN}deleting file ${definitionFile.path} ${definitionFile.namespace}${Console.RESET}]"
-      exec(prefix, command = s"kubectl delete -f $kubernetesConfigPath/${definitionFile.path} ${definitionFile.namespace.fold("")(ns => "-n " + ns)}").void
+      exec(prefix, command = s"kubectl delete -f $kubernetesConfigPath/${definitionFile.path} ${definitionFile.namespace.fold("")(ns => "-n " + ns)}")
+        .flatMap(_ => IO.sleep(3.second))
+
     }
   }
 

@@ -5,9 +5,10 @@ import cats.data.Kleisli
 import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.baas.scaladsl.BakerClient
 import org.http4s.Uri
-import skuber.{Container, ObjectMeta, Pod, Protocol, Service}
+import skuber.LabelSelector.IsEqualRequirement
+import skuber.{Container, LabelSelector, ObjectMeta, Pod, PodList, Protocol, Service, ServiceList}
 import skuber.api.client.KubernetesClient
-import skuber.ext.Deployment
+import skuber.ext.{Deployment, DeploymentList}
 import skuber.json.format._
 import skuber.json.ext.format._
 
@@ -153,7 +154,18 @@ object RecipeOps {
       def terminateBakeryCluster: RecipeK8sOperation[Unit] =
         context { (resource, k8s) =>
           for {
-            _ <- IO.unit
+            compiledRecipe <- resource.decodeRecipe
+            recipeId = compiledRecipe.recipeId
+            (key, value) = recipeLabel(recipeId)
+            _ <- IO.fromFuture {
+              IO(k8s.delete[skuber.ext.Deployment](name = baasStateName(recipeId)))
+            }
+            _ <- IO.fromFuture {
+              IO(k8s.deleteAllSelected[PodList](LabelSelector(IsEqualRequirement(key, value))))
+            }
+            _ <- IO.fromFuture {
+              IO(k8s.delete[skuber.Service](name = baasStateServiceName(recipeId)))
+            }
           } yield ()
         }
 
