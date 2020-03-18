@@ -19,8 +19,8 @@ object Main extends IOApp {
     val k8s: KubernetesClient = skuber.k8sInit
 
     (for {
-      _ <- RecipeController.resource(k8s)
       _ <- BakeryControllerService.resource(InetSocketAddress.createUnresolved("0.0.0.0", 8080))
+      _ <- RecipeController.resource(k8s)
     } yield ()).use(_ => IO.never).as(ExitCode.Success)
   }
 }

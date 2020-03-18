@@ -16,6 +16,7 @@ object RecipeController extends LazyLogging {
 
     def handleEvent(event: K8SWatchEvent[RecipeResource]): IO[Unit] = {
       val ops = new RecipeOps(event._object, k8s)
+      println(Console.YELLOW + event._type + " " + event._object.metadata.name + Console.RESET)
       event._type match {
         case EventType.ADDED => ops.createBakeryCluster
         case EventType.DELETED => ops.terminateBakeryCluster

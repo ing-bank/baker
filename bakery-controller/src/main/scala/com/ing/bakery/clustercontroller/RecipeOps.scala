@@ -120,7 +120,7 @@ object RecipeOps {
 final class RecipeOps(resource: RecipeResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
 
   def createBakeryCluster: IO[Unit] = {
-    for {
+    (for {
       compiledRecipe <- resource.decodeRecipe
       recipeId = compiledRecipe.recipeId
       _ = logger.info(s"Creating baker cluster for recipe '$recipeId'")
@@ -129,11 +129,14 @@ final class RecipeOps(resource: RecipeResource, k8s: KubernetesClient)(implicit 
       stateAccessUri = Uri.unsafeFromString(s"http://${service.metadata.name}:$baasStateServicePort")
       _ <- BakerClient.resource(stateAccessUri, connectionPool).use(client =>
         within(30.seconds, split = 30)(io(client.addRecipe(compiledRecipe))))
-    } yield ()
+    } yield ()).attempt.flatMap {
+      case Left(e) => IO(println(Console.RED + e.getMessage + Console.RESET))
+      case _ => IO.unit
+    }
   }
 
   def terminateBakeryCluster: IO[Unit] =
-    for {
+    (for {
       compiledRecipe <- resource.decodeRecipe
       recipeId = compiledRecipe.recipeId
       _ = logger.info(s"Updating baker cluster for recipe '$recipeId'")
@@ -142,13 +145,19 @@ final class RecipeOps(resource: RecipeResource, k8s: KubernetesClient)(implicit 
       _ <- io(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(key, value))))
       _ <- io(k8s.deleteAllSelected[PodList](LabelSelector(IsEqualRequirement(key, value))))
       _ <- io(k8s.delete[skuber.Service](name = baasStateServiceName(recipeId)))
-    } yield ()
+    } yield ()).attempt.flatMap {
+      case Left(e) => IO(println(Console.RED + e.getMessage + Console.RESET))
+      case _ => IO.unit
+    }
 
   def upgradeBakeryCluster: IO[Unit] =
-    for {
+    (for {
       compiledRecipe <- resource.decodeRecipe
       recipeId = compiledRecipe.recipeId
       _ = logger.info(s"Deleting baker cluster for recipe '$recipeId'")
       _ <- io(k8s.update[skuber.ext.Deployment] (deployment(recipeId, resource.spec.bakeryVersion, resource.spec.replicas)))
-    } yield ()
+    } yield ()).attempt.flatMap {
+      case Left(e) => IO(println(Console.RED + e.getMessage + Console.RESET))
+      case _ => IO.unit
+    }
 }
