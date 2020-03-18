@@ -1,16 +1,16 @@
 package com.ing.bakery.clustercontroller
 
-import cats.syntax.apply._
 import cats.data.Kleisli
 import cats.effect.{ContextShift, IO, Timer}
+import cats.syntax.apply._
 import com.ing.baker.baas.scaladsl.BakerClient
 import org.http4s.Uri
 import skuber.LabelSelector.IsEqualRequirement
-import skuber.{Container, LabelSelector, ObjectMeta, Pod, PodList, Protocol, Service, ServiceList}
 import skuber.api.client.KubernetesClient
-import skuber.ext.{Deployment, DeploymentList, ReplicaSetList}
-import skuber.json.format._
+import skuber.ext.{Deployment, ReplicaSetList}
 import skuber.json.ext.format._
+import skuber.json.format._
+import skuber.{Container, LabelSelector, ObjectMeta, Pod, PodList, Protocol, Service}
 
 import scala.concurrent.duration._
 
@@ -26,6 +26,7 @@ trait RecipeOps[F[_]] {
 }
 
 object RecipeOps {
+
 
   type RecipeK8sOperation[A] = Kleisli[IO, (RecipeResource, KubernetesClient), A]
 
@@ -77,74 +78,13 @@ object RecipeOps {
             compiledRecipe <- resource.decodeRecipe
             recipeId = compiledRecipe.recipeId
             _ <- IO.fromFuture {
-
-              val managementPort = Container.Port(
-                name = "management",
-                containerPort = 8558,
-                protocol = Protocol.TCP
-              )
-
-              val stateNodeContainer = Container(
-                name = baasStateName(recipeId),
-                image = "baas-node-state:" + resource.spec.bakeryVersion
-              )
-                .exposePort(Container.Port(
-                  name = "remoting",
-                  containerPort = 2552,
-                  protocol = Protocol.TCP
-                ))
-                .exposePort(managementPort)
-                .exposePort(Container.Port(
-                  name = "http-api",
-                  containerPort = 8080,
-                  protocol = Protocol.TCP
-                ))
-                .withReadinessProbe(skuber.Probe(
-                  action = skuber.HTTPGetAction(
-                    port = Right(managementPort.name),
-                    path = "/health/ready"
-                  )
-                ))
-                .withLivenessProbe(skuber.Probe(
-                  action = skuber.HTTPGetAction(
-                    port = Right(managementPort.name),
-                    path = "/health/alive"
-                  )
-                ))
-                .setEnvVar("STATE_CLUSTER_SELECTOR", recipeId)
-
-              val podTemplate = Pod.Template.Spec
-                .named(baasStateName(recipeId))
-                .addContainer(stateNodeContainer)
-                .addLabel(stateNodeLabel)
-                .addLabel(recipeLabel(recipeId))
-                .addLabel(akkaClusterLabel(recipeId))
-
-              val deployment = new Deployment(metadata = ObjectMeta(
-                name = baasStateName(recipeId),
-                labels = Map(stateNodeLabel, recipeLabel(recipeId))
-              ))
-                .withReplicas(resource.spec.replicas)
-                .withTemplate(podTemplate)
-
-              IO(k8s.create(deployment))
+              IO(k8s.create(deployment(recipeId, resource.spec.bakeryVersion, resource.spec.replicas)))
             }
-
             service <- IO.fromFuture {
-              val service = Service(baasStateServiceName(recipeId))
-                .withLoadBalancerType
-                .addLabel("baas-component", "state")
-                .addLabel("app", "baas-state-service")
-                .addLabel(recipeLabel(recipeId))
-                .withSelector(stateNodeLabel)
-                .setPort(Service.Port(
-                  name = "http-api",
-                  port = baasStateServicePort,
-                  targetPort = Some(Right("http-api"))
-                ))
-              IO(k8s.create(service))
+              IO(k8s.create(service(recipeId)))
             }
-
+            //Send the Recipe to the created cluster
+            //This is done eventually instead of waiting on the node to be up
             _ <- BakerClient.resource(Uri.unsafeFromString(s"http://${service.metadata.name}:$baasStateServicePort"), scala.concurrent.ExecutionContext.global).use { client => // TODO parametrise a pool for connections
               eventually(IO.fromFuture(IO(client.addRecipe(compiledRecipe))))
             }
@@ -174,7 +114,78 @@ object RecipeOps {
 
       def upgradeBakeryCluster: RecipeK8sOperation[Unit] =
         context { (resource, k8s) =>
-          IO.unit
+          for {
+            compiledRecipe <- resource.decodeRecipe
+            recipeId = compiledRecipe.recipeId
+            _ <- IO.fromFuture {
+              IO(k8s.update[skuber.ext.Deployment] (deployment(recipeId, resource.spec.bakeryVersion, resource.spec.replicas)))
+            }
+          } yield ()
         }
+
+      def deployment(recipeId: String, bakeryVersion: String, replicas: Int): Deployment = {
+        val managementPort = Container.Port(
+          name = "management",
+          containerPort = 8558,
+          protocol = Protocol.TCP
+        )
+
+        val stateNodeContainer = Container(
+          name = baasStateName(recipeId),
+          image = "baas-node-state:" + bakeryVersion
+        )
+          .exposePort(Container.Port(
+            name = "remoting",
+            containerPort = 2552,
+            protocol = Protocol.TCP
+          ))
+          .exposePort(managementPort)
+          .exposePort(Container.Port(
+            name = "http-api",
+            containerPort = 8080,
+            protocol = Protocol.TCP
+          ))
+          .withReadinessProbe(skuber.Probe(
+            action = skuber.HTTPGetAction(
+              port = Right(managementPort.name),
+              path = "/health/ready"
+            )
+          ))
+          .withLivenessProbe(skuber.Probe(
+            action = skuber.HTTPGetAction(
+              port = Right(managementPort.name),
+              path = "/health/alive"
+            )
+          ))
+          .setEnvVar("STATE_CLUSTER_SELECTOR", recipeId)
+
+        val podTemplate = Pod.Template.Spec
+          .named(baasStateName(recipeId))
+          .addContainer(stateNodeContainer)
+          .addLabel(stateNodeLabel)
+          .addLabel(recipeLabel(recipeId))
+          .addLabel(akkaClusterLabel(recipeId))
+
+        new Deployment(metadata = ObjectMeta(
+          name = baasStateName(recipeId),
+          labels = Map(stateNodeLabel, recipeLabel(recipeId))
+        ))
+          .withReplicas(replicas)
+          .withTemplate(podTemplate)
+      }
+
+      def service(recipeId: String) = {
+        Service(baasStateServiceName(recipeId))
+          .withLoadBalancerType
+          .addLabel("baas-component", "state")
+          .addLabel("app", "baas-state-service")
+          .addLabel(recipeLabel(recipeId))
+          .withSelector(stateNodeLabel)
+          .setPort(Service.Port(
+            name = "http-api",
+            port = baasStateServicePort,
+            targetPort = Some(Right("http-api"))
+          ))
+      }
     }
 }
