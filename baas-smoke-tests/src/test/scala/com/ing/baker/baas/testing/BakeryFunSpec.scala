@@ -5,6 +5,7 @@ import cats.syntax.apply._
 import org.scalactic.source
 import org.scalatest.compatible.Assertion
 import org.scalatest.{ConfigMap, FutureOutcome, Tag, fixture}
+import com.ing.baker.baas.smoke.printGreen
 
 import scala.concurrent.duration._
 
@@ -48,7 +49,10 @@ abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
 
   /** Tries every second f until it succeeds or until 20 attempts have been made. */
   def eventually[A](f: IO[A]): IO[A] =
-    within(20.seconds, 20)(f)
+    within(1.minute, 20)(f)
+
+  def eventually[A](message: String)(f: IO[A]): IO[A] =
+    eventually(f).flatMap(a => printGreen(message) *> IO.pure(a))
 
   /** Retries the argument f until it succeeds or time/split attempts have been made,
     * there exists a delay of time for each retry.

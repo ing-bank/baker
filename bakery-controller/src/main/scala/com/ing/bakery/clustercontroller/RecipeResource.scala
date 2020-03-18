@@ -29,11 +29,11 @@ case class RecipeResource(
 
 object RecipeResource {
 
-  def apply(recipe: CompiledRecipe, replicas: Int): RecipeResource = {
+  def apply(recipe: CompiledRecipe, replicas: Int, bakeryVersion: String): RecipeResource = {
     val protoRecipe: Array[Byte] = ProtoMap.ctxToProto(recipe).toByteArray
     val encode64 = Base64.encodeBase64(protoRecipe)
     RecipeResource( spec = Spec(
-      bakeryVersion = "3.0.2-SNAPSHOT", // TODO parametrize this and get the default version from the current sbt version
+      bakeryVersion = bakeryVersion,
       replicas = replicas,
       recipe = new String(encode64)))
   }

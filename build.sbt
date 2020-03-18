@@ -287,6 +287,7 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
     libraryDependencies ++= Seq(
       slf4jApi,
       slf4jSimple,
+      logback,
       akkaPersistenceCassandra,
       akkaManagementHttp,
       akkaClusterBoostrap,
@@ -385,6 +386,7 @@ lazy val `bakery-controller` = project.in(file("bakery-controller"))
     libraryDependencies ++= Seq(
       slf4jApi,
       slf4jSimple,
+      logback,
       scalaLogging,
       skuber,
       http4s,

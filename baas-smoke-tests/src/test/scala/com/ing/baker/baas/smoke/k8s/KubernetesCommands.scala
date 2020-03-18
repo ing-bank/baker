@@ -1,9 +1,8 @@
 package com.ing.baker.baas.smoke.k8s
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import com.ing.baker.baas.smoke.{ printGreen, within }
+import com.ing.baker.baas.smoke.printGreen
 
-import scala.concurrent.duration._
 import scala.sys.process._
 
 object KubernetesCommands {
@@ -23,6 +22,6 @@ object KubernetesCommands {
       _ <- Resource.liftF(printGreen(s"\nCreating Bakery cluster environment."))
       _ <- DefinitionFile.resource("crd-recipe.yaml")
       _ <- DefinitionFile.resource("bakery-controller.yaml", namespace)
-      _ <- Resource.liftF(within(30.seconds, split = 10)(Pod("bakery-controller", namespace).ready))
+      _ <- Resource.liftF(Pod.awaitForAllPods(namespace))
     } yield namespace
 }

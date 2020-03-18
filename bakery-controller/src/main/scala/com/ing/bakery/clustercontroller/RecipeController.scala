@@ -15,10 +15,11 @@ object RecipeController extends LazyLogging {
     val paralellism = math.max(2, Runtime.getRuntime.availableProcessors())
 
     def handleEvent(event: K8SWatchEvent[RecipeResource]): IO[Unit] = {
+      val ops = new RecipeOps(event._object, k8s)
       event._type match {
-        case EventType.ADDED => RecipeOps.k8s.createBakeryCluster.run(event._object, k8s)
-        case EventType.DELETED => RecipeOps.k8s.terminateBakeryCluster.run(event._object, k8s)
-        case EventType.MODIFIED => RecipeOps.k8s.upgradeBakeryCluster.run(event._object, k8s)
+        case EventType.ADDED => ops.createBakeryCluster
+        case EventType.DELETED => ops.terminateBakeryCluster
+        case EventType.MODIFIED => ops.upgradeBakeryCluster
         case EventType.ERROR => IO(logger.error(s"Event type ERROR on Recipe CRD watch for recipe ${event._object}"))
       }
     }

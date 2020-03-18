@@ -13,22 +13,33 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
     test("runs a happy path flow") { context =>
       for {
         orderId <- context.clientApp.createCheckoutOrder(List("item1", "item2"))
-        _ <- eventually(context.clientApp.pollOrderStatus(orderId)
-          .map(status => status shouldBe OrderStatus.InfoPending(List("ShippingAddress", "PaymentInformation")).toString))
-        _ <- printGreen(s"Order created: $orderId")
+
+        _ <- eventually(s"Order created: $orderId") {
+          context.clientApp.pollOrderStatus(orderId)
+            .map(status => status shouldBe OrderStatus.InfoPending(List("ShippingAddress", "PaymentInformation")).toString)
+        }
+
         _ <- context.clientApp.addCheckoutAddressInfo(orderId, "address")
         _ <- printGreen(s"Address information added")
-        _ <- eventually(context.clientApp.pollOrderStatus(orderId)
-          .map(status => status shouldBe OrderStatus.InfoPending(List("PaymentInformation")).toString))
-        _ <- printGreen(s"Address processed")
+
+        _ <- eventually(s"Address processed") {
+          context.clientApp.pollOrderStatus(orderId)
+            .map(status => status shouldBe OrderStatus.InfoPending(List("PaymentInformation")).toString)
+        }
+
         _ <- context.clientApp.addCheckoutPaymentInfo(orderId, "payment-info")
         _ <- printGreen(s"Payment information added")
-        _ <- eventually(context.clientApp.pollOrderStatus(orderId)
-          .map(status => status shouldBe OrderStatus.ProcessingPayment.toString))
-        _ <- printGreen(s"Payment received")
-        _ <- eventually(context.clientApp.pollOrderStatus(orderId)
-          .map(status => status shouldBe OrderStatus.Complete.toString))
-        _ <- printGreen(s"Order completed")
+
+        _ <- eventually(s"Payment received") {
+          context.clientApp.pollOrderStatus(orderId)
+            .map(status => status shouldBe OrderStatus.ProcessingPayment.toString)
+        }
+
+        _ <- eventually(s"Order completed") {
+          context.clientApp.pollOrderStatus(orderId)
+            .map(status => status shouldBe OrderStatus.Complete.toString)
+        }
+
         recipeEvents <- context.recipeEventListener.events
         bakerEvents <- context.bakerEventListener.events
         _ = recipeEvents.foreach { event =>
