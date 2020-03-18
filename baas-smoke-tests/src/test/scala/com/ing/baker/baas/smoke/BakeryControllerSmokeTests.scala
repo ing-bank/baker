@@ -10,6 +10,9 @@ import scala.sys.process._
 
 class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
 
+  val webshopRecipeId = "9a2f8c2880ea8fc0"
+  val reservationRecipeId = "79c890866238cf4b"
+
   describe("The Bakery Controller") {
 
     test("Creates, updates and deletes multiple independent recipes") { context =>
@@ -21,12 +24,21 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
         _ <- eventually("All resources were created") {
           for {
             _ <- Pod.printPodsStatuses(namespace)
-            webshopPodsCount <- Pod.countPodsWithLabel("recipe" -> "79c890866238cf4b", namespace)
-            reservationPodsCount <- Pod.countPodsWithLabel("recipe" -> "9a2f8c2880ea8fc0", namespace)
+            webshopPodsCount <- Pod.countPodsWithLabel("recipe" -> webshopRecipeId, namespace)
+            reservationPodsCount <- Pod.countPodsWithLabel("recipe" -> reservationRecipeId, namespace)
             _ = webshopPodsCount shouldBe 2
             _ = reservationPodsCount shouldBe 2
             _ <- Pod.allPodsAreReady(namespace)
           } yield()
+        }
+
+        _ <- DefinitionFile("recipe-webshop-update.yaml", namespace)
+        _ <- eventually("Webshop should upscale to 3 replicas") {
+          for {
+            _ <- Pod.printPodsStatuses(namespace)
+            webshopPodsCount <- Pod.countPodsWithLabel("recipe" -> webshopRecipeId, namespace)
+            _ = webshopPodsCount shouldBe 3
+          } yield ()
         }
 
         _ <- webshop.delete
@@ -35,11 +47,13 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
         _ <- eventually("All resources were cleaned") {
           for {
             _ <- Pod.printPodsStatuses(namespace)
-            pods <- IO(s"kubectl get pods -n $namespace".!!)
+            webshopPodsCount <- Pod.countPodsWithLabel("recipe" -> webshopRecipeId, namespace)
+            reservationPodsCount <- Pod.countPodsWithLabel("recipe" -> reservationRecipeId, namespace)
+            _ = webshopPodsCount shouldBe 0
+            _ = reservationPodsCount shouldBe 0
             services <- IO(s"kubectl get services -n $namespace".!!)
             deployments <- IO(s"kubectl get deployments -n $namespace".!!)
             replicasets <- IO(s"kubectl get replicasets -n $namespace".!!)
-            _ = assert(!pods.contains("Running"), "There were still running pods while deleting namespace")
             _ = assert(services == "", "Services where still up while deleting namespace")
             _ = assert(deployments == "", "Deployments where still up while deleting namespace")
             _ = assert(replicasets == "", "Replica sets where still up while deleting namespace")
