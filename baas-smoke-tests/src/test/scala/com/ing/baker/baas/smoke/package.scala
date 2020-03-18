@@ -1,16 +1,44 @@
 package com.ing.baker.baas
 
-import cats.effect.IO
+import cats.effect.{IO, Timer}
+import cats.syntax.apply._
 
-import scala.sys.process.{ProcessLogger, stderr}
+import scala.concurrent.duration.FiniteDuration
 
 package object smoke {
-  def exec(prefix: String, command: String): IO[Int] = {
 
-    def processLogger(prefix: String): ProcessLogger = ProcessLogger(
-      line => println(prefix + " " + line),
-      err => stderr.println(Console.RED + err + Console.RESET))
+  def printColor(message: AnyRef, color: String): IO[Unit] =
+    IO(println(color + message.toString + Console.RESET))
 
-    IO(command.!(processLogger(prefix)))
+  def printGreen(message: AnyRef): IO[Unit] =
+    printColor(message, Console.GREEN)
+
+  def printCyan(message: AnyRef): IO[Unit] =
+    printColor(message, Console.CYAN)
+
+  def printRed(message: AnyRef): IO[Unit] =
+    printColor(message, Console.RED)
+
+  def prefix(message: AnyRef, color: String): String =
+    "[" + color + message + Console.RESET + "]"
+
+  def prefixGreen(message: AnyRef): String =
+    prefix(message, Console.GREEN)
+
+  def prefixCyan(message: AnyRef): String =
+    prefix(message, Console.CYAN)
+
+  def prefixRed(message: AnyRef): String =
+    prefix(message, Console.RED)
+
+  def within[A](time: FiniteDuration, split: Int)(f: IO[A])(implicit timer: Timer[IO]): IO[A] = {
+    def inner(count: Int, times: FiniteDuration): IO[A] = {
+      if (count < 1) f else f.attempt.flatMap {
+        case Left(_) => IO.sleep(times) *> inner(count - 1, times)
+        case Right(a) => IO(a)
+      }
+    }
+
+    inner(split, time / split)
   }
 }

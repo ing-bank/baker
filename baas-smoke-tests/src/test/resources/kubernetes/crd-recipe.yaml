@@ -24,11 +24,11 @@ spec:
               type: string
             replicas:
               type: integer
+              minimum: 2
             recipe:
               type: string
           required:
             - bakeryVersion
-            - replicas
             - recipe
   # either Namespaced or Cluster
   scope: Namespaced

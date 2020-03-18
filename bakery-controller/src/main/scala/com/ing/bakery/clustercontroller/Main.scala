@@ -1,5 +1,7 @@
 package com.ing.bakery.clustercontroller
 
+import java.net.InetSocketAddress
+
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{ExitCode, IO, IOApp}
@@ -16,7 +18,9 @@ object Main extends IOApp {
       ActorMaterializer()
     val k8s: KubernetesClient = skuber.k8sInit
 
-    RecipeController.resource(k8s)
-      .use(_ => IO.never).as(ExitCode.Success)
+    (for {
+      _ <- RecipeController.resource(k8s)
+      _ <- BakeryControllerService.resource(InetSocketAddress.createUnresolved("0.0.0.0", 8080))
+    } yield ()).use(_ => IO.never).as(ExitCode.Success)
   }
 }
