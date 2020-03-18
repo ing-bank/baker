@@ -7,11 +7,13 @@ import com.ing.baker.baas.smoke.{ prefixGreen, prefixCyan }
 
 case class DefinitionFile(path: String, namespace: Option[Namespace]) {
 
+  private val ns: String = namespace.fold("")(ns => "-n " + ns)
+
   def delete(implicit timer: Timer[IO]): IO[Unit] = {
     val kubernetesConfigPath = DefinitionFile.getPathSafe("/kubernetes")
     exec(
-      prefix = prefixCyan(s"deleting file $path $namespace"),
-      command = s"kubectl delete -f $kubernetesConfigPath/$path ${namespace.fold("")(ns => "-n " + ns)}"
+      prefix = prefixCyan(s"deleting file $path $ns"),
+      command = s"kubectl delete -f $kubernetesConfigPath/$path $ns"
     ).void
   }
 }
