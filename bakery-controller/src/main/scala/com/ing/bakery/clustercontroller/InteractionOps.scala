@@ -28,23 +28,19 @@ object InteractionOps {
 
   def deployment(name: String, image: String, replicas: Int): Deployment = {
 
+    val healthProbe = skuber.Probe(
+      action = skuber.HTTPGetAction(
+        port = Right(httpAPIPort.name),
+        path = "/api/v3/health"
+      )
+    )
+
     val interactionContainer = Container(
       name = name,
       image = image)
-
       .exposePort(httpAPIPort)
-      .withReadinessProbe(skuber.Probe(
-        action = skuber.HTTPGetAction(
-          port = Right(httpAPIPort.name),
-          path = "/api/v3/health"
-        )
-      ))
-      .withLivenessProbe(skuber.Probe(
-        action = skuber.HTTPGetAction(
-          port = Right(httpAPIPort.name),
-          path = "/health/alive"
-        )
-      ))
+      .withReadinessProbe(healthProbe)
+      .withLivenessProbe(healthProbe)
 
     val podTemplate = Pod.Template.Spec
       .named(name)
