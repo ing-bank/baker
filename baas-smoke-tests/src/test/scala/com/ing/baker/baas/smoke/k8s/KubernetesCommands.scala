@@ -21,6 +21,7 @@ object KubernetesCommands {
       namespace <- Namespace.resource
       _ <- Resource.liftF(printGreen(s"\nCreating Bakery cluster environment."))
       _ <- DefinitionFile.resource("crd-recipe.yaml")
+      _ <- DefinitionFile.resource("crd-interaction.yaml")
       _ <- DefinitionFile.resource("bakery-controller.yaml", namespace)
       _ <- Resource.liftF(Pod.awaitForAllPods(namespace))
     } yield namespace

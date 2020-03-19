@@ -1,8 +1,8 @@
-apiVersion: apiextensions.k8s.io/v1
+apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   # name must match the spec fields below, and be in the form: <plural>.<group>
-  name: interactionsets.ing-bank.github.io
+  name: interactions.ing-bank.github.io
 spec:
   # group name to use for REST API: /apis/<group>/<version>
   group: ing-bank.github.io
@@ -13,33 +13,28 @@ spec:
       served: true
       # One and only one version must be marked as the storage version.
       storage: true
-      schema:
-        openAPIV3Schema:
+  validation:
+    openAPIV3Schema:
+      type: object
+      properties:
+        spec:
           type: object
           properties:
-            spec:
-              type: object
-              properties:
-                interactions:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      name:
-                        type: string
-                      image:
-                        type: string
-                      replicas:
-                        type: integer
+            image:
+              type: string
+            replicas:
+              type: integer
+          required:
+            - image
   # either Namespaced or Cluster
   scope: Namespaced
   names:
     # plural name to be used in the URL: /apis/<group>/<version>/<plural>
-    plural: interactionsets
+    plural: interactions
     # singular name to be used as an alias on the CLI and for display
-    singular: interactionset
+    singular: interaction
     # kind is normally the CamelCased singular type. Your resource manifests use this.
-    kind: InteractionSet
+    kind: Interaction
     # shortNames allow shorter string to match your resource on the CLI
     shortNames:
       - int

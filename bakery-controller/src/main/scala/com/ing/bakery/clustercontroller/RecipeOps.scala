@@ -29,8 +29,6 @@ object RecipeOps {
 
   def akkaClusterLabel(selector: String): (String, String) = "akka-cluster" -> selector
 
-  val namespace: String = "default"
-
   def baasStateName(recipeId: String): String = "baas-state-" + recipeId
 
   def baasStateServiceName(recipeId: String): String = "baas-state-service-" + recipeId
@@ -154,7 +152,7 @@ final class RecipeOps(resource: RecipeResource, k8s: KubernetesClient)(implicit 
     (for {
       compiledRecipe <- resource.decodeRecipe
       recipeId = compiledRecipe.recipeId
-      _ = logger.info(s"Deleting baker cluster for recipe '$recipeId'")
+      _ = logger.info(s"Updating baker cluster for recipe '$recipeId'")
       _ <- io(k8s.update[skuber.ext.Deployment] (deployment(recipeId, resource.spec.bakeryVersion, resource.spec.replicas)))
     } yield ()).attempt.flatMap {
       case Left(e) => IO(println(Console.RED + e.getMessage + Console.RESET))

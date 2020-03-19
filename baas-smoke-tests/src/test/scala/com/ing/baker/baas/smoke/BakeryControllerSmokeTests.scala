@@ -12,16 +12,32 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
 
   val webshopRecipeId = "9a2f8c2880ea8fc0"
   val reservationRecipeId = "79c890866238cf4b"
+  val reserveItems = "app" -> "reserve-items"
+  val shipItems = "app" -> "ship-items"
+  val makePayment = "app" -> "make-payment"
 
   describe("The Bakery Controller") {
 
     test("Creates, updates and deletes multiple independent recipes") { context =>
       val namespace = context.namespace
       for {
+        interactions <- DefinitionFile("interactions-example.yaml", namespace)
+        _ <- eventually("All interactions were created") {
+          for {
+            _ <- Pod.printPodsStatuses(namespace)
+            reserveItemsPodsCount <- Pod.countPodsWithLabel(reserveItems, namespace)
+            shipItemsPodsCount <- Pod.countPodsWithLabel(shipItems, namespace)
+            makePaymentPodsCount <- Pod.countPodsWithLabel(makePayment, namespace)
+            _ = reserveItemsPodsCount shouldBe 2
+            _ = shipItemsPodsCount shouldBe 1
+            _ = makePaymentPodsCount shouldBe 1
+            _ <- Pod.allPodsAreReady(namespace)
+          } yield()
+        }
+
         webshop <- DefinitionFile("recipe-webshop.yaml", namespace)
         reservation <- DefinitionFile("recipe-reservation.yaml", namespace)
-
-        _ <- eventually("All resources were created") {
+        _ <- eventually("All recipes were created") {
           for {
             _ <- Pod.printPodsStatuses(namespace)
             webshopPodsCount <- Pod.countPodsWithLabel("recipe" -> webshopRecipeId, namespace)
@@ -41,6 +57,7 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
           } yield ()
         }
 
+        _ <- interactions.delete
         _ <- webshop.delete
         _ <- reservation.delete
 
@@ -49,8 +66,14 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
             _ <- Pod.printPodsStatuses(namespace)
             webshopPodsCount <- Pod.countPodsWithLabel("recipe" -> webshopRecipeId, namespace)
             reservationPodsCount <- Pod.countPodsWithLabel("recipe" -> reservationRecipeId, namespace)
+            reserveItemsPodsCount <- Pod.countPodsWithLabel(reserveItems, namespace)
+            shipItemsPodsCount <- Pod.countPodsWithLabel(shipItems, namespace)
+            makePaymentPodsCount <- Pod.countPodsWithLabel(makePayment, namespace)
             _ = webshopPodsCount shouldBe 0
             _ = reservationPodsCount shouldBe 0
+            _ = reserveItemsPodsCount shouldBe 0
+            _ = shipItemsPodsCount shouldBe 0
+            _ = makePaymentPodsCount shouldBe 0
             services <- IO(s"kubectl get services -n $namespace".!!)
             deployments <- IO(s"kubectl get deployments -n $namespace".!!)
             replicasets <- IO(s"kubectl get replicasets -n $namespace".!!)

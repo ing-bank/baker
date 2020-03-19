@@ -29,15 +29,6 @@ case class RecipeResource(
 
 object RecipeResource {
 
-  def apply(recipe: CompiledRecipe, replicas: Int, bakeryVersion: String): RecipeResource = {
-    val protoRecipe: Array[Byte] = ProtoMap.ctxToProto(recipe).toByteArray
-    val encode64 = Base64.encodeBase64(protoRecipe)
-    RecipeResource( spec = Spec(
-      bakeryVersion = bakeryVersion,
-      replicas = replicas,
-      recipe = new String(encode64)))
-  }
-
   case class Spec(
     bakeryVersion: String,
     replicas: Int,
@@ -62,7 +53,7 @@ object RecipeResource {
 
   implicit val recipeResourceSpecFmt: Format[Spec] = (
     (JsPath \ "bakeryVersion").format[String] and
-    (JsPath \ "replicas").formatWithDefault[Int](1) and
+    (JsPath \ "replicas").formatWithDefault[Int](2) and
     (JsPath \ "recipe").format[String]
   )(Spec.apply, unlift(Spec.unapply))
 
