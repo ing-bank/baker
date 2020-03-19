@@ -6,6 +6,7 @@ import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.syntax.functor._
+import com.ing.bakery.clustercontroller.ops.{InteractionOperations, RecipeOperations}
 import skuber.api.client.KubernetesClient
 
 object Main extends IOApp {
@@ -20,8 +21,8 @@ object Main extends IOApp {
 
     (for {
       _ <- BakeryControllerService.resource(InetSocketAddress.createUnresolved("0.0.0.0", 8080))
-      _ <- RecipeController.resource(k8s)
-      _ <- InteractionController.resource(k8s)
+      _ <- ResourceOperations.controller(k8s, InteractionOperations.spec)
+      _ <- ResourceOperations.controller(k8s, RecipeOperations.spec)
     } yield ()).use(_ => IO.never).as(ExitCode.Success)
   }
 }

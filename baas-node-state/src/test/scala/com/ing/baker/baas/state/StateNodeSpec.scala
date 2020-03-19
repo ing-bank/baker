@@ -1,7 +1,7 @@
 package com.ing.baker.baas.state
 
 import java.net.InetSocketAddress
-import java.util.UUID
+import java.util.{Base64, UUID}
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
@@ -17,6 +17,7 @@ import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
+import com.ing.baker.runtime.serialization.ProtoMap
 import com.typesafe.config.ConfigFactory
 import org.mockserver.integration.ClientAndServer
 import org.scalatest.{ConfigMap, Matchers}
@@ -28,6 +29,8 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
 
   val recipe: CompiledRecipe =
     ItemReservationRecipe.compiledRecipe
+
+  val recipeId: String = recipe.recipeId
 
   val recipeWithBlockingStrategy: CompiledRecipe =
     ItemReservationRecipe.compiledRecipeWithBlockingStrategy
@@ -69,7 +72,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
-        recipeId <- io(context.client.addRecipe(recipe))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         state <- io(context.client.getRecipeInstanceState(recipeInstanceId))
         _ <- context.remoteEventListener.verifyNoEventsArrived
@@ -82,7 +84,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
-        recipeId <- io(context.client.addRecipe(recipe))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         e <- io(context.client
           .bake(recipeId, recipeInstanceId)
@@ -117,7 +118,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.fireEventAndResolveWhenReceived") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
-        recipeId <- io(context.client.addRecipe(recipe))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         status <- io(context.client.fireEventAndResolveWhenReceived(recipeInstanceId, OrderPlacedEvent))
@@ -128,7 +128,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
-        recipeId <- io(context.client.addRecipe(recipe))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         result <- io(context.client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent))
         serverState <- io(context.client.getRecipeInstanceState(recipeInstanceId))
@@ -143,7 +142,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       val recipeInstanceId: String = UUID.randomUUID().toString
       val event = EventInstance("non-existent", Map.empty)
       for {
-        recipeId <- io(context.client.addRecipe(recipe))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         result <- io(context.client
           .fireEventAndResolveWhenCompleted(recipeInstanceId, event)
@@ -152,7 +150,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
         serverState <- io(context.client.getRecipeInstanceState(recipeInstanceId))
         _ <- context.remoteInteraction.didNothing
       } yield {
-        result shouldBe Some(BakerException.IllegalEventException("No event with name 'non-existent' found in recipe 'ItemReservation'"))
+        result shouldBe Some(BakerException.IllegalEventException("No event with name 'non-existent' found in recipe 'ItemReservation.recipe'"))
         serverState.events.map(_.name) should not contain("OrderPlaced")
       }
     }
@@ -161,7 +159,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
-        recipeId <- io(context.client.addRecipe(recipe))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         result <- io(context.client.fireEventAndResolveOnEvent(recipeInstanceId, OrderPlacedEvent, "OrderPlaced"))
         _ <- eventually {
@@ -177,7 +174,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
-        recipeId <- io(context.client.addRecipe(recipe))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         clientMetadata <- io(context.client.getAllRecipeInstancesMetadata)
         serverMetadata <- io(context.client.getAllRecipeInstancesMetadata)
@@ -188,7 +184,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
-        recipeId <- io(context.client.addRecipe(recipe))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         _ <- io(context.client.getVisualState(recipeInstanceId))
       } yield succeed
@@ -243,7 +238,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.stopRetryingInteraction") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
-        recipeId <- io(context.client.addRecipe(recipe))
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         _ <- context.remoteInteraction.processesWithFailure(new RuntimeException("functional failure"))
         _ <- io(context.client.fireEventAndResolveWhenReceived(recipeInstanceId, OrderPlacedEvent))
@@ -285,6 +279,14 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
    * @return the resources each test can use
    */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] = {
+
+    def getResourceDirectoryPathSafe: String = {
+      val isWindows: Boolean = sys.props.get("os.name").exists(_.toLowerCase().contains("windows"))
+      val safePath = getClass.getResource("/recipes").getPath
+      if (isWindows) safePath.tail
+      else safePath
+    }
+
     for {
       // Mock server
       mockServer <- Resource.make(IO(ClientAndServer.startClientAndServer(0)))(s => IO(s.stop()))
@@ -315,6 +317,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings(
             allowAddingRecipeWithoutRequiringInstances = true))(system))
 
+      _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(getResourceDirectoryPathSafe, baker))
       _ <- Resource.liftF(serviceDiscovery.plugBakerEventListeners(baker))
       // Liveness checks on event discovery
       _ <- Resource.liftF(eventually(serviceDiscovery.cacheRecipeListeners.get.map(data =>

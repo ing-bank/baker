@@ -1,4 +1,4 @@
-package com.ing.bakery.clustercontroller
+package com.ing.bakery.clustercontroller.ops
 
 import play.api.libs.functional.syntax.{unlift, _}
 import play.api.libs.json.{Format, JsPath}

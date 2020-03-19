@@ -21,6 +21,7 @@ object Main extends IOApp {
     // Config
     val config = ConfigFactory.load()
     val httpServerPort = config.getInt("baas-component.http-api-port")
+    val recipeDirectory = config.getString("baas-component.recipe-directory")
 
     // Core dependencies
     implicit val system: ActorSystem =
@@ -42,6 +43,7 @@ object Main extends IOApp {
           timeouts = AkkaBakerConfig.Timeouts.from(config),
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config)
         )(system))
+      _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(recipeDirectory, baker))
       _ <- Resource.liftF(IO.async[Unit] { callback =>
         Cluster(system).registerOnMemberUp {
           callback(Right(()))

@@ -10,11 +10,11 @@ import scala.sys.process._
 
 class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
 
-  val webshopRecipeId = "9a2f8c2880ea8fc0"
-  val reservationRecipeId = "79c890866238cf4b"
-  val reserveItems = "app" -> "reserve-items"
-  val shipItems = "app" -> "ship-items"
-  val makePayment = "app" -> "make-payment"
+  val webshopRecipeId: String = "9a2f8c2880ea8fc0"
+  val reservationRecipeId: String = "79c890866238cf4b"
+  val reserveItems: (String, String) = "interaction" -> "reserve-items"
+  val shipItems: (String, String) = "interaction" -> "ship-items"
+  val makePayment: (String, String) = "interaction" -> "make-payment"
 
   describe("The Bakery Controller") {
 
@@ -48,8 +48,21 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
           } yield()
         }
 
+        _ <- DefinitionFile("interactions-example-update.yaml", namespace)
+        _ <- eventually("Interaction upscaled to 3 replicas") {
+          for {
+            _ <- Pod.printPodsStatuses(namespace)
+            reserveItemsPodsCount <- Pod.countPodsWithLabel(reserveItems, namespace)
+            shipItemsPodsCount <- Pod.countPodsWithLabel(shipItems, namespace)
+            makePaymentPodsCount <- Pod.countPodsWithLabel(makePayment, namespace)
+            _ = reserveItemsPodsCount shouldBe 3
+            _ = shipItemsPodsCount shouldBe 1
+            _ = makePaymentPodsCount shouldBe 1
+          } yield ()
+        }
+
         _ <- DefinitionFile("recipe-webshop-update.yaml", namespace)
-        _ <- eventually("Webshop should upscale to 3 replicas") {
+        _ <- eventually("Webshop upscaled to 3 replicas") {
           for {
             _ <- Pod.printPodsStatuses(namespace)
             webshopPodsCount <- Pod.countPodsWithLabel("recipe" -> webshopRecipeId, namespace)

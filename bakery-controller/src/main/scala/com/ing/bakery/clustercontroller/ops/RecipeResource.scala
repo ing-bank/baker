@@ -1,6 +1,5 @@
-package com.ing.bakery.clustercontroller
+package com.ing.bakery.clustercontroller.ops
 
-import cats.effect.IO
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.serialization.ProtoMap
@@ -11,6 +10,8 @@ import skuber.ResourceSpecification.{Names, Scope}
 import skuber.json.format.objFormat
 import skuber.{NonCoreResourceSpecification, ObjectMeta, ObjectResource, ResourceDefinition}
 
+import scala.util.Try
+
 case class RecipeResource(
     kind: String = "Recipe",
     apiVersion: String = "ing-bank.github.io/v1",
@@ -18,13 +19,16 @@ case class RecipeResource(
     spec:  RecipeResource.Spec)
   extends ObjectResource {
 
-  def decodeRecipe: IO[CompiledRecipe] = {
+  val recipe: Try[CompiledRecipe] = {
     val decode64 = Base64.decodeBase64(spec.recipe)
-    IO.fromTry(for {
+    for {
       protoRecipe <- protobuf.CompiledRecipe.validate(decode64)
       recipe <- ProtoMap.ctxFromProto(protoRecipe)
-    } yield recipe)
+    } yield recipe
   }
+
+  val recipeId: Try[String] =
+    recipe.map(_.recipeId)
 }
 
 object RecipeResource {
