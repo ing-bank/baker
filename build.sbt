@@ -592,23 +592,23 @@ lazy val `baas-smoke-tests` = project.in(file("baas-smoke-tests"))
     `baas-interaction-example-reserve-items`,
     `baas-interaction-example-ship-items`)
 
-val pnmlVersion = "2.2.12"
-val emfVersion = "2.18.0"
 lazy val `pnml-export` = project.in(file("pnml-export"))
   .settings(
     libraryDependencies ++= Seq(
-      "fr.lip6.pnml" % "fr.lip6.pnml.framework.utils" % pnmlVersion,
-      "fr.lip6.pnml" % "fr.lip6.pnml.framework.coremodel" % pnmlVersion,
-      "fr.lip6.pnml" % "fr.lip6.pnml.framework.ptnet" % pnmlVersion,
-      "fr.lip6.pnml" % "fr.lip6.pnml.framework.symmetricnet" % pnmlVersion,
-      "fr.lip6.pnml" % "fr.lip6.pnml.framework.hlpn" % pnmlVersion,
-      "fr.lip6.pnml" % "fr.lip6.pnml.framework.pthlpng" % pnmlVersion,
-      "org.eclipse.emf" % "org.eclipse.emf.common" % emfVersion,
-      "org.eclipse.emf" % "org.eclipse.emf.ecore" % emfVersion
+      pnmlUtils,
+      pnmlCoremodel,
+      pnmlPtnet,
+      pnmlSymmetricnet,
+      pnmlHlpn,
+      pnmlPthlpng,
+      emfCommon,
+      emfEcore,
+      pnmlCheck,
+      scalaTest,
+      "javax.activation" % "activation" % "1.1" % "test"
     )
   )
-  .dependsOn(intermediateLanguage)
-  .dependsOn(bakertypes, runtime, recipeCompiler, recipeDsl)
+  .dependsOn(intermediateLanguage, recipeDsl % "test->test", recipeCompiler % "test")
 
 lazy val `sbt-baas-docker-generate` = project.in(file("sbt-baas-docker-generate"))
   .settings(defaultModuleSettings)

@@ -8,6 +8,9 @@ object Dependencies {
   val http4sVersion = "0.21.1"
   val circeVersion = "0.13.0"
 
+  val pnmlVersion = "2.2.12"
+  val emfVersion = "2.18.0"
+
   val jvmV = "1.8"
   val scalapbVersion = scalapb.compiler.Version.scalapbVersion
 
@@ -94,6 +97,15 @@ object Dependencies {
 
   val scalaLogging =              "com.typesafe.scala-logging" %% "scala-logging"                      % "3.9.2"
 
+  val pnmlUtils =                 "fr.lip6.pnml"               % "fr.lip6.pnml.framework.utils"        % pnmlVersion
+  val pnmlCoremodel =             "fr.lip6.pnml"               % "fr.lip6.pnml.framework.coremodel"    % pnmlVersion
+  val pnmlPtnet =                 "fr.lip6.pnml"               % "fr.lip6.pnml.framework.ptnet"        % pnmlVersion
+  val pnmlSymmetricnet =          "fr.lip6.pnml"               % "fr.lip6.pnml.framework.symmetricnet" % pnmlVersion
+  val pnmlHlpn =                  "fr.lip6.pnml"               % "fr.lip6.pnml.framework.hlpn"         % pnmlVersion
+  val pnmlPthlpng =               "fr.lip6.pnml"               % "fr.lip6.pnml.framework.pthlpng"      % pnmlVersion
+  val pnmlCheck =                 "fr.lip6.pnml"               % "fr.lip6.pnml.check"                  % "1.2.4" % "test"
+  val emfCommon =                 "org.eclipse.emf"            % "org.eclipse.emf.common"              % emfVersion
+  val emfEcore =                  "org.eclipse.emf"            % "org.eclipse.emf.ecore"               % emfVersion
   def scopeDeps(scope: String, modules: Seq[ModuleID]) =  modules.map(m => m % scope)
   def compileDeps(modules: ModuleID*) = modules.toSeq
   def testDeps(modules: ModuleID*) = scopeDeps("test", modules)
