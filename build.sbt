@@ -25,8 +25,8 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
 
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
-  scalaVersion := "2.12.4",
-  crossScalaVersions := Seq("2.12.4"),
+  crossScalaVersions := Seq("2.12.11"),
+  scalaVersion := crossScalaVersions.value.head,
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
   javacOptions := Seq("-source", jvmV, "-target", jvmV),
