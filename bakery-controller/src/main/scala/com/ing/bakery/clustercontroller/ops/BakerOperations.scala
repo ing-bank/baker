@@ -102,7 +102,6 @@ object BakerOperations {
 
   def service(bakerResource: BakerResource): Service = {
     Service(baasStateServiceName(bakerResource.metadata.name))
-      .withLoadBalancerType
       .addLabel("baas-component", "state")
       .addLabel("app", "baas-state-service")
       .addLabel(bakerLabel(bakerResource.metadata.name))
@@ -113,29 +112,26 @@ object BakerOperations {
         targetPort = Some(Right("http-api"))
       ))
   }
-  
-  def hooks: ResourceOperations.Hooks[BakerResource] =
-    new ResourceOperations.Hooks[BakerResource] {
-      override def preDeployment(resource: BakerResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] =
-        loadRecipeFiles(resource, k8s)
-      override def preTermination(resource: BakerResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] =
-        cleanConfigMap(resource, k8s)
-      override def preUpdate(resource: BakerResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] =
-        IO.unit
-    }
 
-  def loadRecipeFiles(bakerResource: BakerResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] = {
+  def configMap(bakerResource: BakerResource): ConfigMap = {
     val bakerName = bakerResource.metadata.name
-    val configMap = new ConfigMap(
+    new ConfigMap(
       metadata = ObjectMeta(
         name = baasRecipesConfigMapName(bakerName),
         labels = Map(bakerLabel(bakerName))),
       data = bakerResource.recipes.get.map {
         case (serializedRecipe, compiledRecipe) => compiledRecipe.recipeId -> serializedRecipe
       }.toMap)
-    IO.fromFuture(IO(k8s.create[ConfigMap](configMap))).void
   }
+  
+  def hooks: ResourceOperations.Hooks[BakerResource] =
+    new ResourceOperations.Hooks[BakerResource] {
+      override def preDeployment(resource: BakerResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] =
+        IO.fromFuture(IO(k8s.create[ConfigMap](configMap(resource)))).void
+      override def preTermination(resource: BakerResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] =
+        IO.fromFuture(IO(k8s.delete[ConfigMap](baasRecipesConfigMapName(resource.metadata.name))))
+      override def preUpdate(resource: BakerResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] =
+        IO.fromFuture(IO(k8s.update[ConfigMap](configMap(resource)))).void
+    }
 
-  def cleanConfigMap(bakerResource: BakerResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] =
-    IO.fromFuture(IO(k8s.delete[ConfigMap](baasRecipesConfigMapName(bakerResource.metadata.name))))
 }

@@ -4,12 +4,15 @@ import java.io.File
 import java.nio.file.Files
 
 import cats.implicits._
-import cats.effect.{ContextShift, IO}
+import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.actor.protobuf
+import com.ing.baker.runtime.common.BakerException.NoSuchRecipeException
 import com.ing.baker.runtime.scaladsl.Baker
 import com.ing.baker.runtime.serialization.ProtoMap
 import org.apache.commons.codec.binary.Base64
+
+import scala.concurrent.duration._
 
 object RecipeLoader {
 
@@ -21,6 +24,19 @@ object RecipeLoader {
         IO.fromFuture(IO(baker.addRecipe(recipe)))
       }
     } yield ()
+
+  def loadRecipesIfRecipeNotFound[A](path: String, baker: Baker)(f: IO[A])(implicit timer: Timer[IO], cs: ContextShift[IO]): IO[A] = {
+    val time = 1.minute / 12
+    val split = 12
+    def within(count: Int)(f0: IO[A]): IO[A] = {
+      if (count < 1) f0 else f0.attempt.flatMap {
+        case Left(_: NoSuchRecipeException) => IO.sleep(time) *> within(count - 1)(loadRecipesIntoBaker(path, baker) *> f)
+        case Left(e) => IO.raiseError(e)
+        case Right(a) => IO.pure(a)
+      }
+    }
+    within(split)(f)
+  }
 
   def loadRecipes(path: String): IO[List[CompiledRecipe]] = {
 

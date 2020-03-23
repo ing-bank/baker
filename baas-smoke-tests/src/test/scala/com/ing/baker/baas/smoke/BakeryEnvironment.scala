@@ -12,12 +12,12 @@ object BakeryEnvironment {
   case class Context(
     clientApp: ExampleAppClient,
     recipeEventListener: EventListenerClient,
-    bakerEventListener: EventListenerClient
+    bakerEventListener: EventListenerClient,
+    namespace: Namespace
   )
 
   case class Arguments(
     clientAppHostname: Uri,
-    stateServiceHostname: Uri,
     eventListenerHostname: Uri,
     bakerEventListenerHostname: Uri
   )
@@ -42,6 +42,7 @@ object BakeryEnvironment {
   } yield Context(
     clientApp = exampleAppClient,
     recipeEventListener = recipeEventsClient,
-    bakerEventListener = bakerEventsClient
+    bakerEventListener = bakerEventsClient,
+    namespace
   )
 }

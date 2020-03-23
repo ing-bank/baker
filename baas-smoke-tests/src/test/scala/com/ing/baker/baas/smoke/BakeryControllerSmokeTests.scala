@@ -1,15 +1,19 @@
 package com.ing.baker.baas.smoke
 
 import cats.effect.{IO, Resource}
+import cats.implicits._
 import com.ing.baker.baas.smoke
 import com.ing.baker.baas.smoke.k8s.{DefinitionFile, Pod}
 import com.ing.baker.baas.testing.BakeryFunSpec
 import org.scalatest.{ConfigMap, Matchers}
-import scala.concurrent.duration._
 
+import scala.concurrent.duration._
 import scala.sys.process._
 
 class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
+
+  val isWindows: Boolean = sys.props.get("os.name").exists(_.toLowerCase().contains("windows"))
+  val splitChar = if(isWindows) "\r\n" else "\n"
 
   val webshopBaker: (String, String) = "baker-name" -> "webshop-baker"
   val reservationBaker: (String, String) = "baker-name" -> "reservation-baker"
@@ -41,11 +45,11 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
         _ <- eventually("All recipes were created") {
           for {
             _ <- Pod.printPodsStatuses(namespace)
+            _ <- Pod.allPodsAreReady(namespace)
             webshopPodsCount <- Pod.countPodsWithLabel(webshopBaker, namespace)
             reservationPodsCount <- Pod.countPodsWithLabel(reservationBaker, namespace)
             _ = webshopPodsCount shouldBe 2
             _ = reservationPodsCount shouldBe 2
-            _ <- Pod.allPodsAreReady(namespace)
           } yield()
         }
 
@@ -53,6 +57,7 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
         _ <- eventually("Interaction upscaled to 3 replicas") {
           for {
             _ <- Pod.printPodsStatuses(namespace)
+            _ <- Pod.allPodsAreReady(namespace)
             reserveItemsPodsCount <- Pod.countPodsWithLabel(reserveItems, namespace)
             shipItemsPodsCount <- Pod.countPodsWithLabel(shipItems, namespace)
             makePaymentPodsCount <- Pod.countPodsWithLabel(makePayment, namespace)
@@ -62,12 +67,35 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
           } yield ()
         }
 
-        _ <- DefinitionFile("baker-webshop-update.yaml", namespace)
-        _ <- eventually("Webshop upscaled to 3 replicas") {
+        _ <- DefinitionFile("baker-webshop-update-replicas.yaml", namespace)
+        _ <- eventually("Webshop baker upscaled to 3 replicas") {
           for {
             _ <- Pod.printPodsStatuses(namespace)
+            _ <- Pod.allPodsAreReady(namespace)
             webshopPodsCount <- Pod.countPodsWithLabel(webshopBaker, namespace)
             _ = webshopPodsCount shouldBe 3
+          } yield ()
+        }
+
+        _ <- DefinitionFile("baker-webshop-update-recipes.yaml", namespace)
+        _ <- eventually("Webshop baker added an extra recipe") {
+          for {
+            _ <- Pod.printPodsStatuses(namespace)
+            _ <- Pod.allPodsAreReady(namespace)
+            webshopPodsCount <- Pod.countPodsWithLabel(webshopBaker, namespace)
+            _ = webshopPodsCount shouldBe 3
+
+            pods <- IO(s"kubectl get --no-headers=true pods -o name -n ${context.namespace}".!!).map(_.split(splitChar).toList)
+            regex = """pod\/(baas-state-webshop-baker.+)""".r
+            webshopPods = pods.mapFilter {
+              case regex(podName) => Some(podName)
+              case _ => None
+            }
+            podsRecipes <- webshopPods.traverse(pod => IO(s"kubectl exec $pod -n ${context.namespace} -- ls /recipes".!!).map(pod -> _.split(splitChar).toList))
+            _ = podsRecipes.foreach { case (pod, recipes) =>
+              println(Console.MAGENTA + s"Pod $pod contains recipes: " + recipes.mkString(", ") + Console.RESET)
+              assert(recipes.contains("79c890866238cf4b") && recipes.contains("9a2f8c2880ea8fc0"), "State pods should contain 1 file named after each recipe id")
+            }
           } yield ()
         }
 

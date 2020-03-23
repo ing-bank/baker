@@ -50,7 +50,7 @@ object Main extends IOApp {
         }
       })
       _ <- Resource.liftF(serviceDiscovery.plugBakerEventListeners(baker))
-      _ <- StateNodeService.resource(baker, hostname)
+      _ <- StateNodeService.resource(baker, recipeDirectory, hostname)
     } yield ()
 
     mainResource.use(_ => IO.never).as(ExitCode.Success)
