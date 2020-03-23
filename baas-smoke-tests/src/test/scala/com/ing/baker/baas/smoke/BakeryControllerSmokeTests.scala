@@ -5,13 +5,14 @@ import com.ing.baker.baas.smoke
 import com.ing.baker.baas.smoke.k8s.{DefinitionFile, Pod}
 import com.ing.baker.baas.testing.BakeryFunSpec
 import org.scalatest.{ConfigMap, Matchers}
+import scala.concurrent.duration._
 
 import scala.sys.process._
 
 class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
 
-  val webshopRecipeId: String = "9a2f8c2880ea8fc0"
-  val reservationRecipeId: String = "79c890866238cf4b"
+  val webshopBaker: (String, String) = "baker-name" -> "webshop-baker"
+  val reservationBaker: (String, String) = "baker-name" -> "reservation-baker"
   val reserveItems: (String, String) = "interaction" -> "reserve-items"
   val shipItems: (String, String) = "interaction" -> "ship-items"
   val makePayment: (String, String) = "interaction" -> "make-payment"
@@ -35,13 +36,13 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
           } yield()
         }
 
-        webshop <- DefinitionFile("recipe-webshop.yaml", namespace)
-        reservation <- DefinitionFile("recipe-reservation.yaml", namespace)
+        webshop <- DefinitionFile("baker-webshop.yaml", namespace)
+        reservation <- DefinitionFile("baker-reservation.yaml", namespace)
         _ <- eventually("All recipes were created") {
           for {
             _ <- Pod.printPodsStatuses(namespace)
-            webshopPodsCount <- Pod.countPodsWithLabel("recipe" -> webshopRecipeId, namespace)
-            reservationPodsCount <- Pod.countPodsWithLabel("recipe" -> reservationRecipeId, namespace)
+            webshopPodsCount <- Pod.countPodsWithLabel(webshopBaker, namespace)
+            reservationPodsCount <- Pod.countPodsWithLabel(reservationBaker, namespace)
             _ = webshopPodsCount shouldBe 2
             _ = reservationPodsCount shouldBe 2
             _ <- Pod.allPodsAreReady(namespace)
@@ -61,11 +62,11 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
           } yield ()
         }
 
-        _ <- DefinitionFile("recipe-webshop-update.yaml", namespace)
+        _ <- DefinitionFile("baker-webshop-update.yaml", namespace)
         _ <- eventually("Webshop upscaled to 3 replicas") {
           for {
             _ <- Pod.printPodsStatuses(namespace)
-            webshopPodsCount <- Pod.countPodsWithLabel("recipe" -> webshopRecipeId, namespace)
+            webshopPodsCount <- Pod.countPodsWithLabel(webshopBaker, namespace)
             _ = webshopPodsCount shouldBe 3
           } yield ()
         }
@@ -77,8 +78,8 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
         _ <- eventually("All resources were cleaned") {
           for {
             _ <- Pod.printPodsStatuses(namespace)
-            webshopPodsCount <- Pod.countPodsWithLabel("recipe" -> webshopRecipeId, namespace)
-            reservationPodsCount <- Pod.countPodsWithLabel("recipe" -> reservationRecipeId, namespace)
+            webshopPodsCount <- Pod.countPodsWithLabel(webshopBaker, namespace)
+            reservationPodsCount <- Pod.countPodsWithLabel(reservationBaker, namespace)
             reserveItemsPodsCount <- Pod.countPodsWithLabel(reserveItems, namespace)
             shipItemsPodsCount <- Pod.countPodsWithLabel(shipItems, namespace)
             makePaymentPodsCount <- Pod.countPodsWithLabel(makePayment, namespace)

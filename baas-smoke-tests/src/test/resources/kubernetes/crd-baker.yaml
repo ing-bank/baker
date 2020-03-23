@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   # name must match the spec fields below, and be in the form: <plural>.<group>
-  name: recipes.ing-bank.github.io
+  name: bakers.ing-bank.github.io
 spec:
   # group name to use for REST API: /apis/<group>/<version>
   group: ing-bank.github.io
@@ -25,30 +25,22 @@ spec:
             replicas:
               type: integer
               minimum: 2
-            recipe:
-              type: string
+            recipes:
+              type: array
+              items:
+                type: string
           required:
             - bakeryVersion
-            - recipe
+            - recipes
   # either Namespaced or Cluster
   scope: Namespaced
   names:
     # plural name to be used in the URL: /apis/<group>/<version>/<plural>
-    plural: recipes
+    plural: bakers
     # singular name to be used as an alias on the CLI and for display
-    singular: recipe
+    singular: baker
     # kind is normally the CamelCased singular type. Your resource manifests use this.
-    kind: Recipe
+    kind: Baker
     # shortNames allow shorter string to match your resource on the CLI
     shortNames:
-      - re
-
-# Example
-
-# apiVersion: ing-bank.github.io
-# kind: Recipe
-# metadata:
-#   name: Webshop
-# spec:
-#   replicas: 3
-#   recipe: "djahd9uh102hdohsioudgha9usghd`2eh="
+      - ba

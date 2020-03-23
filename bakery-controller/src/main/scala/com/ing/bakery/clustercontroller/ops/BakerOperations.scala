@@ -13,33 +13,33 @@ import skuber.json.format._
 
 import scala.concurrent.ExecutionContext
 
-object RecipeOperations {
+object BakerOperations {
 
-  val spec: ControllerSpecification[RecipeResource] =
-    ControllerSpecification(service, deployment, r => recipeLabel(r.recipeId.get), Some(hooks))
+  val spec: ControllerSpecification[BakerResource] =
+    ControllerSpecification(service, deployment, r => bakerLabel(r.metadata.name), Some(hooks))
 
   val connectionPool: ExecutionContext =
     ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
 
   val stateNodeLabel: (String, String) = "app" -> "baas-state"
 
-  def recipeLabel(recipeId: String): (String, String) = "recipe" -> recipeId
+  def bakerLabel(name: String): (String, String) = "baker-name" -> name
 
   def akkaClusterLabel(selector: String): (String, String) = "akka-cluster" -> selector
 
-  def baasStateName(recipeId: String): String = "baas-state-" + recipeId
+  def baasStateName(name: String): String = "baas-state-" + name
 
-  def baasStateServiceName(recipeId: String): String = "baas-state-service-" + recipeId
+  def baasStateServiceName(name: String): String = "baas-state-service-" + name
 
-  def baasRecipesConfigMapName(recipeId: String): String = "baas-state-recipes-config-map-" + recipeId
+  def baasRecipesConfigMapName(name: String): String = "baas-state-recipes-config-map-" + name
 
   val baasStateServicePort: Int = 8081
 
-  def deployment(recipe: RecipeResource): Deployment = {
+  def deployment(bakerResource: BakerResource): Deployment = {
 
-    val recipeId = recipe.recipeId.get
-    val bakeryVersion: String = recipe.spec.bakeryVersion
-    val replicas: Int = recipe.spec.replicas
+    val bakerName: String = bakerResource.metadata.name
+    val bakeryVersion: String = bakerResource.spec.bakeryVersion
+    val replicas: Int = bakerResource.spec.replicas
     val recipesMountPath: String = "/recipes"
 
     val managementPort = Container.Port(
@@ -49,7 +49,7 @@ object RecipeOperations {
     )
 
     val stateNodeContainer = Container(
-      name = baasStateName(recipeId),
+      name = baasStateName(bakerName),
       image = "baas-node-state:" + bakeryVersion
     )
       .exposePort(Container.Port(
@@ -76,36 +76,36 @@ object RecipeOperations {
         )
       ))
       .mount("recipes", recipesMountPath, readOnly = true)
-      .setEnvVar("STATE_CLUSTER_SELECTOR", recipeId)
+      .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)
       .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
 
     val podSpec = Pod.Spec(
       containers = List(stateNodeContainer),
-      volumes = List(Volume("recipes", Volume.ConfigMapVolumeSource(baasRecipesConfigMapName(recipeId))))
+
+      volumes = List(Volume("recipes", Volume.ConfigMapVolumeSource(baasRecipesConfigMapName(bakerName))))
     )
 
     val podTemplate = Pod.Template.Spec
-      .named(baasStateName(recipeId))
+      .named(baasStateName(bakerName))
       .withPodSpec(podSpec)
       .addLabel(stateNodeLabel)
-      .addLabel(recipeLabel(recipeId))
-      .addLabel(akkaClusterLabel(recipeId))
+      .addLabel(bakerLabel(bakerResource.name))
+      .addLabel(akkaClusterLabel(bakerName))
 
     new Deployment(metadata = ObjectMeta(
-      name = baasStateName(recipeId),
-      labels = Map(stateNodeLabel, recipeLabel(recipeId))
+      name = baasStateName(bakerName),
+      labels = Map(stateNodeLabel, bakerLabel(bakerName))
     ))
       .withReplicas(replicas)
       .withTemplate(podTemplate)
   }
 
-  def service(recipe: RecipeResource): Service = {
-    val recipeId = recipe.recipeId.get
-    Service(baasStateServiceName(recipeId))
+  def service(bakerResource: BakerResource): Service = {
+    Service(baasStateServiceName(bakerResource.metadata.name))
       .withLoadBalancerType
       .addLabel("baas-component", "state")
       .addLabel("app", "baas-state-service")
-      .addLabel(recipeLabel(recipeId))
+      .addLabel(bakerLabel(bakerResource.metadata.name))
       .withSelector(stateNodeLabel)
       .setPort(Service.Port(
         name = "http-api",
@@ -114,27 +114,28 @@ object RecipeOperations {
       ))
   }
   
-  def hooks: ResourceOperations.Hooks[RecipeResource] =
-    new ResourceOperations.Hooks[RecipeResource] {
-      override def preDeployment(resource: RecipeResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] =
+  def hooks: ResourceOperations.Hooks[BakerResource] =
+    new ResourceOperations.Hooks[BakerResource] {
+      override def preDeployment(resource: BakerResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] =
         loadRecipeFiles(resource, k8s)
-      override def preTermination(resource: RecipeResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] =
+      override def preTermination(resource: BakerResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] =
         cleanConfigMap(resource, k8s)
-      override def preUpdate(resource: RecipeResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] =
+      override def preUpdate(resource: BakerResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] =
         IO.unit
     }
 
-  def loadRecipeFiles(recipe: RecipeResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] = {
-    val recipeId = recipe.recipeId.get
+  def loadRecipeFiles(bakerResource: BakerResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] = {
+    val bakerName = bakerResource.metadata.name
     val configMap = new ConfigMap(
       metadata = ObjectMeta(
-        name = baasRecipesConfigMapName(recipeId),
-        labels = Map(recipeLabel(recipeId))),
-      data = Map(recipe.name -> recipe.spec.recipe)
-    )
+        name = baasRecipesConfigMapName(bakerName),
+        labels = Map(bakerLabel(bakerName))),
+      data = bakerResource.recipes.get.map {
+        case (serializedRecipe, compiledRecipe) => compiledRecipe.recipeId -> serializedRecipe
+      }.toMap)
     IO.fromFuture(IO(k8s.create[ConfigMap](configMap))).void
   }
 
-  def cleanConfigMap(recipe: RecipeResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] =
-    IO.fromFuture(IO(k8s.delete[ConfigMap](baasRecipesConfigMapName(recipe.recipeId.get))))
+  def cleanConfigMap(bakerResource: BakerResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] =
+    IO.fromFuture(IO(k8s.delete[ConfigMap](baasRecipesConfigMapName(bakerResource.metadata.name))))
 }

@@ -9,34 +9,34 @@ import play.api.libs.json.{Format, JsPath}
 import skuber.ResourceSpecification.{Names, Scope}
 import skuber.json.format.objFormat
 import skuber.{NonCoreResourceSpecification, ObjectMeta, ObjectResource, ResourceDefinition}
+import cats.implicits._
 
 import scala.util.Try
 
-case class RecipeResource(
-    kind: String = "Recipe",
+case class BakerResource(
+    kind: String = "Baker",
     apiVersion: String = "ing-bank.github.io/v1",
     metadata: ObjectMeta = ObjectMeta(),
-    spec:  RecipeResource.Spec)
+    spec:  BakerResource.Spec)
   extends ObjectResource {
 
-  val recipe: Try[CompiledRecipe] = {
-    val decode64 = Base64.decodeBase64(spec.recipe)
-    for {
-      protoRecipe <- protobuf.CompiledRecipe.validate(decode64)
-      recipe <- ProtoMap.ctxFromProto(protoRecipe)
-    } yield recipe
+  val recipes: Try[List[(String, CompiledRecipe)]] = {
+    spec.recipes.traverse { serializedRecipe =>
+      val decode64 = Base64.decodeBase64(serializedRecipe)
+      for {
+        protoRecipe <- protobuf.CompiledRecipe.validate(decode64)
+        recipe <- ProtoMap.ctxFromProto(protoRecipe)
+      } yield serializedRecipe -> recipe
+    }
   }
-
-  val recipeId: Try[String] =
-    recipe.map(_.recipeId)
 }
 
-object RecipeResource {
+object BakerResource {
 
   case class Spec(
     bakeryVersion: String,
     replicas: Int,
-    recipe: String
+    recipes: List[String]
   )
 
   val specification: NonCoreResourceSpecification =
@@ -45,23 +45,23 @@ object RecipeResource {
       version = "v1",
       scope = Scope.Namespaced,
       names=Names(
-        plural = "recipes",
-        singular = "recipe",
-        kind = "Recipe",
-        shortNames = List("re")
+        plural = "bakers",
+        singular = "baker",
+        kind = "Baker",
+        shortNames = List("ba")
       )
     )
 
-  implicit val resourceDefinitionRecipeResource: ResourceDefinition[RecipeResource] =
-    new ResourceDefinition[RecipeResource] { def spec: NonCoreResourceSpecification = specification }
+  implicit val resourceDefinitionRecipeResource: ResourceDefinition[BakerResource] =
+    new ResourceDefinition[BakerResource] { def spec: NonCoreResourceSpecification = specification }
 
   implicit val recipeResourceSpecFmt: Format[Spec] = (
     (JsPath \ "bakeryVersion").format[String] and
     (JsPath \ "replicas").formatWithDefault[Int](2) and
-    (JsPath \ "recipe").format[String]
+    (JsPath \ "recipes").format[List[String]]
   )(Spec.apply, unlift(Spec.unapply))
 
-  implicit lazy val recipeResourceFormat: Format[RecipeResource] = (
+  implicit lazy val recipeResourceFormat: Format[BakerResource] = (
     objFormat and
     (JsPath \ "spec").format[Spec]
   )(apply, unlift(unapply))

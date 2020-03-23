@@ -50,6 +50,6 @@ spec:
               protocol: TCP
           env:
             - name: BAAS_STATE_NODE_HOSTNAME
-              value: http://baas-state-service-9a2f8c2880ea8fc0:8081/
+              value: http://baas-state-service-webshop-baker:8081/
             - name: BAAS_COMPONENT_HTTP_API_PORT
               value: "8082"
