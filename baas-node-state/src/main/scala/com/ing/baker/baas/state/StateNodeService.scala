@@ -1,9 +1,9 @@
 package com.ing.baker.baas.state
 
-import cats.syntax.apply._
 import java.net.InetSocketAddress
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.syntax.apply._
 import com.ing.baker.baas.protocol.BaaSProto._
 import com.ing.baker.baas.protocol.BaaSProtocol
 import com.ing.baker.baas.protocol.BakeryHttp.ProtoEntityEncoders._
@@ -49,13 +49,8 @@ final class StateNodeService private(baker: Baker, recipeDirectory: String)(impl
     case GET -> Root / "health" =>
       Ok("Ok")
 
-    case req@POST -> Root / "addRecipe" =>
-      req.as[BaaSProtocol.AddRecipeRequest]
-        .map(r => IO(baker.addRecipe(r.compiledRecipe)))
-        .flatMap(completeWithBakerFailures(_)(BaaSProtocol.AddRecipeResponse))
-
     case req@POST -> Root / "getRecipe" =>
-       req.as[BaaSProtocol.GetRecipeRequest]
+      req.as[BaaSProtocol.GetRecipeRequest]
         .map(r => IO(baker.getRecipe(r.recipeId)))
         .flatMap(completeWithBakerFailures(_)(BaaSProtocol.GetRecipeResponse))
 

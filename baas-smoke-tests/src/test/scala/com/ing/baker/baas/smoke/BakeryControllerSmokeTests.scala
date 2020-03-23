@@ -7,7 +7,6 @@ import com.ing.baker.baas.smoke.k8s.{DefinitionFile, Pod}
 import com.ing.baker.baas.testing.BakeryFunSpec
 import org.scalatest.{ConfigMap, Matchers}
 
-import scala.concurrent.duration._
 import scala.sys.process._
 
 class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
@@ -91,11 +90,14 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
               case regex(podName) => Some(podName)
               case _ => None
             }
-            podsRecipes <- webshopPods.traverse(pod => IO(s"kubectl exec $pod -n ${context.namespace} -- ls /recipes".!!).map(pod -> _.split(splitChar).toList))
-            _ = podsRecipes.foreach { case (pod, recipes) =>
-              println(Console.MAGENTA + s"Pod $pod contains recipes: " + recipes.mkString(", ") + Console.RESET)
-              assert(recipes.contains("79c890866238cf4b") && recipes.contains("9a2f8c2880ea8fc0"), "State pods should contain 1 file named after each recipe id")
-            }
+            podsRecipes <- webshopPods
+              .traverse { pod =>
+                IO(s"kubectl exec $pod -n ${context.namespace} -- ls /recipes".!!)
+                  .map(_.split(splitChar).toList)
+              }.map(_.flatten)
+
+            _ = assert(podsRecipes.contains("79c890866238cf4b"), "State pods should contain new recipe")
+
           } yield ()
         }
 

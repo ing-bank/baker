@@ -3,7 +3,7 @@ package webshop.webservice
 import java.util.Base64
 import java.util.concurrent.Executors
 
-import cats.effect.{ExitCode, IO, IOApp, Resource}
+import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
 import com.ing.baker.baas.scaladsl.BakerClient
 import com.ing.baker.compiler.RecipeCompiler
@@ -19,6 +19,7 @@ object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
 
     val compiled = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
+    val checkoutRecipeId = compiled.recipeId
     val protoRecipe: Array[Byte] = ProtoMap.ctxToProto(compiled).toByteArray
     val encode64 = Base64.getEncoder.encode(protoRecipe)
 
@@ -37,7 +38,6 @@ object Main extends IOApp {
       ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
     val mainResource = for {
       baker <- BakerClient.resource(Uri.unsafeFromString(baasHostname), connectionPool)
-      checkoutRecipeId  <- Resource.liftF(WebShopBaker.initRecipes(baker))
       _ <- BlazeServerBuilder[IO]
         .bindHttp(httpPort, "0.0.0.0")
         .withHttpApp(new WebShopService(new WebShopBaker(baker, checkoutRecipeId)).build)

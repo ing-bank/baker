@@ -14,9 +14,6 @@ object WebShopBaker {
 
   val checkoutFlowCompiledRecipe: CompiledRecipe =
     RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
-
-  def initRecipes(baker: Baker)(implicit time: Timer[IO], cs: ContextShift[IO]): IO[String] =
-    IO.fromFuture(IO(baker.addRecipe(checkoutFlowCompiledRecipe)))
 }
 
 class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit cs: ContextShift[IO]) extends WebShop with LazyLogging {

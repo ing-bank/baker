@@ -35,6 +35,8 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
   val recipeWithBlockingStrategy: CompiledRecipe =
     ItemReservationRecipe.compiledRecipeWithBlockingStrategy
 
+  val recipeIdBlocking: String = recipeWithBlockingStrategy.recipeId
+
   val OrderPlacedEvent: EventInstance =
     EventInstance.unsafeFrom(
       OrderPlaced(OrderId("order-1"), List(Item("item-1"))
@@ -54,7 +56,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
 
     test("Recipe management") { context =>
       for {
-        recipeId <- io(context.client.addRecipe(recipe))
         recipeInformation <- io(context.client.getRecipe(recipeId))
         noSuchRecipeError <- io(context.client
           .getRecipe("non-existent")
@@ -102,7 +103,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
         e <- io(context.client
           .bake("non-existent", recipeInstanceId)
           .map(_ => None)
-          .recover { case e: BakerException => Some(e) })
+          .recover { case e => Some(e) })
       } yield e shouldBe Some(BakerException.NoSuchRecipeException("non-existent"))
     }
 
@@ -192,8 +193,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.retryInteraction") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
-        recipeId <- io(context.client.addRecipe(recipeWithBlockingStrategy))
-        _ <- io(context.client.bake(recipeId, recipeInstanceId))
+        _ <- io(context.client.bake(recipeIdBlocking, recipeInstanceId))
         _ <- context.remoteInteraction.processesWithFailure(new RuntimeException("functional failure"))
         _ <- io(context.client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent))
         state1 <- io(context.client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name)))
@@ -215,8 +215,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
           ItemsReserved(reservedItems = ReservedItems(items = List(Item("resolution-item")), data = Array.empty))
         )
         for {
-          recipeId <- io(context.client.addRecipe(recipeWithBlockingStrategy))
-          _ <- io(context.client.bake(recipeId, recipeInstanceId))
+          _ <- io(context.client.bake(recipeIdBlocking, recipeInstanceId))
           _ <- context.remoteInteraction.processesWithFailure(new RuntimeException("functional failure"))
           _ <- io(context.client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent))
           state1 <- io(context.client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name)))
@@ -325,7 +324,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       _ <- Resource.liftF(eventually(serviceDiscovery.cacheInteractions.get.map(data =>
         assert(data.headOption.map(_.name).contains(Interactions.ReserveItemsInteraction.name)))))
 
-      server <- StateNodeService.resource(baker, InetSocketAddress.createUnresolved("127.0.0.1", 0))
+      server <- StateNodeService.resource(baker, getResourceDirectoryPathSafe, InetSocketAddress.createUnresolved("127.0.0.1", 0))
       client <- BakerClient.resource(server.baseUri, executionContext)
     } yield Context(
       client,
