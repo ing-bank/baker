@@ -20,9 +20,9 @@ object Dependencies {
   val scalaJava8Compat =          "org.scala-lang.modules"     %% "scala-java8-compat"                 % "0.9.1"
   val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.0.8"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
-  val mockServer =                "org.mock-server"            %  "mockserver-netty"                   % "5.9.0"
+  val mockServer =                "org.mock-server"            %  "mockserver-netty"                   % "5.10"
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
-  val junitJupiter =              "org.junit.jupiter"          %  "junit-jupiter-engine"               % "5.6.0"
+  val junitJupiter =              "org.junit.jupiter"          %  "junit-jupiter-engine"               % "5.6.1"
 
   val akkaActor =                 "com.typesafe.akka"          %% "akka-actor"                         % akkaVersion
   val akkaStream =                "com.typesafe.akka"          %% "akka-stream"                        % akkaVersion
@@ -37,10 +37,10 @@ object Dependencies {
   val akkaTestKit =               "com.typesafe.akka"          %% "akka-testkit"                       % akkaVersion
   val akkaStreamTestKit =         "com.typesafe.akka"          %% "akka-stream-testkit"                % akkaVersion
   val akkaMultiNodeTestkit =      "com.typesafe.akka"          %% "akka-multi-node-testkit"            % akkaVersion
-  val akkaManagementHttp =        "com.lightbend.akka.management" %% "akka-management-cluster-http"      % "1.0.5"
-  val akkaClusterBoostrap =       "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.5"
-  val akkaDiscoveryKube =         "com.lightbend.akka.discovery"  %% "akka-discovery-kubernetes-api"     % "1.0.6"
-  val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.5"
+  val akkaManagementHttp =        "com.lightbend.akka.management" %% "akka-management-cluster-http"      % "1.0.6"
+  val akkaClusterBoostrap =       "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.6"
+  val akkaDiscoveryKube =         "com.lightbend.akka.discovery"  %% "akka-discovery-kubernetes-api"     % "1.0.5"
+  val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.6"
 
   val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.12"
 
