@@ -147,23 +147,25 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
         stopActor()
     }
 
+  private val DoNothingReceive: PartialFunction[Any, Unit] = { case _ => () }
+
   def streaming(runningJobs: Set[Long], cache: List[Any]): Receive = {
     command.reaction match {
       case FireSensoryEventReaction.NotifyOnEvent(_, onEvent)
         if Option(cache.head.asInstanceOf[TransitionFired].output.asInstanceOf[EventInstance]).exists(_.name == onEvent) =>
         notifyComplete(cache.reverse)
-        PartialFunction {_ => ()}
+        DoNothingReceive
 
       case FireSensoryEventReaction.NotifyWhenCompleted(_) if runningJobs.isEmpty =>
         notifyComplete(cache.reverse)
-        PartialFunction {_ => ()}
+        DoNothingReceive
 
       case FireSensoryEventReaction.NotifyBoth(_, _) if runningJobs.isEmpty =>
         notifyComplete(cache.reverse)
-        PartialFunction {_ => ()}
+        DoNothingReceive
 
       case _ =>
-        PartialFunction {
+        {
           case event: TransitionFired ⇒
             context.become(streaming(runningJobs ++ event.newJobsIds - event.jobId, event :: cache))
           case event: TransitionFailed if event.strategy.isRetry && waitForRetries ⇒

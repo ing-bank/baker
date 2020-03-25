@@ -25,8 +25,8 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
 
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
-  scalaVersion := "2.12.4",
-  crossScalaVersions := Seq("2.12.4"),
+  scalaVersion := "2.12.11",
+  crossScalaVersions := Seq("2.12.11"),
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
   javacOptions := Seq("-source", jvmV, "-target", jvmV),
@@ -49,7 +49,7 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
       "Build-Time" -> new java.util.Date().toString,
       "Build-Commit" -> git.gitHeadCommit.value.getOrElse("No Git Revision Found")
     )
-)
+) ++ suppressSourcesAndScalaDocs
 
 val dependencyOverrideSettings = Seq(
   dependencyOverrides ++= Seq(
@@ -61,8 +61,8 @@ val dependencyOverrideSettings = Seq(
 
 lazy val suppressSourcesAndScalaDocs = Seq(
   publishArtifact in (Compile, packageDoc) := false,
-  publishArtifact in packageDoc := false,
-  sources in (Compile,doc) := Seq.empty
+  mappings in (Compile, packageDoc) := Seq(),
+  sources in (Compile, doc) := Seq.empty
 )
 
 lazy val noPublishSettings = Seq(
