@@ -59,13 +59,20 @@ val dependencyOverrideSettings = Seq(
   )
 )
 
+lazy val suppressSourcesAndScalaDocs = Seq(
+  publishArtifact in (Compile, packageDoc) := false,
+  publishArtifact in packageDoc := false,
+  sources in (Compile,doc) := Seq.empty
+)
+
 lazy val noPublishSettings = Seq(
   publish := {},
   publishLocal := {},
-  publishArtifact := false
-)
+  publishArtifact := false,
+) ++ suppressSourcesAndScalaDocs
 
-lazy val defaultModuleSettings = commonSettings ++ dependencyOverrideSettings ++ SonatypePublish.settings
+
+lazy val defaultModuleSettings = commonSettings ++ dependencyOverrideSettings ++ SonatypePublish.settings ++ suppressSourcesAndScalaDocs
 
 lazy val scalaPBSettings = Seq(PB.targets in Compile := Seq(scalapb.gen() -> (sourceManaged in Compile).value))
 

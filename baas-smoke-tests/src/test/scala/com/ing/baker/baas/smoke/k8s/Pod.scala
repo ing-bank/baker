@@ -18,6 +18,12 @@ case class Pod(name: String, namespace: Namespace) {
 
 object Pod {
 
+  private val podStatus = ".*(\\d+)/(\\d+).*".r
+
+  private def podsComplete(str: String): Boolean = podStatus.findAllMatchIn(str).collect(
+      { case m => m.group(1).toInt == m.group(2).toInt }
+    ).forall(identity)
+
   def printPodsStatuses(namespace: Namespace): IO[Int] =
     exec(
       prefix = prefixGreen("pods"),
@@ -33,7 +39,7 @@ object Pod {
   def allPodsAreReady(namespace: Namespace)(implicit timer: Timer[IO]): IO[Unit] =
     for {
       pods <- IO(s"kubectl get pods -n $namespace".!!)
-      _ = assert(!pods.contains("0/1") && pods.contains("1/1"))
+      _ = assert(podsComplete(pods))
     } yield()
 
   private val setupWaitTime = 1.minute

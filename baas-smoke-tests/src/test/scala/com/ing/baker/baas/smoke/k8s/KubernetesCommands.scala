@@ -23,6 +23,7 @@ object KubernetesCommands {
       _ <- DefinitionFile.resource("crd-baker.yaml")
       _ <- DefinitionFile.resource("crd-interaction.yaml")
       _ <- DefinitionFile.resource("bakery-controller.yaml", namespace)
+      _ <- DefinitionFile.resource("kafka-event-sink.yaml", namespace)
       _ <- Resource.liftF(Pod.awaitForAllPods(namespace))
     } yield namespace
 }
