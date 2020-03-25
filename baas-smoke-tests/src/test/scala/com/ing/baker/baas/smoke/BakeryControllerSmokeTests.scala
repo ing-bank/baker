@@ -41,7 +41,6 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
 
         webshop <- DefinitionFile("baker-webshop.yaml", namespace)
         reservation <- DefinitionFile("baker-reservation.yaml", namespace)
-        kafkaEventSink <- DefinitionFile("kafka-event-sink.yaml", namespace)
 
         _ <- eventually("All recipes were created") {
           for {
@@ -106,7 +105,6 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
         _ <- interactions.delete
         _ <- webshop.delete
         _ <- reservation.delete
-        _ <- kafkaEventSink.delete
 
         _ <- eventually("All resources were cleaned") {
           for {
