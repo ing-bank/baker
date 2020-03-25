@@ -25,7 +25,6 @@ object BakeryEnvironment {
 
     _ <- Resource.liftF(printGreen(s"\nAdding custom resources: interactions, listeners, recipe"))
     _ <- DefinitionFile.resource("interactions-example.yaml", namespace)
-    _ <- DefinitionFile.resource("kafka-event-sink.yaml", namespace)
     _ <- DefinitionFile.resource("baker-webshop.yaml", namespace)
     _ <- Resource.liftF(Pod.awaitForAllPods(namespace))
 
