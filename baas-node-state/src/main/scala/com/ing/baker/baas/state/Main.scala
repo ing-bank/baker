@@ -21,7 +21,7 @@ object Main extends IOApp {
     // Config
     val config = ConfigFactory.load()
     val httpServerPort = config.getInt("baas-component.http-api-port")
-    val namespace = config.getString("baas-component.kubernetes-namespace")
+    val recipeDirectory = config.getString("baas-component.recipe-directory")
 
     // Core dependencies
     implicit val system: ActorSystem =
@@ -43,13 +43,14 @@ object Main extends IOApp {
           timeouts = AkkaBakerConfig.Timeouts.from(config),
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config)
         )(system))
+      _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(recipeDirectory, baker))
       _ <- Resource.liftF(IO.async[Unit] { callback =>
         Cluster(system).registerOnMemberUp {
           callback(Right(()))
         }
       })
       _ <- Resource.liftF(serviceDiscovery.plugBakerEventListeners(baker))
-      _ <- StateNodeService.resource(baker, hostname)
+      _ <- StateNodeService.resource(baker, recipeDirectory, hostname)
     } yield ()
 
     mainResource.use(_ => IO.never).as(ExitCode.Success)

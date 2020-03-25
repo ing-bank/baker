@@ -12,6 +12,7 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
       "baas-client-example/docker:publishLocal" ::
       "baas-event-listener-example/docker:publishLocal" ::
       "baas-baker-event-listener-example/docker:publishLocal" ::
+      "bakery-controller/docker:publishLocal" ::
       "project baas-interaction-example-make-payment" ::
       "buildInteractionDockerImage docker:publishLocal webshop.webservice.MakePaymentInstance" ::
       "project baas-interaction-example-ship-items" ::
@@ -286,6 +287,7 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
     libraryDependencies ++= Seq(
       slf4jApi,
       slf4jSimple,
+      logback,
       akkaPersistenceCassandra,
       akkaManagementHttp,
       akkaClusterBoostrap,
@@ -369,6 +371,34 @@ lazy val `baas-node-baker-event-listener` = project.in(file("baas-node-baker-eve
     )
   )
   .dependsOn(`baas-protocol-baker-event-publishing`, `baker-interface`)
+
+lazy val `bakery-controller` = project.in(file("bakery-controller"))
+  .settings(defaultModuleSettings)
+  .enablePlugins(JavaAppPackaging)
+  .settings(
+    maintainer in Docker := "The Bakery Team",
+    packageSummary in Docker := "The bakery controller",
+    packageName in Docker := "bakery-controller",
+    dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
+  )
+  .settings(
+    moduleName := "bakery-controller",
+    libraryDependencies ++= Seq(
+      slf4jApi,
+      slf4jSimple,
+      logback,
+      scalaLogging,
+      skuber,
+      http4s,
+      http4sDsl,
+      http4sServer
+    ) ++ testDeps(
+      scalaTest,
+      logback
+    )
+  )
+  .dependsOn(bakertypes, recipeCompiler, recipeDsl, intermediateLanguage, `baas-node-client`)
+  .aggregate(bakertypes, recipeCompiler, recipeDsl, intermediateLanguage, `baas-node-client`)
 
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)

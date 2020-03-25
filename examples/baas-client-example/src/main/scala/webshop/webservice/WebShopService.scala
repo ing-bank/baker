@@ -54,6 +54,12 @@ class WebShopService(webshop: WebShop)(implicit timer: Timer[IO], cs: ContextShi
     case GET -> Root =>
       Ok("Ok")
 
+    case GET -> Root / "recipe-names" =>
+      for {
+        recipeNames <- webshop.listRecipeNames
+        response <- Ok(recipeNames.mkString(","))
+      } yield response
+
     case req@POST -> Root / "order" =>
       for {
         request <- req.as[PlaceOrderRequest]

@@ -14,12 +14,12 @@ object WebShopBaker {
 
   val checkoutFlowCompiledRecipe: CompiledRecipe =
     RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
-
-  def initRecipes(baker: Baker)(implicit time: Timer[IO], cs: ContextShift[IO]): IO[String] =
-    IO.fromFuture(IO(baker.addRecipe(checkoutFlowCompiledRecipe)))
 }
 
 class WebShopBaker(baker: Baker, checkoutRecipeId: String)(implicit cs: ContextShift[IO]) extends WebShop with LazyLogging {
+
+  override def listRecipeNames: IO[List[String]] =
+    IO.fromFuture(IO(baker.getAllRecipes)).map(_.values.toList.map(_.compiledRecipe.name))
 
   override def createCheckoutOrder(items: List[String]): IO[String] = {
     val orderId: String = UUID.randomUUID().toString
