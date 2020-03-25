@@ -51,7 +51,7 @@ object InteractionResource {
   implicit val interactionResourceSpecFmt: Format[Spec] = (
       (JsPath \ "image").format[String] and
       (JsPath \ "replicas").formatWithDefault[Int](1) and
-      (JsPath \ "env").format[List[EnvVar]] and
+      (JsPath \ "env").formatWithDefault[List[EnvVar]](List.empty) and
       (JsPath \ "configMapMounts").formatWithDefault[List[ConfigMount]](List.empty) and
       (JsPath \ "secretMounts").formatWithDefault[List[ConfigMount]](List.empty)
     ) (Spec.apply, unlift(Spec.unapply))

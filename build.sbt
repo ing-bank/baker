@@ -44,6 +44,7 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     "-Xfatal-warnings"
   ),
   coverageExcludedPackages := "<empty>;.*.javadsl;.*.scaladsl;.*.common;.*.protobuf",
+  parallelExecution in Test := true,
   packageOptions in(Compile, packageBin) +=
     Package.ManifestAttributes(
       "Build-Time" -> new java.util.Date().toString,
@@ -386,6 +387,7 @@ lazy val `bakery-controller` = project.in(file("bakery-controller"))
     libraryDependencies ++= Seq(
       slf4jApi,
       slf4jSimple,
+      akkaSlf4j,
       logback,
       scalaLogging,
       skuber,

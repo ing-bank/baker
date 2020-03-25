@@ -10,16 +10,16 @@ spec:
   - name: TWO
     valueFrom:
       configMapKeyRef:
-        name: timmyoh
-        key: nooblevel
+        name: test-config
+        key: ONE
   - name: THREE
     valueFrom:
       secretKeyRef:
-        name: credentials
-        key: password
+        name: test-secret
+        key: username
   configMapMounts:
-  - name: timmyoh
-    mountPath: "/doesntmatter"
+  - name: test-config
+    mountPath: "/config"
   secretMounts:
-  - name: credentials
+  - name: test-secret
     mountPath: "/secrets"

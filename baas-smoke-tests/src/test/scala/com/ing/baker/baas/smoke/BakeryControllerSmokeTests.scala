@@ -1,7 +1,6 @@
 package com.ing.baker.baas.smoke
 
 import cats.effect.{IO, Resource}
-import cats.implicits._
 import com.ing.baker.baas.smoke
 import com.ing.baker.baas.smoke.k8s.{DefinitionFile, Pod}
 import com.ing.baker.baas.testing.BakeryFunSpec
@@ -38,6 +37,37 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
             _ <- Pod.allPodsAreReady(namespace)
           } yield()
         }
+
+        configOne <- Pod.execOnNamed("ship-items", namespace)("/bin/sh -c \"echo $ONE\"")
+        configTwo <- Pod.execOnNamed("ship-items", namespace)("/bin/sh -c \"echo $TWO\"")
+        configThree <- Pod.execOnNamed("ship-items", namespace)("/bin/sh -c \"echo $THREE\"")
+        mountOne <- Pod.execOnNamed("ship-items", namespace)("ls /config")
+        mountTwo <- Pod.execOnNamed("ship-items", namespace)("ls /secrets")
+
+        _ = configOne shouldBe List(List("1"))
+        _ = configTwo shouldBe List(List("one"))
+        _ = configThree shouldBe List(List("admin"))
+        _ = mountOne shouldBe List(List("ONE"))
+        _ = mountTwo shouldBe List(List("username"))
+
+        configOne <- Pod.execOnNamed("reserve-items", namespace)("/bin/sh -c \"echo $ONE\"")
+        configTwo <- Pod.execOnNamed("reserve-items", namespace)("/bin/sh -c \"echo $TWO\"")
+        configThree <- Pod.execOnNamed("reserve-items", namespace)("/bin/sh -c \"echo $THREE\"")
+        mountOne <- Pod.execOnNamed("reserve-items", namespace)("ls /config").attempt.map {
+          case Left(e) => e.getMessage
+          case Right(a) => a.toString
+        }
+        mountTwo <- Pod.execOnNamed("reserve-items", namespace)("ls /secrets").attempt.map {
+          case Left(e) => e.getMessage
+          case Right(a) => a.toString
+        }
+
+        _ = configOne shouldBe List(List.empty, List.empty)
+        _ = configTwo shouldBe List(List.empty, List.empty)
+        _ = configThree shouldBe List(List.empty, List.empty)
+        _ = mountOne shouldBe "Nonzero exit value: 2"
+        _ = mountTwo shouldBe "Nonzero exit value: 2"
+        _ <- printGreen("Interaction correctly configured")
 
         webshop <- DefinitionFile("baker-webshop.yaml", namespace)
         reservation <- DefinitionFile("baker-reservation.yaml", namespace)
@@ -84,20 +114,8 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
             webshopPodsCount <- Pod.countPodsWithLabel(webshopBaker, namespace)
             _ = webshopPodsCount shouldBe 3
 
-            pods <- IO(s"kubectl get --no-headers=true pods -o name -n ${context.namespace}".!!).map(_.split(splitChar).toList)
-            regex = """pod\/(baas-state-webshop-baker.+)""".r
-            webshopPods = pods.mapFilter {
-              case regex(podName) => Some(podName)
-              case _ => None
-            }
-            podsRecipes <- webshopPods
-              .traverse { pod =>
-                IO(s"kubectl exec $pod -n ${context.namespace} -- ls /recipes".!!)
-                  .map(_.split(splitChar).toList)
-              }.map(_.flatten)
-
+            podsRecipes <- Pod.execOnNamed("baas-state-webshop-baker", namespace)("ls /recipes").map(_.flatten)
             _ = assert(podsRecipes.contains("79c890866238cf4b"), "State pods should contain new recipe")
-
           } yield ()
         }
 
