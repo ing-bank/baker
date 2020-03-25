@@ -4,6 +4,7 @@ metadata:
   name: kafka-event-sink-expose
   labels:
     app: kafka-event-sink-expose
+    test-facility: "true"
 spec:
   selector:
     app: kafka-event-sink
@@ -19,6 +20,7 @@ kind: Deployment
 metadata:
   labels:
     app: kafka-event-sink
+    test-facility: "true" 
   name: kafka-event-sink
 spec:
   replicas: 1
