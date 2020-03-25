@@ -11,8 +11,6 @@ object BakeryEnvironment {
 
   case class Context(
     clientApp: ExampleAppClient,
-    recipeEventListener: EventListenerClient,
-    bakerEventListener: EventListenerClient,
     namespace: Namespace
   )
 
@@ -37,12 +35,8 @@ object BakeryEnvironment {
 
     client <- BlazeClientBuilder[IO](connectionPool).resource
     exampleAppClient = new ExampleAppClient(client, args.clientAppHostname)
-    recipeEventsClient = new EventListenerClient(client, args.eventListenerHostname)
-    bakerEventsClient = new EventListenerClient(client, args.bakerEventListenerHostname)
   } yield Context(
     clientApp = exampleAppClient,
-    recipeEventListener = recipeEventsClient,
-    bakerEventListener = bakerEventsClient,
     namespace
   )
 }
