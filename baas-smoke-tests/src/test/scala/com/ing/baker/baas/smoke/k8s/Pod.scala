@@ -18,7 +18,7 @@ case class Pod(name: String, namespace: Namespace) {
 
   def exec(command: String): IO[String] = {
     val command0 = s"kubectl exec $name -n $namespace -- $command"
-    IO(command0.!!)
+    IO(command0.!!(ProcessLogger.apply(_ => Unit, _ => Unit)))
   }
 }
 

@@ -28,29 +28,43 @@ spec:
             env:
               type: array
               items:
-                type: object
-                properties:
-                  name:
-                    type: string
-                  value:
-                    type: string
-                  valueFrom:
-                    type: object
+                oneOf:
+                  - type: object
                     properties:
-                      configMapKeyRef:
-                        type: object
-                        properties:
-                          name:
-                            type: string
-                          key:
-                            type: string
-                      secretKeyRef:
-                        type: object
-                        properties:
-                          name:
-                            type: string
-                          key:
-                            type: string
+                      name:
+                        type: string
+                      value:
+                        type: string
+                    required: ["name", "value"]
+                  - type: object
+                    properties:
+                      name:
+                        type: string
+                      valueFrom:
+                        oneOf:
+                          - type: object
+                            properties:
+                              configMapKeyRef:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  key:
+                                    type: string
+                                required: ["name", "key"]
+                            required: ["configMapKeyRef"]
+                          - type: object
+                            properties:
+                              secretKeyRef:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  key:
+                                    type: string
+                                required: ["name", "key"]
+                            required: ["secretKeyRef"]
+                    required: ["name", "valueFrom"]
             configMapMounts:
               type: array
               items:
