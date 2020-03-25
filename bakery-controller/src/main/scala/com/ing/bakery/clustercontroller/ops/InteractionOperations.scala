@@ -2,7 +2,7 @@ package com.ing.bakery.clustercontroller.ops
 
 import com.ing.bakery.clustercontroller.ResourceOperations.ControllerSpecification
 import skuber.ext.Deployment
-import skuber.{Container, ObjectMeta, Pod, Protocol, Service}
+import skuber.{Container, ObjectMeta, Pod, Protocol, Service, Volume}
 
 object InteractionOperations {
 
@@ -40,10 +40,36 @@ object InteractionOperations {
       .exposePort(httpAPIPort)
       .withReadinessProbe(healthProbe)
       .withLivenessProbe(healthProbe)
+      .copy(env = interaction.spec.env)
+
+    val interactionContainerWithMounts0 =
+      interaction.spec.configMapMounts.foldLeft(interactionContainer) { (container, configMount) =>
+        container.mount(configMount.name, configMount.mountPath, readOnly = true)
+      }
+
+    val interactionContainerWithMounts1 =
+      interaction.spec.secretMounts.foldLeft(interactionContainerWithMounts0) { (container, configMount) =>
+        container.mount(configMount.name, configMount.mountPath, readOnly = true)
+      }
+
+    val volumesConfigMaps =
+      interaction.spec.configMapMounts.map { configMount =>
+        Volume(configMount.name, Volume.ConfigMapVolumeSource(configMount.name))
+      }
+
+    val volumesSecrets =
+      interaction.spec.secretMounts.map { configMount =>
+        Volume(configMount.name, Volume.Secret(configMount.name))
+      }
+
+    val podSpec = Pod.Spec(
+      containers = List(interactionContainerWithMounts1),
+      volumes = volumesConfigMaps ++ volumesSecrets,
+    )
 
     val podTemplate = Pod.Template.Spec
       .named(name)
-      .addContainer(interactionContainer)
+      .withPodSpec(podSpec)
       .addLabel(interactionLabel(interaction))
 
     new Deployment(metadata = ObjectMeta(

@@ -25,6 +25,52 @@ spec:
             replicas:
               type: integer
               minimum: 1
+            env:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  value:
+                    type: string
+                  valueFrom:
+                    type: object
+                    properties:
+                      configMapKeyRef:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          key:
+                            type: string
+                      secretKeyRef:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          key:
+                            type: string
+            configMapMounts:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  mountPath:
+                    type: string
+                required: ["name", "mountPath"]
+            secretMounts:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  mountPath:
+                    type: string
+                required: ["name", "mountPath"]
           required:
             - image
   # either Namespaced or Cluster
