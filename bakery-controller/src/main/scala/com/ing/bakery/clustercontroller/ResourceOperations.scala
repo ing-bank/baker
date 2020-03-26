@@ -14,6 +14,7 @@ import skuber.json.format._
 import skuber.{K8SWatchEvent, LabelSelector, ObjectResource, PodList, ResourceDefinition, Service}
 
 import scala.concurrent.Future
+import akka.event.{Logging, LoggingAdapter}
 
 object ResourceOperations extends LazyLogging {
 
@@ -40,22 +41,37 @@ object ResourceOperations extends LazyLogging {
     rd: ResourceDefinition[O]
   ): Resource[IO, Unit] = {
 
+    implicit val akkaLogger: LoggingAdapter = Logging(actorSystem, rd.spec.names.kind + "-Controller")
+
     val paralellism = math.max(2, Runtime.getRuntime.availableProcessors())
 
-    def handleEvent(event: K8SWatchEvent[O]): IO[Unit] = {
-      val ops = new ResourceOperations[O](event._object, spec, k8s)
-      println(Console.YELLOW + event._type + " " + event._object.metadata.name + Console.RESET)
-      event._type match {
-        case EventType.ADDED => ops.create
-        case EventType.DELETED => ops.terminate
-        case EventType.MODIFIED => ops.upgrade
-        case EventType.ERROR => IO(logger.error(s"Event type ERROR on Recipe CRD watch for recipe ${event._object}"))
+    def handleEvent(eventOpt: Option[K8SWatchEvent[O]]): IO[Unit] = {
+      eventOpt match {
+        case Some(event) =>
+          val ops = new ResourceOperations[O](event._object, spec, k8s)
+          akkaLogger.info(event._type + " " + event._object.metadata.name)
+          (event._type match {
+            case EventType.ADDED => ops.create
+            case EventType.DELETED => ops.terminate
+            case EventType.MODIFIED => ops.upgrade
+            case EventType.ERROR => IO(akkaLogger.error(s"Event type ERROR on ${rd.spec.names.kind} CRD: ${event._object}"))
+          }).attempt.flatMap {
+            case Left(e) => IO(akkaLogger.error(s"Error when handling the event ${event._type}: " + e.getMessage))
+            case Right(_) => IO.unit
+          }
+        case None =>
+          IO(akkaLogger.info("Doing nothing because stream failed before"))
       }
     }
 
     val create = for {
       killSwitch <- IO {
         k8s.watchAllContinuously[O]()
+          .map(Some(_))
+          .recover { case e =>
+            akkaLogger.error("Serialization or CRD consistency issue:" + e.getMessage)
+            None
+          }
           .viaMat(KillSwitches.single)(Keep.right)
           .toMat(Sink.foreachAsync(paralellism)(handleEvent(_).unsafeToFuture()))(Keep.left)
           .run()
@@ -68,43 +84,34 @@ object ResourceOperations extends LazyLogging {
 }
 
 final class ResourceOperations[O <: ObjectResource](resource: O, spec: ResourceOperations.ControllerSpecification[O], k8s: KubernetesClient)
-                                                   (implicit cs: ContextShift[IO], timer: Timer[IO], fmt: Format[O], rd: ResourceDefinition[O]) extends LazyLogging {
+                                                   (implicit cs: ContextShift[IO], timer: Timer[IO], fmt: Format[O], rd: ResourceDefinition[O], loggingAdapter: LoggingAdapter) extends LazyLogging {
 
   private def io[A](ref: => Future[A])(implicit cs: ContextShift[IO]): IO[A] =
     IO.fromFuture(IO(ref))
 
   def create: IO[Unit] =
-    (for {
-      _ <- IO(logger.info(s"Creating ${rd.spec.names.kind}: ${resource.name}"))
+    for {
+      _ <- IO(loggingAdapter.info(s"Creating ${rd.spec.names.kind}: ${resource.name}"))
       _ <- spec.hooks.fold(IO.unit)(_.preDeployment(resource, k8s))
       _ <- io(k8s.create(spec.deployment(resource)))
       _ <- io(k8s.create(spec.service(resource)))
-    } yield ()).attempt.flatMap {
-      case Left(e) => IO(println(Console.RED + e.getMessage + Console.RESET))
-      case _ => IO.unit
-    }
+    } yield ()
 
   def terminate: IO[Unit] =
-    (for {
-      _ <- IO(logger.info(s"Deleting ${rd.spec.names.kind}: ${resource.name}"))
+    for {
+      _ <- IO(loggingAdapter.info(s"Deleting ${rd.spec.names.kind}: ${resource.name}"))
       _ <- spec.hooks.fold(IO.unit)(_.preTermination(resource, k8s))
       (key, value) = spec.label(resource)
       _ <- io(k8s.delete[Service](spec.service(resource).name))
       _ <- io(k8s.delete[Deployment](spec.deployment(resource).name))
       _ <- io(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(key, value))))
       _ <- io(k8s.deleteAllSelected[PodList](LabelSelector(IsEqualRequirement(key, value))))
-    } yield ()).attempt.flatMap {
-      case Left(e) => IO(println(Console.RED + e.getMessage + Console.RESET))
-      case _ => IO.unit
-    }
+    } yield ()
 
   def upgrade: IO[Unit] =
-    (for {
-      _ <- IO(logger.info(s"Updating ${rd.spec.names.kind}: ${resource.name}"))
+    for {
+      _ <- IO(loggingAdapter.info(s"Updating ${rd.spec.names.kind}: ${resource.name}"))
       _ <- spec.hooks.fold(IO.unit)(_.preUpdate(resource, k8s))
       _ <- io(k8s.update[skuber.ext.Deployment](spec.deployment(resource)))
-    } yield ()).attempt.flatMap {
-      case Left(e) => IO(println(Console.RED + e.getMessage + Console.RESET))
-      case _ => IO.unit
-    }
+    } yield ()
 }

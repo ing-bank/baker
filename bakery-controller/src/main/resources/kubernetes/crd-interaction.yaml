@@ -25,6 +25,66 @@ spec:
             replicas:
               type: integer
               minimum: 1
+            env:
+              type: array
+              items:
+                oneOf:
+                  - type: object
+                    properties:
+                      name:
+                        type: string
+                      value:
+                        type: string
+                    required: ["name", "value"]
+                  - type: object
+                    properties:
+                      name:
+                        type: string
+                      valueFrom:
+                        oneOf:
+                          - type: object
+                            properties:
+                              configMapKeyRef:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  key:
+                                    type: string
+                                required: ["name", "key"]
+                            required: ["configMapKeyRef"]
+                          - type: object
+                            properties:
+                              secretKeyRef:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  key:
+                                    type: string
+                                required: ["name", "key"]
+                            required: ["secretKeyRef"]
+                    required: ["name", "valueFrom"]
+            configMapMounts:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  mountPath:
+                    type: string
+                required: ["name", "mountPath"]
+            secretMounts:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  mountPath:
+                    type: string
+                required: ["name", "mountPath"]
           required:
             - image
   # either Namespaced or Cluster

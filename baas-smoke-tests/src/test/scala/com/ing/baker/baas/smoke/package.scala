@@ -16,6 +16,9 @@ package object smoke {
   def printCyan(message: AnyRef): IO[Unit] =
     printColor(message, Console.CYAN)
 
+  def printMagenta(message: AnyRef): IO[Unit] =
+    printColor(message, Console.MAGENTA)
+
   def printRed(message: AnyRef): IO[Unit] =
     printColor(message, Console.RED)
 
