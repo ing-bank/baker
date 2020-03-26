@@ -71,6 +71,7 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
 
         webshop <- DefinitionFile("baker-webshop.yaml", namespace)
         reservation <- DefinitionFile("baker-reservation.yaml", namespace)
+
         _ <- eventually("All recipes were created") {
           for {
             _ <- Pod.printPodsStatuses(namespace)
@@ -136,9 +137,9 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
             _ = reserveItemsPodsCount shouldBe 0
             _ = shipItemsPodsCount shouldBe 0
             _ = makePaymentPodsCount shouldBe 0
-            services <- IO(s"kubectl get services -n $namespace".!!)
-            deployments <- IO(s"kubectl get deployments -n $namespace".!!)
-            replicasets <- IO(s"kubectl get replicasets -n $namespace".!!)
+            services <- IO(s"kubectl get services -n $namespace --selector=test-facility!=true".!!)
+            deployments <- IO(s"kubectl get deployments -n $namespace --selector=test-facility!=true".!!)
+            replicasets <- IO(s"kubectl get replicasets -n $namespace --selector=test-facility!=true".!!)
             _ = assert(services == "", "Services where still up while deleting namespace")
             _ = assert(deployments == "", "Deployments where still up while deleting namespace")
             _ = assert(replicasets == "", "Replica sets where still up while deleting namespace")

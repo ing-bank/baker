@@ -28,6 +28,12 @@ object Pod {
 
   val splitChar: String = if(isWindows) "\r\n" else "\n"
 
+  private val podStatus = ".*(\\d+)/(\\d+).*".r
+
+  private def podsComplete(str: String): Boolean = podStatus.findAllMatchIn(str).collect(
+      { case m => m.group(1).toInt == m.group(2).toInt }
+    ).forall(identity)
+
   def printPodsStatuses(namespace: Namespace): IO[Int] =
     exec(
       prefix = prefixGreen("pods"),
@@ -44,7 +50,7 @@ object Pod {
     for {
       pods <- IO(s"kubectl get pods --no-headers=true -n $namespace".!!)
       podsLines = pods.split(splitChar).toList
-      _ = assert(!podsLines.exists(_.contains("0/1")) && podsLines.forall(_.contains("1/1")))
+      _ = assert(podsComplete(pods))
     } yield()
 
   private val setupWaitTime = 1.minute
