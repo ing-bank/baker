@@ -71,7 +71,6 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
 
         webshop <- DefinitionFile("baker-webshop.yaml", namespace)
         reservation <- DefinitionFile("baker-reservation.yaml", namespace)
-
         _ <- eventually("All recipes were created") {
           for {
             _ <- Pod.printPodsStatuses(namespace)
