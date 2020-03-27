@@ -38,35 +38,31 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
           } yield()
         }
 
-        configOne <- Pod.execOnNamed("ship-items", namespace)("/bin/sh -c \"echo $ONE\"")
-        configTwo <- Pod.execOnNamed("ship-items", namespace)("/bin/sh -c \"echo $TWO\"")
-        configThree <- Pod.execOnNamed("ship-items", namespace)("/bin/sh -c \"echo $THREE\"")
+        configOne <- Pod.environmentVariable("ship-items", namespace)("ONE")
+        configTwo <- Pod.environmentVariable("ship-items", namespace)("TWO")
+        configThree <- Pod.environmentVariable("ship-items", namespace)("THREE")
         mountOne <- Pod.execOnNamed("ship-items", namespace)("ls /config")
         mountTwo <- Pod.execOnNamed("ship-items", namespace)("ls /secrets")
 
-        _ = configOne shouldBe List(List("1"))
-        _ = configTwo shouldBe List(List("one"))
-        _ = configThree shouldBe List(List("admin"))
-        _ = mountOne shouldBe List(List("ONE"))
-        _ = mountTwo shouldBe List(List("username"))
+        _ = configOne shouldBe "1"
+        _ = configTwo shouldBe "one"
+        _ = configThree shouldBe "admin"
+        _ = mountOne shouldBe List("ONE")
+        _ = mountTwo shouldBe List("username")
 
-        configOne <- Pod.execOnNamed("reserve-items", namespace)("/bin/sh -c \"echo $ONE\"")
-        configTwo <- Pod.execOnNamed("reserve-items", namespace)("/bin/sh -c \"echo $TWO\"")
-        configThree <- Pod.execOnNamed("reserve-items", namespace)("/bin/sh -c \"echo $THREE\"")
-        mountOne <- Pod.execOnNamed("reserve-items", namespace)("ls /config").attempt.map {
-          case Left(e) => e.getMessage
-          case Right(a) => a.toString
-        }
-        mountTwo <- Pod.execOnNamed("reserve-items", namespace)("ls /secrets").attempt.map {
-          case Left(e) => e.getMessage
-          case Right(a) => a.toString
-        }
+        configOne <- Pod.environmentVariable("reserve-items", namespace)("ONE")
+        configTwo <- Pod.environmentVariable("reserve-items", namespace)("TWO")
+        configThree <- Pod.environmentVariable("reserve-items", namespace)("THREE")
 
-        _ = configOne shouldBe List(List.empty, List.empty)
-        _ = configTwo shouldBe List(List.empty, List.empty)
-        _ = configThree shouldBe List(List.empty, List.empty)
-        _ = mountOne shouldBe "Nonzero exit value: 2"
-        _ = mountTwo shouldBe "Nonzero exit value: 2"
+        mountOne <- Pod.execOnNamed("reserve-items", namespace)("ls /config")
+
+        mountTwo <- Pod.execOnNamed("reserve-items", namespace)("ls /secrets")
+
+        _ = configOne shouldBe ""
+        _ = configTwo shouldBe ""
+        _ = configThree shouldBe ""
+        _ = mountOne shouldBe List("", "")
+        _ = mountTwo shouldBe List("", "")
         _ <- printGreen("Interaction correctly configured")
 
         webshop <- DefinitionFile("baker-webshop.yaml", namespace)
@@ -114,7 +110,7 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
             webshopPodsCount <- Pod.countPodsWithLabel(webshopBaker, namespace)
             _ = webshopPodsCount shouldBe 3
 
-            podsRecipes <- Pod.execOnNamed("baas-state-webshop-baker", namespace)("ls /recipes").map(_.flatten)
+            podsRecipes <- Pod.execOnNamed("baas-state-webshop-baker", namespace)("ls /recipes")
             _ = assert(podsRecipes.contains("79c890866238cf4b"), "State pods should contain new recipe")
           } yield ()
         }
