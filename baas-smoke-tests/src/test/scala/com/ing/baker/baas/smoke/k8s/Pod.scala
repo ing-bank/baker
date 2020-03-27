@@ -1,14 +1,18 @@
 package com.ing.baker.baas.smoke.k8s
 
-import cats.implicits._
 import cats.effect.{IO, Timer}
-import com.ing.baker.baas.smoke.k8s.KubernetesCommands.exec
+import cats.implicits._
 import com.ing.baker.baas.smoke._
+import com.ing.baker.baas.smoke.k8s.KubernetesCommands.exec
 
 import scala.concurrent.duration._
 import scala.sys.process._
 
 case class Pod(name: String, namespace: Namespace) {
+
+  private def output(container: String, command: String, prefix: String)(contents: String) =
+    println(s"$command@$container ($prefix): $contents")
+
 
   def status: IO[String] =
     IO(s"kubectl get pod $name -n $namespace".!!)
@@ -18,7 +22,7 @@ case class Pod(name: String, namespace: Namespace) {
 
   def exec(command: String): IO[String] = {
     val command0 = s"kubectl exec $name -n $namespace -- $command"
-    IO(command0.!!(ProcessLogger.apply(_ => Unit, _ => Unit)))
+    IO(command0.!!(ProcessLogger.apply(output(name, command, "out"), output(name, command,"err"))))
   }
 }
 
@@ -27,6 +31,12 @@ object Pod {
   val isWindows: Boolean = sys.props.get("os.name").exists(_.toLowerCase().contains("windows"))
 
   val splitChar: String = if(isWindows) "\r\n" else "\n"
+
+  private val podStatus = ".*(\\d+)/(\\d+).*".r
+
+  private def podsComplete(str: String): Boolean = podStatus.findAllMatchIn(str).collect(
+      { case m => m.group(1).toInt == m.group(2).toInt }
+    ).forall(identity)
 
   def printPodsStatuses(namespace: Namespace): IO[Int] =
     exec(
@@ -43,8 +53,7 @@ object Pod {
   def allPodsAreReady(namespace: Namespace)(implicit timer: Timer[IO]): IO[Unit] =
     for {
       pods <- IO(s"kubectl get pods --no-headers=true -n $namespace".!!)
-      podsLines = pods.split(splitChar).toList
-      _ = assert(!podsLines.exists(_.contains("0/1")) && podsLines.forall(_.contains("1/1")))
+      _ = assert(podsComplete(pods))
     } yield()
 
   private val setupWaitTime = 1.minute
@@ -68,10 +77,19 @@ object Pod {
       }
     } yield pods1
 
-  def execOnNamed(name: String, namespace: Namespace)(command: String): IO[List[List[String]]] =
-    getPodsNames(name, namespace).flatMap(_
-      .traverse { name0 =>
+  def execOnNamed(name: String, namespace: Namespace)(command: String): IO[List[String]] =
+    getPodsNames(name, namespace).flatMap(_.traverse({ name0 =>
         Pod(name0, namespace).exec(command)
           .map(_.split(splitChar).toList)
-      })
+      }).map(_.flatten) )
+
+  def environmentVariable(name: String, namespace: Namespace)(variableName: String): IO[String] =
+    for {
+      env <- execOnNamed(name, namespace)("env")
+    } yield {
+      env
+        .find(_.startsWith(s"$variableName="))
+        .map(_.reverse.takeWhile(_ != '=').reverse)
+        .getOrElse("")
+    }
 }

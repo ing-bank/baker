@@ -11,8 +11,6 @@ object BakeryEnvironment {
 
   case class Context(
     clientApp: ExampleAppClient,
-    recipeEventListener: EventListenerClient,
-    bakerEventListener: EventListenerClient,
     namespace: Namespace
   )
 
@@ -27,7 +25,6 @@ object BakeryEnvironment {
 
     _ <- Resource.liftF(printGreen(s"\nAdding custom resources: interactions, listeners, recipe"))
     _ <- DefinitionFile.resource("interactions-example.yaml", namespace)
-    _ <- DefinitionFile.resource("example-listeners.yaml", namespace)
     _ <- DefinitionFile.resource("baker-webshop.yaml", namespace)
     _ <- Resource.liftF(Pod.awaitForAllPods(namespace))
 
@@ -37,12 +34,8 @@ object BakeryEnvironment {
 
     client <- BlazeClientBuilder[IO](connectionPool).resource
     exampleAppClient = new ExampleAppClient(client, args.clientAppHostname)
-    recipeEventsClient = new EventListenerClient(client, args.eventListenerHostname)
-    bakerEventsClient = new EventListenerClient(client, args.bakerEventListenerHostname)
   } yield Context(
     clientApp = exampleAppClient,
-    recipeEventListener = recipeEventsClient,
-    bakerEventListener = bakerEventsClient,
     namespace
   )
 }

@@ -52,6 +52,9 @@ object BakerOperations {
       name = baasStateName(bakerName),
       image = "baas-node-state:" + bakeryVersion
     )
+      // todo parametrise?
+      .requestMemory("512M")
+      .requestCPU("200m")
       .exposePort(Container.Port(
         name = "remoting",
         containerPort = 2552,
@@ -67,17 +70,22 @@ object BakerOperations {
         action = skuber.HTTPGetAction(
           port = Right(managementPort.name),
           path = "/health/ready"
-        )
+        ),
+        initialDelaySeconds = 15,
+        timeoutSeconds = 10
       ))
       .withLivenessProbe(skuber.Probe(
         action = skuber.HTTPGetAction(
           port = Right(managementPort.name),
           path = "/health/alive"
-        )
+        ),
+        initialDelaySeconds = 15,
+        timeoutSeconds = 10
       ))
       .mount("recipes", recipesMountPath, readOnly = true)
       .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)
       .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
+      .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
 
     val podSpec = Pod.Spec(
       containers = List(stateNodeContainer),
