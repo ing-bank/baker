@@ -51,7 +51,7 @@ class AsyncModelTests extends FlatSpec {
   }
 
   it should "not count pure applications" in {
-    val (lamportClock, result) = AsyncModel.pure(1).run
+    val (lamportClock, result) = AsyncModel.ok(1).run
     assert(lamportClock == 0 && result == Right(1))
   }
 
