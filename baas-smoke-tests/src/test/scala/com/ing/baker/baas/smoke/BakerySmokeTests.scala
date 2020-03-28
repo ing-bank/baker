@@ -1,7 +1,7 @@
 package com.ing.baker.baas.smoke
 
 import cats.effect.{IO, Resource}
-import com.ing.baker.baas.smoke.k8s.DefinitionFile
+import com.ing.baker.baas.smoke.k8s.{DefinitionFile, Pod}
 import com.ing.baker.baas.testing.BakeryFunSpec
 import org.http4s.Uri
 import org.scalatest.{ConfigMap, Matchers}
@@ -13,6 +13,14 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
 
     test("runs a happy path flow") { context =>
       for {
+        _ <- eventually("Kafka even sink is ready, topic for bakery events created") {
+          for {
+            result <- Pod.execOnNamed("kafka-event-sink",
+              context.namespace, Some("kafka"))("kafka-topics --zookeeper localhost:2181 --partitions=1 --replication-factor=1 --create --topic bakery-events")
+            _ = result shouldBe List("Created topic \"bakery-events\".")
+          } yield ()
+        }
+
         recipes <- context.clientApp.listRecipeNames
         _ = recipes.length shouldBe 1
         _ = recipes should contain("Webshop")
@@ -54,6 +62,8 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
           context.clientApp.pollOrderStatus(orderId)
             .map(status => status shouldBe OrderStatus.Complete.toString)
         }
+
+
 // todo add assertions of kafka listeners here
 
 //        recipeEvents <- context.recipeEventListener.events

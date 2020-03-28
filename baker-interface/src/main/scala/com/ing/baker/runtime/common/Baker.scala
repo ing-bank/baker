@@ -341,4 +341,5 @@ trait Baker[F[_]] extends LanguageApi {
     * @return
     */
   def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): F[Unit]
+
 }

@@ -6,13 +6,10 @@ import akka.stream.{KillSwitches, Materializer}
 import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
-import com.ing.baker.baas.bakerlistener.RemoteBakerEventListenerClient
 import com.ing.baker.baas.interaction.RemoteInteractionClient
-import com.ing.baker.baas.recipelistener.RemoteEventListenerClient
-import com.ing.baker.baas.state.ServiceDiscovery.{BakerListener, RecipeListener, RecipeName}
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.akka.internal.InteractionManager
-import com.ing.baker.runtime.scaladsl.{Baker, InteractionInstance}
+import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.typesafe.scalalogging.LazyLogging
 import org.http4s.Uri
 import skuber._
@@ -25,12 +22,8 @@ object ServiceDiscovery extends LazyLogging {
 
   private[state] type RecipeName = String
 
-  private[state] type RecipeListener = Resource[IO, RemoteEventListenerClient]
-
-  private[state] type BakerListener = Resource[IO, RemoteBakerEventListenerClient]
-
   /** Creates resource of a ServiceDiscovery module, when acquired a stream of kubernetes services starts and feeds the
-    * ServiceDiscovery module to give corresponding InteractionInstances and clients to the event listeners.
+    * ServiceDiscovery module to give corresponding InteractionInstances
     * When the resource is released the polling to the Kubernetes API stops.
     *
     * Current hard coded polling periods: 2 seconds
@@ -56,23 +49,6 @@ object ServiceDiscovery extends LazyLogging {
         .map(service => "http://" + service.metadata.name + ":" + getHttpServicePortOrDefault(service))
         .map(Uri.unsafeFromString)
 
-    def getEventListenersAddresses(currentServices: List[Service]): List[(String, Uri)] =
-      currentServices
-        .filter(_.metadata.labels.getOrElse("baas-component", "Wrong")
-          .equals("remote-event-listener"))
-        .map { service =>
-          val recipe = service.metadata.labels.getOrElse("baker-recipe", "All-Recipes")
-          val address = Uri.unsafeFromString("http://" + service.metadata.name + ":" + getHttpServicePortOrDefault(service))
-          recipe -> address
-        }
-
-    def getBakerEventListenersAddresses(currentServices: List[Service]): List[Uri] =
-      currentServices
-        .filter(_.metadata.labels.getOrElse("baas-component", "Wrong")
-          .equals("remote-baker-event-listener"))
-        .map(service => "http://" + service.metadata.name + ":" + getHttpServicePortOrDefault(service))
-        .map(Uri.unsafeFromString)
-
     def buildInteractions(currentServices: List[Service]): IO[List[InteractionInstance]] =
       getInteractionAddresses(currentServices)
         .map(RemoteInteractionClient.resource(_, connectionPool))
@@ -94,22 +70,9 @@ object ServiceDiscovery extends LazyLogging {
         } yield interactionsOpt
       }
 
-    def buildRecipeListeners(currentServices: List[Service]): Map[RecipeName, List[RecipeListener]] =
-      getEventListenersAddresses(currentServices)
-        .map { case (recipe, address) => (recipe, RemoteEventListenerClient.resource(address, connectionPool)) }
-        .foldLeft(Map.empty[RecipeName, List[RecipeListener]]) { case (acc, (recipeName, client)) =>
-          acc + (recipeName -> (client :: acc.getOrElse(recipeName, List.empty)))
-        }
-
-    def buildBakerListeners(currentServices: List[Service]): List[BakerListener] =
-      getBakerEventListenersAddresses(currentServices)
-        .map(RemoteBakerEventListenerClient.resource(_, connectionPool))
-
     def updateServicesWith(
       currentServices: Ref[IO, List[Service]],
-      cacheInteractions: Ref[IO, List[InteractionInstance]],
-      cacheRecipeListeners: Ref[IO, Map[RecipeName, List[RecipeListener]]],
-      cacheBakerListeners: Ref[IO, List[BakerListener]]
+      cacheInteractions: Ref[IO, List[InteractionInstance]]
     )(event: K8SWatchEvent[Service]): IO[Unit] = {
       for {
         services <- event._type match {
@@ -124,8 +87,6 @@ object ServiceDiscovery extends LazyLogging {
         }
         _ <- List(
           buildInteractions(services).flatMap(cacheInteractions.set),
-          cacheRecipeListeners.set(buildRecipeListeners(services)),
-          cacheBakerListeners.set(buildBakerListeners(services))
         ).parSequence
       } yield ()
     }
@@ -135,10 +96,8 @@ object ServiceDiscovery extends LazyLogging {
     val createServiceDiscovery = for {
       currentServices <- Ref.of[IO, List[Service]](List.empty)
       cacheInteractions <- Ref.of[IO, List[InteractionInstance]](List.empty)
-      cacheRecipeListeners <- Ref.of[IO, Map[RecipeName, List[RecipeListener]]](Map.empty)
-      cacheBakerListeners <- Ref.of[IO, List[BakerListener]](List.empty)
-      service = new ServiceDiscovery(cacheInteractions, cacheRecipeListeners, cacheBakerListeners)
-      updateServices = updateServicesWith(currentServices, cacheInteractions, cacheRecipeListeners, cacheBakerListeners) _
+      service = new ServiceDiscovery(cacheInteractions)
+      updateServices = updateServicesWith(currentServices, cacheInteractions) _
       killSwitch <- IO {
         k8s.watchAllContinuously[Service]()
           .viaMat(KillSwitches.single)(Keep.right)
@@ -152,24 +111,8 @@ object ServiceDiscovery extends LazyLogging {
 }
 
 case class ServiceDiscovery private(
-  cacheInteractions: Ref[IO, List[InteractionInstance]],
-  cacheRecipeListeners: Ref[IO, Map[RecipeName, List[RecipeListener]]],
-  cacheBakerListeners: Ref[IO, List[BakerListener]]
+  cacheInteractions: Ref[IO, List[InteractionInstance]]
 ) {
-
-  def plugBakerEventListeners(baker: Baker): IO[Unit] = IO {
-    baker.registerBakerEventListener { event =>
-      cacheBakerListeners.get.map { listeners =>
-        listeners.foreach(_.use(_.fireEvent(event)).unsafeRunAsyncAndForget())
-      }.unsafeRunAsyncAndForget()
-    }
-    baker.registerEventListener { (metadata, event) =>
-      cacheRecipeListeners.get.map { listeners =>
-        listeners.get(metadata.recipeName).foreach(_.foreach(_.use(_.fireEvent(metadata, event)).unsafeRunAsyncAndForget()))
-        listeners.get("All-Recipes").foreach(_.foreach(_.use(_.fireEvent(metadata, event)).unsafeRunAsyncAndForget()))
-      }.unsafeRunAsyncAndForget()
-    }
-  }
 
   def buildInteractionManager: InteractionManager =
     new InteractionManager {

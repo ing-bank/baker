@@ -105,9 +105,12 @@ spec:
           volumeMounts:
             - name: kafka-data
               mountPath: /var/lib/kafka
+        - name: kafkacat
+          image: confluentinc/cp-kafkacat
+          command: ["/bin/sh"]
+          args: ["-c", "trap : TERM INT; sleep infinity & wait"]
       volumes:
         - name: zookeeper-data
           emptyDir: {}
         - name: kafka-data
           emptyDir: {}
-

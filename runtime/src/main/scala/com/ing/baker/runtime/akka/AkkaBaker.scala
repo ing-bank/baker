@@ -29,7 +29,7 @@ object AkkaBaker {
   def apply(config: Config, actorSystem: ActorSystem): scaladsl.Baker =
     new AkkaBaker(AkkaBakerConfig.from(config, actorSystem))
 
-  def withConfig(config: AkkaBakerConfig): scaladsl.Baker =
+  def withConfig(config: AkkaBakerConfig): AkkaBaker =
     new AkkaBaker(config)
 
   def localDefault(actorSystem: ActorSystem): scaladsl.Baker =
@@ -64,6 +64,12 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
 
   val processIndexActor: ActorRef =
     config.bakerActorProvider.createProcessIndexActor(config.interactionManager, recipeManager)
+
+  def withEventSink(eventSink: EventSink): AkkaBaker = {
+    registerBakerEventListener( event => eventSink.fire(event))
+    registerEventListener( (event, _) => eventSink.fire(event))
+    this
+  }
 
   /**
    * Adds a recipe to baker and returns a recipeId for the recipe.

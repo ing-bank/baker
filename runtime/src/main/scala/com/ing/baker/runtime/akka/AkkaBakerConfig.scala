@@ -4,7 +4,7 @@ import akka.actor.{ActorSystem, Address, AddressFromURIString}
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl.{CurrentEventsByPersistenceIdQuery, CurrentPersistenceIdsQuery, PersistenceIdsQuery}
 import cats.data.NonEmptyList
-import com.ing.baker.runtime.akka.AkkaBakerConfig.{BakerPersistenceQuery, BakerValidationSettings}
+import com.ing.baker.runtime.akka.AkkaBakerConfig.{BakerPersistenceQuery, BakerValidationSettings, EventSinkSettings}
 import com.ing.baker.runtime.akka.actor.{BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider}
 import com.ing.baker.runtime.akka.internal.{InteractionManager, InteractionManagerLocal}
 import com.ing.baker.runtime.serialization.Encryption
@@ -23,6 +23,16 @@ case class AkkaBakerConfig(
                           )(implicit val system: ActorSystem)
 
 object AkkaBakerConfig extends LazyLogging {
+
+  case class KafkaEventSinkSettings(broker: String, topic: String)
+  case class InternalEventSinkSettings(`last-events-to-keep`: Int)
+  case class EventSinkSettings(internal: InternalEventSinkSettings, kafka: Option[KafkaEventSinkSettings])
+
+  object EventSinkSettings {
+    val Default: EventSinkSettings = EventSinkSettings(
+      InternalEventSinkSettings(100), None
+    )
+  }
 
   case class BakerValidationSettings(allowAddingRecipeWithoutRequiringInstances: Boolean)
 
@@ -76,7 +86,7 @@ object AkkaBakerConfig extends LazyLogging {
       bakerActorProvider = localProvider,
       interactionManager = new InteractionManagerLocal(),
       readJournal = PersistenceQuery(actorSystem)
-        .readJournalFor[BakerPersistenceQuery]("inmemory-read-journal")
+        .readJournalFor[BakerPersistenceQuery]("inmemory-read-journal"),
     )(actorSystem)
   }
 
@@ -97,7 +107,7 @@ object AkkaBakerConfig extends LazyLogging {
       bakerActorProvider = clusterProvider,
       interactionManager = new InteractionManagerLocal(),
       readJournal = PersistenceQuery(actorSystem)
-        .readJournalFor[BakerPersistenceQuery]("inmemory-read-journal")
+        .readJournalFor[BakerPersistenceQuery]("inmemory-read-journal"),
     )(actorSystem)
   }
 
@@ -109,7 +119,7 @@ object AkkaBakerConfig extends LazyLogging {
       bakerValidationSettings = BakerValidationSettings.from(config),
       bakerActorProvider = bakerProviderFrom(config),
       interactionManager = interactionManagerFrom(config),
-      readJournal = persistenceQueryFrom(config, actorSystem)
+      readJournal = persistenceQueryFrom(config, actorSystem),
     )(actorSystem)
   }
 
