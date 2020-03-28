@@ -27,7 +27,7 @@ object Main extends IOApp {
     val httpServerPort = config.getInt("baas-component.http-api-port")
     val recipeDirectory = config.getString("baas-component.recipe-directory")
 
-    val eventSinkSettings = config.getConfig("bakker.event-sink").as[EventSinkSettings]
+    val eventSinkSettings = config.getConfig("baker.event-sink").as[EventSinkSettings]
 
     // Core dependencies
     implicit val system: ActorSystem =

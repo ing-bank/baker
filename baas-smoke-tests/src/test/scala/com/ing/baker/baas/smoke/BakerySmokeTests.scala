@@ -124,14 +124,8 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
   def argumentsBuilder(config: ConfigMap): TestArguments = {
     val clientAppHostname = Uri.unsafeFromString(
       config.getOptional[String]("client-app").getOrElse("http://localhost:8080"))
-    val eventListenerHostname = Uri.unsafeFromString(
-      config.getOptional[String]("event-listener").getOrElse("http://localhost:8082"))
-    val bakerEventListenerHostname = Uri.unsafeFromString(
-      config.getOptional[String]("baker-event-listener").getOrElse("http://localhost:8083"))
     BakeryEnvironment.Arguments(
-      clientAppHostname = clientAppHostname,
-      eventListenerHostname = eventListenerHostname,
-      bakerEventListenerHostname = bakerEventListenerHostname
+      clientAppHostname = clientAppHostname
     )
   }
 

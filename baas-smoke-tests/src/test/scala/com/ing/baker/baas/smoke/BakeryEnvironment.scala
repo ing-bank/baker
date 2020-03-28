@@ -15,9 +15,7 @@ object BakeryEnvironment {
   )
 
   case class Arguments(
-    clientAppHostname: Uri,
-    eventListenerHostname: Uri,
-    bakerEventListenerHostname: Uri
+    clientAppHostname: Uri
   )
 
   def resource(args: Arguments)(implicit connectionPool: ExecutionContext, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Context] = for {

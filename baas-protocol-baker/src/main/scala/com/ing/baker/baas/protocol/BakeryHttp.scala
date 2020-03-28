@@ -46,10 +46,6 @@ object BakeryHttp {
 
     object Intent {
 
-      case object `Remote-Event-Listener` extends Intent("Remote-Event-Listener")
-
-      case object `Remote-Baker-Event-Listener` extends Intent("Remote-Baker-Event-Listener")
-
       case object `Remote-Interaction` extends Intent("Remote-Interaction")
     }
   }
