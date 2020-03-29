@@ -62,9 +62,10 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
           context.namespace, Some("kafkacat"))(s"kafkacat -b localhost:9092 -C -t recipe-events -o 0 -c ${ExpectedRecipeEvents.size}")
         _ = println(recipeEvents)
 
-        _ = recipeEvents.foreach { event => ExpectedRecipeEvents should contain(event) }
-        _ = bakerEvents.foreach { event => ExpectedBakerEvents should contain(event) }
-        _ <- printGreen(s"Event listeners successfully notified (Note: ordering of events not enforced)")
+        // todo provisional format deserialisation
+        _ = recipeEvents.map(_.takeWhile(_ != '(')) shouldBe ExpectedRecipeEvents
+        _ = bakerEvents.map(_.takeWhile(_ != ',').replace("EventInstance(", "")) shouldBe ExpectedBakerEvents
+        _ <- printGreen(s"Event streams contain all events")
       } yield succeed
     }
   }
@@ -100,21 +101,21 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
     )
   }
 
-  val ExpectedBakerEvents = List(
-    "InteractionCompleted",
-    "InteractionStarted",
-    "InteractionCompleted",
-    "InteractionCompleted",
-    "InteractionStarted",
-    "EventReceived",
-    "EventReceived",
-    "EventReceived",
-    "InteractionStarted",
+  private val ExpectedBakerEvents = List(
+    "RecipeAdded",
+    "RecipeAdded",
     "RecipeInstanceCreated",
-    "RecipeAdded"
+    "EventReceived",
+    "InteractionStarted",
+    "EventReceived",
+    "EventReceived",
+    "InteractionCompleted",
+    "InteractionStarted",
+    "InteractionCompleted",
+    "InteractionStarted"
   )
 
-  val ExpectedRecipeEvents = List(
+  private val ExpectedRecipeEvents = List(
     "ShippingConfirmed",
     "PaymentSuccessful",
     "PaymentInformationReceived",

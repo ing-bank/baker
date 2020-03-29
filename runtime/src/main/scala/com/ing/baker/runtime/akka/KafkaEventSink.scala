@@ -17,11 +17,13 @@ class EventKafkaProducer(kafkaConfig: KafkaEventSinkSettings)(implicit contextSh
   props.put("bootstrap.servers", kafkaConfig.`bootstrap-servers`)
   props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
   props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-  // todo other producer settings from kafkaConfig?
+  // todo other producer settings from kafkaConfig? (batch, timeout etc.)
 
   val producer = new KafkaProducer[String, String](props)
 
   private def send( topic: String, event: Any): Unit = {
+
+    // todo provisional toString serialisation
     val record = new ProducerRecord[String, String](topic, event.toString)
     logger.info(s"Sending $record to kafka")
     producer.send(record)
@@ -44,7 +46,7 @@ class EventKafkaProducer(kafkaConfig: KafkaEventSinkSettings)(implicit contextSh
 
 object KafkaEventSink extends LazyLogging {
 
-  def resource(eventSinkSettings: EventSinkSettings)(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem, materializer: Materializer): Resource[IO, KafkaEventSink] = {
+  def resource(eventSinkSettings: EventSinkSettings)(implicit contextShift: ContextShift[IO], timer: Timer[IO]): Resource[IO, KafkaEventSink] = {
 
     val kafkaEventSinkSettings = eventSinkSettings.kafka
     logger.info(kafkaEventSinkSettings.map(s => s"Starting Kafka streaming event sink: $s").getOrElse("Kafka event sink disabled"))

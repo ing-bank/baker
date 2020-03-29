@@ -117,7 +117,7 @@ case class ServiceDiscovery private(
   def buildInteractionManager: InteractionManager =
     new InteractionManager {
       override def addImplementation(interaction: InteractionInstance): Future[Unit] =
-        Future.failed(new IllegalStateException("Adding implmentation instances is not supported on a Bakery cluster."))
+        Future.failed(new IllegalStateException("Adding implementation instances is not supported on a Bakery cluster."))
       override def getImplementation(interaction: InteractionTransition): Future[Option[InteractionInstance]] =
         cacheInteractions.get.map(_.find(isCompatibleImplementation(interaction, _))).unsafeToFuture()
     }

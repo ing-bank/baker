@@ -67,7 +67,7 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
 
   def withEventSink(eventSink: EventSink): AkkaBaker = {
     registerBakerEventListener( event => eventSink.fire(event))
-    registerEventListener( (event, _) => eventSink.fire(event))
+    registerEventListener( (_, event) => eventSink.fire(event))
     this
   }
 
