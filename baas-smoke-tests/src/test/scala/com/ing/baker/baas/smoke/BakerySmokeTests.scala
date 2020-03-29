@@ -57,10 +57,8 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
 
         bakerEvents <- Pod.execOnNamed("kafka-event-sink",
           context.namespace, Some("kafkacat"))(s"kafkacat -b localhost:9092 -C -t bakery-events -o 0 -c ${ExpectedBakerEvents.size}")
-        _ = println(bakerEvents)
         recipeEvents <- Pod.execOnNamed("kafka-event-sink",
           context.namespace, Some("kafkacat"))(s"kafkacat -b localhost:9092 -C -t recipe-events -o 0 -c ${ExpectedRecipeEvents.size}")
-        _ = println(recipeEvents)
 
         // todo provisional format deserialisation
         _ = recipeEvents.map(_.takeWhile(_ != '(')) shouldBe ExpectedRecipeEvents
