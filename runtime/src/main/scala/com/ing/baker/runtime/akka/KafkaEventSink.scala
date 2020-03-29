@@ -17,12 +17,12 @@ class EventKafkaProducer(kafkaConfig: KafkaEventSinkSettings)(implicit contextSh
 
 }
 
-object KafkaCachingEventSink extends LazyLogging {
+object KafkaEventSink extends LazyLogging {
 
-  def resource(eventSinkSettings: EventSinkSettings)(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem, materializer: Materializer): Resource[IO, KafkaCachingEventSink] = {
+  def resource(eventSinkSettings: EventSinkSettings)(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem, materializer: Materializer): Resource[IO, KafkaEventSink] = {
 
     Resource.make(
-      IO.delay(new KafkaCachingEventSink(Queue.empty,  eventSinkSettings.kafka.map(config => new EventKafkaProducer(config))))
+      IO.delay(new KafkaEventSink(eventSinkSettings.kafka.map(config => new EventKafkaProducer(config))))
     )(_ => IO.unit)
   }
 
@@ -30,15 +30,12 @@ object KafkaCachingEventSink extends LazyLogging {
 
 trait EventSink {
   def fire(event: Any): Unit
-  def lastEvents: Seq[String]
 }
 
-class KafkaCachingEventSink(
-  val lastEvents: mutable.Queue[String],
+class KafkaEventSink(
   kafkaProducer: Option[EventKafkaProducer]
 ) extends EventSink {
   def fire(event: Any): Unit = {
-    lastEvents.enqueue(event.toString)
     kafkaProducer.foreach(_.send(event))
   }
 }

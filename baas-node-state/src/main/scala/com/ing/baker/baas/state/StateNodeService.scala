@@ -7,7 +7,6 @@ import cats.syntax.apply._
 import com.ing.baker.baas.protocol.BaaSProto._
 import com.ing.baker.baas.protocol.BaaSProtocol
 import com.ing.baker.baas.protocol.BakeryHttp.ProtoEntityEncoders._
-import com.ing.baker.runtime.akka.{EventSink, KafkaCachingEventSink}
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl.Baker
 import org.http4s._
@@ -20,17 +19,17 @@ import scala.concurrent.Future
 
 object StateNodeService {
 
-  def resource(baker: Baker, eventSink: EventSink, recipeDirectory: String, hostname: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
+  def resource(baker: Baker, recipeDirectory: String, hostname: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
     for {
       binding <- BlazeServerBuilder[IO]
         .bindSocketAddress(hostname)
-        .withHttpApp(new StateNodeService(baker, eventSink, recipeDirectory).build)
+        .withHttpApp(new StateNodeService(baker, recipeDirectory).build)
         .resource
     } yield binding
   }
 }
 
-final class StateNodeService private(baker: Baker, eventSink: EventSink, recipeDirectory: String)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
+final class StateNodeService private(baker: Baker, recipeDirectory: String)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
 
   def loadRecipeIfNotFound[A](f: IO[A]): IO[A] =
     RecipeLoader.loadRecipesIfRecipeNotFound(recipeDirectory, baker)(f)
@@ -109,7 +108,5 @@ final class StateNodeService private(baker: Baker, eventSink: EventSink, recipeD
         .map(request => IO(baker.stopRetryingInteraction(request.recipeInstanceId, request.interactionName)))
         .flatMap(completeWithBakerFailures(_)(_ => ""))
 
-    case _@GET -> Root / "events" =>
-      Ok(eventSink.lastEvents.toString)
   })
 }

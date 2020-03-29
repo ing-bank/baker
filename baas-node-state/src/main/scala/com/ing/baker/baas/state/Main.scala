@@ -9,7 +9,7 @@ import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import cats.implicits._
 import com.ing.baker.runtime.akka.AkkaBakerConfig.EventSinkSettings
-import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig, KafkaCachingEventSink}
+import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig, KafkaEventSink}
 import com.ing.baker.runtime.scaladsl.Baker
 import com.typesafe.config.ConfigFactory
 import skuber.api.client.KubernetesClient
@@ -42,21 +42,23 @@ object Main extends IOApp {
 
     val mainResource = for {
       serviceDiscovery <- ServiceDiscovery.resource(connectionPool, k8s)
-      eventSink <- KafkaCachingEventSink.resource(eventSinkSettings)
-      baker: Baker = AkkaBaker.withConfig(AkkaBakerConfig(
+      eventSink <- KafkaEventSink.resource(eventSinkSettings)
+      baker: Baker = AkkaBaker
+        .withConfig(AkkaBakerConfig(
           interactionManager = serviceDiscovery.buildInteractionManager,
           bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
           readJournal = AkkaBakerConfig.persistenceQueryFrom(config, system),
           timeouts = AkkaBakerConfig.Timeouts.from(config),
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config),
-        )(system)).withEventSink(eventSink)
+        )(system))
+        .withEventSink(eventSink)
       _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(recipeDirectory, baker))
       _ <- Resource.liftF(IO.async[Unit] { callback =>
         Cluster(system).registerOnMemberUp {
           callback(Right(()))
         }
       })
-      _ <- StateNodeService.resource(baker, eventSink, recipeDirectory, hostname)
+      _ <- StateNodeService.resource(baker, recipeDirectory, hostname)
     } yield ()
 
     mainResource.use(_ => IO.never).as(ExitCode.Success)
