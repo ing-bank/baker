@@ -61,8 +61,8 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
           context.namespace, Some("kafkacat"))(s"kafkacat -b localhost:9092 -C -t recipe-events -o 0 -c ${ExpectedRecipeEvents.size}")
 
         // todo provisional format deserialisation
-        _ = recipeEvents.map(_.takeWhile(_ != '(')) shouldBe ExpectedRecipeEvents
-        _ = bakerEvents.map(_.takeWhile(_ != ',').replace("EventInstance(", "")) shouldBe ExpectedBakerEvents
+        _ = recipeEvents.map(_.takeWhile(_ != ',').replace("EventInstance(", "")) shouldBe ExpectedRecipeEvents
+        _ = bakerEvents.map(_.takeWhile(_ != '(')) shouldBe ExpectedBakerEvents
         _ <- printGreen(s"Event streams contain all events")
       } yield succeed
     }
