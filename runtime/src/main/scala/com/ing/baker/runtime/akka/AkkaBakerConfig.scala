@@ -28,12 +28,6 @@ object AkkaBakerConfig extends LazyLogging {
   case class InternalEventSinkSettings(`last-events-to-keep`: Int)
   case class EventSinkSettings(internal: InternalEventSinkSettings, kafka: Option[KafkaEventSinkSettings])
 
-  object EventSinkSettings {
-    val Default: EventSinkSettings = EventSinkSettings(
-      InternalEventSinkSettings(100), None
-    )
-  }
-
   case class BakerValidationSettings(allowAddingRecipeWithoutRequiringInstances: Boolean)
 
   object BakerValidationSettings {
@@ -86,7 +80,7 @@ object AkkaBakerConfig extends LazyLogging {
       bakerActorProvider = localProvider,
       interactionManager = new InteractionManagerLocal(),
       readJournal = PersistenceQuery(actorSystem)
-        .readJournalFor[BakerPersistenceQuery]("inmemory-read-journal"),
+        .readJournalFor[BakerPersistenceQuery]("inmemory-read-journal")
     )(actorSystem)
   }
 
@@ -107,7 +101,7 @@ object AkkaBakerConfig extends LazyLogging {
       bakerActorProvider = clusterProvider,
       interactionManager = new InteractionManagerLocal(),
       readJournal = PersistenceQuery(actorSystem)
-        .readJournalFor[BakerPersistenceQuery]("inmemory-read-journal"),
+        .readJournalFor[BakerPersistenceQuery]("inmemory-read-journal")
     )(actorSystem)
   }
 
@@ -119,7 +113,7 @@ object AkkaBakerConfig extends LazyLogging {
       bakerValidationSettings = BakerValidationSettings.from(config),
       bakerActorProvider = bakerProviderFrom(config),
       interactionManager = interactionManagerFrom(config),
-      readJournal = persistenceQueryFrom(config, actorSystem),
+      readJournal = persistenceQueryFrom(config, actorSystem)
     )(actorSystem)
   }
 
