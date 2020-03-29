@@ -60,10 +60,10 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
         recipeEvents <- Pod.execOnNamed("kafka-event-sink",
           context.namespace, Some("kafkacat"))(s"kafkacat -b localhost:9092 -C -t recipe-events -o 0 -c ${ExpectedRecipeEvents.size}")
 
-        // todo provisional format deserialisation
+        // todo crude deserialisation of provisional format
         _ = recipeEvents.map(_.takeWhile(_ != ',').replace("EventInstance(", "")) shouldBe ExpectedRecipeEvents
         _ = bakerEvents.map(_.takeWhile(_ != '(')) shouldBe ExpectedBakerEvents
-        _ <- printGreen(s"Event streams contain all events")
+        _ <- printGreen(s"Event streams contain all required events")
       } yield succeed
     }
   }
@@ -114,12 +114,7 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
   )
 
   private val ExpectedRecipeEvents = List(
-    "ShippingConfirmed",
-    "PaymentSuccessful",
-    "PaymentInformationReceived",
-    "OrderPlaced",
-    "ItemsReserved",
-    "ShippingAddressReceived"
+    "OrderPlaced", "ShippingAddressReceived", "PaymentInformationReceived", "ItemsReserved", "PaymentSuccessful", "ShippingConfirmed"
   )
 
 }
