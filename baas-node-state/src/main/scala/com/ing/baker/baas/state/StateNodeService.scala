@@ -107,6 +107,5 @@ final class StateNodeService private(baker: Baker, recipeDirectory: String)(impl
       req.as[BaaSProtocol.StopRetryingInteractionRequest]
         .map(request => IO(baker.stopRetryingInteraction(request.recipeInstanceId, request.interactionName)))
         .flatMap(completeWithBakerFailures(_)(_ => ""))
-
   })
 }
