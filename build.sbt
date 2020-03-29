@@ -129,6 +129,7 @@ lazy val runtime = project.in(file("runtime"))
         akkaSlf4j,
         akkaInmemoryJournal,
         ficusConfig,
+        kafkaClient,
         catsCore,
         catsEffect,
         scalapbRuntime,

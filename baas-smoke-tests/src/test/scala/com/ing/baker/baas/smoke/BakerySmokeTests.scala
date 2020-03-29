@@ -13,11 +13,14 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
 
     test("runs a happy path flow") { context =>
       for {
-        _ <- eventually("Kafka even sink is ready, topic for bakery events created") {
+        _ <- eventually("Kafka even sink is ready, topics for events created") {
           for {
             result <- Pod.execOnNamed("kafka-event-sink",
               context.namespace, Some("kafka"))("kafka-topics --zookeeper localhost:2181 --partitions=1 --replication-factor=1 --create --topic bakery-events")
             _ = result shouldBe List("Created topic \"bakery-events\".")
+            result <- Pod.execOnNamed("kafka-event-sink",
+              context.namespace, Some("kafka"))("kafka-topics --zookeeper localhost:2181 --partitions=1 --replication-factor=1 --create --topic recipe-events")
+            _ = result shouldBe List("Created topic \"recipe-events\".")
           } yield ()
         }
 
@@ -63,37 +66,40 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
             .map(status => status shouldBe OrderStatus.Complete.toString)
         }
 
+        _ = Thread.sleep(10000000)
+        bakerEvents <- Pod.execOnNamed("kafka-event-sink",
+          context.namespace, Some("kafkacat"))("kafkacat -b localhost:9092 -C -t bakery-events -e")
+        _ = println(bakerEvents)
+        recipeEvents <- Pod.execOnNamed("kafka-event-sink",
+          context.namespace, Some("kafkacat"))("kafkacat -b localhost:9092 -C -t recipe-events -e")
+        _ = println(recipeEvents)
 
-// todo add assertions of kafka listeners here
-
-//        recipeEvents <- context.recipeEventListener.events
-//        bakerEvents <- context.bakerEventListener.events
-//        _ = recipeEvents.foreach { event =>
-//          List(
-//            "ShippingConfirmed",
-//            "PaymentSuccessful",
-//            "PaymentInformationReceived",
-//            "OrderPlaced",
-//            "ItemsReserved",
-//            "ShippingAddressReceived"
-//          ) should contain(event)
-//        }
-//        _ = bakerEvents.foreach { event =>
-//          List(
-//            "InteractionCompleted",
-//            "InteractionStarted",
-//            "InteractionCompleted",
-//            "InteractionCompleted",
-//            "InteractionStarted",
-//            "EventReceived",
-//            "EventReceived",
-//            "EventReceived",
-//            "InteractionStarted",
-//            "RecipeInstanceCreated",
-//            "RecipeAdded"
-//          ) should contain(event)
-//        }
-//        _ <- printGreen(s"Event listeners successfully notified (Note: ordering of events not enforced)")
+        _ = recipeEvents.foreach { event =>
+          List(
+            "ShippingConfirmed",
+            "PaymentSuccessful",
+            "PaymentInformationReceived",
+            "OrderPlaced",
+            "ItemsReserved",
+            "ShippingAddressReceived"
+          ) should contain(event)
+        }
+        _ = bakerEvents.foreach { event =>
+          List(
+            "InteractionCompleted",
+            "InteractionStarted",
+            "InteractionCompleted",
+            "InteractionCompleted",
+            "InteractionStarted",
+            "EventReceived",
+            "EventReceived",
+            "EventReceived",
+            "InteractionStarted",
+            "RecipeInstanceCreated",
+            "RecipeAdded"
+          ) should contain(event)
+        }
+        _ <- printGreen(s"Event listeners successfully notified (Note: ordering of events not enforced)")
       } yield succeed
     }
   }

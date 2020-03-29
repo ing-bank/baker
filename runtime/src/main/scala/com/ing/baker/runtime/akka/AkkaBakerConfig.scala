@@ -24,7 +24,7 @@ case class AkkaBakerConfig(
 
 object AkkaBakerConfig extends LazyLogging {
 
-  case class KafkaEventSinkSettings(broker: String, topic: String)
+  case class KafkaEventSinkSettings(`bootstrap-servers`: String, `bakery-events-topic`: String, `recipe-events-topic`: String)
   case class InternalEventSinkSettings(`last-events-to-keep`: Int)
   case class EventSinkSettings(internal: InternalEventSinkSettings, kafka: Option[KafkaEventSinkSettings])
 
