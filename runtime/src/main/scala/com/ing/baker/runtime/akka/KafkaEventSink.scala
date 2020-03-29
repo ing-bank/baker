@@ -11,21 +11,19 @@ import com.ing.baker.runtime.scaladsl.RecipeEventMetadata
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
-import scala.collection.mutable
-import scala.collection.mutable.Queue
-
 class EventKafkaProducer(kafkaConfig: KafkaEventSinkSettings)(implicit contextShift: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
 
   val props = new Properties()
   props.put("bootstrap.servers", kafkaConfig.`bootstrap-servers`)
   props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
   props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-  // todo other producer settings from kafkaConfig
+  // todo other producer settings from kafkaConfig?
 
   val producer = new KafkaProducer[String, String](props)
 
   private def send( topic: String, event: Any): Unit = {
     val record = new ProducerRecord[String, String](topic, event.toString)
+    logger.info(s"Sending $record to kafka")
     producer.send(record)
   }
 

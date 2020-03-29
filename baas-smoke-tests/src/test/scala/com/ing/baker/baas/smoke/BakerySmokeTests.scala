@@ -13,17 +13,6 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
 
     test("runs a happy path flow") { context =>
       for {
-        _ <- eventually("Kafka even sink is ready, topics for events created") {
-          for {
-            result <- Pod.execOnNamed("kafka-event-sink",
-              context.namespace, Some("kafka"))("kafka-topics --zookeeper localhost:2181 --partitions=1 --replication-factor=1 --create --topic bakery-events")
-            _ = result shouldBe List("Created topic \"bakery-events\".")
-            result <- Pod.execOnNamed("kafka-event-sink",
-              context.namespace, Some("kafka"))("kafka-topics --zookeeper localhost:2181 --partitions=1 --replication-factor=1 --create --topic recipe-events")
-            _ = result shouldBe List("Created topic \"recipe-events\".")
-          } yield ()
-        }
-
         recipes <- context.clientApp.listRecipeNames
         _ = recipes.length shouldBe 1
         _ = recipes should contain("Webshop")
@@ -66,39 +55,15 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
             .map(status => status shouldBe OrderStatus.Complete.toString)
         }
 
-        _ = Thread.sleep(10000000)
         bakerEvents <- Pod.execOnNamed("kafka-event-sink",
-          context.namespace, Some("kafkacat"))("kafkacat -b localhost:9092 -C -t bakery-events -e")
+          context.namespace, Some("kafkacat"))(s"kafkacat -b localhost:9092 -C -t bakery-events -o 0 -c ${ExpectedBakerEvents.size}")
         _ = println(bakerEvents)
         recipeEvents <- Pod.execOnNamed("kafka-event-sink",
-          context.namespace, Some("kafkacat"))("kafkacat -b localhost:9092 -C -t recipe-events -e")
+          context.namespace, Some("kafkacat"))(s"kafkacat -b localhost:9092 -C -t recipe-events -o 0 -c ${ExpectedRecipeEvents.size}")
         _ = println(recipeEvents)
 
-        _ = recipeEvents.foreach { event =>
-          List(
-            "ShippingConfirmed",
-            "PaymentSuccessful",
-            "PaymentInformationReceived",
-            "OrderPlaced",
-            "ItemsReserved",
-            "ShippingAddressReceived"
-          ) should contain(event)
-        }
-        _ = bakerEvents.foreach { event =>
-          List(
-            "InteractionCompleted",
-            "InteractionStarted",
-            "InteractionCompleted",
-            "InteractionCompleted",
-            "InteractionStarted",
-            "EventReceived",
-            "EventReceived",
-            "EventReceived",
-            "InteractionStarted",
-            "RecipeInstanceCreated",
-            "RecipeAdded"
-          ) should contain(event)
-        }
+        _ = recipeEvents.foreach { event => ExpectedRecipeEvents should contain(event) }
+        _ = bakerEvents.foreach { event => ExpectedBakerEvents should contain(event) }
         _ <- printGreen(s"Event listeners successfully notified (Note: ordering of events not enforced)")
       } yield succeed
     }
@@ -134,5 +99,28 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
       clientAppHostname = clientAppHostname
     )
   }
+
+  val ExpectedBakerEvents = List(
+    "InteractionCompleted",
+    "InteractionStarted",
+    "InteractionCompleted",
+    "InteractionCompleted",
+    "InteractionStarted",
+    "EventReceived",
+    "EventReceived",
+    "EventReceived",
+    "InteractionStarted",
+    "RecipeInstanceCreated",
+    "RecipeAdded"
+  )
+
+  val ExpectedRecipeEvents = List(
+    "ShippingConfirmed",
+    "PaymentSuccessful",
+    "PaymentInformationReceived",
+    "OrderPlaced",
+    "ItemsReserved",
+    "ShippingAddressReceived"
+  )
 
 }
