@@ -20,8 +20,8 @@ case class Pod(name: String, namespace: Namespace) {
   def ready(implicit timer: Timer[IO]): IO[Unit] =
     status.map(s => assert(s.contains("1/1")))
 
-  def exec(command: String, containerId: Option[String]): IO[String] = {
-    val containerOption = containerId.map(id => s"-c $id").getOrElse("")
+  def exec(command: String, containerName: Option[String]): IO[String] = {
+    val containerOption = containerName.map(id => s"-c $id").getOrElse("")
     val command0 = s"kubectl exec $name -n $namespace $containerOption -- $command"
     IO(command0.!!(ProcessLogger.apply(output(name, command, "out"), output(name, command,"err"))))
   }
