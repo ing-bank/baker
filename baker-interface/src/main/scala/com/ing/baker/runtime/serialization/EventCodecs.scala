@@ -19,6 +19,8 @@ object EventCodecs {
         encodeList(valuesEncoder)(entries)
       case types.RecordValue(entries) =>
         encodeMap(KeyEncoder.encodeKeyString, valuesEncoder)(entries)
+      case types.PrimitiveValue(Array(elements@_*)) =>
+        encodeList(encodeString)(elements.map(_.toString).toList)
       case types.PrimitiveValue(value) =>
         encodeString(value.toString)
     }

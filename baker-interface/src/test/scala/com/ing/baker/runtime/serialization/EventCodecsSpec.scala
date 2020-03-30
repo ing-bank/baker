@@ -5,7 +5,7 @@ import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.common.RejectReason
 import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.runtime.serialization.EventCodecs._
-import com.ing.baker.types.PrimitiveValue
+import com.ing.baker.types.{ListValue, PrimitiveValue}
 import io.circe.syntax._
 import org.scalatest.{FunSpec, Matchers}
 
@@ -21,6 +21,16 @@ class EventCodecsSpec extends FunSpec with Matchers {
     it("should encode EventInstance") {
       val event = EventInstance("name", Map("id" -> PrimitiveValue(3)))
       event.asJson.noSpaces shouldEqual """{"name":"name","providedIngredients":{"id":"3"}}"""
+
+      val event2 = EventInstance("name", Map("id" -> ListValue(List(PrimitiveValue(125.toByte)))))
+      event2.asJson.noSpaces shouldEqual """{"name":"name","providedIngredients":{"id":["125"]}}"""
+
+      case class ShippingOrder(items: List[String], data: Array[Byte])
+
+      val event3 = EventInstance.unsafeFrom(ShippingOrder(List.empty, Array(1.toByte, 5.toByte)))
+      println(event3.asJson.noSpaces)
+
+      event3.asJson.noSpaces shouldEqual """{"name":"ShippingOrder$1","providedIngredients":{"items":[],"data":["1","5"]}}"""
     }
 
     it("should encode ExceptionStrategyOutcome") {
@@ -39,5 +49,6 @@ class EventCodecsSpec extends FunSpec with Matchers {
       println(exception.asJson.noSpaces)
       exception.asJson.noSpaces shouldEqual """{"error":"message"}"""
     }
+
   }
 }
