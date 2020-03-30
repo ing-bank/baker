@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Address, Props}
 import akka.pattern.{FutureRef, ask}
 import akka.util.Timeout
 import cats.data.NonEmptyList
+import cats.effect.{ContextShift, IO}
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.akka.actor._
@@ -66,8 +67,9 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     config.bakerActorProvider.createProcessIndexActor(config.interactionManager, recipeManager)
 
   def withEventSink(eventSink: EventSink): AkkaBaker = {
-    registerBakerEventListener( event => eventSink.fire(event))
-    registerEventListener( (_, event) => eventSink.fire(event))
+    val cs: ContextShift[IO] = IO.contextShift(system.dispatcher)
+    registerBakerEventListener( event => eventSink.fire(event)(cs))
+    registerEventListener( (_, event) => eventSink.fire(event)(cs))
     this
   }
 
