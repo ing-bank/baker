@@ -43,7 +43,7 @@ object Dependencies {
   val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.6"
 
   val scalaKafkaClient =          "net.cakesolutions"          %% "scala-kafka-client"                 % "2.3.1"
-
+  val fs2kafka =                  "com.github.fd4s"            %% "fs2-kafka"                          % "1.0.0"
   val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.12"
 
   val levelDBJni =                "org.fusesource.leveldbjni"  %  "leveldbjni-all"                     % "1.8"

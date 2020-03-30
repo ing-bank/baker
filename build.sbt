@@ -10,6 +10,7 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
 
     "baas-node-state/docker:publishLocal" ::
       "baas-client-example/docker:publishLocal" ::
+      "baas-kafka-listener-example/docker:publishLocal" ::
       "bakery-controller/docker:publishLocal" ::
       "project baas-interaction-example-make-payment" ::
       "buildInteractionDockerImage docker:publishLocal webshop.webservice.MakePaymentInstance" ::
@@ -444,6 +445,38 @@ lazy val `baas-interaction-example-reserve-items` = project.in(file("examples/ba
       )
   )
   .dependsOn(`baas-node-interaction`)
+
+lazy val `baas-kafka-listener-example` = project
+  .in(file("examples/baas-kafka-listener-example"))
+  .enablePlugins(JavaAppPackaging)
+  .settings(commonSettings)
+  .settings(noPublishSettings)
+  .settings(
+    moduleName := "baas-kafka-listener-example",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
+    libraryDependencies ++=
+      compileDeps(
+        slf4jApi,
+        slf4jSimple,
+        circe,
+        circeGeneric,
+        circeGenericExtras,
+        fs2kafka,
+        ficusConfig
+      ) ++ testDeps(
+        scalaTest,
+        scalaCheck
+      )
+  )
+  .settings(
+    maintainer in Docker := "The Bakery Team",
+    packageSummary in Docker := "A web-shop checkout service example running on baas",
+    packageName in Docker := "baas-kafka-listener-example",
+    dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
+  )
+  .dependsOn(bakertypes, `baas-node-client`, recipeCompiler, recipeDsl)
 
 lazy val `baas-interaction-example-ship-items` = project.in(file("examples/baas-interaction-examples/ship-items"))
   .enablePlugins(JavaAppPackaging)
