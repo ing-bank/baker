@@ -26,7 +26,7 @@ object EventCodecs {
   implicit val eventInstanceEncoder: Encoder[EventInstance] = deriveEncoder[EventInstance]
   implicit val rejectReasonEncoder: Encoder[RejectReason] = encodeString.contramap(_.toString)
   implicit val exceptionEncoder: Encoder[ExceptionStrategyOutcome] = deriveEncoder[ExceptionStrategyOutcome]
-  implicit val throwableEncoder: Encoder[Throwable] = encodeString.contramap[Throwable](_.getMessage)
+  implicit val throwableEncoder: Encoder[Throwable] = (throwable: Throwable) => Json.obj(("error", Json.fromString(throwable.getMessage)))
   implicit val compiledRecipeEncoder: Encoder[CompiledRecipe] =
     encodeString.contramap[CompiledRecipe](_.getRecipeVisualization.toString)
 

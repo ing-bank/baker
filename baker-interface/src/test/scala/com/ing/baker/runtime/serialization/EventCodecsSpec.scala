@@ -9,8 +9,8 @@ import com.ing.baker.types.PrimitiveValue
 import io.circe.syntax._
 import org.scalatest.{FunSpec, Matchers}
 
-class BakerEventFormattersSpec extends FunSpec with Matchers {
-  describe("BakerEventFormatters") {
+class EventCodecsSpec extends FunSpec with Matchers {
+  describe("EventCodecs") {
     it("should encode RejectReason enum") {
       RejectReason.values().foreach(
         value =>
@@ -37,7 +37,7 @@ class BakerEventFormattersSpec extends FunSpec with Matchers {
     it("should encode Throwable") {
       val exception: Throwable = new RuntimeException("message")
       println(exception.asJson.noSpaces)
-      exception.asJson.noSpaces shouldEqual """"message""""
+      exception.asJson.noSpaces shouldEqual """{"error":"message"}"""
     }
   }
 }
