@@ -31,9 +31,10 @@ class EventCodecsSpec extends FunSpec with Matchers {
       case class ShippingOrder(items: List[String], data: Array[Byte])
 
       val event3 = EventInstance.unsafeFrom(ShippingOrder(List.empty, Array(1.toByte, 5.toByte)))
-      println(event3.asJson.noSpaces)
+      event3.asJson.noSpaces shouldEqual """{"name":"ShippingOrder$1","providedIngredients":{"items":[],"data":"AQU="}}"""
 
-      event3.asJson.noSpaces shouldEqual """{"name":"ShippingOrder$1","providedIngredients":{"items":[],"data":["1","5"]}}"""
+      val event4 = EventInstance.unsafeFrom(ShippingOrder(List.empty, Array()))
+      event4.asJson.noSpaces shouldEqual """{"name":"ShippingOrder$1","providedIngredients":{"items":[],"data":""}}"""
     }
 
     it("should encode ExceptionStrategyOutcome") {
@@ -49,7 +50,6 @@ class EventCodecsSpec extends FunSpec with Matchers {
 
     it("should encode Throwable") {
       val exception: Throwable = new RuntimeException("message")
-      println(exception.asJson.noSpaces)
       exception.asJson.noSpaces shouldEqual """{"error":"message"}"""
     }
 

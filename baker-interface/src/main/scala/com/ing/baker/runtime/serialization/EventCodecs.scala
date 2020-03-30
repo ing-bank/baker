@@ -1,5 +1,7 @@
 package com.ing.baker.runtime.serialization
 
+import java.util.Base64
+
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.common.RejectReason
@@ -7,8 +9,9 @@ import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance}
 import com.ing.baker.types
 import io.circe.Encoder._
 import io.circe._
-import io.circe.syntax._
 import io.circe.generic.semiauto._
+import io.circe.syntax._
+
 import scala.collection.JavaConverters._
 
 object EventCodecs {
@@ -21,8 +24,8 @@ object EventCodecs {
         encodeList(valuesEncoder)(entries)
       case types.RecordValue(entries) =>
         encodeMap(KeyEncoder.encodeKeyString, valuesEncoder)(entries)
-      case types.PrimitiveValue(Array(elements@_*)) =>
-        encodeList(encodeString)(elements.map(_.toString).toList)
+      case types.PrimitiveValue(bytes: Array[Byte]) =>
+        encodeString(Base64.getEncoder.encodeToString(bytes))
       case types.PrimitiveValue(value) =>
         encodeString(value.toString)
     }
