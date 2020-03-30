@@ -4,8 +4,8 @@ import cakesolutions.kafka.KafkaProducer.Conf
 import cakesolutions.kafka.{KafkaProducer, KafkaProducerRecord}
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.runtime.akka.AkkaBakerConfig.KafkaEventSinkSettings
-import com.ing.baker.runtime.scaladsl.BakerEvent
-import com.ing.baker.runtime.serialization.BakerEventFormatters._
+import com.ing.baker.runtime.scaladsl.{EventInstance, BakerEvent}
+import com.ing.baker.runtime.serialization.EventCodecs._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
 import org.apache.kafka.common.serialization.StringSerializer
@@ -39,17 +39,17 @@ class KafkaEventSink(
   override def close(): Unit = kafkaProducer.close()
 
   def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit] = {
-    event match {
+    (event match {
       case bakerEvent: BakerEvent    =>
-        val record = KafkaProducerRecord[String, String](settings.`bakery-events-topic`, None, bakerEvent.asJson.noSpaces)
-        IO.fromFuture(IO(kafkaProducer.send(record))).map(_ => ())
-//      case _: EventInstance =>
-//        Some(settings.`recipe-events-topic`)
+        Some(KafkaProducerRecord[String, String](settings.`bakery-events-topic`, None, bakerEvent.asJson.noSpaces))
+      case eventInstance: EventInstance =>
+        Some(KafkaProducerRecord[String, String](settings.`recipe-events-topic`, None, eventInstance.asJson.noSpaces))
       case _                =>
         logger.warn(s"Don't know where to send event of class ${ event.getClass.getSimpleName }: $event")
-        IO.unit
-    }
-
+        None
+    }) map { record =>
+      IO.fromFuture(IO(kafkaProducer.send(record))).map(_ => ())
+    } getOrElse IO.unit
   }
 
 }

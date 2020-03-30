@@ -10,7 +10,7 @@ import io.circe.generic.semiauto._
 import com.ing.baker.runtime.common.RejectReason
 import com.ing.baker.types.Type
 
-object BakerEventFormatters {
+object EventCodecs {
 
   implicit val valuesEncoder: Encoder[types.Value] =
     Encoder.instance {
