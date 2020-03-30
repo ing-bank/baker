@@ -40,10 +40,10 @@ class KafkaEventSink(
 
   def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit] = {
     (event match {
-      case bakerEvent: BakerEvent    =>
-        Some(KafkaProducerRecord[String, String](settings.`bakery-events-topic`, None, bakerEvent.asJson.noSpaces))
       case eventInstance: EventInstance =>
         Some(KafkaProducerRecord[String, String](settings.`recipe-events-topic`, None, eventInstance.asJson.noSpaces))
+      case bakerEvent: BakerEvent    =>
+        Some(KafkaProducerRecord[String, String](settings.`bakery-events-topic`, None, bakerEvent.asJson.noSpaces))
       case _                =>
         logger.warn(s"Don't know where to send event of class ${ event.getClass.getSimpleName }: $event")
         None
