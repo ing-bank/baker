@@ -13,12 +13,13 @@ class EventListener {
 
   val eventSink: EventSink = new EventSink() {
 
-    def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit] = IO {
+    def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit] = {
       event match {
         case _: BakerEvent     =>
         case _: EventInstance  =>
           events.append(event.toString)
       }
+      IO.unit
     }
 
   }
