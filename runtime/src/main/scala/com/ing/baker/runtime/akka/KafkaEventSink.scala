@@ -5,7 +5,7 @@ import cakesolutions.kafka.{KafkaProducer, KafkaProducerRecord}
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.runtime.akka.AkkaBakerConfig.KafkaEventSinkSettings
 import com.ing.baker.runtime.scaladsl.{EventInstance, BakerEvent}
-import com.ing.baker.runtime.serialization.EventCodecs._
+import com.ing.baker.runtime.serialization.EventJsonEncoders._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
 import org.apache.kafka.common.serialization.StringSerializer

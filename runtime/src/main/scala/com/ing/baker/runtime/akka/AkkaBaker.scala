@@ -67,12 +67,12 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
     config.bakerActorProvider.createProcessIndexActor(config.interactionManager, recipeManager)
 
   def withEventSink(eventSink: EventSink): AkkaBaker = {
-    val cs: ContextShift[IO] = IO.contextShift(system.dispatcher)
+    implicit val cs: ContextShift[IO] = IO.contextShift(system.dispatcher)
     registerBakerEventListener {
-      event => eventSink.fire(event)(cs).unsafeRunAsyncAndForget()
+      event => eventSink.fire(event).unsafeRunAsyncAndForget()
     }
     registerEventListener {
-      (_, event) => eventSink.fire(event)(cs).unsafeRunAsyncAndForget()
+      (_, event) => eventSink.fire(event).unsafeRunAsyncAndForget()
     }
     this
   }

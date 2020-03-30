@@ -14,7 +14,7 @@ import io.circe.syntax._
 
 import scala.collection.JavaConverters._
 
-object EventCodecs {
+object EventJsonEncoders {
 
   implicit val valuesEncoder: Encoder[types.Value] =
     Encoder.instance {
@@ -39,7 +39,6 @@ object EventCodecs {
       ("name", Json.fromString(recipe.name)),
       ("recipeId", Json.fromString(recipe.recipeId)),
       ("validationErrors", recipe.getValidationErrors.asScala.asJson))
-
 
   implicit val bakerEventEncoder: Encoder[BakerEvent] = deriveEncoder[BakerEvent]
 }

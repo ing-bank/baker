@@ -6,13 +6,13 @@ import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.petrinet.api.{Marking, PetriNet}
 import com.ing.baker.runtime.common.RejectReason
 import com.ing.baker.runtime.scaladsl.EventInstance
-import com.ing.baker.runtime.serialization.EventCodecs._
+import com.ing.baker.runtime.serialization.EventJsonEncoders._
 import com.ing.baker.types.{ListValue, PrimitiveValue}
 import io.circe.syntax._
 import org.scalatest.{FunSpec, Matchers}
 import scalax.collection.immutable.Graph
 
-class EventCodecsSpec extends FunSpec with Matchers {
+class EventJsonEncodersSpec extends FunSpec with Matchers {
   describe("EventCodecs") {
     it("should encode RejectReason enum") {
       RejectReason.values().foreach(
