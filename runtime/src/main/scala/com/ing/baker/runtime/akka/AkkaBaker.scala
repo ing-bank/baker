@@ -69,10 +69,10 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
   def withEventSink(eventSink: EventSink): AkkaBaker = {
     val cs: ContextShift[IO] = IO.contextShift(system.dispatcher)
     registerBakerEventListener {
-      event => eventSink.fire(event)(cs)
+      event => eventSink.fire(event)(cs).unsafeRunAsyncAndForget()
     }
     registerEventListener {
-      (_, event) => eventSink.fire(event)(cs)
+      (_, event) => eventSink.fire(event)(cs).unsafeRunAsyncAndForget()
     }
     this
   }

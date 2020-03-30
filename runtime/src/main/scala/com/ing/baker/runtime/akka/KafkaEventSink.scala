@@ -48,7 +48,9 @@ class KafkaEventSink(
         logger.warn(s"Don't know where to send event of class ${ event.getClass.getSimpleName }: $event")
         None
     }) map { record =>
-      IO.fromFuture(IO(kafkaProducer.send(record))).map(_ => ())
+      IO.fromFuture(IO {
+        kafkaProducer.send(record)
+      }).map(_ =>  () )
     } getOrElse IO.unit
   }
 
