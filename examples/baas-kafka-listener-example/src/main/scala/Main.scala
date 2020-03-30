@@ -20,13 +20,14 @@ object Main extends IOApp with LazyLogging {
     val clientConfig = ConfigFactory.load().getConfig("baas-kafka-listener").as[KafkaListenerConfig]
 
     val consumerSettings = ConsumerSettings(
-        keyDeserializer = Deserializer[IO, String],
+        keyDeserializer = Deserializer[IO, Option[String]],
         valueDeserializer = Deserializer[IO, String],
       )
         .withBootstrapServers(clientConfig.bootstrapServers)
         .withGroupId(clientConfig.group)
+        .withAutoOffsetReset(AutoOffsetReset.Earliest)
 
-    def processRecord(record: ConsumerRecord[String, String]): IO[Unit] =
+    def processRecord(record: ConsumerRecord[Option[String], String]): IO[Unit] =
       IO(
         logger.info(s"Received: ${ record.value }")
       )
