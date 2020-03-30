@@ -8,7 +8,7 @@ import akka.cluster.Cluster
 import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import cats.implicits._
-import com.ing.baker.runtime.akka.AkkaBakerConfig.EventSinkSettings
+import com.ing.baker.runtime.akka.AkkaBakerConfig.{EventSinkSettings, KafkaEventSinkSettings}
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig, KafkaEventSink}
 import com.ing.baker.runtime.scaladsl.Baker
 import com.typesafe.config.ConfigFactory
@@ -27,7 +27,7 @@ object Main extends IOApp {
     val httpServerPort = config.getInt("baas-component.http-api-port")
     val recipeDirectory = config.getString("baas-component.recipe-directory")
 
-    val eventSinkSettings = config.getConfig("baker.event-sink").as[EventSinkSettings]
+    val eventSinkSettings = config.getConfig("baker.kafka-event-sink").as[KafkaEventSinkSettings]
 
     // Core dependencies
     implicit val system: ActorSystem =

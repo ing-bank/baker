@@ -23,8 +23,8 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
 
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
-  scalaVersion := "2.12.4",
-  crossScalaVersions := Seq("2.12.4"),
+  scalaVersion := "2.12.11",
+  crossScalaVersions := Seq("2.12.11"),
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
   javacOptions := Seq("-source", jvmV, "-target", jvmV),
@@ -133,7 +133,7 @@ lazy val runtime = project.in(file("runtime"))
         akkaSlf4j,
         akkaInmemoryJournal,
         ficusConfig,
-        kafkaClient,
+        scalaKafkaClient,
         catsCore,
         catsEffect,
         scalapbRuntime,

@@ -1,71 +1,55 @@
 package com.ing.baker.runtime.akka
 
-import java.util.Properties
-
-import akka.actor.ActorSystem
-import akka.stream.Materializer
+import cakesolutions.kafka.KafkaProducer.Conf
+import cakesolutions.kafka.{KafkaProducer, KafkaProducerRecord}
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import com.ing.baker.runtime.akka.AkkaBakerConfig.{EventSinkSettings, KafkaEventSinkSettings}
-import com.ing.baker.runtime.common.{BakerEvent, EventInstance}
-import com.ing.baker.runtime.scaladsl.RecipeEventMetadata
+import com.ing.baker.runtime.akka.AkkaBakerConfig.KafkaEventSinkSettings
+import com.ing.baker.runtime.scaladsl.BakerEvent
+import com.ing.baker.runtime.serialization.BakerEventEncoders._
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
+import io.circe.syntax._
+import org.apache.kafka.common.serialization.StringSerializer
 
-class EventKafkaProducer(kafkaConfig: KafkaEventSinkSettings)(implicit contextShift: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
-
-  val props = new Properties()
-  props.put("bootstrap.servers", kafkaConfig.`bootstrap-servers`)
-  props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-  props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-  // todo other producer settings from kafkaConfig? (batch, timeout etc.)
-
-  val producer = new KafkaProducer[String, String](props)
-
-  private def send( topic: String, event: Any): Unit = {
-
-    // todo provisional toString serialisation
-    val record = new ProducerRecord[String, String](topic, event.toString)
-    logger.info(s"Sending $record to kafka")
-    producer.send(record)
-  }
-
-  def send(event: Any): Unit = {
-    event match {
-      case _: BakerEvent =>
-        send(kafkaConfig.`bakery-events-topic`, event)
-      case _: EventInstance | _: RecipeEventMetadata  =>
-        send(kafkaConfig.`recipe-events-topic`, event)
-      case _ =>
-      logger.warn(s"Don't know where to send event of class ${event.getClass.getSimpleName}: $event")
-    }
-  }
-
-  def close(): Unit = producer.close()
-
+trait EventSink {
+  def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit]
+  def close(): Unit
 }
 
 object KafkaEventSink extends LazyLogging {
 
-  def resource(eventSinkSettings: EventSinkSettings)(implicit contextShift: ContextShift[IO], timer: Timer[IO]): Resource[IO, KafkaEventSink] = {
+  def resource(settings: KafkaEventSinkSettings)(implicit contextShift: ContextShift[IO], timer: Timer[IO]): Resource[IO, KafkaEventSink] = {
 
-    val kafkaEventSinkSettings = eventSinkSettings.kafka
-    logger.info(kafkaEventSinkSettings.map(s => s"Starting Kafka streaming event sink: $s").getOrElse("Kafka event sink disabled"))
+    logger.info(s"Starting Kafka streaming event sink: $settings")
 
     Resource.make(
-      IO.delay(new KafkaEventSink(eventSinkSettings.kafka.map(config => new EventKafkaProducer(config))))
-    )(producer => IO { producer.kafkaProducer.foreach(_.close()) })
+      IO {
+        new KafkaEventSink(
+          KafkaProducer(Conf(new StringSerializer(), new StringSerializer(), settings.`bootstrap-servers`)),
+          settings)
+      }
+    )(sink => IO(sink.close()))
   }
-
-}
-
-trait EventSink {
-  def fire(event: Any): Unit
 }
 
 class KafkaEventSink(
-  val kafkaProducer: Option[EventKafkaProducer]
-) extends EventSink {
-  def fire(event: Any): Unit = {
-    kafkaProducer.foreach(_.send(event))
+  kafkaProducer: KafkaProducer[String, String],
+  settings: KafkaEventSinkSettings
+) extends EventSink with LazyLogging {
+
+  def close(): Unit = kafkaProducer.close()
+
+  def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit] = {
+    event match {
+      case bakerEvent: BakerEvent    =>
+        val record = KafkaProducerRecord[String, String](settings.`bakery-events-topic`, None, bakerEvent.asJson.noSpaces)
+        IO.fromFuture(IO(kafkaProducer.send(record))).map(_ => ())
+//      case _: EventInstance =>
+//        Some(settings.`recipe-events-topic`)
+      case _                =>
+        logger.warn(s"Don't know where to send event of class ${ event.getClass.getSimpleName }: $event")
+        IO.unit
+    }
+
   }
+
 }
