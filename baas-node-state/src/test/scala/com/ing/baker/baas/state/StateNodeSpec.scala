@@ -74,7 +74,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         state <- io(context.client.getRecipeInstanceState(recipeInstanceId))
-        _ <- context.eventListener.verifyNoEventsArrived
+        _ <- eventually { context.eventListener.verifyNoEventsArrived }
       } yield {
         state.recipeInstanceId shouldBe recipeInstanceId
       }
@@ -131,7 +131,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         result <- io(context.client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent))
         serverState <- io(context.client.getRecipeInstanceState(recipeInstanceId))
-        _ <-context.eventListener.verifyEventsReceived(2)
+        _ <- eventually { context.eventListener.verifyEventsReceived(2) }
       } yield {
         result.eventNames shouldBe Seq("OrderPlaced", "ItemsReserved")
         serverState.events.map(_.name) shouldBe Seq("OrderPlaced", "ItemsReserved")
@@ -166,7 +166,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
             serverState <- io(context.client.getRecipeInstanceState(recipeInstanceId))
           } yield serverState.events.map(_.name) shouldBe Seq("OrderPlaced", "ItemsReserved")
         }
-        _ <- context.eventListener.verifyEventsReceived(2)
+        _ <-  eventually {  context.eventListener.verifyEventsReceived(2) }
       } yield result.eventNames shouldBe Seq("OrderPlaced")
     }
 
@@ -199,7 +199,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         _ <- io(context.client.retryInteraction(recipeInstanceId, "ReserveItems"))
         state2 <- io(context.client.getRecipeInstanceState(recipeInstanceId).map(_.events.map(_.name)))
-        _ <- context.eventListener.verifyEventsReceived(2)
+        _ <- eventually {  context.eventListener.verifyEventsReceived(2) }
       } yield {
         state1 should contain("OrderPlaced")
         state1 should not contain("ItemsReserved")
@@ -223,7 +223,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
           state2 = state2data.events.map(_.name)
           eventState = state2data.ingredients.get("reservedItems").map(_.as[ReservedItems].items.head.itemId)
           // TODO Currently the event listener receives the OrderPlaced... shouldn't also receive the resolved event?
-          _ <- context.eventListener.verifyEventsReceived(1)
+          _ <-  eventually {  context.eventListener.verifyEventsReceived(1) }
         } yield {
           state1 should contain("OrderPlaced")
           state1 should not contain("ItemsReserved")
@@ -243,7 +243,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
         _ <- io(context.client.stopRetryingInteraction(recipeInstanceId, "ReserveItems"))
         state2data <- io(context.client.getRecipeInstanceState(recipeInstanceId))
         state2 = state2data.events.map(_.name)
-        _ <- context.eventListener.verifyEventsReceived(1)
+        _ <-  eventually {  context.eventListener.verifyEventsReceived(1) }
       } yield {
         state1 should contain("OrderPlaced")
         state1 should not contain("ItemsReserved")
