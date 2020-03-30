@@ -65,6 +65,7 @@ object Dependencies {
   val http4sClient =              "org.http4s"                 %% "http4s-blaze-client"                % http4sVersion
   val http4sCirce =               "org.http4s"                 %% "http4s-circe"                       % http4sVersion
   val circe =                     "io.circe"                   %% "circe-core"                         % circeVersion
+  val circeParser =               "io.circe"                   %% "circe-parser"                       % circeVersion
   val circeGeneric =              "io.circe"                   %% "circe-generic"                      % circeVersion
   val circeGenericExtras =        "io.circe"                   %% "circe-generic-extras"               % circeVersion
 

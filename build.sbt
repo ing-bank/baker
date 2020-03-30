@@ -103,6 +103,7 @@ lazy val `baker-interface` = project.in(file("baker-interface"))
     moduleName := "baker-interface",
     libraryDependencies ++= Seq(
       circe,
+      circeParser,
       circeGeneric,
       circeGenericExtras,
       catsEffect,

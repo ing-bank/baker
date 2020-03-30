@@ -12,7 +12,7 @@ import org.apache.kafka.common.serialization.StringSerializer
 
 trait EventSink {
   def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit]
-  def close(): Unit
+  def close(): Unit = ()
 }
 
 object KafkaEventSink extends LazyLogging {
@@ -36,7 +36,7 @@ class KafkaEventSink(
   settings: KafkaEventSinkSettings
 ) extends EventSink with LazyLogging {
 
-  def close(): Unit = kafkaProducer.close()
+  override def close(): Unit = kafkaProducer.close()
 
   def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit] = {
     event match {

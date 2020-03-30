@@ -8,13 +8,13 @@ import akka.cluster.Cluster
 import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import cats.implicits._
-import com.ing.baker.runtime.akka.AkkaBakerConfig.{EventSinkSettings, KafkaEventSinkSettings}
+import com.ing.baker.runtime.akka.AkkaBakerConfig.KafkaEventSinkSettings
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig, KafkaEventSink}
 import com.ing.baker.runtime.scaladsl.Baker
 import com.typesafe.config.ConfigFactory
-import skuber.api.client.KubernetesClient
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import skuber.api.client.KubernetesClient
 
 import scala.concurrent.ExecutionContext
 

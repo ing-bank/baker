@@ -4,7 +4,7 @@ import akka.actor.{ActorSystem, Address, AddressFromURIString}
 import akka.persistence.query.PersistenceQuery
 import akka.persistence.query.scaladsl.{CurrentEventsByPersistenceIdQuery, CurrentPersistenceIdsQuery, PersistenceIdsQuery}
 import cats.data.NonEmptyList
-import com.ing.baker.runtime.akka.AkkaBakerConfig.{BakerPersistenceQuery, BakerValidationSettings, EventSinkSettings}
+import com.ing.baker.runtime.akka.AkkaBakerConfig.{BakerPersistenceQuery, BakerValidationSettings}
 import com.ing.baker.runtime.akka.actor.{BakerActorProvider, ClusterBakerActorProvider, LocalBakerActorProvider}
 import com.ing.baker.runtime.akka.internal.{InteractionManager, InteractionManagerLocal}
 import com.ing.baker.runtime.serialization.Encryption
