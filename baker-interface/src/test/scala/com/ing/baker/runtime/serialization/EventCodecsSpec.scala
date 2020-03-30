@@ -1,13 +1,16 @@
 package com.ing.baker.runtime.serialization
 
 
+import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
+import com.ing.baker.petrinet.api.{Marking, PetriNet}
 import com.ing.baker.runtime.common.RejectReason
 import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.runtime.serialization.EventCodecs._
 import com.ing.baker.types.{ListValue, PrimitiveValue}
 import io.circe.syntax._
 import org.scalatest.{FunSpec, Matchers}
+import scalax.collection.immutable.Graph
 
 class EventCodecsSpec extends FunSpec with Matchers {
   describe("EventCodecs") {
@@ -50,5 +53,9 @@ class EventCodecsSpec extends FunSpec with Matchers {
       exception.asJson.noSpaces shouldEqual """{"error":"message"}"""
     }
 
+    it("should encode CompiledRecipe") {
+      val recipe = CompiledRecipe("name", "recipeId", new PetriNet(Graph.empty), Marking.empty, Seq("first", "second"), Option.empty, Option.empty)
+      recipe.asJson.noSpaces shouldEqual """{"name":"name","recipeId":"recipeId","validationErrors":["first","second"]}"""
+    }
   }
 }

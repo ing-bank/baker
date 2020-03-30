@@ -7,7 +7,9 @@ import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance}
 import com.ing.baker.types
 import io.circe.Encoder._
 import io.circe._
+import io.circe.syntax._
 import io.circe.generic.semiauto._
+import scala.collection.JavaConverters._
 
 object EventCodecs {
 
@@ -30,7 +32,11 @@ object EventCodecs {
   implicit val exceptionEncoder: Encoder[ExceptionStrategyOutcome] = deriveEncoder[ExceptionStrategyOutcome]
   implicit val throwableEncoder: Encoder[Throwable] = (throwable: Throwable) => Json.obj(("error", Json.fromString(throwable.getMessage)))
   implicit val compiledRecipeEncoder: Encoder[CompiledRecipe] =
-    encodeString.contramap[CompiledRecipe](_.getRecipeVisualization.toString)
+    (recipe: CompiledRecipe) => Json.obj(
+      ("name", Json.fromString(recipe.name)),
+      ("recipeId", Json.fromString(recipe.recipeId)),
+      ("validationErrors", recipe.getValidationErrors.asScala.asJson))
+
 
   implicit val bakerEventEncoder: Encoder[BakerEvent] = deriveEncoder[BakerEvent]
 }
