@@ -163,6 +163,7 @@ case class ServiceDiscovery private(
         listeners.foreach(_.use(_.fireEvent(event)).unsafeRunAsyncAndForget())
       }.unsafeRunAsyncAndForget()
     }
+
     baker.registerEventListener { (metadata, event) =>
       cacheRecipeListeners.get.map { listeners =>
         listeners.get(metadata.recipeName).foreach(_.foreach(_.use(_.fireEvent(metadata, event)).unsafeRunAsyncAndForget()))
