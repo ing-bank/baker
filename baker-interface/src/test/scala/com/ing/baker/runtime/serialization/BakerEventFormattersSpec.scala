@@ -4,7 +4,7 @@ package com.ing.baker.runtime.serialization
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.common.RejectReason
 import com.ing.baker.runtime.scaladsl.EventInstance
-import com.ing.baker.runtime.serialization.BakerEventFormatters._
+import com.ing.baker.runtime.serialization.EventCodecs._
 import com.ing.baker.types.PrimitiveValue
 import io.circe.syntax._
 import org.scalatest.{FunSpec, Matchers}
