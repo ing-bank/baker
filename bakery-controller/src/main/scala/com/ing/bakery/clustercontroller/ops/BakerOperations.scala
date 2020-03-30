@@ -71,16 +71,16 @@ object BakerOperations {
           port = Right(managementPort.name),
           path = "/health/ready"
         ),
-        initialDelaySeconds = 20,
-        timeoutSeconds = 15
+        initialDelaySeconds = 10,
+        timeoutSeconds = 5
       ))
       .withLivenessProbe(skuber.Probe(
         action = skuber.HTTPGetAction(
           port = Right(managementPort.name),
           path = "/health/alive"
         ),
-        initialDelaySeconds = 20,
-        timeoutSeconds = 15
+        initialDelaySeconds = 10,
+        timeoutSeconds = 5
       ))
       .mount("recipes", recipesMountPath, readOnly = true)
       .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)

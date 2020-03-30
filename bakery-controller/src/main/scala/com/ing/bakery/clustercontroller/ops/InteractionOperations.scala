@@ -31,7 +31,9 @@ object InteractionOperations {
       action = skuber.HTTPGetAction(
         port = Right(httpAPIPort.name),
         path = "/api/v3/health"
-      )
+      ),
+      initialDelaySeconds = 10,
+      timeoutSeconds = 5
     )
 
     val interactionContainer = Container(
@@ -41,6 +43,10 @@ object InteractionOperations {
       .withReadinessProbe(healthProbe)
       .withLivenessProbe(healthProbe)
       .copy(env = interaction.spec.env)
+      .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
+      // todo parametrise?
+      .requestMemory("256M")
+      .requestCPU("200m")
 
     val interactionContainerWithMounts0 =
       interaction.spec.configMapMounts.foldLeft(interactionContainer) { (container, configMount) =>
