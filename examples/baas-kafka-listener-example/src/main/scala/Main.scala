@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import fs2.kafka._
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import scala.concurrent.duration._
 import cats.implicits._
 
 object Main extends IOApp with LazyLogging {
@@ -14,6 +15,8 @@ object Main extends IOApp with LazyLogging {
     `recipe-events-topic`: String,
     `bakery-events-topic`: String
   )
+
+  private def processRecord(record: ConsumerRecord[Option[String], String]): Unit = logger.info(s"Received: ${ record.value }")
 
   override def run(args: List[String]): IO[ExitCode] = {
 
@@ -27,17 +30,17 @@ object Main extends IOApp with LazyLogging {
         .withGroupId(clientConfig.group)
         .withAutoOffsetReset(AutoOffsetReset.Earliest)
 
-    def processRecord(record: ConsumerRecord[Option[String], String]): IO[Unit] =
-      IO(
-        logger.info(s"Received: ${ record.value }")
-      )
+    logger.info(s"Started listening $clientConfig")
 
     consumerStream(consumerSettings)
       .evalTap(_.subscribeTo(
         clientConfig.`recipe-events-topic`,
         clientConfig.`bakery-events-topic`))
       .flatMap(_.stream)
-      .map(record => processRecord(record.record))
+      .map(committable => {
+        processRecord(committable.record);
+        committable.offset})
+      .through(commitBatchWithin(1, 1.second)(IO.ioConcurrentEffect, timer))
       .compile
       .drain
       .as(ExitCode.Success)
