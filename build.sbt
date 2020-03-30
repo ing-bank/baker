@@ -46,7 +46,8 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     Package.ManifestAttributes(
       "Build-Time" -> new java.util.Date().toString,
       "Build-Commit" -> git.gitHeadCommit.value.getOrElse("No Git Revision Found")
-    )
+    ),
+  resolvers += Resolver.bintrayRepo("cakesolutions", "maven")
 )
 
 val dependencyOverrideSettings = Seq(
@@ -101,6 +102,9 @@ lazy val `baker-interface` = project.in(file("baker-interface"))
   .settings(
     moduleName := "baker-interface",
     libraryDependencies ++= Seq(
+      circe,
+      circeGeneric,
+      circeGenericExtras,
       catsEffect,
       scalaJava8Compat
     ) ++ providedDeps(findbugs) ++ testDeps(
