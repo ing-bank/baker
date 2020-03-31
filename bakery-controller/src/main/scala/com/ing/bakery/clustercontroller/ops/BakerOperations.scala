@@ -53,7 +53,7 @@ object BakerOperations {
       image = "baas-node-state:" + bakeryVersion
     )
       // todo parametrise?
-      .requestMemory("512M")
+      .requestMemory("256M")
       .requestCPU("200m")
       .exposePort(Container.Port(
         name = "remoting",
