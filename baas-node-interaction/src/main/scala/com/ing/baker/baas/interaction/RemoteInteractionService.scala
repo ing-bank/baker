@@ -1,6 +1,6 @@
 package com.ing.baker.baas.interaction
 
-import java.net.InetSocketAddress
+import java.net.{InetSocketAddress, URLDecoder}
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.baas.interaction.BakeryHttp.ProtoEntityEncoders._
@@ -15,14 +15,14 @@ import org.http4s.server.{Router, Server}
 
 object RemoteInteractionService {
 
-  def resource(interaction: InteractionInstance, address: InetSocketAddress)(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] =
+  def resource(interactions: List[InteractionInstance], address: InetSocketAddress)(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] =
     BlazeServerBuilder[IO]
       .bindSocketAddress(address)
-      .withHttpApp(new RemoteInteractionService(interaction).build)
+      .withHttpApp(new RemoteInteractionService(interactions).build)
       .resource
 }
 
-final class RemoteInteractionService(interaction: InteractionInstance)(implicit timer: Timer[IO], cs: ContextShift[IO]) {
+final class RemoteInteractionService(interactions: List[InteractionInstance])(implicit timer: Timer[IO], cs: ContextShift[IO]) {
 
   def build: HttpApp[IO] =
     api.orNotFound
@@ -32,17 +32,24 @@ final class RemoteInteractionService(interaction: InteractionInstance)(implicit 
     case GET -> Root / "health" =>
       Ok("Ok")
 
-    case GET -> Root / "interface" =>
-      Ok(ProtocolInteractionExecution.InstanceInterface(interaction.name, interaction.input))
+    case GET -> Root / "interaction" =>
+      Ok(ProtocolInteractionExecution.Interfaces(interactions.map(interaction =>
+        ProtocolInteractionExecution.InstanceInterface(interaction.shaBase64, interaction.name, interaction.input))))
 
-    case req@POST -> Root / "run-interaction" =>
+    case req@POST -> Root /  "interaction" / interactionIdEncoded / "apply" =>
+      val interactionId = URLDecoder.decode(interactionIdEncoded, "UTF-8")
       for {
         request <- req.as[ProtocolInteractionExecution.ExecuteInstance]
-        response <- IO.fromFuture(IO(interaction.run(request.input))).attempt.flatMap {
-          case Right(value) =>
-            Ok(ProtocolInteractionExecution.InstanceExecutedSuccessfully(value))
-          case Left(e) =>
-            Ok(ProtocolInteractionExecution.InstanceExecutionFailed(e.getMessage))
+        response <- interactions.find(_.shaBase64 == interactionId) match {
+          case Some(interaction) =>
+            IO.fromFuture(IO(interaction.run(request.input))).attempt.flatMap {
+              case Right(value) =>
+                Ok(ProtocolInteractionExecution.InstanceExecutedSuccessfully(value))
+              case Left(e) =>
+                Ok(ProtocolInteractionExecution.InstanceExecutionFailed(e.getMessage))
+            }
+          case None =>
+            Ok(ProtocolInteractionExecution.NoInstanceFound)
         }
       } yield response
   })

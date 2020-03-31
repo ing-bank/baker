@@ -1,8 +1,9 @@
 package com.ing.baker.runtime.scaladsl
 
 import java.lang.reflect.Method
+import java.security.MessageDigest
 import java.util
-import java.util.Optional
+import java.util.{Base64, Optional}
 import java.util.concurrent.CompletableFuture
 
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
@@ -28,6 +29,14 @@ case class InteractionInstance(
 
   override def execute(input: Seq[IngredientInstance]): Future[Option[Event]] =
     run(input)
+
+  def shaBase64: String = {
+    val nameBytes: Array[Byte] = name.getBytes("UTF-8")
+    val interfaceBytes: Array[Byte] = input.toArray.map(_.hashCode().toByte)
+    val sha: Array[Byte] = MessageDigest.getInstance("SHA-256").digest(nameBytes ++ interfaceBytes)
+    val base64: Array[Byte] = Base64.getEncoder.encode(sha)
+    new String(base64)
+  }
 
   def asJava: javadsl.InteractionInstance =
     new javadsl.InteractionInstance {

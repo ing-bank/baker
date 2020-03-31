@@ -52,20 +52,23 @@ object ServiceDiscovery extends LazyLogging {
     def buildInteractions(currentServices: List[Service]): IO[List[InteractionInstance]] =
       getInteractionAddresses(currentServices)
         .map(RemoteInteractionClient.resource(_, connectionPool))
-        .parTraverse[IO, Option[InteractionInstance]](buildInteractionInstance)
+        .parTraverse[IO, List[InteractionInstance]](buildInteractionInstance)
         .map(_.flatten)
 
-    def buildInteractionInstance(resource: Resource[IO, RemoteInteractionClient]): IO[Option[InteractionInstance]] =
+    def buildInteractionInstance(resource: Resource[IO, RemoteInteractionClient]): IO[List[InteractionInstance]] =
       resource.use { client =>
         for {
           interface <- client.interface.attempt
           interactionsOpt = interface match {
-            case Right((name, types)) => Some(InteractionInstance(
-              name = name,
-              input = types,
-              run = input => resource.use(_.runInteraction(input)).unsafeToFuture()
-            ))
-            case Left(_) => None
+            case Right(interfaces) =>
+              interfaces.map { i =>
+                InteractionInstance(
+                  name = i.name,
+                  input = i.interface,
+                  run = input => resource.use(_.runInteraction(i.id, input)).unsafeToFuture()
+                )
+              }
+            case Left(_) => List.empty
           }
         } yield interactionsOpt
       }

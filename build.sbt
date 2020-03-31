@@ -13,11 +13,11 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
       "baas-kafka-listener-example/docker:publishLocal" ::
       "bakery-controller/docker:publishLocal" ::
       "project baas-interaction-example-make-payment" ::
-      "buildInteractionDockerImage docker:publishLocal webshop.webservice.MakePaymentInstance" ::
+      "buildInteractionDockerImage --image-name=interaction-webshop.webservice.makepaymentinstance --publish=local --interaction=webshop.webservice.MakePaymentInstance" ::
       "project baas-interaction-example-ship-items" ::
-      "buildInteractionDockerImage docker:publishLocal webshop.webservice.ShipItemsInstance" ::
+      "buildInteractionDockerImage --image-name=interaction-webshop.webservice.shipitemsinstance --publish=local --interaction=webshop.webservice.ShipItemsInstance" ::
       "project baas-interaction-example-reserve-items" ::
-      "buildInteractionDockerImage docker:publishLocal webshop.webservice.ReserveItemsInstance" ::
+      "buildInteractionDockerImage --image-name=interaction-webshop.webservice.reserveitemsinstance --publish=local --interaction=webshop.webservice.ReserveItemsInstance" ::
       "project baas-smoke-tests" ::
       state
 })

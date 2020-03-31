@@ -4,26 +4,26 @@ import cats.effect.IO
 import com.ing.baker.baas.mocks.Utils._
 import com.ing.baker.baas.protocol.InteractionSchedulingProto._
 import com.ing.baker.baas.protocol.ProtocolInteractionExecution
-import com.ing.baker.recipe.scaladsl.Interaction
-import com.ing.baker.runtime.scaladsl.EventInstance
+import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance}
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.matchers.Times
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.verify.VerificationTimes
 
-class RemoteInteraction(mock: ClientAndServer, interaction: Interaction) {
+class RemoteInteraction(mock: ClientAndServer, interaction: InteractionInstance) {
 
   def publishesItsInterface: IO[Unit] = IO {
     mock.when(
       request()
         .withMethod("GET")
-        .withPath("/api/v3/interface")
+        .withPath("/api/v3/interaction")
         .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost")
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody(serialize(ProtocolInteractionExecution.InstanceInterface(interaction.name, interaction.inputIngredients.map(_.ingredientType))))
+        .withBody(serialize(ProtocolInteractionExecution.Interfaces(List(
+          ProtocolInteractionExecution.InstanceInterface(interaction.shaBase64, interaction.name, interaction.input)))))
     )
   }
 
@@ -60,7 +60,7 @@ class RemoteInteraction(mock: ClientAndServer, interaction: Interaction) {
   private def applyMatch =
     request()
       .withMethod("POST")
-      .withPath("/api/v3/run-interaction")
+      .withPath(s"/api/v3/interaction/apply")
       .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost")
 
 }

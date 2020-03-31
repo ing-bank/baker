@@ -16,7 +16,7 @@ import com.ing.baker.baas.testing.BakeryFunSpec
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
-import com.ing.baker.runtime.scaladsl.{Baker, EventInstance}
+import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import com.typesafe.config.ConfigFactory
 import org.mockserver.integration.ClientAndServer
 import org.scalatest.{ConfigMap, Matchers}
@@ -285,11 +285,17 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       else safePath
     }
 
+    val interactionInstance: InteractionInstance =
+      InteractionInstance(
+        name = Interactions.ReserveItemsInteraction.name,
+        input = Interactions.ReserveItemsInteraction.inputIngredients.map(_.ingredientType),
+        run = _ => ??? // We never call this because it is mocked by mock server
+      )
+
     for {
       // Mock server
       mockServer <- Resource.make(IO(ClientAndServer.startClientAndServer(0)))(s => IO(s.stop()))
-      remoteInteraction = new RemoteInteraction(mockServer, Interactions.ReserveItemsInteraction)
-
+      remoteInteraction = new RemoteInteraction(mockServer, interactionInstance)
       kubeApiServer = new KubeApiServer(mockServer)
       remoteComponents = new RemoteComponents(kubeApiServer, remoteInteraction)
       _ <- Resource.liftF(remoteComponents.registerToTheCluster)
