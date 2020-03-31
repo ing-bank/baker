@@ -3,6 +3,7 @@ package com.ing.baker.baas.smoke
 import cats.effect.{IO, Resource}
 import com.ing.baker.baas.smoke.k8s.{DefinitionFile, Pod}
 import com.ing.baker.baas.testing.BakeryFunSpec
+import io.circe.parser._
 import org.http4s.Uri
 import org.scalatest.{ConfigMap, Matchers}
 import webshop.webservice.OrderStatus
@@ -55,16 +56,22 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
             .map(status => status shouldBe OrderStatus.Complete.toString)
         }
 
-        bakerEvents <- Pod.execOnNamed("kafka-event-sink",
-          context.namespace, Some("kafkacat"))(s"kafkacat -b localhost:9092 -C -t baker-events -o 0 -c ${ExpectedBakerEvents.size}")
-        _ = println(bakerEvents)
         recipeEvents <- Pod.execOnNamed("kafka-event-sink",
           context.namespace, Some("kafkacat"))(s"kafkacat -b localhost:9092 -C -t recipe-events -o 0 -c ${ExpectedRecipeEvents.size}")
         _ = println(recipeEvents)
 
-        // todo crude deserialisation of provisional format
-        _ = recipeEvents.map(_.takeWhile(_ != ',').replace("EventInstance(", "")) shouldBe ExpectedRecipeEvents
-        _ = bakerEvents.map(_.takeWhile(_ != '(')) shouldBe ExpectedBakerEvents
+        _ = recipeEvents
+          .map(parse)
+          .map(_.toOption.get.asObject.get.apply("name").toString) shouldBe ExpectedRecipeEvents
+
+        bakerEvents <- Pod.execOnNamed("kafka-event-sink",
+          context.namespace, Some("kafkacat"))(s"kafkacat -b localhost:9092 -C -t baker-events -o 0 -c ${ExpectedBakerEvents.size}")
+        _ = println(bakerEvents)
+
+        _ = bakerEvents
+          .map(parse)
+          .map(_.toOption.get.asObject.get.keys.head) shouldBe ExpectedBakerEvents
+
         _ <- printGreen(s"Event streams contain all required events")
       } yield succeed
     }
