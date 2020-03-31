@@ -4,17 +4,17 @@ import org.scalatest.FlatSpec
 
 class AsyncModelTests extends FlatSpec {
 
-  type Test[A] = AsyncModel[String, A]
+  type Test[A] = Async[String, A]
 
-  def eventA0: Test[Int] = AsyncModel.async(10)
+  def eventA0: Test[Int] = Async.async(10)
 
-  def eventA1: Test[Int] = AsyncModel.async(100)
+  def eventA1: Test[Int] = Async.async(100)
 
   def eventAA: Test[Int] = eventA0.flatMap(_ => eventA1)
 
-  def eventB: Test[Int] = AsyncModel.async(2).map(_ + 3)
+  def eventB: Test[Int] = Async.async(2).map(_ + 3)
 
-  def eventC(x: Int, y: Int): Test[Int] = AsyncModel.async(x * y)
+  def eventC(x: Int, y: Int): Test[Int] = Async.async(x * y)
 
   "Simple Lamport Clocks" should "async count from 0" in {
     val (lamportClock, result) = eventA0.run
@@ -51,7 +51,7 @@ class AsyncModelTests extends FlatSpec {
   }
 
   it should "not count pure applications" in {
-    val (lamportClock, result) = AsyncModel.ok(1).run
+    val (lamportClock, result) = Async.ok(1).run
     assert(lamportClock == 0 && result == Right(1))
   }
 
@@ -61,18 +61,18 @@ class AsyncModelTests extends FlatSpec {
   }
 
   it should "take the longest clock from a tuple" in {
-    val (lamportClock, result) = AsyncModel.parallel(eventA0, eventAA).run
+    val (lamportClock, result) = Async.parallel(eventA0, eventAA).run
     assert(lamportClock == 2 && result == Right(10, 100))
   }
 
   it should "take the longest clock from a list" in {
-    val (lamportClock, result) = AsyncModel.parallelAll(List(eventA0, eventAA)).run
+    val (lamportClock, result) = Async.parallelAll(List(eventA0, eventAA)).run
     assert(lamportClock == 2 && result == Right(List(10, 100)))
   }
 
   "Simple parallel and sequential" should "tuples" in {
     val program: Test[Int] = for {
-      xy <- AsyncModel.parallel(eventAA, eventB)
+      xy <- Async.parallel(eventAA, eventB)
       z <- eventC(xy._1, xy._2)
     } yield z
 
@@ -82,11 +82,11 @@ class AsyncModelTests extends FlatSpec {
 
   it should "list" in {
     val program: Test[Int] = for {
-      xy <- AsyncModel.parallelAll(List(eventAA, eventB))
+      xy <- Async.parallelAll(List(eventAA, eventB))
       z <- {
         xy match {
           case x :: y :: Nil => eventC(x, y)
-          case _ => AsyncModel.asyncFail("Unexpected events")
+          case _ => Async.asyncFail("Unexpected events")
         }
       }
     } yield z

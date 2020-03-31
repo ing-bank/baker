@@ -6,17 +6,17 @@ import com.ing.baker.il.petrinet.Transition
 import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.runtime.common.BakerException.{IllegalEventException, NoSuchProcessException, NoSuchRecipeException, ProcessAlreadyExistsException}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
-import com.ing.baker.runtime.model.AsyncModel.AsyncModelTypeSetter
-import com.ing.baker.runtime.model.BakerModel._
+import com.ing.baker.runtime.model.Async.AsyncModelTypeSetter
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance, RecipeInformation, SensoryEventResult}
 import com.ing.baker.petrinet.api._
+import com.ing.baker.runtime.model.BakerModel.Model
 
 object BakerModel extends AsyncModelTypeSetter[BakerModelState, BakerException] {
 
-  type Model[+A] = AsyncModel[BakerModelState, BakerException, A]
+  type Model[+A] = Async[BakerModelState, BakerException, A]
 }
 
-class BakerModel extends Baker[Model] {
+class BakerModel extends Baker[Model] with AsyncModelTypeSetter[BakerModelState, BakerException] {
 
   override def addRecipe(compiledRecipe: CompiledRecipe): Model[String] =
     for {
@@ -87,34 +87,33 @@ class BakerModel extends Baker[Model] {
       }
     } yield sensoryEventResult
 
-  private def executeTransition(transitionFiring: TransitionFiring): Model[TransitionEvent] =
-    for {
-      startTime <- asyncStep
-      consumed: Marking[Long] = transitionFiring.consume.marshall
-    } yield transitionEvent
+  /*
+private def executeTransition(transitionFiring: TransitionFiring): Model[TransitionEvent] =
+  for {
+    startTime <- asyncStep
+    consumed: Marking[Long] = transitionFiring.consume.marshall
+  } yield ???
 
-    ???
-    /*
-    IO.unit.flatMap { _ =>
-      // calling transitionTask(...) could potentially throw an exception
-      // TODO I don't believe the last statement is true
-      transitionTask(topology, transition)(job.consume, job.processState, job.input)
-    }.map {
-      case (producedMarking, out) ⇒
-        TransitionFiredEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, producedMarking.marshall, out)
-    }.handleException {
-      // In case an exception was thrown by the transition, we compute the failure strategy and return a TransitionFailedEvent
-      case e: Throwable ⇒
-        val failureCount = job.failureCount + 1
-        val failureStrategy = handleException(job)(e, failureCount, startTime, topology.outMarking(transition))
-        TransitionFailedEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, job.input, exceptionStackTrace(e), failureStrategy)
-    }.handleException {
-      // If an exception was thrown while computing the failure strategy we block the interaction from firing
-      case e: Throwable =>
-        logger.error(s"Exception while handling transition failure", e)
-        TransitionFailedEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, job.input, exceptionStackTrace(e), FailureStrategy.BlockTransition)
-    }
-     */
+  IO.unit.flatMap { _ =>
+    // calling transitionTask(...) could potentially throw an exception
+    // TODO I don't believe the last statement is true
+    transitionTask(topology, transition)(job.consume, job.processState, job.input)
+  }.map {
+    case (producedMarking, out) ⇒
+      TransitionFiredEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, producedMarking.marshall, out)
+  }.handleException {
+    // In case an exception was thrown by the transition, we compute the failure strategy and return a TransitionFailedEvent
+    case e: Throwable ⇒
+      val failureCount = job.failureCount + 1
+      val failureStrategy = handleException(job)(e, failureCount, startTime, topology.outMarking(transition))
+      TransitionFailedEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, job.input, exceptionStackTrace(e), failureStrategy)
+  }.handleException {
+    // If an exception was thrown while computing the failure strategy we block the interaction from firing
+    case e: Throwable =>
+      logger.error(s"Exception while handling transition failure", e)
+      TransitionFailedEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, job.input, exceptionStackTrace(e), FailureStrategy.BlockTransition)
+  }
+   */
 
   /*
   processIndexActor.ask(ProcessEvent(
