@@ -29,6 +29,9 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
   javacOptions := Seq("-source", jvmV, "-target", jvmV),
+  sources in doc := Seq(),
+  publishArtifact in packageDoc := false,
+  publishArtifact in packageSrc := false,
   scalacOptions := Seq(
     "-unchecked",
     "-deprecation",
@@ -429,6 +432,7 @@ lazy val `baas-interaction-example-reserve-items` = project.in(file("examples/ba
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
   .settings(commonSettings)
+  .settings(noPublishSettings)
   .settings(
     moduleName := "baas-interaction-example-reserve-items",
     scalacOptions ++= Seq(
