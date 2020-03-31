@@ -7,6 +7,7 @@ import com.ing.baker.petrinet.api.{Marking, PetriNet}
 import com.ing.baker.runtime.common.RejectReason
 import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.runtime.serialization.EventJsonEncoders._
+import com.ing.baker.types
 import com.ing.baker.types.{ListValue, PrimitiveValue}
 import io.circe.syntax._
 import org.scalatest.{FunSpec, Matchers}
@@ -23,18 +24,18 @@ class EventJsonEncodersSpec extends FunSpec with Matchers {
 
     it("should encode EventInstance") {
       val event = EventInstance("name", Map("id" -> PrimitiveValue(3)))
-      event.asJson.noSpaces shouldEqual """{"name":"name","providedIngredients":{"id":"3"}}"""
+      event.asJson.noSpaces shouldEqual """{"name":"name","providedIngredients":{"id":{"typ":3,"styp":"java.lang.Integer","val":"3"}}}"""
 
       val event2 = EventInstance("name", Map("id" -> ListValue(List(PrimitiveValue(125.toByte)))))
-      event2.asJson.noSpaces shouldEqual """{"name":"name","providedIngredients":{"id":["125"]}}"""
+      event2.asJson.noSpaces shouldEqual """{"name":"name","providedIngredients":{"id":{"typ":1,"val":[{"typ":3,"styp":"java.lang.Byte","val":"125"}]}}}"""
 
       case class ShippingOrder(items: List[String], data: Array[Byte])
 
       val event3 = EventInstance.unsafeFrom(ShippingOrder(List.empty, Array(1.toByte, 5.toByte)))
-      event3.asJson.noSpaces shouldEqual """{"name":"ShippingOrder$1","providedIngredients":{"items":[],"data":"AQU="}}"""
+      event3.asJson.noSpaces shouldEqual """{"name":"ShippingOrder$1","providedIngredients":{"items":{"typ":1,"val":[]},"data":{"typ":3,"styp":"ByteArray","val":"AQU="}}}"""
 
       val event4 = EventInstance.unsafeFrom(ShippingOrder(List.empty, Array()))
-      event4.asJson.noSpaces shouldEqual """{"name":"ShippingOrder$1","providedIngredients":{"items":[],"data":""}}"""
+      event4.asJson.noSpaces shouldEqual """{"name":"ShippingOrder$1","providedIngredients":{"items":{"typ":1,"val":[]},"data":{"typ":3,"styp":"ByteArray","val":""}}}"""
     }
 
     it("should encode ExceptionStrategyOutcome") {
@@ -56,6 +57,23 @@ class EventJsonEncodersSpec extends FunSpec with Matchers {
     it("should encode CompiledRecipe") {
       val recipe = CompiledRecipe("name", "recipeId", new PetriNet(Graph.empty), Marking.empty, Seq("first", "second"), Option.empty, Option.empty)
       recipe.asJson.noSpaces shouldEqual """{"name":"name","recipeId":"recipeId","validationErrors":["first","second"]}"""
+    }
+
+    it("should encode types.Value") {
+      val typ: types.Value = types.NullValue
+      typ.asJson.noSpaces shouldEqual """{"typ":0}"""
+
+      val typ2: types.Value = types.PrimitiveValue(Array[Byte](127, 127))
+      typ2.asJson.noSpaces shouldEqual """{"typ":3,"styp":"ByteArray","val":"f38="}"""
+
+      val typ3: types.Value = types.PrimitiveValue("SuperString")
+      typ3.asJson.noSpaces shouldEqual """{"typ":3,"styp":"java.lang.String","val":"SuperString"}"""
+
+      val typ4: types.Value = types.ListValue(List(typ2, typ3))
+      typ4.asJson.noSpaces shouldEqual """{"typ":1,"val":[{"typ":3,"styp":"ByteArray","val":"f38="},{"typ":3,"styp":"java.lang.String","val":"SuperString"}]}"""
+
+      val typ5: types.Value = types.RecordValue(Map("1" -> typ2, "2" -> typ4))
+      typ5.asJson.noSpaces shouldEqual """{"typ":2,"val":{"1":{"typ":3,"styp":"ByteArray","val":"f38="},"2":{"typ":1,"val":[{"typ":3,"styp":"ByteArray","val":"f38="},{"typ":3,"styp":"java.lang.String","val":"SuperString"}]}}}"""
     }
   }
 }

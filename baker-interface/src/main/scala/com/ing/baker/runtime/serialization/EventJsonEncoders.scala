@@ -16,18 +16,40 @@ import scala.collection.JavaConverters._
 
 object EventJsonEncoders {
 
+  private[serialization] val typeFieldName: String = "typ"
+  private[serialization] val subTypeFieldName: String = "styp"
+  private[serialization] val valueFieldName: String = "val"
+
+  private[serialization] val byteArraySubtype: String = "ByteArray"
+
+  private[serialization] val nullValueType: Int = 0
+  private[serialization] val listValueType: Int = 1
+  private[serialization] val recordValueType: Int = 2
+  private[serialization] val primitiveValueType: Int = 3
+
   implicit val valuesEncoder: Encoder[types.Value] =
     Encoder.instance {
       case types.NullValue =>
-        Json.Null
+        Json.fromFields(List((typeFieldName, nullValueType.asJson)))
       case types.ListValue(entries) =>
-        encodeList(valuesEncoder)(entries)
+        Json.fromFields(List(
+          (typeFieldName, listValueType.asJson),
+          (valueFieldName, encodeList(valuesEncoder)(entries))))
       case types.RecordValue(entries) =>
-        encodeMap(KeyEncoder.encodeKeyString, valuesEncoder)(entries)
-      case types.PrimitiveValue(bytes: Array[Byte]) =>
-        encodeString(Base64.getEncoder.encodeToString(bytes))
+        Json.fromFields(List(
+          (typeFieldName, recordValueType.asJson),
+          (valueFieldName, encodeMap(KeyEncoder.encodeKeyString, valuesEncoder)(entries))))
       case types.PrimitiveValue(value) =>
-        encodeString(value.toString)
+        val (subType, realValue) = value match {
+          case bytes: Array[Byte] =>
+            (byteArraySubtype, Base64.getEncoder.encodeToString(bytes))
+          case _ => (value.getClass.getName, value.toString)
+        }
+
+        Json.fromFields(List(
+          (typeFieldName, primitiveValueType.asJson),
+          (subTypeFieldName, subType.asJson),
+          (valueFieldName, realValue.asJson)))
     }
 
   implicit val eventInstanceEncoder: Encoder[EventInstance] = deriveEncoder[EventInstance]
@@ -35,6 +57,7 @@ object EventJsonEncoders {
   implicit val exceptionEncoder: Encoder[ExceptionStrategyOutcome] = deriveEncoder[ExceptionStrategyOutcome]
   implicit val throwableEncoder: Encoder[Throwable] = (throwable: Throwable) => Json.obj(("error", Json.fromString(throwable.getMessage)))
   implicit val compiledRecipeEncoder: Encoder[CompiledRecipe] =
+  // TODO: write PetriNet and Marking to json
     (recipe: CompiledRecipe) => Json.obj(
       ("name", Json.fromString(recipe.name)),
       ("recipeId", Json.fromString(recipe.recipeId)),
