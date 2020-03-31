@@ -43,7 +43,7 @@ class KafkaEventSink(
       case eventInstance: EventInstance =>
         Some(KafkaProducerRecord[String, String](settings.`recipe-events-topic`, None, eventInstance.asJson.noSpaces))
       case bakerEvent: BakerEvent    =>
-        Some(KafkaProducerRecord[String, String](settings.`bakery-events-topic`, None, bakerEvent.asJson.noSpaces))
+        Some(KafkaProducerRecord[String, String](settings.`baker-events-topic`, None, bakerEvent.asJson.noSpaces))
       case _                =>
         logger.warn(s"Don't know where to send event of class ${ event.getClass.getSimpleName }: $event")
         None
