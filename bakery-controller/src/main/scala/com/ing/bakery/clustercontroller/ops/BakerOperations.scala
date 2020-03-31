@@ -53,8 +53,8 @@ object BakerOperations {
       image = "baas-node-state:" + bakeryVersion
     )
       // todo parametrise?
-      .requestMemory("256M")
-      .requestCPU("200m")
+      .requestMemory("512M")
+      .requestCPU("250m")
       .exposePort(Container.Port(
         name = "remoting",
         containerPort = 2552,
@@ -71,16 +71,16 @@ object BakerOperations {
           port = Right(managementPort.name),
           path = "/health/ready"
         ),
-        initialDelaySeconds = 10,
-        timeoutSeconds = 5
+        initialDelaySeconds = 15,
+        timeoutSeconds = 10
       ))
       .withLivenessProbe(skuber.Probe(
         action = skuber.HTTPGetAction(
           port = Right(managementPort.name),
           path = "/health/alive"
         ),
-        initialDelaySeconds = 10,
-        timeoutSeconds = 5
+        initialDelaySeconds = 15,
+        timeoutSeconds = 10
       ))
       .mount("recipes", recipesMountPath, readOnly = true)
       .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)

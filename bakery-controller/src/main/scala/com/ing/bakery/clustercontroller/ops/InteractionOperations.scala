@@ -32,8 +32,8 @@ object InteractionOperations {
         port = Right(httpAPIPort.name),
         path = "/api/v3/health"
       ),
-      initialDelaySeconds = 10,
-      timeoutSeconds = 5
+      initialDelaySeconds = 15,
+      timeoutSeconds = 10
     )
 
     val interactionContainer = Container(

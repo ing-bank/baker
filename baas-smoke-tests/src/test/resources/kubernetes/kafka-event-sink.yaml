@@ -49,7 +49,7 @@ spec:
               value: "server.1=localhost:2888:3888"
           resources:
             requests:
-              memory: 256M
+              memory: 384M
               cpu: 100m
           ports:
             - containerPort: 2181
