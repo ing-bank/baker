@@ -42,6 +42,8 @@ object Dependencies {
   val akkaDiscoveryKube =         "com.lightbend.akka.discovery"  %% "akka-discovery-kubernetes-api"     % "1.0.5"
   val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.6"
 
+  val scalaKafkaClient =          "net.cakesolutions"          %% "scala-kafka-client"                 % "2.3.1"
+  val fs2kafka =                  "com.github.fd4s"            %% "fs2-kafka"                          % "1.0.0"
   val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.12"
 
   val levelDBJni =                "org.fusesource.leveldbjni"  %  "leveldbjni-all"                     % "1.8"
@@ -63,7 +65,9 @@ object Dependencies {
   val http4sClient =              "org.http4s"                 %% "http4s-blaze-client"                % http4sVersion
   val http4sCirce =               "org.http4s"                 %% "http4s-circe"                       % http4sVersion
   val circe =                     "io.circe"                   %% "circe-core"                         % circeVersion
+  val circeParser =               "io.circe"                   %% "circe-parser"                       % circeVersion
   val circeGeneric =              "io.circe"                   %% "circe-generic"                      % circeVersion
+  val circeGenericExtras =        "io.circe"                   %% "circe-generic-extras"               % circeVersion
 
   val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "2.1.2"
   val catsCore =                  "org.typelevel"              %% "cats-core"                          % "2.1.1"

@@ -1,8 +1,9 @@
 package com.ing.baker.baas.smoke
 
 import cats.effect.{IO, Resource}
-import com.ing.baker.baas.smoke.k8s.DefinitionFile
+import com.ing.baker.baas.smoke.k8s.{DefinitionFile, Pod}
 import com.ing.baker.baas.testing.BakeryFunSpec
+import io.circe.parser._
 import org.http4s.Uri
 import org.scalatest.{ConfigMap, Matchers}
 import webshop.webservice.OrderStatus
@@ -55,34 +56,21 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
             .map(status => status shouldBe OrderStatus.Complete.toString)
         }
 
-        recipeEvents <- context.recipeEventListener.events
-        bakerEvents <- context.bakerEventListener.events
-        _ = recipeEvents.foreach { event =>
-          List(
-            "ShippingConfirmed",
-            "PaymentSuccessful",
-            "PaymentInformationReceived",
-            "OrderPlaced",
-            "ItemsReserved",
-            "ShippingAddressReceived"
-          ) should contain(event)
-        }
-        _ = bakerEvents.foreach { event =>
-          List(
-            "InteractionCompleted",
-            "InteractionStarted",
-            "InteractionCompleted",
-            "InteractionCompleted",
-            "InteractionStarted",
-            "EventReceived",
-            "EventReceived",
-            "EventReceived",
-            "InteractionStarted",
-            "RecipeInstanceCreated",
-            "RecipeAdded"
-          ) should contain(event)
-        }
-        _ <- printGreen(s"Event listeners successfully notified (Note: ordering of events not enforced)")
+        recipeEvents <- Pod.execOnNamed("kafka-event-sink",
+          context.namespace, Some("kafkacat"))(s"kafkacat -b localhost:9092 -C -t recipe-events -o 0 -c ${ExpectedRecipeEvents.size}")
+
+        _ = recipeEvents
+          .map(parse)
+          .map(_.toOption.get.asObject.get.apply("name").get.asString.get) shouldBe ExpectedRecipeEvents
+
+        bakerEvents <- Pod.execOnNamed("kafka-event-sink",
+          context.namespace, Some("kafkacat"))(s"kafkacat -b localhost:9092 -C -t baker-events -o 0 -c ${ExpectedBakerEvents.size}")
+
+        _ = bakerEvents
+          .map(parse)
+          .map(_.toOption.get.asObject.get.keys.head) shouldBe ExpectedBakerEvents
+
+        _ <- printGreen(s"Event streams contain all required events")
       } yield succeed
     }
   }
@@ -113,15 +101,27 @@ class BakerySmokeTests extends BakeryFunSpec with Matchers {
   def argumentsBuilder(config: ConfigMap): TestArguments = {
     val clientAppHostname = Uri.unsafeFromString(
       config.getOptional[String]("client-app").getOrElse("http://localhost:8080"))
-    val eventListenerHostname = Uri.unsafeFromString(
-      config.getOptional[String]("event-listener").getOrElse("http://localhost:8082"))
-    val bakerEventListenerHostname = Uri.unsafeFromString(
-      config.getOptional[String]("baker-event-listener").getOrElse("http://localhost:8083"))
     BakeryEnvironment.Arguments(
-      clientAppHostname = clientAppHostname,
-      eventListenerHostname = eventListenerHostname,
-      bakerEventListenerHostname = bakerEventListenerHostname
+      clientAppHostname = clientAppHostname
     )
   }
+
+  private val ExpectedBakerEvents = List(
+    "RecipeAdded",
+    "RecipeAdded",
+    "RecipeInstanceCreated",
+    "EventReceived",
+    "InteractionStarted",
+    "EventReceived",
+    "EventReceived",
+    "InteractionCompleted",
+    "InteractionStarted",
+    "InteractionCompleted",
+    "InteractionStarted"
+  )
+
+  private val ExpectedRecipeEvents = List(
+    "OrderPlaced", "ShippingAddressReceived", "PaymentInformationReceived", "ItemsReserved", "PaymentSuccessful", "ShippingConfirmed"
+  )
 
 }

@@ -1,17 +1,18 @@
 <configuration>
 
-    <logger name="webshop.webservice" level="debug" additivity="false">
-        <appender-ref ref="CONSOLE"/>
-    </logger>
 
-    <root level="error">
-        <appender-ref ref="CONSOLE"/>
-    </root>
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
 
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
+  <logger name="webshop.webservice" level="debug" additivity="false">
+    <appender-ref ref="CONSOLE"/>
+  </logger>
+
+  <root level="error">
+    <appender-ref ref="CONSOLE"/>
+  </root>
 
 </configuration>
