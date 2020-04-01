@@ -11,9 +11,9 @@ spec:
 apiVersion: ing-bank.github.io/v1
 kind: Interaction
 metadata:
-  name: ship-items
+  name: make-payment-and-ship-items
 spec:
-  image: interaction-webshop.webservice.shipitemsinstance:3.0.2-SNAPSHOT
+  image: make-payment-and-ship-items:3.0.2-SNAPSHOT
   env:
     - name: ONE
       value: "1"
@@ -33,12 +33,3 @@ spec:
   secretMounts:
     - name: test-secret
       mountPath: "/secrets"
-
----
-
-apiVersion: ing-bank.github.io/v1
-kind: Interaction
-metadata:
-  name: make-payment
-spec:
-  image: interaction-webshop.webservice.makepaymentinstance:3.0.2-SNAPSHOT
