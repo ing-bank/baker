@@ -1,21 +1,16 @@
-package com.ing.baker.baas.scaladsl
+package com.ing.baker.baas.interaction
 
 import java.net.InetSocketAddress
 
 import cats.effect.{ContextShift, IO, Timer}
-import com.ing.baker.baas.common
-import com.ing.baker.baas.interaction.RemoteInteractionService
-import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.typesafe.config.ConfigFactory
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
-object RemoteInteraction extends common.RemoteInteraction[Future] with ScalaApi {
+object RemoteInteractionLoader {
 
-  override type InteractionInstanceType = InteractionInstance
-
-  override def load(implementation: InteractionInstance): Unit = {
+  def apply(implementations: List[InteractionInstance]): Unit = {
     val config = ConfigFactory.load()
     val port = config.getInt("baas-component.http-api-port")
 
@@ -25,7 +20,7 @@ object RemoteInteraction extends common.RemoteInteraction[Future] with ScalaApi 
     implicit val timer: Timer[IO] = IO.timer(ExecutionContext.Implicits.global)
 
     RemoteInteractionService
-      .resource(implementation, address)
+      .resource(implementations, address)
       .use(_ => IO.never)
       .unsafeRunAsyncAndForget()
   }
