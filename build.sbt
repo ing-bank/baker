@@ -12,12 +12,10 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
       "baas-client-example/docker:publishLocal" ::
       "baas-kafka-listener-example/docker:publishLocal" ::
       "bakery-controller/docker:publishLocal" ::
-      "project baas-interaction-example-make-payment" ::
-      "buildInteractionDockerImage docker:publishLocal webshop.webservice.MakePaymentInstance" ::
-      "project baas-interaction-example-ship-items" ::
-      "buildInteractionDockerImage docker:publishLocal webshop.webservice.ShipItemsInstance" ::
+      "project baas-interaction-example-make-payment-and-ship-items" ::
+      "buildInteractionDockerImage --image-name=make-payment-and-ship-items --publish=local --interaction=webshop.webservice.MakePaymentInstance --interaction=webshop.webservice.ShipItemsInstance" ::
       "project baas-interaction-example-reserve-items" ::
-      "buildInteractionDockerImage docker:publishLocal webshop.webservice.ReserveItemsInstance" ::
+      "buildInteractionDockerImage --image-name=interaction-webshop.webservice.reserveitemsinstance --publish=local --interaction=webshop.webservice.ReserveItemsInstance" ::
       "project baas-smoke-tests" ::
       state
 })
@@ -482,28 +480,7 @@ lazy val `baas-kafka-listener-example` = project
   )
   .dependsOn(bakertypes, `baas-node-client`, recipeCompiler, recipeDsl)
 
-lazy val `baas-interaction-example-ship-items` = project.in(file("examples/baas-interaction-examples/ship-items"))
-  .enablePlugins(JavaAppPackaging)
-  .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
-  .settings(commonSettings)
-  .settings(
-    moduleName := "baas-interaction-example-ship-items",
-    scalacOptions ++= Seq(
-      "-Ypartial-unification"
-    ),
-    libraryDependencies ++=
-      compileDeps(
-        slf4jApi,
-        slf4jSimple,
-        catsEffect
-      ) ++ testDeps(
-        scalaTest,
-        scalaCheck
-      )
-  )
-  .dependsOn(`baas-node-interaction`)
-
-lazy val `baas-interaction-example-make-payment` = project.in(file("examples/baas-interaction-examples/make-payment"))
+lazy val `baas-interaction-example-make-payment-and-ship-items` = project.in(file("examples/baas-interaction-examples/make-payment-and-ship-items"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
   .settings(commonSettings)
@@ -544,9 +521,8 @@ lazy val `baas-smoke-tests` = project.in(file("baas-smoke-tests"))
   .dependsOn(
     `baas-node-client`,
     `baas-client-example`,
-    `baas-interaction-example-make-payment`,
-    `baas-interaction-example-reserve-items`,
-    `baas-interaction-example-ship-items`)
+    `baas-interaction-example-make-payment-and-ship-items`,
+    `baas-interaction-example-reserve-items`)
 
 lazy val `sbt-baas-docker-generate` = project.in(file("sbt-baas-docker-generate"))
   .settings(defaultModuleSettings)

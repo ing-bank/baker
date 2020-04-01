@@ -16,8 +16,7 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
   val webshopBaker: (String, String) = "baker-name" -> "webshop-baker"
   val reservationBaker: (String, String) = "baker-name" -> "reservation-baker"
   val reserveItems: (String, String) = "interaction" -> "reserve-items"
-  val shipItems: (String, String) = "interaction" -> "ship-items"
-  val makePayment: (String, String) = "interaction" -> "make-payment"
+  val makePaymentAndShipItems: (String, String) = "interaction" -> "make-payment-and-ship-items"
 
   describe("The Bakery Controller") {
 
@@ -29,20 +28,18 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
           for {
             _ <- Pod.printPodsStatuses(namespace)
             reserveItemsPodsCount <- Pod.countPodsWithLabel(reserveItems, namespace)
-            shipItemsPodsCount <- Pod.countPodsWithLabel(shipItems, namespace)
-            makePaymentPodsCount <- Pod.countPodsWithLabel(makePayment, namespace)
+            makePaymentPodsCount <- Pod.countPodsWithLabel(makePaymentAndShipItems, namespace)
             _ = reserveItemsPodsCount shouldBe 2
-            _ = shipItemsPodsCount shouldBe 1
             _ = makePaymentPodsCount shouldBe 1
             _ <- Pod.allPodsAreReady(namespace)
           } yield()
         }
 
-        configOne <- Pod.environmentVariable("ship-items", namespace)("ONE")
-        configTwo <- Pod.environmentVariable("ship-items", namespace)("TWO")
-        configThree <- Pod.environmentVariable("ship-items", namespace)("THREE")
-        mountOne <- Pod.execOnNamed("ship-items", namespace)("ls /config")
-        mountTwo <- Pod.execOnNamed("ship-items", namespace)("ls /secrets")
+        configOne <- Pod.environmentVariable("make-payment-and-ship-items", namespace)("ONE")
+        configTwo <- Pod.environmentVariable("make-payment-and-ship-items", namespace)("TWO")
+        configThree <- Pod.environmentVariable("make-payment-and-ship-items", namespace)("THREE")
+        mountOne <- Pod.execOnNamed("make-payment-and-ship-items", namespace)("ls /config")
+        mountTwo <- Pod.execOnNamed("make-payment-and-ship-items", namespace)("ls /secrets")
 
         _ = configOne shouldBe "1"
         _ = configTwo shouldBe "one"
@@ -84,10 +81,8 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
             _ <- Pod.printPodsStatuses(namespace)
             _ <- Pod.allPodsAreReady(namespace)
             reserveItemsPodsCount <- Pod.countPodsWithLabel(reserveItems, namespace)
-            shipItemsPodsCount <- Pod.countPodsWithLabel(shipItems, namespace)
-            makePaymentPodsCount <- Pod.countPodsWithLabel(makePayment, namespace)
+            makePaymentPodsCount <- Pod.countPodsWithLabel(makePaymentAndShipItems, namespace)
             _ = reserveItemsPodsCount shouldBe 3
-            _ = shipItemsPodsCount shouldBe 1
             _ = makePaymentPodsCount shouldBe 1
           } yield ()
         }
@@ -125,12 +120,10 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
             webshopPodsCount <- Pod.countPodsWithLabel(webshopBaker, namespace)
             reservationPodsCount <- Pod.countPodsWithLabel(reservationBaker, namespace)
             reserveItemsPodsCount <- Pod.countPodsWithLabel(reserveItems, namespace)
-            shipItemsPodsCount <- Pod.countPodsWithLabel(shipItems, namespace)
-            makePaymentPodsCount <- Pod.countPodsWithLabel(makePayment, namespace)
+            makePaymentPodsCount <- Pod.countPodsWithLabel(makePaymentAndShipItems, namespace)
             _ = webshopPodsCount shouldBe 0
             _ = reservationPodsCount shouldBe 0
             _ = reserveItemsPodsCount shouldBe 0
-            _ = shipItemsPodsCount shouldBe 0
             _ = makePaymentPodsCount shouldBe 0
             services <- IO(s"kubectl get services -n $namespace --selector=test-facility!=true".!!)
             deployments <- IO(s"kubectl get deployments -n $namespace --selector=test-facility!=true".!!)

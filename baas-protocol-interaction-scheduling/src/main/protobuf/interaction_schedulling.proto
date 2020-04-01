@@ -10,6 +10,7 @@ option (scalapb.options) = {
 
 message ExecuteInstance {
     repeated Ingredient input = 1;
+    optional string id = 2;
 }
 
 message InstanceExecutedSuccessfully {
@@ -23,6 +24,11 @@ message InstanceExecutionFailed {
 message InstanceInterface {
     optional string name = 1;
     repeated Type input = 2;
+    optional string id = 3;
+}
+
+message Interfaces {
+    repeated InstanceInterface instances = 1;
 }
 
 message InstanceExecutionTimedOut {
