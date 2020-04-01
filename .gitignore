@@ -22,3 +22,4 @@ native/
 /**/.DS_Store
 site/
 /.sbtopts
+/.*sbtopts

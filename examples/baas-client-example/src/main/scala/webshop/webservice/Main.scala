@@ -1,54 +1,50 @@
 package webshop.webservice
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.Uri
-import akka.stream.ActorMaterializer
+import java.util.Base64
+import java.util.concurrent.Executors
+
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
 import com.ing.baker.baas.scaladsl.BakerClient
-import com.ing.baker.runtime.scaladsl._
-import com.ing.baker.runtime.serialization.Encryption
+import com.ing.baker.compiler.RecipeCompiler
+import com.ing.baker.runtime.serialization.ProtoMap
 import com.typesafe.config.ConfigFactory
+import org.http4s.Uri
 import org.http4s.server.blaze.BlazeServerBuilder
 
-import scala.concurrent.Await
-import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
 
 object Main extends IOApp {
 
-  case class AppDependencies(actorSystem: ActorSystem, baker: Baker, app: WebShopService, port: Int)
+  override def run(args: List[String]): IO[ExitCode] = {
 
-  def dependencies: IO[AppDependencies] = {
-    val config = ConfigFactory.load()
-    val baasHostname = config.getString("baas.state-node-hostname")
-    val httpPort = config.getInt("baas-component.http-api-port")
+    val compiled = RecipeCompiler.compileRecipe(CheckoutFlowRecipe.recipe)
+    val checkoutRecipeId = compiled.recipeId
+    val protoRecipe: Array[Byte] = ProtoMap.ctxToProto(compiled).toByteArray
+    val encode64 = Base64.getEncoder.encode(protoRecipe)
 
-    implicit val system = ActorSystem("CheckoutService")
-    implicit val materializer = ActorMaterializer()
-    implicit val encryption = Encryption.from(config)
+    println(Console.YELLOW + "Recipe base 64:" + Console.RESET)
+    println
+    println(Console.YELLOW + new String(encode64) + Console.RESET)
+    println
 
-    val baker = BakerClient(Uri.parseAbsolute(baasHostname))
-    sys.addShutdownHook(Await.result(baker.gracefulShutdown(), 20.seconds))
-
-    import system.dispatcher
-
-    for {
-      checkoutRecipeId <- WebShopBaker.initRecipes(baker)
-      webShopBaker = new WebShopBaker(baker, checkoutRecipeId)
-      app = new WebShopService(webShopBaker)
-      resources = AppDependencies(system, baker, app, httpPort)
-    } yield resources
-  }
-
-  override def run(args: List[String]): IO[ExitCode] =
-    for {
-      deps <- dependencies
-      exitCode <- BlazeServerBuilder[IO]
-        .bindHttp(deps.port, "0.0.0.0")
-        .withHttpApp(deps.app.build)
+    val config =
+      ConfigFactory.load()
+    val baasHostname =
+      config.getString("baas.state-node-hostname")
+    val httpPort =
+      config.getInt("baas-component.http-api-port")
+    val connectionPool =
+      ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
+    val mainResource = for {
+      baker <- BakerClient.resource(Uri.unsafeFromString(baasHostname), connectionPool)
+      _ <- BlazeServerBuilder[IO]
+        .bindHttp(httpPort, "0.0.0.0")
+        .withHttpApp(new WebShopService(new WebShopBaker(baker, checkoutRecipeId)).build)
         .resource
-        .use(_ => IO.never)
-        .as(ExitCode.Success)
-    } yield exitCode
-
+    } yield ()
+    mainResource
+      .use(_ => IO.never)
+      .as(ExitCode.Success)
+  }
 }
