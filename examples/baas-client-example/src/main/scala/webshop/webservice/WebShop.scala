@@ -4,6 +4,8 @@ import cats.effect.IO
 
 trait WebShop {
 
+  def listRecipeNames: IO[List[String]]
+
   def createCheckoutOrder(items: List[String]): IO[String]
 
   def addCheckoutAddressInfo(orderId: String, address: String): IO[Unit]
