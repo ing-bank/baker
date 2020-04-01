@@ -9,12 +9,13 @@ import com.ing.baker.recipe.common.InteractionFailureStrategy
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
 import com.ing.baker.recipe.scaladsl._
 import com.ing.baker.types._
-import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class RecipeCompilerSpec extends WordSpecLike with Matchers {
+class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
 
   "The recipe compiler" should {
 

@@ -9,7 +9,7 @@ import scalapb.GeneratedMessageCompanion
 
 import scala.util.{Success, Try}
 
-trait ProtoMap[A, P <: scalapb.GeneratedMessage with scalapb.Message[P]] {
+trait ProtoMap[A, P <: scalapb.GeneratedMessage] {
 
   def companion: GeneratedMessageCompanion[P]
 
@@ -27,9 +27,9 @@ trait ProtoMap[A, P <: scalapb.GeneratedMessage with scalapb.Message[P]] {
 
 object ProtoMap {
 
-  def ctxToProto[A, P <: scalapb.GeneratedMessage with scalapb.Message[P]](a: A)(implicit ev: ProtoMap[A, P]): P = ev.toProto(a)
+  def ctxToProto[A, P <: scalapb.GeneratedMessage ](a: A)(implicit ev: ProtoMap[A, P]): P = ev.toProto(a)
 
-  def ctxFromProto[A, P <: scalapb.GeneratedMessage with scalapb.Message[P]](proto: P)(implicit ev: ProtoMap[A, P]): Try[A] = ev.fromProto(proto)
+  def ctxFromProto[A, P <: scalapb.GeneratedMessage ](proto: P)(implicit ev: ProtoMap[A, P]): Try[A] = ev.fromProto(proto)
 
   def versioned[A](a: Option[A], name: String): Try[A] =
     Try(a.getOrElse(throw new IllegalStateException(s"Missing field '$name' from protobuf message, probably we received a different version of the message")))
@@ -87,7 +87,7 @@ object ProtoMap {
   implicit val processEventResult: ProtoMap[SensoryEventResult, protobuf.SensoryEventResult] =
     new SensoryEventResultMapping
 
-  def identityProtoMap[A <: scalapb.GeneratedMessage with scalapb.Message[A]](companion0: GeneratedMessageCompanion[A]): ProtoMap[A, A] =
+  def identityProtoMap[A <: scalapb.GeneratedMessage](companion0: GeneratedMessageCompanion[A]): ProtoMap[A, A] =
     new ProtoMap[A, A] {
 
       override def companion: GeneratedMessageCompanion[A] = companion0

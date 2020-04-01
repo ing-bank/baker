@@ -1,11 +1,12 @@
 package com.ing.baker.il.failurestrategy
 
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome.{BlockTransition, RetryWithDelay}
-import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
 import scala.concurrent.duration._
 
-class RetryWithIncrementalBackoffSpec extends WordSpecLike with Matchers {
+class RetryWithIncrementalBackoffSpec extends AnyWordSpecLike with Matchers {
 
   "The RetryWithIncrementalBackoff" should {
     "return RetryWithDelay with the correct time until the next retry" in {

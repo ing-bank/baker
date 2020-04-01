@@ -1,9 +1,9 @@
 package com.ing.baker.petrinet.api
 
-import org.scalatest.Matchers._
-import org.scalatest.WordSpec
+import org.scalatest.matchers.should.Matchers._
+import org.scalatest.wordspec.AnyWordSpec
 
-class MarkingSpec extends WordSpec {
+class MarkingSpec extends AnyWordSpec {
 
   case class Person(name: String, age: Int)
 

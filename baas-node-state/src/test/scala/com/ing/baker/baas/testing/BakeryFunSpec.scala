@@ -4,12 +4,13 @@ import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.syntax.apply._
 import org.scalactic.source
 import org.scalatest.compatible.Assertion
-import org.scalatest.{ConfigMap, FutureOutcome, Tag, fixture}
+import org.scalatest.funspec.FixtureAsyncFunSpecLike
+import org.scalatest.{ConfigMap, FutureOutcome, Tag}
 
 import scala.concurrent.duration._
 
 /** Abstracts the common test practices across the Bakery project. */
-abstract class BakeryFunSpec extends fixture.AsyncFunSpecLike {
+abstract class BakeryFunSpec extends FixtureAsyncFunSpecLike {
 
   implicit val contextShift: ContextShift[IO] =
     IO.contextShift(executionContext)

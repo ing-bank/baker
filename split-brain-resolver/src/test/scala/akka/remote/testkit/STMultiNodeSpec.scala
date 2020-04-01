@@ -5,16 +5,17 @@
 //#example
 package akka.remote.testkit
 
-import scala.language.implicitConversions
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
-import org.scalatest.{ BeforeAndAfterAll, WordSpecLike }
-import org.scalatest.Matchers
+import scala.language.implicitConversions
 
 /**
   * Hooks up MultiNodeSpec with ScalaTest
   */
 trait STMultiNodeSpec extends MultiNodeSpecCallbacks
-  with WordSpecLike with Matchers with BeforeAndAfterAll { self: MultiNodeSpec ⇒
+  with AnyWordSpecLike with Matchers with BeforeAndAfterAll { self: MultiNodeSpec ⇒
 
   override def beforeAll() = multiNodeSpecBeforeAll()
 

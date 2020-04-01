@@ -20,7 +20,6 @@ import com.ing.baker.runtime.akka.actor.recipe_manager.{RecipeManager, RecipeMan
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{EventInstance, EventMoment, RecipeInstanceState, SensoryEventResult}
 import com.ing.baker.runtime.serialization.Encryption.{AESEncryption, NoEncryption}
-import com.ing.baker.runtime.serialization.ProtoMap
 import com.ing.baker.runtime.serialization.ProtoMap.{ctxFromProto, ctxToProto}
 import com.ing.baker.types.modules.PrimitiveModuleSpec._
 import com.ing.baker.types.{Value, _}
@@ -28,14 +27,14 @@ import com.ing.baker.{AllTypeRecipe, types}
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Test.Parameters.defaultVerbose
 import org.scalacheck._
-import org.scalatest.FunSuiteLike
+import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatestplus.scalacheck.Checkers
 
 import scala.concurrent.duration._
 import scala.reflect.ClassTag
 import scala.util.Success
 
-class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec")) with FunSuiteLike with Checkers {
+class SerializationSpec extends TestKit(ActorSystem("BakerProtobufSerializerSpec")) with AnyFunSuiteLike with Checkers {
 
   val serializer: BakerTypedProtobufSerializer =
     SerializationExtension

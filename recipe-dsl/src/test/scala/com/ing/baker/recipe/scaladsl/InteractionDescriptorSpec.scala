@@ -1,7 +1,8 @@
 package com.ing.baker.recipe.scaladsl
 
 import com.ing.baker.recipe.scaladsl.InteractionDescriptorSpec._
-import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
 object InteractionDescriptorSpec {
   val customerName = Ingredient[String]("customerName")
@@ -15,7 +16,7 @@ object InteractionDescriptorSpec {
   val anOtherEvent = Event("anOtherEvent")
 }
 
-class InteractionDescriptorSpec extends WordSpecLike with Matchers {
+class InteractionDescriptorSpec extends AnyWordSpecLike with Matchers {
   "an InteractionDescriptor" when {
 
     "requiredEvents called" should {
