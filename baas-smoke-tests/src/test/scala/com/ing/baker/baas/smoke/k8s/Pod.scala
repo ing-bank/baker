@@ -20,8 +20,9 @@ case class Pod(name: String, namespace: Namespace) {
   def ready(implicit timer: Timer[IO]): IO[Unit] =
     status.map(s => assert(s.contains("1/1")))
 
-  def exec(command: String): IO[String] = {
-    val command0 = s"kubectl exec $name -n $namespace -- $command"
+  def exec(command: String, containerName: Option[String]): IO[String] = {
+    val containerOption = containerName.map(id => s"-c $id").getOrElse("")
+    val command0 = s"kubectl exec $name -n $namespace $containerOption -- $command"
     IO(command0.!!(ProcessLogger.apply(output(name, command, "out"), output(name, command,"err"))))
   }
 }
@@ -60,9 +61,9 @@ object Pod {
 
   private val setupWaitSplit = 10
 
-  def awaitForAllPods(namespace: Namespace)(implicit timer: Timer[IO]): IO[Unit] =
+  def waitUntilAllPodsAreReady(namespace: Namespace)(implicit timer: Timer[IO]): IO[Unit] =
     within(setupWaitTime, setupWaitSplit)(for {
-      _ <- printGreen(s"\nWaiting for bakery cluster (5s)...")
+      _ <- printGreen(s"\nWaiting for all pods to become active (5s)...")
       _ <- Pod.printPodsStatuses(namespace)
       _ <- Pod.allPodsAreReady(namespace)
     } yield ())
@@ -77,9 +78,9 @@ object Pod {
       }
     } yield pods1
 
-  def execOnNamed(name: String, namespace: Namespace)(command: String): IO[List[String]] =
+  def execOnNamed(name: String, namespace: Namespace, containerId: Option[String] = None)(command: String): IO[List[String]] =
     getPodsNames(name, namespace).flatMap(_.traverse({ name0 =>
-        Pod(name0, namespace).exec(command)
+        Pod(name0, namespace).exec(command, containerId)
           .map(_.split(splitChar).toList)
       }).map(_.flatten) )
 
