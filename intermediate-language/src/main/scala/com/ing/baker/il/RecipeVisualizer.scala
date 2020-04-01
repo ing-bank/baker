@@ -125,11 +125,11 @@ object RecipeVisualizer {
     generateDot(recipe.petriNet.innerGraph, style, filter, eventNames, ingredientNames)
 
 
-  def visualizePetriNet[P, T](graph: PetriNetGraph[P, T]): String = {
+  def visualizePetriNet[P, T](graph: PetriNetGraph[P, T], placeLabelFn: P => String = (p: P) => p.toString, transitionLabelFn: T => String = (t: T) => t.toString): String = {
 
     val nodeLabelFn: Either[P, T] ⇒ String = node ⇒ node match {
-      case Left(p) ⇒ p.toString
-      case Right(t) ⇒ t.toString
+      case Left(p) ⇒ placeLabelFn(p)
+      case Right(t) ⇒ transitionLabelFn(t)
     }
 
     val nodeDotAttrFn: Either[P, T] => List[DotAttr] = node ⇒ node match {
