@@ -4,7 +4,7 @@ import java.nio.charset.Charset
 
 import com.typesafe.sbt.packager.Keys.packageName
 import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
-import com.typesafe.sbt.packager.docker.DockerPlugin
+import com.typesafe.sbt.packager.docker.{CmdLike, DockerPlugin, ExecCmd}
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport._
 import com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport._
 import kubeyml.deployment.NoProbe
@@ -47,12 +47,24 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
         }
       }
 
+      def insertAfter(commands: Seq[CmdLike], str: String, cmds: Seq[ExecCmd]) = {
+        commands.find(_.makeContent.contains(str)) map { cmd =>
+          (commands.takeWhile(!_.makeContent.contains(str)).toList :+ cmd) ++
+            cmds ++
+            commands.reverse.takeWhile(!_.makeContent.contains(str)).reverse
+        } getOrElse { println(s"!! $str not found, no substitution"); commands }
+      }
+
       val stateWithNewDependency =
         Project.extract(state).appendWithSession(Seq(
           libraryDependencies ++= moduleID.toSeq,
           packageName in Docker := s"interaction-${entryPointClassName.toLowerCase()}",
           javaOptions in Universal += entryPointClassName,
           livenessProbe in kube := NoProbe,
+          dockerCommands := insertAfter(dockerCommands.value, "COPY --from=stage0", Seq(
+            ExecCmd("RUN", "mkdir", "/config"),
+            ExecCmd("RUN", "mkdir", "/secrets")
+          )),
           sourceGenerators in Compile += Def.task {
             val mainClassName =
               (mainClass in Compile).value.getOrElse(throw new MessageOnlyException("mainClass in Compile is required"))

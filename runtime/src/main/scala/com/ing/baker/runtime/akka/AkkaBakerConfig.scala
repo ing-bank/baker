@@ -24,13 +24,15 @@ case class AkkaBakerConfig(
 
 object AkkaBakerConfig extends LazyLogging {
 
+  case class KafkaEventSinkSettings(`bootstrap-servers`: String, `baker-events-topic`: String, `recipe-events-topic`: String)
+
   case class BakerValidationSettings(allowAddingRecipeWithoutRequiringInstances: Boolean)
 
   object BakerValidationSettings {
     def default: BakerValidationSettings = BakerValidationSettings(false)
 
     def from(config: Config): BakerValidationSettings =
-      BakerValidationSettings(config.getOrElse[Boolean]("allow-adding-recipe-without-requiring-instances", false))
+      BakerValidationSettings(config.getOrElse[Boolean]("baker.allow-adding-recipe-without-requiring-instances", false))
   }
 
   case class Timeouts(
