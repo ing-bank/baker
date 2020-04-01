@@ -3,7 +3,7 @@ kind: Interaction
 metadata:
   name: reserve-items
 spec:
-  image: interaction-webshop.webservice.reserveitemsinstance:3.0.2-SNAPSHOT
+  image: baas-interaction-example-reserve-items:1.0.0
   env:
   - name: ONE
     value: "1"
