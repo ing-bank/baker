@@ -76,14 +76,12 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
 
       val stateWithNewDependency =
         Project.extract(state).appendWithSession(Seq(
+          name := arguments.name,
           libraryDependencies ++= moduleID.toSeq,
           packageName in Docker := arguments.name,
+          version in ThisBuild := moduleID.map(_.revision).getOrElse((version in ThisBuild).value),
           javaOptions in Universal += arguments.interactions.mkString(","),
           livenessProbe in kube := NoProbe,
-          dockerCommands := insertAfter(dockerCommands.value, "COPY --from=stage0", Seq(
-            ExecCmd("RUN", "mkdir", "/config"),
-            ExecCmd("RUN", "mkdir", "/secrets")
-          )),
           sourceGenerators in Compile += Def.task {
             val mainClassName =
               (mainClass in Compile).value.getOrElse(throw new MessageOnlyException("mainClass in Compile is required"))

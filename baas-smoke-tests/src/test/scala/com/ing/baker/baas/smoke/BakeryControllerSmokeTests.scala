@@ -51,15 +51,9 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
         configTwo <- Pod.environmentVariable("reserve-items", namespace)("TWO")
         configThree <- Pod.environmentVariable("reserve-items", namespace)("THREE")
 
-        mountOne <- Pod.execOnNamed("reserve-items", namespace)("ls /config")
-
-        mountTwo <- Pod.execOnNamed("reserve-items", namespace)("ls /secrets")
-
         _ = configOne shouldBe ""
         _ = configTwo shouldBe ""
         _ = configThree shouldBe ""
-        _ = mountOne shouldBe List("", "")
-        _ = mountTwo shouldBe List("", "")
         _ <- printGreen("Interaction correctly configured")
 
         webshop <- DefinitionFile("baker-webshop.yaml", namespace)
