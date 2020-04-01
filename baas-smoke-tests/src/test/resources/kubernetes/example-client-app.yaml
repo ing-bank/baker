@@ -33,9 +33,19 @@ spec:
         app: client-app
     spec:
       containers:
+        - name: kafka-listener
+          image: baas-kafka-listener-example:3.0.2-SNAPSHOT
+          resources:
+            requests:
+              memory: 256M
+              cpu: 200m
         - name: client-app
           image: baas-client-example:3.0.2-SNAPSHOT
           imagePullPolicy: Never
+          resources:
+            requests:
+              memory: 256M
+              cpu: 200m
           readinessProbe:
             httpGet:
               path: /api

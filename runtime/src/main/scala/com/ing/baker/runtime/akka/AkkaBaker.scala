@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Address, Props}
 import akka.pattern.{FutureRef, ask}
 import akka.util.Timeout
 import cats.data.NonEmptyList
+import cats.effect.{ContextShift, IO}
 import com.ing.baker.il._
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.runtime.akka.actor._
@@ -29,7 +30,7 @@ object AkkaBaker {
   def apply(config: Config, actorSystem: ActorSystem): scaladsl.Baker =
     new AkkaBaker(AkkaBakerConfig.from(config, actorSystem))
 
-  def withConfig(config: AkkaBakerConfig): scaladsl.Baker =
+  def withConfig(config: AkkaBakerConfig): AkkaBaker =
     new AkkaBaker(config)
 
   def localDefault(actorSystem: ActorSystem): scaladsl.Baker =
@@ -64,6 +65,17 @@ class AkkaBaker private[runtime](config: AkkaBakerConfig) extends scaladsl.Baker
 
   val processIndexActor: ActorRef =
     config.bakerActorProvider.createProcessIndexActor(config.interactionManager, recipeManager)
+
+  def withEventSink(eventSink: EventSink): AkkaBaker = {
+    implicit val cs: ContextShift[IO] = IO.contextShift(system.dispatcher)
+    registerBakerEventListener {
+      event => eventSink.fire(event).unsafeRunAsyncAndForget()
+    }
+    registerEventListener {
+      (_, event) => eventSink.fire(event).unsafeRunAsyncAndForget()
+    }
+    this
+  }
 
   /**
    * Adds a recipe to baker and returns a recipeId for the recipe.

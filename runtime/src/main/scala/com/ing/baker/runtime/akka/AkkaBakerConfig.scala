@@ -24,6 +24,8 @@ case class AkkaBakerConfig(
 
 object AkkaBakerConfig extends LazyLogging {
 
+  case class KafkaEventSinkSettings(`bootstrap-servers`: String, `baker-events-topic`: String, `recipe-events-topic`: String)
+
   case class BakerValidationSettings(allowAddingRecipeWithoutRequiringInstances: Boolean)
 
   object BakerValidationSettings {

@@ -4,7 +4,6 @@ import cats.effect.IO
 import cats.syntax.apply._
 import com.ing.baker.baas.kubeapi
 import com.ing.baker.baas.kubeapi.{Service, Services}
-import com.ing.baker.baas.recipe.ItemReservationRecipe
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.matchers.Times
 import org.mockserver.model.HttpRequest.request
@@ -14,7 +13,7 @@ import org.mockserver.model.MediaType
 class KubeApiServer(mock: ClientAndServer) {
 
   def registersRemoteComponents: IO[Unit] =
-    respondWithEvents(interactionAndEventListenersServices) *> respondWithEmpty
+    respondWithEvents(interactionServices) *> respondWithEmpty
 
   private def respondWithEvents(templates: Services): IO[Unit] = IO {
     mock.when(
@@ -58,13 +57,4 @@ class KubeApiServer(mock: ClientAndServer) {
     )
     )
 
-  private def interactionAndEventListenersServices: kubeapi.Services =
-    interactionServices.++(kubeapi.Service(
-      metadata_name = "localhost",
-      metadata_labels = Map(
-        "baas-component" -> "remote-event-listener",
-        "baker-recipe" -> ItemReservationRecipe.compiledRecipe.name
-      ),
-      spec_ports = List(mockPort)
-    ))
 }
