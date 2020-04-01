@@ -35,7 +35,7 @@ package object dsl {
   def arc(p: Place, t: Transition, weight: Long): Arc = WLDiEdge[Node, String](Left(p), Right(t))(weight, "")
 
   def requireUniqueElements[T](i: Iterable[T], name: String = "Element"): Unit = {
-    (Set.empty[T] /: i) { (set, e) ⇒
+    (i foldLeft Set.empty[T]) { (set, e) ⇒
       if (set.contains(e))
         throw new IllegalArgumentException(s"$name '$e' is not unique!")
       else

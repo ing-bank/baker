@@ -1,0 +1,7 @@
+apiVersion: ing-bank.github.io/v1
+kind: Interaction
+metadata:
+  name: reserve-items
+spec:
+  image: interaction-webshop.webservice.reserveitemsinstance:3.0.2-SNAPSHOT
+  replicas: 3

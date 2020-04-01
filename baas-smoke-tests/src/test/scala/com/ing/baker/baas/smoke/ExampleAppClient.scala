@@ -17,6 +17,9 @@ class ExampleAppClient(client: Client[IO], hostname: Uri)(implicit cs: ContextSh
   def ping: IO[Status] =
     client.statusFromUri(hostname / "api")
 
+  def listRecipeNames: IO[List[String]] =
+    client.expect[String](hostname / "api" / "recipe-names").map(_.split(",").toList)
+
   def createCheckoutOrder(items: List[String]): IO[String] = {
     val request = POST(
       PlaceOrderRequest(items).asJson,
