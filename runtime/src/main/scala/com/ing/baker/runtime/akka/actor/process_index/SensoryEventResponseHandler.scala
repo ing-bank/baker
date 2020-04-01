@@ -152,18 +152,18 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
       case FireSensoryEventReaction.NotifyOnEvent(_, onEvent)
         if Option(cache.head.asInstanceOf[TransitionFired].output.asInstanceOf[EventInstance]).exists(_.name == onEvent) =>
         notifyComplete(cache.reverse)
-        PartialFunction {_ => ()}
+        Actor.ignoringBehavior
 
       case FireSensoryEventReaction.NotifyWhenCompleted(_) if runningJobs.isEmpty =>
         notifyComplete(cache.reverse)
-        PartialFunction {_ => ()}
+        Actor.ignoringBehavior
 
       case FireSensoryEventReaction.NotifyBoth(_, _) if runningJobs.isEmpty =>
         notifyComplete(cache.reverse)
-        PartialFunction {_ => ()}
+        Actor.ignoringBehavior
 
       case _ =>
-        PartialFunction {
+        val pf: PartialFunction[Any, Unit] = {
           case event: TransitionFired ⇒
             context.become(streaming(runningJobs ++ event.newJobsIds - event.jobId, event :: cache))
           case event: TransitionFailed if event.strategy.isRetry && waitForRetries ⇒
@@ -177,6 +177,7 @@ class SensoryEventResponseHandler(receiver: ActorRef, command: ProcessEvent, ing
             log.debug(s"Unexpected message $message on SensoryEventResponseHandler when streaming")
             stopActor()
         }
+        pf
     }
   }
 }

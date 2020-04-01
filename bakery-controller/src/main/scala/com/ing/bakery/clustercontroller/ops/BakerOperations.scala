@@ -54,7 +54,7 @@ object BakerOperations {
     )
       // todo parametrise?
       .requestMemory("512M")
-      .requestCPU("200m")
+      .requestCPU("250m")
       .exposePort(Container.Port(
         name = "remoting",
         containerPort = 2552,
