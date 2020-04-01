@@ -4,7 +4,8 @@ import cats.effect.{IO, Resource}
 import com.ing.baker.baas.smoke
 import com.ing.baker.baas.smoke.k8s.{DefinitionFile, Pod}
 import com.ing.baker.baas.testing.BakeryFunSpec
-import org.scalatest.{ConfigMap, Matchers}
+import org.scalatest.ConfigMap
+import org.scalatest.matchers.should.Matchers
 
 import scala.sys.process._
 
