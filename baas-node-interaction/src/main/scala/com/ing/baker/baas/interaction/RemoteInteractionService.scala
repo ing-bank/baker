@@ -36,11 +36,10 @@ final class RemoteInteractionService(interactions: List[InteractionInstance])(im
       Ok(ProtocolInteractionExecution.Interfaces(interactions.map(interaction =>
         ProtocolInteractionExecution.InstanceInterface(interaction.shaBase64, interaction.name, interaction.input))))
 
-    case req@POST -> Root /  "interaction" / interactionIdEncoded / "apply" =>
-      val interactionId = URLDecoder.decode(interactionIdEncoded, "UTF-8")
+    case req@POST -> Root /  "interaction" / "apply" =>
       for {
         request <- req.as[ProtocolInteractionExecution.ExecuteInstance]
-        response <- interactions.find(_.shaBase64 == interactionId) match {
+        response <- interactions.find(_.shaBase64 == request.id) match {
           case Some(interaction) =>
             IO.fromFuture(IO(interaction.run(request.input))).attempt.flatMap {
               case Right(value) =>

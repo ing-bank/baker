@@ -86,6 +86,8 @@ class RemoteInteractionSpec extends BakeryFunSpec {
         val ingredient0 = IngredientInstance("input0", PrimitiveValue("A"))
         val ingredient1 = IngredientInstance("input1", PrimitiveValue(1))
         for {
+          interfaces <- client.interface
+          _ = println(interfaces)
           result0 <- client.runInteraction(implementation0.shaBase64, Seq(ingredient0, ingredient1))
           result1 <- client.runInteraction(implementation1.shaBase64, Seq(ingredient0, ingredient1))
         } yield {
