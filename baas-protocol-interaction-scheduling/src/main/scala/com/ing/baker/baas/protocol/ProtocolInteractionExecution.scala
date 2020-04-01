@@ -16,7 +16,7 @@ sealed trait ProtocolInteractionExecution
 
 object ProtocolInteractionExecution {
 
-  case class ExecuteInstance(input: Seq[IngredientInstance]) extends ProtocolInteractionExecution
+  case class ExecuteInstance(id: String, input: Seq[IngredientInstance]) extends ProtocolInteractionExecution
 
   /**
     * Instance executed successfully
@@ -29,10 +29,12 @@ object ProtocolInteractionExecution {
     */
   case class InstanceExecutionFailed(message: String) extends ProtocolInteractionExecution
 
+  case class Interfaces(interfaces: List[InstanceInterface])
+
   /**
     * Communicates the interaction interface
     */
-  case class InstanceInterface(name: String, input: Seq[Type]) extends ProtocolInteractionExecution
+  case class InstanceInterface(id: String, name: String, input: Seq[Type]) extends ProtocolInteractionExecution
 
   /**
     * Technical failure of the interaction
