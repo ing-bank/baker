@@ -1,14 +1,11 @@
 package webshop.webservice
 
-import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff
-import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.UntilDeadline
 import com.ing.baker.recipe.scaladsl.{Event, Ingredient, Interaction, Recipe}
-import CheckoutFlowIngredients._
-import CheckoutFlowEvents._
-import CheckoutFlowInteractions._
+import webshop.webservice.CheckoutFlowEvents._
+import webshop.webservice.CheckoutFlowIngredients._
+import webshop.webservice.CheckoutFlowInteractions._
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 object CheckoutFlowIngredients {
 
@@ -23,6 +20,7 @@ object CheckoutFlowIngredients {
   case class PaymentInformation(info: String)
 
   case class ShippingOrder(items: List[Item], data: Array[Byte], address: ShippingAddress)
+
 }
 
 object CheckoutFlowEvents {
@@ -46,6 +44,7 @@ object CheckoutFlowEvents {
   case class PaymentFailed() extends MakePaymentOutput
 
   case class ShippingConfirmed()
+
 }
 
 object CheckoutFlowInteractions {

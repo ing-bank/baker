@@ -36,7 +36,7 @@ trait InteractionManager {
   def executeImplementation(interaction: InteractionTransition, input: Seq[IngredientInstance])(implicit ec: ExecutionContext): Future[Option[EventInstance]] = {
     getImplementation(interaction).flatMap {
       case Some(implementation) => implementation.run(input)
-      case None => Future.failed(new FatalInteractionException("No implementation available for interaction"))
+      case None => Future.failed(new FatalInteractionException(s"No implementation available for interaction ${interaction.interactionName}"))
     }
   }
 
