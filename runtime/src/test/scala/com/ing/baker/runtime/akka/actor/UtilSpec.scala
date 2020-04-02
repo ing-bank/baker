@@ -3,7 +3,7 @@ package com.ing.baker.runtime.akka.actor
 import scala.collection.immutable.List
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 
 class UtilSpec extends AkkaTestBase("UtilSpec") {
 

@@ -19,7 +19,8 @@ import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
 import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance}
 import com.typesafe.config.ConfigFactory
 import org.mockserver.integration.ClientAndServer
-import org.scalatest.{ConfigMap, Matchers}
+import org.scalatest.ConfigMap
+import org.scalatest.matchers.should.Matchers
 import skuber.api.client.KubernetesClient
 
 import scala.concurrent.Future

@@ -10,10 +10,11 @@ import com.ing.baker.runtime.serialization.EventJsonEncoders._
 import com.ing.baker.types
 import com.ing.baker.types.{ListValue, PrimitiveValue}
 import io.circe.syntax._
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import scalax.collection.immutable.Graph
 
-class EventJsonEncodersSpec extends FunSpec with Matchers {
+class EventJsonEncodersSpec extends AnyFunSpec with Matchers {
   describe("EventCodecs") {
     it("should encode RejectReason enum") {
       RejectReason.values().foreach(

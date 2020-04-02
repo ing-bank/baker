@@ -5,7 +5,8 @@ import com.ing.baker.baas.smoke.k8s.{DefinitionFile, Pod}
 import com.ing.baker.baas.testing.BakeryFunSpec
 import io.circe.parser._
 import org.http4s.Uri
-import org.scalatest.{ConfigMap, Matchers}
+import org.scalatest.ConfigMap
+import org.scalatest.matchers.should.Matchers
 import webshop.webservice.OrderStatus
 
 class BakerySmokeTests extends BakeryFunSpec with Matchers {

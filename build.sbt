@@ -82,7 +82,7 @@ lazy val bakertypes = project.in(file("bakertypes"))
       typeSafeConfig,
       scalaReflect(scalaVersion.value),
       scalaLogging
-    ) ++ testDeps(scalaTest, scalaCheck, scalaCheck)
+    ) ++ testDeps(scalaTest, scalaCheck, scalaCheckPlus)
   )
 
 lazy val intermediateLanguage = project.in(file("intermediate-language"))
@@ -95,7 +95,7 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
       scalaGraphDot,
       typeSafeConfig,
       scalaLogging
-    ) ++ testDeps(scalaTest, scalaCheck)
+    ) ++ testDeps(scalaTest, scalaCheck, scalaCheckPlus)
   ).dependsOn(bakertypes)
 
 lazy val `baker-interface` = project.in(file("baker-interface"))
@@ -156,6 +156,8 @@ lazy val runtime = project.in(file("runtime"))
         junitInterface,
         scalaTest,
         scalaCheck,
+        scalaCheckPlus,
+        scalaCheckPlusMockito,
         mockito)
         ++ providedDeps(findbugs)
   )
@@ -205,6 +207,7 @@ lazy val recipeDsl = project.in(file("recipe-dsl"))
         testDeps(
           scalaTest,
           scalaCheck,
+          scalaCheckPlus,
           junitInterface,
           slf4jApi
         )
@@ -497,7 +500,8 @@ lazy val `baas-interaction-example-make-payment-and-ship-items` = project.in(fil
         catsEffect
       ) ++ testDeps(
         scalaTest,
-        scalaCheck
+        scalaCheck,
+        scalaCheckPlus
       )
   )
   .dependsOn(`baas-node-interaction`)

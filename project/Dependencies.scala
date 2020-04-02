@@ -5,7 +5,7 @@ object Dependencies {
 
   val akkaVersion = "2.5.29"
   
-  val http4sVersion = "0.21.2"
+  val http4sVersion = "0.21.3"
   val circeVersion = "0.13.0"
 
   val jvmV = "1.8"
@@ -18,7 +18,7 @@ object Dependencies {
       .exclude("com.typesafe.akka", "akka-stream")
 
   val scalaJava8Compat =          "org.scala-lang.modules"     %% "scala-java8-compat"                 % "0.9.1"
-  val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.0.8"
+  val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.1.1"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
   val mockServer =                "org.mock-server"            %  "mockserver-netty"                   % "5.10"
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
@@ -50,9 +50,9 @@ object Dependencies {
 
   val ficusConfig =               "com.iheart"                 %% "ficus"                              % "1.4.7"
 
-  val scalaGraph  =               "org.scala-graph"            %% "graph-core"                         % "1.11.5"
-  val scalaGraphDot =             "org.scala-graph"            %% "graph-dot"                          % "1.11.5"
-  val graphvizJava =              "guru.nidi"                  %  "graphviz-java"                      % "0.8.10"
+  val scalaGraph  =               "org.scala-graph"            %% "graph-core"                         % "1.13.1"
+  val scalaGraphDot =             "org.scala-graph"            %% "graph-dot"                          % "1.13.0"
+  val graphvizJava =              "guru.nidi"                  %  "graphviz-java"                      % "0.15.1"
 
   val kamon =                     "io.kamon"                   %% "kamon-bundle"                       % "2.0.0"
   val kamonAkka =                 "io.kamon"                   %% "kamon-akka"                         % "2.0.0"
@@ -94,8 +94,9 @@ object Dependencies {
   val slf4jApi =                  "org.slf4j"                  %  "slf4j-api"                          % "1.7.30"
   val slf4jSimple =               "org.slf4j"                  % "slf4j-simple"                        % "1.7.30"
   val logback =                   "ch.qos.logback"             % "logback-classic"                     % "1.2.3"
-  val scalaCheck =                "org.scalacheck"             %% "scalacheck"                         % "1.13.5"
-
+  val scalaCheck =                "org.scalacheck"             %% "scalacheck"                         % "1.14.3"
+  val scalaCheckPlus =            "org.scalatestplus"          %% "scalatestplus-scalacheck"           % "3.1.0.0-RC2"
+  val scalaCheckPlusMockito =     "org.scalatestplus"          %% "scalatestplus-mockito"              % "1.0.0-M2"
   val scalaLogging =              "com.typesafe.scala-logging" %% "scala-logging"                      % "3.9.2"
 
   def scopeDeps(scope: String, modules: Seq[ModuleID]) =  modules.map(m => m % scope)

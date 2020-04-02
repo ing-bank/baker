@@ -5,11 +5,11 @@ import com.ing.baker.types.Converters
 import org.joda.time.{DateTime, LocalDate, LocalDateTime}
 import org.scalacheck.Gen
 import org.scalacheck.Test.Parameters.defaultVerbose
-import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.scalacheck.Checkers
 
-
-class JodaTimeModuleSpec extends WordSpecLike with Matchers with Checkers {
+class JodaTimeModuleSpec extends AnyWordSpecLike with Matchers with Checkers {
 
   private val minSuccessfulTests = 100
 

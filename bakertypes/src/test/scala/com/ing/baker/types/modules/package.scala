@@ -1,6 +1,6 @@
 package com.ing.baker.types
 
-import org.scalacheck.Prop.{BooleanOperators, forAll}
+import org.scalacheck.Prop.{propBoolean, forAll}
 import org.scalacheck.{Gen, Prop}
 
 import scala.reflect.runtime.universe.TypeTag

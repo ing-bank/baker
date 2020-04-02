@@ -7,10 +7,11 @@ import com.ing.baker.types.Converters
 import com.ing.baker.types.Converters.readJavaType
 import com.ing.baker.types.modules.PrimitiveModuleSpec._
 import org.scalacheck.Gen
-import org.scalacheck.Prop.{BooleanOperators, forAll}
+import org.scalacheck.Prop.{propBoolean, forAll}
 import org.scalacheck.Test.Parameters.defaultVerbose
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.scalacheck.Checkers
-import org.scalatest.{Matchers, WordSpecLike}
 
 import scala.reflect.runtime.universe.TypeTag
 
@@ -34,7 +35,7 @@ object PrimitiveModuleSpec {
   val byteArrayGen: Gen[Array[Byte]] = Gen.listOf(intGen.map(_.toByte)).map(_.toArray)
 }
 
-class PrimitiveModuleSpec extends WordSpecLike with Matchers with Checkers {
+class PrimitiveModuleSpec extends AnyWordSpecLike with Matchers with Checkers {
 
   "The primivite module" should {
 

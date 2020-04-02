@@ -6,10 +6,10 @@ import com.ing.baker.types._
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Test.Parameters.defaultVerbose
 import org.scalacheck.{Arbitrary, Gen, Test}
-import org.scalatest.FunSuiteLike
+import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 
-class HashingSpec extends FunSuiteLike with Checkers {
+class HashingSpec extends AnyFunSuite with Checkers {
 
   val config: Test.Parameters =
     defaultVerbose.withMinSuccessfulTests(minSuccessfulTests = 1000)

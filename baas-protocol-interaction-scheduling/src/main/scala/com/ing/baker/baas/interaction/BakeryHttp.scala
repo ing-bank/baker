@@ -13,7 +13,7 @@ object BakeryHttp {
 
   object ProtoEntityEncoders {
 
-    type ProtoMessage[A] = scalapb.GeneratedMessage with scalapb.Message[A]
+    type ProtoMessage[A] = scalapb.GeneratedMessage
 
     implicit def protoDecoder[A, P <: ProtoMessage[P]](implicit protoMap: ProtoMap[A, P]): EntityDecoder[IO, A] =
       EntityDecoder.decodeBy(MediaType.application.`octet-stream`)(collectBinary[IO]).map(_.toArray)

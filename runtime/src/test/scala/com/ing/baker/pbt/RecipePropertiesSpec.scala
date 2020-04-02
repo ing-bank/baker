@@ -9,13 +9,13 @@ import com.ing.baker.recipe.{common, scaladsl}
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Test.Parameters.defaultVerbose
 import org.scalacheck._
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 
 import scala.annotation.tailrec
 import scala.util.Random
 
-class RecipePropertiesSpec extends FunSuite with Checkers {
+class RecipePropertiesSpec extends AnyFunSuite with Checkers {
 
   import RecipePropertiesSpec._
 

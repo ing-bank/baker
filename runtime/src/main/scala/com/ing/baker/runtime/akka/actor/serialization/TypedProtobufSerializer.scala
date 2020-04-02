@@ -17,13 +17,13 @@ object TypedProtobufSerializer {
 
   class RegisterFor[A <: AnyRef](classTag: ClassTag[A]) {
 
-    def register[P <: scalapb.GeneratedMessage with scalapb.Message[P]](implicit protoMap: ProtoMap[A, P]): BinarySerializable =
+    def register[P <: scalapb.GeneratedMessage ](implicit protoMap: ProtoMap[A, P]): BinarySerializable =
       register[P](None)
 
-    def register[P <: scalapb.GeneratedMessage with scalapb.Message[P]](overrideName: String)(implicit protoMap: ProtoMap[A, P]): BinarySerializable =
+    def register[P <: scalapb.GeneratedMessage ](overrideName: String)(implicit protoMap: ProtoMap[A, P]): BinarySerializable =
       register[P](Some(overrideName))
 
-    def register[P <: scalapb.GeneratedMessage with scalapb.Message[P]](overrideName: Option[String])(implicit protoMap: ProtoMap[A, P]): BinarySerializable = {
+    def register[P <: scalapb.GeneratedMessage ](overrideName: Option[String])(implicit protoMap: ProtoMap[A, P]): BinarySerializable = {
       new BinarySerializable {
 
         override type Type = A

@@ -1,7 +1,8 @@
 package com.ing.baker.petrinet.api
 
 import com.ing.baker.petrinet.api.DSL._
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
 
@@ -68,7 +69,7 @@ object DSL {
   }
 }
 
-class PetriNetAnalysisSpec extends WordSpec with Matchers {
+class PetriNetAnalysisSpec extends AnyWordSpec with Matchers {
 
   "The PetriNetAnalysis class" should {
 

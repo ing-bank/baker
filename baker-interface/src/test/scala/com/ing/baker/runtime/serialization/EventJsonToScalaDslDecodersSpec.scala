@@ -4,12 +4,11 @@ import com.ing.baker.runtime.scaladsl.EventInstance
 import com.ing.baker.runtime.serialization.EventJsonToScalaDslDecoders._
 import com.ing.baker.types._
 import io.circe.parser.decode
-import io.circe.syntax._
-import org.scalatest.{FunSpec, Matchers}
-import com.ing.baker.runtime.serialization.EventJsonEncoders._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 
-class EventJsonToScalaDslDecodersSpec extends FunSpec with Matchers {
+class EventJsonToScalaDslDecodersSpec extends AnyFunSpec with Matchers {
   describe("EventJsonToScalaDslDecoders") {
     it("should decode value") {
       val nullValue = decode[Value]("""{"typ":0}""")
@@ -49,7 +48,7 @@ class EventJsonToScalaDslDecodersSpec extends FunSpec with Matchers {
       shortValue.right.get shouldEqual PrimitiveValue(600.toShort)
 
       val longValue = decode[Value]("""{"typ":3,"styp":"java.lang.Long","val":"123456789012345"}""")
-      longValue.right.get shouldEqual PrimitiveValue(123456789012345l)
+      longValue.right.get shouldEqual PrimitiveValue(123456789012345L)
     }
 
     it("decodes EventInstance") {

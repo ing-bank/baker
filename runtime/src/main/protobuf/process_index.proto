@@ -6,6 +6,7 @@ import "common.proto";
 option java_package = "com.ing.baker.runtime.akka.actor.process_index.protobuf";
 option (scalapb.options) = {
     flat_package: true
+    preserve_unknown_fields: false
 };
 
 // Akka

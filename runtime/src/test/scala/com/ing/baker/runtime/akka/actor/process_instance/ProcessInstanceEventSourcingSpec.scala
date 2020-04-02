@@ -17,7 +17,7 @@ import java.util.UUID
 
 import com.ing.baker.runtime.serialization.Encryption.NoEncryption
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
