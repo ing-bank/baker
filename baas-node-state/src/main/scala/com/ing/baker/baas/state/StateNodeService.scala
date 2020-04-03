@@ -3,6 +3,7 @@ package com.ing.baker.baas.state
 import java.net.InetSocketAddress
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.syntax.apply._
 import com.ing.baker.baas.protocol.BaaSProto._
 import com.ing.baker.baas.protocol.BaaSProtocol
 import com.ing.baker.baas.protocol.BakeryHttp.ProtoEntityEncoders._
@@ -18,23 +19,26 @@ import scala.concurrent.Future
 
 object StateNodeService {
 
-  def resource(baker: Baker, hostname: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
+  def resource(baker: Baker, recipeDirectory: String, hostname: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
     for {
       binding <- BlazeServerBuilder[IO]
         .bindSocketAddress(hostname)
-        .withHttpApp(new StateNodeService(baker).build)
+        .withHttpApp(new StateNodeService(baker, recipeDirectory).build)
         .resource
     } yield binding
   }
 }
 
-final class StateNodeService private(baker: Baker)(implicit cs: ContextShift[IO]) {
+final class StateNodeService private(baker: Baker, recipeDirectory: String)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
+
+  def loadRecipeIfNotFound[A](f: IO[A]): IO[A] =
+    RecipeLoader.loadRecipesIfRecipeNotFound(recipeDirectory, baker)(f)
 
   def build: HttpApp[IO] =
     api.orNotFound
 
   def completeWithBakerFailures[A, R](result: IO[Future[A]])(f: A => R)(implicit decoder: EntityEncoder[IO, R]): IO[Response[IO]] =
-    IO.fromFuture(result).attempt.flatMap {
+    loadRecipeIfNotFound(IO.fromFuture(result)).attempt.flatMap {
       case Left(e: BakerException) => Ok(BaaSProtocol.BaaSRemoteFailure(e))
       case Left(e) => IO.raiseError(new IllegalStateException("No other exception but BakerExceptions should be thrown here.", e))
       case Right(a) => Ok(f(a))
@@ -45,18 +49,13 @@ final class StateNodeService private(baker: Baker)(implicit cs: ContextShift[IO]
     case GET -> Root / "health" =>
       Ok("Ok")
 
-    case req@POST -> Root / "addRecipe" =>
-      req.as[BaaSProtocol.AddRecipeRequest]
-        .map(r => IO(baker.addRecipe(r.compiledRecipe)))
-        .flatMap(completeWithBakerFailures(_)(BaaSProtocol.AddRecipeResponse))
-
     case req@POST -> Root / "getRecipe" =>
       req.as[BaaSProtocol.GetRecipeRequest]
         .map(r => IO(baker.getRecipe(r.recipeId)))
         .flatMap(completeWithBakerFailures(_)(BaaSProtocol.GetRecipeResponse))
 
     case GET -> Root / "getAllRecipes" =>
-      completeWithBakerFailures(IO(baker.getAllRecipes))(BaaSProtocol.GetAllRecipesResponse)
+      completeWithBakerFailures(RecipeLoader.loadRecipesIntoBaker(recipeDirectory, baker) *> IO(baker.getAllRecipes))(BaaSProtocol.GetAllRecipesResponse)
 
     case req@POST -> Root / "bake" =>
       req.as[BaaSProtocol.BakeRequest]

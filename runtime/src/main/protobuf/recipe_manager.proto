@@ -6,6 +6,7 @@ import "scalapb/scalapb.proto";
 option java_package = "com.ing.baker.runtime.akka.actor.recipe_manager.protobuf";
 option (scalapb.options) = {
     flat_package: true
+    preserve_unknown_fields: false
 };
 
 // PERSISTED MESSAGES

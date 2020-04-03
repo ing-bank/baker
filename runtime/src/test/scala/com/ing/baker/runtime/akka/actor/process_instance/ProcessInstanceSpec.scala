@@ -24,7 +24,7 @@ import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Milliseconds, Span}
 import org.scalatestplus.mockito.MockitoSugar
@@ -633,7 +633,7 @@ class ProcessInstanceSpec extends AkkaTestBase("ProcessInstanceSpec") with Scala
 
       expectMsgPF() { case TransitionFired(_, 1, _, _, _, _, _) ⇒ }
 
-      import org.scalatest.concurrent.Timeouts._
+      import org.scalatest.concurrent.TimeLimits._
 
       failAfter(Span(dilatedMillis(1000), Milliseconds)) {
 

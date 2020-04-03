@@ -10,25 +10,26 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
 
     "baas-node-state/docker:publishLocal" ::
       "baas-client-example/docker:publishLocal" ::
-      "baas-event-listener-example/docker:publishLocal" ::
-      "baas-baker-event-listener-example/docker:publishLocal" ::
-      "project baas-interaction-example-make-payment" ::
-      "buildInteractionDockerImage docker:publishLocal webshop.webservice.MakePaymentInstance" ::
-      "project baas-interaction-example-ship-items" ::
-      "buildInteractionDockerImage docker:publishLocal webshop.webservice.ShipItemsInstance" ::
+      "baas-kafka-listener-example/docker:publishLocal" ::
+      "bakery-controller/docker:publishLocal" ::
+      "project baas-interaction-example-make-payment-and-ship-items" ::
+      "buildInteractionDockerImage --image-name=interaction-make-payment-and-ship-items --publish=local --interaction=webshop.webservice.MakePaymentInstance --interaction=webshop.webservice.ShipItemsInstance" ::
       "project baas-interaction-example-reserve-items" ::
-      "buildInteractionDockerImage docker:publishLocal webshop.webservice.ReserveItemsInstance" ::
+      "buildInteractionDockerImage --image-name=baas-interaction-example-reserve-items --publish=local --interaction=webshop.webservice.ReserveItemsInstance" ::
       "project baas-smoke-tests" ::
       state
 })
 
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
-  scalaVersion := "2.12.4",
-  crossScalaVersions := Seq("2.12.4"),
+  scalaVersion := "2.12.11",
+  crossScalaVersions := Seq("2.12.11"),
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
   javacOptions := Seq("-source", jvmV, "-target", jvmV),
+  sources in doc := Seq(),
+  publishArtifact in packageDoc := false,
+  publishArtifact in packageSrc := false,
   scalacOptions := Seq(
     "-unchecked",
     "-deprecation",
@@ -47,7 +48,8 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     Package.ManifestAttributes(
       "Build-Time" -> new java.util.Date().toString,
       "Build-Commit" -> git.gitHeadCommit.value.getOrElse("No Git Revision Found")
-    )
+    ),
+  resolvers += Resolver.bintrayRepo("cakesolutions", "maven")
 )
 
 val dependencyOverrideSettings = Seq(
@@ -80,7 +82,7 @@ lazy val bakertypes = project.in(file("bakertypes"))
       typeSafeConfig,
       scalaReflect(scalaVersion.value),
       scalaLogging
-    ) ++ testDeps(scalaTest, scalaCheck, scalaCheck)
+    ) ++ testDeps(scalaTest, scalaCheck, scalaCheckPlus)
   )
 
 lazy val intermediateLanguage = project.in(file("intermediate-language"))
@@ -93,7 +95,7 @@ lazy val intermediateLanguage = project.in(file("intermediate-language"))
       scalaGraphDot,
       typeSafeConfig,
       scalaLogging
-    ) ++ testDeps(scalaTest, scalaCheck)
+    ) ++ testDeps(scalaTest, scalaCheck, scalaCheckPlus)
   ).dependsOn(bakertypes)
 
 lazy val `baker-interface` = project.in(file("baker-interface"))
@@ -102,6 +104,10 @@ lazy val `baker-interface` = project.in(file("baker-interface"))
   .settings(
     moduleName := "baker-interface",
     libraryDependencies ++= Seq(
+      circe,
+      circeParser,
+      circeGeneric,
+      circeGenericExtras,
       catsEffect,
       scalaJava8Compat
     ) ++ providedDeps(findbugs) ++ testDeps(
@@ -130,6 +136,7 @@ lazy val runtime = project.in(file("runtime"))
         akkaSlf4j,
         akkaInmemoryJournal,
         ficusConfig,
+        scalaKafkaClient,
         catsCore,
         catsEffect,
         scalapbRuntime,
@@ -149,6 +156,8 @@ lazy val runtime = project.in(file("runtime"))
         junitInterface,
         scalaTest,
         scalaCheck,
+        scalaCheckPlus,
+        scalaCheckPlusMockito,
         mockito)
         ++ providedDeps(findbugs)
   )
@@ -198,6 +207,7 @@ lazy val recipeDsl = project.in(file("recipe-dsl"))
         testDeps(
           scalaTest,
           scalaCheck,
+          scalaCheckPlus,
           junitInterface,
           slf4jApi
         )
@@ -237,32 +247,6 @@ lazy val `baas-protocol-interaction-scheduling` = project.in(file("baas-protocol
   )
   .dependsOn(`baker-interface`)
 
-lazy val `baas-protocol-recipe-event-publishing` = project.in(file("baas-protocol-recipe-event-publishing"))
-  .settings(defaultModuleSettings)
-  .settings(scalaPBSettings)
-  .settings(
-    moduleName := "baas-protocol-recipe-event-publishing",
-    libraryDependencies ++= Seq(
-      http4s,
-      http4sDsl,
-      http4sClient
-    )
-  )
-  .dependsOn(`baker-interface`)
-
-lazy val `baas-protocol-baker-event-publishing` = project.in(file("baas-protocol-baker-event-publishing"))
-  .settings(defaultModuleSettings)
-  .settings(scalaPBSettings)
-  .settings(
-    moduleName := "baas-protocol-baker-event-publishing",
-    libraryDependencies ++= Seq(
-      http4s,
-      http4sDsl,
-      http4sClient
-    )
-  )
-  .dependsOn(`baker-interface`)
-
 lazy val `baas-node-client` = project.in(file("baas-node-client"))
   .settings(defaultModuleSettings)
   .settings(
@@ -286,6 +270,7 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
     libraryDependencies ++= Seq(
       slf4jApi,
       slf4jSimple,
+      logback,
       akkaPersistenceCassandra,
       akkaManagementHttp,
       akkaClusterBoostrap,
@@ -315,8 +300,6 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
     `baas-node-client`,
     `baas-protocol-baker`,
     `baas-protocol-interaction-scheduling`,
-    `baas-protocol-recipe-event-publishing`,
-    `baas-protocol-baker-event-publishing`,
     recipeCompiler, recipeDsl, intermediateLanguage
   )
 
@@ -337,29 +320,24 @@ lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
   )
   .dependsOn(`baas-protocol-interaction-scheduling`, `baker-interface`)
 
-lazy val `baas-node-event-listener` = project.in(file("baas-node-event-listener"))
+lazy val `bakery-controller` = project.in(file("bakery-controller"))
   .settings(defaultModuleSettings)
+  .enablePlugins(JavaAppPackaging)
   .settings(
-    moduleName := "baas-node-event-listener",
+    maintainer in Docker := "The Bakery Team",
+    packageSummary in Docker := "The bakery controller",
+    packageName in Docker := "bakery-controller",
+    dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
+  )
+  .settings(
+    moduleName := "bakery-controller",
     libraryDependencies ++= Seq(
       slf4jApi,
       slf4jSimple,
-      http4s,
-      http4sDsl,
-      http4sServer
-    ) ++ testDeps(
-      scalaTest,
-      logback
-    ))
-  .dependsOn(`baas-protocol-recipe-event-publishing`, `baker-interface`)
-
-lazy val `baas-node-baker-event-listener` = project.in(file("baas-node-baker-event-listener"))
-  .settings(defaultModuleSettings)
-  .settings(
-    moduleName := "baas-node-baker-event-listener",
-    libraryDependencies ++= Seq(
-      slf4jApi,
-      slf4jSimple,
+      akkaSlf4j,
+      logback,
+      scalaLogging,
+      skuber,
       http4s,
       http4sDsl,
       http4sServer
@@ -368,14 +346,14 @@ lazy val `baas-node-baker-event-listener` = project.in(file("baas-node-baker-eve
       logback
     )
   )
-  .dependsOn(`baas-protocol-baker-event-publishing`, `baker-interface`)
+  .dependsOn(bakertypes, recipeCompiler, recipeDsl, intermediateLanguage, `baas-node-client`)
+  .aggregate(bakertypes, recipeCompiler, recipeDsl, intermediateLanguage, `baas-node-client`)
 
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .settings(noPublishSettings)
   .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver,
-    `baas-node-client`, `baas-node-state`, `baas-node-interaction`, `baas-node-event-listener`,
-    `baas-node-baker-event-listener`, `sbt-baas-docker-generate`, `baas-protocol-interaction-scheduling`,
+    `baas-node-client`, `baas-node-state`, `baas-node-interaction`, `sbt-baas-docker-generate`, `baas-protocol-interaction-scheduling`,
     `baker-interface`)
 
 lazy val `baker-example` = project
@@ -451,13 +429,13 @@ lazy val `baas-client-example` = project
   )
   .dependsOn(bakertypes, `baas-node-client`, recipeCompiler, recipeDsl)
 
-lazy val `baas-event-listener-example` = project
-  .in(file("examples/baas-event-listener-example"))
+lazy val `baas-kafka-listener-example` = project
+  .in(file("examples/baas-kafka-listener-example"))
   .enablePlugins(JavaAppPackaging)
   .settings(commonSettings)
   .settings(noPublishSettings)
   .settings(
-    moduleName := "baas-event-listener-example",
+    moduleName := "baas-kafka-listener-example",
     scalacOptions ++= Seq(
       "-Ypartial-unification"
     ),
@@ -465,45 +443,23 @@ lazy val `baas-event-listener-example` = project
       compileDeps(
         slf4jApi,
         slf4jSimple,
-        http4s,
-        http4sDsl,
-        http4sServer,
-      ) ++ testDeps()
+        circe,
+        circeGeneric,
+        circeGenericExtras,
+        fs2kafka,
+        ficusConfig
+      ) ++ testDeps(
+        scalaTest,
+        scalaCheck
+      )
   )
   .settings(
     maintainer in Docker := "The Bakery Team",
     packageSummary in Docker := "A web-shop checkout service example running on baas",
-    packageName in Docker := "baas-event-listener-example",
+    packageName in Docker := "baas-kafka-listener-example",
     dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
   )
-  .dependsOn(`baas-node-event-listener`)
-
-lazy val `baas-baker-event-listener-example` = project
-  .in(file("examples/baas-baker-event-listener-example"))
-  .enablePlugins(JavaAppPackaging)
-  .settings(commonSettings)
-  .settings(noPublishSettings)
-  .settings(
-    moduleName := "baas-baker-event-listener-example",
-    scalacOptions ++= Seq(
-      "-Ypartial-unification"
-    ),
-    libraryDependencies ++=
-      compileDeps(
-        slf4jApi,
-        slf4jSimple,
-        http4s,
-        http4sDsl,
-        http4sServer,
-      ) ++ testDeps()
-  )
-  .settings(
-    maintainer in Docker := "The Bakery Team",
-    packageSummary in Docker := "A web-shop checkout service example running on baas",
-    packageName in Docker := "baas-baker-event-listener-example",
-    dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO")
-  )
-  .dependsOn(`baas-node-baker-event-listener`)
+  .dependsOn(bakertypes, `baas-node-client`, recipeCompiler, recipeDsl)
 
 lazy val `baas-interaction-example-reserve-items` = project.in(file("examples/baas-interaction-examples/reserve-items"))
   .enablePlugins(JavaAppPackaging)
@@ -511,6 +467,7 @@ lazy val `baas-interaction-example-reserve-items` = project.in(file("examples/ba
   .settings(commonSettings)
   .settings(
     moduleName := "baas-interaction-example-reserve-items",
+    version := "1.0.0",
     scalacOptions ++= Seq(
       "-Ypartial-unification"
     ),
@@ -526,12 +483,13 @@ lazy val `baas-interaction-example-reserve-items` = project.in(file("examples/ba
   )
   .dependsOn(`baas-node-interaction`)
 
-lazy val `baas-interaction-example-ship-items` = project.in(file("examples/baas-interaction-examples/ship-items"))
+lazy val `baas-interaction-example-make-payment-and-ship-items` = project.in(file("examples/baas-interaction-examples/make-payment-and-ship-items"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
   .settings(commonSettings)
   .settings(
-    moduleName := "baas-interaction-example-ship-items",
+    moduleName := "baas-interaction-example-make-payment-and-ship-items",
+    version := "1.0.0",
     scalacOptions ++= Seq(
       "-Ypartial-unification"
     ),
@@ -542,28 +500,8 @@ lazy val `baas-interaction-example-ship-items` = project.in(file("examples/baas-
         catsEffect
       ) ++ testDeps(
         scalaTest,
-        scalaCheck
-      )
-  )
-  .dependsOn(`baas-node-interaction`)
-
-lazy val `baas-interaction-example-make-payment` = project.in(file("examples/baas-interaction-examples/make-payment"))
-  .enablePlugins(JavaAppPackaging)
-  .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
-  .settings(commonSettings)
-  .settings(
-    moduleName := "baas-interaction-example-make-payment",
-    scalacOptions ++= Seq(
-      "-Ypartial-unification"
-    ),
-    libraryDependencies ++=
-      compileDeps(
-        slf4jApi,
-        slf4jSimple,
-        catsEffect
-      ) ++ testDeps(
-        scalaTest,
-        scalaCheck
+        scalaCheck,
+        scalaCheckPlus
       )
   )
   .dependsOn(`baas-node-interaction`)
@@ -588,9 +526,8 @@ lazy val `baas-smoke-tests` = project.in(file("baas-smoke-tests"))
   .dependsOn(
     `baas-node-client`,
     `baas-client-example`,
-    `baas-interaction-example-make-payment`,
-    `baas-interaction-example-reserve-items`,
-    `baas-interaction-example-ship-items`)
+    `baas-interaction-example-make-payment-and-ship-items`,
+    `baas-interaction-example-reserve-items`)
 
 lazy val `sbt-baas-docker-generate` = project.in(file("sbt-baas-docker-generate"))
   .settings(defaultModuleSettings)
@@ -603,6 +540,7 @@ lazy val `sbt-baas-docker-generate` = project.in(file("sbt-baas-docker-generate"
       Seq(file)
     }.taskValue,
     addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.6.0"),
-    addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.3.1")
+    addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.3.3")
   )
   .enablePlugins(SbtPlugin)
+  .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)

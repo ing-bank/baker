@@ -2,10 +2,11 @@ package com.ing.baker.runtime.akka.actor
 
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestKit}
-import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.wordspec.AnyWordSpecLike
 
 abstract class AkkaTestBase(actorSystemName: String = "testActorSystem") extends TestKit(ActorSystem(actorSystemName))
-    with WordSpecLike
+    with AnyWordSpecLike
     with ImplicitSender
     with BeforeAndAfterAll {
 

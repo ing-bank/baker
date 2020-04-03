@@ -22,9 +22,10 @@ import com.ing.baker.types.Value
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Mockito
 import org.mockito.Mockito.when
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatest.concurrent.Eventually
-import org.scalatestplus.mockito.MockitoSugar
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, Matchers, WordSpecLike}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
 import scalax.collection.immutable.Graph
 
@@ -43,7 +44,7 @@ object ProcessIndexSpec {
 //noinspection TypeAnnotation
 class ProcessIndexSpec extends TestKit(ActorSystem("ProcessIndexSpec", ProcessIndexSpec.config))
   with ImplicitSender
-  with WordSpecLike
+  with AnyWordSpecLike
   with Matchers
   with BeforeAndAfterAll
   with BeforeAndAfter

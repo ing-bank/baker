@@ -15,12 +15,13 @@ object InteractionSchedulingProto {
       val companion = protobuf.ExecuteInstance
 
       def toProto(a: ExecuteInstance): protobuf.ExecuteInstance =
-        protobuf.ExecuteInstance(a.input.map(ctxToProto(_)))
+        protobuf.ExecuteInstance(a.input.map(ctxToProto(_)), Some(a.id))
 
       def fromProto(message: protobuf.ExecuteInstance): Try[ExecuteInstance] =
         for {
           result <- message.input.toList.traverse(ctxFromProto(_))
-        } yield ExecuteInstance(result)
+          id <- versioned(message.id, "id")
+        } yield ExecuteInstance(id, result)
     }
 
   implicit def instanceExcutedSuccessfullyProto: ProtoMap[InstanceExecutedSuccessfully, protobuf.InstanceExecutedSuccessfully] =
@@ -52,19 +53,35 @@ object InteractionSchedulingProto {
       }
     }
 
+  implicit def interfaces: ProtoMap[Interfaces, protobuf.Interfaces] =
+    new ProtoMap[Interfaces, protobuf.Interfaces] {
+
+      val companion = protobuf.Interfaces
+
+      def toProto(a: Interfaces): protobuf.Interfaces =
+        protobuf.Interfaces(a.interfaces.map(ctxToProto(_)))
+
+      def fromProto(message: protobuf.Interfaces): Try[Interfaces] = {
+        for {
+          input <- message.instances.toList.traverse(ctxFromProto(_))
+        } yield Interfaces(input)
+      }
+    }
+
   implicit def instanceInterfaceProto: ProtoMap[InstanceInterface, protobuf.InstanceInterface] =
     new ProtoMap[InstanceInterface, protobuf.InstanceInterface] {
 
       val companion = protobuf.InstanceInterface
 
       def toProto(a: InstanceInterface): protobuf.InstanceInterface =
-        protobuf.InstanceInterface(Some(a.name), a.input.map(ctxToProto(_)))
+        protobuf.InstanceInterface(Some(a.name), a.input.map(ctxToProto(_)), Some(a.id))
 
       def fromProto(message: protobuf.InstanceInterface): Try[InstanceInterface] = {
         for {
           name <- versioned(message.name, "name")
           input <- message.input.toList.traverse(ctxFromProto(_))
-        } yield InstanceInterface(name, input)
+          id <- versioned(message.id, "id")
+        } yield InstanceInterface(id, name, input)
       }
     }
 

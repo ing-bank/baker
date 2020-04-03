@@ -1,9 +1,10 @@
 package com.ing.baker.recipe.scaladsl
 
-import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
 
-class InteractionSpec extends WordSpecLike with Matchers {
+class InteractionSpec extends AnyWordSpecLike with Matchers {
   "an Interaction" when {
     "calling the Equals method" should {
       "return true if same interaction instance" in {

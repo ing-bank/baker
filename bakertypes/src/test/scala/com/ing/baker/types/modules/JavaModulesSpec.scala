@@ -8,7 +8,8 @@ import com.ing.baker.types.Converters._
 import com.ing.baker.types.ConvertersTestData.TestEnum
 import com.ing.baker.types.ConvertersTestData.TestEnum.{ValueA, ValueB, ValueC}
 import com.ing.baker.types._
-import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
 import scala.collection.JavaConverters._
 
@@ -22,7 +23,7 @@ class PersonPojo(val name: String, val age: Int) {
   }
 }
 
-class JavaModulesSpec extends WordSpecLike with Matchers {
+class JavaModulesSpec extends AnyWordSpecLike with Matchers {
 
   val recordPerson = RecordValue(Map("name" -> PrimitiveValue("john"), "age" -> PrimitiveValue(42)))
 

@@ -6,7 +6,8 @@ import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.ing.baker.types
 import com.ing.baker.types.Type
 import org.mockito.Mockito.when
-import org.scalatest.{AsyncWordSpecLike, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AsyncWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
 
 class InteractionManagerLocalSpec extends AsyncWordSpecLike with Matchers with MockitoSugar {
