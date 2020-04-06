@@ -28,12 +28,11 @@ steps:
       targetType: 'inline'
       script: printf "realm=pkgs.dev.azure.com\nhost=pkgs.dev.azure.com\nuser=${FEEDUSER}\npassword=${FEEDPASSWORD}\n" > ~/.credentials
     env:
-      FEEDPASSWORD: $(feedPassword)
+      FEEDPASSWORD: $(feedPassword) # secrets extracted explicitly, other vars - from the group
 
-  - script: sbt package #clean coverage test coverageReport
+  - script: sbt clean coverage test coverageReport
     displayName: 'Running sbt'
 
   - script: sbt aetherDeploy
     displayName: 'Publishing results'
     condition: succeeded()
-

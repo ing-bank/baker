@@ -530,7 +530,7 @@ lazy val `baas-smoke-tests` = project.in(file("baas-smoke-tests"))
 
 lazy val `sbt-baas-docker-generate` = project.in(file("sbt-baas-docker-generate"))
   .settings(defaultModuleSettings)
-  .settings(noPublishSettings) // docker plugin can't be published to azure feed
+  .settings(noPublishSettings) // docker plugin can't be published, at least not to azure feed
   .settings(
     // workaround to let plugin be used in the same project without publishing it
     sourceGenerators in Compile += Def.task {
