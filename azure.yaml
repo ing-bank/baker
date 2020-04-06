@@ -20,10 +20,16 @@ steps:
     displayName: Generate artifacts' version
     inputs:
       targetType: 'inline'
-      script: bash ./set-version.sh
+      script: ./set-version.sh
 
-  - script: printf "realm=BakeryOSSFeed\\nhost=${FEEDURL}\\nuser=${FEEDUSER}\\npassword=${FEEDPASSWORD}\n" > ~/.credentials
+  - task: Bash@3
+      displayName: Generate artifacts' version
+      inputs:
+        targetType: 'inline'
+        script: printf "realm=BakeryOSSFeed\\nhost=${FEEDURL}\\nuser=${FEEDUSER}\\npassword=${FEEDPASSWORD}\n" > ~/.credentials
     displayName: 'Update credentials'
+    env:
+      FEEDPASSWORD: $(feedPassword)
 
   - script: cat ~/.credentials
 
