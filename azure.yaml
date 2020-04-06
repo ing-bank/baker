@@ -11,7 +11,7 @@ variables:
 
 steps:
   - task: CacheBeta@1
-    displayName: Ivy cache
+    displayName: Package resolver cache
     inputs:
       key: 'cache'
       path: '$(CACHE)'
@@ -30,7 +30,7 @@ steps:
     env:
       FEEDPASSWORD: $(feedPassword)
 
-  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} package #clean coverage test coverageReport
+  - script: sbt package #clean coverage test coverageReport
     displayName: 'Running sbt'
 
   - script: sbt aetherDeploy
