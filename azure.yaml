@@ -23,11 +23,10 @@ steps:
       script: ./set-version.sh
 
   - task: Bash@3
-      displayName: Generate artifacts' version
-      inputs:
-        targetType: 'inline'
-        script: printf "realm=BakeryOSSFeed\\nhost=${FEEDURL}\\nuser=${FEEDUSER}\\npassword=${FEEDPASSWORD}\n" > ~/.credentials
     displayName: 'Update credentials'
+    inputs:
+      targetType: 'inline'
+      script: printf "realm=BakeryOSSFeed\\nhost=${FEEDURL}\\nuser=${FEEDUSER}\\npassword=${FEEDPASSWORD}\n" > ~/.credentials
     env:
       FEEDPASSWORD: $(feedPassword)
 
