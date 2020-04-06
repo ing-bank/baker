@@ -6,11 +6,11 @@ import xerial.sbt.Sonatype.SonatypeKeys._
 
 object Publish {
 
-  lazy val settings = if (sys.env.get("feedUrl").isDefined) AzureFeed else Sonatype
+  lazy val settings = if (sys.env.get("FEEDURL").isDefined) AzureFeed else Sonatype
 
   val AzureFeed = Seq(
     credentials += Credentials(Path.userHome / ".credentials"),
-    publishTo := Some("BakeryOSSFeed" at sys.env.getOrElse("feedUrl", ""))
+    publishTo := Some("BakeryOSSFeed" at sys.env.getOrElse("FEEDURL", ""))
   )
 
   protected def isSnapshot(s: String) = s.trim endsWith "SNAPSHOT"

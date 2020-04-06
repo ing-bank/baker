@@ -6,15 +6,15 @@ pool:
 
 variables:
   - group: BakeryOSSFeedCredentials
-  - name: IVY_HOME
-    value: $(Pipeline.Workspace)/.ivy2
+  - name: CACHE
+    value: ~/.cache
 
 steps:
   - task: CacheBeta@1
     displayName: Ivy cache
     inputs:
-      key: 'ivy'
-      path: '$(IVY_HOME)'
+      key: 'cache'
+      path: '$(CACHE)'
 
   - task: Bash@3
     displayName: Generate artifacts' version
@@ -22,9 +22,10 @@ steps:
       targetType: 'inline'
       script: bash ./set-version.sh
 
-  - script: printf "realm=BakeryOSSFeed\\nhost=${feedUrl}\\nuser=${feedUser}\\npassword=${feedPassword}\n" > ~/.credentials
-        cat ~/.credentials
+  - script: printf "realm=BakeryOSSFeed\\nhost=${FEEDURL}\\nuser=${FEEDUSER}\\npassword=${FEEDPASSWORD}\n" > ~/.credentials
     displayName: 'Update credentials'
+
+  - script: cat ~/.credentials
 
   - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} package #clean coverage test coverageReport
     displayName: 'Running sbt'

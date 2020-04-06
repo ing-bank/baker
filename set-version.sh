@@ -11,5 +11,3 @@ VERSION="${SEM_VERSION}-${DATE}-${COMMIT}"
 echo "version in ThisBuild := \"${VERSION}\"" > ./version.sbt
 
 cat ./version.sbt
-
-set
