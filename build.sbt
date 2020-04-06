@@ -278,7 +278,8 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
       skuber,
       http4s,
       http4sDsl,
-      http4sServer
+      http4sServer,
+      scalaKafkaClient
     ) ++ testDeps(
       slf4jApi,
       slf4jSimple,
@@ -544,3 +545,4 @@ lazy val `sbt-baas-docker-generate` = project.in(file("sbt-baas-docker-generate"
   )
   .enablePlugins(SbtPlugin)
   .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
+  .dependsOn(`baas-node-interaction`)

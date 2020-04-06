@@ -1,10 +1,11 @@
-package com.ing.baker.runtime.akka
+package com.ing.baker.baas.state
 
 import cakesolutions.kafka.KafkaProducer.Conf
 import cakesolutions.kafka.{KafkaProducer, KafkaProducerRecord}
 import cats.effect.{ContextShift, IO, Resource, Timer}
+import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.akka.AkkaBakerConfig.KafkaEventSinkSettings
-import com.ing.baker.runtime.scaladsl.{EventInstance, BakerEvent}
+import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance}
 import com.ing.baker.runtime.serialization.EventJsonEncoders._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
@@ -16,6 +17,15 @@ trait EventSink {
 }
 
 object KafkaEventSink extends LazyLogging {
+
+  def withEventSink(eventSink: EventSink, baker: AkkaBaker)(implicit cs: ContextShift[IO]): IO[Unit] = {
+    IO.fromFuture(IO{baker.registerBakerEventListener {
+      event => eventSink.fire(event).unsafeRunAsyncAndForget()
+    }}).flatMap(_ =>
+    IO.fromFuture(IO{baker.registerEventListener {
+      (_, event) => eventSink.fire(event).unsafeRunAsyncAndForget()
+    }}))
+  }
 
   def resource(settings: KafkaEventSinkSettings)(implicit contextShift: ContextShift[IO], timer: Timer[IO]): Resource[IO, KafkaEventSink] = {
 
