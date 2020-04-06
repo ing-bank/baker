@@ -20,7 +20,7 @@ steps:
     displayName: Generate artifacts' version
     inputs:
       targetType: 'inline'
-      script: ./set-version.sh
+      script: bash ./set-version.sh
 
   - task: Bash@3
     displayName: 'Update credentials'
