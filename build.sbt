@@ -261,7 +261,7 @@ lazy val `baas-node-client` = project.in(file("baas-node-client"))
 
 lazy val `baas-node-state` = project.in(file("baas-node-state"))
   .enablePlugins(JavaAppPackaging)
-  .settings(commonSettings)
+  .settings(commonSettings ++ Publish.settings)
   .settings(
     moduleName := "baas-node-state",
     scalacOptions ++= Seq(
