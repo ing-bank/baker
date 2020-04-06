@@ -7,7 +7,7 @@ pool:
 variables:
   - group: BakeryOSSFeedCredentials
   - name: CACHE
-    value: ~/.cache
+    value: $(HOME)/.cache
 
 steps:
   - task: CacheBeta@1
