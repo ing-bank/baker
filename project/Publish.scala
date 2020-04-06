@@ -9,7 +9,7 @@ object Publish {
   lazy val settings = if (sys.env.get("feedUrl").isDefined) AzureFeed else Sonatype
 
   val AzureFeed = Seq(
-    credentials += Credentials(Path.userHome / ".sbt" / ".credentials"),
+    credentials += Credentials(Path.userHome / ".credentials"),
     publishTo := Some("BakeryOSSFeed" at sys.env.getOrElse("feedUrl", ""))
   )
 
