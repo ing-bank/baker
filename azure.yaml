@@ -5,14 +5,29 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  IVY_HOME: $(Pipeline.Workspace)/.ivy2
+  - group: BakeryOSSFeedCredentials
+  - name: IVY_HOME
+    value: $(Pipeline.Workspace)/.ivy2
 
 steps:
   - task: CacheBeta@1
-    displayName: Ivy build cache
+    displayName: Ivy cache
     inputs:
       key: 'ivy'
       path: '$(IVY_HOME)'
 
+  - task: Bash@3
+    displayName: Generate artifacts' version
+    inputs:
+      targetType: 'inline'
+      script: bash ./set-version.sh
+        cat ./version.sbt
+
+  - displayName: Update credentials
+    script: printf "realm=BakeryOSSFeed\\nhost=${feedUrl}\\nuser=${feedUser}\\npassword=${feedPassword}\n" > ~/.sbt/.credentials
+
   - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} clean coverage test coverageReport
     displayName: 'Running sbt'
+
+  - script: sbt publish
+    condition: succeeded()
