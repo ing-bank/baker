@@ -1,0 +1,9 @@
+trigger:
+  - master
+  - feature*
+
+pool:
+  vmImage: 'ubuntu-latest'
+steps:
+  - script: sbt clean coverage test coverageReport
+    displayName: 'Running sbt'
