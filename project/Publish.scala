@@ -8,9 +8,13 @@ object Publish {
 
   lazy val settings = if (sys.env.get("FEEDURL").isDefined) AzureFeed else Sonatype
 
+  import aether.AetherKeys._
+
   val AzureFeed = Seq(
     credentials += Credentials(Path.userHome / ".credentials"),
-    publishTo := Some("BakeryOSSFeed" at sys.env.getOrElse("FEEDURL", ""))
+    publishTo := Some("pkgs.dev.azure.com" at sys.env.getOrElse("FEEDURL", "")),
+    publishMavenStyle := true,
+    logLevel in aetherDeploy := Level.Info
   )
 
   protected def isSnapshot(s: String) = s.trim endsWith "SNAPSHOT"

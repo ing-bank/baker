@@ -23,14 +23,12 @@ steps:
       script: bash ./set-version.sh
 
   - task: Bash@3
-    displayName: 'Update credentials'
+    displayName: 'Prepare publishing credentials'
     inputs:
       targetType: 'inline'
-      script: printf "realm=BakeryOSSFeed\\nhost=${FEEDURL}\\nuser=${FEEDUSER}\\npassword=${FEEDPASSWORD}\n" > ~/.credentials
+      script: printf "realm=pkgs.dev.azure.com\nhost=pkgs.dev.azure.com\nuser=${FEEDUSER}\npassword=${FEEDPASSWORD}\n" > ~/.credentials
     env:
       FEEDPASSWORD: $(feedPassword)
-
-  - script: cat ~/.credentials
 
   - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} package #clean coverage test coverageReport
     displayName: 'Running sbt'
@@ -38,6 +36,6 @@ steps:
   - script: du -h ~
     displayName: 'Disk use'
 
-  - script: sbt publish
+  - script: sbt aetherDeploy
     displayName: 'Publishing results'
     condition: succeeded()
