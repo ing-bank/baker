@@ -9,12 +9,11 @@ variables:
   IVY_HOME: $(Pipeline.Workspace)/.ivy2
 
 steps:
-  - task: Cache@2
+  - task: CacheBeta@1
     inputs:
-      key: 'ivy | "$(Agent.OS)"'
-      restoreKeys: ivy
-      path: $(IVY_HOME)
-    displayName: Ivy build cache
+      key: 'ivy'
+      path: '$(IVY_HOME)'
+      displayName: Ivy build cache
 
   - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} clean coverage test coverageReport
     displayName: 'Running sbt'
