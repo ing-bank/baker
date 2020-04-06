@@ -36,3 +36,4 @@ steps:
   - script: sbt aetherDeploy
     displayName: 'Publishing results'
     condition: succeeded()
+
