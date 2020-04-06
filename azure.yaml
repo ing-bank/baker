@@ -33,9 +33,6 @@ steps:
   - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} package #clean coverage test coverageReport
     displayName: 'Running sbt'
 
-  - script: du -h ~
-    displayName: 'Disk use'
-
   - script: sbt aetherDeploy
     displayName: 'Publishing results'
     condition: succeeded()
