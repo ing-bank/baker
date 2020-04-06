@@ -10,10 +10,10 @@ variables:
 
 steps:
   - task: CacheBeta@1
+    displayName: Ivy build cache
     inputs:
       key: 'ivy'
       path: '$(IVY_HOME)'
-      displayName: Ivy build cache
 
   - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} clean coverage test coverageReport
     displayName: 'Running sbt'
