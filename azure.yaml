@@ -21,13 +21,16 @@ steps:
     inputs:
       targetType: 'inline'
       script: bash ./set-version.sh
-        cat ./version.sbt
 
   - script: printf "realm=BakeryOSSFeed\\nhost=${feedUrl}\\nuser=${feedUser}\\npassword=${feedPassword}\n" > ~/.credentials
-    displayName: Update credentials
+        cat ~/.credentials
+    displayName: 'Update credentials'
 
-  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} clean coverage test coverageReport
+  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} package #clean coverage test coverageReport
     displayName: 'Running sbt'
+
+  - script: du -h ~
+    displayName: 'Disk use'
 
   - script: sbt publish
     displayName: 'Publishing results'
