@@ -23,11 +23,12 @@ steps:
       script: bash ./set-version.sh
         cat ./version.sbt
 
-  - displayName: Update credentials
-    script: printf "realm=BakeryOSSFeed\\nhost=${feedUrl}\\nuser=${feedUser}\\npassword=${feedPassword}\n" > ~/.sbt/.credentials
+  - script: printf "realm=BakeryOSSFeed\\nhost=${feedUrl}\\nuser=${feedUser}\\npassword=${feedPassword}\n" > ~/.sbt/.credentials
+    displayName: Update credentials
 
   - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} clean coverage test coverageReport
     displayName: 'Running sbt'
 
   - script: sbt publish
+    displayName: 'Publishing results'
     condition: succeeded()
