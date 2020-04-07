@@ -14,18 +14,17 @@ import org.apache.kafka.common.serialization.StringSerializer
 trait EventSink {
   def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit]
   def close(): Unit = ()
+  def attach(baker: AkkaBaker)(implicit cs: ContextShift[IO]): IO[Unit] = {
+    IO.fromFuture(IO{baker.registerBakerEventListener {
+      event => fire(event).unsafeRunAsyncAndForget()
+    }}).flatMap(_ =>
+      IO.fromFuture(IO{baker.registerEventListener {
+        (_, event) => fire(event).unsafeRunAsyncAndForget()
+      }}))
+  }
 }
 
 object KafkaEventSink extends LazyLogging {
-
-  def withEventSink(eventSink: EventSink, baker: AkkaBaker)(implicit cs: ContextShift[IO]): IO[Unit] = {
-    IO.fromFuture(IO{baker.registerBakerEventListener {
-      event => eventSink.fire(event).unsafeRunAsyncAndForget()
-    }}).flatMap(_ =>
-    IO.fromFuture(IO{baker.registerEventListener {
-      (_, event) => eventSink.fire(event).unsafeRunAsyncAndForget()
-    }}))
-  }
 
   def resource(settings: KafkaEventSinkSettings)(implicit contextShift: ContextShift[IO], timer: Timer[IO]): Resource[IO, KafkaEventSink] = {
 

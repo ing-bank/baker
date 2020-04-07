@@ -10,7 +10,6 @@ import cats.effect.{ExitCode, IO, IOApp, Resource}
 import cats.implicits._
 import com.ing.baker.runtime.akka.AkkaBakerConfig.KafkaEventSinkSettings
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
-import com.ing.baker.runtime.scaladsl.Baker
 import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -43,7 +42,7 @@ object Main extends IOApp {
     val mainResource = for {
       serviceDiscovery <- ServiceDiscovery.resource(connectionPool, k8s)
       eventSink <- KafkaEventSink.resource(eventSinkSettings)
-      baker: Baker = AkkaBaker
+      baker = AkkaBaker
         .withConfig(AkkaBakerConfig(
           interactionManager = serviceDiscovery.buildInteractionManager,
           bakerActorProvider = AkkaBakerConfig.bakerProviderFrom(config),
@@ -51,7 +50,7 @@ object Main extends IOApp {
           timeouts = AkkaBakerConfig.Timeouts.from(config),
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config),
         )(system))
-      _ <- Resource.liftF(KafkaEventSink.withEventSink(eventSink, baker))
+      _ <- Resource.liftF(eventSink.attach(baker))
       _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(recipeDirectory, baker))
       _ <- Resource.liftF(IO.async[Unit] { callback =>
         Cluster(system).registerOnMemberUp {

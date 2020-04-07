@@ -322,8 +322,8 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
           interactionManager = serviceDiscovery.buildInteractionManager,
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings(
             allowAddingRecipeWithoutRequiringInstances = true))(system))
-        .withEventSink(eventListener.eventSink)
 
+      _ <- Resource.liftF(eventListener.eventSink.attach(baker))
       _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(getResourceDirectoryPathSafe, baker))
       _ <- Resource.liftF(eventually(serviceDiscovery.cacheInteractions.get.map(data =>
         assert(data.headOption.map(_.name).contains(Interactions.ReserveItemsInteraction.name)))))
