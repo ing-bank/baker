@@ -3,7 +3,7 @@ package com.ing.baker.baas.mocks
 import cats.effect.IO
 import cats.syntax.apply._
 import com.ing.baker.baas.kubeapi
-import com.ing.baker.baas.kubeapi.{Service, Services}
+import com.ing.baker.baas.kubeapi.Services
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.matchers.Times
 import org.mockserver.model.HttpRequest.request
