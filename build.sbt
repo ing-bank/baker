@@ -130,13 +130,11 @@ lazy val runtime = project.in(file("runtime"))
         akkaPersistenceQuery,
         akkaCluster,
         akkaClusterTools,
-        akkaDistributedData,
         akkaClusterSharding,
         akkaBoostrap,
         akkaSlf4j,
         akkaInmemoryJournal,
         ficusConfig,
-        scalaKafkaClient,
         catsCore,
         catsEffect,
         scalapbRuntime,
@@ -278,7 +276,8 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
       skuber,
       http4s,
       http4sDsl,
-      http4sServer
+      http4sServer,
+      scalaKafkaClient
     ) ++ testDeps(
       slf4jApi,
       slf4jSimple,
@@ -540,8 +539,9 @@ lazy val `sbt-baas-docker-generate` = project.in(file("sbt-baas-docker-generate"
       Seq(file)
     }.taskValue,
     addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.6.0"),
-    addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.3.3")
+    addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.3.4")
   )
   .dependsOn(`baker-interface`, `baas-node-interaction`)
   .enablePlugins(SbtPlugin)
   .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
+  .dependsOn(`baas-node-interaction`)
