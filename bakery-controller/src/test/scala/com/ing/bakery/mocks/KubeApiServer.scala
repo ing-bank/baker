@@ -35,7 +35,7 @@ class KubeApiServer(mock: ClientAndServer) {
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody("{}", MediaType.APPLICATION_JSON)
+        .withBody("", MediaType.APPLICATION_JSON)
     )
   }
 }
