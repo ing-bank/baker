@@ -1,0 +1,7 @@
+apiVersion: ing-bank.github.io/v1
+kind: Interaction
+metadata:
+  name: reserve-items
+spec:
+  image: baas-interaction-example-reserve-items:1.0.0
+  replicas: 3

@@ -2,9 +2,10 @@ package com.ing.baker.recipe.scaladsl
 
 import com.ing.baker.types
 import com.ing.baker.types._
-import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
-class IngredientSpec extends WordSpecLike with Matchers {
+class IngredientSpec extends AnyWordSpecLike with Matchers {
   "an Ingredient" when {
 
     "constructed" should {

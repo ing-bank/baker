@@ -2,12 +2,13 @@ package com.ing.baker.recipe.common
 
 import com.ing.baker.recipe.common.InteractionFailureStrategy.RetryWithIncrementalBackoff.{UntilDeadline, UntilMaximumRetries}
 import com.ing.baker.recipe.common.InteractionFailureStrategy._
-import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class InteractionFailureStrategySpec extends WordSpecLike with Matchers {
+class InteractionFailureStrategySpec extends AnyWordSpecLike with Matchers {
 
   "RetryWithIncrementalBackoff " should {
 

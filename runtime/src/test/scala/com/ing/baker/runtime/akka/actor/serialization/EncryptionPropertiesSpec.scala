@@ -1,13 +1,13 @@
 package com.ing.baker.runtime.akka.actor.serialization
 
+import com.ing.baker.runtime.serialization.Encryption._
 import org.scalacheck.Gen._
 import org.scalacheck.Prop.forAll
 import org.scalacheck._
-import org.scalatest.FunSuite
-import com.ing.baker.runtime.serialization.Encryption._
+import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 
-class EncryptionPropertiesSpec extends FunSuite with Checkers {
+class EncryptionPropertiesSpec extends AnyFunSuite with Checkers {
 
   val desEncryptionGen: Gen[DESEncryption] = for {
     keyChars ← Gen.listOfN(8, alphaChar)

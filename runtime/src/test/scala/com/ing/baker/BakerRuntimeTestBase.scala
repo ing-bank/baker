@@ -16,7 +16,9 @@ import com.ing.baker.types.{Converters, Value}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
-import org.scalatest._
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AsyncWordSpecLike
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatestplus.mockito.MockitoSugar
 
 import scala.concurrent.Future
@@ -109,7 +111,7 @@ trait BakerRuntimeTestBase
   def writeRecipeToSVGFile(recipe: CompiledRecipe) = {
     import guru.nidi.graphviz.engine.{Format, Graphviz}
     import guru.nidi.graphviz.parse.Parser
-    val g = Parser.read(recipe.getRecipeVisualization)
+    val g = (new Parser()).read(recipe.getRecipeVisualization)
     Graphviz.fromGraph(g).render(Format.SVG).toFile(Paths.get(recipe.name).toFile)
   }
 

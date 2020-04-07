@@ -3,10 +3,11 @@ package com.ing.baker.types.modules
 import com.ing.baker.types
 import com.ing.baker.types.Converters.{readJavaType, toJava, toValue}
 import com.ing.baker.types._
-import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.scalacheck.Checkers
 
-class ScalaModulesSpec extends WordSpecLike with Matchers with Checkers {
+class ScalaModulesSpec extends AnyWordSpecLike with Matchers with Checkers {
 
   private val listValue123 = ListValue(List(PrimitiveValue(1), PrimitiveValue(2), PrimitiveValue(3)))
 

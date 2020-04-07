@@ -198,20 +198,20 @@ object ProcessIndexProto {
           Some(ctxToProto(a.event)),
           a.correlationId,
           Some(a.timeout.toMillis),
-          Some(a.reaction match {
+          (a.reaction match {
             case FireSensoryEventReaction.NotifyWhenReceived =>
-              protobuf.FireSensoryEventReaction(
-                protobuf.FireSensoryEventReaction.SealedValue.Received(protobuf.NotifyWhenReceived()))
+              protobuf.FireSensoryEventReactionMessage(
+                protobuf.FireSensoryEventReactionMessage.SealedValue.Received(protobuf.NotifyWhenReceived()))
             case FireSensoryEventReaction.NotifyWhenCompleted(waitForRetries) =>
-              protobuf.FireSensoryEventReaction(
-                protobuf.FireSensoryEventReaction.SealedValue.Completed(protobuf.NotifyWhenCompleted(Some(waitForRetries))))
+              protobuf.FireSensoryEventReactionMessage(
+                protobuf.FireSensoryEventReactionMessage.SealedValue.Completed(protobuf.NotifyWhenCompleted(Some(waitForRetries))))
             case FireSensoryEventReaction.NotifyBoth(waitForRetries, receiver) =>
-              protobuf.FireSensoryEventReaction(
-                protobuf.FireSensoryEventReaction.SealedValue.Both(protobuf.NotifyBoth(Some(waitForRetries), Some(ctxToProto(receiver)))))
+              protobuf.FireSensoryEventReactionMessage(
+                protobuf.FireSensoryEventReactionMessage.SealedValue.Both(protobuf.NotifyBoth(Some(waitForRetries), Some(ctxToProto(receiver)))))
             case FireSensoryEventReaction.NotifyOnEvent(waitForRetries, onEvent) =>
-              protobuf.FireSensoryEventReaction(
-                protobuf.FireSensoryEventReaction.SealedValue.OnEvent(protobuf.NotifyOnEvent(Some(waitForRetries), Some(onEvent))))
-          })
+              protobuf.FireSensoryEventReactionMessage(
+                protobuf.FireSensoryEventReactionMessage.SealedValue.OnEvent(protobuf.NotifyOnEvent(Some(waitForRetries), Some(onEvent))))
+          }).toFireSensoryEventReaction
         )
 
       def fromProto(message: protobuf.ProcessEvent): Try[ProcessEvent] =
@@ -219,25 +219,25 @@ object ProcessIndexProto {
           recipeInstanceId <- versioned(message.recipeInstanceId, "RecipeInstanceId")
           eventProto <- versioned(message.event, "event")
           timeout <- versioned(message.timeout, "timeout")
-          reactionProto <- versioned(message.reaction, "reaction")
+          reactionProto = message.reaction
           event <- ctxFromProto(eventProto)
-          reaction <- reactionProto.sealedValue match {
-            case protobuf.FireSensoryEventReaction.SealedValue.Received(_) =>
+          reaction <- reactionProto.asMessage.sealedValue match {
+            case protobuf.FireSensoryEventReactionMessage.SealedValue.Received(_) =>
               Success(NotifyWhenReceived)
-            case protobuf.FireSensoryEventReaction.SealedValue.Completed(protobuf.NotifyWhenCompleted(waitForRetries)) =>
+            case protobuf.FireSensoryEventReactionMessage.SealedValue.Completed(protobuf.NotifyWhenCompleted(waitForRetries)) =>
               versioned(waitForRetries, "waitForRetries").map(NotifyWhenCompleted.apply)
-            case protobuf.FireSensoryEventReaction.SealedValue.Both(protobuf.NotifyBoth(waitForRetriesProto, receiverProto)) =>
+            case protobuf.FireSensoryEventReactionMessage.SealedValue.Both(protobuf.NotifyBoth(waitForRetriesProto, receiverProto)) =>
               for {
                 waitForRetries <- versioned(waitForRetriesProto, "waitForRetries")
                 receiverProto <- versioned(receiverProto, "receiver")
                 receiver <- ctxFromProto(receiverProto)
               } yield NotifyBoth(waitForRetries, receiver)
-            case protobuf.FireSensoryEventReaction.SealedValue.OnEvent(protobuf.NotifyOnEvent(waitForRetriesProto, onEventProto)) =>
+            case protobuf.FireSensoryEventReactionMessage.SealedValue.OnEvent(protobuf.NotifyOnEvent(waitForRetriesProto, onEventProto)) =>
               for {
                 waitForRetries <- versioned(waitForRetriesProto, "waitForRetries")
                 onEvent <- versioned(onEventProto, "onEvent")
               } yield NotifyOnEvent(waitForRetries, onEvent)
-            case protobuf.FireSensoryEventReaction.SealedValue.Empty =>
+            case protobuf.FireSensoryEventReactionMessage.SealedValue.Empty =>
               Failure(new IllegalStateException("Received Empty of the oneof FireSensoryEventReaction protocol message."))
           }
           time = FiniteDuration(timeout, TimeUnit.MILLISECONDS)

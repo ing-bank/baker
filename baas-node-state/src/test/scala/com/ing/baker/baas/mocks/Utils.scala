@@ -6,7 +6,7 @@ import com.ing.baker.runtime.serialization.{Encryption, ProtoMap}
 
 object Utils {
 
-  private type ProtoMessage[A] = scalapb.GeneratedMessage with scalapb.Message[A]
+  private type ProtoMessage[A] = scalapb.GeneratedMessage
 
   def serialize[A, P <: ProtoMessage[P]](message: A)(implicit mapping: ProtoMap[A, P]): Array[Byte] =
     mapping.toByteArray(message)

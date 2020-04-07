@@ -8,10 +8,11 @@ import com.ing.baker.runtime.scaladsl.RecipeInstanceState
 import com.ing.baker.types.Value
 import com.ing.baker.{il, types}
 import org.mockito.Mockito._
-import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
 
-class RecipeRuntimeSpec extends WordSpecLike with Matchers with MockitoSugar {
+class RecipeRuntimeSpec extends AnyWordSpecLike with Matchers with MockitoSugar {
   "The recipe runtime" should {
     "provide a ProcessID ingredient to an interaction if required" in {
       val processId = UUID.randomUUID().toString

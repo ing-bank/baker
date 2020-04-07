@@ -5,7 +5,7 @@ object Dependencies {
 
   val akkaVersion = "2.5.29"
   
-  val http4sVersion = "0.21.1"
+  val http4sVersion = "0.21.3"
   val circeVersion = "0.13.0"
 
   val pnmlVersion = "2.2.12"
@@ -21,11 +21,11 @@ object Dependencies {
       .exclude("com.typesafe.akka", "akka-stream")
 
   val scalaJava8Compat =          "org.scala-lang.modules"     %% "scala-java8-compat"                 % "0.9.1"
-  val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.0.8"
+  val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.1.1"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
-  val mockServer =                "org.mock-server"            %  "mockserver-netty"                   % "5.9.0"
+  val mockServer =                "org.mock-server"            %  "mockserver-netty"                   % "5.10"
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
-  val junitJupiter =              "org.junit.jupiter"          %  "junit-jupiter-engine"               % "5.6.0"
+  val junitJupiter =              "org.junit.jupiter"          %  "junit-jupiter-engine"               % "5.6.1"
 
   val akkaActor =                 "com.typesafe.akka"          %% "akka-actor"                         % akkaVersion
   val akkaStream =                "com.typesafe.akka"          %% "akka-stream"                        % akkaVersion
@@ -34,26 +34,27 @@ object Dependencies {
   val akkaPersistenceCassandra =  "com.typesafe.akka"          %% "akka-persistence-cassandra"         % "0.103"
   val akkaCluster =               "com.typesafe.akka"          %% "akka-cluster"                       % akkaVersion
   val akkaClusterSharding =       "com.typesafe.akka"          %% "akka-cluster-sharding"              % akkaVersion
-  val akkaDistributedData =       "com.typesafe.akka"          %% "akka-distributed-data"              % akkaVersion
   val akkaClusterTools =          "com.typesafe.akka"          %% "akka-cluster-tools"                 % akkaVersion
   val akkaSlf4j =                 "com.typesafe.akka"          %% "akka-slf4j"                         % akkaVersion
   val akkaTestKit =               "com.typesafe.akka"          %% "akka-testkit"                       % akkaVersion
   val akkaStreamTestKit =         "com.typesafe.akka"          %% "akka-stream-testkit"                % akkaVersion
   val akkaMultiNodeTestkit =      "com.typesafe.akka"          %% "akka-multi-node-testkit"            % akkaVersion
-  val akkaManagementHttp =        "com.lightbend.akka.management" %% "akka-management-cluster-http"      % "1.0.5"
-  val akkaClusterBoostrap =       "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.5"
-  val akkaDiscoveryKube =         "com.lightbend.akka.discovery"  %% "akka-discovery-kubernetes-api"     % "1.0.5"
-  val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.5"
+  val akkaManagementHttp =        "com.lightbend.akka.management" %% "akka-management-cluster-http"      % "1.0.6"
+  val akkaClusterBoostrap =       "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.6"
+  val akkaDiscoveryKube =         "com.lightbend.akka.discovery"  %% "akka-discovery-kubernetes-api"     % "1.0.6"
+  val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.6"
 
+  val scalaKafkaClient =          "net.cakesolutions"          %% "scala-kafka-client"                 % "2.3.1"
+  val fs2kafka =                  "com.github.fd4s"            %% "fs2-kafka"                          % "1.0.0"
   val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.12"
 
   val levelDBJni =                "org.fusesource.leveldbjni"  %  "leveldbjni-all"                     % "1.8"
 
   val ficusConfig =               "com.iheart"                 %% "ficus"                              % "1.4.7"
 
-  val scalaGraph  =               "org.scala-graph"            %% "graph-core"                         % "1.11.5"
-  val scalaGraphDot =             "org.scala-graph"            %% "graph-dot"                          % "1.11.5"
-  val graphvizJava =              "guru.nidi"                  %  "graphviz-java"                      % "0.8.10"
+  val scalaGraph  =               "org.scala-graph"            %% "graph-core"                         % "1.13.1"
+  val scalaGraphDot =             "org.scala-graph"            %% "graph-dot"                          % "1.13.0"
+  val graphvizJava =              "guru.nidi"                  %  "graphviz-java"                      % "0.15.1"
 
   val kamon =                     "io.kamon"                   %% "kamon-bundle"                       % "2.0.0"
   val kamonAkka =                 "io.kamon"                   %% "kamon-akka"                         % "2.0.0"
@@ -66,7 +67,9 @@ object Dependencies {
   val http4sClient =              "org.http4s"                 %% "http4s-blaze-client"                % http4sVersion
   val http4sCirce =               "org.http4s"                 %% "http4s-circe"                       % http4sVersion
   val circe =                     "io.circe"                   %% "circe-core"                         % circeVersion
+  val circeParser =               "io.circe"                   %% "circe-parser"                       % circeVersion
   val circeGeneric =              "io.circe"                   %% "circe-generic"                      % circeVersion
+  val circeGenericExtras =        "io.circe"                   %% "circe-generic-extras"               % circeVersion
 
   val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "2.1.2"
   val catsCore =                  "org.typelevel"              %% "cats-core"                          % "2.1.1"
@@ -93,8 +96,9 @@ object Dependencies {
   val slf4jApi =                  "org.slf4j"                  %  "slf4j-api"                          % "1.7.30"
   val slf4jSimple =               "org.slf4j"                  % "slf4j-simple"                        % "1.7.30"
   val logback =                   "ch.qos.logback"             % "logback-classic"                     % "1.2.3"
-  val scalaCheck =                "org.scalacheck"             %% "scalacheck"                         % "1.13.5"
-
+  val scalaCheck =                "org.scalacheck"             %% "scalacheck"                         % "1.14.3"
+  val scalaCheckPlus =            "org.scalatestplus"          %% "scalatestplus-scalacheck"           % "3.1.0.0-RC2"
+  val scalaCheckPlusMockito =     "org.scalatestplus"          %% "scalatestplus-mockito"              % "1.0.0-M2"
   val scalaLogging =              "com.typesafe.scala-logging" %% "scala-logging"                      % "3.9.2"
 
   val pnmlUtils =                 "fr.lip6.pnml"               % "fr.lip6.pnml.framework.utils"        % pnmlVersion

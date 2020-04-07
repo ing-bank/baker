@@ -1,9 +1,10 @@
 package com.ing.baker.recipe.scaladsl
 
 import com.ing.baker.types
-import org.scalatest.{Matchers, WordSpecLike}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 
-class CommonMacrosSpec extends WordSpecLike with Matchers {
+class CommonMacrosSpec extends AnyWordSpecLike with Matchers {
 
   "an Ingredient" when {
     "constructed using macro" should {

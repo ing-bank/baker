@@ -10,12 +10,12 @@ import com.ing.baker.runtime.akka.actor.process_instance.ProcessInstanceProtocol
 import com.ing.baker.runtime.common.SensoryEventStatus
 import com.ing.baker.runtime.scaladsl.{ EventInstance, SensoryEventResult }
 import com.ing.baker.types.{ PrimitiveValue, Value }
-import org.scalatest.Matchers._
-import org.scalatest.WordSpecLike
+import org.scalatest.matchers.should.Matchers._
+import org.scalatest.wordspec.AnyWordSpecLike
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class SensoryEventResponseHandlerSpec extends TestKit(ActorSystem("SensoryEventResponseHandlerSpec")) with WordSpecLike {
+class SensoryEventResponseHandlerSpec extends TestKit(ActorSystem("SensoryEventResponseHandlerSpec")) with AnyWordSpecLike {
 
   implicit val ec: ExecutionContext = system.dispatcher
 

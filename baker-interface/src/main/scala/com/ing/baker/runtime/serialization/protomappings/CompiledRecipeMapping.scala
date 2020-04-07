@@ -115,7 +115,7 @@ class CompiledRecipeMapping extends ProtoMap[il.CompiledRecipe, protobuf.Compile
       val edge = e.label.asInstanceOf[il.petrinet.Edge]
       val from = nodeList.indexOf(e.source.value)
       val to = nodeList.indexOf(e.target.value)
-      protobuf.Edge(Option(from), Option(to), Option(e.weight), edge.eventAllowed)
+      protobuf.Edge(Option(from), Option(to), Option(e.weight.toLong), edge.eventAllowed)
     }
   }
 

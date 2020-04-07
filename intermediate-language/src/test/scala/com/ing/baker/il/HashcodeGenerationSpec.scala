@@ -1,10 +1,10 @@
 package com.ing.baker.il
 
 import org.scalacheck.{Gen, Prop, Test}
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 
-class HashcodeGenerationSpec extends FunSuite with Checkers {
+class HashcodeGenerationSpec extends AnyFunSuite with Checkers {
   test("sha256 hash function") {
     val prop = Prop.forAll(Gen.alphaNumStr, Gen.alphaNumStr) {
       (s1: String, s2: String) => {
