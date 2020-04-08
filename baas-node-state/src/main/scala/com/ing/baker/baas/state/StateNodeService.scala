@@ -19,7 +19,7 @@ import scala.concurrent.Future
 
 object StateNodeService {
 
-  def resource(baker: Baker, recipeDirectory: String, hostname: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
+  def resource(baker: Baker, recipeDirectory: String, hostname: InetSocketAddress, serviceDiscovery: ServiceDiscovery)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
     for {
       binding <- BlazeServerBuilder[IO]
         .bindSocketAddress(hostname)
@@ -29,7 +29,7 @@ object StateNodeService {
   }
 }
 
-final class StateNodeService private(baker: Baker, recipeDirectory: String)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
+final class StateNodeService private(baker: Baker, recipeDirectory: String, serviceDiscovery: ServiceDiscovery)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
 
   def loadRecipeIfNotFound[A](f: IO[A]): IO[A] =
     RecipeLoader.loadRecipesIfRecipeNotFound(recipeDirectory, baker)(f)
@@ -43,6 +43,20 @@ final class StateNodeService private(baker: Baker, recipeDirectory: String)(impl
       case Left(e) => IO.raiseError(new IllegalStateException("No other exception but BakerExceptions should be thrown here.", e))
       case Right(a) => Ok(f(a))
     }
+
+  def management: HttpRoutes[IO] = Router("/management" -> HttpRoutes.of[IO] {
+    case GET -> Root / "interaction" =>
+      serviceDiscovery.cacheInteractions.get.flatMap(interactions =>
+        Ok(interactions.map(_.name).mkString(", ")))
+
+    case GET -> Root / "recipe-instance" / recipeInstanceId / "events" =>
+      IO.fromFuture(IO(baker.getEvents(recipeInstanceId))).flatMap(events =>
+        Ok(events.map(_.name).mkString(", ")))
+
+    case GET -> Root / "recipe-instance" / recipeInstanceId / "ingredients" =>
+      IO.fromFuture(IO(baker.getIngredients(recipeInstanceId))).flatMap(ingredients =>
+        Ok(ingredients.keys.mkString(", ")))
+  })
 
   def api: HttpRoutes[IO] = Router("/api/v3" -> HttpRoutes.of[IO] {
 
