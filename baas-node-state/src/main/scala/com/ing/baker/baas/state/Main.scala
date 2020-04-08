@@ -26,7 +26,7 @@ object Main extends IOApp {
     val httpServerPort = config.getInt("baas-component.http-api-port")
     val recipeDirectory = config.getString("baas-component.recipe-directory")
 
-    val eventSinkSettings = config.getConfig("baker.kafka-event-sink").as[KafkaEventSinkSettings]
+//    val eventSinkSettings = config.getConfig("baker.kafka-event-sink").as[KafkaEventSinkSettings]
 
     // Core dependencies
     implicit val system: ActorSystem =
@@ -41,7 +41,7 @@ object Main extends IOApp {
 
     val mainResource = for {
       serviceDiscovery <- ServiceDiscovery.resource(connectionPool, k8s)
-      eventSink <- KafkaEventSink.resource(eventSinkSettings)
+//      eventSink <- KafkaEventSink.resource(eventSinkSettings)
       baker = AkkaBaker
         .withConfig(AkkaBakerConfig(
           interactionManager = serviceDiscovery.buildInteractionManager,
@@ -50,7 +50,7 @@ object Main extends IOApp {
           timeouts = AkkaBakerConfig.Timeouts.from(config),
           bakerValidationSettings = AkkaBakerConfig.BakerValidationSettings.from(config),
         )(system))
-      _ <- Resource.liftF(eventSink.attach(baker))
+//      _ <- Resource.liftF(eventSink.attach(baker))
       _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(recipeDirectory, baker))
       _ <- Resource.liftF(IO.async[Unit] { callback =>
         Cluster(system).registerOnMemberUp {
