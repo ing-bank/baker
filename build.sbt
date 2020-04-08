@@ -353,7 +353,7 @@ lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver,
     `baas-node-client`, `baas-node-state`, `baas-node-interaction`, `sbt-baas-docker-generate`, `baas-protocol-interaction-scheduling`,
-    `baker-interface`)
+    `baker-interface`, `bakery-controller`)
 
 lazy val `baker-example` = project
   .in(file("examples/baker-example"))
