@@ -39,9 +39,5 @@ steps:
     env:
       FEEDPASSWORD: $(feedPassword) # secrets extracted explicitly, other vars - from the group
 
-  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} clean coverage test coverageReport
+  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} clean coverage test coverageReport aetherDeploy
     displayName: 'Running sbt'
-
-  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} aetherDeploy
-    displayName: 'Publishing results'
-    condition: succeeded()
