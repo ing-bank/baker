@@ -24,7 +24,6 @@ steps:
       key: 'ivy_home'
       path: '$(IVY_HOME)'
 
-
   - task: Bash@3
     displayName: Generate artifacts' version
     inputs:
