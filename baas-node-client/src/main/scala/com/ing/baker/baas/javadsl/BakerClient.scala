@@ -6,5 +6,5 @@ import com.ing.baker.runtime.javadsl.{Baker => JavaBaker}
 object BakerClient {
 
   def build(hostname: String): JavaBaker =
-    new JavaBaker(ScalaRemoteBaker.bounded(hostname).unsafeRunSync())
+    new JavaBaker(ScalaRemoteBaker.blocking(hostname))
 }

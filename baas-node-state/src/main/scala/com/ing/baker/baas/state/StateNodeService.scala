@@ -23,7 +23,7 @@ object StateNodeService {
     for {
       binding <- BlazeServerBuilder[IO]
         .bindSocketAddress(hostname)
-        .withHttpApp(new StateNodeService(baker, recipeDirectory).build)
+        .withHttpApp(new StateNodeService(baker, recipeDirectory, serviceDiscovery).build)
         .resource
     } yield binding
   }

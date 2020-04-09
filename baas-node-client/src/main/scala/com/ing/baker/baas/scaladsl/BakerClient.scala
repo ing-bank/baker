@@ -1,7 +1,9 @@
 package com.ing.baker.baas.scaladsl
 
+import java.util.concurrent.Executors
+
 import cats.data.EitherT
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{Blocker, ContextShift, IO, Resource, Timer}
 import com.ing.baker.baas.protocol.BaaSProto._
 import com.ing.baker.baas.protocol.BaaSProtocol
 import com.ing.baker.baas.protocol.BakeryHttp.ProtoEntityEncoders._
@@ -12,7 +14,7 @@ import com.ing.baker.runtime.serialization.ProtoMap
 import com.ing.baker.types.Value
 import org.http4s.EntityDecoder.collectBinary
 import org.http4s.Method._
-import org.http4s.client.Client
+import org.http4s.client.{Client, JavaNetClientBuilder}
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.client.dsl.io._
 import org.http4s._
@@ -23,9 +25,15 @@ import scala.util.{Failure, Success, Try}
 object BakerClient {
 
   /** Uses the global execution context, which is limited to the amount of available cores in the machine. */
-  def bounded(hostname: String): IO[BakerClient] = {
-    val ec = ExecutionContext.Implicits.global
-    resource(Uri.unsafeFromString(hostname), ec)(IO.contextShift(ec), IO.timer(ec)).use(IO.pure)
+  def blocking(hostname: String): BakerClient = {
+    implicit val ec = ExecutionContext.Implicits.global
+    implicit val contextShift = IO.contextShift(ec)
+
+    val blockingPool = Executors.newFixedThreadPool(5)
+    val blocker = Blocker.liftExecutorService(blockingPool)
+    val httpClient: Client[IO] = JavaNetClientBuilder[IO](blocker).create
+
+    new BakerClient(httpClient, Uri.unsafeFromString(hostname))
   }
 
   /** use method `use` of the Resource, the client will be acquired and shut down automatically each time
