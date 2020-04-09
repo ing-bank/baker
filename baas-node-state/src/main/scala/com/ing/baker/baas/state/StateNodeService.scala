@@ -3,7 +3,7 @@ package com.ing.baker.baas.state
 import java.net.InetSocketAddress
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import cats.syntax.apply._
+import cats.implicits._
 import com.ing.baker.baas.protocol.BaaSProto._
 import com.ing.baker.baas.protocol.BaaSProtocol
 import com.ing.baker.baas.protocol.BakeryHttp.ProtoEntityEncoders._
@@ -35,7 +35,7 @@ final class StateNodeService private(baker: Baker, recipeDirectory: String, serv
     RecipeLoader.loadRecipesIfRecipeNotFound(recipeDirectory, baker)(f)
 
   def build: HttpApp[IO] =
-    api.orNotFound
+    (api <+> management).orNotFound
 
   def completeWithBakerFailures[A, R](result: IO[Future[A]])(f: A => R)(implicit decoder: EntityEncoder[IO, R]): IO[Response[IO]] =
     loadRecipeIfNotFound(IO.fromFuture(result)).attempt.flatMap {
