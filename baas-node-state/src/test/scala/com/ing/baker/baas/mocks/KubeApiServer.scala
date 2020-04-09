@@ -9,6 +9,7 @@ import org.mockserver.matchers.Times
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
+import skuber.json.format._
 
 class KubeApiServer(mock: ClientAndServer) {
 
@@ -16,6 +17,10 @@ class KubeApiServer(mock: ClientAndServer) {
     respondWithEvents(interactionServices) *> respondWithEmpty
 
   private def respondWithEvents(templates: Services): IO[Unit] = IO {
+    val watchEventJson = WatchEvent(WatchEvent.ofInteractionService(mock), WatchEvent.Added).toString
+    val other = templates.mock.mkString("\n")
+    println(Console.MAGENTA + watchEventJson + Console.RESET)
+    println(Console.YELLOW + other + Console.RESET)
     mock.when(
       request()
         .withMethod("GET")
@@ -25,7 +30,7 @@ class KubeApiServer(mock: ClientAndServer) {
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody(templates.mock.mkString("\n"), MediaType.APPLICATION_JSON)
+        .withBody(watchEventJson, MediaType.APPLICATION_JSON)
     )
   }
 

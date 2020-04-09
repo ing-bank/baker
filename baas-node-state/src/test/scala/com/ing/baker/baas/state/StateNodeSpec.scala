@@ -23,6 +23,7 @@ import org.scalatest.ConfigMap
 import org.scalatest.matchers.should.Matchers
 import skuber.api.client.KubernetesClient
 
+import scala.concurrent.duration._
 import scala.concurrent.Future
 
 class StateNodeSpec extends BakeryFunSpec with Matchers {
@@ -52,6 +53,16 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
   def io[A](f: => Future[A]): IO[A] =
     IO.fromFuture(IO(f))
 
+  describe("Service Discovery") {
+
+    test("Simple interaction discovery") { context =>
+      eventually(for {
+        interactions <- context.serviceDiscovery.cacheInteractions.get
+      } yield interactions.map(_.name) shouldBe List("ReserveItems"))
+    }
+  }
+
+  /*
   describe("Bakery State Node") {
 
     test("Recipe management") { context =>
@@ -253,9 +264,11 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       }
     }
   }
+   */
 
   case class Context(
     client: Baker,
+    serviceDiscovery: ServiceDiscovery,
     remoteComponents: RemoteComponents,
     remoteInteraction: RemoteInteraction,
     eventListener: EventListener,
@@ -325,14 +338,13 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
 
       _ <- Resource.liftF(eventListener.eventSink.attach(baker))
       _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(getResourceDirectoryPathSafe, baker))
-      _ <- Resource.liftF(eventually(serviceDiscovery.cacheInteractions.get.map(data =>
-        assert(data.headOption.map(_.name).contains(Interactions.ReserveItemsInteraction.name)))))
 
       server <- StateNodeService.resource(baker, getResourceDirectoryPathSafe, InetSocketAddress.createUnresolved("127.0.0.1", 0), serviceDiscovery)
       client <- BakerClient.resource(server.baseUri, executionContext)
 
     } yield Context(
       client,
+      serviceDiscovery,
       remoteComponents,
       remoteInteraction,
       eventListener,
