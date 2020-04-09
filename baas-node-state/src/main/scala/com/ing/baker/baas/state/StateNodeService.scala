@@ -3,7 +3,7 @@ package com.ing.baker.baas.state
 import java.net.InetSocketAddress
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import cats.syntax.apply._
+import cats.implicits._
 import com.ing.baker.baas.protocol.BaaSProto._
 import com.ing.baker.baas.protocol.BaaSProtocol
 import com.ing.baker.baas.protocol.BakeryHttp.ProtoEntityEncoders._
@@ -19,23 +19,23 @@ import scala.concurrent.Future
 
 object StateNodeService {
 
-  def resource(baker: Baker, recipeDirectory: String, hostname: InetSocketAddress)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
+  def resource(baker: Baker, recipeDirectory: String, hostname: InetSocketAddress, serviceDiscovery: ServiceDiscovery)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
     for {
       binding <- BlazeServerBuilder[IO]
         .bindSocketAddress(hostname)
-        .withHttpApp(new StateNodeService(baker, recipeDirectory).build)
+        .withHttpApp(new StateNodeService(baker, recipeDirectory, serviceDiscovery).build)
         .resource
     } yield binding
   }
 }
 
-final class StateNodeService private(baker: Baker, recipeDirectory: String)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
+final class StateNodeService private(baker: Baker, recipeDirectory: String, serviceDiscovery: ServiceDiscovery)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
 
   def loadRecipeIfNotFound[A](f: IO[A]): IO[A] =
     RecipeLoader.loadRecipesIfRecipeNotFound(recipeDirectory, baker)(f)
 
   def build: HttpApp[IO] =
-    api.orNotFound
+    (api <+> management).orNotFound
 
   def completeWithBakerFailures[A, R](result: IO[Future[A]])(f: A => R)(implicit decoder: EntityEncoder[IO, R]): IO[Response[IO]] =
     loadRecipeIfNotFound(IO.fromFuture(result)).attempt.flatMap {
@@ -43,6 +43,20 @@ final class StateNodeService private(baker: Baker, recipeDirectory: String)(impl
       case Left(e) => IO.raiseError(new IllegalStateException("No other exception but BakerExceptions should be thrown here.", e))
       case Right(a) => Ok(f(a))
     }
+
+  def management: HttpRoutes[IO] = Router("/management" -> HttpRoutes.of[IO] {
+    case GET -> Root / "interaction" =>
+      serviceDiscovery.cacheInteractions.get.flatMap(interactions =>
+        Ok(interactions.map(_.name).mkString(", ")))
+
+    case GET -> Root / "recipe-instance" / recipeInstanceId / "events" =>
+      IO.fromFuture(IO(baker.getEvents(recipeInstanceId))).flatMap(events =>
+        Ok(events.map(_.name).mkString(", ")))
+
+    case GET -> Root / "recipe-instance" / recipeInstanceId / "ingredients" =>
+      IO.fromFuture(IO(baker.getIngredients(recipeInstanceId))).flatMap(ingredients =>
+        Ok(ingredients.keys.mkString(", ")))
+  })
 
   def api: HttpRoutes[IO] = Router("/api/v3" -> HttpRoutes.of[IO] {
 
