@@ -25,6 +25,7 @@ import scala.util.{Failure, Success, Try}
 object BakerClient {
 
   /** Uses the global execution context, which is limited to the amount of available cores in the machine. */
+  //TODO rewrite this to a non blocking HTTP client that is usable in Java
   def blocking(hostname: String): BakerClient = {
     implicit val ec = ExecutionContext.Implicits.global
     implicit val contextShift = IO.contextShift(ec)
