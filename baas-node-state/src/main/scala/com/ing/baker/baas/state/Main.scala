@@ -57,7 +57,7 @@ object Main extends IOApp {
           callback(Right(()))
         }
       })
-      _ <- StateNodeService.resource(baker, recipeDirectory, hostname)
+      _ <- StateNodeService.resource(baker, recipeDirectory, hostname, serviceDiscovery)
     } yield ()
 
     mainResource.use(_ => IO.never).as(ExitCode.Success)

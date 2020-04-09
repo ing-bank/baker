@@ -66,7 +66,8 @@ object ResourceOperations extends LazyLogging {
 
     val create = for {
       killSwitch <- IO {
-        k8s.watchAllContinuously[O]()
+        //TODO chose a more reasonable numbre for the bufSize
+        k8s.watchAllContinuously[O](bufSize = Int.MaxValue)
           .map(Some(_))
           .recover { case e =>
             akkaLogger.error("Serialization or CRD consistency issue:" + e.getMessage)
