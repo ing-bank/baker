@@ -8,6 +8,7 @@ import com.ing.baker.runtime.serialization.ProtoMap
 import com.ing.baker.types.Value
 import scalapb.GeneratedMessageCompanion
 
+import scala.collection.compat._
 import scala.util.Try
 
 class SensoryEventResultMapping(implicit valueProto: ProtoMap[Value, protobuf.Value]) extends ProtoMap[SensoryEventResult, protobuf.SensoryEventResult] {
@@ -19,7 +20,7 @@ class SensoryEventResultMapping(implicit valueProto: ProtoMap[Value, protobuf.Va
     protobuf.SensoryEventResult(
       Some(SensoryEventStatusMappingHelper.toProto(a.sensoryEventStatus)),
       a.eventNames,
-      a.ingredients.mapValues(ctxToProto(_))
+      a.ingredients.view.mapValues(ctxToProto(_)).toMap
     )
 
   override def fromProto(message: protobuf.SensoryEventResult): Try[SensoryEventResult] =

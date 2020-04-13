@@ -12,7 +12,8 @@ import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.Value
 import javax.annotation.Nonnull
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
+import scala.collection.compat._
 import scala.compat.java8.FutureConverters
 import scala.concurrent.Future
 
@@ -220,7 +221,7 @@ class Baker private[baker](private val baker: scaladsl.Baker) extends common.Bak
     * @return A map with all recipes from recipeId -> JRecipeInformation
     */
   def getAllRecipes: CompletableFuture[java.util.Map[String, RecipeInformation]] =
-    FutureConverters.toJava(baker.getAllRecipes).toCompletableFuture.thenApply(_.mapValues(_.asJava).asJava)
+    FutureConverters.toJava(baker.getAllRecipes).toCompletableFuture.thenApply(_.view.mapValues(_.asJava).toMap.asJava)
 
   /**
     * Returns an index of all processes.

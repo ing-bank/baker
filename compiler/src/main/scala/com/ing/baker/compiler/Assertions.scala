@@ -14,12 +14,12 @@ object Assertions {
   }
 
   private def assertNonEmptyRecipe(recipe: Recipe): Seq[String] = {
-    val errors = mutable.MutableList.empty[String]
+    val errors = mutable.ArrayDeque.empty[String]
     if (recipe.sensoryEvents.isEmpty)
       errors += "No sensory events found."
     if (recipe.interactions.size == 0)
       errors += "No interactions found."
-    errors
+    errors.toSeq
   }
 
   def preCompileAssertions(recipe: Recipe): Seq[String] = {

@@ -42,12 +42,12 @@ package object javadsl {
         createIngredient(name,
           parseType(
             method.parameterTypeForName(name).get,
-            s"Unsupported type for ingredient '$name' on interaction '${interactionClass.getName}'")))
+            s"Unsupported type for ingredient '$name' on interaction '${interactionClass.getName}'"))).toIndexedSeq
 
     val output: Seq[common.Event] = {
 
       if (method.isAnnotationPresent(classOf[annotations.FiresEvent])) {
-        val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[annotations.FiresEvent]).oneOf()
+        val outputEventClasses: Seq[Class[_]] = method.getAnnotation(classOf[annotations.FiresEvent]).oneOf().toIndexedSeq
 
         outputEventClasses.foreach {
           eventClass =>

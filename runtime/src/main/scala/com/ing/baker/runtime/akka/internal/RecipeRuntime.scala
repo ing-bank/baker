@@ -136,8 +136,8 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
     val edge = petriNet.findPTEdge(p, t).map(_.asInstanceOf[Edge]).get
 
     marking.get(p) match {
-      case None ⇒ MultiSet.empty
-      case Some(tokens) ⇒ tokens.filter { case (e, _) ⇒ edge.isAllowed(e) }
+      case None => MultiSet.empty
+      case Some(tokens) => tokens.filter { case (e, _) => edge.isAllowed(e) }
     }
   }
 

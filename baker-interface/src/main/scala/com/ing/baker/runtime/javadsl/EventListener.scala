@@ -13,5 +13,5 @@ trait EventListener {
     *
     * @param event The event.
     */
-  def processEvent(recipeInstanceId: String, event: EventInstance)
+  def processEvent(recipeInstanceId: String, event: EventInstance): Unit
 }

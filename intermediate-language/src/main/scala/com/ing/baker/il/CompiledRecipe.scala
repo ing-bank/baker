@@ -3,7 +3,7 @@ package com.ing.baker.il
 import com.ing.baker.il.petrinet.{EventTransition, InteractionTransition, Place, RecipePetriNet}
 import com.ing.baker.petrinet.api.Marking
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.duration.FiniteDuration
 
 object CompiledRecipe {
@@ -37,12 +37,7 @@ object CompiledRecipe {
         }
       }.toString
 
-      val recipeString = StringBuilder.newBuilder +
-        name +
-        petriNetId +
-        initMarkingId +
-        validationErrors.mkString +
-        eventReceivePeriod.toString + retentionPeriod
+      val recipeString = s"$name$petriNetId$initMarkingId${validationErrors.mkString}$eventReceivePeriod$retentionPeriod"
 
       // truncate to 64 bits = 16 hex chars
       zeroPaddedSHA256(recipeString).substring(0, 16)

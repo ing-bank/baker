@@ -5,7 +5,7 @@ import java.util
 
 import com.ing.baker.types._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object JavaModules {
 

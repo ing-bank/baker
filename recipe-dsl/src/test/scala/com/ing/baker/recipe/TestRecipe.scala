@@ -302,7 +302,7 @@ object TestRecipe {
               missingJavaOptional2: Optional[Integer],
               missingScalaOption: Option[String],
               missingScalaOption2: Option[Integer],
-              initialIngredient: String)
+              initialIngredient: String): Unit
   }
 
   def getRecipe(recipeName: String): Recipe =

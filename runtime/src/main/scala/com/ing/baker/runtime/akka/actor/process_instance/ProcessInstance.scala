@@ -102,7 +102,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
   }
 
   def uninitialized: Receive = {
-    case Initialize(initialMarking, state) ⇒
+    case Initialize(initialMarking, state) =>
 
       val uninitialized = Instance.uninitialized[P, T, S](petriNet)
       val event = InitializedEvent(initialMarking, state)
@@ -112,7 +112,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
         eventSource.apply(uninitialized)
           .andThen(step)
           .andThen {
-            case (updatedInstance, _) ⇒
+            case (updatedInstance, _) =>
 
               // notifies the sender that initialization was successful
               sender() ! Initialized(initialMarking, state)
@@ -122,10 +122,10 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
           }
       }
 
-    case Stop(_) ⇒
+    case Stop(_) =>
       context.stop(context.self)
 
-    case _: Command ⇒
+    case _: Command =>
       sender() ! Uninitialized(recipeInstanceId)
       context.stop(context.self)
 
@@ -153,7 +153,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
   def running(instance: Instance[P, T, S],
               scheduledRetries: Map[Long, Cancellable]): Receive = {
 
-    case Stop(deleteHistory) ⇒
+    case Stop(deleteHistory) =>
       scheduledRetries.values.foreach(_.cancel())
       if (deleteHistory) {
         log.debug("Deleting process history")
@@ -162,11 +162,11 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       } else
         context.stop(context.self)
 
-    case IdleStop(n) if n == instance.sequenceNr && instance.activeJobs.isEmpty ⇒
+    case IdleStop(n) if n == instance.sequenceNr && instance.activeJobs.isEmpty =>
       log.idleStop(recipeInstanceId, settings.idleTTL.getOrElse(Duration.Zero))
       context.stop(context.self)
 
-    case GetState ⇒
+    case GetState =>
       val instanceState: InstanceState = mapStateToProtocol(instance)
       instanceState.state match {
         case state: RecipeInstanceState =>
@@ -176,7 +176,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
       }
 
 
-    case event@TransitionFiredEvent(jobId, transitionId, correlationId, timeStarted, timeCompleted, consumed, produced, output) ⇒
+    case event@TransitionFiredEvent(jobId, transitionId, correlationId, timeStarted, timeCompleted, consumed, produced, output) =>
 
       val transition = instance.petriNet.transitions.getById(transitionId)
 
@@ -187,7 +187,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
         eventSource.apply(instance)
           .andThen(step)
           .andThen {
-            case (updatedInstance, newJobs) ⇒
+            case (updatedInstance, newJobs) =>
 
               // the sender is notified of the transition having fired
               sender() ! TransitionFired(jobId, transitionId, correlationId, consumed, produced, newJobs.map(_.id), output)
@@ -197,14 +197,14 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
           }
       )
 
-    case event@TransitionFailedEvent(jobId, transitionId, correlationId, timeStarted, timeFailed, consume, input, reason, strategy) ⇒
+    case event@TransitionFailedEvent(jobId, transitionId, correlationId, timeStarted, timeFailed, consume, input, reason, strategy) =>
 
       val transition = instance.petriNet.transitions.getById(transitionId)
 
       log.transitionFailed(recipeInstanceId, transition.asInstanceOf[Transition], jobId, timeStarted, timeFailed, reason)
 
       strategy match {
-        case RetryWithDelay(delay) ⇒
+        case RetryWithDelay(delay) =>
 
           log.scheduleRetry(recipeInstanceId, transition.asInstanceOf[Transition], delay)
 
@@ -213,7 +213,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
           // persist the failure event
           persistEvent(instance, event)(
             eventSource.apply(instance)
-              .andThen { updatedInstance ⇒
+              .andThen { updatedInstance =>
 
                 // a retry is scheduled on the scheduler of the actor system
                 val retry = system.scheduler.scheduleOnce(delay milliseconds) {
@@ -235,21 +235,21 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
           persistEvent(instance, transitionFiredEvent)(
             eventSource.apply(instance)
               .andThen(step)
-              .andThen { case (updatedInstance, newJobs) ⇒
+              .andThen { case (updatedInstance, newJobs) =>
                 sender() ! TransitionFired(jobId, transitionId, correlationId, consume, marshallMarking(produced), newJobs.map(_.id), out)
                 context become running(updatedInstance, scheduledRetries - jobId)
               })
 
-        case _ ⇒
+        case _ =>
           persistEvent(instance, event)(
             eventSource.apply(instance)
-              .andThen { updatedInstance ⇒
+              .andThen { updatedInstance =>
                 sender() ! TransitionFailed(jobId, transitionId, correlationId, consume, input, reason, mapExceptionStrategyToProtocol(strategy))
                 context become running(updatedInstance, scheduledRetries - jobId)
               })
       }
 
-    case FireTransition(transitionId, input, correlationIdOption) ⇒
+    case FireTransition(transitionId, input, correlationIdOption) =>
 
       /**
         * TODO
@@ -264,10 +264,10 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
           sender() ! FireSensoryEventRejection.AlreadyReceived(recipeInstanceId, correlationId)
         case _ =>
           runtime.createJob(transition, input, correlationIdOption).run(instance).value match {
-            case (updatedInstance, Right(job)) ⇒
+            case (updatedInstance, Right(job)) =>
               executeJob(job, sender())
               context become running(updatedInstance, scheduledRetries)
-            case (_, Left(reason)) ⇒
+            case (_, Left(reason)) =>
 
               log.fireTransitionRejected(recipeInstanceId, transition.asInstanceOf[Transition], reason)
 
@@ -275,7 +275,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
           }
       }
 
-    case Initialize(_, _) ⇒
+    case Initialize(_, _) =>
       sender() ! AlreadyInitialized(recipeInstanceId)
 
     case OverrideExceptionStrategy(jobId, protocol.ExceptionStrategy.RetryWithDelay(timeout)) =>
@@ -370,14 +370,14 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
   def step(instance: Instance[P, T, S]): (Instance[P, T, S], Set[Job[P, T, S]]) = {
 
     runtime.allEnabledJobs.run(instance).value match {
-      case (updatedInstance, jobs) ⇒
+      case (updatedInstance, jobs) =>
 
         if (jobs.isEmpty && updatedInstance.activeJobs.isEmpty)
-          settings.idleTTL.foreach { ttl ⇒
+          settings.idleTTL.foreach { ttl =>
             system.scheduler.scheduleOnce(ttl, context.self, IdleStop(updatedInstance.sequenceNr))
           }
 
-        jobs.foreach(job ⇒ executeJob(job, sender()))
+        jobs.foreach(job => executeJob(job, sender()))
         (updatedInstance, jobs)
     }
   }
@@ -402,7 +402,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
 
   def scheduleFailedJobsForRetry(instance: Instance[P, T, S]): Map[Long, Cancellable] = {
     instance.jobs.values.foldLeft(Map.empty[Long, Cancellable]) {
-      case (map, j@Job(_, _, _, _, _, _, Some(internal.ExceptionState(failureTime, _, _, RetryWithDelay(delay))))) ⇒
+      case (map, j@Job(_, _, _, _, _, _, Some(internal.ExceptionState(failureTime, _, _, RetryWithDelay(delay))))) =>
         val newDelay = failureTime + delay - System.currentTimeMillis()
         if (newDelay < 0) {
           executeJob(j, sender())
@@ -414,7 +414,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
           }
           map + (j.id -> cancellable)
         }
-      case (acc, _) ⇒ acc
+      case (acc, _) => acc
     }
   }
 

@@ -22,8 +22,8 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
 
 val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   organization := "com.ing.baker",
-  scalaVersion := "2.12.11",
-  crossScalaVersions := Seq("2.12.11"),
+  scalaVersion := crossScalaVersions.value.head,
+  crossScalaVersions := Seq("2.13.1", "2.12.11"),
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
   javacOptions := Seq("-source", jvmV, "-target", jvmV),
@@ -49,7 +49,10 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
       "Build-Time" -> new java.util.Date().toString,
       "Build-Commit" -> git.gitHeadCommit.value.getOrElse("No Git Revision Found")
     ),
-  resolvers += Resolver.bintrayRepo("cakesolutions", "maven")
+  resolvers ++= Seq(
+    Resolver.bintrayRepo("cakesolutions", "maven"),
+    "jitpack" at "https://jitpack.io",
+  )
 )
 
 val dependencyOverrideSettings = Seq(
@@ -77,6 +80,7 @@ lazy val bakertypes = project.in(file("bakertypes"))
     libraryDependencies ++= compileDeps(
       slf4jApi,
       objenisis,
+      scalaCollectionCompat,
       scalapbRuntime,
       jodaTime,
       typeSafeConfig,
@@ -545,3 +549,8 @@ lazy val `sbt-baas-docker-generate` = project.in(file("sbt-baas-docker-generate"
   .enablePlugins(SbtPlugin)
   .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
   .dependsOn(`baas-node-interaction`)
+
+
+scalafixDependencies in ThisBuild += "org.scala-lang.modules" %% "scala-collection-migrations" % "2.1.4"
+addCompilerPlugin(scalafixSemanticdb)
+scalacOptions ++= List("-Yrangepos", "-P:semanticdb:synthetics:on")

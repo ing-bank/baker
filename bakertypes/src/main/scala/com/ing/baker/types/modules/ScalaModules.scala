@@ -4,6 +4,7 @@ import java.lang.reflect
 import java.lang.reflect.ParameterizedType
 
 import com.ing.baker.types._
+import scala.collection.compat._
 
 object ScalaModules {
 
@@ -62,7 +63,7 @@ object ScalaModules {
 
         val valueType = getTypeParameter(javaType, 1)
 
-        entries.mapValues { value => context.toJava(value, valueType) }
+        entries.view.mapValues { value => context.toJava(value, valueType) }
     }
 
     def fromJava(context: TypeAdapter, obj: Any): Value = obj match {

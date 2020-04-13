@@ -9,8 +9,9 @@ import com.ing.baker.runtime.common.LanguageDataStructures.JavaApi
 import com.ing.baker.runtime.{common, scaladsl}
 import com.ing.baker.types.{Converters, Type}
 
-import scala.collection.JavaConverters._
+import scala.collection.compat._
 import scala.compat.java8.FutureConverters
+import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 import scala.util.Try
 
@@ -31,14 +32,14 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
   def asScala: scaladsl.InteractionInstance =
     scaladsl.InteractionInstance(
       name,
-      input.asScala,
+      input.asScala.toSeq,
       input => FutureConverters.toScala(execute(input.map(_.asJava).asJava)
         .thenApply[Option[scaladsl.EventInstance]] {
         optional =>
           if (optional.isPresent) Some(optional.get().asScala)
           else None
       }),
-      if (output.isPresent) Some(output.get.asScala.toMap.mapValues(_.asScala.toMap)) else None
+      if (output.isPresent) Some(output.get.asScala.view.mapValues(_.asScala.toMap).toMap) else None
     )
 }
 
@@ -88,7 +89,7 @@ object InteractionInstance {
         // Translate the Value objects to the expected runtimeInput types
         val inputArgs: Seq[AnyRef] = runtimeInput.asScala.zip(method.getGenericParameterTypes).map {
           case (value, targetType) => value.value.as(targetType).asInstanceOf[AnyRef]
-        }
+        }.toSeq
         val output = method.invoke(implementation, inputArgs: _*)
         val futureClass: ClassTag[CompletableFuture[Any]] = implicitly[ClassTag[CompletableFuture[Any]]]
         Option(output) match {

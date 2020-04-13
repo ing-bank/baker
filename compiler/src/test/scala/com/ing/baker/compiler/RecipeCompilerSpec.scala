@@ -188,7 +188,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           val invalidInteraction = Interaction(name, Seq.empty, Seq())
           val recipe = Recipe("InteractionNameTest").withInteractions(invalidInteraction).withSensoryEvent(initialEvent)
 
-          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Interaction with a null or empty name found"
+          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)).getMessage() shouldBe "Interaction with a null or empty name found"
         }
       }
 
@@ -198,7 +198,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           val invalidEvent = Event(name)
           val recipe = Recipe("EventNameTest").withSensoryEvent(invalidEvent).withInteraction(interactionOne)
 
-          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Event with a null or empty name found"
+          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)).getMessage() shouldBe "Event with a null or empty name found"
         }
       }
 
@@ -207,7 +207,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
           val invalidIngredient = Ingredient[String](name)
           val recipe = Recipe("IngredientNameTest").withSensoryEvent(Event("someEvent", invalidIngredient)).withInteraction(interactionOne)
 
-          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Ingredient with a null or empty name found"
+          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)).getMessage() shouldBe "Ingredient with a null or empty name found"
         }
       }
 
@@ -215,7 +215,7 @@ class RecipeCompilerSpec extends AnyWordSpecLike with Matchers {
         List("", null) foreach { name =>
           val recipe = Recipe(name)
 
-          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)) getMessage() shouldBe "Recipe with a null or empty name found"
+          intercept[IllegalArgumentException](RecipeCompiler.compileRecipe(recipe)).getMessage() shouldBe "Recipe with a null or empty name found"
         }
       }
     }

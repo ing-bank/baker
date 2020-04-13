@@ -10,7 +10,8 @@ import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
 import com.ing.baker.runtime.{common, javadsl}
 import com.ing.baker.types.{Converters, Type}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
+import scala.collection.compat._
 import scala.compat.java8.FutureConverters
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
@@ -46,12 +47,12 @@ case class InteractionInstance(
         self.input.asJava
       override val output: Optional[util.Map[String, util.Map[String, Type]]] =
         self.output match {
-          case Some(out) => Optional.of(out.mapValues(_.asJava).asJava)
+          case Some(out) => Optional.of(out.view.mapValues(_.asJava).toMap.asJava)
           case None => Optional.empty[util.Map[String, util.Map[String, Type]]]()
         }
       override def execute(input: util.List[javadsl.IngredientInstance]): CompletableFuture[Optional[javadsl.EventInstance]] =
         FutureConverters
-          .toJava(self.run(input.asScala.map(_.asScala)))
+          .toJava(self.run(input.asScala.map(_.asScala).toSeq))
           .toCompletableFuture
           .thenApply(_.fold(Optional.empty[javadsl.EventInstance]())(e => Optional.of(e.asJava)))
     }

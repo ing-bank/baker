@@ -14,7 +14,7 @@ class PojoModule extends TypeModule {
     val pojoClass = getBaseClass(javaType)
     val fields = pojoClass.getDeclaredFields.filterNot(f => f.isSynthetic || Modifier.isStatic(f.getModifiers))
     val ingredients = fields.map(f => RecordField(f.getName, context.readType(f.getGenericType)))
-    RecordType(ingredients)
+    RecordType(ingredients.toIndexedSeq)
   }
 
   override def toJava(context: TypeAdapter, value: Value, javaType: java.lang.reflect.Type): Any = value match {

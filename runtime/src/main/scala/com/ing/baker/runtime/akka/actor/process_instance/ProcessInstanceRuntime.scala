@@ -29,7 +29,7 @@ trait ProcessInstanceRuntime[P, T, S, E] extends LazyLogging {
     *
     * By default the identity function is used.
     */
-  val eventSource: T ⇒ S ⇒ E ⇒ S = _ ⇒ s ⇒ _ ⇒ s
+  val eventSource: T => S => E => S = _ => s => _ => s
 
   /**
    * This function is called when a transition throws an exception.
@@ -70,7 +70,7 @@ trait ProcessInstanceRuntime[P, T, S, E] extends LazyLogging {
    * However, since that is not used this can be refactored to a simple function: Job -> TransitionEvent
    *
    */
-  def jobExecutor(topology: PetriNet[P, T])(implicit transitionIdentifier: Identifiable[T], placeIdentifier: Identifiable[P]): Job[P, T, S] ⇒ IO[TransitionEvent] = {
+  def jobExecutor(topology: PetriNet[P, T])(implicit transitionIdentifier: Identifiable[T], placeIdentifier: Identifiable[P]): Job[P, T, S] => IO[TransitionEvent] = {
 
     def exceptionStackTrace(e: Throwable): String = {
       val sw = new StringWriter()
@@ -78,7 +78,7 @@ trait ProcessInstanceRuntime[P, T, S, E] extends LazyLogging {
       sw.toString
     }
 
-    job ⇒ {
+    job => {
 
       val startTime = System.currentTimeMillis()
       val transition = job.transition
@@ -89,11 +89,11 @@ trait ProcessInstanceRuntime[P, T, S, E] extends LazyLogging {
         // TODO I don't believe the last statement is true
         transitionTask(topology, transition)(job.consume, job.processState, job.input)
       }.map {
-        case (producedMarking, out) ⇒
+        case (producedMarking, out) =>
           TransitionFiredEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, producedMarking.marshall, out)
       }.handleException {
         // In case an exception was thrown by the transition, we compute the failure strategy and return a TransitionFailedEvent
-        case e: Throwable ⇒
+        case e: Throwable =>
           val failureCount = job.failureCount + 1
           val failureStrategy = handleException(job)(e, failureCount, startTime, topology.outMarking(transition))
           TransitionFailedEvent(job.id, transition.getId, job.correlationId, startTime, System.currentTimeMillis(), consumed, job.input, exceptionStackTrace(e), failureStrategy)
@@ -107,20 +107,20 @@ trait ProcessInstanceRuntime[P, T, S, E] extends LazyLogging {
   }
 
   def enabledParameters(petriNet: PetriNet[P, T])(m: Marking[P]): Map[T, Iterable[Marking[P]]] =
-    enabledTransitions(petriNet)(m).view.map(t ⇒ t -> consumableMarkings(petriNet)(m, t)).toMap
+    enabledTransitions(petriNet)(m).view.map(t => t -> consumableMarkings(petriNet)(m, t)).toMap
 
   def consumableMarkings(petriNet: PetriNet[P, T])(marking: Marking[P], t: T): Iterable[Marking[P]] = {
     // TODO this is not the most efficient, should break early when consumable tokens < edge weight
     val consumable = petriNet.inMarking(t).map {
-      case (place, count) ⇒ (place, count, consumableTokens(petriNet)(marking, place, t))
+      case (place, count) => (place, count, consumableTokens(petriNet)(marking, place, t))
     }
 
     // check if any any places have an insufficient number of tokens
-    if (consumable.exists {case (_, count, tokens) ⇒ tokens.multisetSize < count})
+    if (consumable.exists {case (_, count, tokens) => tokens.multisetSize < count})
       Seq.empty
     else {
       val consume = consumable.map {
-        case (place, count, tokens) ⇒ place -> MultiSet.copyOff[Any](tokens.allElements.take(count))
+        case (place, count, tokens) => place -> MultiSet.copyOff[Any](tokens.allElements.take(count))
       }.toMarking
 
       // TODO lazily compute all permutations instead of only providing the first result
@@ -137,20 +137,20 @@ trait ProcessInstanceRuntime[P, T, S, E] extends LazyLogging {
    * Returns all enabled transitions for a marking.
    */
   def enabledTransitions(petriNet: PetriNet[P, T])(marking: Marking[P]): Iterable[T] =
-    petriNet.transitions.filter(t ⇒ consumableMarkings(petriNet)(marking, t).nonEmpty)
+    petriNet.transitions.filter(t => consumableMarkings(petriNet)(marking, t).nonEmpty)
 
   /**
    * Creates a job for a specific transition with input, computes the marking it should consume
    */
   def createJob(transition: T, input: Any, correlationId: Option[String] = None): State[Instance[P, T, S], Either[String, Job[P, T, S]]] =
-    State {instance ⇒
+    State {instance =>
       if (instance.isBlocked(transition))
         (instance, Left("Transition is blocked by a previous failure"))
       else
         enabledParameters(instance.petriNet)(instance.availableMarking).get(transition) match {
-          case None ⇒
+          case None =>
             (instance, Left(s"Not enough consumable tokens. This might have been caused because the event has already been fired up the the firing limit but the recipe requires more instances of the event, use withSensoryEventNoFiringLimit or increase the amount of firing limit on the recipe if such behaviour is desired"))
-          case Some(params) ⇒
+          case Some(params) =>
             val job = Job[P, T, S](instance.nextJobId(), correlationId, instance.state, transition, params.head, input)
             val updatedInstance = instance.copy[P, T, S](jobs = instance.jobs + (job.id -> job))
             (updatedInstance, Right(job))
@@ -160,11 +160,11 @@ trait ProcessInstanceRuntime[P, T, S, E] extends LazyLogging {
   /**
     * Finds the (optional) first transition that is enabled and can be fired automatically
     */
-  def firstEnabledJob: State[Instance[P, T, S], Option[Job[P, T, S]]] = State { instance ⇒
+  def firstEnabledJob: State[Instance[P, T, S], Option[Job[P, T, S]]] = State { instance =>
     enabledParameters(instance.petriNet)(instance.availableMarking).find {
-      case (t, _) ⇒ !instance.isBlocked(t) && canBeFiredAutomatically(instance, t)
+      case (t, _) => !instance.isBlocked(t) && canBeFiredAutomatically(instance, t)
     }.map {
-      case (t, markings) ⇒
+      case (t, markings) =>
         val job = Job[P, T, S](instance.nextJobId(), None, instance.state, t, markings.head, null)
         (instance.copy[P, T, S](jobs = instance.jobs + (job.id -> job)), Some(job))
     }.getOrElse((instance, None))
@@ -175,7 +175,7 @@ trait ProcessInstanceRuntime[P, T, S, E] extends LazyLogging {
    */
   def allEnabledJobs: State[Instance[P, T, S], Set[Job[P, T, S]]] =
     firstEnabledJob.flatMap {
-      case None ⇒ State.pure(Set.empty)
-      case Some(job) ⇒ allEnabledJobs.map(_ + job)
+      case None => State.pure(Set.empty)
+      case Some(job) => allEnabledJobs.map(_ + job)
     }
 }

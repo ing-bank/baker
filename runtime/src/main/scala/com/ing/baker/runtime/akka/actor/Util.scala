@@ -15,6 +15,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent._
 import scala.concurrent.duration.{FiniteDuration, _}
 import scala.util.{Failure, Success}
+import scala.collection.compat._
 
 object Util {
 
@@ -60,7 +61,7 @@ object Util {
     Future.firstCompletedOf(Seq(future, timeoutFuture))
   }
 
-  def collectFuturesWithin[T, M[X] <: scala.TraversableOnce[X]](futures: M[Future[T]], timeout: FiniteDuration, scheduler: akka.actor.Scheduler)(implicit ec: ExecutionContext): Seq[T] = {
+  def collectFuturesWithin[T, M[X] <: IterableOnce[X]](futures: M[Future[T]], timeout: FiniteDuration, scheduler: akka.actor.Scheduler)(implicit ec: ExecutionContext): Seq[T] = {
 
     val size = futures.size
     val queue = new LinkedBlockingQueue[T](size)

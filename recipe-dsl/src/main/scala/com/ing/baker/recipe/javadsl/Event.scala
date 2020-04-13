@@ -7,5 +7,5 @@ case class Event(val eventClass: Class[_], override val maxFiringLimit: Option[I
   override val providedIngredients: Seq[common.Ingredient] =
     eventClass.getDeclaredFields
       .filter(field => !field.isSynthetic)
-      .map(f => createIngredient(f.getName, parseType(f.getGenericType, s"Unsupported type for ingredient '${f.getName}' on event '${eventClass.getSimpleName}'")))
+      .map(f => createIngredient(f.getName, parseType(f.getGenericType, s"Unsupported type for ingredient '${f.getName}' on event '${eventClass.getSimpleName}'"))).toIndexedSeq
 }

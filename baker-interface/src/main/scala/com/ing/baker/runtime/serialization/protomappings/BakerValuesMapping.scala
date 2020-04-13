@@ -9,6 +9,7 @@ import com.ing.baker.types
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{LocalDate, LocalDateTime, LocalTime}
 
+import scala.collection.compat._
 import scala.util.{Failure, Success, Try}
 
 class BakerValuesMapping extends ProtoMap[types.Value, protobuf.Value] {
@@ -66,7 +67,7 @@ class BakerValuesMapping extends ProtoMap[types.Value, protobuf.Value] {
       throw new IllegalStateException(s"Unknown primitive value of type: ${value.getClass}")
 
     case types.RecordValue(entries) =>
-      RecordValue(protobuf.Record(entries.mapValues(toProto)))
+      RecordValue(protobuf.Record(entries.view.mapValues(toProto).toMap))
 
     case types.ListValue(entries) =>
       ListValue(protobuf.List(entries.map(toProto)))

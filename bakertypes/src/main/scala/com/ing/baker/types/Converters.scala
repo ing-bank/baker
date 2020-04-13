@@ -2,7 +2,7 @@ package com.ing.baker.types
 
 import com.typesafe.config.{ ConfigFactory, ConfigValue }
 import com.typesafe.scalalogging.LazyLogging
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe.TypeTag
 import scala.util.Try

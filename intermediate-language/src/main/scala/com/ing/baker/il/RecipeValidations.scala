@@ -5,12 +5,13 @@ import com.ing.baker.petrinet.api._
 import com.ing.baker.types
 
 import scala.collection.mutable
+import scala.collection.compat._
 
 object RecipeValidations {
 
   def validateInteraction(compiledRecipe: CompiledRecipe)(interactionTransition: InteractionTransition): Seq[String] = {
 
-    val validationErrors: mutable.MutableList[String] = mutable.MutableList.empty[String]
+    val validationErrors: mutable.ArrayDeque[String] = mutable.ArrayDeque.empty[String]
 
     if (compiledRecipe.petriNet.inMarking(interactionTransition).isEmpty)
       validationErrors += s"Interaction $interactionTransition does not have any requirements (ingredients or preconditions)! This will result in an infinite execution loop."
@@ -33,7 +34,7 @@ object RecipeValidations {
         }
     }
 
-    validationErrors
+    validationErrors.toSeq
   }
 
   def validateInteractions(compiledRecipe: CompiledRecipe): Seq[String] = {
@@ -89,7 +90,7 @@ object RecipeValidations {
                              validationSettings: ValidationSettings): CompiledRecipe = {
 
     // TODO don't use a mutable list but instead a more functional solutions such as folding or a writer monad
-    val postCompileValidationErrors = mutable.MutableList.empty[String]
+    val postCompileValidationErrors = mutable.ArrayDeque.empty[String]
 
     postCompileValidationErrors ++= validateInteractionIngredients(compiledRecipe)
     postCompileValidationErrors ++= validateInteractions(compiledRecipe)

@@ -17,6 +17,7 @@ object Dependencies {
       .exclude("com.typesafe.akka", "akka-persistence-query")
       .exclude("com.typesafe.akka", "akka-stream")
 
+  val scalaCollectionCompat =     "org.scala-lang.modules"     %% "scala-collection-compat"            % "2.1.4"
   val scalaJava8Compat =          "org.scala-lang.modules"     %% "scala-java8-compat"                 % "0.9.1"
   val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.1.1"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
@@ -41,7 +42,8 @@ object Dependencies {
   val akkaDiscoveryKube =         "com.lightbend.akka.discovery"  %% "akka-discovery-kubernetes-api"     % "1.0.6"
   val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.6"
 
-  val scalaKafkaClient =          "net.cakesolutions"          %% "scala-kafka-client"                 % "2.3.1"
+  // val scalaKafkaClient =          "net.cakesolutions"          %% "scala-kafka-client"                 % "2.3.1"
+  val scalaKafkaClient =          "com.github.nightscape"   %% "scala-kafka-client"                 % "7e3468c5bd"
   val fs2kafka =                  "com.github.fd4s"            %% "fs2-kafka"                          % "1.0.0"
   val levelDB   =                 "org.iq80.leveldb"           %  "leveldb"                            % "0.12"
 

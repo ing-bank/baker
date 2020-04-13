@@ -18,5 +18,5 @@ class EventMomentMapping extends ProtoMap[EventMoment, protobuf.EventMoment] {
   override def fromProto(message: protobuf.EventMoment): Try[EventMoment] =
     for {
       name <- versioned(message.name, "name")
-    } yield EventMoment(name, message.occurredOn.getOrElse(0l))
+    } yield EventMoment(name, message.occurredOn.getOrElse(0L))
 }

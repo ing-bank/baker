@@ -1,5 +1,7 @@
 package com.ing.baker.petrinet.api
 
+import scala.collection.compat._
+
 trait MarkingOps {
 
   /**
@@ -8,7 +10,7 @@ trait MarkingOps {
   implicit class MarkingFunctions[P](marking: Marking[P]) {
 
     // Note: extra .map(identity) is a needed to workaround the scala Map serialization bug: https://issues.scala-lang.org/browse/SI-7005
-    def multiplicities: MultiSet[P] = marking.mapValues(_.multisetSize).map(identity)
+    def multiplicities: MultiSet[P] = marking.view.mapValues(_.multisetSize).map(identity).toMap
 
     def add(p: P, value: Any, count: Int = 1): Marking[P] = {
       val newTokens = marking.getOrElse(p, MultiSet.empty).multisetIncrement(value, count)
@@ -17,11 +19,11 @@ trait MarkingOps {
 
     def |-|(other: Marking[P]): Marking[P] = other.keySet.foldLeft(marking) {
 
-      case (result, place) ⇒
+      case (result, place) =>
 
         marking.get(place) match {
-          case None ⇒ result
-          case Some(tokens) ⇒
+          case None => result
+          case Some(tokens) =>
             val newTokens = tokens.multisetDifference(other(place))
             if (newTokens.isEmpty)
               result - place
@@ -31,10 +33,10 @@ trait MarkingOps {
     }
 
     def |+|(other: Marking[P]): Marking[P] = other.keySet.foldLeft(marking) {
-      case (result, place) ⇒
+      case (result, place) =>
         val newTokens = marking.get(place) match {
-          case None         ⇒ other(place)
-          case Some(tokens) ⇒ tokens.multisetSum(other(place))
+          case None         => other(place)
+          case Some(tokens) => tokens.multisetSum(other(place))
         }
 
         result + (place -> newTokens)
@@ -54,6 +56,6 @@ trait MarkingOps {
     * @return Marking (state of the petrinet) with 'null' token values
     */
   implicit class MultiSetToMarking[P](mset: MultiSet[P]) {
-    def toMarking: Marking[P] = mset.map { case (p, n) ⇒ p -> Map[Any, Int](Tuple2(null, n)) }.toMarking
+    def toMarking: Marking[P] = mset.map { case (p, n) => p -> Map[Any, Int](Tuple2(null, n)) }.toMarking
   }
 }

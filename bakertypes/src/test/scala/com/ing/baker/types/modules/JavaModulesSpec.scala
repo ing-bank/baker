@@ -11,7 +11,7 @@ import com.ing.baker.types._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 case class PersonCaseClass(name: String, age: Int)
 

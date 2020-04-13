@@ -15,7 +15,7 @@ import scala.language.implicitConversions
   * Hooks up MultiNodeSpec with ScalaTest
   */
 trait STMultiNodeSpec extends MultiNodeSpecCallbacks
-  with AnyWordSpecLike with Matchers with BeforeAndAfterAll { self: MultiNodeSpec ⇒
+  with AnyWordSpecLike with Matchers with BeforeAndAfterAll { self: MultiNodeSpec =>
 
   override def beforeAll() = multiNodeSpecBeforeAll()
 

@@ -15,6 +15,7 @@ import scalax.collection.GraphEdge
 import scalax.collection.edge.WLDiEdge
 import scalax.collection.immutable.Graph
 
+import scala.collection.compat._
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success, Try}
 
@@ -45,12 +46,12 @@ class CompiledRecipeMapping extends ProtoMap[il.CompiledRecipe, protobuf.Compile
       graph <- fromProtoGraph(graphMsg)
       petriNet: RecipePetriNet = new com.ing.baker.petrinet.api.PetriNet(graph)
       initialMarking <- Try(message.initialMarking.foldLeft(Marking.empty[il.petrinet.Place]) {
-        case (accumulated, protobuf.ProducedToken(Some(placeId), Some(_), Some(count), _)) ⇒ // Option[SerializedData] is always None, and we don't use it here.
+        case (accumulated, protobuf.ProducedToken(Some(placeId), Some(_), Some(count), _)) => // Option[SerializedData] is always None, and we don't use it here.
           val place = petriNet.places.getById(placeId, "place in petrinet")
           val value = null // Values are not serialized (not interested in) in the serialized recipe
                            // Only the ProcessInstanceSerialization serializer uses this field
           accumulated.add(place, value, count)
-        case _ ⇒ throw new IllegalStateException("Missing data in persisted ProducedToken")
+        case _ => throw new IllegalStateException("Missing data in persisted ProducedToken")
       })
     } yield message.recipeId.map { recipeId =>
       il.CompiledRecipe(name, recipeId, petriNet, initialMarking, message.validationErrors, eventReceivePeriod, retentionPeriod)
@@ -94,10 +95,10 @@ class CompiledRecipeMapping extends ProtoMap[il.CompiledRecipe, protobuf.Compile
             requiredIngredients = t.requiredIngredients.map(ctxToProto(_)),
             interactionName = Option(t.interactionName),
             originalInteractionName = Option(t.originalInteractionName),
-            predefinedParameters = t.predefinedParameters.mapValues(ctxToProto(_)),
+            predefinedParameters = t.predefinedParameters.view.mapValues(ctxToProto(_)).toMap,
             maximumInteractionCount = t.maximumInteractionCount,
             failureStrategy = Option(ctxToProto(t.failureStrategy)),
-            eventOutputTransformers = t.eventOutputTransformers.mapValues(ctxToProto(_))
+            eventOutputTransformers = t.eventOutputTransformers.view.mapValues(ctxToProto(_)).toMap
           )
 
           protobuf.Node(protobuf.Node.OneofNode.InteractionTransition(pt))
@@ -121,8 +122,8 @@ class CompiledRecipeMapping extends ProtoMap[il.CompiledRecipe, protobuf.Compile
 
   private def protoMarkings(recipe: il.CompiledRecipe): Seq[protobuf.ProducedToken] =
     recipe.initialMarking.toSeq.flatMap {
-      case (place, tokens) ⇒ tokens.toSeq.map {
-        case (value, count) ⇒ protobuf.ProducedToken(
+      case (place, tokens) => tokens.toSeq.map {
+        case (value, count) => protobuf.ProducedToken(
           placeId = Option(place.id),
           tokenId = Option(TokenIdentifier(value)),
           count = Option(count),

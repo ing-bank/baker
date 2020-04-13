@@ -2,7 +2,7 @@ package com.ing.baker.il
 
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scalax.collection.io.dot.implicits._
 import scalax.collection.io.dot.{ DotAttr, DotAttrStmt, Elem }
 

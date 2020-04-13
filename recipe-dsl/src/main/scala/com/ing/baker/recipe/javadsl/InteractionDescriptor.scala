@@ -4,7 +4,7 @@ import com.ing.baker.recipe.common
 import com.ing.baker.types.Converters
 
 import scala.annotation.varargs
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 case class InteractionDescriptor private(
                           override val originalName: String,

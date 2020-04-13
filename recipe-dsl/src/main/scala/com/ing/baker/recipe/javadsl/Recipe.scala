@@ -3,7 +3,7 @@ package com.ing.baker.recipe.javadsl
 import com.ing.baker.recipe.common
 
 import scala.annotation.varargs
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.duration
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
