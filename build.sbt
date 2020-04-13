@@ -66,7 +66,7 @@ lazy val noPublishSettings = Seq(
   publishArtifact := false
 )
 
-lazy val defaultModuleSettings = commonSettings ++ dependencyOverrideSettings ++ SonatypePublish.settings
+lazy val defaultModuleSettings = commonSettings ++ dependencyOverrideSettings ++ Publish.settings
 
 lazy val scalaPBSettings = Seq(PB.targets in Compile := Seq(scalapb.gen() -> (sourceManaged in Compile).value))
 
@@ -259,7 +259,7 @@ lazy val `baas-node-client` = project.in(file("baas-node-client"))
 
 lazy val `baas-node-state` = project.in(file("baas-node-state"))
   .enablePlugins(JavaAppPackaging)
-  .settings(commonSettings)
+  .settings(commonSettings ++ Publish.settings)
   .settings(
     moduleName := "baas-node-state",
     scalacOptions ++= Seq(
@@ -350,10 +350,10 @@ lazy val `bakery-controller` = project.in(file("bakery-controller"))
 
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
-  .settings(noPublishSettings)
   .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver,
-    `baas-node-client`, `baas-node-state`, `baas-node-interaction`, `sbt-baas-docker-generate`, `baas-protocol-interaction-scheduling`,
-    `baker-interface`)
+    `baas-node-client`, `baas-node-state`, `baas-node-interaction`, `baas-protocol-interaction-scheduling`, `baas-protocol-baker`,
+    `sbt-baas-docker-generate`,
+    `baker-interface`, `bakery-controller`)
 
 lazy val `baker-example` = project
   .in(file("examples/baker-example"))
@@ -530,6 +530,7 @@ lazy val `baas-smoke-tests` = project.in(file("baas-smoke-tests"))
 
 lazy val `sbt-baas-docker-generate` = project.in(file("sbt-baas-docker-generate"))
   .settings(defaultModuleSettings)
+  .settings(noPublishSettings) // docker plugin can't be published, at least not to azure feed
   .settings(
     // workaround to let plugin be used in the same project without publishing it
     sourceGenerators in Compile += Def.task {
