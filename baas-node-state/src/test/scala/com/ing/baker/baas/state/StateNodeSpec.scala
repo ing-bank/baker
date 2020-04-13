@@ -20,6 +20,7 @@ import com.ing.baker.runtime.scaladsl.{Baker, EventInstance, InteractionInstance
 import com.typesafe.config.ConfigFactory
 import org.mockserver.integration.ClientAndServer
 import org.scalatest.ConfigMap
+import org.scalatest.compatible.Assertion
 import org.scalatest.matchers.should.Matchers
 import skuber.api.client.KubernetesClient
 
@@ -53,20 +54,33 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
   def io[A](f: => Future[A]): IO[A] =
     IO.fromFuture(IO(f))
 
+  def awaitForInteractionDiscovery(context: Context): IO[Assertion] =
+    awaitForServiceDiscoveryState(context)(_.map(_.name) shouldBe List("ReserveItems"))
+
+  def awaitForEmptyServiceDiscovery(context: Context): IO[Assertion] =
+    awaitForServiceDiscoveryState(context)(_ shouldBe List.empty)
+
+  def awaitForServiceDiscoveryState(context: Context)(f: List[InteractionInstance] => Assertion): IO[Assertion] =
+    eventually(context.serviceDiscovery.cacheInteractions.get.map(f))
+
   describe("Service Discovery") {
 
     test("Simple interaction discovery") { context =>
-      eventually(for {
-        interactions <- context.serviceDiscovery.cacheInteractions.get
-      } yield interactions.map(_.name) shouldBe List("ReserveItems"))
+      for {
+        _ <- awaitForInteractionDiscovery(context)
+        _ <- context.kubeApiServer.deleteInteractionService
+        _ <- awaitForEmptyServiceDiscovery(context)
+        _ <- context.kubeApiServer.deployInteractionService
+        _ <- awaitForInteractionDiscovery(context)
+      } yield succeed
     }
   }
 
-  /*
   describe("Bakery State Node") {
 
     test("Recipe management") { context =>
       for {
+        _ <- awaitForInteractionDiscovery(context)
         recipeInformation <- io(context.client.getRecipe(recipeId))
         noSuchRecipeError <- io(context.client
           .getRecipe("non-existent")
@@ -83,6 +97,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.bake") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- awaitForInteractionDiscovery(context)
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         state <- io(context.client.getRecipeInstanceState(recipeInstanceId))
@@ -95,6 +110,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.bake (fail with ProcessAlreadyExistsException)") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- awaitForInteractionDiscovery(context)
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         e <- io(context.client
@@ -111,6 +127,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.bake (fail with NoSuchRecipeException)") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- awaitForInteractionDiscovery(context)
         e <- io(context.client
           .bake("non-existent", recipeInstanceId)
           .map(_ => None)
@@ -120,6 +137,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
 
     test("Baker.getRecipeInstanceState (fails with NoSuchProcessException)") { context =>
       for {
+        _ <- awaitForInteractionDiscovery(context)
         e <- io(context.client
           .getRecipeInstanceState("non-existent")
           .map(_ => None)
@@ -130,6 +148,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.fireEventAndResolveWhenReceived") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- awaitForInteractionDiscovery(context)
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         status <- io(context.client.fireEventAndResolveWhenReceived(recipeInstanceId, OrderPlacedEvent))
@@ -139,6 +158,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.fireEventAndResolveWhenCompleted") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- awaitForInteractionDiscovery(context)
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         result <- io(context.client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent))
@@ -154,6 +174,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       val recipeInstanceId: String = UUID.randomUUID().toString
       val event = EventInstance("non-existent", Map.empty)
       for {
+        _ <- awaitForInteractionDiscovery(context)
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         result <- io(context.client
           .fireEventAndResolveWhenCompleted(recipeInstanceId, event)
@@ -170,6 +191,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.fireEventAndResolveOnEvent") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- awaitForInteractionDiscovery(context)
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         result <- io(context.client.fireEventAndResolveOnEvent(recipeInstanceId, OrderPlacedEvent, "OrderPlaced"))
@@ -185,6 +207,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.getAllRecipeInstancesMetadata") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- awaitForInteractionDiscovery(context)
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         clientMetadata <- io(context.client.getAllRecipeInstancesMetadata)
@@ -195,6 +218,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.getVisualState") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- awaitForInteractionDiscovery(context)
         _ <- context.remoteInteraction.processesSuccessfullyAndFires(ItemsReservedEvent)
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         _ <- io(context.client.getVisualState(recipeInstanceId))
@@ -204,6 +228,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.retryInteraction") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- awaitForInteractionDiscovery(context)
         _ <- io(context.client.bake(recipeIdBlocking, recipeInstanceId))
         _ <- context.remoteInteraction.processesWithFailure(new RuntimeException("functional failure"))
         _ <- io(context.client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent))
@@ -226,6 +251,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
           ItemsReserved(reservedItems = ReservedItems(items = List(Item("resolution-item")), data = Array.empty))
         )
         for {
+          _ <- awaitForInteractionDiscovery(context)
           _ <- io(context.client.bake(recipeIdBlocking, recipeInstanceId))
           _ <- context.remoteInteraction.processesWithFailure(new RuntimeException("functional failure"))
           _ <- io(context.client.fireEventAndResolveWhenCompleted(recipeInstanceId, OrderPlacedEvent))
@@ -248,6 +274,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
     test("Baker.stopRetryingInteraction") { context =>
       val recipeInstanceId: String = UUID.randomUUID().toString
       for {
+        _ <- awaitForInteractionDiscovery(context)
         _ <- io(context.client.bake(recipeId, recipeInstanceId))
         _ <- context.remoteInteraction.processesWithFailure(new RuntimeException("functional failure"))
         _ <- io(context.client.fireEventAndResolveWhenReceived(recipeInstanceId, OrderPlacedEvent))
@@ -264,7 +291,6 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       }
     }
   }
-   */
 
   case class Context(
     client: Baker,

@@ -3,21 +3,40 @@ package com.ing.baker.baas.mocks
 import play.api.libs.json.Format
 import skuber.Service
 
-case class WatchEvent[O](item: O, tpe: WatchEvent.WatchEventType)(implicit fmt: Format[O]) {
+trait WatchEvent {
+
+  type Resource
+
+  def item: Resource
+
+  def fmt: Format[Resource]
+
+  def eventType: WatchEvent.WatchEventType
 
   override def toString: String =
-    s"""{"type": "$tpe", "object": "${fmt.writes(item).toString}" }"""
+    s"""{"type": "$eventType", "object": ${fmt.writes(item).toString} }"""
 }
 
 object WatchEvent {
 
-  def ofInteractionService(mock: org.mockserver.integration.ClientAndServer): Service =
-    Service(name = "localhost")
-      .setPort(Service.Port(
-        name = "http-api",
-        port = mock.getLocalPort
-      ))
-      .addLabel("baas-component" -> "remote-interaction")
+  def ofInteractionService(port: Int, tpe: WatchEventType): WatchEvent =
+    new WatchEvent {
+      override type Resource = Service
+
+      override def item: Resource =
+        Service(name = "localhost")
+          .setPort(Service.Port(
+            name = "http-api",
+            port = port
+          ))
+          .addLabel("baas-component" -> "remote-interaction")
+
+      override def fmt: Format[Resource] =
+        skuber.json.format.serviceFmt
+
+      override def eventType: WatchEventType =
+        tpe
+    }
 
   sealed trait WatchEventType
   case object Added extends WatchEventType { override def toString: String = "ADDED" }

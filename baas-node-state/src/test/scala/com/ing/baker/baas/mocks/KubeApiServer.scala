@@ -1,36 +1,36 @@
 package com.ing.baker.baas.mocks
 
+import java.util.concurrent.TimeUnit
+
 import cats.effect.IO
 import cats.syntax.apply._
-import com.ing.baker.baas.kubeapi
-import com.ing.baker.baas.kubeapi.{Service, Services}
 import org.mockserver.integration.ClientAndServer
-import org.mockserver.matchers.Times
+import org.mockserver.matchers.{TimeToLive, Times}
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.model.MediaType
-import skuber.json.format._
 
 class KubeApiServer(mock: ClientAndServer) {
 
-  def registersRemoteComponents: IO[Unit] =
-    respondWithEvents(interactionServices) *> respondWithEmpty
+  def deployInteractionService: IO[Unit] =
+    respondWithEvents(WatchEvent.ofInteractionService(mock.getLocalPort, WatchEvent.Added)) *> respondWithEmpty
 
-  private def respondWithEvents(templates: Services): IO[Unit] = IO {
-    val watchEventJson = WatchEvent(WatchEvent.ofInteractionService(mock), WatchEvent.Added).toString
-    val other = templates.mock.mkString("\n")
-    println(Console.MAGENTA + watchEventJson + Console.RESET)
-    println(Console.YELLOW + other + Console.RESET)
+  def deleteInteractionService: IO[Unit] =
+    respondWithEvents(WatchEvent.ofInteractionService(mock.getLocalPort, WatchEvent.Deleted)) *> respondWithEmpty
+
+  private def respondWithEvents(events: WatchEvent*): IO[Unit] = IO {
     mock.when(
       request()
         .withMethod("GET")
         .withPath("/api/v1/namespaces/default/services")
         .withQueryStringParameter("watch", "true"),
-      Times.exactly(1)
+      Times.exactly(1),
+      TimeToLive.unlimited(),
+      10
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody(watchEventJson, MediaType.APPLICATION_JSON)
+        .withBody(events.mkString(","), MediaType.APPLICATION_JSON)
     )
   }
 
@@ -43,23 +43,8 @@ class KubeApiServer(mock: ClientAndServer) {
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody("{}", MediaType.APPLICATION_JSON)
+        .withBody("", MediaType.APPLICATION_JSON)
+        .withDelay(TimeUnit.SECONDS, 2)
     )
   }
-
-  private def mockPort: kubeapi.PodPort =
-    kubeapi.PodPort(
-      name = "http-api",
-      port = mock.getLocalPort,
-      targetPort = Left(mock.getLocalPort))
-
-  private def interactionServices: kubeapi.Services =
-    kubeapi.Services(List(
-      kubeapi.Service(
-        metadata_name = "localhost",
-        metadata_labels = Map("baas-component" -> "remote-interaction"),
-        spec_ports = List(mockPort))
-    )
-    )
-
 }

@@ -77,7 +77,6 @@ object ServiceDiscovery extends LazyLogging {
       currentServices: Ref[IO, List[Service]],
       cacheInteractions: Ref[IO, List[InteractionInstance]]
     )(event: K8SWatchEvent[Service]): IO[Unit] = {
-      println(Console.YELLOW + event + Console.RESET)
       for {
         services <- event._type match {
           case EventType.ADDED =>
