@@ -101,10 +101,26 @@ object ServiceDiscovery extends LazyLogging {
       cacheInteractions <- Ref.of[IO, List[InteractionInstance]](List.empty)
       service = new ServiceDiscovery(cacheInteractions)
       updateServices = updateServicesWith(currentServices, cacheInteractions) _
+      sink = Sink
+        .foreachAsync[Option[K8SWatchEvent[Service]]](paralellism) {
+          case Some(event) =>
+            updateServices(event).recover { case e =>
+              println(Console.RED + e + Console.RESET)
+              logger.error("Failure when updating the services in the Service Discovery component", e)
+            }.unsafeToFuture()
+          case None =>
+            Future.successful(Unit)
+        }
       killSwitch <- IO {
         k8s.watchAllContinuously[Service]()
+          .map(Some(_))
+          .recover {
+            case e =>
+              println(Console.RED + e + Console.RESET)
+              None
+          }
           .viaMat(KillSwitches.single)(Keep.right)
-          .toMat(Sink.foreachAsync(paralellism)(updateServices(_).unsafeToFuture()))(Keep.left)
+          .toMat(sink)(Keep.left)
           .run()
       }
     } yield (service, killSwitch)

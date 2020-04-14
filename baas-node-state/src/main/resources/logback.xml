@@ -6,12 +6,12 @@
     </encoder>
   </appender>
 
-  <logger level="ERROR" name="skuber.api"/>
-
-  <logger level="ERROR" name="org.http4s"/>
-
   <root level="INFO">
     <appender-ref ref="CONSOLE"/>
   </root>
+
+  <logger level="ERROR" name="skuber.api"/>
+
+  <logger level="ERROR" name="org.http4s"/>
 
 </configuration>
