@@ -21,8 +21,8 @@ object Main extends IOApp {
 
     (for {
       _ <- BakeryControllerService.resource(InetSocketAddress.createUnresolved("0.0.0.0", 8080))
-      _ <- ResourceOperations.controller(k8s, InteractionOperations.spec)
-      _ <- ResourceOperations.controller(k8s, BakerOperations.spec)
+      _ <- ResourceOperations.controller(k8s, InteractionOperations.ops)
+      _ <- ResourceOperations.controller(k8s, BakerOperations.ops)
     } yield ()).use(_ => IO.never).as(ExitCode.Success)
   }
 }

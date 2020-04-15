@@ -46,16 +46,18 @@ final class StateNodeService private(baker: Baker, recipeDirectory: String, serv
 
   def management: HttpRoutes[IO] = Router("/management" -> HttpRoutes.of[IO] {
     case GET -> Root / "interaction" =>
-      serviceDiscovery.cacheInteractions.get.flatMap(interactions =>
-        Ok(interactions.map(_.name).mkString(", ")))
+      serviceDiscovery.cacheInteractions.get.flatMap { interactions =>
+        println(interactions.map(_.name))
+        Ok(interactions.map(_.name).mkString(","))
+      }
 
     case GET -> Root / "recipe-instance" / recipeInstanceId / "events" =>
       IO.fromFuture(IO(baker.getEvents(recipeInstanceId))).flatMap(events =>
-        Ok(events.map(_.name).mkString(", ")))
+        Ok(events.map(_.name).mkString(",")))
 
     case GET -> Root / "recipe-instance" / recipeInstanceId / "ingredients" =>
       IO.fromFuture(IO(baker.getIngredients(recipeInstanceId))).flatMap(ingredients =>
-        Ok(ingredients.keys.mkString(", ")))
+        Ok(ingredients.keys.mkString(",")))
   })
 
   def api: HttpRoutes[IO] = Router("/api/v3" -> HttpRoutes.of[IO] {

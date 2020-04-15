@@ -51,6 +51,10 @@ object ServiceDiscovery extends LazyLogging {
 
     def buildInteractions(currentServices: List[Service]): IO[List[InteractionInstance]] =
       getInteractionAddresses(currentServices)
+        .map { i =>
+          println(Console.MAGENTA + "WILL TRY TO ADD INTERACTION " + i + Console.RESET)
+          i
+        }
         .map(RemoteInteractionClient.resource(_, connectionPool))
         .parTraverse[IO, List[InteractionInstance]](buildInteractionInstance)
         .map(_.flatten)
@@ -59,6 +63,7 @@ object ServiceDiscovery extends LazyLogging {
       resource.use { client =>
         for {
           interface <- client.interface.attempt
+          _ = println(s"GOT INTERFACES: ${interface}")
           interactionsOpt = interface match {
             case Right(interfaces) =>
               interfaces.map { i =>
@@ -68,7 +73,12 @@ object ServiceDiscovery extends LazyLogging {
                   run = input => resource.use(_.runInteraction(i.id, input)).unsafeToFuture()
                 )
               }
-            case Left(_) => List.empty
+            case Left(e) =>
+              println("")
+              println("FAILED TO ADD INTERACTION: " + e.getMessage)
+              e.printStackTrace()
+              println("")
+              List.empty
           }
         } yield interactionsOpt
       }
@@ -77,6 +87,7 @@ object ServiceDiscovery extends LazyLogging {
       currentServices: Ref[IO, List[Service]],
       cacheInteractions: Ref[IO, List[InteractionInstance]]
     )(event: K8SWatchEvent[Service]): IO[Unit] = {
+      println(Console.YELLOW + event + Console.RESET)
       for {
         services <- event._type match {
           case EventType.ADDED =>

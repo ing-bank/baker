@@ -1,13 +1,56 @@
 package com.ing.bakery.clustercontroller.ops
 
-import com.ing.bakery.clustercontroller.ResourceOperations.ControllerSpecification
-import skuber.ext.Deployment
-import skuber.{Container, ObjectMeta, Pod, Protocol, Service, Volume}
+import cats.effect.{ContextShift, IO, Timer}
+import com.ing.bakery.clustercontroller.ResourceOperations
+import skuber.LabelSelector.IsEqualRequirement
+import skuber.api.client.KubernetesClient
+import skuber.ext.{Deployment, ReplicaSetList}
+import skuber.{Container, LabelSelector, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
+import skuber.json.ext.format._
+import skuber.json.format._
+
+import scala.concurrent.Future
 
 object InteractionOperations {
 
-  val spec: ControllerSpecification[InteractionResource] =
-    ControllerSpecification(service, deployment, interactionLabel)
+  def ops(implicit cs: ContextShift[IO], timer: Timer[IO]): (InteractionResource, KubernetesClient) => ResourceOperations[InteractionResource] = { (resource, k8s) =>
+    new ResourceOperations[InteractionResource] {
+
+      private def io[A](ref: => Future[A])(implicit cs: ContextShift[IO]): IO[A] =
+        IO.fromFuture(IO(ref))
+
+      def create: IO[Unit] = {
+        val dplmnt = deployment(resource)
+        for {
+          _ <- io(k8s.create(dplmnt))
+          _ <- Utils.eventually {
+            io(k8s.get[Deployment](dplmnt.metadata.name)).map { dp =>
+              println()
+              println(s"Checking the available pods for deployment '${dp.metadata.name}, available replicas: ${dp.status.map(_.availableReplicas)}")
+              println()
+              assert(dp.status.forall(_.availableReplicas >= 1))
+            }
+          }
+          _ <- io(k8s.create(service(resource)))
+        } yield ()
+      }
+
+      def terminate: IO[Unit] = {
+        val (key, value) = interactionLabel(resource)
+        for {
+          _ <- io(k8s.delete[Service](service(resource).name))
+          _ <- io(k8s.delete[Deployment](deployment(resource).name))
+          _ <- io(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(key, value))))
+          _ <- io(k8s.deleteAllSelected[PodList](LabelSelector(IsEqualRequirement(key, value))))
+        } yield ()
+      }
+
+      def upgrade: IO[Unit] =
+        for {
+          _ <- io(k8s.update[skuber.ext.Deployment](deployment(resource)))
+        } yield ()
+    }
+  }
 
   def interactionLabel(interaction: InteractionResource): (String, String) = "interaction" -> interaction.name
 

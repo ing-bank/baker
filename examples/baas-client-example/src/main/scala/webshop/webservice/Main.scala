@@ -36,11 +36,15 @@ object Main extends IOApp {
       config.getInt("baas-component.http-api-port")
     val connectionPool =
       ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
+
+    println("THIS IS THE CORRECT ONE")
+
     val mainResource = for {
       baker <- BakerClient.resource(Uri.unsafeFromString(baasHostname), connectionPool)
+      management <- StateNodeManagementClient.resource(Uri.unsafeFromString(baasHostname), connectionPool)
       _ <- BlazeServerBuilder[IO]
         .bindHttp(httpPort, "0.0.0.0")
-        .withHttpApp(new WebShopService(new WebShopBaker(baker, checkoutRecipeId)).build)
+        .withHttpApp(new WebShopService(new WebShopBaker(baker, checkoutRecipeId), management).build)
         .resource
     } yield ()
     mainResource
