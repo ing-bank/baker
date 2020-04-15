@@ -77,7 +77,7 @@ class TemporalSpec extends BakeryFunSpec with Matchers {
   type TestContext = smoke.BakeryControllerEnvironment.Context
 
   /** Represents external arguments to the test context builder. */
-  type TestArguments = Unit
+  type TestArguments = smoke.BakeryControllerEnvironment.Arguments
 
   /** Creates a `Resource` which allocates and liberates the expensive resources each test can use.
     * For example web servers, network connection, database mocks.
@@ -96,5 +96,10 @@ class TemporalSpec extends BakeryFunSpec with Matchers {
     * @param config map populated with the -Dkey=value arguments.
     * @return the data structure used by the `contextBuilder` function.
     */
-  def argumentsBuilder(config: ConfigMap): TestArguments = ()
+  def argumentsBuilder(config: ConfigMap): TestArguments = {
+    config.getOrElse("debug", "false") match {
+      case "yes" | "true" | "t" | "y" => smoke.BakeryControllerEnvironment.Arguments(debugMode = true)
+      case _ => smoke.BakeryControllerEnvironment.Arguments(debugMode = false)
+    }
+  }
 }
