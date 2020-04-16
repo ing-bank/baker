@@ -345,8 +345,7 @@ lazy val `bakery-controller` = project.in(file("bakery-controller"))
       logback
     )
   )
-  .dependsOn(bakertypes, recipeCompiler, recipeDsl, intermediateLanguage, `baas-node-client`)
-  .aggregate(bakertypes, recipeCompiler, recipeDsl, intermediateLanguage, `baas-node-client`)
+  .dependsOn(bakertypes, recipeCompiler, recipeDsl, intermediateLanguage, `baas-node-client`, `baas-protocol-interaction-scheduling`)
 
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)

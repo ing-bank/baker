@@ -18,9 +18,24 @@ import skuber.json.format._
 
 import scala.concurrent.{ExecutionContext, Future}
 
+/*
+
+REFACTOR: listening at the services is hackish, listening directly to the interaction CRD would be better, although
+we need to await for success of deployment, for which a new CRD can be created, so that the BakeryController can
+create/delete this new CRD with all the information about the deployed interactions and also creating a contract,
+promising that the existence of this CRD ensures the availability of the interactions (then again, with extra generated
+data, like the interfaces, names, version etc)
+
+rename crd: Interaction -> InteractionContainer
+new crd: InteractionSet
+
+ */
+
 object ServiceDiscovery extends LazyLogging {
 
-  private[state] type RecipeName = String
+  def empty(connectionPool: ExecutionContext): IO[ServiceDiscovery] =
+    Ref.of[IO, List[InteractionInstance]](List.empty).map(new ServiceDiscovery(_, connectionPool))
+
 
   /** Creates resource of a ServiceDiscovery module, when acquired a stream of kubernetes services starts and feeds the
     * ServiceDiscovery module to give corresponding InteractionInstances
@@ -35,114 +50,71 @@ object ServiceDiscovery extends LazyLogging {
     */
   def resource(connectionPool: ExecutionContext, k8s: KubernetesClient)(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem, materializer: Materializer): Resource[IO, ServiceDiscovery] = {
 
-    def getHttpServicePortOrDefault(service: Service): String = {
+    val createServiceDiscovery =
       for {
-        spec <- service.spec
-        portNumber <- spec.ports.find(_.name == "http-api")
-      } yield portNumber.port.toString
-    }.getOrElse("8080")
-
-    def getInteractionAddresses(currentServices: List[Service]): List[Uri] =
-      currentServices
-        .filter(_.metadata.labels.getOrElse("baas-component", "Wrong")
-          .equals("remote-interaction"))
-        .map(service => "http://" + service.metadata.name + ":" + getHttpServicePortOrDefault(service))
-        .map(Uri.unsafeFromString)
-
-    def buildInteractions(currentServices: List[Service]): IO[List[InteractionInstance]] =
-      getInteractionAddresses(currentServices)
-        .map { i =>
-          println(Console.MAGENTA + "WILL TRY TO ADD INTERACTION " + i + Console.RESET)
-          i
-        }
-        .map(RemoteInteractionClient.resource(_, connectionPool))
-        .parTraverse[IO, List[InteractionInstance]](buildInteractionInstance)
-        .map(_.flatten)
-
-    def buildInteractionInstance(resource: Resource[IO, RemoteInteractionClient]): IO[List[InteractionInstance]] =
-      resource.use { client =>
-        for {
-          interface <- client.interface.attempt
-          _ = println(s"GOT INTERFACES: ${interface}")
-          interactionsOpt = interface match {
-            case Right(interfaces) =>
-              interfaces.map { i =>
-                InteractionInstance(
-                  name = i.name,
-                  input = i.interface,
-                  run = input => resource.use(_.runInteraction(i.id, input)).unsafeToFuture()
-                )
-              }
-            case Left(e) =>
-              println("")
-              println("FAILED TO ADD INTERACTION: " + e.getMessage)
-              e.printStackTrace()
-              println("")
-              List.empty
+        serviceDiscovery <- ServiceDiscovery.empty(connectionPool)
+        sink = Sink
+          .foreach[Option[K8SWatchEvent[Service]]] {
+            case Some(event) =>
+              serviceDiscovery.update(event).recover { case e =>
+                println(Console.RED + e + Console.RESET)
+                logger.error("Failure when updating the services in the Service Discovery component", e)
+              }.unsafeToFuture()
+            case None =>
+              Future.successful(Unit)
           }
-        } yield interactionsOpt
-      }
-
-    def updateServicesWith(
-      currentServices: Ref[IO, List[Service]],
-      cacheInteractions: Ref[IO, List[InteractionInstance]]
-    )(event: K8SWatchEvent[Service]): IO[Unit] = {
-      println(Console.YELLOW + event + Console.RESET)
-      for {
-        services <- event._type match {
-          case EventType.ADDED =>
-            currentServices.updateAndGet(event._object :: _)
-          case EventType.DELETED =>
-            currentServices.updateAndGet(_.filterNot(_ == event._object))
-          case EventType.MODIFIED =>
-            currentServices.updateAndGet(_.map(service => if (service.metadata.uid == event._object.metadata.uid) event._object else service))
-          case EventType.ERROR =>
-            IO(logger.error(s"Event type ERROR on service watch for service ${event._object}")) *> currentServices.get
+        killSwitch <- IO {
+          k8s.watchAllContinuously[Service]()
+            .map(Some(_))
+            .recover {
+              case e =>
+                println(Console.RED + e + Console.RESET)
+                None
+            }
+            .viaMat(KillSwitches.single)(Keep.right)
+            .toMat(sink)(Keep.left)
+            .run()
         }
-        _ <- List(
-          buildInteractions(services).flatMap(cacheInteractions.set),
-        ).parSequence
-      } yield ()
-    }
-
-    val paralellism = math.max(2, Runtime.getRuntime.availableProcessors())
-    
-    val createServiceDiscovery = for {
-      currentServices <- Ref.of[IO, List[Service]](List.empty)
-      cacheInteractions <- Ref.of[IO, List[InteractionInstance]](List.empty)
-      service = new ServiceDiscovery(cacheInteractions)
-      updateServices = updateServicesWith(currentServices, cacheInteractions) _
-      sink = Sink
-        .foreachAsync[Option[K8SWatchEvent[Service]]](paralellism) {
-          case Some(event) =>
-            updateServices(event).recover { case e =>
-              println(Console.RED + e + Console.RESET)
-              logger.error("Failure when updating the services in the Service Discovery component", e)
-            }.unsafeToFuture()
-          case None =>
-            Future.successful(Unit)
-        }
-      killSwitch <- IO {
-        k8s.watchAllContinuously[Service]()
-          .map(Some(_))
-          .recover {
-            case e =>
-              println(Console.RED + e + Console.RESET)
-              None
-          }
-          .viaMat(KillSwitches.single)(Keep.right)
-          .toMat(sink)(Keep.left)
-          .run()
-      }
-    } yield (service, killSwitch)
+      } yield (serviceDiscovery, killSwitch)
 
     Resource.make(createServiceDiscovery)(s => IO(s._2.shutdown())).map(_._1)
   }
 }
 
-case class ServiceDiscovery private(
-  cacheInteractions: Ref[IO, List[InteractionInstance]]
-) {
+final class ServiceDiscovery private(
+  cacheInteractions: Ref[IO, List[InteractionInstance]],
+  connectionPool: ExecutionContext
+) extends LazyLogging {
+
+  def get: IO[List[InteractionInstance]] =
+    cacheInteractions.get
+
+  def update(event: K8SWatchEvent[Service])(implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[Unit] = {
+    println(Console.YELLOW + event + Console.RESET)
+    for {
+      _ <- event._type match {
+        case EventType.ADDED =>
+          filterServiceAndGetInteractionAddress(event._object)
+            .map(buildInteractionInstances(_)
+              .flatMap(newInteractions => cacheInteractions.update(_ ++ newInteractions)))
+            .getOrElse(IO.unit)
+        //currentServices.updateAndGet(_ + (event._object.metadata.uid -> event._object))
+        case EventType.DELETED =>
+          // TODO There can be several interactions in a service, that is why we need to request the interface again
+          // to delete all interactions in the cache related to the service, but by this moment, the interface is unreachable,
+          //  (remember as well: there might be same name with different interfaces)
+          // TODO an improvement might be to publish all interaction names with base64 interfaces in the tags of the service
+          IO.unit
+        case EventType.MODIFIED =>
+          IO.unit
+        //currentServices.updateAndGet(_ + (event._object.metadata.uid -> event._object))
+        case EventType.ERROR =>
+          IO(logger.error(s"Event type ERROR on service watch for service ${event._object}"))
+      }
+      current <- cacheInteractions.get
+      _ = println("[INFO] Current Interactions: " + current.map(_.name).mkString(", "))
+    } yield ()
+  }
 
   def buildInteractionManager: InteractionManager =
     new InteractionManager {
@@ -151,4 +123,39 @@ case class ServiceDiscovery private(
       override def getImplementation(interaction: InteractionTransition): Future[Option[InteractionInstance]] =
         cacheInteractions.get.map(_.find(isCompatibleImplementation(interaction, _))).unsafeToFuture()
     }
+
+  private def filterServiceAndGetInteractionAddress(service: Service): Option[Uri] = {
+    for {
+      componentLabel <- service.metadata.labels.get("baas-component")
+      _ <- if(componentLabel == "remote-interaction") Some(()) else None
+      port = service.spec
+        .flatMap(_.ports.find(_.name == "http-api"))
+        .map(_.port.toString)
+        .getOrElse("8080")
+    } yield Uri.unsafeFromString("http://" + service.metadata.name + ":" + port)
+  }
+
+  private def buildInteractionInstances(interactionAddress: Uri)(implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[List[InteractionInstance]] = {
+    val clientR = RemoteInteractionClient.resource(interactionAddress, connectionPool)
+    clientR.use { client =>
+      for {
+        interface <- client.interface.attempt
+        _ = println(s"GOT INTERFACES: $interface")
+        interactionsOpt = interface match {
+          case Right(interfaces) =>
+            interfaces.map { i =>
+              InteractionInstance(
+                name = i.name,
+                input = i.interface,
+                run = input => clientR.use(_.runInteraction(i.id, input)).unsafeToFuture()
+              )
+            }
+          case Left(e) =>
+            println("[ERROR] FAILED TO ADD INTERACTION: " + e.getMessage)
+            e.printStackTrace()
+            List.empty
+        }
+      } yield interactionsOpt
+    }
+  }
 }

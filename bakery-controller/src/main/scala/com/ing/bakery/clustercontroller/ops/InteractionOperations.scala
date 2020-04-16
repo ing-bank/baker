@@ -1,7 +1,9 @@
 package com.ing.bakery.clustercontroller.ops
 
 import cats.effect.{ContextShift, IO, Timer}
+import com.ing.baker.baas.interaction.RemoteInteractionClient
 import com.ing.bakery.clustercontroller.ResourceOperations
+import org.http4s.Uri
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.api.client.KubernetesClient
 import skuber.ext.{Deployment, ReplicaSetList}
@@ -21,17 +23,31 @@ object InteractionOperations {
 
       def create: IO[Unit] = {
         val dplmnt = deployment(resource)
+        val svc = service(resource)
+        val temporalSvc = svc.copy(metadata = svc.metadata.copy(labels = Map.empty))
         for {
           _ <- io(k8s.create(dplmnt))
           _ <- Utils.eventually {
             io(k8s.get[Deployment](dplmnt.metadata.name)).map { dp =>
-              println()
-              println(s"Checking the available pods for deployment '${dp.metadata.name}, available replicas: ${dp.status.map(_.availableReplicas)}")
-              println()
               assert(dp.status.forall(_.availableReplicas >= 1))
             }
           }
-          _ <- io(k8s.create(service(resource)))
+          _ <- io(k8s.create(temporalSvc))
+          interfaces <- RemoteInteractionClient.resource(Uri.unsafeFromString(s"http://${temporalSvc.metadata.name}:8080"), scala.concurrent.ExecutionContext.global).use { client =>
+            Utils.eventually {
+              client.interface.map { interfaces =>
+                println(s"[INTERFACES for ${resource.metadata.name}]: " + interfaces)
+                assert(interfaces.length > 1)
+                interfaces
+              }
+            }
+          }
+          _ <- io(k8s.delete[Service](temporalSvc.metadata.name))
+          _ <- io(k8s.create(svc
+            .addLabel(baasComponentLabel)
+            .addLabels(interfaces.map(i => i.id -> i.name).toMap)
+          ))
+
         } yield ()
       }
 
@@ -131,7 +147,6 @@ object InteractionOperations {
 
   def service(interaction: InteractionResource): Service = {
     Service(serviceName(interaction.name))
-      .addLabel(baasComponentLabel)
       .withSelector(interactionLabel(interaction))
       .setPort(Service.Port(
         name = httpAPIPort.name,

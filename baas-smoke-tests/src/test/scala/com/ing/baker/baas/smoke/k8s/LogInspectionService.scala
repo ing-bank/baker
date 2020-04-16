@@ -100,7 +100,7 @@ object LogInspectionService {
         .withHttpApp(new LogInspectionService(testsName, state).build)
         .resource
       _ <- Resource.make(IO.pure(state)) { inspector =>
-        if(awaitLock) printYellow(s"To finish the tests, please visit http://localhost:${hostname.getPort}/terminate") *> inspector.awaitLock
+        if(awaitLock) printYellow(s"To inspect the pods, please visit http://localhost:${hostname.getPort}/") *> printYellow(s"To terminate the tests, please visit http://localhost:${hostname.getPort}/terminate") *> inspector.awaitLock
         else IO.unit
       }
     } yield state

@@ -39,7 +39,7 @@ object BakeryEnvironment {
 
     inspector <- LogInspectionService.resource(
       testsName = "Bakery Controller",
-      hostname = InetSocketAddress.createUnresolved("0.0.0.0", 9000),
+      hostname = InetSocketAddress.createUnresolved("0.0.0.0", 9090),
       awaitLock = args.debugMode)
     _ <- Resource.liftF(inspector.watchLogs("bakery-controller", None, namespace))
     _ <- Resource.liftF(inspector.watchLogsWithPrefix("baas-state", None, namespace))

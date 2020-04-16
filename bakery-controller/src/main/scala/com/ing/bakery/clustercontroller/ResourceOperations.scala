@@ -1,5 +1,6 @@
 package com.ing.bakery.clustercontroller
 
+import cats.implicits._
 import akka.actor.ActorSystem
 import akka.event.{Logging, LoggingAdapter}
 import akka.stream.scaladsl.{Keep, Sink}
@@ -30,26 +31,30 @@ object ResourceOperations extends LazyLogging {
 
     implicit val akkaLogger: LoggingAdapter = Logging(actorSystem, rd.spec.names.kind + "-Controller")
 
-    val paralellism = math.max(2, Runtime.getRuntime.availableProcessors())
-
-    def handleEvent(eventOpt: Option[K8SWatchEvent[O]]): IO[Unit] = {
-      eventOpt match {
-        case Some(event) =>
-          akkaLogger.info(event._type + " " + event._object.metadata.name)
-          val ops = opsConstructor(event._object, k8s)
-          (event._type match {
-            case EventType.ADDED => ops.create
-            case EventType.DELETED => ops.terminate
-            case EventType.MODIFIED => ops.upgrade
-            case EventType.ERROR => IO(akkaLogger.error(s"Event type ERROR on ${rd.spec.names.kind} CRD: ${event._object}"))
-          }).attempt.flatMap {
-            case Left(e) => IO(akkaLogger.error(s"Error when handling the event ${event._type}: " + e.getMessage))
-            case Right(_) => IO.unit
-          }
-        case None =>
-          IO(akkaLogger.info("Doing nothing because stream failed before"))
+    def handleEvent(event: K8SWatchEvent[O]): IO[Unit] = {
+      akkaLogger.info(event._type + " " + event._object.metadata.name)
+      val ops = opsConstructor(event._object, k8s)
+      (event._type match {
+        case EventType.ADDED => ops.create
+        case EventType.DELETED => ops.terminate
+        case EventType.MODIFIED => ops.upgrade
+        case EventType.ERROR => IO(akkaLogger.error(s"Event type ERROR on ${rd.spec.names.kind} CRD: ${event._object}"))
+      }).attempt.flatMap {
+        case Left(e) => IO(akkaLogger.error(s"Error when handling the event ${event._type}: " + e.getMessage))
+        case Right(_) => IO.unit
       }
     }
+
+    //val paralellism = math.max(2, Runtime.getRuntime.availableProcessors())
+    val sink = Sink
+      .foreach[Option[K8SWatchEvent[O]]] {
+        case Some(event) =>
+          handleEvent(event).recover { case e =>
+            println(Console.RED + e + Console.RESET)
+          }.unsafeToFuture()
+        case None =>
+          Unit
+      }
 
     val create = for {
       killSwitch <- IO {
@@ -61,7 +66,7 @@ object ResourceOperations extends LazyLogging {
             None
           }
           .viaMat(KillSwitches.single)(Keep.right)
-          .toMat(Sink.foreach(handleEvent(_).unsafeRunAsyncAndForget()))(Keep.left)
+          .toMat(sink)(Keep.left)
           .run()
       }
       _ = sys.addShutdownHook(killSwitch.shutdown())
