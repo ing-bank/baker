@@ -19,25 +19,6 @@ trait WatchEvent {
 
 object WatchEvent {
 
-  def ofInteractionService(port: Int, tpe: WatchEventType): WatchEvent =
-    new WatchEvent {
-      override type Resource = Service
-
-      override def item: Resource =
-        Service(name = "localhost")
-          .setPort(Service.Port(
-            name = "http-api",
-            port = port
-          ))
-          .addLabel("baas-component" -> "remote-interaction")
-
-      override def fmt: Format[Resource] =
-        skuber.json.format.serviceFmt
-
-      override def eventType: WatchEventType =
-        tpe
-    }
-
   sealed trait WatchEventType
   case object Added extends WatchEventType { override def toString: String = "ADDED" }
   case object Deleted extends WatchEventType { override def toString: String = "DELETED" }

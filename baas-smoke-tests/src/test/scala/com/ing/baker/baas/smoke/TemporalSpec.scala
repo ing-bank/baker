@@ -27,11 +27,13 @@ class TemporalSpec extends BakeryFunSpec with Matchers {
 
       BlazeClientBuilder[IO](executionContext).resource.use { client =>
         for {
-          webshop <- DefinitionFile("baker-webshop.yaml", namespace)
+          _ <- context.inspector.watchLogs("bakery-controller", None, namespace)
+          _ <- DefinitionFile("baker-webshop.yaml", namespace)
           _ <- eventually("All recipes were created") {
             for {
               _ <- Pod.printPodsStatuses(namespace)
               _ <- Pod.allPodsAreReady(namespace)
+              _ <- context.inspector.watchLogsWithPrefix("baas-state", None, namespace)
               webshopPodsCount <- Pod.countPodsWithLabel(webshopBaker, namespace)
               _ = webshopPodsCount shouldBe 2
             } yield ()
@@ -40,23 +42,23 @@ class TemporalSpec extends BakeryFunSpec with Matchers {
           _ <- printGreen(s"\nCreating client app")
           _ <- DefinitionFile("example-client-app.yaml", namespace)
           _ <- Pod.waitUntilAllPodsAreReady(namespace)
+          _ <- context.inspector.watchLogsWithPrefix("client-app", Some("client-app"), namespace)
 
-          exampleAppClient = new ExampleAppClient(client, Uri.unsafeFromString("http://localhost:8080"))
           managementClient = new StateNodeManagementClient(client, Uri.unsafeFromString("http://localhost:8080"))
 
-          interactions <- DefinitionFile("interactions-example.yaml", namespace)
+          _ <- DefinitionFile("interactions-example.yaml", namespace)
           _ <- eventually("All interactions were created") {
             for {
               _ <- Pod.printPodsStatuses(namespace)
               reserveItemsPodsCount <- Pod.countPodsWithLabel(reserveItems, namespace)
               makePaymentPodsCount <- Pod.countPodsWithLabel(makePaymentAndShipItems, namespace)
+              _ <- context.inspector.watchLogsWithPrefix("reserve-items", None, namespace)
+              _ <- context.inspector.watchLogsWithPrefix("make-payment-and-ship-items", None, namespace)
               _ = reserveItemsPodsCount shouldBe 2
               _ = makePaymentPodsCount shouldBe 1
               _ <- Pod.allPodsAreReady(namespace)
             } yield ()
           }
-
-          //_ <- IO.sleep(5.minutes)
 
           _ <- eventually("State node discovered the interactions") {
             for {

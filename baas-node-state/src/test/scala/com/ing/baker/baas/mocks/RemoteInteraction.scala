@@ -7,25 +7,12 @@ import com.ing.baker.baas.protocol.ProtocolInteractionExecution
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance}
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.matchers.Times
+import org.mockserver.model.HttpRequest
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.verify.VerificationTimes
 
 class RemoteInteraction(mock: ClientAndServer, interaction: InteractionInstance) {
-
-  def publishesItsInterface: IO[Unit] = IO {
-    mock.when(
-      request()
-        .withMethod("GET")
-        .withPath("/api/v3/interaction")
-        .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost")
-    ).respond(
-      response()
-        .withStatusCode(200)
-        .withBody(serialize(ProtocolInteractionExecution.Interfaces(List(
-          ProtocolInteractionExecution.InstanceInterface(interaction.shaBase64, interaction.name, interaction.input)))))
-    )
-  }
 
   def processesSuccessfullyAndFires(event: EventInstance): IO[Unit] = IO {
     mock.when(
@@ -57,7 +44,7 @@ class RemoteInteraction(mock: ClientAndServer, interaction: InteractionInstance)
     mock.verify(applyMatch, VerificationTimes.exactly(1))
   }
 
-  private def applyMatch =
+  private def applyMatch: HttpRequest =
     request()
       .withMethod("POST")
       .withPath(s"/api/v3/interaction/apply")

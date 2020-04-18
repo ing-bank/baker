@@ -267,7 +267,6 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
     ),
     libraryDependencies ++= Seq(
       slf4jApi,
-      slf4jSimple,
       logback,
       akkaPersistenceCassandra,
       akkaManagementHttp,
@@ -280,7 +279,6 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
       scalaKafkaClient
     ) ++ testDeps(
       slf4jApi,
-      slf4jSimple,
       logback,
       scalaTest,
       mockServer,
@@ -308,7 +306,6 @@ lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
     moduleName := "baas-node-interaction",
     libraryDependencies ++= Seq(
       slf4jApi,
-      slf4jSimple,
       http4s,
       http4sDsl,
       http4sServer
@@ -332,7 +329,6 @@ lazy val `bakery-controller` = project.in(file("bakery-controller"))
     moduleName := "bakery-controller",
     libraryDependencies ++= Seq(
       slf4jApi,
-      slf4jSimple,
       akkaSlf4j,
       logback,
       scalaLogging,
@@ -367,7 +363,6 @@ lazy val `baker-example` = project
     libraryDependencies ++=
       compileDeps(
         slf4jApi,
-        slf4jSimple,
         http4s,
         http4sDsl,
         http4sServer,
@@ -407,7 +402,6 @@ lazy val `baas-client-example` = project
     libraryDependencies ++=
       compileDeps(
         slf4jApi,
-        slf4jSimple,
         http4s,
         http4sDsl,
         http4sServer,
@@ -440,7 +434,6 @@ lazy val `baas-kafka-listener-example` = project
     libraryDependencies ++=
       compileDeps(
         slf4jApi,
-        slf4jSimple,
         circe,
         circeGeneric,
         circeGenericExtras,
@@ -472,7 +465,6 @@ lazy val `baas-interaction-example-reserve-items` = project.in(file("examples/ba
     libraryDependencies ++=
       compileDeps(
         slf4jApi,
-        slf4jSimple,
         catsEffect
       ) ++ testDeps(
         scalaTest,
@@ -494,7 +486,6 @@ lazy val `baas-interaction-example-make-payment-and-ship-items` = project.in(fil
     libraryDependencies ++=
       compileDeps(
         slf4jApi,
-        slf4jSimple,
         catsEffect
       ) ++ testDeps(
         scalaTest,
@@ -516,7 +507,6 @@ lazy val `baas-smoke-tests` = project.in(file("baas-smoke-tests"))
         http4sClient,
         circe,
         slf4jApi,
-        slf4jSimple,
         scalaTest,
         scalaCheck
       )

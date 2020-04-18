@@ -139,18 +139,19 @@ final class LogInspectionService private(testName: String, state: LogInspectionS
     case GET -> Root / podName =>
       for {
         lines <- state.getPodLines(podName)
-        normalLineStyle = "padding: 3px; font-family: monospaced; margin: 2px;"
-        errorStyle = """padding: 3px; font-family: 'Lucida Console', Courier, monospace; margin: 2px; border-radius: 2px; color: red; border: 1px solid red; background-color: #ffe6e6;"""
-        infoStyle = """padding: 3px; font-family: 'Lucida Console', Courier, monospace; margin: 2px; border-radius: 2px; color: #3366ff; border: 1px solid #b3c6ff; background-color: #e6ecff;"""
+        commonStyle = "padding: 3px; font-family: 'Lucida Console', Courier, monospace; margin: 2px; "
+        normalLineStyle = commonStyle
+        errorStyle = commonStyle + "border-radius: 2px; color: red; border: 1px solid red; background-color: #ffe6e6;"
+        debugStyle = commonStyle + "border-radius: 2px; color: #3366ff; border: 1px solid #b3c6ff; background-color: #e6ecff;"
         style = (line: String) =>
-          if(line.toLowerCase.contains("info")) infoStyle
+          if(line.toLowerCase.contains("debug")) debugStyle
           else if(line.toLowerCase.contains("error")) errorStyle
           else normalLineStyle
         html = lines.reverse.map(line => s""" <p style="${style(line)}"> $line </p> """)
         response <- Ok(s"""
           |<head><title>$testName / $podName </title></head>
           |<body>
-          |<h1>$testName / $podName</h1>
+          |<h1 style="font-family: 'Lucida Console', Courier, monospace;">$testName / $podName</h1>
           |${html.mkString("\n")}
           |</body>
           |""".stripMargin)

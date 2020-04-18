@@ -5,6 +5,7 @@ import java.util.concurrent.Executors
 import cats.syntax.functor._
 import cats.effect.{ContextShift, IO, Timer}
 import com.ing.bakery.clustercontroller.ResourceOperations
+import com.typesafe.scalalogging.Logger
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.api.client.KubernetesClient
 import skuber.ext.{Deployment, ReplicaSetList}
@@ -17,6 +18,8 @@ import scala.concurrent.Future
 
 object BakerOperations {
 
+  val logger: Logger = Logger("bakery.BakerOperations")
+
   def ops(implicit cs: ContextShift[IO], timer: Timer[IO]): (BakerResource, KubernetesClient) => ResourceOperations[BakerResource] = { (resource, k8s) =>
     new ResourceOperations[BakerResource] {
 
@@ -28,6 +31,7 @@ object BakerOperations {
           _ <- io(k8s.create[ConfigMap](configMap(resource))).void
           _ <- io(k8s.create(deployment(resource)))
           _ <- io(k8s.create(service(resource)))
+          _ = logger.info(s"Created baker cluster named '${resource.name}'")
         } yield ()
 
       def terminate: IO[Unit] =
@@ -38,12 +42,14 @@ object BakerOperations {
           _ <- io(k8s.delete[Deployment](deployment(resource).name))
           _ <- io(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(key, value))))
           _ <- io(k8s.deleteAllSelected[PodList](LabelSelector(IsEqualRequirement(key, value))))
+          _ = logger.info(s"Terminated baker cluster named '${resource.name}'")
         } yield ()
 
       def upgrade: IO[Unit] =
         for {
           _ <- io(k8s.update[ConfigMap](configMap(resource))).void
           _ <- io(k8s.update[skuber.ext.Deployment](deployment(resource)))
+          _ = logger.info(s"Upgraded baker cluster named '${resource.name}'")
         } yield ()
     }
   }
