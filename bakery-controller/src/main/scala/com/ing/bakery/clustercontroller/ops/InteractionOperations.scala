@@ -27,6 +27,7 @@ object InteractionOperations {
       private def io[A](ref: => Future[A])(implicit cs: ContextShift[IO]): IO[A] =
         IO.fromFuture(IO(ref))
 
+      // TODO make these operations atomic, if one fails we need to rollback previous ones
       def create: IO[Unit] = {
         val address = Uri.unsafeFromString(s"http://${serviceName(resource)}:${httpAPIPort.containerPort}/")
         val client = new RemoteInteractionClient(httpClient, address)

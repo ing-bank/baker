@@ -50,6 +50,7 @@ object ResourceOperations extends LazyLogging {
       .foreach[Option[K8SWatchEvent[O]]] {
         case Some(event) =>
           handleEvent(event).recover { case e =>
+            // TODO proper error logging please :P
             println(Console.RED + e + Console.RESET)
           }.unsafeToFuture()
         case None =>
