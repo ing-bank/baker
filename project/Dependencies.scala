@@ -25,7 +25,7 @@ object Dependencies {
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
   val mockServer =                "org.mock-server"            %  "mockserver-netty"                   % "5.10"
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
-  val junitJupiter =              "org.junit.jupiter"          %  "junit-jupiter-engine"               % "5.6.1"
+  val junitJupiter =              "org.junit.jupiter"          %  "junit-jupiter-engine"               % "5.6.2"
 
   val akkaActor =                 "com.typesafe.akka"          %% "akka-actor"                         % akkaVersion
   val akkaStream =                "com.typesafe.akka"          %% "akka-stream"                        % akkaVersion
@@ -71,7 +71,7 @@ object Dependencies {
   val circeGeneric =              "io.circe"                   %% "circe-generic"                      % circeVersion
   val circeGenericExtras =        "io.circe"                   %% "circe-generic-extras"               % circeVersion
 
-  val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "2.1.2"
+  val catsEffect =                "org.typelevel"              %% "cats-effect"                        % "2.1.3"
   val catsCore =                  "org.typelevel"              %% "cats-core"                          % "2.1.1"
   val console4Cats =              "dev.profunktor"             %% "console4cats"                       % "0.8.0"
 
@@ -94,7 +94,6 @@ object Dependencies {
   val objenisis =                 "org.objenesis"              %  "objenesis"                          % "3.1"
   val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.10.5"
   val slf4jApi =                  "org.slf4j"                  %  "slf4j-api"                          % "1.7.30"
-  val slf4jSimple =               "org.slf4j"                  % "slf4j-simple"                        % "1.7.30"
   val logback =                   "ch.qos.logback"             % "logback-classic"                     % "1.2.3"
   val scalaCheck =                "org.scalacheck"             %% "scalacheck"                         % "1.14.3"
   val scalaCheckPlus =            "org.scalatestplus"          %% "scalatestplus-scalacheck"           % "3.1.0.0-RC2"

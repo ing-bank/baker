@@ -53,7 +53,7 @@ object InteractionSchedulingProto {
       }
     }
 
-  implicit def interfaces: ProtoMap[Interfaces, protobuf.Interfaces] =
+  implicit def interfacesProto: ProtoMap[Interfaces, protobuf.Interfaces] =
     new ProtoMap[Interfaces, protobuf.Interfaces] {
 
       val companion = protobuf.Interfaces

@@ -1,60 +1,74 @@
 package com.ing.baker.baas.mocks
 
+import java.util.concurrent.TimeUnit
+
 import cats.effect.IO
 import cats.syntax.apply._
-import com.ing.baker.baas.kubeapi
-import com.ing.baker.baas.kubeapi.{Service, Services}
+import com.ing.baker.baas.interaction.RemoteInteractionClient.InteractionEndpoint
+import com.ing.baker.baas.mocks.WatchEvent.WatchEventType
+import com.ing.baker.runtime.scaladsl.InteractionInstance
 import org.mockserver.integration.ClientAndServer
-import org.mockserver.matchers.Times
+import org.mockserver.matchers.{TimeToLive, Times}
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
-import org.mockserver.model.MediaType
+import org.mockserver.model.{HttpRequest, MediaType}
+import play.api.libs.json.Format
+import skuber.{ConfigMap, ObjectMeta}
 
-class KubeApiServer(mock: ClientAndServer) {
+class KubeApiServer(mock: ClientAndServer, interaction: InteractionInstance) {
 
-  def registersRemoteComponents: IO[Unit] =
-    respondWithEvents(interactionServices) *> respondWithEmpty
+  def deployInteraction: IO[Unit] =
+    respondWithEvents(eventOfInteractionCreationContract(mock.getLocalPort, WatchEvent.Added)) *> noNewInteractions
 
-  private def respondWithEvents(templates: Services): IO[Unit] = IO {
-    mock.when(
-      request()
-        .withMethod("GET")
-        .withPath("/api/v1/namespaces/default/services")
-        .withQueryStringParameter("watch", "true"),
-      Times.exactly(1)
-    ).respond(
+  def deleteInteraction: IO[Unit] =
+    respondWithEvents(eventOfInteractionCreationContract(mock.getLocalPort, WatchEvent.Deleted)) *> noNewInteractions
+
+  def noNewInteractions: IO[Unit] = IO {
+    mock.when(watchMatch).respond(
       response()
         .withStatusCode(200)
-        .withBody(templates.mock.mkString("\n"), MediaType.APPLICATION_JSON)
+        .withBody("", MediaType.APPLICATION_JSON)
+        .withDelay(TimeUnit.MILLISECONDS, 100)
     )
   }
 
-  private def respondWithEmpty: IO[Unit] = IO {
+  private val baasComponentLabel: (String, String) = "baas-component" -> "remote-interaction-interfaces"
+
+  private def eventOfInteractionCreationContract(port: Int, tpe: WatchEventType): WatchEvent = {
+    val creationContractName: String = "interactions-test-interaction"
+    val interfaces = List(InteractionEndpoint(interaction.shaBase64, interaction.name, interaction.input))
+    new WatchEvent {
+      override type Resource = skuber.ConfigMap
+      override def item: Resource = {
+        val name = creationContractName
+        val interactionsData = InteractionEndpoint.toBase64(interfaces)
+        ConfigMap(
+          metadata = ObjectMeta(name = name, labels = Map(baasComponentLabel)),
+          data = Map("address" -> s"http://localhost:$port/", "interfaces" -> interactionsData)
+        )
+      }
+      override def fmt: Format[Resource] = skuber.json.format.configMapFmt
+      override def eventType: WatchEventType = tpe
+    }
+  }
+
+  private def respondWithEvents(events: WatchEvent*): IO[Unit] = IO {
     mock.when(
-      request()
-        .withMethod("GET")
-        .withPath("/api/v1/namespaces/default/services")
-        .withQueryStringParameter("watch", "true")
+      watchMatch,
+      Times.exactly(1),
+      TimeToLive.unlimited(),
+      10
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody("{}", MediaType.APPLICATION_JSON)
+        .withBody(events.mkString(","), MediaType.APPLICATION_JSON)
     )
   }
 
-  private def mockPort: kubeapi.PodPort =
-    kubeapi.PodPort(
-      name = "http-api",
-      port = mock.getLocalPort,
-      targetPort = Left(mock.getLocalPort))
-
-  private def interactionServices: kubeapi.Services =
-    kubeapi.Services(List(
-      kubeapi.Service(
-        metadata_name = "localhost",
-        metadata_labels = Map("baas-component" -> "remote-interaction"),
-        spec_ports = List(mockPort))
-    )
-    )
-
+  private def watchMatch: HttpRequest =
+    request()
+      .withMethod("GET")
+      .withPath("/api/v1/namespaces/default/configmaps")
+      .withQueryStringParameter("watch", "true")
+      .withQueryStringParameter("labelSelector", baasComponentLabel._1 + "=" + baasComponentLabel._2)
 }

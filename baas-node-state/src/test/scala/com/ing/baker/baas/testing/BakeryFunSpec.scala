@@ -49,7 +49,7 @@ abstract class BakeryFunSpec extends FixtureAsyncFunSpecLike {
 
   /** Tries every second f until it succeeds or until 20 attempts have been made. */
   def eventually[A](f: IO[A]): IO[A] =
-    within(20.seconds, 20)(f)
+    within(10.seconds, 100)(f)
 
   /** Retries the argument f until it succeeds or time/split attempts have been made,
     * there exists a delay of time for each retry.
