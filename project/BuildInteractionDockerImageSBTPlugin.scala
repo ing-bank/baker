@@ -66,14 +66,6 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
         }
       }
 
-      def insertAfter(commands: Seq[CmdLike], str: String, cmds: Seq[ExecCmd]) = {
-        commands.find(_.makeContent.contains(str)) map { cmd =>
-          (commands.takeWhile(!_.makeContent.contains(str)).toList :+ cmd) ++
-            cmds ++
-            commands.reverse.takeWhile(!_.makeContent.contains(str)).reverse
-        } getOrElse { println(s"!! $str not found, no substitution"); commands }
-      }
-
       val stateWithNewDependency =
         Project.extract(state).appendWithSession(Seq(
           name := arguments.name,

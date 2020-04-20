@@ -52,7 +52,7 @@ object ServiceDiscovery {
 
       k8s.watchWithOptions[ConfigMap](watchFilter)
         .map(Some(_))
-        .recover { case e => println(Console.RED + e + Console.RESET); None }
+        .recover { case e => logger.error(e.getMessage, e); None }
         .viaMat(KillSwitches.single)(Keep.right)
     }
 

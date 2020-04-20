@@ -1,12 +1,11 @@
 package com.ing.bakery.clustercontroller
 
-import cats.implicits._
 import akka.actor.ActorSystem
-import akka.event.{Logging, LoggingAdapter}
 import akka.stream.scaladsl.{Keep, Sink}
 import akka.stream.{KillSwitches, Materializer}
 import cats.effect.{ContextShift, IO, Resource, Timer}
-import com.typesafe.scalalogging.LazyLogging
+import cats.implicits._
+import com.typesafe.scalalogging.Logger
 import play.api.libs.json.Format
 import skuber.api.client.{EventType, KubernetesClient}
 import skuber.{K8SWatchEvent, ObjectResource, ResourceDefinition}
@@ -17,7 +16,9 @@ trait ResourceOperations[O <: ObjectResource] {
   def upgrade: IO[Unit]
 }
 
-object ResourceOperations extends LazyLogging {
+object ResourceOperations {
+
+  val logger: Logger = Logger("bakery.ResourceOperations")
 
   def controller[O <: ObjectResource](k8s: KubernetesClient, opsConstructor: (O, KubernetesClient) => ResourceOperations[O])(
     implicit
@@ -29,18 +30,16 @@ object ResourceOperations extends LazyLogging {
     rd: ResourceDefinition[O]
   ): Resource[IO, Unit] = {
 
-    implicit val akkaLogger: LoggingAdapter = Logging(actorSystem, rd.spec.names.kind + "-Controller")
-
     def handleEvent(event: K8SWatchEvent[O]): IO[Unit] = {
-      akkaLogger.info(event._type + " " + event._object.metadata.name)
+      logger.info(event._type + " " + event._object.metadata.name)
       val ops = opsConstructor(event._object, k8s)
       (event._type match {
         case EventType.ADDED => ops.create
         case EventType.DELETED => ops.terminate
         case EventType.MODIFIED => ops.upgrade
-        case EventType.ERROR => IO(akkaLogger.error(s"Event type ERROR on ${rd.spec.names.kind} CRD: ${event._object}"))
+        case EventType.ERROR => IO(logger.error(s"Event type ERROR on ${rd.spec.names.kind} CRD: ${event._object}"))
       }).attempt.flatMap {
-        case Left(e) => IO(akkaLogger.error(s"Error when handling the event ${event._type}: " + e.getMessage))
+        case Left(e) => IO(logger.error(s"Error when handling the event ${event._type}: " + e.getMessage))
         case Right(_) => IO.unit
       }
     }
@@ -50,8 +49,7 @@ object ResourceOperations extends LazyLogging {
       .foreach[Option[K8SWatchEvent[O]]] {
         case Some(event) =>
           handleEvent(event).recover { case e =>
-            // TODO proper error logging please :P
-            println(Console.RED + e + Console.RESET)
+            logger.error(s"While processing watch events on controller: ${e.getMessage}", e)
           }.unsafeToFuture()
         case None =>
           Unit
@@ -63,7 +61,7 @@ object ResourceOperations extends LazyLogging {
         k8s.watchAllContinuously[O](bufSize = Int.MaxValue)
           .map(Some(_))
           .recover { case e =>
-            akkaLogger.error("Serialization or CRD consistency issue:" + e.getMessage)
+            logger.error("Serialization or CRD consistency issue:" + e.getMessage, e)
             None
           }
           .viaMat(KillSwitches.single)(Keep.right)

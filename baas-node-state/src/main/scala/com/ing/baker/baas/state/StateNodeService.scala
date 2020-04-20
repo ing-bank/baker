@@ -47,7 +47,6 @@ final class StateNodeService private(baker: Baker, recipeDirectory: String, serv
   def management: HttpRoutes[IO] = Router("/management" -> HttpRoutes.of[IO] {
     case GET -> Root / "interaction" =>
       serviceDiscovery.get.flatMap { interactions =>
-        println(interactions.map(_.name))
         Ok(interactions.map(_.name).mkString(","))
       }
 

@@ -24,10 +24,7 @@ final class StateNodeManagementClient(client: Client[IO], hostname: Uri)(implici
 
   def knownInteractionNames: IO[List[String]] = {
     val request = GET(hostname / "management" / "interaction")
-    client.expect[String](request).map { i =>
-      println(i)
-      i.split(",").toList
-    }
+    client.expect[String](request).map { _.split(",").toList }
   }
 
   def getEvents(recipeInstanceId: String): IO[List[String]] = {
