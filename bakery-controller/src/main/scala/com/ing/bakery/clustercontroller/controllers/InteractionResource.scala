@@ -1,10 +1,11 @@
-package com.ing.bakery.clustercontroller.ops
+package com.ing.bakery.clustercontroller.controllers
 
+import cats.data.ValidatedNel
 import play.api.libs.functional.syntax.{unlift, _}
 import play.api.libs.json.{Format, JsPath}
 import skuber.ResourceSpecification.{Names, Scope}
-import skuber.json.format.{ objFormat, envVarFormat }
-import skuber.{EnvVar, NonCoreResourceSpecification, ObjectMeta, ObjectResource, ResourceDefinition}
+import skuber.json.format.{envVarFormat, objFormat}
+import skuber.{ConfigMap, EnvVar, NonCoreResourceSpecification, ObjectMeta, ObjectResource, ResourceDefinition}
 
 case class InteractionResource(
     kind: String = "Interaction",
@@ -14,6 +15,8 @@ case class InteractionResource(
   extends ObjectResource
 
 object InteractionResource {
+
+  def fromConfigMap(configMap: ConfigMap): ValidatedNel[String, InteractionResource] = ???
 
   case class Spec(
     image: String,

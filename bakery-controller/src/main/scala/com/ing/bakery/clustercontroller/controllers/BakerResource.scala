@@ -1,5 +1,6 @@
-package com.ing.bakery.clustercontroller.ops
+package com.ing.bakery.clustercontroller.controllers
 
+import cats.data.ValidatedNel
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.serialization.ProtoMap
@@ -8,7 +9,7 @@ import play.api.libs.functional.syntax.{unlift, _}
 import play.api.libs.json.{Format, JsPath}
 import skuber.ResourceSpecification.{Names, Scope}
 import skuber.json.format.objFormat
-import skuber.{NonCoreResourceSpecification, ObjectMeta, ObjectResource, ResourceDefinition}
+import skuber.{ConfigMap, NonCoreResourceSpecification, ObjectMeta, ObjectResource, ResourceDefinition}
 import cats.implicits._
 
 import scala.util.Try
@@ -32,6 +33,8 @@ case class BakerResource(
 }
 
 object BakerResource {
+
+  def fromConfigMap(configMap: ConfigMap): ValidatedNel[String, BakerResource] = ???
 
   case class Spec(
     bakeryVersion: String,

@@ -1,4 +1,4 @@
-package com.ing.bakery.clustercontroller.ops
+package com.ing.bakery.clustercontroller.controllers
 
 import cats.effect.{IO, Timer}
 import cats.syntax.apply._

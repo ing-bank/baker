@@ -7,9 +7,10 @@ import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.syntax.functor._
-import com.ing.bakery.clustercontroller.ops.{BakerOperations, InteractionOperations}
+import com.ing.bakery.clustercontroller.controllers.{BakerController, BakerResource, InteractionController, InteractionResource}
 import org.http4s.client.blaze.BlazeClientBuilder
 import skuber.api.client.KubernetesClient
+import skuber.json.format.configMapFmt
 
 import scala.concurrent.ExecutionContext
 
@@ -29,8 +30,12 @@ object Main extends IOApp {
     (for {
       _ <- BakeryControllerService.resource(InetSocketAddress.createUnresolved("0.0.0.0", 8080))
       httpClient <- BlazeClientBuilder[IO](connectionPool).resource
-      _ <- ResourceOperations.controller(k8s, InteractionOperations.ops(httpClient))
-      _ <- ResourceOperations.controller(k8s, BakerOperations.ops)
+      interactions = new InteractionController(httpClient)
+      bakers = new BakerController()
+      _ <- interactions.watch(k8s)
+      _ <- interactions.fromConfigMaps(InteractionResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "interactions"))
+      _ <- bakers.watch(k8s)
+      _ <- bakers.fromConfigMaps(BakerResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "bakers"))
     } yield ()).use(_ => IO.never).as(ExitCode.Success)
   }
 }
