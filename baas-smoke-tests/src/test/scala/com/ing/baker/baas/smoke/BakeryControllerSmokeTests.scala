@@ -30,6 +30,8 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
             _ <- Pod.printPodsStatuses(namespace)
             reserveItemsPodsCount <- Pod.countPodsWithLabel(reserveItems, namespace)
             makePaymentPodsCount <- Pod.countPodsWithLabel(makePaymentAndShipItems, namespace)
+            _ <- context.inspector.watchLogsWithPrefix("reserve-items", None, context.namespace)
+            _ <- context.inspector.watchLogsWithPrefix("make-payment-and-ship-items", None, context.namespace)
             _ = reserveItemsPodsCount shouldBe 2
             _ = makePaymentPodsCount shouldBe 1
             _ <- Pod.allPodsAreReady(namespace)
@@ -65,6 +67,7 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
             _ <- Pod.allPodsAreReady(namespace)
             webshopPodsCount <- Pod.countPodsWithLabel(webshopBaker, namespace)
             reservationPodsCount <- Pod.countPodsWithLabel(reservationBaker, namespace)
+            _ <- context.inspector.watchLogsWithPrefix("baas-state", None, namespace)
             _ = webshopPodsCount shouldBe 2
             _ = reservationPodsCount shouldBe 2
           } yield()
@@ -136,7 +139,7 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
   type TestContext = smoke.BakeryControllerEnvironment.Context
 
   /** Represents external arguments to the test context builder. */
-  type TestArguments = Unit
+  type TestArguments = smoke.BakeryControllerEnvironment.Arguments
 
   /** Creates a `Resource` which allocates and liberates the expensive resources each test can use.
     * For example web servers, network connection, database mocks.
@@ -155,5 +158,10 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
     * @param config map populated with the -Dkey=value arguments.
     * @return the data structure used by the `contextBuilder` function.
     */
-  def argumentsBuilder(config: ConfigMap): TestArguments = ()
+  def argumentsBuilder(config: ConfigMap): TestArguments = {
+    config.getOrElse("debug", "false") match {
+      case "yes" | "true" | "t" | "y" => smoke.BakeryControllerEnvironment.Arguments(debugMode = true)
+      case _ => smoke.BakeryControllerEnvironment.Arguments(debugMode = false)
+    }
+  }
 }

@@ -1,4 +1,4 @@
-package com.ing.baker.baas.state
+package webshop.webservice
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import org.http4s.Method._
@@ -24,7 +24,7 @@ final class StateNodeManagementClient(client: Client[IO], hostname: Uri)(implici
 
   def knownInteractionNames: IO[List[String]] = {
     val request = GET(hostname / "management" / "interaction")
-    client.expect[String](request).map(_.split(",").toList)
+    client.expect[String](request).map { _.split(",").toList }
   }
 
   def getEvents(recipeInstanceId: String): IO[List[String]] = {

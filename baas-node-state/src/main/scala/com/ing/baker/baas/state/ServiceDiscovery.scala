@@ -1,8 +1,9 @@
 package com.ing.baker.baas.state
 
+import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.{Keep, Sink}
-import akka.stream.{KillSwitches, Materializer}
+import akka.stream.scaladsl.{Keep, Sink, Source}
+import akka.stream.{KillSwitches, Materializer, UniqueKillSwitch}
 import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
@@ -10,17 +11,24 @@ import com.ing.baker.baas.interaction.RemoteInteractionClient
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.akka.internal.InteractionManager
 import com.ing.baker.runtime.scaladsl.InteractionInstance
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.{LazyLogging, Logger}
 import org.http4s.Uri
+import org.http4s.client.Client
 import skuber._
 import skuber.api.client.{EventType, KubernetesClient}
 import skuber.json.format._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
-object ServiceDiscovery extends LazyLogging {
+object ServiceDiscovery {
 
-  private[state] type RecipeName = String
+  val logger: Logger = Logger("bakery.ServiceDiscovery")
+
+  def empty(httpClient: Client[IO]): IO[ServiceDiscovery] =
+    Ref.of[IO, Map[String, InteractionInstance]](Map.empty).map(new ServiceDiscovery(_, httpClient))
+
+  val baasComponentLabel: (String, String) = "baas-component" -> "remote-interaction-interfaces"
 
   /** Creates resource of a ServiceDiscovery module, when acquired a stream of kubernetes services starts and feeds the
     * ServiceDiscovery module to give corresponding InteractionInstances
@@ -28,116 +36,110 @@ object ServiceDiscovery extends LazyLogging {
     *
     * Current hard coded polling periods: 2 seconds
     *
-    * @param connectionPool to be used for client connections
+    * @param httpClient to be used for interaction with the remote interactions
     * @param contextShift to be used by the streams
     * @param timer to be used by the streams
     * @return
     */
-  def resource(connectionPool: ExecutionContext, k8s: KubernetesClient)(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem, materializer: Materializer): Resource[IO, ServiceDiscovery] = {
+  def resource(httpClient: Client[IO], k8s: KubernetesClient)(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem, materializer: Materializer): Resource[IO, ServiceDiscovery] = {
 
-    def getHttpServicePortOrDefault(service: Service): String = {
-      for {
-        spec <- service.spec
-        portNumber <- spec.ports.find(_.name == "http-api")
-      } yield portNumber.port.toString
-    }.getOrElse("8080")
-
-    def getInteractionAddresses(currentServices: List[Service]): List[Uri] =
-      currentServices
-        .filter(_.metadata.labels.getOrElse("baas-component", "Wrong")
-          .equals("remote-interaction"))
-        .map(service => "http://" + service.metadata.name + ":" + getHttpServicePortOrDefault(service))
-        .map(Uri.unsafeFromString)
-
-    def buildInteractions(currentServices: List[Service]): IO[List[InteractionInstance]] =
-      getInteractionAddresses(currentServices)
-        .map(RemoteInteractionClient.resource(_, connectionPool))
-        .parTraverse[IO, List[InteractionInstance]](buildInteractionInstance)
-        .map(_.flatten)
-
-    def buildInteractionInstance(resource: Resource[IO, RemoteInteractionClient]): IO[List[InteractionInstance]] =
-      resource.use { client =>
-        for {
-          interface <- client.interface.attempt
-          interactionsOpt = interface match {
-            case Right(interfaces) =>
-              interfaces.map { i =>
-                InteractionInstance(
-                  name = i.name,
-                  input = i.interface,
-                  run = input => resource.use(_.runInteraction(i.id, input)).unsafeToFuture()
-                )
-              }
-            case Left(_) => List.empty
-          }
-        } yield interactionsOpt
+    def watchSource(serviceDiscovery: ServiceDiscovery): Source[Option[K8SWatchEvent[ConfigMap]], UniqueKillSwitch] = {
+      val watchFilter: ListOptions = {
+        val (key, value) = baasComponentLabel
+        val labelSelector = LabelSelector(LabelSelector.IsEqualRequirement(key, value))
+        ListOptions(labelSelector = Some(labelSelector))
       }
 
-    def updateServicesWith(
-      currentServices: Ref[IO, List[Service]],
-      cacheInteractions: Ref[IO, List[InteractionInstance]]
-    )(event: K8SWatchEvent[Service]): IO[Unit] = {
-      for {
-        services <- event._type match {
-          case EventType.ADDED =>
-            currentServices.updateAndGet(event._object :: _)
-          case EventType.DELETED =>
-            currentServices.updateAndGet(_.filterNot(_ == event._object))
-          case EventType.MODIFIED =>
-            currentServices.updateAndGet(_.map(service => if (service.metadata.uid == event._object.metadata.uid) event._object else service))
-          case EventType.ERROR =>
-            IO(logger.error(s"Event type ERROR on service watch for service ${event._object}")) *> currentServices.get
-        }
-        _ <- List(
-          buildInteractions(services).flatMap(cacheInteractions.set),
-        ).parSequence
-      } yield ()
+      k8s.watchWithOptions[ConfigMap](watchFilter)
+        .map(Some(_))
+        .recover { case e => logger.error(e.getMessage, e); None }
+        .viaMat(KillSwitches.single)(Keep.right)
     }
 
-    val paralellism = math.max(2, Runtime.getRuntime.availableProcessors())
-    
-    val createServiceDiscovery = for {
-      currentServices <- Ref.of[IO, List[Service]](List.empty)
-      cacheInteractions <- Ref.of[IO, List[InteractionInstance]](List.empty)
-      service = new ServiceDiscovery(cacheInteractions)
-      updateServices = updateServicesWith(currentServices, cacheInteractions) _
-      sink = Sink
-        .foreachAsync[Option[K8SWatchEvent[Service]]](paralellism) {
-          case Some(event) =>
-            updateServices(event).recover { case e =>
-              println(Console.RED + e + Console.RESET)
-              logger.error("Failure when updating the services in the Service Discovery component", e)
-            }.unsafeToFuture()
-          case None =>
-            Future.successful(Unit)
-        }
-      killSwitch <- IO {
-        k8s.watchAllContinuously[Service]()
-          .map(Some(_))
-          .recover {
-            case e =>
-              println(Console.RED + e + Console.RESET)
-              None
-          }
-          .viaMat(KillSwitches.single)(Keep.right)
-          .toMat(sink)(Keep.left)
-          .run()
+    def updateSink(serviceDiscovery: ServiceDiscovery): Sink[Option[K8SWatchEvent[ConfigMap]], Future[Done]] = {
+      Sink.foreach[Option[K8SWatchEvent[ConfigMap]]] {
+        case Some(event) =>
+          serviceDiscovery.update(event).recover { case e =>
+            logger.error("Failure when updating the services in the ConfigMap Discovery component", e)
+          }.unsafeToFuture()
+        case None =>
+          Future.successful(Unit)
       }
-    } yield (service, killSwitch)
+    }
 
-    Resource.make(createServiceDiscovery)(s => IO(s._2.shutdown())).map(_._1)
+    val createServiceDiscovery: IO[(ServiceDiscovery, UniqueKillSwitch)] =
+      for {
+        serviceDiscovery <- ServiceDiscovery.empty(httpClient)
+        killSwitch <- IO { watchSource(serviceDiscovery).toMat(updateSink(serviceDiscovery))(Keep.left).run() }
+      } yield (serviceDiscovery, killSwitch)
+
+    Resource.make(createServiceDiscovery) { case (_, hook) => IO(hook.shutdown()) }.map(_._1)
   }
 }
 
-case class ServiceDiscovery private(
-  cacheInteractions: Ref[IO, List[InteractionInstance]]
-) {
+final class ServiceDiscovery private(
+  cacheInteractions: Ref[IO, Map[String, InteractionInstance]],
+  httpClient: Client[IO]
+) extends LazyLogging {
+
+  def get: IO[List[InteractionInstance]] =
+    cacheInteractions.get.map(_.values.toList)
+
+  def update(event: K8SWatchEvent[ConfigMap])(implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[Unit] =
+    event._type match {
+      case EventType.ADDED =>
+        addInteractionInstancesFrom(event._object)
+      case EventType.DELETED =>
+        removeInteractionInstancesFrom(event._object)
+      case EventType.MODIFIED =>
+        IO.unit
+      case EventType.ERROR =>
+        IO(logger.error(s"Event type ERROR on service watch for service ${event._object}"))
+    }
 
   def buildInteractionManager: InteractionManager =
     new InteractionManager {
       override def addImplementation(interaction: InteractionInstance): Future[Unit] =
         Future.failed(new IllegalStateException("Adding implementation instances is not supported on a Bakery cluster."))
       override def getImplementation(interaction: InteractionTransition): Future[Option[InteractionInstance]] =
-        cacheInteractions.get.map(_.find(isCompatibleImplementation(interaction, _))).unsafeToFuture()
+        cacheInteractions.get.map(_.values.find(isCompatibleImplementation(interaction, _))).unsafeToFuture()
+    }
+
+  private def addInteractionInstancesFrom(contract: ConfigMap)(implicit contextShift: ContextShift[IO], timer: Timer[IO]): IO[Unit] =
+    for {
+      address <- extractAddress(contract)
+      interfaces <- extractInterfaces(contract)
+      client = new RemoteInteractionClient(httpClient, address)
+      interactions = interfaces.map { interaction =>
+        interaction.id -> InteractionInstance(
+          name = interaction.name,
+          input = interaction.interface,
+          run = input => client.runInteraction(interaction.id, input).unsafeToFuture()
+        )
+      }.toMap
+      _ <- cacheInteractions.update(_ ++ interactions)
+      _ = logger.info(s"Added interactions: ${interfaces.map(_.name).mkString(", ")}")
+    } yield ()
+
+  private def removeInteractionInstancesFrom(contract: ConfigMap): IO[Unit] = {
+    for {
+      interfaces <- extractInterfaces(contract)
+      _ <- cacheInteractions.update(current =>
+        interfaces.foldLeft(current) { case (updated, interaction) => updated - interaction.id })
+      _ = logger.info(s"Removed interactions: ${interfaces.map(_.name).mkString(", ")}")
+    } yield ()
+  }
+
+  private def extractAddress(contract: ConfigMap): IO[Uri] =
+    contract.data.get("address") match {
+      case Some(address) => IO(Uri.unsafeFromString(address))
+      case None => IO.raiseError(new IllegalStateException("'address' key not found in interaction creation contract config map"))
+    }
+
+  private def extractInterfaces(contract: ConfigMap): IO[List[RemoteInteractionClient.InteractionEndpoint]] =
+    contract.data.get("interfaces").map(RemoteInteractionClient.InteractionEndpoint.fromBase64) match {
+      case Some(Success(interfaces)) => IO.pure(interfaces)
+      case Some(Failure(exception)) => IO.raiseError(new IllegalStateException("Error when deserializing base 64 interfaces in interaction creation contract config map", exception))
+      case None => IO.raiseError(new IllegalStateException("'interfaces' key not found in interaction creation contract config map"))
     }
 }

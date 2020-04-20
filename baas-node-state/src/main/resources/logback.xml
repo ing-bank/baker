@@ -2,7 +2,7 @@
 
   <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+      <pattern>%d{HH:mm:ss.SSS} [%-5level] %logger{36} - %msg%n</pattern>
     </encoder>
   </appender>
 
@@ -13,5 +13,7 @@
   <logger level="ERROR" name="skuber.api"/>
 
   <logger level="ERROR" name="org.http4s"/>
+
+  <logger level="INFO" name="bakery.ServiceDiscovery"/>
 
 </configuration>

@@ -1,13 +1,17 @@
 package com.ing.bakery.clustercontroller
 
 import java.net.InetSocketAddress
+import java.util.concurrent.Executors
 
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.syntax.functor._
-import com.ing.bakery.clustercontroller.ops.{InteractionOperations, BakerOperations}
+import com.ing.bakery.clustercontroller.ops.{BakerOperations, InteractionOperations}
+import org.http4s.client.blaze.BlazeClientBuilder
 import skuber.api.client.KubernetesClient
+
+import scala.concurrent.ExecutionContext
 
 object Main extends IOApp {
 
@@ -17,12 +21,16 @@ object Main extends IOApp {
       ActorSystem("BaaSStateNodeSystem")
     implicit val materializer: Materializer =
       ActorMaterializer()
-    val k8s: KubernetesClient = skuber.k8sInit
+    val k8s: KubernetesClient =
+      skuber.k8sInit
+    val connectionPool =
+      ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
 
     (for {
       _ <- BakeryControllerService.resource(InetSocketAddress.createUnresolved("0.0.0.0", 8080))
-      _ <- ResourceOperations.controller(k8s, InteractionOperations.spec)
-      _ <- ResourceOperations.controller(k8s, BakerOperations.spec)
+      httpClient <- BlazeClientBuilder[IO](connectionPool).resource
+      _ <- ResourceOperations.controller(k8s, InteractionOperations.ops(httpClient))
+      _ <- ResourceOperations.controller(k8s, BakerOperations.ops)
     } yield ()).use(_ => IO.never).as(ExitCode.Success)
   }
 }
