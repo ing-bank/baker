@@ -1,11 +1,14 @@
 package com.ing.bakery.clustercontroller.controllers
 
-import cats.data.ValidatedNel
+import cats.implicits._
+import com.ing.bakery.clustercontroller.controllers.Utils.FromConfigMapValidation
 import play.api.libs.functional.syntax.{unlift, _}
 import play.api.libs.json.{Format, JsPath}
 import skuber.ResourceSpecification.{Names, Scope}
 import skuber.json.format.{envVarFormat, objFormat}
 import skuber.{ConfigMap, EnvVar, NonCoreResourceSpecification, ObjectMeta, ObjectResource, ResourceDefinition}
+
+import scala.util.Try
 
 case class InteractionResource(
     kind: String = "Interaction",
@@ -16,7 +19,50 @@ case class InteractionResource(
 
 object InteractionResource {
 
-  def fromConfigMap(configMap: ConfigMap): ValidatedNel[String, InteractionResource] = ???
+  def fromConfigMap(configMap: ConfigMap): FromConfigMapValidation[InteractionResource] = {
+
+    def envValidated: FromConfigMapValidation[List[EnvVar]] = {
+
+      def envFromLiteral(sub: ConfigMap): FromConfigMapValidation[EnvVar] =
+        ( Utils.extractValidated(sub, "name")
+        , Utils.extractValidated(sub, "value")
+        ).mapN((name, value) => EnvVar(name, EnvVar.StringValue(value)))
+
+      def envFromConfigMap(sub: ConfigMap): FromConfigMapValidation[EnvVar] =
+        ( Utils.extractValidated(sub, "name")
+        , Utils.extractValidated(sub, "valueFrom.configMapKeyRef.name")
+        , Utils.extractValidated(sub, "valueFrom.configMapKeyRef.key")
+        ).mapN((name, configMapName, key) => EnvVar(name, EnvVar.ConfigMapKeyRef(configMapName, key)))
+
+      def envFromSecret(sub: ConfigMap): FromConfigMapValidation[EnvVar] =
+        ( Utils.extractValidated(sub, "name")
+        , Utils.extractValidated(sub, "valueFrom.secretKeyRef.name")
+        , Utils.extractValidated(sub, "valueFrom.secretKeyRef.key")
+        ).mapN((name, secretName, key) => EnvVar(name, EnvVar.SecretKeyRef(secretName, key)))
+
+      Utils.extractListWithSubPaths(configMap, "env").andThen(_.traverse[FromConfigMapValidation, EnvVar](
+        sub => envFromLiteral(sub).orElse(envFromConfigMap(sub)).orElse(envFromSecret(sub)).orElse(s"No valid environment between subpaths '${sub.data.keys.mkString(", ")}' in ConfigMap '${sub.name}'".invalidNel)
+      ))
+    }
+
+    def configMount(sub: ConfigMap): FromConfigMapValidation[ConfigMount] =
+      ( Utils.extractValidated(sub, "name")
+        , Utils.extractValidated(sub, "mountPath")
+        ).mapN(ConfigMount)
+
+    def configMapMountsValidated: FromConfigMapValidation[List[ConfigMount]] =
+      Utils.extractListWithSubPaths(configMap, "configMapMounts").andThen(_.traverse(configMount))
+
+    def secretMountsValidated: FromConfigMapValidation[List[ConfigMount]] =
+      Utils.extractListWithSubPaths(configMap, "secretMounts").andThen(_.traverse(configMount))
+
+    ( Utils.extractValidated(configMap, "image")
+    , Utils.extractAndParseValidated(configMap, "replicas", r => Try(r.toInt)).orElse(1.validNel): FromConfigMapValidation[Int]
+    , envValidated
+    , configMapMountsValidated
+    , secretMountsValidated
+    ).mapN(Spec).map(spec => InteractionResource(spec = spec))
+  }
 
   case class Spec(
     image: String,

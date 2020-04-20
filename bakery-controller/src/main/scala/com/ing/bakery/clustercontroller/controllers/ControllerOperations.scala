@@ -1,4 +1,4 @@
-package com.ing.bakery.clustercontroller
+package com.ing.bakery.clustercontroller.controllers
 
 import akka.Done
 import akka.actor.ActorSystem
@@ -7,6 +7,7 @@ import akka.stream.{KillSwitches, Materializer, UniqueKillSwitch}
 import cats.data.ValidatedNel
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
+import com.ing.bakery.clustercontroller.controllers.Utils.FromConfigMapValidation
 import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json.Format
 import skuber.api.client.{EventType, KubernetesClient}
@@ -22,7 +23,7 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
 
   def upgrade(resource: O, k8s: KubernetesClient): IO[Unit]
 
-  def fromConfigMaps(from: ConfigMap => ValidatedNel[String, O])(implicit rd: ResourceDefinition[O]): ControllerOperations[ConfigMap] = {
+  def fromConfigMaps(from: ConfigMap => FromConfigMapValidation[O])(implicit rd: ResourceDefinition[O]): ControllerOperations[ConfigMap] = {
     def validate(resource: ConfigMap): IO[O] =
       from(resource).fold(
         errs => IO.raiseError(new RuntimeException(s"Could not transform ConfigMap into ${rd.spec.names.kind}: ${errs.mkString_(" and ")}")),
@@ -62,7 +63,7 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
     }
 
     //TODO chose a more reasonable number for the bufSize
-    def sourceWithLabel(keyValue: (String, String)): Source[K8SWatchEvent[O], _] = {
+    def sourceWithLabel(keyValue: (String, String)) = {
       val watchFilter: ListOptions = {
         val labelSelector = LabelSelector(LabelSelector.IsEqualRequirement(keyValue._1, keyValue._2))
         ListOptions(labelSelector = Some(labelSelector))
@@ -71,7 +72,7 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
     }
 
     //TODO chose a more reasonable number for the bufSize
-    def sourceWithoutLabel: Source[K8SWatchEvent[O], _] =
+    def sourceWithoutLabel =
       k8s.watchAllContinuously[O](bufSize = Int.MaxValue)
 
     val source: Source[Option[K8SWatchEvent[O]], UniqueKillSwitch] =

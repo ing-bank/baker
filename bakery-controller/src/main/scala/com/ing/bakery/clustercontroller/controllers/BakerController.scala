@@ -2,7 +2,6 @@ package com.ing.bakery.clustercontroller.controllers
 
 import cats.effect.{ContextShift, IO, Timer}
 import cats.syntax.functor._
-import com.ing.bakery.clustercontroller.ControllerOperations
 import com.typesafe.scalalogging.LazyLogging
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.api.client.KubernetesClient

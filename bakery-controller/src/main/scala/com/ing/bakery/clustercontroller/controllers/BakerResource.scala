@@ -1,16 +1,16 @@
 package com.ing.bakery.clustercontroller.controllers
 
-import cats.data.ValidatedNel
+import cats.implicits._
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.serialization.ProtoMap
+import com.ing.bakery.clustercontroller.controllers.Utils.FromConfigMapValidation
 import org.apache.commons.codec.binary.Base64
 import play.api.libs.functional.syntax.{unlift, _}
 import play.api.libs.json.{Format, JsPath}
 import skuber.ResourceSpecification.{Names, Scope}
 import skuber.json.format.objFormat
 import skuber.{ConfigMap, NonCoreResourceSpecification, ObjectMeta, ObjectResource, ResourceDefinition}
-import cats.implicits._
 
 import scala.util.Try
 
@@ -34,7 +34,12 @@ case class BakerResource(
 
 object BakerResource {
 
-  def fromConfigMap(configMap: ConfigMap): ValidatedNel[String, BakerResource] = ???
+  def fromConfigMap(configMap: ConfigMap): FromConfigMapValidation[BakerResource] = {
+    ( Utils.extractValidated(configMap, "bakeryVersion")
+    , Utils.extractAndParseValidated(configMap, "replicas", r => Try(r.toInt)).orElse(2.validNel): FromConfigMapValidation[Int]
+    , Utils.extractListValidated(configMap, "recipes")
+    ).mapN(Spec).map(spec => BakerResource(spec = spec))
+  }
 
   case class Spec(
     bakeryVersion: String,

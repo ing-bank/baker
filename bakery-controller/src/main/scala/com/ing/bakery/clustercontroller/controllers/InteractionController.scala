@@ -3,7 +3,6 @@ package com.ing.bakery.clustercontroller.controllers
 import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.baas.interaction.RemoteInteractionClient
 import com.ing.baker.baas.interaction.RemoteInteractionClient.InteractionEndpoint
-import com.ing.bakery.clustercontroller.ControllerOperations
 import com.typesafe.scalalogging.LazyLogging
 import org.http4s.Uri
 import org.http4s.client.Client
