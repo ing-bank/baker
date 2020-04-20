@@ -2,7 +2,7 @@ trigger:
   batch: true
   branches:
     include:
-    - master
+      - feature*
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -41,6 +41,8 @@ steps:
     env:
       FEEDPASSWORD: $(feedPassword) # secrets extracted explicitly, other vars - from the group
 
-  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} clean test aetherDeploy
+  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} clean coverage test coverageReport
     displayName: 'Running sbt'
 
+  - script: bash <(curl -s https://codecov.io/bash)
+    displayName: 'Updating code coverage report'
