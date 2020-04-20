@@ -1,5 +1,7 @@
 package com.ing.baker.runtime.serialization
 
+import java.util.Base64
+
 import com.ing.baker.runtime.akka.actor.protobuf
 import com.ing.baker.runtime.common.BakerException
 import com.ing.baker.runtime.scaladsl._
@@ -27,9 +29,15 @@ trait ProtoMap[A, P <: scalapb.GeneratedMessage] {
 
 object ProtoMap {
 
-  def ctxToProto[A, P <: scalapb.GeneratedMessage ](a: A)(implicit ev: ProtoMap[A, P]): P = ev.toProto(a)
+  def encode64[A, P <: scalapb.GeneratedMessage](a: A)(implicit ev: ProtoMap[A, P]): String =
+    new String(Base64.getEncoder.encode(ev.toByteArray(a)))
 
-  def ctxFromProto[A, P <: scalapb.GeneratedMessage ](proto: P)(implicit ev: ProtoMap[A, P]): Try[A] = ev.fromProto(proto)
+  def decode64[A, P <: scalapb.GeneratedMessage](str: String)(implicit ev: ProtoMap[A, P]): Try[A] =
+    ev.fromByteArray(Base64.getDecoder.decode(str))
+
+  def ctxToProto[A, P <: scalapb.GeneratedMessage](a: A)(implicit ev: ProtoMap[A, P]): P = ev.toProto(a)
+
+  def ctxFromProto[A, P <: scalapb.GeneratedMessage](proto: P)(implicit ev: ProtoMap[A, P]): Try[A] = ev.fromProto(proto)
 
   def versioned[A](a: Option[A], name: String): Try[A] =
     Try(a.getOrElse(throw new IllegalStateException(s"Missing field '$name' from protobuf message, probably we received a different version of the message")))

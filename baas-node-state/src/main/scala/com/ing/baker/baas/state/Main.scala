@@ -13,6 +13,7 @@ import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import org.http4s.client.blaze.BlazeClientBuilder
 import skuber.api.client.KubernetesClient
 
 import scala.concurrent.ExecutionContext
@@ -40,7 +41,8 @@ object Main extends IOApp {
     val k8s: KubernetesClient = skuber.k8sInit
 
     val mainResource = for {
-      serviceDiscovery <- ServiceDiscovery.resource(connectionPool, k8s)
+      httpClient <- BlazeClientBuilder[IO](connectionPool).resource
+      serviceDiscovery <- ServiceDiscovery.resource(httpClient, k8s)
       eventSink <- KafkaEventSink.resource(eventSinkSettings)
       baker = AkkaBaker
         .withConfig(AkkaBakerConfig(
