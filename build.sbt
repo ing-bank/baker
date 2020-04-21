@@ -392,7 +392,6 @@ lazy val `baker-example` = project
 lazy val `baas-client-example` = project
   .in(file("examples/baas-client-example"))
   .enablePlugins(JavaAppPackaging)
-  .settings(commonSettings)
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "baas-client-example",
@@ -424,7 +423,6 @@ lazy val `baas-client-example` = project
 lazy val `baas-kafka-listener-example` = project
   .in(file("examples/baas-kafka-listener-example"))
   .enablePlugins(JavaAppPackaging)
-  .settings(commonSettings)
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "baas-kafka-listener-example",
@@ -458,7 +456,6 @@ lazy val `baas-interaction-example-reserve-items` = project.in(file("examples/ba
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "baas-interaction-example-reserve-items",
-    version := "1.0.0",
     scalacOptions ++= Seq(
       "-Ypartial-unification"
     ),
@@ -479,7 +476,6 @@ lazy val `baas-interaction-example-make-payment-and-ship-items` = project.in(fil
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "baas-interaction-example-make-payment-and-ship-items",
-    version := "1.0.0",
     scalacOptions ++= Seq(
       "-Ypartial-unification"
     ),
