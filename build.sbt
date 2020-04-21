@@ -455,7 +455,7 @@ lazy val `baas-kafka-listener-example` = project
 lazy val `baas-interaction-example-reserve-items` = project.in(file("examples/baas-interaction-examples/reserve-items"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
-  .settings(commonSettings)
+  .settings(defaultModuleSettings)
   .settings(
     moduleName := "baas-interaction-example-reserve-items",
     version := "1.0.0",
@@ -476,7 +476,7 @@ lazy val `baas-interaction-example-reserve-items` = project.in(file("examples/ba
 lazy val `baas-interaction-example-make-payment-and-ship-items` = project.in(file("examples/baas-interaction-examples/make-payment-and-ship-items"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
-  .settings(commonSettings)
+  .settings(defaultModuleSettings)
   .settings(
     moduleName := "baas-interaction-example-make-payment-and-ship-items",
     version := "1.0.0",
