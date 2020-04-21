@@ -42,7 +42,10 @@ steps:
       FEEDPASSWORD: $(feedPassword) # secrets extracted explicitly, other vars - from the group
 
   - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} clean coverage test coverageReport
-    displayName: 'Running sbt'
+    displayName: 'Building and testing main Baker'
 
   - script: bash <(curl -s https://codecov.io/bash)
     displayName: 'Updating code coverage report'
+
+  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project baas-interaction-example-make-payment-and-ship-items; test; project baas-interaction-example-reserve-items; test"
+    displayName: 'Building and testing example integrations'
