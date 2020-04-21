@@ -44,6 +44,6 @@ steps:
   - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "clean; test; aetherDeploy"
     displayName: 'Building main Baker'
 
-  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project baas-interaction-example-make-payment-and-ship-items; aetherDeploy; project baas-interaction-example-reserve-items; aetherDeploy"
-    displayName: 'Building and publishing example integrations'
+  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project baas-interaction-example-make-payment-and-ship-items; aetherDeploy; project baas-interaction-example-reserve-items; aetherDeploy; project baas-client-example; aetherDeploy; project baas-kafka-listener-example; aetherDeploy"
+    displayName: 'Building and publishing examples'
 
