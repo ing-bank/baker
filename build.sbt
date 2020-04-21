@@ -393,7 +393,7 @@ lazy val `baas-client-example` = project
   .in(file("examples/baas-client-example"))
   .enablePlugins(JavaAppPackaging)
   .settings(commonSettings)
-  .settings(noPublishSettings)
+  .settings(defaultModuleSettings)
   .settings(
     moduleName := "baas-client-example",
     scalacOptions ++= Seq(
@@ -425,7 +425,7 @@ lazy val `baas-kafka-listener-example` = project
   .in(file("examples/baas-kafka-listener-example"))
   .enablePlugins(JavaAppPackaging)
   .settings(commonSettings)
-  .settings(noPublishSettings)
+  .settings(defaultModuleSettings)
   .settings(
     moduleName := "baas-kafka-listener-example",
     scalacOptions ++= Seq(
