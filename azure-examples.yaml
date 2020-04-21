@@ -41,6 +41,6 @@ steps:
     env:
       FEEDPASSWORD: $(feedPassword) # secrets extracted explicitly, other vars - from the group
 
-  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "package; project baas-interaction-example-make-payment-and-ship-items; aetherDeploy; project baas-interaction-example-reserve-items; aetherDeploy"
+  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "clean; test; aetherDeploy; project baas-interaction-example-make-payment-and-ship-items; aetherDeploy; project baas-interaction-example-reserve-items; aetherDeploy"
     displayName: 'Running sbt'
 
