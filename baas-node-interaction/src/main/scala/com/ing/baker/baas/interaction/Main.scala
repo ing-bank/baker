@@ -4,14 +4,14 @@ import com.ing.baker.runtime.scaladsl.InteractionInstance
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
- * Expects single argument containing full classpath entry point for interaction
+ * Expects single argument containing comma-separated list of interactions' entry points
  */
 object Main extends App {
   private def runApp(classNames: String): Unit =
     try {
       val interactions: List[String] = classNames.split(",").toList
       val implementations = interactions
-        .map(entryClassName => Class.forName(entryClassName).newInstance.asInstanceOf[AnyRef])
+        .map(entryClassName => Class.forName(entryClassName).getConstructor().newInstance().asInstanceOf[AnyRef])
         .map(implementation => InteractionInstance.unsafeFrom(implementation))
       RemoteInteractionLoader.apply(implementations)
     } catch {

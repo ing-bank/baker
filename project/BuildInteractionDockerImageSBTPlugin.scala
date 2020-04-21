@@ -45,7 +45,7 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
       }
 
       val arguments = builder match {
-        case cmd@CommandArgumentsBuilder(Some(name), Some("local" | "remote" | "stage") | None, artifact, interactions) if interactions.nonEmpty =>
+        case cmd@CommandArgumentsBuilder(Some(name), Some("local" | "remote") | None, artifact, interactions) if interactions.nonEmpty =>
           CommandArguments(name, cmd.publish.getOrElse("remote"), artifact, interactions)
         case CommandArgumentsBuilder(None, _, _, _) =>
           throw new MessageOnlyException(s"Expected name for image (--image-name=<name>)")
@@ -94,7 +94,6 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
 
       val commandName = arguments.publish match {
         case "local" => "docker:publishLocal"
-        case "stage" => "docker:stage"
         case _ => "docker:publish"
       }
       val updatedState = Command.process(commandName, stateWithNewDependency)
