@@ -38,7 +38,7 @@ object BakerResource {
     ( Utils.extractValidated(configMap, "bakeryVersion")
     , Utils.extractAndParseValidated(configMap, "replicas", r => Try(r.toInt)).orElse(2.validNel): FromConfigMapValidation[Int]
     , Utils.extractListValidated(configMap, "recipes")
-    ).mapN(Spec).map(spec => BakerResource(spec = spec))
+    ).mapN(Spec).map(spec => BakerResource(metadata = configMap.metadata, spec = spec))
   }
 
   case class Spec(

@@ -5,9 +5,10 @@ import java.util.concurrent.Executors
 
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.{ExitCode, IO, IOApp, Resource}
 import cats.syntax.functor._
 import com.ing.bakery.clustercontroller.controllers.{BakerController, BakerResource, InteractionController, InteractionResource}
+import com.typesafe.config.ConfigFactory
 import org.http4s.client.blaze.BlazeClientBuilder
 import skuber.api.client.KubernetesClient
 import skuber.json.format.configMapFmt
@@ -18,6 +19,8 @@ object Main extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] = {
 
+    val config = ConfigFactory.load()
+    val useCrds = config.getBoolean("bakery-controller.use-crds")
     implicit val system: ActorSystem =
       ActorSystem("BaaSStateNodeSystem")
     implicit val materializer: Materializer =
@@ -32,9 +35,9 @@ object Main extends IOApp {
       httpClient <- BlazeClientBuilder[IO](connectionPool).resource
       interactions = new InteractionController(httpClient)
       bakers = new BakerController()
-      _ <- interactions.watch(k8s)
+      _ <- if(useCrds) interactions.watch(k8s) else Resource.liftF(IO.unit)
       _ <- interactions.fromConfigMaps(InteractionResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "interactions"))
-      _ <- bakers.watch(k8s)
+      _ <- if(useCrds) bakers.watch(k8s) else Resource.liftF(IO.unit)
       _ <- bakers.fromConfigMaps(BakerResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "bakers"))
     } yield ()).use(_ => IO.never).as(ExitCode.Success)
   }

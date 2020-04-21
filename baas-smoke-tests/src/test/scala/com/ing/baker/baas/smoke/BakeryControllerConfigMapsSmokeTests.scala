@@ -28,7 +28,7 @@ object BakeryControllerConfigMapsSmokeTests {
   def resource(args: Arguments)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Context] = for {
     namespace <- Namespace.resource
     _ <- Resource.liftF(printGreen(s"\nCreating Bakery cluster environment."))
-    _ <- DefinitionFile.resource("bakery-controller.yaml", namespace)
+    _ <- DefinitionFile.resource("bakery-controller-no-crds.yaml", namespace)
     _ <- DefinitionFile.resource("example-config.yaml", namespace)
     _ <- DefinitionFile.resource("kafka-event-sink.yaml", namespace)
     _ <- Resource.liftF(Pod.waitUntilAllPodsAreReady(namespace))
@@ -160,10 +160,10 @@ class BakeryControllerConfigMapsSmokeTests extends BakeryFunSpec with Matchers {
   }
 
   /** Represents the "sealed resources context" that each test can use. */
-  type TestContext = smoke.BakeryControllerEnvironment.Context
+  type TestContext = BakeryControllerConfigMapsSmokeTests.Context
 
   /** Represents external arguments to the test context builder. */
-  type TestArguments = smoke.BakeryControllerEnvironment.Arguments
+  type TestArguments = BakeryControllerConfigMapsSmokeTests.Arguments
 
   /** Creates a `Resource` which allocates and liberates the expensive resources each test can use.
     * For example web servers, network connection, database mocks.
@@ -175,7 +175,7 @@ class BakeryControllerConfigMapsSmokeTests extends BakeryFunSpec with Matchers {
     * @return the resources each test can use
     */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] =
-    BakeryControllerEnvironment.resource(testArguments)
+    BakeryControllerConfigMapsSmokeTests.resource(testArguments)
 
   /** Refines the `ConfigMap` populated with the -Dkey=value arguments coming from the "sbt testOnly" command.
     *
@@ -184,8 +184,8 @@ class BakeryControllerConfigMapsSmokeTests extends BakeryFunSpec with Matchers {
     */
   def argumentsBuilder(config: ConfigMap): TestArguments = {
     config.getOrElse("debug", "false") match {
-      case "yes" | "true" | "t" | "y" => smoke.BakeryControllerEnvironment.Arguments(debugMode = true)
-      case _ => smoke.BakeryControllerEnvironment.Arguments(debugMode = false)
+      case "yes" | "true" | "t" | "y" => BakeryControllerConfigMapsSmokeTests.Arguments(debugMode = true)
+      case _ => BakeryControllerConfigMapsSmokeTests.Arguments(debugMode = false)
     }
   }
 }

@@ -32,17 +32,22 @@ object InteractionResource {
         ( Utils.extractValidated(sub, "name")
         , Utils.extractValidated(sub, "valueFrom.configMapKeyRef.name")
         , Utils.extractValidated(sub, "valueFrom.configMapKeyRef.key")
-        ).mapN((name, configMapName, key) => EnvVar(name, EnvVar.ConfigMapKeyRef(configMapName, key)))
+        ).mapN((name, configMapName, key) => EnvVar(name, EnvVar.ConfigMapKeyRef(key = key, name = configMapName)))
 
       def envFromSecret(sub: ConfigMap): FromConfigMapValidation[EnvVar] =
         ( Utils.extractValidated(sub, "name")
         , Utils.extractValidated(sub, "valueFrom.secretKeyRef.name")
         , Utils.extractValidated(sub, "valueFrom.secretKeyRef.key")
-        ).mapN((name, secretName, key) => EnvVar(name, EnvVar.SecretKeyRef(secretName, key)))
+        ).mapN((name, secretName, key) => EnvVar(name, EnvVar.SecretKeyRef(key = key, name = secretName)))
 
-      Utils.extractListWithSubPaths(configMap, "env").andThen(_.traverse[FromConfigMapValidation, EnvVar](
-        sub => envFromLiteral(sub).orElse(envFromConfigMap(sub)).orElse(envFromSecret(sub)).orElse(s"No valid environment between subpaths '${sub.data.keys.mkString(", ")}' in ConfigMap '${sub.name}'".invalidNel)
-      ))
+      Utils.extractListWithSubPaths(configMap, "env")
+        .orElse(List.empty.validNel)
+        .andThen(_.traverse[FromConfigMapValidation, EnvVar](sub =>
+          envFromLiteral(sub)
+            .orElse(envFromConfigMap(sub))
+            .orElse(envFromSecret(sub))
+            .orElse(s"No valid environment between subpaths '${sub.data.keys.mkString(", ")}' in ConfigMap '${sub.name}'".invalidNel)
+        ))
     }
 
     def configMount(sub: ConfigMap): FromConfigMapValidation[ConfigMount] =
@@ -51,17 +56,21 @@ object InteractionResource {
         ).mapN(ConfigMount)
 
     def configMapMountsValidated: FromConfigMapValidation[List[ConfigMount]] =
-      Utils.extractListWithSubPaths(configMap, "configMapMounts").andThen(_.traverse(configMount))
+      Utils.extractListWithSubPaths(configMap, "configMapMounts")
+        .orElse(List.empty.validNel)
+        .andThen(_.traverse(configMount))
 
     def secretMountsValidated: FromConfigMapValidation[List[ConfigMount]] =
-      Utils.extractListWithSubPaths(configMap, "secretMounts").andThen(_.traverse(configMount))
+      Utils.extractListWithSubPaths(configMap, "secretMounts")
+        .orElse(List.empty.validNel)
+        .andThen(_.traverse(configMount))
 
     ( Utils.extractValidated(configMap, "image")
     , Utils.extractAndParseValidated(configMap, "replicas", r => Try(r.toInt)).orElse(1.validNel): FromConfigMapValidation[Int]
     , envValidated
     , configMapMountsValidated
     , secretMountsValidated
-    ).mapN(Spec).map(spec => InteractionResource(spec = spec))
+    ).mapN(Spec).map(spec => InteractionResource(metadata = configMap.metadata, spec = spec))
   }
 
   case class Spec(
