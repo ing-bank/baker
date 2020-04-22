@@ -3,5 +3,5 @@ kind: Interaction
 metadata:
   name: reserve-items
 spec:
-  image: baas-interaction-example-reserve-items:1.0.0
+  image: baas-interaction-example-reserve-items:local
   replicas: 3

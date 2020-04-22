@@ -1,7 +1,7 @@
 version: '3'
 services:
   node1:
-    image: "checkout-service-baker-example:3.0.1-SNAPSHOT"
+    image: "checkout-service-baker-example:local"
     ports:
       - "8081:8080"
       - "5261:5266"
@@ -14,7 +14,7 @@ services:
       CLUSTER_SEED_HOST: node1
       CLUSTER_SEED_PORT: 2551
   node2:
-    image: "checkout-service-baker-example:3.0.1-SNAPSHOT"
+    image: "checkout-service-baker-example:local"
     ports:
       - "8082:8080"
       - "5262:5266"
@@ -27,7 +27,7 @@ services:
       CLUSTER_SEED_HOST: node1
       CLUSTER_SEED_PORT: 2551
   node3:
-    image: "checkout-service-baker-example:3.0.1-SNAPSHOT"
+    image: "checkout-service-baker-example:local"
     ports:
       - "8083:8080"
       - "5263:526"

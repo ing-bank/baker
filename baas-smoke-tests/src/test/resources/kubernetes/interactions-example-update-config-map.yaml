@@ -5,5 +5,5 @@ metadata:
   labels:
     custom-resource-definition: interactions
 data:
-  image: baas-interaction-example-reserve-items:1.0.0
+  image: baas-interaction-example-reserve-items:local
   replicas: "3"
