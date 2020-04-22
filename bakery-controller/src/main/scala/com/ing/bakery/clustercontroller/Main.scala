@@ -5,11 +5,13 @@ import java.util.concurrent.Executors
 
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.{ExitCode, IO, IOApp, Resource}
 import cats.syntax.functor._
-import com.ing.bakery.clustercontroller.ops.{BakerOperations, InteractionOperations}
+import com.ing.bakery.clustercontroller.controllers.{BakerController, BakerResource, InteractionController, InteractionResource}
+import com.typesafe.config.ConfigFactory
 import org.http4s.client.blaze.BlazeClientBuilder
 import skuber.api.client.KubernetesClient
+import skuber.json.format.configMapFmt
 
 import scala.concurrent.ExecutionContext
 
@@ -17,6 +19,8 @@ object Main extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] = {
 
+    val config = ConfigFactory.load()
+    val useCrds = config.getBoolean("bakery-controller.use-crds")
     implicit val system: ActorSystem =
       ActorSystem("BaaSStateNodeSystem")
     implicit val materializer: Materializer =
@@ -29,8 +33,12 @@ object Main extends IOApp {
     (for {
       _ <- BakeryControllerService.resource(InetSocketAddress.createUnresolved("0.0.0.0", 8080))
       httpClient <- BlazeClientBuilder[IO](connectionPool).resource
-      _ <- ResourceOperations.controller(k8s, InteractionOperations.ops(httpClient))
-      _ <- ResourceOperations.controller(k8s, BakerOperations.ops)
+      interactions = new InteractionController(httpClient)
+      bakers = new BakerController()
+      _ <- if(useCrds) interactions.watch(k8s) else Resource.liftF(IO.unit)
+      _ <- interactions.fromConfigMaps(InteractionResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "interactions"))
+      _ <- if(useCrds) bakers.watch(k8s) else Resource.liftF(IO.unit)
+      _ <- bakers.fromConfigMaps(BakerResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "bakers"))
     } yield ()).use(_ => IO.never).as(ExitCode.Success)
   }
 }
