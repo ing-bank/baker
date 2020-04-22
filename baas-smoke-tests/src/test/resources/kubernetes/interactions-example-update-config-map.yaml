@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: reserve-items
+  labels:
+    custom-resource-definition: interactions
+data:
+  image: baas-interaction-example-reserve-items:1.0.0
+  replicas: "3"
