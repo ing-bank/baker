@@ -58,12 +58,12 @@ object LogInspectionService {
     def watchLogs(name: String, container: Option[String], namespace: Namespace): IO[Unit] = {
       podsF.get.map(_.get(name)).flatMap {
         case None =>
-          val command = s"kubectl logs $name ${container.map(_ + " ").getOrElse("")}-n $namespace"
+          val command = s"kubectl logs $name ${container.map(_ + " ").getOrElse("")}-n $namespace -f"
           val logger = ProcessLogger(fn = line => addLine(name, line).unsafeRunAsyncAndForget())
           for {
             outcome <- IO(command.run(logger)).attempt
             _ <- outcome match {
-              case Left(e) => IO.unit
+              case Left(e) => IO { println(Console.RED + s"ERROR WHEN WATCHING WITH: $command" + Console.RESET); println(e.getMessage) }
               case Right(_) => addPod(name)
             }
           } yield ()
