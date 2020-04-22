@@ -1,41 +1,63 @@
-package com.ing.bakery.clustercontroller.ops
+package com.ing.bakery.clustercontroller.controllers
 
-import java.util.concurrent.Executors
-
+import cats.effect.{ContextShift, IO, Timer}
 import cats.syntax.functor._
-import cats.effect.{ContextShift, IO}
-import com.ing.bakery.clustercontroller.ResourceOperations
-import com.ing.bakery.clustercontroller.ResourceOperations.ControllerSpecification
+import com.typesafe.scalalogging.LazyLogging
+import skuber.LabelSelector.IsEqualRequirement
 import skuber.api.client.KubernetesClient
-import skuber.ext.Deployment
-import skuber.{ConfigMap, Container, ObjectMeta, Pod, Protocol, Service, Volume}
+import skuber.ext.{Deployment, ReplicaSetList}
+import skuber.json.ext.format._
 import skuber.json.format._
+import skuber.{ConfigMap, Container, LabelSelector, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-object BakerOperations {
+final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[BakerResource] with LazyLogging {
 
-  val spec: ControllerSpecification[BakerResource] =
-    ControllerSpecification(service, deployment, r => bakerLabel(r.metadata.name), Some(hooks))
+  def create(resource: BakerResource, k8s: KubernetesClient): IO[Unit] =
+    for {
+      _ <- io(k8s.create[ConfigMap](configMap(resource))).void
+      _ <- io(k8s.create(deployment(resource)))
+      _ <- io(k8s.create(service(resource)))
+      _ = logger.info(s"Created baker cluster named '${resource.name}'")
+    } yield ()
 
-  val connectionPool: ExecutionContext =
-    ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
+  def terminate(resource: BakerResource, k8s: KubernetesClient): IO[Unit] =
+    for {
+      _ <- io(k8s.delete[ConfigMap](baasRecipesConfigMapName(resource.metadata.name)))
+      (key, value) = bakerLabel(resource.metadata.name)
+      _ <- io(k8s.delete[Service](service(resource).name))
+      _ <- io(k8s.delete[Deployment](deployment(resource).name))
+      _ <- io(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(key, value))))
+      _ <- io(k8s.deleteAllSelected[PodList](LabelSelector(IsEqualRequirement(key, value))))
+      _ = logger.info(s"Terminated baker cluster named '${resource.name}'")
+    } yield ()
 
-  val stateNodeLabel: (String, String) = "app" -> "baas-state"
+  def upgrade(resource: BakerResource, k8s: KubernetesClient): IO[Unit] =
+    for {
+      _ <- io(k8s.update[ConfigMap](configMap(resource))).void
+      _ <- io(k8s.update[skuber.ext.Deployment](deployment(resource)))
+      _ = logger.info(s"Upgraded baker cluster named '${resource.name}'")
+    } yield ()
 
-  def bakerLabel(name: String): (String, String) = "baker-name" -> name
+  private def io[A](ref: => Future[A])(implicit cs: ContextShift[IO]): IO[A] =
+    IO.fromFuture(IO(ref))
 
-  def akkaClusterLabel(selector: String): (String, String) = "akka-cluster" -> selector
+  private def stateNodeLabel: (String, String) = "app" -> "baas-state"
 
-  def baasStateName(name: String): String = "baas-state-" + name
+  private def bakerLabel(name: String): (String, String) = "baker-name" -> name
 
-  def baasStateServiceName(name: String): String = "baas-state-service-" + name
+  private def akkaClusterLabel(selector: String): (String, String) = "akka-cluster" -> selector
 
-  def baasRecipesConfigMapName(name: String): String = "baas-state-recipes-config-map-" + name
+  private def baasStateName(name: String): String = "baas-state-" + name
 
-  val baasStateServicePort: Int = 8081
+  private def baasStateServiceName(name: String): String = "baas-state-service-" + name
 
-  def deployment(bakerResource: BakerResource): Deployment = {
+  private def baasRecipesConfigMapName(name: String): String = "baas-state-recipes-config-map-" + name
+
+  private def baasStateServicePort: Int = 8081
+
+  private def deployment(bakerResource: BakerResource): Deployment = {
 
     val bakerName: String = bakerResource.metadata.name
     val bakeryVersion: String = bakerResource.spec.bakeryVersion
@@ -121,7 +143,7 @@ object BakerOperations {
       ))
   }
 
-  def configMap(bakerResource: BakerResource): ConfigMap = {
+  private def configMap(bakerResource: BakerResource): ConfigMap = {
     val bakerName = bakerResource.metadata.name
     new ConfigMap(
       metadata = ObjectMeta(
@@ -131,15 +153,4 @@ object BakerOperations {
         case (serializedRecipe, compiledRecipe) => compiledRecipe.recipeId -> serializedRecipe
       }.toMap)
   }
-  
-  def hooks: ResourceOperations.Hooks[BakerResource] =
-    new ResourceOperations.Hooks[BakerResource] {
-      override def preDeployment(resource: BakerResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] =
-        IO.fromFuture(IO(k8s.create[ConfigMap](configMap(resource)))).void
-      override def preTermination(resource: BakerResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] =
-        IO.fromFuture(IO(k8s.delete[ConfigMap](baasRecipesConfigMapName(resource.metadata.name))))
-      override def preUpdate(resource: BakerResource, k8s: KubernetesClient)(implicit cs: ContextShift[IO]): IO[Unit] =
-        IO.fromFuture(IO(k8s.update[ConfigMap](configMap(resource)))).void
-    }
-
 }

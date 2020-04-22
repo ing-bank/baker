@@ -1,30 +1,54 @@
 package com.ing.baker.baas.smoke
 
-import cats.effect.{IO, Resource}
+import java.net.InetSocketAddress
+
+import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.baas.smoke
-import com.ing.baker.baas.smoke.k8s.{DefinitionFile, Pod}
+import com.ing.baker.baas.smoke.k8s.{DefinitionFile, LogInspectionService, Namespace, Pod}
 import com.ing.baker.baas.testing.BakeryFunSpec
 import org.scalatest.ConfigMap
 import org.scalatest.matchers.should.Matchers
+import BakeryControllerConfigMapsSmokeTests._
 
 import scala.sys.process._
 
-class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
+object BakeryControllerConfigMapsSmokeTests {
 
   val isWindows: Boolean = sys.props.get("os.name").exists(_.toLowerCase().contains("windows"))
-  val splitChar = if(isWindows) "\r\n" else "\n"
-
+  val splitChar: String = if(isWindows) "\r\n" else "\n"
   val webshopBaker: (String, String) = "baker-name" -> "webshop-baker"
   val reservationBaker: (String, String) = "baker-name" -> "reservation-baker"
   val reserveItems: (String, String) = "interaction" -> "reserve-items"
   val makePaymentAndShipItems: (String, String) = "interaction" -> "make-payment-and-ship-items"
+
+  case class Context(namespace: Namespace, inspector: LogInspectionService.Inspector)
+
+  case class Arguments(debugMode: Boolean)
+
+  def resource(args: Arguments)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Context] = for {
+    namespace <- Namespace.resource
+    _ <- Resource.liftF(printGreen(s"\nCreating Bakery cluster environment."))
+    _ <- DefinitionFile.resource("bakery-controller-no-crds.yaml", namespace)
+    _ <- DefinitionFile.resource("example-config.yaml", namespace)
+    _ <- DefinitionFile.resource("kafka-event-sink.yaml", namespace)
+    _ <- Resource.liftF(Pod.waitUntilAllPodsAreReady(namespace))
+    inspector <- LogInspectionService.resource(
+      testsName = "Bakery Controller With Config Maps",
+      hostname = InetSocketAddress.createUnresolved("0.0.0.0", 9090),
+      awaitLock = args.debugMode)
+    _ <- Resource.liftF(inspector.watchLogs("bakery-controller", None, namespace))
+  } yield Context(namespace, inspector)
+
+}
+
+class BakeryControllerConfigMapsSmokeTests extends BakeryFunSpec with Matchers {
 
   describe("The Bakery Controller") {
 
     test("Creates, updates and deletes multiple independent recipes") { context =>
       val namespace = context.namespace
       for {
-        interactions <- DefinitionFile("interactions-example.yaml", namespace)
+        interactions <- DefinitionFile("interactions-example-config-map.yaml", namespace)
         _ <- eventually("All interactions were created") {
           for {
             _ <- Pod.printPodsStatuses(namespace)
@@ -59,8 +83,8 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
         _ = configThree shouldBe ""
         _ <- printGreen("Interaction correctly configured")
 
-        webshop <- DefinitionFile("baker-webshop.yaml", namespace)
-        reservation <- DefinitionFile("baker-reservation.yaml", namespace)
+        webshop <- DefinitionFile("baker-webshop-config-map.yaml", namespace)
+        reservation <- DefinitionFile("baker-reservation-config-map.yaml", namespace)
         _ <- eventually("All recipes were created") {
           for {
             _ <- Pod.printPodsStatuses(namespace)
@@ -73,7 +97,7 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
           } yield()
         }
 
-        _ <- DefinitionFile("interactions-example-update.yaml", namespace)
+        _ <- DefinitionFile("interactions-example-update-config-map.yaml", namespace)
         _ <- eventually("Interaction upscaled to 3 replicas") {
           for {
             _ <- Pod.printPodsStatuses(namespace)
@@ -85,7 +109,7 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
           } yield ()
         }
 
-        _ <- DefinitionFile("baker-webshop-update-replicas.yaml", namespace)
+        _ <- DefinitionFile("baker-webshop-update-replicas-config-map.yaml", namespace)
         _ <- eventually("Webshop baker upscaled to 3 replicas") {
           for {
             _ <- Pod.printPodsStatuses(namespace)
@@ -95,7 +119,7 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
           } yield ()
         }
 
-        _ <- DefinitionFile("baker-webshop-update-recipes.yaml", namespace)
+        _ <- DefinitionFile("baker-webshop-update-recipes-config-map.yaml", namespace)
         _ <- eventually("Webshop baker added an extra recipe") {
           for {
             _ <- Pod.printPodsStatuses(namespace)
@@ -136,10 +160,10 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
   }
 
   /** Represents the "sealed resources context" that each test can use. */
-  type TestContext = smoke.BakeryControllerEnvironment.Context
+  type TestContext = BakeryControllerConfigMapsSmokeTests.Context
 
   /** Represents external arguments to the test context builder. */
-  type TestArguments = smoke.BakeryControllerEnvironment.Arguments
+  type TestArguments = BakeryControllerConfigMapsSmokeTests.Arguments
 
   /** Creates a `Resource` which allocates and liberates the expensive resources each test can use.
     * For example web servers, network connection, database mocks.
@@ -151,7 +175,7 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
     * @return the resources each test can use
     */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] =
-    BakeryControllerEnvironment.resource(testArguments)
+    BakeryControllerConfigMapsSmokeTests.resource(testArguments)
 
   /** Refines the `ConfigMap` populated with the -Dkey=value arguments coming from the "sbt testOnly" command.
     *
@@ -160,8 +184,8 @@ class BakeryControllerSmokeTests extends BakeryFunSpec with Matchers {
     */
   def argumentsBuilder(config: ConfigMap): TestArguments = {
     config.getOrElse("debug", "false") match {
-      case "yes" | "true" | "t" | "y" => smoke.BakeryControllerEnvironment.Arguments(debugMode = true)
-      case _ => smoke.BakeryControllerEnvironment.Arguments(debugMode = false)
+      case "yes" | "true" | "t" | "y" => BakeryControllerConfigMapsSmokeTests.Arguments(debugMode = true)
+      case _ => BakeryControllerConfigMapsSmokeTests.Arguments(debugMode = false)
     }
   }
 }

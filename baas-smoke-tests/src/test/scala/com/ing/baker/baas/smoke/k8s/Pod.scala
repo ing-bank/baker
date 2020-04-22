@@ -64,9 +64,8 @@ object Pod {
   def waitUntilAllPodsAreReady(namespace: Namespace)(implicit timer: Timer[IO]): IO[Unit] =
     within(setupWaitTime, setupWaitSplit)(for {
       _ <- printGreen(s"\nWaiting for all pods to become active (5s)...")
-      _ <- Pod.printPodsStatuses(namespace)
       _ <- Pod.allPodsAreReady(namespace)
-    } yield ())
+    } yield ()) *> Pod.printPodsStatuses(namespace).void
 
   def getPodsNames(name: String, namespace: Namespace): IO[List[String]] =
     for {

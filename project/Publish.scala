@@ -4,7 +4,18 @@ import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleaseStateTransformations._
 import xerial.sbt.Sonatype.SonatypeKeys._
 
-object SonatypePublish {
+object Publish {
+
+  lazy val settings = if (sys.env.get("FEEDURL").isDefined) AzureFeed else Sonatype
+
+  import aether.AetherKeys._
+
+  val AzureFeed = Seq(
+    credentials += Credentials(Path.userHome / ".credentials"),
+    publishTo := Some("pkgs.dev.azure.com" at sys.env.getOrElse("FEEDURL", "")),
+    publishMavenStyle := true,
+    logLevel in aetherDeploy := Level.Info
+  )
 
   protected def isSnapshot(s: String) = s.trim endsWith "SNAPSHOT"
 
@@ -12,7 +23,7 @@ object SonatypePublish {
   protected val ossSnapshots = "Sonatype OSS Snapshots" at nexus + "content/repositories/snapshots/"
   protected val ossStaging = "Sonatype OSS Staging" at nexus + "service/local/staging/deploy/maven2/"
 
-  val settings = Seq(
+  val Sonatype = Seq(
     sonatypeProfileName := "com.ing",
     licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT")),
     homepage := Some(url("https://github.com/ing-bank/baker")),

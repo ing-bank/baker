@@ -26,6 +26,5 @@ object KubernetesCommands {
       _ <- DefinitionFile.resource("example-config.yaml", namespace)
       _ <- DefinitionFile.resource("kafka-event-sink.yaml", namespace)
       _ <- Resource.liftF(Pod.waitUntilAllPodsAreReady(namespace))
-
     } yield namespace
 }

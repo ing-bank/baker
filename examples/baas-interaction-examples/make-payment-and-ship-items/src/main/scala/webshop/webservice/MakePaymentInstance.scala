@@ -12,7 +12,6 @@ class MakePaymentInstance extends MakePayment {
 
   override def apply(processId: String, items: ReservedItems, address: ShippingAddress, payment: PaymentInformation): Future[MakePaymentOutput] = {
     IO.sleep(1.second)
-      .map(_ => println(Console.GREEN + processId + Console.RESET))
       .map(_ => PaymentSuccessful(ShippingOrder(items.items, items.data, address)))
       .unsafeToFuture()
   }
