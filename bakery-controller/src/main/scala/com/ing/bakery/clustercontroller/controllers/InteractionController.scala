@@ -26,7 +26,7 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
       _ <- io(k8s.create(deployment(resource)))
       _ <- io(k8s.create(service(resource)))
       interfaces <- Utils.within(10.minutes, split = 300) { // Check every 2 seconds for interfaces
-        client.interface.map { interfaces =>assert(interfaces.nonEmpty); interfaces }
+        client.interface.map { interfaces => assert(interfaces.nonEmpty); interfaces }
       }
       _ <- io(k8s.create(creationContract(resource, address, interfaces)))
       _ = logger.info(s"Deployed interactions from interaction set named '${resource.name}': ${interfaces.map(_.name).mkString(", ")}")
@@ -55,7 +55,7 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
 
   private def interactionLabel(interaction: InteractionResource): (String, String) = "interaction" -> interaction.name
 
-  private def serviceName(interactionResource: InteractionResource): String = interactionResource.name + "-interaction-service"
+  private def serviceName(interactionResource: InteractionResource): String = interactionResource.name
 
   private def deploymentName(interactionResource: InteractionResource): String = interactionResource.name
 

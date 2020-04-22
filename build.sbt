@@ -338,7 +338,6 @@ lazy val `bakery-controller` = project.in(file("bakery-controller"))
       http4sServer
     ) ++ testDeps(
       slf4jApi,
-      slf4jSimple,
       logback,
       scalaTest,
       mockServer,

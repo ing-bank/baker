@@ -6,30 +6,73 @@ import cats.implicits._
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import cats.effect.{IO, Resource}
-import com.ing.bakery.clustercontroller.ops.{BakerOperations, BakerResource, InteractionOperations, InteractionResource}
-import com.ing.bakery.mocks.{KubeApiServer, WatchEvent}
+import com.ing.bakery.clustercontroller.BakeryControllerSpec._
+import com.ing.bakery.clustercontroller.controllers.{BakerController, BakerResource, InteractionController, InteractionResource}
+import com.ing.bakery.mocks.KubeApiServer
+import com.ing.bakery.mocks.WatchEvent.ResourcePath
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
+import org.http4s.client.blaze.BlazeClientBuilder
 import org.mockserver.integration.ClientAndServer
 import org.scalatest.ConfigMap
 import org.scalatest.matchers.should.Matchers
 import skuber.api.client.KubernetesClient
+import skuber.{EnvVar, ObjectMeta}
 
 import scala.concurrent.duration._
+
+object BakeryControllerSpec {
+
+  val interaction: InteractionResource = InteractionResource(
+    metadata = ObjectMeta(name = "localhost"),
+    spec = InteractionResource.Spec(
+      image = "interaction.image:1.0.0",
+      replicas = 2,
+      env = List(
+        EnvVar("ONE", EnvVar.StringValue("one")),
+        EnvVar("TWO", EnvVar.ConfigMapKeyRef(name = "my-config-map", key = "two")),
+        EnvVar("THREE", EnvVar.SecretKeyRef(name = "my-secret", key = "three"))
+      ),
+      configMapMounts = List(InteractionResource.ConfigMount(name = "my-config-map", mountPath = "/my-config")),
+      secretMounts = List(InteractionResource.ConfigMount(name = "my-secret", mountPath = "/my-secrets"))
+    )
+  )
+
+  val baker: BakerResource = BakerResource(
+    metadata = ObjectMeta(name = "RecipeOne"),
+    spec = BakerResource.Spec(
+      bakeryVersion = "3.0.2-SNAPSHOT",
+      replicas = 2,
+      recipes = List("CgdXZWJzaG9wErEQChYKFAoQdW5hdmFpbGFibGVJdGVtcxABCkVaQwo/ChdTaGlwcGluZ0FkZHJlc3NSZWNlaXZlZBIkCg9zaGlwcGluZ0FkZHJlc3MSESIPCg0KB2FkZHJlc3MSAggREAEKEwoRCg1yZXNlcnZlZEl0ZW1zEAEKCwoJCgVpdGVtcxABCg8KDQoJU2hpcEl0ZW1zEAIKnANimQMKRAoYT3JkZXJIYWRVbmF2YWlsYWJsZUl0ZW1zEigKEHVuYXZhaWxhYmxlSXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCk8KDUl0ZW1zUmVzZXJ2ZWQSPgoNcmVzZXJ2ZWRJdGVtcxItIisKHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCgoKBGRhdGESAggWEkQKGE9yZGVySGFkVW5hdmFpbGFibGVJdGVtcxIoChB1bmF2YWlsYWJsZUl0ZW1zEhQaEgoQIg4KDAoGaXRlbUlkEgIIERJPCg1JdGVtc1Jlc2VydmVkEj4KDXJlc2VydmVkSXRlbXMSLSIrCh0KBWl0ZW1zEhQaEgoQIg4KDAoGaXRlbUlkEgIIEQoKCgRkYXRhEgIIFiIcCgdvcmRlcklkEhEiDwoNCgdvcmRlcklkEgIIESIdCgVpdGVtcxIUGhIKECIOCgwKBml0ZW1JZBICCBEqDFJlc2VydmVJdGVtczIMUmVzZXJ2ZUl0ZW1zUhAaDgjoBxEAAAAAAAAAQBgFCkhaRgpCChpQYXltZW50SW5mb3JtYXRpb25SZWNlaXZlZBIkChJwYXltZW50SW5mb3JtYXRpb24SDiIMCgoKBGluZm8SAggREAEKFVoTCg8KDVBheW1lbnRGYWlsZWQQAApQWk4KSgoLT3JkZXJQbGFjZWQSHAoHb3JkZXJJZBIRIg8KDQoHb3JkZXJJZBICCBESHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggREAEKFQoTCg9zaGlwcGluZ0FkZHJlc3MQAQpKWkgKRAoYT3JkZXJIYWRVbmF2YWlsYWJsZUl0ZW1zEigKEHVuYXZhaWxhYmxlSXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggREAAK2wNi2AMKcQoRUGF5bWVudFN1Y2Nlc3NmdWwSXAoNc2hpcHBpbmdPcmRlchJLIkkKHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCgoKBGRhdGESAggWChwKB2FkZHJlc3MSESIPCg0KB2FkZHJlc3MSAggRCg8KDVBheW1lbnRGYWlsZWQScQoRUGF5bWVudFN1Y2Nlc3NmdWwSXAoNc2hpcHBpbmdPcmRlchJLIkkKHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCgoKBGRhdGESAggWChwKB2FkZHJlc3MSESIPCg0KB2FkZHJlc3MSAggREg8KDVBheW1lbnRGYWlsZWQiFgoQcmVjaXBlSW5zdGFuY2VJZBICCBEiPgoNcmVzZXJ2ZWRJdGVtcxItIisKHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCgoKBGRhdGESAggWIiQKD3NoaXBwaW5nQWRkcmVzcxIRIg8KDQoHYWRkcmVzcxICCBEiJAoScGF5bWVudEluZm9ybWF0aW9uEg4iDAoKCgRpbmZvEgIIESoLTWFrZVBheW1lbnQyC01ha2VQYXltZW50UhAaDgjoBxEAAAAAAAAAQBgFClVaUwpPCg1JdGVtc1Jlc2VydmVkEj4KDXJlc2VydmVkSXRlbXMSLSIrCh0KBWl0ZW1zEhQaEgoQIg4KDAoGaXRlbUlkEgIIEQoKCgRkYXRhEgIIFhAAChMKEQoNc2hpcHBpbmdPcmRlchABChlaFwoTChFTaGlwcGluZ0NvbmZpcm1lZBAACndadQpxChFQYXltZW50U3VjY2Vzc2Z1bBJcCg1zaGlwcGluZ09yZGVyEksiSQodCgVpdGVtcxIUGhIKECIOCgwKBml0ZW1JZBICCBEKCgoEZGF0YRICCBYKHAoHYWRkcmVzcxIRIg8KDQoHYWRkcmVzcxICCBEQAAoRCg8KC01ha2VQYXltZW50EAIKGAoWChJwYXltZW50SW5mb3JtYXRpb24QAQoSChAKDFJlc2VydmVJdGVtcxACCrMBYrABChMKEVNoaXBwaW5nQ29uZmlybWVkEhMKEVNoaXBwaW5nQ29uZmlybWVkIlwKDXNoaXBwaW5nT3JkZXISSyJJCh0KBWl0ZW1zEhQaEgoQIg4KDAoGaXRlbUlkEgIIEQoKCgRkYXRhEgIIFgocCgdhZGRyZXNzEhEiDwoNCgdhZGRyZXNzEgIIESoJU2hpcEl0ZW1zMglTaGlwSXRlbXNSEBoOCOgHEQAAAAAAAABAGAUKDQoLCgdvcmRlcklkEAESBggLEBAYARIGCBEQCxgBEiAIEhAKGAEiGE9yZGVySGFkVW5hdmFpbGFibGVJdGVtcxIVCBIQDBgBIg1JdGVtc1Jlc2VydmVkEgYIAhALGAESBggGEBEYARIGCAgQFBgBEgYICBADGAESBggBEAkYARIGCAkQCxgBEgYIBRASGAESBggDEAUYARIGCAwQAhgBEgYIChAAGAESBggNEBMYARIZCAQQDhgBIhFTaGlwcGluZ0NvbmZpcm1lZBIGCA8QDRgBEhkIEBAPGAEiEVBheW1lbnRTdWNjZXNzZnVsEhUIEBAHGAEiDVBheW1lbnRGYWlsZWQSBggTEAQYARIGCBQQBRgBOhA5YTJmOGMyODgwZWE4ZmMw")
+    )
+  )
+}
 
 class BakeryControllerSpec extends BakeryFunSpec with Matchers {
 
   describe("Bakery Controller") {
 
-    test("Creates a baker") { context =>
-      for {
-        _ <- context.kubeApiServer.resourceWatchResponds(WatchEvent.BakersPath, WatchEvent.Added, WatchEvent.recipeResource)
-        _ <- IO.sleep(10.seconds)
-      } yield succeed
+    test("Creates interactions") { context =>
+      context.interactionController.use( _ =>
+        for {
+          _ <- context.kubeApiServer.expectCreationOf("expectations/interaction-deployment.json", ResourcePath.DeploymentsPath)
+          _ <- context.kubeApiServer.expectCreationOf("expectations/interaction-service.json", ResourcePath.ServicesPath)
+          _ <- context.kubeApiServer.createInteractions(interaction)
+          _ <- eventually(for {
+            _ <- context.kubeApiServer.validateCreationOf("expectations/interaction-deployment.json", ResourcePath.DeploymentsPath)
+            _ <- context.kubeApiServer.validateCreationOf("expectations/interaction-service.json", ResourcePath.ServicesPath)
+          } yield succeed)
+          _ <- IO.sleep(2.seconds)
+        } yield succeed
+      )
     }
   }
 
-  case class Context(kubeApiServer: KubeApiServer)
+  case class Context(
+    kubeApiServer: KubeApiServer,
+    bakerController: Resource[IO, Unit],
+    interactionController: Resource[IO, Unit]
+  )
 
   /** Represents the "sealed resources context" that each test can use. */
   type TestContext = Context
@@ -46,15 +89,7 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
     * @param testArguments arguments built by the `argumentsBuilder` function.
     * @return the resources each test can use
     */
-  def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] = {
-
-    def getResourceDirectoryPathSafe: String = {
-      val isWindows: Boolean = sys.props.get("os.name").exists(_.toLowerCase().contains("windows"))
-      val safePath = getClass.getResource("/recipes").getPath
-      if (isWindows) safePath.tail
-      else safePath
-    }
-
+  def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] =
     for {
       // Mock server
       mockServer <- Resource.make(IO(ClientAndServer.startClientAndServer(0)))(s => IO(s.stop()))
@@ -73,13 +108,15 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
       system <- Resource.make(makeActorSystem)(stopActorSystem)
       materializer = ActorMaterializer()(system)
       k8s: KubernetesClient = skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))(system, materializer)
-      _ <- Resource.liftF(kubeApiServer.resourceWatchRespondsEmpty(WatchEvent.BakersPath))
-      _ <- Resource.liftF(kubeApiServer.resourceWatchRespondsEmpty(WatchEvent.InteractionsPath))
 
-      _ <- ResourceOperations.controller(k8s, InteractionOperations.spec)(contextShift, timer, system, materializer, InteractionResource.interactionResourceFormat, InteractionResource.resourceDefinitionInteractionResource)
-      _ <- ResourceOperations.controller(k8s, BakerOperations.spec)(contextShift, timer, system, materializer, BakerResource.recipeResourceFormat, BakerResource.resourceDefinitionRecipeResource)
-    } yield Context(kubeApiServer)
-  }
+      httpClient <- BlazeClientBuilder[IO](executionContext).resource
+      interactionController =
+        Resource.liftF(kubeApiServer.noNewInteractionEvents).flatMap( _ =>
+          new InteractionController(httpClient).watch(k8s)(contextShift, timer, system, materializer, InteractionResource.interactionResourceFormat, InteractionResource.resourceDefinitionInteractionResource))
+      bakerController =
+        Resource.liftF(kubeApiServer.noNewBakerEvents).flatMap( _ =>
+          new BakerController().watch(k8s)(contextShift, timer, system, materializer, BakerResource.recipeResourceFormat, BakerResource.resourceDefinitionRecipeResource))
+    } yield Context(kubeApiServer, bakerController, interactionController)
 
   /** Refines the `ConfigMap` populated with the -Dkey=value arguments coming from the "sbt testOnly" command.
     *
