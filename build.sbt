@@ -524,3 +524,12 @@ lazy val `sbt-baas-docker-generate` = project.in(file("sbt-baas-docker-generate"
   .enablePlugins(SbtPlugin)
   .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
   .dependsOn(`baas-node-interaction`)
+
+lazy val `baker-test` = project.in(file("baker-test"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "baker-test",
+    libraryDependencies ++= compileDeps(
+      slf4jApi
+    ) ++ testDeps(scalaTest, logback)
+  ).dependsOn(runtime, recipeCompiler, recipeDsl)
