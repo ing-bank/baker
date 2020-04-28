@@ -6,9 +6,11 @@ import cats.implicits._
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import cats.effect.{IO, Resource}
+import com.ing.baker.runtime.scaladsl.InteractionInstance
+import com.ing.baker.types.CharArray
 import com.ing.bakery.clustercontroller.BakeryControllerSpec._
 import com.ing.bakery.clustercontroller.controllers.{BakerController, BakerResource, InteractionController, InteractionResource}
-import com.ing.bakery.mocks.KubeApiServer
+import com.ing.bakery.mocks.{KubeApiServer, RemoteInteraction}
 import com.ing.bakery.mocks.WatchEvent.ResourcePath
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
@@ -19,11 +21,12 @@ import org.scalatest.matchers.should.Matchers
 import skuber.api.client.KubernetesClient
 import skuber.{EnvVar, ObjectMeta}
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 object BakeryControllerSpec {
 
-  val interaction: InteractionResource = InteractionResource(
+  val interactionResource: InteractionResource = InteractionResource(
     metadata = ObjectMeta(name = "localhost"),
     spec = InteractionResource.Spec(
       image = "interaction.image:1.0.0",
@@ -38,7 +41,13 @@ object BakeryControllerSpec {
     )
   )
 
-  val baker: BakerResource = BakerResource(
+  val interaction: InteractionInstance = InteractionInstance(
+    name = "interaction-one",
+    input = Seq(CharArray),
+    run = _ => Future.successful(None)
+  )
+
+  val bakerResource: BakerResource = BakerResource(
     metadata = ObjectMeta(name = "RecipeOne"),
     spec = BakerResource.Spec(
       bakeryVersion = "3.0.2-SNAPSHOT",
@@ -56,13 +65,16 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
       context.interactionController.use( _ =>
         for {
           _ <- context.kubeApiServer.expectCreationOf("expectations/interaction-deployment.json", ResourcePath.DeploymentsPath)
-          _ <- context.kubeApiServer.expectCreationOf("expectations/interaction-service.json", ResourcePath.ServicesPath)
-          _ <- context.kubeApiServer.createInteractions(interaction)
+          _ <- context.kubeApiServer.expectCreationOf("expectations/interaction-service.json", ResourcePath.ServicesPath, context.adaptHttpPortToMockServerPort)
+          _ <- context.kubeApiServer.expectCreationOf("expectations/interaction-creation-config-map.json", ResourcePath.ConfigMapsPath, context.adaptHttpPortToMockServerPort)
+          _ <- context.kubeApiServer.createInteractions(interactionResource)
+          _ <- context.remoteInteraction.publishesItsInterface(interaction)
           _ <- eventually(for {
-            _ <- context.kubeApiServer.validateCreationOf("expectations/interaction-deployment.json", ResourcePath.DeploymentsPath)
-            _ <- context.kubeApiServer.validateCreationOf("expectations/interaction-service.json", ResourcePath.ServicesPath)
+            _ <- context.kubeApiServer.validateCreationOf(ResourcePath.DeploymentsPath)
+            _ <- context.kubeApiServer.validateCreationOf(ResourcePath.ServicesPath)
+            _ <- context.remoteInteraction.interfaceWasQueried(interaction)
+            _ <- context.kubeApiServer.validateCreationOf(ResourcePath.ConfigMapsPath)
           } yield succeed)
-          _ <- IO.sleep(2.seconds)
         } yield succeed
       )
     }
@@ -70,6 +82,8 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
 
   case class Context(
     kubeApiServer: KubeApiServer,
+    remoteInteraction: RemoteInteraction,
+    adaptHttpPortToMockServerPort: String => String,
     bakerController: Resource[IO, Unit],
     interactionController: Resource[IO, Unit]
   )
@@ -116,7 +130,13 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
       bakerController =
         Resource.liftF(kubeApiServer.noNewBakerEvents).flatMap( _ =>
           new BakerController().watch(k8s)(contextShift, timer, system, materializer, BakerResource.recipeResourceFormat, BakerResource.resourceDefinitionRecipeResource))
-    } yield Context(kubeApiServer, bakerController, interactionController)
+    } yield Context(
+      kubeApiServer,
+      new RemoteInteraction(mockServer),
+      _.replace("{{http-api-port}}", mockServer.getLocalPort.toString),
+      bakerController,
+      interactionController
+    )
 
   /** Refines the `ConfigMap` populated with the -Dkey=value arguments coming from the "sbt testOnly" command.
     *

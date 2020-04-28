@@ -8,7 +8,7 @@
     "ports" : [ {
       "name" : "http-api",
       "protocol" : "TCP",
-      "port" : 8080
+      "port" : {{http-api-port}}
     } ],
     "selector" : {
       "interaction" : "InteractionOne"

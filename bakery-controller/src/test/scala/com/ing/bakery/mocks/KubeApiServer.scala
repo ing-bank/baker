@@ -68,8 +68,8 @@ class KubeApiServer(mock: ClientAndServer) {
     )
   }
 
-  def expectCreationOf(jsonPath: String, resourcePath: ResourcePath): IO[Unit] = IO {
-    val json = scala.io.Source.fromResource(jsonPath).mkString
+  def expectCreationOf(jsonPath: String, resourcePath: ResourcePath, transform: String => String = identity): IO[Unit] = IO {
+    val json = transform(scala.io.Source.fromResource(jsonPath).mkString)
     mock.when(
       request().withMethod("POST").withPath(resourcePath.toString),
       Times.exactly(1),
@@ -82,7 +82,7 @@ class KubeApiServer(mock: ClientAndServer) {
     )
   }
 
-  def validateCreationOf(jsonPath: String, resourcePath: ResourcePath): IO[Unit] = IO {
+  def validateCreationOf(resourcePath: ResourcePath): IO[Unit] = IO {
     mock.verify(request().withMethod("POST").withPath(resourcePath.toString), VerificationTimes.exactly(1))
   }
 }

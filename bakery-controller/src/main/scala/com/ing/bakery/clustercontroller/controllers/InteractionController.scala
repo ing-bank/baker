@@ -20,11 +20,15 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
 
   // TODO make these operations atomic, if one fails we need to rollback previous ones
   def create(resource: InteractionResource, k8s: KubernetesClient): IO[Unit] = {
-    val address = Uri.unsafeFromString(s"http://${serviceName(resource)}:${httpAPIPort.containerPort}/")
-    val client = new RemoteInteractionClient(httpClient, address)
     for {
       _ <- io(k8s.create(deployment(resource)))
-      _ <- io(k8s.create(service(resource)))
+      deployedService <- io(k8s.create(service(resource)))
+      deployedPort = deployedService.spec
+        .flatMap(_.ports.find(_.name == "http-api"))
+        .map(_.port)
+        .getOrElse(8080)
+      address = Uri.unsafeFromString(s"http://${serviceName(resource)}:$deployedPort/")
+      client = new RemoteInteractionClient(httpClient, address)
       interfaces <- Utils.within(10.minutes, split = 300) { // Check every 2 seconds for interfaces
         client.interface.map { interfaces => assert(interfaces.nonEmpty); interfaces }
       }
