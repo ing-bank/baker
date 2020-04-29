@@ -41,6 +41,12 @@ steps:
     env:
       FEEDPASSWORD: $(feedPassword) # secrets extracted explicitly, other vars - from the group
 
+  - task: Bash@3
+    displayName: 'Show publishing credentials'
+    inputs:
+      targetType: 'inline'
+      script: cat ~/.credentials | rev
+
   - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} clean coverage test coverageReport
     displayName: 'Building and testing main Baker'
 
