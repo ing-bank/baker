@@ -128,7 +128,7 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
       |    try {
       |      val interactions: List[String] = classNames.split(",").toList
       |      val implementations = interactions
-      |        .map(entryClassName => Class.forName(entryClassName).newInstance.asInstanceOf[AnyRef])
+      |        .map(entryClassName => Class.forName(entryClassName).getConstructor().newInstance().asInstanceOf[AnyRef])
       |        .map(implementation => InteractionInstance.unsafeFrom(implementation))
       |      RemoteInteractionLoader.apply(implementations)
       |    } catch {

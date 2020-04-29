@@ -30,8 +30,11 @@ object Utils {
 
   type FromConfigMapValidation[+A] = ValidatedNel[String, A]
 
-  def extractValidated(configMap: ConfigMap, path: String): FromConfigMapValidation[String] =
+  def extractValidatedString(configMap: ConfigMap, path: String): FromConfigMapValidation[String] =
     configMap.data.get(path).fold(s"required path '$path' not found in ConfigMap '${configMap.name}'".invalidNel[String])(_.validNel)
+
+  def extractValidatedStringOption(configMap: ConfigMap, path: String): FromConfigMapValidation[Option[String]] =
+    configMap.data.get(path).map(Some(_).validNel).getOrElse(None.validNel)
 
   def extractListValidated(configMap: ConfigMap, path: String): FromConfigMapValidation[List[String]] = {
     val ArrayReg = s"^${path.replace(".", "\\.")}\\.(\\d+)$$".r
@@ -56,7 +59,7 @@ object Utils {
   }
 
   def extractAndParseValidated[A](configMap: ConfigMap, path: String, parse: String => Try[A]): FromConfigMapValidation[A] =
-    extractValidated(configMap, path).andThen(raw => parseValidated(parse(raw), path))
+    extractValidatedString(configMap, path).andThen(raw => parseValidated(parse(raw), path))
 
   def parseValidated[A](t: Try[A], fromPath: String): FromConfigMapValidation[A] =
     Validated.fromTry(t).leftMap(e => NonEmptyList.one(s"parsing error from path '$fromPath': ${e.getMessage}'"))
