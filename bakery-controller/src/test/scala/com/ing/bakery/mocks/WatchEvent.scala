@@ -36,10 +36,13 @@ object WatchEvent {
 
   sealed trait ResourcePath
   object ResourcePath {
+    case class Named(name: String, resourcePath: ResourcePath) extends ResourcePath { override def toString: String = resourcePath.toString + "/" + name }
     case object BakersPath extends ResourcePath { override def toString: String = "/apis/ing-bank.github.io/v1/namespaces/default/bakers" }
     case object InteractionsPath extends ResourcePath { override def toString: String = "/apis/ing-bank.github.io/v1/namespaces/default/interactions" }
+    case object PodsPath extends ResourcePath { override def toString: String = "/api/v1/namespaces/default/pods" }
     case object DeploymentsPath extends ResourcePath { override def toString: String = "/apis/extensions/v1beta1/namespaces/default/deployments" }
     case object ServicesPath extends ResourcePath { override def toString: String = "/api/v1/namespaces/default/services" }
     case object ConfigMapsPath extends ResourcePath { override def toString: String = "/api/v1/namespaces/default/configmaps" }
+    case object ReplicaSetsPath extends ResourcePath { override def toString: String = "/apis/extensions/v1beta1/namespaces/default/replicasets" }
   }
 }

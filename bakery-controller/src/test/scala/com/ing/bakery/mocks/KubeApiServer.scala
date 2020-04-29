@@ -9,8 +9,10 @@ import org.mockserver.integration.ClientAndServer
 import org.mockserver.matchers.{TimeToLive, Times}
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
-import org.mockserver.model.{HttpRequest, MediaType}
+import org.mockserver.model.{HttpRequest, HttpResponse, MediaType}
 import org.mockserver.verify.VerificationTimes
+import skuber.ConfigMap
+import skuber.json.format.configMapFmt
 
 class KubeApiServer(mock: ClientAndServer) {
 
@@ -35,13 +37,25 @@ class KubeApiServer(mock: ClientAndServer) {
   def updateInteractions(resource: InteractionResource*): IO[Unit] =
     eventsFor(watchResourceMatch(ResourcePath.InteractionsPath), resource.map(WatchEvent.of(_, WatchEventType.Modified)): _*)
 
+  def createConfigMapFor(component: String, resource: ConfigMap*): IO[Unit] =
+    eventsFor(withLabelSelector(watchResourceMatch(ResourcePath.ConfigMapsPath), Some("custom-resource-definition" -> component)), resource.map(WatchEvent.of(_, WatchEventType.Added)): _*)
+
+  def deleteConfigMapFor(component: String, resource: ConfigMap*): IO[Unit] =
+    eventsFor(withLabelSelector(watchResourceMatch(ResourcePath.ConfigMapsPath), Some("custom-resource-definition" -> component)), resource.map(WatchEvent.of(_, WatchEventType.Deleted)): _*)
+
+  def updateConfigMapFor(component: String, resource: ConfigMap*): IO[Unit] =
+    eventsFor(withLabelSelector(watchResourceMatch(ResourcePath.ConfigMapsPath), Some("custom-resource-definition" -> component)), resource.map(WatchEvent.of(_, WatchEventType.Modified)): _*)
+
   def noNewInteractionEvents: IO[Unit] =
     emptyEventsFor(watchResourceMatch(ResourcePath.InteractionsPath))
 
-  private def watchResourceMatch(resourcePath: ResourcePath): HttpRequest =
-    request()
+  def noNewConfigMapEventsFor(component: String): IO[Unit] =
+    emptyEventsFor(watchResourceMatch(ResourcePath.ConfigMapsPath, Some("custom-resource-definition" -> component)))
+
+  private def watchResourceMatch(resourcePath: ResourcePath, labelSelector: Option[(String, String)] = None): HttpRequest =
+    withLabelSelector(request()
       .withMethod("GET")
-      .withPath(resourcePath.toString)
+      .withPath(resourcePath.toString), labelSelector)
 
   private def emptyEventsFor(httpMatch: HttpRequest): IO[Unit] = IO {
     mock.when(httpMatch
@@ -82,7 +96,50 @@ class KubeApiServer(mock: ClientAndServer) {
     )
   }
 
+  def expectDeletionOf(resourcePath: ResourcePath, labelSelector: Option[(String, String)] = None, returnJsonPath: Option[String] = None): IO[Unit] = IO {
+    mock.when(
+      withLabelSelector(request().withMethod("DELETE").withPath(resourcePath.toString), labelSelector),
+      Times.exactly(1),
+      TimeToLive.unlimited(),
+      10
+    ).respond(
+      withReturnJson(response()
+        .withStatusCode(200), returnJsonPath)
+    )
+  }
+
+  def expectUpdateOf(jsonPath: String, resourcePath: ResourcePath, transform: String => String = identity): IO[Unit] = IO {
+    val json = transform(scala.io.Source.fromResource(jsonPath).mkString)
+    mock.when(
+      request().withMethod("PUT").withPath(resourcePath.toString),
+      Times.exactly(1),
+      TimeToLive.unlimited(),
+      10
+    ).respond(
+      response()
+        .withStatusCode(201)
+        .withBody(json, MediaType.APPLICATION_JSON)
+    )
+  }
+
   def validateCreationOf(resourcePath: ResourcePath): IO[Unit] = IO {
     mock.verify(request().withMethod("POST").withPath(resourcePath.toString), VerificationTimes.exactly(1))
   }
+
+  def validateDeletionOf(resourcePath: ResourcePath, labelSelector: Option[(String, String)] = None): IO[Unit] = IO {
+    mock.verify(withLabelSelector(request().withMethod("DELETE").withPath(resourcePath.toString), labelSelector), VerificationTimes.exactly(1))
+  }
+
+  def validateUpdateOf(resourcePath: ResourcePath): IO[Unit] = IO {
+    mock.verify(request().withMethod("PUT").withPath(resourcePath.toString), VerificationTimes.exactly(1))
+  }
+
+  private def withLabelSelector(request: HttpRequest, labelSelector: Option[(String, String)]): HttpRequest =
+    labelSelector.fold(request) { case (key, value) => request.withQueryStringParameter("labelSelector", s"$key=$value")}
+
+  private def withReturnJson(response: HttpResponse, returnJsonPath: Option[String]): HttpResponse =
+    returnJsonPath.fold(response) { path =>
+      val json = scala.io.Source.fromResource(path).mkString
+      response.withBody(json, MediaType.APPLICATION_JSON)
+    }
 }
