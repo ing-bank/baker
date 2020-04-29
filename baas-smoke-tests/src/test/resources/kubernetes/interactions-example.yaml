@@ -4,7 +4,7 @@ metadata:
   name: reserve-items
 spec:
   image: baas-interaction-example-reserve-items:local
-  imagePullSecret: ""
+  imagePullSecret: "dummy"
   replicas: 2
 
 ---
@@ -15,6 +15,7 @@ metadata:
   name: make-payment-and-ship-items
 spec:
   image: interaction-make-payment-and-ship-items:local
+  imagePullSecret: "dummy"
   env:
     - name: ONE
       value: "1"

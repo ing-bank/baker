@@ -6,5 +6,5 @@ metadata:
     custom-resource-definition: interactions
 data:
   image: baas-interaction-example-reserve-items:local
-  imagePullSecret: ""
+  imagePullSecret: "dummy"
   replicas: "3"
