@@ -3,7 +3,7 @@ kind: Interaction
 metadata:
   name: reserve-items
 spec:
-  image: baas-interaction-example-reserve-items:1.0.0
+  image: baas-interaction-example-reserve-items:local
   replicas: 2
 
 ---
@@ -13,7 +13,7 @@ kind: Interaction
 metadata:
   name: make-payment-and-ship-items
 spec:
-  image: interaction-make-payment-and-ship-items:1.0.0
+  image: interaction-make-payment-and-ship-items:local
   env:
     - name: ONE
       value: "1"

@@ -11,7 +11,7 @@ import skuber.api.client.KubernetesClient
 import skuber.ext.{Deployment, ReplicaSetList}
 import skuber.json.ext.format._
 import skuber.json.format._
-import skuber.{ConfigMap, Container, LabelSelector, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
+import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -86,6 +86,7 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
 
     val name: String = deploymentName(interaction)
     val image: String = interaction.spec.image
+    val imagePullSecret: Option[String] = interaction.spec.imagePullSecret
     val replicas: Int = interaction.spec.replicas
 
     val healthProbe = skuber.Probe(
@@ -131,6 +132,7 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
 
     val podSpec = Pod.Spec(
       containers = List(interactionContainerWithMounts1),
+      imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
       volumes = volumesConfigMaps ++ volumesSecrets,
     )
 
@@ -141,7 +143,9 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
 
     new Deployment(metadata = ObjectMeta(
       name = name,
-      labels = Map(interactionLabel(interaction))
+      labels = Map(
+        interactionLabel(interaction),
+        ("app", interaction.name))
     ))
       .withReplicas(replicas)
       .withTemplate(podTemplate)
@@ -150,6 +154,7 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
   private def service(interaction: InteractionResource): Service = {
     Service(serviceName(interaction))
       .withSelector(interactionLabel(interaction))
+      .addLabel("app", interaction.name)
       .setPort(Service.Port(
         name = httpAPIPort.name,
         port = httpAPIPort.containerPort

@@ -8,7 +8,7 @@ import skuber.api.client.KubernetesClient
 import skuber.ext.{Deployment, ReplicaSetList}
 import skuber.json.ext.format._
 import skuber.json.format._
-import skuber.{ConfigMap, Container, LabelSelector, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
+import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
 
 import scala.concurrent.Future
 
@@ -60,7 +60,8 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
   private def deployment(bakerResource: BakerResource): Deployment = {
 
     val bakerName: String = bakerResource.metadata.name
-    val bakeryVersion: String = bakerResource.spec.bakeryVersion
+    val image: String = bakerResource.spec.image
+    val imagePullSecret: Option[String] = bakerResource.spec.imagePullSecret
     val replicas: Int = bakerResource.spec.replicas
     val recipesMountPath: String = "/recipes"
 
@@ -72,7 +73,7 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
 
     val stateNodeContainer = Container(
       name = baasStateName(bakerName),
-      image = "baas-node-state:" + bakeryVersion
+      image = image
     )
       // todo parametrise?
       .requestMemory("512M")
@@ -111,7 +112,7 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
 
     val podSpec = Pod.Spec(
       containers = List(stateNodeContainer),
-
+      imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
       volumes = List(Volume("recipes", Volume.ConfigMapVolumeSource(baasRecipesConfigMapName(bakerName))))
     )
 
