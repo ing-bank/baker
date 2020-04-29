@@ -35,14 +35,16 @@ case class BakerResource(
 object BakerResource {
 
   def fromConfigMap(configMap: ConfigMap): FromConfigMapValidation[BakerResource] = {
-    ( Utils.extractValidated(configMap, "bakeryVersion")
+    ( Utils.extractValidated(configMap, "image")
+    , Utils.extractValidated(configMap, "imagePullSecret")
     , Utils.extractAndParseValidated(configMap, "replicas", r => Try(r.toInt)).orElse(2.validNel): FromConfigMapValidation[Int]
     , Utils.extractListValidated(configMap, "recipes")
     ).mapN(Spec).map(spec => BakerResource(metadata = configMap.metadata, spec = spec))
   }
 
   case class Spec(
-    bakeryVersion: String,
+    image: String,
+    imagePullSecret: String,
     replicas: Int,
     recipes: List[String]
   )
@@ -64,7 +66,8 @@ object BakerResource {
     new ResourceDefinition[BakerResource] { def spec: NonCoreResourceSpecification = specification }
 
   implicit val recipeResourceSpecFmt: Format[Spec] = (
-    (JsPath \ "bakeryVersion").format[String] and
+    (JsPath \ "image").format[String] and
+    (JsPath \ "imagePullSecret").format[String] and
     (JsPath \ "replicas").formatWithDefault[Int](2) and
     (JsPath \ "recipes").format[List[String]]
   )(Spec.apply, unlift(Spec.unapply))

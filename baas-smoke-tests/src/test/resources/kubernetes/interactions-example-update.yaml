@@ -4,4 +4,5 @@ metadata:
   name: reserve-items
 spec:
   image: baas-interaction-example-reserve-items:local
+  imagePullSecret: ""
   replicas: 3

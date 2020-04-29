@@ -20,7 +20,7 @@ spec:
         spec:
           type: object
           properties:
-            bakeryVersion:
+            imageSelector:
               type: string
             replicas:
               type: integer
@@ -30,7 +30,7 @@ spec:
               items:
                 type: string
           required:
-            - bakeryVersion
+            - image
             - recipes
   # either Namespaced or Cluster
   scope: Namespaced

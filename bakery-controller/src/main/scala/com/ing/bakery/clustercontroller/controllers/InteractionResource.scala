@@ -66,6 +66,7 @@ object InteractionResource {
         .andThen(_.traverse(configMount))
 
     ( Utils.extractValidated(configMap, "image")
+    , Utils.extractValidated(configMap, "imagePullSecret")
     , Utils.extractAndParseValidated(configMap, "replicas", r => Try(r.toInt)).orElse(1.validNel): FromConfigMapValidation[Int]
     , envValidated
     , configMapMountsValidated
@@ -75,6 +76,7 @@ object InteractionResource {
 
   case class Spec(
     image: String,
+    imagePullSecret: String,
     replicas: Int,
     env: List[EnvVar],
     configMapMounts: List[ConfigMount],
@@ -108,6 +110,7 @@ object InteractionResource {
 
   implicit val interactionResourceSpecFmt: Format[Spec] = (
       (JsPath \ "image").format[String] and
+      (JsPath \ "imagePullSecret").format[String] and
       (JsPath \ "replicas").formatWithDefault[Int](1) and
       (JsPath \ "env").formatWithDefault[List[EnvVar]](List.empty) and
       (JsPath \ "configMapMounts").formatWithDefault[List[ConfigMount]](List.empty) and

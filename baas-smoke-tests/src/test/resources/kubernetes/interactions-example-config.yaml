@@ -4,6 +4,7 @@ metadata:
   name: reserve-items
 spec:
   image: baas-interaction-example-reserve-items:local
+  imagePullSecret: ""
   env:
   - name: ONE
     value: "1"

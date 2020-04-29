@@ -6,6 +6,7 @@ metadata:
     custom-resource-definition: interactions
 data:
   image: baas-interaction-example-reserve-items:local
+  imagePullSecret: ""
   replicas: "2"
 
 ---
@@ -18,6 +19,7 @@ metadata:
     custom-resource-definition: interactions
 data:
   image: interaction-make-payment-and-ship-items:local
+  imagePullSecret: ""
   env.0.name: ONE
   env.0.value: "1"
   env.1.name: TWO
