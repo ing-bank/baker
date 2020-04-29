@@ -22,7 +22,7 @@
       "spec" : {
         "containers" : [ {
           "name" : "baas-state-RecipeOne",
-          "image" : "baas-node-state:3.0.2-SNAPSHOT",
+          "image" : "baas-node-state:local",
           "ports" : [ {
             "containerPort" : 8080,
             "protocol" : "TCP",
