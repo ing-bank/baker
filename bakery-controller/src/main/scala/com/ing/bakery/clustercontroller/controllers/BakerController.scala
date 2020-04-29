@@ -61,7 +61,7 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
 
     val bakerName: String = bakerResource.metadata.name
     val image: String = bakerResource.spec.image
-    val imagePullSecret: String = bakerResource.spec.imagePullSecret
+    val imagePullSecret: Option[String] = bakerResource.spec.imagePullSecret
     val replicas: Int = bakerResource.spec.replicas
     val recipesMountPath: String = "/recipes"
 
@@ -112,7 +112,7 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
 
     val podSpec = Pod.Spec(
       containers = List(stateNodeContainer),
-      imagePullSecrets = List(LocalObjectReference(imagePullSecret)),
+      imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
       volumes = List(Volume("recipes", Volume.ConfigMapVolumeSource(baasRecipesConfigMapName(bakerName))))
     )
 

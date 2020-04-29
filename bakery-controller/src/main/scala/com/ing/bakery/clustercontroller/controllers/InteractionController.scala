@@ -82,7 +82,7 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
 
     val name: String = deploymentName(interaction)
     val image: String = interaction.spec.image
-    val imagePullSecret: String = interaction.spec.imagePullSecret
+    val imagePullSecret: Option[String] = interaction.spec.imagePullSecret
     val replicas: Int = interaction.spec.replicas
 
     val healthProbe = skuber.Probe(
@@ -128,7 +128,7 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
 
     val podSpec = Pod.Spec(
       containers = List(interactionContainerWithMounts1),
-      imagePullSecrets = List(LocalObjectReference(imagePullSecret)),
+      imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
       volumes = volumesConfigMaps ++ volumesSecrets,
     )
 
