@@ -107,7 +107,7 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
         timeoutSeconds = 10
       ))
       .mount("recipes", recipesMountPath, readOnly = true)
-      .mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount")
+      .mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true)
       .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)
       .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
       .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
