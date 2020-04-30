@@ -117,7 +117,7 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
       imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
       volumes = List(
         Some(Volume("recipes", Volume.ConfigMapVolumeSource(baasRecipesConfigMapName(bakerName)))),
-        serviceAccountSecret.map(s => Volume("service-account", Volume.Secret(s)))
+        serviceAccountSecret.map(s => Volume("service-account-token", Volume.Secret(s)))
       ).flatten
     )
 
