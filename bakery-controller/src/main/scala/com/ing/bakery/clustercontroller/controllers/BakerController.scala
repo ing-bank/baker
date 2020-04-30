@@ -109,7 +109,9 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
       .mount("recipes", recipesMountPath, readOnly = true)
       .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)
       .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
-      .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "false") // todo follow-up - configurable kafka event sink
+      // todo add missing kafka configuration later (topics + identity missing)
+      .setEnvVar("KAFKA_EVENT_SINK_ENABLED", bakerResource.spec.kafkaBootstrapServers.isDefined.toString)
+      .setEnvVar("KAFKA_EVENT_SINK_BOOTSTRAP_SERVERS", bakerResource.spec.kafkaBootstrapServers.getOrElse("none"))
       .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
 
     val podSpec = Pod.Spec(
