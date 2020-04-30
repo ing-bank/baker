@@ -1,9 +1,9 @@
 package com.ing.bakery.clustercontroller.controllers
 
-import akka.Done
+import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.stream.{KillSwitches, Materializer, UniqueKillSwitch}
+import akka.stream.{KillSwitches, Materializer}
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
 import com.ing.bakery.clustercontroller.controllers.Utils.FromConfigMapValidation
@@ -62,42 +62,45 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
     }
 
     //TODO chose a more reasonable number for the bufSize
-    def sourceWithLabel(keyValue: (String, String)) = {
+    def sourceWithLabel(keyValue: (String, String)): Source[K8SWatchEvent[O], NotUsed] = {
       val watchFilter: ListOptions = {
         val labelSelector = LabelSelector(LabelSelector.IsEqualRequirement(keyValue._1, keyValue._2))
         ListOptions(labelSelector = Some(labelSelector))
       }
       k8s.watchWithOptions(watchFilter, bufsize = Int.MaxValue)
+        .monitor
+        .mapMaterializedValue(_ => NotUsed)
     }
 
     //TODO chose a more reasonable number for the bufSize
-    def sourceWithoutLabel =
+    def sourceWithoutLabel: Source[K8SWatchEvent[O], NotUsed] =
       k8s.watchAllContinuously[O](bufSize = Int.MaxValue)
+        .mapMaterializedValue(_ => NotUsed)
 
-    val source: Source[Option[K8SWatchEvent[O]], UniqueKillSwitch] =
+    def source: Source[K8SWatchEvent[O], NotUsed] =
       label.fold(sourceWithoutLabel)(sourceWithLabel)
-        .map(Some(_))
-        .recover { case e =>
-          logger.error("Serialization or CRD consistency issue:" + e.getMessage, e)
-          None
-        }
-        .viaMat(KillSwitches.single)(Keep.right)
 
-    val sink: Sink[Option[K8SWatchEvent[O]], Future[Done]] =
-      Sink.foreach[Option[K8SWatchEvent[O]]] {
-        case Some(event) =>
-          handleEvent(event)
-            .recover { case e => logger.error(s"While processing watch events on controller: ${e.getMessage}", e) }
-            .unsafeToFuture()
-        case None =>
-          Unit
+    def sourceWithRetry: Source[K8SWatchEvent[O], NotUsed] =
+      source.recoverWithRetries(-1, { case e =>
+        logger.error(s"Error on the '${rd.spec.names.plural}' watch stream:" + e.getMessage, e)
+        source
+      })
+
+    val sink: Sink[K8SWatchEvent[O], Future[Done]] =
+      Sink.foreach[K8SWatchEvent[O]] { event =>
+        handleEvent(event)
+          .recover { case e => logger.error(s"Error while processing watch event ${event._type} of controller for '${rd.spec.names.plural}': ${e.getMessage}", e) }
+          .unsafeToFuture()
       }
 
     Resource.make(
-      IO(source.toMat(sink)(Keep.left).run()).map { killSwitch =>
-        sys.addShutdownHook(killSwitch.shutdown())
-        IO(killSwitch.shutdown())
-      }
+      IO(sourceWithRetry
+        .viaMat(KillSwitches.single)(Keep.right)
+        .toMat(sink)(Keep.left).run())
+        .map { killSwitch =>
+          sys.addShutdownHook(killSwitch.shutdown())
+          IO(killSwitch.shutdown())
+        }
     )(identity).map(_ => ())
   }
 }
