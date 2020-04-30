@@ -11,7 +11,7 @@ import skuber.api.client.KubernetesClient
 import skuber.ext.{Deployment, ReplicaSetList}
 import skuber.json.ext.format._
 import skuber.json.format._
-import skuber.{ConfigMap, Container, LabelSelector, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
+import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -20,13 +20,17 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
 
   // TODO make these operations atomic, if one fails we need to rollback previous ones
   def create(resource: InteractionResource, k8s: KubernetesClient): IO[Unit] = {
-    val address = Uri.unsafeFromString(s"http://${serviceName(resource)}:${httpAPIPort.containerPort}/")
-    val client = new RemoteInteractionClient(httpClient, address)
     for {
       _ <- io(k8s.create(deployment(resource)))
-      _ <- io(k8s.create(service(resource)))
+      deployedService <- io(k8s.create(service(resource)))
+      deployedPort = deployedService.spec
+        .flatMap(_.ports.find(_.name == "http-api"))
+        .map(_.port)
+        .getOrElse(8080)
+      address = Uri.unsafeFromString(s"http://${serviceName(resource)}:$deployedPort/")
+      client = new RemoteInteractionClient(httpClient, address)
       interfaces <- Utils.within(10.minutes, split = 300) { // Check every 2 seconds for interfaces
-        client.interface.map { interfaces =>assert(interfaces.nonEmpty); interfaces }
+        client.interface.map { interfaces => assert(interfaces.nonEmpty); interfaces }
       }
       _ <- io(k8s.create(creationContract(resource, address, interfaces)))
       _ = logger.info(s"Deployed interactions from interaction set named '${resource.name}': ${interfaces.map(_.name).mkString(", ")}")
@@ -55,7 +59,7 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
 
   private def interactionLabel(interaction: InteractionResource): (String, String) = "interaction" -> interaction.name
 
-  private def serviceName(interactionResource: InteractionResource): String = interactionResource.name + "-interaction-service"
+  private def serviceName(interactionResource: InteractionResource): String = interactionResource.name
 
   private def deploymentName(interactionResource: InteractionResource): String = interactionResource.name
 
@@ -82,6 +86,7 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
 
     val name: String = deploymentName(interaction)
     val image: String = interaction.spec.image
+    val imagePullSecret: Option[String] = interaction.spec.imagePullSecret
     val replicas: Int = interaction.spec.replicas
 
     val healthProbe = skuber.Probe(
@@ -127,6 +132,7 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
 
     val podSpec = Pod.Spec(
       containers = List(interactionContainerWithMounts1),
+      imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
       volumes = volumesConfigMaps ++ volumesSecrets,
     )
 
@@ -137,7 +143,9 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
 
     new Deployment(metadata = ObjectMeta(
       name = name,
-      labels = Map(interactionLabel(interaction))
+      labels = Map(
+        interactionLabel(interaction),
+        ("app", interaction.name))
     ))
       .withReplicas(replicas)
       .withTemplate(podTemplate)
@@ -146,6 +154,7 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
   private def service(interaction: InteractionResource): Service = {
     Service(serviceName(interaction))
       .withSelector(interactionLabel(interaction))
+      .addLabel("app", interaction.name)
       .setPort(Service.Port(
         name = httpAPIPort.name,
         port = httpAPIPort.containerPort
