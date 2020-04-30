@@ -62,6 +62,7 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
     val bakerName: String = bakerResource.metadata.name
     val image: String = bakerResource.spec.image
     val imagePullSecret: Option[String] = bakerResource.spec.imagePullSecret
+    val serviceAccountSecret: Option[String] = bakerResource.spec.serviceAccountSecret
     val replicas: Int = bakerResource.spec.replicas
     val recipesMountPath: String = "/recipes"
 
@@ -106,6 +107,7 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
         timeoutSeconds = 10
       ))
       .mount("recipes", recipesMountPath, readOnly = true)
+      .mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount")
       .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)
       .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
       .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
@@ -113,7 +115,10 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
     val podSpec = Pod.Spec(
       containers = List(stateNodeContainer),
       imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
-      volumes = List(Volume("recipes", Volume.ConfigMapVolumeSource(baasRecipesConfigMapName(bakerName))))
+      volumes = List(
+        Some(Volume("recipes", Volume.ConfigMapVolumeSource(baasRecipesConfigMapName(bakerName)))),
+        serviceAccountSecret.map(s => Volume("service-account", Volume.Secret(s)))
+      ).flatten
     )
 
     val podTemplate = Pod.Template.Spec
