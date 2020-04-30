@@ -24,6 +24,8 @@ spec:
               type: string
             imagePullSecret:
               type: string
+            serviceAccountSecret:
+              type: string
             replicas:
               type: integer
               minimum: 2
