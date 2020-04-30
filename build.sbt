@@ -336,8 +336,12 @@ lazy val `bakery-controller` = project.in(file("bakery-controller"))
       http4sDsl,
       http4sServer
     ) ++ testDeps(
+      slf4jApi,
+      logback,
       scalaTest,
-      logback
+      mockServer,
+      circe,
+      circeGeneric
     )
   )
   .dependsOn(bakertypes, recipeCompiler, recipeDsl, intermediateLanguage, `baas-node-client`, `baas-protocol-interaction-scheduling`)
