@@ -26,16 +26,22 @@ trait EventSink {
 
 object KafkaEventSink extends LazyLogging {
 
-  def resource(settings: KafkaEventSinkSettings)(implicit contextShift: ContextShift[IO], timer: Timer[IO]): Resource[IO, KafkaEventSink] = {
+  def resource(settings: KafkaEventSinkSettings)(implicit contextShift: ContextShift[IO], timer: Timer[IO]): Resource[IO, EventSink] = {
 
     logger.info(s"Starting Kafka streaming event sink: $settings")
 
     Resource.make(
-      IO {
-        new KafkaEventSink(
-          KafkaProducer(Conf(new StringSerializer(), new StringSerializer(), settings.`bootstrap-servers`)),
-          settings)
-      }
+        if (settings.enabled) IO {
+          new KafkaEventSink(
+            KafkaProducer(Conf(new StringSerializer(), new StringSerializer(), settings.`bootstrap-servers`)),
+            settings)}
+        else IO {
+          new EventSink {
+            override def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit] = {
+              IO.delay(logger.info(s">>> $event"))
+            }
+          }
+        }
     )(sink => IO(sink.close()))
   }
 }
