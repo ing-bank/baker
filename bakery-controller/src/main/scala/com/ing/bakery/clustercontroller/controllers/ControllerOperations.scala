@@ -10,7 +10,7 @@ import com.ing.bakery.clustercontroller.controllers.Utils.FromConfigMapValidatio
 import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json.Format
 import skuber.api.client.{EventType, KubernetesClient}
-import skuber.{ConfigMap, K8SWatchEvent, LabelSelector, ListOptions, ObjectResource, ResourceDefinition}
+import skuber.{ConfigMap, K8SException, K8SWatchEvent, LabelSelector, ListOptions, ObjectResource, ResourceDefinition}
 
 import scala.concurrent.Future
 
@@ -49,15 +49,18 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
   ): Resource[IO, Unit] = {
 
     def handleEvent(event: K8SWatchEvent[O]): IO[Unit] = {
-      logger.info(event._type + " " + event._object.metadata.name)
       (event._type match {
         case EventType.ADDED => create(event._object, k8s)
         case EventType.DELETED => terminate(event._object, k8s)
         case EventType.MODIFIED => upgrade(event._object, k8s)
         case EventType.ERROR => IO(logger.error(s"Event type ERROR on ${rd.spec.names.kind} CRD: ${event._object}"))
       }).attempt.flatMap {
-        case Left(e) => IO(logger.error(s"Error when handling the event ${event._type}: " + e.getMessage))
-        case Right(_) => IO.unit
+        case Left(e: K8SException) if e.status.code.contains(409) =>
+          IO(logger.info(event._type + " " + event._object.metadata.name + " (resource already existed)"))
+        case Left(e) =>
+          IO(logger.error(s"Error when handling the event ${event._type} ${event._object.metadata.name}: " + e.getMessage))
+        case Right(_) =>
+          IO(logger.info(event._type + " " + event._object.metadata.name))
       }
     }
 
@@ -65,10 +68,9 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
     def sourceWithLabel(keyValue: (String, String)): Source[K8SWatchEvent[O], NotUsed] = {
       val watchFilter: ListOptions = {
         val labelSelector = LabelSelector(LabelSelector.IsEqualRequirement(keyValue._1, keyValue._2))
-        ListOptions(labelSelector = Some(labelSelector))
+        ListOptions(labelSelector = Some(labelSelector), timeoutSeconds = Some(30))
       }
       k8s.watchWithOptions(watchFilter, bufsize = Int.MaxValue)
-        .monitor
         .mapMaterializedValue(_ => NotUsed)
     }
 
@@ -82,7 +84,7 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
 
     def sourceWithRetry: Source[K8SWatchEvent[O], NotUsed] =
       source.recoverWithRetries(-1, { case e =>
-        logger.error(s"Error on the '${rd.spec.names.plural}' watch stream:" + e.getMessage, e)
+        logger.error(s"Error on the '${rd.spec.names.plural}' watch stream: " + e.getMessage, e)
         source
       })
 
