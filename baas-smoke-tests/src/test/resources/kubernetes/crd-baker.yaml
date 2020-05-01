@@ -26,6 +26,8 @@ spec:
               type: string
             serviceAccountSecret:
               type: string
+            kafkaBootstrapServers:
+              type: string
             replicas:
               type: integer
               minimum: 2

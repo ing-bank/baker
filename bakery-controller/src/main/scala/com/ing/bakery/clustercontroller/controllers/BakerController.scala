@@ -1,7 +1,6 @@
 package com.ing.bakery.clustercontroller.controllers
 
 import cats.effect.{ContextShift, IO, Timer}
-import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.api.client.KubernetesClient
@@ -111,12 +110,21 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
       .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
       .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
 
+    val stateContainerWithEventSink =
+      bakerResource.spec.kafkaBootstrapServers.map( servers =>
+        stateNodeContainer
+          .setEnvVar("KAFKA_EVENT_SINK_BOOTSTRAP_SERVERS", servers)
+          // todo add missing kafka configuration later (topics + identity missing)
+          .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "true")
+      ).getOrElse(stateNodeContainer
+          .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "false"))
+
     val podSpec = Pod.Spec(
       containers = List(
         if (serviceAccountSecret.isDefined)
-          stateNodeContainer.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true)
+          stateContainerWithEventSink.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true)
         else
-          stateNodeContainer
+          stateContainerWithEventSink
       ),
       imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
       volumes = List(
