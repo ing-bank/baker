@@ -45,7 +45,7 @@ object ServiceDiscovery extends LazyLogging {
       val watchFilter: ListOptions = {
         val (key, value) = baasComponentLabel
         val labelSelector = LabelSelector(LabelSelector.IsEqualRequirement(key, value))
-        ListOptions(labelSelector = Some(labelSelector))
+        ListOptions(labelSelector = Some(labelSelector), timeoutSeconds = Some(30))
       }
 
       def source: Source[K8SWatchEvent[ConfigMap], NotUsed] =
