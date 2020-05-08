@@ -36,10 +36,10 @@ object Dependencies {
   val akkaTestKit =               "com.typesafe.akka"          %% "akka-testkit"                       % akkaVersion
   val akkaStreamTestKit =         "com.typesafe.akka"          %% "akka-stream-testkit"                % akkaVersion
   val akkaMultiNodeTestkit =      "com.typesafe.akka"          %% "akka-multi-node-testkit"            % akkaVersion
-  val akkaManagementHttp =        "com.lightbend.akka.management" %% "akka-management-cluster-http"      % "1.0.6"
-  val akkaClusterBoostrap =       "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.6"
+  val akkaManagementHttp =        "com.lightbend.akka.management" %% "akka-management-cluster-http"      % "1.0.7"
+  val akkaClusterBoostrap =       "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.7"
   val akkaDiscoveryKube =         "com.lightbend.akka.discovery"  %% "akka-discovery-kubernetes-api"     % "1.0.6"
-  val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.6"
+  val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.7"
 
   val scalaKafkaClient =          "net.cakesolutions"          %% "scala-kafka-client"                 % "2.3.1"
   val fs2kafka =                  "com.github.fd4s"            %% "fs2-kafka"                          % "1.0.0"
