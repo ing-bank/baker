@@ -22,6 +22,8 @@ spec:
           properties:
             image:
               type: string
+            imagePullSecret:
+              type: string
             replicas:
               type: integer
               minimum: 1

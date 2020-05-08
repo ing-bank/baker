@@ -20,7 +20,13 @@ spec:
         spec:
           type: object
           properties:
-            bakeryVersion:
+            image:
+              type: string
+            imagePullSecret:
+              type: string
+            serviceAccountSecret:
+              type: string
+            kafkaBootstrapServers:
               type: string
             replicas:
               type: integer
@@ -30,7 +36,7 @@ spec:
               items:
                 type: string
           required:
-            - bakeryVersion
+            - image
             - recipes
   # either Namespaced or Cluster
   scope: Namespaced

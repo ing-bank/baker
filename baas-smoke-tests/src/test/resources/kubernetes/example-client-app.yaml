@@ -34,13 +34,13 @@ spec:
     spec:
       containers:
         - name: kafka-listener
-          image: baas-kafka-listener-example:3.0.2-SNAPSHOT
+          image: baas-kafka-listener-example:local
           resources:
             requests:
               memory: 256M
               cpu: 200m
         - name: client-app
-          image: baas-client-example:3.0.2-SNAPSHOT
+          image: baas-client-example:local
           imagePullPolicy: Never
           resources:
             requests:

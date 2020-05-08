@@ -1,0 +1,19 @@
+{
+  "kind" : "Service",
+  "apiVersion" : "v1",
+  "metadata" : {
+    "name" : "localhost"
+  },
+  "spec" : {
+    "ports" : [ {
+      "name" : "http-api",
+      "protocol" : "TCP",
+      "port" : {{http-api-port}}
+    } ],
+    "selector" : {
+      "interaction" : "InteractionOne"
+    },
+    "type" : "ClusterIP",
+    "sessionAffinity" : "None"
+  }
+}

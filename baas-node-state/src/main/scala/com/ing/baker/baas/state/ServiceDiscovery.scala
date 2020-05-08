@@ -1,6 +1,6 @@
 package com.ing.baker.baas.state
 
-import akka.Done
+import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.stream.{KillSwitches, Materializer, UniqueKillSwitch}
@@ -21,9 +21,7 @@ import skuber.json.format._
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
-object ServiceDiscovery {
-
-  val logger: Logger = Logger("bakery.ServiceDiscovery")
+object ServiceDiscovery extends LazyLogging {
 
   def empty(httpClient: Client[IO]): IO[ServiceDiscovery] =
     Ref.of[IO, Map[String, InteractionInstance]](Map.empty).map(new ServiceDiscovery(_, httpClient))
@@ -43,27 +41,29 @@ object ServiceDiscovery {
     */
   def resource(httpClient: Client[IO], k8s: KubernetesClient)(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem, materializer: Materializer): Resource[IO, ServiceDiscovery] = {
 
-    def watchSource(serviceDiscovery: ServiceDiscovery): Source[Option[K8SWatchEvent[ConfigMap]], UniqueKillSwitch] = {
+    def watchSource(serviceDiscovery: ServiceDiscovery): Source[K8SWatchEvent[ConfigMap], UniqueKillSwitch] = {
       val watchFilter: ListOptions = {
         val (key, value) = baasComponentLabel
         val labelSelector = LabelSelector(LabelSelector.IsEqualRequirement(key, value))
-        ListOptions(labelSelector = Some(labelSelector))
+        ListOptions(labelSelector = Some(labelSelector), timeoutSeconds = Some(30))
       }
 
-      k8s.watchWithOptions[ConfigMap](watchFilter)
-        .map(Some(_))
-        .recover { case e => logger.error(e.getMessage, e); None }
+      def source: Source[K8SWatchEvent[ConfigMap], NotUsed] =
+        k8s.watchWithOptions[ConfigMap](watchFilter).mapMaterializedValue(_ => NotUsed)
+
+      source
+        .recoverWithRetries(-1, { case e =>
+          logger.error("Error on the service discovery watch stream: " + e.getMessage, e)
+          source
+        })
         .viaMat(KillSwitches.single)(Keep.right)
     }
 
-    def updateSink(serviceDiscovery: ServiceDiscovery): Sink[Option[K8SWatchEvent[ConfigMap]], Future[Done]] = {
-      Sink.foreach[Option[K8SWatchEvent[ConfigMap]]] {
-        case Some(event) =>
+    def updateSink(serviceDiscovery: ServiceDiscovery): Sink[K8SWatchEvent[ConfigMap], Future[Done]] = {
+      Sink.foreach[K8SWatchEvent[ConfigMap]] { event =>
           serviceDiscovery.update(event).recover { case e =>
             logger.error("Failure when updating the services in the ConfigMap Discovery component", e)
           }.unsafeToFuture()
-        case None =>
-          Future.successful(Unit)
       }
     }
 

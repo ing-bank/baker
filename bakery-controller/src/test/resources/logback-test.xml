@@ -1,0 +1,20 @@
+<configuration>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <logger level="OFF" name="skuber.api"/>
+
+    <logger level="OFF" name="org.http4s"/>
+
+    <logger level="ERROR" name="org.mockserver.log.MockServerEventLog"/>
+
+    <logger level="ERROR" name="com.ing.bakery.clustercontroller.controllers"/>
+</configuration>
