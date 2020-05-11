@@ -66,5 +66,3 @@ steps:
       USERNAME: $(username)
       PASSWORD: $(password)
       PGP_PASSPHRASE: $(gpg key)
-      GPGPUBRING: $(pubring.secureFilePath)
-      GPGSECRING: $(secring.secureFilePath)
