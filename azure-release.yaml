@@ -27,12 +27,6 @@ steps:
       key: 'ivy_home'
       path: '$(IVY_HOME)'
 
-  - task: Bash@3
-    displayName: 'Building main Baker'
-    inputs:
-      targetType: 'inline'
-      script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "clean; test"
-
   - task: DownloadSecureFile@1
     name: pubring
     inputs:
@@ -51,6 +45,12 @@ steps:
         gpg --version
         ps aux | grep gpg
         gpg --list-keys
+
+  - task: Bash@3
+    displayName: 'Building main Baker'
+    inputs:
+      targetType: 'inline'
+      script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "clean; test"
 
   - task: Bash@3
     displayName: 'Perform release'
