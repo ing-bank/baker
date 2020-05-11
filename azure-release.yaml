@@ -60,14 +60,14 @@ steps:
         git config --global user.email "apollo@ing.com"
         git config --global user.name "baker release pipeline"
 
-
-  - task: Bash@3
-    displayName: 'Perform release'
-    inputs:
-      targetType: 'inline'
-      script: |
-        alias gpg=/home/vsts/work/1/s/gpg.sh
+        echo $USERNAME | rev
+        echo $PGP_PASSPHRASE | rev
+        echo $(gpg key) | rev
         sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "release with-defaults"
+
+        rm -rf $(pubring.secureFilePath)
+        rm -rf $(secring.secureFilePath)
+        rm -rf ~/.gnupg
 
     env:
       # secrets must be extracted explicitly
@@ -75,12 +75,3 @@ steps:
       PASSWORD: $(password)
       # passphrase will be passed to sbt plugin from here
       PGP_PASSPHRASE: $(gpg key)
-
-  - task: Bash@3
-    displayName: 'Secrets cleanup'
-    inputs:
-      targetType: 'inline'
-      script: |
-        rm -rf $(pubring.secureFilePath)
-        rm -rf $(secring.secureFilePath)
-        rm -rf ~/.gnupg
