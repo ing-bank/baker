@@ -34,13 +34,13 @@ object Publish {
       sys.env.getOrElse("USERNAME", ""),
       sys.env.getOrElse("PASSWORD", "")
     ),
-//  Credentials(
-//        "GnuPG Key ID",
-//        "gpg",
-//        "2BE67AC00D699E04E840B7FE29967E804D85663F", // key identifier
-//        "ignored" // this field is ignored; passwords are supplied by pinentry
-//      )
-//    ),
+      Credentials(
+        "GnuPG Key ID",
+        "gpg",
+        "2BE67AC00D699E04E840B7FE29967E804D85663F", // key identifier
+        "ignored" // this field is ignored; passwords are supplied by pinentry
+      )
+    ),
     sonatypeProfileName := "com.ing",
     licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT")),
     homepage := Some(url("https://github.com/ing-bank/baker")),

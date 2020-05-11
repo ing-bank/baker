@@ -44,6 +44,15 @@ steps:
       secureFile: secring.asc
 
   - task: Bash@3
+    displayName: 'GPG'
+    inputs:
+      targetType: 'inline'
+      script: |
+        gpg --version
+        ps aux | grep gpg
+        gpg --list-keys
+
+  - task: Bash@3
     displayName: 'Perform release'
     inputs:
       targetType: 'inline'
