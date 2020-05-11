@@ -27,9 +27,6 @@ object Publish {
   protected val ossSnapshots = "Sonatype OSS Snapshots" at nexus + "content/repositories/snapshots/"
   protected val ossStaging = "Sonatype OSS Staging" at nexus + "service/local/staging/deploy/maven2/"
 
-  def gpgCommand = PgpKeys.gpgCommand in Global
-  Global / gpgCommand := (baseDirectory.value / "gpg.sh").getAbsolutePath
-
   val Sonatype = Seq(
     credentials ++= Seq(
       Credentials(

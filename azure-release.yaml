@@ -46,8 +46,11 @@ steps:
         ls -la $(secring.secureFilePath)
         mkdir ~/.gnupg
         chmod -R 700 ~/.gnupg
+
+        # overrides tty to let gpg run on headless agents
+        alias gpg=/home/vsts/work/1/s/gpg.sh
+
         gpg --import  $(pubring.secureFilePath)
-        export GPG_TTY=$(tty)
         gpg --batch --import $(secring.secureFilePath)
         gpg --version
         gpg --list-keys
@@ -56,6 +59,7 @@ steps:
         git checkout oss-release
         git config --global user.email "apollo@ing.com"
         git config --global user.name "baker release pipeline"
+
 
   - task: Bash@3
     displayName: 'Perform release'
@@ -68,10 +72,3 @@ steps:
       USERNAME: $(username)
       PASSWORD: $(password)
       PGP_PASSPHRASE: $(gpg key)
-
-  - task: Bash@3
-    displayName: 'GPG'
-    inputs:
-      targetType: 'inline'
-      script: |
-        cat /home/vsts/work/1/s/gpg.log
