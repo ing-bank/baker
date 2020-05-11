@@ -61,7 +61,9 @@ steps:
     displayName: 'Perform release'
     inputs:
       targetType: 'inline'
-      script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "release with-defaults"
+      script: |
+      export GPG_TTY=$(tty)
+      sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "release with-defaults"
     env:
       # secrets must be extracted explicitly
       USERNAME: $(username)
