@@ -61,9 +61,8 @@ steps:
         git config --global user.email "apollo@ing.com"
         git config --global user.name "baker release pipeline"
 
-        echo $USERNAME | rev
-        echo $PGP_PASSPHRASE | rev
-        echo $(gpg key) | rev
+        mkdir ~/.sbt
+        cat 'Global / gpgCommand := "/home/vsts/work/1/s/gpg.sh"' >~/.sbt/gpg.sbt
         sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "release with-defaults"
 
         rm -rf $(pubring.secureFilePath)

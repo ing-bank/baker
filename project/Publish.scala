@@ -5,7 +5,6 @@ import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleaseStateTransformations._
 import xerial.sbt.Sonatype.SonatypeKeys._
 
-
 object Publish {
 
   lazy val settings =
@@ -29,7 +28,6 @@ object Publish {
   protected val ossStaging = "Sonatype OSS Staging" at nexus + "service/local/staging/deploy/maven2/"
 
   val Sonatype = Seq(
-    PgpKeys.gpgCommand := (baseDirectory.value / "./gpg.sh").getAbsolutePath,
     credentials ++= Seq(
       Credentials(
       "Sonatype Nexus Repository Manager",
