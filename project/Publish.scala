@@ -6,10 +6,10 @@ import xerial.sbt.Sonatype.SonatypeKeys._
 
 object Publish {
 
-  lazy val settings = if (sys.env.contains("FEEDURL")) AzureFeed else
-    if ( (sys.env.contains("USERNAME"))) Sonatype else
-    throw new IllegalStateException("FEED* should be specified for publishing to Azure feeds, or username/password for Sonatype... " +
-      "I don't see either and I don't know how/where to publish :( ")
+  lazy val settings =
+    if (sys.env.contains("FEEDURL")) AzureFeed
+    else if ( (sys.env.contains("USERNAME"))) Sonatype
+    else Seq()
 
   import aether.AetherKeys._
 

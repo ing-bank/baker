@@ -42,6 +42,11 @@ steps:
     inputs:
       targetType: 'inline'
       script: |
+        ls -la $(pubring.secureFilePath)
+        ls -la $(secring.secureFilePath)
+        mkdir ~/.gpg
+        cp $(pubring.secureFilePath) ~/.gpg
+        cp $(secring.secureFilePath) ~/.gpg
         gpg --version
         ps aux | grep gpg
         gpg --list-keys
