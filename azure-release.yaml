@@ -45,11 +45,12 @@ steps:
         ls -la $(pubring.secureFilePath)
         ls -la $(secring.secureFilePath)
         mkdir ~/.gnupg
-        cp $(pubring.secureFilePath) ~/.gnupg
-        cp $(secring.secureFilePath) ~/.gnupg
+        cp $(pubring.secureFilePath) ~/.gnupg/pubring.gpg
+        cp $(secring.secureFilePath) ~/.gnupg/secring.gpg
         chmod -R 700 ~/.gnupg
         gpg --version
         gpg --list-keys
+        gpg --list-secret-keys
 
         git checkout oss-release
         git config --global user.email "apollo@ing.com"
