@@ -73,4 +73,4 @@ steps:
       PASSWORD: $(password)
       # passphrase will be passed to sbt plugin from here
       PGP_PASSPHRASE: $(gpg key)
-      GPG_TTY: $(tty)
+      GPG_TTY: /dev/pts/0
