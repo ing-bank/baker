@@ -48,7 +48,6 @@ steps:
         ls -la $(secring.secureFilePath)
         mkdir ~/.gnupg
         chmod -R 700 ~/.gnupg
-        echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
 
         gpg --import  $(pubring.secureFilePath)
         gpg --batch --import $(secring.secureFilePath)
@@ -60,7 +59,6 @@ steps:
         git config --global user.email "apollo@ing.com"
         git config --global user.name "baker release pipeline"
 
-        mkdir ~/.sbt
         sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "release with-defaults"
 
         rm -rf $(pubring.secureFilePath)
