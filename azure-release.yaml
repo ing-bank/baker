@@ -47,7 +47,8 @@ steps:
         mkdir ~/.gnupg
         chmod -R 700 ~/.gnupg
         gpg --import  $(pubring.secureFilePath)
-        export GPG_TTY=$(tty) gpg --batch --import  $(secring.secureFilePath)
+        export GPG_TTY=$(tty)
+        gpg --batch --import $(secring.secureFilePath)
         gpg --version
         gpg --list-keys
         gpg --list-secret-keys
