@@ -47,16 +47,13 @@ steps:
         mkdir ~/.gnupg
         cp $(pubring.secureFilePath) ~/.gnupg
         cp $(secring.secureFilePath) ~/.gnupg
+        chmod -R 700 ~/.gnupg
         gpg --version
-        ps aux | grep gpg
         gpg --list-keys
-        git checkout oss-release
 
-  - task: Bash@3
-    displayName: 'Building main Baker'
-    inputs:
-      targetType: 'inline'
-      script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "clean; test"
+        git checkout oss-release
+        git config --global user.email "apollo@ing.com"
+        git config --global user.name "baker release pipeline"
 
   - task: Bash@3
     displayName: 'Perform release'
