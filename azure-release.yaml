@@ -48,9 +48,6 @@ steps:
         mkdir ~/.gnupg
         chmod -R 700 ~/.gnupg
 
-        # overrides tty to let gpg run on headless agents
-        alias gpg=/home/vsts/work/1/s/gpg.sh
-
         gpg --import  $(pubring.secureFilePath)
         gpg --batch --import $(secring.secureFilePath)
         gpg --version
@@ -62,7 +59,6 @@ steps:
         git config --global user.name "baker release pipeline"
 
         mkdir ~/.sbt
-        echo 'Global / gpgCommand := "/home/vsts/work/1/s/gpg.sh"' >~/.sbt/gpg.sbt
         sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "release with-defaults"
 
         rm -rf $(pubring.secureFilePath)
@@ -75,3 +71,4 @@ steps:
       PASSWORD: $(password)
       # passphrase will be passed to sbt plugin from here
       PGP_PASSPHRASE: $(gpg key)
+      GPG_TTY: $(tty)
