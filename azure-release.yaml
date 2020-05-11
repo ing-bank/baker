@@ -38,11 +38,28 @@ steps:
       secureFile: secring.asc
 
   - task: Bash@3
+    displayName: 'GPG'
+    inputs:
+      targetType: 'inline'
+      script: |
+        ls -la $(pubring.secureFilePath)
+        ls -la $(secring.secureFilePath)
+        mkdir ~/.gnupg
+        cp $(pubring.secureFilePath) ~/.gnupg
+        cp $(secring.secureFilePath) ~/.gnupg
+        chmod -R 700 ~/.gnupg
+        gpg --version
+        gpg --list-keys
+
+        git checkout oss-release
+        git config --global user.email "apollo@ing.com"
+        git config --global user.name "baker release pipeline"
+
+  - task: Bash@3
     displayName: 'Perform release'
     inputs:
       targetType: 'inline'
       script: ./do-release.sh
-
     env:
       # secrets must be extracted explicitly
       USERNAME: $(username)
