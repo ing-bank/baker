@@ -1,0 +1,57 @@
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - group: SonaTypeCredentials
+  - name: CACHE
+    value: $(HOME)/.cache
+  - name: IVY_HOME
+    value: $(Pipeline.Workspace)/.ivy2
+
+steps:
+  - task: CacheBeta@1
+    displayName: Package resolver cache
+    inputs:
+      key: 'cache'
+      path: '$(CACHE)'
+
+  - task: CacheBeta@1
+    displayName: Ivy resolver cache
+    inputs:
+      key: 'ivy_home'
+      path: '$(IVY_HOME)'
+
+  - task: Bash@3
+    displayName: 'Building main Baker'
+    inputs:
+      targetType: 'inline'
+      script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "clean; test"
+
+  - task: DownloadSecureFile@1
+    name: pubring
+    inputs:
+      secureFile: pubring.asc
+
+  - task: DownloadSecureFile@1
+    name: secring
+    inputs:
+      secureFile: secring.asc
+
+  - task: Bash@3
+    displayName: 'Perform release'
+    inputs:
+      targetType: 'inline'
+      script: sbt release with-defaults
+    env:
+      # secrets must be extracted explicitly
+      USERNAME: $(username)
+      PASSWORD: $(password)
+      GPGKEY: $(gpg key)
+      GPGPUBRING: $(pubring.secureFilePath)
+      GPGSECRING: $(secring.secureFilePath)
