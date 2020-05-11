@@ -65,10 +65,22 @@ steps:
     displayName: 'Perform release'
     inputs:
       targetType: 'inline'
-      script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "release with-defaults"
+      script: |
+        alias gpg=/home/vsts/work/1/s/gpg.sh
+        sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "release with-defaults"
 
     env:
       # secrets must be extracted explicitly
       USERNAME: $(username)
       PASSWORD: $(password)
+      # passphrase will be passed to sbt plugin from here
       PGP_PASSPHRASE: $(gpg key)
+
+  - task: Bash@3
+    displayName: 'Secrets cleanup'
+    inputs:
+      targetType: 'inline'
+      script: |
+        rm -rf $(pubring.secureFilePath)
+        rm -rf $(secring.secureFilePath)
+        rm -rf ~/.gnupg
