@@ -45,9 +45,9 @@ steps:
         ls -la $(pubring.secureFilePath)
         ls -la $(secring.secureFilePath)
         mkdir ~/.gnupg
-        cp $(pubring.secureFilePath) ~/.gnupg/pubring.gpg
-        cp $(secring.secureFilePath) ~/.gnupg/secring.gpg
         chmod -R 700 ~/.gnupg
+        gpg --import  $(pubring.secureFilePath)
+        gpg --import  $(secring.secureFilePath)
         gpg --version
         gpg --list-keys
         gpg --list-secret-keys
