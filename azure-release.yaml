@@ -43,10 +43,12 @@ steps:
     inputs:
       targetType: 'inline'
       script: |
+        echo $(tty)
         ls -la $(pubring.secureFilePath)
         ls -la $(secring.secureFilePath)
         mkdir ~/.gnupg
         chmod -R 700 ~/.gnupg
+        echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
 
         gpg --import  $(pubring.secureFilePath)
         gpg --batch --import $(secring.secureFilePath)
