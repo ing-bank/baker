@@ -9,6 +9,7 @@ pool:
 
 variables:
   - group: SonaTypeCredentials
+  - group: gpg key
   - name: CACHE
     value: $(HOME)/.cache
   - name: IVY_HOME
