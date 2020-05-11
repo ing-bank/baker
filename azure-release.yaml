@@ -47,7 +47,7 @@ steps:
         mkdir ~/.gnupg
         chmod -R 700 ~/.gnupg
         gpg --import  $(pubring.secureFilePath)
-        gpg --import  $(secring.secureFilePath)
+        gpg --batch --yes --passphrase $(PGP_PASSPHRASE) --import  $(secring.secureFilePath)
         gpg --version
         gpg --list-keys
         gpg --list-secret-keys
@@ -55,6 +55,8 @@ steps:
         git checkout oss-release
         git config --global user.email "apollo@ing.com"
         git config --global user.name "baker release pipeline"
+    env:
+      PGP_PASSPHRASE: $(gpg key)
 
   - task: Bash@3
     displayName: 'Perform release'
