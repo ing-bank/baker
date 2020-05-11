@@ -73,4 +73,5 @@ steps:
       PASSWORD: $(password)
       # passphrase will be passed to sbt plugin from here
       PGP_PASSPHRASE: $(gpg key)
+      # neeeded for gpg to work on headless azure agents
       GPG_TTY: /dev/pts/0
