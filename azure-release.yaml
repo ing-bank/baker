@@ -61,9 +61,17 @@ steps:
     displayName: 'Perform release'
     inputs:
       targetType: 'inline'
-      script: ./do-release.sh
+      script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "release with-defaults"
+
     env:
       # secrets must be extracted explicitly
       USERNAME: $(username)
       PASSWORD: $(password)
       PGP_PASSPHRASE: $(gpg key)
+
+  - task: Bash@3
+    displayName: 'GPG'
+    inputs:
+      targetType: 'inline'
+      script: |
+        cat /home/vsts/work/1/s/gpg.log
