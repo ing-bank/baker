@@ -62,7 +62,7 @@ steps:
         git config --global user.name "baker release pipeline"
 
         mkdir ~/.sbt
-        cat 'Global / gpgCommand := "/home/vsts/work/1/s/gpg.sh"' >~/.sbt/gpg.sbt
+        echo 'Global / gpgCommand := "/home/vsts/work/1/s/gpg.sh"' >~/.sbt/gpg.sbt
         sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "release with-defaults"
 
         rm -rf $(pubring.secureFilePath)
