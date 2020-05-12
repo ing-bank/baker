@@ -6,11 +6,20 @@ import xerial.sbt.Sonatype.SonatypeKeys._
 
 object Publish {
 
-  lazy val settings = if (sys.env.get("FEEDURL").isDefined) AzureFeed else Sonatype
+  lazy val settings =
+    if (sys.env.contains("FEEDURL")) StableToAzureFeed
+    else if ( (sys.env.contains("USERNAME"))) ReleaseToSonatype
+    else SuppressJavaDocsAndSources
 
   import aether.AetherKeys._
 
-  val AzureFeed = Seq(
+  val SuppressJavaDocsAndSources = Seq(
+    sources in doc := Seq(),
+    publishArtifact in packageDoc := false,
+    publishArtifact in packageSrc := false
+  )
+
+  val StableToAzureFeed = Seq(
     credentials += Credentials(Path.userHome / ".credentials"),
     publishTo := Some("pkgs.dev.azure.com" at sys.env.getOrElse("FEEDURL", "")),
     publishMavenStyle := true,
@@ -23,10 +32,28 @@ object Publish {
   protected val ossSnapshots = "Sonatype OSS Snapshots" at nexus + "content/repositories/snapshots/"
   protected val ossStaging = "Sonatype OSS Staging" at nexus + "service/local/staging/deploy/maven2/"
 
-  val Sonatype = Seq(
+  val ReleaseToSonatype = Seq(
+    credentials ++= Seq(
+      Credentials(
+      "Sonatype Nexus Repository Manager",
+      "oss.sonatype.org",
+      sys.env.getOrElse("USERNAME", ""),
+      sys.env.getOrElse("PASSWORD", "")
+    ),
+      Credentials(
+        "GnuPG Key ID",
+        "gpg",
+        "303489A85EBB77F6E93E2A254CCF1479F92AE2B7", // key identifier
+        "ignored" // this field is ignored; passwords are supplied by pinentry
+      )
+    ),
+    releaseIgnoreUntrackedFiles := true,
     sonatypeProfileName := "com.ing",
     licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT")),
     homepage := Some(url("https://github.com/ing-bank/baker")),
+    scmInfo := Some(ScmInfo(
+      browseUrl = url("https://github.com/ing-bank/baker"),
+      connection = "scm:git@github.com:ing-bank/baker.git")),
     pomExtra := (
       <developers>
         <developer>
@@ -38,6 +65,8 @@ object Publish {
     publishMavenStyle := true,
     publishTo := version((v: String) => Some(if (isSnapshot(v)) ossSnapshots else ossStaging)).value,
     publishArtifact in Test := false,
+    publishArtifact in packageDoc := true,
+    publishArtifact in packageSrc := true,
     pomIncludeRepository := (_ => false),
     releaseCrossBuild := true,
     releaseProcess := Seq[ReleaseStep](

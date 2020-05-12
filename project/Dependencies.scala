@@ -4,7 +4,7 @@ import sbt._
 object Dependencies {
 
   val akkaVersion = "2.5.29"
-  
+  val akkaManagementVersion = "1.0.6"
   val http4sVersion = "0.21.3"
   val circeVersion = "0.13.0"
 
@@ -18,7 +18,7 @@ object Dependencies {
       .exclude("com.typesafe.akka", "akka-stream")
 
   val scalaJava8Compat =          "org.scala-lang.modules"     %% "scala-java8-compat"                 % "0.9.1"
-  val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.1.1"
+  val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.1.2"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
   val mockServer =                "org.mock-server"            %  "mockserver-netty"                   % "5.10"
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
@@ -26,6 +26,7 @@ object Dependencies {
 
   val akkaActor =                 "com.typesafe.akka"          %% "akka-actor"                         % akkaVersion
   val akkaStream =                "com.typesafe.akka"          %% "akka-stream"                        % akkaVersion
+  val akkaProtobuf =              "com.typesafe.akka"          %% "akka-protobuf"                      % akkaVersion
   val akkaPersistence =           "com.typesafe.akka"          %% "akka-persistence"                   % akkaVersion
   val akkaPersistenceQuery =      "com.typesafe.akka"          %% "akka-persistence-query"             % akkaVersion
   val akkaPersistenceCassandra =  "com.typesafe.akka"          %% "akka-persistence-cassandra"         % "0.103"
@@ -36,10 +37,10 @@ object Dependencies {
   val akkaTestKit =               "com.typesafe.akka"          %% "akka-testkit"                       % akkaVersion
   val akkaStreamTestKit =         "com.typesafe.akka"          %% "akka-stream-testkit"                % akkaVersion
   val akkaMultiNodeTestkit =      "com.typesafe.akka"          %% "akka-multi-node-testkit"            % akkaVersion
-  val akkaManagementHttp =        "com.lightbend.akka.management" %% "akka-management-cluster-http"      % "1.0.6"
-  val akkaClusterBoostrap =       "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.6"
-  val akkaDiscoveryKube =         "com.lightbend.akka.discovery"  %% "akka-discovery-kubernetes-api"     % "1.0.6"
-  val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.6"
+  val akkaManagementHttp =        "com.lightbend.akka.management" %% "akka-management-cluster-http"      % akkaManagementVersion
+  val akkaClusterBoostrap =       "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion
+  val akkaDiscoveryKube =         "com.lightbend.akka.discovery"  %% "akka-discovery-kubernetes-api"     % akkaManagementVersion
+  val akkaBoostrap =              "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion
 
   val scalaKafkaClient =          "net.cakesolutions"          %% "scala-kafka-client"                 % "2.3.1"
   val fs2kafka =                  "com.github.fd4s"            %% "fs2-kafka"                          % "1.0.0"
@@ -51,7 +52,7 @@ object Dependencies {
 
   val scalaGraph  =               "org.scala-graph"            %% "graph-core"                         % "1.13.1"
   val scalaGraphDot =             "org.scala-graph"            %% "graph-dot"                          % "1.13.0"
-  val graphvizJava =              "guru.nidi"                  %  "graphviz-java"                      % "0.15.1"
+  val graphvizJava =              "guru.nidi"                  %  "graphviz-java"                      % "0.16.0"
 
   val kamon =                     "io.kamon"                   %% "kamon-bundle"                       % "2.0.0"
   val kamonAkka =                 "io.kamon"                   %% "kamon-akka"                         % "2.0.0"
@@ -89,7 +90,7 @@ object Dependencies {
   val typeSafeConfig =            "com.typesafe"               % "config"                              % "1.4.0"
 
   val objenisis =                 "org.objenesis"              %  "objenesis"                          % "3.1"
-  val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.10.5"
+  val jodaTime =                  "joda-time"                  %  "joda-time"                          % "2.10.6"
   val slf4jApi =                  "org.slf4j"                  %  "slf4j-api"                          % "1.7.30"
   val logback =                   "ch.qos.logback"             % "logback-classic"                     % "1.2.3"
   val scalaCheck =                "org.scalacheck"             %% "scalacheck"                         % "1.14.3"
