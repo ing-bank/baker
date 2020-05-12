@@ -10,6 +10,7 @@ pool:
 variables:
   - group: SonaTypeCredentials
   - group: gpg key
+  - group: github_token
 
 steps:
   - task: DownloadSecureFile@1
@@ -43,6 +44,7 @@ steps:
         git checkout oss-release
         git config --global user.email "apollo@ing.com"
         git config --global user.name "baker release pipeline"
+        git remote set-url origin "https://jacum:${GIT_AUTH_TOKEN}@https://github.com/ing-bank/baker"
 
         sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "release with-defaults"
 
@@ -58,3 +60,4 @@ steps:
       PGP_PASSPHRASE: $(gpg key)
       # neeeded for gpg to work on headless azure agents
       GPG_TTY: /dev/pts/0
+      GIT_AUTH_TOKEN: $(git_token)
