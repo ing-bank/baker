@@ -10,24 +10,8 @@ pool:
 variables:
   - group: SonaTypeCredentials
   - group: gpg key
-  - name: CACHE
-    value: $(HOME)/.cache
-  - name: IVY_HOME
-    value: $(Pipeline.Workspace)/.ivy2
 
 steps:
-  - task: CacheBeta@1
-    displayName: Package resolver cache
-    inputs:
-      key: 'cache'
-      path: '$(CACHE)'
-
-  - task: CacheBeta@1
-    displayName: Ivy resolver cache
-    inputs:
-      key: 'ivy_home'
-      path: '$(IVY_HOME)'
-
   - task: DownloadSecureFile@1
     name: pubring
     inputs:
