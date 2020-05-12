@@ -64,6 +64,8 @@ object Publish {
     publishMavenStyle := true,
     publishTo := version((v: String) => Some(if (isSnapshot(v)) ossSnapshots else ossStaging)).value,
     publishArtifact in Test := false,
+    publishArtifact in packageDoc := true,
+    publishArtifact in packageSrc := true,
     pomIncludeRepository := (_ => false),
     releaseCrossBuild := true,
     releaseProcess := Seq[ReleaseStep](
