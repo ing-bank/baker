@@ -39,7 +39,7 @@ steps:
       secureFile: secring.asc
 
   - task: Bash@3
-    displayName: 'GPG'
+    displayName: 'Build, sign and publish'
     inputs:
       targetType: 'inline'
       script: |
