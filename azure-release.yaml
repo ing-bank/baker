@@ -33,9 +33,7 @@ steps:
         mkdir ~/.gnupg
         chmod -R 700 ~/.gnupg
         echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
-        echo $USERNAME | rev
-        echo $PASSWORD | rev
-        echo $PGP_PASSPHRASE | rev
+
         gpg --import  $(pubring.secureFilePath)
         gpg --batch --import $(secring.secureFilePath)
         gpg --version
