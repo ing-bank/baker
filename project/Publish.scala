@@ -7,13 +7,19 @@ import xerial.sbt.Sonatype.SonatypeKeys._
 object Publish {
 
   lazy val settings =
-    if (sys.env.contains("FEEDURL")) AzureFeed
-    else if ( (sys.env.contains("USERNAME"))) Sonatype
-    else Seq()
+    if (sys.env.contains("FEEDURL")) StableToAzureFeed
+    else if ( (sys.env.contains("USERNAME"))) ReleaseToSonatype
+    else SuppressJavaDocsAndSources
 
   import aether.AetherKeys._
 
-  val AzureFeed = Seq(
+  val SuppressJavaDocsAndSources = Seq(
+    sources in doc := Seq(),
+    publishArtifact in packageDoc := false,
+    publishArtifact in packageSrc := false
+  )
+
+  val StableToAzureFeed = Seq(
     credentials += Credentials(Path.userHome / ".credentials"),
     publishTo := Some("pkgs.dev.azure.com" at sys.env.getOrElse("FEEDURL", "")),
     publishMavenStyle := true,
@@ -26,7 +32,7 @@ object Publish {
   protected val ossSnapshots = "Sonatype OSS Snapshots" at nexus + "content/repositories/snapshots/"
   protected val ossStaging = "Sonatype OSS Staging" at nexus + "service/local/staging/deploy/maven2/"
 
-  val Sonatype = Seq(
+  val ReleaseToSonatype = Seq(
     credentials ++= Seq(
       Credentials(
       "Sonatype Nexus Repository Manager",

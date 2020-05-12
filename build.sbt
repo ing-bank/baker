@@ -26,9 +26,6 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   fork := true,
   testOptions += Tests.Argument(TestFrameworks.JUnit, "-v"),
   javacOptions := Seq("-source", jvmV, "-target", jvmV),
-  sources in doc := Seq(),
-  publishArtifact in packageDoc := false,
-  publishArtifact in packageSrc := false,
   scalacOptions := Seq(
     "-unchecked",
     "-deprecation",
