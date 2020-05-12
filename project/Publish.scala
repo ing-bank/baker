@@ -47,6 +47,7 @@ object Publish {
         "ignored" // this field is ignored; passwords are supplied by pinentry
       )
     ),
+    releaseIgnoreUntrackedFiles := true,
     sonatypeProfileName := "com.ing",
     licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT")),
     homepage := Some(url("https://github.com/ing-bank/baker")),
