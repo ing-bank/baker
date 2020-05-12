@@ -50,6 +50,9 @@ object Publish {
     sonatypeProfileName := "com.ing",
     licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT")),
     homepage := Some(url("https://github.com/ing-bank/baker")),
+    scmInfo := Some(ScmInfo(
+      browseUrl = url("https://github.com/ing-bank/baker"),
+      connection = "scm:git@github.com:ing-bank/baker.git")),
     pomExtra := (
       <developers>
         <developer>

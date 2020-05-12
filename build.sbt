@@ -120,8 +120,6 @@ lazy val runtime = project.in(file("runtime"))
   .settings(scalaPBSettings)
   .settings(
     moduleName := "baker-runtime",
-    // we have to exclude the sources because of a compiler bug: https://issues.scala-lang.org/browse/SI-10134
-    sources in(Compile, doc) := Seq.empty,
     libraryDependencies ++=
       compileDeps(
         akkaActor,
@@ -171,8 +169,6 @@ lazy val splitBrainResolver = project.in(file("split-brain-resolver"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "baker-split-brain-resolver",
-    // we have to exclude the sources because of a compiler bug: https://issues.scala-lang.org/browse/SI-10134
-    sources in(Compile, doc) := Seq.empty,
     libraryDependencies ++=
       compileDeps(
         akkaActor,
@@ -193,8 +189,6 @@ lazy val recipeDsl = project.in(file("recipe-dsl"))
   .settings(defaultModuleSettings)
   .settings(
     moduleName := "baker-recipe-dsl",
-    // we have to exclude the sources because of a compiler bug: https://issues.scala-lang.org/browse/SI-10134
-    sources in(Compile, doc) := Seq.empty,
     libraryDependencies ++=
       compileDeps(
         javaxInject,
