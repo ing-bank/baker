@@ -1,14 +1,13 @@
 package com.ing.bakery.clustercontroller.controllers
 
 import cats.effect.{ContextShift, IO, Timer}
-import cats.syntax.functor._
 import com.typesafe.scalalogging.LazyLogging
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.api.client.KubernetesClient
 import skuber.ext.{Deployment, ReplicaSetList}
 import skuber.json.ext.format._
 import skuber.json.format._
-import skuber.{ConfigMap, Container, LabelSelector, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
+import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
 
 import scala.concurrent.Future
 
@@ -60,7 +59,9 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
   private def deployment(bakerResource: BakerResource): Deployment = {
 
     val bakerName: String = bakerResource.metadata.name
-    val bakeryVersion: String = bakerResource.spec.bakeryVersion
+    val image: String = bakerResource.spec.image
+    val imagePullSecret: Option[String] = bakerResource.spec.imagePullSecret
+    val serviceAccountSecret: Option[String] = bakerResource.spec.serviceAccountSecret
     val replicas: Int = bakerResource.spec.replicas
     val recipesMountPath: String = "/recipes"
 
@@ -72,7 +73,7 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
 
     val stateNodeContainer = Container(
       name = baasStateName(bakerName),
-      image = "baas-node-state:" + bakeryVersion
+      image = image
     )
       // todo parametrise?
       .requestMemory("512M")
@@ -109,10 +110,27 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
       .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
       .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
 
-    val podSpec = Pod.Spec(
-      containers = List(stateNodeContainer),
+    val stateContainerWithEventSink =
+      bakerResource.spec.kafkaBootstrapServers.map( servers =>
+        stateNodeContainer
+          .setEnvVar("KAFKA_EVENT_SINK_BOOTSTRAP_SERVERS", servers)
+          // todo add missing kafka configuration later (topics + identity missing)
+          .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "true")
+      ).getOrElse(stateNodeContainer
+          .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "false"))
 
-      volumes = List(Volume("recipes", Volume.ConfigMapVolumeSource(baasRecipesConfigMapName(bakerName))))
+    val podSpec = Pod.Spec(
+      containers = List(
+        if (serviceAccountSecret.isDefined)
+          stateContainerWithEventSink.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true)
+        else
+          stateContainerWithEventSink
+      ),
+      imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
+      volumes = List(
+        Some(Volume("recipes", Volume.ConfigMapVolumeSource(baasRecipesConfigMapName(bakerName)))),
+        serviceAccountSecret.map(s => Volume("service-account-token", Volume.Secret(s)))
+      ).flatten
     )
 
     val podTemplate = Pod.Template.Spec
