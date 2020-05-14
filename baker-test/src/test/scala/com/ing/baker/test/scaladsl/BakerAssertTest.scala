@@ -46,18 +46,23 @@ class BakerAssertTest extends AnyFlatSpec with Matchers {
   "assertEventsFlow" should "work with happy flow" in {
     val bakerAssert = createBakerAssert()
     bakerAssert
-      .assertEventsFlow(WebshopRecipe.happyFlow, wait = true)
+      .waitFor(WebshopRecipe.happyFlow)
+      .assertEventsFlow(WebshopRecipe.happyFlow)
   }
 
   "assertEventsFlow" should "work with some delay" in {
     val bakerAssert = createBakerAssert(true)
     bakerAssert
-      .assertEventsFlow(WebshopRecipe.happyFlow, wait = true)
+      .waitFor(WebshopRecipe.happyFlow)
+      .assertEventsFlow(WebshopRecipe.happyFlow)
   }
 
   "assertEventsFlow" should "fail on incorrect events" in {
     val bakerAssert = createBakerAssert()
-    Try(bakerAssert.assertEventsFlow(WebshopRecipe.happyFlow -- classOf[ItemsReserved], wait = true)) match {
+    Try(bakerAssert
+      .waitFor(WebshopRecipe.happyFlow)
+      .logEvents()
+      .assertEventsFlow(WebshopRecipe.happyFlow -- classOf[ItemsReserved])) match {
       case Failure(exception: AssertionError) => log.info(exception.getMessage)
       case default => fail(s"assertion error is expected but got $default")
     }

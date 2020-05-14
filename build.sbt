@@ -522,9 +522,11 @@ lazy val `sbt-baas-docker-generate` = project.in(file("sbt-baas-docker-generate"
 
 lazy val `baker-test` = project.in(file("baker-test"))
   .settings(defaultModuleSettings)
+  .settings(scalaPBSettings)
   .settings(
     moduleName := "baker-test",
     libraryDependencies ++= compileDeps(
       slf4jApi
-    ) ++ testDeps(scalaTest, logback)
-  ).dependsOn(runtime, recipeCompiler, recipeDsl)
+    ) ++ testDeps(scalaTest, logback, "io.altoo" %% "akka-kryo-serialization" % "1.1.5")
+  ).dependsOn(runtime, recipeCompiler % "test->compile")
+
