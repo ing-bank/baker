@@ -85,7 +85,7 @@ object Dependencies {
 
   val protobufJava =              "com.google.protobuf"        % "protobuf-java"                       % "3.11.4"
 
-  val betterFiles =               "com.github.pathikrit"       %% "better-files"                       % "3.8.0"
+  val betterFiles =               "com.github.pathikrit"       %% "better-files"                       % "3.9.0"
 
   val typeSafeConfig =            "com.typesafe"               % "config"                              % "1.4.0"
 
