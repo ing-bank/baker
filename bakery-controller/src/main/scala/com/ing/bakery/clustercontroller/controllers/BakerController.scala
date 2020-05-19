@@ -171,8 +171,7 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
 
     new Deployment(metadata = ObjectMeta(
       name = baasStateName(bakerName),
-      labels = Map(stateNodeLabel, bakerLabelWithName)
-    ))
+      labels = Map(stateNodeLabel, bakerLabelWithName) ++ bakerResource.metadata.labels.filter(_._1 != "custom-resource-definition")))
       .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(key = bakerLabelWithName._1, value = bakerLabelWithName._2)))
       .withReplicas(replicas)
       .withTemplate(podSpec(bakerResource))

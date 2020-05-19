@@ -175,7 +175,7 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
       name = name,
       labels = Map(
         interactionLabelWithName,
-        ("app", interaction.name))
+        ("app", interaction.name)) ++ interaction.metadata.labels.filter(_._1 != "custom-resource-definition")
     ))
       .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(key = interactionLabelWithName._1, value = interactionLabelWithName._2)))
       .withReplicas(replicas)
@@ -192,7 +192,7 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
       name = name,
       labels = Map(
         interactionLabelWithName,
-        ("app", interaction.name))
+        ("app", interaction.name)) ++ interaction.metadata.labels.filter(_._1 != "custom-resource-definition")
     ))
       .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(key = interactionLabelWithName._1, value = interactionLabelWithName._2)))
       .withReplicas(replicas)
