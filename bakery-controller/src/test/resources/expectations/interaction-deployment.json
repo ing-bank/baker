@@ -9,6 +9,11 @@
   },
   "spec": {
     "replicas": 2,
+    "selector": {
+      "matchLabels": {
+        "interaction": "InteractionOne"
+      }
+    },
     "template": {
       "metadata": {
         "name": "InteractionOne",
