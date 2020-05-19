@@ -2,21 +2,26 @@ package com.ing.bakery.clustercontroller.controllers
 
 import cats.effect.{ContextShift, IO, Timer}
 import com.typesafe.scalalogging.LazyLogging
+import play.api.libs.json.Format
+import skuber.{ConfigMap, Container, K8SException, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.api.client.KubernetesClient
-import skuber.ext.{Deployment, ReplicaSetList}
-import skuber.json.ext.format._
+import skuber.apps.v1.{Deployment, ReplicaSet, ReplicaSetList}
 import skuber.json.format._
-import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
+import skuber.json.ext.format._
 
 import scala.concurrent.Future
 
 final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[BakerResource] with LazyLogging {
 
+  implicit lazy val replicaSetListFormat: Format[ReplicaSetList] = ListResourceFormat[ReplicaSet]
+
   def create(resource: BakerResource, k8s: KubernetesClient): IO[Unit] =
     for {
       _ <- io(k8s.create[ConfigMap](configMap(resource))).void
-      _ <- io(k8s.create(deployment(resource)))
+      _ <- attemptOpOrTryOlderVersion(
+        v1 = io(k8s.create[Deployment](deployment(resource))).void,
+        older = io(k8s.create[skuber.ext.Deployment](oldDeployment(resource))).void)
       _ <- io(k8s.create(service(resource)))
       _ = logger.info(s"Created baker cluster named '${resource.name}'")
     } yield ()
@@ -26,8 +31,12 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
       _ <- io(k8s.delete[ConfigMap](baasRecipesConfigMapName(resource.metadata.name)))
       (key, value) = bakerLabel(resource.metadata.name)
       _ <- io(k8s.delete[Service](service(resource).name))
-      _ <- io(k8s.delete[Deployment](deployment(resource).name))
-      _ <- io(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(key, value))))
+      _ <- attemptOpOrTryOlderVersion(
+        v1 = io(k8s.delete[Deployment](deployment(resource).name)),
+        older = io(k8s.delete[skuber.ext.Deployment](oldDeployment(resource).name)))
+      _ <- attemptOpOrTryOlderVersion(
+        v1 = io(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void,
+        older = io(k8s.deleteAllSelected[skuber.ext.ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void)
       _ <- io(k8s.deleteAllSelected[PodList](LabelSelector(IsEqualRequirement(key, value))))
       _ = logger.info(s"Terminated baker cluster named '${resource.name}'")
     } yield ()
@@ -35,9 +44,22 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
   def upgrade(resource: BakerResource, k8s: KubernetesClient): IO[Unit] =
     for {
       _ <- io(k8s.update[ConfigMap](configMap(resource))).void
-      _ <- io(k8s.update[skuber.ext.Deployment](deployment(resource)))
+      _ <- attemptOpOrTryOlderVersion(
+        v1 = io(k8s.update[Deployment](deployment(resource))).void,
+        older = io(k8s.update[skuber.ext.Deployment](oldDeployment(resource))).void)
       _ = logger.info(s"Upgraded baker cluster named '${resource.name}'")
     } yield ()
+
+  /**
+    * This attempts to make a skuber operation (normaly an api call to api version apps/v1), if the error is 404,
+    * that means we are in an old kubernetes environment and we need to use an older version like extensions/apps/v1beta1
+    */
+  private def attemptOpOrTryOlderVersion(v1: IO[Unit], older: IO[Unit]): IO[Unit] =
+    v1.attempt.flatMap {
+      case Left(e: K8SException) if e.status.code.contains(404) => older
+      case Left(e) => IO.raiseError(e)
+      case Right(a) => IO.pure(a)
+    }
 
   private def io[A](ref: => Future[A])(implicit cs: ContextShift[IO]): IO[A] =
     IO.fromFuture(IO(ref))
@@ -56,13 +78,13 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
 
   private def baasStateServicePort: Int = 8081
 
-  private def deployment(bakerResource: BakerResource): Deployment = {
+  private def podSpec(bakerResource: BakerResource): Pod.Template.Spec = {
 
     val bakerName: String = bakerResource.metadata.name
+    val bakerLabelWithName: (String, String) = bakerLabel(bakerName)
     val image: String = bakerResource.spec.image
     val imagePullSecret: Option[String] = bakerResource.spec.imagePullSecret
     val serviceAccountSecret: Option[String] = bakerResource.spec.serviceAccountSecret
-    val replicas: Int = bakerResource.spec.replicas
     val recipesMountPath: String = "/recipes"
 
     val managementPort = Container.Port(
@@ -117,7 +139,7 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
           // todo add missing kafka configuration later (topics + identity missing)
           .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "true")
       ).getOrElse(stateNodeContainer
-          .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "false"))
+        .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "false"))
 
     val podSpec = Pod.Spec(
       containers = List(
@@ -133,19 +155,42 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
       ).flatten
     )
 
-    val podTemplate = Pod.Template.Spec
+    Pod.Template.Spec
       .named(baasStateName(bakerName))
       .withPodSpec(podSpec)
       .addLabel(stateNodeLabel)
-      .addLabel(bakerLabel(bakerResource.name))
+      .addLabel(bakerLabelWithName)
       .addLabel(akkaClusterLabel(bakerName))
+  }
+
+  private def deployment(bakerResource: BakerResource): Deployment = {
+
+    val bakerName: String = bakerResource.metadata.name
+    val bakerLabelWithName: (String, String) = bakerLabel(bakerName)
+    val replicas: Int = bakerResource.spec.replicas
 
     new Deployment(metadata = ObjectMeta(
       name = baasStateName(bakerName),
-      labels = Map(stateNodeLabel, bakerLabel(bakerName))
+      labels = Map(stateNodeLabel, bakerLabelWithName)
     ))
+      .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(key = bakerLabelWithName._1, value = bakerLabelWithName._2)))
       .withReplicas(replicas)
-      .withTemplate(podTemplate)
+      .withTemplate(podSpec(bakerResource))
+  }
+
+  private def oldDeployment(bakerResource: BakerResource): skuber.ext.Deployment = {
+
+    val bakerName: String = bakerResource.metadata.name
+    val bakerLabelWithName: (String, String) = bakerLabel(bakerName)
+    val replicas: Int = bakerResource.spec.replicas
+
+    new skuber.ext.Deployment(metadata = ObjectMeta(
+      name = baasStateName(bakerName),
+      labels = Map(stateNodeLabel, bakerLabelWithName)
+    ))
+      .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(key = bakerLabelWithName._1, value = bakerLabelWithName._2)))
+      .withReplicas(replicas)
+      .withTemplate(podSpec(bakerResource))
   }
 
   def service(bakerResource: BakerResource): Service = {
