@@ -153,7 +153,7 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
       .addLabel("baas-component", "state")
       .addLabel("app", "baas-state-service")
       .addLabel(bakerLabel(bakerResource.metadata.name))
-      .withSelector(stateNodeLabel)
+      .withSelector(bakerLabel(bakerResource.metadata.name))
       .setPort(Service.Port(
         name = "http-api",
         port = baasStateServicePort,
