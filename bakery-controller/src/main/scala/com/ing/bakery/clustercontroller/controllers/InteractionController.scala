@@ -100,7 +100,7 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
     val name = creationContractName(interaction)
     val interactionsData = InteractionEndpoint.toBase64(interactions)
     ConfigMap(
-      metadata = ObjectMeta(name = name, labels = Map(baasComponentLabel)),
+      metadata = ObjectMeta(name = name, labels = Map(baasComponentLabel) ++ interaction.metadata.labels.filter(_._1 != "custom-resource-definition")),
       data = Map("address" -> address.toString, "interfaces" -> interactionsData)
     )
   }
