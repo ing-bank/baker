@@ -30,7 +30,7 @@ spec:
               type: string
             replicas:
               type: integer
-              minimum: 2
+              minimum: 0
             recipes:
               type: array
               items:
