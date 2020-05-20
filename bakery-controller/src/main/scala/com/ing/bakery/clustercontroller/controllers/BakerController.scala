@@ -97,9 +97,6 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
       name = baasStateName(bakerName),
       image = image
     )
-      // todo parametrise?
-      .requestMemory("512M")
-      .requestCPU("250m")
       .exposePort(Container.Port(
         name = "remoting",
         containerPort = 2552,
@@ -132,22 +129,26 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
       .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
       .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
 
+    val stateNodeContainerWithResources =
+      Utils.addResourcesSpec(stateNodeContainer, bakerResource.spec.resources)
+
     val stateContainerWithEventSink =
       bakerResource.spec.kafkaBootstrapServers.map( servers =>
-        stateNodeContainer
+        stateNodeContainerWithResources
           .setEnvVar("KAFKA_EVENT_SINK_BOOTSTRAP_SERVERS", servers)
           // todo add missing kafka configuration later (topics + identity missing)
           .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "true")
-      ).getOrElse(stateNodeContainer
+      ).getOrElse(stateNodeContainerWithResources
         .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "false"))
 
+    val stateNodeContainerWithServiceAccount =
+      if (serviceAccountSecret.isDefined)
+        stateContainerWithEventSink.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true)
+      else
+        stateContainerWithEventSink
+
     val podSpec = Pod.Spec(
-      containers = List(
-        if (serviceAccountSecret.isDefined)
-          stateContainerWithEventSink.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true)
-        else
-          stateContainerWithEventSink
-      ),
+      containers = List(stateNodeContainerWithServiceAccount),
       imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
       volumes = List(
         Some(Volume("recipes", Volume.ConfigMapVolumeSource(baasRecipesConfigMapName(bakerName)))),

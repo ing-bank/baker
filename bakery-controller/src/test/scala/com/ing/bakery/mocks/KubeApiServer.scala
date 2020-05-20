@@ -64,7 +64,7 @@ class KubeApiServer(mock: ClientAndServer) {
       response()
         .withStatusCode(200)
         .withBody("", MediaType.APPLICATION_JSON)
-        .withDelay(TimeUnit.MILLISECONDS, 1000)
+        .withDelay(TimeUnit.MILLISECONDS, 500)
     )
   }
 

@@ -5,8 +5,8 @@ import com.ing.bakery.clustercontroller.controllers.Utils.FromConfigMapValidatio
 import play.api.libs.functional.syntax.{unlift, _}
 import play.api.libs.json.{Format, JsPath}
 import skuber.ResourceSpecification.{Names, Scope}
-import skuber.json.format.{envVarFormat, objFormat}
-import skuber.{ConfigMap, EnvVar, NonCoreResourceSpecification, ObjectMeta, ObjectResource, ResourceDefinition}
+import skuber.json.format.{envVarFormat, objFormat, resRqtsFormat}
+import skuber.{ConfigMap, EnvVar, NonCoreResourceSpecification, ObjectMeta, ObjectResource, Resource, ResourceDefinition}
 
 import scala.util.Try
 
@@ -71,6 +71,7 @@ object InteractionResource {
     , envValidated
     , configMapMountsValidated
     , secretMountsValidated
+    , Utils.optional(Utils.resourcesFromConfigMap(configMap))
     ).mapN(Spec).map(spec => InteractionResource(metadata = configMap.metadata, spec = spec))
   }
 
@@ -80,7 +81,8 @@ object InteractionResource {
     replicas: Int,
     env: List[EnvVar],
     configMapMounts: List[ConfigMount],
-    secretMounts: List[ConfigMount]
+    secretMounts: List[ConfigMount],
+    resources: Option[Resource.Requirements]
   )
 
   case class ConfigMount(name: String, mountPath: String)
@@ -114,7 +116,8 @@ object InteractionResource {
       (JsPath \ "replicas").formatWithDefault[Int](1) and
       (JsPath \ "env").formatWithDefault[List[EnvVar]](List.empty) and
       (JsPath \ "configMapMounts").formatWithDefault[List[ConfigMount]](List.empty) and
-      (JsPath \ "secretMounts").formatWithDefault[List[ConfigMount]](List.empty)
+      (JsPath \ "secretMounts").formatWithDefault[List[ConfigMount]](List.empty) and
+      (JsPath \ "resources").formatNullable[Resource.Requirements]
     ) (Spec.apply, unlift(Spec.unapply))
 
   implicit lazy val interactionResourceFormat: Format[InteractionResource] = (
