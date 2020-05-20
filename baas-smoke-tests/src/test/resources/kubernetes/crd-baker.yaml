@@ -35,6 +35,23 @@ spec:
               type: array
               items:
                 type: string
+            resources:
+              type: object
+              properties:
+                requests:
+                  type: object
+                  properties:
+                    memory:
+                      type: string
+                    cpu:
+                      type: string
+                limits:
+                  type: object
+                  properties:
+                    memory:
+                      type: string
+                    cpu:
+                      type: string
           required:
             - image
             - recipes
