@@ -3,7 +3,7 @@ package com.ing.bakery.clustercontroller.controllers
 import cats.implicits._
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.{IO, Timer}
-import skuber.ConfigMap
+import skuber.{ConfigMap, Container, Resource}
 
 import scala.concurrent.duration._
 import scala.util.Try
@@ -28,6 +28,16 @@ object Utils {
     inner(split, time / split)
   }
 
+  def addResourcesSpec(container0: Container, resources0: Option[Resource.Requirements]): Container = {
+    resources0.map { resources =>
+      val container1 = resources.limits.get("memory").map(container0.limitMemory).getOrElse(container0)
+      val container2 = resources.limits.get("cpu").map(container1.limitCPU).getOrElse(container1)
+      val container3 = resources.requests.get("memory").map(container2.requestMemory).getOrElse(container2)
+      val container4 = resources.requests.get("cpu").map(container3.requestCPU).getOrElse(container3)
+      container4
+    }.getOrElse(container0)
+  }
+
   type FromConfigMapValidation[+A] = ValidatedNel[String, A]
 
   def extractValidatedString(configMap: ConfigMap, path: String): FromConfigMapValidation[String] =
@@ -44,6 +54,9 @@ object Utils {
     }.sortBy(_._1).map(_._2)
     if(elements.isEmpty) s"no element of array '$path' found in ConfigMap '${configMap.name}''".invalidNel[List[String]] else elements.validNel
   }
+
+  def optional[A](fromConfigMapValidation: FromConfigMapValidation[A]): FromConfigMapValidation[Option[A]] =
+    fromConfigMapValidation.map(Some(_)).orElse(None.validNel)
 
   def extractListWithSubPaths(configMap: ConfigMap, path: String): FromConfigMapValidation[List[ConfigMap]] = {
     val ArrayReg = s"^${path.replace(".", "\\.")}\\.(\\d+)\\.(.+)$$".r
@@ -63,4 +76,20 @@ object Utils {
 
   def parseValidated[A](t: Try[A], fromPath: String): FromConfigMapValidation[A] =
     Validated.fromTry(t).leftMap(e => NonEmptyList.one(s"parsing error from path '$fromPath': ${e.getMessage}'"))
+
+  def resourcesFromConfigMap(configMap: ConfigMap): FromConfigMapValidation[Resource.Requirements] =
+    ( Utils.optional(Utils.extractValidatedString(configMap, "resources.requests.memory"))
+      , Utils.optional(Utils.extractValidatedString(configMap, "resources.requests.cpu"))
+      , Utils.optional(Utils.extractValidatedString(configMap, "resources.limits.memory"))
+      , Utils.optional(Utils.extractValidatedString(configMap, "resources.limits.cpu"))
+      ).mapN { (requestMemory, requestCpu, limitsMemory, limitsCpu) =>
+      val rm = requestMemory.map(q => Map("memory" -> Resource.Quantity(q))).getOrElse(Map.empty)
+      val rc = requestCpu.map(q => Map("cpu" -> Resource.Quantity(q))).getOrElse(Map.empty)
+      val lm = limitsMemory.map(q => Map("memory" -> Resource.Quantity(q))).getOrElse(Map.empty)
+      val lc = limitsCpu.map(q => Map("cpu" -> Resource.Quantity(q))).getOrElse(Map.empty)
+      Resource.Requirements(
+        requests = rm ++ rc,
+        limits = lm ++ lc
+      )
+    }
 }

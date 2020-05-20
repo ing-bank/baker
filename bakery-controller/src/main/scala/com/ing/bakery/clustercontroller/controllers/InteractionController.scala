@@ -116,12 +116,12 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
       .withLivenessProbe(healthProbe)
       .copy(env = interaction.spec.env)
       .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
-      // todo parametrise?
-      .requestMemory("256M")
-      .requestCPU("200m")
+
+    val interactionContainerWithResources =
+      Utils.addResourcesSpec(interactionContainer, interaction.spec.resources)
 
     val interactionContainerWithMounts0 =
-      interaction.spec.configMapMounts.foldLeft(interactionContainer) { (container, configMount) =>
+      interaction.spec.configMapMounts.foldLeft(interactionContainerWithResources) { (container, configMount) =>
         container.mount(configMount.name, configMount.mountPath, readOnly = true)
       }
 

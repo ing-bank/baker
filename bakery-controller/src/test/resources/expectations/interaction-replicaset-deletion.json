@@ -1,5 +1,5 @@
 {
-  "apiVersion": "extensions/v1beta1",
+  "apiVersion": "apps/v1",
   "kind": "ReplicaSetList",
   "metadata": {
     "selfLink": "/apis/extensions/v1beta1/namespaces/d2e15589-100b-471a-b45e-d122e3b98a74/replicasets",
