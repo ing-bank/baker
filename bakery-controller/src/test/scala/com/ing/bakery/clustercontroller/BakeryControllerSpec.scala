@@ -128,6 +128,25 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
       )
     }
 
+    test("Creates interactions (With already previously created components)") { context =>
+      context.interactionController.use( _ =>
+        for {
+          _ <- context.kubeApiServer.expectCreationOfAndReport409(ResourcePath.DeploymentsPath)
+          _ <- context.kubeApiServer.expectCreationOfAndReport409(ResourcePath.ServicesPath)
+          _ <- context.kubeApiServer.expectGetOf("expectations/interaction-service.json", ResourcePath.Named("localhost", ResourcePath.ServicesPath), context.adaptHttpPortToMockServerPort)
+          _ <- context.kubeApiServer.expectCreationOf("expectations/interaction-creation-config-map.json", ResourcePath.ConfigMapsPath, context.adaptHttpPortToMockServerPort)
+          _ <- context.kubeApiServer.createInteractions(interactionResource)
+          _ <- context.remoteInteraction.publishesItsInterface(interaction)
+          _ <- eventually(for {
+            _ <- context.kubeApiServer.validateCreationOf(ResourcePath.DeploymentsPath)
+            _ <- context.kubeApiServer.validateCreationOf(ResourcePath.ServicesPath)
+            _ <- context.remoteInteraction.interfaceWasQueried(interaction)
+            _ <- context.kubeApiServer.validateCreationOf(ResourcePath.ConfigMapsPath)
+          } yield succeed)
+        } yield succeed
+      )
+    }
+
     test("Deletes interactions (CRDs)") { context =>
       context.interactionController.use( _ =>
         for {
@@ -221,6 +240,22 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
         for {
           _ <- context.kubeApiServer.expectCreationOf("expectations/baker-deployment.json", ResourcePath.DeploymentsPath)
           _ <- context.kubeApiServer.expectCreationOf("expectations/baker-service.json", ResourcePath.ServicesPath, context.adaptHttpPortToMockServerPort)
+          _ <- context.kubeApiServer.expectCreationOf("expectations/baker-creation-recipes.json", ResourcePath.ConfigMapsPath, context.adaptHttpPortToMockServerPort)
+          _ <- context.kubeApiServer.createBakers(bakerResource)
+          _ <- eventually(for {
+            _ <- context.kubeApiServer.validateCreationOf(ResourcePath.DeploymentsPath)
+            _ <- context.kubeApiServer.validateCreationOf(ResourcePath.ServicesPath)
+            _ <- context.kubeApiServer.validateCreationOf(ResourcePath.ConfigMapsPath)
+          } yield succeed)
+        } yield succeed
+      )
+    }
+
+    test("Creates state nodes (With already created components)") { context =>
+      context.bakerController.use( _ =>
+        for {
+          _ <- context.kubeApiServer.expectCreationOfAndReport409(ResourcePath.DeploymentsPath)
+          _ <- context.kubeApiServer.expectCreationOfAndReport409(ResourcePath.ServicesPath)
           _ <- context.kubeApiServer.expectCreationOf("expectations/baker-creation-recipes.json", ResourcePath.ConfigMapsPath, context.adaptHttpPortToMockServerPort)
           _ <- context.kubeApiServer.createBakers(bakerResource)
           _ <- eventually(for {

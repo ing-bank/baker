@@ -105,4 +105,35 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
         }
     )(identity).map(_ => ())
   }
+
+  /**
+    * This attempts to make a skuber operation (normaly an api call to api version apps/v1), if the error is 404,
+    * that means we are in an old kubernetes environment and we need to use an older version like extensions/apps/v1beta1
+    */
+  protected def attemptOpOrTryOlderVersion(v1: IO[Unit], older: IO[Unit]): IO[Unit] =
+    v1.attempt.flatMap {
+      case Left(e: K8SException) if e.status.code.contains(404) => older
+      case Left(e) => IO.raiseError(e)
+      case Right(a) => IO.pure(a)
+    }
+
+  protected def idem[A](ref: IO[A], name: String)(implicit cs: ContextShift[IO], rd: ResourceDefinition[O]): IO[Unit] =
+    ref.attempt.flatMap {
+      case Left(e: K8SException) if e.status.code.contains(409) =>
+        IO(logger.info(s"ADDED ${rd.spec.names.kind} ($name already existed, trying next step)"))
+      case Left(e) => IO.raiseError(e)
+      case Right(_) => IO.unit
+    }
+
+  protected def applyOrGet[A](ref: IO[A], orGet: IO[A], name: String)(implicit cs: ContextShift[IO], rd: ResourceDefinition[O]): IO[A] =
+    ref.attempt.flatMap {
+      case Left(e: K8SException) if e.status.code.contains(409) =>
+        IO(logger.info(s"ADDED ${rd.spec.names.kind} ($name already existed, will fetch it instead)")) *> orGet
+      case Left(e) => IO.raiseError(e)
+      case Right(a) => IO.pure(a)
+    }
+
+  protected def io[A](ref: => Future[A])(implicit cs: ContextShift[IO]): IO[A] =
+    IO.fromFuture(IO(ref))
+
 }

@@ -82,6 +82,20 @@ class KubeApiServer(mock: ClientAndServer) {
     )
   }
 
+  def expectGetOf(jsonPath: String, resourcePath: ResourcePath, transform: String => String = identity): IO[Unit] = IO {
+    val json = transform(scala.io.Source.fromResource(jsonPath).mkString)
+    mock.when(
+      request().withMethod("GET").withPath(resourcePath.toString),
+      Times.exactly(1),
+      TimeToLive.unlimited(),
+      10
+    ).respond(
+      response()
+        .withStatusCode(200)
+        .withBody(json, MediaType.APPLICATION_JSON)
+    )
+  }
+
   def expectCreationOf(jsonPath: String, resourcePath: ResourcePath, transform: String => String = identity): IO[Unit] = IO {
     val json = transform(scala.io.Source.fromResource(jsonPath).mkString)
     mock.when(
@@ -92,6 +106,20 @@ class KubeApiServer(mock: ClientAndServer) {
     ).respond(
       response()
         .withStatusCode(201)
+        .withBody(json, MediaType.APPLICATION_JSON)
+    )
+  }
+
+  def expectCreationOfAndReport409(resourcePath: ResourcePath): IO[Unit] = IO {
+    val json = scala.io.Source.fromResource("expectations/status-409.json").mkString
+    mock.when(
+      request().withMethod("POST").withPath(resourcePath.toString),
+      Times.exactly(1),
+      TimeToLive.unlimited(),
+      10
+    ).respond(
+      response()
+        .withStatusCode(409)
         .withBody(json, MediaType.APPLICATION_JSON)
     )
   }

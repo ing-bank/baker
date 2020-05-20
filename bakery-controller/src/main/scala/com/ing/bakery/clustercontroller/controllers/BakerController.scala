@@ -3,28 +3,30 @@ package com.ing.bakery.clustercontroller.controllers
 import cats.effect.{ContextShift, IO, Timer}
 import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json.Format
-import skuber.{ConfigMap, Container, K8SException, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.api.client.KubernetesClient
 import skuber.apps.v1.{Deployment, ReplicaSet, ReplicaSetList}
-import skuber.json.format._
 import skuber.json.ext.format._
-
-import scala.concurrent.Future
+import skuber.json.format._
+import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
 
 final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[BakerResource] with LazyLogging {
 
   implicit lazy val replicaSetListFormat: Format[ReplicaSetList] = ListResourceFormat[ReplicaSet]
 
-  def create(resource: BakerResource, k8s: KubernetesClient): IO[Unit] =
+  def create(resource: BakerResource, k8s: KubernetesClient): IO[Unit] = {
+    val cm = configMap(resource)
+    val dep = deployment(resource)
+    val svc = service(resource)
     for {
-      _ <- io(k8s.create[ConfigMap](configMap(resource))).void
-      _ <- attemptOpOrTryOlderVersion(
-        v1 = io(k8s.create[Deployment](deployment(resource))).void,
-        older = io(k8s.create[skuber.ext.Deployment](oldDeployment(resource))).void)
-      _ <- io(k8s.create(service(resource)))
+      _ <- idem(io(k8s.create[ConfigMap](cm)), s"recipes config map '${cm.name}'")
+      _ <- idem(attemptOpOrTryOlderVersion(
+        v1 = io(k8s.create[Deployment](dep)).void,
+        older = io(k8s.create[skuber.ext.Deployment](oldDeployment(resource))).void), s"deployment '${dep.name}'")
+      _ <- idem(io(k8s.create(svc)), s"service '${svc.name}'")
       _ = logger.info(s"Created baker cluster named '${resource.name}'")
     } yield ()
+  }
 
   def terminate(resource: BakerResource, k8s: KubernetesClient): IO[Unit] =
     for {
@@ -49,20 +51,6 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
         older = io(k8s.update[skuber.ext.Deployment](oldDeployment(resource))).void)
       _ = logger.info(s"Upgraded baker cluster named '${resource.name}'")
     } yield ()
-
-  /**
-    * This attempts to make a skuber operation (normaly an api call to api version apps/v1), if the error is 404,
-    * that means we are in an old kubernetes environment and we need to use an older version like extensions/apps/v1beta1
-    */
-  private def attemptOpOrTryOlderVersion(v1: IO[Unit], older: IO[Unit]): IO[Unit] =
-    v1.attempt.flatMap {
-      case Left(e: K8SException) if e.status.code.contains(404) => older
-      case Left(e) => IO.raiseError(e)
-      case Right(a) => IO.pure(a)
-    }
-
-  private def io[A](ref: => Future[A])(implicit cs: ContextShift[IO]): IO[A] =
-    IO.fromFuture(IO(ref))
 
   private def stateNodeLabel: (String, String) = "app" -> "baas-state"
 
