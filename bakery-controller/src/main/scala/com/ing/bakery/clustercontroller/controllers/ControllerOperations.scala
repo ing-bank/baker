@@ -68,7 +68,7 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
     def sourceWithLabel(keyValue: (String, String)): Source[K8SWatchEvent[O], NotUsed] = {
       val watchFilter: ListOptions = {
         val labelSelector = LabelSelector(LabelSelector.IsEqualRequirement(keyValue._1, keyValue._2))
-        ListOptions(labelSelector = Some(labelSelector), timeoutSeconds = Some(30))
+        ListOptions(labelSelector = Some(labelSelector), timeoutSeconds = Some(45))
       }
       k8s.watchWithOptions(watchFilter, bufsize = Int.MaxValue)
         .mapMaterializedValue(_ => NotUsed)
