@@ -26,7 +26,7 @@ object BakeryEnvironment {
     namespace <- KubernetesCommands.basicSetup
 
     _ <- Resource.liftF(printGreen(s"\nAdding custom resources: interactions, listeners, recipe"))
-    _ <- DefinitionFile.resource("interactions-example.yaml", namespace)
+    _ <- DefinitionFile.resource("interactions-example-config-map.yaml", namespace)
     _ <- DefinitionFile.resource("baker-webshop.yaml", namespace)
     _ <- DefinitionFile.resource("example-client-app.yaml", namespace)
     _ <- Resource.liftF(Pod.waitUntilAllPodsAreReady(namespace))
