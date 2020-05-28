@@ -10,7 +10,7 @@
     <appender-ref ref="STDOUT"/>
   </root>
 
-  <logger level="INFO" name="skuber.api"/>
+  <logger level="ERROR" name="skuber.api"/>
 
   <logger level="ERROR" name="org.http4s"/>
 

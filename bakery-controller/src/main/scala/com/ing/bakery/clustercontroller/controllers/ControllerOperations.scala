@@ -68,7 +68,7 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
     def sourceWithLabel(keyValue: (String, String)): Source[K8SWatchEvent[O], NotUsed] = {
       val watchFilter: ListOptions = {
         val labelSelector = LabelSelector(LabelSelector.IsEqualRequirement(keyValue._1, keyValue._2))
-        ListOptions(labelSelector = Some(labelSelector), timeoutSeconds = Some(45))
+        ListOptions(labelSelector = Some(labelSelector)/*, timeoutSeconds = Some(45)*/) // Note, we decided to go for long connections against renewing every 45 seconds due an issue with OpenShift 3.11 not being able to respond to calls with resourceVersion as supposed to be
       }
       k8s.watchWithOptions(watchFilter, bufsize = Int.MaxValue)
         .mapMaterializedValue(_ => NotUsed)
@@ -120,7 +120,7 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
   protected def idem[A](ref: IO[A], name: String)(implicit cs: ContextShift[IO], rd: ResourceDefinition[O]): IO[Unit] =
     ref.attempt.flatMap {
       case Left(e: K8SException) if e.status.code.contains(409) =>
-        IO(logger.info(s"ADDED ${rd.spec.names.kind} ($name already existed, trying next step)"))
+        IO(logger.debug(s"ADDED ${rd.spec.names.kind} ($name already existed, trying next step)"))
       case Left(e) => IO.raiseError(e)
       case Right(_) => IO.unit
     }
@@ -128,7 +128,7 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
   protected def applyOrGet[A](ref: IO[A], orGet: IO[A], name: String)(implicit cs: ContextShift[IO], rd: ResourceDefinition[O]): IO[A] =
     ref.attempt.flatMap {
       case Left(e: K8SException) if e.status.code.contains(409) =>
-        IO(logger.info(s"ADDED ${rd.spec.names.kind} ($name already existed, will fetch it instead)")) *> orGet
+        IO(logger.debug(s"ADDED ${rd.spec.names.kind} ($name already existed, will fetch it instead)")) *> orGet
       case Left(e) => IO.raiseError(e)
       case Right(a) => IO.pure(a)
     }
