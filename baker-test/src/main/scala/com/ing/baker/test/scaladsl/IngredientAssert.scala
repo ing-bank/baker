@@ -11,16 +11,16 @@ class IngredientAssert(bakerAssert: BakerAssert, name: String) {
       .map(m => m(name)))
 
   def notNull(): BakerAssert =
-    is(value => !value.isNull)
+    is(value => assert(!value.isNull, s"expect value '$value' to be not null"))
 
   def isNull(): BakerAssert =
-    is(value => value.isNull)
+    is(value => assert(value.isNull, s"expect value '$value' to be null"))
 
   def isEqual[T](v: T): BakerAssert =
-    is(value => value.equalsObject(v))
+    is(value => assert(value.equalsObject(v), s"""expect value $value to equal to "$v""""))
 
-  def is(check: Value => Boolean): BakerAssert = {
-    bakerAssert.logInfoOnError(() => assert(check(value)))
+  def is(assertion: Value => Unit): BakerAssert = {
+    bakerAssert.logInfoOnError(assertion(value))
     bakerAssert
   }
 }

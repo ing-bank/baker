@@ -59,7 +59,7 @@ class BakerAssert(_baker: Baker, _recipeInstanceId: String, timeout: Duration = 
   // ingredients
   // ===========
 
-  def assetIngredient(name: String): IngredientAssert = new IngredientAssert(this, name)
+  def assertIngredient(name: String): IngredientAssert = new IngredientAssert(this, name)
 
   // =======
   // logging

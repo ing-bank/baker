@@ -9,8 +9,8 @@ import com.ing.baker.test.recipe.WebshopBaker._
 import com.ing.baker.test.recipe.WebshopRecipe
 import com.ing.baker.test.recipe.WebshopRecipe.{ItemsReserved, OrderPlaced}
 import com.typesafe.config.ConfigFactory
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -38,6 +38,12 @@ class BakerAssertTest extends AnyFlatSpec with Matchers {
     BakerAssert.apply(baker, recipeInstanceId)
   }
 
+  private def assertFail[T](assertion: => T): Unit =
+    Try(assertion) match {
+      case Failure(exception: AssertionError) => log.info(exception.getMessage)
+      case default => fail(s"assertion error is expected but got $default")
+    }
+
   "BakerAssert object" should "be created" in {
     val baker = AkkaBaker(ConfigFactory.load, ActorSystem.apply("test"))
     BakerAssert.apply(baker, "someProcessId")
@@ -58,12 +64,21 @@ class BakerAssertTest extends AnyFlatSpec with Matchers {
   }
 
   "assertEventsFlow" should "fail on incorrect events" in {
-    val bakerAssert = createBakerAssert()
-    Try(bakerAssert
+    assertFail(createBakerAssert()
       .waitFor(WebshopRecipe.happyFlow)
-      .assertEventsFlow(WebshopRecipe.happyFlow -- classOf[ItemsReserved])) match {
-      case Failure(exception: AssertionError) => log.info(exception.getMessage)
-      case default => fail(s"assertion error is expected but got $default")
-    }
+      .assertEventsFlow(WebshopRecipe.happyFlow -- classOf[ItemsReserved]))
+  }
+
+  "assertIngredient" should "work for isEqual" in {
+    val bakerAssert = createBakerAssert()
+    bakerAssert
+      .waitFor(WebshopRecipe.happyFlow)
+      .assertIngredient("orderId").isEqual("order-1")
+  }
+
+  "assertIngredient" should "fail for isEqual" in {
+    val bakerAssert = createBakerAssert()
+    assertFail(bakerAssert.waitFor(WebshopRecipe.happyFlow)
+    .assertIngredient("orderId").isEqual("order-2"))
   }
 }
