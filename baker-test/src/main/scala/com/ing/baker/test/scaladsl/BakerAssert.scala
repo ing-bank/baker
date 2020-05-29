@@ -9,7 +9,7 @@ import scala.concurrent.{Await, Awaitable}
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
-class BakerAssert(_baker: Baker, _recipeInstanceId: String) {
+class BakerAssert(_baker: Baker, _recipeInstanceId: String, timeout: Duration = 10 seconds) {
   private val log = LoggerFactory.getLogger(getClass)
 
   def baker: Baker = _baker
@@ -18,9 +18,7 @@ class BakerAssert(_baker: Baker, _recipeInstanceId: String) {
 
   private val bakerAsync = new BakerAsync(baker)
 
-  private val TIMEOUT = 10 seconds;
-
-  private[scaladsl] def await[T](fn: Awaitable[T]): T = Await.result(fn, TIMEOUT)
+  private[scaladsl] def await[T](fn: Awaitable[T]): T = Await.result(fn, timeout)
 
   private[scaladsl] def logInfoOnError[T](assert: => T): T = Try(assert) match {
     case Success(v) => v // do nothing
