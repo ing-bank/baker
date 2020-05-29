@@ -9,6 +9,7 @@ import com.ing.baker.test.recipe.WebshopBaker._
 import com.ing.baker.test.recipe.WebshopRecipe
 import com.ing.baker.test.recipe.WebshopRecipe.{ItemsReserved, OrderPlaced}
 import com.typesafe.config.ConfigFactory
+import org.scalatest.Assertions
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.slf4j.LoggerFactory
@@ -40,7 +41,7 @@ class BakerAssertTest extends AnyFlatSpec with Matchers {
 
   private def assertFail[T](assertion: => T): Unit =
     Try(assertion) match {
-      case Failure(exception: AssertionError) => log.info(exception.getMessage)
+      case Failure(t: Throwable) => log.info(t.getMessage)
       case default => fail(s"assertion error is expected but got $default")
     }
 
@@ -93,5 +94,17 @@ class BakerAssertTest extends AnyFlatSpec with Matchers {
     val bakerAssert = createBakerAssert()
     assertFail(bakerAssert.waitFor(WebshopRecipe.happyFlow)
       .assertIngredient("orderId").isNull())
+  }
+
+  "assertIngredient" should "work for customAssert" in {
+    val bakerAssert = createBakerAssert()
+    bakerAssert.waitFor(WebshopRecipe.happyFlow)
+      .assertIngredient("orderId").is(value => Assertions.assert(value.as[String] == "order-1"))
+  }
+
+  "assertIngredient" should "fail for customAssert" in {
+    val bakerAssert = createBakerAssert()
+    assertFail(bakerAssert.waitFor(WebshopRecipe.happyFlow)
+      .assertIngredient("orderId").is(value => Assertions.assert(value.as[String] == "order-2")))
   }
 }
