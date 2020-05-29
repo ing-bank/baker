@@ -81,4 +81,17 @@ class BakerAssertTest extends AnyFlatSpec with Matchers {
     assertFail(bakerAssert.waitFor(WebshopRecipe.happyFlow)
     .assertIngredient("orderId").isEqual("order-2"))
   }
+
+  "assertIngredient" should "work for notNull" in {
+    val bakerAssert = createBakerAssert()
+    bakerAssert
+      .waitFor(WebshopRecipe.happyFlow)
+      .assertIngredient("orderId").notNull()
+  }
+
+  "assertIngredient" should "work for isNull" in {
+    val bakerAssert = createBakerAssert()
+    assertFail(bakerAssert.waitFor(WebshopRecipe.happyFlow)
+      .assertIngredient("orderId").isNull())
+  }
 }
