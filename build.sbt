@@ -527,6 +527,6 @@ lazy val `baker-test` = project.in(file("baker-test"))
     moduleName := "baker-test",
     libraryDependencies ++= compileDeps(
       slf4jApi
-    ) ++ testDeps(scalaTest, logback, "io.altoo" %% "akka-kryo-serialization" % "1.1.5")
+    ) ++ testDeps(scalaTest, logback, "io.altoo" %% "akka-kryo-serialization" % "1.1.5", "junit" % "junit" % "4.13")
   ).dependsOn(runtime, recipeCompiler % "test->compile")
 
