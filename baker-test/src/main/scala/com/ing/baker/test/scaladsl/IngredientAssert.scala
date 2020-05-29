@@ -2,13 +2,26 @@ package com.ing.baker.test.scaladsl
 
 import com.ing.baker.types.Value
 
-class IngredientAssert(bakerAssert: BakerAssert) {
-  def notNull(): BakerAssert = ???
+import scala.concurrent.ExecutionContext.Implicits.global
 
-  def isNull(): BakerAssert = ???
+class IngredientAssert(bakerAssert: BakerAssert, name: String) {
 
-  def isEqual[T](value: T): BakerAssert = ???
+  private val value: Value =
+    bakerAssert.await(bakerAssert.baker.getIngredients(bakerAssert.recipeInstanceId)
+      .map(m => m(name)))
 
-  def is(check: Value => Unit): BakerAssert = ???
+  def notNull(): BakerAssert =
+    is(value => !value.isNull)
+
+  def isNull(): BakerAssert =
+    is(value => value.isNull)
+
+  def isEqual[T](v: T): BakerAssert =
+    is(value => value.equalsObject(v))
+
+  def is(check: Value => Boolean): BakerAssert = {
+    bakerAssert.logInfoOnError(() => assert(check(value)))
+    bakerAssert
+  }
 }
 

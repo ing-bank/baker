@@ -3,20 +3,33 @@ package com.ing.baker.test.scaladsl
 import com.ing.baker.runtime.scaladsl.Baker
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.{Await, Awaitable, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Awaitable}
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
-final class BakerAssert(baker: Baker, recipeInstanceId: String) {
+class BakerAssert(_baker: Baker, _recipeInstanceId: String) {
   private val log = LoggerFactory.getLogger(getClass)
+
+  def baker: Baker = _baker
+
+  def recipeInstanceId: String = _recipeInstanceId
 
   private val bakerAsync = new BakerAsync(baker)
 
   private val TIMEOUT = 10 seconds;
 
-  private def await[T](fn: Awaitable[T]): T = Await.result(fn, TIMEOUT)
+  private[scaladsl] def await[T](fn: Awaitable[T]): T = Await.result(fn, TIMEOUT)
+
+  private[scaladsl] def logInfoOnError[T](assert: => T): T = Try(assert) match {
+    case Success(v) => v // do nothing
+    case Failure(f) =>
+      logEventNames()
+      logIngredients()
+      logVisualState()
+      throw f
+  }
 
   // =====
   // async
@@ -34,21 +47,13 @@ final class BakerAssert(baker: Baker, recipeInstanceId: String) {
   def assertEventsFlow(expectedFlow: BakerEventsFlow): BakerAssert = {
     val actualFlow = await(baker.getEvents(recipeInstanceId)
       .map(events => BakerEventsFlow.apply(events.map(_.name).toSet)))
-    val t = Try(assert(expectedFlow == actualFlow,
+    logInfoOnError(assert(expectedFlow == actualFlow,
       s"""
          |Events are not equal:
          |     actual: ${actualFlow}
          |   expected: ${expectedFlow}
          | difference: ${(expectedFlow --- actualFlow) ::: (actualFlow --- expectedFlow)}
          |""".stripMargin))
-    t match {
-      case Success(_) => // do nothing
-      case Failure(f) =>
-        logEventNames()
-        logIngredients()
-        logVisualState()
-        throw f
-    }
     this
   }
 
@@ -56,7 +61,7 @@ final class BakerAssert(baker: Baker, recipeInstanceId: String) {
   // ingredients
   // ===========
 
-  def assetIngredient(name: String): IngredientAssert = new IngredientAssert(this)
+  def assetIngredient(name: String): IngredientAssert = new IngredientAssert(this, name)
 
   // =======
   // logging
