@@ -14,7 +14,7 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-multi-jvm" % "0.4.0")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.7.2")
 
-addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.3.5")
+addSbtPlugin("org.vaslabs.kube" % "sbt-kubeyml" % "0.3.6")
 
 addSbtPlugin("no.arktekk.sbt" % "aether-deploy" % "0.24.1")
 
