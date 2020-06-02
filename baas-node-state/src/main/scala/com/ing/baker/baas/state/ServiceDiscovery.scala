@@ -45,7 +45,7 @@ object ServiceDiscovery extends LazyLogging {
       val watchFilter: ListOptions = {
         val (key, value) = baasComponentLabel
         val labelSelector = LabelSelector(LabelSelector.IsEqualRequirement(key, value))
-        ListOptions(labelSelector = Some(labelSelector), timeoutSeconds = Some(30))
+        ListOptions(labelSelector = Some(labelSelector)/*, timeoutSeconds = Some(45)*/) // Note, we decided to go for long connections against renewing every 45 seconds due an issue with OpenShift 3.11 not being able to respond to calls with resourceVersion as supposed to be
       }
 
       def source: Source[K8SWatchEvent[ConfigMap], NotUsed] =
