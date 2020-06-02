@@ -2,8 +2,8 @@ package com.ing.bakery.clustercontroller.controllers
 
 import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.stream.{KillSwitches, Materializer}
+import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source}
+import akka.stream.{KillSwitches, Materializer, UniqueKillSwitch}
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
 import com.ing.bakery.clustercontroller.controllers.Utils.FromConfigMapValidation
@@ -13,6 +13,7 @@ import skuber.api.client.{EventType, KubernetesClient}
 import skuber.{ConfigMap, K8SException, K8SWatchEvent, LabelSelector, ListOptions, ObjectResource, ResourceDefinition}
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
 
@@ -79,14 +80,18 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
       k8s.watchAllContinuously[O](bufSize = Int.MaxValue)
         .mapMaterializedValue(_ => NotUsed)
 
-    def source: Source[K8SWatchEvent[O], NotUsed] =
-      label.fold(sourceWithoutLabel)(sourceWithLabel)
-
-    def sourceWithRetry: Source[K8SWatchEvent[O], NotUsed] =
-      source.recoverWithRetries(-1, { case e =>
-        logger.error(s"Error on the '${rd.spec.names.plural}' watch stream: " + e.getMessage, e)
-        source
-      })
+    def sourceWithRetry: Source[K8SWatchEvent[O], UniqueKillSwitch] =
+      RestartSource.withBackoff(
+        minBackoff = 3.seconds,
+        maxBackoff = 30.seconds,
+        randomFactor = 0.2, // adds 20% "noise" to vary the intervals slightly
+        maxRestarts = -1 // not limit the amount of restarts
+      ) { () =>
+        label.fold(sourceWithoutLabel)(sourceWithLabel).mapError { case e =>
+          logger.error(s"Error on the '${rd.spec.names.plural}' watch stream: " + e.getMessage, e)
+          e
+        }
+      }.viaMat(KillSwitches.single)(Keep.right)
 
     val sink: Sink[K8SWatchEvent[O], Future[Done]] =
       Sink.foreach[K8SWatchEvent[O]] { event =>
