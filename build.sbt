@@ -325,7 +325,9 @@ lazy val `bakery-controller` = project.in(file("bakery-controller"))
       skuber,
       http4s,
       http4sDsl,
-      http4sServer
+      http4sServer,
+      kamon,
+      kamonPrometheus
     ) ++ testDeps(
       slf4jApi,
       logback,
