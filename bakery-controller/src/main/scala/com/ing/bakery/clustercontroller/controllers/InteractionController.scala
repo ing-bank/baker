@@ -116,6 +116,11 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
       name = name,
       image = image)
       .exposePort(httpAPIPort)
+      .exposePort(Container.Port(
+        name = "prometheus",
+        containerPort = 9095,
+        protocol = Protocol.TCP
+      ))
       .withReadinessProbe(healthProbe.copy(failureThreshold = Some(30)))
       .withLivenessProbe(healthProbe.copy(failureThreshold = Some(30)))
       .copy(env = interaction.spec.env)

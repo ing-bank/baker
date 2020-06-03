@@ -1,3 +1,4 @@
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,6 +19,11 @@ spec:
       containers:
         - name: bakery-controller
           image: bakery-controller:local
+          ports:
+            - name: prometheus
+              containerPort: 9095
+            - name: kamon
+              containerPort: 5266
           resources:
             requests:
               memory: 256M
