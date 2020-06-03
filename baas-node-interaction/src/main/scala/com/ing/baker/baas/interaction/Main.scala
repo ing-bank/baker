@@ -1,12 +1,16 @@
 package com.ing.baker.baas.interaction
 
 import com.ing.baker.runtime.scaladsl.InteractionInstance
+import kamon.Kamon
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * Expects single argument containing comma-separated list of interactions' entry points
  */
 object Main extends App {
+  Kamon.init()
+
   private def runApp(classNames: String): Unit =
     try {
       val interactions: List[String] = classNames.split(",").toList
