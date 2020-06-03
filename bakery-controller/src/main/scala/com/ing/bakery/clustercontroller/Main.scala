@@ -6,9 +6,9 @@ import java.util.concurrent.Executors
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{ExitCode, IO, IOApp, Resource}
-import cats.syntax.functor._
 import com.ing.bakery.clustercontroller.controllers.{BakerController, BakerResource, InteractionController, InteractionResource}
 import com.typesafe.config.ConfigFactory
+import kamon.Kamon
 import org.http4s.client.blaze.BlazeClientBuilder
 import skuber.api.client.KubernetesClient
 import skuber.json.format.configMapFmt
@@ -18,6 +18,7 @@ import scala.concurrent.ExecutionContext
 object Main extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] = {
+    Kamon.init()
 
     val config = ConfigFactory.load()
     val useCrds = config.getBoolean("bakery-controller.use-crds")

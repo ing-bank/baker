@@ -92,6 +92,11 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
       ))
       .exposePort(managementPort)
       .exposePort(Container.Port(
+        name = "prometheus",
+        containerPort = 9095,
+        protocol = Protocol.TCP
+      ))
+      .exposePort(Container.Port(
         name = "http-api",
         containerPort = 8080,
         protocol = Protocol.TCP

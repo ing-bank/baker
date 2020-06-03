@@ -270,7 +270,10 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
       http4s,
       http4sDsl,
       http4sServer,
-      scalaKafkaClient
+      scalaKafkaClient,
+      kamon,
+      kamonAkka,
+      kamonPrometheus
     ) ++ testDeps(
       slf4jApi,
       logback,
@@ -298,9 +301,12 @@ lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
     moduleName := "baas-node-interaction",
     libraryDependencies ++= Seq(
       slf4jApi,
+      logback,
       http4s,
       http4sDsl,
-      http4sServer
+      http4sServer,
+      kamon,
+      kamonPrometheus
     ) ++ testDeps(
       scalaTest,
       logback
@@ -325,7 +331,9 @@ lazy val `bakery-controller` = project.in(file("bakery-controller"))
       skuber,
       http4s,
       http4sDsl,
-      http4sServer
+      http4sServer,
+      kamon,
+      kamonPrometheus
     ) ++ testDeps(
       slf4jApi,
       logback,
