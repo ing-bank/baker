@@ -9,6 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * Expects single argument containing comma-separated list of interactions' entry points
  */
 object Main extends App {
+  
   Kamon.init()
 
   private def runApp(classNames: String): Unit =
