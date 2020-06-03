@@ -25,7 +25,7 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
     val dpl = deployment(resource)
     val svc = service(resource)
     for {
-      _ <- idem(attemptOpOrTryOlderVersion(
+      wasAlreadyThere1 <- idem(attemptOpOrTryOlderVersion(
         v1 = io(k8s.create[Deployment](dpl)).void,
         older = io(k8s.create[skuber.ext.Deployment](oldDeployment(resource))).void), s"deployment '${dpl.name}'")
       deployedService <- applyOrGet(io(k8s.create(svc)), io(k8s.get[Service](svc.name)), s"service '${svc.name}'")
@@ -39,9 +39,13 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
         client.interface.map { interfaces => assert(interfaces.nonEmpty); interfaces }
       }
       contract = creationContract(resource, address, interfaces)
-      _ <- idem(io(k8s.create(contract)), s"creation contract config map '${contract.name}'")
-      _ = logger.info(s"Deployed interactions from interaction set named '${resource.name}': ${interfaces.map(_.name).mkString(", ")}")
-    } yield ()
+      wasAlreadyThere2 <- idem(io(k8s.create(contract)), s"creation contract config map '${contract.name}'")
+    } yield {
+      if(wasAlreadyThere1 || wasAlreadyThere2)
+        logger.debug(s"Deployed (idem) interactions from interaction set named '${resource.name}': ${interfaces.map(_.name).mkString(", ")}")
+      else
+        logger.info(s"Deployed interactions from interaction set named '${resource.name}': ${interfaces.map(_.name).mkString(", ")}")
+    }
   }
 
   def terminate(resource: InteractionResource, k8s: KubernetesClient): IO[Unit] = {

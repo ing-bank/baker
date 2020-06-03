@@ -19,13 +19,17 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
     val dep = deployment(resource)
     val svc = service(resource)
     for {
-      _ <- idem(io(k8s.create[ConfigMap](cm)), s"recipes config map '${cm.name}'")
-      _ <- idem(attemptOpOrTryOlderVersion(
+      wasAlreadyThere1 <- idem(io(k8s.create[ConfigMap](cm)), s"recipes config map '${cm.name}'")
+      wasAlreadyThere2 <- idem(attemptOpOrTryOlderVersion(
         v1 = io(k8s.create[Deployment](dep)).void,
         older = io(k8s.create[skuber.ext.Deployment](oldDeployment(resource))).void), s"deployment '${dep.name}'")
-      _ <- idem(io(k8s.create(svc)), s"service '${svc.name}'")
-      _ = logger.info(s"Created baker cluster named '${resource.name}'")
-    } yield ()
+      wasAlreadyThere3 <- idem(io(k8s.create(svc)), s"service '${svc.name}'")
+    } yield {
+      if(wasAlreadyThere1 || wasAlreadyThere2 || wasAlreadyThere3)
+        logger.debug(s"Created (idem) baker cluster named '${resource.name}'")
+      else
+        logger.info(s"Created baker cluster named '${resource.name}'")
+    }
   }
 
   def terminate(resource: BakerResource, k8s: KubernetesClient): IO[Unit] =
