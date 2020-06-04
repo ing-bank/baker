@@ -122,12 +122,13 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
       case Right(a) => IO.pure(a)
     }
 
-  protected def idem[A](ref: IO[A], name: String)(implicit cs: ContextShift[IO], rd: ResourceDefinition[O]): IO[Unit] =
+  /** Ensures idempotence from the Kubernetes api server creation calls, returns true if no-op, false if the operation was executed */
+  protected def idem[A](ref: IO[A], name: String)(implicit cs: ContextShift[IO], rd: ResourceDefinition[O]): IO[Boolean] =
     ref.attempt.flatMap {
       case Left(e: K8SException) if e.status.code.contains(409) =>
-        IO(logger.debug(s"ADDED ${rd.spec.names.kind} ($name already existed, trying next step)"))
+        IO(logger.debug(s"ADDED ${rd.spec.names.kind} ($name already existed, trying next step)")) *> IO.pure(true)
       case Left(e) => IO.raiseError(e)
-      case Right(_) => IO.unit
+      case Right(_) => IO.pure(false)
     }
 
   protected def applyOrGet[A](ref: IO[A], orGet: IO[A], name: String)(implicit cs: ContextShift[IO], rd: ResourceDefinition[O]): IO[A] =
