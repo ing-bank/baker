@@ -56,12 +56,10 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
         case EventType.MODIFIED => upgrade(event._object, k8s)
         case EventType.ERROR => IO(logger.error(s"Event type ERROR on ${rd.spec.names.kind} CRD: ${event._object}"))
       }).attempt.flatMap {
-        case Left(e: K8SException) if e.status.code.contains(409) =>
-          IO(logger.info(event._type + " " + event._object.metadata.name + " (resource already existed)"))
         case Left(e) =>
           IO(logger.error(s"Error when handling the event ${event._type} ${event._object.metadata.name}: " + e.getMessage))
         case Right(_) =>
-          IO(logger.info(event._type + " " + event._object.metadata.name))
+          IO.unit
       }
     }
 
