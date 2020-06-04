@@ -316,13 +316,14 @@ lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
 
 lazy val `bakery-controller` = project.in(file("bakery-controller"))
   .settings(defaultModuleSettings)
-  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(JavaAppPackaging, JavaAgent)
   .settings(
     packageSummary in Docker := "The bakery controller",
     packageName in Docker := "bakery-controller"
   )
   .settings(
     moduleName := "bakery-controller",
+    javaAgents += "io.kamon" % "kanela-agent" % "1.0.5",
     libraryDependencies ++= Seq(
       slf4jApi,
       akkaSlf4j,
