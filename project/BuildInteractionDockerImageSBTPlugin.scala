@@ -117,6 +117,7 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
       |
       |import com.ing.baker.baas.interaction.RemoteInteractionLoader
       |import com.ing.baker.runtime.scaladsl.InteractionInstance
+      |import kamon.Kamon
       |
       |import scala.concurrent.ExecutionContext.Implicits.global
       |
@@ -124,6 +125,8 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
       |  * Expects single argument containing full classpath entry point for interaction
       |  */
       |object Main extends App {
+      |  Kamon.init()
+      |
       |  private def runApp(classNames: String): Unit =
       |    try {
       |      val interactions: List[String] = classNames.split(",").toList
@@ -135,6 +138,7 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
       |      case ex: Exception =>
       |        throw new IllegalStateException(s"Unable to initialize the classes $classNames", ex)
       |    }
+      |
       |
       |  args.headOption.map(runApp).getOrElse(throw new IllegalAccessException("Expected class name a parameter"))
       |}
