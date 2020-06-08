@@ -194,12 +194,18 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
     Service(baasStateServiceName(bakerResource.metadata.name))
       .addLabel("baas-component", "state")
       .addLabel("app", "baas-state-service")
+      .addLabel("metrics" -> "collect")
       .addLabel(bakerLabel(bakerResource.metadata.name))
       .withSelector(bakerLabel(bakerResource.metadata.name))
       .setPort(Service.Port(
         name = "http-api",
         port = baasStateServicePort,
         targetPort = Some(Right("http-api"))
+      ))
+      .setPort(Service.Port(
+        name = "prometheus",
+        port = 9095,
+        targetPort = Some(Right("prometheus"))
       ))
   }
 
