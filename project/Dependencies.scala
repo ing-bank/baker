@@ -54,9 +54,9 @@ object Dependencies {
   val scalaGraphDot =             "org.scala-graph"            %% "graph-dot"                          % "1.13.0"
   val graphvizJava =              "guru.nidi"                  %  "graphviz-java"                      % "0.16.0"
 
-  val kamon =                     "io.kamon"                   %% "kamon-bundle"                       % "2.1.0"
-  val kamonAkka =                 "io.kamon"                   %% "kamon-akka"                         % "2.1.0"
-  val kamonPrometheus =           "io.kamon"                   %% "kamon-prometheus"                   % "2.1.0"
+  val kamon =                     "io.kamon"                   %% "kamon-bundle"                       % "2.1.1"
+  val kamonAkka =                 "io.kamon"                   %% "kamon-akka"                         % "2.1.1"
+  val kamonPrometheus =           "io.kamon"                   %% "kamon-prometheus"                   % "2.1.1"
 
   val skuber =                    "io.skuber"                  %% "skuber"                             % "2.4.0"
   val http4s =                    "org.http4s"                 %% "http4s-core"                        % http4sVersion
