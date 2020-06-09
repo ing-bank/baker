@@ -52,6 +52,10 @@ spec:
                       type: string
                     cpu:
                       type: string
+            config:
+              type: string
+            secrets:
+              type: string
           required:
             - image
             - recipes

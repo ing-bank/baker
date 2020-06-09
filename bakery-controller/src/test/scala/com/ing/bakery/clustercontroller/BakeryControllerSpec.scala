@@ -88,7 +88,9 @@ object BakeryControllerSpec {
       resources = Some(skuber.Resource.Requirements(
         requests = Map("cpu" -> skuber.Resource.Quantity("600m"), "memory" -> skuber.Resource.Quantity("500Mi")),
         limits = Map("cpu" -> skuber.Resource.Quantity("6000m"), "memory" -> skuber.Resource.Quantity("1000Mi"))
-      ))
+      )),
+      config = None,
+      secrets = None
     )
   )
 
