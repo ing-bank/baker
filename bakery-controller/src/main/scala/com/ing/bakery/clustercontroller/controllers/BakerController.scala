@@ -197,15 +197,17 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
       .addLabel("metrics" -> "collect")
       .addLabel(bakerLabel(bakerResource.metadata.name))
       .withSelector(bakerLabel(bakerResource.metadata.name))
-      .setPort(Service.Port(
-        name = "http-api",
-        port = baasStateServicePort,
-        targetPort = Some(Right("http-api"))
-      ))
-      .setPort(Service.Port(
-        name = "prometheus",
-        port = 9095,
-        targetPort = Some(Right("prometheus"))
+      .setPorts(List(
+        Service.Port(
+          name = "http-api",
+          port = baasStateServicePort,
+          targetPort = Some(Right("http-api"))
+        ),
+        Service.Port(
+          name = "prometheus",
+          port = 9095,
+          targetPort = Some(Right("prometheus"))
+        )
       ))
   }
 

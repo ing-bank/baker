@@ -403,6 +403,7 @@ lazy val `baas-client-example` = project
     libraryDependencies ++=
       compileDeps(
         slf4jApi,
+        logback,
         http4s,
         http4sDsl,
         http4sServer,
