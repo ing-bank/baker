@@ -201,14 +201,16 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
       .addLabel("app", interaction.name)
       .addLabel(baasComponentLabel)
       .addLabel("metrics" -> "collect")
-      .setPort(Service.Port(
-        name = httpAPIPort.name,
-        port = httpAPIPort.containerPort
-      ))
-      .setPort(Service.Port(
-        name = "prometheus",
-        port = 9095,
-        targetPort = Some(Right("prometheus"))
+      .setPorts(List(
+        Service.Port(
+          name = httpAPIPort.name,
+          port = httpAPIPort.containerPort
+        ),
+        Service.Port(
+          name = "prometheus",
+          port = 9095,
+          targetPort = Some(Right("prometheus"))
+        )
       ))
   }
 }
