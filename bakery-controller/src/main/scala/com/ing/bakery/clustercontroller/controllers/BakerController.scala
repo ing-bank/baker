@@ -144,12 +144,26 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
       else
         stateContainerWithEventSink
 
+    val stateNodeContainerWithExtraConfig =
+      bakerResource.spec.config match {
+        case Some(_) => stateNodeContainerWithServiceAccount.mount("extra-config", "/bakery-config", readOnly = true)
+        case None => stateNodeContainerWithServiceAccount
+      }
+
+    val stateNodeContainerWithExtraSecrets =
+      bakerResource.spec.secrets match {
+        case Some(_) => stateNodeContainerWithExtraConfig.mount("extra-secrets", "/bakery-secrets", readOnly = true)
+        case None => stateNodeContainerWithExtraConfig
+      }
+
     val podSpec = Pod.Spec(
-      containers = List(stateNodeContainerWithServiceAccount),
+      containers = List(stateNodeContainerWithExtraSecrets),
       imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
       volumes = List(
         Some(Volume("recipes", Volume.ConfigMapVolumeSource(baasRecipesConfigMapName(bakerName)))),
-        serviceAccountSecret.map(s => Volume("service-account-token", Volume.Secret(s)))
+        serviceAccountSecret.map(s => Volume("service-account-token", Volume.Secret(s))),
+        bakerResource.spec.config.map(c => Volume("extra-config", Volume.ConfigMapVolumeSource(c))),
+        bakerResource.spec.secrets.map(s => Volume("extra-secrets", Volume.Secret(s)))
       ).flatten
     )
 

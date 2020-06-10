@@ -45,6 +45,8 @@ object BakerResource {
     , Utils.extractAndParseValidated(configMap, "replicas", r => Try(r.toInt)).orElse(2.validNel): FromConfigMapValidation[Int]
     , Utils.extractListValidated(configMap, "recipes")
     , Utils.optional(Utils.resourcesFromConfigMap(configMap))
+    , Utils.extractValidatedStringOption(configMap, "config")
+    , Utils.extractValidatedStringOption(configMap, "secrets")
     ).mapN(Spec).map(spec => BakerResource(metadata = configMap.metadata, spec = spec))
   }
 
@@ -55,7 +57,9 @@ object BakerResource {
     kafkaBootstrapServers: Option[String],
     replicas: Int,
     recipes: List[String],
-    resources: Option[Resource.Requirements]
+    resources: Option[Resource.Requirements],
+    config: Option[String],
+    secrets: Option[String]
   )
 
   val specification: NonCoreResourceSpecification =
@@ -81,7 +85,9 @@ object BakerResource {
     (JsPath \ "kafkaBootstrapServers").formatNullableWithDefault[String](None) and
     (JsPath \ "replicas").formatWithDefault[Int](2) and
     (JsPath \ "recipes").format[List[String]] and
-    (JsPath \ "resources").formatNullable[Resource.Requirements]
+    (JsPath \ "resources").formatNullableWithDefault[Resource.Requirements](None) and
+    (JsPath \ "config").formatNullableWithDefault[String](None) and
+    (JsPath \ "secrets").formatNullableWithDefault[String](None)
   )(Spec.apply, unlift(Spec.unapply))
 
   implicit lazy val recipeResourceFormat: Format[BakerResource] = (
