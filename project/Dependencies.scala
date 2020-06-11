@@ -29,7 +29,7 @@ object Dependencies {
   val akkaProtobuf =              "com.typesafe.akka"          %% "akka-protobuf"                      % akkaVersion
   val akkaPersistence =           "com.typesafe.akka"          %% "akka-persistence"                   % akkaVersion
   val akkaPersistenceQuery =      "com.typesafe.akka"          %% "akka-persistence-query"             % akkaVersion
-  val akkaPersistenceCassandra =  "com.typesafe.akka"          %% "akka-persistence-cassandra"         % "0.103"
+  val akkaPersistenceCassandra =  "com.typesafe.akka"          %% "akka-persistence-cassandra"         % "1.0.1"
   val akkaCluster =               "com.typesafe.akka"          %% "akka-cluster"                       % akkaVersion
   val akkaClusterSharding =       "com.typesafe.akka"          %% "akka-cluster-sharding"              % akkaVersion
   val akkaClusterTools =          "com.typesafe.akka"          %% "akka-cluster-tools"                 % akkaVersion
