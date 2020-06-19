@@ -111,7 +111,8 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
           path = "/health/ready"
         ),
         initialDelaySeconds = 15,
-        timeoutSeconds = 10
+        timeoutSeconds = 10,
+        failureThreshold = Some(30)
       ))
       .withLivenessProbe(skuber.Probe(
         action = skuber.HTTPGetAction(
@@ -119,7 +120,8 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
           path = "/health/alive"
         ),
         initialDelaySeconds = 15,
-        timeoutSeconds = 10
+        timeoutSeconds = 10,
+        failureThreshold = Some(30)
       ))
       .mount("recipes", recipesMountPath, readOnly = true)
       .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)
