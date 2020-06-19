@@ -16,4 +16,6 @@
 
   <logger level="INFO" name="bakery.ServiceDiscovery"/>
 
+  <logger level="INFO" name="com.ing.baker.baas.state.Main"/>
+
 </configuration>

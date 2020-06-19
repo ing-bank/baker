@@ -27,7 +27,7 @@ object Main extends IOApp with LazyLogging {
     Kamon.init()
 
     // Config
-    val config = mergeConfig(getExtraSecrets ++ getExtraConfig)
+    val config = mergeConfig(executeLoad(getExtraSecrets) ++ executeLoad(getExtraConfig))
 
     val httpServerPort = config.getInt("baas-component.http-api-port")
     val recipeDirectory = config.getString("baas-component.recipe-directory")
@@ -78,20 +78,28 @@ object Main extends IOApp with LazyLogging {
       case Nil => ConfigFactory.load()
     }
 
-  def getExtraConfig: List[Config] =
-    loadExtraConfig(new File("/bakery-config"))
+  def executeLoad(from: IO[List[Config]]): List[Config] =
+    from.attempt.unsafeRunSync() match {
+      case Left(e) => logger.error(s"Error while loading config: ${e.getMessage}"); List.empty
+      case Right(a) => a
+    }
 
-  def getExtraSecrets: List[Config] =
-    loadExtraConfig(new File("/bakery-secrets"))
+  def getExtraConfig: IO[List[Config]] =
+    loadExtraConfig(IO(new File("/bakery-config")))
 
-  def loadExtraConfig(from: File): List[Config] =
-    from.listFiles
-      .filter(f => """.*\.conf$""".r.findFirstIn(f.getName).isDefined)
-      .map(f => Try(ConfigFactory.parseFile(f) -> f.getName))
-      .map {
-        case Failure(e) => logger.error("Failed to parse extra config: " + e.getMessage); None
-        case Success((v, name)) => logger.info(s"Loaded extra configuration from '$name'"); Some(v)
-      }
-      .toList
-      .flatten
+  def getExtraSecrets: IO[List[Config]] =
+    loadExtraConfig(IO(new File("/bakery-secrets")))
+
+  def loadExtraConfig(from: IO[File]): IO[List[Config]] =
+    from.map {
+      _.listFiles
+        .filter(f => """.*\.conf$""".r.findFirstIn(f.getName).isDefined)
+        .map(f => Try(ConfigFactory.parseFile(f) -> f.getName))
+        .map {
+          case Failure(e) => logger.error("Failed to parse extra config: " + e.getMessage); None
+          case Success((v, name)) => logger.info(s"Loaded extra configuration from '$name'"); Some(v)
+        }
+        .toList
+        .flatten
+    }
 }
