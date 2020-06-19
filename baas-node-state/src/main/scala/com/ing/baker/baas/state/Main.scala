@@ -73,10 +73,10 @@ object Main extends IOApp with LazyLogging {
   /** Merges all configuration giving priority to values in front of the list, and as final fallback the configuration from
     * ConfigFactory.load */
   def mergeConfig(cs: List[Config]): Config =
-    cs match {
+    (cs match {
       case c :: tail => c.withFallback(mergeConfig(tail))
       case Nil => ConfigFactory.load()
-    }
+    }).resolve()
 
   def executeLoad(from: IO[List[Config]]): List[Config] =
     from.attempt.unsafeRunSync() match {
