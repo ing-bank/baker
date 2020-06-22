@@ -20,7 +20,7 @@ metadata:
   labels:
     app: webshop-baker
 data:
-  cassandra.conf: "cassandra: testconf"
+  cassandra.conf: "cassandra = testconf"
 
 ---
 
