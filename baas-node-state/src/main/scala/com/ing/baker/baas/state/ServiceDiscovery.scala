@@ -2,7 +2,7 @@ package com.ing.baker.baas.state
 
 import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.{Keep, Sink, Source}
+import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source}
 import akka.stream.{KillSwitches, Materializer, UniqueKillSwitch}
 import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Timer}
@@ -18,6 +18,7 @@ import skuber._
 import skuber.api.client.{EventType, KubernetesClient}
 import skuber.json.format._
 
+import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
@@ -45,18 +46,23 @@ object ServiceDiscovery extends LazyLogging {
       val watchFilter: ListOptions = {
         val (key, value) = baasComponentLabel
         val labelSelector = LabelSelector(LabelSelector.IsEqualRequirement(key, value))
-        ListOptions(labelSelector = Some(labelSelector), timeoutSeconds = Some(30))
+        ListOptions(labelSelector = Some(labelSelector)/*, timeoutSeconds = Some(45)*/) // Note, we decided to go for long connections against renewing every 45 seconds due an issue with OpenShift 3.11 not being able to respond to calls with resourceVersion as supposed to be
       }
 
       def source: Source[K8SWatchEvent[ConfigMap], NotUsed] =
         k8s.watchWithOptions[ConfigMap](watchFilter).mapMaterializedValue(_ => NotUsed)
 
-      source
-        .recoverWithRetries(-1, { case e =>
+      RestartSource.withBackoff(
+        minBackoff = 3.seconds,
+        maxBackoff = 30.seconds,
+        randomFactor = 0.2, // adds 20% "noise" to vary the intervals slightly
+        maxRestarts = -1 // not limit the amount of restarts
+      ) { () =>
+        source.mapError { case e =>
           logger.error("Error on the service discovery watch stream: " + e.getMessage, e)
-          source
-        })
-        .viaMat(KillSwitches.single)(Keep.right)
+          e
+        }
+      }.viaMat(KillSwitches.single)(Keep.right)
     }
 
     def updateSink(serviceDiscovery: ServiceDiscovery): Sink[K8SWatchEvent[ConfigMap], Future[Done]] = {

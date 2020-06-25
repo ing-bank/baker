@@ -2,8 +2,8 @@ package com.ing.bakery.clustercontroller.controllers
 
 import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.{Keep, Sink, Source}
-import akka.stream.{KillSwitches, Materializer}
+import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source}
+import akka.stream.{KillSwitches, Materializer, UniqueKillSwitch}
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
 import com.ing.bakery.clustercontroller.controllers.Utils.FromConfigMapValidation
@@ -13,6 +13,7 @@ import skuber.api.client.{EventType, KubernetesClient}
 import skuber.{ConfigMap, K8SException, K8SWatchEvent, LabelSelector, ListOptions, ObjectResource, ResourceDefinition}
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
 
@@ -55,12 +56,10 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
         case EventType.MODIFIED => upgrade(event._object, k8s)
         case EventType.ERROR => IO(logger.error(s"Event type ERROR on ${rd.spec.names.kind} CRD: ${event._object}"))
       }).attempt.flatMap {
-        case Left(e: K8SException) if e.status.code.contains(409) =>
-          IO(logger.info(event._type + " " + event._object.metadata.name + " (resource already existed)"))
         case Left(e) =>
           IO(logger.error(s"Error when handling the event ${event._type} ${event._object.metadata.name}: " + e.getMessage))
         case Right(_) =>
-          IO(logger.info(event._type + " " + event._object.metadata.name))
+          IO.unit
       }
     }
 
@@ -68,7 +67,7 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
     def sourceWithLabel(keyValue: (String, String)): Source[K8SWatchEvent[O], NotUsed] = {
       val watchFilter: ListOptions = {
         val labelSelector = LabelSelector(LabelSelector.IsEqualRequirement(keyValue._1, keyValue._2))
-        ListOptions(labelSelector = Some(labelSelector), timeoutSeconds = Some(30))
+        ListOptions(labelSelector = Some(labelSelector)/*, timeoutSeconds = Some(45)*/) // Note, we decided to go for long connections against renewing every 45 seconds due an issue with OpenShift 3.11 not being able to respond to calls with resourceVersion as supposed to be
       }
       k8s.watchWithOptions(watchFilter, bufsize = Int.MaxValue)
         .mapMaterializedValue(_ => NotUsed)
@@ -79,14 +78,18 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
       k8s.watchAllContinuously[O](bufSize = Int.MaxValue)
         .mapMaterializedValue(_ => NotUsed)
 
-    def source: Source[K8SWatchEvent[O], NotUsed] =
-      label.fold(sourceWithoutLabel)(sourceWithLabel)
-
-    def sourceWithRetry: Source[K8SWatchEvent[O], NotUsed] =
-      source.recoverWithRetries(-1, { case e =>
-        logger.error(s"Error on the '${rd.spec.names.plural}' watch stream: " + e.getMessage, e)
-        source
-      })
+    def sourceWithRetry: Source[K8SWatchEvent[O], UniqueKillSwitch] =
+      RestartSource.withBackoff(
+        minBackoff = 3.seconds,
+        maxBackoff = 30.seconds,
+        randomFactor = 0.2, // adds 20% "noise" to vary the intervals slightly
+        maxRestarts = -1 // not limit the amount of restarts
+      ) { () =>
+        label.fold(sourceWithoutLabel)(sourceWithLabel).mapError { case e =>
+          logger.error(s"Error on the '${rd.spec.names.plural}' watch stream: " + e.getMessage, e)
+          e
+        }
+      }.viaMat(KillSwitches.single)(Keep.right)
 
     val sink: Sink[K8SWatchEvent[O], Future[Done]] =
       Sink.foreach[K8SWatchEvent[O]] { event =>
@@ -105,4 +108,36 @@ trait ControllerOperations[O <: ObjectResource] extends LazyLogging { self =>
         }
     )(identity).map(_ => ())
   }
+
+  /**
+    * This attempts to make a skuber operation (normaly an api call to api version apps/v1), if the error is 404,
+    * that means we are in an old kubernetes environment and we need to use an older version like extensions/apps/v1beta1
+    */
+  protected def attemptOpOrTryOlderVersion(v1: IO[Unit], older: IO[Unit]): IO[Unit] =
+    v1.attempt.flatMap {
+      case Left(e: K8SException) if e.status.code.contains(404) => older
+      case Left(e) => IO.raiseError(e)
+      case Right(a) => IO.pure(a)
+    }
+
+  /** Ensures idempotence from the Kubernetes api server creation calls, returns true if no-op, false if the operation was executed */
+  protected def idem[A](ref: IO[A], name: String)(implicit cs: ContextShift[IO], rd: ResourceDefinition[O]): IO[Boolean] =
+    ref.attempt.flatMap {
+      case Left(e: K8SException) if e.status.code.contains(409) =>
+        IO(logger.debug(s"ADDED ${rd.spec.names.kind} ($name already existed, trying next step)")) *> IO.pure(true)
+      case Left(e) => IO.raiseError(e)
+      case Right(_) => IO.pure(false)
+    }
+
+  protected def applyOrGet[A](ref: IO[A], orGet: IO[A], name: String)(implicit cs: ContextShift[IO], rd: ResourceDefinition[O]): IO[A] =
+    ref.attempt.flatMap {
+      case Left(e: K8SException) if e.status.code.contains(409) =>
+        IO(logger.debug(s"ADDED ${rd.spec.names.kind} ($name already existed, will fetch it instead)")) *> orGet
+      case Left(e) => IO.raiseError(e)
+      case Right(a) => IO.pure(a)
+    }
+
+  protected def io[A](ref: => Future[A])(implicit cs: ContextShift[IO]): IO[A] =
+    IO.fromFuture(IO(ref))
+
 }

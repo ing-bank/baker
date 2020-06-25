@@ -2,32 +2,47 @@ package com.ing.bakery.clustercontroller.controllers
 
 import cats.effect.{ContextShift, IO, Timer}
 import com.typesafe.scalalogging.LazyLogging
+import play.api.libs.json.Format
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.api.client.KubernetesClient
-import skuber.ext.{Deployment, ReplicaSetList}
+import skuber.apps.v1.{Deployment, ReplicaSet, ReplicaSetList}
 import skuber.json.ext.format._
 import skuber.json.format._
 import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
 
-import scala.concurrent.Future
-
 final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[BakerResource] with LazyLogging {
 
-  def create(resource: BakerResource, k8s: KubernetesClient): IO[Unit] =
+  implicit lazy val replicaSetListFormat: Format[ReplicaSetList] = ListResourceFormat[ReplicaSet]
+
+  def create(resource: BakerResource, k8s: KubernetesClient): IO[Unit] = {
+    val cm = configMap(resource)
+    val dep = deployment(resource)
+    val svc = service(resource)
     for {
-      _ <- io(k8s.create[ConfigMap](configMap(resource))).void
-      _ <- io(k8s.create(deployment(resource)))
-      _ <- io(k8s.create(service(resource)))
-      _ = logger.info(s"Created baker cluster named '${resource.name}'")
-    } yield ()
+      wasAlreadyThere1 <- idem(io(k8s.create[ConfigMap](cm)), s"recipes config map '${cm.name}'")
+      wasAlreadyThere2 <- idem(attemptOpOrTryOlderVersion(
+        v1 = io(k8s.create[Deployment](dep)).void,
+        older = io(k8s.create[skuber.ext.Deployment](oldDeployment(resource))).void), s"deployment '${dep.name}'")
+      wasAlreadyThere3 <- idem(io(k8s.create(svc)), s"service '${svc.name}'")
+    } yield {
+      if(wasAlreadyThere1 || wasAlreadyThere2 || wasAlreadyThere3)
+        logger.debug(s"Created (idem) baker cluster named '${resource.name}'")
+      else
+        logger.info(s"Created baker cluster named '${resource.name}'")
+    }
+  }
 
   def terminate(resource: BakerResource, k8s: KubernetesClient): IO[Unit] =
     for {
       _ <- io(k8s.delete[ConfigMap](baasRecipesConfigMapName(resource.metadata.name)))
       (key, value) = bakerLabel(resource.metadata.name)
       _ <- io(k8s.delete[Service](service(resource).name))
-      _ <- io(k8s.delete[Deployment](deployment(resource).name))
-      _ <- io(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(key, value))))
+      _ <- attemptOpOrTryOlderVersion(
+        v1 = io(k8s.delete[Deployment](deployment(resource).name)),
+        older = io(k8s.delete[skuber.ext.Deployment](oldDeployment(resource).name)))
+      _ <- attemptOpOrTryOlderVersion(
+        v1 = io(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void,
+        older = io(k8s.deleteAllSelected[skuber.ext.ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void)
       _ <- io(k8s.deleteAllSelected[PodList](LabelSelector(IsEqualRequirement(key, value))))
       _ = logger.info(s"Terminated baker cluster named '${resource.name}'")
     } yield ()
@@ -35,12 +50,11 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
   def upgrade(resource: BakerResource, k8s: KubernetesClient): IO[Unit] =
     for {
       _ <- io(k8s.update[ConfigMap](configMap(resource))).void
-      _ <- io(k8s.update[skuber.ext.Deployment](deployment(resource)))
+      _ <- attemptOpOrTryOlderVersion(
+        v1 = io(k8s.update[Deployment](deployment(resource))).void,
+        older = io(k8s.update[skuber.ext.Deployment](oldDeployment(resource))).void)
       _ = logger.info(s"Upgraded baker cluster named '${resource.name}'")
     } yield ()
-
-  private def io[A](ref: => Future[A])(implicit cs: ContextShift[IO]): IO[A] =
-    IO.fromFuture(IO(ref))
 
   private def stateNodeLabel: (String, String) = "app" -> "baas-state"
 
@@ -56,13 +70,13 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
 
   private def baasStateServicePort: Int = 8081
 
-  private def deployment(bakerResource: BakerResource): Deployment = {
+  private def podSpec(bakerResource: BakerResource): Pod.Template.Spec = {
 
     val bakerName: String = bakerResource.metadata.name
+    val bakerLabelWithName: (String, String) = bakerLabel(bakerName)
     val image: String = bakerResource.spec.image
     val imagePullSecret: Option[String] = bakerResource.spec.imagePullSecret
     val serviceAccountSecret: Option[String] = bakerResource.spec.serviceAccountSecret
-    val replicas: Int = bakerResource.spec.replicas
     val recipesMountPath: String = "/recipes"
 
     val managementPort = Container.Port(
@@ -75,15 +89,17 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
       name = baasStateName(bakerName),
       image = image
     )
-      // todo parametrise?
-      .requestMemory("512M")
-      .requestCPU("250m")
       .exposePort(Container.Port(
         name = "remoting",
         containerPort = 2552,
         protocol = Protocol.TCP
       ))
       .exposePort(managementPort)
+      .exposePort(Container.Port(
+        name = "prometheus",
+        containerPort = 9095,
+        protocol = Protocol.TCP
+      ))
       .exposePort(Container.Port(
         name = "http-api",
         containerPort = 8080,
@@ -95,7 +111,8 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
           path = "/health/ready"
         ),
         initialDelaySeconds = 15,
-        timeoutSeconds = 10
+        timeoutSeconds = 10,
+        failureThreshold = Some(30)
       ))
       .withLivenessProbe(skuber.Probe(
         action = skuber.HTTPGetAction(
@@ -103,61 +120,110 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
           path = "/health/alive"
         ),
         initialDelaySeconds = 15,
-        timeoutSeconds = 10
+        timeoutSeconds = 10,
+        failureThreshold = Some(30)
       ))
       .mount("recipes", recipesMountPath, readOnly = true)
       .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)
       .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
       .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
 
+    val stateNodeContainerWithResources =
+      Utils.addResourcesSpec(stateNodeContainer, bakerResource.spec.resources)
+
     val stateContainerWithEventSink =
       bakerResource.spec.kafkaBootstrapServers.map( servers =>
-        stateNodeContainer
+        stateNodeContainerWithResources
           .setEnvVar("KAFKA_EVENT_SINK_BOOTSTRAP_SERVERS", servers)
           // todo add missing kafka configuration later (topics + identity missing)
           .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "true")
-      ).getOrElse(stateNodeContainer
-          .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "false"))
+      ).getOrElse(stateNodeContainerWithResources
+        .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "false"))
+
+    val stateNodeContainerWithServiceAccount =
+      if (serviceAccountSecret.isDefined)
+        stateContainerWithEventSink.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true)
+      else
+        stateContainerWithEventSink
+
+    val stateNodeContainerWithExtraConfig =
+      bakerResource.spec.config match {
+        case Some(_) => stateNodeContainerWithServiceAccount.mount("extra-config", "/bakery-config", readOnly = true)
+        case None => stateNodeContainerWithServiceAccount
+      }
+
+    val stateNodeContainerWithExtraSecrets =
+      bakerResource.spec.secrets match {
+        case Some(_) => stateNodeContainerWithExtraConfig.mount("extra-secrets", "/bakery-secrets", readOnly = true)
+        case None => stateNodeContainerWithExtraConfig
+      }
 
     val podSpec = Pod.Spec(
-      containers = List(
-        if (serviceAccountSecret.isDefined)
-          stateContainerWithEventSink.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true)
-        else
-          stateContainerWithEventSink
-      ),
+      containers = List(stateNodeContainerWithExtraSecrets),
       imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
       volumes = List(
         Some(Volume("recipes", Volume.ConfigMapVolumeSource(baasRecipesConfigMapName(bakerName)))),
-        serviceAccountSecret.map(s => Volume("service-account-token", Volume.Secret(s)))
+        serviceAccountSecret.map(s => Volume("service-account-token", Volume.Secret(s))),
+        bakerResource.spec.config.map(c => Volume("extra-config", Volume.ConfigMapVolumeSource(c))),
+        bakerResource.spec.secrets.map(s => Volume("extra-secrets", Volume.Secret(s)))
       ).flatten
     )
 
-    val podTemplate = Pod.Template.Spec
+    Pod.Template.Spec
       .named(baasStateName(bakerName))
       .withPodSpec(podSpec)
       .addLabel(stateNodeLabel)
-      .addLabel(bakerLabel(bakerResource.name))
+      .addLabel(bakerLabelWithName)
       .addLabel(akkaClusterLabel(bakerName))
+  }
+
+  private def deployment(bakerResource: BakerResource): Deployment = {
+
+    val bakerName: String = bakerResource.metadata.name
+    val bakerLabelWithName: (String, String) = bakerLabel(bakerName)
+    val replicas: Int = bakerResource.spec.replicas
 
     new Deployment(metadata = ObjectMeta(
       name = baasStateName(bakerName),
-      labels = Map(stateNodeLabel, bakerLabel(bakerName))
-    ))
+      labels = Map(stateNodeLabel, bakerLabelWithName) ++ bakerResource.metadata.labels.filter(_._1 != "custom-resource-definition")))
+      .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(key = bakerLabelWithName._1, value = bakerLabelWithName._2)))
       .withReplicas(replicas)
-      .withTemplate(podTemplate)
+      .withTemplate(podSpec(bakerResource))
+  }
+
+  private def oldDeployment(bakerResource: BakerResource): skuber.ext.Deployment = {
+
+    val bakerName: String = bakerResource.metadata.name
+    val bakerLabelWithName: (String, String) = bakerLabel(bakerName)
+    val replicas: Int = bakerResource.spec.replicas
+
+    new skuber.ext.Deployment(metadata = ObjectMeta(
+      name = baasStateName(bakerName),
+      labels = Map(stateNodeLabel, bakerLabelWithName)
+    ))
+      .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(key = bakerLabelWithName._1, value = bakerLabelWithName._2)))
+      .withReplicas(replicas)
+      .withTemplate(podSpec(bakerResource))
   }
 
   def service(bakerResource: BakerResource): Service = {
     Service(baasStateServiceName(bakerResource.metadata.name))
       .addLabel("baas-component", "state")
       .addLabel("app", "baas-state-service")
+      .addLabel("metrics" -> "collect")
       .addLabel(bakerLabel(bakerResource.metadata.name))
-      .withSelector(stateNodeLabel)
-      .setPort(Service.Port(
-        name = "http-api",
-        port = baasStateServicePort,
-        targetPort = Some(Right("http-api"))
+      .withSelector(bakerLabel(bakerResource.metadata.name))
+      .setPorts(List(
+        Service.Port(
+          name = "http-api",
+          port = baasStateServicePort,
+          targetPort = Some(Right("http-api"))
+        ),
+        Service.Port(
+          name = "prometheus",
+          port = 9095,
+          targetPort = Some(Right("prometheus"))
+        )
       ))
   }
 

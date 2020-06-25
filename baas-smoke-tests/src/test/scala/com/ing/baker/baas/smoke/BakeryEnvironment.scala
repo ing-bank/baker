@@ -26,10 +26,13 @@ object BakeryEnvironment {
     namespace <- KubernetesCommands.basicSetup
 
     _ <- Resource.liftF(printGreen(s"\nAdding custom resources: interactions, listeners, recipe"))
-    _ <- DefinitionFile.resource("interactions-example.yaml", namespace)
+    _ <- DefinitionFile.resource("interactions-example-config-map.yaml", namespace)
     _ <- DefinitionFile.resource("baker-webshop.yaml", namespace)
     _ <- DefinitionFile.resource("example-client-app.yaml", namespace)
-    _ <- Resource.liftF(Pod.waitUntilAllPodsAreReady(namespace))
+    _ <- Resource.liftF(Pod.waitUntilAllPodsAreReady(namespace).attempt.flatMap {
+      case Left(_) => printRed("ERROR Pods were not ready on time, will terminate...")
+      case Right(_) => IO.unit
+    })
 
     client <- BlazeClientBuilder[IO](connectionPool).resource
     exampleAppClient = new ExampleAppClient(client, args.clientAppHostname)

@@ -270,7 +270,10 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
       http4s,
       http4sDsl,
       http4sServer,
-      scalaKafkaClient
+      scalaKafkaClient,
+      kamon,
+      kamonAkka,
+      kamonPrometheus
     ) ++ testDeps(
       slf4jApi,
       logback,
@@ -298,9 +301,12 @@ lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
     moduleName := "baas-node-interaction",
     libraryDependencies ++= Seq(
       slf4jApi,
+      logback,
       http4s,
       http4sDsl,
-      http4sServer
+      http4sServer,
+      kamon,
+      kamonPrometheus
     ) ++ testDeps(
       scalaTest,
       logback
@@ -310,13 +316,14 @@ lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
 
 lazy val `bakery-controller` = project.in(file("bakery-controller"))
   .settings(defaultModuleSettings)
-  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(JavaAppPackaging, JavaAgent)
   .settings(
     packageSummary in Docker := "The bakery controller",
     packageName in Docker := "bakery-controller"
   )
   .settings(
     moduleName := "bakery-controller",
+    javaAgents += "io.kamon" % "kanela-agent" % "1.0.5",
     libraryDependencies ++= Seq(
       slf4jApi,
       akkaSlf4j,
@@ -325,7 +332,9 @@ lazy val `bakery-controller` = project.in(file("bakery-controller"))
       skuber,
       http4s,
       http4sDsl,
-      http4sServer
+      http4sServer,
+      kamon,
+      kamonPrometheus
     ) ++ testDeps(
       slf4jApi,
       logback,
@@ -394,6 +403,7 @@ lazy val `baas-client-example` = project
     libraryDependencies ++=
       compileDeps(
         slf4jApi,
+        logback,
         http4s,
         http4sDsl,
         http4sServer,

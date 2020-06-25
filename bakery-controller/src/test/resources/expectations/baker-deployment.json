@@ -1,6 +1,6 @@
 {
   "kind" : "Deployment",
-  "apiVersion" : "extensions/v1beta1",
+  "apiVersion" : "apps/v1",
   "metadata" : {
     "name" : "baas-state-RecipeOne",
     "labels" : {
@@ -10,6 +10,11 @@
   },
   "spec" : {
     "replicas" : 2,
+    "selector": {
+      "matchLabels": {
+        "baker-name": "RecipeOne"
+      }
+    },
     "template" : {
       "metadata" : {
         "name" : "baas-state-RecipeOne",
@@ -48,8 +53,12 @@
           } ],
           "resources" : {
             "requests" : {
-              "memory" : "512M",
-              "cpu" : "250m"
+              "memory" : "500Mi",
+              "cpu" : "600m"
+            },
+            "limits" : {
+              "memory" : "1000Mi",
+              "cpu" : "6000m"
             }
           },
           "volumeMounts" : [ {

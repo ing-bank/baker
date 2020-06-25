@@ -30,11 +30,32 @@ spec:
               type: string
             replicas:
               type: integer
-              minimum: 2
+              minimum: 0
             recipes:
               type: array
               items:
                 type: string
+            resources:
+              type: object
+              properties:
+                requests:
+                  type: object
+                  properties:
+                    memory:
+                      type: string
+                    cpu:
+                      type: string
+                limits:
+                  type: object
+                  properties:
+                    memory:
+                      type: string
+                    cpu:
+                      type: string
+            config:
+              type: string
+            secrets:
+              type: string
           required:
             - image
             - recipes

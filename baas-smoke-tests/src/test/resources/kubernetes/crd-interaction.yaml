@@ -27,6 +27,23 @@ spec:
             replicas:
               type: integer
               minimum: 1
+            resources:
+              type: object
+              properties:
+                requests:
+                  type: object
+                  properties:
+                    memory:
+                      type: string
+                    cpu:
+                      type: string
+                limits:
+                  type: object
+                  properties:
+                    memory:
+                      type: string
+                    cpu:
+                      type: string
             env:
               type: array
               items:

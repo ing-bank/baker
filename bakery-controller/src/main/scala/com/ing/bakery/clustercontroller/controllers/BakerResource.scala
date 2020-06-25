@@ -8,8 +8,10 @@ import com.ing.bakery.clustercontroller.controllers.Utils.FromConfigMapValidatio
 import org.apache.commons.codec.binary.Base64
 import play.api.libs.functional.syntax.{unlift, _}
 import play.api.libs.json.{Format, JsPath}
+import skuber.Resource
 import skuber.ResourceSpecification.{Names, Scope}
 import skuber.json.format.objFormat
+import skuber.json.format.resRqtsFormat
 import skuber.{ConfigMap, NonCoreResourceSpecification, ObjectMeta, ObjectResource, ResourceDefinition}
 
 import scala.util.Try
@@ -35,12 +37,16 @@ case class BakerResource(
 object BakerResource {
 
   def fromConfigMap(configMap: ConfigMap): FromConfigMapValidation[BakerResource] = {
+
     ( Utils.extractValidatedString(configMap, "image")
     , Utils.extractValidatedStringOption(configMap, "imagePullSecret")
     , Utils.extractValidatedStringOption(configMap, "serviceAccountSecret")
     , Utils.extractValidatedStringOption(configMap, "kafkaBootstrapServers")
     , Utils.extractAndParseValidated(configMap, "replicas", r => Try(r.toInt)).orElse(2.validNel): FromConfigMapValidation[Int]
     , Utils.extractListValidated(configMap, "recipes")
+    , Utils.optional(Utils.resourcesFromConfigMap(configMap))
+    , Utils.extractValidatedStringOption(configMap, "config")
+    , Utils.extractValidatedStringOption(configMap, "secrets")
     ).mapN(Spec).map(spec => BakerResource(metadata = configMap.metadata, spec = spec))
   }
 
@@ -50,7 +56,10 @@ object BakerResource {
     serviceAccountSecret: Option[String],
     kafkaBootstrapServers: Option[String],
     replicas: Int,
-    recipes: List[String]
+    recipes: List[String],
+    resources: Option[Resource.Requirements],
+    config: Option[String],
+    secrets: Option[String]
   )
 
   val specification: NonCoreResourceSpecification =
@@ -75,7 +84,10 @@ object BakerResource {
     (JsPath \ "serviceAccountSecret").formatNullableWithDefault[String](None) and
     (JsPath \ "kafkaBootstrapServers").formatNullableWithDefault[String](None) and
     (JsPath \ "replicas").formatWithDefault[Int](2) and
-    (JsPath \ "recipes").format[List[String]]
+    (JsPath \ "recipes").format[List[String]] and
+    (JsPath \ "resources").formatNullableWithDefault[Resource.Requirements](None) and
+    (JsPath \ "config").formatNullableWithDefault[String](None) and
+    (JsPath \ "secrets").formatNullableWithDefault[String](None)
   )(Spec.apply, unlift(Spec.unapply))
 
   implicit lazy val recipeResourceFormat: Format[BakerResource] = (
