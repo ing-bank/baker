@@ -1,4 +1,6 @@
-package com.ing.baker.test.scaladsl
+package com.ing.baker.test.common
+
+import com.ing.baker.test.scaladsl.Predicate
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}

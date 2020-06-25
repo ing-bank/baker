@@ -1,10 +1,11 @@
-package com.ing.baker.test.scaladsl
+package com.ing.baker.test.common
 
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 
 import com.ing.baker.runtime.common.EventInstance
 import com.ing.baker.runtime.scaladsl.{Baker, RecipeEventMetadata}
-import org.slf4j.LoggerFactory
+import com.ing.baker.test.scaladsl.BakerEventsFlow
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -12,9 +13,7 @@ import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
-class BakerAsync(baker: Baker, duration: Duration = 10 seconds) {
-
-  private val log = LoggerFactory.getLogger(getClass)
+class BakerAsync(baker: Baker, duration: Duration = 10 seconds) extends LazyLogging {
 
   private case class EventMessage(recipeInstanceId: String, eventName: String)
 
@@ -26,12 +25,12 @@ class BakerAsync(baker: Baker, duration: Duration = 10 seconds) {
 
   baker.registerEventListener((recipeEventMetadata: RecipeEventMetadata, event: EventInstance) => {
     waitForOnboarding.await(duration.toMillis, TimeUnit.MILLISECONDS)
-    log.debug("Event {} is received for processId {}", event.asInstanceOf[Any], recipeEventMetadata.asInstanceOf[Any])
+    logger.debug("Event {} is received for processId {}", event.asInstanceOf[Any], recipeEventMetadata.asInstanceOf[Any])
     while (!isEventRegistered(recipeEventMetadata.recipeInstanceId, event)) {
-      log.trace("Event {} is not yet visible in baker, waiting for 10 millis ...", event.name)
+      logger.trace("Event {} is not yet visible in baker, waiting for 10 millis ...", event.name)
       Thread.sleep(10)
     }
-    log.trace("Adding event {} to the queue", event.name)
+    logger.trace("Adding event {} to the queue", event.name)
     queue.put(EventMessage(recipeEventMetadata.recipeInstanceId, event.name))
   })
 

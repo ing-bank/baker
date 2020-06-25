@@ -36,7 +36,7 @@ class BakerAssertTest extends AnyFlatSpec with Matchers {
       baker.fireEvent(recipeInstanceId, sensoryEvent)
     }
 
-    BakerAssert.apply(baker, recipeInstanceId)
+    BakerAssert(baker, recipeInstanceId)
   }
 
   private def assertFail[T](assertion: => T): Unit =
@@ -93,7 +93,7 @@ class BakerAssertTest extends AnyFlatSpec with Matchers {
   "assertIngredient" should "work for isNull" in {
     val bakerAssert = createBakerAssert()
     assertFail(bakerAssert.waitFor(WebshopRecipe.happyFlow)
-      .assertIngredient("orderId").isNull())
+      .assertIngredient("orderId").isNull)
   }
 
   "assertIngredient" should "work for customAssert" in {

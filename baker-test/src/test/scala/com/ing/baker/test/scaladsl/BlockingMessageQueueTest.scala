@@ -3,6 +3,7 @@ package com.ing.baker.test.scaladsl
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
+import com.ing.baker.test.common.AsyncMessages
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
 
