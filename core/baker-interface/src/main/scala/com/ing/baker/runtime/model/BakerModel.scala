@@ -6,17 +6,11 @@ import com.ing.baker.il.petrinet.Transition
 import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.runtime.common.BakerException.{IllegalEventException, NoSuchProcessException, NoSuchRecipeException, ProcessAlreadyExistsException}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
-import com.ing.baker.runtime.model.Async.AsyncModelTypeSetter
+import com.ing.baker.runtime.model.AsyncOpt.AsyncModelTypeSetter
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance, RecipeInformation, SensoryEventResult}
 import com.ing.baker.petrinet.api._
-import com.ing.baker.runtime.model.BakerModel.Model
 
-object BakerModel extends AsyncModelTypeSetter[BakerModelState, BakerException] {
-
-  type Model[+A] = Async[BakerModelState, BakerException, A]
-}
-
-class BakerModel extends Baker[Model] with AsyncModelTypeSetter[BakerModelState, BakerException] {
+class BakerModel[F[_]] extends Baker[F] with  {
 
   override def addRecipe(compiledRecipe: CompiledRecipe): Model[String] =
     for {

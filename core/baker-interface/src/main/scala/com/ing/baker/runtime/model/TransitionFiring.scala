@@ -5,6 +5,7 @@ import com.ing.baker.petrinet.api.Marking
 import com.ing.baker.runtime.scaladsl.EventInstance
 
 case class TransitionFiring(id: Long,
+                            correlationId: Option[String],
                             transition: Transition,
                             consume: Marking[Place],
                             input: EventInstance,
