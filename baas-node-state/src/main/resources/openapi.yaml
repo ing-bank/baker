@@ -1,0 +1,245 @@
+swagger: '2.0'
+info:
+  description: |
+    Bakery API
+
+    Collection of APIs - baker as a service.
+    Status: draft/placeholder.
+
+  version: '3.0.4'
+  title: Bakery API
+  contact:
+    name: ING NL Apollo
+    email: apollo@ing.com
+    url: https://confluence.europe.intranet/display/APL
+host: api.ing.com
+basePath: /
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+
+paths:
+
+  GET
+  /api/bakery/app/health
+  /api/bakery/app/interactions
+  /api/bakery/app/recipes        - RecipeInformation->CompiledRecipe (?
+  /api/bakery/app/recipe/{id}    - RecipeInformation->CompiledRecipe
+
+  GET
+  /api/bakery/instances
+  /api/bakery/instance/{id}
+  /api/bakery/instance/{id}/events
+  /api/bakery/instance/{id}/ingredients
+  /api/bakery/instance/{id}/visual
+
+  POST
+  /api/bakery/instance/{id}                                                      "bake"
+  /api/bakery/instance/{id}/fire/{correlationId}/resolveWhenReceived            - EventInstance->Value / SensoryEventStatus
+  /api/bakery/instance/{id}/fire/{correlationId}/resolveWhenCompleted           - EventInstance->Value / SensoryEventResult
+  /api/bakery/instance/{id}/fire/{correlationId}/resolveOnEvent/{eventName}     - EventInstance->Value / SensoryEventResult
+  /api/bakery/instance/{id}/interaction/{name}/retry
+  /api/bakery/instance/{id}/interaction/{name}/resolve                          - EventInstance->Value
+  /api/bakery/instance/{id}/interaction/{name}/stopRetrying
+
+
+
+  /api/bakery/management/interaction:
+    get:
+      operationId: getInteractions
+      summary: 'List all configured interactions'
+      description: 'Get interactions'
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/management/recipe-instance/{recipeInstanceId}/events:
+    get:
+      operationId: getRecipeInstanceEvents
+      summary: 'Recipe instance events'
+      description: 'Get all events of a recipe instance'
+      parameters:
+        - in: path
+          name: recipeInstanceId
+          required: true
+          description: 'ID of the recipe instance'
+          type: string
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/management/recipe-instance/{recipeInstanceId}/ingredients:
+    get:
+      operationId: getRecipeInstanceEvents
+      summary: 'Recipe instance ingredients'
+      description: 'Get all ingredients of a recipe instance'
+      parameters:
+        - in: path
+          name: recipeInstanceId
+          required: true
+          description: 'ID of the recipe instance'
+          type: string
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/api/v3/health:
+    get:
+      operationId: health
+      summary: "Health check"
+      description: "State node Health check"
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/api/v3/getRecipe:
+    post:
+      operationId: getRecipe
+      summary: "Get recipe (protobuf)"
+      description: "BaaSProtocol.GetRecipeRequest -> BaaSProtocol.GetRecipeResponse"
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/api/v3/getAllRecipes:
+    get:
+      operationId: getAllRecipes
+      summary: "Get all recipes (protobuf)"
+      description: "() -> BaaSProtocol.GetAllRecipesResponse"
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/api/v3/getRecipeInstanceState:
+    post:
+      operationId: getRecipeInstanceState
+      summary: "Get all recipe instance state (protobuf)"
+      description: "BaaSProtocol.GetRecipeInstanceStateRequest ->BaaSProtocol.GetRecipeInstanceStateResponse"
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/api/v3/getVisualState:
+    post:
+      operationId: getVisualState
+      summary: "Get visual state (protobuf)"
+      description: "BaaSProtocol.GetVisualStateRequest -> BaaSProtocol.GetVisualStateResponse"
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/api/v3/bake:
+    post:
+      operationId: bake
+      summary: "Bake a new instance of the recipe (protobuf)"
+      description: "BaaSProtocol.BakeRequest -> ()"
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/api/v3/fireEventAndResolveWhenReceived:
+    post:
+      operationId: fireEventAndResolveWhenReceived
+      summary: "Fire event and resolve, when received (protobuf)"
+      description: "BaaSProtocol.FireEventAndResolveWhenReceivedRequest -> BaaSProtocol.FireEventAndResolveWhenReceivedResponse"
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/api/v3/fireEventAndResolveWhenCompleted:
+    post:
+      operationId: fireEventAndResolveWhenCompleted
+      summary: "Fire event and resolve, when completed (protobuf)"
+      description: "BaaSProtocol.FireEventAndResolveWhenCompletedRequest -> BaaSProtocol.FireEventAndResolveWhenCompletedResponse"
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/api/v3/fireEventAndResolveOnEvent:
+    post:
+      operationId: fireEventAndResolveOnEvent
+      summary: "Fire event and resolve on an event (protobuf)"
+      description: "BaaSProtocol.FireEventAndResolveOnEventRequest -> BaaSProtocol.FireEventAndResolveOnEventResponse"
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/api/v3/retryInteraction:
+    post:
+      operationId: retryInteraction
+      summary: "Retry interaction (protobuf)"
+      description: "BaaSProtocol.RetryInteractionRequest -> ())"
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/api/v3/resolveInteraction:
+    post:
+      operationId: resolveInteraction
+      summary: "Resolve interaction (protobuf)"
+      description: "BaaSProtocol.ResolveInteractionRequest -> ())"
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/api/v3/stopRetryingInteraction:
+    post:
+      operationId: resolveInteraction
+      summary: "Resolve interaction (protobuf)"
+      description: "BaaSProtocol.StopRetryingInteractionRequest -> ())"
+      responses:
+        200:
+          description: OK response
+
+definitions:
+  ClaimsSet:
+    type: object
+    properties:
+      notBeforeTimestamp:
+        type: integer
+        format: int64
+      jwtId:
+        type: string
+      issuedAtTimestamp:
+        type: integer
+        format: int64
+      expirationTimestamp:
+        type: integer
+        format: int64
+      sharedKey:
+        type: string
+      scope:
+        type: array
+        items:
+          type: string
+      issuer:
+        type: string
+      subject:
+        type: string
+      type:
+        type: string
+  Header:
+    type: object
+    properties:
+      algorithm:
+        type: string
+      contentType:
+        type: string
+      type:
+        type: string
+      keyIdentifier:
+        type: string
+      certificateFingerprint:
+        type: string
+  PeerToPeerTrustToken:
+    type: object
+    properties:
+      header:
+        $ref: '#/definitions/Header'
+      verified:
+        type: boolean
+      claimsSet:
+        $ref: '#/definitions/ClaimsSet'

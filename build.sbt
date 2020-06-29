@@ -269,6 +269,7 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
       skuber,
       http4s,
       http4sDsl,
+      http4sCirce,
       http4sServer,
       scalaKafkaClient,
       kamon,
