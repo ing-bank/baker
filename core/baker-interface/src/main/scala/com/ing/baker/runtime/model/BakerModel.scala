@@ -1,15 +1,6 @@
 package com.ing.baker.runtime.model
 
-import cats.data.State
-import com.ing.baker.il.CompiledRecipe
-import com.ing.baker.il.petrinet.Transition
-import com.ing.baker.petrinet.api.Marking
-import com.ing.baker.runtime.common.BakerException.{IllegalEventException, NoSuchProcessException, NoSuchRecipeException, ProcessAlreadyExistsException}
-import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
-import com.ing.baker.runtime.model.AsyncOpt.AsyncModelTypeSetter
-import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance, RecipeInformation, SensoryEventResult}
-import com.ing.baker.petrinet.api._
-
+/*
 class BakerModel[F[_]] extends Baker[F] with  {
 
   override def addRecipe(compiledRecipe: CompiledRecipe): Model[String] =
@@ -81,6 +72,8 @@ class BakerModel[F[_]] extends Baker[F] with  {
       }
     } yield sensoryEventResult
 
+ */
+
   /*
 private def executeTransition(transitionFiring: TransitionFiring): Model[TransitionEvent] =
   for {
@@ -132,6 +125,6 @@ private def executeTransition(transitionFiring: TransitionFiring): Model[Transit
     case ProcessEventCompletedResponse(result) =>
       Future.successful(result)
   }
-   */
 
 }
+   */
