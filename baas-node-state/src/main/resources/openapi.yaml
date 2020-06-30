@@ -9,7 +9,7 @@ info:
   version: '3.0.4'
   title: Bakery API
   contact:
-    name: ING NL Apollo
+    name: ING NL Apollohttps://gaccountrequestdatabaseapi.hyperloop-tst.pod.dcr.non-prod.ichp.ing.net/
     email: apollo@ing.com
     url: https://confluence.europe.intranet/display/APL
 host: api.ing.com
@@ -23,29 +23,96 @@ produces:
 
 paths:
 
-  GET
-  /api/bakery/app/health
-  /api/bakery/app/interactions
-  /api/bakery/app/recipes        - RecipeInformation->CompiledRecipe (?
-  /api/bakery/app/recipe/{id}    - RecipeInformation->CompiledRecipe
+  /api/bakery/app/health:
+    get:
+      operationId: health
+      summary: 'Application health check'
+      description: 'Test URL to indicate listener presence'
+      responses:
+        200:
+          description: OK response
 
-  GET
-  /api/bakery/instances
-  /api/bakery/instance/{id}
-  /api/bakery/instance/{id}/events
-  /api/bakery/instance/{id}/ingredients
-  /api/bakery/instance/{id}/visual
+  /api/bakery/app/interactions:
+    get:
+      operationId: getInteractions
+      summary: 'Get interactions'
+      description: 'List all configured interactions'
+      responses:
+        200:
+          description: OK response
 
-  POST
-  /api/bakery/instance/{id}                                                      "bake"
-  /api/bakery/instance/{id}/fire/{correlationId}/resolveWhenReceived            - EventInstance->Value / SensoryEventStatus
-  /api/bakery/instance/{id}/fire/{correlationId}/resolveWhenCompleted           - EventInstance->Value / SensoryEventResult
-  /api/bakery/instance/{id}/fire/{correlationId}/resolveOnEvent/{eventName}     - EventInstance->Value / SensoryEventResult
-  /api/bakery/instance/{id}/interaction/{name}/retry
-  /api/bakery/instance/{id}/interaction/{name}/resolve                          - EventInstance->Value
-  /api/bakery/instance/{id}/interaction/{name}/stopRetrying
+  /api/bakery/app/recipes:
+    get:
+      operationId: getRecipes
+      summary: 'Get recipes'
+      description: 'List all configured recipes'
+      responses:
+        200:
+          description: OK response
 
+  /api/bakery/app/recipe/{id}:
+    get:
+      operationId: getInteractions
+      summary: 'List all configured interactions'
+      description: 'Get interactions'
+      responses:
+        200:
+          description: OK response
 
+  /api/bakery/instance:
+    get:
+      operationId: getInteractions
+      summary: 'List all configured interactions'
+      description: 'Get interactions'
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/instance/{id}:
+    get:
+      operationId: getInteractions
+      summary: 'List all configured interactions'
+      description: 'Get interactions'
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/instance/{id}/events:
+    get:
+      operationId: getInteractions
+      summary: 'List all configured interactions'
+      description: 'Get interactions'
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/instance/{id}/ingredients:
+    get:
+      operationId: getInteractions
+      summary: 'List all configured interactions'
+      description: 'Get interactions'
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/instance/{id}/visual:
+    get:
+      operationId: getInteractions
+      summary: 'List all configured interactions'
+      description: 'Get interactions'
+      responses:
+        200:
+          description: OK response
+
+  /api/bakery/instance/{id}/bake/{recipeId}:
+    post:
+
+  /api/bakery/instance/{id}/fire/{correlationId}/resolveWhenReceived:
+  /api/bakery/instance/{id}/fire/{correlationId}/resolveWhenCompleted:
+  /api/bakery/instance/{id}/fire/{correlationId}/resolveOnEvent/{eventName}:
+  /api/bakery/instance/{id}/interaction/{name}/retry:
+  /api/bakery/instance/{id}/interaction/{name}/resolve:
+  /api/bakery/instance/{id}/interaction/{name}/stopRetrying:
 
   /api/bakery/management/interaction:
     get:

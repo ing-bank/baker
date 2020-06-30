@@ -5,19 +5,20 @@ import java.util.Base64
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
 import com.ing.baker.petrinet.api.{Marking, PetriNet}
-import com.ing.baker.runtime.common.RejectReason
-import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance}
-import com.ing.baker.runtime.serialization.EventJsonEncoders._
+import com.ing.baker.runtime.common.{BakerException, RejectReason, SensoryEventStatus}
+import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, EventMoment, RecipeInformation, RecipeInstanceMetadata, RecipeInstanceState, SensoryEventResult}
+import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.types._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.CursorOp.DownField
 import io.circe.Decoder._
 import io.circe.KeyDecoder.decodeKeyString
 import io.circe._
+import io.circe.syntax._
 import io.circe.generic.semiauto._
 import scalax.collection.immutable.Graph
 
-object EventJsonToScalaDslDecoders extends LazyLogging {
+object JsonDecoders extends LazyLogging {
 
   implicit val valuesDecoder: Decoder[Value] = (c: HCursor) => {
     c.downField(typeFieldName).as[Int].flatMap(
@@ -81,4 +82,20 @@ object EventJsonToScalaDslDecoders extends LazyLogging {
   }
 
   implicit val bakerEventDecoder: Decoder[BakerEvent] = deriveDecoder[BakerEvent]
+  implicit val recipeInformationDecoder: Decoder[RecipeInformation] = deriveDecoder[RecipeInformation]
+  implicit val recipeInstanceStateDecoder: Decoder[RecipeInstanceState] = deriveDecoder[RecipeInstanceState]
+  implicit val recipeInstanceMetadataDecoder: Decoder[RecipeInstanceMetadata] = deriveDecoder[RecipeInstanceMetadata]
+
+  implicit val sensoryEventStatusDecoder: Decoder[SensoryEventStatus] = Decoder.decodeString.map(SensoryEventStatus.valueOf)
+  implicit val sensoryEventResultDecoder: Decoder[SensoryEventResult] = deriveDecoder[SensoryEventResult]
+
+  implicit val eventMomentDecoder: Decoder[EventMoment] = deriveDecoder[EventMoment]
+  implicit val bakerResultDecoder: Decoder[BakerResult] = deriveDecoder[BakerResult]
+  implicit val bakerExceptionDecoder: Decoder[BakerException] = (c: HCursor) => {
+    for {
+      message <- c.downField("message").as[String]
+      enum <- c.downField("enum").as[Int]
+      exception <- BakerException.decode(message, `enum`).toEither.left.map(DecodingFailure.fromThrowable(_, List.empty))
+    } yield exception
+  }
 }

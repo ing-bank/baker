@@ -6,7 +6,7 @@ import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.akka.AkkaBakerConfig.KafkaEventSinkSettings
 import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance}
-import com.ing.baker.runtime.serialization.EventJsonEncoders._
+import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
 import org.apache.kafka.common.serialization.StringSerializer
