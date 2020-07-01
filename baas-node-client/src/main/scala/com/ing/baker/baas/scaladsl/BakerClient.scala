@@ -109,7 +109,7 @@ final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: Executio
                                                 event: EventInstance,
                                                 correlationId: Option[String]): Future[SensoryEventResult] =
     callRemoteBaker[SensoryEventResult](
-      POST(event, (Root / "instances" / recipeInstanceId / "fireAndResolveWhenCompleted")
+      POST(event, (Root / "instances" / recipeInstanceId / "fire-and-resolve-when-completed")
         .withOptionQueryParam("correlationId", correlationId)))
 
   /**
@@ -127,7 +127,7 @@ final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: Executio
                                                event: EventInstance,
                                                correlationId: Option[String]): Future[SensoryEventStatus] =
     callRemoteBaker[SensoryEventStatus](
-      POST(event, (Root / "instances" / recipeInstanceId / "fireAndResolveWhenReceived")
+      POST(event, (Root / "instances" / recipeInstanceId / "fire-and-resolve-when-received")
         .withOptionQueryParam("correlationId", correlationId)))
 
   /**
@@ -147,7 +147,7 @@ final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: Executio
                                           onEvent: String,
                                           correlationId: Option[String]): Future[SensoryEventResult] =
     callRemoteBaker[SensoryEventResult](
-      POST(event, (Root / "instances" / recipeInstanceId / "fireAndResolveOnEvent" / onEvent)
+      POST(event, (Root / "instances" / recipeInstanceId / "fire-and-resolve-on-event" / onEvent)
         .withOptionQueryParam("correlationId", correlationId)))
 
 
@@ -278,7 +278,7 @@ final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: Executio
     * @return
     */
   override def retryInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
-    callRemoteBaker[Unit](POST(Root / "instances" / recipeInstanceId / "retryInteraction" / interactionName))
+    callRemoteBaker[Unit](POST(Root / "instances" / recipeInstanceId / "interaction" / interactionName / "retry"))
 
   /**
     * Resolves a blocked interaction by specifying it's output.
@@ -288,7 +288,7 @@ final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: Executio
     * @return
     */
   override def resolveInteraction(recipeInstanceId: String, interactionName: String, event: EventInstance): Future[Unit] =
-    callRemoteBaker[Unit](POST(event, Root / "instances" / recipeInstanceId / "resolveInteraction" / interactionName))
+    callRemoteBaker[Unit](POST(event, Root / "instances" / recipeInstanceId / "interaction" / interactionName / "resolve"))
 
   /**
     * Stops the retrying of an interaction.
@@ -296,6 +296,6 @@ final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: Executio
     * @return
     */
   override def stopRetryingInteraction(recipeInstanceId: String, interactionName: String): Future[Unit] =
-    callRemoteBaker[Unit](POST(Root / "instances" / recipeInstanceId / "stopRetryingInteraction" / interactionName))
+    callRemoteBaker[Unit](POST(Root / "instances" / recipeInstanceId / "interaction" / interactionName / "stop-retrying"))
 
 }

@@ -78,35 +78,35 @@ final class StateNodeService private(baker: Baker, serviceDiscovery: ServiceDisc
 
       case POST -> Root / recipeInstanceId / "bake"  / recipeId => callBaker(baker.bake(recipeId, recipeInstanceId))
 
-      case req@POST -> Root / recipeInstanceId / "fireAndResolveWhenReceived" :? CorrelationId(maybeCorrelationId)  =>
+      case req@POST -> Root / recipeInstanceId / "fire-and-resolve-when-received" :? CorrelationId(maybeCorrelationId)  =>
         for {
           event <- req.as[EventInstance]
           result <- callBaker(baker.fireEventAndResolveWhenReceived(recipeInstanceId, event, maybeCorrelationId))
         } yield result
 
-      case req@POST -> Root / recipeInstanceId / "fireAndResolveWhenCompleted" :? CorrelationId(maybeCorrelationId)  =>
+      case req@POST -> Root / recipeInstanceId / "fire-and-resolve-when-completed" :? CorrelationId(maybeCorrelationId)  =>
         for {
           event <- req.as[EventInstance]
           result <- callBaker(baker.fireEventAndResolveWhenCompleted(recipeInstanceId, event, maybeCorrelationId))
         } yield result
 
-      case  req@POST -> Root / recipeInstanceId / "fireAndResolveOnEvent" / onEvent :? CorrelationId(maybeCorrelationId) =>
+      case  req@POST -> Root / recipeInstanceId / "fire-and-resolve-on-event" / onEvent :? CorrelationId(maybeCorrelationId) =>
         for {
           event <- req.as[EventInstance]
           result <- callBaker(baker.fireEventAndResolveOnEvent(recipeInstanceId, event, onEvent, maybeCorrelationId))
         } yield result
 
-      case POST -> Root / recipeInstanceId / "retryInteraction" / interactionName =>
+      case POST -> Root / recipeInstanceId / "interaction" / interactionName / "retry" =>
         for {
           result <- callBaker(baker.retryInteraction(recipeInstanceId, interactionName))
         } yield result
 
-      case POST -> Root / recipeInstanceId / "stopRetryingInteraction" / interactionName =>
+      case POST -> Root / recipeInstanceId / "interaction" / interactionName / "stop-retrying" =>
         for {
           result <- callBaker(baker.stopRetryingInteraction(recipeInstanceId, interactionName))
         } yield result
 
-      case req@POST -> Root / recipeInstanceId / "resolveInteraction" / interactionName =>
+      case req@POST -> Root / recipeInstanceId / "interaction" / interactionName / "resolve" =>
         for {
           event <- req.as[EventInstance]
           result <- callBaker(baker.resolveInteraction(recipeInstanceId, interactionName, event))
