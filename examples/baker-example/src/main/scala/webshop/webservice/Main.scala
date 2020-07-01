@@ -4,7 +4,6 @@ import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import cats.effect.concurrent.Ref
 import cats.effect.{ExitCode, IO, IOApp, Resource}
-import cats.implicits._
 import com.ing.baker.runtime.akka.AkkaBaker
 import com.ing.baker.runtime.scaladsl._
 import com.typesafe.config.ConfigFactory
@@ -12,9 +11,7 @@ import kamon.Kamon
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.log4s.Logger
 
-import scala.concurrent.duration._
-
-object Main extends IOApp {
+object Main extends IOApp.WithContext {
 
   case class SystemResources(actorSystem: ActorSystem, baker: Baker, app: WebShopService, port: Int, shuttingDown: Ref[IO, Boolean])
 
@@ -57,7 +54,7 @@ object Main extends IOApp {
 
       sys.addShutdownHook(r.baker.gracefulShutdown())
 
-      BlazeServerBuilder[IO]
+      BlazeServerBuilder[IO](executionContext)
         .bindHttp(r.port, "0.0.0.0")
         .withHttpApp(r.app.buildHttpService(r.shuttingDown))
         .resource

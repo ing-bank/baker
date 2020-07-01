@@ -1,8 +1,8 @@
 package com.ing.baker.baas.interaction
 
-import java.net.{InetSocketAddress, URLDecoder}
+import java.net.InetSocketAddress
 
-import cats.effect.{ConcurrentEffect, ContextShift, IO, Resource, Timer}
+import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.baas.interaction.BakeryHttp.ProtoEntityEncoders._
 import com.ing.baker.baas.protocol.InteractionSchedulingProto._
 import com.ing.baker.baas.protocol.ProtocolInteractionExecution
