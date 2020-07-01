@@ -380,7 +380,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       _ <- Resource.liftF(eventListener.eventSink.attach(baker))
       _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(getResourceDirectoryPathSafe, baker))
 
-      server <- StateNodeService.resource(baker, getResourceDirectoryPathSafe, InetSocketAddress.createUnresolved("127.0.0.1", 0), serviceDiscovery)
+      server <- StateNodeService.resource(baker, InetSocketAddress.createUnresolved("127.0.0.1", 0), serviceDiscovery)
       client <- BakerClient.resource(server.baseUri, executionContext)
 
     } yield Context(

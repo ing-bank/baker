@@ -18,13 +18,13 @@ import org.http4s.server.{Router, Server}
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.runtime.serialization.JsonDecoders._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 object StateNodeService {
 
-  def resource(baker: Baker, recipeDirectory: String, hostname: InetSocketAddress, serviceDiscovery: ServiceDiscovery)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
+  def resource(baker: Baker, hostname: InetSocketAddress, serviceDiscovery: ServiceDiscovery)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
     for {
-      binding <- BlazeServerBuilder[IO]
+      binding <- BlazeServerBuilder[IO](ec)
         .bindSocketAddress(hostname)
         .withHttpApp(new StateNodeService(baker, serviceDiscovery).build)
         .resource

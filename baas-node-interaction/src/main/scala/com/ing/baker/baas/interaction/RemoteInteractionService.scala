@@ -2,7 +2,7 @@ package com.ing.baker.baas.interaction
 
 import java.net.{InetSocketAddress, URLDecoder}
 
-import cats.effect.{ContextShift, IO, Resource, Timer}
+import cats.effect.{ConcurrentEffect, ContextShift, IO, Resource, Timer}
 import com.ing.baker.baas.interaction.BakeryHttp.ProtoEntityEncoders._
 import com.ing.baker.baas.protocol.InteractionSchedulingProto._
 import com.ing.baker.baas.protocol.ProtocolInteractionExecution
@@ -13,10 +13,12 @@ import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.{Router, Server}
 
+import scala.concurrent.ExecutionContext
+
 object RemoteInteractionService {
 
-  def resource(interactions: List[InteractionInstance], address: InetSocketAddress)(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] =
-    BlazeServerBuilder[IO]
+  def resource(interactions: List[InteractionInstance], address: InetSocketAddress)(implicit timer: Timer[IO], cs: ContextShift[IO], ec: ExecutionContext): Resource[IO, Server[IO]] =
+    BlazeServerBuilder[IO](ec)
       .bindSocketAddress(address)
       .withHttpApp(new RemoteInteractionService(interactions).build)
       .resource
