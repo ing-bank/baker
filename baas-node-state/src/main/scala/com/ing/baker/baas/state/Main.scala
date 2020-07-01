@@ -39,7 +39,7 @@ object Main extends IOApp with LazyLogging {
       ActorSystem("BaaSStateNodeSystem", config)
     implicit val materializer: Materializer =
       ActorMaterializer()
-    val connectionPool: ExecutionContext =
+    implicit val connectionPool: ExecutionContext =
       ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
     val hostname: InetSocketAddress =
       InetSocketAddress.createUnresolved("0.0.0.0", httpServerPort)
@@ -64,7 +64,7 @@ object Main extends IOApp with LazyLogging {
           callback(Right(()))
         }
       })
-      _ <- StateNodeService.resource(baker, recipeDirectory, hostname, serviceDiscovery)
+      _ <- StateNodeService.resource(baker, hostname, serviceDiscovery)
     } yield ()
 
     mainResource.use(_ => IO.never).as(ExitCode.Success)

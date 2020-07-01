@@ -1,0 +1,458 @@
+swagger: '2.0'
+info:
+  description: |
+    Bakery API
+
+    Collection of APIs - for Bakery - Baker as a service.
+    Fully compatible with Touchpoint service mesh.
+
+    Status: draft/placeholder.
+
+
+    Not all object structures are described in depth yet (definitions section will be enhanced, eventually).
+    Keep watching this, as other changes may follow soon.
+
+
+  version: '3.0.4'
+  title: Bakery API
+  contact:
+    name: ING NL Apollo
+    email: apollo@ing.com
+    url: https://confluence.europe.intranet/display/APL
+host: api.ing.com
+basePath: /
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+
+paths:
+
+  /api/bakery/app/health:
+    get:
+      operationId: health
+      summary: 'Application health check'
+      description: 'Test URL to indicate listener presence'
+      responses:
+        200:
+          description: OK response
+        404:
+          description: 'Not Found'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+        500:
+          description: 'Internal Server Error'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+
+  /api/bakery/app/interactions:
+    get:
+      operationId: getInteractions
+      summary: 'Get all configured interactions'
+      description: 'List all configured interactions'
+      responses:
+        200:
+          description: OK response
+        404:
+          description: 'Not Found'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+        500:
+          description: 'Internal Server Error'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+
+  /api/bakery/app/recipes:
+    get:
+      operationId: getRecipes
+      summary: 'Get all configured recipes'
+      description: 'List all configured recipes'
+      responses:
+        200:
+          description: OK response
+        404:
+          description: 'Not Found'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+        500:
+          description: 'Internal Server Error'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+
+  /api/bakery/app/recipes/{id}:
+    get:
+      operationId: getRecipe
+      summary: 'Get all configured interactions'
+      description: 'List all configured interactions'
+      parameters:
+        - in: path
+          name: id
+          type: string
+          required: true
+          description: 'Recipe ID'
+      responses:
+        200:
+          description: OK response
+        404:
+          description: 'Not Found'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+        500:
+          description: 'Internal Server Error'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+
+  /api/bakery/instances:
+    get:
+      operationId: getInstances
+      summary: 'Get instances of the recipes'
+      description: 'List all active recipe instances'
+      responses:
+        200:
+          description: OK response
+        404:
+          description: 'Not Found'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+        500:
+          description: 'Internal Server Error'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+
+  /api/bakery/instances/{id}:
+    get:
+      operationId: getRecipeInstance
+      summary: 'Get recipe instance state'
+      description: 'Get the full state of a recipe instance'
+      parameters:
+        - in: path
+          name: id
+          type: string
+          required: true
+          description: 'Recipe instance ID'
+      responses:
+        200:
+          description: OK response
+        404:
+          description: 'Not Found'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+        500:
+          description: 'Internal Server Error'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+
+  /api/bakery/instances/{id}/events:
+    get:
+      operationId: getRecipeInstanceEvents
+      summary: 'Events of the recipe instance'
+      description: 'List all events of the recipe instance'
+      parameters:
+        - in: path
+          name: id
+          type: string
+          required: true
+          description: 'Recipe instance ID'
+      responses:
+        200:
+          description: OK response
+        404:
+          description: 'Not Found'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+        500:
+          description: 'Internal Server Error'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+
+  /api/bakery/instances/{id}/ingredients:
+    get:
+      operationId: getRecipeInstanceIngredients
+      summary: 'Ingredients of the recipe instance'
+      description: 'List all ingredients of the recipe instance'
+      parameters:
+        - in: path
+          name: id
+          type: string
+          required: true
+          description: 'Recipe instance ID'
+      responses:
+        200:
+          description: OK response
+        404:
+          description: 'Not Found'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+        500:
+          description: 'Internal Server Error'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+
+  /api/bakery/instances/{id}/visual:
+    get:
+      operationId: getRecipeInstanceVisualRepresentation
+      summary: 'Visual representation of the recipe instance'
+      description: 'SVG visual representation of the recipe instance'
+      parameters:
+        - in: path
+          name: id
+          type: string
+          required: true
+          description: 'Recipe instance ID'
+      responses:
+        200:
+          description: OK response
+        404:
+          description: 'Not Found'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+        500:
+          description: 'Internal Server Error'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+
+  /api/bakery/instances/{id}/bake/{recipeId}:
+    post:
+      operationId: bakeRecipe
+      summary: 'Create new recipe instance'
+      description: 'Create new instance of the given recipe.'
+      parameters:
+        - in: path
+          name: id
+          type: string
+          required: true
+          description: 'Recipe instance ID'
+        - in: path
+          name: recipeId
+          type: string
+          required: true
+          description: 'Recipe ID'
+      responses:
+        200:
+          description: OK response
+        404:
+          description: 'Not Found'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+        500:
+          description: 'Internal Server Error'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+
+  /api/bakery/instances/{id}/fire-and-resolve-when-received:
+    post:
+      operationId: fireAndResolveWhenReceived
+      summary: 'Fire and resolve when received'
+      description: 'Fire event and resolve, when event is received'
+      parameters:
+        - in: path
+          name: id
+          type: string
+          required: true
+          description: 'Recipe instance ID'
+        - in: body
+          name: event
+          description: 'Inbound event'
+          schema:
+            $ref: '#/definitions/Event'
+          required: true
+        - in: query
+          type: string
+          name: correlationId
+          required: false
+          description: 'Event correlation ID'
+      responses:
+        200:
+          description: OK response
+        404:
+          description: 'Not Found'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+        500:
+          description: 'Internal Server Error'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+
+  /api/bakery/instances/{id}/fire-and-resolve-when-completed:
+    post:
+      operationId: fireAndResolveWhenCompleted
+      summary: 'Fire and resolve when completed'
+      description: 'Fire event and resolve, when event processing is completed'
+      parameters:
+        - in: path
+          name: id
+          type: string
+          required: true
+          description: 'Recipe instance ID'
+        - in: body
+          name: event
+          description: 'Inbound event'
+          schema:
+            $ref: '#/definitions/Event'
+          required: true
+        - in: query
+          type: string
+          name: correlationId
+          required: false
+          description: 'Event correlation ID'
+      responses:
+        200:
+          description: OK response
+        404:
+          description: 'Not Found'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+        500:
+          description: 'Internal Server Error'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+
+
+  /api/bakery/instances/{id}/fire-and-resolve-on-event/{eventName}:
+    post:
+      operationId: fireAndResolveOnEvent
+      summary: 'Fire and resolve on event'
+      description: 'Fire event and resolve, when certain event happens down the processing line.'
+      parameters:
+        - in: path
+          name: id
+          type: string
+          required: true
+          description: 'Recipe instance ID'
+        - in: body
+          name: event
+          description: 'Inbound event'
+          schema:
+            $ref: '#/definitions/Event'
+          required: true
+        - in: path
+          name: eventName
+          type: string
+          required: true
+          description: 'Name of the event to resolve on'
+        - in: query
+          type: string
+          name: correlationId
+          required: false
+          description: 'Event correlation ID'
+      responses:
+        200:
+          description: OK response
+        404:
+          description: 'Not Found'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+        500:
+          description: 'Internal Server Error'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+
+  /api/bakery/instances/{id}/interaction/{interactionName}/retry:
+    post:
+      operationId: retryInteraction
+      summary: 'Retry an interaction'
+      description: 'Force retrying of a given interaction'
+      parameters:
+        - in: path
+          name: id
+          type: string
+          required: true
+          description: 'Recipe instance ID'
+        - in: path
+          name: interactionName
+          type: string
+          required: true
+          description: 'Interaction name'
+        - in: query
+          type: string
+          name: correlationId
+          required: false
+          description: 'Event correlation ID'
+      responses:
+        200:
+          description: OK response
+        404:
+          description: 'Not Found'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+        500:
+          description: 'Internal Server Error'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+
+  /api/bakery/instances/{id}/interaction/{interactionName}/resolve:
+    post:
+      operationId: resolveInteraction
+      summary: 'Force interaction to resolve'
+      description: 'Resolve a given interaction'
+      parameters:
+        - in: path
+          name: id
+          type: string
+          required: true
+          description: 'Recipe instance ID'
+        - in: path
+          name: interactionName
+          type: string
+          required: true
+          description: 'Interaction name'
+        - in: body
+          name: event
+          description: 'Inbound event'
+          schema:
+            $ref: '#/definitions/Event'
+          required: true
+      responses:
+        200:
+          description: OK response
+        404:
+          description: 'Not Found'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+        500:
+          description: 'Internal Server Error'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+
+  /api/bakery/instances/{id}/interaction/{interactionName}/stop-retrying:
+    post:
+      operationId: stopRetryingInteraction
+      summary: 'Stop retrying interaction'
+      description: 'Stop retrying of a given interaction'
+      parameters:
+        - in: path
+          name: id
+          type: string
+          required: true
+          description: 'Recipe instance ID'
+        - in: path
+          name: interactionName
+          type: string
+          required: true
+          description: 'Interaction name'
+      responses:
+        200:
+          description: OK response
+        404:
+          description: 'Not Found'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+        500:
+          description: 'Internal Server Error'
+          schema:
+            $ref: https://api.touchpoint.ing.net/schemas/error/1.0
+
+# definitions are just sketches for now
+definitions:
+  Event:
+    type: object
+    required:
+      - name
+      - providedIngredients
+    properties:
+      name:
+        type: string
+      providedIngredients:
+        type: object

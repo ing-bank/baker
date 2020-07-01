@@ -28,7 +28,7 @@ object Main extends IOApp {
       ActorMaterializer()
     val k8s: KubernetesClient =
       skuber.k8sInit
-    val connectionPool =
+    implicit val connectionPool =
       ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
 
     (for {

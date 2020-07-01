@@ -4,8 +4,8 @@ import sbt._
 object Dependencies {
 
   val akkaVersion = "2.5.29"
-  val akkaManagementVersion = "1.0.6"
-  val http4sVersion = "0.21.3"
+  val akkaManagementVersion = "1.0.8"
+  val http4sVersion = "0.21.6"
   val circeVersion = "0.13.0"
 
   val jvmV = "1.8"
@@ -18,7 +18,7 @@ object Dependencies {
       .exclude("com.typesafe.akka", "akka-stream")
 
   val scalaJava8Compat =          "org.scala-lang.modules"     %% "scala-java8-compat"                 % "0.9.1"
-  val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.1.2"
+  val scalaTest =                 "org.scalatest"              %% "scalatest"                          % "3.2.0"
   val mockito =                   "org.mockito"                %  "mockito-all"                        % "1.10.19"
   val mockServer =                "org.mock-server"            %  "mockserver-netty"                   % "5.10"
   val junitInterface =            "com.novocode"               %  "junit-interface"                    % "0.11"
@@ -52,11 +52,11 @@ object Dependencies {
 
   val scalaGraph  =               "org.scala-graph"            %% "graph-core"                         % "1.13.1"
   val scalaGraphDot =             "org.scala-graph"            %% "graph-dot"                          % "1.13.0"
-  val graphvizJava =              "guru.nidi"                  %  "graphviz-java"                      % "0.16.0"
+  val graphvizJava =              "guru.nidi"                  %  "graphviz-java"                      % "0.16.3"
 
-  val kamon =                     "io.kamon"                   %% "kamon-bundle"                       % "2.1.0"
-  val kamonAkka =                 "io.kamon"                   %% "kamon-akka"                         % "2.1.0"
-  val kamonPrometheus =           "io.kamon"                   %% "kamon-prometheus"                   % "2.1.0"
+  val kamon =                     "io.kamon"                   %% "kamon-bundle"                       % "2.1.1"
+  val kamonAkka =                 "io.kamon"                   %% "kamon-akka"                         % "2.1.1"
+  val kamonPrometheus =           "io.kamon"                   %% "kamon-prometheus"                   % "2.1.1"
 
   val skuber =                    "io.skuber"                  %% "skuber"                             % "2.4.0"
   val http4s =                    "org.http4s"                 %% "http4s-core"                        % http4sVersion
@@ -83,9 +83,9 @@ object Dependencies {
 
   val scalapbRuntime =            "com.thesamet.scalapb"       %% "scalapb-runtime"                    % scalapbVersion % "protobuf"
 
-  val protobufJava =              "com.google.protobuf"        % "protobuf-java"                       % "3.11.4"
+  val protobufJava =              "com.google.protobuf"        % "protobuf-java"                       % "3.12.2"
 
-  val betterFiles =               "com.github.pathikrit"       %% "better-files"                       % "3.8.0"
+  val betterFiles =               "com.github.pathikrit"       %% "better-files"                       % "3.9.1"
 
   val typeSafeConfig =            "com.typesafe"               % "config"                              % "1.4.0"
 

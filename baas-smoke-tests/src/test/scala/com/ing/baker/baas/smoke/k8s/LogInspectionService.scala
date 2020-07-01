@@ -13,6 +13,7 @@ import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 
+import scala.concurrent.ExecutionContext
 import scala.sys.process._
 
 object LogInspectionService {
@@ -92,10 +93,10 @@ object LogInspectionService {
   }
 
 
-  def resource(testsName: String, hostname: InetSocketAddress, awaitLock: Boolean)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Inspector] = {
+  def resource(testsName: String, hostname: InetSocketAddress, awaitLock: Boolean)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Inspector] = {
     for {
       state <- Resource.liftF(Inspector.empty)
-      _ <- BlazeServerBuilder[IO]
+      _ <- BlazeServerBuilder[IO](ec)
         .bindSocketAddress(hostname)
         .withHttpApp(new LogInspectionService(testsName, state).build)
         .resource

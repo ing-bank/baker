@@ -213,17 +213,6 @@ lazy val recipeCompiler = project.in(file("compiler"))
   )
   .dependsOn(recipeDsl, intermediateLanguage, testScope(recipeDsl))
 
-lazy val `baas-protocol-baker` = project.in(file("baas-protocol-baker"))
-  .settings(defaultModuleSettings)
-  .settings(scalaPBSettings)
-  .settings(
-    moduleName := "baas-protocol-baker",
-    libraryDependencies ++= Seq(
-      http4s,
-      http4sDsl
-    )
-  )
-  .dependsOn(`baker-interface`)
 
 lazy val `baas-protocol-interaction-scheduling` = project.in(file("baas-protocol-interaction-scheduling"))
   .settings(defaultModuleSettings)
@@ -245,10 +234,11 @@ lazy val `baas-node-client` = project.in(file("baas-node-client"))
     libraryDependencies ++= Seq(
       http4s,
       http4sDsl,
-      http4sClient
+      http4sClient,
+      http4sCirce
     )
   )
-  .dependsOn(`baker-interface`, `baas-protocol-baker`)
+  .dependsOn(`baker-interface`)
 
 lazy val `baas-node-state` = project.in(file("baas-node-state"))
   .enablePlugins(JavaAppPackaging)
@@ -269,6 +259,7 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
       skuber,
       http4s,
       http4sDsl,
+      http4sCirce,
       http4sServer,
       scalaKafkaClient,
       kamon,
@@ -290,7 +281,6 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
   .dependsOn(
     runtime,
     `baas-node-client`,
-    `baas-protocol-baker`,
     `baas-protocol-interaction-scheduling`,
     recipeCompiler, recipeDsl, intermediateLanguage
   )
@@ -349,7 +339,7 @@ lazy val `bakery-controller` = project.in(file("bakery-controller"))
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver,
-    `baas-node-client`, `baas-node-state`, `baas-node-interaction`, `baas-protocol-interaction-scheduling`, `baas-protocol-baker`,
+    `baas-node-client`, `baas-node-state`, `baas-node-interaction`, `baas-protocol-interaction-scheduling`,
     `sbt-baas-docker-generate`,
     `baker-interface`, `bakery-controller`)
 

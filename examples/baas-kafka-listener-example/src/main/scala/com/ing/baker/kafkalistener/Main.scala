@@ -2,7 +2,7 @@ package com.ing.baker.kafkalistener
 
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
-import com.ing.baker.runtime.serialization.EventJsonToScalaDslDecoders
+import com.ing.baker.runtime.serialization.JsonDecoders
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import fs2.kafka._
@@ -30,8 +30,8 @@ object Main extends IOApp with LazyLogging {
 
     val eventProcessor = Class.forName(clientConfig.`event-processor-class`).getConstructor().newInstance().asInstanceOf[EventProcessor]
 
-    val bakerEventsDecoder = EventJsonToScalaDslDecoders.bakerEventDecoder
-    val eventInstanceDecoder = EventJsonToScalaDslDecoders.eventInstanceDecoder
+    val bakerEventsDecoder = JsonDecoders.bakerEventDecoder
+    val eventInstanceDecoder = JsonDecoders.eventInstanceDecoder
 
     def processIncomingMessage[A](rawMessage: String, decode: Json => Decoder.Result[A], process: A => Unit, failure: (String, String) => Unit): Unit = {
       parse(rawMessage).leftMap(_.message) match {

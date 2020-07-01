@@ -16,8 +16,9 @@ object RemoteInteractionLoader {
 
     val address = InetSocketAddress.createUnresolved("0.0.0.0", port)
 
-    implicit val contextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.Implicits.global)
-    implicit val timer: Timer[IO] = IO.timer(ExecutionContext.Implicits.global)
+    implicit val executionContext = ExecutionContext.Implicits.global
+    implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContext)
+    implicit val timer: Timer[IO] = IO.timer(executionContext)
 
     RemoteInteractionService
       .resource(implementations, address)

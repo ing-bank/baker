@@ -4,8 +4,8 @@ import java.util.Base64
 
 import com.ing.baker.il.CompiledRecipe
 import com.ing.baker.il.failurestrategy.ExceptionStrategyOutcome
-import com.ing.baker.runtime.common.RejectReason
-import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance}
+import com.ing.baker.runtime.common.{BakerException, RejectReason, SensoryEventStatus}
+import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, EventMoment, SensoryEventResult}
 import com.ing.baker.types
 import io.circe.Encoder._
 import io.circe._
@@ -14,7 +14,7 @@ import io.circe.syntax._
 
 import scala.collection.JavaConverters._
 
-object EventJsonEncoders {
+object JsonEncoders {
 
   private[serialization] val typeFieldName: String = "typ"
   private[serialization] val subTypeFieldName: String = "styp"
@@ -53,15 +53,28 @@ object EventJsonEncoders {
     }
 
   implicit val eventInstanceEncoder: Encoder[EventInstance] = deriveEncoder[EventInstance]
+  implicit val eventMomentEncoder: Encoder[EventMoment] = deriveEncoder[EventMoment]
+
   implicit val rejectReasonEncoder: Encoder[RejectReason] = encodeString.contramap(_.toString)
   implicit val exceptionEncoder: Encoder[ExceptionStrategyOutcome] = deriveEncoder[ExceptionStrategyOutcome]
   implicit val throwableEncoder: Encoder[Throwable] = (throwable: Throwable) => Json.obj(("error", Json.fromString(throwable.getMessage)))
   implicit val compiledRecipeEncoder: Encoder[CompiledRecipe] =
   // TODO: write PetriNet and Marking to json
     (recipe: CompiledRecipe) => Json.obj(
-      ("name", Json.fromString(recipe.name)),
-      ("recipeId", Json.fromString(recipe.recipeId)),
-      ("validationErrors", recipe.getValidationErrors.asScala.asJson))
+      "name" -> recipe.name.asJson,
+      "recipeId" -> recipe.recipeId.asJson,
+      "validationErrors" -> recipe.getValidationErrors.asScala.asJson
+    )
 
   implicit val bakerEventEncoder: Encoder[BakerEvent] = deriveEncoder[BakerEvent]
+  implicit val sensoryEventStatusEncoder: Encoder[SensoryEventStatus] = (s: SensoryEventStatus) => Encoder.encodeString.apply(s.toString)
+  implicit val sensoryEventResultEncoder: Encoder[SensoryEventResult] = deriveEncoder[SensoryEventResult]
+  implicit val bakerResultEncoder: Encoder[BakerResult] = deriveEncoder[BakerResult]
+  implicit val bakerExceptionEncoder: Encoder[BakerException] = (e: BakerException) => {
+    val (message, enum) = BakerException.encode(e)
+    Json.obj(
+      "enum" -> `enum`.asJson,
+      "message"-> message.asJson
+    )
+  }
 }
