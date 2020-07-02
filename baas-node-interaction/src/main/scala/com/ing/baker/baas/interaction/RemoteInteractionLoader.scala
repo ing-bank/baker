@@ -21,7 +21,7 @@ object RemoteInteractionLoader {
     implicit val timer: Timer[IO] = IO.timer(executionContext)
 
     RemoteInteractionService
-      .resource(implementations, address)
+      .resource(implementations, address, RemoteInteractionService.TLSConfig("changeit", "test-certs/interaction.ing-bank.github.io.jks"))
       .use(_ => IO.never)
       .unsafeRunAsyncAndForget()
   }

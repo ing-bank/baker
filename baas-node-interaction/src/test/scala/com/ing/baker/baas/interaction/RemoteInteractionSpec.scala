@@ -35,8 +35,8 @@ class RemoteInteractionSpec extends BakeryFunSpec {
    */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] = {
     val context = Context({ interaction => runTest =>
-      RemoteInteractionService.resource(interaction, InetSocketAddress.createUnresolved("localhost", 0))
-        .flatMap(server => RemoteInteractionClient.resource(server.baseUri, executionContext))
+      RemoteInteractionService.resource(interaction, InetSocketAddress.createUnresolved("localhost", 0), RemoteInteractionService.TLSConfig("changeit", "test-certs/interaction.ing-bank.github.io.jks"))
+        .flatMap(server => RemoteInteractionClient.resource(server.baseUri, executionContext, RemoteInteractionClient.TLSConfig("changeit", "test-certs/client.interaction.ing-bank.github.io.jks")))
         .use(runTest)
     })
     Resource.pure[IO, Context](context)

@@ -1,5 +1,8 @@
 package com.ing.baker.baas.interaction
 
+import java.io.InputStream
+import java.security.{KeyStore, SecureRandom}
+
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import com.ing.baker.baas.interaction.BakeryHttp.Headers.{Intent, `X-Bakery-Intent`}
 import com.ing.baker.baas.interaction.BakeryHttp.ProtoEntityEncoders._
@@ -10,6 +13,7 @@ import com.ing.baker.baas.protocol.ProtocolInteractionExecution.InstanceInterfac
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance}
 import com.ing.baker.runtime.serialization.ProtoMap
 import com.ing.baker.types.Type
+import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 import org.http4s.Method._
 import org.http4s.Uri
 import org.http4s.client.Client
@@ -32,11 +36,33 @@ object RemoteInteractionClient {
       ProtoMap.decode64(str)(interfacesProto).map(_.interfaces.map(i => InteractionEndpoint(id = i.id, name = i.name, interface = i.input)))
   }
 
+  case class TLSConfig(password: String, keystorePath: String)
+
+  def loadSSLContext(config: TLSConfig): SSLContext = {
+    val password: Array[Char] = config.password.toCharArray
+
+    val ks: KeyStore = KeyStore.getInstance("JKS")
+    val keystore: InputStream = getClass.getClassLoader.getResourceAsStream(config.keystorePath)
+
+    require(keystore != null, "Keystore required!")
+    ks.load(keystore, password)
+
+    val keyManagerFactory: KeyManagerFactory = KeyManagerFactory.getInstance("SunX509")
+    keyManagerFactory.init(ks, password)
+
+    val tmf: TrustManagerFactory = TrustManagerFactory.getInstance("SunX509")
+    tmf.init(ks)
+
+    val sslContext: SSLContext = SSLContext.getInstance("TLS")
+    sslContext.init(keyManagerFactory.getKeyManagers, tmf.getTrustManagers, new SecureRandom)
+    sslContext
+  }
+
   /** use method `use` of the Resource, the client will be acquired and shut down automatically each time
    * the resulting `IO` is run, each time using the common connection pool.
    */
-  def resource(hostname: Uri, pool: ExecutionContext)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, RemoteInteractionClient] =
-    BlazeClientBuilder[IO](pool)
+  def resource(hostname: Uri, pool: ExecutionContext, tlsConfig: TLSConfig)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, RemoteInteractionClient] =
+    BlazeClientBuilder[IO](pool, Some(loadSSLContext(tlsConfig)))
       .resource
       .map(new RemoteInteractionClient(_, hostname))
 }
