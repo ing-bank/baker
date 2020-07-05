@@ -152,10 +152,10 @@ case class RecipeInstanceCore[F[_]](
 
           def interactionInput: Seq[IngredientInstance] = {
             // the process id is a special ingredient that is always available
-            val recipeInstanceId: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(recipeInstanceId)
-            val processId: (String, Value) = il.processIdName -> PrimitiveValue(recipeInstanceId)
+            val recipeInstanceIdIngredient: (String, Value) = il.recipeInstanceIdName -> PrimitiveValue(recipeInstanceId)
+            val processIdIngredient: (String, Value) = il.processIdName -> PrimitiveValue(recipeInstanceId)
             // a map of all ingredients
-            val allIngredients: Map[String, Value] = interaction.predefinedParameters ++ ingredients + recipeInstanceId + processId
+            val allIngredients: Map[String, Value] = interaction.predefinedParameters ++ ingredients + recipeInstanceIdIngredient + processIdIngredient
             // arranges the ingredients in the expected order
             interaction.requiredIngredients.map {
               case IngredientDescriptor(name, _) =>
