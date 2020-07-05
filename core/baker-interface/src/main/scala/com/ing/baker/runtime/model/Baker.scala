@@ -1,11 +1,9 @@
 package com.ing.baker.runtime.model
 
-import cats.data.EitherT
-import cats.{Functor, MonadError}
+import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
 import cats.implicits._
-import cats.effect.{Async, ConcurrentEffect, ContextShift, IO, Timer}
-import com.ing.baker.il.{CompiledRecipe, EventDescriptor}
-import com.ing.baker.il.petrinet.{InteractionTransition, Transition}
+import com.ing.baker.il.CompiledRecipe
+import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.common
 import com.ing.baker.runtime.common.BakerException.{IllegalEventException, NoSuchProcessException, NoSuchRecipeException, ProcessAlreadyExistsException}
 import com.ing.baker.runtime.common.LanguageDataStructures.ScalaApi
@@ -142,10 +140,11 @@ abstract class RecipeInstanceManager[F[_]](implicit eff: ConcurrentEffect[F]) {
 
   def fireEventAndResoleWhenReceived(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): F[Either[FireSensoryEventRejection, SensoryEventStatus]]
 
-  def fireEventAndResoleWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String], waitForRetries: Boolean): F[Either[FireSensoryEventRejection, SensoryEventStatus]]
+  def fireEventAndResoleWhenCompleted(recipeInstanceId: String, event: EventInstance, correlationId: Option[String], waitForRetries: Boolean): F[Either[FireSensoryEventRejection, SensoryEventResult]]
 
-  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String], waitForRetries: Boolean, onEvent: String): F[Either[FireSensoryEventRejection, SensoryEventStatus]]
+  def fireEventAndResolveOnEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String], waitForRetries: Boolean, onEvent: String): F[Either[FireSensoryEventRejection, SensoryEventResult]]
 
+  /*
   type FireEventValidation[A] = EitherT[F, FireSensoryEventRejection, A]
 
   def reject[A](rejection: FireSensoryEventRejection): FireEventValidation[A] =
@@ -193,6 +192,7 @@ abstract class RecipeInstanceManager[F[_]](implicit eff: ConcurrentEffect[F]) {
       }
     } yield ()
   }
+   */
 
   /*
   for {
@@ -257,6 +257,8 @@ private def executeTransition(transitionFiring: TransitionFiring): F[TransitionE
    */
 }
 
+/* This is going great, except `EventResolutions` and `Interactioninstance` should be parametriced on the effect type F[_], now are set to Future, this has some implications
+
 abstract class Baker[F[_]](recipeManager: RecipeManager[F],
                            interactionManager: InteractionManager[F],
                            recipeInstanceManager: RecipeInstanceManager[F])
@@ -268,7 +270,7 @@ abstract class Baker[F[_]](recipeManager: RecipeManager[F],
 
   override type EventInstanceType = EventInstance
 
-  override type RecipeInstanceStateType = RecipeInstanceCore
+  override type RecipeInstanceStateType = RecipeInstanceState
 
   override type InteractionInstanceType = InteractionInstance
 
@@ -388,6 +390,7 @@ abstract class Baker[F[_]](recipeManager: RecipeManager[F],
   override def fireEvent(recipeInstanceId: String, event: EventInstance, correlationId: Option[String]): EventResolutions = ???
 
 
+
   /*
   processIndexActor.ask(ProcessEvent(
     recipeInstanceId = recipeInstanceId,
@@ -413,3 +416,4 @@ abstract class Baker[F[_]](recipeManager: RecipeManager[F],
   }
    */
 }
+ */
