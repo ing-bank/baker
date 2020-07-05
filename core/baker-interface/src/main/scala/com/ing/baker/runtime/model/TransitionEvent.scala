@@ -12,6 +12,7 @@ object TransitionEvent {
 
   case class Fired(transitionFiringId: Long,
                    transitionId: Long,
+                   correlationId: Option[String],
                    timeStarted: Long,
                    timeCompleted: Long,
                    consumed: Marking[Long],
