@@ -12,6 +12,6 @@
 
     <logger name="org.mockserver.log.MockServerEventLog" level="OFF"/>
 
-    <logger level="ERROR" name="org.http4s"/>
+    <logger name="org.http4s" level="OFF"/>
 
 </configuration>

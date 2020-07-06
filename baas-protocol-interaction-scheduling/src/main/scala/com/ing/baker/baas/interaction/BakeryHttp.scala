@@ -1,8 +1,13 @@
 package com.ing.baker.baas.interaction
 
+import java.io.{File, FileInputStream, InputStream}
+import java.security.{KeyStore, SecureRandom}
+
 import cats.data.EitherT
 import cats.effect.IO
+import com.ing.baker.baas.interaction.RemoteInteractionClient.getClass
 import com.ing.baker.runtime.serialization.ProtoMap
+import javax.net.ssl.{KeyManagerFactory, SSLContext, TrustManagerFactory}
 import org.http4s.EntityDecoder.collectBinary
 import org.http4s.util.CaseInsensitiveString
 import org.http4s._
@@ -10,6 +15,34 @@ import org.http4s._
 import scala.util.{Failure, Success, Try}
 
 object BakeryHttp {
+
+  case class TLSConfig(password: String, keystorePath: String, keystoreType: String)
+
+  def loadSSLContext(config: TLSConfig): SSLContext = {
+    val password: Array[Char] = config.password.toCharArray
+
+    // Try resource directory as root first
+    val ks: KeyStore = KeyStore.getInstance(config.keystoreType)
+    val keystoreResource: InputStream = getClass.getClassLoader.getResourceAsStream(config.keystorePath)
+
+    // Otherwise try absolute path
+    val keystore: InputStream =
+      if(keystoreResource == null) new FileInputStream(new File(config.keystorePath))
+      else keystoreResource
+
+    require(keystore != null, s"Keystore of type '${config.keystoreType}' not found on path '${config.keystorePath}', tried classpath resources and then absolute path")
+    ks.load(keystore, password)
+
+    val keyManagerFactory: KeyManagerFactory = KeyManagerFactory.getInstance("SunX509")
+    keyManagerFactory.init(ks, password)
+
+    val tmf: TrustManagerFactory = TrustManagerFactory.getInstance("SunX509")
+    tmf.init(ks)
+
+    val sslContext: SSLContext = SSLContext.getInstance("TLS")
+    sslContext.init(keyManagerFactory.getKeyManagers, tmf.getTrustManagers, new SecureRandom)
+    sslContext
+  }
 
   object ProtoEntityEncoders {
 

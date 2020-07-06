@@ -16,7 +16,7 @@ import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, Object
 
 import scala.concurrent.duration._
 
-final class InteractionController(httpClient: Client[IO])(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[InteractionResource] with LazyLogging {
+final class InteractionController(interactionHttpClient: Client[IO])(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[InteractionResource] with LazyLogging {
 
   implicit lazy val replicaSetListFormat: Format[ReplicaSetList] = ListResourceFormat[ReplicaSet]
 
@@ -34,7 +34,7 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
         .map(_.port)
         .getOrElse(8080)
       address = Uri.unsafeFromString(s"http://${serviceName(resource)}:$deployedPort/")
-      client = new RemoteInteractionClient(httpClient, address)
+      client = new RemoteInteractionClient(interactionHttpClient, address)
       interfaces <- Utils.within(10.minutes, split = 300) { // Check every 2 seconds for interfaces
         client.interface.map { interfaces => assert(interfaces.nonEmpty); interfaces }
       }

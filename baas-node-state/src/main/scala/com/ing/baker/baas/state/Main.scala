@@ -8,10 +8,12 @@ import akka.actor.ActorSystem
 import akka.cluster.Cluster
 import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{ExitCode, IO, IOApp, Resource}
+import com.ing.baker.baas.interaction.BakeryHttp
 import com.ing.baker.runtime.akka.AkkaBakerConfig.KafkaEventSinkSettings
 import com.ing.baker.runtime.akka.{AkkaBaker, AkkaBakerConfig}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import javax.net.ssl.SSLContext
 import kamon.Kamon
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -19,7 +21,7 @@ import org.http4s.client.blaze.BlazeClientBuilder
 import skuber.api.client.KubernetesClient
 
 import scala.concurrent.ExecutionContext
-import scala.util.{Success, Try, Failure}
+import scala.util.{Failure, Success, Try}
 
 object Main extends IOApp with LazyLogging {
 
@@ -31,6 +33,11 @@ object Main extends IOApp with LazyLogging {
 
     val httpServerPort = config.getInt("baas-component.http-api-port")
     val recipeDirectory = config.getString("baas-component.recipe-directory")
+
+    val interactionClientHttpsEnabled = config.getBoolean("baas-component.interaction-client.https-enabled")
+    lazy val interactionClientKeystorePath = config.getString("baas-component.interaction-client.https-keystore-path")
+    lazy val interactionClientKeystorePassword = config.getString("baas-component.interaction-client.https-keystore-password")
+    lazy val interactionClientKeystoreType = config.getString("baas-component.interaction-client.https-keystore-type")
 
     val eventSinkSettings = config.getConfig("baker.kafka-event-sink").as[KafkaEventSinkSettings]
 
@@ -45,9 +52,18 @@ object Main extends IOApp with LazyLogging {
       InetSocketAddress.createUnresolved("0.0.0.0", httpServerPort)
     val k8s: KubernetesClient = skuber.k8sInit
 
+    val tlsConfig: Option[SSLContext] =
+      if(interactionClientHttpsEnabled)
+        Some(BakeryHttp.loadSSLContext(BakeryHttp.TLSConfig(
+          password = interactionClientKeystorePassword,
+          keystorePath = interactionClientKeystorePath,
+          keystoreType = interactionClientKeystoreType
+        )))
+      else None
+
     val mainResource = for {
-      httpClient <- BlazeClientBuilder[IO](connectionPool).resource
-      serviceDiscovery <- ServiceDiscovery.resource(httpClient, k8s)
+      interactionHttpClient <- BlazeClientBuilder[IO](connectionPool, tlsConfig).resource
+      serviceDiscovery <- ServiceDiscovery.resource(interactionHttpClient, k8s)
       eventSink <- KafkaEventSink.resource(eventSinkSettings)
       baker = AkkaBaker
         .withConfig(AkkaBakerConfig(
