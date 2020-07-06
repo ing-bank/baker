@@ -91,9 +91,9 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
           .recover { case e: BakerException => Some(e) })
         allRecipes <- io(context.client.getAllRecipes)
       } yield {
-        recipeInformation.compiledRecipe shouldBe recipe
+        recipeInformation.compiledRecipe.name shouldBe recipe.name
         noSuchRecipeError shouldBe Some(BakerException.NoSuchRecipeException("non-existent"))
-        allRecipes.get(recipeId).map(_.compiledRecipe) shouldBe Some(recipe)
+        allRecipes.get(recipeId).map(_.compiledRecipe.name) shouldBe Some(recipe.name)
       }
     }
 
@@ -380,7 +380,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
       _ <- Resource.liftF(eventListener.eventSink.attach(baker))
       _ <- Resource.liftF(RecipeLoader.loadRecipesIntoBaker(getResourceDirectoryPathSafe, baker))
 
-      server <- StateNodeService.resource(baker, getResourceDirectoryPathSafe, InetSocketAddress.createUnresolved("127.0.0.1", 0), serviceDiscovery)
+      server <- StateNodeService.resource(baker, InetSocketAddress.createUnresolved("127.0.0.1", 0), serviceDiscovery)
       client <- BakerClient.resource(server.baseUri, executionContext)
 
     } yield Context(

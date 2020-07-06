@@ -4,123 +4,113 @@ import java.net.InetSocketAddress
 
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
-import com.ing.baker.baas.protocol.BaaSProto._
-import com.ing.baker.baas.protocol.BaaSProtocol
-import com.ing.baker.baas.protocol.BakeryHttp.ProtoEntityEncoders._
 import com.ing.baker.runtime.common.BakerException
-import com.ing.baker.runtime.scaladsl.Baker
+import com.ing.baker.runtime.scaladsl.{Baker, BakerResult, EventInstance}
+import io.circe._
+import io.circe.generic.auto._
+import io.circe.syntax._
 import org.http4s._
+import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.{Router, Server}
+import com.ing.baker.runtime.serialization.JsonEncoders._
+import com.ing.baker.runtime.serialization.JsonDecoders._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 object StateNodeService {
 
-  def resource(baker: Baker, recipeDirectory: String, hostname: InetSocketAddress, serviceDiscovery: ServiceDiscovery)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Server[IO]] = {
+  def resource(baker: Baker, hostname: InetSocketAddress, serviceDiscovery: ServiceDiscovery)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
     for {
-      binding <- BlazeServerBuilder[IO]
+      binding <- BlazeServerBuilder[IO](ec)
         .bindSocketAddress(hostname)
-        .withHttpApp(new StateNodeService(baker, recipeDirectory, serviceDiscovery).build)
+        .withHttpApp(new StateNodeService(baker, serviceDiscovery).build)
         .resource
     } yield binding
   }
 }
 
-final class StateNodeService private(baker: Baker, recipeDirectory: String, serviceDiscovery: ServiceDiscovery)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
+final class StateNodeService private(baker: Baker, serviceDiscovery: ServiceDiscovery)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
 
-  def loadRecipeIfNotFound[A](f: IO[A]): IO[A] =
-    RecipeLoader.loadRecipesIfRecipeNotFound(recipeDirectory, baker)(f)
+  object CorrelationId extends OptionalQueryParamDecoderMatcher[String]("correlationId")
 
-  def build: HttpApp[IO] =
-    (api <+> management).orNotFound
+  implicit val eventInstanceDecoder: EntityDecoder[IO, EventInstance] = jsonOf[IO, EventInstance]
+  implicit val bakerResultEntityEncoder: EntityEncoder[IO, BakerResult] = jsonEncoderOf[IO, BakerResult]
 
-  def completeWithBakerFailures[A, R](result: IO[Future[A]])(f: A => R)(implicit decoder: EntityEncoder[IO, R]): IO[Response[IO]] =
-    loadRecipeIfNotFound(IO.fromFuture(result)).attempt.flatMap {
-      case Left(e: BakerException) => Ok(BaaSProtocol.BaaSRemoteFailure(e))
-      case Left(e) => IO.raiseError(new IllegalStateException("No other exception but BakerExceptions should be thrown here.", e))
-      case Right(a) => Ok(f(a))
+  def build: HttpApp[IO] = Router("/api/bakery" -> (app <+> instance)) orNotFound
+
+  private def callBaker[A](f : => Future[A])(implicit encoder: Encoder[A]): IO[Response[IO]] = {
+    IO.fromFuture(IO(f)).attempt.flatMap {
+      case Left(e: BakerException) => Ok(BakerResult(e))
+      case Left(e) => InternalServerError(s"No other exception but BakerExceptions should be thrown here: ${e.getCause}")
+      case Right(Unit) => Ok(BakerResult.Ack)
+      case Right(a) => Ok(BakerResult(a))
     }
+  }
 
-  def management: HttpRoutes[IO] = Router("/management" -> HttpRoutes.of[IO] {
-    case GET -> Root / "interaction" =>
-      serviceDiscovery.get.flatMap { interactions =>
-        Ok(interactions.map(_.name).mkString(","))
-      }
+  private def app: HttpRoutes[IO] = Router("/app" ->
+    HttpRoutes.of[IO] {
+        case GET -> Root / "health" => Ok()
 
-    case GET -> Root / "recipe-instance" / recipeInstanceId / "events" =>
-      IO.fromFuture(IO(baker.getEvents(recipeInstanceId))).flatMap(events =>
-        Ok(events.map(_.name).mkString(",")))
+        case GET -> Root / "interactions" => for {
+          interactions <- serviceDiscovery.get
+          resp <- Ok(interactions.map(_.name).asJson)
+        } yield  resp
 
-    case GET -> Root / "recipe-instance" / recipeInstanceId / "ingredients" =>
-      IO.fromFuture(IO(baker.getIngredients(recipeInstanceId))).flatMap(ingredients =>
-        Ok(ingredients.keys.mkString(",")))
-  })
+        case GET -> Root / "recipes" => callBaker(baker.getAllRecipes)
 
-  def api: HttpRoutes[IO] = Router("/api/v3" -> HttpRoutes.of[IO] {
+        case GET -> Root / "recipes" / recipeId => callBaker(baker.getRecipe(recipeId))
+    } )
 
-    case GET -> Root / "health" =>
-      Ok("Ok")
+  private def instance: HttpRoutes[IO]  = Router("/instances" ->  HttpRoutes.of[IO] {
 
-    case req@POST -> Root / "getRecipe" =>
-      req.as[BaaSProtocol.GetRecipeRequest]
-        .map(r => IO(baker.getRecipe(r.recipeId)))
-        .flatMap(completeWithBakerFailures(_)(BaaSProtocol.GetRecipeResponse))
+      case GET -> Root => callBaker(baker.getAllRecipeInstancesMetadata)
 
-    case GET -> Root / "getAllRecipes" =>
-      completeWithBakerFailures(RecipeLoader.loadRecipesIntoBaker(recipeDirectory, baker) *> IO(baker.getAllRecipes))(BaaSProtocol.GetAllRecipesResponse)
+      case GET -> Root / recipeInstanceId  => callBaker(baker.getRecipeInstanceState(recipeInstanceId))
 
-    case req@POST -> Root / "bake" =>
-      req.as[BaaSProtocol.BakeRequest]
-        .map(r => IO(baker.bake(r.recipeId, r.recipeInstanceId)))
-        .flatMap(completeWithBakerFailures(_)(_ => ""))
+      case GET -> Root / recipeInstanceId / "events" => callBaker(baker.getEvents(recipeInstanceId))
 
-    case req@POST -> Root / "fireEventAndResolveWhenReceived" =>
-      req.as[BaaSProtocol.FireEventAndResolveWhenReceivedRequest]
-        .map(request => IO(baker.fireEventAndResolveWhenReceived(request.recipeInstanceId, request.event, request.correlationId)))
-        .flatMap(completeWithBakerFailures(_)(BaaSProtocol.FireEventAndResolveWhenReceivedResponse))
+      case GET -> Root / recipeInstanceId / "ingredients" => callBaker(baker.getIngredients(recipeInstanceId))
 
-    case req@POST -> Root / "fireEventAndResolveWhenCompleted" =>
-      req.as[BaaSProtocol.FireEventAndResolveWhenCompletedRequest]
-        .map(request => IO(baker.fireEventAndResolveWhenCompleted(request.recipeInstanceId, request.event, request.correlationId)))
-        .flatMap(completeWithBakerFailures(_)(BaaSProtocol.FireEventAndResolveWhenCompletedResponse))
+      case GET -> Root / recipeInstanceId / "visual" => callBaker(baker.getVisualState(recipeInstanceId))
 
-    case req@POST -> Root / "fireEventAndResolveOnEvent" =>
-      req.as[BaaSProtocol.FireEventAndResolveOnEventRequest]
-        .map(request => IO(baker.fireEventAndResolveOnEvent(request.recipeInstanceId, request.event, request.onEvent, request.correlationId)))
-        .flatMap(completeWithBakerFailures(_)(BaaSProtocol.FireEventAndResolveOnEventResponse))
+      case POST -> Root / recipeInstanceId / "bake"  / recipeId => callBaker(baker.bake(recipeId, recipeInstanceId))
 
-    case POST -> Root / "fireEvent" =>
-      Ok("") // TODO figure out what to do here with the 2 different futures
+      case req@POST -> Root / recipeInstanceId / "fire-and-resolve-when-received" :? CorrelationId(maybeCorrelationId)  =>
+        for {
+          event <- req.as[EventInstance]
+          result <- callBaker(baker.fireEventAndResolveWhenReceived(recipeInstanceId, event, maybeCorrelationId))
+        } yield result
 
-    case GET -> Root / "getAllRecipeInstancesMetadata" =>
-      completeWithBakerFailures(IO(baker.getAllRecipeInstancesMetadata))(BaaSProtocol.GetAllRecipeInstancesMetadataResponse)
+      case req@POST -> Root / recipeInstanceId / "fire-and-resolve-when-completed" :? CorrelationId(maybeCorrelationId)  =>
+        for {
+          event <- req.as[EventInstance]
+          result <- callBaker(baker.fireEventAndResolveWhenCompleted(recipeInstanceId, event, maybeCorrelationId))
+        } yield result
 
-    case req@POST -> Root / "getRecipeInstanceState" =>
-      req.as[BaaSProtocol.GetRecipeInstanceStateRequest]
-        .map(request => IO(baker.getRecipeInstanceState(request.recipeInstanceId)))
-        .flatMap(completeWithBakerFailures(_)(BaaSProtocol.GetRecipeInstanceStateResponse))
+      case  req@POST -> Root / recipeInstanceId / "fire-and-resolve-on-event" / onEvent :? CorrelationId(maybeCorrelationId) =>
+        for {
+          event <- req.as[EventInstance]
+          result <- callBaker(baker.fireEventAndResolveOnEvent(recipeInstanceId, event, onEvent, maybeCorrelationId))
+        } yield result
 
-    case req@POST -> Root / "getVisualState" =>
-      req.as[BaaSProtocol.GetVisualStateRequest]
-        .map(request => IO(baker.getVisualState(request.recipeInstanceId)))
-        .flatMap(completeWithBakerFailures(_)(BaaSProtocol.GetVisualStateResponse))
+      case POST -> Root / recipeInstanceId / "interaction" / interactionName / "retry" =>
+        for {
+          result <- callBaker(baker.retryInteraction(recipeInstanceId, interactionName))
+        } yield result
 
-    case req@POST -> Root / "retryInteraction" =>
-      req.as[BaaSProtocol.RetryInteractionRequest]
-        .map(request => IO(baker.retryInteraction(request.recipeInstanceId, request.interactionName)))
-        .flatMap(completeWithBakerFailures(_)(_ => ""))
+      case POST -> Root / recipeInstanceId / "interaction" / interactionName / "stop-retrying" =>
+        for {
+          result <- callBaker(baker.stopRetryingInteraction(recipeInstanceId, interactionName))
+        } yield result
 
-    case req@POST -> Root / "resolveInteraction" =>
-      req.as[BaaSProtocol.ResolveInteractionRequest]
-        .map(request => IO(baker.resolveInteraction(request.recipeInstanceId, request.interactionName, request.event)))
-        .flatMap(completeWithBakerFailures(_)(_ => ""))
+      case req@POST -> Root / recipeInstanceId / "interaction" / interactionName / "resolve" =>
+        for {
+          event <- req.as[EventInstance]
+          result <- callBaker(baker.resolveInteraction(recipeInstanceId, interactionName, event))
+        } yield result
+    })
 
-    case req@POST -> Root / "stopRetryingInteraction" =>
-      req.as[BaaSProtocol.StopRetryingInteractionRequest]
-        .map(request => IO(baker.stopRetryingInteraction(request.recipeInstanceId, request.interactionName)))
-        .flatMap(completeWithBakerFailures(_)(_ => ""))
-  })
 }

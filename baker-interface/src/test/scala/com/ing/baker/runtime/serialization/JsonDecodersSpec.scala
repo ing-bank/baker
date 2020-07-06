@@ -1,14 +1,14 @@
 package com.ing.baker.runtime.serialization
 
 import com.ing.baker.runtime.scaladsl.EventInstance
-import com.ing.baker.runtime.serialization.EventJsonToScalaDslDecoders._
+import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.types._
 import io.circe.parser.decode
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
 
-class EventJsonToScalaDslDecodersSpec extends AnyFunSpec with Matchers {
+class JsonDecodersSpec extends AnyFunSpec with Matchers {
   describe("EventJsonToScalaDslDecoders") {
     it("should decode value") {
       val nullValue = decode[Value]("""{"typ":0}""")

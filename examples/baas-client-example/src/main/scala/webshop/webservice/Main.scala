@@ -35,7 +35,7 @@ object Main extends IOApp {
     val mainResource = for {
       baker <- BakerClient.resource(Uri.unsafeFromString(baasHostname), connectionPool)
       management <- StateNodeManagementClient.resource(Uri.unsafeFromString(baasHostname), connectionPool)
-      _ <- BlazeServerBuilder[IO]
+      _ <- BlazeServerBuilder[IO](connectionPool)
         .bindHttp(httpPort, "0.0.0.0")
         .withHttpApp(new WebShopService(new WebShopBaker(baker, checkoutRecipeId), management).build)
         .resource
