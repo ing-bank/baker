@@ -85,81 +85,89 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
       protocol = Protocol.TCP
     )
 
-    val stateNodeContainer = Container(
-      name = baasStateName(bakerName),
-      image = image
-    )
-      .exposePort(Container.Port(
-        name = "remoting",
-        containerPort = 2552,
-        protocol = Protocol.TCP
-      ))
-      .exposePort(managementPort)
-      .exposePort(Container.Port(
-        name = "prometheus",
-        containerPort = 9095,
-        protocol = Protocol.TCP
-      ))
-      .exposePort(Container.Port(
-        name = "http-api",
-        containerPort = 8080,
-        protocol = Protocol.TCP
-      ))
-      .withReadinessProbe(skuber.Probe(
-        action = skuber.HTTPGetAction(
-          port = Right(managementPort.name),
-          path = "/health/ready"
-        ),
-        initialDelaySeconds = 15,
-        timeoutSeconds = 10,
-        failureThreshold = Some(30)
-      ))
-      .withLivenessProbe(skuber.Probe(
-        action = skuber.HTTPGetAction(
-          port = Right(managementPort.name),
-          path = "/health/alive"
-        ),
-        initialDelaySeconds = 15,
-        timeoutSeconds = 10,
-        failureThreshold = Some(30)
-      ))
-      .mount("recipes", recipesMountPath, readOnly = true)
-      .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)
-      .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
-      .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
+    def stateNodeContainer = {
+      val stateNodeContainer = Container(
+        name = baasStateName(bakerName),
+        image = image
+      )
+        .exposePort(Container.Port(
+          name = "remoting",
+          containerPort = 2552,
+          protocol = Protocol.TCP
+        ))
+        .exposePort(managementPort)
+        .exposePort(Container.Port(
+          name = "prometheus",
+          containerPort = 9095,
+          protocol = Protocol.TCP
+        ))
+        .exposePort(Container.Port(
+          name = "http-api",
+          containerPort = 8080,
+          protocol = Protocol.TCP
+        ))
+        .withReadinessProbe(skuber.Probe(
+          action = skuber.HTTPGetAction(
+            port = Right(managementPort.name),
+            path = "/health/ready"
+          ),
+          initialDelaySeconds = 15,
+          timeoutSeconds = 10,
+          failureThreshold = Some(30)
+        ))
+        .withLivenessProbe(skuber.Probe(
+          action = skuber.HTTPGetAction(
+            port = Right(managementPort.name),
+            path = "/health/alive"
+          ),
+          initialDelaySeconds = 15,
+          timeoutSeconds = 10,
+          failureThreshold = Some(30)
+        ))
+        .mount("recipes", recipesMountPath, readOnly = true)
+        .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)
+        .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
+        .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
 
-    val stateNodeContainerWithResources =
-      Utils.addResourcesSpec(stateNodeContainer, bakerResource.spec.resources)
+      val stateNodeContainerWithResources =
+        Utils.addResourcesSpec(stateNodeContainer, bakerResource.spec.resources)
 
-    val stateContainerWithEventSink =
-      bakerResource.spec.kafkaBootstrapServers.map( servers =>
-        stateNodeContainerWithResources
-          .setEnvVar("KAFKA_EVENT_SINK_BOOTSTRAP_SERVERS", servers)
-          // todo add missing kafka configuration later (topics + identity missing)
-          .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "true")
-      ).getOrElse(stateNodeContainerWithResources
-        .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "false"))
+      val stateContainerWithEventSink =
+        bakerResource.spec.kafkaBootstrapServers.map(servers =>
+          stateNodeContainerWithResources
+            .setEnvVar("KAFKA_EVENT_SINK_BOOTSTRAP_SERVERS", servers)
+            // todo add missing kafka configuration later (topics + identity missing)
+            .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "true")
+        ).getOrElse(stateNodeContainerWithResources
+          .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "false"))
 
-    val stateNodeContainerWithServiceAccount =
-      if (serviceAccountSecret.isDefined)
-        stateContainerWithEventSink.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true)
-      else
-        stateContainerWithEventSink
+      val stateNodeContainerWithServiceAccount =
+        if (serviceAccountSecret.isDefined)
+          stateContainerWithEventSink.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true)
+        else
+          stateContainerWithEventSink
 
-    val stateNodeContainerWithExtraConfig =
-      bakerResource.spec.config match {
-        case Some(_) => stateNodeContainerWithServiceAccount.mount("extra-config", "/bakery-config", readOnly = true)
-        case None => stateNodeContainerWithServiceAccount
-      }
+      val stateNodeContainerWithExtraConfig =
+        bakerResource.spec.config match {
+          case Some(_) => stateNodeContainerWithServiceAccount.mount("extra-config", "/bakery-config", readOnly = true)
+          case None => stateNodeContainerWithServiceAccount
+        }
 
-    val stateNodeContainerWithExtraSecrets =
-      bakerResource.spec.secrets match {
-        case Some(_) => stateNodeContainerWithExtraConfig.mount("extra-secrets", "/bakery-secrets", readOnly = true)
-        case None => stateNodeContainerWithExtraConfig
-      }
+      val stateNodeContainerWithExtraSecrets =
+        bakerResource.spec.secrets match {
+          case Some(_) => stateNodeContainerWithExtraConfig.mount("extra-secrets", "/bakery-secrets", readOnly = true)
+          case None => stateNodeContainerWithExtraConfig
+        }
+      stateNodeContainerWithExtraSecrets
+    }
+
+    def maybeSidecarContainer: Option[Container] = {
+      //
+      None
+    }
 
     val podSpec = Pod.Spec(
-      containers = List(stateNodeContainerWithExtraSecrets),
+      containers = List(Some(stateNodeContainer), maybeSidecarContainer).flatten,
       imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
       volumes = List(
         Some(Volume("recipes", Volume.ConfigMapVolumeSource(baasRecipesConfigMapName(bakerName)))),

@@ -3,6 +3,7 @@ package com.ing.bakery.clustercontroller.controllers
 import cats.implicits._
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.{IO, Timer}
+import com.ing.bakery.clustercontroller.controllers.BakerResource.SidecarSpec
 import skuber.{ConfigMap, Container, Resource}
 
 import scala.concurrent.duration._
@@ -77,11 +78,12 @@ object Utils {
   def parseValidated[A](t: Try[A], fromPath: String): FromConfigMapValidation[A] =
     Validated.fromTry(t).leftMap(e => NonEmptyList.one(s"parsing error from path '$fromPath': ${e.getMessage}'"))
 
-  def resourcesFromConfigMap(configMap: ConfigMap): FromConfigMapValidation[Resource.Requirements] =
-    ( Utils.optional(Utils.extractValidatedString(configMap, "resources.requests.memory"))
-      , Utils.optional(Utils.extractValidatedString(configMap, "resources.requests.cpu"))
-      , Utils.optional(Utils.extractValidatedString(configMap, "resources.limits.memory"))
-      , Utils.optional(Utils.extractValidatedString(configMap, "resources.limits.cpu"))
+  def resourcesFromConfigMap(configMap: ConfigMap, prefix: Option[String] = None): FromConfigMapValidation[Resource.Requirements] = {
+    val p = prefix.map(_ + ".").getOrElse("")
+    (Utils.optional(Utils.extractValidatedString(configMap, s"${p}resources.requests.memory"))
+      , Utils.optional(Utils.extractValidatedString(configMap, s"${p}resources.requests.cpu"))
+      , Utils.optional(Utils.extractValidatedString(configMap, s"${p}resources.limits.memory"))
+      , Utils.optional(Utils.extractValidatedString(configMap, s"${p}resources.limits.cpu"))
       ).mapN { (requestMemory, requestCpu, limitsMemory, limitsCpu) =>
       val rm = requestMemory.map(q => Map("memory" -> Resource.Quantity(q))).getOrElse(Map.empty)
       val rc = requestCpu.map(q => Map("cpu" -> Resource.Quantity(q))).getOrElse(Map.empty)
@@ -92,4 +94,15 @@ object Utils {
         limits = lm ++ lc
       )
     }
+  }
+
+  def sidecarFromConfigMap(configMap: ConfigMap): FromConfigMapValidation[SidecarSpec] =
+  ( Utils.optional(Utils.extractValidatedString("sidecar.image"))
+      , Utils.resourcesFromConfigMap(configMap, Some("sidecar"))
+      , Utils.extractValidatedString("sidecar.clusterHostSuffix")
+      , Utils.extractValidatedString("sidecar.configVolumeMountPath")
+      , Utils.probeFromConfigMap(configMap, "sidecar.livenessProbe")
+      , Utils.probeFromConfigMap(configMap, "sidecar.readinessProbe")
+      ) mapN (SidecarSpec)
+
 }
