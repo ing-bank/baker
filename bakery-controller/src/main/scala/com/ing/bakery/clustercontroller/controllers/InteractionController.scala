@@ -1,22 +1,25 @@
 package com.ing.bakery.clustercontroller.controllers
 
+import cats.implicits._
 import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.baas.interaction.RemoteInteractionClient
 import com.ing.baker.baas.interaction.RemoteInteractionClient.InteractionEndpoint
+import com.ing.bakery.clustercontroller.MutualAuthKeystoreConfig
 import com.typesafe.scalalogging.LazyLogging
 import org.http4s.Uri
-import org.http4s.client.Client
+import org.http4s.client.blaze.BlazeClientBuilder
 import play.api.libs.json.Format
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.api.client.KubernetesClient
 import skuber.apps.v1.{Deployment, ReplicaSet, ReplicaSetList}
-import skuber.json.format._
 import skuber.json.ext.format._
+import skuber.json.format._
 import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-final class InteractionController(interactionHttpClient: Client[IO])(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[InteractionResource] with LazyLogging {
+final class InteractionController(connectionPool: ExecutionContext, interactionTLS: Option[MutualAuthKeystoreConfig] = None, interactionClientTLS: Option[MutualAuthKeystoreConfig] = None)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[InteractionResource] with LazyLogging {
 
   implicit lazy val replicaSetListFormat: Format[ReplicaSetList] = ListResourceFormat[ReplicaSet]
 
@@ -33,11 +36,8 @@ final class InteractionController(interactionHttpClient: Client[IO])(implicit cs
         .flatMap(_.ports.find(_.name == "http-api"))
         .map(_.port)
         .getOrElse(8080)
-      address = Uri.unsafeFromString(s"http://${serviceName(resource)}:$deployedPort/")
-      client = new RemoteInteractionClient(interactionHttpClient, address)
-      interfaces <- Utils.within(10.minutes, split = 300) { // Check every 2 seconds for interfaces
-        client.interface.map { interfaces => assert(interfaces.nonEmpty); interfaces }
-      }
+      addressAndInterfaces <- extractInterfacesFromDeployedInteraction(serviceName(resource), deployedPort, k8s)
+      (address, interfaces) = addressAndInterfaces
       contract = creationContract(resource, address, interfaces)
       wasAlreadyThere2 <- idem(io(k8s.create(contract)), s"creation contract config map '${contract.name}'")
     } yield {
@@ -71,6 +71,20 @@ final class InteractionController(interactionHttpClient: Client[IO])(implicit cs
         older = io(k8s.update[skuber.ext.Deployment](oldDeployment(resource))).void)
     } yield ()
 
+  private def extractInterfacesFromDeployedInteraction(serviceName: String, deployedPort: Int, k8s: KubernetesClient): IO[(Uri, List[InteractionEndpoint])] = {
+    val protocol = if(interactionClientTLS.isDefined) "https" else "http"
+    val address = Uri.unsafeFromString(s"$protocol://$serviceName:$deployedPort/")
+    for {
+      tlsConfig <- interactionClientTLS.traverse(_.loadKeystore(k8s))
+      interfaces <- BlazeClientBuilder[IO](connectionPool, tlsConfig).resource.use { client =>
+        val interactionClient = new RemoteInteractionClient(client, address)
+        Utils.within(10.minutes, split = 300) { // Check every 2 seconds for interfaces
+          interactionClient.interface.map { interfaces => assert(interfaces.nonEmpty); interfaces }
+        }
+      }
+    } yield (address, interfaces)
+  }
+
   private def interactionLabel(interaction: InteractionResource): (String, String) = "interaction" -> interaction.name
 
   private def serviceName(interactionResource: InteractionResource): String = interactionResource.name
@@ -102,11 +116,13 @@ final class InteractionController(interactionHttpClient: Client[IO])(implicit cs
     val interactionLabelWithName: (String, String) = interactionLabel(interaction)
     val image: String = interaction.spec.image
     val imagePullSecret: Option[String] = interaction.spec.imagePullSecret
+    val tlsMountName: String = "bakery-tls-keystore"
+    val tlsMountPath: String = "/bakery-tls-keystore"
 
     val healthProbe = skuber.Probe(
       action = skuber.HTTPGetAction(
-        port = Right(httpAPIPort.name),
-        path = "/api/v3/health"
+        port = Left(9999),
+        path = "/health"
       ),
       initialDelaySeconds = 15,
       timeoutSeconds = 10
@@ -126,8 +142,21 @@ final class InteractionController(interactionHttpClient: Client[IO])(implicit cs
       .copy(env = interaction.spec.env)
       .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
 
+    val interactionContainerWithTLSEnvVars =
+      interactionTLS match {
+        case Some(interactionTLS) =>
+          interactionContainer
+            .setEnvVar("INTERACTION_HTTPS_ENABLED", "true")
+            .setEnvVar("INTERACTION_HTTPS_KEYSTORE_PATH", tlsMountPath+"/"+interactionTLS.fileName)
+            .setEnvVar("INTERACTION_HTTPS_KEYSTORE_PASSWORD", interactionTLS.password)
+            .setEnvVar("INTERACTION_HTTPS_KEYSTORE_TYPE", interactionTLS._type)
+        case None =>
+          interactionContainer
+            .setEnvVar("INTERACTION_HTTPS_ENABLED", "false")
+      }
+
     val interactionContainerWithResources =
-      Utils.addResourcesSpec(interactionContainer, interaction.spec.resources)
+      Utils.addResourcesSpec(interactionContainerWithTLSEnvVars, interaction.spec.resources)
 
     val interactionContainerWithMounts0 =
       interaction.spec.configMapMounts.foldLeft(interactionContainerWithResources) { (container, configMount) =>
@@ -137,6 +166,14 @@ final class InteractionController(interactionHttpClient: Client[IO])(implicit cs
     val interactionContainerWithMounts1 =
       interaction.spec.secretMounts.foldLeft(interactionContainerWithMounts0) { (container, configMount) =>
         container.mount(configMount.name, configMount.mountPath, readOnly = true)
+      }
+
+    val interactionContainerWithMounts2 =
+      interactionTLS match {
+        case Some(_) =>
+          interactionContainerWithMounts1.mount(tlsMountName, tlsMountPath, readOnly = true)
+        case None =>
+          interactionContainerWithMounts1
       }
 
     val volumesConfigMaps =
@@ -149,10 +186,18 @@ final class InteractionController(interactionHttpClient: Client[IO])(implicit cs
         Volume(configMount.name, Volume.Secret(configMount.name))
       }
 
+    val volumeTLSKeystore =
+      interactionTLS match {
+        case Some(interactionTLS) =>
+          Seq(Volume(tlsMountName, Volume.Secret(interactionTLS.secretName)))
+        case None =>
+          Seq.empty
+      }
+
     val podSpec = Pod.Spec(
-      containers = List(interactionContainerWithMounts1),
+      containers = List(interactionContainerWithMounts2),
       imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
-      volumes = volumesConfigMaps ++ volumesSecrets,
+      volumes = volumesConfigMaps ++ volumesSecrets ++ volumeTLSKeystore,
     )
 
     Pod.Template.Spec

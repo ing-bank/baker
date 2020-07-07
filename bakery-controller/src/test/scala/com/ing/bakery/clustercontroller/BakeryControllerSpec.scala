@@ -401,19 +401,18 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
       materializer = ActorMaterializer()(system)
       k8s: KubernetesClient = skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))(system, materializer)
 
-      httpClient <- BlazeClientBuilder[IO](executionContext).resource
     } yield {
       implicit val as: ActorSystem = system
       implicit val mat: Materializer = materializer
       val interactionController =
         Resource.liftF(kubeApiServer.noNewInteractionEvents).flatMap( _ =>
-          new InteractionController(httpClient).watch(k8s)(contextShift, timer, system, materializer, InteractionResource.interactionResourceFormat, InteractionResource.resourceDefinitionInteractionResource))
+          new InteractionController(executionContext).watch(k8s)(contextShift, timer, system, materializer, InteractionResource.interactionResourceFormat, InteractionResource.resourceDefinitionInteractionResource))
       val bakerController =
         Resource.liftF(kubeApiServer.noNewBakerEvents).flatMap( _ =>
           new BakerController().watch(k8s))
       val interactionControllerConfigMaps =
         Resource.liftF(kubeApiServer.noNewConfigMapEventsFor("interactions")).flatMap( _ =>
-          new InteractionController(httpClient).fromConfigMaps(InteractionResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "interactions")))
+          new InteractionController(executionContext).fromConfigMaps(InteractionResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "interactions")))
       val bakerControllerConfigMaps =
         Resource.liftF(kubeApiServer.noNewConfigMapEventsFor("bakers")).flatMap( _ =>
           new BakerController().fromConfigMaps(BakerResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "bakers")))

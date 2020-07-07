@@ -22,14 +22,21 @@ object RemoteInteractionService {
       sslParams.setNeedClientAuth(true)
       (sslConfig, sslParams)
     }
+    val service = new RemoteInteractionService(interactions)
     val builder0 = BlazeServerBuilder[IO]
       .bindSocketAddress(address)
-      .withHttpApp(new RemoteInteractionService(interactions).build)
+      .withHttpApp(service.build)
     val builder1 = tls match {
       case Some((sslConfig, sslParams)) => builder0.withSslContextAndParameters(sslConfig, sslParams)
       case None => builder0
     }
-    builder1.resource
+    for {
+      baseApp <- builder1.resource
+      _ <- BlazeServerBuilder[IO]
+        .bindLocal(9999)
+        .withHttpApp(service.buildHealth)
+        .resource
+    } yield baseApp
   }
 }
 
@@ -37,6 +44,15 @@ final class RemoteInteractionService(interactions: List[InteractionInstance])(im
 
   def build: HttpApp[IO] =
     api.orNotFound
+
+  def buildHealth: HttpApp[IO] =
+    health.orNotFound
+
+  def health: HttpRoutes[IO] = Router("/" -> HttpRoutes.of[IO] {
+
+    case GET -> Root / "health" =>
+      Ok("Ok")
+  })
 
   def api: HttpRoutes[IO] = Router("/api/v3" -> HttpRoutes.of[IO] {
 
