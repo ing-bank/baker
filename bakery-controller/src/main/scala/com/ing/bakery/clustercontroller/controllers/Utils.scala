@@ -97,12 +97,28 @@ object Utils {
   }
 
   def sidecarFromConfigMap(configMap: ConfigMap): FromConfigMapValidation[SidecarSpec] =
-  ( Utils.optional(Utils.extractValidatedString("sidecar.image"))
-      , Utils.resourcesFromConfigMap(configMap, Some("sidecar"))
-      , Utils.extractValidatedString("sidecar.clusterHostSuffix")
-      , Utils.extractValidatedString("sidecar.configVolumeMountPath")
-      , Utils.probeFromConfigMap(configMap, "sidecar.livenessProbe")
-      , Utils.probeFromConfigMap(configMap, "sidecar.readinessProbe")
-      ) mapN (SidecarSpec)
+     ( Utils.extractValidatedString(configMap, "sidecar.image"),
+      Utils.extractValidatedString(configMap, "sidecar.clusterHostSuffix"),
+      Utils.extractValidatedString(configMap, "sidecar.configVolumeMountPath"),
+      Utils.optional(Utils.resourcesFromConfigMap(configMap, Some("sidecar"))),
+      Utils.optional(Utils.probeFromConfigMap(configMap, "sidecar.livenessProbe")),
+      Utils.optional(Utils.probeFromConfigMap(configMap, "sidecar.readinessProbe"))) mapN {
+      (sidecarImage, clusterHostSuffix, configVolumeMountPath, maybeResources, maybeLivenessProbe, maybeReadinessProbe) =>
+        SidecarSpec(sidecarImage, maybeResources, clusterHostSuffix, configVolumeMountPath, maybeLivenessProbe, maybeReadinessProbe)
+    }
 
+  def probeFromConfigMap(configMap: ConfigMap, path: String): FromConfigMapValidation[skuber.Probe] =
+    (Utils.extractValidatedString(configMap, s"$path.scheme"),
+     Utils.extractValidatedString(configMap, s"$path.port"),
+     Utils.extractValidatedString(configMap, s"$path.path")) mapN { (scheme, port, path) =>
+      skuber.Probe(
+        action = skuber.HTTPGetAction(
+          port = Right(port),
+          path = path,
+          schema = scheme
+        ),
+        initialDelaySeconds = 15,
+        timeoutSeconds = 10
+      )
+  }
 }

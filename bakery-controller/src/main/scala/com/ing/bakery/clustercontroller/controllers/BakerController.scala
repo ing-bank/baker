@@ -79,13 +79,13 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
     val serviceAccountSecret: Option[String] = bakerResource.spec.serviceAccountSecret
     val recipesMountPath: String = "/recipes"
 
-    val managementPort = Container.Port(
-      name = "management",
-      containerPort = 8558,
-      protocol = Protocol.TCP
-    )
-
     def stateNodeContainer = {
+      val managementPort = Container.Port(
+        name = "management",
+        containerPort = 8558,
+        protocol = Protocol.TCP
+      )
+
       val stateNodeContainer = Container(
         name = baasStateName(bakerName),
         image = image
@@ -161,9 +161,46 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
       stateNodeContainerWithExtraSecrets
     }
 
-    def maybeSidecarContainer: Option[Container] = {
-      //
-      None
+    def maybeSidecarContainer: Option[Container] = bakerResource.spec.sidecar map { sidecarSpec => {
+      val sidecarContainer = Container(
+        name = baasStateName(bakerName) + "-sidecar",
+        image = sidecarSpec.image
+      )
+        .mount("config", sidecarSpec.configVolumeMountPath, readOnly = true)
+        .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)
+        .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
+        .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
+
+      val stateNodeContainerWithResources =
+        Utils.addResourcesSpec(stateNodeContainer, bakerResource.spec.resources)
+
+      val stateContainerWithEventSink =
+        bakerResource.spec.kafkaBootstrapServers.map(servers =>
+          stateNodeContainerWithResources
+            .setEnvVar("KAFKA_EVENT_SINK_BOOTSTRAP_SERVERS", servers)
+            // todo add missing kafka configuration later (topics + identity missing)
+            .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "true")
+        ).getOrElse(stateNodeContainerWithResources
+          .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "false"))
+
+      val stateNodeContainerWithServiceAccount =
+        if (serviceAccountSecret.isDefined)
+          stateContainerWithEventSink.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true)
+        else
+          stateContainerWithEventSink
+
+      val stateNodeContainerWithExtraConfig =
+        bakerResource.spec.config match {
+          case Some(_) => stateNodeContainerWithServiceAccount.mount("extra-config", "/bakery-config", readOnly = true)
+          case None => stateNodeContainerWithServiceAccount
+        }
+
+      val stateNodeContainerWithExtraSecrets =
+        bakerResource.spec.secrets match {
+          case Some(_) => stateNodeContainerWithExtraConfig.mount("extra-secrets", "/bakery-secrets", readOnly = true)
+          case None => stateNodeContainerWithExtraConfig
+        }
+      stateNodeContainerWithExtraSecrets
     }
 
     val podSpec = Pod.Spec(
@@ -172,6 +209,7 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
       volumes = List(
         Some(Volume("recipes", Volume.ConfigMapVolumeSource(baasRecipesConfigMapName(bakerName)))),
         serviceAccountSecret.map(s => Volume("service-account-token", Volume.Secret(s))),
+        Some(Volume("config", Volume.))
         bakerResource.spec.config.map(c => Volume("extra-config", Volume.ConfigMapVolumeSource(c))),
         bakerResource.spec.secrets.map(s => Volume("extra-secrets", Volume.Secret(s)))
       ).flatten

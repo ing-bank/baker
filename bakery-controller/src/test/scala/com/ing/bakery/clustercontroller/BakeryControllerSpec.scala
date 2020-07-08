@@ -8,6 +8,7 @@ import cats.effect.{IO, Resource}
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.ing.baker.types.CharArray
 import com.ing.bakery.clustercontroller.BakeryControllerSpec._
+import com.ing.bakery.clustercontroller.controllers.BakerResource.SidecarSpec
 import com.ing.bakery.clustercontroller.controllers.{BakerController, BakerResource, InteractionController, InteractionResource}
 import com.ing.bakery.mocks.{KubeApiServer, RemoteInteraction}
 import com.ing.bakery.mocks.WatchEvent.ResourcePath
@@ -90,7 +91,8 @@ object BakeryControllerSpec {
         limits = Map("cpu" -> skuber.Resource.Quantity("6000m"), "memory" -> skuber.Resource.Quantity("1000Mi"))
       )),
       config = None,
-      secrets = None
+      secrets = None,
+      sidecar = None
     )
   )
 
@@ -106,6 +108,82 @@ object BakeryControllerSpec {
       "resources.limits.memory" -> "1000Mi"
     )
   )
+
+  val bakerResourceSidecar: BakerResource = BakerResource(
+    metadata = ObjectMeta(name = "RecipeOne"),
+    spec = BakerResource.Spec(
+      image = "baas-node-state:local",
+      imagePullSecret = None,
+      serviceAccountSecret = None,
+      kafkaBootstrapServers = None,
+      replicas = 2,
+      recipes = List("CgdXZWJzaG9wErEQChYKFAoQdW5hdmFpbGFibGVJdGVtcxABCkVaQwo/ChdTaGlwcGluZ0FkZHJlc3NSZWNlaXZlZBIkCg9zaGlwcGluZ0FkZHJlc3MSESIPCg0KB2FkZHJlc3MSAggREAEKEwoRCg1yZXNlcnZlZEl0ZW1zEAEKCwoJCgVpdGVtcxABCg8KDQoJU2hpcEl0ZW1zEAIKnANimQMKRAoYT3JkZXJIYWRVbmF2YWlsYWJsZUl0ZW1zEigKEHVuYXZhaWxhYmxlSXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCk8KDUl0ZW1zUmVzZXJ2ZWQSPgoNcmVzZXJ2ZWRJdGVtcxItIisKHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCgoKBGRhdGESAggWEkQKGE9yZGVySGFkVW5hdmFpbGFibGVJdGVtcxIoChB1bmF2YWlsYWJsZUl0ZW1zEhQaEgoQIg4KDAoGaXRlbUlkEgIIERJPCg1JdGVtc1Jlc2VydmVkEj4KDXJlc2VydmVkSXRlbXMSLSIrCh0KBWl0ZW1zEhQaEgoQIg4KDAoGaXRlbUlkEgIIEQoKCgRkYXRhEgIIFiIcCgdvcmRlcklkEhEiDwoNCgdvcmRlcklkEgIIESIdCgVpdGVtcxIUGhIKECIOCgwKBml0ZW1JZBICCBEqDFJlc2VydmVJdGVtczIMUmVzZXJ2ZUl0ZW1zUhAaDgjoBxEAAAAAAAAAQBgFCkhaRgpCChpQYXltZW50SW5mb3JtYXRpb25SZWNlaXZlZBIkChJwYXltZW50SW5mb3JtYXRpb24SDiIMCgoKBGluZm8SAggREAEKFVoTCg8KDVBheW1lbnRGYWlsZWQQAApQWk4KSgoLT3JkZXJQbGFjZWQSHAoHb3JkZXJJZBIRIg8KDQoHb3JkZXJJZBICCBESHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggREAEKFQoTCg9zaGlwcGluZ0FkZHJlc3MQAQpKWkgKRAoYT3JkZXJIYWRVbmF2YWlsYWJsZUl0ZW1zEigKEHVuYXZhaWxhYmxlSXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggREAAK2wNi2AMKcQoRUGF5bWVudFN1Y2Nlc3NmdWwSXAoNc2hpcHBpbmdPcmRlchJLIkkKHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCgoKBGRhdGESAggWChwKB2FkZHJlc3MSESIPCg0KB2FkZHJlc3MSAggRCg8KDVBheW1lbnRGYWlsZWQScQoRUGF5bWVudFN1Y2Nlc3NmdWwSXAoNc2hpcHBpbmdPcmRlchJLIkkKHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCgoKBGRhdGESAggWChwKB2FkZHJlc3MSESIPCg0KB2FkZHJlc3MSAggREg8KDVBheW1lbnRGYWlsZWQiFgoQcmVjaXBlSW5zdGFuY2VJZBICCBEiPgoNcmVzZXJ2ZWRJdGVtcxItIisKHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCgoKBGRhdGESAggWIiQKD3NoaXBwaW5nQWRkcmVzcxIRIg8KDQoHYWRkcmVzcxICCBEiJAoScGF5bWVudEluZm9ybWF0aW9uEg4iDAoKCgRpbmZvEgIIESoLTWFrZVBheW1lbnQyC01ha2VQYXltZW50UhAaDgjoBxEAAAAAAAAAQBgFClVaUwpPCg1JdGVtc1Jlc2VydmVkEj4KDXJlc2VydmVkSXRlbXMSLSIrCh0KBWl0ZW1zEhQaEgoQIg4KDAoGaXRlbUlkEgIIEQoKCgRkYXRhEgIIFhAAChMKEQoNc2hpcHBpbmdPcmRlchABChlaFwoTChFTaGlwcGluZ0NvbmZpcm1lZBAACndadQpxChFQYXltZW50U3VjY2Vzc2Z1bBJcCg1zaGlwcGluZ09yZGVyEksiSQodCgVpdGVtcxIUGhIKECIOCgwKBml0ZW1JZBICCBEKCgoEZGF0YRICCBYKHAoHYWRkcmVzcxIRIg8KDQoHYWRkcmVzcxICCBEQAAoRCg8KC01ha2VQYXltZW50EAIKGAoWChJwYXltZW50SW5mb3JtYXRpb24QAQoSChAKDFJlc2VydmVJdGVtcxACCrMBYrABChMKEVNoaXBwaW5nQ29uZmlybWVkEhMKEVNoaXBwaW5nQ29uZmlybWVkIlwKDXNoaXBwaW5nT3JkZXISSyJJCh0KBWl0ZW1zEhQaEgoQIg4KDAoGaXRlbUlkEgIIEQoKCgRkYXRhEgIIFgocCgdhZGRyZXNzEhEiDwoNCgdhZGRyZXNzEgIIESoJU2hpcEl0ZW1zMglTaGlwSXRlbXNSEBoOCOgHEQAAAAAAAABAGAUKDQoLCgdvcmRlcklkEAESBggLEBAYARIGCBEQCxgBEiAIEhAKGAEiGE9yZGVySGFkVW5hdmFpbGFibGVJdGVtcxIVCBIQDBgBIg1JdGVtc1Jlc2VydmVkEgYIAhALGAESBggGEBEYARIGCAgQFBgBEgYICBADGAESBggBEAkYARIGCAkQCxgBEgYIBRASGAESBggDEAUYARIGCAwQAhgBEgYIChAAGAESBggNEBMYARIZCAQQDhgBIhFTaGlwcGluZ0NvbmZpcm1lZBIGCA8QDRgBEhkIEBAPGAEiEVBheW1lbnRTdWNjZXNzZnVsEhUIEBAHGAEiDVBheW1lbnRGYWlsZWQSBggTEAQYARIGCBQQBRgBOhA5YTJmOGMyODgwZWE4ZmMw"),
+      resources = Some(skuber.Resource.Requirements(
+        requests = Map("cpu" -> skuber.Resource.Quantity("600m"), "memory" -> skuber.Resource.Quantity("500Mi")),
+        limits = Map("cpu" -> skuber.Resource.Quantity("6000m"), "memory" -> skuber.Resource.Quantity("1000Mi"))
+      )),
+      config = None,
+      secrets = None,
+      sidecar = Some(
+        SidecarSpec(
+          image = "baas-node-state:local",
+          resources = Some(skuber.Resource.Requirements(
+            requests = Map("cpu" -> skuber.Resource.Quantity("600m"), "memory" -> skuber.Resource.Quantity("500Mi")),
+            limits = Map("cpu" -> skuber.Resource.Quantity("6000m"), "memory" -> skuber.Resource.Quantity("1000Mi"))
+          )),
+          clusterHostSuffix =  ".test.local",
+          configVolumeMountPath =  "/home/app/config",
+          Some(skuber.Probe(
+            action = skuber.HTTPGetAction(
+              port = Right("8443"),
+              path = "/metrics",
+              schema = "https"
+            ),
+            initialDelaySeconds = 15,
+            timeoutSeconds = 10
+          )),
+          Some(
+            skuber.Probe(
+              action = skuber.HTTPGetAction(
+                port = Right("8443"),
+                path = "/metrics",
+                schema = "https"
+              ),
+              initialDelaySeconds = 15,
+              timeoutSeconds = 10
+            )
+          )
+        )
+      )
+    )
+  )
+
+  val bakerConfigMapResourceSidecar: skuber.ConfigMap = skuber.ConfigMap(
+    metadata = ObjectMeta(name = "RecipeOne"),
+    data = Map(
+      "image" -> "baas-node-state:local",
+      "replicas" -> "2",
+      "recipes.0" -> "CgdXZWJzaG9wErEQChYKFAoQdW5hdmFpbGFibGVJdGVtcxABCkVaQwo/ChdTaGlwcGluZ0FkZHJlc3NSZWNlaXZlZBIkCg9zaGlwcGluZ0FkZHJlc3MSESIPCg0KB2FkZHJlc3MSAggREAEKEwoRCg1yZXNlcnZlZEl0ZW1zEAEKCwoJCgVpdGVtcxABCg8KDQoJU2hpcEl0ZW1zEAIKnANimQMKRAoYT3JkZXJIYWRVbmF2YWlsYWJsZUl0ZW1zEigKEHVuYXZhaWxhYmxlSXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCk8KDUl0ZW1zUmVzZXJ2ZWQSPgoNcmVzZXJ2ZWRJdGVtcxItIisKHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCgoKBGRhdGESAggWEkQKGE9yZGVySGFkVW5hdmFpbGFibGVJdGVtcxIoChB1bmF2YWlsYWJsZUl0ZW1zEhQaEgoQIg4KDAoGaXRlbUlkEgIIERJPCg1JdGVtc1Jlc2VydmVkEj4KDXJlc2VydmVkSXRlbXMSLSIrCh0KBWl0ZW1zEhQaEgoQIg4KDAoGaXRlbUlkEgIIEQoKCgRkYXRhEgIIFiIcCgdvcmRlcklkEhEiDwoNCgdvcmRlcklkEgIIESIdCgVpdGVtcxIUGhIKECIOCgwKBml0ZW1JZBICCBEqDFJlc2VydmVJdGVtczIMUmVzZXJ2ZUl0ZW1zUhAaDgjoBxEAAAAAAAAAQBgFCkhaRgpCChpQYXltZW50SW5mb3JtYXRpb25SZWNlaXZlZBIkChJwYXltZW50SW5mb3JtYXRpb24SDiIMCgoKBGluZm8SAggREAEKFVoTCg8KDVBheW1lbnRGYWlsZWQQAApQWk4KSgoLT3JkZXJQbGFjZWQSHAoHb3JkZXJJZBIRIg8KDQoHb3JkZXJJZBICCBESHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggREAEKFQoTCg9zaGlwcGluZ0FkZHJlc3MQAQpKWkgKRAoYT3JkZXJIYWRVbmF2YWlsYWJsZUl0ZW1zEigKEHVuYXZhaWxhYmxlSXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggREAAK2wNi2AMKcQoRUGF5bWVudFN1Y2Nlc3NmdWwSXAoNc2hpcHBpbmdPcmRlchJLIkkKHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCgoKBGRhdGESAggWChwKB2FkZHJlc3MSESIPCg0KB2FkZHJlc3MSAggRCg8KDVBheW1lbnRGYWlsZWQScQoRUGF5bWVudFN1Y2Nlc3NmdWwSXAoNc2hpcHBpbmdPcmRlchJLIkkKHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCgoKBGRhdGESAggWChwKB2FkZHJlc3MSESIPCg0KB2FkZHJlc3MSAggREg8KDVBheW1lbnRGYWlsZWQiFgoQcmVjaXBlSW5zdGFuY2VJZBICCBEiPgoNcmVzZXJ2ZWRJdGVtcxItIisKHQoFaXRlbXMSFBoSChAiDgoMCgZpdGVtSWQSAggRCgoKBGRhdGESAggWIiQKD3NoaXBwaW5nQWRkcmVzcxIRIg8KDQoHYWRkcmVzcxICCBEiJAoScGF5bWVudEluZm9ybWF0aW9uEg4iDAoKCgRpbmZvEgIIESoLTWFrZVBheW1lbnQyC01ha2VQYXltZW50UhAaDgjoBxEAAAAAAAAAQBgFClVaUwpPCg1JdGVtc1Jlc2VydmVkEj4KDXJlc2VydmVkSXRlbXMSLSIrCh0KBWl0ZW1zEhQaEgoQIg4KDAoGaXRlbUlkEgIIEQoKCgRkYXRhEgIIFhAAChMKEQoNc2hpcHBpbmdPcmRlchABChlaFwoTChFTaGlwcGluZ0NvbmZpcm1lZBAACndadQpxChFQYXltZW50U3VjY2Vzc2Z1bBJcCg1zaGlwcGluZ09yZGVyEksiSQodCgVpdGVtcxIUGhIKECIOCgwKBml0ZW1JZBICCBEKCgoEZGF0YRICCBYKHAoHYWRkcmVzcxIRIg8KDQoHYWRkcmVzcxICCBEQAAoRCg8KC01ha2VQYXltZW50EAIKGAoWChJwYXltZW50SW5mb3JtYXRpb24QAQoSChAKDFJlc2VydmVJdGVtcxACCrMBYrABChMKEVNoaXBwaW5nQ29uZmlybWVkEhMKEVNoaXBwaW5nQ29uZmlybWVkIlwKDXNoaXBwaW5nT3JkZXISSyJJCh0KBWl0ZW1zEhQaEgoQIg4KDAoGaXRlbUlkEgIIEQoKCgRkYXRhEgIIFgocCgdhZGRyZXNzEhEiDwoNCgdhZGRyZXNzEgIIESoJU2hpcEl0ZW1zMglTaGlwSXRlbXNSEBoOCOgHEQAAAAAAAABAGAUKDQoLCgdvcmRlcklkEAESBggLEBAYARIGCBEQCxgBEiAIEhAKGAEiGE9yZGVySGFkVW5hdmFpbGFibGVJdGVtcxIVCBIQDBgBIg1JdGVtc1Jlc2VydmVkEgYIAhALGAESBggGEBEYARIGCAgQFBgBEgYICBADGAESBggBEAkYARIGCAkQCxgBEgYIBRASGAESBggDEAUYARIGCAwQAhgBEgYIChAAGAESBggNEBMYARIZCAQQDhgBIhFTaGlwcGluZ0NvbmZpcm1lZBIGCA8QDRgBEhkIEBAPGAEiEVBheW1lbnRTdWNjZXNzZnVsEhUIEBAHGAEiDVBheW1lbnRGYWlsZWQSBggTEAQYARIGCBQQBRgBOhA5YTJmOGMyODgwZWE4ZmMw",
+      "resources.requests.cpu" -> "600m",
+      "resources.requests.memory" -> "500Mi",
+      "resources.limits.cpu" -> "6000m",
+      "resources.limits.memory" -> "1000Mi",
+      "sidecar.image" -> "baas-node-state:local",
+      "sidecar.clusterHostSuffix" -> ".test.local",
+      "sidecar.configVolumeMountPath" -> "/home/app/config",
+      "sidecar.resources.requests.cpu" -> "600m",
+      "sidecar.resources.requests.memory" -> "500Mi",
+      "sidecar.resources.limits.cpu" -> "6000m",
+      "sidecar.resources.limits.memory" -> "1000Mi",
+      "sidecar.livenessProbe.scheme" -> "https",
+      "sidecar.livenessProbe.port" -> "10080",
+      "sidecar.livenessProbe.path" -> "/metrics",
+      "sidecar.readinessProbe.scheme" -> "https",
+      "sidecar.readinessProbe.port" -> "10080",
+      "sidecar.readinessProbe.path" -> "/metrics"
+  )
+  )
+
 }
 
 class BakeryControllerSpec extends BakeryFunSpec with Matchers {
@@ -253,6 +331,23 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
       )
     }
 
+    test("Creates state nodes with sidecars (CRDs)") { context =>
+      context.bakerController.use( _ =>
+        for {
+          _ <- context.kubeApiServer.expectCreationOf("expectations/baker-deployment-sidecar.json", ResourcePath.DeploymentsPath)
+          _ <- context.kubeApiServer.expectCreationOf("expectations/baker-service.json", ResourcePath.ServicesPath, context.adaptHttpPortToMockServerPort)
+          _ <- context.kubeApiServer.expectCreationOf("expectations/baker-creation-recipes.json", ResourcePath.ConfigMapsPath, context.adaptHttpPortToMockServerPort)
+          _ <- context.kubeApiServer.createBakers(bakerResourceSidecar)
+          _ <- eventually(for {
+            _ <- context.kubeApiServer.validateCreationOf(ResourcePath.DeploymentsPath)
+            _ <- context.kubeApiServer.validateCreationOf(ResourcePath.ServicesPath)
+            _ <- context.kubeApiServer.validateCreationOf(ResourcePath.ConfigMapsPath)
+          } yield succeed)
+        } yield succeed
+      )
+    }
+
+
     test("Creates state nodes (With already created components)") { context =>
       context.bakerController.use( _ =>
         for {
@@ -322,6 +417,21 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
       )
     }
 
+    test("Creates state nodes with sidecar (Config Maps)") { context =>
+      context.bakerControllerConfigMaps.use( _ =>
+        for {
+          _ <- context.kubeApiServer.expectCreationOf("expectations/baker-deployment-sidecar.json", ResourcePath.DeploymentsPath)
+          _ <- context.kubeApiServer.expectCreationOf("expectations/baker-service.json", ResourcePath.ServicesPath, context.adaptHttpPortToMockServerPort)
+          _ <- context.kubeApiServer.expectCreationOf("expectations/baker-creation-recipes.json", ResourcePath.ConfigMapsPath, context.adaptHttpPortToMockServerPort)
+          _ <- context.kubeApiServer.createConfigMapFor("bakers", bakerConfigMapResourceSidecar)
+          _ <- eventually(for {
+            _ <- context.kubeApiServer.validateCreationOf(ResourcePath.DeploymentsPath)
+            _ <- context.kubeApiServer.validateCreationOf(ResourcePath.ServicesPath)
+            _ <- context.kubeApiServer.validateCreationOf(ResourcePath.ConfigMapsPath)
+          } yield succeed)
+        } yield succeed
+      )
+    }
     test("Deletes state nodes (Config Maps)") { context =>
       context.bakerControllerConfigMaps.use( _ =>
         for {

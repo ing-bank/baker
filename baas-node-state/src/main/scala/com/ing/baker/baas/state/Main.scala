@@ -27,7 +27,7 @@ object Main extends IOApp with LazyLogging {
     Kamon.init()
 
     // Config
-    val config = mergeConfig(executeLoad(getExtraSecrets) ++ executeLoad(getExtraConfig))
+    val config = mergeConfig(executeLoad(getExtraConfig))
 
     val httpServerPort = config.getInt("baas-component.http-api-port")
     val recipeDirectory = config.getString("baas-component.recipe-directory")
@@ -86,9 +86,6 @@ object Main extends IOApp with LazyLogging {
 
   def getExtraConfig: IO[List[Config]] =
     loadExtraConfig(IO(new File("/bakery-config")))
-
-  def getExtraSecrets: IO[List[Config]] =
-    loadExtraConfig(IO(new File("/bakery-secrets")))
 
   def loadExtraConfig(from: IO[File]): IO[List[Config]] =
     from.map {
