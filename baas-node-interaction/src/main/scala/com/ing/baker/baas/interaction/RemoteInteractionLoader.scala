@@ -2,6 +2,7 @@ package com.ing.baker.baas.interaction
 
 import java.net.InetSocketAddress
 
+import cats.implicits._
 import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.typesafe.config.ConfigFactory
@@ -27,8 +28,7 @@ object RemoteInteractionLoader {
     implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContext)
     implicit val timer: Timer[IO] = IO.timer(executionContext)
 
-    RemoteInteractionService
-      .resource(implementations, address, tlsConfig)
+    (RemoteInteractionService.resource(implementations, address, tlsConfig) *> HealthService.resource)
       .use(_ => IO.never)
       .unsafeRunAsyncAndForget()
   }

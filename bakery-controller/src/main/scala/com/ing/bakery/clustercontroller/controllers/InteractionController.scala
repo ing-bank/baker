@@ -137,6 +137,11 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
         containerPort = 9095,
         protocol = Protocol.TCP
       ))
+      .exposePort(Container.Port(
+        name = "health",
+        containerPort = 9999,
+        protocol = Protocol.TCP
+      ))
       .withReadinessProbe(healthProbe.copy(failureThreshold = Some(30)))
       .withLivenessProbe(healthProbe.copy(failureThreshold = Some(30)))
       .copy(env = interaction.spec.env)
