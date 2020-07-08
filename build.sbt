@@ -317,7 +317,8 @@ lazy val `baas-node-interaction-spring` = project.in(file("baas-node-interaction
       kamon,
       kamonPrometheus,
       springCore,
-      springContext
+      springContext,
+      scalaLogging
     ) ++ testDeps(
       scalaTest,
       logback
