@@ -10,8 +10,9 @@ import com.ing.baker.runtime.scaladsl.InteractionInstance
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.server.blaze._
 import org.http4s.server.{Router, Server}
+import scala.concurrent.ExecutionContext
 
 object RemoteInteractionService {
 
@@ -23,7 +24,7 @@ object RemoteInteractionService {
       (sslConfig, sslParams)
     }
     val service = new RemoteInteractionService(interactions)
-    val builder0 = BlazeServerBuilder[IO]
+    val builder0 = BlazeServerBuilder[IO](ExecutionContext.global)
       .bindSocketAddress(address)
       .withHttpApp(service.build)
     val builder1 = tls match {

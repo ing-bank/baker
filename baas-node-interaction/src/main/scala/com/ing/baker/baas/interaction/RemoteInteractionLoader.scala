@@ -2,7 +2,6 @@ package com.ing.baker.baas.interaction
 
 import java.net.InetSocketAddress
 
-import cats.implicits._
 import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.typesafe.config.ConfigFactory
@@ -24,11 +23,12 @@ object RemoteInteractionLoader {
       if(httpsEnabled) Some(BakeryHttp.TLSConfig(password = keystorePassword, keystorePath = keystorePath, keystoreType = keystoreType))
       else None
 
-    implicit val executionContext = ExecutionContext.Implicits.global
+    implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
     implicit val contextShift: ContextShift[IO] = IO.contextShift(executionContext)
     implicit val timer: Timer[IO] = IO.timer(executionContext)
 
-    (RemoteInteractionService.resource(implementations, address, tlsConfig) *> HealthService.resource)
+    RemoteInteractionService.resource(implementations, address, tlsConfig)
+      .flatMap(_ => HealthService.resource)
       .use(_ => IO.never)
       .unsafeRunAsyncAndForget()
   }

@@ -8,12 +8,14 @@ import org.http4s.implicits._
 import org.http4s.{HttpApp, HttpRoutes}
 import org.http4s.dsl.io.{->, /, GET, Ok, Root}
 import org.http4s.server.{Router, Server}
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.server.blaze._
+
+import scala.concurrent.ExecutionContext
 
 object HealthService {
 
   def resource(implicit cs: ContextShift[IO], clock: Timer[IO]): Resource[IO, Server[IO]] =
-    BlazeServerBuilder[IO]
+    BlazeServerBuilder[IO](ExecutionContext.global)
       .bindSocketAddress(InetSocketAddress.createUnresolved("0.0.0.0", 9999))
       .withHttpApp(new HealthService().build)
       .resource
