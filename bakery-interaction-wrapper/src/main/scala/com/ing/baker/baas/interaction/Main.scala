@@ -12,13 +12,16 @@ object Main extends App {
   
   Kamon.init()
 
+  def getImplementations(classNames: String): List[InteractionInstance] = {
+    val interactions: List[String] = classNames.split(",").toList
+    interactions
+      .map(entryClassName => Class.forName(entryClassName).getConstructor().newInstance().asInstanceOf[AnyRef])
+      .map(implementation => InteractionInstance.unsafeFrom(implementation))
+  }
+
   private def runApp(classNames: String): Unit =
     try {
-      val interactions: List[String] = classNames.split(",").toList
-      val implementations = interactions
-        .map(entryClassName => Class.forName(entryClassName).getConstructor().newInstance().asInstanceOf[AnyRef])
-        .map(implementation => InteractionInstance.unsafeFrom(implementation))
-      RemoteInteractionLoader.apply(implementations)
+      RemoteInteractionLoader.apply(getImplementations(classNames))
     } catch {
       case ex: Exception =>
         throw new IllegalStateException(s"Unable to initialize the classes $classNames", ex)

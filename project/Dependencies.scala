@@ -98,6 +98,10 @@ object Dependencies {
   val scalaCheckPlusMockito =     "org.scalatestplus"          %% "scalatestplus-mockito"              % "1.0.0-M2"
   val scalaLogging =              "com.typesafe.scala-logging" %% "scala-logging"                      % "3.9.2"
 
+
+  val springContext =             "org.springframework"         % "spring-context"                     % "5.2.7.RELEASE"
+  val springCore    =             "org.springframework"         % "spring-core"                        % "5.2.7.RELEASE"
+
   def scopeDeps(scope: String, modules: Seq[ModuleID]) =  modules.map(m => m % scope)
   def compileDeps(modules: ModuleID*) = modules.toSeq
   def testDeps(modules: ModuleID*) = scopeDeps("test", modules)
