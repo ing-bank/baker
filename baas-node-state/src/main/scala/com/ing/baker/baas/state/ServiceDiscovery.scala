@@ -50,7 +50,7 @@ object ServiceDiscovery extends LazyLogging {
       }
 
       def source: Source[K8SWatchEvent[ConfigMap], NotUsed] =
-        k8s.watchWithOptions[ConfigMap](watchFilter).mapMaterializedValue(_ => NotUsed)
+        k8s.watchWithOptions[ConfigMap](watchFilter, bufsize = Int.MaxValue).mapMaterializedValue(_ => NotUsed)
 
       RestartSource.withBackoff(
         minBackoff = 3.seconds,
