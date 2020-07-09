@@ -295,6 +295,8 @@ lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
       http4s,
       http4sDsl,
       http4sServer,
+      catsEffect,
+      catsCore,
       kamon,
       kamonPrometheus
     ) ++ testDeps(
