@@ -214,11 +214,11 @@ lazy val recipeCompiler = project.in(file("compiler"))
   .dependsOn(recipeDsl, intermediateLanguage, testScope(recipeDsl))
 
 
-lazy val `baas-protocol-interaction-scheduling` = project.in(file("baas-protocol-interaction-scheduling"))
+lazy val `bakery-interaction-api` = project.in(file("bakery-interaction-api"))
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
   .settings(
-    moduleName := "baas-protocol-interaction-scheduling",
+    moduleName := "bakery-interaction-api",
     libraryDependencies ++= Seq(
       http4s,
       http4sDsl,
@@ -281,7 +281,7 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
   .dependsOn(
     runtime,
     `baas-node-client`,
-    `baas-protocol-interaction-scheduling`,
+    `bakery-interaction-api`,
     recipeCompiler, recipeDsl, intermediateLanguage
   )
 
@@ -334,12 +334,12 @@ lazy val `bakery-controller` = project.in(file("bakery-controller"))
       circeGeneric
     )
   )
-  .dependsOn(bakertypes, recipeCompiler, recipeDsl, intermediateLanguage, `baas-node-client`, `baas-protocol-interaction-scheduling`)
+  .dependsOn(bakertypes, recipeCompiler, recipeDsl, intermediateLanguage, `baas-node-client`, `bakery-interaction-api`)
 
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver,
-    `baas-node-client`, `baas-node-state`, `bakery-interaction-wrapper`, `baas-protocol-interaction-scheduling`,
+    `baas-node-client`, `baas-node-state`, `bakery-interaction-wrapper`, `bakery-interaction-api`,
     `sbt-baas-docker-generate`,
     `baker-interface`, `bakery-controller`)
 

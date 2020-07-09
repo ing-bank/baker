@@ -45,7 +45,7 @@ final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit 
 
   def interface: IO[List[InteractionEndpoint]] = {
     val request = GET(
-      hostname / "api" / "v3" / "interaction",
+      hostname / "api" / "bakery" / "interaction",
       `X-Bakery-Intent`(Intent.`Remote-Interaction`, hostname)
     )
     client.expect[ProtocolInteractionExecution.Interfaces](request)
