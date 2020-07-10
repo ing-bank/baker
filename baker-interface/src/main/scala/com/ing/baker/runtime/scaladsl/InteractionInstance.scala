@@ -18,8 +18,8 @@ import scala.util.Try
 
 case class InteractionInstance(
     name: String,
-    input: List[Type],
-    run: List[IngredientInstance] => Future[Option[EventInstance]],
+    input: Seq[Type],
+    run: Seq[IngredientInstance] => Future[Option[EventInstance]],
     output: Option[Map[String, Map[String, Type]]] = None
   ) extends common.InteractionInstance[Future] with ScalaApi { self =>
 
@@ -28,7 +28,7 @@ case class InteractionInstance(
   override type Ingredient = IngredientInstance
 
   override def execute(input: Seq[IngredientInstance]): Future[Option[Event]] =
-    run(input.toList)
+    run(input)
 
   def shaBase64: String = {
     val nameBytes: Array[Byte] = name.getBytes("UTF-8")
@@ -51,7 +51,7 @@ case class InteractionInstance(
         }
       override def execute(input: util.List[javadsl.IngredientInstance]): CompletableFuture[Optional[javadsl.EventInstance]] =
         FutureConverters
-          .toJava(self.run(input.asScala.map(_.asScala).toList))
+          .toJava(self.run(input.asScala.map(_.asScala)))
           .toCompletableFuture
           .thenApply(_.fold(Optional.empty[javadsl.EventInstance]())(e => Optional.of(e.asJava)))
     }
@@ -118,6 +118,6 @@ object InteractionInstance {
           Future.successful(None)
       }
     }
-    InteractionInstance(name, input.toList, run)
+    InteractionInstance(name, input, run)
   }
 }

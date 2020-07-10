@@ -4,22 +4,20 @@ import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.baas.interaction.RemoteInteractionClient
 import com.ing.baker.baas.protocol.InteractionExecution.Interaction
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.generic.semiauto._
-import io.circe.parser._
-import io.circe.generic.extras._, io.circe.syntax._
+import io.circe.syntax._
 import org.http4s.Uri
 import org.http4s.client.Client
 import play.api.libs.json.Format
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.api.client.KubernetesClient
 import skuber.apps.v1.{Deployment, ReplicaSet, ReplicaSetList}
-import skuber.json.format._
 import skuber.json.ext.format._
+import skuber.json.format._
 import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
-import com.ing.baker.baas.protocol.{InteractionExecution => I}
-import io.circe.Encoder
 
 import scala.concurrent.duration._
+
+import com.ing.baker.baas.protocol.InteractionExecutionJsonCodecs._
 
 final class InteractionController(httpClient: Client[IO])(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[InteractionResource] with LazyLogging {
 
@@ -93,7 +91,7 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
   )
 
   import com.ing.baker.baas.protocol.InteractionExecutionJsonCodecs._
-  val interfacesEncoder: Encoder[List[I.Interaction]] = deriveEncoder[List[I.Interaction]]
+
 
   private def creationContract(interaction: InteractionResource, address: Uri, interactions: List[Interaction]): ConfigMap = {
     val name = creationContractName(interaction)

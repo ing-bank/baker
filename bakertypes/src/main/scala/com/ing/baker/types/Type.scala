@@ -1,6 +1,6 @@
 package com.ing.baker.types
 
-object Type {
+§object Type {
 
   def fromString(s: String) : Either[String, Type] = s match {
     case "Bool" => Right(Bool)

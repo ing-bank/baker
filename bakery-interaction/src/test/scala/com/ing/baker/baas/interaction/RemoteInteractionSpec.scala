@@ -3,13 +3,12 @@ package com.ing.baker.baas.interaction
 import java.net.InetSocketAddress
 
 import cats.effect.{IO, Resource}
-import com.ing.baker.baas.interaction.RemoteInteractionClient.InteractionEndpoint
 import com.ing.baker.baas.testing.BakeryFunSpec
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
 import com.ing.baker.types.{CharArray, Int64, PrimitiveValue}
 import org.scalatest.ConfigMap
 import org.scalatest.compatible.Assertion
-
+import com.ing.baker.baas.protocol.{InteractionExecution => I}
 import scala.concurrent.Future
 
 class RemoteInteractionSpec extends BakeryFunSpec {
@@ -60,7 +59,7 @@ class RemoteInteractionSpec extends BakeryFunSpec {
 
     val implementation0 = InteractionInstance(
       name = "TestInteraction0",
-      input = Seq(CharArray, Int64),
+      input = Seq(CharArray, Int64).toList,
       run = input => Future.successful(Some(result(input.head.value.as[String], input(1).value.as[Int])))
     )
 
@@ -75,8 +74,8 @@ class RemoteInteractionSpec extends BakeryFunSpec {
         for {
           result <- client.interface
         } yield assert(result == List(
-          InteractionEndpoint(implementation0.shaBase64, implementation0.name, implementation0.input),
-          InteractionEndpoint(implementation1.shaBase64, implementation1.name, implementation1.input)
+          I.Interaction(implementation0.shaBase64, implementation0.name, implementation0.input),
+          I.Interaction(implementation1.shaBase64, implementation1.name, implementation1.input)
         ))
       }
     }

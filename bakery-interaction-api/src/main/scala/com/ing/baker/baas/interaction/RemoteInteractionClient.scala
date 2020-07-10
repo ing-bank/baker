@@ -40,9 +40,9 @@ final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit 
       `X-Bakery-Intent`(Intent.`Remote-Interaction`, hostname)
     ))
 
-  def runInteraction(interactionId: String, input: List[IngredientInstance]): IO[Option[EventInstance]] = {
+  def runInteraction(interactionId: String, input: Seq[IngredientInstance]): IO[Option[EventInstance]] = {
     val request = POST(
-      input,
+      input.toList,
       hostname / "api" / "bakery" / "interactions" / interactionId / "execute",
       `X-Bakery-Intent`(Intent.`Remote-Interaction`, hostname)
     )

@@ -1,14 +1,15 @@
 package com.ing.bakery.mocks
 
 import cats.effect.IO
-import com.ing.baker.baas.protocol.InteractionExecution
+import com.ing.baker.baas.protocol.{InteractionExecution => I}
 import com.ing.baker.runtime.scaladsl.InteractionInstance
-import com.ing.baker.runtime.serialization.ProtoMap
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
+import io.circe.syntax._
 
 class RemoteInteraction(mock: ClientAndServer) {
+  import com.ing.baker.baas.protocol.InteractionExecutionJsonCodecs._
 
   def publishesItsInterface(interaction: InteractionInstance): IO[Unit] = IO {
     mock.when(
@@ -20,8 +21,7 @@ class RemoteInteraction(mock: ClientAndServer) {
       response()
         .withStatusCode(200)
         .withBody(
-          List(
-          InteractionExecution.Interaction(interaction.shaBase64, interaction.name, interaction.input))
+          List(I.Interaction(interaction.shaBase64, interaction.name, interaction.input)).asJson.toString
         )
     )
   }

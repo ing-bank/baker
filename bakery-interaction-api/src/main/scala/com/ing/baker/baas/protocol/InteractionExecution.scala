@@ -5,7 +5,8 @@ import com.ing.baker.runtime.scaladsl.{BakerEvent, EventInstance, IngredientInst
 import com.ing.baker.types.{Bool, Type}
 import io.circe.CursorOp.Field
 import io.circe.{Codec, Decoder, DecodingFailure, Encoder, HCursor, Json}
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.generic.semiauto.{deriveCodec, deriveEncoder}
+
 /**
   * Protocol executed after a match between a QuestMandate and InteractionAgent has been made and after both
   * have committed.
@@ -33,13 +34,14 @@ object InteractionExecutionJsonCodecs {
       x => Json.fromString(x.toString)
     )
   )
-
   implicit val instanceInterfaceCodec: Codec[Interaction] = deriveCodec[Interaction]
   implicit val ingredientInstanceCodec: Codec[IngredientInstance] = deriveCodec[IngredientInstance]
 
   implicit val failureReasonCodec: Codec[FailureReason] = deriveCodec[FailureReason]
   implicit val successCodec: Codec[Success] = deriveCodec[Success]
   implicit val failureCodec: Codec[Failure] = deriveCodec[Failure]
+  implicit val interfacesCodec: Codec[List[Interaction]] = deriveCodec[List[Interaction]]
+
 }
 
 object InteractionExecution {

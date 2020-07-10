@@ -1,9 +1,7 @@
 package com.ing.baker.baas.mocks
 
 import cats.effect.IO
-import com.ing.baker.baas.mocks.Utils._
-import com.ing.baker.baas.protocol.InteractionSchedulingProto._
-import com.ing.baker.baas.protocol.InteractionExecution
+import com.ing.baker.baas.protocol.{InteractionExecution=>I}
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance}
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.matchers.Times
@@ -11,8 +9,10 @@ import org.mockserver.model.HttpRequest
 import org.mockserver.model.HttpRequest.request
 import org.mockserver.model.HttpResponse.response
 import org.mockserver.verify.VerificationTimes
+import io.circe.syntax._
 
 class RemoteInteraction(mock: ClientAndServer, interaction: InteractionInstance) {
+  import com.ing.baker.baas.protocol.InteractionExecutionJsonCodecs._
 
   def processesSuccessfullyAndFires(event: EventInstance): IO[Unit] = IO {
     mock.when(
@@ -21,7 +21,7 @@ class RemoteInteraction(mock: ClientAndServer, interaction: InteractionInstance)
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody(serialize(InteractionExecution.InstanceExecutedSuccessfully(Some(event)))),
+        .withBody(I.Success(Some(event)).asJson.toString),
     )
   }
 
@@ -32,7 +32,7 @@ class RemoteInteraction(mock: ClientAndServer, interaction: InteractionInstance)
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody(serialize(InteractionExecution.InstanceExecutionFailed(e.getMessage)))
+        .withBody(I.Failure(I.InteractionError(e.getMessage)).asJson.toString)
     )
   }
 
