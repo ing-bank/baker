@@ -31,7 +31,7 @@ abstract class InteractionInstance extends common.InteractionInstance[Completabl
   def asScala: scaladsl.InteractionInstance =
     scaladsl.InteractionInstance(
       name,
-      input.asScala,
+      input.asScala.toList,
       input => FutureConverters.toScala(execute(input.map(_.asJava).asJava)
         .thenApply[Option[scaladsl.EventInstance]] {
         optional =>

@@ -1,13 +1,7 @@
 package com.ing.baker.baas.interaction
 
-import cats.data.EitherT
-import cats.effect.IO
-import com.ing.baker.runtime.serialization.ProtoMap
-import org.http4s.EntityDecoder.collectBinary
-import org.http4s.util.CaseInsensitiveString
 import org.http4s._
-
-import scala.util.{Failure, Success, Try}
+import org.http4s.util.CaseInsensitiveString
 
 object BakeryHttp {
 

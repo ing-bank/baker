@@ -3,7 +3,7 @@ package com.ing.baker.baas.mocks
 import cats.effect.IO
 import com.ing.baker.baas.mocks.Utils._
 import com.ing.baker.baas.protocol.InteractionSchedulingProto._
-import com.ing.baker.baas.protocol.ProtocolInteractionExecution
+import com.ing.baker.baas.protocol.InteractionExecution
 import com.ing.baker.runtime.scaladsl.{EventInstance, InteractionInstance}
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.matchers.Times
@@ -21,7 +21,7 @@ class RemoteInteraction(mock: ClientAndServer, interaction: InteractionInstance)
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody(serialize(ProtocolInteractionExecution.InstanceExecutedSuccessfully(Some(event)))),
+        .withBody(serialize(InteractionExecution.InstanceExecutedSuccessfully(Some(event)))),
     )
   }
 
@@ -32,7 +32,7 @@ class RemoteInteraction(mock: ClientAndServer, interaction: InteractionInstance)
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody(serialize(ProtocolInteractionExecution.InstanceExecutionFailed(e.getMessage)))
+        .withBody(serialize(InteractionExecution.InstanceExecutionFailed(e.getMessage)))
     )
   }
 

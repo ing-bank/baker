@@ -1,5 +1,32 @@
 package com.ing.baker.types
 
+object Type {
+
+  def fromString(s: String) : Either[String, Type] = s match {
+    case "Bool" => Right(Bool)
+    case "Byte" => Right(Byte)
+    case "Char" => Right(Char)
+    case "Date" => Right(Date)
+    case "Int16" => Right(Int16)
+    case "Int32" => Right(Int32)
+    case "Int64" => Right(Int64)
+    case "IntBig" => Right(IntBig)
+    case "Float32" => Right(Float32)
+    case "Float64" => Right(Float64)
+    case "FloatBig" => Right(FloatBig)
+   // TODO: other types
+//    case t if t.startsWith("OptionType") => OptionType
+//
+//      OptionType
+//      ListType
+//      EnumType
+//      MapType
+//      RecordType
+    case _ => Left(s"Can't parse type $s")
+  }
+
+}
+
 sealed trait Type {
 
   /**
@@ -129,62 +156,86 @@ sealed trait PrimitiveType extends Type
 /**
   * Boolean (1 bit)
   */
-case object Bool extends PrimitiveType
+case object Bool extends PrimitiveType{
+  override def toString = "Bool"
+}
 
 /**
   * Signed 8 bit integer
   */
-case object Byte extends PrimitiveType
+case object Byte extends PrimitiveType {
+  override def toString = "Byte"
+}
 
 /**
   * Character (Unsigned 16 bit integer)
   */
-case object Char extends PrimitiveType
+case object Char extends PrimitiveType {
+  override def toString = "Char"
+}
 
 /**
   * Signed 16 bit integer
   */
-case object Int16 extends PrimitiveType
+case object Int16 extends PrimitiveType {
+  override def toString = "Int16"
+}
 
 /**
   * Signed 32 bit integer
   */
-case object Int32 extends PrimitiveType
+case object Int32 extends PrimitiveType {
+  override def toString = "Int32"
+}
 
 /**
   * Signed 64 bit integer
   */
-case object Int64 extends PrimitiveType
+case object Int64 extends PrimitiveType {
+  override def toString = "Int64"
+}
 
 /**
   * Integer of arbitrary precision
   */
-case object IntBig extends PrimitiveType
+case object IntBig extends PrimitiveType {
+  override def toString = "IntBig"
+}
 
 /**
   * Signed 32 bit floating point
   */
-case object Float32 extends PrimitiveType
+case object Float32 extends PrimitiveType {
+  override def toString = "Float32"
+}
 
 /**
   * Signed 64 bit floating point
   */
-case object Float64 extends PrimitiveType
+case object Float64 extends PrimitiveType {
+  override def toString = "Float64"
+}
 
 /**
   * Floating point with arbitrary precision
   */
-case object FloatBig extends PrimitiveType
+case object FloatBig extends PrimitiveType {
+  override def toString = "FloatBig"
+}
 
 /**
   * Byte array
   */
-case object ByteArray extends PrimitiveType
+case object ByteArray extends PrimitiveType {
+  override def toString = "ByteArray"
+}
 
 /**
   * Character array
   */
-case object CharArray extends PrimitiveType
+case object CharArray extends PrimitiveType {
+  override def toString = "CharArray"
+}
 
 /**
   * Date is technically equal to Int64
@@ -193,5 +244,7 @@ case object CharArray extends PrimitiveType
   *
   * A UTC date in the ISO-8601 calendar system with millisecond precision
   */
-case object Date extends PrimitiveType
+case object Date extends PrimitiveType {
+  override def toString = "Date"
+}
 

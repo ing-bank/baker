@@ -41,7 +41,7 @@ class KubeApiServer(mock: ClientAndServer, interaction: InteractionInstance) {
       override type Resource = skuber.ConfigMap
       override def item: Resource = {
         val name = creationContractName
-        val interactionsData = InteractionEndpoint.toBase64(interfaces)
+        val interactionsData = InteractionEndpoint.asString(interfaces)
         ConfigMap(
           metadata = ObjectMeta(name = name, labels = Map(baasComponentLabel)),
           data = Map("address" -> s"http://localhost:$port/", "interfaces" -> interactionsData)

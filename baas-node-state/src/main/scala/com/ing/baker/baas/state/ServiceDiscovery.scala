@@ -1,26 +1,29 @@
 package com.ing.baker.baas.state
 
-import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source}
 import akka.stream.{KillSwitches, Materializer, UniqueKillSwitch}
+import akka.{Done, NotUsed}
 import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
 import com.ing.baker.baas.interaction.RemoteInteractionClient
+import com.ing.baker.baas.protocol.{InteractionExecution => I}
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.akka.internal.InteractionManager
 import com.ing.baker.runtime.scaladsl.InteractionInstance
-import com.typesafe.scalalogging.{LazyLogging, Logger}
+import com.typesafe.scalalogging.LazyLogging
+import io.circe.Decoder
+import io.circe.generic.semiauto._
+import io.circe.parser._
 import org.http4s.Uri
 import org.http4s.client.Client
 import skuber._
 import skuber.api.client.{EventType, KubernetesClient}
 import skuber.json.format._
 
-import scala.concurrent.duration._
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.concurrent.duration._
 
 object ServiceDiscovery extends LazyLogging {
 
@@ -119,7 +122,7 @@ final class ServiceDiscovery private(
       interactions = interfaces.map { interaction =>
         interaction.id -> InteractionInstance(
           name = interaction.name,
-          input = interaction.interface,
+          input = interaction.input.toList,
           run = input => client.runInteraction(interaction.id, input).unsafeToFuture()
         )
       }.toMap
@@ -142,10 +145,21 @@ final class ServiceDiscovery private(
       case None => IO.raiseError(new IllegalStateException("'address' key not found in interaction creation contract config map"))
     }
 
-  private def extractInterfaces(contract: ConfigMap): IO[List[RemoteInteractionClient.InteractionEndpoint]] =
-    contract.data.get("interfaces").map(RemoteInteractionClient.InteractionEndpoint.fromBase64) match {
-      case Some(Success(interfaces)) => IO.pure(interfaces)
-      case Some(Failure(exception)) => IO.raiseError(new IllegalStateException("Error when deserializing base 64 interfaces in interaction creation contract config map", exception))
-      case None => IO.raiseError(new IllegalStateException("'interfaces' key not found in interaction creation contract config map"))
+  import com.ing.baker.baas.protocol.InteractionExecutionJsonCodecs._
+  private val interfacesDecoder: Decoder[List[I.Interaction]] = deriveDecoder[List[I.Interaction]]
+
+  private def extractInterfaces(contract: ConfigMap): IO[List[I.Interaction]] = {
+    contract.data.get("interfaces").map(parse) map {
+      case Right(json) => interfacesDecoder.decodeJson(json).map(interactions =>
+        IO.pure(interactions)
+      ) getOrElse (
+        IO.raiseError(new IllegalStateException(s"Can't decode list from $json"))
+        )
+      case Left(value) =>
+        IO.raiseError(new IllegalStateException(s"Can't parse config map data: $value"))
+    } getOrElse {
+      IO.raiseError(new IllegalStateException("'interfaces' key not found in interaction creation contract config map"))
     }
+  }
+
 }
