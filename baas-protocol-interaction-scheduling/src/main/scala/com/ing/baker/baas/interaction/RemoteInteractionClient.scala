@@ -37,6 +37,7 @@ object RemoteInteractionClient {
    */
   def resource(hostname: Uri, pool: ExecutionContext, tlsConfig: Option[BakeryHttp.TLSConfig])(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, RemoteInteractionClient] =
     BlazeClientBuilder[IO](pool, tlsConfig.map(BakeryHttp.loadSSLContext))
+      .withCheckEndpointAuthentication(false)
       .resource
       .map(new RemoteInteractionClient(_, hostname))
 }

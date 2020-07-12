@@ -76,12 +76,14 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
     val address = Uri.unsafeFromString(s"$protocol://$serviceName:$deployedPort/")
     for {
       tlsConfig <- interactionClientTLS.traverse(_.loadKeystore(k8s))
-      interfaces <- BlazeClientBuilder[IO](connectionPool, tlsConfig).resource.use { client =>
-        val interactionClient = new RemoteInteractionClient(client, address)
-        Utils.within(10.minutes, split = 300) { // Check every 2 seconds for interfaces
-          interactionClient.interface.map { interfaces => assert(interfaces.nonEmpty); interfaces }
+      interfaces <- BlazeClientBuilder[IO](connectionPool, tlsConfig)
+        .withCheckEndpointAuthentication(false)
+        .resource.use { client =>
+          val interactionClient = new RemoteInteractionClient(client, address)
+          Utils.within(10.minutes, split = 300) { // Check every 2 seconds for interfaces
+            interactionClient.interface.map { interfaces => assert(interfaces.nonEmpty); interfaces }
+          }
         }
-      }
     } yield (address, interfaces)
   }
 

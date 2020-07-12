@@ -62,7 +62,7 @@ object Main extends IOApp with LazyLogging {
       else None
 
     val mainResource = for {
-      interactionHttpClient <- BlazeClientBuilder[IO](connectionPool, tlsConfig).resource
+      interactionHttpClient <- BlazeClientBuilder[IO](connectionPool, tlsConfig).withCheckEndpointAuthentication(false).resource
       serviceDiscovery <- ServiceDiscovery.resource(interactionHttpClient, k8s)
       eventSink <- KafkaEventSink.resource(eventSinkSettings)
       baker = AkkaBaker
