@@ -64,7 +64,7 @@
             "livenessProbe": {
               "httpGet": {
                 "port": "http-api",
-                "path": "/api/v3/health",
+                "path": "/api/bakery/health",
                 "scheme": "HTTP"
               },
               "initialDelaySeconds": 15,
@@ -76,7 +76,7 @@
             "readinessProbe": {
               "httpGet": {
                 "port": "http-api",
-                "path": "/api/v3/health",
+                "path": "/api/bakery/health",
                 "scheme": "HTTP"
               },
               "initialDelaySeconds": 15,
@@ -228,7 +228,7 @@
             "livenessProbe": {
               "httpGet": {
                 "port": "http-api",
-                "path": "/api/v3/health",
+                "path": "/api/bakery/health",
                 "scheme": "HTTP"
               },
               "initialDelaySeconds": 15,
@@ -240,7 +240,7 @@
             "readinessProbe": {
               "httpGet": {
                 "port": "http-api",
-                "path": "/api/v3/health",
+                "path": "/api/bakery/health",
                 "scheme": "HTTP"
               },
               "initialDelaySeconds": 15,
@@ -392,7 +392,7 @@
             "livenessProbe": {
               "httpGet": {
                 "port": "http-api",
-                "path": "/api/v3/health",
+                "path": "/api/bakery/health",
                 "scheme": "HTTP"
               },
               "initialDelaySeconds": 15,
@@ -404,7 +404,7 @@
             "readinessProbe": {
               "httpGet": {
                 "port": "http-api",
-                "path": "/api/v3/health",
+                "path": "/api/bakery/health",
                 "scheme": "HTTP"
               },
               "initialDelaySeconds": 15,

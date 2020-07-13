@@ -3,9 +3,10 @@ package com.ing.bakery.clustercontroller.controllers
 import cats.implicits._
 import cats.effect.{ContextShift, IO, Timer}
 import com.ing.baker.baas.interaction.RemoteInteractionClient
-import com.ing.baker.baas.interaction.RemoteInteractionClient.InteractionEndpoint
 import com.ing.bakery.clustercontroller.MutualAuthKeystoreConfig
+import com.ing.baker.baas.protocol.{InteractionExecution => I}
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.syntax._
 import org.http4s.Uri
 import org.http4s.client.blaze.BlazeClientBuilder
 import play.api.libs.json.Format
@@ -22,6 +23,7 @@ import scala.concurrent.duration._
 final class InteractionController(connectionPool: ExecutionContext, interactionTLS: Option[MutualAuthKeystoreConfig] = None, interactionClientTLS: Option[MutualAuthKeystoreConfig] = None)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[InteractionResource] with LazyLogging {
 
   implicit lazy val replicaSetListFormat: Format[ReplicaSetList] = ListResourceFormat[ReplicaSet]
+  import com.ing.baker.baas.protocol.InteractionExecutionJsonCodecs._
 
   // TODO make these operations atomic, if one fails we need to rollback previous ones
   def create(resource: InteractionResource, k8s: KubernetesClient): IO[Unit] = {
@@ -71,7 +73,7 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
         older = io(k8s.update[skuber.ext.Deployment](oldDeployment(resource))).void)
     } yield ()
 
-  private def extractInterfacesFromDeployedInteraction(serviceName: String, deployedPort: Int, k8s: KubernetesClient): IO[(Uri, List[InteractionEndpoint])] = {
+  private def extractInterfacesFromDeployedInteraction(serviceName: String, deployedPort: Int, k8s: KubernetesClient): IO[(Uri, List[I.Interaction])] = {
     val protocol = if(interactionClientTLS.isDefined) "https" else "http"
     val address = Uri.unsafeFromString(s"$protocol://$serviceName:$deployedPort/")
     for {
@@ -103,9 +105,12 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
     protocol = Protocol.TCP
   )
 
-  private def creationContract(interaction: InteractionResource, address: Uri, interactions: List[InteractionEndpoint]): ConfigMap = {
+  import com.ing.baker.baas.protocol.InteractionExecutionJsonCodecs._
+
+
+  private def creationContract(interaction: InteractionResource, address: Uri, interactions: List[I.Interaction]): ConfigMap = {
     val name = creationContractName(interaction)
-    val interactionsData = InteractionEndpoint.toBase64(interactions)
+    val interactionsData =  interactions.asJson.toString
     ConfigMap(
       metadata = ObjectMeta(name = name, labels = Map(baasComponentLabel)),
       data = Map("address" -> address.toString, "interfaces" -> interactionsData)
