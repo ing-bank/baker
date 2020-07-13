@@ -174,6 +174,7 @@ class StateNodeSpec extends BakeryFunSpec with Matchers {
         serverState <- io(context.client.getRecipeInstanceState(recipeInstanceId))
         _ <- eventually { context.eventListener.verifyEventsReceived(2) }
       } yield {
+        1 shouldBe 1
         result.eventNames shouldBe Seq("OrderPlaced", "ItemsReserved")
         serverState.events.map(_.name) shouldBe Seq("OrderPlaced", "ItemsReserved")
       }

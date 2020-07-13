@@ -74,8 +74,8 @@ class RemoteInteractionSpec extends BakeryFunSpec {
         for {
           result <- client.interface
         } yield assert(result == List(
-          I.Interaction(implementation0.shaBase64, implementation0.name, implementation0.input),
-          I.Interaction(implementation1.shaBase64, implementation1.name, implementation1.input)
+          I.Interaction(implementation0.shaBase64, implementation0.name, implementation0.input.toList),
+          I.Interaction(implementation1.shaBase64, implementation1.name, implementation1.input.toList)
         ))
       }
     }

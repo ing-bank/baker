@@ -1,31 +1,51 @@
 package com.ing.baker.types
 
-§object Type {
-
-  def fromString(s: String) : Either[String, Type] = s match {
-    case "Bool" => Right(Bool)
-    case "Byte" => Right(Byte)
-    case "Char" => Right(Char)
-    case "Date" => Right(Date)
-    case "Int16" => Right(Int16)
-    case "Int32" => Right(Int32)
-    case "Int64" => Right(Int64)
-    case "IntBig" => Right(IntBig)
-    case "Float32" => Right(Float32)
-    case "Float64" => Right(Float64)
-    case "FloatBig" => Right(FloatBig)
-   // TODO: other types
-//    case t if t.startsWith("OptionType") => OptionType
+//object Type {
 //
-//      OptionType
-//      ListType
-//      EnumType
-//      MapType
-//      RecordType
-    case _ => Left(s"Can't parse type $s")
-  }
-
-}
+//  private val extractSquareBracketsValue = "^[^]]+[(.*]$".r
+//
+//  private def outerSquareBracketsIn(typeDef: String): Boolean = typeDef.endsWith("]")
+//
+//  private def extractSquareBracketsType(typeDef: String): (String, String) = ???
+//
+//  private def extractEnumOptions(typeDef: String): Set[String] = ???
+//
+//  private def extractRecordFields(typ)
+//
+//  def fromString(s: String) : Either[String, Type] = s match {
+//    case "Bool" => Right(Bool)
+//    case "Byte" => Right(Byte)
+//    case "Char" => Right(Char)
+//    case "Date" => Right(Date)
+//    case "Int16" => Right(Int16)
+//    case "Int32" => Right(Int32)
+//    case "Int64" => Right(Int64)
+//    case "IntBig" => Right(IntBig)
+//    case "Float32" => Right(Float32)
+//    case "Float64" => Right(Float64)
+//    case "FloatBig" => Right(FloatBig)
+//
+//    case typeDefinition: String if outerSquareBracketsIn(typeDefinition) =>
+//      val (outerTypeDef, innerTypeDef) = extractSquareBracketsType(typeDefinition)
+//      for {
+//        innerType <- fromString(innerTypeDef)
+//        outerType <- outerTypeDef match {
+//          case "OptionType" => Right(OptionType(innerType))
+//          case "ListType" => Right(ListType(innerType))
+//          case "MapType" => Right(MapType(innerType))
+//          case _ => Left(s"Type $outerTypeDef is unknown")
+//        }
+//      } yield outerType
+//
+//    case typeDefinition: String if typeDefinition.startsWith("EnumType") =>
+//      Right(EnumType(extractEnumOptions(typeDefinition)))
+//
+//    case typeDefinition: String if typeDefinition.startsWith("RecordType") =>
+//      Right(RecordType(extractRecordFields(typeDefinition)))
+//
+//    case _ => Left(s"Can't parse type $s")
+//  }
+//}
 
 sealed trait Type {
 
@@ -116,7 +136,6 @@ sealed trait Type {
 }
 
 case class ListType(entryType: Type) extends Type {
-
   override def toString: String = s"List[$entryType]"
 }
 

@@ -21,7 +21,7 @@ class RemoteInteraction(mock: ClientAndServer, interaction: InteractionInstance)
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody(I.Success(Some(event)).asJson.toString),
+        .withBody(I.ExecutionResult(Right(I.Success(Some(event)))).asJson.toString),
     )
   }
 
@@ -32,7 +32,7 @@ class RemoteInteraction(mock: ClientAndServer, interaction: InteractionInstance)
     ).respond(
       response()
         .withStatusCode(200)
-        .withBody(I.Failure(I.InteractionError(e.getMessage)).asJson.toString)
+        .withBody(I.ExecutionResult(Left(I.Failure(I.InteractionError(e.getMessage)))).asJson.toString)
     )
   }
 
@@ -47,7 +47,7 @@ class RemoteInteraction(mock: ClientAndServer, interaction: InteractionInstance)
   private def applyMatch: HttpRequest =
     request()
       .withMethod("POST")
-      .withPath(s"/api/v3/interaction/apply")
+//      .withPath(s"/api/bakery/interaction/apply")
       .withHeader("X-Bakery-Intent", s"Remote-Interaction:localhost")
 
 }

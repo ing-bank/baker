@@ -32,7 +32,7 @@ final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit 
 
   implicit val interactionEntityDecoder: EntityDecoder[IO, List[I.Interaction]] = jsonOf[IO,  List[I.Interaction]]
   implicit val executeRequestEntityEncoder: EntityEncoder[IO, List[IngredientInstance]] = jsonEncoderOf[IO, List[IngredientInstance]]
-  implicit val executeResponseEntityDecoder: EntityDecoder[IO, Either[I.Success, I.Failure]] = jsonOf[IO, Either[I.Success, I.Failure]]
+  implicit val executeResponseEntityDecoder: EntityDecoder[IO, I.ExecutionResult] = jsonOf[IO, I.ExecutionResult]
 
   def interface: IO[List[I.Interaction]] =
     client.expect[List[I.Interaction]]( GET(
@@ -46,14 +46,12 @@ final class RemoteInteractionClient(client: Client[IO], hostname: Uri)(implicit 
       hostname / "api" / "bakery" / "interactions" / interactionId / "execute",
       `X-Bakery-Intent`(Intent.`Remote-Interaction`, hostname)
     )
-    client.expect[Either[
-      I.Success,
-      I.Failure]](request)
+    client.expect[I.ExecutionResult](request)
       .flatMap {
-      case Left(result) =>
-        IO.pure(result.result)
-      case Right(e) =>
-        IO.raiseError(new RuntimeException(s"Remote interaction execution failed; reason: ${e.reason}"))
+      case I.ExecutionResult(Right(success)) =>
+        IO.pure(success.result)
+      case I.ExecutionResult(Left(error)) =>
+        IO.raiseError(new RuntimeException(s"Remote interaction execution failed; reason: ${error.reason}"))
     }
   }
 }

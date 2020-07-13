@@ -26,17 +26,17 @@ object RemoteInteractionService {
 final class RemoteInteractionService(interactions: List[InteractionInstance])(implicit timer: Timer[IO], cs: ContextShift[IO]) {
 
   import com.ing.baker.baas.protocol.InteractionExecutionJsonCodecs._
+
   implicit val interactionEntityEncoder: EntityEncoder[IO, List[I.Interaction]] = jsonEncoderOf[IO,  List[I.Interaction]]
 
   implicit val executeRequestEntityDecoder: EntityDecoder[IO, List[IngredientInstance]] = jsonOf[IO, List[IngredientInstance]]
-  implicit val successEntityEncoder: EntityEncoder[IO, I.Success] = jsonEncoderOf[IO, I.Success]
-  implicit val failureEntityEncoder: EntityEncoder[IO, I.Failure] = jsonEncoderOf[IO, I.Failure]
+  implicit val executeResponseEntityEncoder: EntityEncoder[IO, I.ExecutionResult] = jsonEncoderOf[IO, I.ExecutionResult]
 
   def build: HttpApp[IO] =
     api.orNotFound
   
   private val Interactions = interactions.map(interaction =>
-    I.Interaction(interaction.shaBase64, interaction.name, interaction.input))
+    I.Interaction(interaction.shaBase64, interaction.name, interaction.input.toList))
 
   def api: HttpRoutes[IO] = Router("/api/bakery" -> HttpRoutes.of[IO] {
 
@@ -51,12 +51,12 @@ final class RemoteInteractionService(interactions: List[InteractionInstance])(im
           case Some(interaction) =>
             IO.fromFuture(IO(interaction.run(request))).attempt.flatMap {
               case Right(value) =>
-                Ok(I.Success(value))
+                Ok(I.ExecutionResult(Right(I.Success(value))))
               case Left(e) =>
-                Ok(I.Failure(I.InteractionError(e.getMessage)))
+                Ok(I.ExecutionResult(Left(I.Failure(I.InteractionError(e.getMessage)))))
             }
           case None =>
-            Ok(I.Failure(I.NoInstanceFound))
+            Ok(I.ExecutionResult(Left(I.Failure(I.NoInstanceFound))))
         })
       } yield response
   })

@@ -146,15 +146,12 @@ final class ServiceDiscovery private(
     }
 
   import com.ing.baker.baas.protocol.InteractionExecutionJsonCodecs._
-  private val interfacesDecoder: Decoder[List[I.Interaction]] = deriveDecoder[List[I.Interaction]]
 
   private def extractInterfaces(contract: ConfigMap): IO[List[I.Interaction]] = {
     contract.data.get("interfaces").map(parse) map {
-      case Right(json) => interfacesDecoder.decodeJson(json).map(interactions =>
+      case Right(json) => json.as[List[I.Interaction]].map(interactions =>
         IO.pure(interactions)
-      ) getOrElse (
-        IO.raiseError(new IllegalStateException(s"Can't decode list from $json"))
-        )
+      ) getOrElse IO.raiseError(new IllegalStateException(s"Can't decode list from $json"))
       case Left(value) =>
         IO.raiseError(new IllegalStateException(s"Can't parse config map data: $value"))
     } getOrElse {
