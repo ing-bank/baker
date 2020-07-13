@@ -9,20 +9,18 @@ import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.ing.baker.types.CharArray
 import com.ing.bakery.clustercontroller.BakeryControllerSpec._
 import com.ing.bakery.clustercontroller.controllers.{BakerController, BakerResource, InteractionController, InteractionResource}
-import com.ing.bakery.mocks.{KubeApiServer, RemoteInteraction}
 import com.ing.bakery.mocks.WatchEvent.ResourcePath
+import com.ing.bakery.mocks.{KubeApiServer, RemoteInteraction}
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
-import org.http4s.client.blaze.BlazeClientBuilder
 import org.mockserver.integration.ClientAndServer
 import org.scalatest.ConfigMap
 import org.scalatest.matchers.should.Matchers
 import skuber.api.client.KubernetesClient
-import skuber.{EnvVar, ObjectMeta}
 import skuber.json.format.configMapFmt
+import skuber.{EnvVar, ObjectMeta}
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 object BakeryControllerSpec {
 
