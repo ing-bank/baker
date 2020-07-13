@@ -9,6 +9,7 @@ import com.ing.baker.runtime.scaladsl.{BakerEvent, BakerResult, EventInstance, E
 import com.ing.baker.runtime.serialization.JsonDecoders._
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.types.Value
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Decoder, DecodingFailure}
 import org.http4s.Method.{POST, _}
 import org.http4s._
@@ -46,7 +47,7 @@ object BakerClient {
   }
 }
 
-final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: ExecutionContext) extends ScalaBaker {
+final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: ExecutionContext) extends ScalaBaker with LazyLogging {
 
   val Root = hostname / "api" / "bakery"
 
@@ -64,8 +65,15 @@ final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: Executio
   }
 
   private def callRemoteBaker[A](request: IO[Request[IO]])(implicit decoder: Decoder[A]): Future[A] = {
-    client.expect(request)(jsonOf[IO, BakerResult]).map(r => parse(r)(decoder)).unsafeToFuture() flatMap {
-      case Left(t) => Future.failed(t)
+    client.expect(request)(jsonOf[IO, BakerResult]).map(r => {
+      parse(r)(decoder)
+    }).unsafeToFuture() flatMap {
+      case Left(bakerException: BakerException) =>
+        logger.warn(s"Baker call resulted in Baker exception: ${bakerException.message}")
+        Future.failed(bakerException)
+      case Left(t) =>
+        logger.error(s"Request $request sent to remote Baker caused unexpected error", t)
+        Future.failed(t)
       case Right(t) => Future.successful(t)
     }
   }
