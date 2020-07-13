@@ -10,18 +10,29 @@ import com.ing.baker.runtime.scaladsl.InteractionInstance
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.server.blaze._
 import org.http4s.server.{Router, Server}
-
 import scala.concurrent.ExecutionContext
 
 object RemoteInteractionService {
 
-  def resource(interactions: List[InteractionInstance], address: InetSocketAddress)(implicit timer: Timer[IO], cs: ContextShift[IO], ec: ExecutionContext): Resource[IO, Server[IO]] =
-    BlazeServerBuilder[IO](ec)
+  def resource(interactions: List[InteractionInstance], address: InetSocketAddress, tlsConfig: Option[BakeryHttp.TLSConfig])(implicit timer: Timer[IO], cs: ContextShift[IO]): Resource[IO, Server[IO]] = {
+    val tls = tlsConfig.map { tlsConfig =>
+      val sslConfig = BakeryHttp.loadSSLContext(tlsConfig)
+      val sslParams = sslConfig.getDefaultSSLParameters
+      sslParams.setNeedClientAuth(true)
+      (sslConfig, sslParams)
+    }
+    val service = new RemoteInteractionService(interactions)
+    val builder0 = BlazeServerBuilder[IO](ExecutionContext.global)
       .bindSocketAddress(address)
-      .withHttpApp(new RemoteInteractionService(interactions).build)
-      .resource
+      .withHttpApp(service.build)
+    val builder1 = tls match {
+      case Some((sslConfig, sslParams)) => builder0.withSslContextAndParameters(sslConfig, sslParams)
+      case None => builder0
+    }
+    builder1.resource
+  }
 }
 
 final class RemoteInteractionService(interactions: List[InteractionInstance])(implicit timer: Timer[IO], cs: ContextShift[IO]) {

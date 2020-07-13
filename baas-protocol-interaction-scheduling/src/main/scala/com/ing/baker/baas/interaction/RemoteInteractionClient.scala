@@ -35,8 +35,9 @@ object RemoteInteractionClient {
   /** use method `use` of the Resource, the client will be acquired and shut down automatically each time
    * the resulting `IO` is run, each time using the common connection pool.
    */
-  def resource(hostname: Uri, pool: ExecutionContext)(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, RemoteInteractionClient] =
-    BlazeClientBuilder[IO](pool)
+  def resource(hostname: Uri, pool: ExecutionContext, tlsConfig: Option[BakeryHttp.TLSConfig])(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, RemoteInteractionClient] =
+    BlazeClientBuilder[IO](pool, tlsConfig.map(BakeryHttp.loadSSLContext))
+      .withCheckEndpointAuthentication(false)
       .resource
       .map(new RemoteInteractionClient(_, hostname))
 }

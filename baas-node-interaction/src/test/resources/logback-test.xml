@@ -1,15 +1,17 @@
 <configuration>
 
-    <logger name="org.mockserver.log.MockServerEventLog" level="OFF"/>
-
-    <root level="info">
-        <appender-ref ref="CONSOLE"/>
-    </root>
-
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <logger name="org.mockserver.log.MockServerEventLog" level="OFF"/>
+
+    <logger name="org.http4s" level="OFF"/>
 
 </configuration>

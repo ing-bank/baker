@@ -35,12 +35,12 @@ object ServiceDiscovery extends LazyLogging {
     *
     * Current hard coded polling periods: 2 seconds
     *
-    * @param httpClient to be used for interaction with the remote interactions
+    * @param interactionHttpClient to be used for interaction with the remote interactions
     * @param contextShift to be used by the streams
     * @param timer to be used by the streams
     * @return
     */
-  def resource(httpClient: Client[IO], k8s: KubernetesClient)(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem, materializer: Materializer): Resource[IO, ServiceDiscovery] = {
+  def resource(interactionHttpClient: Client[IO], k8s: KubernetesClient)(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem, materializer: Materializer): Resource[IO, ServiceDiscovery] = {
 
     def watchSource(serviceDiscovery: ServiceDiscovery): Source[K8SWatchEvent[ConfigMap], UniqueKillSwitch] = {
       val watchFilter: ListOptions = {
@@ -75,7 +75,7 @@ object ServiceDiscovery extends LazyLogging {
 
     val createServiceDiscovery: IO[(ServiceDiscovery, UniqueKillSwitch)] =
       for {
-        serviceDiscovery <- ServiceDiscovery.empty(httpClient)
+        serviceDiscovery <- ServiceDiscovery.empty(interactionHttpClient)
         killSwitch <- IO { watchSource(serviceDiscovery).toMat(updateSink(serviceDiscovery))(Keep.left).run() }
       } yield (serviceDiscovery, killSwitch)
 
@@ -85,7 +85,7 @@ object ServiceDiscovery extends LazyLogging {
 
 final class ServiceDiscovery private(
   cacheInteractions: Ref[IO, Map[String, InteractionInstance]],
-  httpClient: Client[IO]
+  interactionHttpClient: Client[IO]
 ) extends LazyLogging {
 
   def get: IO[List[InteractionInstance]] =
@@ -115,7 +115,7 @@ final class ServiceDiscovery private(
     for {
       address <- extractAddress(contract)
       interfaces <- extractInterfaces(contract)
-      client = new RemoteInteractionClient(httpClient, address)
+      client = new RemoteInteractionClient(interactionHttpClient, address)
       interactions = interfaces.map { interaction =>
         interaction.id -> InteractionInstance(
           name = interaction.name,

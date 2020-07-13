@@ -16,4 +16,6 @@
 
     <logger level="OFF" name="org.mockserver.log.MockServerEventLog"/>
 
+    <logger level="OFF" name="com.ing.baker.baas.state.ServiceDiscovery"/>
+
 </configuration>
