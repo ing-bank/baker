@@ -17,9 +17,9 @@ spec:
           cpu: 200m
       readinessProbe:
         httpGet:
-          path: /api/v3/health
+          path: /api/bakery/health
           port: 8080
       livenessProbe:
         httpGet:
-          path: /api/v3/health
+          path: /api/bakery/health
           port: 8080

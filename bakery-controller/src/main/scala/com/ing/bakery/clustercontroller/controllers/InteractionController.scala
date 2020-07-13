@@ -112,7 +112,7 @@ final class InteractionController(httpClient: Client[IO])(implicit cs: ContextSh
     val healthProbe = skuber.Probe(
       action = skuber.HTTPGetAction(
         port = Right(httpAPIPort.name),
-        path = "/api/v3/health"
+        path = "/api/bakery/health"
       ),
       initialDelaySeconds = 15,
       timeoutSeconds = 10
