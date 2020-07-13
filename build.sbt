@@ -295,6 +295,8 @@ lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
       http4s,
       http4sDsl,
       http4sServer,
+      catsEffect,
+      catsCore,
       kamon,
       kamonPrometheus
     ) ++ testDeps(
@@ -303,6 +305,28 @@ lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
     )
   )
   .dependsOn(`baas-protocol-interaction-scheduling`, `baker-interface`)
+
+lazy val `baas-node-interaction-spring` = project.in(file("baas-node-interaction-spring"))
+  .settings(defaultModuleSettings)
+  .settings(
+    moduleName := "baas-node-interaction-spring",
+    libraryDependencies ++= Seq(
+      slf4jApi,
+      logback,
+      http4s,
+      http4sDsl,
+      http4sServer,
+      kamon,
+      kamonPrometheus,
+      springCore,
+      springContext,
+      scalaLogging
+    ) ++ testDeps(
+      scalaTest,
+      logback
+    )
+  )
+  .dependsOn(`baas-node-interaction`, `recipeDsl`)
 
 lazy val `bakery-controller` = project.in(file("bakery-controller"))
   .settings(defaultModuleSettings)
