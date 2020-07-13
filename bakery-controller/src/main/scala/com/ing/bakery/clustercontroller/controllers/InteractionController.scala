@@ -128,8 +128,8 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
 
     val healthProbe = skuber.Probe(
       action = skuber.HTTPGetAction(
-        port = Right(httpAPIPort.name),
-        path = "/api/bakery/health"
+        port = Left(9999),
+        path = "/health"
       ),
       initialDelaySeconds = 15,
       timeoutSeconds = 10

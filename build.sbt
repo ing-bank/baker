@@ -214,11 +214,11 @@ lazy val recipeCompiler = project.in(file("compiler"))
   .dependsOn(recipeDsl, intermediateLanguage, testScope(recipeDsl))
 
 
-lazy val `bakery-interaction-api` = project.in(file("bakery-interaction-api"))
+lazy val `baas-protocol-interaction-scheduling` = project.in(file("baas-protocol-interaction-scheduling"))
   .settings(defaultModuleSettings)
   .settings(scalaPBSettings)
   .settings(
-    moduleName := "bakery-interaction-api",
+    moduleName := "baas-protocol-interaction-scheduling",
     libraryDependencies ++= Seq(
       http4s,
       http4sDsl,
@@ -283,14 +283,14 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
   .dependsOn(
     runtime,
     `baas-node-client`,
-    `bakery-interaction-api`,
+    `baas-protocol-interaction-scheduling`,
     recipeCompiler, recipeDsl, intermediateLanguage
   )
 
-lazy val `bakery-interaction` = project.in(file("bakery-interaction"))
+lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
   .settings(defaultModuleSettings)
   .settings(
-    moduleName := "bakery-interaction",
+    moduleName := "baas-node-interaction",
     libraryDependencies ++= Seq(
       slf4jApi,
       logback,
@@ -306,12 +306,12 @@ lazy val `bakery-interaction` = project.in(file("bakery-interaction"))
       logback
     )
   )
-  .dependsOn(`bakery-interaction-api`, `baker-interface`)
+  .dependsOn(`baas-protocol-interaction-scheduling`, `baker-interface`)
 
-lazy val `bakery-interaction-spring` = project.in(file("bakery-interaction-spring"))
+lazy val `baas-node-interaction-spring` = project.in(file("baas-node-interaction-spring"))
   .settings(defaultModuleSettings)
   .settings(
-    moduleName := "bakery-interaction-spring",
+    moduleName := "baas-node-interaction-spring",
     libraryDependencies ++= Seq(
       slf4jApi,
       logback,
@@ -328,7 +328,7 @@ lazy val `bakery-interaction-spring` = project.in(file("bakery-interaction-sprin
       logback
     )
   )
-  .dependsOn(`bakery-interaction`, `recipeDsl`)
+  .dependsOn(`baas-node-interaction`, `recipeDsl`)
 
 lazy val `bakery-controller` = project.in(file("bakery-controller"))
   .settings(defaultModuleSettings)
@@ -360,12 +360,12 @@ lazy val `bakery-controller` = project.in(file("bakery-controller"))
       circeGeneric
     )
   )
-  .dependsOn(bakertypes, recipeCompiler, recipeDsl, intermediateLanguage, `baas-node-client`, `bakery-interaction-api`)
+  .dependsOn(bakertypes, recipeCompiler, recipeDsl, intermediateLanguage, `baas-node-client`, `baas-protocol-interaction-scheduling`)
 
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver,
-    `baas-node-client`, `baas-node-state`, `bakery-interaction`, `bakery-interaction-api`,
+    `baas-node-client`, `baas-node-state`, `baas-node-interaction`, `baas-protocol-interaction-scheduling`,
     `sbt-baas-docker-generate`,
     `baker-interface`, `bakery-controller`)
 
@@ -483,7 +483,7 @@ lazy val `baas-interaction-example-reserve-items` = project.in(file("examples/ba
         scalaCheck
       )
   )
-  .dependsOn(`bakery-interaction`)
+  .dependsOn(`baas-node-interaction`)
 
 lazy val `baas-interaction-example-make-payment-and-ship-items` = project.in(file("examples/baas-interaction-examples/make-payment-and-ship-items"))
   .enablePlugins(JavaAppPackaging)
@@ -504,7 +504,7 @@ lazy val `baas-interaction-example-make-payment-and-ship-items` = project.in(fil
         scalaCheckPlus
       )
   )
-  .dependsOn(`bakery-interaction`)
+  .dependsOn(`baas-node-interaction`)
 
 lazy val `baas-smoke-tests` = project.in(file("baas-smoke-tests"))
   .settings(defaultModuleSettings)
@@ -544,4 +544,4 @@ lazy val `sbt-baas-docker-generate` = project.in(file("sbt-baas-docker-generate"
   )
   .enablePlugins(SbtPlugin)
   .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
-  .dependsOn(`bakery-interaction`)
+  .dependsOn(`baas-node-interaction`)

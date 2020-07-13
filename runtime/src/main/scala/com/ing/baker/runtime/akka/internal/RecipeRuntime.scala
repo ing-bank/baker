@@ -204,7 +204,7 @@ class RecipeRuntime(recipe: CompiledRecipe, interactionManager: InteractionManag
         eventStream.publish(InteractionStarted(timeStarted, recipe.name, recipe.recipeId, processState.recipeInstanceId, interaction.interactionName))
 
         // executes the interaction and obtain the (optional) output event
-        interactionManager.executeImplementation(interaction, input.toList).map { interactionOutput =>
+        interactionManager.executeImplementation(interaction, input).map { interactionOutput =>
 
           // validates the event, throws a FatalInteraction exception if invalid
           RecipeRuntime.validateInteractionOutput(interaction, interactionOutput).foreach { validationError =>

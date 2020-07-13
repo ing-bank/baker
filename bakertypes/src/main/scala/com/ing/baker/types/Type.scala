@@ -89,6 +89,7 @@ sealed trait Type {
 }
 
 case class ListType(entryType: Type) extends Type {
+
   override def toString: String = s"List[$entryType]"
 }
 

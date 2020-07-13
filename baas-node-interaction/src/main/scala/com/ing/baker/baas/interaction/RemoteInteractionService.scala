@@ -9,7 +9,7 @@ import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.server.blaze._
 import org.http4s.server.{Router, Server}
 
 import scala.concurrent.ExecutionContext
