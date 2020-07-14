@@ -45,6 +45,14 @@ object JsonDecoders extends LazyLogging {
                 PrimitiveValue(value)
               } else if (sTyp == "java.lang.Character") {
                 PrimitiveValue(Character.valueOf(value.headOption.getOrElse('\u0000')))
+              } else if (sTyp == "java.math.BigInteger") {
+                PrimitiveValue(new java.math.BigInteger(value))
+              } else if (sTyp == "java.math.BigDecimal") {
+                PrimitiveValue(new java.math.BigDecimal(value))
+              } else if (sTyp == "scala.math.BigInt") {
+                PrimitiveValue(BigInt(value))
+              } else if (sTyp == "scala.math.BigDecimal") {
+                PrimitiveValue(BigDecimal(value))
               } else {
                 val result = Class
                   .forName(sTyp)
