@@ -223,7 +223,8 @@ lazy val `baas-protocol-interaction-scheduling` = project.in(file("baas-protocol
     libraryDependencies ++= Seq(
       http4s,
       http4sDsl,
-      http4sClient
+      http4sClient,
+      http4sCirce
     )
   )
   .dependsOn(`baker-interface`)
@@ -236,7 +237,8 @@ lazy val `baas-node-client` = project.in(file("baas-node-client"))
       http4s,
       http4sDsl,
       http4sClient,
-      http4sCirce
+      http4sCirce,
+      scalaLogging
     )
   )
   .dependsOn(`baker-interface`)

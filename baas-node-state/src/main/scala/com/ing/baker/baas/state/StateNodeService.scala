@@ -17,10 +17,11 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.{Router, Server}
 import com.ing.baker.runtime.serialization.JsonEncoders._
 import com.ing.baker.runtime.serialization.JsonDecoders._
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object StateNodeService {
+object StateNodeService  {
 
   def resource(baker: Baker, hostname: InetSocketAddress, serviceDiscovery: ServiceDiscovery)(implicit cs: ContextShift[IO], timer: Timer[IO], ec: ExecutionContext): Resource[IO, Server[IO]] = {
     for {
@@ -32,7 +33,7 @@ object StateNodeService {
   }
 }
 
-final class StateNodeService private(baker: Baker, serviceDiscovery: ServiceDiscovery)(implicit cs: ContextShift[IO], timer: Timer[IO]) {
+final class StateNodeService private(baker: Baker, serviceDiscovery: ServiceDiscovery)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends LazyLogging {
 
   object CorrelationId extends OptionalQueryParamDecoderMatcher[String]("correlationId")
 
@@ -44,7 +45,9 @@ final class StateNodeService private(baker: Baker, serviceDiscovery: ServiceDisc
   private def callBaker[A](f : => Future[A])(implicit encoder: Encoder[A]): IO[Response[IO]] = {
     IO.fromFuture(IO(f)).attempt.flatMap {
       case Left(e: BakerException) => Ok(BakerResult(e))
-      case Left(e) => InternalServerError(s"No other exception but BakerExceptions should be thrown here: ${e.getCause}")
+      case Left(e) =>
+        logger.error(s"Unexpected exception happened when calling Baker", e)
+        InternalServerError(s"No other exception but BakerExceptions should be thrown here: ${e.getCause}")
       case Right(Unit) => Ok(BakerResult.Ack)
       case Right(a) => Ok(BakerResult(a))
     }

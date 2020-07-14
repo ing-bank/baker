@@ -9,20 +9,18 @@ import com.ing.baker.runtime.scaladsl.InteractionInstance
 import com.ing.baker.types.CharArray
 import com.ing.bakery.clustercontroller.BakeryControllerSpec._
 import com.ing.bakery.clustercontroller.controllers.{BakerController, BakerResource, InteractionController, InteractionResource}
-import com.ing.bakery.mocks.{KubeApiServer, RemoteInteraction}
 import com.ing.bakery.mocks.WatchEvent.ResourcePath
+import com.ing.bakery.mocks.{KubeApiServer, RemoteInteraction}
 import com.ing.bakery.testing.BakeryFunSpec
 import com.typesafe.config.ConfigFactory
-import org.http4s.client.blaze.BlazeClientBuilder
 import org.mockserver.integration.ClientAndServer
 import org.scalatest.ConfigMap
 import org.scalatest.matchers.should.Matchers
 import skuber.api.client.KubernetesClient
-import skuber.{EnvVar, ObjectMeta}
 import skuber.json.format.configMapFmt
+import skuber.{EnvVar, ObjectMeta}
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 object BakeryControllerSpec {
 
@@ -401,19 +399,18 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
       materializer = ActorMaterializer()(system)
       k8s: KubernetesClient = skuber.k8sInit(skuber.api.Configuration.useLocalProxyOnPort(mockServer.getLocalPort))(system, materializer)
 
-      httpClient <- BlazeClientBuilder[IO](executionContext).resource
     } yield {
       implicit val as: ActorSystem = system
       implicit val mat: Materializer = materializer
       val interactionController =
         Resource.liftF(kubeApiServer.noNewInteractionEvents).flatMap( _ =>
-          new InteractionController(httpClient).watch(k8s)(contextShift, timer, system, materializer, InteractionResource.interactionResourceFormat, InteractionResource.resourceDefinitionInteractionResource))
+          new InteractionController(executionContext).watch(k8s)(contextShift, timer, system, materializer, InteractionResource.interactionResourceFormat, InteractionResource.resourceDefinitionInteractionResource))
       val bakerController =
         Resource.liftF(kubeApiServer.noNewBakerEvents).flatMap( _ =>
           new BakerController().watch(k8s))
       val interactionControllerConfigMaps =
         Resource.liftF(kubeApiServer.noNewConfigMapEventsFor("interactions")).flatMap( _ =>
-          new InteractionController(httpClient).fromConfigMaps(InteractionResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "interactions")))
+          new InteractionController(executionContext).fromConfigMaps(InteractionResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "interactions")))
       val bakerControllerConfigMaps =
         Resource.liftF(kubeApiServer.noNewConfigMapEventsFor("bakers")).flatMap( _ =>
           new BakerController().fromConfigMaps(BakerResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "bakers")))

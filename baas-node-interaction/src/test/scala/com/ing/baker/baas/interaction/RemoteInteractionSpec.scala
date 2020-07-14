@@ -3,20 +3,29 @@ package com.ing.baker.baas.interaction
 import java.net.InetSocketAddress
 
 import cats.effect.{IO, Resource}
-import com.ing.baker.baas.interaction.RemoteInteractionClient.InteractionEndpoint
 import com.ing.baker.baas.testing.BakeryFunSpec
 import com.ing.baker.runtime.scaladsl.{EventInstance, IngredientInstance, InteractionInstance}
 import com.ing.baker.types.{CharArray, Int64, PrimitiveValue}
 import org.scalatest.ConfigMap
 import org.scalatest.compatible.Assertion
-
+import com.ing.baker.baas.protocol.{InteractionExecution => I}
 import scala.concurrent.Future
 
 class RemoteInteractionSpec extends BakeryFunSpec {
 
   case class Context(
-    withInteractionInstances: List[InteractionInstance] => (RemoteInteractionClient => IO[Assertion]) => IO[Assertion]
+    withInteractionInstances: List[InteractionInstance] => (RemoteInteractionClient => IO[Assertion]) => IO[Assertion],
+    withNoTrustClient: List[InteractionInstance] => (RemoteInteractionClient => IO[Assertion]) => IO[Assertion]
   )
+
+  val serviceTLSConfig: BakeryHttp.TLSConfig =
+    BakeryHttp.TLSConfig("changeit", "test-certs/interaction.ing-bank.github.io.jks", "JKS")
+
+  val clientTLSConfig: BakeryHttp.TLSConfig =
+    BakeryHttp.TLSConfig("changeit", "test-certs/client.interaction.ing-bank.github.io.jks", "JKS")
+
+  val serviceNoTrustTLSConfig: BakeryHttp.TLSConfig =
+    BakeryHttp.TLSConfig("changeit", "test-certs/interaction.ing-bank.github.io_NO_CLIENT_TRUST.jks", "JKS")
 
   /** Represents the "sealed resources context" that each test can use. */
   type TestContext = Context
@@ -34,11 +43,18 @@ class RemoteInteractionSpec extends BakeryFunSpec {
    * @return the resources each test can use
    */
   def contextBuilder(testArguments: TestArguments): Resource[IO, TestContext] = {
-    val context = Context({ interaction => runTest =>
-      RemoteInteractionService.resource(interaction, InetSocketAddress.createUnresolved("localhost", 0))
-        .flatMap(server => RemoteInteractionClient.resource(server.baseUri, executionContext))
-        .use(runTest)
-    })
+    val context = Context(
+      withInteractionInstances = { interaction => runTest =>
+        RemoteInteractionService.resource(interaction, InetSocketAddress.createUnresolved("localhost", 0), Some(serviceTLSConfig))
+          .flatMap(server => RemoteInteractionClient.resource(server.baseUri, executionContext, Some(clientTLSConfig)))
+          .use(runTest)
+      },
+      withNoTrustClient = { interaction => runTest =>
+        RemoteInteractionService.resource(interaction, InetSocketAddress.createUnresolved("localhost", 0), Some(serviceNoTrustTLSConfig))
+          .flatMap(server => RemoteInteractionClient.resource(server.baseUri, executionContext, Some(clientTLSConfig)))
+          .use(runTest)
+      }
+    )
     Resource.pure[IO, Context](context)
   }
 
@@ -60,7 +76,7 @@ class RemoteInteractionSpec extends BakeryFunSpec {
 
     val implementation0 = InteractionInstance(
       name = "TestInteraction0",
-      input = Seq(CharArray, Int64),
+      input = Seq(CharArray, Int64).toList,
       run = input => Future.successful(Some(result(input.head.value.as[String], input(1).value.as[Int])))
     )
 
@@ -75,8 +91,8 @@ class RemoteInteractionSpec extends BakeryFunSpec {
         for {
           result <- client.interface
         } yield assert(result == List(
-          InteractionEndpoint(implementation0.shaBase64, implementation0.name, implementation0.input),
-          InteractionEndpoint(implementation1.shaBase64, implementation1.name, implementation1.input)
+          I.Interaction(implementation0.shaBase64, implementation0.name, implementation0.input.toList),
+          I.Interaction(implementation1.shaBase64, implementation1.name, implementation1.input.toList)
         ))
       }
     }
@@ -92,6 +108,20 @@ class RemoteInteractionSpec extends BakeryFunSpec {
           assert(result0 === Some(result("A", 1)))
           assert(result1 === Some(result("A!", 2)))
         }
+      }
+    }
+
+    test("does not make connections with clients that does not trust") { context =>
+      context.withNoTrustClient(List(implementation0)) { client =>
+        val ingredient0 = IngredientInstance("input0", PrimitiveValue("A"))
+        val ingredient1 = IngredientInstance("input1", PrimitiveValue(1))
+        val result: IO[Option[String]] = client.runInteraction(implementation0.shaBase64, Seq(ingredient0, ingredient1))
+          .map(_ => None)
+          .handleErrorWith {
+            case e: java.net.ConnectException => IO.pure(Some("connection error"))
+            case e => IO.raiseError(e)
+          }
+        result.map(result => assert(result === Some("connection error")))
       }
     }
   }

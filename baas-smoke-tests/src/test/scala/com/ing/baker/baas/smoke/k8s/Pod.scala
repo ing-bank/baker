@@ -57,9 +57,9 @@ object Pod {
       _ = assert(podsComplete(pods))
     } yield()
 
-  private val setupWaitTime = 1.minute
+  private val setupWaitTime = 10.minute
 
-  private val setupWaitSplit = 10
+  private val setupWaitSplit = 100
 
   def waitUntilAllPodsAreReady(namespace: Namespace)(implicit timer: Timer[IO]): IO[Unit] =
     within(setupWaitTime, setupWaitSplit)(for {
