@@ -10,7 +10,7 @@ import com.typesafe.config.ConfigFactory
 import org.http4s.Uri
 import org.http4s.server.blaze.BlazeServerBuilder
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
 object Main extends IOApp {
 
@@ -29,7 +29,7 @@ object Main extends IOApp {
       config.getString("baas.state-node-hostname")
     val httpPort =
       config.getInt("baas-component.http-api-port")
-    val connectionPool =
+    val connectionPool: ExecutionContextExecutor =
       ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
 
     val mainResource = for {

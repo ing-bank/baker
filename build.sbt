@@ -1,5 +1,6 @@
 import Dependencies._
 import sbt.Keys._
+import sbt.file
 
 def testScope(project: ProjectReference): ClasspathDep[ProjectReference] = project % "test->test;test->compile"
 
@@ -14,7 +15,7 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
       "project baas-interaction-example-make-payment-and-ship-items" ::
       "buildInteractionDockerImage --image-name=interaction-make-payment-and-ship-items --publish=local --interaction=webshop.webservice.MakePaymentInstance --interaction=webshop.webservice.ShipItemsInstance" ::
       "project baas-interaction-example-reserve-items" ::
-      "buildInteractionDockerImage --image-name=baas-interaction-example-reserve-items --publish=local --interaction=webshop.webservice.ReserveItemsInstance" ::
+      "buildInteractionDockerImage --image-name=baas-interaction-example-reserve-items --publish=local --interaction=webshop.webservice.ReserveItemsConfiguration --springEnabled=true" ::
       "project baas-smoke-tests" ::
       state
 })
@@ -297,6 +298,8 @@ lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
       http4s,
       http4sDsl,
       http4sServer,
+      http4sCirce,
+      circe,
       catsEffect,
       catsCore,
       kamon,
@@ -318,6 +321,10 @@ lazy val `baas-node-interaction-spring` = project.in(file("baas-node-interaction
       http4s,
       http4sDsl,
       http4sServer,
+      http4sCirce,
+      circe,
+      catsEffect,
+      catsCore,
       kamon,
       kamonPrometheus,
       springCore,
@@ -365,7 +372,7 @@ lazy val `bakery-controller` = project.in(file("bakery-controller"))
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
   .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver,
-    `baas-node-client`, `baas-node-state`, `baas-node-interaction`, `baas-protocol-interaction-scheduling`,
+    `baas-node-client`, `baas-node-state`, `baas-node-interaction`, `baas-node-interaction-spring`, `baas-protocol-interaction-scheduling`,
     `sbt-baas-docker-generate`,
     `baker-interface`, `bakery-controller`)
 
@@ -477,13 +484,15 @@ lazy val `baas-interaction-example-reserve-items` = project.in(file("examples/ba
     libraryDependencies ++=
       compileDeps(
         slf4jApi,
-        catsEffect
+        catsEffect,
+        springCore,
+        springContext
       ) ++ testDeps(
         scalaTest,
         scalaCheck
       )
   )
-  .dependsOn(`baas-node-interaction`)
+  .dependsOn(`baas-node-interaction`, recipeDsl)
 
 lazy val `baas-interaction-example-make-payment-and-ship-items` = project.in(file("examples/baas-interaction-examples/make-payment-and-ship-items"))
   .enablePlugins(JavaAppPackaging)
@@ -544,4 +553,4 @@ lazy val `sbt-baas-docker-generate` = project.in(file("sbt-baas-docker-generate"
   )
   .enablePlugins(SbtPlugin)
   .enablePlugins(baas.sbt.BuildInteractionDockerImageSBTPlugin)
-  .dependsOn(`baas-node-interaction`)
+  .dependsOn(`baas-node-interaction`, `baas-node-interaction-spring`)

@@ -1,8 +1,9 @@
 package webshop.webservice
 
 import scala.concurrent.Future
+import com.ing.baker.recipe.javadsl.Interaction
 
-trait ReserveItems {
+trait ReserveItems extends Interaction {
 
   case class OrderId(orderId: String)
 
