@@ -40,7 +40,7 @@ object KafkaEventSink extends LazyLogging {
           IO {
             new EventSink {
               override def fire(event: Any)(implicit cs: ContextShift[IO]): IO[Unit] = {
-                IO.delay(logger.info(s">>> $event"))
+                IO.delay(logger.debug(s">>> $event"))
               }
             }
           }
