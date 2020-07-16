@@ -1,21 +1,21 @@
 <configuration>
 
-  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder>
-      <pattern>%d{HH:mm:ss.SSS} [%-5level] %logger{36} - %msg%n</pattern>
-    </encoder>
-  </appender>
+<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+  <encoder>
+    <pattern>%d{HH:mm:ss.SSS} [%-5level] %logger{36} - %msg%n</pattern>
+  </encoder>
+</appender>
 
-  <root level="INFO">
-    <appender-ref ref="CONSOLE"/>
-  </root>
+<root level="INFO">
+  <appender-ref ref="CONSOLE"/>
+</root>
 
-  <logger level="ERROR" name="skuber.api"/>
+<logger level="ERROR" name="skuber.api"/>
 
-  <logger level="ERROR" name="org.http4s"/>
+<logger level="ERROR" name="org.http4s"/>
 
-  <logger level="INFO" name="bakery.ServiceDiscovery"/>
+<logger level="INFO" name="bakery.ServiceDiscovery"/>
 
-  <logger level="INFO" name="com.ing.baker.baas.state.Main"/>
+<logger level="INFO" name="com.ing.baker.baas.state.Main"/>
 
 </configuration>
