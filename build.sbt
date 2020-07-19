@@ -8,10 +8,10 @@ lazy val buildExampleDockerCommand: Command = Command.command("buildExampleDocke
   state =>
     val extracted = Project.extract(state)
 
-    "baas-node-state/docker:publishLocal" ::
+    "bakery-state-docker-generate/docker:publishLocal" ::
       "baas-client-example/docker:publishLocal" ::
       "baas-kafka-listener-example/docker:publishLocal" ::
-      "bakery-controller/docker:publishLocal" ::
+      "bakery-controller-docker-generate/docker:publishLocal" ::
       "project baas-interaction-example-make-payment-and-ship-items" ::
       "buildInteractionDockerImage --image-name=interaction-make-payment-and-ship-items --publish=local --interaction=webshop.webservice.MakePaymentInstance --interaction=webshop.webservice.ShipItemsInstance" ::
       "project baas-interaction-example-reserve-items" ::
@@ -244,8 +244,6 @@ lazy val `baas-node-client` = project.in(file("baas-node-client"))
   .dependsOn(`baker-interface`)
 
 lazy val `baas-node-state` = project.in(file("baas-node-state"))
-  .enablePlugins(JavaAppPackaging)
-  .enablePlugins(DockerPlugin)
   .settings(commonSettings ++ Publish.settings)
   .settings(
     moduleName := "baas-node-state",
@@ -254,7 +252,6 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
     ),
     libraryDependencies ++= Seq(
       slf4jApi,
-      logback,
       akkaPersistenceCassandra,
       akkaManagementHttp,
       akkaClusterBoostrap,
@@ -277,10 +274,6 @@ lazy val `baas-node-state` = project.in(file("baas-node-state"))
       circeGeneric
     )
   )
-  .settings(
-    packageSummary in Docker := "The core node",
-    packageName in Docker := "baas-node-state"
-  )
   .dependsOn(
     runtime,
     `baas-node-client`,
@@ -294,7 +287,6 @@ lazy val `baas-node-interaction` = project.in(file("baas-node-interaction"))
     moduleName := "baas-node-interaction",
     libraryDependencies ++= Seq(
       slf4jApi,
-      logback,
       http4s,
       http4sDsl,
       http4sServer,
@@ -317,7 +309,6 @@ lazy val `baas-node-interaction-spring` = project.in(file("baas-node-interaction
     moduleName := "baas-node-interaction-spring",
     libraryDependencies ++= Seq(
       slf4jApi,
-      logback,
       http4s,
       http4sDsl,
       http4sServer,
@@ -339,18 +330,11 @@ lazy val `baas-node-interaction-spring` = project.in(file("baas-node-interaction
 
 lazy val `bakery-controller` = project.in(file("bakery-controller"))
   .settings(defaultModuleSettings)
-  .enablePlugins(JavaAppPackaging, JavaAgent)
-  .settings(
-    packageSummary in Docker := "The bakery controller",
-    packageName in Docker := "bakery-controller"
-  )
   .settings(
     moduleName := "bakery-controller",
-    javaAgents += "io.kamon" % "kanela-agent" % "1.0.5",
     libraryDependencies ++= Seq(
       slf4jApi,
       akkaSlf4j,
-      logback,
       scalaLogging,
       skuber,
       http4s,
@@ -368,6 +352,32 @@ lazy val `bakery-controller` = project.in(file("bakery-controller"))
     )
   )
   .dependsOn(bakertypes, recipeCompiler, recipeDsl, intermediateLanguage, `baas-node-client`, `baas-protocol-interaction-scheduling`)
+
+lazy val `bakery-controller-docker-generate` = project.in(file("docker/bakery-controller-docker-generate"))
+  .settings(commonSettings, noPublishSettings)
+  .enablePlugins(JavaAppPackaging, JavaAgent)
+  .settings(
+    packageSummary in Docker := "The bakery controller",
+    packageName in Docker := "bakery-controller",
+    libraryDependencies ++= Seq(
+      logback
+    )
+  )
+  .dependsOn(`bakery-controller`)
+  .aggregate(`bakery-controller`)
+
+lazy val `bakery-state-docker-generate` = project.in(file("docker/bakery-state-docker-generate"))
+  .settings(commonSettings, noPublishSettings)
+  .enablePlugins(JavaAppPackaging, JavaAgent)
+  .settings(
+    packageSummary in Docker := "The bakery state node",
+    packageName in Docker := "baas-node-state",
+    libraryDependencies ++= Seq(
+      logback
+    )
+  )
+  .dependsOn(`baas-node-state`)
+  .aggregate(`baas-node-state`)
 
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
@@ -483,7 +493,7 @@ lazy val `baas-interaction-example-reserve-items` = project.in(file("examples/ba
     ),
     libraryDependencies ++=
       compileDeps(
-        slf4jApi,
+        logback,
         catsEffect,
         springCore,
         springContext
@@ -505,7 +515,7 @@ lazy val `baas-interaction-example-make-payment-and-ship-items` = project.in(fil
     ),
     libraryDependencies ++=
       compileDeps(
-        slf4jApi,
+        logback,
         catsEffect
       ) ++ testDeps(
         scalaTest,
