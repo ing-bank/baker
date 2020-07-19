@@ -2,6 +2,7 @@ package com.ing.baker.baas.scaladsl
 
 import java.util.concurrent.Executors
 
+import cats.implicits._
 import cats.effect.{Blocker, ContextShift, IO, Resource, Timer}
 import com.ing.baker.il.{CompiledRecipe, RecipeVisualStyle}
 import com.ing.baker.runtime.common.{BakerException, SensoryEventStatus}
@@ -100,7 +101,10 @@ final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: Executio
     * @param recipeInstanceId The identifier for the newly baked process
     * @return
     */
-  override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] = callRemoteBaker[Unit](POST(Root / "instances" / recipeInstanceId / "bake"  / recipeId))
+  override def bake(recipeId: String, recipeInstanceId: String): Future[Unit] =
+    callRemoteBaker[Unit](POST(Root / "instances" / recipeInstanceId / "bake"  / recipeId)).map { _ =>
+      logger.info(s"Baked recipe instance '$recipeInstanceId' from recipe '$recipeId'")
+    }
 
   /**
    * Notifies Baker that an event has happened and waits until all the actions which depend on this event are executed.
@@ -118,7 +122,11 @@ final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: Executio
                                                 correlationId: Option[String]): Future[SensoryEventResult] =
     callRemoteBaker[SensoryEventResult](
       POST(event, (Root / "instances" / recipeInstanceId / "fire-and-resolve-when-completed")
-        .withOptionQueryParam("correlationId", correlationId)))
+        .withOptionQueryParam("correlationId", correlationId))).map { result =>
+      logger.info(s"For recipe instance '$recipeInstanceId', fired and completed event '${event.name}', resulting status ${result.sensoryEventStatus}")
+      logger.debug(s"Resulting ingredients ${result.ingredients.map { case (ingredient, value) => s"$ingredient=$value" }.mkString(", ")}")
+      result
+    }
 
   /**
     * Notifies Baker that an event has happened and waits until the event was accepted but not executed by the process.
@@ -136,7 +144,10 @@ final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: Executio
                                                correlationId: Option[String]): Future[SensoryEventStatus] =
     callRemoteBaker[SensoryEventStatus](
       POST(event, (Root / "instances" / recipeInstanceId / "fire-and-resolve-when-received")
-        .withOptionQueryParam("correlationId", correlationId)))
+        .withOptionQueryParam("correlationId", correlationId))).map { result =>
+      logger.info(s"For recipe instance '$recipeInstanceId', fired and received event '${event.name}', resulting status $result")
+      result
+    }
 
   /**
     * Notifies Baker that an event has happened and waits until an specific event has executed.
@@ -156,7 +167,11 @@ final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: Executio
                                           correlationId: Option[String]): Future[SensoryEventResult] =
     callRemoteBaker[SensoryEventResult](
       POST(event, (Root / "instances" / recipeInstanceId / "fire-and-resolve-on-event" / onEvent)
-        .withOptionQueryParam("correlationId", correlationId)))
+        .withOptionQueryParam("correlationId", correlationId))).map { result =>
+      logger.info(s"For recipe instance '$recipeInstanceId', fired event '${event.name}', and resolved on event '$onEvent', resulting status ${result.sensoryEventStatus}")
+      logger.debug(s"Resulting ingredients ${result.ingredients.map { case (ingredient, value) => s"$ingredient=$value" }.mkString(", ")}")
+      result
+    }
 
 
   /**
@@ -186,6 +201,7 @@ final class BakerClient(client: Client[IO], hostname: Uri)(implicit ec: Executio
     */
   override def getAllRecipeInstancesMetadata: Future[Set[RecipeInstanceMetadata]] =
     callRemoteBaker[Set[RecipeInstanceMetadata]](GET(Root / "instances"))
+  
   /**
     * Returns the process state.
     *
