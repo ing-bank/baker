@@ -156,7 +156,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
     case Stop(deleteHistory) ⇒
       scheduledRetries.values.foreach(_.cancel())
       if (deleteHistory) {
-        log.debug("Deleting process history")
+        log.debug("Deleting recipe instance history")
         deleteMessages(lastSequenceNr)
         context become waitForDeleteConfirmation(instance)
       } else
@@ -384,7 +384,7 @@ class ProcessInstance[P: Identifiable, T: Identifiable, S, E](
 
   def executeJob(job: Job[P, T, S], originalSender: ActorRef): Unit = {
 
-    log.firingTransition(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
+    log.firingInteraction(recipeInstanceId, job.id, job.transition.asInstanceOf[Transition], System.currentTimeMillis())
 
     // context.self can be potentially throw NullPointerException in non graceful shutdown situations
     Try(context.self).foreach { self =>
