@@ -355,29 +355,29 @@ lazy val `bakery-controller` = project.in(file("bakery-controller"))
 
 lazy val `bakery-controller-docker-generate` = project.in(file("docker/bakery-controller-docker-generate"))
   .settings(commonSettings, noPublishSettings)
-  .enablePlugins(JavaAppPackaging, JavaAgent)
+  .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(
     packageSummary in Docker := "The bakery controller",
     packageName in Docker := "bakery-controller",
+    mainClass in Compile := Some("com.ing.bakery.clustercontroller.Main"),
     libraryDependencies ++= Seq(
       logback
     )
   )
   .dependsOn(`bakery-controller`)
-  .aggregate(`bakery-controller`)
 
 lazy val `bakery-state-docker-generate` = project.in(file("docker/bakery-state-docker-generate"))
   .settings(commonSettings, noPublishSettings)
-  .enablePlugins(JavaAppPackaging, JavaAgent)
+  .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(
     packageSummary in Docker := "The bakery state node",
     packageName in Docker := "baas-node-state",
+    mainClass in Compile := Some("com.ing.baker.baas.state.Main"),
     libraryDependencies ++= Seq(
       logback
     )
   )
   .dependsOn(`baas-node-state`)
-  .aggregate(`baas-node-state`)
 
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)

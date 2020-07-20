@@ -9,7 +9,7 @@ spec:
     - port: 9042
   selector:
     app: cassandra
-  type: LoadBalancer
+  type: ClusterIP
 
 ---
 
