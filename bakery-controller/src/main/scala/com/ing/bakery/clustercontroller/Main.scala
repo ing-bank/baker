@@ -9,7 +9,6 @@ import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.ing.bakery.clustercontroller.controllers.{BakerController, BakerResource, InteractionController, InteractionResource}
 import com.typesafe.config.ConfigFactory
 import kamon.Kamon
-import org.http4s.client.blaze.BlazeClientBuilder
 import skuber.api.client.KubernetesClient
 import skuber.json.format.configMapFmt
 
@@ -22,6 +21,7 @@ object Main extends IOApp {
 
     val config = ConfigFactory.load()
     val useCrds = config.getBoolean("bakery-controller.use-crds")
+
     implicit val system: ActorSystem =
       ActorSystem("BaaSStateNodeSystem")
     implicit val materializer: Materializer =
@@ -30,12 +30,15 @@ object Main extends IOApp {
       skuber.k8sInit
     implicit val connectionPool =
       ExecutionContext.fromExecutor(Executors.newCachedThreadPool())
+    val interactionMutualTLS: Option[MutualAuthKeystoreConfig] =
+      MutualAuthKeystoreConfig.from(config, "interaction")
+    val interactionClientMutualTLS: Option[MutualAuthKeystoreConfig] =
+      MutualAuthKeystoreConfig.from(config, "interaction-client")
 
     (for {
       _ <- BakeryControllerService.resource(InetSocketAddress.createUnresolved("0.0.0.0", 8080))
-      httpClient <- BlazeClientBuilder[IO](connectionPool).resource
-      interactions = new InteractionController(httpClient)
-      bakers = new BakerController()
+      interactions = new InteractionController(connectionPool, interactionMutualTLS, interactionClientMutualTLS)
+      bakers = new BakerController(interactionClientMutualTLS)
       _ <- if(useCrds) interactions.watch(k8s) else Resource.liftF(IO.unit)
       _ <- interactions.fromConfigMaps(InteractionResource.fromConfigMap).watch(k8s, label = Some("custom-resource-definition" -> "interactions"))
       _ <- if(useCrds) bakers.watch(k8s) else Resource.liftF(IO.unit)

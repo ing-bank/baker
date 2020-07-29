@@ -1,26 +1,27 @@
 package com.ing.baker.baas.state
 
-import akka.{Done, NotUsed}
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Keep, RestartSource, Sink, Source}
 import akka.stream.{KillSwitches, Materializer, UniqueKillSwitch}
+import akka.{Done, NotUsed}
 import cats.effect.concurrent.Ref
 import cats.effect.{ContextShift, IO, Resource, Timer}
 import cats.implicits._
 import com.ing.baker.baas.interaction.RemoteInteractionClient
+import com.ing.baker.baas.protocol.{InteractionExecution => I}
 import com.ing.baker.il.petrinet.InteractionTransition
 import com.ing.baker.runtime.akka.internal.InteractionManager
 import com.ing.baker.runtime.scaladsl.InteractionInstance
-import com.typesafe.scalalogging.{LazyLogging, Logger}
+import com.typesafe.scalalogging.LazyLogging
+import io.circe.parser._
 import org.http4s.Uri
 import org.http4s.client.Client
 import skuber._
 import skuber.api.client.{EventType, KubernetesClient}
 import skuber.json.format._
 
-import scala.concurrent.duration._
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.concurrent.duration._
 
 object ServiceDiscovery extends LazyLogging {
 
@@ -35,12 +36,12 @@ object ServiceDiscovery extends LazyLogging {
     *
     * Current hard coded polling periods: 2 seconds
     *
-    * @param httpClient to be used for interaction with the remote interactions
+    * @param interactionHttpClient to be used for interaction with the remote interactions
     * @param contextShift to be used by the streams
     * @param timer to be used by the streams
     * @return
     */
-  def resource(httpClient: Client[IO], k8s: KubernetesClient)(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem, materializer: Materializer): Resource[IO, ServiceDiscovery] = {
+  def resource(interactionHttpClient: Client[IO], k8s: KubernetesClient)(implicit contextShift: ContextShift[IO], timer: Timer[IO], actorSystem: ActorSystem, materializer: Materializer): Resource[IO, ServiceDiscovery] = {
 
     def watchSource(serviceDiscovery: ServiceDiscovery): Source[K8SWatchEvent[ConfigMap], UniqueKillSwitch] = {
       val watchFilter: ListOptions = {
@@ -50,7 +51,7 @@ object ServiceDiscovery extends LazyLogging {
       }
 
       def source: Source[K8SWatchEvent[ConfigMap], NotUsed] =
-        k8s.watchWithOptions[ConfigMap](watchFilter).mapMaterializedValue(_ => NotUsed)
+        k8s.watchWithOptions[ConfigMap](watchFilter, bufsize = Int.MaxValue).mapMaterializedValue(_ => NotUsed)
 
       RestartSource.withBackoff(
         minBackoff = 3.seconds,
@@ -75,7 +76,7 @@ object ServiceDiscovery extends LazyLogging {
 
     val createServiceDiscovery: IO[(ServiceDiscovery, UniqueKillSwitch)] =
       for {
-        serviceDiscovery <- ServiceDiscovery.empty(httpClient)
+        serviceDiscovery <- ServiceDiscovery.empty(interactionHttpClient)
         killSwitch <- IO { watchSource(serviceDiscovery).toMat(updateSink(serviceDiscovery))(Keep.left).run() }
       } yield (serviceDiscovery, killSwitch)
 
@@ -85,7 +86,7 @@ object ServiceDiscovery extends LazyLogging {
 
 final class ServiceDiscovery private(
   cacheInteractions: Ref[IO, Map[String, InteractionInstance]],
-  httpClient: Client[IO]
+  interactionHttpClient: Client[IO]
 ) extends LazyLogging {
 
   def get: IO[List[InteractionInstance]] =
@@ -115,11 +116,11 @@ final class ServiceDiscovery private(
     for {
       address <- extractAddress(contract)
       interfaces <- extractInterfaces(contract)
-      client = new RemoteInteractionClient(httpClient, address)
+      client = new RemoteInteractionClient(interactionHttpClient, address)
       interactions = interfaces.map { interaction =>
         interaction.id -> InteractionInstance(
           name = interaction.name,
-          input = interaction.interface,
+          input = interaction.input,
           run = input => client.runInteraction(interaction.id, input).unsafeToFuture()
         )
       }.toMap
@@ -142,10 +143,18 @@ final class ServiceDiscovery private(
       case None => IO.raiseError(new IllegalStateException("'address' key not found in interaction creation contract config map"))
     }
 
-  private def extractInterfaces(contract: ConfigMap): IO[List[RemoteInteractionClient.InteractionEndpoint]] =
-    contract.data.get("interfaces").map(RemoteInteractionClient.InteractionEndpoint.fromBase64) match {
-      case Some(Success(interfaces)) => IO.pure(interfaces)
-      case Some(Failure(exception)) => IO.raiseError(new IllegalStateException("Error when deserializing base 64 interfaces in interaction creation contract config map", exception))
-      case None => IO.raiseError(new IllegalStateException("'interfaces' key not found in interaction creation contract config map"))
+  import com.ing.baker.baas.protocol.InteractionExecutionJsonCodecs._
+
+  private def extractInterfaces(contract: ConfigMap): IO[List[I.Interaction]] = {
+    contract.data.get("interfaces").map(parse) map {
+      case Right(json) => json.as[List[I.Interaction]].map(interactions =>
+        IO.pure(interactions)
+      ) getOrElse IO.raiseError(new IllegalStateException(s"Can't decode list from $json"))
+      case Left(value) =>
+        IO.raiseError(new IllegalStateException(s"Can't parse config map data: $value"))
+    } getOrElse {
+      IO.raiseError(new IllegalStateException("'interfaces' key not found in interaction creation contract config map"))
     }
+  }
+
 }

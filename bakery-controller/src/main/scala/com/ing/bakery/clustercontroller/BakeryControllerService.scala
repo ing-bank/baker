@@ -28,7 +28,7 @@ final class BakeryControllerService(implicit cs: ContextShift[IO]) {
   def build: HttpApp[IO] =
     api.orNotFound
 
-  def api: HttpRoutes[IO] = Router("/api/v3" -> HttpRoutes.of[IO] {
+  def api: HttpRoutes[IO] = Router("/api/bakery" -> HttpRoutes.of[IO] {
 
     case GET -> Root / "health" =>
       Ok("Ok")

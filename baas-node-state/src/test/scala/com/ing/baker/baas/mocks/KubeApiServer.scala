@@ -4,8 +4,9 @@ import java.util.concurrent.TimeUnit
 
 import cats.effect.IO
 import cats.syntax.apply._
-import com.ing.baker.baas.interaction.RemoteInteractionClient.InteractionEndpoint
+import io.circe.syntax._
 import com.ing.baker.baas.mocks.WatchEvent.WatchEventType
+import com.ing.baker.baas.protocol.{InteractionExecution => I}
 import com.ing.baker.runtime.scaladsl.InteractionInstance
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.matchers.{TimeToLive, Times}
@@ -33,15 +34,16 @@ class KubeApiServer(mock: ClientAndServer, interaction: InteractionInstance) {
   }
 
   private val baasComponentLabel: (String, String) = "baas-component" -> "remote-interaction-interfaces"
+  import com.ing.baker.baas.protocol.InteractionExecutionJsonCodecs._
 
   private def eventOfInteractionCreationContract(port: Int, tpe: WatchEventType): WatchEvent = {
     val creationContractName: String = "interactions-test-interaction"
-    val interfaces = List(InteractionEndpoint(interaction.shaBase64, interaction.name, interaction.input))
+    val interfaces = List(I.Interaction(interaction.shaBase64, interaction.name, interaction.input.toList))
     new WatchEvent {
       override type Resource = skuber.ConfigMap
       override def item: Resource = {
         val name = creationContractName
-        val interactionsData = InteractionEndpoint.toBase64(interfaces)
+        val interactionsData = interfaces.asJson.toString
         ConfigMap(
           metadata = ObjectMeta(name = name, labels = Map(baasComponentLabel)),
           data = Map("address" -> s"http://localhost:$port/", "interfaces" -> interactionsData)

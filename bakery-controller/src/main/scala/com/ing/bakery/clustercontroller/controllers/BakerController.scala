@@ -1,6 +1,7 @@
 package com.ing.bakery.clustercontroller.controllers
 
 import cats.effect.{ContextShift, IO, Timer}
+import com.ing.bakery.clustercontroller.MutualAuthKeystoreConfig
 import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json.Format
 import skuber.LabelSelector.IsEqualRequirement
@@ -10,7 +11,7 @@ import skuber.json.ext.format._
 import skuber.json.format._
 import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
 
-final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[BakerResource] with LazyLogging {
+final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfig] = None)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[BakerResource] with LazyLogging {
 
   implicit lazy val replicaSetListFormat: Format[ReplicaSetList] = ListResourceFormat[ReplicaSet]
 
@@ -78,6 +79,8 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
     val imagePullSecret: Option[String] = bakerResource.spec.imagePullSecret
     val serviceAccountSecret: Option[String] = bakerResource.spec.serviceAccountSecret
     val recipesMountPath: String = "/recipes"
+    val tlsMountName: String = "bakery-tls-keystore"
+    val tlsMountPath: String = "/bakery-tls-keystore"
 
     def stateNodeContainer = {
       val managementPort = Container.Port(
@@ -171,8 +174,19 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
         .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
         .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
 
-      val stateNodeContainerWithResources =
-        Utils.addResourcesSpec(stateNodeContainer, bakerResource.spec.resources)
+      val stateNodeContainerWithTLSEnvVars =
+      interactionClientTLS match {
+        case Some(interactionClientTLS) =>
+          stateNodeContainer
+            .setEnvVar("INTERACTION_CLIENT_HTTPS_ENABLED", "true")
+            .setEnvVar("INTERACTION_CLIENT_HTTPS_KEYSTORE_PATH", tlsMountPath+"/"+interactionClientTLS.fileName)
+            .setEnvVar("INTERACTION_CLIENT_HTTPS_KEYSTORE_PASSWORD", interactionClientTLS.password)
+            .setEnvVar("INTERACTION_CLIENT_HTTPS_KEYSTORE_TYPE", interactionClientTLS._type)
+        case None =>
+          stateNodeContainer
+            .setEnvVar("INTERACTION_CLIENT_HTTPS_ENABLED", "false")
+      }val stateNodeContainerWithResources =
+        Utils.addResourcesSpec(stateNodeContainerWithTLSEnvVars, bakerResource.spec.resources)
 
       val stateContainerWithEventSink =
         bakerResource.spec.kafkaBootstrapServers.map(servers =>
@@ -203,7 +217,12 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
       stateNodeContainerWithExtraSecrets
     }
 
+    val interactionContainerWithTLSMount =
+      if(interactionClientTLS.isDefined) stateNodeContainerWithExtraSecrets.mount(tlsMountName, tlsMountPath, readOnly = true)
+      else stateNodeContainerWithExtraSecrets
+
     val podSpec = Pod.Spec(
+      containers = List(interactionContainerWithTLSMount),
       containers = List(Some(stateNodeContainer), maybeSidecarContainer).flatten,
       imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
       volumes = List(
@@ -211,7 +230,8 @@ final class BakerController(implicit cs: ContextShift[IO], timer: Timer[IO]) ext
         serviceAccountSecret.map(s => Volume("service-account-token", Volume.Secret(s))),
         Some(Volume("config", Volume.))
         bakerResource.spec.config.map(c => Volume("extra-config", Volume.ConfigMapVolumeSource(c))),
-        bakerResource.spec.secrets.map(s => Volume("extra-secrets", Volume.Secret(s)))
+        bakerResource.spec.secrets.map(s => Volume("extra-secrets", Volume.Secret(s))),
+        interactionClientTLS.map(interactionClientTLS => Volume(tlsMountName, Volume.Secret(interactionClientTLS.secretName)))
       ).flatten
     )
 

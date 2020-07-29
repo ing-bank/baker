@@ -81,16 +81,17 @@ object ProcessInstanceLogger {
       log.logWithMDC(Logging.ErrorLevel, msg, mdc)
     }
 
-    def firingTransition(recipeInstanceId: String, jobId: Long, transition: Transition, timeStarted: Long): Unit = {
+    def firingInteraction(recipeInstanceId: String, jobId: Long, transition: Transition, timeStarted: Long): Unit = {
       val mdc = Map(
         "processEvent" -> "FiringTransition",
+        "recipeInstanceEvent" -> "FiringInteraction",
         "processId" -> recipeInstanceId,
         "recipeInstanceId" -> recipeInstanceId,
         "jobId" -> jobId,
         "transitionId" -> transition.label,
         "timeStarted" -> timeStarted
       )
-      val msg = s"Firing transition ${transition.label}"
+      val msg = s"Firing interaction ${transition.label}"
       log.logWithMDC(Logging.InfoLevel, msg, mdc)
     }
 
@@ -107,6 +108,7 @@ object ProcessInstanceLogger {
     def fireTransitionRejected(recipeInstanceId: String, transition: Transition, rejectReason: String) {
       val mdc = Map(
         "processEvent" -> "FireTransitionRejected",
+        "recipeInstanceEvent" -> "FireInteractionRejected",
         "processId" -> recipeInstanceId,
         "recipeInstanceId" -> recipeInstanceId,
         "transitionId" -> transition.label,
@@ -120,11 +122,12 @@ object ProcessInstanceLogger {
     def scheduleRetry(recipeInstanceId: String, transition: Transition, delay: Long) {
       val mdc = Map(
         "processEvent" -> "TransitionRetry",
+        "recipeInstanceEvent" -> "InteractionRetry",
         "processId" -> recipeInstanceId,
         "recipeInstanceId" -> recipeInstanceId,
         "transitionId" -> transition.label)
 
-      val msg = s"Scheduling a retry of transition '${transition.label}' in ${durationFormatter.print(new org.joda.time.Period(delay))}"
+      val msg = s"Scheduling a retry of interaction '${transition.label}' in ${durationFormatter.print(new org.joda.time.Period(delay))}"
 
       log.logWithMDC(Logging.InfoLevel, msg, mdc)
     }
