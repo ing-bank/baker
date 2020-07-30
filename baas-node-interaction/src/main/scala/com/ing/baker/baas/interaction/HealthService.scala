@@ -14,9 +14,9 @@ import scala.concurrent.ExecutionContext
 
 object HealthService {
 
-  def resource(implicit cs: ContextShift[IO], clock: Timer[IO]): Resource[IO, Server[IO]] =
+  def resource(address: InetSocketAddress)(implicit cs: ContextShift[IO], clock: Timer[IO]): Resource[IO, Server[IO]] =
     BlazeServerBuilder[IO](ExecutionContext.global)
-      .bindSocketAddress(InetSocketAddress.createUnresolved("0.0.0.0", 9999))
+      .bindSocketAddress(address)
       .withHttpApp(new HealthService().build)
       .resource
 }

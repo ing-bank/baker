@@ -40,7 +40,7 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     s"-target:jvm-$jvmV",
     "-Xfatal-warnings"
   ),
-  coverageExcludedPackages := "<empty>;.*.javadsl;.*.scaladsl;.*.common;.*.protobuf",
+  coverageExcludedPackages := "<empty>;.*javadsl.*;.*scaladsl.*;.*common.*;.*protobuf.*;.*Main.*",
   packageOptions in(Compile, packageBin) +=
     Package.ManifestAttributes(
       "Build-Time" -> new java.util.Date().toString,
@@ -381,7 +381,7 @@ lazy val `bakery-state-docker-generate` = project.in(file("docker/bakery-state-d
 
 lazy val baker = project.in(file("."))
   .settings(defaultModuleSettings)
-  .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage, splitBrainResolver,
+  .aggregate(bakertypes, runtime, recipeCompiler, recipeDsl, intermediateLanguage,
     `baas-node-client`, `baas-node-state`, `baas-node-interaction`, `baas-node-interaction-spring`, `baas-protocol-interaction-scheduling`,
     `sbt-baas-docker-generate`,
     `baker-interface`, `bakery-controller`)
