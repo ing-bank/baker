@@ -3,13 +3,45 @@ package com.ing.bakery.clustercontroller.controllers
 import cats.implicits._
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.{IO, Timer}
+import com.ing.bakery.clustercontroller.MutualAuthKeystoreConfig
 import com.ing.bakery.clustercontroller.controllers.BakerResource.SidecarSpec
 import skuber.{ConfigMap, Container, Resource}
 
 import scala.concurrent.duration._
 import scala.util.Try
 
+
 object Utils {
+
+  implicit class ConfigurableContainer(container: Container) {
+    def withMaybeInteractionTLSEnvironmentVariables(interactionClientTLS: Option[MutualAuthKeystoreConfig]): Container = interactionClientTLS map { tls =>
+      container
+        .setEnvVar("INTERACTION_CLIENT_HTTPS_ENABLED", "true")
+        .setEnvVar("INTERACTION_CLIENT_HTTPS_KEYSTORE_PATH", "/bakery-config/" + tls.fileName)
+        .setEnvVar("INTERACTION_CLIENT_HTTPS_KEYSTORE_PASSWORD", tls.password)
+        .setEnvVar("INTERACTION_CLIENT_HTTPS_KEYSTORE_TYPE", tls._type)
+    } getOrElse
+      container
+        .setEnvVar("INTERACTION_CLIENT_HTTPS_ENABLED", "false")
+
+    def withMaybeLimitMemory(qty: Option[Resource.Quantity]): Container = qty.map(container.limitMemory).getOrElse(container)
+    def withMaybeLimitCpu(qty: Option[Resource.Quantity]): Container = qty.map(container.limitCPU).getOrElse(container)
+    def withMaybeRequestMemory(qty: Option[Resource.Quantity]): Container = qty.map(container.requestMemory).getOrElse(container)
+    def withMaybeRequestCpu(qty: Option[Resource.Quantity]): Container = qty.map(container.requestCPU).getOrElse(container)
+
+    def withMaybeResources(resources: Option[Resource.Requirements]): Container = resources.map(r =>
+      container
+        .withMaybeLimitMemory(r.limits.get("memory"))
+        .withMaybeLimitCpu(r.limits.get("cpu"))
+        .withMaybeRequestMemory(r.requests.get("memory"))
+        .withMaybeRequestCpu(r.requests.get("cpu"))).getOrElse(container)
+
+    def withMaybeKafkaSink(kafkaBootstrapServers: Option[String]): Container = kafkaBootstrapServers.map(servers =>
+      container
+        .setEnvVar("KAFKA_EVENT_SINK_BOOTSTRAP_SERVERS", servers)  // todo add missing kafka configuration later (topics + identity/tls)
+        .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "true")
+    ).getOrElse(container.setEnvVar("KAFKA_EVENT_SINK_ENABLED", "false"))
+  }
 
   /** Tries every second f until it succeeds or until 20 attempts have been made. */
   def eventually[A](f: IO[A])(implicit timer: Timer[IO]): IO[A] =
@@ -27,16 +59,6 @@ object Utils {
     }
 
     inner(split, time / split)
-  }
-
-  def addResourcesSpec(container0: Container, resources0: Option[Resource.Requirements]): Container = {
-    resources0.map { resources =>
-      val container1 = resources.limits.get("memory").map(container0.limitMemory).getOrElse(container0)
-      val container2 = resources.limits.get("cpu").map(container1.limitCPU).getOrElse(container1)
-      val container3 = resources.requests.get("memory").map(container2.requestMemory).getOrElse(container2)
-      val container4 = resources.requests.get("cpu").map(container3.requestCPU).getOrElse(container3)
-      container4
-    }.getOrElse(container0)
   }
 
   type FromConfigMapValidation[+A] = ValidatedNel[String, A]

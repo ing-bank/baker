@@ -36,8 +36,8 @@ object BakeryControllerSpec {
         EnvVar("TWO", EnvVar.ConfigMapKeyRef(name = "my-config-map", key = "two")),
         EnvVar("THREE", EnvVar.SecretKeyRef(name = "my-secret", key = "three"))
       ),
-      configMapMounts = List(InteractionResource.ConfigMount(name = "my-config-map", mountPath = "/my-config")),
-      secretMounts = List(InteractionResource.ConfigMount(name = "my-secret", mountPath = "/my-secrets")),
+      configMapMounts = List("my-config-map"),
+      secretMounts = List("my-secret"),
       resources = Some(skuber.Resource.Requirements(
         requests = Map("cpu" -> skuber.Resource.Quantity("600m"), "memory" -> skuber.Resource.Quantity("500Mi")),
         limits = Map("cpu" -> skuber.Resource.Quantity("6000m"), "memory" -> skuber.Resource.Quantity("1000Mi"))
@@ -58,10 +58,8 @@ object BakeryControllerSpec {
       "env.2.name" -> "THREE",
       "env.2.valueFrom.secretKeyRef.name" -> "test-secret",
       "env.2.valueFrom.secretKeyRef.key" -> "username",
-      "configMapMounts.0.name" -> "test-config",
-      "configMapMounts.0.mountPath" -> "/config",
-      "secretMounts.1.name" -> "test-secret",
-      "secretMounts.1.mountPath" -> "/secrets",
+      "configMapMounts.0" -> "test-config",
+      "secretMounts.0" -> "test-secret",
       "resources.requests.cpu" -> "600m",
       "resources.requests.memory" -> "500Mi",
       "resources.limits.cpu" -> "6000m",

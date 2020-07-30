@@ -50,27 +50,12 @@ object InteractionResource {
         ))
     }
 
-    def configMount(sub: ConfigMap): FromConfigMapValidation[ConfigMount] =
-      ( Utils.extractValidatedString(sub, "name")
-        , Utils.extractValidatedString(sub, "mountPath")
-        ).mapN(ConfigMount)
-
-    def configMapMountsValidated: FromConfigMapValidation[List[ConfigMount]] =
-      Utils.extractListWithSubPaths(configMap, "configMapMounts")
-        .orElse(List.empty.validNel)
-        .andThen(_.traverse(configMount))
-
-    def secretMountsValidated: FromConfigMapValidation[List[ConfigMount]] =
-      Utils.extractListWithSubPaths(configMap, "secretMounts")
-        .orElse(List.empty.validNel)
-        .andThen(_.traverse(configMount))
-
     ( Utils.extractValidatedString(configMap, "image")
     , Utils.extractValidatedStringOption(configMap, "imagePullSecret")
     , Utils.extractAndParseValidated(configMap, "replicas", r => Try(r.toInt)).orElse(1.validNel): FromConfigMapValidation[Int]
     , envValidated
-    , configMapMountsValidated
-    , secretMountsValidated
+    , Utils.extractListValidated(configMap, "configMapMounts")
+    , Utils.extractListValidated(configMap, "secretMounts")
     , Utils.optional(Utils.resourcesFromConfigMap(configMap))
     ).mapN(Spec).map(spec => InteractionResource(metadata = configMap.metadata, spec = spec))
   }
@@ -80,12 +65,10 @@ object InteractionResource {
     imagePullSecret: Option[String],
     replicas: Int,
     env: List[EnvVar],
-    configMapMounts: List[ConfigMount],
-    secretMounts: List[ConfigMount],
+    configMapMounts: List[String],
+    secretMounts: List[String],
     resources: Option[Resource.Requirements]
   )
-
-  case class ConfigMount(name: String, mountPath: String)
 
   val specification: NonCoreResourceSpecification =
     NonCoreResourceSpecification(
@@ -105,18 +88,13 @@ object InteractionResource {
       def spec: NonCoreResourceSpecification = specification
     }
 
-  implicit val configMountFmt: Format[ConfigMount] = (
-      (JsPath \ "name").format[String] and
-      (JsPath \ "mountPath").format[String]
-    ) (ConfigMount.apply, unlift(ConfigMount.unapply))
-
   implicit val interactionResourceSpecFmt: Format[Spec] = (
       (JsPath \ "image").format[String] and
       (JsPath \ "imagePullSecret").formatNullableWithDefault[String](None) and
       (JsPath \ "replicas").formatWithDefault[Int](1) and
       (JsPath \ "env").formatWithDefault[List[EnvVar]](List.empty) and
-      (JsPath \ "configMapMounts").formatWithDefault[List[ConfigMount]](List.empty) and
-      (JsPath \ "secretMounts").formatWithDefault[List[ConfigMount]](List.empty) and
+      (JsPath \ "configMapMounts").formatWithDefault[List[String]](List.empty) and
+      (JsPath \ "secretMounts").formatWithDefault[List[String]](List.empty) and
       (JsPath \ "resources").formatNullable[Resource.Requirements]
     ) (Spec.apply, unlift(Spec.unapply))
 

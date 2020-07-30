@@ -91,9 +91,7 @@ spec:
                 properties:
                   name:
                     type: string
-                  mountPath:
-                    type: string
-                required: ["name", "mountPath"]
+                required: ["name"]
             secretMounts:
               type: array
               items:
@@ -101,9 +99,7 @@ spec:
                 properties:
                   name:
                     type: string
-                  mountPath:
-                    type: string
-                required: ["name", "mountPath"]
+                required: ["name"]
           required:
             - image
   # either Namespaced or Cluster

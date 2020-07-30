@@ -11,6 +11,7 @@ import org.http4s.Uri
 import org.http4s.client.blaze.BlazeClientBuilder
 import play.api.libs.json.Format
 import skuber.LabelSelector.IsEqualRequirement
+import skuber.Volume.{ConfigMapProjection, ProjectedVolumeSource, SecretProjection}
 import skuber.api.client.KubernetesClient
 import skuber.apps.v1.{Deployment, ReplicaSet, ReplicaSetList}
 import skuber.json.ext.format._
@@ -117,14 +118,14 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
     )
   }
 
+  import Utils.ConfigurableContainer
+
   private def podSpec(interaction: InteractionResource): Pod.Template.Spec = {
 
     val name: String = deploymentName(interaction)
     val interactionLabelWithName: (String, String) = interactionLabel(interaction)
     val image: String = interaction.spec.image
     val imagePullSecret: Option[String] = interaction.spec.imagePullSecret
-    val tlsMountName: String = "bakery-tls-keystore"
-    val tlsMountPath: String = "/bakery-tls-keystore"
 
     val healthProbe = skuber.Probe(
       action = skuber.HTTPGetAction(
@@ -153,63 +154,21 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
       .withLivenessProbe(healthProbe.copy(failureThreshold = Some(30)))
       .copy(env = interaction.spec.env)
       .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
-
-    val interactionContainerWithTLSEnvVars =
-      interactionTLS match {
-        case Some(interactionTLS) =>
-          interactionContainer
-            .setEnvVar("INTERACTION_HTTPS_ENABLED", "true")
-            .setEnvVar("INTERACTION_HTTPS_KEYSTORE_PATH", tlsMountPath+"/"+interactionTLS.fileName)
-            .setEnvVar("INTERACTION_HTTPS_KEYSTORE_PASSWORD", interactionTLS.password)
-            .setEnvVar("INTERACTION_HTTPS_KEYSTORE_TYPE", interactionTLS._type)
-        case None =>
-          interactionContainer
-            .setEnvVar("INTERACTION_HTTPS_ENABLED", "false")
-      }
-
-    val interactionContainerWithResources =
-      Utils.addResourcesSpec(interactionContainerWithTLSEnvVars, interaction.spec.resources)
-
-    val interactionContainerWithMounts0 =
-      interaction.spec.configMapMounts.foldLeft(interactionContainerWithResources) { (container, configMount) =>
-        container.mount(configMount.name, configMount.mountPath, readOnly = true)
-      }
-
-    val interactionContainerWithMounts1 =
-      interaction.spec.secretMounts.foldLeft(interactionContainerWithMounts0) { (container, configMount) =>
-        container.mount(configMount.name, configMount.mountPath, readOnly = true)
-      }
-
-    val interactionContainerWithMounts2 =
-      interactionTLS match {
-        case Some(_) =>
-          interactionContainerWithMounts1.mount(tlsMountName, tlsMountPath, readOnly = true)
-        case None =>
-          interactionContainerWithMounts1
-      }
-
-    val volumesConfigMaps =
-      interaction.spec.configMapMounts.map { configMount =>
-        Volume(configMount.name, Volume.ConfigMapVolumeSource(configMount.name))
-      }
-
-    val volumesSecrets =
-      interaction.spec.secretMounts.map { configMount =>
-        Volume(configMount.name, Volume.Secret(configMount.name))
-      }
-
-    val volumeTLSKeystore =
-      interactionTLS match {
-        case Some(interactionTLS) =>
-          Seq(Volume(tlsMountName, Volume.Secret(interactionTLS.secretName)))
-        case None =>
-          Seq.empty
-      }
+      .withMaybeInteractionTLSEnvironmentVariables(interactionTLS)
+      .withMaybeResources(interaction.spec.resources)
+      .mount("config", "/bakery-config")
 
     val podSpec = Pod.Spec(
-      containers = List(interactionContainerWithMounts2),
+      containers = List(interactionContainer),
       imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
-      volumes = volumesConfigMaps ++ volumesSecrets ++ volumeTLSKeystore,
+      volumes = List(
+        Volume(name = "config",
+          source = ProjectedVolumeSource(
+            sources = (interaction.spec.configMapMounts.map(m => Some(ConfigMapProjection(m))) ++
+              interaction.spec.secretMounts.map(m => Some(SecretProjection(m))) ++
+              List(interactionClientTLS.map(c => SecretProjection(c.secretName)))).flatten)
+        )
+      )
     )
 
     Pod.Template.Spec

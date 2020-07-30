@@ -65,14 +65,10 @@
             }
           },
           "volumeMounts" : [ {
-            "name" : "my-secret",
-            "mountPath" : "/my-secrets",
+            "name" : "config",
+            "mountPath" : "/bakery-config",
             "readOnly" : true
-          }, {
-            "name" : "my-config-map",
-            "mountPath" : "/my-config",
-            "readOnly" : true
-          } ],
+          }],
           "livenessProbe" : {
             "httpGet" : {
               "port" : "http-api",

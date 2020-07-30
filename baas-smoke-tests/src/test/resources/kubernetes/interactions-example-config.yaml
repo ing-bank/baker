@@ -17,9 +17,5 @@ spec:
       secretKeyRef:
         name: test-secret
         key: username
-  configMapMounts:
-  - name: test-config
-    mountPath: "/config"
-  secretMounts:
-  - name: test-secret
-    mountPath: "/secrets"
+  configMapMounts: [ test-config ]
+  secretMounts: [ test-secret ]

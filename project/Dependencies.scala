@@ -58,7 +58,7 @@ object Dependencies {
   val kamonAkka =                 "io.kamon"                   %% "kamon-akka"                         % "2.1.3"
   val kamonPrometheus =           "io.kamon"                   %% "kamon-prometheus"                   % "2.1.3"
 
-  val skuber =                    "io.skuber"                  %% "skuber"                             % "2.4.0"
+  val skuber =                    "io.skuber"                  %% "skuber"                             % "2.5.0"
   val http4s =                    "org.http4s"                 %% "http4s-core"                        % http4sVersion
   val http4sDsl =                 "org.http4s"                 %% "http4s-dsl"                         % http4sVersion
   val http4sServer =              "org.http4s"                 %% "http4s-blaze-server"                % http4sVersion

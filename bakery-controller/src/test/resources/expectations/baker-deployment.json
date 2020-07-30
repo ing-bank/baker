@@ -65,7 +65,11 @@
             "name" : "recipes",
             "mountPath" : "/recipes",
             "readOnly" : true
-          } ],
+          }, {
+              "name" : "config",
+              "mountPath" : "/bakery-config",
+              "readOnly" : true
+            }],
           "livenessProbe" : {
             "httpGet" : {
               "port" : "management",
