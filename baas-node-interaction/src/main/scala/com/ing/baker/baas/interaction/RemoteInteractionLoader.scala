@@ -19,6 +19,7 @@ object RemoteInteractionLoader {
     val keystoreType = config.getString("baas-component.interaction.https-keystore-type")
 
     val address = InetSocketAddress.createUnresolved("0.0.0.0", port)
+    val healthServiceAddress = InetSocketAddress.createUnresolved("0.0.0.0", 9999)
     val tlsConfig =
       if(httpsEnabled) Some(BakeryHttp.TLSConfig(password = keystorePassword, keystorePath = keystorePath, keystoreType = keystoreType))
       else None
@@ -28,7 +29,7 @@ object RemoteInteractionLoader {
     implicit val timer: Timer[IO] = IO.timer(executionContext)
 
     RemoteInteractionService.resource(implementations, address, tlsConfig)
-      .flatMap(_ => HealthService.resource)
+      .flatMap(_ => HealthService.resource(healthServiceAddress))
       .use(_ => IO.never)
       .unsafeRunAsyncAndForget()
   }
