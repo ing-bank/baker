@@ -154,9 +154,9 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
       .withLivenessProbe(healthProbe.copy(failureThreshold = Some(30)))
       .copy(env = interaction.spec.env)
       .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
-      .withMaybeInteractionTLSEnvironmentVariables(interactionTLS)
+      .maybeWithKeyStoreConfig("INTERACTION", interactionTLS)
       .withMaybeResources(interaction.spec.resources)
-      .mount("config", "/bakery-config")
+      .mount("config", "/bakery-config", readOnly = true)
 
     val podSpec = Pod.Spec(
       containers = List(interactionContainer),
@@ -164,9 +164,9 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
       volumes = List(
         Volume(name = "config",
           source = ProjectedVolumeSource(
-            sources = (interaction.spec.configMapMounts.map(m => Some(ConfigMapProjection(m))) ++
-              interaction.spec.secretMounts.map(m => Some(SecretProjection(m))) ++
-              List(interactionClientTLS.map(c => SecretProjection(c.secretName)))).flatten)
+            sources = (interaction.spec.configMapMounts.getOrElse(List.empty).map(m => Some(ConfigMapProjection(m))) ++
+              interaction.spec.secretMounts.getOrElse(List.empty).map(m => Some(SecretProjection(m))) ++
+              List(interactionTLS.map(c => SecretProjection(c.secretName)))).flatten)
         )
       )
     )

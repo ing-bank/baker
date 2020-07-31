@@ -131,7 +131,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)
         .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
         .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
-        .withMaybeInteractionTLSEnvironmentVariables(interactionClientTLS)
+        .maybeWithKeyStoreConfig("INTERACTION_CLIENT", interactionClientTLS)
         .withMaybeResources(bakerResource.spec.resources)
         .withMaybeKafkaSink(bakerResource.spec.kafkaBootstrapServers)
 
@@ -140,6 +140,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         image = sidecarSpec.image
       )
         .mount("config", sidecarSpec.configVolumeMountPath, readOnly = true)
+        .maybe(serviceAccountSecret.isDefined, _.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true))
         .withMaybeResources(sidecarSpec.resources)
         .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)
         .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
@@ -150,16 +151,21 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
       containers = List(Some(stateNodeContainer), maybeSidecarContainer).flatten,
       imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
       volumes = List(
-        Volume(name = "config",
-        source = ProjectedVolumeSource(
-          sources = List(
-            Some(ConfigMapProjection(baasRecipesConfigMapName(bakerName))),
-            serviceAccountSecret.map(SecretProjection(_)),
-            bakerResource.spec.config.map(ConfigMapProjection(_)),
-            bakerResource.spec.secrets.map(SecretProjection(_)),
-            interactionClientTLS.map(c => SecretProjection(c.secretName))
-        ).flatten))
-    ))
+        serviceAccountSecret.map(s => Volume("service-account-token", Volume.Secret(s))),
+        Some(Volume(
+          name = "recipes",
+          source = Volume.ConfigMapVolumeSource(baasRecipesConfigMapName(bakerName)))),
+        Some(Volume(
+          name = "config",
+          source = ProjectedVolumeSource(
+            sources = List(
+              Some(ConfigMapProjection(baasRecipesConfigMapName(bakerName))),
+              serviceAccountSecret.map(SecretProjection(_)),
+              bakerResource.spec.config.map(ConfigMapProjection(_)),
+              bakerResource.spec.secrets.map(SecretProjection(_)),
+              interactionClientTLS.map(c => SecretProjection(c.secretName))
+            ).flatten)))
+    ).flatten)
 
     Pod.Template.Spec
       .named(baasStateName(bakerName))

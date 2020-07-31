@@ -54,8 +54,8 @@ object InteractionResource {
     , Utils.extractValidatedStringOption(configMap, "imagePullSecret")
     , Utils.extractAndParseValidated(configMap, "replicas", r => Try(r.toInt)).orElse(1.validNel): FromConfigMapValidation[Int]
     , envValidated
-    , Utils.extractListValidated(configMap, "configMapMounts")
-    , Utils.extractListValidated(configMap, "secretMounts")
+    , Utils.optional(Utils.extractListValidated(configMap, "configMapMounts"))
+    , Utils.optional(Utils.extractListValidated(configMap, "secretMounts"))
     , Utils.optional(Utils.resourcesFromConfigMap(configMap))
     ).mapN(Spec).map(spec => InteractionResource(metadata = configMap.metadata, spec = spec))
   }
@@ -65,8 +65,8 @@ object InteractionResource {
     imagePullSecret: Option[String],
     replicas: Int,
     env: List[EnvVar],
-    configMapMounts: List[String],
-    secretMounts: List[String],
+    configMapMounts: Option[List[String]],
+    secretMounts: Option[List[String]],
     resources: Option[Resource.Requirements]
   )
 
@@ -93,8 +93,8 @@ object InteractionResource {
       (JsPath \ "imagePullSecret").formatNullableWithDefault[String](None) and
       (JsPath \ "replicas").formatWithDefault[Int](1) and
       (JsPath \ "env").formatWithDefault[List[EnvVar]](List.empty) and
-      (JsPath \ "configMapMounts").formatWithDefault[List[String]](List.empty) and
-      (JsPath \ "secretMounts").formatWithDefault[List[String]](List.empty) and
+      (JsPath \ "configMapMounts").formatNullable[List[String]] and
+      (JsPath \ "secretMounts").formatNullable[List[String]] and
       (JsPath \ "resources").formatNullable[Resource.Requirements]
     ) (Spec.apply, unlift(Spec.unapply))
 

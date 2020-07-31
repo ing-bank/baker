@@ -14,12 +14,16 @@ import scala.util.Try
 object Utils {
 
   implicit class ConfigurableContainer(container: Container) {
-    def withMaybeInteractionTLSEnvironmentVariables(interactionClientTLS: Option[MutualAuthKeystoreConfig]): Container = interactionClientTLS map { tls =>
+
+    def maybe(featureEnabled: Boolean, apply: Container => Container): Container = if (featureEnabled) apply(container) else container
+
+    def maybeWithKeyStoreConfig(prefix: String, config: Option[MutualAuthKeystoreConfig]): Container = config map { tls => {
       container
-        .setEnvVar("INTERACTION_CLIENT_HTTPS_ENABLED", "true")
-        .setEnvVar("INTERACTION_CLIENT_HTTPS_KEYSTORE_PATH", "/bakery-config/" + tls.fileName)
-        .setEnvVar("INTERACTION_CLIENT_HTTPS_KEYSTORE_PASSWORD", tls.password)
-        .setEnvVar("INTERACTION_CLIENT_HTTPS_KEYSTORE_TYPE", tls._type)
+        .setEnvVar(s"${prefix}_HTTPS_ENABLED", "true")
+        .setEnvVar(s"${prefix}_HTTPS_KEYSTORE_PATH", "/bakery-config/" + tls.fileName)
+        .setEnvVar(s"${prefix}_HTTPS_KEYSTORE_PASSWORD", tls.password)
+        .setEnvVar(s"${prefix}_HTTPS_KEYSTORE_TYPE", tls._type)
+    }
     } getOrElse
       container
         .setEnvVar("INTERACTION_CLIENT_HTTPS_ENABLED", "false")

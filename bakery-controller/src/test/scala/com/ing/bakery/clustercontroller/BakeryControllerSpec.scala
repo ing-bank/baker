@@ -36,8 +36,8 @@ object BakeryControllerSpec {
         EnvVar("TWO", EnvVar.ConfigMapKeyRef(name = "my-config-map", key = "two")),
         EnvVar("THREE", EnvVar.SecretKeyRef(name = "my-secret", key = "three"))
       ),
-      configMapMounts = List("my-config-map"),
-      secretMounts = List("my-secret"),
+      configMapMounts = Some(List("my-config-map")),
+      secretMounts = Some(List("my-secret")),
       resources = Some(skuber.Resource.Requirements(
         requests = Map("cpu" -> skuber.Resource.Quantity("600m"), "memory" -> skuber.Resource.Quantity("500Mi")),
         limits = Map("cpu" -> skuber.Resource.Quantity("6000m"), "memory" -> skuber.Resource.Quantity("1000Mi"))
