@@ -48,9 +48,9 @@ steps:
 
   - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "clean; aetherDeploy"
     displayName: 'Building and publishing main Baker'
-    condition:  $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
+    condition:  eq(variables['Build.SourceBranch'], 'refs/heads/master')
 
   - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project baas-interaction-example-make-payment-and-ship-items; aetherDeploy; project baas-interaction-example-reserve-items; aetherDeploy; project baas-client-example; aetherDeploy; project baas-kafka-listener-example; aetherDeploy"
     displayName: 'Building and publishing examples'
-    condition:  $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
+    condition:  eq(variables['Build.SourceBranch'], 'refs/heads/master')
 
