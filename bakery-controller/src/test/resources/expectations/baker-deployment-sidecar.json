@@ -2,77 +2,74 @@
   "kind" : "Deployment",
   "apiVersion" : "apps/v1",
   "metadata" : {
-    "name" : "localhost",
+    "name" : "baas-state-RecipeOne",
     "labels" : {
-      "interaction" : "localhost",
-      "app" : "localhost"
+      "app" : "baas-state",
+      "baker-name" : "RecipeOne"
     }
   },
   "spec" : {
     "replicas" : 2,
-    "selector" : {
-      "matchLabels" : {
-        "interaction" : "localhost"
+    "selector": {
+      "matchLabels": {
+        "baker-name": "RecipeOne"
       }
     },
     "template" : {
       "metadata" : {
-        "name" : "localhost",
+        "name" : "baas-state-RecipeOne",
         "labels" : {
-          "interaction" : "localhost"
+          "app" : "baas-state",
+          "baker-name" : "RecipeOne",
+          "akka-cluster" : "RecipeOne"
         }
       },
       "spec" : {
         "containers" : [ {
-          "name" : "localhost",
-          "image" : "interaction.image:1.0.0",
+          "name" : "baas-state-RecipeOne",
+          "image" : "baas-node-state:local",
           "ports" : [ {
             "containerPort" : 8080,
             "protocol" : "TCP",
             "name" : "http-api"
+          }, {
+            "containerPort" : 8558,
+            "protocol" : "TCP",
+            "name" : "management"
+          }, {
+            "containerPort" : 2552,
+            "protocol" : "TCP",
+            "name" : "remoting"
           } ],
           "env" : [ {
-            "name" : "ONE",
-            "value" : "one"
+            "name" : "STATE_CLUSTER_SELECTOR",
+            "value" : "RecipeOne"
           }, {
-            "name" : "TWO",
-            "valueFrom" : {
-              "configMapKeyRef" : {
-                "key" : "two",
-                "name" : "my-config-map"
-              }
-            }
-          }, {
-            "name" : "THREE",
-            "valueFrom" : {
-              "secretKeyRef" : {
-                "key" : "three",
-                "name" : "my-secret"
-              }
-            }
+            "name" : "RECIPE_DIRECTORY",
+            "value" : "/recipes"
           }, {
             "name" : "JAVA_TOOL_OPTIONS",
             "value" : "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0"
           } ],
           "resources" : {
-            "limits" : {
-              "memory" : "1000Mi",
-              "cpu" : "6000m"
-            },
             "requests" : {
               "memory" : "500Mi",
               "cpu" : "600m"
+            },
+            "limits" : {
+              "memory" : "1000Mi",
+              "cpu" : "6000m"
             }
           },
           "volumeMounts" : [ {
-            "name" : "config",
-            "mountPath" : "/bakery-config",
+            "name" : "recipes",
+            "mountPath" : "/recipes",
             "readOnly" : true
-          }],
+          } ],
           "livenessProbe" : {
             "httpGet" : {
-              "port" : "http-api",
-              "path" : "/api/bakery/health",
+              "port" : "management",
+              "path" : "/health/alive",
               "scheme" : "HTTP"
             },
             "initialDelaySeconds" : 15,
@@ -80,8 +77,8 @@
           },
           "readinessProbe" : {
             "httpGet" : {
-              "port" : "http-api",
-              "path" : "/api/bakery/health",
+              "port" : "management",
+              "path" : "/health/ready",
               "scheme" : "HTTP"
             },
             "initialDelaySeconds" : 15,
@@ -90,14 +87,9 @@
           "imagePullPolicy" : "IfNotPresent"
         } ],
         "volumes" : [ {
-          "name" : "my-config-map",
+          "name" : "recipes",
           "configMap" : {
-            "name" : "my-config-map"
-          }
-        }, {
-          "name" : "my-secret",
-          "secret" : {
-            "secretName" : "my-secret"
+            "name" : "baas-state-recipes-config-map-RecipeOne"
           }
         } ],
         "restartPolicy" : "Always",

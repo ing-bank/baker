@@ -19,6 +19,9 @@ spec:
       properties:
         spec:
           type: object
+          required:
+            - image
+            - recipes
           properties:
             image:
               type: string
@@ -56,9 +59,65 @@ spec:
               type: string
             secrets:
               type: string
-          required:
-            - image
-            - recipes
+            sidecar:
+              required:
+                - image
+                - clusterHostSuffix
+                - configVolumeMountPath
+                - livenessProbe
+                - readinessProbe
+              type: object
+              properties:
+                images:
+                  type: string
+                clusterHostSuffix:
+                  type: string
+                configVolumeMountPath:
+                  type: string
+                livenessProbe:
+                  type: object
+                  required:
+                    - scheme
+                    - port
+                    - path
+                  properties:
+                    scheme:
+                      type: string
+                    port:
+                      type: integer
+                    path:
+                      type: string
+                readinessProbe:
+                  type: object
+                  required:
+                    - scheme
+                    - port
+                    - path
+                  properties:
+                    scheme:
+                      type: string
+                    port:
+                      type: integer
+                    path:
+                      type: string
+                resources:
+                  type: object
+                  properties:
+                    requests:
+                      type: object
+                      properties:
+                        memory:
+                          type: string
+                        cpu:
+                          type: string
+                    limits:
+                      type: object
+                      properties:
+                        memory:
+                          type: string
+                        cpu:
+                          type: string
+
   # either Namespaced or Cluster
   scope: Namespaced
   names:

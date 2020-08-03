@@ -5,11 +5,12 @@ import com.ing.bakery.clustercontroller.MutualAuthKeystoreConfig
 import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json.Format
 import skuber.LabelSelector.IsEqualRequirement
+import skuber.Volume.{ConfigMapProjection, ProjectedVolumeSource, SecretProjection}
 import skuber.api.client.KubernetesClient
 import skuber.apps.v1.{Deployment, ReplicaSet, ReplicaSetList}
 import skuber.json.ext.format._
 import skuber.json.format._
-import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
+import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Resource, Service, Volume}
 
 final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfig] = None)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[BakerResource] with LazyLogging {
 
@@ -71,6 +72,8 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
 
   private def baasStateServicePort: Int = 8081
 
+  import Utils.ConfigurableContainer
+
   private def podSpec(bakerResource: BakerResource): Pod.Template.Spec = {
 
     val bakerName: String = bakerResource.metadata.name
@@ -79,9 +82,6 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
     val imagePullSecret: Option[String] = bakerResource.spec.imagePullSecret
     val serviceAccountSecret: Option[String] = bakerResource.spec.serviceAccountSecret
     val recipesMountPath: String = "/recipes"
-    val tlsMountName: String = "bakery-tls-keystore"
-    val tlsMountPath: String = "/bakery-tls-keystore"
-
     val managementPort = Container.Port(
       name = "management",
       containerPort = 8558,
@@ -89,106 +89,83 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
     )
 
     val stateNodeContainer = Container(
-      name = baasStateName(bakerName),
-      image = image
-    )
-      .exposePort(Container.Port(
-        name = "remoting",
-        containerPort = 2552,
-        protocol = Protocol.TCP
-      ))
-      .exposePort(managementPort)
-      .exposePort(Container.Port(
-        name = "prometheus",
-        containerPort = 9095,
-        protocol = Protocol.TCP
-      ))
-      .exposePort(Container.Port(
-        name = "http-api",
-        containerPort = 8080,
-        protocol = Protocol.TCP
-      ))
-      .withReadinessProbe(skuber.Probe(
-        action = skuber.HTTPGetAction(
-          port = Right(managementPort.name),
-          path = "/health/ready"
-        ),
-        initialDelaySeconds = 15,
-        timeoutSeconds = 10,
-        failureThreshold = Some(30)
-      ))
-      .withLivenessProbe(skuber.Probe(
-        action = skuber.HTTPGetAction(
-          port = Right(managementPort.name),
-          path = "/health/alive"
-        ),
-        initialDelaySeconds = 15,
-        timeoutSeconds = 10,
-        failureThreshold = Some(30)
-      ))
-      .mount("recipes", recipesMountPath, readOnly = true)
-      .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)
-      .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
-      .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
+        name = baasStateName(bakerName),
+        image = image
+      )
+        .exposePort(Container.Port(
+          name = "remoting",
+          containerPort = 2552,
+          protocol = Protocol.TCP
+        ))
+        .exposePort(managementPort)
+        .exposePort(Container.Port(
+          name = "prometheus",
+          containerPort = 9095,
+          protocol = Protocol.TCP
+        ))
+        .exposePort(Container.Port(
+          name = "http-api",
+          containerPort = 8080,
+          protocol = Protocol.TCP
+        ))
+        .withReadinessProbe(skuber.Probe(
+          action = skuber.HTTPGetAction(
+            port = Right(managementPort.name),
+            path = "/health/ready"
+          ),
+          initialDelaySeconds = 15,
+          timeoutSeconds = 10,
+          failureThreshold = Some(30)
+        ))
+        .withLivenessProbe(skuber.Probe(
+          action = skuber.HTTPGetAction(
+            port = Right(managementPort.name),
+            path = "/health/alive"
+          ),
+          initialDelaySeconds = 15,
+          timeoutSeconds = 10,
+          failureThreshold = Some(30)
+        ))
+        .mount("recipes", recipesMountPath, readOnly = true)
+        .mount("config", "/bakery-config", readOnly = true)
+        .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)
+        .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
+        .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
+        .maybeWithKeyStoreConfig("INTERACTION_CLIENT", interactionClientTLS)
+        .withMaybeResources(bakerResource.spec.resources)
+        .withMaybeKafkaSink(bakerResource.spec.kafkaBootstrapServers)
 
-    val stateNodeContainerWithTLSEnvVars =
-      interactionClientTLS match {
-        case Some(interactionClientTLS) =>
-          stateNodeContainer
-            .setEnvVar("INTERACTION_CLIENT_HTTPS_ENABLED", "true")
-            .setEnvVar("INTERACTION_CLIENT_HTTPS_KEYSTORE_PATH", tlsMountPath+"/"+interactionClientTLS.fileName)
-            .setEnvVar("INTERACTION_CLIENT_HTTPS_KEYSTORE_PASSWORD", interactionClientTLS.password)
-            .setEnvVar("INTERACTION_CLIENT_HTTPS_KEYSTORE_TYPE", interactionClientTLS._type)
-        case None =>
-          stateNodeContainer
-            .setEnvVar("INTERACTION_CLIENT_HTTPS_ENABLED", "false")
-      }
-
-    val stateNodeContainerWithResources =
-      Utils.addResourcesSpec(stateNodeContainerWithTLSEnvVars, bakerResource.spec.resources)
-
-    val stateContainerWithEventSink =
-      bakerResource.spec.kafkaBootstrapServers.map( servers =>
-        stateNodeContainerWithResources
-          .setEnvVar("KAFKA_EVENT_SINK_BOOTSTRAP_SERVERS", servers)
-          // todo add missing kafka configuration later (topics + identity missing)
-          .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "true")
-      ).getOrElse(stateNodeContainerWithResources
-        .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "false"))
-
-    val stateNodeContainerWithServiceAccount =
-      if (serviceAccountSecret.isDefined)
-        stateContainerWithEventSink.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true)
-      else
-        stateContainerWithEventSink
-
-    val stateNodeContainerWithExtraConfig =
-      bakerResource.spec.config match {
-        case Some(_) => stateNodeContainerWithServiceAccount.mount("extra-config", "/bakery-config", readOnly = true)
-        case None => stateNodeContainerWithServiceAccount
-      }
-
-    val stateNodeContainerWithExtraSecrets =
-      bakerResource.spec.secrets match {
-        case Some(_) => stateNodeContainerWithExtraConfig.mount("extra-secrets", "/bakery-secrets", readOnly = true)
-        case None => stateNodeContainerWithExtraConfig
-      }
-
-    val interactionContainerWithTLSMount =
-      if(interactionClientTLS.isDefined) stateNodeContainerWithExtraSecrets.mount(tlsMountName, tlsMountPath, readOnly = true)
-      else stateNodeContainerWithExtraSecrets
+    val maybeSidecarContainer: Option[Container] = bakerResource.spec.sidecar map { sidecarSpec => Container(
+        name = baasStateName(bakerName) + "-sidecar",
+        image = sidecarSpec.image
+      )
+        .mount("config", sidecarSpec.configVolumeMountPath, readOnly = true)
+        .maybe(serviceAccountSecret.isDefined, _.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true))
+        .withMaybeResources(sidecarSpec.resources)
+        .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)
+        .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
+        .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
+    }
 
     val podSpec = Pod.Spec(
-      containers = List(interactionContainerWithTLSMount),
+      containers = List(Some(stateNodeContainer), maybeSidecarContainer).flatten,
       imagePullSecrets = imagePullSecret.map(s => List(LocalObjectReference(s))).getOrElse(List.empty),
       volumes = List(
-        Some(Volume("recipes", Volume.ConfigMapVolumeSource(baasRecipesConfigMapName(bakerName)))),
         serviceAccountSecret.map(s => Volume("service-account-token", Volume.Secret(s))),
-        bakerResource.spec.config.map(c => Volume("extra-config", Volume.ConfigMapVolumeSource(c))),
-        bakerResource.spec.secrets.map(s => Volume("extra-secrets", Volume.Secret(s))),
-        interactionClientTLS.map(interactionClientTLS => Volume(tlsMountName, Volume.Secret(interactionClientTLS.secretName)))
-      ).flatten
-    )
+        Some(Volume(
+          name = "recipes",
+          source = Volume.ConfigMapVolumeSource(baasRecipesConfigMapName(bakerName)))),
+        Some(Volume(
+          name = "config",
+          source = ProjectedVolumeSource(
+            sources = List(
+              Some(ConfigMapProjection(baasRecipesConfigMapName(bakerName))),
+              serviceAccountSecret.map(SecretProjection(_)),
+              bakerResource.spec.config.map(ConfigMapProjection(_)),
+              bakerResource.spec.secrets.map(SecretProjection(_)),
+              interactionClientTLS.map(c => SecretProjection(c.secretName))
+            ).flatten)))
+    ).flatten)
 
     Pod.Template.Spec
       .named(baasStateName(bakerName))

@@ -26,7 +26,5 @@ data:
   env.2.name: THREE
   env.2.valueFrom.secretKeyRef.name: test-secret
   env.2.valueFrom.secretKeyRef.key: username
-  configMapMounts.0.name: test-config
-  configMapMounts.0.mountPath: /config
-  secretMounts.1.name: test-secret
-  secretMounts.1.mountPath: /secrets
+  configMapMounts.0: test-config
+  secretMounts.0: test-secret

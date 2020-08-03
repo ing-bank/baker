@@ -59,7 +59,7 @@ final class RemoteInteractionService(interactions: List[InteractionInstance])(im
     case req@POST -> Root /  "interactions" / id / "execute" =>
       for {
         request <- req.as[List[IngredientInstance]]
-        response <- (interactions.find(_.shaBase64 == id) match {
+        response <- interactions.find(_.shaBase64 == id) match {
           case Some(interaction) =>
             IO.fromFuture(IO(interaction.run(request))).attempt.flatMap {
               case Right(value) =>
@@ -69,7 +69,7 @@ final class RemoteInteractionService(interactions: List[InteractionInstance])(im
             }
           case None =>
             Ok(I.ExecutionResult(Left(I.Failure(I.NoInstanceFound))))
-        })
+        }
       } yield response
   })
 }
