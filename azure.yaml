@@ -45,11 +45,12 @@ steps:
       sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} clean coverage test coverageReport aetherDeploy
       bash <(curl -s https://codecov.io/bash)
     displayName: 'Building, testing and publishing main Baker with code coverage instrumentation'
-    condition:  $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
 
-  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "clean; test; aetherDeploy"
-    displayName: 'Building, testing and publishing main Baker'
+  - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "clean; aetherDeploy"
+    displayName: 'Building and publishing main Baker'
+    condition:  $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
 
   - script: sbt -Divy.home=${IVY_HOME} -Dsbt.ivy.home=${IVY_HOME} "project baas-interaction-example-make-payment-and-ship-items; aetherDeploy; project baas-interaction-example-reserve-items; aetherDeploy; project baas-client-example; aetherDeploy; project baas-kafka-listener-example; aetherDeploy"
     displayName: 'Building and publishing examples'
+    condition:  $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
 
