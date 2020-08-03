@@ -8,13 +8,14 @@ import akka.stream.{ActorMaterializer, Materializer}
 import cats.effect.{ExitCode, IO, IOApp, Resource}
 import com.ing.bakery.clustercontroller.controllers.{BakerController, BakerResource, InteractionController, InteractionResource}
 import com.typesafe.config.ConfigFactory
+import com.typesafe.scalalogging.LazyLogging
 import kamon.Kamon
 import skuber.api.client.KubernetesClient
 import skuber.json.format.configMapFmt
 
 import scala.concurrent.ExecutionContext
 
-object Main extends IOApp {
+object Main extends IOApp with LazyLogging {
 
   override def run(args: List[String]): IO[ExitCode] = {
     Kamon.init()
@@ -34,6 +35,13 @@ object Main extends IOApp {
       MutualAuthKeystoreConfig.from(config, "interaction")
     val interactionClientMutualTLS: Option[MutualAuthKeystoreConfig] =
       MutualAuthKeystoreConfig.from(config, "interaction-client")
+
+    interactionMutualTLS.foreach { config =>
+      logger.info(s"Mutual TLS authentication enabled for interactions, using secret name ${config.secretName}")
+    }
+    interactionClientMutualTLS.foreach { config =>
+      logger.info(s"Mutual TLS authentication enabled for interaction clients, using secret name ${config.secretName}")
+    }
 
     (for {
       _ <- BakeryControllerService.resource(InetSocketAddress.createUnresolved("0.0.0.0", 8080))
