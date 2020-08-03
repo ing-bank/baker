@@ -26,7 +26,7 @@ object Utils {
     }
     } getOrElse
       container
-        .setEnvVar("INTERACTION_CLIENT_HTTPS_ENABLED", "false")
+        .setEnvVar(s"${prefix}_HTTPS_ENABLED", "false")
 
     def withMaybeLimitMemory(qty: Option[Resource.Quantity]): Container = qty.map(container.limitMemory).getOrElse(container)
     def withMaybeLimitCpu(qty: Option[Resource.Quantity]): Container = qty.map(container.limitCPU).getOrElse(container)

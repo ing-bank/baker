@@ -5,6 +5,7 @@ import java.io.ByteArrayInputStream
 import cats.effect.{ContextShift, IO}
 import com.ing.baker.baas.interaction.BakeryHttp
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.LazyLogging
 import javax.net.ssl.SSLContext
 import skuber.api.client.KubernetesClient
 import skuber.json.format.secretFmt
@@ -22,10 +23,11 @@ case class MutualAuthKeystoreConfig(secretName: String, fileName: String, passwo
     } yield sslContext
 }
 
-object MutualAuthKeystoreConfig {
+object MutualAuthKeystoreConfig extends LazyLogging {
 
   def from(config: Config, of: String): Option[MutualAuthKeystoreConfig] = {
     val enabled = config.getBoolean("bakery-controller.https-mutual-auth")
+    if (enabled) logger.info("Https mutual auth enabled for interactions and interaction clients")
     if(enabled)
       Some(MutualAuthKeystoreConfig(
         secretName = config.getString(s"bakery-controller.$of.https-keystore-secret"),
