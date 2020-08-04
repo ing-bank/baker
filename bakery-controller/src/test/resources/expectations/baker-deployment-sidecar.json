@@ -88,65 +88,15 @@
         },
           {
             "name" : "sidecar",
-            "image" : "baas-node-state:local",
+            "image" : "nginx",
             "ports" : [ {
               "containerPort" : 8080,
               "protocol" : "TCP",
               "name" : "http-api"
-            }, {
-              "containerPort" : 8558,
-              "protocol" : "TCP",
-              "name" : "management"
-            }, {
-              "containerPort" : 2552,
-              "protocol" : "TCP",
-              "name" : "remoting"
-            } ],
-            "env" : [ {
-              "name" : "STATE_CLUSTER_SELECTOR",
-              "value" : "RecipeOne"
-            }, {
-              "name" : "RECIPE_DIRECTORY",
-              "value" : "/recipes"
-            }, {
-              "name" : "JAVA_TOOL_OPTIONS",
-              "value" : "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0"
-            } ],
-            "resources" : {
-              "requests" : {
-                "memory" : "500Mi",
-                "cpu" : "600m"
-              },
-              "limits" : {
-                "memory" : "1000Mi",
-                "cpu" : "6000m"
-              }
-            },
-            "volumeMounts" : [ {
-              "name" : "recipes",
-              "mountPath" : "/recipes",
-              "readOnly" : true
-            } ],
-            "livenessProbe" : {
-              "httpGet" : {
-                "port" : "management",
-                "path" : "/health/alive",
-                "scheme" : "HTTP"
-              },
-              "initialDelaySeconds" : 15,
-              "timeoutSeconds" : 10
-            },
-            "readinessProbe" : {
-              "httpGet" : {
-                "port" : "management",
-                "path" : "/health/ready",
-                "scheme" : "HTTP"
-              },
-              "initialDelaySeconds" : 15,
-              "timeoutSeconds" : 10
-            },
+            }],
             "imagePullPolicy" : "IfNotPresent"
-          } ],
+          }
+        ],
         "volumes" : [ {
           "name" : "recipes",
           "configMap" : {
