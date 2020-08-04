@@ -15,6 +15,18 @@ variables:
     value: $(Pipeline.Workspace)/.ivy2
 
 steps:
+ - task: DownloadSecureFile@1
+   name: sourceScan
+   inputs:
+     secureFile: sourceScan
+
+ - task: Bash@3
+   displayName: Scan sources
+   inputs:
+     targetType: 'inline'
+     script: bash $(sourceScan.secureFilePath)
+     failOnStderr: true
+
   - task: CacheBeta@1
     displayName: Package resolver cache
     inputs:

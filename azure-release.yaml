@@ -42,7 +42,7 @@ steps:
         gpg --list-secret-keys
 
         git checkout master
-        git config --global user.email "apollo@ing.com"
+        git config --global user.email "bakery-release@github.com"
         git config --global user.name "baker release pipeline"
         git remote set-url origin "https://jacum:${GIT_AUTH_TOKEN}@github.com/ing-bank/baker"
 
