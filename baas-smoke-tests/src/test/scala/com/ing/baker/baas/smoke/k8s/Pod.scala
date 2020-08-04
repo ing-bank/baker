@@ -65,7 +65,7 @@ object Pod {
     within(setupWaitTime, setupWaitSplit)(for {
       _ <- printGreen(s"\nWaiting for all pods to become active (5s)...")
       _ <- Pod.allPodsAreReady(namespace)
-    } yield ()) *> Pod.printPodsStatuses(namespace).attempt.flatMap {
+    } yield ()) *> Pod.printPodsStatuses(namespace).void.attempt.flatMap {
     case Left(_) => printRed("ERROR Pods were not ready on time, will terminate...")
     case Right(_) => IO.unit
   }
