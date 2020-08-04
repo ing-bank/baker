@@ -25,16 +25,16 @@ object BakeryEnvironment {
   def configMapNamespace(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Namespace] =
     for {
       namespace <- Namespace.resource
-      _ <- Resource.liftF(printGreen(s"\nCreating Bakery cluster environment for configmaps"))
+      _ <- Resource.liftF(printGreen("\nCreating Bakery cluster environment for configmaps"))
       _ <- DefinitionFile.resource("cassandra.yaml", namespace)
       _ <- DefinitionFile.resource("configmap/bakery-controller.yaml", namespace)
       _ <- DefinitionFile.resource("example-config.yaml", namespace)
       _ <- DefinitionFile.resource("kafka-event-sink.yaml", namespace)
       _ <- Resource.liftF(Pod.waitUntilAllPodsAreReady(namespace))
 
-      _ <- Resource.liftF(printGreen(s"\nAdding custom resources: interactions, listeners, recipe"))
-      _ <- DefinitionFile.resource(s"configmap/interactions-example.yaml", namespace)
-      _ <- DefinitionFile.resource(s"configmap/baker-webshop.yaml", namespace)
+      _ <- Resource.liftF(printGreen("\nAdding custom resources: interactions, listeners, recipe"))
+      _ <- DefinitionFile.resource("configmap/interactions-example.yaml", namespace)
+      _ <- DefinitionFile.resource("configmap/baker-webshop.yaml", namespace)
       _ <- DefinitionFile.resource("example-client-app.yaml", namespace)
       _ <- Resource.liftF(Pod.waitUntilAllPodsAreReady(namespace))
     } yield namespace
@@ -42,7 +42,7 @@ object BakeryEnvironment {
   def crdNamespace(implicit connectionPool: ExecutionContext, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Namespace] =
     for {
     namespace <- Namespace.resource
-    _ <- Resource.liftF(printGreen(s"\nCreating Bakery cluster environment for CRD"))
+    _ <- Resource.liftF(printGreen("\nCreating Bakery cluster environment for CRD"))
     _ <- DefinitionFile.resource("crd/crd-baker.yaml")
     _ <- DefinitionFile.resource("crd/crd-interaction.yaml")
     _ <- DefinitionFile.resource("cassandra.yaml", namespace)
@@ -51,9 +51,9 @@ object BakeryEnvironment {
     _ <- DefinitionFile.resource("kafka-event-sink.yaml", namespace)
     _ <- Resource.liftF(Pod.waitUntilAllPodsAreReady(namespace))
 
-    _ <- Resource.liftF(printGreen(s"\nAdding custom resources: interactions, listeners, recipe"))
-    _ <- DefinitionFile.resource(s"crd/interactions-example.yaml", namespace)
-    _ <- DefinitionFile.resource(s"crd/baker-webshop.yaml", namespace)
+    _ <- Resource.liftF(printGreen("\nAdding custom resources: interactions, listeners, recipe"))
+    _ <- DefinitionFile.resource("crd/interactions-example.yaml", namespace)
+    _ <- DefinitionFile.resource("crd/baker-webshop.yaml", namespace)
     _ <- DefinitionFile.resource("example-client-app.yaml", namespace)
     _ <- Resource.liftF(Pod.waitUntilAllPodsAreReady(namespace))
   } yield namespace
