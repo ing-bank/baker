@@ -18,7 +18,7 @@ steps:
   - task: DownloadSecureFile@1
     name: sourceScan
     inputs:
-      secureFile: sourceScan
+      secureFile: sourceScan.sh
 
   - task: Bash@3
     displayName: Scan sources
