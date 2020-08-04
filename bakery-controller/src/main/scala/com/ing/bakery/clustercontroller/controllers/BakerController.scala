@@ -139,11 +139,10 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         name = baasStateName(bakerName) + "-sidecar",
         image = sidecarSpec.image
       )
-        .mount("config", sidecarSpec.configVolumeMountPath, readOnly = true)
+        .maybe(sidecarSpec.configVolumeMountPath.isDefined,  _.mount("config", sidecarSpec.configVolumeMountPath.get, readOnly = true))
         .maybe(serviceAccountSecret.isDefined, _.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true))
+        .maybe(sidecarSpec.environment.isDefined, _.withEnvironment(sidecarSpec.environment.get))
         .withMaybeResources(sidecarSpec.resources)
-        .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)
-        .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
         .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
     }
 

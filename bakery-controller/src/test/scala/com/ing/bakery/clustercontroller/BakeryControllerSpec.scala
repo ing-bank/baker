@@ -127,9 +127,12 @@ object BakeryControllerSpec {
             requests = Map("cpu" -> skuber.Resource.Quantity("600m"), "memory" -> skuber.Resource.Quantity("500Mi")),
             limits = Map("cpu" -> skuber.Resource.Quantity("6000m"), "memory" -> skuber.Resource.Quantity("1000Mi"))
           )),
-          clusterHostSuffix =  ".test.local",
-          configVolumeMountPath =  "/home/app/config",
-          Some(skuber.Probe(
+          environment = Some(Map(
+            "POD_IP" -> "@status.podIP",
+            "CLUSTER_DNS_SUFFIX" -> ".test.local"
+          )),
+          configVolumeMountPath =  Some("/home/app/config"),
+          readinessProbe = Some(skuber.Probe(
             action = skuber.HTTPGetAction(
               port = Right("8443"),
               path = "/metrics",
@@ -138,7 +141,7 @@ object BakeryControllerSpec {
             initialDelaySeconds = 15,
             timeoutSeconds = 10
           )),
-          Some(
+          livenessProbe = Some(
             skuber.Probe(
               action = skuber.HTTPGetAction(
                 port = Right("8443"),
@@ -165,7 +168,6 @@ object BakeryControllerSpec {
       "resources.limits.cpu" -> "6000m",
       "resources.limits.memory" -> "1000Mi",
       "sidecar.image" -> "baas-node-state:local",
-      "sidecar.clusterHostSuffix" -> ".test.local",
       "sidecar.configVolumeMountPath" -> "/home/app/config",
       "sidecar.resources.requests.cpu" -> "600m",
       "sidecar.resources.requests.memory" -> "500Mi",
@@ -176,7 +178,9 @@ object BakeryControllerSpec {
       "sidecar.livenessProbe.path" -> "/metrics",
       "sidecar.readinessProbe.scheme" -> "https",
       "sidecar.readinessProbe.port" -> "10080",
-      "sidecar.readinessProbe.path" -> "/metrics"
+      "sidecar.readinessProbe.path" -> "/metrics",
+      "sidecar.environment.POD_IP" -> "@status.podIP",
+      "sidecar.environment.CLUSTER_DNS_SUFFIX" -> ".test.local"
   )
   )
 
