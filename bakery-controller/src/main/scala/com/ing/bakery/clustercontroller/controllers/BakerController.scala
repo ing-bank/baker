@@ -18,7 +18,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
   implicit lazy val replicaSetListFormat: Format[ReplicaSetList] = ListResourceFormat[ReplicaSet]
 
   def create(resource: BakerResource, k8s: KubernetesClient): IO[Unit] = {
-    val cm = intermediateRecipesWitnessConfigMap(resource)
+    val cm = intermediateRecipesManifestConfigMap(resource)
     val dep = deployment(resource)
     val svc = service(resource)
     for {
@@ -52,7 +52,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
 
   def upgrade(resource: BakerResource, k8s: KubernetesClient): IO[Unit] =
     for {
-      _ <- io(k8s.update[ConfigMap](intermediateRecipesWitnessConfigMap(resource))).void
+      _ <- io(k8s.update[ConfigMap](intermediateRecipesManifestConfigMap(resource))).void
       _ <- attemptOpOrTryOlderVersion(
         v1 = io(k8s.update[Deployment](deployment(resource))).void,
         older = io(k8s.update[skuber.ext.Deployment](oldKubernetesDeployment(resource))).void)
@@ -220,7 +220,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
       ))
   }
 
-  private def intermediateRecipesWitnessConfigMap(bakerResource: BakerResource): ConfigMap = {
+  private def intermediateRecipesManifestConfigMap(bakerResource: BakerResource): ConfigMap = {
     new ConfigMap(
       metadata = ObjectMeta(
         name = intermediateRecipesManifestConfigMapName(bakerResource),
