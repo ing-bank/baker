@@ -11,20 +11,21 @@ import skuber.apps.v1.{Deployment, ReplicaSet, ReplicaSetList}
 import skuber.json.ext.format._
 import skuber.json.format._
 import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Resource, Service, Volume}
+import Utils.ConfigurableContainer
 
 final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfig] = None)(implicit cs: ContextShift[IO], timer: Timer[IO]) extends ControllerOperations[BakerResource] with LazyLogging {
 
   implicit lazy val replicaSetListFormat: Format[ReplicaSetList] = ListResourceFormat[ReplicaSet]
 
   def create(resource: BakerResource, k8s: KubernetesClient): IO[Unit] = {
-    val cm = configMap(resource)
+    val cm = intermediateRecipesWitnessConfigMap(resource)
     val dep = deployment(resource)
     val svc = service(resource)
     for {
       wasAlreadyThere1 <- idem(io(k8s.create[ConfigMap](cm)), s"recipes config map '${cm.name}'")
       wasAlreadyThere2 <- idem(attemptOpOrTryOlderVersion(
         v1 = io(k8s.create[Deployment](dep)).void,
-        older = io(k8s.create[skuber.ext.Deployment](oldDeployment(resource))).void), s"deployment '${dep.name}'")
+        older = io(k8s.create[skuber.ext.Deployment](oldKubernetesDeployment(resource))).void), s"deployment '${dep.name}'")
       wasAlreadyThere3 <- idem(io(k8s.create(svc)), s"service '${svc.name}'")
     } yield {
       if(wasAlreadyThere1 || wasAlreadyThere2 || wasAlreadyThere3)
@@ -36,12 +37,12 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
 
   def terminate(resource: BakerResource, k8s: KubernetesClient): IO[Unit] =
     for {
-      _ <- io(k8s.delete[ConfigMap](baasRecipesConfigMapName(resource.metadata.name)))
-      (key, value) = bakerLabel(resource.metadata.name)
+      _ <- io(k8s.delete[ConfigMap](intermediateRecipesWitnessConfigMapName(resource)))
+      (key, value) = recipeNameLabel(resource)
       _ <- io(k8s.delete[Service](service(resource).name))
       _ <- attemptOpOrTryOlderVersion(
         v1 = io(k8s.delete[Deployment](deployment(resource).name)),
-        older = io(k8s.delete[skuber.ext.Deployment](oldDeployment(resource).name)))
+        older = io(k8s.delete[skuber.ext.Deployment](oldKubernetesDeployment(resource).name)))
       _ <- attemptOpOrTryOlderVersion(
         v1 = io(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void,
         older = io(k8s.deleteAllSelected[skuber.ext.ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void)
@@ -51,33 +52,28 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
 
   def upgrade(resource: BakerResource, k8s: KubernetesClient): IO[Unit] =
     for {
-      _ <- io(k8s.update[ConfigMap](configMap(resource))).void
+      _ <- io(k8s.update[ConfigMap](intermediateRecipesWitnessConfigMap(resource))).void
       _ <- attemptOpOrTryOlderVersion(
         v1 = io(k8s.update[Deployment](deployment(resource))).void,
-        older = io(k8s.update[skuber.ext.Deployment](oldDeployment(resource))).void)
+        older = io(k8s.update[skuber.ext.Deployment](oldKubernetesDeployment(resource))).void)
       _ = logger.info(s"Upgraded baker cluster named '${resource.name}'")
     } yield ()
 
-  private def stateNodeLabel: (String, String) = "app" -> "baas-state"
+  private def recipeNodeLabel: (String, String) = "bakery-component" -> "recipe-node"
 
-  private def bakerLabel(name: String): (String, String) = "baker-name" -> name
+  private def recipeNameLabel(resource: BakerResource): (String, String) = "bakery-recipe-name" -> resource.name
 
-  private def akkaClusterLabel(selector: String): (String, String) = "akka-cluster" -> selector
+  private def akkaClusterLabel(resource: BakerResource): (String, String) = "akka-cluster" -> resource.name
 
-  private def baasStateName(name: String): String = "baas-state-" + name
+  private def intermediateRecipesWitnessConfigMapName(resource: BakerResource): String = resource.name + "-witness"
 
-  private def baasStateServiceName(name: String): String = "baas-state-service-" + name
-
-  private def baasRecipesConfigMapName(name: String): String = "baas-state-recipes-config-map-" + name
+  private def recipeWitnessLabel: (String, String) = "bakery-witness" -> "recipes"
 
   private def baasStateServicePort: Int = 8081
 
-  import Utils.ConfigurableContainer
-
   private def podSpec(bakerResource: BakerResource): Pod.Template.Spec = {
 
-    val bakerName: String = bakerResource.metadata.name
-    val bakerLabelWithName: (String, String) = bakerLabel(bakerName)
+    val bakerCrdName: String = bakerResource.metadata.name
     val image: String = bakerResource.spec.image
     val imagePullSecret: Option[String] = bakerResource.spec.imagePullSecret
     val serviceAccountSecret: Option[String] = bakerResource.spec.serviceAccountSecret
@@ -89,7 +85,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
     )
 
     val stateNodeContainer = Container(
-        name = baasStateName(bakerName),
+        name = bakerCrdName,
         image = image
       )
         .exposePort(Container.Port(
@@ -128,7 +124,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         ))
         .mount("recipes", recipesMountPath, readOnly = true)
         .mount("config", "/bakery-config", readOnly = true)
-        .setEnvVar("STATE_CLUSTER_SELECTOR", bakerName)
+        .setEnvVar("STATE_CLUSTER_SELECTOR", bakerCrdName)
         .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
         .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
         .maybeWithKeyStoreConfig("INTERACTION_CLIENT", interactionClientTLS)
@@ -136,7 +132,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         .withMaybeKafkaSink(bakerResource.spec.kafkaBootstrapServers)
 
     val maybeSidecarContainer: Option[Container] = bakerResource.spec.sidecar map { sidecarSpec => Container(
-        name = baasStateName(bakerName) + "-sidecar",
+        name = bakerCrdName + "-sidecar",
         image = sidecarSpec.image
       )
         .maybe(sidecarSpec.configVolumeMountPath.isDefined,  _.mount("config", sidecarSpec.configVolumeMountPath.get, readOnly = true))
@@ -153,12 +149,12 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         serviceAccountSecret.map(s => Volume("service-account-token", Volume.Secret(s))),
         Some(Volume(
           name = "recipes",
-          source = Volume.ConfigMapVolumeSource(baasRecipesConfigMapName(bakerName)))),
+          source = Volume.ConfigMapVolumeSource(intermediateRecipesWitnessConfigMapName(bakerResource)))),
         Some(Volume(
           name = "config",
           source = ProjectedVolumeSource(
             sources = List(
-              Some(ConfigMapProjection(baasRecipesConfigMapName(bakerName))),
+              Some(ConfigMapProjection(intermediateRecipesWitnessConfigMapName(bakerResource))),
               serviceAccountSecret.map(SecretProjection(_)),
               bakerResource.spec.config.map(ConfigMapProjection(_)),
               bakerResource.spec.secrets.map(SecretProjection(_)),
@@ -167,36 +163,36 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
     ).flatten)
 
     Pod.Template.Spec
-      .named(baasStateName(bakerName))
+      .named(bakerCrdName)
       .withPodSpec(podSpec)
-      .addLabel(stateNodeLabel)
-      .addLabel(bakerLabelWithName)
-      .addLabel(akkaClusterLabel(bakerName))
+      .addLabel(recipeNodeLabel)
+      .addLabel(recipeNameLabel(bakerResource))
+      .addLabel(akkaClusterLabel(bakerResource))
   }
 
   private def deployment(bakerResource: BakerResource): Deployment = {
 
-    val bakerName: String = bakerResource.metadata.name
-    val bakerLabelWithName: (String, String) = bakerLabel(bakerName)
+    val bakerCrdName: String = bakerResource.metadata.name
+    val bakerLabelWithName: (String, String) = recipeNameLabel(bakerResource)
     val replicas: Int = bakerResource.spec.replicas
 
     new Deployment(metadata = ObjectMeta(
-      name = baasStateName(bakerName),
-      labels = Map(stateNodeLabel, bakerLabelWithName) ++ bakerResource.metadata.labels.filter(_._1 != "custom-resource-definition")))
+      name = bakerCrdName,
+      labels = Map(recipeNodeLabel, bakerLabelWithName) ++ bakerResource.metadata.labels.filter(_._1 != "custom-resource-definition")))
       .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(key = bakerLabelWithName._1, value = bakerLabelWithName._2)))
       .withReplicas(replicas)
       .withTemplate(podSpec(bakerResource))
   }
 
-  private def oldDeployment(bakerResource: BakerResource): skuber.ext.Deployment = {
+  private def oldKubernetesDeployment(bakerResource: BakerResource): skuber.ext.Deployment = {
 
-    val bakerName: String = bakerResource.metadata.name
-    val bakerLabelWithName: (String, String) = bakerLabel(bakerName)
+    val bakerCrdName: String = bakerResource.metadata.name
+    val bakerLabelWithName: (String, String) = recipeNameLabel(bakerResource)
     val replicas: Int = bakerResource.spec.replicas
 
     new skuber.ext.Deployment(metadata = ObjectMeta(
-      name = baasStateName(bakerName),
-      labels = Map(stateNodeLabel, bakerLabelWithName)
+      name = bakerCrdName,
+      labels = Map(recipeNodeLabel, bakerLabelWithName) ++ bakerResource.metadata.labels.filter(_._1 != "custom-resource-definition")
     ))
       .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(key = bakerLabelWithName._1, value = bakerLabelWithName._2)))
       .withReplicas(replicas)
@@ -204,12 +200,12 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
   }
 
   def service(bakerResource: BakerResource): Service = {
-    Service(baasStateServiceName(bakerResource.metadata.name))
-      .addLabel("baas-component", "state")
-      .addLabel("app", "baas-state-service")
+    val bakerCrdName: String = bakerResource.metadata.name
+    Service(bakerCrdName)
+      .addLabel(recipeNodeLabel)
+      .addLabel(recipeNameLabel(bakerResource))
       .addLabel("metrics" -> "collect")
-      .addLabel(bakerLabel(bakerResource.metadata.name))
-      .withSelector(bakerLabel(bakerResource.metadata.name))
+      .withSelector(recipeNameLabel(bakerResource))
       .setPorts(List(
         Service.Port(
           name = "http-api",
@@ -224,12 +220,15 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
       ))
   }
 
-  private def configMap(bakerResource: BakerResource): ConfigMap = {
-    val bakerName = bakerResource.metadata.name
+  private def intermediateRecipesWitnessConfigMap(bakerResource: BakerResource): ConfigMap = {
     new ConfigMap(
       metadata = ObjectMeta(
-        name = baasRecipesConfigMapName(bakerName),
-        labels = Map(bakerLabel(bakerName))),
+        name = intermediateRecipesWitnessConfigMapName(bakerResource),
+        labels = Map(
+          recipeNodeLabel,
+          recipeNameLabel(bakerResource),
+          recipeWitnessLabel
+        )),
       data = bakerResource.recipes.get.map {
         case (serializedRecipe, compiledRecipe) => compiledRecipe.recipeId -> serializedRecipe
       }.toMap)
