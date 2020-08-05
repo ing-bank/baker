@@ -15,7 +15,7 @@ object Utils {
 
   implicit class ConfigurableContainer(container: Container) {
 
-    def maybe[T](option: Option[T], apply: (T, Container) => Container): Container =
+    def applyIfDefined[T](option: Option[T], apply: (T, Container) => Container): Container =
       option.map(value => apply(value, container)).getOrElse(container)
 
     def maybeWithKeyStoreConfig(prefix: String, config: Option[MutualAuthKeystoreConfig]): Container = config map { tls => {

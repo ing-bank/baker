@@ -124,7 +124,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         ))
         .mount("recipes", recipesMountPath, readOnly = true)
         .mount("config", "/bakery-config", readOnly = true)
-        .maybe(serviceAccountSecret, (_: String, c) => c.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true))
+        .applyIfDefined(serviceAccountSecret, (_: String, c) => c.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true))
         .setEnvVar("STATE_CLUSTER_SELECTOR", bakerCrdName)
         .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
         .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
@@ -136,11 +136,11 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         name = bakerCrdName + "-sidecar",
         image = sidecarSpec.image
       )
-        .maybe(sidecarSpec.configVolumeMountPath, (v: String, c) => c.mount("config", v, readOnly = true))
-        .maybe(sidecarSpec.environment, (e: Map[String, String], c) => c.withEnvironment(e))
+        .applyIfDefined(sidecarSpec.configVolumeMountPath, (v: String, c) => c.mount("config", v, readOnly = true))
+        .applyIfDefined(sidecarSpec.environment, (e: Map[String, String], c) => c.withEnvironment(e))
         .withMaybeResources(sidecarSpec.resources)
-        .maybe(sidecarSpec.livenessProbe, (p, c) => c.withLivenessProbe(p))
-        .maybe(sidecarSpec.readinessProbe, (p, c) => c.withReadinessProbe(p))
+        .applyIfDefined(sidecarSpec.livenessProbe, (p, c) => c.withLivenessProbe(p))
+        .applyIfDefined(sidecarSpec.readinessProbe, (p, c) => c.withReadinessProbe(p))
         .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
     }
 
