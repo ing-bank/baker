@@ -19,10 +19,10 @@ import skuber.{ConfigMap, ObjectMeta}
 class KubeApiServer(mock: ClientAndServer, interaction: InteractionInstance) {
 
   def deployInteraction: IO[Unit] =
-    respondWithEvents(eventOfInteractionCreationContract(mock.getLocalPort, WatchEvent.Added)) *> noNewInteractions
+    respondWithEvents(eventOfInteractionManifest(mock.getLocalPort, WatchEvent.Added)) *> noNewInteractions
 
   def deleteInteraction: IO[Unit] =
-    respondWithEvents(eventOfInteractionCreationContract(mock.getLocalPort, WatchEvent.Deleted)) *> noNewInteractions
+    respondWithEvents(eventOfInteractionManifest(mock.getLocalPort, WatchEvent.Deleted)) *> noNewInteractions
 
   def noNewInteractions: IO[Unit] = IO {
     mock.when(watchMatch).respond(
@@ -33,11 +33,11 @@ class KubeApiServer(mock: ClientAndServer, interaction: InteractionInstance) {
     )
   }
 
-  private val baasComponentLabel: (String, String) = "baas-component" -> "remote-interaction-interfaces"
+  private val interactionManifestLabel: (String, String) = "bakery-manifest" -> "interactions"
   import com.ing.baker.baas.protocol.InteractionExecutionJsonCodecs._
 
-  private def eventOfInteractionCreationContract(port: Int, tpe: WatchEventType): WatchEvent = {
-    val creationContractName: String = "interactions-test-interaction"
+  private def eventOfInteractionManifest(port: Int, tpe: WatchEventType): WatchEvent = {
+    val creationContractName: String = "test-interaction-manifest"
     val interfaces = List(I.Interaction(interaction.shaBase64, interaction.name, interaction.input.toList))
     new WatchEvent {
       override type Resource = skuber.ConfigMap
@@ -45,7 +45,7 @@ class KubeApiServer(mock: ClientAndServer, interaction: InteractionInstance) {
         val name = creationContractName
         val interactionsData = interfaces.asJson.toString
         ConfigMap(
-          metadata = ObjectMeta(name = name, labels = Map(baasComponentLabel)),
+          metadata = ObjectMeta(name = name, labels = Map(interactionManifestLabel)),
           data = Map("address" -> s"http://localhost:$port/", "interfaces" -> interactionsData)
         )
       }
@@ -72,5 +72,5 @@ class KubeApiServer(mock: ClientAndServer, interaction: InteractionInstance) {
       .withMethod("GET")
       .withPath("/api/v1/namespaces/default/configmaps")
       .withQueryStringParameter("watch", "true")
-      .withQueryStringParameter("labelSelector", baasComponentLabel._1 + "=" + baasComponentLabel._2)
+      .withQueryStringParameter("labelSelector", interactionManifestLabel._1 + "=" + interactionManifestLabel._2)
 }

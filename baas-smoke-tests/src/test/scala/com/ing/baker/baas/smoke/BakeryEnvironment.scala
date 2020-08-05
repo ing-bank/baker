@@ -68,7 +68,7 @@ object BakeryEnvironment {
       hostname = InetSocketAddress.createUnresolved("0.0.0.0", 9090),
       awaitLock = args.debugMode)
     _ <- Resource.liftF(inspector.watchLogs("bakery-controller", None, namespace))
-    _ <- Resource.liftF(inspector.watchLogsWithPrefix("baas-state", None, namespace))
+    _ <- Resource.liftF(inspector.watchLogsWithPrefix("webshop-baker", None, namespace))
     _ <- Resource.liftF(inspector.watchLogsWithPrefix("reserve-items", None, namespace))
     _ <- Resource.liftF(inspector.watchLogsWithPrefix("client-app", Some("client-app"), namespace))
   } yield Context(

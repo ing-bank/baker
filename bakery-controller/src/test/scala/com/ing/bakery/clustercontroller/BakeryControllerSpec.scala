@@ -233,15 +233,15 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("interactions-localhost", ResourcePath.ConfigMapsPath))
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("localhost", ResourcePath.DeploymentsPath))
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("localhost", ResourcePath.ServicesPath))
-          _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.ReplicaSetsPath, Some("interaction" -> "localhost"), Some("expectations/interaction-replicaset-deletion.json"))
-          _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.PodsPath, Some("interaction" -> "localhost"), Some("expectations/interaction-podlist-deletion.json"))
+          _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.ReplicaSetsPath, Some("bakery-interaction-name" -> "localhost"), Some("expectations/interaction-replicaset-deletion.json"))
+          _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.PodsPath, Some("bakery-interaction-name" -> "localhost"), Some("expectations/interaction-podlist-deletion.json"))
           _ <- context.kubeApiServer.deleteInteractions(interactionResource)
           _ <- eventually(for {
-            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("interactions-localhost", ResourcePath.ConfigMapsPath))
+            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("localhost-manifest", ResourcePath.ConfigMapsPath))
             _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("localhost", ResourcePath.DeploymentsPath))
             _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("localhost", ResourcePath.ServicesPath))
-            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.ReplicaSetsPath, Some("interaction" -> "localhost"))
-            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.PodsPath, Some("interaction" -> "localhost"))
+            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.ReplicaSetsPath, Some("bakery-interaction-name" -> "localhost"))
+            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.PodsPath, Some("bakery-interaction-name" -> "localhost"))
           } yield succeed)
         } yield succeed
       )
@@ -283,18 +283,18 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
     test("Deletes interactions (Config Maps)") { context =>
       context.interactionControllerConfigMaps.use( _ =>
         for {
-          _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("interactions-localhost", ResourcePath.ConfigMapsPath))
+          _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("localhost-manifest", ResourcePath.ConfigMapsPath))
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("localhost", ResourcePath.DeploymentsPath))
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("localhost", ResourcePath.ServicesPath))
-          _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.ReplicaSetsPath, Some("interaction" -> "localhost"), Some("expectations/interaction-replicaset-deletion.json"))
-          _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.PodsPath, Some("interaction" -> "localhost"), Some("expectations/interaction-podlist-deletion.json"))
+          _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.ReplicaSetsPath, Some("bakery-interaction-name" -> "localhost"), Some("expectations/interaction-replicaset-deletion.json"))
+          _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.PodsPath, Some("bakery-interaction-name" -> "localhost"), Some("expectations/interaction-podlist-deletion.json"))
           _ <- context.kubeApiServer.deleteConfigMapFor("interactions", interactionConfigMapResource)
           _ <- eventually(for {
-            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("interactions-localhost", ResourcePath.ConfigMapsPath))
+            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("localhost-manifest", ResourcePath.ConfigMapsPath))
             _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("localhost", ResourcePath.DeploymentsPath))
             _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("localhost", ResourcePath.ServicesPath))
-            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.ReplicaSetsPath, Some("interaction" -> "localhost"))
-            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.PodsPath, Some("interaction" -> "localhost"))
+            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.ReplicaSetsPath, Some("bakery-interaction-name" -> "localhost"))
+            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.PodsPath, Some("bakery-interaction-name" -> "localhost"))
           } yield succeed)
         } yield succeed
       )
@@ -370,15 +370,15 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("baas-state-recipes-config-map-RecipeOne", ResourcePath.ConfigMapsPath))
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("baas-state-RecipeOne", ResourcePath.DeploymentsPath))
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("baas-state-service-RecipeOne", ResourcePath.ServicesPath))
-          _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.ReplicaSetsPath, Some("baker-name" -> "RecipeOne"), Some("expectations/interaction-replicaset-deletion.json"))
-          _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.PodsPath, Some("baker-name" -> "RecipeOne"), Some("expectations/interaction-podlist-deletion.json"))
+          _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.ReplicaSetsPath, Some("bakery-baker-name" -> "RecipeOne"), Some("expectations/interaction-replicaset-deletion.json"))
+          _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.PodsPath, Some("bakery-baker-name" -> "RecipeOne"), Some("expectations/interaction-podlist-deletion.json"))
           _ <- context.kubeApiServer.deleteBakers(bakerResource)
           _ <- eventually(for {
-            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("baas-state-recipes-config-map-RecipeOne", ResourcePath.ConfigMapsPath))
-            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("baas-state-RecipeOne", ResourcePath.DeploymentsPath))
-            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("baas-state-service-RecipeOne", ResourcePath.ServicesPath))
-            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.ReplicaSetsPath, Some("baker-name" -> "RecipeOne"))
-            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.PodsPath, Some("baker-name" -> "RecipeOne"))
+            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("RecipeOne-manifest", ResourcePath.ConfigMapsPath))
+            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("RecipeOne", ResourcePath.DeploymentsPath))
+            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("RecipeOne", ResourcePath.ServicesPath))
+            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.ReplicaSetsPath, Some("bakery-baker-name" -> "RecipeOne"))
+            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.PodsPath, Some("bakery-baker-name" -> "RecipeOne"))
           } yield succeed)
         } yield succeed
       )
@@ -387,12 +387,12 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
     test("Updates state nodes (CRDs)") { context =>
       context.bakerController.use( _ =>
         for {
-          _ <- context.kubeApiServer.expectUpdateOf("expectations/baker-creation-recipes.json", ResourcePath.Named("baas-state-recipes-config-map-RecipeOne", ResourcePath.ConfigMapsPath))
-          _ <- context.kubeApiServer.expectUpdateOf("expectations/baker-deployment.json", ResourcePath.Named("baas-state-RecipeOne", ResourcePath.DeploymentsPath))
+          _ <- context.kubeApiServer.expectUpdateOf("expectations/baker-creation-recipes.json", ResourcePath.Named("RecipeOne-manifest", ResourcePath.ConfigMapsPath))
+          _ <- context.kubeApiServer.expectUpdateOf("expectations/baker-deployment.json", ResourcePath.Named("RecipeOne", ResourcePath.DeploymentsPath))
           _ <- context.kubeApiServer.updateBakers(bakerResource)
           _ <- eventually(for {
-            _ <- context.kubeApiServer.validateUpdateOf(ResourcePath.Named("baas-state-RecipeOne", ResourcePath.DeploymentsPath))
-            _ <- context.kubeApiServer.validateUpdateOf(ResourcePath.Named("baas-state-recipes-config-map-RecipeOne", ResourcePath.ConfigMapsPath))
+            _ <- context.kubeApiServer.validateUpdateOf(ResourcePath.Named("RecipeOne", ResourcePath.DeploymentsPath))
+            _ <- context.kubeApiServer.validateUpdateOf(ResourcePath.Named("RecipeOne-manifest", ResourcePath.ConfigMapsPath))
           } yield succeed)
         } yield succeed
       )
@@ -438,15 +438,15 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("baas-state-recipes-config-map-RecipeOne", ResourcePath.ConfigMapsPath))
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("baas-state-RecipeOne", ResourcePath.DeploymentsPath))
           _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.Named("baas-state-service-RecipeOne", ResourcePath.ServicesPath))
-          _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.ReplicaSetsPath, Some("baker-name" -> "RecipeOne"), Some("expectations/interaction-replicaset-deletion.json"))
-          _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.PodsPath, Some("baker-name" -> "RecipeOne"), Some("expectations/interaction-podlist-deletion.json"))
+          _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.ReplicaSetsPath, Some("bakery-baker-name" -> "RecipeOne"), Some("expectations/interaction-replicaset-deletion.json"))
+          _ <- context.kubeApiServer.expectDeletionOf(ResourcePath.PodsPath, Some("bakery-baker-name" -> "RecipeOne"), Some("expectations/interaction-podlist-deletion.json"))
           _ <- context.kubeApiServer.deleteConfigMapFor("bakers", bakerConfigMapResource)
           _ <- eventually(for {
-            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("baas-state-recipes-config-map-RecipeOne", ResourcePath.ConfigMapsPath))
-            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("baas-state-RecipeOne", ResourcePath.DeploymentsPath))
-            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("baas-state-service-RecipeOne", ResourcePath.ServicesPath))
-            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.ReplicaSetsPath, Some("baker-name" -> "RecipeOne"))
-            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.PodsPath, Some("baker-name" -> "RecipeOne"))
+            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("RecipeOne-manifest", ResourcePath.ConfigMapsPath))
+            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("RecipeOne", ResourcePath.DeploymentsPath))
+            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.Named("RecipeOne", ResourcePath.ServicesPath))
+            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.ReplicaSetsPath, Some("bakery-baker-name" -> "RecipeOne"))
+            _ <- context.kubeApiServer.validateDeletionOf(ResourcePath.PodsPath, Some("bakery-baker-name" -> "RecipeOne"))
           } yield succeed)
         } yield succeed
       )
@@ -455,12 +455,12 @@ class BakeryControllerSpec extends BakeryFunSpec with Matchers {
     test("Updates state nodes (Config Maps)") { context =>
       context.bakerControllerConfigMaps.use( _ =>
         for {
-          _ <- context.kubeApiServer.expectUpdateOf("expectations/baker-creation-recipes.json", ResourcePath.Named("baas-state-recipes-config-map-RecipeOne", ResourcePath.ConfigMapsPath))
-          _ <- context.kubeApiServer.expectUpdateOf("expectations/baker-deployment.json", ResourcePath.Named("baas-state-RecipeOne", ResourcePath.DeploymentsPath))
+          _ <- context.kubeApiServer.expectUpdateOf("expectations/baker-creation-recipes.json", ResourcePath.Named("RecipeOne-manifest", ResourcePath.ConfigMapsPath))
+          _ <- context.kubeApiServer.expectUpdateOf("expectations/baker-deployment.json", ResourcePath.Named("RecipeOne", ResourcePath.DeploymentsPath))
           _ <- context.kubeApiServer.updateConfigMapFor("bakers", bakerConfigMapResource)
           _ <- eventually(for {
-            _ <- context.kubeApiServer.validateUpdateOf(ResourcePath.Named("baas-state-RecipeOne", ResourcePath.DeploymentsPath))
-            _ <- context.kubeApiServer.validateUpdateOf(ResourcePath.Named("baas-state-recipes-config-map-RecipeOne", ResourcePath.ConfigMapsPath))
+            _ <- context.kubeApiServer.validateUpdateOf(ResourcePath.Named("RecipeOne", ResourcePath.DeploymentsPath))
+            _ <- context.kubeApiServer.validateUpdateOf(ResourcePath.Named("RecipeOne-manifest", ResourcePath.ConfigMapsPath))
           } yield succeed)
         } yield succeed
       )

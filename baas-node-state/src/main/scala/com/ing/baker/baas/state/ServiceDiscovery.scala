@@ -28,8 +28,6 @@ object ServiceDiscovery extends LazyLogging {
   def empty(httpClient: Client[IO]): IO[ServiceDiscovery] =
     Ref.of[IO, Map[String, InteractionInstance]](Map.empty).map(new ServiceDiscovery(_, httpClient))
 
-  val baasComponentLabel: (String, String) = "baas-component" -> "remote-interaction-interfaces"
-
   /** Creates resource of a ServiceDiscovery module, when acquired a stream of kubernetes services starts and feeds the
     * ServiceDiscovery module to give corresponding InteractionInstances
     * When the resource is released the polling to the Kubernetes API stops.
@@ -45,8 +43,7 @@ object ServiceDiscovery extends LazyLogging {
 
     def watchSource(serviceDiscovery: ServiceDiscovery): Source[K8SWatchEvent[ConfigMap], UniqueKillSwitch] = {
       val watchFilter: ListOptions = {
-        val (key, value) = baasComponentLabel
-        val labelSelector = LabelSelector(LabelSelector.IsEqualRequirement(key, value))
+        val labelSelector = LabelSelector(LabelSelector.IsEqualRequirement("bakery-manifest", "interactions"))
         ListOptions(labelSelector = Some(labelSelector)/*, timeoutSeconds = Some(45)*/) // Note, we decided to go for long connections against renewing every 45 seconds due an issue with OpenShift 3.11 not being able to respond to calls with resourceVersion as supposed to be
       }
 

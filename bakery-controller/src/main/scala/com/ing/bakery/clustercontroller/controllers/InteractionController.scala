@@ -17,6 +17,8 @@ import skuber.apps.v1.{Deployment, ReplicaSet, ReplicaSetList}
 import skuber.json.ext.format._
 import skuber.json.format._
 import skuber.{ConfigMap, Container, LabelSelector, LocalObjectReference, ObjectMeta, Pod, PodList, Protocol, Service, Volume}
+import Utils.ConfigurableContainer
+
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -33,13 +35,13 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
     for {
       wasAlreadyThere1 <- idem(attemptOpOrTryOlderVersion(
         v1 = io(k8s.create[Deployment](dpl)).void,
-        older = io(k8s.create[skuber.ext.Deployment](oldDeployment(resource))).void), s"deployment '${dpl.name}'")
+        older = io(k8s.create[skuber.ext.Deployment](oldKubernetesDeployment(resource))).void), s"deployment '${dpl.name}'")
       deployedService <- applyOrGet(io(k8s.create(svc)), io(k8s.get[Service](svc.name)), s"service '${svc.name}'")
       deployedPort = deployedService.spec
         .flatMap(_.ports.find(_.name == "http-api"))
         .map(_.port)
         .getOrElse(8080)
-      addressAndInterfaces <- extractInterfacesFromDeployedInteraction(serviceName(resource), deployedPort, k8s)
+      addressAndInterfaces <- extractInterfacesFromDeployedInteraction(resource.name, deployedPort, k8s)
       (address, interfaces) = addressAndInterfaces
       contract = creationContract(resource, address, interfaces)
       wasAlreadyThere2 <- idem(io(k8s.create(contract)), s"creation contract config map '${contract.name}'")
@@ -52,13 +54,13 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
   }
 
   def terminate(resource: InteractionResource, k8s: KubernetesClient): IO[Unit] = {
-    val (key, value) = interactionLabel(resource)
+    val (key, value) = interactionNameLabel(resource)
     for {
-      _ <- io(k8s.delete[ConfigMap](creationContractName(resource)))
-      _ <- io(k8s.delete[Service](serviceName(resource)))
+      _ <- io(k8s.delete[ConfigMap](intermediateInteractionManifestConfigMapName(resource)))
+      _ <- io(k8s.delete[Service](resource.name))
       _ <- attemptOpOrTryOlderVersion(
         v1 = io(k8s.delete[Deployment](deployment(resource).name)),
-        older = io(k8s.delete[skuber.ext.Deployment](oldDeployment(resource).name)))
+        older = io(k8s.delete[skuber.ext.Deployment](oldKubernetesDeployment(resource).name)))
       _ <- attemptOpOrTryOlderVersion(
         v1 = io(k8s.deleteAllSelected[ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void,
         older = io(k8s.deleteAllSelected[skuber.ext.ReplicaSetList](LabelSelector(IsEqualRequirement(key, value)))).void)
@@ -71,7 +73,7 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
     for {
       _ <- attemptOpOrTryOlderVersion(
         v1 = io(k8s.update[Deployment](deployment(resource))).void,
-        older = io(k8s.update[skuber.ext.Deployment](oldDeployment(resource))).void)
+        older = io(k8s.update[skuber.ext.Deployment](oldKubernetesDeployment(resource))).void)
     } yield ()
 
   private def extractInterfacesFromDeployedInteraction(serviceName: String, deployedPort: Int, k8s: KubernetesClient): IO[(Uri, List[I.Interaction])] = {
@@ -90,15 +92,13 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
     } yield (address, interfaces)
   }
 
-  private def interactionLabel(interaction: InteractionResource): (String, String) = "interaction" -> interaction.name
+  private def interactionNodeLabel: (String, String) = "bakery-component" -> "interaction"
 
-  private def serviceName(interactionResource: InteractionResource): String = interactionResource.name
+  private def interactionNameLabel(interaction: InteractionResource): (String, String) = "bakery-interaction-name" -> interaction.name
 
-  private def deploymentName(interactionResource: InteractionResource): String = interactionResource.name
+  private def intermediateInteractionManifestConfigMapName(interaction: InteractionResource): String = interaction.name + "-manifest"
 
-  private def creationContractName(interactionResource: InteractionResource): String = "interactions-" + interactionResource.name
-
-  private def baasComponentLabel: (String, String) = "baas-component" -> "remote-interaction-interfaces"
+  private def interactionManifestLabel: (String, String) = "bakery-manifest" -> "interactions"
 
   private def httpAPIPort: Container.Port = Container.Port(
     name = "http-api",
@@ -110,20 +110,20 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
 
 
   private def creationContract(interaction: InteractionResource, address: Uri, interactions: List[I.Interaction]): ConfigMap = {
-    val name = creationContractName(interaction)
+    val name = intermediateInteractionManifestConfigMapName(interaction)
     val interactionsData =  interactions.asJson.toString
     ConfigMap(
-      metadata = ObjectMeta(name = name, labels = Map(baasComponentLabel)),
+      metadata = ObjectMeta(name = name, labels = Map(
+        interactionNodeLabel,
+        interactionNameLabel(interaction),
+        interactionManifestLabel
+      )),
       data = Map("address" -> address.toString, "interfaces" -> interactionsData)
     )
   }
 
-  import Utils.ConfigurableContainer
-
   private def podSpec(interaction: InteractionResource): Pod.Template.Spec = {
 
-    val name: String = deploymentName(interaction)
-    val interactionLabelWithName: (String, String) = interactionLabel(interaction)
     val image: String = interaction.spec.image
     val imagePullSecret: Option[String] = interaction.spec.imagePullSecret
 
@@ -137,7 +137,7 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
     )
 
     val interactionContainer = Container(
-      name = name,
+      name = interaction.name,
       image = image)
       .exposePort(httpAPIPort)
       .exposePort(Container.Port(
@@ -172,39 +172,40 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
     )
 
     Pod.Template.Spec
-      .named(name)
+      .named(interaction.name)
       .withPodSpec(podSpec)
-      .addLabel(interactionLabelWithName)
+      .addLabel(interactionNodeLabel)
+      .addLabel(interactionNameLabel(interaction))
   }
 
   private def deployment(interaction: InteractionResource): Deployment = {
 
-    val name: String = deploymentName(interaction)
-    val interactionLabelWithName: (String, String) = interactionLabel(interaction)
+    val interactionLabelWithName: (String, String) = interactionNameLabel(interaction)
     val replicas: Int = interaction.spec.replicas
 
     new Deployment(metadata = ObjectMeta(
-      name = name,
+      name = interaction.name,
       labels = Map(
-        interactionLabelWithName,
-        ("app", interaction.name)) ++ interaction.metadata.labels.filter(_._1 != "custom-resource-definition")
+        interactionNodeLabel,
+        interactionNameLabel(interaction)) ++
+        interaction.metadata.labels.filter(_._1 != "custom-resource-definition")
     ))
       .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(key = interactionLabelWithName._1, value = interactionLabelWithName._2)))
       .withReplicas(replicas)
       .withTemplate(podSpec(interaction))
   }
 
-  private def oldDeployment(interaction: InteractionResource): skuber.ext.Deployment = {
+  private def oldKubernetesDeployment(interaction: InteractionResource): skuber.ext.Deployment = {
 
-    val name: String = deploymentName(interaction)
-    val interactionLabelWithName: (String, String) = interactionLabel(interaction)
+    val interactionLabelWithName: (String, String) = interactionNameLabel(interaction)
     val replicas: Int = interaction.spec.replicas
 
     new skuber.ext.Deployment(metadata = ObjectMeta(
-      name = name,
+      name = interaction.name,
       labels = Map(
-        interactionLabelWithName,
-        ("app", interaction.name)) ++ interaction.metadata.labels.filter(_._1 != "custom-resource-definition")
+        interactionNodeLabel,
+        interactionNameLabel(interaction)) ++
+        interaction.metadata.labels.filter(_._1 != "custom-resource-definition")
     ))
       .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(key = interactionLabelWithName._1, value = interactionLabelWithName._2)))
       .withReplicas(replicas)
@@ -212,11 +213,11 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
   }
 
   private def service(interaction: InteractionResource): Service = {
-    Service(serviceName(interaction))
-      .withSelector(interactionLabel(interaction))
-      .addLabel("app", interaction.name)
-      .addLabel(baasComponentLabel)
+    Service(interaction.name)
+      .addLabel(interactionNodeLabel)
+      .addLabel(interactionNameLabel(interaction))
       .addLabel("metrics" -> "collect")
+      .withSelector(interactionNameLabel(interaction))
       .setPorts(List(
         Service.Port(
           name = httpAPIPort.name,
