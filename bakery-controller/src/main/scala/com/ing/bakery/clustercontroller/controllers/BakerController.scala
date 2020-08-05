@@ -157,7 +157,6 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
           source = ProjectedVolumeSource(
             sources = List(
               Some(ConfigMapProjection(intermediateRecipesManifestConfigMapName(bakerResource))),
-              serviceAccountSecret.map(SecretProjection(_)),
               bakerResource.spec.config.map(ConfigMapProjection(_)),
               bakerResource.spec.secrets.map(SecretProjection(_)),
               interactionClientTLS.map(c => SecretProjection(c.secretName))
