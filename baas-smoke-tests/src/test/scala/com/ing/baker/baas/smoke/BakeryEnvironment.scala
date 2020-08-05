@@ -22,18 +22,44 @@ object BakeryEnvironment {
     debugMode: Boolean
   )
 
-  def resource(args: Arguments)(implicit connectionPool: ExecutionContext, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Context] = for {
-    namespace <- KubernetesCommands.basicSetup
+  def configMapNamespace(implicit cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Namespace] =
+    for {
+      namespace <- Namespace.resource
+      _ <- Resource.liftF(printGreen("\nCreating Bakery cluster environment for configmaps"))
+      _ <- DefinitionFile.resource("cassandra.yaml", namespace)
+      _ <- DefinitionFile.resource("configmap/bakery-controller.yaml", namespace)
+      _ <- DefinitionFile.resource("example-config.yaml", namespace)
+      _ <- DefinitionFile.resource("kafka-event-sink.yaml", namespace)
+      _ <- Resource.liftF(Pod.waitUntilAllPodsAreReady(namespace))
 
-    _ <- Resource.liftF(printGreen(s"\nAdding custom resources: interactions, listeners, recipe"))
-    _ <- DefinitionFile.resource("interactions-example-config-map.yaml", namespace)
-    _ <- DefinitionFile.resource("baker-webshop.yaml", namespace)
+      _ <- Resource.liftF(printGreen("\nAdding custom resources: interactions, listeners, recipe"))
+      _ <- DefinitionFile.resource("configmap/interactions-example.yaml", namespace)
+      _ <- DefinitionFile.resource("configmap/baker-webshop.yaml", namespace)
+      _ <- DefinitionFile.resource("example-client-app.yaml", namespace)
+      _ <- Resource.liftF(Pod.waitUntilAllPodsAreReady(namespace))
+    } yield namespace
+
+  def crdNamespace(implicit connectionPool: ExecutionContext, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Namespace] =
+    for {
+    namespace <- Namespace.resource
+    _ <- Resource.liftF(printGreen("\nCreating Bakery cluster environment for CRD"))
+    _ <- DefinitionFile.resource("crd/crd-baker.yaml")
+    _ <- DefinitionFile.resource("crd/crd-interaction.yaml")
+    _ <- DefinitionFile.resource("cassandra.yaml", namespace)
+    _ <- DefinitionFile.resource("crd/bakery-controller.yaml", namespace)
+    _ <- DefinitionFile.resource("example-config.yaml", namespace)
+    _ <- DefinitionFile.resource("kafka-event-sink.yaml", namespace)
+    _ <- Resource.liftF(Pod.waitUntilAllPodsAreReady(namespace))
+
+    _ <- Resource.liftF(printGreen("\nAdding custom resources: interactions, listeners, recipe"))
+    _ <- DefinitionFile.resource("crd/interactions-example.yaml", namespace)
+    _ <- DefinitionFile.resource("crd/baker-webshop.yaml", namespace)
     _ <- DefinitionFile.resource("example-client-app.yaml", namespace)
-    _ <- Resource.liftF(Pod.waitUntilAllPodsAreReady(namespace).attempt.flatMap {
-      case Left(_) => printRed("ERROR Pods were not ready on time, will terminate...")
-      case Right(_) => IO.unit
-    })
+    _ <- Resource.liftF(Pod.waitUntilAllPodsAreReady(namespace))
+  } yield namespace
 
+  def resource(args: Arguments, namespaceSetup: => Resource[IO, Namespace])(implicit connectionPool: ExecutionContext, cs: ContextShift[IO], timer: Timer[IO]): Resource[IO, Context] = for {
+    namespace <- namespaceSetup
     client <- BlazeClientBuilder[IO](connectionPool).resource
     exampleAppClient = new ExampleAppClient(client, args.clientAppHostname)
 
@@ -44,7 +70,6 @@ object BakeryEnvironment {
     _ <- Resource.liftF(inspector.watchLogs("bakery-controller", None, namespace))
     _ <- Resource.liftF(inspector.watchLogsWithPrefix("baas-state", None, namespace))
     _ <- Resource.liftF(inspector.watchLogsWithPrefix("reserve-items", None, namespace))
-    _ <- Resource.liftF(inspector.watchLogsWithPrefix("make-payment-and-ship-items", None, namespace))
     _ <- Resource.liftF(inspector.watchLogsWithPrefix("client-app", Some("client-app"), namespace))
   } yield Context(
     clientApp = exampleAppClient,

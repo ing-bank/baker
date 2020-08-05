@@ -1,8 +1,8 @@
 package com.ing.bakery.clustercontroller.controllers
 
-import cats.implicits._
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.{IO, Timer}
+import cats.implicits._
 import com.ing.bakery.clustercontroller.MutualAuthKeystoreConfig
 import com.ing.bakery.clustercontroller.controllers.BakerResource.SidecarSpec
 import skuber.{ConfigMap, Container, Resource}
@@ -45,6 +45,14 @@ object Utils {
         .setEnvVar("KAFKA_EVENT_SINK_BOOTSTRAP_SERVERS", servers)  // todo add missing kafka configuration later (topics + identity/tls)
         .setEnvVar("KAFKA_EVENT_SINK_ENABLED", "true")
     ).getOrElse(container.setEnvVar("KAFKA_EVENT_SINK_ENABLED", "false"))
+
+    def withEnvironment(environment: Map[String, String]): Container =
+      environment.keySet.foldLeft(container)( (c, key) => {
+        val value = environment(key)
+          .replace("['\"]", "")
+        if (value.startsWith("@")) c.setEnvVarFromField(key, value.substring(1))
+        else c.setEnvVar(key, value)
+      })
   }
 
   /** Tries every second f until it succeeds or until 20 attempts have been made. */
@@ -61,11 +69,18 @@ object Utils {
         case Right(a) => IO(a)
       }
     }
-
     inner(split, time / split)
   }
 
   type FromConfigMapValidation[+A] = ValidatedNel[String, A]
+
+  def extractMapValidated(configMap: ConfigMap, path: String): FromConfigMapValidation[Map[String, String]] = {
+    val mapRegex = s"^${path.replace(".", "\\.")}\\.(\\w+)$$".r
+    val elements = configMap.data.toList.collect {
+      case (mapRegex(key), value) => key -> value
+    }.toMap
+    if(elements.isEmpty) s"no element of map '$path' found in ConfigMap '${configMap.name}''".invalidNel[Map[String, String]] else elements.validNel
+  }
 
   def extractValidatedString(configMap: ConfigMap, path: String): FromConfigMapValidation[String] =
     configMap.data.get(path).fold(s"required path '$path' not found in ConfigMap '${configMap.name}'".invalidNel[String])(_.validNel)
@@ -74,9 +89,9 @@ object Utils {
     configMap.data.get(path).map(Some(_).validNel).getOrElse(None.validNel)
 
   def extractListValidated(configMap: ConfigMap, path: String): FromConfigMapValidation[List[String]] = {
-    val ArrayReg = s"^${path.replace(".", "\\.")}\\.(\\d+)$$".r
+    val arrayRegex = s"^${path.replace(".", "\\.")}\\.(\\d+)$$".r
     val elements = configMap.data.toList.mapFilter {
-      case (ArrayReg(index), value) =>  Some(index.toInt -> value)
+      case (arrayRegex(index), value) =>  Some(index.toInt -> value)
       case _ => None
     }.sortBy(_._1).map(_._2)
     if(elements.isEmpty) s"no element of array '$path' found in ConfigMap '${configMap.name}''".invalidNel[List[String]] else elements.validNel
@@ -124,13 +139,14 @@ object Utils {
 
   def sidecarFromConfigMap(configMap: ConfigMap): FromConfigMapValidation[SidecarSpec] =
      ( Utils.extractValidatedString(configMap, "sidecar.image"),
-      Utils.extractValidatedString(configMap, "sidecar.clusterHostSuffix"),
-      Utils.extractValidatedString(configMap, "sidecar.configVolumeMountPath"),
-      Utils.optional(Utils.resourcesFromConfigMap(configMap, Some("sidecar"))),
-      Utils.optional(Utils.probeFromConfigMap(configMap, "sidecar.livenessProbe")),
-      Utils.optional(Utils.probeFromConfigMap(configMap, "sidecar.readinessProbe"))) mapN {
-      (sidecarImage, clusterHostSuffix, configVolumeMountPath, maybeResources, maybeLivenessProbe, maybeReadinessProbe) =>
-        SidecarSpec(sidecarImage, maybeResources, clusterHostSuffix, configVolumeMountPath, maybeLivenessProbe, maybeReadinessProbe)
+       Utils.optional(Utils.resourcesFromConfigMap(configMap, Some("sidecar"))),
+       Utils.extractValidatedStringOption(configMap, "sidecar.configVolumeMountPath"),
+       Utils.optional(Utils.probeFromConfigMap(configMap, "sidecar.livenessProbe")),
+       Utils.optional(Utils.probeFromConfigMap(configMap, "sidecar.readinessProbe")),
+       Utils.optional(extractMapValidated(configMap, "sidecar.environment"))
+     ) mapN {
+      (sidecarImage, maybeResources, maybeConfigVolumeMountPath, maybeLivenessProbe, maybeReadinessProbe, maybeEnvironment) =>
+        SidecarSpec(sidecarImage, maybeResources, maybeConfigVolumeMountPath, maybeLivenessProbe, maybeReadinessProbe, maybeEnvironment)
     }
 
   def probeFromConfigMap(configMap: ConfigMap, path: String): FromConfigMapValidation[skuber.Probe] =

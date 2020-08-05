@@ -28,8 +28,6 @@ spec:
     - name: bakery-controller
       image: bakery-controller:local
       env:
-        - name: USE_CRDS
-          value: "false"
         - name: BAKERY_HTTPS_MUTUAL_AUTH
           value: "true"
         - name: INTERACTION_HTTPS_KEYSTORE_SECRET

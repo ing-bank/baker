@@ -53,10 +53,10 @@ object BakerResource {
   case class SidecarSpec(
                         image: String,
                         resources: Option[Resource.Requirements],
-                        clusterHostSuffix: String,
-                        configVolumeMountPath: String,
+                        configVolumeMountPath: Option[String],
                         livenessProbe: Option[Probe],
-                        readinessProbe: Option[Probe]
+                        readinessProbe: Option[Probe],
+                        environment: Option[Map[String, String]]
                         )
 
   case class Spec(
@@ -110,10 +110,10 @@ object BakerResource {
   implicit val sidecarSpecFmt: Format[SidecarSpec] = (
     (JsPath \ "image").format[String] and
     (JsPath \ "resources").formatNullableWithDefault[Resource.Requirements](None) and
-    (JsPath \ "clusterHostSuffix" ).format[String] and
-    (JsPath \ "configVolumeMountPath" ).format[String] and
+    (JsPath \ "configVolumeMountPath" ).formatNullable[String] and
     (JsPath \ "livenessProbe" ).formatNullableWithDefault[Probe](None) and
-    (JsPath \ "readinessProbe" ).formatNullableWithDefault[Probe](None)
+    (JsPath \ "readinessProbe" ).formatNullableWithDefault[Probe](None) and
+    (JsPath \ "environment" ).formatNullable[Map[String, String]]
     )(SidecarSpec.apply, unlift(SidecarSpec.unapply))
 
   implicit val recipeResourceSpecFmt: Format[Spec] = (

@@ -62,16 +62,13 @@ spec:
             sidecar:
               required:
                 - image
-                - clusterHostSuffix
-                - configVolumeMountPath
-                - livenessProbe
-                - readinessProbe
               type: object
               properties:
-                images:
+                image:
                   type: string
-                clusterHostSuffix:
-                  type: string
+                environment:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
                 configVolumeMountPath:
                   type: string
                 livenessProbe:
