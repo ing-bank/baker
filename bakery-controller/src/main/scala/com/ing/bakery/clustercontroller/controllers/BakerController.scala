@@ -124,6 +124,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         ))
         .mount("recipes", recipesMountPath, readOnly = true)
         .mount("config", "/bakery-config", readOnly = true)
+        .maybe(serviceAccountSecret.isDefined, _.mount(name = "service-account-token", "/var/run/secrets/kubernetes.io/serviceaccount", readOnly = true))
         .setEnvVar("STATE_CLUSTER_SELECTOR", bakerCrdName)
         .setEnvVar("RECIPE_DIRECTORY", recipesMountPath)
         .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
