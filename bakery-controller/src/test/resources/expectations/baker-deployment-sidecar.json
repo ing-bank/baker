@@ -85,7 +85,18 @@
             "timeoutSeconds" : 10
           },
           "imagePullPolicy" : "IfNotPresent"
-        } ],
+        },
+          {
+            "name" : "sidecar",
+            "image" : "nginx",
+            "ports" : [ {
+              "containerPort" : 8080,
+              "protocol" : "TCP",
+              "name" : "http-api"
+            }],
+            "imagePullPolicy" : "IfNotPresent"
+          }
+        ],
         "volumes" : [ {
           "name" : "recipes",
           "configMap" : {
