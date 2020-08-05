@@ -43,7 +43,7 @@ object ServiceDiscovery extends LazyLogging {
 
     def watchSource(serviceDiscovery: ServiceDiscovery): Source[K8SWatchEvent[ConfigMap], UniqueKillSwitch] = {
       val watchFilter: ListOptions = {
-        val labelSelector = LabelSelector(LabelSelector.IsEqualRequirement("bakery-witness", "interactions"))
+        val labelSelector = LabelSelector(LabelSelector.IsEqualRequirement("bakery-manifest", "interactions"))
         ListOptions(labelSelector = Some(labelSelector)/*, timeoutSeconds = Some(45)*/) // Note, we decided to go for long connections against renewing every 45 seconds due an issue with OpenShift 3.11 not being able to respond to calls with resourceVersion as supposed to be
       }
 

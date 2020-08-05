@@ -37,7 +37,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
 
   def terminate(resource: BakerResource, k8s: KubernetesClient): IO[Unit] =
     for {
-      _ <- io(k8s.delete[ConfigMap](intermediateRecipesWitnessConfigMapName(resource)))
+      _ <- io(k8s.delete[ConfigMap](intermediateRecipesManifestConfigMapName(resource)))
       (key, value) = recipeNameLabel(resource)
       _ <- io(k8s.delete[Service](service(resource).name))
       _ <- attemptOpOrTryOlderVersion(
@@ -59,15 +59,15 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
       _ = logger.info(s"Upgraded baker cluster named '${resource.name}'")
     } yield ()
 
-  private def recipeNodeLabel: (String, String) = "bakery-component" -> "recipe-node"
+  private def recipeNodeLabel: (String, String) = "bakery-component" -> "baker"
 
-  private def recipeNameLabel(resource: BakerResource): (String, String) = "bakery-recipe-name" -> resource.name
+  private def recipeNameLabel(resource: BakerResource): (String, String) = "bakery-baker-name" -> resource.name
 
   private def akkaClusterLabel(resource: BakerResource): (String, String) = "akka-cluster" -> resource.name
 
-  private def intermediateRecipesWitnessConfigMapName(resource: BakerResource): String = resource.name + "-witness"
+  private def intermediateRecipesManifestConfigMapName(resource: BakerResource): String = resource.name + "-manifest"
 
-  private def recipeWitnessLabel: (String, String) = "bakery-witness" -> "recipes"
+  private def recipeManifestLabel: (String, String) = "bakery-manifest" -> "recipes"
 
   private def baasStateServicePort: Int = 8081
 
@@ -149,12 +149,12 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         serviceAccountSecret.map(s => Volume("service-account-token", Volume.Secret(s))),
         Some(Volume(
           name = "recipes",
-          source = Volume.ConfigMapVolumeSource(intermediateRecipesWitnessConfigMapName(bakerResource)))),
+          source = Volume.ConfigMapVolumeSource(intermediateRecipesManifestConfigMapName(bakerResource)))),
         Some(Volume(
           name = "config",
           source = ProjectedVolumeSource(
             sources = List(
-              Some(ConfigMapProjection(intermediateRecipesWitnessConfigMapName(bakerResource))),
+              Some(ConfigMapProjection(intermediateRecipesManifestConfigMapName(bakerResource))),
               serviceAccountSecret.map(SecretProjection(_)),
               bakerResource.spec.config.map(ConfigMapProjection(_)),
               bakerResource.spec.secrets.map(SecretProjection(_)),
@@ -223,11 +223,11 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
   private def intermediateRecipesWitnessConfigMap(bakerResource: BakerResource): ConfigMap = {
     new ConfigMap(
       metadata = ObjectMeta(
-        name = intermediateRecipesWitnessConfigMapName(bakerResource),
+        name = intermediateRecipesManifestConfigMapName(bakerResource),
         labels = Map(
           recipeNodeLabel,
           recipeNameLabel(bakerResource),
-          recipeWitnessLabel
+          recipeManifestLabel
         )),
       data = bakerResource.recipes.get.map {
         case (serializedRecipe, compiledRecipe) => compiledRecipe.recipeId -> serializedRecipe

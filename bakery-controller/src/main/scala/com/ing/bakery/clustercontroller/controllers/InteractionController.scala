@@ -56,7 +56,7 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
   def terminate(resource: InteractionResource, k8s: KubernetesClient): IO[Unit] = {
     val (key, value) = interactionNameLabel(resource)
     for {
-      _ <- io(k8s.delete[ConfigMap](intermediateInteractionWitnessConfigMapName(resource)))
+      _ <- io(k8s.delete[ConfigMap](intermediateInteractionManifestConfigMapName(resource)))
       _ <- io(k8s.delete[Service](resource.name))
       _ <- attemptOpOrTryOlderVersion(
         v1 = io(k8s.delete[Deployment](deployment(resource).name)),
@@ -92,13 +92,13 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
     } yield (address, interfaces)
   }
 
-  private def interactionNodeLabel: (String, String) = "bakery-component" -> "interaction-node"
+  private def interactionNodeLabel: (String, String) = "bakery-component" -> "interaction"
 
   private def interactionNameLabel(interaction: InteractionResource): (String, String) = "bakery-interaction-name" -> interaction.name
 
-  private def intermediateInteractionWitnessConfigMapName(interaction: InteractionResource): String = interaction.name + "-witness"
+  private def intermediateInteractionManifestConfigMapName(interaction: InteractionResource): String = interaction.name + "-manifest"
 
-  private def interactionWitnessLabel: (String, String) = "bakery-witness" -> "interactions"
+  private def interactionManifestLabel: (String, String) = "bakery-manifest" -> "interactions"
 
   private def httpAPIPort: Container.Port = Container.Port(
     name = "http-api",
@@ -110,13 +110,13 @@ final class InteractionController(connectionPool: ExecutionContext, interactionT
 
 
   private def creationContract(interaction: InteractionResource, address: Uri, interactions: List[I.Interaction]): ConfigMap = {
-    val name = intermediateInteractionWitnessConfigMapName(interaction)
+    val name = intermediateInteractionManifestConfigMapName(interaction)
     val interactionsData =  interactions.asJson.toString
     ConfigMap(
       metadata = ObjectMeta(name = name, labels = Map(
         interactionNodeLabel,
         interactionNameLabel(interaction),
-        interactionWitnessLabel
+        interactionManifestLabel
       )),
       data = Map("address" -> address.toString, "interfaces" -> interactionsData)
     )
