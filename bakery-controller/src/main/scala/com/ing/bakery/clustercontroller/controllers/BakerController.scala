@@ -139,8 +139,8 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
         .applyIfDefined(sidecarSpec.configVolumeMountPath, (v: String, c) => c.mount("config", v, readOnly = true))
         .applyIfDefined(sidecarSpec.environment, (e: Map[String, String], c) => c.withEnvironment(e))
         .withMaybeResources(sidecarSpec.resources)
-        .applyIfDefined(sidecarSpec.livenessProbe, (p, c) => c.withLivenessProbe(p))
-        .applyIfDefined(sidecarSpec.readinessProbe, (p, c) => c.withReadinessProbe(p))
+        .applyIfDefined(sidecarSpec.livenessProbe, (p: skuber.Probe, c) => c.withLivenessProbe(p))
+        .applyIfDefined(sidecarSpec.readinessProbe, (p: skuber.Probe, c) => c.withReadinessProbe(p))
         .setEnvVar("JAVA_TOOL_OPTIONS", "-XX:+UseContainerSupport -XX:MaxRAMPercentage=85.0")
     }
 
