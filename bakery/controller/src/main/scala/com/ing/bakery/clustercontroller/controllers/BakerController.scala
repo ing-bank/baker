@@ -59,7 +59,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
       _ = logger.info(s"Upgraded baker cluster named '${resource.name}'")
     } yield ()
 
-  private def recipeNodeLabel: (String, String) = "bakery-component" -> "baker"
+  private def bakeryBakerLabel: (String, String) = "bakery-component" -> "baker"
 
   private def recipeNameLabel(resource: BakerResource): (String, String) = "bakery-baker-name" -> resource.name
 
@@ -69,7 +69,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
 
   private def recipeManifestLabel: (String, String) = "bakery-manifest" -> "recipes"
 
-  private def baasStateServicePort: Int = 8081
+  private def bakeryBakerServicePort: Int = 8081
 
   private def podSpec(bakerResource: BakerResource): Pod.Template.Spec = {
 
@@ -177,7 +177,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
     Pod.Template.Spec
       .named(bakerCrdName)
       .withPodSpec(podSpec)
-      .addLabel(recipeNodeLabel)
+      .addLabel(bakeryBakerLabel)
       .addLabel(recipeNameLabel(bakerResource))
       .addLabel(akkaClusterLabel(bakerResource))
   }
@@ -190,7 +190,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
 
     new Deployment(metadata = ObjectMeta(
       name = bakerCrdName,
-      labels = Map(recipeNodeLabel, bakerLabelWithName) ++ bakerResource.metadata.labels.filter(_._1 != "custom-resource-definition")))
+      labels = Map(bakeryBakerLabel, bakerLabelWithName) ++ bakerResource.metadata.labels.filter(_._1 != "custom-resource-definition")))
       .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(key = bakerLabelWithName._1, value = bakerLabelWithName._2)))
       .withReplicas(replicas)
       .withTemplate(podSpec(bakerResource))
@@ -204,7 +204,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
 
     new skuber.ext.Deployment(metadata = ObjectMeta(
       name = bakerCrdName,
-      labels = Map(recipeNodeLabel, bakerLabelWithName) ++ bakerResource.metadata.labels.filter(_._1 != "custom-resource-definition")
+      labels = Map(bakeryBakerLabel, bakerLabelWithName) ++ bakerResource.metadata.labels.filter(_._1 != "custom-resource-definition")
     ))
       .withLabelSelector(LabelSelector(LabelSelector.IsEqualRequirement(key = bakerLabelWithName._1, value = bakerLabelWithName._2)))
       .withReplicas(replicas)
@@ -214,14 +214,14 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
   def service(bakerResource: BakerResource): Service = {
     val bakerCrdName: String = bakerResource.metadata.name
     Service(bakerCrdName)
-      .addLabel(recipeNodeLabel)
+      .addLabel(bakeryBakerLabel)
       .addLabel(recipeNameLabel(bakerResource))
       .addLabel("metrics" -> "collect")
       .withSelector(recipeNameLabel(bakerResource))
       .setPorts(List(
         Some(Service.Port(
           name = "http-api",
-          port = baasStateServicePort,
+          port = bakeryBakerServicePort,
           targetPort = Some(Right("http-api"))
         )),
         Some(Service.Port(
@@ -243,7 +243,7 @@ final class BakerController(interactionClientTLS: Option[MutualAuthKeystoreConfi
       metadata = ObjectMeta(
         name = intermediateRecipesManifestConfigMapName(bakerResource),
         labels = Map(
-          recipeNodeLabel,
+          bakeryBakerLabel,
           recipeNameLabel(bakerResource),
           recipeManifestLabel
         )),

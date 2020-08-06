@@ -26,7 +26,7 @@ object Main extends IOApp with LazyLogging {
 
   override def run(args: List[String]): IO[ExitCode] = {
 
-    val clientConfig = ConfigFactory.load().getConfig("baas-kafka-listener").as[KafkaListenerConfig]
+    val clientConfig = ConfigFactory.load().getConfig("bakery-kafka-listener").as[KafkaListenerConfig]
 
     val eventProcessor = Class.forName(clientConfig.`event-processor-class`).getConstructor().newInstance().asInstanceOf[EventProcessor]
 

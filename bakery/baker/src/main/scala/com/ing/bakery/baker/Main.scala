@@ -30,13 +30,13 @@ object Main extends IOApp with LazyLogging {
 
     val config = ConfigFactory.load(ConfigFactory.parseFile(new File("/bakery-config/application.conf")))
 
-    val httpServerPort = config.getInt("baas-component.http-api-port")
-    val recipeDirectory = config.getString("baas-component.recipe-directory")
+    val httpServerPort = config.getInt("bakery-component.http-api-port")
+    val recipeDirectory = config.getString("bakery-component.recipe-directory")
 
-    val interactionClientHttpsEnabled = config.getBoolean("baas-component.interaction-client.https-enabled")
-    lazy val interactionClientKeystorePath = config.getString("baas-component.interaction-client.https-keystore-path")
-    lazy val interactionClientKeystorePassword = config.getString("baas-component.interaction-client.https-keystore-password")
-    lazy val interactionClientKeystoreType = config.getString("baas-component.interaction-client.https-keystore-type")
+    val interactionClientHttpsEnabled = config.getBoolean("bakery-component.interaction-client.https-enabled")
+    lazy val interactionClientKeystorePath = config.getString("bakery-component.interaction-client.https-keystore-path")
+    lazy val interactionClientKeystorePassword = config.getString("bakery-component.interaction-client.https-keystore-password")
+    lazy val interactionClientKeystoreType = config.getString("bakery-component.interaction-client.https-keystore-type")
 
     val loggingEnabled = config.getBoolean("baas-component.api-logging-enabled")
     logger.info(s"Logging of API: ${loggingEnabled}  - MUST NEVER BE SET TO 'true' IN PRODUCTION")

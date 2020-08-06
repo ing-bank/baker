@@ -12,11 +12,11 @@ object RemoteInteractionLoader {
 
   def apply(implementations: List[InteractionInstance]): Unit = {
     val config = ConfigFactory.load()
-    val port = config.getInt("baas-component.http-api-port")
-    val httpsEnabled = config.getBoolean("baas-component.interaction.https-enabled")
-    val keystorePath = config.getString("baas-component.interaction.https-keystore-path")
-    val keystorePassword = config.getString("baas-component.interaction.https-keystore-password")
-    val keystoreType = config.getString("baas-component.interaction.https-keystore-type")
+    val port = config.getInt("bakery-component.http-api-port")
+    val httpsEnabled = config.getBoolean("bakery-component.interaction.https-enabled")
+    val keystorePath = config.getString("bakery-component.interaction.https-keystore-path")
+    val keystorePassword = config.getString("bakery-component.interaction.https-keystore-password")
+    val keystoreType = config.getString("bakery-component.interaction.https-keystore-type")
 
     val address = InetSocketAddress.createUnresolved("0.0.0.0", port)
     val healthServiceAddress = InetSocketAddress.createUnresolved("0.0.0.0", 9999)
