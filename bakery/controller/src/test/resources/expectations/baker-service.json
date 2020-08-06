@@ -2,11 +2,9 @@
   "kind" : "Service",
   "apiVersion" : "v1",
   "metadata" : {
-    "name" : "baas-state-service-RecipeOne",
+    "name" : "RecipeOne",
     "labels" : {
-      "baas-component" : "state",
-      "app" : "baas-state-service",
-      "baker-name" : "RecipeOne"
+      "bakery-recipe-name" : "RecipeOne"
     }
   },
   "spec" : {
@@ -17,7 +15,7 @@
       "targetPort" : "http-api"
     } ],
     "selector" : {
-      "app" : "baas-state"
+      "bakery-recipe-name" : "RecipeOne"
     },
     "type" : "ClusterIP",
     "sessionAffinity" : "None"

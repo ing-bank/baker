@@ -2,9 +2,8 @@
   "kind" : "Deployment",
   "apiVersion" : "apps/v1",
   "metadata" : {
-    "name" : "baas-state-RecipeOne",
+    "name" : "RecipeOne",
     "labels" : {
-      "app" : "baas-state",
       "baker-name" : "RecipeOne"
     }
   },
@@ -17,17 +16,16 @@
     },
     "template" : {
       "metadata" : {
-        "name" : "baas-state-RecipeOne",
+        "name" : "RecipeOne",
         "labels" : {
-          "app" : "baas-state",
           "baker-name" : "RecipeOne",
           "akka-cluster" : "RecipeOne"
         }
       },
       "spec" : {
         "containers" : [ {
-          "name" : "baas-state-RecipeOne",
-          "image" : "baas-node-state:local",
+          "name" : "RecipeOne",
+          "image" : "bakery-baker:local",
           "ports" : [ {
             "containerPort" : 8080,
             "protocol" : "TCP",
@@ -100,7 +98,7 @@
         "volumes" : [ {
           "name" : "recipes",
           "configMap" : {
-            "name" : "baas-state-recipes-config-map-RecipeOne"
+            "name" : "RecipeOne-manifest"
           }
         } ],
         "restartPolicy" : "Always",

@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 import cats.effect.IO
 import com.ing.bakery.clustercontroller.controllers.{BakerResource, InteractionResource}
 import com.ing.bakery.mocks.WatchEvent.{ResourcePath, WatchEventType}
+import com.ing.bakery.protocol.{InteractionExecution => I}
 import org.mockserver.integration.ClientAndServer
 import org.mockserver.matchers.{TimeToLive, Times}
 import org.mockserver.model.HttpRequest.request

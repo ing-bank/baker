@@ -112,15 +112,15 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
 
   override lazy val projectSettings: Seq[Def.Setting[_]] = Seq(
     mainClassBody := None,
-    mainClass in Compile := Some("com.ing.baker.baas.Main"),
+    mainClass in Compile := Some("com.ing.bakery.Main"),
     commands += buildDockerCommand
   )
 
   private val mainClassBodyDefault =
     """
-      |package com.ing.baker.baas
+      |package com.ing.bakery
       |
-      |import com.ing.baker.baas.interaction.RemoteInteractionLoader
+      |import com.ing.bakery.interaction.RemoteInteractionLoader
       |import com.ing.baker.runtime.scaladsl.InteractionInstance
       |import kamon.Kamon
       |
@@ -151,11 +151,11 @@ object BuildInteractionDockerImageSBTPlugin extends sbt.AutoPlugin {
 
   private val mainClassBodySpringDefault =
     """
-      |package com.ing.baker.baas
+      |package com.ing.bakery
       |
       |import java.util
       |
-      |import com.ing.baker.baas.interaction.RemoteInteractionLoader
+      |import com.ing.bakery.interaction.RemoteInteractionLoader
       |import com.ing.baker.recipe.javadsl.Interaction
       |import com.ing.baker.runtime.scaladsl.InteractionInstance
       |import com.typesafe.scalalogging.LazyLogging

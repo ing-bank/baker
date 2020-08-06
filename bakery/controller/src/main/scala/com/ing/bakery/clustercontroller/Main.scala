@@ -24,7 +24,7 @@ object Main extends IOApp with LazyLogging {
     val useCrds = config.getBoolean("bakery-controller.use-crds")
 
     implicit val system: ActorSystem =
-      ActorSystem("BaaSStateNodeSystem")
+      ActorSystem("bakery-baker-system")
     implicit val materializer: Materializer =
       ActorMaterializer()
     val k8s: KubernetesClient =

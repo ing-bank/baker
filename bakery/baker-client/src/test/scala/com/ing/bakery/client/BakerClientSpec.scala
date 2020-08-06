@@ -4,9 +4,9 @@ import java.net.InetSocketAddress
 
 import cats.effect.concurrent.MVar
 import cats.effect.{IO, Resource}
-import com.ing.baker.baas.common.{KeystoreConfig, TLSConfig}
-import com.ing.baker.baas.javadsl
-import com.ing.baker.baas.scaladsl.BakerClient
+import com.ing.bakery.common.{KeystoreConfig, TLSConfig}
+import com.ing.bakery.javadsl
+import com.ing.bakery.scaladsl.BakerClient
 import com.ing.baker.runtime.common.RecipeInstanceMetadata
 import com.ing.baker.runtime.scaladsl.BakerResult
 import com.ing.baker.runtime.serialization.JsonEncoders._

@@ -5,7 +5,7 @@ metadata:
   labels:
     custom-resource-definition: interactions
 data:
-  image: baas-interaction-example-reserve-items:local
+  image: bakery-interaction-example-reserve-items:local
   replicas: "2"
 ---
 apiVersion: v1

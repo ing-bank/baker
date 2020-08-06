@@ -3,7 +3,7 @@ kind: Interaction
 metadata:
   name: reserve-items
 spec:
-  image: baas-interaction-example-reserve-items:local
+  image: bakery-interaction-example-reserve-items:local
   env:
   - name: ONE
     value: "1"

@@ -4,8 +4,8 @@ import java.util.concurrent.Executors
 
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
-import com.ing.baker.baas.scaladsl.BakerClient
 import com.ing.baker.compiler.RecipeCompiler
+import com.ing.bakery.scaladsl.BakerClient
 import com.typesafe.config.ConfigFactory
 import org.http4s.Uri
 import org.http4s.server.blaze.BlazeServerBuilder

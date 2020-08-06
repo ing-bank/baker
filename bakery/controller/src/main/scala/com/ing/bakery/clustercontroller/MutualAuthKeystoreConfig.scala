@@ -3,7 +3,7 @@ package com.ing.bakery.clustercontroller
 import java.io.ByteArrayInputStream
 
 import cats.effect.{ContextShift, IO}
-import com.ing.baker.baas.interaction.BakeryHttp
+import com.ing.bakery.interaction.BakeryHttp
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import javax.net.ssl.SSLContext

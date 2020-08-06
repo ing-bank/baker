@@ -48,7 +48,7 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
     ),
   resolvers += Resolver.bintrayRepo("cakesolutions", "maven"),
   maintainer in Docker := "The Bakery Team",
-  dockerRepository in Docker := sys.env.get("BAAS_DOCKER_REPO"),
+  dockerRepository in Docker := sys.env.get("BAKERY_DOCKER_REPO"),
   version in Docker := "local" // used by smoke tests for locally built images
 )
 
@@ -368,7 +368,7 @@ lazy val `bakery-baker-docker-generate` = project.in(file("docker/bakery-baker-d
   .settings(
     packageSummary in Docker := "The bakery state node",
     packageName in Docker := "bakery-baker",
-    mainClass in Compile := Some("com.ing.baker.bakery.state.Main"),
+    mainClass in Compile := Some("com.ing.bakery.baker.Main"),
     libraryDependencies ++= Seq(
       logback
     )

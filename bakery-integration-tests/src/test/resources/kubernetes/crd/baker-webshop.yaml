@@ -3,7 +3,7 @@ kind: Baker
 metadata:
   name: webshop-baker
 spec:
-  image: baas-node-state:local
+  image: bakery-baker:local
   kafkaBootstrapServers: kafka-event-sink:9092
   replicas: 1
   recipes:

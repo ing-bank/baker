@@ -34,7 +34,7 @@
         "containers": [
           {
             "name": "reserve-items",
-            "image": "baas-interaction-example-reserve-items:1.0.0",
+            "image": "bakery-interaction-example-reserve-items:1.0.0",
             "ports": [
               {
                 "containerPort": 8080,
@@ -154,7 +154,7 @@
             "name": "reserve-items",
             "ready": true,
             "restartCount": 0,
-            "image": "baas-interaction-example-reserve-items:1.0.0",
+            "image": "bakery-interaction-example-reserve-items:1.0.0",
             "imageID": "docker://sha256:24c532fbd1e0032e21ffa4829db3ebc721200aad479a3b6269e85dcdad4ee7f3",
             "state": {
               "running": {
@@ -198,7 +198,7 @@
         "containers": [
           {
             "name": "reserve-items",
-            "image": "baas-interaction-example-reserve-items:1.0.0",
+            "image": "bakery-interaction-example-reserve-items:1.0.0",
             "ports": [
               {
                 "containerPort": 8080,
@@ -318,7 +318,7 @@
             "name": "reserve-items",
             "ready": true,
             "restartCount": 0,
-            "image": "baas-interaction-example-reserve-items:1.0.0",
+            "image": "bakery-interaction-example-reserve-items:1.0.0",
             "imageID": "docker://sha256:24c532fbd1e0032e21ffa4829db3ebc721200aad479a3b6269e85dcdad4ee7f3",
             "state": {
               "running": {
@@ -362,7 +362,7 @@
         "containers": [
           {
             "name": "reserve-items",
-            "image": "baas-interaction-example-reserve-items:1.0.0",
+            "image": "bakery-interaction-example-reserve-items:1.0.0",
             "ports": [
               {
                 "containerPort": 8080,
@@ -482,7 +482,7 @@
             "name": "reserve-items",
             "ready": true,
             "restartCount": 0,
-            "image": "baas-interaction-example-reserve-items:1.0.0",
+            "image": "bakery-interaction-example-reserve-items:1.0.0",
             "imageID": "docker://sha256:24c532fbd1e0032e21ffa4829db3ebc721200aad479a3b6269e85dcdad4ee7f3",
             "state": {
               "running": {
