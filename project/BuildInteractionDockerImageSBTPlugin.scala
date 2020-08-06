@@ -1,4 +1,4 @@
-package baas.sbt
+package bakery.sbt
 
 import java.nio.charset.Charset
 
